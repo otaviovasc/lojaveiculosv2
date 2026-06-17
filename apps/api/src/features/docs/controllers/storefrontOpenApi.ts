@@ -28,6 +28,37 @@ export const storefrontPaths = {
       },
     },
   },
+  "/api/v1/public/storefront/listings/{listingSlug}": {
+    get: {
+      tags: ["Public Storefront"],
+      summary: "Get public storefront vehicle detail",
+      description:
+        "Returns one published, visible vehicle and its public media for the store resolved from the request host subdomain.",
+      operationId: "getPublicStorefrontVehicle",
+      parameters: [
+        {
+          name: "listingSlug",
+          in: "path",
+          required: true,
+          schema: { type: "string", minLength: 1 },
+        },
+      ],
+      responses: {
+        "200": {
+          description: "Public storefront vehicle detail.",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/PublicStorefrontListingDetail",
+              },
+            },
+          },
+        },
+        "400": { description: "Store subdomain is invalid." },
+        "404": { description: "Public storefront or listing was not found." },
+      },
+    },
+  },
 } as const;
 
 export const storefrontSchemas = {
@@ -53,6 +84,43 @@ export const storefrontSchemas = {
       slug: { type: "string" },
       tenantId: { type: "string" },
     },
+  },
+  PublicStorefrontListingDetail: {
+    type: "object",
+    additionalProperties: false,
+    required: ["store", "listing"],
+    properties: {
+      store: { $ref: "#/components/schemas/PublicStorefrontStore" },
+      listing: { $ref: "#/components/schemas/PublicVehicleListingDetail" },
+    },
+  },
+  PublicVehicleMedia: {
+    type: "object",
+    additionalProperties: false,
+    required: ["altText", "displayOrder", "kind", "mediaId", "url"],
+    properties: {
+      altText: { type: ["string", "null"] },
+      displayOrder: { type: "integer" },
+      kind: { type: "string", enum: ["document_preview", "photo", "video"] },
+      mediaId: { type: "string" },
+      url: { type: "string" },
+    },
+  },
+  PublicVehicleListingDetail: {
+    allOf: [
+      { $ref: "#/components/schemas/PublicVehicleListing" },
+      {
+        type: "object",
+        additionalProperties: false,
+        required: ["media"],
+        properties: {
+          media: {
+            type: "array",
+            items: { $ref: "#/components/schemas/PublicVehicleMedia" },
+          },
+        },
+      },
+    ],
   },
   PublicVehicleListing: {
     type: "object",

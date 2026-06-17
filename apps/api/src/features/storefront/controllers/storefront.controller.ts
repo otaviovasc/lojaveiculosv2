@@ -2,8 +2,10 @@ import type { AuditSink } from "@lojaveiculosv2/audit";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { AuthorizationError } from "../../../shared/authorization.js";
+import { getPublicVehicleListing } from "../../../domains/storefront/services/StorefrontService/getPublicVehicleListing.js";
 import { listPublicVehicleListings } from "../../../domains/storefront/services/StorefrontService/listPublicVehicleListings.js";
 import {
+  PublicStorefrontListingNotFoundError,
   PublicStorefrontNotFoundError,
   PublicStorefrontRepositoryError,
 } from "../../../domains/storefront/services/StorefrontService/serviceSupport.js";
@@ -55,6 +57,29 @@ export function createStorefrontFeature(
     }),
   );
 
+  storefrontFeature.get("/listings/:listingSlug", async (context) =>
+    handle(context, async () => {
+      const storeSlug = resolveStoreSlugFromRequest(context);
+      const listingSlug = context.req.param("listingSlug");
+
+      if (!storeSlug) {
+        return context.json({ message: "Store subdomain is required." }, 400);
+      }
+
+      const serviceContext = createPlaceholderServiceContext(
+        context,
+        options.audit ? { audit: options.audit } : {},
+      );
+      const result = await getPublicVehicleListing(
+        serviceContext,
+        { listingSlug, storeSlug },
+        repository,
+      );
+
+      return context.json(result);
+    }),
+  );
+
   return storefrontFeature;
 }
 
@@ -72,6 +97,10 @@ async function handle(
     }
 
     if (error instanceof PublicStorefrontNotFoundError) {
+      return context.json({ message: error.message }, 404);
+    }
+
+    if (error instanceof PublicStorefrontListingNotFoundError) {
       return context.json({ message: error.message }, 404);
     }
 

@@ -14,6 +14,13 @@ export class PublicStorefrontNotFoundError extends Error {
   }
 }
 
+export class PublicStorefrontListingNotFoundError extends Error {
+  constructor(listingSlug: string) {
+    super(`Public storefront listing not found: ${listingSlug}`);
+    this.name = "PublicStorefrontListingNotFoundError";
+  }
+}
+
 export function getPublicStorefrontRepository(
   repository?: PublicStorefrontRepository,
 ): PublicStorefrontRepository {

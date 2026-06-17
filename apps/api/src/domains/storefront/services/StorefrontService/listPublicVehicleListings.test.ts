@@ -70,6 +70,7 @@ function createRepository(
   options: { includeStore?: boolean } = {},
 ): PublicStorefrontRepository {
   return {
+    findPublicListingDetail: vi.fn(async () => null),
     findPublicStoreBySlug: vi.fn(async (storeSlug: string) =>
       options.includeStore === false
         ? null

@@ -2,6 +2,9 @@ import type { PublicStorefrontRepository } from "../../../domains/storefront/por
 
 export function createMemoryPublicStorefrontRepository(): PublicStorefrontRepository {
   return {
+    async findPublicListingDetail() {
+      return null;
+    },
     async findPublicStoreBySlug() {
       return null;
     },

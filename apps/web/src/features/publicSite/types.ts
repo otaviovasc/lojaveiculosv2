@@ -11,6 +11,18 @@ export type PublicVehicleListing = {
   title: string;
 };
 
+export type PublicVehicleMedia = {
+  altText: string | null;
+  displayOrder: number;
+  kind: "document_preview" | "photo" | "video";
+  mediaId: string;
+  url: string;
+};
+
+export type PublicVehicleListingDetail = PublicVehicleListing & {
+  media: readonly PublicVehicleMedia[];
+};
+
 export type PublicStorefrontData = {
   listings: readonly PublicVehicleListing[];
   store: {
@@ -19,4 +31,9 @@ export type PublicStorefrontData = {
     slug: string;
     tenantId: string;
   };
+};
+
+export type PublicStorefrontListingDetailData = {
+  listing: PublicVehicleListingDetail;
+  store: PublicStorefrontData["store"];
 };

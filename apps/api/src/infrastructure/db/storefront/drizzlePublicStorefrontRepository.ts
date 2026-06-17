@@ -1,8 +1,10 @@
-import { and, eq, isNull } from "drizzle-orm";
-import { stores, vehicleListings } from "@lojaveiculosv2/db";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { stores, vehicleListings, vehicleMedia } from "@lojaveiculosv2/db";
 import type {
   PublicStorefrontRepository,
   PublicStorefrontStore,
+  PublicVehicleListingDetail,
+  PublicVehicleMedia,
   PublicVehicleListing,
 } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 
@@ -24,12 +26,29 @@ type ListingRow = {
   title: string;
 };
 
+type MediaRow = {
+  altText: string | null;
+  displayOrder: number;
+  kind: PublicVehicleMedia["kind"];
+  mediaId: string;
+  url: string;
+};
+
 type SelectLimitBuilder<Row> = {
   limit: (count: number) => Promise<readonly Row[]>;
 };
 
+type SelectOrderBuilder<Row> = {
+  limit: (count: number) => Promise<readonly Row[]>;
+};
+
+type SelectWhereResultBuilder<Row> = SelectLimitBuilder<Row> & {
+  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
+};
+
 type SelectWhereBuilder<Row> = {
-  where: (condition: unknown) => SelectLimitBuilder<Row>;
+  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
+  where: (condition: unknown) => SelectWhereResultBuilder<Row>;
 };
 
 type SelectFromBuilder<Row> = {
@@ -54,6 +73,13 @@ export type DrizzlePublicStorefrontClient = {
       slug: unknown;
       title: unknown;
     }): SelectFromBuilder<ListingRow>;
+    (selection: {
+      altText: unknown;
+      displayOrder: unknown;
+      kind: unknown;
+      mediaId: unknown;
+      url: unknown;
+    }): SelectFromBuilder<MediaRow>;
   };
 };
 
@@ -80,6 +106,46 @@ export function createDrizzlePublicStorefrontRepository(
         .limit(1);
 
       return store ?? null;
+    },
+
+    async findPublicListingDetail(input) {
+      const [listing] = await db
+        .select({
+          description: vehicleListings.description,
+          listingId: vehicleListings.id,
+          manufactureYear: vehicleListings.manufactureYear,
+          mileageKm: vehicleListings.mileageKm,
+          modelYear: vehicleListings.modelYear,
+          priceCents: vehicleListings.askingPriceCents,
+          slug: vehicleListings.publicSlug,
+          title: vehicleListings.title,
+        })
+        .from(vehicleListings)
+        .where(
+          and(
+            createPublicListingSlugCondition(input.listingSlug),
+            eq(vehicleListings.storeId, input.storeId),
+            eq(vehicleListings.tenantId, input.tenantId),
+            eq(vehicleListings.status, "published"),
+            eq(vehicleListings.isVisibleOnPublicSite, true),
+            eq(vehicleListings.isDeleted, false),
+            isNull(vehicleListings.deletedAt),
+          ),
+        )
+        .limit(1);
+
+      if (!listing) return null;
+
+      const media = await findListingMedia(db, {
+        listingId: listing.listingId,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      });
+
+      return {
+        ...toPublicVehicleListing(listing),
+        media,
+      } satisfies PublicVehicleListingDetail;
     },
 
     async listPublicListings(input) {
@@ -110,6 +176,50 @@ export function createDrizzlePublicStorefrontRepository(
       return rows.map(toPublicVehicleListing);
     },
   };
+}
+
+async function findListingMedia(
+  db: DrizzlePublicStorefrontClient,
+  input: { listingId: string; storeId: string; tenantId: string },
+): Promise<readonly PublicVehicleMedia[]> {
+  const rows = await db
+    .select({
+      altText: vehicleMedia.altText,
+      displayOrder: vehicleMedia.displayOrder,
+      kind: vehicleMedia.kind,
+      mediaId: vehicleMedia.id,
+      url: vehicleMedia.url,
+    })
+    .from(vehicleMedia)
+    .where(
+      and(
+        eq(vehicleMedia.listingId, input.listingId),
+        eq(vehicleMedia.storeId, input.storeId),
+        eq(vehicleMedia.tenantId, input.tenantId),
+        eq(vehicleMedia.isPublic, true),
+        eq(vehicleMedia.isDeleted, false),
+        isNull(vehicleMedia.deletedAt),
+      ),
+    )
+    .orderBy(asc(vehicleMedia.displayOrder))
+    .limit(48);
+
+  return rows;
+}
+
+function createPublicListingSlugCondition(listingSlug: string) {
+  if (!isUuid(listingSlug)) return eq(vehicleListings.publicSlug, listingSlug);
+
+  return or(
+    eq(vehicleListings.publicSlug, listingSlug),
+    eq(vehicleListings.id, listingSlug),
+  );
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 function toPublicVehicleListing(row: ListingRow): PublicVehicleListing {

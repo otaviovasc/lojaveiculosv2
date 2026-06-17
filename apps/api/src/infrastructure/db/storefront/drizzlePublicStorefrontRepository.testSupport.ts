@@ -1,4 +1,4 @@
-import { stores, vehicleListings } from "@lojaveiculosv2/db";
+import { stores, vehicleListings, vehicleMedia } from "@lojaveiculosv2/db";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { DrizzlePublicStorefrontClient } from "./drizzlePublicStorefrontRepository.js";
 
@@ -20,6 +20,14 @@ type ListingRow = {
   title: string;
 };
 
+type MediaRow = {
+  altText: string | null;
+  displayOrder: number;
+  kind: "document_preview" | "photo" | "video";
+  mediaId: string;
+  url: string;
+};
+
 export function createFakePublicStorefrontDb() {
   const queriedTables: unknown[] = [];
   const db = {
@@ -31,6 +39,13 @@ export function createFakePublicStorefrontDb() {
           return {
             where() {
               return {
+                orderBy() {
+                  return {
+                    async limit(count: number) {
+                      return rowsFor(table).slice(0, count);
+                    },
+                  };
+                },
                 async limit(count: number) {
                   return rowsFor(table).slice(0, count);
                 },
@@ -45,7 +60,9 @@ export function createFakePublicStorefrontDb() {
   return db as typeof db & DrizzlePublicStorefrontClient;
 }
 
-function rowsFor(table: unknown): readonly (StoreRow | ListingRow)[] {
+function rowsFor(
+  table: unknown,
+): readonly (StoreRow | ListingRow | MediaRow)[] {
   if (table === stores) {
     return [
       {
@@ -68,6 +85,18 @@ function rowsFor(table: unknown): readonly (StoreRow | ListingRow)[] {
         priceCents: 12690000,
         slug: "fiat-toro-2023",
         title: "Fiat Toro Volcano 2023",
+      },
+    ];
+  }
+
+  if (table === vehicleMedia) {
+    return [
+      {
+        altText: "Front photo",
+        displayOrder: 0,
+        kind: "photo",
+        mediaId: "media_1",
+        url: "https://cdn.local/front.jpg",
       },
     ];
   }

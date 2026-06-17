@@ -36,6 +36,40 @@ describe("public storefront routes", () => {
     });
   });
 
+  it("gets public vehicle detail for the store resolved from host", async () => {
+    const repository = createRepository();
+    const app = createStorefrontFeature({ repository });
+
+    const response = await app.request("/listings/fiat-toro-2023", {
+      headers: { host: "demo.lojaveiculos.com.br" },
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      listing,
+      store,
+    });
+    expect(repository.findPublicListingDetail).toHaveBeenCalledWith({
+      listingSlug: "fiat-toro-2023",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+  });
+
+  it("maps unknown public listings to not found", async () => {
+    const app = createStorefrontFeature({
+      repository: createRepository({ includeListing: false }),
+    });
+    const response = await app.request("/listings/missing", {
+      headers: { host: "demo.lojaveiculos.com.br" },
+    });
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      message: "Public storefront listing not found: missing",
+    });
+  });
+
   it("maps unknown public stores to not found", async () => {
     const app = createStorefrontFeature({
       repository: createRepository({ includeStore: false }),
@@ -62,6 +96,15 @@ const listing = {
   description: "Ready to sell.",
   listingId: "listing_1",
   manufactureYear: 2022,
+  media: [
+    {
+      altText: "Front photo",
+      displayOrder: 0,
+      kind: "photo" as const,
+      mediaId: "media_1",
+      url: "https://cdn.local/front.jpg",
+    },
+  ],
   mileageKm: 32000,
   modelYear: 2023,
   priceCents: 12690000,
@@ -72,9 +115,12 @@ const listing = {
 };
 
 function createRepository(
-  options: { includeStore?: boolean } = {},
+  options: { includeListing?: boolean; includeStore?: boolean } = {},
 ): PublicStorefrontRepository {
   return {
+    findPublicListingDetail: vi.fn(async () =>
+      options.includeListing === false ? null : listing,
+    ),
     findPublicStoreBySlug: vi.fn(async () =>
       options.includeStore === false ? null : store,
     ),

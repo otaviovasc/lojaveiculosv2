@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPublicStorefrontApi } from "./apiClient";
+import { createPublicStorefrontApi, publicStorefrontRoutes } from "./apiClient";
 import { publicStorefrontPreview } from "./fixtures";
 
 type FetchCall = {
@@ -40,5 +40,37 @@ describe("createPublicStorefrontApi", () => {
     await expect(api.listListings()).rejects.toThrow(
       "Public storefront request failed with status 404",
     );
+  });
+
+  it("gets one public storefront vehicle detail by encoded slug", async () => {
+    const calls: FetchCall[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      return new Response(
+        JSON.stringify({
+          listing: { ...publicStorefrontPreview.listings[0], media: [] },
+          store: publicStorefrontPreview.store,
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        },
+      );
+    };
+    const api = createPublicStorefrontApi({ fetch: fakeFetch });
+
+    const result = await api.getListing("fiat toro 2023");
+
+    expect(result.listing.slug).toBe("fiat-toro-2023");
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/public/storefront/listings/fiat%20toro%202023",
+      init: { method: "GET" },
+    });
+  });
+
+  it("builds listing detail routes", () => {
+    expect(
+      publicStorefrontRoutes.listing("civic touring", "https://demo/api/v1/"),
+    ).toBe("https://demo/api/v1/public/storefront/listings/civic%20touring");
   });
 });

@@ -8,6 +8,7 @@ export const llmsText = `# Loja Veiculos API
 - OpenAPI document: /api/v1/openapi.json
 - Health check: /health
 - Public storefront listings: GET /api/v1/public/storefront/listings
+- Public storefront listing detail: GET /api/v1/public/storefront/listings/{listingSlug}
 - Create listing: POST /api/v1/inventory/listings
 - Get listing: GET /api/v1/inventory/listings/{listingId}
 - Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
@@ -31,6 +32,7 @@ export const llmsText = `# Loja Veiculos API
 
 ## Current inventory endpoints
 - GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br.
+- GET /api/v1/public/storefront/listings/{listingSlug}: returns one published, visible vehicle plus public media for storename.lojaveiculos.com.br.
 - POST /api/v1/inventory/listings: creates a listing scaffold; requires inventory.create.
 - GET /api/v1/inventory/listings/{listingId}: returns a listing scaffold; requires inventory.read.
 - PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
