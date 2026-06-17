@@ -20,7 +20,14 @@ function walk(dir, files = []) {
 }
 
 function isServiceFile(file) {
-  return file.includes("/services/") && basename(file) !== "index.ts";
+  const fileName = basename(file);
+  return (
+    file.includes("/services/") &&
+    fileName !== "index.ts" &&
+    fileName !== "serviceSupport.ts" &&
+    fileName !== "testSupport.ts" &&
+    fileName !== "types.ts"
+  );
 }
 
 const failures = [];
@@ -39,14 +46,16 @@ for (const file of walk(domainsRoot).filter(isServiceFile)) {
 
   if (
     !source.includes("context.audit.record(") &&
-    !source.includes("input.audit.record(")
+    !source.includes("input.audit.record(") &&
+    !source.includes("auditVehicleServiceEvent(")
   ) {
     failures.push(`${file}: service must emit an audit event`);
   }
 
   if (
     !source.includes("context.logger.") &&
-    !source.includes("input.logger.")
+    !source.includes("input.logger.") &&
+    !source.includes("logVehicleServiceEvent(")
   ) {
     failures.push(`${file}: service must write scoped structured logs`);
   }

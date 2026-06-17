@@ -1,11 +1,17 @@
 import { Hono } from "hono";
+import { inventoryPaths, inventorySchemas } from "./inventoryOpenApi.js";
 
 export const llmsText = `# Loja Veiculos API
 
 ## API entry points
 - OpenAPI document: /api/v1/openapi.json
 - Health check: /health
-- Inventory vehicle lookup: GET /api/v1/inventory/vehicles/{vehicleId}
+- Create listing: POST /api/v1/inventory/listings
+- Get listing: GET /api/v1/inventory/listings/{listingId}
+- Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
+- Update listing price: PATCH /api/v1/inventory/listings/{listingId}/price
+- Attach listing unit: PUT /api/v1/inventory/listings/{listingId}/unit
+- Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
 
 ## Authentication
 - API clients should send a bearer token in the Authorization header.
@@ -17,10 +23,16 @@ export const llmsText = `# Loja Veiculos API
 - inventory.create: reserved for vehicle creation workflows.
 - inventory.update_description: reserved for descriptive inventory edits.
 - inventory.update_price: reserved for price edits.
+- inventory.update_status: reserved for listing lifecycle edits.
 - inventory.delete: reserved for vehicle deletion workflows.
 
 ## Current inventory endpoints
-- GET /api/v1/inventory/vehicles/{vehicleId}: returns the requested vehicle id with status "not_implemented"; requires inventory.read.
+- POST /api/v1/inventory/listings: creates a listing scaffold; requires inventory.create.
+- GET /api/v1/inventory/listings/{listingId}: returns a listing scaffold; requires inventory.read.
+- PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
+- PATCH /api/v1/inventory/listings/{listingId}/price: updates price; requires inventory.update_price.
+- PUT /api/v1/inventory/listings/{listingId}/unit: attaches an operational unit; requires inventory.create.
+- PATCH /api/v1/inventory/listings/{listingId}/status: changes lifecycle status; requires inventory.update_status.
 
 ## Planned external API safety limits
 - External write/import APIs must be tenant and store scoped.
@@ -85,49 +97,7 @@ export const openApiDocument = {
         },
       },
     },
-    "/api/v1/inventory/vehicles/{vehicleId}": {
-      get: {
-        tags: ["Inventory"],
-        summary: "Get vehicle",
-        description:
-          'Returns the requested vehicle id with status "not_implemented" while inventory persistence is being built.',
-        operationId: "getInventoryVehicle",
-        security: [{ bearerAuth: ["inventory.read"] }],
-        parameters: [
-          {
-            name: "vehicleId",
-            in: "path",
-            required: true,
-            schema: { type: "string", minLength: 1 },
-            description: "Vehicle identifier.",
-          },
-        ],
-        responses: {
-          "200": {
-            description: "Vehicle lookup scaffold response.",
-            content: {
-              "application/json": {
-                schema: { $ref: "#/components/schemas/VehicleLookup" },
-                examples: {
-                  scaffold: {
-                    value: {
-                      vehicleId: "vehicle_1",
-                      status: "not_implemented",
-                    },
-                  },
-                },
-              },
-            },
-          },
-          "401": {
-            description: "Authentication is missing or invalid.",
-          },
-          "403": {
-            description: "Authenticated actor lacks inventory.read.",
-          },
-        },
-      },
-    },
+    ...inventoryPaths,
   },
   components: {
     securitySchemes: {
@@ -140,15 +110,7 @@ export const openApiDocument = {
       },
     },
     schemas: {
-      VehicleLookup: {
-        type: "object",
-        additionalProperties: false,
-        required: ["vehicleId", "status"],
-        properties: {
-          vehicleId: { type: "string" },
-          status: { type: "string", enum: ["not_implemented"] },
-        },
-      },
+      ...inventorySchemas,
       ApiError: {
         type: "object",
         additionalProperties: true,
@@ -169,6 +131,7 @@ export const openApiDocument = {
     "inventory.create": "Create vehicle inventory records.",
     "inventory.update_description": "Edit descriptive vehicle fields.",
     "inventory.update_price": "Edit vehicle pricing.",
+    "inventory.update_status": "Edit vehicle listing lifecycle status.",
     "inventory.delete": "Delete vehicle inventory records.",
   },
   "x-planned-external-api-safety-limits": [

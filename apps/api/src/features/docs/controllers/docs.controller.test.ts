@@ -25,9 +25,22 @@ describe("API docs routes", () => {
 
   it("documents current inventory auth and planned external API limits", () => {
     expect(
-      openApiDocument.paths["/api/v1/inventory/vehicles/{vehicleId}"].get
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}"].get
         .security,
     ).toEqual([{ bearerAuth: ["inventory.read"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/price"]
+        .patch.security,
+    ).toEqual([{ bearerAuth: ["inventory.update_price"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/status"]
+        .patch.security,
+    ).toEqual([{ bearerAuth: ["inventory.update_status"] }]);
+    expect(openApiDocument.components.schemas.ListingScaffold).toEqual(
+      expect.objectContaining({
+        required: ["listingId", "status"],
+      }),
+    );
     expect(openApiDocument["x-scopes"]["inventory.read"]).toContain(
       "Read vehicle inventory",
     );
