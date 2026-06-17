@@ -1,4 +1,5 @@
 import * as schema from "@lojaveiculosv2/db";
+import * as auditSchema from "@lojaveiculosv2/audit-db";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -14,6 +15,10 @@ import {
   createDrizzlePublicStorefrontRepository,
   type DrizzlePublicStorefrontClient,
 } from "./storefront/drizzlePublicStorefrontRepository.js";
+import {
+  createDrizzleAuditSink,
+  type DrizzleAuditSinkClient,
+} from "./audit/drizzleAuditSink.js";
 import type { DrizzleVehicleInventoryClient } from "./vehicleInventory/drizzleVehicleInventoryRepository.js";
 
 export function createRuntimeAppOptions(
@@ -32,8 +37,10 @@ export function createRuntimeAppOptions(
   }
 
   const db = createProductDb(databaseUrl, env);
+  const audit = createRuntimeAuditSink(env);
 
   return {
+    ...(audit ? { audit } : {}),
     inventoryListingServices: createRuntimeInventoryServices(db),
     publicStorefrontRepository: createDrizzlePublicStorefrontRepository(
       db as unknown as DrizzlePublicStorefrontClient,
@@ -70,6 +77,27 @@ function createProductDb(
   });
 
   return drizzle(client, { schema });
+}
+
+function createRuntimeAuditSink(env: Record<string, string | undefined>) {
+  const auditDatabaseUrl = env.AUDIT_DATABASE_URL;
+
+  if (!auditDatabaseUrl || auditDatabaseUrl.startsWith("${{")) {
+    if (!allowsMemoryRuntimeFallback(env)) {
+      throw new RuntimeDatabaseConfigError(
+        "AUDIT_DATABASE_URL must be configured before starting DB-backed API runtime outside local/test.",
+      );
+    }
+
+    return null;
+  }
+
+  const client = postgres(auditDatabaseUrl, {
+    max: Number(env.AUDIT_DB_POOL_MAX ?? env.DB_POOL_MAX ?? 5),
+  });
+  const db = drizzle(client, { schema: auditSchema });
+
+  return createDrizzleAuditSink(db as unknown as DrizzleAuditSinkClient);
 }
 
 function createRuntimeInventoryServices(db: unknown): InventoryListingServices {

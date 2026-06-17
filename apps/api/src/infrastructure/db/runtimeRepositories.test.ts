@@ -27,4 +27,25 @@ describe("createRuntimeAppOptions", () => {
       }),
     ).toThrow("DATABASE_URL must be configured");
   });
+
+  it("fails fast outside local/test when audit DB URL is missing", () => {
+    expect(() =>
+      createRuntimeAppOptions({
+        APP_ENV: "production",
+        DATABASE_URL: "postgresql://user:pass@localhost:54321/app",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("AUDIT_DATABASE_URL must be configured");
+  });
+
+  it("fails fast outside local/test when audit DB Railway reference is unresolved", () => {
+    expect(() =>
+      createRuntimeAppOptions({
+        APP_ENV: "production",
+        AUDIT_DATABASE_URL: "${{AuditPostgres.DATABASE_URL}}",
+        DATABASE_URL: "postgresql://user:pass@localhost:54321/app",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("AUDIT_DATABASE_URL must be configured");
+  });
 });

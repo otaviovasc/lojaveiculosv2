@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import type { AuditSink } from "@lojaveiculosv2/audit";
 import { createNoopAuditSink } from "../../shared/auditSink.js";
 import {
   createServiceContext,
@@ -8,6 +9,7 @@ import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
 
 export function createPlaceholderServiceContext(
   context: Context,
+  options: { audit?: AuditSink } = {},
 ): ServiceContext {
   const requestId = context.req.header("x-request-id") ?? crypto.randomUUID();
   const correlationId = context.req.header("x-correlation-id") ?? requestId;
@@ -17,7 +19,7 @@ export function createPlaceholderServiceContext(
 
   return createServiceContext({
     actor: { id: "public", kind: "public" },
-    audit: createNoopAuditSink(),
+    audit: options.audit ?? createNoopAuditSink(),
     logger: createConsoleServiceLogger({ correlationId, requestId }),
     permissions: ["public", "public_storefront.read"],
     request: {

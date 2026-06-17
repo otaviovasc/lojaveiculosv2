@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { InventoryListingServices } from "../../features/inventory/controllers/listingServices.js";
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
@@ -8,6 +9,7 @@ import type { PublicStorefrontRepository } from "../../domains/storefront/ports/
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 
 export type CreateAppOptions = {
+  audit?: AuditSink;
   inventoryListingServices?: InventoryListingServices;
   publicStorefrontRepository?: PublicStorefrontRepository;
   storeAccessRepository?: StoreAccessRepository;
@@ -16,10 +18,16 @@ export type CreateAppOptions = {
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
   const contextOptions = options.storeAccessRepository
-    ? { repository: options.storeAccessRepository }
+    ? {
+        ...(options.audit ? { audit: options.audit } : {}),
+        repository: options.storeAccessRepository,
+      }
     : {};
   const storefrontOptions = options.publicStorefrontRepository
-    ? { repository: options.publicStorefrontRepository }
+    ? {
+        ...(options.audit ? { audit: options.audit } : {}),
+        repository: options.publicStorefrontRepository,
+      }
     : {};
 
   app.route("/", docsFeature);

@@ -1,3 +1,4 @@
+import type { AuditSink } from "@lojaveiculosv2/audit";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { AuthorizationError } from "../../../shared/authorization.js";
@@ -16,6 +17,7 @@ const querySchema = z.object({
 });
 
 export type CreateStorefrontFeatureOptions = {
+  audit?: AuditSink;
   repository?: PublicStorefrontRepository;
 };
 
@@ -39,7 +41,10 @@ export function createStorefrontFeature(
         return context.json({ message: "Query parameters are invalid." }, 400);
       }
 
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = createPlaceholderServiceContext(
+        context,
+        options.audit ? { audit: options.audit } : {},
+      );
       const result = await listPublicVehicleListings(
         serviceContext,
         { limit: query.data.limit, storeSlug },
