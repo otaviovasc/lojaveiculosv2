@@ -10,6 +10,8 @@ import {
 } from "./drizzleVehicleInventoryRepository.testSupport.js";
 
 describe("Drizzle vehicle inventory repositories", () => {
+  const listingId = "00000000-0000-4000-8000-000000000001";
+
   it("creates listing and unit records using the product inventory schema", async () => {
     const db = createFakeDb();
     const { listingRepository, unitRepository } =
@@ -62,11 +64,11 @@ describe("Drizzle vehicle inventory repositories", () => {
   it("hydrates listing unit ids and plate from vehicle units", async () => {
     const rows = createRows();
     const db = createFakeDb({
-      listings: [rows.listing({ id: "listing_1", status: "sold_out" })],
+      listings: [rows.listing({ id: listingId, status: "sold_out" })],
       units: [
         rows.unit({
           id: "unit_1",
-          listingId: "listing_1",
+          listingId,
           plate: "ABC1D23",
           status: "available",
         }),
@@ -75,17 +77,30 @@ describe("Drizzle vehicle inventory repositories", () => {
     const { listingRepository } = createDrizzleVehicleInventoryRepositories(db);
 
     const listing = await listingRepository.findById({
-      listingId: "listing_1",
+      listingId,
       storeId: "store_1",
       tenantId: "tenant_1",
     });
 
     expect(listing).toMatchObject({
-      id: "listing_1",
+      id: listingId,
       plate: "ABC1D23",
       status: "sold",
       unitIds: ["unit_1"],
     });
+  });
+
+  it("returns null before querying when listing id is not a UUID", async () => {
+    const db = createFakeDb();
+    const { listingRepository } = createDrizzleVehicleInventoryRepositories(db);
+
+    const listing = await listingRepository.findById({
+      listingId: "not-a-uuid",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+
+    expect(listing).toBeNull();
   });
 
   it("rejects null store and tenant scope for DB-backed writes", async () => {
@@ -115,7 +130,7 @@ describe("Drizzle vehicle inventory repositories", () => {
 
     await expect(
       listingRepository.findById({
-        listingId: "listing_1",
+        listingId,
         storeId: "store_1",
         tenantId: "tenant_1",
       }),

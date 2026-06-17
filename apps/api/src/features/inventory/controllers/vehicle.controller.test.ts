@@ -4,6 +4,7 @@ import {
   createServiceContext,
   type ServiceContext,
 } from "../../../shared/serviceContext.js";
+import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   createInventoryTestApp,
   createInventoryTestServices,
@@ -157,6 +158,23 @@ describe("inventory listing routes", () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({
       message: "Missing permission: inventory.read",
+    });
+  });
+
+  it("maps vehicle listing not found failures", async () => {
+    const services = createInventoryTestServices();
+    vi.mocked(services.getListing).mockRejectedValue(
+      new VehicleListingNotFoundError("listing_missing"),
+    );
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/listings/listing_missing",
+    );
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({
+      message: "Vehicle listing not found: listing_missing",
     });
   });
 

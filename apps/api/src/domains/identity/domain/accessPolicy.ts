@@ -12,6 +12,7 @@ const allPermissions = [
   "inventory.read",
   "inventory.update_description",
   "inventory.update_price",
+  "inventory.update_status",
   "store.manage",
   "tenant.manage",
   "users.manage",

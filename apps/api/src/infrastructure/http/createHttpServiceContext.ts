@@ -94,6 +94,12 @@ function readIdentityHeaders(context: Context) {
     return null;
   }
 
+  if (!allowsTrustedIdentityHeaders()) {
+    throw new HttpContextAuthenticationError(
+      "Trusted identity headers are only accepted in local/test.",
+    );
+  }
+
   if (!clerkUserId || !storeSlug) {
     throw new HttpContextAuthenticationError(
       "Authenticated HTTP context requires Clerk user and store slug",
@@ -101,6 +107,11 @@ function readIdentityHeaders(context: Context) {
   }
 
   return { clerkUserId, storeSlug, userId };
+}
+
+function allowsTrustedIdentityHeaders(): boolean {
+  if (process.env.APP_ENV) return process.env.APP_ENV === "local";
+  return process.env.NODE_ENV === "test";
 }
 
 async function resolveContextOrThrow(

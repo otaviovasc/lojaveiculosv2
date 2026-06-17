@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type {
   StoreAccessRecord,
   StoreAccessRepository,
@@ -7,6 +7,10 @@ import type {
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 
 describe("createHttpServiceContext", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("keeps public routes on the existing placeholder context", async () => {
     const context = await captureContext(
       new Request("https://api.local/health", {
@@ -108,6 +112,22 @@ describe("createHttpServiceContext", () => {
 
     await expect(createHttpServiceContext(context)).rejects.toThrow(
       "requires store access repository",
+    );
+  });
+
+  it("rejects trusted identity headers outside local and test", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/inventory/listings", {
+        headers: {
+          "x-clerk-user-id": "clerk_1",
+          "x-store-slug": "demo",
+        },
+      }),
+    );
+
+    await expect(createHttpServiceContext(context)).rejects.toThrow(
+      "Trusted identity headers are only accepted in local/test.",
     );
   });
 });

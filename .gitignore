@@ -12,4 +12,5 @@ playwright-report/
 test-results/
 *.dump
 *.sql
+!docker/postgres/seed/*.sql
 *.gz

@@ -1,0 +1,45 @@
+services:
+  lojaveiculosv2-postgres:
+    image: postgres:16-alpine
+    container_name: lojaveiculosv2-postgres
+    environment:
+      POSTGRES_DB: lojaveiculosv2
+      POSTGRES_PASSWORD: lojaveiculosv2_dev
+      POSTGRES_USER: lojaveiculosv2
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lojaveiculosv2 -d lojaveiculosv2"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    ports:
+      - "54321:5432"
+    volumes:
+      - lojaveiculosv2_product_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+      - ./docker/postgres/seed:/seed:ro
+
+  lojaveiculosv2-audit-postgres:
+    image: postgres:16-alpine
+    container_name: lojaveiculosv2-audit-postgres
+    environment:
+      POSTGRES_DB: lojaveiculosv2_audit
+      POSTGRES_PASSWORD: lojaveiculosv2_audit_dev
+      POSTGRES_USER: lojaveiculosv2_audit
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U lojaveiculosv2_audit -d lojaveiculosv2_audit",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    ports:
+      - "54322:5432"
+    volumes:
+      - lojaveiculosv2_audit_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  lojaveiculosv2_product_pgdata:
+  lojaveiculosv2_audit_pgdata:

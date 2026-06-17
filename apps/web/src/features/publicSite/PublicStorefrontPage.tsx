@@ -13,8 +13,7 @@ import {
 
 export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   const storefrontApi = useMemo(
-    () =>
-      api ?? createPublicStorefrontApi({ fetch: window.fetch.bind(window) }),
+    () => api ?? createPublicStorefrontApi(createPublicStorefrontApiOptions()),
     [api],
   );
   const [retryKey, setRetryKey] = useState(0);
@@ -82,6 +81,23 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
       title="Carregando estoque"
     />
   );
+}
+
+function createPublicStorefrontApiOptions() {
+  const baseUrl = getPublicStorefrontApiBaseUrl();
+
+  return {
+    ...(baseUrl ? { baseUrl } : {}),
+    fetch: window.fetch.bind(window),
+  };
+}
+
+function getPublicStorefrontApiBaseUrl() {
+  const env = import.meta.env as unknown as {
+    VITE_API_BASE_URL?: string;
+  };
+
+  return env.VITE_API_BASE_URL;
 }
 
 function StorefrontStateFrame({

@@ -12,6 +12,7 @@ import {
   listingStatuses,
   type InventoryListingServices,
 } from "./listingServices.js";
+import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
 
@@ -153,7 +154,7 @@ async function createProtectedServiceContext(
   const serviceContext = await contextFactory(context);
 
   if (serviceContext.actor.kind !== "user") {
-    throw new AuthenticationError(
+    throw new HttpContextAuthenticationError(
       "Inventory routes require authenticated user context.",
     );
   }
@@ -197,8 +198,8 @@ async function handle(
       return context.json({ message: error.message }, 403);
     }
 
-    if (error instanceof AuthenticationError) {
-      return context.json({ message: error.message }, 401);
+    if (isVehicleListingNotFoundError(error)) {
+      return context.json({ message: error.message }, 404);
     }
 
     if (error instanceof HttpContextAuthenticationError) {
@@ -222,9 +223,11 @@ class RequestValidationError extends Error {
   }
 }
 
-class AuthenticationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "AuthenticationError";
-  }
+function isVehicleListingNotFoundError(
+  error: unknown,
+): error is VehicleListingNotFoundError {
+  return (
+    error instanceof VehicleListingNotFoundError ||
+    (error instanceof Error && error.name === "VehicleListingNotFoundError")
+  );
 }

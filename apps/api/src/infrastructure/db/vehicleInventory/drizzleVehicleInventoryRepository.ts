@@ -79,6 +79,7 @@ export function createDrizzleVehicleListingRepository(
 
     async findById(input) {
       const scope = requireDbScope(input);
+      if (!isUuid(input.listingId)) return null;
       const [row] = await listingDb
         .select()
         .from(vehicleListings)
@@ -126,6 +127,12 @@ export function createDrizzleVehicleListingRepository(
       );
     },
   };
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 export function createDrizzleVehicleUnitRepository(

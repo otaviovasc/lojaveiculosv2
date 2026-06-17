@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { InventoryListingServices } from "../../features/inventory/controllers/listingServices.js";
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
@@ -7,6 +8,7 @@ import type { PublicStorefrontRepository } from "../../domains/storefront/ports/
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 
 export type CreateAppOptions = {
+  inventoryListingServices?: InventoryListingServices;
   publicStorefrontRepository?: PublicStorefrontRepository;
   storeAccessRepository?: StoreAccessRepository;
 };
@@ -31,6 +33,9 @@ export function createApp(options: CreateAppOptions = {}) {
     createInventoryFeature({
       contextFactory: (context) =>
         createHttpServiceContext(context, contextOptions),
+      ...(options.inventoryListingServices
+        ? { services: options.inventoryListingServices }
+        : {}),
     }),
   );
 
