@@ -5,6 +5,7 @@ import {
   createPublicStorefrontApi,
   type PublicStorefrontApi,
 } from "./apiClient";
+import type { PublicListingDetailSnapshot } from "./PublicListingDetailPanel";
 import { PublicStorefront } from "./PublicStorefront";
 import {
   derivePublicStorefrontState,
@@ -17,9 +18,15 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     [api],
   );
   const [retryKey, setRetryKey] = useState(0);
+  const [detailRetryKey, setDetailRetryKey] = useState(0);
   const [snapshot, setSnapshot] = useState<PublicStorefrontSnapshot>({
     isLoading: true,
   });
+  const [detailSnapshot, setDetailSnapshot] =
+    useState<PublicListingDetailSnapshot>({
+      isLoading: false,
+      listingSlug: null,
+    });
 
   useEffect(() => {
     let isActive = true;
@@ -43,9 +50,50 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     };
   }, [retryKey, storefrontApi]);
 
+  useEffect(() => {
+    if (!detailSnapshot.listingSlug) return;
+
+    let isActive = true;
+    const listingSlug = detailSnapshot.listingSlug;
+    setDetailSnapshot({ isLoading: true, listingSlug });
+
+    storefrontApi
+      .getListing(listingSlug)
+      .then((data) => {
+        if (isActive)
+          setDetailSnapshot({ data, isLoading: false, listingSlug });
+      })
+      .catch((error: unknown) => {
+        if (!isActive) return;
+        setDetailSnapshot({
+          error: error instanceof Error ? error : new Error(String(error)),
+          isLoading: false,
+          listingSlug,
+        });
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [detailRetryKey, detailSnapshot.listingSlug, storefrontApi]);
+
   const state = derivePublicStorefrontState(snapshot);
 
-  if (state.kind === "ready") return <PublicStorefront data={state.data} />;
+  if (state.kind === "ready") {
+    return (
+      <PublicStorefront
+        data={state.data}
+        detail={detailSnapshot}
+        onCloseListing={() =>
+          setDetailSnapshot({ isLoading: false, listingSlug: null })
+        }
+        onOpenListing={(listingSlug) =>
+          setDetailSnapshot({ isLoading: true, listingSlug })
+        }
+        onRetryListing={() => setDetailRetryKey((current) => current + 1)}
+      />
+    );
+  }
 
   if (state.kind === "empty") {
     return (

@@ -1,10 +1,15 @@
 import {
   Car,
   CheckCircle2,
+  Eye,
   MessageCircle,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import {
+  PublicListingDetailPanel,
+  type PublicListingDetailSnapshot,
+} from "./PublicListingDetailPanel";
 import type { PublicStorefrontData, PublicVehicleListing } from "./types";
 
 const proofItems = [
@@ -13,7 +18,21 @@ const proofItems = [
   { icon: MessageCircle, label: "Atendimento WhatsApp" },
 ];
 
-export function PublicStorefront({ data }: { data: PublicStorefrontData }) {
+type PublicStorefrontProps = {
+  data: PublicStorefrontData;
+  detail: PublicListingDetailSnapshot;
+  onCloseListing: () => void;
+  onOpenListing: (listingSlug: string) => void;
+  onRetryListing: () => void;
+};
+
+export function PublicStorefront({
+  data,
+  detail,
+  onCloseListing,
+  onOpenListing,
+  onRetryListing,
+}: PublicStorefrontProps) {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8">
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -53,14 +72,32 @@ export function PublicStorefront({ data }: { data: PublicStorefrontData }) {
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.listings.map((listing) => (
-          <VehicleCard key={listing.listingId} listing={listing} />
+          <VehicleCard
+            key={listing.listingId}
+            listing={listing}
+            onOpen={() => onOpenListing(listing.slug)}
+          />
         ))}
       </section>
+
+      {detail.listingSlug ? (
+        <PublicListingDetailPanel
+          detail={detail}
+          onClose={onCloseListing}
+          onRetry={onRetryListing}
+        />
+      ) : null}
     </main>
   );
 }
 
-function VehicleCard({ listing }: { listing: PublicVehicleListing }) {
+function VehicleCard({
+  listing,
+  onOpen,
+}: {
+  listing: PublicVehicleListing;
+  onOpen: () => void;
+}) {
   return (
     <article className="overflow-hidden rounded-lg border border-line bg-panel">
       <div className="flex aspect-[16/9] items-center justify-center bg-accent-soft text-accent">
@@ -84,6 +121,14 @@ function VehicleCard({ listing }: { listing: PublicVehicleListing }) {
           <Metric label="Km" value={formatMileage(listing.mileageKm)} />
           <Metric label="Cod." value={listing.slug.slice(0, 8)} />
         </div>
+        <button
+          className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
+          onClick={onOpen}
+          type="button"
+        >
+          <Eye aria-hidden="true" className="size-4" />
+          Ver detalhes
+        </button>
       </div>
     </article>
   );
