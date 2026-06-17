@@ -22,6 +22,13 @@ export type ResolvedStoreContext = ServiceContext & {
   entitlements: readonly EntitlementKey[];
 };
 
+export class StoreAccessDeniedError extends Error {
+  constructor() {
+    super("Store access denied");
+    this.name = "StoreAccessDeniedError";
+  }
+}
+
 export async function resolveStoreContext(
   input: ResolveStoreContextInput,
 ): Promise<ResolvedStoreContext> {
@@ -37,7 +44,7 @@ export async function resolveStoreContext(
       storeSlug: input.storeSlug,
     });
 
-    throw new Error("Store access denied");
+    throw new StoreAccessDeniedError();
   }
 
   const permissions = resolvePermissions({

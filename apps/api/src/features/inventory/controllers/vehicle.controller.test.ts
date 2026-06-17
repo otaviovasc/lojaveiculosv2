@@ -1,41 +1,19 @@
-import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "../../../shared/authorization.js";
-import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
-  createInventoryFeature,
-  type InventoryListingServices,
-} from "./vehicle.controller.js";
-
-function createApp(services: InventoryListingServices) {
-  const app = new Hono();
-  app.route("/api/v1/inventory", createInventoryFeature(services));
-
-  return app;
-}
-
-function createServices(): InventoryListingServices {
-  return {
-    attachListingUnit: vi.fn(async () => scaffoldResult()),
-    changeListingStatus: vi.fn(async () => scaffoldResult()),
-    createListing: vi.fn(async () => scaffoldResult()),
-    getListing: vi.fn(async () => scaffoldResult()),
-    updateListingDescription: vi.fn(async () => scaffoldResult()),
-    updateListingPrice: vi.fn(async () => scaffoldResult()),
-  };
-}
-
-function scaffoldResult() {
-  return {
-    listingId: "listing_1",
-    status: "not_implemented" as const,
-  };
-}
+  createServiceContext,
+  type ServiceContext,
+} from "../../../shared/serviceContext.js";
+import {
+  createInventoryTestApp,
+  createInventoryTestServices,
+  scaffoldResult,
+} from "./vehicle.controller.testSupport.js";
 
 describe("inventory listing routes", () => {
   it("wires create listing requests to the service boundary", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request("/api/v1/inventory/listings", {
       body: JSON.stringify({ plate: "ABC1D23", title: "Fiat Toro" }),
@@ -51,8 +29,8 @@ describe("inventory listing routes", () => {
   });
 
   it("wires get listing requests to the service boundary", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request("/api/v1/inventory/listings/listing_1");
 
@@ -63,8 +41,8 @@ describe("inventory listing routes", () => {
   });
 
   it("wires description updates to the planned service name", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request(
       "/api/v1/inventory/listings/listing_1/description",
@@ -85,8 +63,8 @@ describe("inventory listing routes", () => {
   });
 
   it("wires price updates to the planned service name", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request(
       "/api/v1/inventory/listings/listing_1/price",
@@ -107,8 +85,8 @@ describe("inventory listing routes", () => {
   });
 
   it("wires unit attachment to the planned service name", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request(
       "/api/v1/inventory/listings/listing_1/unit",
@@ -130,8 +108,8 @@ describe("inventory listing routes", () => {
   });
 
   it("wires status changes to the planned service name", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request(
       "/api/v1/inventory/listings/listing_1/status",
@@ -152,8 +130,8 @@ describe("inventory listing routes", () => {
   });
 
   it("maps validation failures before calling services", async () => {
-    const services = createServices();
-    const app = createApp(services);
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     const response = await app.request("/api/v1/inventory/listings", {
       body: JSON.stringify({ title: "" }),
@@ -168,11 +146,11 @@ describe("inventory listing routes", () => {
   });
 
   it("maps authorization failures from services", async () => {
-    const services = createServices();
+    const services = createInventoryTestServices();
     vi.mocked(services.getListing).mockRejectedValue(
       new AuthorizationError("Missing permission: inventory.read"),
     );
-    const app = createApp(services);
+    const app = createInventoryTestApp(services);
 
     const response = await app.request("/api/v1/inventory/listings/listing_1");
 
@@ -182,9 +160,9 @@ describe("inventory listing routes", () => {
     });
   });
 
-  it("passes placeholder service context into listing services", async () => {
-    const services = createServices();
-    const app = createApp(services);
+  it("passes authenticated service context into listing services", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
 
     await app.request("/api/v1/inventory/listings/listing_1", {
       headers: { "x-request-id": "req_1" },
@@ -195,6 +173,23 @@ describe("inventory listing routes", () => {
     ];
 
     expect(serviceContext.requestId).toBe("req_1");
-    expect(serviceContext.actor).toEqual({ id: "public", kind: "public" });
+    expect(serviceContext.actor).toEqual({ id: "user_1", kind: "user" });
+    expect(serviceContext.storeId).toBe("store_1");
+    expect(serviceContext.tenantId).toBe("tenant_1");
+  });
+
+  it("rejects public context for protected inventory routes", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services, async () =>
+      createServiceContext({ request: { requestId: "req_public" } }),
+    );
+
+    const response = await app.request("/api/v1/inventory/listings/listing_1");
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      message: "Inventory routes require authenticated user context.",
+    });
+    expect(services.getListing).not.toHaveBeenCalled();
   });
 });

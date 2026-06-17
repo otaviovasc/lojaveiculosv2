@@ -1,6 +1,9 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { Context } from "hono";
-import { resolveStoreContext } from "../../domains/identity/services/IdentityService/resolveStoreContext.js";
+import {
+  resolveStoreContext,
+  StoreAccessDeniedError,
+} from "../../domains/identity/services/IdentityService/resolveStoreContext.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
 import { createNoopAuditSink } from "../../shared/auditSink.js";
 import type {
@@ -9,12 +12,27 @@ import type {
 } from "../../shared/serviceContext.js";
 import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
 import { createPlaceholderServiceContext } from "./createPlaceholderServiceContext.js";
+import { resolveStoreSlugFromRequest } from "./storeScope.js";
 
 export type CreateHttpServiceContextOptions = {
   audit?: AuditSink;
   logger?: ServiceLogger;
   repository?: StoreAccessRepository;
 };
+
+export class HttpContextAuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HttpContextAuthenticationError";
+  }
+}
+
+export class HttpContextAuthorizationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "HttpContextAuthorizationError";
+  }
+}
 
 export async function createHttpServiceContext(
   context: Context,
@@ -27,7 +45,7 @@ export async function createHttpServiceContext(
   }
 
   if (!options.repository) {
-    throw new Error(
+    throw new HttpContextAuthenticationError(
       "Authenticated HTTP context requires store access repository",
     );
   }
@@ -41,7 +59,7 @@ export async function createHttpServiceContext(
     });
   const audit = options.audit ?? createNoopAuditSink();
 
-  const resolved = await resolveStoreContext({
+  const resolved = await resolveContextOrThrow({
     actor: {
       externalId: identity.clerkUserId,
       id: identity.userId ?? identity.clerkUserId,
@@ -68,7 +86,8 @@ export async function createHttpServiceContext(
 
 function readIdentityHeaders(context: Context) {
   const clerkUserId = context.req.header("x-clerk-user-id");
-  const storeSlug = context.req.header("x-store-slug");
+  const storeSlug =
+    context.req.header("x-store-slug") ?? resolveStoreSlugFromRequest(context);
   const userId = context.req.header("x-user-id");
 
   if (!clerkUserId && !storeSlug) {
@@ -76,12 +95,26 @@ function readIdentityHeaders(context: Context) {
   }
 
   if (!clerkUserId || !storeSlug) {
-    throw new Error(
+    throw new HttpContextAuthenticationError(
       "Authenticated HTTP context requires Clerk user and store slug",
     );
   }
 
   return { clerkUserId, storeSlug, userId };
+}
+
+async function resolveContextOrThrow(
+  input: Parameters<typeof resolveStoreContext>[0],
+) {
+  try {
+    return await resolveStoreContext(input);
+  } catch (error) {
+    if (error instanceof StoreAccessDeniedError) {
+      throw new HttpContextAuthorizationError(error.message);
+    }
+
+    throw error;
+  }
 }
 
 function readRequestHeaders(context: Context) {

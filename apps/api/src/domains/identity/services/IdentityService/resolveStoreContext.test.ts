@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { resolveStoreContext } from "./resolveStoreContext.js";
+import {
+  resolveStoreContext,
+  StoreAccessDeniedError,
+} from "./resolveStoreContext.js";
 import type {
   StoreAccessRecord,
   StoreAccessRepository,
@@ -40,5 +43,23 @@ describe("resolveStoreContext", () => {
         requestId: "req_1",
       }),
     );
+  });
+
+  it("fails with a typed error when user cannot access store", async () => {
+    const repository: StoreAccessRepository = {
+      findByClerkUserAndStoreSlug: vi.fn(async () => null),
+    };
+
+    await expect(
+      resolveStoreContext({
+        actor: { id: "user_1", kind: "user" },
+        audit: { record: vi.fn(async () => undefined) },
+        clerkUserId: "clerk_1",
+        logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+        repository,
+        requestId: "req_1",
+        storeSlug: "demo",
+      }),
+    ).rejects.toBeInstanceOf(StoreAccessDeniedError);
   });
 });

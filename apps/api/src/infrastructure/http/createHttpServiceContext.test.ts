@@ -1,6 +1,9 @@
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
-import type { StoreAccessRecord } from "../../domains/identity/ports/storeAccessRepository.js";
+import type {
+  StoreAccessRecord,
+  StoreAccessRepository,
+} from "../../domains/identity/ports/storeAccessRepository.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 
 describe("createHttpServiceContext", () => {
@@ -54,6 +57,36 @@ describe("createHttpServiceContext", () => {
     });
     expect(serviceContext.permissions).toContain("inventory.update_price");
     expect(serviceContext.storeId).toBe("store_1");
+    expect(repository.findByClerkUserAndStoreSlug).toHaveBeenCalledWith({
+      clerkUserId: "clerk_1",
+      storeSlug: "demo",
+    });
+  });
+
+  it("falls back to the public storefront subdomain for store scope", async () => {
+    const access: StoreAccessRecord = {
+      entitlements: ["subdomain"],
+      overrides: [],
+      role: "owner",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+      userId: "user_1" as never,
+    };
+    const repository: StoreAccessRepository = {
+      findByClerkUserAndStoreSlug: vi.fn(async () => access),
+    };
+    const context = await captureContext(
+      new Request("https://demo.lojaveiculos.com.br/api/v1/inventory", {
+        headers: {
+          host: "demo.lojaveiculos.com.br",
+          "x-clerk-user-id": "clerk_1",
+          "x-request-id": "req_1",
+        },
+      }),
+    );
+
+    await createHttpServiceContext(context, { repository });
+
     expect(repository.findByClerkUserAndStoreSlug).toHaveBeenCalledWith({
       clerkUserId: "clerk_1",
       storeSlug: "demo",

@@ -1,7 +1,12 @@
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { AuthorizationError } from "../../../shared/authorization.js";
-import { createPlaceholderServiceContext } from "../../../infrastructure/http/createPlaceholderServiceContext.js";
+import {
+  createHttpServiceContext,
+  HttpContextAuthenticationError,
+  HttpContextAuthorizationError,
+} from "../../../infrastructure/http/createHttpServiceContext.js";
+import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   inventoryListingServices,
   listingStatuses,
@@ -9,6 +14,15 @@ import {
 } from "./listingServices.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
+
+export type InventoryContextFactory = (
+  context: Context,
+) => Promise<ServiceContext>;
+
+export type CreateInventoryFeatureOptions = {
+  contextFactory?: InventoryContextFactory;
+  services?: InventoryListingServices;
+};
 
 const createListingSchema = z.object({
   description: z.string().trim().min(1).nullable().optional(),
@@ -37,14 +51,20 @@ const statusSchema = z.object({
 });
 
 export function createInventoryFeature(
-  services: InventoryListingServices = inventoryListingServices,
+  input: CreateInventoryFeatureOptions | InventoryListingServices = {},
 ) {
   const inventoryFeature = new Hono();
+  const options = normalizeFeatureOptions(input);
+  const services = options.services ?? inventoryListingServices;
+  const contextFactory =
+    options.contextFactory ?? ((context) => createHttpServiceContext(context));
+  const createContext = (context: Context) =>
+    createProtectedServiceContext(context, contextFactory);
 
   inventoryFeature.post("/listings", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, createListingSchema);
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = await createContext(context);
       const result = await services.createListing(serviceContext, input);
 
       return context.json(result, 201);
@@ -53,7 +73,7 @@ export function createInventoryFeature(
 
   inventoryFeature.get("/listings/:listingId", async (context) =>
     handle(context, async () => {
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = await createContext(context);
       const result = await services.getListing(serviceContext, {
         listingId: context.req.param("listingId"),
       });
@@ -65,7 +85,7 @@ export function createInventoryFeature(
   inventoryFeature.patch("/listings/:listingId/description", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, descriptionSchema);
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = await createContext(context);
       const result = await services.updateListingDescription(serviceContext, {
         ...input,
         listingId: context.req.param("listingId"),
@@ -78,7 +98,7 @@ export function createInventoryFeature(
   inventoryFeature.patch("/listings/:listingId/price", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, priceSchema);
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = await createContext(context);
       const result = await services.updateListingPrice(serviceContext, {
         ...input,
         listingId: context.req.param("listingId"),
@@ -91,7 +111,7 @@ export function createInventoryFeature(
   inventoryFeature.put("/listings/:listingId/unit", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, attachUnitSchema);
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = await createContext(context);
       const result = await services.attachListingUnit(serviceContext, {
         ...input,
         listingId: context.req.param("listingId"),
@@ -104,7 +124,7 @@ export function createInventoryFeature(
   inventoryFeature.patch("/listings/:listingId/status", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, statusSchema);
-      const serviceContext = createPlaceholderServiceContext(context);
+      const serviceContext = await createContext(context);
       const result = await services.changeListingStatus(serviceContext, {
         ...input,
         listingId: context.req.param("listingId"),
@@ -118,6 +138,28 @@ export function createInventoryFeature(
 }
 
 export const vehicleFeature = createInventoryFeature();
+
+function normalizeFeatureOptions(
+  input: CreateInventoryFeatureOptions | InventoryListingServices,
+): CreateInventoryFeatureOptions {
+  if ("createListing" in input) return { services: input };
+  return input;
+}
+
+async function createProtectedServiceContext(
+  context: Context,
+  contextFactory: InventoryContextFactory,
+): Promise<ServiceContext> {
+  const serviceContext = await contextFactory(context);
+
+  if (serviceContext.actor.kind !== "user") {
+    throw new AuthenticationError(
+      "Inventory routes require authenticated user context.",
+    );
+  }
+
+  return serviceContext;
+}
 
 async function parseJson<Schema extends z.ZodType>(
   context: Context,
@@ -155,6 +197,18 @@ async function handle(
       return context.json({ message: error.message }, 403);
     }
 
+    if (error instanceof AuthenticationError) {
+      return context.json({ message: error.message }, 401);
+    }
+
+    if (error instanceof HttpContextAuthenticationError) {
+      return context.json({ message: error.message }, 401);
+    }
+
+    if (error instanceof HttpContextAuthorizationError) {
+      return context.json({ message: error.message }, 403);
+    }
+
     context.error = error instanceof Error ? error : new Error(String(error));
 
     return context.json({ message: "Internal server error." }, 500);
@@ -165,5 +219,12 @@ class RequestValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "RequestValidationError";
+  }
+}
+
+class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthenticationError";
   }
 }
