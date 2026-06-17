@@ -21,6 +21,76 @@ export type ReadOnlyCrmApi = {
   requestSseTicket: (token: string) => Promise<CrmSseTicket>;
 };
 
+export type CreateReadOnlyCrmApiOptions = {
+  auth: CrmAuthState;
+  baseUrl?: string;
+  fetch: typeof fetch;
+};
+
+type HttpMethod = "GET" | "POST";
+
+type JsonBody = Record<string, unknown>;
+
+export function createReadOnlyCrmApi({
+  auth,
+  baseUrl,
+  fetch,
+}: CreateReadOnlyCrmApiOptions): ReadOnlyCrmApi {
+  const request = <T>(
+    route: string,
+    options: {
+      body?: JsonBody;
+      includeAuth?: boolean;
+      method: HttpMethod;
+      token?: string | null;
+    },
+  ) =>
+    fetch(route, {
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+      headers: createJsonHeaders(
+        options.includeAuth === false
+          ? { accessToken: null, agent: null }
+          : { ...auth, accessToken: options.token ?? auth.accessToken },
+      ),
+      method: options.method,
+    }).then(readJson<T>);
+
+  return {
+    bridge: (bridgeToken) =>
+      request(readOnlyCrmRoutes.bridge(baseUrl), {
+        body: { bridgeToken },
+        includeAuth: false,
+        method: "POST",
+      }),
+    listMessages: (sessionId, query) =>
+      request(
+        withQuery(readOnlyCrmRoutes.listMessages(sessionId, baseUrl), [
+          createCrmMessagesQuery(query),
+        ]),
+        { method: "GET" },
+      ),
+    listSessions: (query) =>
+      request(
+        withQuery(readOnlyCrmRoutes.listSessions(baseUrl), [
+          createCrmSessionsQuery(query),
+        ]),
+        { method: "GET" },
+      ),
+    login: (email, password) =>
+      request(readOnlyCrmRoutes.login(baseUrl), {
+        body: { email, password },
+        includeAuth: false,
+        method: "POST",
+      }),
+    requestSseTicket: (token) =>
+      request(readOnlyCrmRoutes.sseTicket(baseUrl), {
+        body: { _authToken: token },
+        method: "POST",
+        token,
+      }),
+  };
+}
+
 export function createCrmRequestHeaders(auth: CrmAuthState): CrmRequestHeaders {
   const headers: CrmRequestHeaders = {};
 
@@ -86,14 +156,41 @@ export function createCrmMessagesQuery(query: CrmMessageQuery = {}) {
 }
 
 export const readOnlyCrmRoutes = {
-  bridge: () => createCrmEndpoint("/auth/bridge"),
-  listMessages: (sessionId: number) =>
-    createCrmEndpoint(`/crm/chat/messages/${sessionId}`),
-  listSessions: () => createCrmEndpoint("/crm/chat/sessions"),
-  login: () => createCrmEndpoint("/crm/agents/login"),
-  sse: (ticket: string) => createCrmEndpoint(`/crm/sse?ticket=${ticket}`),
-  sseTicket: () => createCrmEndpoint("/crm/sse/ticket"),
+  bridge: (baseUrl?: string) => createCrmEndpoint("/auth/bridge", baseUrl),
+  listMessages: (sessionId: number, baseUrl?: string) =>
+    createCrmEndpoint(`/crm/chat/messages/${sessionId}`, baseUrl),
+  listSessions: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/chat/sessions", baseUrl),
+  login: (baseUrl?: string) => createCrmEndpoint("/crm/agents/login", baseUrl),
+  sse: (ticket: string, baseUrl?: string) =>
+    createCrmEndpoint(`/crm/sse?ticket=${ticket}`, baseUrl),
+  sseTicket: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/sse/ticket", baseUrl),
 } as const;
+
+function createJsonHeaders(auth: CrmAuthState): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+    ...createCrmRequestHeaders(auth),
+  };
+}
+
+async function readJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    throw new Error(`CRM request failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+function withQuery(route: string, params: URLSearchParams[]) {
+  const query = params
+    .map((param) => param.toString())
+    .filter(Boolean)
+    .join("&");
+
+  return query ? `${route}?${query}` : route;
+}
 
 function addOptionalParam(
   params: URLSearchParams,
