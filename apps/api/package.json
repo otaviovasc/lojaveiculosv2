@@ -1,0 +1,29 @@
+{
+  "name": "@lojaveiculosv2/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -b",
+    "start": "node dist/main.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.0.5",
+    "@lojaveiculosv2/audit": "0.0.0",
+    "@lojaveiculosv2/config": "0.0.0",
+    "@lojaveiculosv2/db": "0.0.0",
+    "@lojaveiculosv2/shared": "0.0.0",
+    "drizzle-orm": "0.45.2",
+    "hono": "4.12.22",
+    "pino": "10.3.0",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "tsx": "4.22.4",
+    "vitest": "4.1.9"
+  }
+}

@@ -1,0 +1,163 @@
+import type { ModuleDefinition, ModuleId } from "./modules";
+
+export const defaultModuleId: ModuleId = "dashboard";
+
+export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
+  "auto-entries": {
+    action: "Mapear regras",
+    description: "Lancamentos automaticos aguardando contratos do backend.",
+    eyebrow: "Gestao",
+    id: "auto-entries",
+    title: "Lancamentos",
+  },
+  autobot: {
+    action: "Preparar piloto",
+    description: "Automacoes comerciais isoladas por tenant e permissao.",
+    eyebrow: "Servico",
+    id: "autobot",
+    title: "Autobot",
+  },
+  billing: {
+    action: "Definir faturas",
+    description: "Cobrancas, planos e add-ons com estados de bloqueio claros.",
+    eyebrow: "Financeiro",
+    id: "billing",
+    title: "Billing",
+  },
+  checklists: {
+    action: "Criar modelos",
+    description: "Checklist operacional para entrega, compra e pos-venda.",
+    eyebrow: "Gestao",
+    id: "checklists",
+    title: "Checklists",
+  },
+  commissions: {
+    action: "Modelar comissoes",
+    description: "Regras por vendedor, loja e status da venda.",
+    eyebrow: "Financeiro",
+    id: "commissions",
+    title: "Comissoes",
+  },
+  crm: {
+    action: "Configurar canais",
+    description: "CRM WhatsApp nativo, sem iframe, com repasses auditaveis.",
+    eyebrow: "Atendimento",
+    id: "crm",
+    title: "CRM",
+  },
+  customers: {
+    action: "Unificar contatos",
+    description:
+      "Cadastro de clientes preparado para LGPD e historico comercial.",
+    eyebrow: "Operacao",
+    id: "customers",
+    title: "Clientes",
+  },
+  dashboard: {
+    action: "Acompanhar operacao",
+    description: "Visao inicial com indicadores e guardrails da migracao V2.",
+    eyebrow: "Painel",
+    id: "dashboard",
+    title: "Inicio",
+  },
+  documents: {
+    action: "Organizar arquivos",
+    description: "Documentos de venda, compra e financiamento por veiculo.",
+    eyebrow: "Operacao",
+    id: "documents",
+    title: "Documentos",
+  },
+  domain: {
+    action: "Validar DNS",
+    description: "Dominio proprio para o site publico e canais conectados.",
+    eyebrow: "Canais",
+    id: "domain",
+    title: "Dominio",
+  },
+  expenses: {
+    action: "Classificar gastos",
+    description: "Gastos operacionais vinculados a loja, veiculo e categoria.",
+    eyebrow: "Financeiro",
+    id: "expenses",
+    title: "Gastos",
+  },
+  fiscal: {
+    action: "Preparar NF-e",
+    description:
+      "Emissao fiscal com configuracao guiada e trilha de auditoria.",
+    eyebrow: "Servico",
+    id: "fiscal",
+    title: "NF-e",
+  },
+  inventory: {
+    action: "Cadastrar estoque",
+    description: "Inventario de veiculos com fotos, precificacao e status.",
+    eyebrow: "Operacao",
+    id: "inventory",
+    title: "Inventario",
+  },
+  "internal-health": {
+    action: "Verificar sinais",
+    description: "Saude interna, filas, logs escopados e integracoes criticas.",
+    eyebrow: "Sistema",
+    id: "internal-health",
+    title: "Saude",
+  },
+  marketplaces: {
+    action: "Conectar canais",
+    description: "Publicacao de estoque em marketplaces com controle por loja.",
+    eyebrow: "Canais",
+    id: "marketplaces",
+    title: "Marketplaces",
+  },
+  notifications: {
+    action: "Definir alertas",
+    description: "Alertas por papel, loja e prioridade operacional.",
+    eyebrow: "Sistema",
+    id: "notifications",
+    title: "Notificacoes",
+  },
+  "paid-traffic": {
+    action: "Planejar midia",
+    description: "Trafego pago orientado por estoque, margem e origem do lead.",
+    eyebrow: "Servico",
+    id: "paid-traffic",
+    title: "Trafego",
+  },
+  "public-api": {
+    action: "Publicar chaves",
+    description: "API publica versionada para estoque, leads e integracoes.",
+    eyebrow: "Plataforma",
+    id: "public-api",
+    title: "Public API",
+  },
+  "public-site": {
+    action: "Personalizar vitrine",
+    description: "Site publico com vitrine, SEO local e identidade da loja.",
+    eyebrow: "Canais",
+    id: "public-site",
+    title: "Site publico",
+  },
+  reports: {
+    action: "Montar relatorios",
+    description:
+      "Relatorios gerenciais com filtros por periodo, loja e origem.",
+    eyebrow: "Gestao",
+    id: "reports",
+    title: "Relatorios",
+  },
+  settings: {
+    action: "Revisar parametros",
+    description: "Configuracoes de loja, usuarios, papeis e preferencias.",
+    eyebrow: "Sistema",
+    id: "settings",
+    title: "Configuracoes",
+  },
+  simulations: {
+    action: "Simular venda",
+    description: "Cenarios comerciais e financiamento antes da proposta final.",
+    eyebrow: "Operacao",
+    id: "simulations",
+    title: "Simulacoes",
+  },
+};

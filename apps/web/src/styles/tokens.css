@@ -1,0 +1,52 @@
+:root {
+  --color-app: #f7f9fb;
+  --color-text: #15222d;
+  --color-muted: #5a6977;
+  --color-panel: #ffffff;
+  --color-line: #dce4ea;
+  --color-line-strong: #b8c6d1;
+  --color-accent: #20c77a;
+  --color-accent-strong: #16a765;
+  --color-accent-soft: #ddf8eb;
+  --color-app-elevated: #edf3f7;
+  --color-blue-start: #2684ff;
+  --color-blue-end: #0e68d8;
+  --color-blue-soft: rgb(38 132 255 / 0.14);
+  --color-green-start: #20c77a;
+  --color-green-end: #16a765;
+  --color-pink-start: #f45da6;
+  --color-pink-end: #d83f89;
+  --color-violet-start: #8f6bff;
+  --color-violet-end: #714ee6;
+  --color-warning: #f5c542;
+  --color-danger: #ef5b5b;
+  --color-inverse: #ffffff;
+  --color-inverse-soft: rgb(255 255 255 / 0.2);
+  --color-inverse-muted: rgb(255 255 255 / 0.72);
+  --color-inverse-ghost: rgb(255 255 255 / 0.14);
+  --layout-content-max: 80rem;
+  --layout-header-height: 5rem;
+  --layout-sidebar-width: 272px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-focus: 0 0 0 3px rgb(32 199 122 / 0.26);
+  --shadow-panel: 0 20px 50px rgb(21 34 45 / 0.08);
+}
+
+@theme {
+  --color-app: var(--color-app);
+  --color-app-elevated: var(--color-app-elevated);
+  --color-app-text: var(--color-text);
+  --color-muted: var(--color-muted);
+  --color-panel: var(--color-panel);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-accent: var(--color-accent);
+  --color-accent-strong: var(--color-accent-strong);
+  --color-accent-soft: var(--color-accent-soft);
+  --color-blue-soft: var(--color-blue-soft);
+  --color-inverse: var(--color-inverse);
+  --color-warning: var(--color-warning);
+  --color-danger: var(--color-danger);
+}
