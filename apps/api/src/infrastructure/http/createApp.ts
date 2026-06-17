@@ -7,9 +7,11 @@ import { createStorefrontFeature } from "../../features/storefront/controllers/s
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
 import type { PublicStorefrontRepository } from "../../domains/storefront/ports/publicStorefrontRepository.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
+import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 
 export type CreateAppOptions = {
   audit?: AuditSink;
+  identityVerifier?: HttpIdentityVerifier;
   inventoryListingServices?: InventoryListingServices;
   publicStorefrontRepository?: PublicStorefrontRepository;
   storeAccessRepository?: StoreAccessRepository;
@@ -20,6 +22,9 @@ export function createApp(options: CreateAppOptions = {}) {
   const contextOptions = options.storeAccessRepository
     ? {
         ...(options.audit ? { audit: options.audit } : {}),
+        ...(options.identityVerifier
+          ? { identityVerifier: options.identityVerifier }
+          : {}),
         repository: options.storeAccessRepository,
       }
     : {};

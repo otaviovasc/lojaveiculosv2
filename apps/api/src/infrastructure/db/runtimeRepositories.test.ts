@@ -48,4 +48,15 @@ describe("createRuntimeAppOptions", () => {
       }),
     ).toThrow("AUDIT_DATABASE_URL must be configured");
   });
+
+  it("fails fast outside local/test when Clerk secret is missing", () => {
+    expect(() =>
+      createRuntimeAppOptions({
+        APP_ENV: "production",
+        AUDIT_DATABASE_URL: "postgresql://user:pass@localhost:54322/audit",
+        DATABASE_URL: "postgresql://user:pass@localhost:54321/app",
+        NODE_ENV: "production",
+      }),
+    ).toThrow("CLERK_SECRET_KEY must be configured");
+  });
 });

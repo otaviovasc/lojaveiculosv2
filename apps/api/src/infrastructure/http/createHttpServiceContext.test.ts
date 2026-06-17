@@ -100,6 +100,72 @@ describe("createHttpServiceContext", () => {
     });
   });
 
+  it("resolves authenticated context from a verified Clerk bearer token", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    const access: StoreAccessRecord = {
+      entitlements: ["crm"],
+      overrides: [],
+      role: "owner",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+      userId: "user_1" as never,
+    };
+    const repository: StoreAccessRepository = {
+      findByClerkUserAndStoreSlug: vi.fn(async () => access),
+    };
+    const identityVerifier = {
+      verify: vi.fn(async () => ({ clerkUserId: "clerk_verified" })),
+    };
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/inventory", {
+        headers: {
+          authorization: "Bearer session_token",
+          "x-request-id": "req_1",
+          "x-store-slug": "demo",
+        },
+      }),
+    );
+
+    const serviceContext = await createHttpServiceContext(context, {
+      identityVerifier,
+      repository,
+    });
+
+    expect(serviceContext.actor).toEqual({
+      externalId: "clerk_verified",
+      id: "user_1",
+      kind: "user",
+    });
+    expect(repository.findByClerkUserAndStoreSlug).toHaveBeenCalledWith({
+      clerkUserId: "clerk_verified",
+      storeSlug: "demo",
+    });
+  });
+
+  it("maps verifier failures to authentication errors", async () => {
+    vi.stubEnv("APP_ENV", "production");
+    const repository: StoreAccessRepository = {
+      findByClerkUserAndStoreSlug: vi.fn(),
+    };
+    const identityVerifier = {
+      verify: vi.fn(async () => {
+        throw new Error("bad token");
+      }),
+    };
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/inventory", {
+        headers: {
+          authorization: "Bearer bad_token",
+          "x-store-slug": "demo",
+        },
+      }),
+    );
+
+    await expect(
+      createHttpServiceContext(context, { identityVerifier, repository }),
+    ).rejects.toThrow("Invalid or expired Clerk token.");
+  });
+
   it("fails closed when identity headers are present without a repository", async () => {
     const context = await captureContext(
       new Request("https://api.local/api/v1/inventory/listings", {

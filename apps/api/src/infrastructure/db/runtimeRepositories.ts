@@ -6,6 +6,7 @@ import {
   createInventoryListingServices,
   type InventoryListingServices,
 } from "../../features/inventory/controllers/listingServices.js";
+import { createClerkHttpIdentityVerifier } from "../auth/clerkHttpIdentityVerifier.js";
 import type { CreateAppOptions } from "../http/createApp.js";
 import {
   createDrizzleStoreAccessRepository,
@@ -38,9 +39,11 @@ export function createRuntimeAppOptions(
 
   const db = createProductDb(databaseUrl, env);
   const audit = createRuntimeAuditSink(env);
+  const identityVerifier = createRuntimeIdentityVerifier(env);
 
   return {
     ...(audit ? { audit } : {}),
+    ...(identityVerifier ? { identityVerifier } : {}),
     inventoryListingServices: createRuntimeInventoryServices(db),
     publicStorefrontRepository: createDrizzlePublicStorefrontRepository(
       db as unknown as DrizzlePublicStorefrontClient,
@@ -98,6 +101,40 @@ function createRuntimeAuditSink(env: Record<string, string | undefined>) {
   const db = drizzle(client, { schema: auditSchema });
 
   return createDrizzleAuditSink(db as unknown as DrizzleAuditSinkClient);
+}
+
+function createRuntimeIdentityVerifier(
+  env: Record<string, string | undefined>,
+) {
+  const secretKey = env.CLERK_SECRET_KEY;
+
+  if (!secretKey) {
+    if (!allowsMemoryRuntimeFallback(env)) {
+      throw new RuntimeDatabaseConfigError(
+        "CLERK_SECRET_KEY must be configured before starting DB-backed API runtime outside local/test.",
+      );
+    }
+
+    return null;
+  }
+
+  return createClerkHttpIdentityVerifier({
+    ...(env.CLERK_AUDIENCE
+      ? { audience: parseCsvEnv(env.CLERK_AUDIENCE) }
+      : {}),
+    ...(env.CLERK_AUTHORIZED_PARTIES
+      ? { authorizedParties: parseCsvEnv(env.CLERK_AUTHORIZED_PARTIES) }
+      : {}),
+    ...(env.CLERK_JWT_KEY ? { jwtKey: env.CLERK_JWT_KEY } : {}),
+    secretKey,
+  });
+}
+
+function parseCsvEnv(value: string): string[] {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
 }
 
 function createRuntimeInventoryServices(db: unknown): InventoryListingServices {

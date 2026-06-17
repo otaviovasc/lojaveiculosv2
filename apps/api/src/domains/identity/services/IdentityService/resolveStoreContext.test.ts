@@ -35,11 +35,21 @@ describe("resolveStoreContext", () => {
 
     expect(context.storeId).toBe("store_1");
     expect(context.tenantId).toBe("tenant_1");
+    expect(context.actor).toEqual({
+      externalId: "clerk_1",
+      id: "user_1",
+      kind: "user",
+    });
     expect(context.entitlements).toContain("crm");
     expect(context.permissions).toContain("inventory.update_price");
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "identity.context.resolve",
+        actor: {
+          externalId: "clerk_1",
+          id: "user_1",
+          kind: "user",
+        },
         requestId: "req_1",
       }),
     );

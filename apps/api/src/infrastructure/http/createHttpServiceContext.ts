@@ -12,10 +12,12 @@ import type {
 } from "../../shared/serviceContext.js";
 import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
 import { createPlaceholderServiceContext } from "./createPlaceholderServiceContext.js";
+import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 import { resolveStoreSlugFromRequest } from "./storeScope.js";
 
 export type CreateHttpServiceContextOptions = {
   audit?: AuditSink;
+  identityVerifier?: HttpIdentityVerifier;
   logger?: ServiceLogger;
   repository?: StoreAccessRepository;
 };
@@ -38,7 +40,7 @@ export async function createHttpServiceContext(
   context: Context,
   options: CreateHttpServiceContextOptions = {},
 ): Promise<ServiceContext> {
-  const identity = readIdentityHeaders(context);
+  const identity = await resolveHttpIdentity(context, options.identityVerifier);
 
   if (!identity) {
     return createPlaceholderServiceContext(context);
@@ -84,10 +86,42 @@ export async function createHttpServiceContext(
   };
 }
 
-function readIdentityHeaders(context: Context) {
-  const clerkUserId = context.req.header("x-clerk-user-id");
+async function resolveHttpIdentity(
+  context: Context,
+  identityVerifier?: HttpIdentityVerifier,
+) {
   const storeSlug =
     context.req.header("x-store-slug") ?? resolveStoreSlugFromRequest(context);
+
+  if (identityVerifier) {
+    let verifiedIdentity: Awaited<ReturnType<HttpIdentityVerifier["verify"]>>;
+
+    try {
+      verifiedIdentity = await identityVerifier.verify(context);
+    } catch {
+      throw new HttpContextAuthenticationError(
+        "Invalid or expired Clerk token.",
+      );
+    }
+
+    if (!verifiedIdentity && !storeSlug) return null;
+    if (!verifiedIdentity || !storeSlug) {
+      throw new HttpContextAuthenticationError(
+        "Authenticated HTTP context requires Clerk user and store slug",
+      );
+    }
+
+    return { ...verifiedIdentity, storeSlug };
+  }
+
+  return readTrustedIdentityHeaders(context, storeSlug);
+}
+
+function readTrustedIdentityHeaders(
+  context: Context,
+  storeSlug?: string | null,
+) {
+  const clerkUserId = context.req.header("x-clerk-user-id");
   const userId = context.req.header("x-user-id");
 
   if (!clerkUserId && !storeSlug) {

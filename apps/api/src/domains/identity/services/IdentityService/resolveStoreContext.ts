@@ -51,10 +51,15 @@ export async function resolveStoreContext(
     overrides: access.overrides,
     role: access.role,
   });
+  const actor: ServiceActor = {
+    ...input.actor,
+    externalId: input.actor.externalId ?? input.clerkUserId,
+    id: access.userId,
+  };
 
   await input.audit.record({
     action: "identity.context.resolve",
-    actor: input.actor,
+    actor,
     entityId: access.storeId,
     entityType: "store",
     requestId: input.requestId,
@@ -63,7 +68,7 @@ export async function resolveStoreContext(
   });
 
   return {
-    actor: input.actor,
+    actor,
     audit: input.audit,
     entitlements: access.entitlements,
     logger: input.logger,
