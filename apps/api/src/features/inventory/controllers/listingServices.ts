@@ -10,17 +10,14 @@ import {
 import { getVehicleListing } from "../../../domains/vehicle/services/VehicleService/getVehicleListing.js";
 import { updateVehicleDescription } from "../../../domains/vehicle/services/VehicleService/updateVehicleDescription.js";
 import { updateVehiclePrice } from "../../../domains/vehicle/services/VehicleService/updateVehiclePrice.js";
-import type {
-  CreateVehicleListingRecord,
-  CreateVehicleUnitRecord,
-  VehicleListing,
-  VehicleListingRepository,
-  VehicleListingStatus,
-  VehicleUnit,
-  VehicleUnitRepository,
-} from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
+import type { VehicleListingStatus } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
+import {
+  createDrizzleVehicleInventoryRepositories,
+  type DrizzleVehicleInventoryClient,
+} from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { createMemoryVehicleInventoryPorts } from "./memoryVehicleInventoryPorts.js";
 
 export const listingStatuses = [
   "available",
@@ -73,48 +70,84 @@ export type InventoryListingServices = {
   ) => Promise<ListingScaffoldResult>;
 };
 
-const ports = createMemoryVehiclePorts();
+export type DrizzleVehicleInventoryAdapter = (
+  client: DrizzleVehicleInventoryClient,
+) => VehicleInventoryServicePorts;
 
-export const inventoryListingServices: InventoryListingServices = {
-  async attachListingUnit(context, input) {
-    const unit = await attachVehicleUnit(
-      context,
-      cleanAttachInput(input),
-      ports,
-    );
+export type CreateInventoryListingServicesOptions =
+  | {
+      drizzleAdapter?: never;
+      drizzleClient?: never;
+      ports?: VehicleInventoryServicePorts;
+    }
+  | {
+      drizzleAdapter?: DrizzleVehicleInventoryAdapter;
+      drizzleClient: DrizzleVehicleInventoryClient;
+      ports?: never;
+    };
 
-    return plannedListingResult(unit.listingId);
-  },
-  async changeListingStatus(context, input) {
-    const listing = await changeVehicleStatus(context, input, ports);
+export function createInventoryListingServices(
+  options: CreateInventoryListingServicesOptions = {},
+): InventoryListingServices {
+  const ports = resolveVehicleInventoryPorts(options);
 
-    return plannedListingResult(listing.id);
-  },
-  async createListing(context, input) {
-    const listing = await createVehicleListing(
-      context,
-      cleanCreateInput(input),
-      ports,
-    );
+  return {
+    async attachListingUnit(context, input) {
+      const unit = await attachVehicleUnit(
+        context,
+        cleanAttachInput(input),
+        ports,
+      );
 
-    return plannedListingResult(listing.id);
-  },
-  async getListing(context, input) {
-    const listing = await getVehicleListing(context, input, ports);
+      return plannedListingResult(unit.listingId);
+    },
+    async changeListingStatus(context, input) {
+      const listing = await changeVehicleStatus(context, input, ports);
 
-    return plannedListingResult(listing.id);
-  },
-  async updateListingDescription(context, input) {
-    const listing = await updateVehicleDescription(context, input, ports);
+      return plannedListingResult(listing.id);
+    },
+    async createListing(context, input) {
+      const listing = await createVehicleListing(
+        context,
+        cleanCreateInput(input),
+        ports,
+      );
 
-    return plannedListingResult(listing.id);
-  },
-  async updateListingPrice(context, input) {
-    const listing = await updateVehiclePrice(context, input, ports);
+      return plannedListingResult(listing.id);
+    },
+    async getListing(context, input) {
+      const listing = await getVehicleListing(context, input, ports);
 
-    return plannedListingResult(listing.id);
-  },
-};
+      return plannedListingResult(listing.id);
+    },
+    async updateListingDescription(context, input) {
+      const listing = await updateVehicleDescription(context, input, ports);
+
+      return plannedListingResult(listing.id);
+    },
+    async updateListingPrice(context, input) {
+      const listing = await updateVehiclePrice(context, input, ports);
+
+      return plannedListingResult(listing.id);
+    },
+  };
+}
+
+export const inventoryListingServices = createInventoryListingServices();
+
+function resolveVehicleInventoryPorts(
+  options: CreateInventoryListingServicesOptions,
+): VehicleInventoryServicePorts {
+  if ("ports" in options && options.ports) return options.ports;
+
+  if ("drizzleClient" in options) {
+    const adapter =
+      options.drizzleAdapter ?? createDrizzleVehicleInventoryRepositories;
+    return adapter(options.drizzleClient);
+  }
+
+  return createMemoryVehicleInventoryPorts();
+}
 
 function cleanAttachInput(
   input: Parameters<InventoryListingServices["attachListingUnit"]>[1],
@@ -143,70 +176,6 @@ function cleanCreateInput(
   if (input.status !== undefined) result.status = input.status;
 
   return result;
-}
-
-function createMemoryVehiclePorts(): VehicleInventoryServicePorts {
-  const listings = new Map<string, VehicleListing>();
-  const units = new Map<string, VehicleUnit>();
-  let listingSequence = 1;
-  let unitSequence = 1;
-
-  const listingRepository: VehicleListingRepository = {
-    create: async (record) => {
-      const listing = createListingRecord(record, listingSequence);
-      listingSequence += 1;
-      listings.set(listing.id, listing);
-      return listing;
-    },
-    findById: async ({ listingId, storeId, tenantId }) => {
-      const listing = listings.get(listingId);
-      if (!listing) return null;
-      if (listing.storeId !== storeId || listing.tenantId !== tenantId) {
-        return null;
-      }
-      return listing;
-    },
-    save: async (listing) => {
-      listings.set(listing.id, listing);
-      return listing;
-    },
-  };
-
-  const unitRepository: VehicleUnitRepository = {
-    create: async (record) => {
-      const unit = createUnitRecord(record, unitSequence);
-      unitSequence += 1;
-      units.set(unit.id, unit);
-      return unit;
-    },
-  };
-
-  return { listingRepository, unitRepository };
-}
-
-function createListingRecord(
-  record: CreateVehicleListingRecord,
-  sequence: number,
-): VehicleListing {
-  const now = new Date();
-  return {
-    ...record,
-    createdAt: now,
-    id: `listing_${sequence}`,
-    unitIds: [],
-    updatedAt: now,
-  };
-}
-
-function createUnitRecord(
-  record: CreateVehicleUnitRecord,
-  sequence: number,
-): VehicleUnit {
-  return {
-    ...record,
-    createdAt: new Date(),
-    id: `unit_${sequence}`,
-  };
 }
 
 function plannedListingResult(listingId: string): ListingScaffoldResult {

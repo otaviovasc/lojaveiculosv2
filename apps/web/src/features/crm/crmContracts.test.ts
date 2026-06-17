@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createCrmRequestHeaders } from "./apiClient";
+import {
+  createCrmMessagesQuery,
+  createCrmRequestHeaders,
+  createCrmSessionsQuery,
+  readOnlyCrmRoutes,
+} from "./apiClient";
 import {
   getCrmBootstrapState,
   readBridgeTokenRefresh,
@@ -68,5 +73,34 @@ describe("CRM migration contracts", () => {
       Authorization: "Bearer session-token",
       "x-crm-agent-id": "agent-123",
     });
+  });
+
+  it("keeps read-only CRM routes aligned with repasses backend", () => {
+    expect(readOnlyCrmRoutes.bridge()).toBe("/api/v1/auth/bridge");
+    expect(readOnlyCrmRoutes.login()).toBe("/api/v1/crm/agents/login");
+    expect(readOnlyCrmRoutes.sseTicket()).toBe("/api/v1/crm/sse/ticket");
+    expect(readOnlyCrmRoutes.sse("ticket_1")).toBe(
+      "/api/v1/crm/sse?ticket=ticket_1",
+    );
+    expect(readOnlyCrmRoutes.listSessions()).toBe("/api/v1/crm/chat/sessions");
+    expect(readOnlyCrmRoutes.listMessages(42)).toBe(
+      "/api/v1/crm/chat/messages/42",
+    );
+  });
+
+  it("serializes CRM sessions and messages read queries", () => {
+    const sessions = createCrmSessionsQuery({
+      agentId: 7,
+      filterByAgent: true,
+      limit: 20,
+      tagIds: [1, 2],
+      tagMatchMode: "any",
+    });
+    const messages = createCrmMessagesQuery({ limit: 30, offset: 60 });
+
+    expect(sessions.toString()).toBe(
+      "agentId=7&filterByAgent=true&limit=20&tagMatchMode=any&tagIds=1&tagIds=2",
+    );
+    expect(messages.toString()).toBe("limit=30&offset=60");
   });
 });
