@@ -179,6 +179,26 @@ The source dump should be produced outside this repo by an approved operator.
 This repository must not contain production dumps, credentials, `.pgpass` files,
 or customer payload exports.
 
+### Render Archive Dumps
+
+The local `lojaveiculosdbprod.gz` backup inspected on 2026-06-17 expands to a
+tar/custom PostgreSQL archive, not plain SQL. The archive contains the real
+`db_lojaveiculos` dump plus Prisma shadow databases. Do not point the plain SQL
+profiler at this archive directly.
+
+Use PostgreSQL client tools to extract the real database into a temporary plain
+SQL data file first:
+
+```bash
+gzip -dc /path/to/lojaveiculosdbprod.gz > /tmp/lojaveiculosdbprod.tar
+pg_restore --data-only --file /tmp/lojaveiculos-v1-data.sql /tmp/lojaveiculosdbprod.tar
+node tools/migration/profile-local-dump.mjs /tmp/lojaveiculos-v1-data.sql /tmp/lojaveiculos-v1-profile.json
+```
+
+If the archive has multiple databases, profile only the real `db_lojaveiculos`
+payload. Ignore `prisma_migrate_shadow_db_*` entries; they are migration shadow
+databases and not product data.
+
 ## Parity Checks
 
 - Tenant/store counts and store profile completeness.

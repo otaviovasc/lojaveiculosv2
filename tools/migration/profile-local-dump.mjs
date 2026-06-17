@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { createReadStream, writeFileSync } from "node:fs";
+import { createReadStream, readFileSync, writeFileSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { createInterface } from "node:readline";
 
@@ -37,6 +37,7 @@ const profile = {
 };
 
 let currentCopy = null;
+assertPlainSqlDump(dumpPath);
 
 const rl = createInterface({
   input: createReadStream(resolve(dumpPath), { encoding: "utf8" }),
@@ -68,6 +69,18 @@ rl.on("close", () => {
 
   finalizeProfile();
 
+  if (Object.keys(profile.tables).length === 0) {
+    console.error(
+      [
+        "No COPY data blocks were found in the input.",
+        "This profiler expects a plain SQL pg_dump with COPY sections.",
+        "For custom or tar archives, first run:",
+        "  pg_restore --data-only --file /tmp/v1-data.sql /path/to/archive.dump",
+      ].join("\n"),
+    );
+    process.exit(2);
+  }
+
   const json = `${JSON.stringify(profile, null, 2)}\n`;
   if (outputPath) {
     writeFileSync(resolve(outputPath), json);
@@ -93,6 +106,31 @@ function parseCopyStart(line) {
   const columns = splitColumns(rawColumns).map(normalizeColumnIdentifier);
 
   return { table, columns };
+}
+
+function assertPlainSqlDump(path) {
+  const sample = readFileSync(resolve(path), { encoding: null, flag: "r" })
+    .subarray(0, 8192)
+    .toString("binary");
+
+  const looksBinary =
+    sample.includes("\0") ||
+    sample.includes("ustar") ||
+    sample.includes("PGDMP");
+
+  if (looksBinary) {
+    console.error(
+      [
+        "Input appears to be a binary, custom, tar, or compressed dump.",
+        "This profiler only accepts local plain SQL dumps.",
+        "Convert it first with PostgreSQL client tools, for example:",
+        "  pg_restore --data-only --file /tmp/v1-data.sql /path/to/archive.dump",
+        "Then run:",
+        "  node tools/migration/profile-local-dump.mjs /tmp/v1-data.sql",
+      ].join("\n"),
+    );
+    process.exit(2);
+  }
 }
 
 function splitColumns(rawColumns) {

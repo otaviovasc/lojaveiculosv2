@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./components.css";
+@import "./crm.css";
 
 @source "../**/*.{ts,tsx}";
 

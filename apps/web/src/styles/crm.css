@@ -1,0 +1,222 @@
+.crm-hero {
+  align-items: flex-start;
+  background:
+    linear-gradient(135deg, var(--color-blue-start), var(--color-blue-end) 58%),
+    var(--color-blue-start);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  justify-content: space-between;
+  min-height: 15rem;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.crm-hero-status,
+.crm-sse-row,
+.crm-note {
+  align-items: center;
+  display: flex;
+  gap: 0.625rem;
+}
+
+.crm-hero-status {
+  background: var(--color-inverse-ghost);
+  border: 1px solid var(--color-inverse-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  font-size: 0.8125rem;
+  font-weight: 900;
+  padding: 0.625rem 0.75rem;
+}
+
+.crm-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.crm-panel-title {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.crm-panel-title h3 {
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-weight: 900;
+}
+
+.crm-agent-card,
+.crm-thread,
+.crm-conversation-header,
+.crm-header-row,
+.crm-contract-row {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.crm-agent-card,
+.crm-thread,
+.crm-header-row,
+.crm-contract-row {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+}
+
+.crm-avatar {
+  align-items: center;
+  background: var(--color-pink-start);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  display: flex;
+  flex: 0 0 auto;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.crm-status,
+.crm-unread {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  font-size: 0.6875rem;
+  font-weight: 900;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.crm-status-open,
+.crm-unread {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.crm-action {
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  font-size: 0.8125rem;
+  font-weight: 900;
+  min-height: 2.5rem;
+  padding: 0.625rem 0.875rem;
+}
+
+.crm-action-secondary {
+  background: var(--color-blue-start);
+}
+
+.crm-contract-row,
+.crm-header-row {
+  justify-content: space-between;
+}
+
+.crm-contract-row dt,
+.crm-header-row span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.crm-contract-row dd,
+.crm-header-row strong {
+  color: var(--color-text);
+  font-size: 0.75rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.crm-workspace {
+  display: grid;
+  gap: 1rem;
+}
+
+.crm-thread {
+  width: 100%;
+}
+
+.crm-thread-dot {
+  border-radius: 999px;
+  flex: 0 0 auto;
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.crm-thread-open {
+  background: var(--color-accent);
+}
+
+.crm-thread-waiting {
+  background: var(--color-warning);
+}
+
+.crm-thread-closed {
+  background: var(--color-line-strong);
+}
+
+.crm-conversation-header {
+  border-bottom: 1px solid var(--color-line);
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+}
+
+.crm-message-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.crm-message {
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  max-width: 28rem;
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+}
+
+.crm-message-in {
+  background: var(--color-app-elevated);
+}
+
+.crm-message-out {
+  align-self: flex-end;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.crm-sse-row,
+.crm-note {
+  background: var(--color-blue-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  padding: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .crm-hero {
+    align-items: center;
+    flex-direction: row;
+    padding: 2rem;
+  }
+}
