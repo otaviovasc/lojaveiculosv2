@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import { inventoryPaths, inventorySchemas } from "./inventoryOpenApi.js";
+import { storefrontPaths, storefrontSchemas } from "./storefrontOpenApi.js";
 
 export const llmsText = `# Loja Veiculos API
 
 ## API entry points
 - OpenAPI document: /api/v1/openapi.json
 - Health check: /health
+- Public storefront listings: GET /api/v1/public/storefront/listings
 - Create listing: POST /api/v1/inventory/listings
 - Get listing: GET /api/v1/inventory/listings/{listingId}
 - Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
@@ -15,7 +17,8 @@ export const llmsText = `# Loja Veiculos API
 
 ## Authentication
 - API clients should send a bearer token in the Authorization header.
-- Current local scaffolding uses placeholder service context until identity resolution is wired into HTTP.
+- Public storefront requests resolve store scope from the Host or x-forwarded-host subdomain and do not require bearer auth.
+- Protected inventory requests require Clerk user identity and store membership context.
 - Every tenant-scoped request is expected to resolve tenantId, storeId, actor, permissions, requestId, logger, and audit sink before domain services run.
 
 ## Scopes
@@ -27,6 +30,7 @@ export const llmsText = `# Loja Veiculos API
 - inventory.delete: reserved for vehicle deletion workflows.
 
 ## Current inventory endpoints
+- GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br.
 - POST /api/v1/inventory/listings: creates a listing scaffold; requires inventory.create.
 - GET /api/v1/inventory/listings/{listingId}: returns a listing scaffold; requires inventory.read.
 - PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
@@ -67,6 +71,10 @@ export const openApiDocument = {
       description: "Vehicle inventory endpoints.",
     },
     {
+      name: "Public Storefront",
+      description: "Public vehicle stock endpoints resolved from store host.",
+    },
+    {
       name: "External API Safety",
       description:
         "Planned guardrails for future partner and automation-facing APIs.",
@@ -97,6 +105,7 @@ export const openApiDocument = {
         },
       },
     },
+    ...storefrontPaths,
     ...inventoryPaths,
   },
   components: {
@@ -111,6 +120,7 @@ export const openApiDocument = {
     },
     schemas: {
       ...inventorySchemas,
+      ...storefrontSchemas,
       ApiError: {
         type: "object",
         additionalProperties: true,
@@ -124,7 +134,7 @@ export const openApiDocument = {
   "x-authentication": {
     header: "Authorization: Bearer <token>",
     currentStatus:
-      "HTTP identity resolution is scaffolded; domain services already enforce permission checks through ServiceContext.",
+      "Protected routes resolve Clerk identity plus store membership; public storefront routes use host-based store scope.",
   },
   "x-scopes": {
     "inventory.read": "Read vehicle inventory.",

@@ -23,6 +23,7 @@ export type PermissionKey =
   | "inventory.update_description"
   | "inventory.update_price"
   | "inventory.update_status"
+  | "public_storefront.read"
   | "store.manage"
   | "tenant.manage"
   | "users.manage";

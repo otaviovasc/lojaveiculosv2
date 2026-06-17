@@ -1,10 +1,13 @@
 import { Hono } from "hono";
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
+import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
+import type { PublicStorefrontRepository } from "../../domains/storefront/ports/publicStorefrontRepository.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 
 export type CreateAppOptions = {
+  publicStorefrontRepository?: PublicStorefrontRepository;
   storeAccessRepository?: StoreAccessRepository;
 };
 
@@ -13,9 +16,16 @@ export function createApp(options: CreateAppOptions = {}) {
   const contextOptions = options.storeAccessRepository
     ? { repository: options.storeAccessRepository }
     : {};
+  const storefrontOptions = options.publicStorefrontRepository
+    ? { repository: options.publicStorefrontRepository }
+    : {};
 
   app.route("/", docsFeature);
   app.get("/health", (context) => context.json({ ok: true }));
+  app.route(
+    "/api/v1/public/storefront",
+    createStorefrontFeature(storefrontOptions),
+  );
   app.route(
     "/api/v1/inventory",
     createInventoryFeature({

@@ -17,7 +17,10 @@ describe("createHttpServiceContext", () => {
     const serviceContext = await createHttpServiceContext(context);
 
     expect(serviceContext.actor).toEqual({ id: "public", kind: "public" });
-    expect(serviceContext.permissions).toEqual(["public"]);
+    expect(serviceContext.permissions).toEqual([
+      "public",
+      "public_storefront.read",
+    ]);
     expect(serviceContext.storeId).toBeNull();
   });
 

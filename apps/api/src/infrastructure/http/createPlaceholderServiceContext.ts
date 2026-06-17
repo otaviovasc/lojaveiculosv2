@@ -19,7 +19,7 @@ export function createPlaceholderServiceContext(
     actor: { id: "public", kind: "public" },
     audit: createNoopAuditSink(),
     logger: createConsoleServiceLogger({ correlationId, requestId }),
-    permissions: ["public"],
+    permissions: ["public", "public_storefront.read"],
     request: {
       correlationId,
       method: context.req.method,

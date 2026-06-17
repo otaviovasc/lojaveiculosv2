@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dashboardStats } from "./dashboardData";
+import { publicStorefrontPreview } from "../features/publicSite/fixtures";
 import { parseModuleHash } from "./moduleState";
 import { navigationGroups } from "./modules";
 
@@ -42,5 +43,12 @@ describe("App module navigation", () => {
       "violet",
       "pink",
     ]);
+  });
+
+  it("keeps public storefront preview aligned with subdomain routing", () => {
+    expect(publicStorefrontPreview.store.slug).toBe("demo");
+    expect(
+      publicStorefrontPreview.listings.every((listing) => listing.slug),
+    ).toBe(true);
   });
 });
