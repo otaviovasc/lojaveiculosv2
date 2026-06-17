@@ -2,7 +2,7 @@ import { DashboardHome } from "../components/DashboardHome";
 import { AppShell } from "../components/AppShell";
 import { ModulePlaceholder } from "../components/ModulePlaceholder";
 import { CrmModule } from "../features/crm/CrmModule";
-import { PublicStorefront } from "../features/publicSite/PublicStorefront";
+import { PublicStorefrontPage } from "../features/publicSite/PublicStorefrontPage";
 import { moduleDefinitions } from "./moduleDefinitions";
 import { useModuleState } from "./moduleState";
 
@@ -17,7 +17,7 @@ export function App() {
       ) : activeModuleId === "crm" ? (
         <CrmModule />
       ) : activeModuleId === "public-site" ? (
-        <PublicStorefront />
+        <PublicStorefrontPage />
       ) : (
         <ModulePlaceholder module={activeModule} />
       )}

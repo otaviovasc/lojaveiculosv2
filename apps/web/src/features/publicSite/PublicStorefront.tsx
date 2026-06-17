@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { publicStorefrontPreview } from "./fixtures";
 import type { PublicStorefrontData, PublicVehicleListing } from "./types";
 
 const proofItems = [
@@ -14,11 +13,7 @@ const proofItems = [
   { icon: MessageCircle, label: "Atendimento WhatsApp" },
 ];
 
-export function PublicStorefront({
-  data = publicStorefrontPreview,
-}: {
-  data?: PublicStorefrontData;
-}) {
+export function PublicStorefront({ data }: { data: PublicStorefrontData }) {
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8">
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
@@ -102,8 +97,14 @@ function LeadPanel() {
       </p>
       <h3 className="mt-2 text-xl font-black">Separar veiculo</h3>
       <div className="mt-5 grid gap-3">
-        <input className="rounded-lg border border-line bg-app p-3 font-bold" />
-        <input className="rounded-lg border border-line bg-app p-3 font-bold" />
+        <input
+          aria-label="Nome"
+          className="rounded-lg border border-line bg-app p-3 font-bold"
+        />
+        <input
+          aria-label="Telefone"
+          className="rounded-lg border border-line bg-app p-3 font-bold"
+        />
         <button
           className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
           type="button"
