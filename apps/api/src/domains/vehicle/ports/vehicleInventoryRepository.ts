@@ -1,70 +1,54 @@
-export type VehicleListingStatus =
-  | "draft"
-  | "available"
-  | "reserved"
-  | "sold"
-  | "inactive";
+import type {
+  CreateVehicleDocumentRecord,
+  CreateVehicleListingRecord,
+  CreateVehicleMediaRecord,
+  CreateVehicleUnitRecord,
+  FindVehicleListingInput,
+  FindVehicleMediaInput,
+  FindVehicleUnitInput,
+  ListVehicleChildrenInput,
+  ListVehicleDocumentsInput,
+  ListVehicleListingsInput,
+} from "./vehicleInventoryInputs.js";
+import type {
+  VehicleDocument,
+  VehicleListing,
+  VehicleMedia,
+  VehicleUnit,
+} from "./vehicleInventoryTypes.js";
 
-export type VehicleUnitStatus = "available" | "reserved" | "sold" | "retired";
-
-export type VehicleListing = {
-  createdAt: Date;
-  description: string | null;
-  id: string;
-  plate: string | null;
-  priceCents: number | null;
-  status: VehicleListingStatus;
-  storeId: string | null;
-  tenantId: string | null;
-  title: string;
-  unitIds: readonly string[];
-  updatedAt: Date;
-};
-
-export type VehicleUnit = {
-  createdAt: Date;
-  id: string;
-  listingId: string;
-  plate: string | null;
-  status: VehicleUnitStatus;
-  stockNumber: string | null;
-  storeId: string | null;
-  tenantId: string | null;
-  vin: string | null;
-};
-
-export type CreateVehicleListingRecord = {
-  description: string | null;
-  plate: string | null;
-  priceCents: number | null;
-  status: VehicleListingStatus;
-  storeId: string | null;
-  tenantId: string | null;
-  title: string;
-};
-
-export type CreateVehicleUnitRecord = {
-  listingId: string;
-  plate: string | null;
-  status: VehicleUnitStatus;
-  stockNumber: string | null;
-  storeId: string | null;
-  tenantId: string | null;
-  vin: string | null;
-};
-
-export type FindVehicleListingInput = {
-  listingId: string;
-  storeId: string | null;
-  tenantId: string | null;
-};
+export type * from "./vehicleInventoryInputs.js";
+export type * from "./vehicleInventoryTypes.js";
 
 export type VehicleListingRepository = {
   create: (record: CreateVehicleListingRecord) => Promise<VehicleListing>;
   findById: (input: FindVehicleListingInput) => Promise<VehicleListing | null>;
+  list: (input: ListVehicleListingsInput) => Promise<readonly VehicleListing[]>;
   save: (listing: VehicleListing) => Promise<VehicleListing>;
 };
 
 export type VehicleUnitRepository = {
   create: (record: CreateVehicleUnitRecord) => Promise<VehicleUnit>;
+  findById: (input: FindVehicleUnitInput) => Promise<VehicleUnit | null>;
+  listByListingIds: (
+    input: ListVehicleChildrenInput,
+  ) => Promise<readonly VehicleUnit[]>;
+  save: (unit: VehicleUnit) => Promise<VehicleUnit>;
+};
+
+export type VehicleMediaRepository = {
+  create: (record: CreateVehicleMediaRecord) => Promise<VehicleMedia>;
+  delete: (media: VehicleMedia) => Promise<VehicleMedia>;
+  findById: (input: FindVehicleMediaInput) => Promise<VehicleMedia | null>;
+  listByListingIds: (
+    input: ListVehicleChildrenInput,
+  ) => Promise<readonly VehicleMedia[]>;
+  save: (media: VehicleMedia) => Promise<VehicleMedia>;
+};
+
+export type VehicleDocumentRepository = {
+  create: (record: CreateVehicleDocumentRecord) => Promise<VehicleDocument>;
+  listByListing: (
+    input: ListVehicleDocumentsInput,
+  ) => Promise<readonly VehicleDocument[]>;
 };

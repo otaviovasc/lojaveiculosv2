@@ -1,52 +1,16 @@
 import { Hono } from "hono";
+import { billingPaths, billingSchemas } from "./billingOpenApi.js";
+import { externalApiPaths, externalApiSchemas } from "./externalApiOpenApi.js";
+import { identityPaths, identitySchemas } from "./identityOpenApi.js";
+import {
+  internalMonitoringPaths,
+  internalMonitoringSchemas,
+} from "./internalMonitoringOpenApi.js";
 import { inventoryPaths, inventorySchemas } from "./inventoryOpenApi.js";
+import { llmsText } from "./llmsText.js";
 import { storefrontPaths, storefrontSchemas } from "./storefrontOpenApi.js";
 
-export const llmsText = `# Loja Veiculos API
-
-## API entry points
-- OpenAPI document: /api/v1/openapi.json
-- Health check: /health
-- Public storefront listings: GET /api/v1/public/storefront/listings
-- Public storefront listing detail: GET /api/v1/public/storefront/listings/{listingSlug}
-- Create listing: POST /api/v1/inventory/listings
-- Get listing: GET /api/v1/inventory/listings/{listingId}
-- Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
-- Update listing price: PATCH /api/v1/inventory/listings/{listingId}/price
-- Attach listing unit: PUT /api/v1/inventory/listings/{listingId}/unit
-- Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
-
-## Authentication
-- API clients should send a bearer token in the Authorization header.
-- Public storefront requests resolve store scope from the Host or x-forwarded-host subdomain and do not require bearer auth.
-- Protected inventory requests require Clerk user identity and store membership context.
-- Every tenant-scoped request is expected to resolve tenantId, storeId, actor, permissions, requestId, logger, and audit sink before domain services run.
-
-## Scopes
-- inventory.read: required to read vehicle inventory.
-- inventory.create: reserved for vehicle creation workflows.
-- inventory.update_description: reserved for descriptive inventory edits.
-- inventory.update_price: reserved for price edits.
-- inventory.update_status: reserved for listing lifecycle edits.
-- inventory.delete: reserved for vehicle deletion workflows.
-
-## Current inventory endpoints
-- GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br.
-- GET /api/v1/public/storefront/listings/{listingSlug}: returns one published, visible vehicle plus public media for storename.lojaveiculos.com.br.
-- POST /api/v1/inventory/listings: creates a listing scaffold; requires inventory.create.
-- GET /api/v1/inventory/listings/{listingId}: returns a listing scaffold; requires inventory.read.
-- PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
-- PATCH /api/v1/inventory/listings/{listingId}/price: updates price; requires inventory.update_price.
-- PUT /api/v1/inventory/listings/{listingId}/unit: attaches an operational unit; requires inventory.create.
-- PATCH /api/v1/inventory/listings/{listingId}/status: changes lifecycle status; requires inventory.update_status.
-
-## Planned external API safety limits
-- External write/import APIs must be tenant and store scoped.
-- External clients must use least-privilege scopes instead of operator roles.
-- Mutations must be idempotent where possible and include request identifiers for audit correlation.
-- Rate limits, payload size limits, and pagination caps must be enforced before public external API launch.
-- Destructive operations must require explicit delete scopes and audit records.
-`;
+export { llmsText } from "./llmsText.js";
 
 export const openApiDocument = {
   openapi: "3.1.0",
@@ -55,7 +19,7 @@ export const openApiDocument = {
     version: "0.1.0",
     summary: "AI-friendly metadata for the Loja Veiculos backend API.",
     description:
-      "Current API surface is intentionally small. Inventory read endpoints are scaffolded and external API safety limits are documented as planned constraints.",
+      "Current API surface exposes canonical V2 inventory DTOs and public storefront reads. External API safety limits are documented as planned constraints.",
   },
   servers: [
     {
@@ -73,13 +37,25 @@ export const openApiDocument = {
       description: "Vehicle inventory endpoints.",
     },
     {
+      name: "Identity",
+      description: "Store roles, permissions, and membership access.",
+    },
+    {
+      name: "Billing",
+      description: "Plans, subscriptions, and store feature entitlements.",
+    },
+    {
       name: "Public Storefront",
       description: "Public vehicle stock endpoints resolved from store host.",
     },
     {
       name: "External API Safety",
       description:
-        "Planned guardrails for future partner and automation-facing APIs.",
+        "Scoped key management and guardrails for partner and automation-facing APIs.",
+    },
+    {
+      name: "Internal Monitoring",
+      description: "Scoped audit events, sink failures, and runtime health.",
     },
   ],
   paths: {
@@ -108,6 +84,10 @@ export const openApiDocument = {
       },
     },
     ...storefrontPaths,
+    ...identityPaths,
+    ...billingPaths,
+    ...externalApiPaths,
+    ...internalMonitoringPaths,
     ...inventoryPaths,
   },
   components: {
@@ -119,9 +99,20 @@ export const openApiDocument = {
         description:
           "Bearer token representing an actor with tenant and store scoped permissions.",
       },
+      externalApiKey: {
+        type: "apiKey",
+        in: "header",
+        name: "x-api-key",
+        description:
+          "Scoped Loja Veiculos API key. Authorization: Bearer lv2_... is also accepted.",
+      },
     },
     schemas: {
       ...inventorySchemas,
+      ...billingSchemas,
+      ...externalApiSchemas,
+      ...identitySchemas,
+      ...internalMonitoringSchemas,
       ...storefrontSchemas,
       ApiError: {
         type: "object",
@@ -134,9 +125,9 @@ export const openApiDocument = {
     },
   },
   "x-authentication": {
-    header: "Authorization: Bearer <token>",
+    header: "Authorization: Bearer <token> or x-api-key: lv2_...",
     currentStatus:
-      "Protected routes resolve Clerk identity plus store membership; public storefront routes use host-based store scope.",
+      "Protected routes resolve Clerk identity plus store membership or scoped external API keys; public storefront routes use host-based store scope.",
   },
   "x-scopes": {
     "inventory.read": "Read vehicle inventory.",
@@ -144,7 +135,26 @@ export const openApiDocument = {
     "inventory.update_description": "Edit descriptive vehicle fields.",
     "inventory.update_price": "Edit vehicle pricing.",
     "inventory.update_status": "Edit vehicle listing lifecycle status.",
+    "inventory.update_unit": "Edit physical/unit inventory fields.",
+    "inventory.cost_create": "Create vehicle costs and linked finance entries.",
+    "inventory.reserve":
+      "Reserve vehicle listings and emit reservation receipts.",
+    "inventory.sell": "Sell vehicle listings and emit sale document bundles.",
     "inventory.delete": "Delete vehicle inventory records.",
+  },
+  "x-finance-side-effects": {
+    "vehicle-cost":
+      "POST /api/v1/inventory/listings/{listingId}/costs creates an expense finance_entries row linked to vehicle_cost plus listing/unit context.",
+    reserve:
+      "POST /api/v1/inventory/listings/{listingId}/reserve creates finance_entries linked to reservation sale/payment context.",
+    sell: "POST /api/v1/inventory/listings/{listingId}/sell creates finance_entries linked to sale and sale_payment context.",
+    linkTargets: [
+      "sale",
+      "sale_payment",
+      "vehicle_cost",
+      "vehicle_listing",
+      "vehicle_unit",
+    ],
   },
   "x-planned-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",

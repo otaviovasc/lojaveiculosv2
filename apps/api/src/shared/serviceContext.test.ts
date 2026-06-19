@@ -133,6 +133,40 @@ describe("service context scaffolding", () => {
     ).rejects.toThrow("database unavailable");
   });
 
+  it("enforces critical audit failures through service contexts", async () => {
+    const logger = {
+      error: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+    };
+    const context = createServiceContext({
+      audit: {
+        record: vi.fn(async () => {
+          throw new Error("audit database unavailable");
+        }),
+      },
+      logger,
+      request: { requestId: "req_critical" },
+    });
+
+    await expect(
+      context.audit.record({
+        action: "billing.entitlement.update",
+        actor: context.actor,
+        criticality: "critical",
+        entityId: "store_1",
+        entityType: "store",
+        requestId: context.requestId,
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).rejects.toThrow("audit database unavailable");
+    expect(logger.error).toHaveBeenCalledWith(
+      "audit.record.failed",
+      expect.objectContaining({ tier: "required" }),
+    );
+  });
+
   it("adds stable request metadata for service logs", () => {
     const context = createServiceContext({
       logger: createNoopServiceLogger(),
@@ -145,7 +179,9 @@ describe("service context scaffolding", () => {
       createServiceLogMetadata(context, { action: "vehicle.read" }),
     ).toEqual({
       action: "vehicle.read",
+      actorExternalId: null,
       actorId: "public",
+      actorKind: "public",
       correlationId: "corr_1",
       requestId: "req_1",
       storeId: "store_1",

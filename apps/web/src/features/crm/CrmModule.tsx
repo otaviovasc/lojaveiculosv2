@@ -1,138 +1,100 @@
-import {
-  CircleAlert,
-  Inbox,
-  LockKeyhole,
-  MessageSquareText,
-  RefreshCcw,
-  ShieldCheck,
-} from "lucide-react";
-import { useMemo, useState } from "react";
-import { describeCrmHeaderContract } from "./apiClient";
-import {
-  getCrmBootstrapState,
-  readBridgeTokenRefresh,
-  requestBridgeRefresh,
-} from "./bridge";
-import {
-  crmConversations,
-  crmFixtureAgent,
-  crmFixtureSseStatus,
-  crmFixtureToken,
-} from "./fixtures";
-import {
-  AgentPanel,
-  BridgePanel,
-  ConversationPanel,
-  CrmNotice,
-  InboxPanel,
-  Panel,
-} from "./CrmPanels";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ProductCrmApi } from "./productCrmApi";
+import { CrmPipelineView } from "./CrmPipelineView";
+import { createRuntimeProductCrmApi } from "./runtimeApi";
+import type {
+  CreateProductCrmActivityInput,
+  CreateProductCrmLeadInput,
+  CrmLeadStatus,
+  ProductCrmLead,
+  ProductCrmLeadActivity,
+} from "./productCrmTypes";
 
-export function CrmModule() {
-  const bootstrap = useMemo(() => getCrmBootstrapState(window.location), []);
-  const [bridgeToken, setBridgeToken] = useState(
-    bootstrap.bridgeToken ?? crmFixtureToken,
-  );
-  const [bridgeEventCount, setBridgeEventCount] = useState(0);
-  const headers = describeCrmHeaderContract({
-    accessToken: bridgeToken,
-    agent: crmFixtureAgent,
-  });
-  const activeConversation = crmConversations[0];
+export function CrmModule({ api }: { api?: ProductCrmApi }) {
+  const crmApi = useMemo(() => api ?? createProductCrmApiFromRuntime(), [api]);
+  const [activities, setActivities] = useState<ProductCrmLeadActivity[]>([]);
+  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [leads, setLeads] = useState<ProductCrmLead[]>([]);
 
-  if (!activeConversation) {
-    return (
-      <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
-        <CrmNotice icon={<Inbox className="size-5 shrink-0" />}>
-          Nenhuma conversa disponivel para esta visualizacao.
-        </CrmNotice>
-      </main>
-    );
-  }
+  const refreshLeads = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const nextLeads = await crmApi.listLeads({ limit: 80 });
+      setLeads(nextLeads);
+      setActiveLeadId((current) => current ?? nextLeads[0]?.id ?? null);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught : new Error(String(caught)));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [crmApi]);
 
-  const handleBridgeRefresh = () => {
-    requestBridgeRefresh(window.parent);
-    setBridgeEventCount((count) => count + 1);
+  useEffect(() => {
+    void refreshLeads();
+  }, [refreshLeads]);
+
+  useEffect(() => {
+    if (!activeLeadId) {
+      setActivities([]);
+      return;
+    }
+
+    let isActive = true;
+    crmApi
+      .listActivities(activeLeadId)
+      .then((nextActivities) => {
+        if (isActive) setActivities(nextActivities);
+      })
+      .catch((caught: unknown) => {
+        if (!isActive) return;
+        setError(caught instanceof Error ? caught : new Error(String(caught)));
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [activeLeadId, crmApi]);
+
+  const createLead = async (input: CreateProductCrmLeadInput) => {
+    const lead = await crmApi.createLead(input);
+    setLeads((current) => [lead, ...current]);
+    setActiveLeadId(lead.id);
   };
 
-  const handleTokenRefreshPreview = () => {
-    const token = readBridgeTokenRefresh({
-      bridgeToken: "refreshed.demo.bridge.token",
-      type: "CRM_BRIDGE_TOKEN_REFRESH",
-    });
+  const updateLeadStatus = async (leadId: string, status: CrmLeadStatus) => {
+    const lead = await crmApi.updateLead(leadId, { status });
+    setLeads((current) =>
+      current.map((item) => (item.id === lead.id ? lead : item)),
+    );
+  };
 
-    if (token) {
-      setBridgeToken(token);
-    }
+  const createActivity = async (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => {
+    const activity = await crmApi.createActivity(leadId, input);
+    setActivities((current) => [activity, ...current]);
   };
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
-      <section className="crm-hero">
-        <div className="min-w-0 space-y-3">
-          <p className="text-xs font-black uppercase tracking-widest text-inverse-muted">
-            CRM WhatsApp V2
-          </p>
-          <h2 className="max-w-3xl text-2xl font-black text-inverse lg:text-4xl">
-            Atendimento nativo preparado para bridge, agente e eventos.
-          </h2>
-          <p className="max-w-2xl text-sm font-semibold text-inverse-muted">
-            Shell sem chamadas externas: contratos de migracao preservados com
-            bootstrap, headers tipados e placeholder SSE auditavel.
-          </p>
-        </div>
-        <div className="crm-hero-status">
-          <ShieldCheck aria-hidden="true" className="size-5" />
-          <span>
-            {bootstrap.mode === "embedded" ? "Embedded" : "Standalone"}
-          </span>
-        </div>
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.3fr]">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
-          <Panel
-            title="Login do agente"
-            icon={<LockKeyhole className="size-5" />}
-          >
-            <AgentPanel
-              agent={crmFixtureAgent}
-              bridgeToken={bridgeToken}
-              bootstrap={bootstrap}
-            />
-          </Panel>
-
-          <Panel title="Bridge e API" icon={<RefreshCcw className="size-5" />}>
-            <BridgePanel
-              bridgeEventCount={bridgeEventCount}
-              headers={headers}
-              onBridgeRefresh={handleBridgeRefresh}
-              onTokenRefreshPreview={handleTokenRefreshPreview}
-            />
-          </Panel>
-        </div>
-
-        <div className="crm-workspace">
-          <Panel title="Inbox" icon={<Inbox className="size-5" />}>
-            <InboxPanel conversations={crmConversations} />
-          </Panel>
-
-          <Panel
-            title="Conversa"
-            icon={<MessageSquareText className="size-5" />}
-          >
-            <ConversationPanel
-              conversation={activeConversation}
-              sseStatus={crmFixtureSseStatus}
-            />
-          </Panel>
-        </div>
-      </section>
-
-      <CrmNotice icon={<CircleAlert className="size-5 shrink-0" />}>
-        Sem segredos reais, iframe ou backend: esta fatia so estabelece o
-        contrato visual e tipado para a migracao do CRM.
-      </CrmNotice>
-    </main>
+    <CrmPipelineView
+      activities={activities}
+      activeLeadId={activeLeadId}
+      error={error}
+      isLoading={isLoading}
+      leads={leads}
+      onCreateActivity={createActivity}
+      onCreateLead={createLead}
+      onRefresh={refreshLeads}
+      onSelectLead={setActiveLeadId}
+      onUpdateStatus={updateLeadStatus}
+    />
   );
+}
+
+function createProductCrmApiFromRuntime(): ProductCrmApi {
+  return createRuntimeProductCrmApi();
 }

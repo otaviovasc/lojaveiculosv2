@@ -6,16 +6,20 @@ import type {
 } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
+  actorUserId,
   findScopedListing,
   getListingRepository,
+  getOperationsRepository,
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
+import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
 
 const permission = "inventory.update_status";
 
 export type ChangeVehicleStatusInput = {
   listingId: string;
+  reason?: string | null | undefined;
   status: VehicleListingStatus;
 };
 
@@ -25,6 +29,7 @@ export async function changeVehicleStatus(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
   assertPermission(context, permission);
+  assertGenericListingStatusAllowed(input.status);
 
   logVehicleServiceEvent(context, "vehicle_listing.status.change.started", {
     listingId: input.listingId,
@@ -37,6 +42,17 @@ export async function changeVehicleStatus(
     ...listing,
     status: input.status,
     updatedAt: new Date(),
+  });
+  await getOperationsRepository(ports).createStatusHistory({
+    actorUserId: actorUserId(context),
+    fromStatus: listing.status,
+    listingId: listing.id,
+    reason: input.reason ?? null,
+    storeId: context.storeId,
+    target: "listing",
+    tenantId: context.tenantId,
+    toStatus: input.status,
+    unitId: null,
   });
 
   await auditVehicleServiceEvent(context, {
@@ -51,6 +67,7 @@ export async function changeVehicleStatus(
     ],
     entityId: updated.id,
     permission,
+    metadata: { reason: input.reason ?? null },
     summary: "Changed vehicle listing status",
   });
 

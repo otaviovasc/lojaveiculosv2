@@ -18,13 +18,17 @@ describe("Drizzle vehicle inventory repositories", () => {
       createDrizzleVehicleInventoryRepositories(db);
 
     const listing = await listingRepository.create({
+      catalog: null,
       description: "Clean sedan",
+      manufactureYear: null,
+      modelYear: null,
       plate: "ABC1D23",
       priceCents: 12000000,
       status: "available",
       storeId: "store_1",
       tenantId: "tenant_1",
       title: "Civic EXL",
+      trimName: null,
     });
     const unit = await unitRepository.create({
       listingId: listing.id,
@@ -58,6 +62,40 @@ describe("Drizzle vehicle inventory repositories", () => {
       id: "unit_1",
       plate: "ABC1D23",
       status: "retired",
+    });
+  });
+
+  it("creates media records using the product inventory schema", async () => {
+    const db = createFakeDb();
+    const { mediaRepository } = createDrizzleVehicleInventoryRepositories(db);
+
+    const media = await mediaRepository.create({
+      altText: "Front photo",
+      displayOrder: 1,
+      isPublic: true,
+      kind: "photo",
+      listingId,
+      storageKey:
+        "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+      url: "https://cdn.local/front.jpg",
+    });
+
+    expect(db.inserted).toEqual([
+      expect.objectContaining({
+        altText: "Front photo",
+        displayOrder: 1,
+        kind: "photo",
+        listingId,
+        storageKey:
+          "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      }),
+    ]);
+    expect(media).toMatchObject({
+      altText: "Front photo",
+      id: "media_1",
+      url: "https://cdn.local/front.jpg",
     });
   });
 
@@ -109,13 +147,17 @@ describe("Drizzle vehicle inventory repositories", () => {
 
     await expect(
       listingRepository.create({
+        catalog: null,
         description: null,
+        manufactureYear: null,
+        modelYear: null,
         plate: null,
         priceCents: null,
         status: "draft",
         storeId: null,
         tenantId: "tenant_1",
         title: "Unsynced listing",
+        trimName: null,
       }),
     ).rejects.toBeInstanceOf(VehicleInventoryDrizzleScopeError);
   });

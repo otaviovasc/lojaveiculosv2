@@ -1,18 +1,37 @@
 import { Hono, type Context } from "hono";
-import { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
 import {
   createHttpServiceContext,
   HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   inventoryListingServices,
-  listingStatuses,
   type InventoryListingServices,
 } from "./listingServices.js";
-import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
+import {
+  handle,
+  parseJson,
+  RequestValidationError,
+} from "./vehicle.controller.http.js";
+import {
+  attachUnitSchema,
+  costSchema,
+  createListingSchema,
+  descriptionSchema,
+  listListingsQuerySchema,
+  priceSchema,
+  statusSchema,
+  updateListingDetailsSchema,
+  updateUnitSchema,
+} from "./vehicle.controller.schemas.js";
+import {
+  cleanListListingsQuery,
+  cleanUpdateListingRequest,
+  cleanUpdateUnitRequest,
+} from "./vehicle.controller.cleaners.js";
+import { registerInventoryMediaRoutes } from "./vehicle.media.controller.js";
+import { registerInventoryCatalogRoutes } from "./vehicle.catalog.controller.js";
+import { registerInventoryWorkflowRoutes } from "./vehicle.workflow.controller.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
 
@@ -24,32 +43,6 @@ export type CreateInventoryFeatureOptions = {
   contextFactory?: InventoryContextFactory;
   services?: InventoryListingServices;
 };
-
-const createListingSchema = z.object({
-  description: z.string().trim().min(1).nullable().optional(),
-  plate: z.string().trim().min(1).nullable().default(null),
-  priceCents: z.number().int().nonnegative().nullable().optional(),
-  status: z.enum(listingStatuses).optional(),
-  title: z.string().trim().min(1),
-});
-
-const descriptionSchema = z.object({
-  description: z.string().trim().min(1),
-});
-
-const priceSchema = z.object({
-  priceCents: z.number().int().nonnegative().nullable(),
-});
-
-const attachUnitSchema = z.object({
-  plate: z.string().trim().min(1).nullable().optional(),
-  stockNumber: z.string().trim().min(1).nullable().optional(),
-  vin: z.string().trim().min(1).nullable().optional(),
-});
-
-const statusSchema = z.object({
-  status: z.enum(listingStatuses),
-});
 
 export function createInventoryFeature(
   input: CreateInventoryFeatureOptions | InventoryListingServices = {},
@@ -72,12 +65,45 @@ export function createInventoryFeature(
     }),
   );
 
+  inventoryFeature.get("/listings", async (context) =>
+    handle(context, async () => {
+      const parsed = listListingsQuerySchema.safeParse(context.req.query());
+      if (!parsed.success) {
+        throw new RequestValidationError("Request query is invalid.");
+      }
+      const serviceContext = await createContext(context);
+      const result = await services.listListings(
+        serviceContext,
+        cleanListListingsQuery({
+          limit: parsed.data.limit,
+          search: parsed.data.search,
+          status: parsed.data.status,
+        }),
+      );
+
+      return context.json(result);
+    }),
+  );
+
   inventoryFeature.get("/listings/:listingId", async (context) =>
     handle(context, async () => {
       const serviceContext = await createContext(context);
       const result = await services.getListing(serviceContext, {
         listingId: context.req.param("listingId"),
       });
+
+      return context.json(result);
+    }),
+  );
+
+  inventoryFeature.patch("/listings/:listingId", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, updateListingDetailsSchema);
+      const serviceContext = await createContext(context);
+      const result = await services.updateListingDetails(
+        serviceContext,
+        cleanUpdateListingRequest(context.req.param("listingId"), input),
+      );
 
       return context.json(result);
     }),
@@ -109,6 +135,19 @@ export function createInventoryFeature(
     }),
   );
 
+  inventoryFeature.post("/listings/:listingId/costs", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, costSchema);
+      const serviceContext = await createContext(context);
+      const result = await services.addVehicleCost(serviceContext, {
+        ...input,
+        listingId: context.req.param("listingId"),
+      });
+
+      return context.json(result, 201);
+    }),
+  );
+
   inventoryFeature.put("/listings/:listingId/unit", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, attachUnitSchema);
@@ -121,6 +160,29 @@ export function createInventoryFeature(
       return context.json(result);
     }),
   );
+
+  inventoryFeature.patch(
+    "/listings/:listingId/units/:unitId",
+    async (context) =>
+      handle(context, async () => {
+        const input = await parseJson(context, updateUnitSchema);
+        const serviceContext = await createContext(context);
+        const result = await services.updateListingUnit(
+          serviceContext,
+          cleanUpdateUnitRequest(
+            context.req.param("listingId"),
+            context.req.param("unitId"),
+            input,
+          ),
+        );
+
+        return context.json(result);
+      }),
+  );
+
+  registerInventoryMediaRoutes(inventoryFeature, services, createContext);
+  registerInventoryCatalogRoutes(inventoryFeature, services, createContext);
+  registerInventoryWorkflowRoutes(inventoryFeature, services, createContext);
 
   inventoryFeature.patch("/listings/:listingId/status", async (context) =>
     handle(context, async () => {
@@ -153,81 +215,11 @@ async function createProtectedServiceContext(
 ): Promise<ServiceContext> {
   const serviceContext = await contextFactory(context);
 
-  if (serviceContext.actor.kind !== "user") {
+  if (!["integration", "user"].includes(serviceContext.actor.kind)) {
     throw new HttpContextAuthenticationError(
-      "Inventory routes require authenticated user context.",
+      "Inventory routes require authenticated user or integration context.",
     );
   }
 
   return serviceContext;
-}
-
-async function parseJson<Schema extends z.ZodType>(
-  context: Context,
-  schema: Schema,
-): Promise<z.infer<Schema>> {
-  let body: unknown;
-
-  try {
-    body = await context.req.json();
-  } catch {
-    throw new RequestValidationError("Request body must be valid JSON.");
-  }
-
-  const parsed = schema.safeParse(body);
-
-  if (!parsed.success) {
-    throw new RequestValidationError("Request body is invalid.");
-  }
-
-  return parsed.data;
-}
-
-async function handle(
-  context: Context,
-  action: () => Promise<Response>,
-): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    if (error instanceof RequestValidationError) {
-      return context.json({ message: error.message }, 400);
-    }
-
-    if (error instanceof AuthorizationError) {
-      return context.json({ message: error.message }, 403);
-    }
-
-    if (isVehicleListingNotFoundError(error)) {
-      return context.json({ message: error.message }, 404);
-    }
-
-    if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
-    }
-
-    if (error instanceof HttpContextAuthorizationError) {
-      return context.json({ message: error.message }, 403);
-    }
-
-    context.error = error instanceof Error ? error : new Error(String(error));
-
-    return context.json({ message: "Internal server error." }, 500);
-  }
-}
-
-class RequestValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "RequestValidationError";
-  }
-}
-
-function isVehicleListingNotFoundError(
-  error: unknown,
-): error is VehicleListingNotFoundError {
-  return (
-    error instanceof VehicleListingNotFoundError ||
-    (error instanceof Error && error.name === "VehicleListingNotFoundError")
-  );
 }

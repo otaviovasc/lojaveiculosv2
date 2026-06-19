@@ -1,6 +1,9 @@
 import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
-import { createNoopAuditSink } from "./auditSink.js";
+import {
+  createNoopAuditSink,
+  createPolicyAwareAuditSink,
+} from "./auditSink.js";
 import {
   createNoopServiceLogger,
   type ServiceLogMetadata,
@@ -76,10 +79,18 @@ export {
 export function createServiceContext(
   input: CreateServiceContextInput,
 ): ServiceContext {
+  const logger = input.logger ?? createNoopServiceLogger();
+
   return {
     actor: input.actor ?? { id: "public", kind: "public" },
-    audit: input.audit ?? createNoopAuditSink(),
-    logger: input.logger ?? createNoopServiceLogger(),
+    audit: createPolicyAwareAuditSink({
+      sink: input.audit ?? createNoopAuditSink(),
+      logger,
+      ...(input.auditFailureTier
+        ? { defaultPolicy: input.auditFailureTier }
+        : {}),
+    }),
+    logger,
     permissions: [...(input.permissions ?? [])],
     request: input.request,
     requestId: input.request.requestId,
@@ -100,7 +111,9 @@ export function createServiceLogMetadata(
   metadata: ServiceLogMetadata = {},
 ): ServiceLogMetadata {
   return {
+    actorExternalId: context.actor.externalId ?? null,
     actorId: context.actor.id,
+    actorKind: context.actor.kind,
     correlationId: context.correlationId ?? null,
     requestId: context.requestId,
     storeId: context.storeId,

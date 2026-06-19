@@ -1,0 +1,211 @@
+import { ShieldCheck } from "lucide-react";
+import type { ChangeEvent, FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { createInventoryApi, type InventoryApi } from "../api/apiClient";
+import {
+  createInitialInventoryForm,
+  createInventoryFlowInput,
+  validateInventoryForm,
+  type InventoryFieldChangeHandler,
+  type InventoryFormState,
+} from "../model/formModel";
+import { InventoryEditPanel } from "../components/InventoryEditPanel";
+import { InventoryBadge } from "../components/InventoryFormParts";
+import { ListingPanel, UnitPanel } from "../components/InventoryListingPanels";
+import {
+  MediaPanel,
+  SubmitPanel,
+  type SubmitState,
+} from "../components/InventorySidePanels";
+import { InventoryStockTable } from "../components/InventoryStockTable";
+import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
+import type { InventoryListingDetail } from "../model/types";
+
+type SelectionState =
+  | { kind: "idle" }
+  | { kind: "loading"; listingId: string }
+  | { detail: InventoryListingDetail; kind: "ready" }
+  | { kind: "error"; message: string };
+
+export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
+  const [form, setForm] = useState(createInitialInventoryForm);
+  const [file, setFile] = useState<File | null>(null);
+  const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
+    api ?? null,
+  );
+  const [refreshToken, setRefreshToken] = useState(0);
+  const [selection, setSelection] = useState<SelectionState>({ kind: "idle" });
+  const [submitState, setSubmitState] = useState<SubmitState>({
+    kind: "idle",
+  });
+
+  useEffect(() => {
+    if (api) {
+      setRuntimeApi(api);
+      return;
+    }
+
+    void createInventoryApiOptions().then((options) => {
+      setRuntimeApi(createInventoryApi(options));
+    });
+  }, [api]);
+
+  const setField: InventoryFieldChangeHandler =
+    (field: keyof InventoryFormState) =>
+    (
+      event: ChangeEvent<
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >,
+    ) => {
+      setForm((current) => ({ ...current, [field]: event.target.value }));
+    };
+
+  const handleCatalogChange = useCallback(
+    (catalog: InventoryFormState["catalog"]) => {
+      setForm((current) => ({
+        ...current,
+        catalog,
+        modelYear: catalog?.modelYear ? String(catalog.modelYear) : "",
+        title: current.title || createCatalogTitle(catalog),
+        trimName: catalog?.modelName ?? "",
+      }));
+    },
+    [],
+  );
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const validationMessage = validateInventoryForm(form);
+
+    if (validationMessage) {
+      setSubmitState({ kind: "error", message: validationMessage });
+      return;
+    }
+
+    setSubmitState({ kind: "submitting" });
+
+    try {
+      const inventoryApi =
+        runtimeApi ?? createInventoryApi(await createInventoryApiOptions());
+      const result = await inventoryApi.createFlow(
+        createInventoryFlowInput(form, file),
+      );
+      setRefreshToken((current) => current + 1);
+      setSubmitState({ kind: "success", result });
+    } catch (error) {
+      setSubmitState({
+        kind: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  const selectListing = async (listingId: string) => {
+    if (!runtimeApi) return;
+
+    setSelection({ kind: "loading", listingId });
+
+    try {
+      const detail = await runtimeApi.getListing(listingId);
+      setSelection({ detail, kind: "ready" });
+    } catch (error) {
+      setSelection({
+        kind: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
+  const handleUpdated = (detail: InventoryListingDetail) => {
+    setSelection({ detail, kind: "ready" });
+    setRefreshToken((current) => current + 1);
+  };
+
+  return (
+    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
+      <section className="rounded-lg border border-line bg-panel p-5 shadow-[var(--shadow-panel)]">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <InventoryBadge>Inventario V2</InventoryBadge>
+              <InventoryBadge tone="blue">R2 media</InventoryBadge>
+            </div>
+            <h2 className="text-2xl font-black text-app-text lg:text-4xl">
+              Criar veiculo no estoque
+            </h2>
+            <p className="max-w-3xl text-sm font-bold text-muted">
+              Cadastre o anuncio, vincule a unidade operacional e envie uma
+              midia opcional para hospedagem externa.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-sm font-black text-accent-strong">
+            <ShieldCheck aria-hidden="true" className="size-4" />
+            Sequencia transacional guiada
+          </div>
+        </div>
+      </section>
+
+      <form
+        className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"
+        onSubmit={(event) => {
+          void handleSubmit(event);
+        }}
+      >
+        <div className="grid gap-4">
+          <ListingPanel
+            api={runtimeApi}
+            form={form}
+            onCatalogChange={handleCatalogChange}
+            onChange={setField}
+          />
+          <UnitPanel form={form} onChange={setField} />
+        </div>
+
+        <div className="grid content-start gap-4">
+          <MediaPanel
+            file={file}
+            form={form}
+            onChange={setField}
+            onFileChange={setFile}
+          />
+          <SubmitPanel file={file} state={submitState} />
+        </div>
+      </form>
+
+      {runtimeApi ? (
+        <InventoryStockTable
+          api={runtimeApi}
+          onSelect={(listingId) => void selectListing(listingId)}
+          refreshToken={refreshToken}
+        />
+      ) : null}
+
+      {runtimeApi && selection.kind === "ready" ? (
+        <InventoryEditPanel
+          api={runtimeApi}
+          detail={selection.detail}
+          onUpdated={handleUpdated}
+        />
+      ) : null}
+
+      {selection.kind === "loading" ? (
+        <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-muted">
+          Carregando {selection.listingId}.
+        </p>
+      ) : null}
+
+      {selection.kind === "error" ? (
+        <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-danger">
+          {selection.message}
+        </p>
+      ) : null}
+    </main>
+  );
+}
+
+function createCatalogTitle(catalog: InventoryFormState["catalog"]) {
+  if (!catalog) return "";
+  return [catalog.brandName, catalog.modelName, catalog.modelYear]
+    .filter(Boolean)
+    .join(" ");
+}

@@ -1,4 +1,25 @@
 export const storefrontPaths = {
+  "/api/v1/public/storefront/settings": {
+    get: {
+      tags: ["Public Storefront"],
+      summary: "Get public storefront settings",
+      description:
+        "Returns public-safe hero, SEO, contact, and branding settings for the published store resolved from the request host subdomain.",
+      operationId: "getPublicStorefrontSettings",
+      responses: {
+        "200": {
+          description: "Public storefront settings.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PublicStorefrontSettings" },
+            },
+          },
+        },
+        "400": { description: "Store subdomain is invalid." },
+        "404": { description: "Published public storefront was not found." },
+      },
+    },
+  },
   "/api/v1/public/storefront/listings": {
     get: {
       tags: ["Public Storefront"],
@@ -62,6 +83,62 @@ export const storefrontPaths = {
 } as const;
 
 export const storefrontSchemas = {
+  PublicStorefrontContact: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "city",
+      "contactEmail",
+      "contactPhone",
+      "whatsappPhone",
+      "whatsappUrl",
+    ],
+    properties: {
+      city: { type: ["string", "null"] },
+      contactEmail: { type: ["string", "null"] },
+      contactPhone: { type: ["string", "null"] },
+      whatsappPhone: { type: ["string", "null"] },
+      whatsappUrl: { type: ["string", "null"] },
+    },
+  },
+  PublicStorefrontPublicStore: {
+    type: "object",
+    additionalProperties: false,
+    required: ["name", "publicUrl", "slug"],
+    properties: {
+      name: { type: "string" },
+      publicUrl: { type: "string" },
+      slug: { type: "string" },
+    },
+  },
+  PublicStorefrontSettings: {
+    type: "object",
+    additionalProperties: false,
+    required: ["store", "site", "contact"],
+    properties: {
+      contact: { $ref: "#/components/schemas/PublicStorefrontContact" },
+      site: { $ref: "#/components/schemas/PublicStorefrontSite" },
+      store: { $ref: "#/components/schemas/PublicStorefrontPublicStore" },
+    },
+  },
+  PublicStorefrontSite: {
+    type: "object",
+    additionalProperties: false,
+    required: [
+      "heroImageUrl",
+      "layoutKey",
+      "seoDescription",
+      "seoTitle",
+      "theme",
+    ],
+    properties: {
+      heroImageUrl: { type: ["string", "null"] },
+      layoutKey: { type: "string" },
+      seoDescription: { type: ["string", "null"] },
+      seoTitle: { type: ["string", "null"] },
+      theme: { type: "object", additionalProperties: true },
+    },
+  },
   PublicStorefrontListings: {
     type: "object",
     additionalProperties: false,
@@ -77,12 +154,10 @@ export const storefrontSchemas = {
   PublicStorefrontStore: {
     type: "object",
     additionalProperties: false,
-    required: ["id", "name", "slug", "tenantId"],
+    required: ["name", "slug"],
     properties: {
-      id: { type: "string" },
       name: { type: "string" },
       slug: { type: "string" },
-      tenantId: { type: "string" },
     },
   },
   PublicStorefrontListingDetail: {
@@ -97,12 +172,11 @@ export const storefrontSchemas = {
   PublicVehicleMedia: {
     type: "object",
     additionalProperties: false,
-    required: ["altText", "displayOrder", "kind", "mediaId", "url"],
+    required: ["altText", "displayOrder", "kind", "url"],
     properties: {
       altText: { type: ["string", "null"] },
       displayOrder: { type: "integer" },
       kind: { type: "string", enum: ["document_preview", "photo", "video"] },
-      mediaId: { type: "string" },
       url: { type: "string" },
     },
   },
@@ -127,7 +201,6 @@ export const storefrontSchemas = {
     additionalProperties: false,
     required: [
       "description",
-      "listingId",
       "manufactureYear",
       "mileageKm",
       "modelYear",
@@ -139,7 +212,6 @@ export const storefrontSchemas = {
     ],
     properties: {
       description: { type: ["string", "null"] },
-      listingId: { type: "string" },
       manufactureYear: { type: ["integer", "null"] },
       mileageKm: { type: ["integer", "null"] },
       modelYear: { type: ["integer", "null"] },

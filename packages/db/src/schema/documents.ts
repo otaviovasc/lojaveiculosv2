@@ -14,9 +14,14 @@ import { stores, tenants, users } from "./identity.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
 export const documentKind = pgEnum("document_kind", [
+  "delivery_term",
+  "finance_receipt",
   "invoice",
   "vehicle_registration",
   "inspection",
+  "power_of_attorney",
+  "reservation_receipt",
+  "sale_receipt",
   "sale_contract",
   "test_drive",
   "buyer_document",

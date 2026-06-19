@@ -68,6 +68,26 @@ describe("createPublicStorefrontApi", () => {
     });
   });
 
+  it("gets public storefront settings", async () => {
+    const calls: FetchCall[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      return new Response(JSON.stringify(publicStorefrontPreview.settings), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createPublicStorefrontApi({ fetch: fakeFetch });
+
+    const result = await api.getSettings();
+
+    expect(result.store.slug).toBe("demo");
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/public/storefront/settings",
+      init: { method: "GET" },
+    });
+  });
+
   it("builds listing detail routes", () => {
     expect(
       publicStorefrontRoutes.listing("civic touring", "https://demo/api/v1/"),

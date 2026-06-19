@@ -24,7 +24,7 @@ describe("getPublicVehicleListing", () => {
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "public_storefront.listing.get",
-        entityId: "listing_1",
+        entityId: "fiat-toro-2023",
       }),
     );
     const [[auditEvent]] = audit.record.mock.calls as unknown as [[AuditEvent]];
@@ -74,6 +74,7 @@ function createRepository(options: { includeListing?: boolean } = {}) {
     findPublicListingDetail: vi.fn(async () =>
       options.includeListing === false ? null : listing,
     ),
+    findPublicSiteBySlug: vi.fn(async () => null),
     findPublicStoreBySlug: vi.fn(async () => store),
     listPublicListings: vi.fn(async () => [listing]),
   };
@@ -88,14 +89,12 @@ const store = {
 
 const listing = {
   description: "Ready to sell.",
-  listingId: "listing_1",
   manufactureYear: 2022,
   media: [
     {
       altText: "Front photo",
       displayOrder: 0,
       kind: "photo" as const,
-      mediaId: "media_1",
       url: "https://cdn.local/front.jpg",
     },
   ],

@@ -5,7 +5,7 @@ import {
 } from "../../../../shared/serviceContext.js";
 import type {
   PublicStorefrontRepository,
-  PublicStorefrontStore,
+  PublicStorefrontStoreSummary,
   PublicVehicleListingDetail,
 } from "../../ports/publicStorefrontRepository.js";
 import {
@@ -23,7 +23,7 @@ export type GetPublicVehicleListingInput = {
 
 export type PublicVehicleListingDetailResult = {
   listing: PublicVehicleListingDetail;
-  store: PublicStorefrontStore;
+  store: PublicStorefrontStoreSummary;
 };
 
 export async function getPublicVehicleListing(
@@ -62,7 +62,7 @@ export async function getPublicVehicleListing(
     action: "public_storefront.listing.get",
     actor: context.actor,
     category: "data_access",
-    entityId: listing.listingId,
+    entityId: listing.slug,
     entityType: "vehicle_listing",
     metadata: {
       mediaCount: listing.media.length,
@@ -76,5 +76,5 @@ export async function getPublicVehicleListing(
     summary: "Read public storefront vehicle listing detail",
   });
 
-  return { listing, store };
+  return { listing, store: { name: store.name, slug: store.slug } };
 }

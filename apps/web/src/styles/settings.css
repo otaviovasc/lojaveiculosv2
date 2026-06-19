@@ -1,0 +1,197 @@
+.settings-hero,
+.settings-panel,
+.settings-empty,
+.settings-saved,
+.settings-alert {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.settings-hero {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.25rem;
+}
+
+.settings-badge,
+.settings-tabs,
+.settings-icon-action,
+.settings-save,
+.settings-saved {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.settings-tabs {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 0.375rem;
+}
+
+.settings-tabs button {
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 900;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+}
+
+.settings-tabs button.is-active {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.settings-badge {
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0.5rem 0.625rem;
+}
+
+.settings-icon-action {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.settings-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.settings-panel-title {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: flex;
+  gap: 0.5rem;
+}
+
+.settings-panel-title h3 {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.settings-field {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.settings-field span,
+.settings-domain-status span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.settings-input-shell,
+.settings-field textarea,
+.settings-domain-status,
+.settings-toggle {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.settings-input-shell,
+.settings-domain-status,
+.settings-toggle {
+  align-items: center;
+  display: flex;
+  gap: 0.625rem;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+}
+
+.settings-input-shell input,
+.settings-field textarea {
+  color: var(--color-text);
+  font-weight: 800;
+  outline: none;
+  width: 100%;
+}
+
+.settings-input-shell input {
+  background: transparent;
+  min-width: 0;
+}
+
+.settings-input-shell strong,
+.settings-domain-status strong {
+  color: var(--color-accent-strong);
+  font-size: 0.75rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.settings-field textarea {
+  min-height: 5.5rem;
+  padding: 0.75rem;
+  resize: vertical;
+}
+
+.settings-toggle {
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.settings-save {
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  font-size: 0.875rem;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.75rem 1rem;
+}
+
+.settings-empty,
+.settings-saved,
+.settings-alert {
+  padding: 1rem;
+}
+
+.settings-empty {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  gap: 0.625rem;
+  justify-content: center;
+  min-height: 12rem;
+}
+
+.settings-saved {
+  color: var(--color-accent-strong);
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+.settings-alert {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+  font-weight: 900;
+}
+
+@media (min-width: 768px) {
+  .settings-hero {
+    align-items: center;
+    flex-direction: row;
+    padding: 1.5rem;
+  }
+}

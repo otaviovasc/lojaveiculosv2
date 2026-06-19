@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V2 Architecture & Product Plan</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --panel: #ffffff;
+        --text: #141826;
+        --muted: #5f6572;
+        --line: #dbe2ee;
+        --accent: #0f6fff;
+        --accent-soft: #0f6fff14;
+        --ok: #2e8b57;
+        --warn: #b47f00;
+        --bad: #b00020;
+        --shadow: 0 12px 30px rgba(19, 29, 49, 0.08);
+        font-family:
+          "Trebuchet MS", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .hero {
+        padding: 26px 28px 12px;
+        background: linear-gradient(
+          120deg,
+          #f8faff 0%,
+          #eef4ff 40%,
+          #f7efff 100%
+        );
+        border-bottom: 1px solid var(--line);
+      }
+
+      .title {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: baseline;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .title h1 {
+        margin: 0;
+        font-size: 1.7rem;
+        letter-spacing: 0.2px;
+      }
+      .meta {
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .layout {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        display: grid;
+        grid-template-columns: 270px 1fr;
+        gap: 16px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .left {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-weight: 600;
+        font-size: 0.77rem;
+        border: 1px solid #c6dcff;
+        margin-right: 6px;
+        margin-bottom: 4px;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 8px 0 6px;
+        gap: 10px;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .bar {
+        height: 8px;
+        background: #edf1f9;
+        border-radius: 999px;
+        overflow: hidden;
+        margin-bottom: 8px;
+      }
+
+      .bar > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #0f6fff, #2e8b57);
+        width: 46%;
+      }
+
+      .section-title {
+        margin: 4px 0 10px;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .chip {
+        border: 1px solid var(--line);
+        border-left: 4px solid;
+        border-radius: 10px;
+        padding: 10px;
+        background: #fcfdff;
+        cursor: pointer;
+        transition:
+          transform 120ms ease,
+          border-color 120ms ease;
+      }
+
+      .chip:hover {
+        transform: translateY(-1px);
+        border-color: #bfd0ee;
+      }
+      .chip.ok {
+        border-left-color: var(--ok);
+      }
+      .chip.warn {
+        border-left-color: var(--warn);
+      }
+      .chip.bad {
+        border-left-color: var(--bad);
+      }
+
+      .chip strong {
+        display: block;
+      }
+      .chip small {
+        color: var(--muted);
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .toolbar button {
+        border: 1px solid var(--line);
+        background: #fff;
+        padding: 7px 12px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 120ms ease;
+        font-weight: 600;
+        color: #24314c;
+      }
+
+      .toolbar button.active,
+      .toolbar button:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+      }
+
+      .map {
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .map-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 16px 0;
+      }
+
+      .subtext {
+        color: var(--muted);
+        margin-bottom: 12px;
+        font-size: 0.92rem;
+      }
+
+      svg {
+        width: 100%;
+        height: 420px;
+        display: block;
+        border-top: 1px solid var(--line);
+        background: radial-gradient(circle at 18% 10%, #f7f9ff, #ffffff);
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin: 12px 0;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        background: #fff;
+        min-height: 82px;
+      }
+
+      .mini .name {
+        font-weight: 700;
+        font-size: 0.93rem;
+      }
+      .mini .meta2 {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .legend {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        font-size: 0.82rem;
+      }
+
+      .legend span {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 4px 10px;
+      }
+
+      .warn-text {
+        color: var(--warn);
+        font-weight: 700;
+      }
+      .ok-text {
+        color: var(--ok);
+        font-weight: 700;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 9px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      .footnote {
+        color: var(--muted);
+        font-size: 0.88rem;
+        margin-top: 14px;
+        line-height: 1.45;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .timeline {
+        border-left: 2px solid #d8e0ee;
+        padding-left: 12px;
+        margin: 8px 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .tl-item {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 9px;
+        background: #fcfdff;
+      }
+
+      .tl-item strong {
+        font-size: 0.9rem;
+      }
+      .tl-item small {
+        color: var(--muted);
+        display: block;
+      }
+
+      @media (max-width: 980px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+        .card-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        svg {
+          height: 340px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .card-grid {
+          grid-template-columns: 1fr;
+        }
+        .split {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hero">
+      <div class="title">
+        <div>
+          <h1>V2 Product & Architecture Live Plan</h1>
+          <div class="meta">
+            Last updated: 2026-06-18 · V2 monorepo product architecture
+          </div>
+        </div>
+        <div>
+          <span class="badge">Developer View</span>
+          <span class="badge">Architecture</span>
+          <span class="badge">Slice Tracker</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="left">
+        <section class="panel" id="currentSlicePanel">
+          <div class="section-title">Current Slice Status</div>
+          <div class="status">
+            <span>Slice Delivery</span><strong>10/10 foundation-green</strong>
+          </div>
+          <div class="bar"><span style="width: 82%"></span></div>
+          <div class="subtext">
+            Vehicles, Finance, Store/Public Site, storefront runtime, roles,
+            billing entitlements, external API auth, internal health, and review
+            hardening are implemented and validation-green; CRM expansion
+            remains paused.
+          </div>
+
+          <div class="toolbar">
+            <button class="active" data-filter="all">All</button>
+            <button data-filter="done">Done</button>
+            <button data-filter="risk">Risk</button>
+            <button data-filter="blocked">Blocked</button>
+          </div>
+
+          <div class="list" id="sliceList">
+            <div class="chip ok" data-state="done">
+              <strong>Slice 01 — Vehicle Catalog Core</strong
+              ><small
+                >Done: domain model, listing endpoint, cache-safe lookup
+                tables.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 02 — Search & Filters</strong
+              ><small
+                >Done: query filtering and sorting pipeline with fallback sort
+                keys.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 03 — Finance Core</strong
+              ><small
+                >Done: entries, attachments, summary, recurring entries and
+                commission rules.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 04 — CRM Pipeline Foundation</strong
+              ><small
+                >Done: leads, activities, status transitions, audit trail and
+                native pipeline UI.</small
+              >
+            </div>
+            <div class="chip warn" data-state="blocked">
+              <strong>Slice 05 — CRM Pipeline (Paused)</strong
+              ><small
+                >Status: foundation complete, delivery frozen while Store +
+                Public Site slices are prioritized.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 06 — Store Settings + Public Site Settings</strong
+              ><small
+                >Implemented in backend + frontend and validation-green;
+                permissioned, transactional, and tested.</small
+              >
+            </div>
+            <div class="chip warn" data-state="risk">
+              <strong>Slice 07 — Public Storefront Completion</strong
+              ><small
+                >In progress: public settings endpoint, custom-domain routing,
+                SEO runtime, hero/contact UI, and slug-only public vehicle
+                contract are implemented; remaining work is media polish and
+                resilience checks.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 08 — Roles + Permissions Foundation</strong
+              ><small
+                >Implemented: Agency/Owner/Supervisor/Salesman role matrix,
+                per-user overrides, API, audit, UI, seed data, and OpenAPI
+                docs.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 09 — Billing + Entitlements Foundation</strong
+              ><small
+                >Implemented: plan/subscription overview, store entitlement
+                updates, critical audit, UI module, seed data, OpenAPI docs, and
+                CRM entitlement enforcement.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Slice 10 — External API + Internal Health</strong
+              ><small
+                >Implemented: scoped API key management, integration auth,
+                durable request logging, DB-backed rate limiting, idempotency
+                enforcement, AI-facing docs, internal audit/health dashboard,
+                and validation-green guardrails.</small
+              >
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">Foundation Guardrails (Now)</div>
+          <div class="subtext">
+            Development and product decisions locked for Store, Public Site,
+            Roles, and Billing delivery.
+          </div>
+          <div class="list">
+            <div class="chip ok">
+              <strong>Store profile schema</strong
+              ><small
+                >Mandatory fields (legal name, slug, timezone, currency, contact
+                block, publish visibility) are enforced and validated.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Public storefront read path</strong
+              ><small
+                >Now resolves only published public site settings to prevent
+                draft leakage to production traffic.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Transactional repository writes</strong
+              ><small
+                >Store settings repository writes are now fully transactional
+                for consistency and rollback safety.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Unified permission read guard</strong
+              ><small
+                >Unified settings read requires both
+                <em>store_profile.manage</em> and
+                <em>store_public_site.manage</em>.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Domain validation</strong
+              ><small
+                >Ambiguous hostnames are now rejected in domain validation
+                before persistence.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Quality gates</strong
+              ><small
+                >Custom domain + SSL contract, SEO defaults, R2 media
+                constraints, and WhatsApp/contact routing were added under test
+                coverage.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Test coverage</strong
+              ><small
+                >Guardrails and happy-path settings flows have automated tests
+                and are now validate-green in CI.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Entitlements before permissions</strong
+              ><small
+                >Billing controls whether a feature exists for the store; roles
+                control what each user can do inside enabled features.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Canonical vehicle workflows</strong
+              ><small
+                >Reserved/sold states are blocked from generic edits and must go
+                through reserve/sell workflows with documents and finance side
+                effects.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Public contract hardening</strong
+              ><small
+                >Public storefront vehicle payloads expose slugs only; internal
+                listing/media IDs stay server-side and UUID listing fallback is
+                removed.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Finance link ownership</strong
+              ><small
+                >Financial entries can only link to targets that exist inside
+                the same tenant and store scope.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Policy-aware audit</strong
+              ><small
+                >Service contexts now route audit events through failure policy
+                handling, so critical audit writes fail closed instead of being
+                swallowed.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Scoped external API</strong
+              ><small
+                >API clients use hashed one-time keys, store scope, and
+                least-privilege permission scopes; billing, users, audit,
+                tenant, and settings remain user-only.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Integration safety</strong
+              ><small
+                >External API traffic is rate-limited from durable request logs,
+                mutations require Idempotency-Key, and each request persists
+                client/store/status/latency metadata.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Traceable logs</strong
+              ><small
+                >Shared service log metadata now includes actorId, actorKind,
+                actorExternalId, requestId, storeId, tenantId, and correlationId
+                where available.</small
+              >
+            </div>
+            <div class="chip ok">
+              <strong>Internal health dashboard</strong
+              ><small
+                >The Saude module reads scoped audit events and open audit-sink
+                failures from the separated audit database.</small
+              >
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="panel map">
+        <div class="map-header">
+          <div>
+            <div class="section-title">Architecture Map</div>
+            <div class="subtext">
+              Foundation execution now includes scoped API keys and internal
+              audit visibility; CRM execution remains paused while Slice 07
+              advances through public-safe storefront contracts, media polish,
+              and resilience checks.
+            </div>
+          </div>
+          <div class="legend">
+            <span>API Gateway</span>
+            <span>Service Layer</span>
+            <span>Domain</span>
+            <span>Persistence</span>
+          </div>
+        </div>
+
+        <svg viewBox="0 0 1000 420" aria-label="architecture map">
+          <defs>
+            <marker
+              id="arrow"
+              markerWidth="8"
+              markerHeight="8"
+              refX="6"
+              refY="3"
+              orient="auto"
+            >
+              <path d="M0,0 L6,3 L0,6 Z" fill="#7d8fb0" />
+            </marker>
+          </defs>
+          <rect
+            x="16"
+            y="16"
+            width="968"
+            height="388"
+            rx="14"
+            fill="none"
+            stroke="#e3e9f5"
+          />
+
+          <g fill="#f3f7ff" stroke="#d0dcf1" stroke-width="2">
+            <rect x="40" y="45" width="180" height="70" rx="12" />
+            <rect x="260" y="45" width="220" height="70" rx="12" />
+            <rect x="520" y="45" width="200" height="70" rx="12" />
+            <rect x="760" y="45" width="200" height="70" rx="12" />
+
+            <rect x="40" y="170" width="220" height="80" rx="12" />
+            <rect x="300" y="170" width="180" height="80" rx="12" />
+            <rect x="520" y="170" width="180" height="80" rx="12" />
+            <rect x="760" y="170" width="200" height="80" rx="12" />
+
+            <rect x="40" y="312" width="240" height="70" rx="12" />
+            <rect x="320" y="312" width="220" height="70" rx="12" />
+            <rect x="600" y="312" width="240" height="70" rx="12" />
+            <rect x="880" y="312" width="80" height="70" rx="12" />
+          </g>
+
+          <g
+            fill="#22314f"
+            font-family="Trebuchet MS"
+            font-size="12"
+            text-anchor="middle"
+          >
+            <text x="130" y="83">UI / Web Clients</text>
+            <text x="370" y="83">API Gateway</text>
+            <text x="620" y="83">Auth + Access</text>
+            <text x="860" y="83">Integrations</text>
+
+            <text x="150" y="211">Vehicles Domain</text>
+            <text x="390" y="211">Store Settings Domain</text>
+            <text x="610" y="211">Orders/Offers Domain</text>
+            <text x="860" y="211">Billing Domain</text>
+
+            <text x="160" y="351">PostgreSQL</text>
+            <text x="430" y="351">Redis Cache</text>
+            <text x="720" y="351">R2 Object Storage</text>
+            <text x="920" y="351">Workers</text>
+          </g>
+
+          <g
+            stroke="#7d8fb0"
+            stroke-width="2"
+            fill="none"
+            marker-end="url(#arrow)"
+          >
+            <path d="M220,80 L260,80" />
+            <path d="M480,80 L520,80" />
+            <path d="M720,80 L760,80" />
+
+            <path d="M130,115 L130,170" />
+            <path d="M370,115 L370,170" />
+            <path d="M620,115 L620,170" />
+            <path d="M860,115 L860,170" />
+
+            <path d="M150,250 L390,250" />
+            <path d="M390,250 L610,250" />
+            <path d="M610,250 L860,250" />
+
+            <path d="M230,210 C260,265 290,300 400,346" />
+            <path d="M390,250 C430,280 470,316 520,346" />
+            <path d="M610,250 C640,280 670,316 710,346" />
+            <path d="M860,250 C880,305 900,316 920,346" />
+          </g>
+        </svg>
+
+        <div class="card-grid">
+          <div class="mini">
+            <div class="name">REST API</div>
+            <div class="meta2">Versioned by domain and slice ownership.</div>
+          </div>
+          <div class="mini">
+            <div class="name">Command Bus</div>
+            <div class="meta2">
+              Slice-level use-case orchestration and idempotency.
+            </div>
+          </div>
+          <div class="mini">
+            <div class="name">Observability</div>
+            <div class="meta2">
+              Request traces, structured logs, alert thresholds.
+            </div>
+          </div>
+          <div class="mini">
+            <div class="name">Resilience</div>
+            <div class="meta2">
+              Timeouts, retries, circuit patterns for external calls.
+            </div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div>
+            <div class="section-title">DB Domains</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th>Core Tables</th>
+                  <th>Ownership</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Vehicles</td>
+                  <td>brands, models, versions, years, listings</td>
+                  <td>Catalog Team</td>
+                </tr>
+                <tr>
+                  <td>CRM Pipeline</td>
+                  <td>leads, lead_activities, lead_vehicle_interests</td>
+                  <td>Growth Team</td>
+                </tr>
+                <tr>
+                  <td>Auth</td>
+                  <td>
+                    users, role_templates, store_memberships,
+                    permission_overrides
+                  </td>
+                  <td>Platform Team</td>
+                </tr>
+                <tr>
+                  <td>Billing</td>
+                  <td>
+                    plans, plan_features, subscriptions, subscription_items,
+                    payments, store_entitlements
+                  </td>
+                  <td>Platform Team</td>
+                </tr>
+                <tr>
+                  <td>External API</td>
+                  <td>
+                    api_clients, api_client_keys, api_request_logs,
+                    api_idempotency_keys, api_webhooks
+                  </td>
+                  <td>Platform Team</td>
+                </tr>
+                <tr>
+                  <td>Audit</td>
+                  <td>audit_events, audit_sink_failures</td>
+                  <td>Platform Team</td>
+                </tr>
+                <tr>
+                  <td>Store/Public Site</td>
+                  <td>
+                    store_profiles, store_public_settings, seo_settings,
+                    media_assets
+                  </td>
+                  <td>Platform Team</td>
+                </tr>
+                <tr>
+                  <td>Offers</td>
+                  <td>offers, quote_requests, price_snapshots</td>
+                  <td>Sales Team</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="footnote">
+              Use singular write models with foreign-key boundaries; avoid
+              direct cross-module joins in read paths.
+            </p>
+          </div>
+
+          <div>
+            <div class="section-title">API Modules</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Route</th>
+                  <th>Owner</th>
+                  <th>Health</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>/api/v1/catalog</td>
+                  <td>Catalog</td>
+                  <td class="ok-text">Stable</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/search</td>
+                  <td>Search</td>
+                  <td class="ok-text">Stable</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/crm</td>
+                  <td>CRM</td>
+                  <td class="warn-text">Paused (Foundation)</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/store</td>
+                  <td>Store Settings</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/site</td>
+                  <td>Public Site Settings</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/identity</td>
+                  <td>Roles + Permissions</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/billing</td>
+                  <td>Billing + Entitlements</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/external-api</td>
+                  <td>Scoped Public API</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/internal/health</td>
+                  <td>Audit + Health</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/public/storefront/settings</td>
+                  <td>Public Storefront</td>
+                  <td class="ok-text">Implemented</td>
+                </tr>
+                <tr>
+                  <td>/api/v1/media</td>
+                  <td>R2 Assets</td>
+                  <td class="warn-text">Next slice</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="split" style="margin-top: 10px">
+          <div>
+            <div class="section-title">Slice 07 Scope</div>
+            <div class="timeline">
+              <div class="tl-item">
+                <strong>1) Public Settings Contract</strong
+                ><small
+                  >Delivered: published-only /api/v1/public/storefront/settings
+                  with public-safe hero, SEO, contact, branding, audit, OpenAPI,
+                  and tests.</small
+                >
+              </div>
+              <div class="tl-item">
+                <strong>2) Storefront UI Consumption</strong
+                ><small
+                  >Delivered: public storefront now renders configured hero
+                  image, SEO title/description, public URL, city, and WhatsApp
+                  CTA.</small
+                >
+              </div>
+              <div class="tl-item">
+                <strong>3) SEO Runtime</strong
+                ><small
+                  >Delivered: storefront page applies title, description,
+                  canonical URL, and robots metadata from public
+                  settings.</small
+                >
+              </div>
+              <div class="tl-item">
+                <strong>4) Domain + Media Governance</strong
+                ><small
+                  >Partially delivered: verified custom-domain resolution and
+                  slug-only public listing lookup are implemented; next is
+                  stronger R2 asset selector UX and storefront resilience
+                  checks.</small
+                >
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="section-title">Foundation Boundary</div>
+            <div class="timeline">
+              <div class="tl-item">
+                <strong>Foundation Delivered Now</strong
+                ><small
+                  >Roles UI/API, billing overview, store entitlement management,
+                  scoped external API auth, API-key UI, durable request logs,
+                  idempotency enforcement, rate limiting, and internal health
+                  are implemented with audit, tests, docs, and local seed
+                  data.</small
+                >
+              </div>
+              <div class="tl-item">
+                <strong>Foundation Remaining</strong
+                ><small
+                  >Production migration plan, deployment runbooks, per-route
+                  quota policies, Redis-backed distributed counters if needed,
+                  and deeper internal alerting.</small
+                >
+              </div>
+              <div class="tl-item">
+                <strong>Backend Review Fixes</strong
+                ><small
+                  >CRM now enforces the CRM entitlement, CRM vehicle interests
+                  are store-scoped, buyer PII was removed from CRM audit
+                  metadata, generic sold/reserved inventory edits are blocked,
+                  finance target filters paginate correctly, finance link
+                  targets are ownership-validated, public storefront payloads
+                  hide internal IDs, audit criticality is enforced, and catalog
+                  logs are scoped.</small
+                >
+              </div>
+              <div class="tl-item">
+                <strong>V2 Product Work</strong
+                ><small
+                  >AI WhatsApp operations, advanced storefront builder,
+                  NFE/SPEDY depth, payment-link banking flows, analytics,
+                  recommendation engines, and CRM parity expansion.</small
+                >
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px">
+            <div class="section-title">Local Reality Notes</div>
+            <div class="subtext">Current environment caveat:</div>
+            <p style="margin-top: 0" class="footnote">
+              <span class="warn-text"
+                >CRM pipeline is paused by roadmap decision</span
+              >
+              while Store + Public Site is implemented; auth/bypass caveats
+              remain unchanged.
+            </p>
+            <div class="list">
+              <div class="chip ok">
+                <strong>Priority-0</strong
+                ><small
+                  >Store profile + public-site settings are implemented
+                  end-to-end and validate-green.</small
+                >
+              </div>
+              <div class="chip warn">
+                <strong>Priority-1</strong
+                ><small
+                  >Finish Slice 07 Public Storefront Completion: richer
+                  storefront preview, public media polish, and resilience
+                  checks.</small
+                >
+              </div>
+              <div class="chip warn">
+                <strong>Priority-2</strong
+                ><small
+                  >Move to production runbooks, migration rehearsal, and
+                  external API quota dashboards.</small
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      (function () {
+        const buttons = document.querySelectorAll(".toolbar button");
+        const chips = document.querySelectorAll("#sliceList .chip");
+
+        buttons.forEach((btn) => {
+          btn.addEventListener("click", () => {
+            buttons.forEach((b) => b.classList.remove("active"));
+            btn.classList.add("active");
+            const filter = btn.dataset.filter;
+            chips.forEach((chip) => {
+              chip.classList.toggle(
+                "hidden",
+                filter !== "all" && chip.dataset.state !== filter,
+              );
+            });
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

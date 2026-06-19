@@ -66,7 +66,7 @@ export const vehiclePriceHistory = pgTable(
     listingId: uuid("listing_id")
       .notNull()
       .references(() => vehicleListings.id),
-    newPriceCents: integer("new_price_cents").notNull(),
+    newPriceCents: integer("new_price_cents"),
     oldPriceCents: integer("old_price_cents"),
     reason: text("reason"),
     storeId: uuid("store_id")

@@ -1,0 +1,25 @@
+import type { FinanceRepository } from "../../../finance/ports/financeRepository.js";
+import type {
+  VehicleDocumentRepository,
+  VehicleListingRepository,
+  VehicleMediaRepository,
+  VehicleUnitRepository,
+} from "../../ports/vehicleInventoryRepository.js";
+import type { VehicleCatalogProvider } from "../../ports/vehicleCatalogProvider.js";
+import type { VehicleCatalogRepository } from "../../ports/vehicleCatalogRepository.js";
+import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
+import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
+import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
+
+export type VehicleInventoryServicePorts = {
+  catalogProvider?: VehicleCatalogProvider;
+  catalogRepository?: VehicleCatalogRepository;
+  documentRepository?: VehicleDocumentRepository;
+  financeRepository?: FinanceRepository;
+  listingRepository: VehicleListingRepository;
+  mediaRepository?: VehicleMediaRepository;
+  mediaStorage?: VehicleMediaStorage;
+  operationsRepository?: VehicleOperationsRepository;
+  salesRepository?: VehicleSalesRepository;
+  unitRepository?: VehicleUnitRepository;
+};

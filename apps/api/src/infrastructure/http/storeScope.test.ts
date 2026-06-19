@@ -20,9 +20,13 @@ describe("resolveStoreSlugFromHostHeader", () => {
     ).toBeNull();
   });
 
-  it("returns null for custom domains", () => {
-    expect(resolveStoreSlugFromHostHeader("lojavelaudos.com.br")).toBeNull();
-    expect(resolveStoreSlugFromHostHeader("demo.customer-site.com")).toBeNull();
+  it("returns normalized custom domain hosts for repository resolution", () => {
+    expect(resolveStoreSlugFromHostHeader("lojavelaudos.com.br")).toBe(
+      "lojavelaudos.com.br",
+    );
+    expect(resolveStoreSlugFromHostHeader("Demo.Customer-Site.com")).toBe(
+      "demo.customer-site.com",
+    );
   });
 
   it("strips port and lowercases", () => {

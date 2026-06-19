@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -33,6 +34,21 @@ export const leadSource = pgEnum("lead_source", [
   "other",
 ]);
 
+export const leadActivityType = pgEnum("lead_activity_type", [
+  "note",
+  "call",
+  "whatsapp",
+  "email",
+  "status_change",
+  "task",
+]);
+
+export const leadActivityDirection = pgEnum("lead_activity_direction", [
+  "inbound",
+  "outbound",
+  "internal",
+]);
+
 export const leads = pgTable(
   "leads",
   {
@@ -59,6 +75,39 @@ export const leads = pgTable(
     index("leads_status_idx").on(table.status),
     index("leads_store_status_idx").on(table.storeId, table.status),
     index("leads_tenant_id_idx").on(table.tenantId),
+  ],
+);
+
+export const leadActivities = pgTable(
+  "lead_activities",
+  {
+    ...lifecycleColumns,
+    activityType: leadActivityType("activity_type").notNull(),
+    content: text("content").notNull(),
+    createdByUserId: uuid("created_by_user_id").references(() => users.id),
+    direction: leadActivityDirection("direction").notNull().default("internal"),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id),
+    metadata: jsonb("metadata").notNull().default({}),
+    occurredAt: timestamp("occurred_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    priority: integer("priority").notNull().default(0),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+  },
+  (table) => [
+    index("lead_activities_lead_id_idx").on(table.leadId),
+    index("lead_activities_store_occurred_at_idx").on(
+      table.storeId,
+      table.occurredAt,
+    ),
+    index("lead_activities_tenant_id_idx").on(table.tenantId),
   ],
 );
 

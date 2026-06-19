@@ -1,0 +1,52 @@
+export type InventoryListingStatus =
+  | "available"
+  | "draft"
+  | "inactive"
+  | "reserved"
+  | "sold";
+
+export type InventoryMediaKind = "document_preview" | "photo" | "video";
+
+export type InventoryDocumentKind =
+  | "buyer_document"
+  | "delivery_term"
+  | "inspection"
+  | "internal"
+  | "invoice"
+  | "other"
+  | "power_of_attorney"
+  | "reservation_receipt"
+  | "sale_contract"
+  | "sale_receipt"
+  | "test_drive"
+  | "vehicle_registration";
+
+export type InventoryDocumentTargetType = "vehicle_listing" | "vehicle_unit";
+export type InventoryCatalogVehicleType = "cars" | "motorcycles" | "trucks";
+
+export type InventoryCatalogOption = { code: string; name: string };
+
+export type InventoryCatalogYearOption = InventoryCatalogOption & {
+  fuelCode: string | null;
+  modelYear: number | null;
+};
+
+export type InventoryCatalogVersionOption = InventoryCatalogOption & {
+  modelFamilyCode: string;
+  modelFamilyName: string;
+};
+
+export type InventoryCatalogSnapshot = {
+  brandCode: string | null;
+  brandName: string | null;
+  fipeCode: string | null;
+  fuel: string | null;
+  modelCode: string | null;
+  modelName: string | null;
+  modelYear: number | null;
+  referenceMonth: string | null;
+  source: "fipe" | null;
+  vehicleType: InventoryCatalogVehicleType | null;
+  yearCode: string | null;
+  yearName: string | null;
+};

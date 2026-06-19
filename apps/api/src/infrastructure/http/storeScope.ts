@@ -22,7 +22,7 @@ export function resolveStoreSlugFromHostHeader(
   }
 
   if (!host.endsWith(`.${baseDomain}`)) {
-    return null;
+    return host;
   }
 
   const storeSlug = host.substring(0, host.length - baseDomain.length - 1);

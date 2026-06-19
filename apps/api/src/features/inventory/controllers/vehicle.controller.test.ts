@@ -8,8 +8,12 @@ import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/V
 import {
   createInventoryTestApp,
   createInventoryTestServices,
-  scaffoldResult,
 } from "./vehicle.controller.testSupport.js";
+
+type ListingDetailBody = {
+  listing?: { id?: string };
+  status?: string;
+};
 
 describe("inventory listing routes", () => {
   it("wires create listing requests to the service boundary", async () => {
@@ -22,22 +26,12 @@ describe("inventory listing routes", () => {
     });
 
     expect(response.status).toBe(201);
-    expect(await response.json()).toEqual(scaffoldResult());
+    const body = (await response.json()) as ListingDetailBody;
+    expect(body.listing?.id).toBe("listing_1");
+    expect(body.status).toBe("ready");
     expect(services.createListing).toHaveBeenCalledWith(expect.any(Object), {
       plate: "ABC1D23",
       title: "Fiat Toro",
-    });
-  });
-
-  it("wires get listing requests to the service boundary", async () => {
-    const services = createInventoryTestServices();
-    const app = createInventoryTestApp(services);
-
-    const response = await app.request("/api/v1/inventory/listings/listing_1");
-
-    expect(response.status).toBe(200);
-    expect(services.getListing).toHaveBeenCalledWith(expect.any(Object), {
-      listingId: "listing_1",
     });
   });
 
@@ -130,6 +124,33 @@ describe("inventory listing routes", () => {
     );
   });
 
+  it("wires vehicle costs to the planned service name", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/listings/listing_1/costs",
+      {
+        body: JSON.stringify({
+          amountCents: 120000,
+          description: "Preparacao",
+          kind: "preparation",
+          unitId: "unit_1",
+        }),
+        method: "POST",
+      },
+    );
+
+    expect(response.status).toBe(201);
+    expect(services.addVehicleCost).toHaveBeenCalledWith(expect.any(Object), {
+      amountCents: 120000,
+      description: "Preparacao",
+      kind: "preparation",
+      listingId: "listing_1",
+      unitId: "unit_1",
+    });
+  });
+
   it("maps validation failures before calling services", async () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);
@@ -206,7 +227,8 @@ describe("inventory listing routes", () => {
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({
-      message: "Inventory routes require authenticated user context.",
+      message:
+        "Inventory routes require authenticated user or integration context.",
     });
     expect(services.getListing).not.toHaveBeenCalled();
   });

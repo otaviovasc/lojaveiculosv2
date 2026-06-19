@@ -9,16 +9,26 @@ tenant pages, external API, NFE integrations, billing, permissions, audit, and a
 CRM frontend migrated from `repasses-frontend` while keeping
 `repasses-lojaveiculos-backend` as the CRM backend until explicitly replaced.
 
+This is primarily a store-operated product, not a buyer-operated marketplace.
+Public storefront users can view inventory and submit interest, but only
+authenticated store actors may mutate inventory, reserve vehicles, close sales,
+emit documents, manage billing, or trigger audited operational workflows.
+
 ## Architecture Rules
 
+- Follow `docs/repo-organization.md` before adding or moving files.
 - Keep backend business logic inside `apps/api/src/domains/<domain>/services/`.
 - Name service folders with PascalCase plus `Service`, for example
   `VehicleService/getVehicle.ts`.
 - Keep HTTP controllers inside `apps/api/src/features/<feature>/controllers/`.
+- Keep feature-local adapters inside `apps/api/src/features/<feature>/adapters/`.
 - Controllers parse input, enforce feature routing, call services, and map
   responses. They must not contain business rules.
+- Memory repositories and storage fakes are adapters, not controllers.
 - Domain service code must not import HTTP, Railway, Clerk, Drizzle, Pino,
   provider SDKs, or framework adapters directly.
+- Domain test support must not import from `features`; keep domain test adapters
+  in `apps/api/src/domains/<domain>/testSupport*.ts`.
 - Cross-domain calls must use ports or anti-corruption-layer clients.
 - Shared code belongs in `packages/shared` only when two apps/packages already
   need it.

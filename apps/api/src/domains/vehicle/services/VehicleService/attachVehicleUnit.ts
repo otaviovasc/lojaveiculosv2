@@ -56,11 +56,15 @@ export async function attachVehicleUnit(
   await auditVehicleServiceEvent(context, {
     action: "vehicle_unit.attach",
     category: "data_change",
-    entityId: listing.id,
+    entityId: unit.id,
+    entityType: "vehicle_unit",
     metadata: {
+      listingId: listing.id,
+      status: unit.status,
       unitId: unit.id,
     },
     permission,
+    relatedEntities: [{ id: listing.id, type: "vehicle_listing" }],
     summary: "Attached vehicle unit to listing",
   });
 

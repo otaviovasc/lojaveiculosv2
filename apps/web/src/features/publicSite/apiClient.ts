@@ -1,6 +1,7 @@
 import type {
   PublicStorefrontData,
   PublicStorefrontListingDetailData,
+  PublicStorefrontSettingsData,
 } from "./types";
 
 export type PublicStorefrontApi = {
@@ -10,6 +11,7 @@ export type PublicStorefrontApi = {
   getListing: (
     listingSlug: string,
   ) => Promise<PublicStorefrontListingDetailData>;
+  getSettings: () => Promise<PublicStorefrontSettingsData>;
 };
 
 export type PublicStorefrontQuery = {
@@ -30,6 +32,10 @@ export function createPublicStorefrontApi({
       fetch(publicStorefrontRoutes.listing(listingSlug, baseUrl), {
         method: "GET",
       }).then(readJson<PublicStorefrontListingDetailData>),
+    getSettings: () =>
+      fetch(publicStorefrontRoutes.settings(baseUrl), {
+        method: "GET",
+      }).then(readJson<PublicStorefrontSettingsData>),
     listListings: (query) =>
       fetch(
         withQuery(publicStorefrontRoutes.listings(baseUrl), [
@@ -48,6 +54,8 @@ export const publicStorefrontRoutes = {
     ),
   listings: (baseUrl?: string) =>
     createPublicStorefrontEndpoint("/public/storefront/listings", baseUrl),
+  settings: (baseUrl?: string) =>
+    createPublicStorefrontEndpoint("/public/storefront/settings", baseUrl),
 } as const;
 
 export function createPublicStorefrontQuery(query: PublicStorefrontQuery = {}) {

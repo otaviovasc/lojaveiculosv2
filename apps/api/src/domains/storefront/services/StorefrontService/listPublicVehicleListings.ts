@@ -3,7 +3,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type {
   PublicStorefrontRepository,
-  PublicStorefrontStore,
+  PublicStorefrontStoreSummary,
   PublicVehicleListing,
 } from "../../ports/publicStorefrontRepository.js";
 import {
@@ -20,7 +20,7 @@ export type ListPublicVehicleListingsInput = {
 
 export type PublicVehicleListingsResult = {
   listings: readonly PublicVehicleListing[];
-  store: PublicStorefrontStore;
+  store: PublicStorefrontStoreSummary;
 };
 
 export async function listPublicVehicleListings(
@@ -67,5 +67,5 @@ export async function listPublicVehicleListings(
     summary: "Listed public storefront vehicle listings",
   });
 
-  return { listings, store };
+  return { listings, store: { name: store.name, slug: store.slug } };
 }

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "catalog:sync": "tsx src/jobs/syncVehicleCatalog.ts",
     "build": "tsc -b",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
@@ -12,6 +13,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1071.0",
+    "@aws-sdk/s3-request-presigner": "^3.1071.0",
     "@clerk/backend": "^3.7.1",
     "@hono/node-server": "2.0.5",
     "@lojaveiculosv2/audit": "0.0.0",
@@ -21,6 +24,7 @@
     "@lojaveiculosv2/shared": "0.0.0",
     "drizzle-orm": "0.45.2",
     "hono": "4.12.22",
+    "pdf-lib": "^1.17.1",
     "pino": "10.3.0",
     "postgres": "^3.4.9",
     "zod": "4.4.3"

@@ -24,6 +24,12 @@ export const apiWebhookStatus = pgEnum("api_webhook_status", [
   "revoked",
 ]);
 
+export const apiIdempotencyStatus = pgEnum("api_idempotency_status", [
+  "completed",
+  "failed",
+  "started",
+]);
+
 export const apiClients = pgTable(
   "api_clients",
   {
@@ -81,6 +87,44 @@ export const apiRequestLogs = pgTable(
     index("api_request_logs_store_created_idx").on(
       table.storeId,
       table.createdAt,
+    ),
+  ],
+);
+
+export const apiIdempotencyKeys = pgTable(
+  "api_idempotency_keys",
+  {
+    ...lifecycleColumns,
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => apiClients.id),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    idempotencyKey: varchar("idempotency_key", { length: 191 }).notNull(),
+    method: varchar("method", { length: 16 }).notNull(),
+    path: varchar("path", { length: 500 }).notNull(),
+    requestFingerprint: varchar("request_fingerprint", {
+      length: 191,
+    }).notNull(),
+    requestId: varchar("request_id", { length: 191 }).notNull(),
+    responseMs: integer("response_ms"),
+    status: apiIdempotencyStatus("status").notNull().default("started"),
+    statusCode: integer("status_code"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+  },
+  (table) => [
+    index("api_idempotency_keys_client_id_idx").on(table.clientId),
+    index("api_idempotency_keys_store_created_idx").on(
+      table.storeId,
+      table.createdAt,
+    ),
+    uniqueIndex("api_idempotency_keys_client_key_unique").on(
+      table.clientId,
+      table.idempotencyKey,
     ),
   ],
 );

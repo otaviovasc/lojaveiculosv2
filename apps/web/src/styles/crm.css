@@ -109,11 +109,15 @@
 }
 
 .crm-action {
+  align-items: center;
   background: var(--color-accent);
   border-radius: var(--radius-md);
   color: var(--color-inverse);
+  display: inline-flex;
   font-size: 0.8125rem;
   font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
   min-height: 2.5rem;
   padding: 0.625rem 0.875rem;
 }

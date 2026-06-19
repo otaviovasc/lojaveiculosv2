@@ -1,25 +1,36 @@
-import { vehicleListings, vehicleUnits } from "@lojaveiculosv2/db";
+import {
+  vehicleListings,
+  vehicleMedia,
+  vehicleUnits,
+} from "@lojaveiculosv2/db";
 import type { DrizzleVehicleInventoryClient } from "./drizzleVehicleInventoryRepository.js";
 import type {
   InsertVehicleListingRow,
+  InsertVehicleMediaRow,
   InsertVehicleUnitRow,
   UpdateVehicleListingRow,
   UpdateVehicleUnitRow,
   VehicleListingRow,
+  VehicleMediaRow,
   VehicleUnitRow,
 } from "./drizzleVehicleInventoryMappers.js";
 
-type InsertRecord = InsertVehicleListingRow | InsertVehicleUnitRow;
+type InsertRecord =
+  | InsertVehicleListingRow
+  | InsertVehicleMediaRow
+  | InsertVehicleUnitRow;
 type UpdateRecord = UpdateVehicleListingRow | UpdateVehicleUnitRow;
 
 type StoredRows = {
   listings: VehicleListingRow[];
+  media: VehicleMediaRow[];
   units: VehicleUnitRow[];
 };
 
 export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
   const rows: StoredRows = {
     listings: initialRows.listings ?? [],
+    media: initialRows.media ?? [],
     units: initialRows.units ?? [],
   };
   const inserted: InsertRecord[] = [];
@@ -45,6 +56,16 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
                 return [row];
               }
 
+              if (table === vehicleMedia) {
+                const row = {
+                  ...rowFactory.media(),
+                  ...(record as Partial<VehicleMediaRow>),
+                  id: `media_${rows.media.length + 1}`,
+                };
+                rows.media.push(row);
+                return [row];
+              }
+
               const row = {
                 ...rowFactory.unit(),
                 ...(record as Partial<VehicleUnitRow>),
@@ -62,7 +83,9 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
         from(table: unknown) {
           return {
             async where() {
-              return table === vehicleListings ? rows.listings : rows.units;
+              if (table === vehicleListings) return rows.listings;
+              if (table === vehicleMedia) return rows.media;
+              return rows.units;
             },
           };
         },
@@ -106,7 +129,6 @@ export function createRows() {
     listing(overrides: Partial<VehicleListingRow> = {}): VehicleListingRow {
       return {
         askingPriceCents: null,
-        brandId: null,
         condition: "used",
         createdAt: now,
         deletedAt: null,
@@ -121,7 +143,6 @@ export function createRows() {
         manufactureYear: null,
         metadata: {},
         mileageKm: null,
-        modelId: null,
         modelYear: null,
         publicSlug: null,
         status: "draft",
@@ -151,6 +172,27 @@ export function createRows() {
         tenantId: "tenant_1",
         updatedAt: now,
         vin: null,
+        ...overrides,
+      };
+    },
+    media(overrides: Partial<VehicleMediaRow> = {}): VehicleMediaRow {
+      return {
+        altText: null,
+        createdAt: now,
+        deletedAt: null,
+        displayOrder: 0,
+        id: "media_1",
+        isDeleted: false,
+        isPublic: true,
+        kind: "photo",
+        listingId: "listing_1",
+        metadata: {},
+        storageKey:
+          "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+        updatedAt: now,
+        url: "https://cdn.local/front.jpg",
         ...overrides,
       };
     },

@@ -1,0 +1,70 @@
+import type {
+  VehicleListing,
+  VehicleDocument,
+  VehicleMedia,
+  VehicleUnit,
+} from "../ports/vehicleInventoryRepository.js";
+import type {
+  VehicleCost,
+  VehiclePriceHistoryEntry,
+  VehicleStatusHistoryEntry,
+} from "../ports/vehicleOperationsRepository.js";
+
+export type VehicleListingDetail = {
+  costs: readonly VehicleCost[];
+  documents: readonly VehicleDocument[];
+  listing: VehicleListing;
+  media: readonly VehicleMedia[];
+  priceHistory: readonly VehiclePriceHistoryEntry[];
+  statusHistory: readonly VehicleStatusHistoryEntry[];
+  units: readonly VehicleUnit[];
+};
+
+export type VehicleListingSummary = {
+  listing: VehicleListing;
+  mediaCount: number;
+  primaryMediaUrl: string | null;
+  primaryUnit: VehicleUnit | null;
+};
+
+export type VehicleListingListResult = {
+  items: readonly VehicleListingSummary[];
+  total: number;
+};
+
+export function createListingDetail(input: {
+  documents?: readonly VehicleDocument[];
+  costs?: readonly VehicleCost[];
+  listing: VehicleListing;
+  media: readonly VehicleMedia[];
+  priceHistory?: readonly VehiclePriceHistoryEntry[];
+  statusHistory?: readonly VehicleStatusHistoryEntry[];
+  units: readonly VehicleUnit[];
+}): VehicleListingDetail {
+  return {
+    costs: input.costs ?? [],
+    documents: input.documents ?? [],
+    listing: input.listing,
+    media: input.media,
+    priceHistory: input.priceHistory ?? [],
+    statusHistory: input.statusHistory ?? [],
+    units: input.units,
+  };
+}
+
+export function createListingSummary(input: {
+  listing: VehicleListing;
+  media: readonly VehicleMedia[];
+  units: readonly VehicleUnit[];
+}): VehicleListingSummary {
+  const orderedMedia = [...input.media].sort(
+    (left, right) => left.displayOrder - right.displayOrder,
+  );
+
+  return {
+    listing: input.listing,
+    mediaCount: input.media.length,
+    primaryMediaUrl: orderedMedia[0]?.url ?? null,
+    primaryUnit: input.units[0] ?? null,
+  };
+}

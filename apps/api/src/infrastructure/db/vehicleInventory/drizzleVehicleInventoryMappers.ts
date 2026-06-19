@@ -1,6 +1,14 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import type { vehicleListings, vehicleUnits } from "@lojaveiculosv2/db";
 import type {
+  documentLinks,
+  documents,
+  vehicleListings,
+  vehicleMedia,
+  vehicleUnits,
+} from "@lojaveiculosv2/db";
+import type {
+  VehicleListingCatalog,
+  VehicleMedia,
   VehicleListing,
   VehicleListingStatus,
   VehicleUnit,
@@ -11,9 +19,17 @@ export type VehicleListingRow = InferSelectModel<typeof vehicleListings>;
 export type InsertVehicleListingRow = InferInsertModel<typeof vehicleListings>;
 export type UpdateVehicleListingRow = Partial<InsertVehicleListingRow>;
 
+export type VehicleDocumentRow = InferSelectModel<typeof documents>;
+export type InsertDocumentRow = InferInsertModel<typeof documents>;
+export type VehicleDocumentLinkRow = InferSelectModel<typeof documentLinks>;
+export type InsertDocumentLinkRow = InferInsertModel<typeof documentLinks>;
+
 export type VehicleUnitRow = InferSelectModel<typeof vehicleUnits>;
 export type InsertVehicleUnitRow = InferInsertModel<typeof vehicleUnits>;
 export type UpdateVehicleUnitRow = Partial<InsertVehicleUnitRow>;
+
+export type VehicleMediaRow = InferSelectModel<typeof vehicleMedia>;
+export type InsertVehicleMediaRow = InferInsertModel<typeof vehicleMedia>;
 
 export class VehicleInventoryDrizzleMappingError extends Error {
   constructor(message: string) {
@@ -34,17 +50,46 @@ export function toVehicleListing(
   units: readonly VehicleUnit[],
 ): VehicleListing {
   return {
+    catalog: readListingCatalog(row.metadata),
     createdAt: row.createdAt,
     description: row.description,
     id: row.id,
+    manufactureYear: row.manufactureYear,
+    modelYear: row.modelYear,
     plate: units[0]?.plate ?? null,
     priceCents: row.askingPriceCents,
     status: toDomainListingStatus(row.status),
     storeId: row.storeId,
     tenantId: row.tenantId,
     title: row.title,
+    trimName: row.trimName,
     unitIds: units.map((unit) => unit.id),
     updatedAt: row.updatedAt,
+  };
+}
+
+export function createListingMetadata(
+  catalog: VehicleListingCatalog | null,
+): Record<string, unknown> {
+  return catalog ? { catalog } : {};
+}
+
+function readListingCatalog(metadata: unknown): VehicleListingCatalog | null {
+  if (!isRecord(metadata) || !isRecord(metadata.catalog)) return null;
+  const catalog = metadata.catalog;
+  return {
+    brandCode: readString(catalog.brandCode),
+    brandName: readString(catalog.brandName),
+    fipeCode: readString(catalog.fipeCode),
+    fuel: readString(catalog.fuel),
+    modelCode: readString(catalog.modelCode),
+    modelName: readString(catalog.modelName),
+    modelYear: readNumber(catalog.modelYear),
+    referenceMonth: readString(catalog.referenceMonth),
+    source: catalog.source === "fipe" ? "fipe" : null,
+    vehicleType: readVehicleType(catalog.vehicleType),
+    yearCode: readString(catalog.yearCode),
+    yearName: readString(catalog.yearName),
   };
 }
 
@@ -58,7 +103,25 @@ export function toVehicleUnit(row: VehicleUnitRow): VehicleUnit {
     stockNumber: row.stockNumber,
     storeId: row.storeId,
     tenantId: row.tenantId,
+    updatedAt: row.updatedAt,
     vin: row.vin,
+  };
+}
+
+export function toVehicleMedia(row: VehicleMediaRow): VehicleMedia {
+  return {
+    altText: row.altText,
+    createdAt: row.createdAt,
+    displayOrder: row.displayOrder,
+    id: row.id,
+    isPublic: row.isPublic,
+    kind: row.kind,
+    listingId: row.listingId,
+    storageKey: row.storageKey,
+    storeId: row.storeId,
+    tenantId: row.tenantId,
+    updatedAt: row.updatedAt,
+    url: row.url,
   };
 }
 
@@ -147,4 +210,22 @@ function toDomainUnitStatus(
         `DB unit status ${status} has no VehicleService equivalent`,
       );
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function readNumber(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function readVehicleType(value: unknown): VehicleListingCatalog["vehicleType"] {
+  return value === "cars" || value === "motorcycles" || value === "trucks"
+    ? value
+    : null;
 }

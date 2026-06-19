@@ -1,92 +1,28 @@
-import { and, asc, eq, isNull, or } from "drizzle-orm";
-import { stores, vehicleListings, vehicleMedia } from "@lojaveiculosv2/db";
+import { and, asc, eq, isNotNull, isNull, or } from "drizzle-orm";
+import {
+  storePublicSiteSettings,
+  stores,
+  vehicleListings,
+  vehicleMedia,
+} from "@lojaveiculosv2/db";
 import type {
   PublicStorefrontRepository,
-  PublicStorefrontStore,
   PublicVehicleListingDetail,
   PublicVehicleMedia,
   PublicVehicleListing,
 } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
-
-type StoreRow = {
-  id: PublicStorefrontStore["id"];
-  name: string;
-  slug: string;
-  tenantId: PublicStorefrontStore["tenantId"];
-};
-
-type ListingRow = {
-  description: string | null;
-  listingId: string;
-  manufactureYear: number | null;
-  mileageKm: number | null;
-  modelYear: number | null;
-  priceCents: number | null;
-  slug: string | null;
-  title: string;
-};
-
-type MediaRow = {
-  altText: string | null;
-  displayOrder: number;
-  kind: PublicVehicleMedia["kind"];
-  mediaId: string;
-  url: string;
-};
-
-type SelectLimitBuilder<Row> = {
-  limit: (count: number) => Promise<readonly Row[]>;
-};
-
-type SelectOrderBuilder<Row> = {
-  limit: (count: number) => Promise<readonly Row[]>;
-};
-
-type SelectWhereResultBuilder<Row> = SelectLimitBuilder<Row> & {
-  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
-};
-
-type SelectWhereBuilder<Row> = {
-  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
-  where: (condition: unknown) => SelectWhereResultBuilder<Row>;
-};
-
-type SelectFromBuilder<Row> = {
-  from: (table: unknown) => SelectWhereBuilder<Row>;
-};
-
-export type DrizzlePublicStorefrontClient = {
-  select: {
-    (selection: {
-      id: unknown;
-      name: unknown;
-      slug: unknown;
-      tenantId: unknown;
-    }): SelectFromBuilder<StoreRow>;
-    (selection: {
-      description: unknown;
-      listingId: unknown;
-      manufactureYear: unknown;
-      mileageKm: unknown;
-      modelYear: unknown;
-      priceCents: unknown;
-      slug: unknown;
-      title: unknown;
-    }): SelectFromBuilder<ListingRow>;
-    (selection: {
-      altText: unknown;
-      displayOrder: unknown;
-      kind: unknown;
-      mediaId: unknown;
-      url: unknown;
-    }): SelectFromBuilder<MediaRow>;
-  };
-};
+import type {
+  DrizzlePublicStorefrontClient,
+  ListingRow,
+} from "./drizzlePublicStorefrontQueryTypes.js";
+import { findPublicSiteBySlug } from "./drizzlePublicStorefrontSite.js";
 
 export function createDrizzlePublicStorefrontRepository(
   db: DrizzlePublicStorefrontClient,
 ): PublicStorefrontRepository {
   return {
+    findPublicSiteBySlug: (storeSlug) => findPublicSiteBySlug(db, storeSlug),
+
     async findPublicStoreBySlug(storeSlug) {
       const [store] = await db
         .select({
@@ -96,16 +32,30 @@ export function createDrizzlePublicStorefrontRepository(
           tenantId: stores.tenantId,
         })
         .from(stores)
+        .innerJoin(
+          storePublicSiteSettings,
+          and(
+            eq(storePublicSiteSettings.storeId, stores.id),
+            eq(storePublicSiteSettings.isPublished, true),
+          ),
+        )
         .where(
           and(
-            eq(stores.publicSlug, storeSlug),
+            createPublicStoreLookupCondition(storeSlug),
             eq(stores.isDeleted, false),
             isNull(stores.deletedAt),
           ),
         )
         .limit(1);
 
-      return store ?? null;
+      return store
+        ? {
+            id: store.id,
+            name: store.name,
+            slug: store.slug,
+            tenantId: store.tenantId,
+          }
+        : null;
     },
 
     async findPublicListingDetail(input) {
@@ -123,12 +73,13 @@ export function createDrizzlePublicStorefrontRepository(
         .from(vehicleListings)
         .where(
           and(
-            createPublicListingSlugCondition(input.listingSlug),
+            eq(vehicleListings.publicSlug, input.listingSlug),
             eq(vehicleListings.storeId, input.storeId),
             eq(vehicleListings.tenantId, input.tenantId),
             eq(vehicleListings.status, "published"),
             eq(vehicleListings.isVisibleOnPublicSite, true),
             eq(vehicleListings.isDeleted, false),
+            isNotNull(vehicleListings.publicSlug),
             isNull(vehicleListings.deletedAt),
           ),
         )
@@ -168,6 +119,7 @@ export function createDrizzlePublicStorefrontRepository(
             eq(vehicleListings.status, "published"),
             eq(vehicleListings.isVisibleOnPublicSite, true),
             eq(vehicleListings.isDeleted, false),
+            isNotNull(vehicleListings.publicSlug),
             isNull(vehicleListings.deletedAt),
           ),
         )
@@ -187,7 +139,6 @@ async function findListingMedia(
       altText: vehicleMedia.altText,
       displayOrder: vehicleMedia.displayOrder,
       kind: vehicleMedia.kind,
-      mediaId: vehicleMedia.id,
       url: vehicleMedia.url,
     })
     .from(vehicleMedia)
@@ -207,32 +158,43 @@ async function findListingMedia(
   return rows;
 }
 
-function createPublicListingSlugCondition(listingSlug: string) {
-  if (!isUuid(listingSlug)) return eq(vehicleListings.publicSlug, listingSlug);
-
+function createPublicStoreLookupCondition(storeLookupKey: string) {
   return or(
-    eq(vehicleListings.publicSlug, listingSlug),
-    eq(vehicleListings.id, listingSlug),
-  );
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(
-    value,
+    eq(stores.publicSlug, storeLookupKey),
+    and(
+      eq(storePublicSiteSettings.customDomain, storeLookupKey),
+      eq(storePublicSiteSettings.customDomainStatus, "verified"),
+    ),
   );
 }
 
 function toPublicVehicleListing(row: ListingRow): PublicVehicleListing {
   return {
     description: row.description,
-    listingId: row.listingId,
     manufactureYear: row.manufactureYear,
     mileageKm: row.mileageKm,
     modelYear: row.modelYear,
     priceCents: row.priceCents,
-    slug: row.slug ?? row.listingId,
+    slug: assertPublicSlug(row.slug),
     status: "available",
     thumbnailUrl: null,
     title: row.title,
   };
+}
+
+function assertPublicSlug(slug: string | null): string {
+  if (!slug) {
+    throw new PublicStorefrontDataInvariantError(
+      "Published public listing is missing public_slug.",
+    );
+  }
+
+  return slug;
+}
+
+export class PublicStorefrontDataInvariantError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PublicStorefrontDataInvariantError";
+  }
 }

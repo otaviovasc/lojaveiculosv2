@@ -29,6 +29,9 @@ describe("API docs routes", () => {
         .security,
     ).toEqual([{ bearerAuth: ["inventory.read"] }]);
     expect(
+      openApiDocument.paths["/api/v1/inventory/listings"].get.security,
+    ).toEqual([{ bearerAuth: ["inventory.read"] }]);
+    expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/price"]
         .patch.security,
     ).toEqual([{ bearerAuth: ["inventory.update_price"] }]);
@@ -36,13 +39,66 @@ describe("API docs routes", () => {
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/status"]
         .patch.security,
     ).toEqual([{ bearerAuth: ["inventory.update_status"] }]);
-    expect(openApiDocument.components.schemas.ListingScaffold).toEqual(
+    expect(
+      openApiDocument.paths[
+        "/api/v1/inventory/listings/{listingId}/media/uploads"
+      ].post.security,
+    ).toEqual([{ bearerAuth: ["inventory.create"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
+        .security,
+    ).toEqual([{ bearerAuth: ["inventory.cost_create"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
+        .post.security,
+    ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/sell"].post
+        .security,
+    ).toEqual([{ bearerAuth: ["inventory.sell"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
+        .post.requestBody.content["application/json"].schema,
+    ).toEqual({ $ref: "#/components/schemas/ReserveVehicleListingRequest" });
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/sell"].post
+        .requestBody.content["application/json"].schema,
+    ).toEqual({ $ref: "#/components/schemas/SellVehicleListingRequest" });
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
+        .requestBody.content["application/json"].schema,
+    ).toEqual({ $ref: "#/components/schemas/CreateVehicleCostRequest" });
+    expect(openApiDocument.components.schemas.VehicleMediaUpload).toEqual(
       expect.objectContaining({
-        required: ["listingId", "status"],
+        required: [
+          "expiresAt",
+          "publicUrl",
+          "storageKey",
+          "uploadHeaders",
+          "uploadMethod",
+          "uploadUrl",
+        ],
       }),
+    );
+    expect(openApiDocument.components.schemas.InventoryListingDetail).toEqual(
+      expect.objectContaining({
+        required: ["documents", "listing", "media", "status", "units"],
+      }),
+    );
+    expect(openApiDocument.components.schemas.VehicleDocumentKind.enum).toEqual(
+      expect.arrayContaining([
+        "reservation_receipt",
+        "sale_contract",
+        "sale_receipt",
+        "delivery_term",
+        "power_of_attorney",
+      ]),
     );
     expect(openApiDocument["x-scopes"]["inventory.read"]).toContain(
       "Read vehicle inventory",
+    );
+    expect(openApiDocument["x-finance-side-effects"].linkTargets).toEqual(
+      expect.arrayContaining(["sale", "sale_payment", "vehicle_cost"]),
     );
     expect(openApiDocument["x-planned-external-api-safety-limits"]).toContain(
       "Tenant and store scoping required for every external request.",

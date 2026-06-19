@@ -1,16 +1,16 @@
-import type { PublicStorefrontData } from "./types";
+import type { PublicStorefrontPageData } from "./types";
 
 export type PublicStorefrontSnapshot = {
-  data?: PublicStorefrontData | null;
+  data?: PublicStorefrontPageData | null;
   error?: Error | null;
   isLoading: boolean;
 };
 
 export type PublicStorefrontState =
   | { kind: "loading" }
-  | { data: PublicStorefrontData; kind: "empty" }
+  | { data: PublicStorefrontPageData; kind: "empty" }
   | { error: Error; kind: "error" }
-  | { data: PublicStorefrontData; kind: "ready" };
+  | { data: PublicStorefrontPageData; kind: "ready" };
 
 export function derivePublicStorefrontState(
   snapshot: PublicStorefrontSnapshot,
@@ -30,10 +30,29 @@ export function derivePublicStorefrontState(
 
 const emptyStorefrontData = {
   listings: [],
+  settings: {
+    contact: {
+      city: null,
+      contactEmail: null,
+      contactPhone: null,
+      whatsappPhone: null,
+      whatsappUrl: null,
+    },
+    site: {
+      heroImageUrl: null,
+      layoutKey: "default",
+      seoDescription: null,
+      seoTitle: null,
+      theme: {},
+    },
+    store: {
+      name: "Loja",
+      publicUrl: "loja.lojaveiculos.com.br",
+      slug: "loja",
+    },
+  },
   store: {
-    id: "unknown",
     name: "Loja",
     slug: "loja",
-    tenantId: "unknown",
   },
-} satisfies PublicStorefrontData;
+} satisfies PublicStorefrontPageData;

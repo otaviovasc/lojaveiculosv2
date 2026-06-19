@@ -2,6 +2,12 @@
 @import "./tokens.css";
 @import "./components.css";
 @import "./crm.css";
+@import "./crmPipeline.css";
+@import "./settings.css";
+@import "./roles.css";
+@import "./billing.css";
+@import "./internal.css";
+@import "./internalLists.css";
 
 @source "../**/*.{ts,tsx}";
 

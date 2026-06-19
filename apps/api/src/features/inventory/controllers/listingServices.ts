@@ -1,23 +1,38 @@
-import {
-  attachVehicleUnit,
-  type AttachVehicleUnitInput,
-} from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
-import { changeVehicleStatus } from "../../../domains/vehicle/services/VehicleService/changeVehicleStatus.js";
-import {
-  createVehicleListing,
-  type CreateVehicleListingInput,
-} from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
-import { getVehicleListing } from "../../../domains/vehicle/services/VehicleService/getVehicleListing.js";
-import { updateVehicleDescription } from "../../../domains/vehicle/services/VehicleService/updateVehicleDescription.js";
-import { updateVehiclePrice } from "../../../domains/vehicle/services/VehicleService/updateVehiclePrice.js";
+import type { AttachVehicleDocumentInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
+import type { AddVehicleCostInput } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
+import type { CreateVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
+import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
+import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
+import type { ListVehicleListingsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
+import type { ReorderVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
+import type { ReserveVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
+import type { RequestVehicleDocumentUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
+import type { RequestVehicleMediaUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleMediaUpload.js";
+import type { SellVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/sellVehicleListing.js";
+import type { UpdateVehicleListingDetailsInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleListingDetails.js";
+import type { UpdateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleMedia.js";
+import type { UpdateVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleUnit.js";
 import type { VehicleListingStatus } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
+import type { VehicleMediaUpload } from "../../../domains/vehicle/ports/vehicleMediaStorage.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
-import {
-  createDrizzleVehicleInventoryRepositories,
-  type DrizzleVehicleInventoryClient,
-} from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
+import type { DrizzleVehicleInventoryClient } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { createMemoryVehicleInventoryPorts } from "./memoryVehicleInventoryPorts.js";
+import type { GetVehicleCatalogSnapshotInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogSnapshot.js";
+import type { ListVehicleCatalogBrandsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogBrands.js";
+import type { ListVehicleCatalogModelsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogModels.js";
+import type { ListVehicleCatalogVersionsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogVersions.js";
+import type { ListVehicleCatalogYearsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogYears.js";
+import type {
+  VehicleCatalogOption,
+  VehicleCatalogSnapshot,
+  VehicleCatalogYearOption,
+} from "../../../domains/vehicle/ports/vehicleCatalogProvider.js";
+import type { VehicleCatalogVersionOption } from "../../../domains/vehicle/ports/vehicleCatalogRepository.js";
+import {
+  type InventoryListingDetailResponse,
+  type InventoryListingListResponse,
+} from "./listingResponseDtos.js";
+import { createInventoryListingServices } from "./listingServicesFactory.js";
 
 export const listingStatuses = [
   "available",
@@ -27,47 +42,130 @@ export const listingStatuses = [
   "sold",
 ] as const;
 
-export type ListingScaffoldResult = {
+export type VehicleMediaResult = {
   listingId: string;
-  status: "not_implemented";
+  mediaId: string;
+  storageKey: string;
+  status: "created";
+  url: string;
 };
 
 export type InventoryListingServices = {
   attachListingUnit: (
     context: ServiceContext,
-    input: {
-      listingId: string;
-      plate?: string | null | undefined;
-      stockNumber?: string | null | undefined;
-      vin?: string | null | undefined;
-    },
-  ) => Promise<ListingScaffoldResult>;
+    input: AttachListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  attachVehicleDocument: (
+    context: ServiceContext,
+    input: AttachVehicleDocumentInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  addVehicleCost: (
+    context: ServiceContext,
+    input: AddVehicleCostInput,
+  ) => Promise<InventoryListingDetailResponse>;
   changeListingStatus: (
     context: ServiceContext,
     input: { listingId: string; status: VehicleListingStatus },
-  ) => Promise<ListingScaffoldResult>;
+  ) => Promise<InventoryListingDetailResponse>;
   createListing: (
     context: ServiceContext,
-    input: {
-      description?: string | null | undefined;
-      plate: string | null;
-      priceCents?: number | null | undefined;
-      status?: VehicleListingStatus | undefined;
-      title: string;
-    },
-  ) => Promise<ListingScaffoldResult>;
+    input: CreateListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  createMedia: (
+    context: ServiceContext,
+    input: CreateVehicleMediaInput,
+  ) => Promise<VehicleMediaResult>;
+  deleteMedia: (
+    context: ServiceContext,
+    input: DeleteVehicleMediaInput,
+  ) => Promise<InventoryListingDetailResponse>;
   getListing: (
     context: ServiceContext,
     input: { listingId: string },
-  ) => Promise<ListingScaffoldResult>;
+  ) => Promise<InventoryListingDetailResponse>;
+  getCatalogSnapshot: (
+    context: ServiceContext,
+    input: GetVehicleCatalogSnapshotInput,
+  ) => Promise<VehicleCatalogSnapshot>;
+  listListings: (
+    context: ServiceContext,
+    input: ListVehicleListingsInput,
+  ) => Promise<InventoryListingListResponse>;
+  listCatalogBrands: (
+    context: ServiceContext,
+    input: ListVehicleCatalogBrandsInput,
+  ) => Promise<readonly VehicleCatalogOption[]>;
+  listCatalogModels: (
+    context: ServiceContext,
+    input: ListVehicleCatalogModelsInput,
+  ) => Promise<readonly VehicleCatalogOption[]>;
+  listCatalogVersions: (
+    context: ServiceContext,
+    input: ListVehicleCatalogVersionsInput,
+  ) => Promise<readonly VehicleCatalogVersionOption[]>;
+  listCatalogYears: (
+    context: ServiceContext,
+    input: ListVehicleCatalogYearsInput,
+  ) => Promise<readonly VehicleCatalogYearOption[]>;
+  requestMediaUpload: (
+    context: ServiceContext,
+    input: RequestVehicleMediaUploadInput,
+  ) => Promise<VehicleMediaUpload>;
+  reorderMedia: (
+    context: ServiceContext,
+    input: ReorderVehicleMediaInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  requestDocumentUpload: (
+    context: ServiceContext,
+    input: RequestVehicleDocumentUploadInput,
+  ) => Promise<VehicleMediaUpload>;
+  reserveListing: (
+    context: ServiceContext,
+    input: ReserveVehicleListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
   updateListingDescription: (
     context: ServiceContext,
     input: { description: string | null; listingId: string },
-  ) => Promise<ListingScaffoldResult>;
+  ) => Promise<InventoryListingDetailResponse>;
   updateListingPrice: (
     context: ServiceContext,
     input: { listingId: string; priceCents: number | null },
-  ) => Promise<ListingScaffoldResult>;
+  ) => Promise<InventoryListingDetailResponse>;
+  updateListingDetails: (
+    context: ServiceContext,
+    input: UpdateVehicleListingDetailsInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  updateMedia: (
+    context: ServiceContext,
+    input: UpdateVehicleMediaInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  updateListingUnit: (
+    context: ServiceContext,
+    input: UpdateVehicleUnitInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  sellListing: (
+    context: ServiceContext,
+    input: SellVehicleListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
+};
+
+type AttachListingInput = {
+  listingId: string;
+  plate?: string | null | undefined;
+  stockNumber?: string | null | undefined;
+  vin?: string | null | undefined;
+};
+
+type CreateListingInput = {
+  catalog?: CreateVehicleListingInput["catalog"] | undefined;
+  description?: string | null | undefined;
+  manufactureYear?: number | null | undefined;
+  modelYear?: number | null | undefined;
+  plate: string | null;
+  priceCents?: number | null | undefined;
+  status?: VehicleListingStatus | undefined;
+  title: string;
+  trimName?: string | null | undefined;
 };
 
 export type DrizzleVehicleInventoryAdapter = (
@@ -86,101 +184,5 @@ export type CreateInventoryListingServicesOptions =
       ports?: never;
     };
 
-export function createInventoryListingServices(
-  options: CreateInventoryListingServicesOptions = {},
-): InventoryListingServices {
-  const ports = resolveVehicleInventoryPorts(options);
-
-  return {
-    async attachListingUnit(context, input) {
-      const unit = await attachVehicleUnit(
-        context,
-        cleanAttachInput(input),
-        ports,
-      );
-
-      return plannedListingResult(unit.listingId);
-    },
-    async changeListingStatus(context, input) {
-      const listing = await changeVehicleStatus(context, input, ports);
-
-      return plannedListingResult(listing.id);
-    },
-    async createListing(context, input) {
-      const listing = await createVehicleListing(
-        context,
-        cleanCreateInput(input),
-        ports,
-      );
-
-      return plannedListingResult(listing.id);
-    },
-    async getListing(context, input) {
-      const listing = await getVehicleListing(context, input, ports);
-
-      return plannedListingResult(listing.id);
-    },
-    async updateListingDescription(context, input) {
-      const listing = await updateVehicleDescription(context, input, ports);
-
-      return plannedListingResult(listing.id);
-    },
-    async updateListingPrice(context, input) {
-      const listing = await updateVehiclePrice(context, input, ports);
-
-      return plannedListingResult(listing.id);
-    },
-  };
-}
-
 export const inventoryListingServices = createInventoryListingServices();
-
-function resolveVehicleInventoryPorts(
-  options: CreateInventoryListingServicesOptions,
-): VehicleInventoryServicePorts {
-  if ("ports" in options && options.ports) return options.ports;
-
-  if ("drizzleClient" in options) {
-    const adapter =
-      options.drizzleAdapter ?? createDrizzleVehicleInventoryRepositories;
-    return adapter(options.drizzleClient);
-  }
-
-  return createMemoryVehicleInventoryPorts();
-}
-
-function cleanAttachInput(
-  input: Parameters<InventoryListingServices["attachListingUnit"]>[1],
-): AttachVehicleUnitInput {
-  const result: AttachVehicleUnitInput = {
-    listingId: input.listingId,
-  };
-
-  if (input.plate !== undefined) result.plate = input.plate;
-  if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;
-  if (input.vin !== undefined) result.vin = input.vin;
-
-  return result;
-}
-
-function cleanCreateInput(
-  input: Parameters<InventoryListingServices["createListing"]>[1],
-): CreateVehicleListingInput {
-  const result: CreateVehicleListingInput = {
-    plate: input.plate,
-    title: input.title,
-  };
-
-  if (input.description !== undefined) result.description = input.description;
-  if (input.priceCents !== undefined) result.priceCents = input.priceCents;
-  if (input.status !== undefined) result.status = input.status;
-
-  return result;
-}
-
-function plannedListingResult(listingId: string): ListingScaffoldResult {
-  return {
-    listingId,
-    status: "not_implemented",
-  };
-}
+export { createInventoryListingServices };

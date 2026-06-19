@@ -8,3 +8,4 @@ const port = Number(process.env.PORT ?? 8787);
 const app = createApp(createRuntimeAppOptions());
 
 serve({ fetch: app.fetch, port });
+console.info(`Lojaveiculos V2 API listening on http://localhost:${port}`);

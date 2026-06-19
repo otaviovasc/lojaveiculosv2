@@ -1,7 +1,10 @@
-import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import type { PublicStorefrontRepository } from "../../../../domains/storefront/ports/publicStorefrontRepository.js";
 
 export function createMemoryPublicStorefrontRepository(): PublicStorefrontRepository {
   return {
+    async findPublicSiteBySlug() {
+      return null;
+    },
     async findPublicListingDetail() {
       return null;
     },

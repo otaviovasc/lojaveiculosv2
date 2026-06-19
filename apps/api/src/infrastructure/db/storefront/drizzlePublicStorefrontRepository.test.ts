@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { stores, vehicleListings, vehicleMedia } from "@lojaveiculosv2/db";
+import {
+  storePublicSiteSettings,
+  stores,
+  vehicleListings,
+  vehicleMedia,
+} from "@lojaveiculosv2/db";
 import { createDrizzlePublicStorefrontRepository } from "./drizzlePublicStorefrontRepository.js";
 import { createFakePublicStorefrontDb } from "./drizzlePublicStorefrontRepository.testSupport.js";
 
@@ -23,13 +28,47 @@ describe("Drizzle public storefront repository", () => {
     });
     expect(listings).toEqual([
       expect.objectContaining({
-        listingId: "listing_1",
         slug: "fiat-toro-2023",
         status: "available",
         title: "Fiat Toro Volcano 2023",
       }),
     ]);
-    expect(db.queriedTables).toEqual([stores, vehicleListings]);
+    expect(db.queriedTables).toEqual([
+      stores,
+      storePublicSiteSettings,
+      vehicleListings,
+    ]);
+  });
+
+  it("maps published public site settings without domain verification data", async () => {
+    const db = createFakePublicStorefrontDb();
+    const repository = createDrizzlePublicStorefrontRepository(db);
+
+    const site = await repository.findPublicSiteBySlug("demo");
+
+    expect(site).toEqual({
+      contact: {
+        city: "Sao Paulo",
+        contactEmail: "contato@demo.com.br",
+        contactPhone: null,
+        whatsappPhone: "5511999999999",
+        whatsappUrl: "https://wa.me/5511999999999",
+      },
+      site: {
+        heroImageUrl: "https://cdn.local/hero.jpg",
+        layoutKey: "default",
+        seoDescription: "Estoque selecionado",
+        seoTitle: "Loja Demo",
+        theme: {},
+      },
+      store: {
+        id: "store_1",
+        name: "Loja Demo",
+        publicUrl: "demo.lojaveiculos.com.br",
+        slug: "demo",
+        tenantId: "tenant_1",
+      },
+    });
   });
 
   it("maps visible listing detail with public media", async () => {
@@ -44,13 +83,11 @@ describe("Drizzle public storefront repository", () => {
 
     expect(listing).toEqual(
       expect.objectContaining({
-        listingId: "listing_1",
         media: [
           {
             altText: "Front photo",
             displayOrder: 0,
             kind: "photo",
-            mediaId: "media_1",
             url: "https://cdn.local/front.jpg",
           },
         ],

@@ -28,6 +28,7 @@ describe("App module navigation", () => {
     expect(ids).toContain("billing");
     expect(ids).toContain("settings");
     expect(ids).toContain("public-api");
+    expect(ids).toContain("internal-health");
   });
 
   it("parses hash module state without a router dependency", () => {

@@ -3,8 +3,10 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { VehicleListing } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
+  actorUserId,
   findScopedListing,
   getListingRepository,
+  getOperationsRepository,
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
@@ -14,6 +16,7 @@ const permission = "inventory.update_price";
 export type UpdateVehiclePriceInput = {
   listingId: string;
   priceCents: number | null;
+  reason?: string | null | undefined;
 };
 
 export async function updateVehiclePrice(
@@ -35,6 +38,15 @@ export async function updateVehiclePrice(
     priceCents: input.priceCents,
     updatedAt: new Date(),
   });
+  await getOperationsRepository(ports).createPriceHistory({
+    actorUserId: actorUserId(context),
+    listingId: listing.id,
+    newPriceCents: input.priceCents,
+    oldPriceCents: listing.priceCents,
+    reason: input.reason ?? null,
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.price.update",
@@ -48,6 +60,7 @@ export async function updateVehiclePrice(
     ],
     entityId: updated.id,
     permission,
+    metadata: { reason: input.reason ?? null },
     summary: "Updated vehicle listing price",
   });
 

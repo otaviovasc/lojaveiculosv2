@@ -73,49 +73,12 @@ export const vehicleCostKind = pgEnum("vehicle_cost_kind", [
   "other",
 ]);
 
-export const vehicleBrands = pgTable(
-  "vehicle_brands",
-  {
-    ...lifecycleColumns,
-    fipeCode: varchar("fipe_code", { length: 40 }),
-    name: varchar("name", { length: 120 }).notNull(),
-    slug: varchar("slug", { length: 120 }).notNull(),
-  },
-  (table) => [
-    uniqueIndex("vehicle_brands_fipe_code_unique").on(table.fipeCode),
-    uniqueIndex("vehicle_brands_slug_unique").on(table.slug),
-  ],
-);
-
-export const vehicleModels = pgTable(
-  "vehicle_models",
-  {
-    ...lifecycleColumns,
-    brandId: uuid("brand_id")
-      .notNull()
-      .references(() => vehicleBrands.id),
-    fipeCode: varchar("fipe_code", { length: 40 }),
-    name: varchar("name", { length: 160 }).notNull(),
-    slug: varchar("slug", { length: 160 }).notNull(),
-    tenantId: uuid("tenant_id").references(() => tenants.id),
-  },
-  (table) => [
-    index("vehicle_models_brand_id_idx").on(table.brandId),
-    index("vehicle_models_tenant_id_idx").on(table.tenantId),
-    uniqueIndex("vehicle_models_brand_slug_unique").on(
-      table.brandId,
-      table.slug,
-    ),
-  ],
-);
-
 export const vehicleListings = pgTable(
   "vehicle_listings",
   {
     ...lifecycleColumns,
     ...softDeleteColumns,
     askingPriceCents: integer("asking_price_cents"),
-    brandId: uuid("brand_id").references(() => vehicleBrands.id),
     condition: vehicleCondition("condition").notNull().default("used"),
     description: text("description"),
     doors: integer("doors"),
@@ -125,7 +88,6 @@ export const vehicleListings = pgTable(
     isVisibleOnPublicSite: boolean("is_visible_on_public_site")
       .notNull()
       .default(false),
-    modelId: uuid("model_id").references(() => vehicleModels.id),
     modelYear: integer("model_year"),
     manufactureYear: integer("manufacture_year"),
     metadata: jsonb("metadata").notNull().default({}),
@@ -143,8 +105,6 @@ export const vehicleListings = pgTable(
     trimName: varchar("trim_name", { length: 160 }),
   },
   (table) => [
-    index("vehicle_listings_brand_id_idx").on(table.brandId),
-    index("vehicle_listings_model_id_idx").on(table.modelId),
     index("vehicle_listings_status_idx").on(table.status),
     index("vehicle_listings_store_status_idx").on(table.storeId, table.status),
     index("vehicle_listings_tenant_id_idx").on(table.tenantId),

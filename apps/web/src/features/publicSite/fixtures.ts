@@ -1,16 +1,34 @@
-import type { PublicStorefrontData } from "./types";
+import type { PublicStorefrontPageData } from "./types";
 
 export const publicStorefrontPreview = {
+  settings: {
+    contact: {
+      city: "Sao Paulo",
+      contactEmail: "contato@demo.com.br",
+      contactPhone: null,
+      whatsappPhone: "5511999999999",
+      whatsappUrl: "https://wa.me/5511999999999",
+    },
+    site: {
+      heroImageUrl: "https://cdn.local/hero.jpg",
+      layoutKey: "default",
+      seoDescription: "Estoque revisado com atendimento direto pelo WhatsApp.",
+      seoTitle: "Loja Demo Motors",
+      theme: {},
+    },
+    store: {
+      name: "Loja Demo Motors",
+      publicUrl: "demo.lojaveiculos.com.br",
+      slug: "demo",
+    },
+  },
   store: {
-    id: "store_1",
     name: "Loja Demo Motors",
     slug: "demo",
-    tenantId: "tenant_1",
   },
   listings: [
     {
       description: "Unico dono, revisoes em dia e pronta entrega.",
-      listingId: "listing_1",
       manufactureYear: 2022,
       mileageKm: 32000,
       modelYear: 2023,
@@ -22,7 +40,6 @@ export const publicStorefrontPreview = {
     },
     {
       description: "SUV completo com multimidia, camera e garantia.",
-      listingId: "listing_2",
       manufactureYear: 2021,
       mileageKm: 41000,
       modelYear: 2022,
@@ -34,7 +51,6 @@ export const publicStorefrontPreview = {
     },
     {
       description: "Hatch economico para giro rapido de estoque.",
-      listingId: "listing_3",
       manufactureYear: 2020,
       mileageKm: 52000,
       modelYear: 2021,
@@ -45,4 +61,4 @@ export const publicStorefrontPreview = {
       title: "Hyundai HB20 Comfort 2021",
     },
   ],
-} satisfies PublicStorefrontData;
+} satisfies PublicStorefrontPageData;

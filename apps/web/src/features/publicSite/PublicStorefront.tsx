@@ -10,7 +10,11 @@ import {
   PublicListingDetailPanel,
   type PublicListingDetailSnapshot,
 } from "./PublicListingDetailPanel";
-import type { PublicStorefrontData, PublicVehicleListing } from "./types";
+import type {
+  PublicStorefrontData,
+  PublicStorefrontSettingsData,
+  PublicVehicleListing,
+} from "./types";
 
 const proofItems = [
   { icon: CheckCircle2, label: "Estoque conferido" },
@@ -19,7 +23,7 @@ const proofItems = [
 ];
 
 type PublicStorefrontProps = {
-  data: PublicStorefrontData;
+  data: PublicStorefrontData & { settings: PublicStorefrontSettingsData };
   detail: PublicListingDetailSnapshot;
   onCloseListing: () => void;
   onOpenListing: (listingSlug: string) => void;
@@ -36,44 +40,58 @@ export function PublicStorefront({
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8">
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="rounded-lg border border-line bg-panel p-5 lg:p-6">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex size-11 items-center justify-center rounded-lg bg-accent-soft text-accent">
-              <Sparkles aria-hidden="true" className="size-5" />
+        <div className="overflow-hidden rounded-lg border border-line bg-panel">
+          {data.settings.site.heroImageUrl ? (
+            <img
+              alt=""
+              className="h-44 w-full object-cover"
+              src={data.settings.site.heroImageUrl}
+            />
+          ) : null}
+          <div className="p-5 lg:p-6">
+            <div className="mb-8 flex items-center gap-3">
+              <div className="flex size-11 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                <Sparkles aria-hidden="true" className="size-5" />
+              </div>
+              <div>
+                <p className="text-xs font-black uppercase tracking-widest text-muted">
+                  {data.settings.store.publicUrl}
+                </p>
+                <h2 className="text-2xl font-black md:text-4xl">
+                  {data.settings.site.seoTitle ?? data.settings.store.name}
+                </h2>
+                {data.settings.site.seoDescription ? (
+                  <p className="mt-2 max-w-2xl text-sm font-bold text-muted">
+                    {data.settings.site.seoDescription}
+                  </p>
+                ) : null}
+              </div>
             </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest text-muted">
-                {data.store.slug}.lojaveiculos.com.br
-              </p>
-              <h2 className="text-2xl font-black md:text-4xl">
-                {data.store.name}
-              </h2>
-            </div>
-          </div>
 
-          <div className="grid gap-3 sm:grid-cols-3">
-            {proofItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  className="flex min-h-20 items-center gap-3 rounded-lg bg-app p-4"
-                  key={item.label}
-                >
-                  <Icon aria-hidden="true" className="size-5 text-accent" />
-                  <span className="text-sm font-black">{item.label}</span>
-                </div>
-              );
-            })}
+            <div className="grid gap-3 sm:grid-cols-3">
+              {proofItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    className="flex min-h-20 items-center gap-3 rounded-lg bg-app p-4"
+                    key={item.label}
+                  >
+                    <Icon aria-hidden="true" className="size-5 text-accent" />
+                    <span className="text-sm font-black">{item.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        <LeadPanel />
+        <LeadPanel settings={data.settings} />
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {data.listings.map((listing) => (
           <VehicleCard
-            key={listing.listingId}
+            key={listing.slug}
             listing={listing}
             onOpen={() => onOpenListing(listing.slug)}
           />
@@ -134,13 +152,18 @@ function VehicleCard({
   );
 }
 
-function LeadPanel() {
+function LeadPanel({ settings }: { settings: PublicStorefrontSettingsData }) {
   return (
     <aside className="rounded-lg border border-line bg-panel p-5 lg:p-6">
       <p className="text-xs font-black uppercase tracking-widest text-muted">
         Interesse rapido
       </p>
       <h3 className="mt-2 text-xl font-black">Separar veiculo</h3>
+      {settings.contact.city ? (
+        <p className="mt-2 text-sm font-bold text-muted">
+          {settings.contact.city}
+        </p>
+      ) : null}
       <div className="mt-5 grid gap-3">
         <input
           aria-label="Nome"
@@ -150,13 +173,13 @@ function LeadPanel() {
           aria-label="Telefone"
           className="rounded-lg border border-line bg-app p-3 font-bold"
         />
-        <button
+        <a
           className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
-          type="button"
+          href={settings.contact.whatsappUrl ?? undefined}
         >
           <MessageCircle aria-hidden="true" className="size-4" />
           Chamar no WhatsApp
-        </button>
+        </a>
       </div>
     </aside>
   );

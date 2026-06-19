@@ -1,6 +1,7 @@
 export * from "./schema/identity.js";
 export * from "./schema/storeProfile.js";
 export * from "./schema/inventory.js";
+export * from "./schema/vehicleCatalog.js";
 export * from "./schema/inventoryOperations.js";
 export * from "./schema/documents.js";
 export * from "./schema/leads.js";

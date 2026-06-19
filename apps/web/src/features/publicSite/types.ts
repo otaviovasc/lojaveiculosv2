@@ -1,6 +1,5 @@
 export type PublicVehicleListing = {
   description: string | null;
-  listingId: string;
   manufactureYear: number | null;
   mileageKm: number | null;
   modelYear: number | null;
@@ -15,7 +14,6 @@ export type PublicVehicleMedia = {
   altText: string | null;
   displayOrder: number;
   kind: "document_preview" | "photo" | "video";
-  mediaId: string;
   url: string;
 };
 
@@ -26,11 +24,35 @@ export type PublicVehicleListingDetail = PublicVehicleListing & {
 export type PublicStorefrontData = {
   listings: readonly PublicVehicleListing[];
   store: {
-    id: string;
     name: string;
     slug: string;
-    tenantId: string;
   };
+};
+
+export type PublicStorefrontSettingsData = {
+  contact: {
+    city: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+    whatsappPhone: string | null;
+    whatsappUrl: string | null;
+  };
+  site: {
+    heroImageUrl: string | null;
+    layoutKey: string;
+    seoDescription: string | null;
+    seoTitle: string | null;
+    theme: Record<string, unknown>;
+  };
+  store: {
+    name: string;
+    publicUrl: string;
+    slug: string;
+  };
+};
+
+export type PublicStorefrontPageData = PublicStorefrontData & {
+  settings: PublicStorefrontSettingsData;
 };
 
 export type PublicStorefrontListingDetailData = {

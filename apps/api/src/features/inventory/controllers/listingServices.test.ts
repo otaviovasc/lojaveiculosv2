@@ -20,13 +20,10 @@ describe("inventory listing services factory", () => {
       title: "Fiat Toro",
     });
     const found = await services.getListing(context, {
-      listingId: created.listingId,
+      listingId: created.listing.id,
     });
 
-    expect(created).toEqual({
-      listingId: "listing_1",
-      status: "not_implemented",
-    });
+    expect(created.listing).toMatchObject({ id: "listing_1" });
     expect(found).toEqual(created);
   });
 
@@ -46,12 +43,108 @@ describe("inventory listing services factory", () => {
       },
     );
 
-    expect(result.listingId).toBe("listing_1");
+    expect(result.listing.id).toBe("listing_1");
     expect(adapter).toHaveBeenCalledWith(client);
     expect(ports.listingRepository.findById).toHaveBeenCalledWith({
       listingId: "listing_1",
       storeId: "store_1",
       tenantId: "tenant_1",
+    });
+  });
+
+  it("passes media requests through the injected ports", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const services = createInventoryListingServices({ ports });
+    const context = createContext(["inventory.create"]);
+
+    const upload = await services.requestMediaUpload(context, {
+      contentType: "image/jpeg",
+      fileName: "front.jpg",
+      kind: "photo",
+      listingId: "listing_1",
+      sizeBytes: 1024,
+    });
+    const media = await services.createMedia(context, {
+      kind: "photo",
+      listingId: "listing_1",
+      storageKey: upload.storageKey,
+    });
+
+    expect(media).toEqual({
+      listingId: "listing_1",
+      mediaId: "media_1",
+      storageKey: upload.storageKey,
+      status: "created",
+      url: `https://cdn.local/${upload.storageKey}`,
+    });
+  });
+
+  it("returns created listing detail without requiring inventory.read", async () => {
+    const services = createInventoryListingServices();
+
+    const result = await services.createListing(
+      createContext(["inventory.create"]),
+      {
+        plate: "ABC1D23",
+        title: "Fiat Toro",
+      },
+    );
+
+    expect(result.listing).toMatchObject({
+      id: "listing_1",
+      title: "Fiat Toro",
+    });
+  });
+
+  it("returns edited listing detail under the matching write permission", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const services = createInventoryListingServices({ ports });
+
+    const result = await services.updateListingPrice(
+      createContext(["inventory.update_price"]),
+      { listingId: "listing_1", priceCents: 12000000 },
+    );
+
+    expect(result.listing.priceCents).toBe(12000000);
+  });
+
+  it("returns edited unit detail under the unit write permission", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const services = createInventoryListingServices({ ports });
+    await services.attachListingUnit(createContext(["inventory.create"]), {
+      listingId: "listing_1",
+      plate: "ABC1D23",
+    });
+
+    const result = await services.updateListingUnit(
+      createContext(["inventory.update_unit"]),
+      {
+        listingId: "listing_1",
+        plate: "DEF4G56",
+        unitId: "unit_1",
+      },
+    );
+
+    expect(result.units[0]).toMatchObject({ id: "unit_1", plate: "DEF4G56" });
+  });
+
+  it("lists stock summaries through injected ports", async () => {
+    const ports = createInMemoryVehiclePorts([
+      createListing({ id: "listing_1", title: "Fiat Toro" }),
+      createListing({ id: "listing_2", title: "Honda Civic" }),
+    ]);
+    const services = createInventoryListingServices({ ports });
+
+    const result = await services.listListings(
+      createContext(["inventory.read"]),
+      {
+        search: "toro",
+      },
+    );
+
+    expect(result).toMatchObject({
+      items: [{ listing: { id: "listing_1", title: "Fiat Toro" } }],
+      total: 1,
     });
   });
 });

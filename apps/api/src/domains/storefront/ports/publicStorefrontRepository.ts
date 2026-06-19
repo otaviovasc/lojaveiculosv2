@@ -7,9 +7,47 @@ export type PublicStorefrontStore = {
   tenantId: TenantId;
 };
 
+export type PublicStorefrontPublicStore = {
+  name: string;
+  publicUrl: string;
+  slug: string;
+};
+
+export type PublicStorefrontStoreSummary = {
+  name: string;
+  slug: string;
+};
+
+export type PublicStorefrontContact = {
+  city: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  whatsappPhone: string | null;
+  whatsappUrl: string | null;
+};
+
+export type PublicStorefrontSite = {
+  heroImageUrl: string | null;
+  layoutKey: string;
+  seoDescription: string | null;
+  seoTitle: string | null;
+  theme: Record<string, unknown>;
+};
+
+export type PublicStorefrontSiteSnapshot = {
+  contact: PublicStorefrontContact;
+  site: PublicStorefrontSite;
+  store: PublicStorefrontStore & { publicUrl: string };
+};
+
+export type PublicStorefrontSiteResult = {
+  contact: PublicStorefrontContact;
+  site: PublicStorefrontSite;
+  store: PublicStorefrontPublicStore;
+};
+
 export type PublicVehicleListing = {
   description: string | null;
-  listingId: string;
   manufactureYear: number | null;
   mileageKm: number | null;
   modelYear: number | null;
@@ -24,7 +62,6 @@ export type PublicVehicleMedia = {
   altText: string | null;
   displayOrder: number;
   kind: "document_preview" | "photo" | "video";
-  mediaId: string;
   url: string;
 };
 
@@ -45,6 +82,9 @@ export type FindPublicListingDetailInput = {
 };
 
 export type PublicStorefrontRepository = {
+  findPublicSiteBySlug: (
+    storeSlug: string,
+  ) => Promise<PublicStorefrontSiteSnapshot | null>;
   findPublicStoreBySlug: (
     storeSlug: string,
   ) => Promise<PublicStorefrontStore | null>;

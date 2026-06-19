@@ -1,0 +1,112 @@
+import type {
+  PublicStorefrontStore,
+  PublicVehicleMedia,
+} from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+
+export type StoreRow = {
+  id: PublicStorefrontStore["id"];
+  name: string;
+  slug: string;
+  tenantId: PublicStorefrontStore["tenantId"];
+};
+
+export type ListingRow = {
+  description: string | null;
+  listingId: string;
+  manufactureYear: number | null;
+  mileageKm: number | null;
+  modelYear: number | null;
+  priceCents: number | null;
+  slug: string | null;
+  title: string;
+};
+
+export type MediaRow = {
+  altText: string | null;
+  displayOrder: number;
+  kind: PublicVehicleMedia["kind"];
+  url: string;
+};
+
+export type PublicSiteRow = {
+  addressCity: string | null;
+  contactEmail: string | null;
+  contactPhone: string | null;
+  customDomain: string | null;
+  heroImageUrl: string | null;
+  layoutKey: string;
+  name: string;
+  seoDescription: string | null;
+  seoTitle: string | null;
+  slug: string;
+  storeId: PublicStorefrontStore["id"];
+  tenantId: PublicStorefrontStore["tenantId"];
+  theme: unknown;
+  whatsappPhone: string | null;
+};
+
+type SelectLimitBuilder<Row> = {
+  limit: (count: number) => Promise<readonly Row[]>;
+};
+
+type SelectOrderBuilder<Row> = {
+  limit: (count: number) => Promise<readonly Row[]>;
+};
+
+type SelectWhereResultBuilder<Row> = SelectLimitBuilder<Row> & {
+  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
+};
+
+type SelectWhereBuilder<Row> = {
+  innerJoin: (table: unknown, condition: unknown) => SelectWhereBuilder<Row>;
+  leftJoin: (table: unknown, condition: unknown) => SelectWhereBuilder<Row>;
+  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
+  where: (condition: unknown) => SelectWhereResultBuilder<Row>;
+};
+
+type SelectFromBuilder<Row> = {
+  from: (table: unknown) => SelectWhereBuilder<Row>;
+};
+
+export type DrizzlePublicStorefrontClient = {
+  select: {
+    (selection: {
+      addressCity: unknown;
+      contactEmail: unknown;
+      contactPhone: unknown;
+      customDomain: unknown;
+      heroImageUrl: unknown;
+      layoutKey: unknown;
+      name: unknown;
+      seoDescription: unknown;
+      seoTitle: unknown;
+      slug: unknown;
+      storeId: unknown;
+      tenantId: unknown;
+      theme: unknown;
+      whatsappPhone: unknown;
+    }): SelectFromBuilder<PublicSiteRow>;
+    (selection: {
+      id: unknown;
+      name: unknown;
+      slug: unknown;
+      tenantId: unknown;
+    }): SelectFromBuilder<StoreRow>;
+    (selection: {
+      description: unknown;
+      listingId: unknown;
+      manufactureYear: unknown;
+      mileageKm: unknown;
+      modelYear: unknown;
+      priceCents: unknown;
+      slug: unknown;
+      title: unknown;
+    }): SelectFromBuilder<ListingRow>;
+    (selection: {
+      altText: unknown;
+      displayOrder: unknown;
+      kind: unknown;
+      url: unknown;
+    }): SelectFromBuilder<MediaRow>;
+  };
+};

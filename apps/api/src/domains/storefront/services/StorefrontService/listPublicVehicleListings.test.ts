@@ -71,6 +71,7 @@ function createRepository(
 ): PublicStorefrontRepository {
   return {
     findPublicListingDetail: vi.fn(async () => null),
+    findPublicSiteBySlug: vi.fn(async () => null),
     findPublicStoreBySlug: vi.fn(async (storeSlug: string) =>
       options.includeStore === false
         ? null
@@ -84,7 +85,6 @@ function createRepository(
     listPublicListings: vi.fn(async () => [
       {
         description: "Ready to sell.",
-        listingId: "listing_1",
         manufactureYear: 2022,
         mileageKm: 32000,
         modelYear: 2023,

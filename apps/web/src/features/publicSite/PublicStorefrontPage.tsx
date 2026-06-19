@@ -1,5 +1,4 @@
 import { RefreshCcw, SearchX } from "lucide-react";
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import {
   createPublicStorefrontApi,
@@ -11,6 +10,10 @@ import {
   derivePublicStorefrontState,
   type PublicStorefrontSnapshot,
 } from "./state";
+import {
+  applyPublicStorefrontMetadata,
+  StorefrontStateFrame,
+} from "./PublicStorefrontPageSupport";
 
 export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   const storefrontApi = useMemo(
@@ -33,7 +36,12 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     setSnapshot({ isLoading: true });
 
     storefrontApi
-      .listListings({ limit: 12 })
+      .getSettings()
+      .then((settings) =>
+        storefrontApi
+          .listListings({ limit: 12 })
+          .then((data) => ({ ...data, settings })),
+      )
       .then((data) => {
         if (isActive) setSnapshot({ data, isLoading: false });
       })
@@ -78,6 +86,11 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   }, [detailRetryKey, detailSnapshot.listingSlug, storefrontApi]);
 
   const state = derivePublicStorefrontState(snapshot);
+
+  useEffect(() => {
+    if (state.kind !== "ready" && state.kind !== "empty") return;
+    return applyPublicStorefrontMetadata(state.data);
+  }, [state]);
 
   if (state.kind === "ready") {
     return (
@@ -146,26 +159,4 @@ function getPublicStorefrontApiBaseUrl() {
   };
 
   return env.VITE_API_BASE_URL;
-}
-
-function StorefrontStateFrame({
-  action,
-  icon,
-  title,
-}: {
-  action?: ReactNode;
-  icon: ReactNode;
-  title: string;
-}) {
-  return (
-    <main className="mx-auto flex min-h-[32rem] w-full max-w-7xl items-center justify-center px-4 py-6 lg:px-6 lg:py-8">
-      <section className="w-full max-w-md rounded-lg border border-line bg-panel p-6 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-accent-soft text-accent">
-          {icon}
-        </div>
-        <h2 className="mt-4 text-xl font-black">{title}</h2>
-        {action}
-      </section>
-    </main>
-  );
 }

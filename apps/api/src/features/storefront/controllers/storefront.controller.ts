@@ -2,6 +2,7 @@ import type { AuditSink } from "@lojaveiculosv2/audit";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
 import { AuthorizationError } from "../../../shared/authorization.js";
+import { getPublicStorefrontSite } from "../../../domains/storefront/services/StorefrontService/getPublicStorefrontSite.js";
 import { getPublicVehicleListing } from "../../../domains/storefront/services/StorefrontService/getPublicVehicleListing.js";
 import { listPublicVehicleListings } from "../../../domains/storefront/services/StorefrontService/listPublicVehicleListings.js";
 import {
@@ -12,7 +13,7 @@ import {
 import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 import { createPlaceholderServiceContext } from "../../../infrastructure/http/createPlaceholderServiceContext.js";
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
-import { createMemoryPublicStorefrontRepository } from "./memoryPublicStorefrontRepository.js";
+import { createMemoryPublicStorefrontRepository } from "../adapters/memory/publicStorefrontRepository.js";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(48).default(24),
@@ -29,6 +30,28 @@ export function createStorefrontFeature(
   const storefrontFeature = new Hono();
   const repository =
     options.repository ?? createMemoryPublicStorefrontRepository();
+
+  storefrontFeature.get("/settings", async (context) =>
+    handle(context, async () => {
+      const storeSlug = resolveStoreSlugFromRequest(context);
+
+      if (!storeSlug) {
+        return context.json({ message: "Store subdomain is required." }, 400);
+      }
+
+      const serviceContext = createPlaceholderServiceContext(
+        context,
+        options.audit ? { audit: options.audit } : {},
+      );
+      const result = await getPublicStorefrontSite(
+        serviceContext,
+        { storeSlug },
+        repository,
+      );
+
+      return context.json(result);
+    }),
+  );
 
   storefrontFeature.get("/listings", async (context) =>
     handle(context, async () => {

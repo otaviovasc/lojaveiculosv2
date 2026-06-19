@@ -27,12 +27,30 @@ export const financeEntryStatus = pgEnum("finance_entry_status", [
   "cancelled",
 ]);
 
+export const financeRecurrenceFrequency = pgEnum(
+  "finance_recurrence_frequency",
+  ["monthly", "weekly", "yearly"],
+);
+
+export const commissionRuleType = pgEnum("commission_rule_type", [
+  "fixed_amount",
+  "manual",
+  "percentage",
+]);
+
+export const commissionRuleStatus = pgEnum("commission_rule_status", [
+  "active",
+  "inactive",
+]);
+
 export const financeLinkTarget = pgEnum("finance_link_target", [
+  "document",
+  "lead",
+  "sale",
+  "sale_payment",
+  "vehicle_cost",
   "vehicle_listing",
   "vehicle_unit",
-  "sale",
-  "lead",
-  "document",
 ]);
 
 export const financeEntries = pgTable(
@@ -85,6 +103,62 @@ export const financeEntryLinks = pgTable(
       table.targetType,
       table.targetId,
     ),
+  ],
+);
+
+export const financeRecurringEntries = pgTable(
+  "finance_recurring_entries",
+  {
+    ...lifecycleColumns,
+    amountCents: integer("amount_cents").notNull(),
+    category: varchar("category", { length: 120 }).notNull(),
+    dayOfMonth: integer("day_of_month"),
+    frequency: financeRecurrenceFrequency("frequency").notNull(),
+    lastGeneratedAt: timestamp("last_generated_at", { withTimezone: true }),
+    metadata: jsonb("metadata").notNull().default({}),
+    name: varchar("name", { length: 191 }).notNull(),
+    nextDueAt: timestamp("next_due_at", { withTimezone: true }).notNull(),
+    sellerUserId: uuid("seller_user_id").references(() => users.id),
+    status: financeEntryStatus("status").notNull().default("pending"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    type: financeEntryType("type").notNull(),
+  },
+  (table) => [
+    index("finance_recurring_entries_next_due_at_idx").on(table.nextDueAt),
+    index("finance_recurring_entries_store_type_idx").on(
+      table.storeId,
+      table.type,
+    ),
+  ],
+);
+
+export const commissionRules = pgTable(
+  "commission_rules",
+  {
+    ...lifecycleColumns,
+    category: varchar("category", { length: 120 }).notNull(),
+    fixedAmountCents: integer("fixed_amount_cents"),
+    metadata: jsonb("metadata").notNull().default({}),
+    name: varchar("name", { length: 191 }).notNull(),
+    percentageBasisPoints: integer("percentage_basis_points"),
+    sellerUserId: uuid("seller_user_id").references(() => users.id),
+    status: commissionRuleStatus("status").notNull().default("active"),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    type: commissionRuleType("type").notNull(),
+  },
+  (table) => [
+    index("commission_rules_seller_user_id_idx").on(table.sellerUserId),
+    index("commission_rules_store_status_idx").on(table.storeId, table.status),
   ],
 );
 

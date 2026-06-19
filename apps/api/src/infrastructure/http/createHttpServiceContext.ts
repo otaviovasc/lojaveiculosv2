@@ -4,42 +4,76 @@ import {
   resolveStoreContext,
   StoreAccessDeniedError,
 } from "../../domains/identity/services/IdentityService/resolveStoreContext.js";
+import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
-import { createNoopAuditSink } from "../../shared/auditSink.js";
+import {
+  createNoopAuditSink,
+  createPolicyAwareAuditSink,
+} from "../../shared/auditSink.js";
 import type {
   ServiceContext,
   ServiceLogger,
 } from "../../shared/serviceContext.js";
 import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
 import { createPlaceholderServiceContext } from "./createPlaceholderServiceContext.js";
+import {
+  createExternalApiServiceContext,
+  externalApiContextKey,
+  readExternalApiKey,
+} from "./externalApiHttpContext.js";
+import {
+  HttpContextAuthenticationError,
+  HttpContextAuthorizationError,
+} from "./httpContextErrors.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 import { resolveStoreSlugFromRequest } from "./storeScope.js";
 
 export type CreateHttpServiceContextOptions = {
   audit?: AuditSink;
+  externalApiRepository?: ExternalApiRepository;
   identityVerifier?: HttpIdentityVerifier;
   logger?: ServiceLogger;
   repository?: StoreAccessRepository;
 };
 
-export class HttpContextAuthenticationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "HttpContextAuthenticationError";
-  }
-}
-
-export class HttpContextAuthorizationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "HttpContextAuthorizationError";
-  }
-}
+export {
+  HttpContextAuthenticationError,
+  HttpContextAuthorizationError,
+  HttpContextRequestPolicyError,
+} from "./httpContextErrors.js";
 
 export async function createHttpServiceContext(
   context: Context,
   options: CreateHttpServiceContextOptions = {},
 ): Promise<ServiceContext> {
+  const request = readRequestHeaders(context);
+  const logger =
+    options.logger ??
+    createConsoleServiceLogger({
+      correlationId: request.correlationId,
+      requestId: request.requestId,
+    });
+  const audit = createPolicyAwareAuditSink({
+    sink: options.audit ?? createNoopAuditSink(),
+    logger,
+  });
+  const externalApiKey = readExternalApiKey(context);
+
+  if (externalApiKey) {
+    return createExternalApiServiceContext({
+      audit,
+      apiKey: externalApiKey,
+      logger,
+      onAuthenticated: (metadata) => {
+        context.set(externalApiContextKey, metadata);
+      },
+      request,
+      ...(options.externalApiRepository
+        ? { repository: options.externalApiRepository }
+        : {}),
+    });
+  }
+
   const identity = await resolveHttpIdentity(context, options.identityVerifier);
 
   if (!identity) {
@@ -51,15 +85,6 @@ export async function createHttpServiceContext(
       "Authenticated HTTP context requires store access repository",
     );
   }
-
-  const request = readRequestHeaders(context);
-  const logger =
-    options.logger ??
-    createConsoleServiceLogger({
-      correlationId: request.correlationId,
-      requestId: request.requestId,
-    });
-  const audit = options.audit ?? createNoopAuditSink();
 
   const resolved = await resolveContextOrThrow({
     actor: {
@@ -121,10 +146,13 @@ function readTrustedIdentityHeaders(
   context: Context,
   storeSlug?: string | null,
 ) {
-  const clerkUserId = context.req.header("x-clerk-user-id");
+  const bypassIdentity = readLocalBypassIdentity();
+  const clerkUserId =
+    context.req.header("x-clerk-user-id") ?? bypassIdentity.clerkUserId;
+  const resolvedStoreSlug = storeSlug ?? bypassIdentity.storeSlug;
   const userId = context.req.header("x-user-id");
 
-  if (!clerkUserId && !storeSlug) {
+  if (!clerkUserId && !resolvedStoreSlug) {
     return null;
   }
 
@@ -134,18 +162,38 @@ function readTrustedIdentityHeaders(
     );
   }
 
-  if (!clerkUserId || !storeSlug) {
+  if (!clerkUserId || !resolvedStoreSlug) {
     throw new HttpContextAuthenticationError(
       "Authenticated HTTP context requires Clerk user and store slug",
     );
   }
 
-  return { clerkUserId, storeSlug, userId };
+  return {
+    clerkUserId,
+    storeSlug: resolvedStoreSlug,
+    ...(userId ? { userId } : {}),
+  };
 }
 
 function allowsTrustedIdentityHeaders(): boolean {
+  if (process.env.NODE_ENV === "production") return false;
   if (process.env.APP_ENV) return process.env.APP_ENV === "local";
   return process.env.NODE_ENV === "test";
+}
+
+function readLocalBypassIdentity(): {
+  clerkUserId?: string;
+  storeSlug?: string;
+} {
+  if (!allowsTrustedIdentityHeaders()) return {};
+  if (process.env.LOCAL_AUTH_BYPASS !== "true") return {};
+  const clerkUserId = process.env.DEV_CLERK_USER_ID ?? "clerk_test_user";
+  const storeSlug = process.env.DEV_STORE_SLUG ?? "test-store";
+
+  return {
+    ...(clerkUserId ? { clerkUserId } : {}),
+    ...(storeSlug ? { storeSlug } : {}),
+  };
 }
 
 async function resolveContextOrThrow(
@@ -165,6 +213,7 @@ async function resolveContextOrThrow(
 function readRequestHeaders(context: Context) {
   const requestId = context.req.header("x-request-id") ?? crypto.randomUUID();
   const correlationId = context.req.header("x-correlation-id") ?? requestId;
+  const idempotencyKey = context.req.header("idempotency-key");
   const ipAddress =
     context.req.header("x-forwarded-for") ?? context.req.header("x-real-ip");
   const userAgent = context.req.header("user-agent");
@@ -174,6 +223,7 @@ function readRequestHeaders(context: Context) {
     method: context.req.method,
     path: context.req.path,
     requestId,
+    ...(idempotencyKey ? { idempotencyKey } : {}),
     ...(ipAddress ? { ipAddress } : {}),
     ...(userAgent ? { userAgent } : {}),
   };

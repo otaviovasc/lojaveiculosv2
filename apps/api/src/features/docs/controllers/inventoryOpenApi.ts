@@ -1,46 +1,35 @@
-const listingIdParameter = {
-  name: "listingId",
-  in: "path",
-  required: true,
-  schema: { type: "string", minLength: 1 },
-  description: "Inventory listing identifier.",
-} as const;
-
-const scaffoldResponse = {
-  description: "Listing scaffold response.",
-  content: {
-    "application/json": {
-      schema: { $ref: "#/components/schemas/ListingScaffold" },
-      examples: {
-        scaffold: {
-          value: {
-            listingId: "listing_1",
-            status: "not_implemented",
-          },
-        },
-      },
-    },
-  },
-} as const;
-
-const authResponses = {
-  "401": { description: "Authentication is missing or invalid." },
-  "403": { description: "Authenticated actor lacks the required scope." },
-} as const;
-
-const validationResponse = {
-  "400": {
-    description: "Request body is invalid.",
-    content: {
-      "application/json": {
-        schema: { $ref: "#/components/schemas/ApiError" },
-      },
-    },
-  },
-} as const;
+import { inventorySchemas, jsonRequest } from "./inventoryOpenApiSchemas.js";
+import { inventoryFinancePaths } from "./inventoryFinanceOpenApi.js";
+import {
+  authResponses,
+  detailResponse,
+  listingIdParameter,
+  listResponse,
+  mediaCreatedResponse,
+  mediaUploadResponse,
+  queryParameter,
+  unitIdParameter,
+  validationResponse,
+} from "./inventoryOpenApiParts.js";
 
 export const inventoryPaths = {
   "/api/v1/inventory/listings": {
+    get: {
+      tags: ["Inventory"],
+      summary: "List inventory stock",
+      operationId: "listInventoryListings",
+      security: [{ bearerAuth: ["inventory.read"] }],
+      parameters: [
+        queryParameter("search"),
+        queryParameter("status"),
+        queryParameter("limit"),
+      ],
+      responses: {
+        "200": listResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
     post: {
       tags: ["Inventory"],
       summary: "Create listing",
@@ -57,7 +46,7 @@ export const inventoryPaths = {
         },
       },
       responses: {
-        "201": scaffoldResponse,
+        "201": detailResponse,
         ...validationResponse,
         ...authResponses,
       },
@@ -73,7 +62,28 @@ export const inventoryPaths = {
       security: [{ bearerAuth: ["inventory.read"] }],
       parameters: [listingIdParameter],
       responses: {
-        "200": scaffoldResponse,
+        "200": detailResponse,
+        ...authResponses,
+      },
+    },
+    patch: {
+      tags: ["Inventory"],
+      summary: "Update listing details",
+      operationId: "updateInventoryListingDetails",
+      security: [
+        {
+          bearerAuth: [
+            "inventory.update_description",
+            "inventory.update_price",
+            "inventory.update_status",
+          ],
+        },
+      ],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("UpdateListingDetailsRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
         ...authResponses,
       },
     },
@@ -87,7 +97,7 @@ export const inventoryPaths = {
       parameters: [listingIdParameter],
       requestBody: jsonRequest("UpdateListingDescriptionRequest"),
       responses: {
-        "200": scaffoldResponse,
+        "200": detailResponse,
         ...validationResponse,
         ...authResponses,
       },
@@ -102,7 +112,7 @@ export const inventoryPaths = {
       parameters: [listingIdParameter],
       requestBody: jsonRequest("UpdateListingPriceRequest"),
       responses: {
-        "200": scaffoldResponse,
+        "200": detailResponse,
         ...validationResponse,
         ...authResponses,
       },
@@ -117,7 +127,87 @@ export const inventoryPaths = {
       parameters: [listingIdParameter],
       requestBody: jsonRequest("AttachListingUnitRequest"),
       responses: {
-        "200": scaffoldResponse,
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/listings/{listingId}/units/{unitId}": {
+    patch: {
+      tags: ["Inventory"],
+      summary: "Update listing unit",
+      operationId: "updateInventoryListingUnit",
+      security: [{ bearerAuth: ["inventory.update_unit"] }],
+      parameters: [listingIdParameter, unitIdParameter],
+      requestBody: jsonRequest("UpdateListingUnitRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/listings/{listingId}/media/uploads": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Request media upload URL",
+      operationId: "requestInventoryListingMediaUpload",
+      security: [{ bearerAuth: ["inventory.create"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("RequestVehicleMediaUploadRequest"),
+      responses: {
+        "201": mediaUploadResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/listings/{listingId}/media": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Attach uploaded media to listing",
+      operationId: "createInventoryListingMedia",
+      security: [{ bearerAuth: ["inventory.create"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("CreateVehicleMediaRequest"),
+      responses: {
+        "201": mediaCreatedResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  ...inventoryFinancePaths,
+  "/api/v1/inventory/listings/{listingId}/reserve": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Reserve listing",
+      description:
+        "Reserves a listing unit, records buyer/signal payment data, emits reservation_receipt, and creates linked finance_entries.",
+      operationId: "reserveInventoryListing",
+      security: [{ bearerAuth: ["inventory.reserve"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("ReserveVehicleListingRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/listings/{listingId}/sell": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Sell listing",
+      description:
+        "Sells a listing unit, emits sale documents, and creates linked finance_entries for sale/payment accounting.",
+      operationId: "sellInventoryListing",
+      security: [{ bearerAuth: ["inventory.sell"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("SellVehicleListingRequest"),
+      responses: {
+        "201": detailResponse,
         ...validationResponse,
         ...authResponses,
       },
@@ -132,7 +222,7 @@ export const inventoryPaths = {
       parameters: [listingIdParameter],
       requestBody: jsonRequest("ChangeListingStatusRequest"),
       responses: {
-        "200": scaffoldResponse,
+        "200": detailResponse,
         ...validationResponse,
         ...authResponses,
       },
@@ -140,59 +230,4 @@ export const inventoryPaths = {
   },
 } as const;
 
-export const inventorySchemas = {
-  AttachListingUnitRequest: objectSchema([], {
-    plate: { type: ["string", "null"], minLength: 1 },
-    stockNumber: { type: ["string", "null"], minLength: 1 },
-    vin: { type: ["string", "null"], minLength: 1 },
-  }),
-  ChangeListingStatusRequest: objectSchema(["status"], {
-    status: {
-      type: "string",
-      enum: ["draft", "available", "reserved", "sold", "inactive"],
-    },
-  }),
-  CreateListingRequest: objectSchema(["title"], {
-    description: { type: ["string", "null"], minLength: 1 },
-    plate: { type: ["string", "null"], minLength: 1, default: null },
-    priceCents: { type: ["integer", "null"], minimum: 0 },
-    status: {
-      type: "string",
-      enum: ["draft", "available", "reserved", "sold", "inactive"],
-    },
-    title: { type: "string", minLength: 1 },
-  }),
-  ListingScaffold: objectSchema(["listingId", "status"], {
-    listingId: { type: "string" },
-    status: { type: "string", enum: ["not_implemented"] },
-  }),
-  UpdateListingDescriptionRequest: objectSchema(["description"], {
-    description: { type: "string", minLength: 1 },
-  }),
-  UpdateListingPriceRequest: objectSchema(["priceCents"], {
-    priceCents: { type: ["integer", "null"], minimum: 0 },
-  }),
-} as const;
-
-function jsonRequest(schemaName: keyof typeof inventorySchemas) {
-  return {
-    required: true,
-    content: {
-      "application/json": {
-        schema: { $ref: `#/components/schemas/${schemaName}` },
-      },
-    },
-  } as const;
-}
-
-function objectSchema(
-  required: readonly string[],
-  properties: Record<string, unknown>,
-) {
-  return {
-    type: "object",
-    additionalProperties: false,
-    required,
-    properties,
-  } as const;
-}
+export { inventorySchemas };

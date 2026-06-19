@@ -6,6 +6,11 @@ V2 will live in `./lojaveiculosv2` and deploy primarily to Railway. The target
 is one Railway project where V2 services, V2 databases, and the transitional
 CRM backend can communicate privately.
 
+Loja Veiculos V2 is primarily a product for stores, not a buyer-operated
+marketplace. Public storefronts expose inventory and lead capture, but inventory
+mutation, reservation, sale close, document emission, billing, and audit flows
+are executed by authenticated store actors with explicit permissions.
+
 ## Backend Shape
 
 Backend code follows a domain/service plus feature/controller split:
@@ -14,23 +19,29 @@ Backend code follows a domain/service plus feature/controller split:
 apps/api/src/
 ├── domains/
 │   └── vehicle/
-│       ├── domain/
+│       ├── documents/
 │       ├── ports/
-│       ├── repositories/
+│       ├── readModels/
 │       └── services/
 │           └── VehicleService/
 │               ├── createVehicle.ts
 │               └── getVehicle.ts
 ├── features/
 │   └── inventory/
+│       ├── adapters/
+│       │   └── memory/
 │       └── controllers/
-│           └── vehicle.controller.ts
 └── infrastructure/
 ```
 
 Controllers are feature-scoped so features can be enabled or disabled per
 customer. Domain services are business capabilities and must be testable without
 HTTP, provider SDKs, or a live database.
+
+Folder placement is governed by `docs/repo-organization.md`. The most important
+rule is directional dependency: domains own business modules and ports; features
+own delivery modules and feature-local adapters; infrastructure owns real
+provider adapters.
 
 ## CRM Boundary
 
@@ -65,6 +76,21 @@ Inventory must also be split:
 Documents are shared domain objects linked to stores, leads, listings, units,
 sales, test drives, and fiscal flows instead of being duplicated inside each
 bounded context.
+
+Vehicle workflow document generation is domain-owned under
+`apps/api/src/domains/vehicle/documents`. Reserving a listing must emit one
+`reservation_receipt`; selling a listing must emit `sale_contract`,
+`sale_receipt`, `delivery_term`, and `power_of_attorney`.
+
+Vehicle cost, reserve, and sell workflows must also create tenant/store-scoped
+`finance_entries` rows. Those rows are connected through `finance_entry_links`
+to the workflow source, including `vehicle_cost`, `vehicle_listing`,
+`vehicle_unit`, `sale`, and `sale_payment` targets when the workflow creates or
+uses those records.
+
+Reservation and sale services may receive customer/buyer snapshots for the
+documents, but the buyer is never the actor allowed to reserve or sell. The
+service actor is the authenticated store user recorded in `ServiceContext`.
 
 Every application table must use the shared `lifecycleColumns` helper:
 

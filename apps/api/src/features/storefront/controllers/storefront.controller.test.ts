@@ -3,6 +3,27 @@ import type { PublicStorefrontRepository } from "../../../domains/storefront/por
 import { createStorefrontFeature } from "./storefront.controller.js";
 
 describe("public storefront routes", () => {
+  it("gets public site settings for the store resolved from host", async () => {
+    const repository = createRepository();
+    const app = createStorefrontFeature({ repository });
+
+    const response = await app.request("/settings", {
+      headers: { host: "demo.lojaveiculos.com.br" },
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      contact: site.contact,
+      site: site.site,
+      store: {
+        name: "Loja Demo",
+        publicUrl: "demo.lojaveiculos.com.br",
+        slug: "demo",
+      },
+    });
+    expect(repository.findPublicSiteBySlug).toHaveBeenCalledWith("demo");
+  });
+
   it("lists public vehicles for the store resolved from host", async () => {
     const repository = createRepository();
     const app = createStorefrontFeature({ repository });
@@ -14,7 +35,7 @@ describe("public storefront routes", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       listings: [listing],
-      store,
+      store: publicStore,
     });
     expect(repository.findPublicStoreBySlug).toHaveBeenCalledWith("demo");
     expect(repository.listPublicListings).toHaveBeenCalledWith({
@@ -22,6 +43,20 @@ describe("public storefront routes", () => {
       storeId: "store_1",
       tenantId: "tenant_1",
     });
+  });
+
+  it("resolves custom domain hosts through the storefront repository", async () => {
+    const repository = createRepository();
+    const app = createStorefrontFeature({ repository });
+
+    const response = await app.request("/settings", {
+      headers: { host: "www.autocerto.com.br" },
+    });
+
+    expect(response.status).toBe(200);
+    expect(repository.findPublicSiteBySlug).toHaveBeenCalledWith(
+      "www.autocerto.com.br",
+    );
   });
 
   it("rejects requests without a store subdomain", async () => {
@@ -47,7 +82,7 @@ describe("public storefront routes", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       listing,
-      store,
+      store: publicStore,
     });
     expect(repository.findPublicListingDetail).toHaveBeenCalledWith({
       listingSlug: "fiat-toro-2023",
@@ -92,16 +127,19 @@ const store = {
   tenantId: "tenant_1" as never,
 };
 
+const publicStore = {
+  name: "Loja Demo",
+  slug: "demo",
+};
+
 const listing = {
   description: "Ready to sell.",
-  listingId: "listing_1",
   manufactureYear: 2022,
   media: [
     {
       altText: "Front photo",
       displayOrder: 0,
       kind: "photo" as const,
-      mediaId: "media_1",
       url: "https://cdn.local/front.jpg",
     },
   ],
@@ -114,10 +152,31 @@ const listing = {
   title: "Fiat Toro Volcano 2023",
 };
 
+const site = {
+  contact: {
+    city: "Sao Paulo",
+    contactEmail: "contato@demo.com.br",
+    contactPhone: null,
+    whatsappPhone: "5511999999999",
+    whatsappUrl: "https://wa.me/5511999999999",
+  },
+  site: {
+    heroImageUrl: "https://cdn.local/hero.jpg",
+    layoutKey: "default",
+    seoDescription: "Estoque selecionado",
+    seoTitle: "Loja Demo",
+    theme: {},
+  },
+  store: { ...store, publicUrl: "demo.lojaveiculos.com.br" },
+};
+
 function createRepository(
   options: { includeListing?: boolean; includeStore?: boolean } = {},
 ): PublicStorefrontRepository {
   return {
+    findPublicSiteBySlug: vi.fn(async () =>
+      options.includeStore === false ? null : site,
+    ),
     findPublicListingDetail: vi.fn(async () =>
       options.includeListing === false ? null : listing,
     ),

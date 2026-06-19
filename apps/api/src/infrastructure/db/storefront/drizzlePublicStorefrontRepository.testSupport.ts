@@ -1,32 +1,17 @@
-import { stores, vehicleListings, vehicleMedia } from "@lojaveiculosv2/db";
+import {
+  storePublicSiteSettings,
+  stores,
+  vehicleListings,
+  vehicleMedia,
+} from "@lojaveiculosv2/db";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
-import type { DrizzlePublicStorefrontClient } from "./drizzlePublicStorefrontRepository.js";
-
-type StoreRow = {
-  id: StoreId;
-  name: string;
-  slug: string;
-  tenantId: TenantId;
-};
-
-type ListingRow = {
-  description: string | null;
-  listingId: string;
-  manufactureYear: number | null;
-  mileageKm: number | null;
-  modelYear: number | null;
-  priceCents: number | null;
-  slug: string | null;
-  title: string;
-};
-
-type MediaRow = {
-  altText: string | null;
-  displayOrder: number;
-  kind: "document_preview" | "photo" | "video";
-  mediaId: string;
-  url: string;
-};
+import type {
+  DrizzlePublicStorefrontClient,
+  ListingRow,
+  MediaRow,
+  PublicSiteRow,
+  StoreRow,
+} from "./drizzlePublicStorefrontQueryTypes.js";
 
 export function createFakePublicStorefrontDb() {
   const queriedTables: unknown[] = [];
@@ -36,7 +21,15 @@ export function createFakePublicStorefrontDb() {
       return {
         from(table: unknown) {
           queriedTables.push(table);
-          return {
+          const builder = {
+            innerJoin(joinedTable: unknown) {
+              queriedTables.push(joinedTable);
+              return builder;
+            },
+            leftJoin(joinedTable: unknown) {
+              queriedTables.push(joinedTable);
+              return builder;
+            },
             where() {
               return {
                 orderBy() {
@@ -52,6 +45,7 @@ export function createFakePublicStorefrontDb() {
               };
             },
           };
+          return builder;
         },
       };
     },
@@ -62,14 +56,25 @@ export function createFakePublicStorefrontDb() {
 
 function rowsFor(
   table: unknown,
-): readonly (StoreRow | ListingRow | MediaRow)[] {
+): readonly (StoreRow | ListingRow | MediaRow | PublicSiteRow)[] {
   if (table === stores) {
     return [
       {
+        addressCity: "Sao Paulo",
+        contactEmail: "contato@demo.com.br",
+        contactPhone: null,
+        customDomain: null,
+        heroImageUrl: "https://cdn.local/hero.jpg",
         id: "store_1" as StoreId,
+        layoutKey: "default",
         name: "Loja Demo",
+        seoDescription: "Estoque selecionado",
+        seoTitle: "Loja Demo",
         slug: "demo",
+        storeId: "store_1" as StoreId,
         tenantId: "tenant_1" as TenantId,
+        theme: {},
+        whatsappPhone: "5511999999999",
       },
     ];
   }
@@ -95,11 +100,12 @@ function rowsFor(
         altText: "Front photo",
         displayOrder: 0,
         kind: "photo",
-        mediaId: "media_1",
         url: "https://cdn.local/front.jpg",
       },
     ];
   }
+
+  if (table === storePublicSiteSettings) return [];
 
   throw new Error(`Unhandled fake public storefront table: ${String(table)}`);
 }
