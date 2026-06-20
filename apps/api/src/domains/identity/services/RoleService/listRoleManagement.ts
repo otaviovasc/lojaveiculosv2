@@ -19,8 +19,11 @@ import {
 const permission = "users.manage";
 
 export type RoleTemplateView = {
+  assignable: boolean;
   defaultPermissions: readonly PermissionKey[];
+  description: string;
   label: string;
+  level: number;
   role: RoleKey;
 };
 
@@ -80,12 +83,18 @@ export async function listRoleManagement(
       role: actor?.role ?? null,
     },
     memberships: state.memberships.map((member) =>
-      toMemberView(member, actor?.membershipId ?? null),
+      toMemberView(member, {
+        actorMembershipId: actor?.membershipId ?? null,
+        actorRole: actor?.role ?? null,
+      }),
     ),
     permissionGroups,
     roles: visibleRoleKeys.map((role) => ({
+      assignable: canAssignRole(actor?.role, role),
       defaultPermissions: getDefaultPermissions(role),
+      description: roleDescription(role),
       label: roleLabel(role),
+      level: roleLevel(role),
       role,
     })),
   };
@@ -93,7 +102,7 @@ export async function listRoleManagement(
 
 function toMemberView(
   member: RoleMembership,
-  actorMembershipId: string | null,
+  actor: { actorMembershipId: string | null; actorRole: RoleKey | null },
 ): RoleMemberView {
   return {
     ...member,
@@ -103,9 +112,8 @@ function toMemberView(
       role: member.role,
     }),
     manageable:
-      member.membershipId !== actorMembershipId &&
-      member.role !== "agency" &&
-      member.role !== "admin",
+      member.membershipId !== actor.actorMembershipId &&
+      canManageTarget(actor.actorRole, member.role),
   };
 }
 
@@ -120,12 +128,56 @@ function canManageAs(role?: RoleKey): boolean {
   return role === "agency" || role === "owner";
 }
 
+function canManageTarget(actorRole: RoleKey | null, targetRole: RoleKey) {
+  if (actorRole === "agency") {
+    return !["admin", "agency"].includes(targetRole);
+  }
+  if (actorRole === "owner") {
+    return ["investor", "salesman", "supervisor"].includes(targetRole);
+  }
+  return false;
+}
+
+function canAssignRole(actorRole: RoleKey | undefined, targetRole: RoleKey) {
+  if (actorRole === "agency") {
+    return ["investor", "owner", "salesman", "supervisor"].includes(targetRole);
+  }
+  if (actorRole === "owner") {
+    return ["investor", "salesman", "supervisor"].includes(targetRole);
+  }
+  return false;
+}
+
 function roleLabel(role: RoleKey): string {
   return {
     admin: "Admin",
     agency: "Agency",
+    investor: "Investor",
     owner: "Owner",
     salesman: "Salesman",
     supervisor: "Supervisor",
+  }[role];
+}
+
+function roleDescription(role: RoleKey): string {
+  return {
+    admin: "Platform administrator; not managed from store settings.",
+    agency: "Agency-level operator that can manage multiple store owners.",
+    investor: "Read-only financial and operational visibility.",
+    owner: "Store owner with full operational control for one store.",
+    salesman: "Sales workflow user with limited inventory and lead access.",
+    supervisor:
+      "Operational manager with broader inventory and finance access.",
+  }[role];
+}
+
+function roleLevel(role: RoleKey): number {
+  return {
+    admin: 100,
+    agency: 90,
+    owner: 80,
+    supervisor: 60,
+    salesman: 40,
+    investor: 20,
   }[role];
 }

@@ -5,6 +5,7 @@ import {
 } from "../../../../shared/serviceContext.js";
 import type { InternalHealthSnapshot } from "../../ports/internalMonitoringRepository.js";
 import {
+  normalizeInternalHealthLimit,
   requireInternalMonitoringScope,
   type InternalMonitoringServicePorts,
 } from "./serviceSupport.js";
@@ -16,12 +17,16 @@ export async function getInternalHealthSnapshot(
 ): Promise<InternalHealthSnapshot> {
   assertPermission(context, "audit.read");
   const scope = requireInternalMonitoringScope(context);
+  const limit = normalizeInternalHealthLimit(input.limit);
   context.logger.info(
     "internal.health.read",
-    createServiceLogMetadata(context, { limit: input.limit }),
+    createServiceLogMetadata(context, {
+      limit,
+      requestedLimit: input.limit,
+    }),
   );
   const snapshot = await ports.internalMonitoringRepository.getHealthSnapshot({
-    limit: input.limit,
+    limit,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
@@ -35,8 +40,11 @@ export async function getInternalHealthSnapshot(
     entityType: "internal_health",
     metadata: {
       criticalEvents: snapshot.summary.criticalEvents,
+      limit,
       openSinkFailures: snapshot.summary.openSinkFailures,
       recentEvents: snapshot.summary.recentEvents,
+      requestedLimit: input.limit,
+      status: snapshot.status,
     },
     outcome: "succeeded",
     requestId: context.requestId,

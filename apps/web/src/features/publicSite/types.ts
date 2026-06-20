@@ -59,3 +59,19 @@ export type PublicStorefrontListingDetailData = {
   listing: PublicVehicleListingDetail;
   store: PublicStorefrontData["store"];
 };
+
+export type PublicStorefrontLeadInput = {
+  buyerEmail?: string;
+  buyerName: string;
+  buyerPhone?: string;
+  message?: string;
+};
+
+export type PublicStorefrontLeadResult = {
+  deduplicated: boolean;
+  lead: {
+    id: string;
+    source: "public_site";
+    status: string;
+  };
+};

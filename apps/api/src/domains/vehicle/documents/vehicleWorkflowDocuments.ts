@@ -8,6 +8,7 @@ import type {
   VehicleBuyerSnapshot,
   VehicleSaleBundle,
 } from "../ports/vehicleSalesRepository.js";
+import type { DocumentTemplate } from "../../documents/ports/documentRepository.js";
 
 type WorkflowDocumentSpec = {
   kind: VehicleDocumentKind;
@@ -32,6 +33,7 @@ export function buildReservationReceiptDocument(input: {
   paymentMethod: string;
   sale: VehicleSaleBundle;
   signalAmountCents: number;
+  template?: DocumentTemplate | null;
   unit: VehicleUnit;
 }): CreateVehicleDocumentRecord {
   return buildDocumentRecord({
@@ -48,10 +50,12 @@ export function buildReservationReceiptDocument(input: {
       saleId: input.sale.sale.id,
       salePaymentId: input.sale.payment?.id ?? null,
       template: "recibo_de_sinal_v1",
+      templateClauses: input.template?.clauses ?? null,
+      templateTitle: input.template?.title ?? null,
       vehicle: vehicleSnapshot(input.listing, input.unit),
     },
     role: "reservation_receipt",
-    title: `Recibo de sinal - ${input.buyer.name}`,
+    title: `${input.template?.title ?? "Recibo de sinal"} - ${input.buyer.name}`,
   });
 }
 
@@ -60,10 +64,12 @@ export function buildSoldDocuments(input: {
   listing: VehicleListing;
   paymentMethod: string;
   sale: VehicleSaleBundle;
+  templates?: ReadonlyMap<string, DocumentTemplate>;
   unit: VehicleUnit;
 }): readonly CreateVehicleDocumentRecord[] {
-  return soldDocuments.map((spec) =>
-    buildDocumentRecord({
+  return soldDocuments.map((spec) => {
+    const template = input.templates?.get(spec.kind);
+    return buildDocumentRecord({
       kind: spec.kind,
       listing: input.listing,
       metadata: {
@@ -77,12 +83,14 @@ export function buildSoldDocuments(input: {
         saleId: input.sale.sale.id,
         salePaymentId: input.sale.payment?.id ?? null,
         template: `${spec.role}_v1`,
+        templateClauses: template?.clauses ?? null,
+        templateTitle: template?.title ?? null,
         vehicle: vehicleSnapshot(input.listing, input.unit),
       },
       role: spec.role,
-      title: `${spec.title} - ${input.buyer.name}`,
-    }),
-  );
+      title: `${template?.title ?? spec.title} - ${input.buyer.name}`,
+    });
+  });
 }
 
 function buildDocumentRecord(input: {

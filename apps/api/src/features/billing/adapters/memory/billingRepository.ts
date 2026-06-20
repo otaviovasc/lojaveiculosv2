@@ -1,9 +1,11 @@
 import type {
+  BillingEntitlementEvent,
   BillingOverview,
   BillingPlan,
   BillingRepository,
   StoreEntitlement,
 } from "../../../../domains/billing/ports/billingRepository.js";
+import { createBillingOverview } from "../../../../domains/billing/readModels/billingOverviewModel.js";
 
 const defaultPlans: readonly BillingPlan[] = [
   {
@@ -13,6 +15,7 @@ const defaultPlans: readonly BillingPlan[] = [
       { featureKey: "crm", included: true, limitValue: null },
       { featureKey: "plate_lookup", included: true, limitValue: 300 },
       { featureKey: "external_api", included: false, limitValue: null },
+      { featureKey: "marketplace", included: false, limitValue: null },
       { featureKey: "custom_domain", included: false, limitValue: null },
       { featureKey: "nfe", included: false, limitValue: null },
     ],
@@ -44,12 +47,21 @@ const defaultEntitlements: readonly StoreEntitlement[] = [
 
 export function createMemoryBillingRepository(): BillingRepository {
   let entitlements = [...defaultEntitlements];
+  let entitlementEvents: BillingEntitlementEvent[] = [];
 
   return {
     async getOverview(input) {
-      return toOverview(input.storeId, input.tenantId, entitlements);
+      return toOverview(
+        input.storeId,
+        input.tenantId,
+        entitlements,
+        entitlementEvents,
+      );
     },
     async updateStoreEntitlement(input) {
+      const before = entitlements.find(
+        (entitlement) => entitlement.featureKey === input.featureKey,
+      );
       entitlements = [
         ...entitlements.filter(
           (entitlement) => entitlement.featureKey !== input.featureKey,
@@ -63,8 +75,27 @@ export function createMemoryBillingRepository(): BillingRepository {
           status: input.status,
         },
       ].sort((left, right) => left.featureKey.localeCompare(right.featureKey));
+      entitlementEvents = [
+        {
+          actorId: input.actorId ?? null,
+          createdAt: new Date(),
+          featureKey: input.featureKey,
+          id: `event_${entitlementEvents.length + 1}`,
+          metadata: input.metadata ?? {},
+          nextStatus: input.status,
+          previousStatus: input.previousStatus ?? before?.status ?? null,
+          reason: input.reason ?? null,
+          source: input.source,
+        },
+        ...entitlementEvents,
+      ].slice(0, 25);
 
-      return toOverview(input.storeId, input.tenantId, entitlements);
+      return toOverview(
+        input.storeId,
+        input.tenantId,
+        entitlements,
+        entitlementEvents,
+      );
     },
   };
 }
@@ -73,9 +104,32 @@ function toOverview(
   storeId: string,
   tenantId: string,
   entitlements: StoreEntitlement[],
+  entitlementEvents: BillingEntitlementEvent[],
 ): BillingOverview {
-  return {
+  return createBillingOverview({
+    allocations: [
+      {
+        activeEntitlementCount: entitlements.filter(
+          (item) => item.status === "active" || item.status === "trialing",
+        ).length,
+        addonCount: 0,
+        monthlyAmountCents: 29900,
+        planCode: "growth",
+        planName: "Growth",
+        storeId: storeId as never,
+        storeName: "Loja principal",
+        subscriptionStatus: "trialing",
+      },
+    ],
+    entitlementEvents,
     entitlements,
+    financialSummary: {
+      monthlyRecurringCents: 29900,
+      nextDueAt: null,
+      openInvoiceCount: 0,
+      overdueInvoiceCount: 0,
+      paidThisPeriodCents: 0,
+    },
     plans: defaultPlans,
     storeId: storeId as never,
     subscription: {
@@ -86,5 +140,5 @@ function toOverview(
       status: "trialing",
     },
     tenantId: tenantId as never,
-  };
+  });
 }

@@ -5,15 +5,27 @@ import { AuthorizationError } from "../../../shared/authorization.js";
 import { getPublicStorefrontSite } from "../../../domains/storefront/services/StorefrontService/getPublicStorefrontSite.js";
 import { getPublicVehicleListing } from "../../../domains/storefront/services/StorefrontService/getPublicVehicleListing.js";
 import { listPublicVehicleListings } from "../../../domains/storefront/services/StorefrontService/listPublicVehicleListings.js";
+import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import {
   PublicStorefrontListingNotFoundError,
   PublicStorefrontNotFoundError,
   PublicStorefrontRepositoryError,
 } from "../../../domains/storefront/services/StorefrontService/serviceSupport.js";
-import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import type {
+  PublicStorefrontRepository,
+  PublicVehicleListing,
+  PublicVehicleListingDetail,
+} from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 import { createPlaceholderServiceContext } from "../../../infrastructure/http/createPlaceholderServiceContext.js";
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
+import { createMemoryCrmRepository } from "../../crm/adapters/memory/crmRepository.js";
 import { createMemoryPublicStorefrontRepository } from "../adapters/memory/publicStorefrontRepository.js";
+import {
+  createMemoryPublicLeadRateLimiter,
+  type PublicLeadRateLimiter,
+} from "../adapters/rateLimiter/publicLeadRateLimiter.js";
+import { StorefrontRequestValidationError } from "./storefrontErrors.js";
+import { handleCreatePublicStorefrontLead } from "./storefrontLeadHandler.js";
 
 const querySchema = z.object({
   limit: z.coerce.number().int().min(1).max(48).default(24),
@@ -21,6 +33,8 @@ const querySchema = z.object({
 
 export type CreateStorefrontFeatureOptions = {
   audit?: AuditSink;
+  crmRepository?: CrmRepository;
+  leadRateLimiter?: PublicLeadRateLimiter;
   repository?: PublicStorefrontRepository;
 };
 
@@ -30,6 +44,9 @@ export function createStorefrontFeature(
   const storefrontFeature = new Hono();
   const repository =
     options.repository ?? createMemoryPublicStorefrontRepository();
+  const crmRepository = options.crmRepository ?? createMemoryCrmRepository();
+  const leadRateLimiter =
+    options.leadRateLimiter ?? createMemoryPublicLeadRateLimiter();
 
   storefrontFeature.get("/settings", async (context) =>
     handle(context, async () => {
@@ -76,8 +93,22 @@ export function createStorefrontFeature(
         repository,
       );
 
-      return context.json(result);
+      return context.json({
+        listings: result.listings.map(toPublicVehicleListingDto),
+        store: result.store,
+      });
     }),
+  );
+
+  storefrontFeature.post("/listings/:listingSlug/leads", async (context) =>
+    handle(context, () =>
+      handleCreatePublicStorefrontLead(context, {
+        crmRepository,
+        leadRateLimiter,
+        repository,
+        ...(options.audit ? { audit: options.audit } : {}),
+      }),
+    ),
   );
 
   storefrontFeature.get("/listings/:listingSlug", async (context) =>
@@ -99,7 +130,10 @@ export function createStorefrontFeature(
         repository,
       );
 
-      return context.json(result);
+      return context.json({
+        listing: toPublicVehicleListingDetailDto(result.listing),
+        store: result.store,
+      });
     }),
   );
 
@@ -119,6 +153,10 @@ async function handle(
       return context.json({ message: error.message }, 403);
     }
 
+    if (error instanceof StorefrontRequestValidationError) {
+      return context.json({ message: error.message }, 400);
+    }
+
     if (error instanceof PublicStorefrontNotFoundError) {
       return context.json({ message: error.message }, 404);
     }
@@ -134,4 +172,14 @@ async function handle(
     context.error = error instanceof Error ? error : new Error(String(error));
     return context.json({ message: "Internal server error." }, 500);
   }
+}
+
+function toPublicVehicleListingDto(listing: PublicVehicleListing) {
+  const { id: _id, ...dto } = listing;
+  return dto;
+}
+
+function toPublicVehicleListingDetailDto(listing: PublicVehicleListingDetail) {
+  const { id: _id, ...dto } = listing;
+  return dto;
 }

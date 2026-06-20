@@ -1,4 +1,8 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import type {
@@ -15,16 +19,19 @@ export type R2ObjectStorageOptions = {
   publicBaseUrl: string;
   region?: string;
   secretAccessKey: string;
-  signer?: R2UploadSigner;
+  signer?: R2UrlSigner;
+  downloadUrlExpiresSeconds?: number;
   uniqueId?: () => string;
   uploadUrlExpiresSeconds?: number;
 };
 
-export type R2UploadSigner = (
+export type R2UrlSigner = (
   client: S3Client,
-  command: PutObjectCommand,
+  command: GetObjectCommand | PutObjectCommand,
   expiresIn: number,
 ) => Promise<string>;
+
+export type R2UploadSigner = R2UrlSigner;
 
 export type R2ObjectWriter = (
   client: S3Client,
@@ -47,7 +54,8 @@ export function createR2ObjectStorage(
   assertRequired(options, "publicBaseUrl");
   assertRequired(options, "secretAccessKey");
 
-  const expiresIn = options.uploadUrlExpiresSeconds ?? 900;
+  const downloadExpiresIn = options.downloadUrlExpiresSeconds ?? 300;
+  const uploadExpiresIn = options.uploadUrlExpiresSeconds ?? 900;
   const objectWriter = options.objectWriter ?? defaultObjectWriter;
   const publicBaseUrl = options.publicBaseUrl.replace(/\/+$/, "");
   const signer = options.signer ?? defaultSigner;
@@ -70,15 +78,28 @@ export function createR2ObjectStorage(
         ContentType: input.contentType,
         Key: storageKey,
       });
-      const uploadUrl = await signer(client, command, expiresIn);
+      const uploadUrl = await signer(client, command, uploadExpiresIn);
 
       return {
-        expiresAt: new Date(Date.now() + expiresIn * 1000),
+        expiresAt: new Date(Date.now() + uploadExpiresIn * 1000),
         publicUrl: createPublicUrl(publicBaseUrl, storageKey),
         storageKey,
         uploadHeaders: { "content-type": input.contentType },
         uploadMethod: "PUT",
         uploadUrl,
+      };
+    },
+    async createDownload(input) {
+      const command = new GetObjectCommand({
+        Bucket: options.bucketName,
+        Key: input.storageKey,
+        ResponseContentDisposition: `attachment; filename="${sanitizeFileName(input.fileName)}"`,
+        ...(input.mimeType ? { ResponseContentType: input.mimeType } : {}),
+      });
+      return {
+        downloadMethod: "GET",
+        downloadUrl: await signer(client, command, downloadExpiresIn),
+        expiresAt: new Date(Date.now() + downloadExpiresIn * 1000),
       };
     },
     getPublicUrl(storageKey) {
@@ -116,6 +137,10 @@ export function createR2ObjectStorageFromEnv(
     uploadUrlExpiresSeconds: parseExpiresSeconds(
       env.R2_UPLOAD_URL_EXPIRES_SECONDS,
     ),
+    downloadUrlExpiresSeconds: parseExpiresSeconds(
+      env.R2_DOWNLOAD_URL_EXPIRES_SECONDS,
+      300,
+    ),
   });
 }
 
@@ -139,10 +164,13 @@ function requireEnv(
   return value;
 }
 
-function parseExpiresSeconds(value: string | undefined): number {
-  if (!value) return 900;
+function parseExpiresSeconds(
+  value: string | undefined,
+  fallback = 900,
+): number {
+  if (!value) return fallback;
   const parsed = Number(value);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 900;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function createStorageKey(
@@ -185,7 +213,7 @@ function createPublicUrl(publicBaseUrl: string, storageKey: string): string {
 
 async function defaultSigner(
   client: S3Client,
-  command: PutObjectCommand,
+  command: GetObjectCommand | PutObjectCommand,
   expiresIn: number,
 ): Promise<string> {
   return getSignedUrl(client, command, { expiresIn });

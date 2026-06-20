@@ -88,6 +88,58 @@ describe("createPublicStorefrontApi", () => {
     });
   });
 
+  it("submits listing interest to public lead endpoint", async () => {
+    const calls: FetchCall[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      return new Response(
+        JSON.stringify({
+          deduplicated: false,
+          lead: { id: "lead_1", source: "public_site", status: "new" },
+        }),
+        {
+          headers: { "Content-Type": "application/json" },
+          status: 201,
+        },
+      );
+    };
+    const api = createPublicStorefrontApi({ fetch: fakeFetch });
+
+    const result = await api.submitListingInterest("fiat toro 2023", {
+      buyerEmail: "ana@example.com",
+      buyerName: "Ana Cliente",
+      buyerPhone: "11999999999",
+      message: "Tenho interesse.",
+    });
+
+    expect(result.lead.id).toBe("lead_1");
+    expect(result.deduplicated).toBe(false);
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/public/storefront/listings/fiat%20toro%202023/leads",
+      init: {
+        body: JSON.stringify({
+          buyerEmail: "ana@example.com",
+          buyerName: "Ana Cliente",
+          buyerPhone: "11999999999",
+          message: "Tenho interesse.",
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    });
+  });
+
+  it("builds listing lead routes", () => {
+    expect(
+      publicStorefrontRoutes.listingLead(
+        "civic touring",
+        "https://demo/api/v1/",
+      ),
+    ).toBe(
+      "https://demo/api/v1/public/storefront/listings/civic%20touring/leads",
+    );
+  });
+
   it("builds listing detail routes", () => {
     expect(
       publicStorefrontRoutes.listing("civic touring", "https://demo/api/v1/"),

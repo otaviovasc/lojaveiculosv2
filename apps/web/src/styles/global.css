@@ -6,8 +6,16 @@
 @import "./settings.css";
 @import "./roles.css";
 @import "./billing.css";
+@import "./billing-panels.css";
+@import "./documents.css";
+@import "./documents-operations.css";
+@import "./documents-templates.css";
 @import "./internal.css";
 @import "./internalLists.css";
+@import "./internalDashboard.css";
+@import "./publicSite.css";
+@import "./marketplaces.css";
+@import "./featureModules.css";
 
 @source "../**/*.{ts,tsx}";
 

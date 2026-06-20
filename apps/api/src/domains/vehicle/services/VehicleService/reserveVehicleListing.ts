@@ -11,6 +11,7 @@ import {
   findScopedListing,
   findScopedUnit,
   getDocumentRepository,
+  getDocumentTemplateRepository,
   getFinanceRepository,
   getListingRepository,
   getMediaStorage,
@@ -92,6 +93,7 @@ export async function reserveVehicleListing(
     paymentMethod: input.paymentMethod,
     sale,
     signalAmountCents: input.signalAmountCents,
+    template: await getWorkflowTemplate(context, ports, "reservation_receipt"),
     unit,
   });
   const storedDocument = await storeWorkflowDocument(
@@ -143,6 +145,20 @@ export async function reserveVehicleListing(
   });
 
   return updatedListing;
+}
+
+async function getWorkflowTemplate(
+  context: ServiceContext,
+  ports: VehicleInventoryServicePorts | undefined,
+  kind: "reservation_receipt",
+) {
+  const repository = getDocumentTemplateRepository(ports);
+  if (!repository || !context.storeId || !context.tenantId) return null;
+  return repository.findTemplate({
+    kind,
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
 }
 
 export class VehicleWorkflowValidationError extends Error {

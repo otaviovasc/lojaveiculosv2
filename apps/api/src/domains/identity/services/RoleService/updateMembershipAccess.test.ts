@@ -13,7 +13,9 @@ import { RoleManagementPolicyError } from "./serviceSupport.js";
 const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 const ownerUserId = "user_owner" as UserId;
+const agencyUserId = "user_agency" as UserId;
 const ownerMembershipId = "membership_owner" as StoreMembershipId;
+const agencyMembershipId = "membership_agency" as StoreMembershipId;
 const salesmanMembershipId = "membership_salesman" as StoreMembershipId;
 
 describe("updateMembershipAccess", () => {
@@ -38,6 +40,89 @@ describe("updateMembershipAccess", () => {
       }),
     );
     expect(result.actor.canManageRoles).toBe(true);
+  });
+
+  it("lets owner assign investor read-only role", async () => {
+    const repository = createRepository();
+
+    await updateMembershipAccess(
+      createContext(ownerUserId),
+      { membershipId: salesmanMembershipId, overrides: [], role: "investor" },
+      { roleManagementRepository: repository },
+    );
+
+    expect(repository.updateMembershipAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ role: "investor" }),
+    );
+  });
+
+  it("blocks owner from assigning owner role", async () => {
+    await expect(
+      updateMembershipAccess(
+        createContext(ownerUserId),
+        { membershipId: salesmanMembershipId, overrides: [], role: "owner" },
+        { roleManagementRepository: createRepository() },
+      ),
+    ).rejects.toBeInstanceOf(RoleManagementPolicyError);
+  });
+
+  it("rejects unknown permission overrides", async () => {
+    await expect(
+      updateMembershipAccess(
+        createContext(ownerUserId),
+        {
+          membershipId: salesmanMembershipId,
+          overrides: [
+            {
+              allowed: true,
+              permission: "inventory.fly" as never,
+              reason: null,
+            },
+          ],
+          role: "supervisor",
+        },
+        { roleManagementRepository: createRepository() },
+      ),
+    ).rejects.toThrow("Unknown permission override");
+  });
+
+  it("rejects duplicate permission overrides", async () => {
+    await expect(
+      updateMembershipAccess(
+        createContext(ownerUserId),
+        {
+          membershipId: salesmanMembershipId,
+          overrides: [
+            {
+              allowed: true,
+              permission: "inventory.update_price",
+              reason: null,
+            },
+            {
+              allowed: false,
+              permission: "inventory.update_price",
+              reason: null,
+            },
+          ],
+          role: "supervisor",
+        },
+        { roleManagementRepository: createRepository() },
+      ),
+    ).rejects.toThrow("Duplicate permission override");
+  });
+
+  it("lets agency manage store owners", async () => {
+    const repository = createRepository();
+
+    await updateMembershipAccess(
+      createContext(agencyUserId),
+      { membershipId: ownerMembershipId, overrides: [], role: "owner" },
+      { roleManagementRepository: repository },
+    );
+
+    expect(repository.updateMembershipAccess).toHaveBeenCalledWith(
+      expect.objectContaining({ membershipId: ownerMembershipId }),
+    );
   });
 
   it("blocks users from editing their own role", async () => {
@@ -78,6 +163,13 @@ function createContext(userId: UserId) {
 function createRepository(): RoleManagementRepository {
   const state = {
     memberships: [
+      {
+        membershipId: agencyMembershipId,
+        overrides: [],
+        role: "agency" as const,
+        status: "active" as const,
+        user: { email: "agency@test", id: agencyUserId, name: "Agency" },
+      },
       {
         membershipId: ownerMembershipId,
         overrides: [],

@@ -28,6 +28,17 @@ const state: RoleManagementState = {
         name: "Test Salesman",
       },
     },
+    {
+      membershipId: "22222222-2222-4222-8222-222222222222" as never,
+      overrides: [],
+      role: "investor",
+      status: "active",
+      user: {
+        email: "investor@lojaveiculos.com.br",
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" as never,
+        name: "Test Investor",
+      },
+    },
   ],
   storeId: "66666666-6666-4666-8666-666666666666" as never,
   tenantId: "77777777-7777-4777-8777-777777777777" as never,

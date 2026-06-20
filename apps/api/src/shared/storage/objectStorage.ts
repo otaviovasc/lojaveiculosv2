@@ -12,6 +12,12 @@ export type PutStorageObjectInput = {
   scopeSegments: readonly string[];
 };
 
+export type CreateObjectDownloadInput = {
+  fileName: string;
+  mimeType: string | null;
+  storageKey: string;
+};
+
 export type ObjectUpload = {
   expiresAt: Date;
   publicUrl: string;
@@ -26,7 +32,14 @@ export type StoredObject = {
   storageKey: string;
 };
 
+export type ObjectDownload = {
+  downloadMethod: "GET";
+  downloadUrl: string;
+  expiresAt: Date;
+};
+
 export type ObjectStorage = {
+  createDownload: (input: CreateObjectDownloadInput) => Promise<ObjectDownload>;
   createUpload: (input: CreateObjectUploadInput) => Promise<ObjectUpload>;
   getPublicUrl: (storageKey: string) => string;
   putObject: (input: PutStorageObjectInput) => Promise<StoredObject>;

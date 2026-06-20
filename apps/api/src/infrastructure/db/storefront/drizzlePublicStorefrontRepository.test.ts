@@ -30,6 +30,7 @@ describe("Drizzle public storefront repository", () => {
       expect.objectContaining({
         slug: "fiat-toro-2023",
         status: "available",
+        thumbnailUrl: "https://cdn.local/front.jpg",
         title: "Fiat Toro Volcano 2023",
       }),
     ]);
@@ -37,6 +38,7 @@ describe("Drizzle public storefront repository", () => {
       stores,
       storePublicSiteSettings,
       vehicleListings,
+      vehicleMedia,
     ]);
   });
 

@@ -41,12 +41,44 @@ export function InventoryMediaWorkspace({
       title="Midia e documentos"
     >
       <div className="grid gap-4">
+        <MediaReadiness detail={detail} />
         <InventoryUploadActions api={api} detail={detail} run={run} />
         <InventoryMediaGrid api={api} detail={detail} run={run} />
         <InventoryDocumentList detail={detail} />
         <WorkspaceStatus state={state} />
       </div>
     </InventoryPanel>
+  );
+}
+
+function MediaReadiness({ detail }: { detail: InventoryListingDetail }) {
+  const publicPhotos = detail.media.filter(
+    (item) => item.kind === "photo" && item.isPublic,
+  );
+  const hiddenItems = detail.media.filter((item) => !item.isPublic).length;
+  const cover = publicPhotos.at(0);
+
+  return (
+    <div className="grid gap-2 rounded-lg border border-line bg-app p-3 text-sm font-black text-muted sm:grid-cols-3">
+      <StatusTile label="Capa" value={cover ? "Pronta" : "Pendente"} />
+      <StatusTile label="Fotos publicas" value={publicPhotos.length} />
+      <StatusTile label="Ocultos" value={hiddenItems} />
+    </div>
+  );
+}
+
+function StatusTile({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="rounded-md bg-panel p-3">
+      <span className="block text-xs uppercase tracking-widest">{label}</span>
+      <strong className="block text-app-text">{value}</strong>
+    </div>
   );
 }
 

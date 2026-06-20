@@ -35,7 +35,7 @@ export const publicStorefrontPreview = {
       priceCents: 12690000,
       slug: "fiat-toro-2023",
       status: "available",
-      thumbnailUrl: null,
+      thumbnailUrl: "https://cdn.local/front.jpg",
       title: "Fiat Toro Volcano 2023",
     },
     {

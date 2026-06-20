@@ -11,6 +11,7 @@ import {
   findScopedListing,
   findScopedUnit,
   getDocumentRepository,
+  getDocumentTemplateRepository,
   getFinanceRepository,
   getListingRepository,
   getMediaStorage,
@@ -87,11 +88,13 @@ export async function sellVehicleListing(
     updatedAt: new Date(),
   } as const;
 
+  const workflowTemplates = await getWorkflowTemplates(context, ports);
   const documents = buildSoldDocuments({
     buyer: input.buyer,
     listing: soldListing,
     paymentMethod: input.paymentMethod,
     sale,
+    ...(workflowTemplates ? { templates: workflowTemplates } : {}),
     unit,
   });
   const createdDocuments = [];
@@ -143,4 +146,41 @@ export async function sellVehicleListing(
   });
 
   return updatedListing;
+}
+
+async function getWorkflowTemplates(
+  context: ServiceContext,
+  ports: VehicleInventoryServicePorts | undefined,
+) {
+  const repository = getDocumentTemplateRepository(ports);
+  if (!repository || !context.storeId || !context.tenantId) return undefined;
+  const kinds = [
+    "sale_contract",
+    "sale_receipt",
+    "delivery_term",
+    "power_of_attorney",
+  ] as const;
+  const entries = await Promise.all(
+    kinds.map(
+      async (kind) =>
+        [
+          kind,
+          await repository.findTemplate({
+            kind,
+            storeId: context.storeId as string,
+            tenantId: context.tenantId as string,
+          }),
+        ] as const,
+    ),
+  );
+  return new Map(
+    entries.filter(
+      (
+        entry,
+      ): entry is readonly [
+        (typeof entry)[0],
+        NonNullable<(typeof entry)[1]>,
+      ] => Boolean(entry[1]),
+    ),
+  );
 }

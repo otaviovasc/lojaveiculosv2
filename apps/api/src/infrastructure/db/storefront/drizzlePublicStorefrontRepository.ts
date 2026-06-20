@@ -94,7 +94,7 @@ export function createDrizzlePublicStorefrontRepository(
       });
 
       return {
-        ...toPublicVehicleListing(listing),
+        ...toPublicVehicleListing(listing, firstPhotoUrl(media)),
         media,
       } satisfies PublicVehicleListingDetail;
     },
@@ -125,7 +125,16 @@ export function createDrizzlePublicStorefrontRepository(
         )
         .limit(input.limit);
 
-      return rows.map(toPublicVehicleListing);
+      return Promise.all(
+        rows.map(async (row) => {
+          const media = await findListingMedia(db, {
+            listingId: row.listingId,
+            storeId: input.storeId,
+            tenantId: input.tenantId,
+          });
+          return toPublicVehicleListing(row, firstPhotoUrl(media));
+        }),
+      );
     },
   };
 }
@@ -158,6 +167,10 @@ async function findListingMedia(
   return rows;
 }
 
+function firstPhotoUrl(media: readonly PublicVehicleMedia[]) {
+  return media.find((item) => item.kind === "photo")?.url ?? null;
+}
+
 function createPublicStoreLookupCondition(storeLookupKey: string) {
   return or(
     eq(stores.publicSlug, storeLookupKey),
@@ -168,16 +181,20 @@ function createPublicStoreLookupCondition(storeLookupKey: string) {
   );
 }
 
-function toPublicVehicleListing(row: ListingRow): PublicVehicleListing {
+function toPublicVehicleListing(
+  row: ListingRow,
+  thumbnailUrl: string | null,
+): PublicVehicleListing {
   return {
     description: row.description,
+    id: row.listingId,
     manufactureYear: row.manufactureYear,
     mileageKm: row.mileageKm,
     modelYear: row.modelYear,
     priceCents: row.priceCents,
     slug: assertPublicSlug(row.slug),
     status: "available",
-    thumbnailUrl: null,
+    thumbnailUrl,
     title: row.title,
   };
 }
@@ -192,9 +209,4 @@ function assertPublicSlug(slug: string | null): string {
   return slug;
 }
 
-export class PublicStorefrontDataInvariantError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "PublicStorefrontDataInvariantError";
-  }
-}
+export class PublicStorefrontDataInvariantError extends Error {}

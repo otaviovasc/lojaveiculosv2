@@ -1,0 +1,98 @@
+.billing-panel {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.billing-panel-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.billing-panel-header h3 {
+  color: var(--color-text);
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.billing-panel-header p,
+.billing-muted {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  margin-top: 0.25rem;
+}
+
+.billing-table-wrap {
+  overflow-x: auto;
+}
+
+.billing-table {
+  border-collapse: collapse;
+  min-width: 720px;
+  width: 100%;
+}
+
+.billing-table th,
+.billing-table td {
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  padding: 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.billing-table th {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-update-box {
+  display: grid;
+  gap: 0.75rem;
+  min-width: min(100%, 28rem);
+}
+
+.billing-update-box input {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  width: 100%;
+}
+
+.billing-event-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.billing-event {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem;
+}
+
+.billing-event strong,
+.billing-event span {
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 900;
+}
+
+.billing-event p {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}

@@ -6,6 +6,7 @@ import {
   SettingsStatus,
   SettingsTextarea,
 } from "./SettingsPanelParts";
+import { SettingsThemeBuilder } from "./SettingsThemeBuilder";
 import type { StoreSettingsSnapshot } from "./types";
 
 export function SettingsForm({
@@ -125,6 +126,29 @@ export function SettingsForm({
           }
           value={draft.publicSite.heroImageUrl ?? ""}
         />
+        <div className="settings-builder">
+          <span>Layout da vitrine</span>
+          <div className="settings-segmented">
+            {["classic", "showroom", "compact"].map((layout) => (
+              <button
+                className={
+                  draft.publicSite.layoutKey === layout ? "is-active" : ""
+                }
+                key={layout}
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    publicSite: { ...draft.publicSite, layoutKey: layout },
+                  })
+                }
+                type="button"
+              >
+                {layout}
+              </button>
+            ))}
+          </div>
+        </div>
+        <SettingsThemeBuilder draft={draft} onChange={setDraft} />
         <SettingsInput
           label="SEO title"
           onChange={(value) =>

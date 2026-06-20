@@ -19,6 +19,7 @@ export type UpdateStoreEntitlementServiceInput = {
   endsAt?: Date | null;
   featureKey: EntitlementKey;
   metadata?: Record<string, unknown>;
+  reason?: string | null;
   startsAt?: Date | null;
   status: BillingEntitlementStatus;
 };
@@ -50,6 +51,9 @@ export async function updateStoreEntitlement(
   const overview = await ports.billingRepository.updateStoreEntitlement({
     featureKey: input.featureKey,
     metadata: input.metadata ?? {},
+    actorId: context.actor.kind === "user" ? context.actor.id : null,
+    previousStatus: beforeEntitlement?.status ?? null,
+    reason: input.reason ?? null,
     source: "billing_console",
     status: input.status,
     storeId: scope.storeId as never,

@@ -1,5 +1,6 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
 import { defaultRolePermissions } from "./accessPolicy.js";
+import { marketplacePermissionGroup } from "./marketplacePermissionCatalog.js";
 
 export type PermissionRisk = "high" | "medium" | "low";
 
@@ -17,6 +18,7 @@ export type PermissionGroup = {
 };
 
 export const assignableRoleKeys = [
+  "investor",
   "owner",
   "supervisor",
   "salesman",
@@ -24,6 +26,7 @@ export const assignableRoleKeys = [
 
 export const visibleRoleKeys = [
   "agency",
+  "investor",
   "owner",
   "supervisor",
   "salesman",
@@ -141,11 +144,66 @@ export const permissionGroups: readonly PermissionGroup[] = [
       permission("users.manage", "Usuarios", "Gerenciar papeis.", "high"),
     ],
   },
+  marketplacePermissionGroup,
+  {
+    key: "documents",
+    label: "Documentos",
+    permissions: [
+      permission(
+        "documents.read",
+        "Ler documentos",
+        "Visualizar documentos compartilhados da loja.",
+        "medium",
+      ),
+      permission(
+        "documents.download",
+        "Baixar",
+        "Gerar link de download de documentos.",
+        "high",
+      ),
+      permission(
+        "documents.preview",
+        "Pre-visualizar",
+        "Renderizar previa de documentos.",
+        "medium",
+      ),
+      permission(
+        "documents.regenerate",
+        "Regenerar",
+        "Regenerar documento operacional.",
+        "high",
+      ),
+      permission(
+        "documents.template_update",
+        "Editar modelos",
+        "Alterar clausulas dos documentos da loja.",
+        "high",
+      ),
+      permission(
+        "documents.void",
+        "Cancelar",
+        "Cancelar documentos emitidos.",
+        "high",
+      ),
+    ],
+  },
   {
     key: "platform",
     label: "Plataforma",
     permissions: [
+      permission(
+        "analytics.read",
+        "Relatorios",
+        "Ler dashboards e metricas comerciais.",
+        "medium",
+      ),
       permission("billing.manage", "Billing", "Gerenciar cobranca.", "high"),
+      permission(
+        "compliance.manage",
+        "Compliance",
+        "Gerenciar LGPD, retencao, revisoes de acesso e postura de seguranca.",
+        "high",
+      ),
       permission("external_api.manage", "Public API", "Gerenciar API.", "high"),
       permission("audit.read", "Auditoria", "Ler auditoria.", "high"),
       permission("fiscal.manage", "Fiscal", "Gerenciar fiscal.", "high"),

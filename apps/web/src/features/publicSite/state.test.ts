@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { publicStorefrontPreview } from "./fixtures";
-import { derivePublicStorefrontState } from "./state";
+import { deriveLeadCaptureState, derivePublicStorefrontState } from "./state";
 
 describe("derivePublicStorefrontState", () => {
   it("keeps loading state while requests are pending", () => {
@@ -34,5 +34,31 @@ describe("derivePublicStorefrontState", () => {
     });
 
     expect(state.kind).toBe("ready");
+  });
+});
+
+describe("deriveLeadCaptureState", () => {
+  it("keeps submitting state while lead capture is pending", () => {
+    expect(deriveLeadCaptureState({ isSubmitting: true })).toEqual({
+      kind: "submitting",
+    });
+  });
+
+  it("returns submitted state with lead id", () => {
+    expect(
+      deriveLeadCaptureState({
+        isSubmitting: false,
+        submittedLeadId: "lead_1",
+      }),
+    ).toEqual({ kind: "submitted", leadId: "lead_1" });
+  });
+
+  it("returns error state when lead capture fails", () => {
+    const error = new Error("network");
+
+    expect(deriveLeadCaptureState({ error, isSubmitting: false })).toEqual({
+      error,
+      kind: "error",
+    });
   });
 });

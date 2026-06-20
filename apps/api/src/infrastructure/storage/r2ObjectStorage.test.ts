@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   createR2ObjectStorage,
   createR2ObjectStorageFromEnv,
   R2ObjectStorageConfigError,
+  type R2UrlSigner,
 } from "./r2ObjectStorage.js";
 
 describe("R2 object storage", () => {
@@ -57,5 +59,42 @@ describe("R2 object storage", () => {
         R2_ENDPOINT: "https://account.r2.cloudflarestorage.com",
       }),
     ).toThrow(R2ObjectStorageConfigError);
+  });
+
+  it("creates private signed download urls with a 300 second env default", async () => {
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const signer: R2UrlSigner = vi.fn(async (_client, command) => {
+      expect(command).toBeInstanceOf(GetObjectCommand);
+      return "https://signed-download.example/document.pdf";
+    });
+    const storage = createR2ObjectStorageFromEnv({
+      R2_ACCESS_KEY_ID: "key",
+      R2_BUCKET_NAME: "app-media",
+      R2_ENDPOINT: "https://account.r2.cloudflarestorage.com",
+      R2_PUBLIC_BASE_URL: "https://media.lojaveiculos.com.br",
+      R2_SECRET_ACCESS_KEY: "secret",
+    });
+    const directStorage = createR2ObjectStorage({
+      accessKeyId: "key",
+      bucketName: "app-media",
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      publicBaseUrl: "https://media.lojaveiculos.com.br",
+      secretAccessKey: "secret",
+      signer,
+    });
+
+    expect(storage).not.toBeNull();
+    const download = await directStorage.createDownload({
+      fileName: "Contrato.pdf",
+      mimeType: "application/pdf",
+      storageKey: "private/document.pdf",
+    });
+
+    expect(download).toEqual({
+      downloadMethod: "GET",
+      downloadUrl: "https://signed-download.example/document.pdf",
+      expiresAt: new Date("2026-01-01T00:05:00.000Z"),
+    });
+    vi.useRealTimers();
   });
 });

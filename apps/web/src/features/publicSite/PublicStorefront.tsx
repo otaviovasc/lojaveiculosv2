@@ -1,7 +1,5 @@
 import {
-  Car,
   CheckCircle2,
-  Eye,
   MessageCircle,
   ShieldCheck,
   Sparkles,
@@ -10,16 +8,18 @@ import {
   PublicListingDetailPanel,
   type PublicListingDetailSnapshot,
 } from "./PublicListingDetailPanel";
+import { PublicVehicleCard } from "./PublicVehicleCard";
 import type {
   PublicStorefrontData,
+  PublicStorefrontLeadInput,
+  PublicStorefrontLeadResult,
   PublicStorefrontSettingsData,
-  PublicVehicleListing,
 } from "./types";
 
 const proofItems = [
-  { icon: CheckCircle2, label: "Estoque conferido" },
-  { icon: ShieldCheck, label: "Dados do lojista" },
-  { icon: MessageCircle, label: "Atendimento WhatsApp" },
+  { icon: CheckCircle2, key: "featured", label: "Estoque conferido" },
+  { icon: ShieldCheck, key: "trust", label: "Dados do lojista" },
+  { icon: MessageCircle, key: "financing", label: "Atendimento WhatsApp" },
 ];
 
 type PublicStorefrontProps = {
@@ -28,6 +28,10 @@ type PublicStorefrontProps = {
   onCloseListing: () => void;
   onOpenListing: (listingSlug: string) => void;
   onRetryListing: () => void;
+  onSubmitListingInterest: (
+    listingSlug: string,
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export function PublicStorefront({
@@ -36,9 +40,17 @@ export function PublicStorefront({
   onCloseListing,
   onOpenListing,
   onRetryListing,
+  onSubmitListingInterest,
 }: PublicStorefrontProps) {
+  const theme = normalizeTheme(data.settings.site.theme);
+  const visibleProofItems = proofItems.filter((item) =>
+    theme.sections.includes(item.key),
+  );
   return (
-    <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8">
+    <main
+      className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8"
+      data-layout={data.settings.site.layoutKey}
+    >
       <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="overflow-hidden rounded-lg border border-line bg-panel">
           {data.settings.site.heroImageUrl ? (
@@ -58,7 +70,9 @@ export function PublicStorefront({
                   {data.settings.store.publicUrl}
                 </p>
                 <h2 className="text-2xl font-black md:text-4xl">
-                  {data.settings.site.seoTitle ?? data.settings.store.name}
+                  {theme.headline ||
+                    data.settings.site.seoTitle ||
+                    data.settings.store.name}
                 </h2>
                 {data.settings.site.seoDescription ? (
                   <p className="mt-2 max-w-2xl text-sm font-bold text-muted">
@@ -69,7 +83,7 @@ export function PublicStorefront({
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">
-              {proofItems.map((item) => {
+              {visibleProofItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <div
@@ -85,71 +99,46 @@ export function PublicStorefront({
           </div>
         </div>
 
-        <LeadPanel settings={data.settings} />
+        {theme.sections.includes("contact") ? (
+          <LeadPanel settings={data.settings} />
+        ) : null}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {data.listings.map((listing) => (
-          <VehicleCard
-            key={listing.slug}
-            listing={listing}
-            onOpen={() => onOpenListing(listing.slug)}
-          />
-        ))}
-      </section>
+      {theme.sections.includes("featured") ? (
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {data.listings.map((listing) => (
+            <PublicVehicleCard
+              key={listing.slug}
+              listing={listing}
+              onOpen={() => onOpenListing(listing.slug)}
+            />
+          ))}
+        </section>
+      ) : null}
 
       {detail.listingSlug ? (
         <PublicListingDetailPanel
           detail={detail}
           onClose={onCloseListing}
           onRetry={onRetryListing}
+          onSubmitInterest={onSubmitListingInterest}
         />
       ) : null}
     </main>
   );
 }
 
-function VehicleCard({
-  listing,
-  onOpen,
-}: {
-  listing: PublicVehicleListing;
-  onOpen: () => void;
-}) {
-  return (
-    <article className="overflow-hidden rounded-lg border border-line bg-panel">
-      <div className="flex aspect-[16/9] items-center justify-center bg-accent-soft text-accent">
-        <Car aria-hidden="true" className="size-12" />
-      </div>
-      <div className="p-4">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <h3 className="text-lg font-black">{listing.title}</h3>
-          <span className="rounded-md bg-accent-soft px-2 py-1 text-xs font-black text-accent">
-            Disponivel
-          </span>
-        </div>
-        <p className="text-2xl font-black text-accent">
-          {formatPrice(listing.priceCents)}
-        </p>
-        <p className="mt-3 min-h-10 text-sm font-semibold text-muted">
-          {listing.description}
-        </p>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-black text-muted">
-          <Metric label="Ano" value={listing.modelYear ?? "-"} />
-          <Metric label="Km" value={formatMileage(listing.mileageKm)} />
-          <Metric label="Cod." value={listing.slug.slice(0, 8)} />
-        </div>
-        <button
-          className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
-          onClick={onOpen}
-          type="button"
-        >
-          <Eye aria-hidden="true" className="size-4" />
-          Ver detalhes
-        </button>
-      </div>
-    </article>
-  );
+const defaultSections = ["featured", "financing", "trust", "contact"];
+
+function normalizeTheme(theme: Record<string, unknown>) {
+  return {
+    headline: typeof theme.headline === "string" ? theme.headline : "",
+    sections: Array.isArray(theme.sections)
+      ? theme.sections.filter(
+          (item): item is string => typeof item === "string",
+        )
+      : defaultSections,
+  };
 }
 
 function LeadPanel({ settings }: { settings: PublicStorefrontSettingsData }) {
@@ -183,27 +172,4 @@ function LeadPanel({ settings }: { settings: PublicStorefrontSettingsData }) {
       </div>
     </aside>
   );
-}
-
-function Metric({ label, value }: { label: string; value: string | number }) {
-  return (
-    <div className="rounded-md bg-app p-2">
-      <span className="block">{label}</span>
-      <strong className="block text-app-text">{value}</strong>
-    </div>
-  );
-}
-
-function formatPrice(priceCents: number | null) {
-  if (priceCents === null) return "Sob consulta";
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(priceCents / 100);
-}
-
-function formatMileage(mileageKm: number | null) {
-  if (mileageKm === null) return "-";
-  return `${new Intl.NumberFormat("pt-BR").format(mileageKm)} km`;
 }

@@ -12,9 +12,17 @@ export type Result<T, E = string> =
 
 export type PermissionKey =
   | "audit.read"
+  | "analytics.read"
   | "billing.manage"
+  | "compliance.manage"
   | "crm.access"
   | "crm.manage"
+  | "documents.read"
+  | "documents.download"
+  | "documents.preview"
+  | "documents.regenerate"
+  | "documents.template_update"
+  | "documents.void"
   | "external_api.manage"
   | "finance.attach_document"
   | "finance.create"
@@ -38,6 +46,14 @@ export type PermissionKey =
   | "lead.create"
   | "lead.read"
   | "lead.update"
+  | "marketplace.inventory_sync"
+  | "marketplace.lead_sync"
+  | "marketplace.listing_publish"
+  | "marketplace.listing_unpublish"
+  | "marketplace.listing_update"
+  | "marketplace.manage"
+  | "marketplace.read"
+  | "public_storefront.lead_create"
   | "public_storefront.read"
   | "store.manage"
   | "store_profile.manage"
@@ -46,11 +62,20 @@ export type PermissionKey =
   | "users.manage";
 
 export type EntitlementKey =
+  | "analytics"
+  | "compliance"
   | "crm"
   | "custom_domain"
   | "external_api"
+  | "marketplace"
   | "nfe"
   | "plate_lookup"
   | "subdomain";
 
-export type RoleKey = "agency" | "admin" | "owner" | "salesman" | "supervisor";
+export type RoleKey =
+  | "agency"
+  | "admin"
+  | "investor"
+  | "owner"
+  | "salesman"
+  | "supervisor";

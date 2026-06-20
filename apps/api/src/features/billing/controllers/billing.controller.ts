@@ -38,6 +38,16 @@ export function createBillingFeature(
     }),
   );
 
+  feature.get("/provider/status", async (context) =>
+    handleBilling(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(await services.getProviderStatus(serviceContext));
+    }),
+  );
+
   feature.patch("/entitlements/:featureKey", async (context) =>
     handleBilling(context, async () => {
       const input = await parseJson(context, updateEntitlementSchema);
@@ -58,6 +68,7 @@ export function createBillingFeature(
             ? { endsAt: parseDateOrNull(input.endsAt) }
             : {}),
           ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+          ...(input.reason !== undefined ? { reason: input.reason } : {}),
           ...(input.startsAt !== undefined
             ? { startsAt: parseDateOrNull(input.startsAt) }
             : {}),

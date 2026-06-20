@@ -48,6 +48,7 @@ export type PublicStorefrontSiteResult = {
 
 export type PublicVehicleListing = {
   description: string | null;
+  id: string;
   manufactureYear: number | null;
   mileageKm: number | null;
   modelYear: number | null;

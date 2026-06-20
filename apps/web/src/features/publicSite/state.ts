@@ -12,6 +12,18 @@ export type PublicStorefrontState =
   | { error: Error; kind: "error" }
   | { data: PublicStorefrontPageData; kind: "ready" };
 
+export type LeadCaptureSnapshot = {
+  error?: Error | null;
+  isSubmitting: boolean;
+  submittedLeadId?: string | null;
+};
+
+export type LeadCaptureState =
+  | { kind: "idle" }
+  | { kind: "submitting" }
+  | { error: Error; kind: "error" }
+  | { kind: "submitted"; leadId: string };
+
 export function derivePublicStorefrontState(
   snapshot: PublicStorefrontSnapshot,
 ): PublicStorefrontState {
@@ -26,6 +38,18 @@ export function derivePublicStorefrontState(
   }
 
   return { data: snapshot.data, kind: "ready" };
+}
+
+export function deriveLeadCaptureState(
+  snapshot: LeadCaptureSnapshot,
+): LeadCaptureState {
+  if (snapshot.isSubmitting) return { kind: "submitting" };
+  if (snapshot.error) return { error: snapshot.error, kind: "error" };
+  if (snapshot.submittedLeadId) {
+    return { kind: "submitted", leadId: snapshot.submittedLeadId };
+  }
+
+  return { kind: "idle" };
 }
 
 const emptyStorefrontData = {

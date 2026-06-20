@@ -62,10 +62,11 @@ export async function updateMembershipAccess(
       role: input.role,
     }),
   );
+  const normalizedOverrides = normalizeOverrides(input.overrides, input.role);
 
   await ports.roleManagementRepository.updateMembershipAccess({
     membershipId: input.membershipId as StoreMembershipId,
-    overrides: normalizeOverrides(input.overrides, input.role),
+    overrides: normalizedOverrides,
     role: input.role,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
@@ -79,7 +80,7 @@ export async function updateMembershipAccess(
     entityId: input.membershipId,
     entityType: "store_membership",
     metadata: {
-      overrideCount: input.overrides.length,
+      overrideCount: normalizedOverrides.length,
       previousRole: target?.role ?? null,
       role: input.role,
     },
@@ -115,8 +116,16 @@ function enforcePolicy(input: {
       "Privileged roles cannot be edited here.",
     );
   }
+  if (!canManageTarget(input.actorRole, input.target.role)) {
+    throw new RoleManagementPolicyError(
+      "Actor cannot manage this membership role.",
+    );
+  }
   if (!isAssignableRole(input.input.role)) {
     throw new RoleManagementPolicyError("Role cannot be assigned here.");
+  }
+  if (!canAssignRole(input.actorRole, input.input.role)) {
+    throw new RoleManagementPolicyError("Actor cannot assign this role.");
   }
 }
 
@@ -126,6 +135,24 @@ function isAssignableRole(role: RoleKey): boolean {
   );
 }
 
+function canManageTarget(actorRole: RoleKey | undefined, targetRole: RoleKey) {
+  if (actorRole === "agency") return !["admin", "agency"].includes(targetRole);
+  if (actorRole === "owner") {
+    return ["investor", "salesman", "supervisor"].includes(targetRole);
+  }
+  return false;
+}
+
+function canAssignRole(actorRole: RoleKey | undefined, role: RoleKey) {
+  if (actorRole === "agency") {
+    return ["investor", "owner", "salesman", "supervisor"].includes(role);
+  }
+  if (actorRole === "owner") {
+    return ["investor", "salesman", "supervisor"].includes(role);
+  }
+  return false;
+}
+
 function normalizeOverrides(
   overrides: readonly RolePermissionOverride[],
   role: RoleKey,
@@ -133,21 +160,33 @@ function normalizeOverrides(
   const allowedKeys = new Set(allCatalogPermissions());
   const defaultPermissions = new Set(getDefaultPermissions(role));
   const seen = new Set<PermissionKey>();
+  const normalized: RolePermissionOverride[] = [];
 
-  return overrides
-    .filter((override) => allowedKeys.has(override.permission))
-    .filter((override) => {
-      const changesDefault =
-        defaultPermissions.has(override.permission) !== override.allowed;
-      if (!changesDefault || seen.has(override.permission)) return false;
-      seen.add(override.permission);
-      return true;
-    })
-    .map((override) => ({
+  for (const override of overrides) {
+    if (!allowedKeys.has(override.permission)) {
+      throw new RoleManagementPolicyError(
+        `Unknown permission override: ${override.permission}`,
+      );
+    }
+    if (seen.has(override.permission)) {
+      throw new RoleManagementPolicyError(
+        `Duplicate permission override: ${override.permission}`,
+      );
+    }
+    seen.add(override.permission);
+
+    if (defaultPermissions.has(override.permission) === override.allowed) {
+      continue;
+    }
+
+    normalized.push({
       allowed: override.allowed,
       permission: override.permission,
       reason: override.reason ?? "role_management_ui",
-    }));
+    });
+  }
+
+  return normalized;
 }
 
 function allCatalogPermissions(): PermissionKey[] {

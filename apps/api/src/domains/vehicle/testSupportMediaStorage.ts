@@ -3,10 +3,18 @@ import type {
   PutVehicleStorageObjectInput,
   VehicleMediaStorage,
 } from "./ports/vehicleMediaStorage.js";
-import type { CreateObjectUploadInput } from "../../shared/storage/objectStorage.js";
+import type {
+  CreateObjectDownloadInput,
+  CreateObjectUploadInput,
+} from "../../shared/storage/objectStorage.js";
 
 export function createTestVehicleMediaStorage(): VehicleMediaStorage {
   return {
+    createDownload: vi.fn(async (input: CreateObjectDownloadInput) => ({
+      downloadMethod: "GET" as const,
+      downloadUrl: `https://download.local/${input.storageKey}`,
+      expiresAt: new Date("2026-01-01T00:05:00.000Z"),
+    })),
     createUpload: vi.fn(async (input: CreateObjectUploadInput) => {
       const storageKey = createStorageKey(input);
       return {

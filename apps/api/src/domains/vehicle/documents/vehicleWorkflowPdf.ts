@@ -1,5 +1,9 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import type { CreateVehicleDocumentRecord } from "../ports/vehicleInventoryRepository.js";
+import {
+  createWorkflowTemplateVariables,
+  interpolateWorkflowTemplateClause,
+} from "./vehicleWorkflowTemplateVariables.js";
 
 type LineGroup = {
   heading: string;
@@ -52,12 +56,20 @@ function buildDocumentGroups(
   const buyer = asRecord(metadata.buyer);
   const finance = asRecord(metadata.finance);
   const vehicle = asRecord(metadata.vehicle);
+  const variables = createWorkflowTemplateVariables({
+    buyer,
+    finance,
+    vehicle,
+  });
 
   return [
     { heading: "Partes", lines: buyerLines(buyer) },
     { heading: "Veiculo", lines: vehicleLines(vehicle) },
     { heading: "Valores", lines: financeLines(finance) },
-    { heading: "Declaracao", lines: declarationLines(record.kind) },
+    {
+      heading: "Declaracao",
+      lines: declarationLines(record.kind, metadata, variables),
+    },
     { heading: "Auditoria", lines: auditLines(record, metadata) },
   ];
 }
@@ -91,7 +103,18 @@ function financeLines(finance: Record<string, unknown>): readonly string[] {
   ];
 }
 
-function declarationLines(kind: string): readonly string[] {
+function declarationLines(
+  kind: string,
+  metadata: Record<string, unknown>,
+  variables: Record<string, string>,
+): readonly string[] {
+  const templateClauses = stringArray(metadata.templateClauses);
+  if (templateClauses.length) {
+    return templateClauses.map((clause) =>
+      interpolateWorkflowTemplateClause(clause, variables),
+    );
+  }
+
   if (kind === "reservation_receipt") {
     return [
       "A loja declara o recebimento do sinal informado para reserva do veiculo descrito.",
@@ -118,6 +141,11 @@ function declarationLines(kind: string): readonly string[] {
   ];
 }
 
+function stringArray(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is string => typeof item === "string");
+}
+
 function auditLines(
   record: CreateVehicleDocumentRecord,
   metadata: Record<string, unknown>,
@@ -125,7 +153,7 @@ function auditLines(
   return [
     `Sale ID: ${text(metadata.saleId)}`,
     `Payment ID: ${text(metadata.salePaymentId)}`,
-    `Template: ${text(metadata.template)}`,
+    `Template: ${text(metadata.templateTitle ?? metadata.template)}`,
     `Listing ID: ${record.targetId}`,
   ];
 }

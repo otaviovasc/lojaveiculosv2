@@ -25,8 +25,18 @@ export function createInternalHealthApi({
 
 export const internalHealthRoutes = {
   health: (limit: number, baseUrl?: string) =>
-    createEndpoint(`/internal/health?limit=${limit}`, baseUrl),
+    createEndpoint(
+      `/internal/health?${new URLSearchParams({
+        limit: String(normalizeInternalHealthLimit(limit)),
+      })}`,
+      baseUrl,
+    ),
 } as const;
+
+function normalizeInternalHealthLimit(limit: number) {
+  if (!Number.isFinite(limit)) return 40;
+  return Math.min(Math.max(Math.trunc(limit), 1), 100);
+}
 
 function createHeaders(auth: InternalHealthAuth): HeadersInit {
   const headers: Record<string, string> = {

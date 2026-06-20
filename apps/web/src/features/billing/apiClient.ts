@@ -1,12 +1,14 @@
 import type {
   BillingAuth,
   BillingOverview,
+  BillingProviderStatus,
   EntitlementKey,
   UpdateEntitlementInput,
 } from "./types";
 
 export type BillingApi = {
   getOverview: () => Promise<BillingOverview>;
+  getProviderStatus: () => Promise<BillingProviderStatus>;
   updateEntitlement: (
     featureKey: EntitlementKey,
     input: UpdateEntitlementInput,
@@ -29,6 +31,10 @@ export function createBillingApi({
       fetch(billingRoutes.overview(baseUrl), {
         headers: createBillingHeaders(auth),
       }).then(readJson<BillingOverview>),
+    getProviderStatus: () =>
+      fetch(billingRoutes.providerStatus(baseUrl), {
+        headers: createBillingHeaders(auth),
+      }).then(readJson<BillingProviderStatus>),
     updateEntitlement: (featureKey, input) =>
       fetch(billingRoutes.entitlement(featureKey, baseUrl), {
         body: JSON.stringify(input),
@@ -46,6 +52,8 @@ export const billingRoutes = {
     ),
   overview: (baseUrl?: string) =>
     createBillingEndpoint("/billing/overview", baseUrl),
+  providerStatus: (baseUrl?: string) =>
+    createBillingEndpoint("/billing/provider/status", baseUrl),
 } as const;
 
 function createBillingHeaders(auth: BillingAuth): HeadersInit {

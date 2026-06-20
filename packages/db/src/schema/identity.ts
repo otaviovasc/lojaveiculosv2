@@ -29,6 +29,7 @@ export const entitlementStatus = pgEnum("entitlement_status", [
 export const roleTemplateKey = pgEnum("role_template_key", [
   "agency",
   "admin",
+  "investor",
   "owner",
   "salesman",
   "supervisor",

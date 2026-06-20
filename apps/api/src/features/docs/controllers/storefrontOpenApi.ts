@@ -25,7 +25,7 @@ export const storefrontPaths = {
       tags: ["Public Storefront"],
       summary: "List public storefront vehicles",
       description:
-        "Lists published, visible vehicles for the store resolved from the request host subdomain.",
+        "Lists published, visible vehicles for the store resolved from the request host subdomain. thumbnailUrl is derived from the first public photo by displayOrder.",
       operationId: "listPublicStorefrontVehicles",
       parameters: [
         {
@@ -54,7 +54,7 @@ export const storefrontPaths = {
       tags: ["Public Storefront"],
       summary: "Get public storefront vehicle detail",
       description:
-        "Returns one published, visible vehicle and its public media for the store resolved from the request host subdomain.",
+        "Returns one published, visible vehicle and its public media ordered by displayOrder for the store resolved from the request host subdomain.",
       operationId: "getPublicStorefrontVehicle",
       parameters: [
         {
@@ -218,7 +218,10 @@ export const storefrontSchemas = {
       priceCents: { type: ["integer", "null"] },
       slug: { type: "string" },
       status: { type: "string", enum: ["available"] },
-      thumbnailUrl: { type: ["string", "null"] },
+      thumbnailUrl: {
+        type: ["string", "null"],
+        description: "First public photo URL by displayOrder.",
+      },
       title: { type: "string" },
     },
   },

@@ -1,4 +1,5 @@
 import type { FinanceRepository } from "../../../finance/ports/financeRepository.js";
+import type { DocumentRepository } from "../../../documents/ports/documentRepository.js";
 import type {
   VehicleDocumentRepository,
   VehicleListingRepository,
@@ -15,6 +16,7 @@ export type VehicleInventoryServicePorts = {
   catalogProvider?: VehicleCatalogProvider;
   catalogRepository?: VehicleCatalogRepository;
   documentRepository?: VehicleDocumentRepository;
+  documentTemplateRepository?: Pick<DocumentRepository, "findTemplate">;
   financeRepository?: FinanceRepository;
   listingRepository: VehicleListingRepository;
   mediaRepository?: VehicleMediaRepository;

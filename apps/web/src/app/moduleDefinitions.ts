@@ -38,6 +38,13 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     id: "commissions",
     title: "Comissoes",
   },
+  compliance: {
+    action: "Revisar controles",
+    description: "LGPD, auditoria, acessos e seguranca operacional.",
+    eyebrow: "Sistema",
+    id: "compliance",
+    title: "Compliance",
+  },
   crm: {
     action: "Configurar canais",
     description: "CRM WhatsApp nativo, sem iframe, com repasses auditaveis.",

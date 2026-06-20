@@ -104,6 +104,9 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
           setDetailSnapshot({ isLoading: true, listingSlug })
         }
         onRetryListing={() => setDetailRetryKey((current) => current + 1)}
+        onSubmitListingInterest={(listingSlug, input) =>
+          storefrontApi.submitListingInterest(listingSlug, input)
+        }
       />
     );
   }

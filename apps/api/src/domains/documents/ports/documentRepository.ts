@@ -52,6 +52,21 @@ export type LinkedDocument = {
   uploadedAt: Date;
 };
 
+export type DocumentVersion = {
+  createdAt: Date;
+  createdByUserId: string | null;
+  documentId: string;
+  fileName: string;
+  fileSizeBytes: number | null;
+  id: string;
+  metadata: Record<string, unknown>;
+  mimeType: string | null;
+  storageKey: string;
+  storeId: string;
+  tenantId: string;
+  versionNumber: number;
+};
+
 export type CreateLinkedDocumentInput = {
   createdByUserId: string | null;
   fileName: string;
@@ -76,9 +91,93 @@ export type ListLinkedDocumentsInput = {
   tenantId: string;
 };
 
+export type ListDocumentsInput = {
+  kind?: DocumentKind | undefined;
+  limit?: number | undefined;
+  search?: string | undefined;
+  status?: DocumentStatus | undefined;
+  storeId: string;
+  targetId?: string | undefined;
+  targetType?: DocumentLinkTarget | undefined;
+  tenantId: string;
+};
+
+export type DocumentTemplate = {
+  availableVariables: readonly string[];
+  clauses: readonly string[];
+  defaultClauses: readonly string[];
+  defaultTitle: string;
+  isCustomized: boolean;
+  kind: DocumentKind;
+  title: string;
+  updatedAt: Date | null;
+};
+
+export type ListDocumentTemplatesInput = {
+  storeId: string;
+  tenantId: string;
+};
+
+export type UpsertDocumentTemplateInput = {
+  clauses: readonly string[];
+  kind: DocumentKind;
+  storeId: string;
+  tenantId: string;
+  title: string;
+  updatedByUserId: string | null;
+};
+
+export type UpdateLinkedDocumentInput = {
+  documentId: string;
+  metadata?: Record<string, unknown> | undefined;
+  status?: DocumentStatus | undefined;
+  storeId: string;
+  tenantId: string;
+  title?: string | undefined;
+};
+
+export type CreateDocumentVersionInput = {
+  createdByUserId: string | null;
+  documentId: string;
+  fileName: string;
+  fileSizeBytes: number | null;
+  metadata?: Record<string, unknown> | undefined;
+  mimeType: string | null;
+  storageKey: string;
+  storeId: string;
+  tenantId: string;
+};
+
 export type DocumentRepository = {
   create: (input: CreateLinkedDocumentInput) => Promise<LinkedDocument>;
+  createVersion: (
+    input: CreateDocumentVersionInput,
+  ) => Promise<DocumentVersion>;
+  findById: (input: {
+    documentId: string;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<LinkedDocument | null>;
+  findTemplate: (input: {
+    kind: DocumentKind;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<DocumentTemplate | null>;
+  list: (input: ListDocumentsInput) => Promise<readonly LinkedDocument[]>;
+  listVersions: (input: {
+    documentId: string;
+    versionId?: string | undefined;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<readonly DocumentVersion[]>;
   listByTarget: (
     input: ListLinkedDocumentsInput,
   ) => Promise<readonly LinkedDocument[]>;
+  listTemplates: (
+    input: ListDocumentTemplatesInput,
+  ) => Promise<readonly DocumentTemplate[]>;
+  upsertTemplate: (
+    input: UpsertDocumentTemplateInput,
+  ) => Promise<DocumentTemplate>;
+  update: (input: UpdateLinkedDocumentInput) => Promise<LinkedDocument>;
 };

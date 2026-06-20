@@ -18,6 +18,7 @@ import type {
   VehicleUnitRepository,
 } from "../../ports/vehicleInventoryRepository.js";
 import type { FinanceRepository } from "../../../finance/ports/financeRepository.js";
+import type { DocumentRepository } from "../../../documents/ports/documentRepository.js";
 import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
 import type { VehicleCatalogProvider } from "../../ports/vehicleCatalogProvider.js";
@@ -84,6 +85,12 @@ export function getDocumentRepository(
   return requirePort(ports?.documentRepository, "documentRepository");
 }
 
+export function getDocumentTemplateRepository(
+  ports: VehicleInventoryServicePorts | undefined,
+): Pick<DocumentRepository, "findTemplate"> | null {
+  return ports?.documentTemplateRepository ?? null;
+}
+
 export function getFinanceRepository(
   ports: VehicleInventoryServicePorts | undefined,
 ): FinanceRepository {
@@ -124,9 +131,7 @@ export async function findScopedListing(
     tenantId: context.tenantId,
   });
 
-  if (!listing) {
-    throw new VehicleListingNotFoundError(listingId);
-  }
+  if (!listing) throw new VehicleListingNotFoundError(listingId);
 
   return listing;
 }
@@ -143,9 +148,7 @@ export async function findScopedUnit(
     unitId: input.unitId,
   });
 
-  if (!unit) {
-    throw new VehicleUnitNotFoundError(input.unitId);
-  }
+  if (!unit) throw new VehicleUnitNotFoundError(input.unitId);
 
   return unit;
 }
@@ -162,9 +165,7 @@ export async function findScopedMedia(
     tenantId: context.tenantId,
   });
 
-  if (!media) {
-    throw new VehicleMediaNotFoundError(input.mediaId);
-  }
+  if (!media) throw new VehicleMediaNotFoundError(input.mediaId);
 
   return media;
 }

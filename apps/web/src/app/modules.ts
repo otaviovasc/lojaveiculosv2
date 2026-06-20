@@ -14,6 +14,7 @@ import {
   MessageCircle,
   Palette,
   Receipt,
+  ScrollText,
   Settings,
   ShieldCheck,
   Store,
@@ -48,6 +49,7 @@ export type ModuleId =
   | "autobot"
   | "settings"
   | "notifications"
+  | "compliance"
   | "internal-health";
 
 export type NavigationItem = {
@@ -89,7 +91,12 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: HandCoins, id: "commissions", label: "Comissoes" },
       { icon: Receipt, id: "billing", label: "Billing" },
       { icon: Receipt, id: "expenses", label: "Gastos" },
-      { icon: BarChart3, id: "reports", label: "Relatorios" },
+      {
+        entitlementKey: "analytics",
+        icon: BarChart3,
+        id: "reports",
+        label: "Relatorios",
+      },
       { icon: ShieldCheck, id: "checklists", label: "Checklists" },
     ],
   },
@@ -98,7 +105,12 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       { icon: Palette, id: "public-site", label: "Personalizar" },
       { icon: Globe, id: "domain", label: "Dominio" },
-      { icon: Store, id: "marketplaces", label: "Marketplaces" },
+      {
+        entitlementKey: "marketplace",
+        icon: Store,
+        id: "marketplaces",
+        label: "Marketplaces",
+      },
       { icon: KeyRound, id: "public-api", label: "Public API" },
     ],
   },
@@ -120,6 +132,12 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       { icon: Settings, id: "settings", label: "Geral" },
       { icon: Bell, id: "notifications", label: "Notificacoes" },
+      {
+        entitlementKey: "compliance",
+        icon: ScrollText,
+        id: "compliance",
+        label: "Compliance",
+      },
       { icon: Gauge, id: "internal-health", label: "Saude" },
     ],
   },

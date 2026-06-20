@@ -40,6 +40,13 @@ VALUES
     'supervisor@lojaveiculos.com.br',
     'Test Supervisor',
     '77777777-7777-4777-8777-777777777777'
+  ),
+  (
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    'clerk_test_investor',
+    'investor@lojaveiculos.com.br',
+    'Test Investor',
+    '77777777-7777-4777-8777-777777777777'
   )
 ON CONFLICT (clerk_user_id) DO NOTHING;
 
@@ -72,6 +79,13 @@ VALUES
     true,
     'Salesman',
     'salesman'
+  ),
+  (
+    'eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee',
+    'Investor role for read-only financial and operational visibility.',
+    true,
+    'Investor',
+    'investor'
   )
 ON CONFLICT (role_key) DO NOTHING;
 
@@ -117,6 +131,14 @@ VALUES
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777',
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  ),
+  (
+    'eeeeeeee-2222-4eee-8eee-eeeeeeeeeeee',
+    'eeeeeeee-1111-4eee-8eee-eeeeeeeeeeee',
+    'active',
+    '66666666-6666-4666-8666-666666666666',
+    '77777777-7777-4777-8777-777777777777',
+    'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
   )
 ON CONFLICT (store_id, user_id) DO NOTHING;
 

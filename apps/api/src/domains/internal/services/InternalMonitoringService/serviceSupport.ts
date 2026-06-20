@@ -5,6 +5,11 @@ export type InternalMonitoringServicePorts = {
   internalMonitoringRepository: InternalMonitoringRepository;
 };
 
+export function normalizeInternalHealthLimit(limit: number) {
+  if (!Number.isFinite(limit)) return 40;
+  return Math.min(Math.max(Math.trunc(limit), 1), 100);
+}
+
 export function requireInternalMonitoringScope(context: ServiceContext) {
   if (!context.storeId || !context.tenantId) {
     throw new InternalMonitoringScopeError();

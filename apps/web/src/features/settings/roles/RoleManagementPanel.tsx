@@ -1,11 +1,8 @@
 import { ShieldCheck, UserCog } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import type {
-  PermissionGroup,
-  RoleKey,
-  RoleManagementView,
-  RoleMemberView,
-} from "../types";
+import type { RoleKey, RoleManagementView, RoleMemberView } from "../types";
+import { PermissionGroupPanel } from "./PermissionGroupPanel";
+import type { Draft, OverrideMode } from "./roleDraft";
 
 export function RoleManagementPanel({
   isSaving,
@@ -16,45 +13,34 @@ export function RoleManagementPanel({
   onSave: (
     membershipId: string,
     input: {
-      overrides: { allowed: boolean; permission: string }[];
+      overrides: { allowed: boolean; permission: string; reason: string }[];
       role: RoleKey;
     },
   ) => Promise<void>;
   roles: RoleManagementView;
 }) {
-  const [selectedId, setSelectedId] = useState(
-    roles.memberships.find((member) => member.manageable)?.membershipId ??
-      roles.memberships[0]?.membershipId ??
-      "",
-  );
+  const [selectedId, setSelectedId] = useState(initialSelection(roles));
   const selected = roles.memberships.find(
     (member) => member.membershipId === selectedId,
   );
-  const [draft, setDraft] = useState(() => createDraft(selected, roles));
+  const [draft, setDraft] = useState(() => createDraft(selected));
 
-  useEffect(() => {
-    setDraft(createDraft(selected, roles));
-  }, [roles, selected]);
+  useEffect(() => setDraft(createDraft(selected)), [selected]);
 
   const editable = Boolean(selected?.manageable && roles.actor.canManageRoles);
-  const permissionCount = useMemo(
-    () =>
-      roles.permissionGroups.reduce(
-        (total, group) => total + group.permissions.length,
-        0,
-      ),
-    [roles.permissionGroups],
+  const availableRoles = roles.roles.filter(
+    (role) => role.assignable || role.role === selected?.role,
   );
+  const stats = useMemo(() => summarizeDraft(draft, roles), [draft, roles]);
 
-  if (!selected) {
+  if (!selected)
     return (
       <section className="settings-empty">Nenhum usuario encontrado</section>
     );
-  }
 
   const save = () =>
     onSave(selected.membershipId, {
-      overrides: createOverrides(draft, roles),
+      overrides: createOverrides(draft),
       role: draft.role,
     });
 
@@ -73,14 +59,12 @@ export function RoleManagementPanel({
                 : "roles-user"
             }
             key={member.membershipId}
-            onClick={() => {
-              setSelectedId(member.membershipId);
-              setDraft(createDraft(member, roles));
-            }}
+            onClick={() => setSelectedId(member.membershipId)}
             type="button"
           >
             <strong>{member.user.name ?? member.user.email}</strong>
-            <span>{member.role}</span>
+            <span>{roleLabel(member.role, roles)}</span>
+            <small>{member.manageable ? "Editavel" : "Protegido"}</small>
           </button>
         ))}
       </aside>
@@ -94,24 +78,32 @@ export function RoleManagementPanel({
           <select
             disabled={!editable}
             onChange={(event) =>
-              setDraft(createRoleDraft(event.target.value as RoleKey, roles))
+              setDraft({
+                overrides: new Map(),
+                role: event.target.value as RoleKey,
+              })
             }
             value={draft.role}
           >
-            {roles.roles
-              .filter((role) => role.role !== "agency")
-              .map((role) => (
-                <option key={role.role} value={role.role}>
-                  {role.label}
-                </option>
-              ))}
+            {availableRoles.map((role) => (
+              <option key={role.role} value={role.role}>
+                {role.label}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="roles-summary">
-          <span>{permissionCount} permissoes mapeadas</span>
-          <span>{draft.permissions.size} ativas para este usuario</span>
+          <span>{stats.active} permissoes efetivas</span>
+          <span>{stats.allowed} liberadas manualmente</span>
+          <span>{stats.denied} bloqueadas manualmente</span>
         </div>
+
+        {roles.roles.find((role) => role.role === draft.role) ? (
+          <p className="roles-role-note">
+            {roles.roles.find((role) => role.role === draft.role)?.description}
+          </p>
+        ) : null}
 
         {roles.permissionGroups.map((group) => (
           <PermissionGroupPanel
@@ -119,11 +111,12 @@ export function RoleManagementPanel({
             editable={editable}
             group={group}
             key={group.key}
-            onToggle={(permission) => {
-              const permissions = new Set(draft.permissions);
-              if (permissions.has(permission)) permissions.delete(permission);
-              else permissions.add(permission);
-              setDraft({ ...draft, permissions });
+            roles={roles}
+            onModeChange={(permission, mode) => {
+              const overrides = new Map(draft.overrides);
+              if (mode === "inherit") overrides.delete(permission);
+              else overrides.set(permission, mode);
+              setDraft({ ...draft, overrides });
             }}
           />
         ))}
@@ -135,82 +128,59 @@ export function RoleManagementPanel({
           type="button"
         >
           <ShieldCheck aria-hidden="true" className="size-4" />
-          {isSaving ? "Salvando" : "Salvar papeis"}
+          {isSaving ? "Salvando" : "Salvar permissoes exatas"}
         </button>
       </section>
     </section>
   );
 }
 
-type Draft = {
-  permissions: Set<string>;
-  role: RoleKey;
-};
-
-function PermissionGroupPanel({
-  draft,
-  editable,
-  group,
-  onToggle,
-}: {
-  draft: Draft;
-  editable: boolean;
-  group: PermissionGroup;
-  onToggle: (permission: string) => void;
-}) {
+function initialSelection(roles: RoleManagementView) {
   return (
-    <div className="roles-permission-group">
-      <h4>{group.label}</h4>
-      <div className="roles-permission-grid">
-        {group.permissions.map((permission) => (
-          <label className="roles-permission" key={permission.key}>
-            <input
-              checked={draft.permissions.has(permission.key)}
-              disabled={!editable}
-              onChange={() => onToggle(permission.key)}
-              type="checkbox"
-            />
-            <span>
-              <strong>{permission.label}</strong>
-              <small>{permission.description}</small>
-            </span>
-          </label>
-        ))}
-      </div>
-    </div>
+    roles.memberships.find((member) => member.manageable)?.membershipId ??
+    roles.memberships[0]?.membershipId ??
+    ""
   );
 }
 
-function createDraft(
-  member: RoleMemberView | undefined,
-  roles: RoleManagementView,
-): Draft {
-  return member
-    ? { permissions: new Set(member.effectivePermissions), role: member.role }
-    : createRoleDraft("salesman", roles);
+function createDraft(member: RoleMemberView | undefined): Draft {
+  const overrides = new Map<string, OverrideMode>();
+  for (const override of member?.overrides ?? []) {
+    overrides.set(override.permission, override.allowed ? "allow" : "deny");
+  }
+  return { overrides, role: member?.role ?? "salesman" };
 }
 
-function createRoleDraft(role: RoleKey, roles: RoleManagementView): Draft {
-  const template = roles.roles.find((item) => item.role === role);
-  return {
-    permissions: new Set(template?.defaultPermissions ?? []),
-    role,
-  };
+function createOverrides(draft: Draft) {
+  return [...draft.overrides.entries()].map(([permission, mode]) => ({
+    allowed: mode === "allow",
+    permission,
+    reason: "role_management_tri_state",
+  }));
 }
 
-function createOverrides(draft: Draft, roles: RoleManagementView) {
+function summarizeDraft(draft: Draft, roles: RoleManagementView) {
   const base = new Set(
     roles.roles.find((role) => role.role === draft.role)?.defaultPermissions ??
       [],
   );
-  return roles.permissionGroups
-    .flatMap((group) => group.permissions.map((permission) => permission.key))
-    .filter(
-      (permission) =>
-        base.has(permission) !== draft.permissions.has(permission),
-    )
-    .map((permission) => ({
-      allowed: draft.permissions.has(permission),
-      permission,
-    }));
+  let active = 0;
+  for (const group of roles.permissionGroups) {
+    for (const permission of group.permissions) {
+      const mode = draft.overrides.get(permission.key) ?? "inherit";
+      if (mode === "allow" || (mode === "inherit" && base.has(permission.key)))
+        active += 1;
+    }
+  }
+  return {
+    active,
+    allowed: [...draft.overrides.values()].filter((mode) => mode === "allow")
+      .length,
+    denied: [...draft.overrides.values()].filter((mode) => mode === "deny")
+      .length,
+  };
+}
+
+function roleLabel(role: RoleKey, roles: RoleManagementView) {
+  return roles.roles.find((item) => item.role === role)?.label ?? role;
 }

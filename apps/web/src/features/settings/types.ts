@@ -45,7 +45,13 @@ export type UpdateStoreSettingsInput = {
   publicSite?: Partial<StoreSettingsSnapshot["publicSite"]>;
 };
 
-export type RoleKey = "agency" | "owner" | "salesman" | "supervisor";
+export type RoleKey =
+  | "agency"
+  | "admin"
+  | "investor"
+  | "owner"
+  | "salesman"
+  | "supervisor";
 
 export type PermissionDescriptor = {
   description: string;
@@ -61,8 +67,11 @@ export type PermissionGroup = {
 };
 
 export type RoleTemplateView = {
+  assignable: boolean;
   defaultPermissions: readonly string[];
+  description: string;
   label: string;
+  level: number;
   role: RoleKey;
 };
 

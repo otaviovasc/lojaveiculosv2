@@ -1,6 +1,14 @@
 import { Hono } from "hono";
 import { billingPaths, billingSchemas } from "./billingOpenApi.js";
+import { analyticsPaths, analyticsSchemas } from "./analyticsOpenApi.js";
+import { compliancePaths, complianceSchemas } from "./complianceOpenApi.js";
+import {
+  documentOperationPaths,
+  documentOperationSchemas,
+} from "./documentOperationsOpenApi.js";
+import { documentsPaths, documentsSchemas } from "./documentsOpenApi.js";
 import { externalApiPaths, externalApiSchemas } from "./externalApiOpenApi.js";
+import { fiscalPaths, fiscalSchemas } from "./fiscalOpenApi.js";
 import { identityPaths, identitySchemas } from "./identityOpenApi.js";
 import {
   internalMonitoringPaths,
@@ -8,7 +16,13 @@ import {
 } from "./internalMonitoringOpenApi.js";
 import { inventoryPaths, inventorySchemas } from "./inventoryOpenApi.js";
 import { llmsText } from "./llmsText.js";
+import { marketplacePaths, marketplaceSchemas } from "./marketplaceOpenApi.js";
+import {
+  storefrontLeadPaths,
+  storefrontLeadSchemas,
+} from "./storefrontLeadOpenApi.js";
 import { storefrontPaths, storefrontSchemas } from "./storefrontOpenApi.js";
+import { openApiTags } from "./openApiTags.js";
 
 export { llmsText } from "./llmsText.js";
 
@@ -27,37 +41,7 @@ export const openApiDocument = {
       description: "Current deployment origin",
     },
   ],
-  tags: [
-    {
-      name: "System",
-      description: "Operational endpoints.",
-    },
-    {
-      name: "Inventory",
-      description: "Vehicle inventory endpoints.",
-    },
-    {
-      name: "Identity",
-      description: "Store roles, permissions, and membership access.",
-    },
-    {
-      name: "Billing",
-      description: "Plans, subscriptions, and store feature entitlements.",
-    },
-    {
-      name: "Public Storefront",
-      description: "Public vehicle stock endpoints resolved from store host.",
-    },
-    {
-      name: "External API Safety",
-      description:
-        "Scoped key management and guardrails for partner and automation-facing APIs.",
-    },
-    {
-      name: "Internal Monitoring",
-      description: "Scoped audit events, sink failures, and runtime health.",
-    },
-  ],
+  tags: openApiTags,
   paths: {
     "/health": {
       get: {
@@ -86,9 +70,16 @@ export const openApiDocument = {
     ...storefrontPaths,
     ...identityPaths,
     ...billingPaths,
+    ...fiscalPaths,
+    ...analyticsPaths,
+    ...compliancePaths,
+    ...documentsPaths,
+    ...documentOperationPaths,
     ...externalApiPaths,
     ...internalMonitoringPaths,
+    ...marketplacePaths,
     ...inventoryPaths,
+    ...storefrontLeadPaths,
   },
   components: {
     securitySchemes: {
@@ -110,10 +101,17 @@ export const openApiDocument = {
     schemas: {
       ...inventorySchemas,
       ...billingSchemas,
+      ...fiscalSchemas,
+      ...analyticsSchemas,
+      ...complianceSchemas,
+      ...documentsSchemas,
+      ...documentOperationSchemas,
       ...externalApiSchemas,
       ...identitySchemas,
       ...internalMonitoringSchemas,
+      ...marketplaceSchemas,
       ...storefrontSchemas,
+      ...storefrontLeadSchemas,
       ApiError: {
         type: "object",
         additionalProperties: true,
@@ -130,6 +128,9 @@ export const openApiDocument = {
       "Protected routes resolve Clerk identity plus store membership or scoped external API keys; public storefront routes use host-based store scope.",
   },
   "x-scopes": {
+    "analytics.read": "Read commercial analytics dashboards.",
+    "compliance.manage": "Read and operate LGPD/security posture controls.",
+    "fiscal.manage": "Operate fiscal provider and NF-e document lifecycle.",
     "inventory.read": "Read vehicle inventory.",
     "inventory.create": "Create vehicle inventory records.",
     "inventory.update_description": "Edit descriptive vehicle fields.",
@@ -141,6 +142,18 @@ export const openApiDocument = {
       "Reserve vehicle listings and emit reservation receipts.",
     "inventory.sell": "Sell vehicle listings and emit sale document bundles.",
     "inventory.delete": "Delete vehicle inventory records.",
+    "documents.read": "Read shared store-scoped documents.",
+    "documents.download": "Generate scoped document download descriptors.",
+    "documents.preview": "Render scoped document previews.",
+    "documents.regenerate": "Regenerate scoped operational documents.",
+    "documents.void": "Void scoped documents.",
+    "marketplace.read": "Read OLX/Mercado Livre account and sync status.",
+    "marketplace.manage": "Connect or pause marketplace accounts.",
+    "marketplace.inventory_sync": "Queue marketplace inventory sync jobs.",
+    "marketplace.lead_sync": "Queue marketplace lead import jobs.",
+    "marketplace.listing_publish": "Queue listing publish jobs.",
+    "marketplace.listing_update": "Queue listing update jobs.",
+    "marketplace.listing_unpublish": "Queue listing unpublish jobs.",
   },
   "x-finance-side-effects": {
     "vehicle-cost":

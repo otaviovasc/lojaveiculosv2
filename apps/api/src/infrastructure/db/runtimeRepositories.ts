@@ -13,6 +13,7 @@ import {
   createInternalMonitoringServices,
   type InternalMonitoringServices,
 } from "../../features/internal/controllers/internalMonitoringServices.js";
+import { createMarketplaceServices } from "../../features/marketplaces/controllers/marketplaceServices.js";
 import {
   createCrmServices,
   type CrmServices,
@@ -50,13 +51,24 @@ import {
   type DrizzleVehicleInventoryClient,
 } from "./vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
+import {
+  createDrizzleDocumentRepository,
+  type DrizzleDocumentClient,
+} from "./documents/drizzleDocumentRepository.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
+import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
 import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
 import {
   createDrizzleRoleManagementRepository,
   type DrizzleRoleManagementClient,
 } from "./roles/drizzleRoleManagementRepository.js";
 import type { DrizzleBillingClient } from "./billing/drizzleBillingRepository.js";
+import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
+import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
+import { createRuntimeAnalyticsServices } from "../analytics/runtimeAnalyticsServices.js";
+import { createRuntimeComplianceServices } from "../compliance/runtimeComplianceServices.js";
+import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServices.js";
+import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
 import {
   createDrizzleExternalApiRepository,
   type DrizzleExternalApiClient,
@@ -99,21 +111,32 @@ export function createRuntimeAppOptions(
   const identityVerifier = createRuntimeIdentityVerifier(env);
 
   return {
+    analyticsServices: createRuntimeAnalyticsServices(db),
     ...(audit ? { audit } : {}),
     billingServices: createRuntimeBillingServices(db),
+    complianceServices: createRuntimeComplianceServices(),
     crmServices: createRuntimeCrmServices(db),
+    documentServices: createRuntimeDocumentServices(db, env),
     externalApiRepository: createDrizzleExternalApiRepository(
       db as unknown as DrizzleExternalApiClient,
     ),
     externalApiServices: createRuntimeExternalApiServices(db),
     financeServices: createRuntimeFinanceServices(db, env),
+    fiscalServices: createRuntimeFiscalServices(db, env),
     ...(identityVerifier ? { identityVerifier } : {}),
     inventoryListingServices: createRuntimeInventoryServices(db, env),
     internalMonitoringServices: auditDb
       ? createRuntimeInternalMonitoringServices(auditDb)
       : createInternalMonitoringServices(),
+    marketplaceServices: createMarketplaceServices({
+      drizzleClient: db as DrizzleMarketplaceClient,
+      gatewayRegistry: createMarketplaceGatewayRegistry(env),
+    }),
     publicStorefrontRepository: createDrizzlePublicStorefrontRepository(
       db as unknown as DrizzlePublicStorefrontClient,
+    ),
+    publicStorefrontCrmRepository: createDrizzleCrmRepository(
+      db as unknown as DrizzleCrmClient,
     ),
     roleServices: createRuntimeRoleServices(db),
     settingsServices: createRuntimeSettingsServices(db),
@@ -130,14 +153,11 @@ function createProductDb(
   const client = postgres(databaseUrl, {
     max: Number(env.DB_POOL_MAX ?? 5),
   });
-
   return drizzle(client, { schema });
 }
 
 function createRuntimeBillingServices(db: unknown): BillingServices {
-  return createBillingServices({
-    drizzleClient: db as DrizzleBillingClient,
-  });
+  return createBillingServices({ drizzleClient: db as DrizzleBillingClient });
 }
 
 function createRuntimeExternalApiServices(db: unknown): ExternalApiServices {
@@ -163,6 +183,9 @@ function createRuntimeInventoryServices(
         client as unknown as DrizzleVehicleCatalogClient,
       ),
       catalogProvider,
+      documentTemplateRepository: createDrizzleDocumentRepository(
+        client as unknown as DrizzleDocumentClient,
+      ),
       ...(mediaStorage ? { mediaStorage } : {}),
     }),
     drizzleClient: db as DrizzleVehicleInventoryClient,

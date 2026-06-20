@@ -31,7 +31,6 @@ export async function storeWorkflowDocument(
     fileSizeBytes: body.byteLength,
     metadata: {
       ...(record.metadata ?? {}),
-      generatedDocumentUrl: object.publicUrl,
       renderer: "pdf-lib",
     },
     mimeType: "application/pdf",

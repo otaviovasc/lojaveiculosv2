@@ -349,7 +349,7 @@
         <div>
           <h1>V2 Product & Architecture Live Plan</h1>
           <div class="meta">
-            Last updated: 2026-06-18 · V2 monorepo product architecture
+            Last updated: 2026-06-20 · V2 monorepo product architecture
           </div>
         </div>
         <div>
@@ -371,8 +371,16 @@
           <div class="subtext">
             Vehicles, Finance, Store/Public Site, storefront runtime, roles,
             billing entitlements, external API auth, internal health, and review
-            hardening are implemented and validation-green; CRM expansion
-            remains paused.
+            hardening are implemented. This Codex session added public lead
+            capture, the documents workspace with editable store templates, and
+            exact agency/owner/salesman/investor permission controls. The
+            document slice now stores generated files privately in R2, signs
+            short-lived downloads, and keeps immutable document versions. Agency
+            billing now includes allocation, entitlement matrix, financial
+            summary, and marketplace integration foundations for OLX and Mercado
+            Livre. The next product-readiness layer adds Asaas readiness,
+            SPEDY/NF-e operations, analytics, compliance controls, and a
+            storefront builder UX backed by public-site settings.
           </div>
 
           <div class="toolbar">
@@ -425,21 +433,20 @@
                 permissioned, transactional, and tested.</small
               >
             </div>
-            <div class="chip warn" data-state="risk">
+            <div class="chip ok" data-state="done">
               <strong>Slice 07 — Public Storefront Completion</strong
               ><small
-                >In progress: public settings endpoint, custom-domain routing,
-                SEO runtime, hero/contact UI, and slug-only public vehicle
-                contract are implemented; remaining work is media polish and
-                resilience checks.</small
+                >Delivered: public settings, custom-domain routing, SEO runtime,
+                slug-only vehicle lookup, detail pages, and public lead capture
+                wired into the CRM lead flow.</small
               >
             </div>
             <div class="chip ok" data-state="done">
               <strong>Slice 08 — Roles + Permissions Foundation</strong
               ><small
-                >Implemented: Agency/Owner/Supervisor/Salesman role matrix,
-                per-user overrides, API, audit, UI, seed data, and OpenAPI
-                docs.</small
+                >Implemented: Agency/Owner/Supervisor/Salesman/Investor role
+                hierarchy, assignability rules, tri-state per-user overrides,
+                API enforcement, audit, seed data, UI, and docs.</small
               >
             </div>
             <div class="chip ok" data-state="done">
@@ -457,6 +464,171 @@
                 durable request logging, DB-backed rate limiting, idempotency
                 enforcement, AI-facing docs, internal audit/health dashboard,
                 and validation-green guardrails.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Codex Session — Documents + Permissions Hardening</strong
+              ><small
+                >Delivered: shared documents workspace, editable store document
+                templates for workflow PDFs, template OpenAPI routes, document
+                UI tabs, and exact permission UX/backend controls.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Codex Session — Private Document Hosting</strong
+              ><small
+                >Delivered: Cloudflare R2 private document writes, short-lived
+                signed GET downloads, immutable document version rows,
+                version-specific downloads, version timeline UI, and OpenAPI/LLM
+                documentation.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Codex Session — R2 Media Polish</strong
+              ><small
+                >Delivered: operator media readiness, one-click public cover
+                selection, storefront listing thumbnails from ordered public
+                photos, detail gallery selection, and public media docs.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Codex Session — Admin Observability</strong
+              ><small
+                >Delivered: scoped health status, alert cards, audit action
+                metrics, outcome/severity breakdowns, actor activity, sink
+                impact, OpenAPI docs, and a professional admin dashboard.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Codex Session — Agency Billing + Marketplaces</strong
+              ><small
+                >Delivered: agency allocation dashboard, entitlement matrix with
+                reasoned changes, billing history, marketplace entitlement and
+                permissions, OLX/Mercado Livre account APIs, sync-job
+                foundation, UI module, and docs.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong>Codex Session — Marketplace Provider Runtime</strong
+              ><small
+                >Delivered: Mercado Livre OAuth/token/item gateway, OLX
+                partner-configurable gateway, encrypted provider credentials,
+                connect URL and OAuth completion APIs, listing payload mapper,
+                executable sync jobs, provider listing ids, console controls,
+                and docs/env updates.</small
+              >
+            </div>
+            <div class="chip ok" data-state="done">
+              <strong
+                >Codex Session — Billing, Fiscal, Analytics + Compliance</strong
+              ><small
+                >Delivered: Asaas provider readiness surface, audited SPEDY/NF-e
+                feature routes and UI, admin reports dashboard, LGPD/security
+                compliance dashboard, storefront builder controls, OpenAPI/LLM
+                docs, and observability attention-queue improvements.</small
+              >
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title">Codex Session Delivery</div>
+          <div class="timeline">
+            <div class="tl-item">
+              <strong>1) Public Storefront Lead Capture</strong
+              ><small
+                >Public listing pages now collect buyer interest, validate the
+                payload, create a store-scoped CRM lead, emit audit context, and
+                expose the contract in OpenAPI and AI-facing docs. Reviewer
+                hardening added per-client throttling and duplicate-lead
+                suppression before CRM writes.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>2) Documents Workspace</strong
+              ><small
+                >Authenticated store actors can list documents across vehicle,
+                lead, sale, payment, finance, and fiscal contexts through a
+                permissioned backend service and responsive frontend workspace.
+                The workspace now opens a document detail panel with preview,
+                download, regeneration, void, status, and operation history
+                actions.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>3) Editable Document Templates</strong
+              ><small
+                >Stores can customize reservation receipts, sale contracts, sale
+                receipts, delivery terms, and power-of-attorney templates with
+                clause editing, variable preview, default restore, template
+                persistence, audited generation metadata, server-side variable
+                interpolation, customized generated titles, and regenerate flows
+                that preserve operation history.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>4) Exact Permission Administration</strong
+              ><small
+                >Agencies can manage store owners, salespeople, supervisors, and
+                investors with role assignability rules; owners can manage
+                non-privileged store users; the UI now exposes inherited,
+                allowed, and denied permission states explicitly. Invalid or
+                duplicate permission overrides are rejected instead of silently
+                dropped.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>5) Private Document Hosting + Versions</strong
+              ><small
+                >Generated workflow documents now write to the object storage
+                port, use Cloudflare R2 signed GET descriptors for downloads,
+                avoid durable public document URLs, append immutable version
+                rows on regeneration, and expose newest-first version history in
+                the operator document panel. The mutable document row is the
+                current pointer; document_versions is append-only
+                history.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>6) R2 Media Polish</strong
+              ><small
+                >Inventory media now shows public readiness, public photo count,
+                hidden media count, and a direct cover action that publishes and
+                reorders the selected photo. Public storefront cards render the
+                first public photo by display order, and listing details expose
+                an ordered gallery selector.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>7) Admin Observability Dashboard</strong
+              ><small
+                >Internal health now computes critical/warning/healthy status
+                from audit events and open sink failures. The admin dashboard
+                exposes alert cards, summary KPIs, outcome/severity charts, top
+                actions, actor activity, sink impact, and recent audit rows for
+                the current tenant/store scope.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>8) Agency Billing + Marketplace Foundation</strong
+              ><small
+                >Billing now exposes agency store allocations, financial KPIs,
+                entitlement matrix rows, reasoned entitlement changes, and a
+                scoped history feed. Marketplaces now have entitlement and exact
+                permission keys plus OLX/Mercado Livre account and sync-job
+                APIs, a mounted frontend console, OpenAPI docs, and AI-facing
+                documentation.</small
+              >
+            </div>
+            <div class="tl-item">
+              <strong>9) Real Marketplace Provider Runtime</strong
+              ><small
+                >Provider accounts now use OAuth connection URLs and
+                authenticated completion, credentials are encrypted at rest and
+                redacted from responses, listing sync jobs execute through
+                provider gateways, scoped listing payloads are mapped for
+                Mercado Livre/OLX, and provider listing ids are persisted for
+                future updates/unpublish operations.</small
               >
             </div>
           </div>
@@ -536,6 +708,15 @@
               >
             </div>
             <div class="chip ok">
+              <strong>Private document delivery</strong
+              ><small
+                >Document downloads are service-authorized, scoped by tenant and
+                store, and returned as short-lived signed URLs. Raw storage keys
+                are not exposed in workspace DTOs, OpenAPI schemas, or the web
+                document UI.</small
+              >
+            </div>
+            <div class="chip ok">
               <strong>Public contract hardening</strong
               ><small
                 >Public storefront vehicle payloads expose slugs only; internal
@@ -599,9 +780,8 @@
             <div class="section-title">Architecture Map</div>
             <div class="subtext">
               Foundation execution now includes scoped API keys and internal
-              audit visibility; CRM execution remains paused while Slice 07
-              advances through public-safe storefront contracts, media polish,
-              and resilience checks.
+              audit visibility; CRM execution remains paused while storefront
+              resilience checks and production runbooks are finalized.
             </div>
           </div>
           <div class="legend">
@@ -861,7 +1041,7 @@
                 <tr>
                   <td>/api/v1/media</td>
                   <td>R2 Assets</td>
-                  <td class="warn-text">Next slice</td>
+                  <td class="ok-text">Inventory media implemented</td>
                 </tr>
               </tbody>
             </table>
@@ -899,10 +1079,10 @@
               <div class="tl-item">
                 <strong>4) Domain + Media Governance</strong
                 ><small
-                  >Partially delivered: verified custom-domain resolution and
-                  slug-only public listing lookup are implemented; next is
-                  stronger R2 asset selector UX and storefront resilience
-                  checks.</small
+                  >Delivered: verified custom-domain resolution, slug-only
+                  public listing lookup, lead capture, and public-safe
+                  storefront contracts are implemented; next media work is R2
+                  asset selector UX.</small
                 >
               </div>
             </div>
@@ -916,17 +1096,23 @@
                 ><small
                   >Roles UI/API, billing overview, store entitlement management,
                   scoped external API auth, API-key UI, durable request logs,
-                  idempotency enforcement, rate limiting, and internal health
-                  are implemented with audit, tests, docs, and local seed
-                  data.</small
+                  idempotency enforcement, rate limiting, internal health,
+                  public lead capture, document workspace, editable document
+                  templates, exact permission overrides, and admin
+                  observability, agency billing controls, and marketplace sync
+                  foundations are implemented with audit, tests, docs, and local
+                  seed data. Billing provider readiness, NF-e operational
+                  routes, analytics, compliance posture, and storefront builder
+                  controls now have first-class API/UI surfaces.</small
                 >
               </div>
               <div class="tl-item">
                 <strong>Foundation Remaining</strong
                 ><small
-                  >Production migration plan, deployment runbooks, per-route
-                  quota policies, Redis-backed distributed counters if needed,
-                  and deeper internal alerting.</small
+                  >Production migration plan, deployment runbooks, certified
+                  Asaas/SPEDY provider calls and webhooks, per-route quota
+                  policies, Redis-backed distributed counters if needed, and
+                  deeper alerting/runbooks.</small
                 >
               </div>
               <div class="tl-item">
@@ -944,9 +1130,10 @@
               <div class="tl-item">
                 <strong>V2 Product Work</strong
                 ><small
-                  >AI WhatsApp operations, advanced storefront builder,
-                  NFE/SPEDY depth, payment-link banking flows, analytics,
-                  recommendation engines, and CRM parity expansion.</small
+                  >AI WhatsApp operations, provider-certified fiscal/billing
+                  depth, payment-link banking flows, recommendation engines, CRM
+                  parity expansion, and production migration once the product is
+                  ready.</small
                 >
               </div>
             </div>
@@ -973,9 +1160,8 @@
               <div class="chip warn">
                 <strong>Priority-1</strong
                 ><small
-                  >Finish Slice 07 Public Storefront Completion: richer
-                  storefront preview, public media polish, and resilience
-                  checks.</small
+                  >Finish storefront production resilience checks and media
+                  migration/runbook rehearsal.</small
                 >
               </div>
               <div class="chip warn">

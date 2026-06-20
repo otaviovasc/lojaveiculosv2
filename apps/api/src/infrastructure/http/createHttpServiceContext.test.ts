@@ -23,6 +23,7 @@ describe("createHttpServiceContext", () => {
     expect(serviceContext.actor).toEqual({ id: "public", kind: "public" });
     expect(serviceContext.permissions).toEqual([
       "public",
+      "public_storefront.lead_create",
       "public_storefront.read",
     ]);
     expect(serviceContext.storeId).toBeNull();

@@ -1,0 +1,122 @@
+.documents-row-action {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.documents-detail-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.documents-detail-title,
+.documents-detail-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.documents-detail-title div,
+.documents-void-reason,
+.documents-preview,
+.documents-history,
+.documents-version-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.documents-detail-title strong,
+.documents-preview strong,
+.documents-history strong,
+.documents-version-list strong {
+  color: var(--color-text);
+  font-weight: 900;
+}
+
+.documents-detail-title span,
+.documents-void-reason span,
+.documents-preview p,
+.documents-history p,
+.documents-version-list p {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.documents-detail-title button,
+.documents-detail-actions button,
+.documents-danger-action {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  display: inline-flex;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+}
+
+.documents-void-reason textarea {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  min-height: 4rem;
+  padding: 0.75rem;
+}
+
+.documents-danger-action {
+  color: var(--color-danger);
+  justify-content: center;
+}
+
+.documents-preview section,
+.documents-history {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem;
+}
+
+.documents-version-list button {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: auto 1fr auto;
+  min-height: 2.75rem;
+  padding: 0 0.75rem;
+}
+
+.documents-version-list button span:last-of-type {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+@media (min-width: 980px) {
+  .documents-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.35fr);
+  }
+
+  .documents-detail-panel {
+    align-self: start;
+    grid-column: 2;
+    grid-row: 1 / span 8;
+    position: sticky;
+    top: 1rem;
+  }
+}

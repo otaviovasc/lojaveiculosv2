@@ -4,7 +4,7 @@ export const identityPaths = {
       tags: ["Identity"],
       summary: "List role and permission management matrix",
       description:
-        "Returns role templates, domain-grouped permissions, and store memberships with base/effective permissions.",
+        "Returns role templates, domain-grouped permissions, assignability metadata, and store memberships with base/effective permissions.",
       operationId: "listRoleManagement",
       security: [{ bearerAuth: [] }],
       responses: {
@@ -25,7 +25,7 @@ export const identityPaths = {
       tags: ["Identity"],
       summary: "Update one member role and permission overrides",
       description:
-        "Updates a subuser role and explicit permission overrides. Agency and owner actors can manage subusers; self-edits and privileged role edits are blocked.",
+        "Updates a subuser role and exact permission overrides. Agency actors can manage store owners, supervisors, salespeople, and investors; owner actors can manage supervisors, salespeople, and investors.",
       operationId: "updateMembershipAccess",
       security: [{ bearerAuth: [] }],
       parameters: [

@@ -4,6 +4,7 @@ import {
   planFeatures,
   plans,
   storeEntitlements,
+  storeEntitlementEvents,
   subscriptionItems,
   subscriptions,
 } from "@lojaveiculosv2/db";
@@ -15,6 +16,12 @@ import type {
   BillingSubscription,
   StoreEntitlement,
 } from "../../../domains/billing/ports/billingRepository.js";
+import { createBillingOverview } from "../../../domains/billing/readModels/billingOverviewModel.js";
+import {
+  getFinancialSummary,
+  listAllocations,
+  listEntitlementEvents,
+} from "./drizzleBillingOverviewSupport.js";
 
 export type DrizzleBillingClient = PostgresJsDatabase<typeof schema>;
 
@@ -26,30 +33,51 @@ export function createDrizzleBillingRepository(
       return getOverview(db, input);
     },
     async updateStoreEntitlement(input) {
-      await db
-        .insert(storeEntitlements)
-        .values({
-          endsAt: input.endsAt ?? null,
-          featureKey: input.featureKey,
-          metadata: input.metadata ?? {},
-          source: input.source,
-          startsAt: input.startsAt ?? null,
-          status: input.status,
-          storeId: input.storeId,
-          tenantId: input.tenantId,
-        })
-        .onConflictDoUpdate({
-          set: {
+      return db.transaction(async (tx) => {
+        const txDb = tx as DrizzleBillingClient;
+        const before = await listEntitlements(txDb, input);
+        const beforeEntitlement = before.find(
+          (entitlement) => entitlement.featureKey === input.featureKey,
+        );
+
+        await txDb
+          .insert(storeEntitlements)
+          .values({
             endsAt: input.endsAt ?? null,
+            featureKey: input.featureKey,
             metadata: input.metadata ?? {},
             source: input.source,
             startsAt: input.startsAt ?? null,
             status: input.status,
-          },
-          target: [storeEntitlements.storeId, storeEntitlements.featureKey],
+            storeId: input.storeId,
+            tenantId: input.tenantId,
+          })
+          .onConflictDoUpdate({
+            set: {
+              endsAt: input.endsAt ?? null,
+              metadata: input.metadata ?? {},
+              source: input.source,
+              startsAt: input.startsAt ?? null,
+              status: input.status,
+            },
+            target: [storeEntitlements.storeId, storeEntitlements.featureKey],
+          });
+
+        await txDb.insert(storeEntitlementEvents).values({
+          actorId: input.actorId ?? null,
+          featureKey: input.featureKey,
+          metadata: input.metadata ?? {},
+          nextStatus: input.status,
+          previousStatus:
+            input.previousStatus ?? beforeEntitlement?.status ?? null,
+          reason: input.reason ?? null,
+          source: input.source,
+          storeId: input.storeId,
+          tenantId: input.tenantId,
         });
 
-      return getOverview(db, input);
+        return getOverview(txDb, input);
+      });
     },
   };
 }
@@ -58,19 +86,27 @@ async function getOverview(
   db: DrizzleBillingClient,
   input: { storeId: string; tenantId: string },
 ): Promise<BillingOverview> {
-  const [billingPlans, entitlements, subscription] = await Promise.all([
+  const [billingPlans, entitlements, subscription, events] = await Promise.all([
     listPlans(db),
     listEntitlements(db, input),
     findSubscription(db, input),
+    listEntitlementEvents(db, input),
+  ]);
+  const [allocations, financialSummary] = await Promise.all([
+    listAllocations(db, input, billingPlans, subscription),
+    getFinancialSummary(db, input, subscription),
   ]);
 
-  return {
+  return createBillingOverview({
+    allocations,
+    entitlementEvents: events,
     entitlements,
     plans: billingPlans,
     storeId: input.storeId as never,
+    financialSummary,
     subscription,
     tenantId: input.tenantId as never,
-  };
+  });
 }
 
 async function listPlans(db: DrizzleBillingClient): Promise<BillingPlan[]> {

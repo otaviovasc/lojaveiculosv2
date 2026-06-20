@@ -6,14 +6,30 @@ export const llmsText = `# Loja Veiculos API
 - Public storefront settings: GET /api/v1/public/storefront/settings
 - Public storefront listings: GET /api/v1/public/storefront/listings
 - Public storefront listing detail: GET /api/v1/public/storefront/listings/{listingSlug}
+- Public storefront lead capture: POST /api/v1/public/storefront/listings/{listingSlug}/leads
 - Role management matrix: GET /api/v1/identity/roles
 - Update member access: PATCH /api/v1/identity/memberships/{membershipId}/access
 - Billing overview: GET /api/v1/billing/overview
+- Billing provider status: GET /api/v1/billing/provider/status
 - Update store entitlement: PATCH /api/v1/billing/entitlements/{featureKey}
+- Fiscal overview: GET /api/v1/fiscal/overview
+- Issue fiscal document: POST /api/v1/fiscal/documents
+- Cancel fiscal document: POST /api/v1/fiscal/documents/{documentId}/cancel
+- Sync fiscal status: POST /api/v1/fiscal/documents/{documentId}/status-sync
+- Analytics dashboard: GET /api/v1/analytics/dashboard
+- Compliance snapshot: GET /api/v1/compliance/snapshot
+- Marketplace overview: GET /api/v1/marketplaces/overview
+- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
+- Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete
+- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
+- Queue marketplace sync: POST /api/v1/marketplaces/integrations/{provider}/sync-jobs
+- Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
+- Documents workspace: GET /api/v1/documents
+- Document versions: GET /api/v1/documents/{documentId}/versions
 - List external API clients: GET /api/v1/external-api/clients
 - Create external API client: POST /api/v1/external-api/clients
 - Revoke external API client: POST /api/v1/external-api/clients/{clientId}/revoke
-- Internal health snapshot: GET /api/v1/internal/health
+- Admin observability snapshot: GET /api/v1/internal/health
 - List inventory stock: GET /api/v1/inventory/listings
 - Create listing: POST /api/v1/inventory/listings
 - Get listing: GET /api/v1/inventory/listings/{listingId}
@@ -50,13 +66,29 @@ export const llmsText = `# Loja Veiculos API
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
 - billing.manage: required to read billing and mutate store entitlements.
+- analytics.read: required to read reports and commercial dashboards.
+- compliance.manage: required to read and operate LGPD/security controls.
+- fiscal.manage: required to operate SPEDY/NF-e lifecycle workflows.
+- marketplace.read: required to read OLX/Mercado Livre connection status.
+- marketplace.manage: required to connect or pause marketplace accounts.
+- marketplace.inventory_sync: required to queue inventory sync jobs.
+- marketplace.lead_sync: required to import leads from marketplaces.
+- marketplace.listing_publish: required to publish listings.
+- marketplace.listing_update: required to update listings.
+- marketplace.listing_unpublish: required to remove listings.
 - external_api.manage: required to create and revoke scoped API keys.
+- documents.read: required to list shared store-scoped documents.
+- documents.download: required to generate authorized document download descriptors.
+- documents.preview: required to render document previews.
+- documents.regenerate: required to regenerate operational documents.
+- documents.void: required to cancel issued/shared documents.
 - audit.read: required to read the internal health and audit snapshot.
 
 ## Current inventory endpoints
-- GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br.
+- GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br; thumbnailUrl is the first public photo by displayOrder.
 - GET /api/v1/public/storefront/settings: returns public-safe hero, SEO, contact, and branding settings for a published store.
-- GET /api/v1/public/storefront/listings/{listingSlug}: returns one published, visible vehicle plus public media.
+- GET /api/v1/public/storefront/listings/{listingSlug}: returns one published, visible vehicle plus ordered public media.
+- POST /api/v1/public/storefront/listings/{listingSlug}/leads: creates a V2 CRM lead from public buyer interest.
 - GET /api/v1/inventory/listings: returns canonical V2 stock list DTOs; requires inventory.read.
 - POST /api/v1/inventory/listings: creates a listing and returns canonical V2 listing detail; requires inventory.create.
 - GET /api/v1/inventory/listings/{listingId}: returns canonical V2 listing detail with units and media; requires inventory.read.
@@ -73,12 +105,44 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
 
 ## Current identity endpoints
-- GET /api/v1/identity/roles: returns role templates, grouped permission catalog, memberships, base permissions, effective permissions, and overrides.
-- PATCH /api/v1/identity/memberships/{membershipId}/access: updates one subuser role and explicit permission overrides.
+- GET /api/v1/identity/roles: returns agency, owner, supervisor, salesman, and investor role templates, grouped permission catalog, memberships, assignability, base permissions, effective permissions, and overrides.
+- PATCH /api/v1/identity/memberships/{membershipId}/access: updates one member role and exact allow/deny permission overrides. Agency actors can manage owners; owners can manage supervisors, salespeople, and investors.
 
 ## Current billing endpoints
-- GET /api/v1/billing/overview: returns plans, subscription status, and store entitlements; requires billing.manage.
-- PATCH /api/v1/billing/entitlements/{featureKey}: updates one entitlement status and writes critical audit; requires billing.manage.
+- GET /api/v1/billing/overview: returns plans, subscription status, agency allocations, financial summary, entitlement matrix, store entitlements, and entitlement change events; requires billing.manage.
+- GET /api/v1/billing/provider/status: returns Asaas provider readiness without exposing secrets; requires billing.manage.
+- PATCH /api/v1/billing/entitlements/{featureKey}: updates one entitlement status with optional reason, writes product entitlement history, and writes critical audit; requires billing.manage.
+
+## Current fiscal endpoints
+- GET /api/v1/fiscal/overview: returns SPEDY readiness, NF-e document summary, recent documents, and fiscal events; requires fiscal.manage and nfe entitlement.
+- POST /api/v1/fiscal/documents: records one fiscal issue attempt and persists provider status; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
+- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
+- POST /api/v1/fiscal/documents/{documentId}/status-sync: reconciles one persisted fiscal document status with the configured gateway state; requires fiscal.manage and nfe entitlement.
+
+## Current analytics endpoints
+- GET /api/v1/analytics/dashboard: returns DB-backed inventory, finance, lead funnel, source attribution, and KPI snapshots; requires analytics.read and analytics entitlement.
+
+## Current compliance endpoints
+- GET /api/v1/compliance/snapshot: returns LGPD workflow, access review, audit export, retention, provider webhook, and secret-rotation posture; requires compliance.manage and compliance entitlement.
+
+## Current marketplace endpoints
+- GET /api/v1/marketplaces/overview: returns OLX/Mercado Livre accounts and recent sync jobs for the current store; requires marketplace entitlement plus marketplace.read.
+- POST /api/v1/marketplaces/connect-url: creates the provider OAuth authorization URL for the current store; requires marketplace.manage and provider env configuration.
+- POST /api/v1/marketplaces/oauth/complete: exchanges an OAuth code for provider credentials and stores encrypted tokens server-side; requires marketplace.manage.
+- PUT /api/v1/marketplaces/integrations/{provider}: creates, activates, pauses, or marks one marketplace account; provider is olx or mercado_livre; requires marketplace.manage.
+- POST /api/v1/marketplaces/integrations/{provider}/sync-jobs: queues inventory, lead, publish, update, or unpublish sync jobs after provider setup; requires the matching marketplace permission.
+- POST /api/v1/marketplaces/sync-jobs/{jobId}/run: runs one queued provider job, maps the scoped listing payload, calls the provider gateway, stores provider external ids, and marks the job succeeded or failed.
+- Mercado Livre runtime uses OAuth token exchange and item endpoints when MERCADO_LIVRE_CLIENT_ID is configured.
+- OLX runtime is partner-configurable through OLX_AUTHORIZATION_URL, OLX_API_BASE_URL, OLX_TOKEN_URL, and OLX_LISTINGS_PATH because public official OLX Brasil API docs were not available in this environment.
+- Provider tokens are encrypted at rest with MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY in production and redacted from API responses, docs, audit metadata, and UI state.
+
+## Current documents endpoints
+- GET /api/v1/documents: lists shared documents linked to vehicles, leads, sales, finance, and fiscal contexts; requires documents.read.
+- GET /api/v1/documents/{documentId}/download: returns a short-lived scoped R2 signed GET descriptor without exposing raw storage keys; accepts optional versionId; requires documents.download.
+- GET /api/v1/documents/{documentId}/preview: renders a metadata-based document preview; requires documents.preview.
+- GET /api/v1/documents/{documentId}/versions: lists immutable generated versions in newest-first order; requires documents.read.
+- POST /api/v1/documents/{documentId}/regenerate: renders a new private PDF object, appends an immutable version, and points the document to the latest version; requires documents.regenerate.
+- POST /api/v1/documents/{documentId}/void: voids a scoped document with optional reason; requires documents.void.
 
 ## Current external API endpoints
 - GET /api/v1/external-api/clients: returns scoped API clients and key prefixes; requires external_api.manage.
@@ -86,7 +150,7 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/external-api/clients/{clientId}/revoke: revokes the client and active keys; requires external_api.manage.
 
 ## Current internal monitoring endpoints
-- GET /api/v1/internal/health: returns recent scoped audit events plus open audit sink failures; requires audit.read.
+- GET /api/v1/internal/health: returns scoped admin observability with audit events, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; requires audit.read.
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.

@@ -1,0 +1,7 @@
+.public-media-thumb {
+  border-color: var(--color-line);
+}
+
+.public-media-thumb[data-selected="true"] {
+  border-color: var(--color-accent);
+}

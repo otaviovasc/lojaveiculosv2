@@ -1,13 +1,13 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { auditEvents, auditSinkFailures } from "@lojaveiculosv2/audit-db";
 import type * as auditSchema from "@lojaveiculosv2/audit-db";
 import type {
   InternalAuditEvent,
   InternalAuditSinkFailure,
-  InternalHealthSnapshot,
   InternalMonitoringRepository,
 } from "../../../domains/internal/ports/internalMonitoringRepository.js";
+import { createInternalHealthSnapshot } from "./internalMonitoringSnapshot.js";
 
 export type DrizzleInternalMonitoringClient = PostgresJsDatabase<
   typeof auditSchema
@@ -19,47 +19,53 @@ export function createDrizzleInternalMonitoringRepository(
   return {
     async getHealthSnapshot(input) {
       const limit = Math.min(Math.max(input.limit, 1), 100);
-      const [events, failures] = await Promise.all([
-        db
-          .select()
-          .from(auditEvents)
-          .where(
-            and(
-              eq(auditEvents.storeId, input.storeId),
-              eq(auditEvents.tenantId, input.tenantId),
-            ),
-          )
-          .orderBy(desc(auditEvents.occurredAt))
-          .limit(limit),
-        db
-          .select()
-          .from(auditSinkFailures)
-          .where(isNull(auditSinkFailures.resolvedAt))
-          .orderBy(desc(auditSinkFailures.createdAt))
-          .limit(limit),
-      ]);
+      const events = await db
+        .select()
+        .from(auditEvents)
+        .where(
+          and(
+            eq(auditEvents.storeId, input.storeId),
+            eq(auditEvents.tenantId, input.tenantId),
+          ),
+        )
+        .orderBy(desc(auditEvents.occurredAt))
+        .limit(limit);
+      const failures = await listScopedFailures(db, events, limit);
 
-      return toSnapshot(events.map(toEvent), failures.map(toFailure));
+      return createInternalHealthSnapshot(
+        events.map(toEvent),
+        failures.map(toFailure),
+      );
     },
   };
 }
 
-function toSnapshot(
-  events: InternalAuditEvent[],
-  failures: InternalAuditSinkFailure[],
-): InternalHealthSnapshot {
-  return {
-    events,
-    failures,
-    generatedAt: new Date(),
-    summary: {
-      criticalEvents: events.filter((event) => event.criticality === "critical")
-        .length,
-      failedEvents: events.filter((event) => event.outcome === "failed").length,
-      openSinkFailures: failures.length,
-      recentEvents: events.length,
-    },
-  };
+async function listScopedFailures(
+  db: DrizzleInternalMonitoringClient,
+  events: (typeof auditEvents.$inferSelect)[],
+  limit: number,
+) {
+  if (!events.length) return [];
+  return db
+    .select()
+    .from(auditSinkFailures)
+    .where(
+      and(
+        isNull(auditSinkFailures.resolvedAt),
+        or(
+          inArray(
+            auditSinkFailures.eventId,
+            events.map((event) => event.id),
+          ),
+          inArray(
+            auditSinkFailures.requestId,
+            events.map((event) => event.requestId),
+          ),
+        ),
+      ),
+    )
+    .orderBy(desc(auditSinkFailures.createdAt))
+    .limit(limit);
 }
 
 function toEvent(row: typeof auditEvents.$inferSelect): InternalAuditEvent {

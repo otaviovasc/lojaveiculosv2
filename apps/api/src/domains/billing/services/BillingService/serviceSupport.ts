@@ -1,8 +1,10 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { BillingRepository } from "../../ports/billingRepository.js";
+import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
 
 export type BillingServicePorts = {
   billingRepository: BillingRepository;
+  paymentProviderGateway?: PaymentProviderGateway;
 };
 
 export class BillingScopeError extends Error {

@@ -1,4 +1,12 @@
-import { ArrowDown, ArrowUp, Eye, EyeOff, Save, Trash2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Eye,
+  EyeOff,
+  Save,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import { InventoryBadge, InventoryInput } from "./InventoryFormParts";
@@ -62,15 +70,24 @@ function MediaCard({
     run("Atualizando midia", () =>
       api.updateMedia(listingId, media.id, { isPublic: !media.isPublic }),
     );
+  const coverId = firstPublicPhoto(detail.media)?.id;
 
   return (
     <article className="grid min-w-0 gap-3 rounded-lg border border-line bg-panel p-3">
       <MediaPreview media={media} />
       <div className="flex items-center justify-between gap-2">
         <InventoryBadge tone={media.isPublic ? "accent" : "warning"}>
-          {media.kind}
+          {media.id === coverId ? "capa" : media.kind}
         </InventoryBadge>
         <div className="flex gap-1">
+          {media.kind === "photo" ? (
+            <IconAction
+              label="Definir capa"
+              onClick={() => setCover(api, detail, media, run)}
+            >
+              <Star className="size-4" />
+            </IconAction>
+          ) : null}
           <IconAction
             label="Subir"
             onClick={() => reorder(api, detail, index, -1, run)}
@@ -117,6 +134,10 @@ function MediaCard({
       </div>
     </article>
   );
+}
+
+function firstPublicPhoto(media: readonly InventoryMedia[]) {
+  return media.find((item) => item.kind === "photo" && item.isPublic);
 }
 
 function MediaPreview({ media }: { media: InventoryMedia }) {
@@ -169,4 +190,22 @@ function reorder(
       next.map((item, displayOrder) => ({ displayOrder, mediaId: item.id })),
     ),
   );
+}
+
+function setCover(
+  api: InventoryApi,
+  detail: InventoryListingDetail,
+  media: InventoryMedia,
+  run: InventoryMediaRun,
+) {
+  const ordered = [
+    media,
+    ...detail.media.filter((item) => item.id !== media.id),
+  ].map((item, displayOrder) => ({ displayOrder, mediaId: item.id }));
+  void run("Definindo capa publica", async () => {
+    if (!media.isPublic) {
+      await api.updateMedia(detail.listing.id, media.id, { isPublic: true });
+    }
+    return api.reorderMedia(detail.listing.id, ordered);
+  });
 }

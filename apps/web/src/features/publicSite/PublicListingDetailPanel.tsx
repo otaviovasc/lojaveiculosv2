@@ -1,6 +1,13 @@
-import { ImageIcon, RefreshCcw, X } from "lucide-react";
+import { RefreshCcw, X } from "lucide-react";
 import type { ReactNode } from "react";
-import type { PublicStorefrontListingDetailData } from "./types";
+import { useEffect, useState } from "react";
+import { LeadCaptureForm } from "./LeadCaptureForm";
+import { HeroMedia, MediaStrip } from "./PublicListingGallery";
+import type {
+  PublicStorefrontLeadInput,
+  PublicStorefrontLeadResult,
+  PublicStorefrontListingDetailData,
+} from "./types";
 
 export type PublicListingDetailSnapshot = {
   data?: PublicStorefrontListingDetailData | null;
@@ -13,10 +20,15 @@ export function PublicListingDetailPanel({
   detail,
   onClose,
   onRetry,
+  onSubmitInterest,
 }: {
   detail: PublicListingDetailSnapshot;
   onClose: () => void;
   onRetry: () => void;
+  onSubmitInterest: (
+    listingSlug: string,
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 }) {
   const listing = detail.data?.listing;
 
@@ -59,7 +71,12 @@ export function PublicListingDetailPanel({
             icon={<RefreshCcw aria-hidden="true" className="size-5" />}
           />
         ) : null}
-        {detail.data ? <ListingDetailContent detail={detail.data} /> : null}
+        {detail.data ? (
+          <ListingDetailContent
+            detail={detail.data}
+            onSubmitInterest={onSubmitInterest}
+          />
+        ) : null}
       </article>
     </section>
   );
@@ -67,26 +84,38 @@ export function PublicListingDetailPanel({
 
 function ListingDetailContent({
   detail,
+  onSubmitInterest,
 }: {
   detail: PublicStorefrontListingDetailData;
+  onSubmitInterest: (
+    listingSlug: string,
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 }) {
-  const [heroMedia] = detail.listing.media;
-  const heroUrl = heroMedia?.url ?? detail.listing.thumbnailUrl;
+  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
+  const selectedMedia =
+    detail.listing.media.find((item) => item.url === selectedMediaUrl) ??
+    detail.listing.media[0] ??
+    null;
+  const heroUrl = selectedMedia?.url ?? detail.listing.thumbnailUrl;
+
+  useEffect(() => {
+    setSelectedMediaUrl(detail.listing.media[0]?.url ?? null);
+  }, [detail.listing.slug, detail.listing.media]);
 
   return (
     <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="bg-app p-4">
-        {heroUrl ? (
-          <img
-            alt={heroMedia?.altText ?? detail.listing.title}
-            className="aspect-[16/10] w-full rounded-lg object-cover"
-            src={heroUrl}
-          />
-        ) : (
-          <div className="flex aspect-[16/10] items-center justify-center rounded-lg bg-accent-soft text-accent">
-            <ImageIcon aria-hidden="true" className="size-14" />
-          </div>
-        )}
+      <div className="grid gap-3 bg-app p-4">
+        <HeroMedia
+          altText={selectedMedia?.altText ?? detail.listing.title}
+          heroUrl={heroUrl}
+          kind={selectedMedia?.kind ?? "photo"}
+        />
+        <MediaStrip
+          media={detail.listing.media}
+          onSelect={setSelectedMediaUrl}
+          selectedUrl={selectedMedia?.url ?? null}
+        />
       </div>
 
       <div className="p-5">
@@ -105,6 +134,10 @@ function ListingDetailContent({
           <Metric label="Km" value={formatMileage(detail.listing.mileageKm)} />
           <Metric label="Fotos" value={detail.listing.media.length} />
         </div>
+        <LeadCaptureForm
+          listingSlug={detail.listing.slug}
+          onSubmitInterest={onSubmitInterest}
+        />
       </div>
     </div>
   );
@@ -127,7 +160,13 @@ function DetailState({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string | number }) {
+function Metric({
+  label,
+  value,
+}: {
+  label: string | number;
+  value: string | number;
+}) {
   return (
     <div className="rounded-md bg-app p-2">
       <span className="block">{label}</span>

@@ -5,6 +5,13 @@ import type {
 
 export function createMemoryObjectStorage(): ObjectStorage {
   return {
+    async createDownload(input) {
+      return {
+        downloadMethod: "GET",
+        downloadUrl: `https://download.local/${input.storageKey}`,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      };
+    },
     async createUpload(input) {
       const storageKey = createStorageKey(input);
       return {

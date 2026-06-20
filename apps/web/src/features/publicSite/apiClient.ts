@@ -1,5 +1,7 @@
 import type {
   PublicStorefrontData,
+  PublicStorefrontLeadInput,
+  PublicStorefrontLeadResult,
   PublicStorefrontListingDetailData,
   PublicStorefrontSettingsData,
 } from "./types";
@@ -12,6 +14,10 @@ export type PublicStorefrontApi = {
     listingSlug: string,
   ) => Promise<PublicStorefrontListingDetailData>;
   getSettings: () => Promise<PublicStorefrontSettingsData>;
+  submitListingInterest: (
+    listingSlug: string,
+    input: PublicStorefrontLeadInput,
+  ) => Promise<PublicStorefrontLeadResult>;
 };
 
 export type PublicStorefrontQuery = {
@@ -43,6 +49,12 @@ export function createPublicStorefrontApi({
         ]),
         { method: "GET" },
       ).then(readJson<PublicStorefrontData>),
+    submitListingInterest: (listingSlug, input) =>
+      fetch(publicStorefrontRoutes.listingLead(listingSlug, baseUrl), {
+        body: JSON.stringify(input),
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      }).then(readJson<PublicStorefrontLeadResult>),
   };
 }
 
@@ -50,6 +62,11 @@ export const publicStorefrontRoutes = {
   listing: (listingSlug: string, baseUrl?: string) =>
     createPublicStorefrontEndpoint(
       `/public/storefront/listings/${encodeURIComponent(listingSlug)}`,
+      baseUrl,
+    ),
+  listingLead: (listingSlug: string, baseUrl?: string) =>
+    createPublicStorefrontEndpoint(
+      `/public/storefront/listings/${encodeURIComponent(listingSlug)}/leads`,
       baseUrl,
     ),
   listings: (baseUrl?: string) =>

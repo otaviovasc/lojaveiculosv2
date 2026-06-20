@@ -89,6 +89,7 @@ const store = {
 
 const listing = {
   description: "Ready to sell.",
+  id: "listing_1",
   manufactureYear: 2022,
   media: [
     {

@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
-import { documentLinks, documents } from "@lojaveiculosv2/db";
+import { and, desc, eq, ilike, or } from "drizzle-orm";
+import { documentLinks, documents, documentVersions } from "@lojaveiculosv2/db";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -7,7 +7,13 @@ import type {
   CreateLinkedDocumentInput,
   DocumentRepository,
   LinkedDocument,
+  ListDocumentsInput,
 } from "../../../domains/documents/ports/documentRepository.js";
+import { createDrizzleDocumentTemplateMethods } from "./drizzleDocumentTemplates.js";
+import {
+  createDrizzleDocumentVersionMethods,
+  toInsertVersion,
+} from "./drizzleDocumentVersions.js";
 
 type DocumentRow = InferSelectModel<typeof documents>;
 type InsertDocumentRow = InferInsertModel<typeof documents>;
@@ -20,6 +26,8 @@ export function createDrizzleDocumentRepository(
   db: DrizzleDocumentClient,
 ): DocumentRepository {
   return {
+    ...createDrizzleDocumentTemplateMethods(db),
+    ...createDrizzleDocumentVersionMethods(db),
     async create(input) {
       const [documentRow] = await db
         .insert(documents)
@@ -40,8 +48,25 @@ export function createDrizzleDocumentRepository(
           "Drizzle adapter did not return inserted document link.",
         );
       }
+      await db
+        .insert(documentVersions)
+        .values(toInsertVersion({ ...input, documentId: documentRow.id }, 1));
 
       return toLinkedDocument(documentRow, linkRow);
+    },
+    async findById(input) {
+      return findScopedDocument(db, input);
+    },
+    async list(input) {
+      const rows = await db
+        .select({ document: documents, link: documentLinks })
+        .from(documentLinks)
+        .innerJoin(documents, eq(documents.id, documentLinks.documentId))
+        .where(and(...listDocumentFilters(input)))
+        .orderBy(desc(documents.uploadedAt))
+        .limit(input.limit ?? 100);
+
+      return rows.map((row) => toLinkedDocument(row.document, row.link));
     },
     async listByTarget(input) {
       const linkRows = await db
@@ -77,7 +102,77 @@ export function createDrizzleDocumentRepository(
 
       return rows.filter((row): row is LinkedDocument => Boolean(row));
     },
+    async update(input) {
+      await db
+        .update(documents)
+        .set({
+          ...(input.metadata ? { metadata: input.metadata } : {}),
+          ...(input.status ? { status: input.status } : {}),
+          ...(input.title ? { title: input.title } : {}),
+          updatedAt: new Date(),
+          ...(input.status === "issued" ? { uploadedAt: new Date() } : {}),
+        })
+        .where(
+          and(
+            eq(documents.id, input.documentId),
+            eq(documents.storeId, input.storeId),
+            eq(documents.tenantId, input.tenantId),
+            eq(documents.isDeleted, false),
+          ),
+        );
+      const document = await findScopedDocument(db, input);
+      if (!document) throw new Error(`Document not found: ${input.documentId}`);
+      return document;
+    },
   };
+}
+
+async function findScopedDocument(
+  db: DrizzleDocumentClient,
+  input: { documentId: string; storeId: string; tenantId: string },
+): Promise<LinkedDocument | null> {
+  const [row] = await db
+    .select({ document: documents, link: documentLinks })
+    .from(documentLinks)
+    .innerJoin(documents, eq(documents.id, documentLinks.documentId))
+    .where(
+      and(
+        eq(documentLinks.documentId, input.documentId),
+        eq(documentLinks.storeId, input.storeId),
+        eq(documentLinks.tenantId, input.tenantId),
+        eq(documents.id, input.documentId),
+        eq(documents.storeId, input.storeId),
+        eq(documents.tenantId, input.tenantId),
+        eq(documents.isDeleted, false),
+      ),
+    )
+    .limit(1);
+
+  return row ? toLinkedDocument(row.document, row.link) : null;
+}
+
+function listDocumentFilters(input: ListDocumentsInput) {
+  return [
+    eq(documentLinks.storeId, input.storeId),
+    eq(documentLinks.tenantId, input.tenantId),
+    eq(documents.storeId, input.storeId),
+    eq(documents.tenantId, input.tenantId),
+    eq(documents.isDeleted, false),
+    ...(input.targetId ? [eq(documentLinks.targetId, input.targetId)] : []),
+    ...(input.targetType
+      ? [eq(documentLinks.targetType, input.targetType)]
+      : []),
+    ...(input.kind ? [eq(documents.kind, input.kind)] : []),
+    ...(input.status ? [eq(documents.status, input.status)] : []),
+    ...(input.search
+      ? [
+          or(
+            ilike(documents.title, `%${input.search}%`),
+            ilike(documents.fileName, `%${input.search}%`),
+          ),
+        ]
+      : []),
+  ];
 }
 
 function toInsertDocument(input: CreateLinkedDocumentInput): InsertDocumentRow {

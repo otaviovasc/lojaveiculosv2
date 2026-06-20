@@ -3,6 +3,11 @@ import type { CreateObjectUploadInput } from "../../../../shared/storage/objectS
 
 export function createMemoryVehicleMediaStorage(): VehicleMediaStorage {
   return {
+    createDownload: async (input) => ({
+      downloadMethod: "GET",
+      downloadUrl: `https://download.local/${input.storageKey}`,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+    }),
     createUpload: async (input) => {
       const storageKey = createStorageKey(input);
       return {
