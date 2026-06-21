@@ -21,16 +21,26 @@ export function SettingsSection({
 }
 
 export function SettingsInput({
+  help,
   icon,
+  inputMode,
   label,
+  maxLength,
   onChange,
+  placeholder,
   suffix,
+  type = "text",
   value,
 }: {
+  help?: string;
   icon?: ReactNode;
+  inputMode?: "email" | "numeric" | "search" | "tel" | "text" | "url";
   label: string;
+  maxLength?: number;
   onChange: (value: string) => void;
+  placeholder?: string;
   suffix?: string;
+  type?: "email" | "search" | "tel" | "text" | "url";
   value: string;
 }) {
   return (
@@ -39,11 +49,16 @@ export function SettingsInput({
       <div className="settings-input-shell">
         {icon}
         <input
+          inputMode={inputMode}
+          maxLength={maxLength}
           onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          type={type}
           value={value}
         />
         {suffix ? <strong>{suffix}</strong> : null}
       </div>
+      {help ? <small>{help}</small> : null}
     </label>
   );
 }

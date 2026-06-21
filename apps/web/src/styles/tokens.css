@@ -24,6 +24,8 @@
   --color-inverse-soft: rgb(255 255 255 / 0.2);
   --color-inverse-muted: rgb(255 255 255 / 0.72);
   --color-inverse-ghost: rgb(255 255 255 / 0.14);
+  --color-header-surface: rgb(247 249 251 / 0.88);
+  --color-overlay: rgb(21 34 45 / 0.42);
   --layout-content-max: 80rem;
   --layout-header-height: 5rem;
   --layout-sidebar-width: 272px;
@@ -32,6 +34,30 @@
   --radius-lg: 12px;
   --shadow-focus: 0 0 0 3px rgb(32 199 122 / 0.26);
   --shadow-panel: 0 20px 50px rgb(21 34 45 / 0.08);
+}
+
+:root[data-theme="dark"] {
+  --color-app: #0f171d;
+  --color-text: #edf4f8;
+  --color-muted: #9fb0bd;
+  --color-panel: #16232c;
+  --color-line: #2d3c47;
+  --color-line-strong: #455865;
+  --color-accent: #20c77a;
+  --color-accent-strong: #63e5aa;
+  --color-accent-soft: rgb(32 199 122 / 0.16);
+  --color-app-elevated: #1d2c36;
+  --color-blue-soft: rgb(38 132 255 / 0.18);
+  --color-warning: #f5c542;
+  --color-danger: #ff7a7a;
+  --color-inverse: #071016;
+  --color-inverse-soft: rgb(7 16 22 / 0.22);
+  --color-inverse-muted: rgb(7 16 22 / 0.7);
+  --color-inverse-ghost: rgb(7 16 22 / 0.16);
+  --color-header-surface: rgb(15 23 29 / 0.9);
+  --color-overlay: rgb(0 0 0 / 0.58);
+  --shadow-focus: 0 0 0 3px rgb(99 229 170 / 0.26);
+  --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.26);
 }
 
 @theme {

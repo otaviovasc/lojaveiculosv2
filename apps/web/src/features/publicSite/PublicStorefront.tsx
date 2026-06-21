@@ -9,6 +9,10 @@ import {
   type PublicListingDetailSnapshot,
 } from "./PublicListingDetailPanel";
 import { PublicVehicleCard } from "./PublicVehicleCard";
+import {
+  createStorefrontTheme,
+  normalizeStorefrontTemplateKey,
+} from "./storefrontTemplates";
 import type {
   PublicStorefrontData,
   PublicStorefrontLeadInput,
@@ -42,43 +46,47 @@ export function PublicStorefront({
   onRetryListing,
   onSubmitListingInterest,
 }: PublicStorefrontProps) {
-  const theme = normalizeTheme(data.settings.site.theme);
+  const layoutKey = normalizeStorefrontTemplateKey(
+    data.settings.site.layoutKey,
+  );
+  const theme = createStorefrontTheme(data.settings.site.theme, layoutKey);
   const visibleProofItems = proofItems.filter((item) =>
     theme.sections.includes(item.key),
   );
   return (
     <main
       className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8"
-      data-layout={data.settings.site.layoutKey}
+      data-layout={layoutKey}
     >
-      <section className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="public-storefront-hero">
         <div className="overflow-hidden rounded-lg border border-line bg-panel">
-          {data.settings.site.heroImageUrl ? (
+          {layoutKey === "showroom" && data.settings.site.heroImageUrl ? (
             <img
               alt=""
-              className="h-44 w-full object-cover"
+              className="public-storefront-hero-image"
               src={data.settings.site.heroImageUrl}
             />
           ) : null}
           <div className="p-5 lg:p-6">
-            <div className="mb-8 flex items-center gap-3">
+            <div className="mb-6 flex items-start gap-3 lg:mb-8">
               <div className="flex size-11 items-center justify-center rounded-lg bg-accent-soft text-accent">
                 <Sparkles aria-hidden="true" className="size-5" />
               </div>
               <div>
                 <p className="text-xs font-black uppercase tracking-widest text-muted">
-                  {data.settings.store.publicUrl}
+                  {theme.badgeLabel}
                 </p>
                 <h2 className="text-2xl font-black md:text-4xl">
-                  {theme.headline ||
-                    data.settings.site.seoTitle ||
-                    data.settings.store.name}
+                  {theme.headline}
                 </h2>
                 {data.settings.site.seoDescription ? (
                   <p className="mt-2 max-w-2xl text-sm font-bold text-muted">
                     {data.settings.site.seoDescription}
                   </p>
                 ) : null}
+                <p className="mt-2 text-xs font-black uppercase tracking-widest text-muted">
+                  {data.settings.store.publicUrl}
+                </p>
               </div>
             </div>
 
@@ -100,12 +108,12 @@ export function PublicStorefront({
         </div>
 
         {theme.sections.includes("contact") ? (
-          <LeadPanel settings={data.settings} />
+          <LeadPanel ctaLabel={theme.ctaLabel} settings={data.settings} />
         ) : null}
       </section>
 
       {theme.sections.includes("featured") ? (
-        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <section className="public-storefront-stock">
           {data.listings.map((listing) => (
             <PublicVehicleCard
               key={listing.slug}
@@ -128,20 +136,13 @@ export function PublicStorefront({
   );
 }
 
-const defaultSections = ["featured", "financing", "trust", "contact"];
-
-function normalizeTheme(theme: Record<string, unknown>) {
-  return {
-    headline: typeof theme.headline === "string" ? theme.headline : "",
-    sections: Array.isArray(theme.sections)
-      ? theme.sections.filter(
-          (item): item is string => typeof item === "string",
-        )
-      : defaultSections,
-  };
-}
-
-function LeadPanel({ settings }: { settings: PublicStorefrontSettingsData }) {
+function LeadPanel({
+  ctaLabel,
+  settings,
+}: {
+  ctaLabel: string;
+  settings: PublicStorefrontSettingsData;
+}) {
   return (
     <aside className="rounded-lg border border-line bg-panel p-5 lg:p-6">
       <p className="text-xs font-black uppercase tracking-widest text-muted">
@@ -167,7 +168,7 @@ function LeadPanel({ settings }: { settings: PublicStorefrontSettingsData }) {
           href={settings.contact.whatsappUrl ?? undefined}
         >
           <MessageCircle aria-hidden="true" className="size-4" />
-          Chamar no WhatsApp
+          {ctaLabel}
         </a>
       </div>
     </aside>

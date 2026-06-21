@@ -5,3 +5,43 @@
 .public-media-thumb[data-selected="true"] {
   border-color: var(--color-accent);
 }
+
+.public-storefront-hero,
+.public-storefront-stock {
+  display: grid;
+  gap: 1rem;
+}
+
+.public-storefront-hero-image {
+  height: 11rem;
+  object-fit: cover;
+  width: 100%;
+}
+
+main[data-layout="classic"] .public-storefront-hero {
+  gap: 0.75rem;
+}
+
+main[data-layout="classic"] .public-storefront-stock {
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .public-storefront-stock {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .public-storefront-hero {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+
+  .public-storefront-stock {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  main[data-layout="classic"] .public-storefront-hero {
+    grid-template-columns: 1fr;
+  }
+}

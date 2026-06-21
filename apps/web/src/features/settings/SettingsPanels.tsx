@@ -1,12 +1,13 @@
-import { Building2, Globe2, Image, Mail, MapPin, Save } from "lucide-react";
+import { Building2, Globe2, Mail, MapPin, Phone, Save } from "lucide-react";
 import { useEffect, useState } from "react";
+import { SettingsInput, SettingsSection } from "./SettingsPanelParts";
 import {
-  SettingsInput,
-  SettingsSection,
-  SettingsStatus,
-  SettingsTextarea,
-} from "./SettingsPanelParts";
-import { SettingsThemeBuilder } from "./SettingsThemeBuilder";
+  formatBrazilianDocument,
+  formatBrazilianPhone,
+  formatBrazilianZipCode,
+  normalizePublicSlug,
+} from "./settingsMasks";
+import { SettingsStorefrontDesigner } from "./SettingsStorefrontDesigner";
 import type { StoreSettingsSnapshot } from "./types";
 
 export function SettingsForm({
@@ -23,7 +24,7 @@ export function SettingsForm({
   useEffect(() => setDraft(settings), [settings]);
 
   return (
-    <section className="grid gap-4 xl:grid-cols-2">
+    <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
       <SettingsSection icon={<Building2 className="size-5" />} title="Loja">
         <SettingsInput
           label="Nome fantasia"
@@ -46,17 +47,23 @@ export function SettingsForm({
           value={draft.identity.legalName ?? ""}
         />
         <SettingsInput
-          label="Documento"
+          help="CPF ou CNPJ usado em documentos comerciais."
+          inputMode="numeric"
+          label="Documento fiscal"
           onChange={(value) =>
             setDraft({
               ...draft,
-              profile: { ...draft.profile, documentNumber: value },
+              profile: {
+                ...draft.profile,
+                documentNumber: formatBrazilianDocument(value),
+              },
             })
           }
           value={draft.profile.documentNumber ?? ""}
         />
         <SettingsInput
           icon={<Mail className="size-4" />}
+          inputMode="email"
           label="Email"
           onChange={(value) =>
             setDraft({
@@ -64,17 +71,49 @@ export function SettingsForm({
               profile: { ...draft.profile, contactEmail: value },
             })
           }
+          type="email"
           value={draft.profile.contactEmail ?? ""}
         />
         <SettingsInput
+          icon={<Phone className="size-4" />}
+          inputMode="tel"
+          label="Telefone"
+          onChange={(value) =>
+            setDraft({
+              ...draft,
+              profile: {
+                ...draft.profile,
+                contactPhone: formatBrazilianPhone(value),
+              },
+            })
+          }
+          value={draft.profile.contactPhone ?? ""}
+        />
+        <SettingsInput
+          icon={<Phone className="size-4" />}
+          inputMode="tel"
           label="WhatsApp"
           onChange={(value) =>
             setDraft({
               ...draft,
-              profile: { ...draft.profile, whatsappPhone: value },
+              profile: {
+                ...draft.profile,
+                whatsappPhone: formatBrazilianPhone(value),
+              },
             })
           }
           value={draft.profile.whatsappPhone ?? ""}
+        />
+        <SettingsInput
+          icon={<MapPin className="size-4" />}
+          label="Endereco"
+          onChange={(value) =>
+            setDraft({
+              ...draft,
+              profile: { ...draft.profile, addressLine1: value || null },
+            })
+          }
+          value={draft.profile.addressLine1 ?? ""}
         />
         <SettingsInput
           icon={<MapPin className="size-4" />}
@@ -87,104 +126,58 @@ export function SettingsForm({
           }
           value={draft.profile.addressCity ?? ""}
         />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <SettingsInput
+            label="UF"
+            maxLength={2}
+            onChange={(value) =>
+              setDraft({
+                ...draft,
+                profile: {
+                  ...draft.profile,
+                  addressState: value.toUpperCase().slice(0, 2),
+                },
+              })
+            }
+            value={draft.profile.addressState ?? ""}
+          />
+          <SettingsInput
+            inputMode="numeric"
+            label="CEP"
+            onChange={(value) =>
+              setDraft({
+                ...draft,
+                profile: {
+                  ...draft.profile,
+                  addressZipCode: formatBrazilianZipCode(value),
+                },
+              })
+            }
+            value={draft.profile.addressZipCode ?? ""}
+          />
+        </div>
       </SettingsSection>
 
       <SettingsSection
         icon={<Globe2 className="size-5" />}
-        title="Site publico"
+        title="Site publico e vitrine"
       >
         <SettingsInput
+          help="Use apenas letras, numeros e hifens."
           label="Subdominio"
           onChange={(value) =>
             setDraft({
               ...draft,
-              identity: { ...draft.identity, publicSlug: value },
+              identity: {
+                ...draft.identity,
+                publicSlug: normalizePublicSlug(value),
+              },
             })
           }
           suffix=".lojaveiculos.com.br"
           value={draft.identity.publicSlug}
         />
-        <SettingsInput
-          label="Dominio proprio"
-          onChange={(value) =>
-            setDraft({
-              ...draft,
-              publicSite: { ...draft.publicSite, customDomain: value || null },
-            })
-          }
-          value={draft.publicSite.customDomain ?? ""}
-        />
-        <SettingsStatus status={draft.publicSite.customDomainStatus} />
-        <SettingsInput
-          icon={<Image className="size-4" />}
-          label="Imagem hero"
-          onChange={(value) =>
-            setDraft({
-              ...draft,
-              publicSite: { ...draft.publicSite, heroImageUrl: value || null },
-            })
-          }
-          value={draft.publicSite.heroImageUrl ?? ""}
-        />
-        <div className="settings-builder">
-          <span>Layout da vitrine</span>
-          <div className="settings-segmented">
-            {["classic", "showroom", "compact"].map((layout) => (
-              <button
-                className={
-                  draft.publicSite.layoutKey === layout ? "is-active" : ""
-                }
-                key={layout}
-                onClick={() =>
-                  setDraft({
-                    ...draft,
-                    publicSite: { ...draft.publicSite, layoutKey: layout },
-                  })
-                }
-                type="button"
-              >
-                {layout}
-              </button>
-            ))}
-          </div>
-        </div>
-        <SettingsThemeBuilder draft={draft} onChange={setDraft} />
-        <SettingsInput
-          label="SEO title"
-          onChange={(value) =>
-            setDraft({
-              ...draft,
-              publicSite: { ...draft.publicSite, seoTitle: value },
-            })
-          }
-          value={draft.publicSite.seoTitle ?? ""}
-        />
-        <SettingsTextarea
-          label="SEO description"
-          onChange={(value) =>
-            setDraft({
-              ...draft,
-              publicSite: { ...draft.publicSite, seoDescription: value },
-            })
-          }
-          value={draft.publicSite.seoDescription ?? ""}
-        />
-        <label className="settings-toggle">
-          <input
-            checked={draft.publicSite.isPublished}
-            onChange={(event) =>
-              setDraft({
-                ...draft,
-                publicSite: {
-                  ...draft.publicSite,
-                  isPublished: event.target.checked,
-                },
-              })
-            }
-            type="checkbox"
-          />
-          <span>Publicar vitrine no subdominio</span>
-        </label>
+        <SettingsStorefrontDesigner draft={draft} onChange={setDraft} />
         <button
           className="settings-save"
           disabled={isSaving}

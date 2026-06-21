@@ -38,7 +38,7 @@
 }
 
 .mobile-nav {
-  background: rgb(21 34 45 / 0.42);
+  background: var(--color-overlay);
   inset: 0;
   position: fixed;
   z-index: 20;
@@ -55,7 +55,7 @@
 
 .shell-header {
   align-items: center;
-  background: rgb(247 249 251 / 0.88);
+  background: var(--color-header-surface);
   border-bottom: 1px solid var(--color-line);
   display: flex;
   gap: 1rem;

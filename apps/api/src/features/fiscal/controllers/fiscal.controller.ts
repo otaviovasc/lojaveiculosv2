@@ -128,10 +128,21 @@ async function handleFiscal(
     ) {
       return context.json({ message: error.message }, 403);
     }
+    if (isFiscalProviderRuntimeError(error)) {
+      return context.json({ message: error.message }, 503);
+    }
 
     context.error = error instanceof Error ? error : new Error(String(error));
     return context.json({ message: "Internal server error." }, 500);
   }
+}
+
+function isFiscalProviderRuntimeError(error: unknown): error is Error {
+  return (
+    error instanceof Error &&
+    (error.name === "SpedyGatewayConfigurationError" ||
+      error.name === "SpedyGatewayHttpError")
+  );
 }
 
 class FiscalRequestValidationError extends Error {

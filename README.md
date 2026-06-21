@@ -36,6 +36,43 @@ lojaveiculosv2/
     └── quality/   # Local checks agents must keep green
 ```
 
+## Local Development
+
+Run the full local stack from the repo root:
+
+```bash
+npm install
+npm run db:up
+npm run db:push:local
+npm run db:seed:local
+npm run dev:all:local
+```
+
+Then open the web app at `http://localhost:5173`. The API listens on
+`http://localhost:8787`, and Vite proxies `/api` to that API.
+
+`npm run dev:all:local` starts the API with:
+
+```text
+LOCAL_AUTH_BYPASS=true
+DEV_CLERK_USER_ID=clerk_test_user
+DEV_STORE_SLUG=test-store
+```
+
+In Vite dev mode, the web runtime clients also default to
+`clerk_test_user` and `test-store`, so the app behaves as the seeded owner user.
+The product seed creates realistic local data for inventory, CRM/leads,
+finance, commissions, documents, public storefront, billing, marketplace,
+external API, fiscal, provider events, users, roles, and entitlements.
+
+Useful checks:
+
+```bash
+npm run validate
+npm run test --workspace @lojaveiculosv2/web
+npm run test --workspace @lojaveiculosv2/api
+```
+
 ## Current Package Targets
 
 Checked against npm on 2026-06-16:

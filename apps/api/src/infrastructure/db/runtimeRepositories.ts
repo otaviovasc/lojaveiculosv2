@@ -18,10 +18,7 @@ import {
   createCrmServices,
   type CrmServices,
 } from "../../features/crm/controllers/crmServices.js";
-import {
-  createBillingServices,
-  type BillingServices,
-} from "../../features/billing/controllers/billingServices.js";
+import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
 import {
   createExternalApiServices,
   type ExternalApiServices,
@@ -62,13 +59,17 @@ import {
   createDrizzleRoleManagementRepository,
   type DrizzleRoleManagementClient,
 } from "./roles/drizzleRoleManagementRepository.js";
-import type { DrizzleBillingClient } from "./billing/drizzleBillingRepository.js";
+import {
+  createDrizzleBillingRepository,
+  type DrizzleBillingClient,
+} from "./billing/drizzleBillingRepository.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
 import { createRuntimeAnalyticsServices } from "../analytics/runtimeAnalyticsServices.js";
 import { createRuntimeComplianceServices } from "../compliance/runtimeComplianceServices.js";
 import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServices.js";
 import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
+import { createAsaasPaymentProviderGateway } from "../billing/asaasPaymentProviderGateway.js";
 import {
   createDrizzleExternalApiRepository,
   type DrizzleExternalApiClient,
@@ -113,7 +114,14 @@ export function createRuntimeAppOptions(
   return {
     analyticsServices: createRuntimeAnalyticsServices(db),
     ...(audit ? { audit } : {}),
-    billingServices: createRuntimeBillingServices(db),
+    billingServices: createBillingServices({
+      ports: {
+        billingRepository: createDrizzleBillingRepository(
+          db as DrizzleBillingClient,
+        ),
+        paymentProviderGateway: createAsaasPaymentProviderGateway(env),
+      },
+    }),
     complianceServices: createRuntimeComplianceServices(),
     crmServices: createRuntimeCrmServices(db),
     documentServices: createRuntimeDocumentServices(db, env),
@@ -154,10 +162,6 @@ function createProductDb(
     max: Number(env.DB_POOL_MAX ?? 5),
   });
   return drizzle(client, { schema });
-}
-
-function createRuntimeBillingServices(db: unknown): BillingServices {
-  return createBillingServices({ drizzleClient: db as DrizzleBillingClient });
 }
 
 function createRuntimeExternalApiServices(db: unknown): ExternalApiServices {

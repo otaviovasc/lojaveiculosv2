@@ -1,8 +1,15 @@
 import { Menu, Moon, Search, Sun, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { navigationGroups } from "../app/modules";
 import type { ModuleDefinition, ModuleId } from "../app/modules";
+import {
+  applyThemeToDocument,
+  getNextTheme,
+  persistTheme,
+  readBrowserPreferredTheme,
+  type AppTheme,
+} from "../app/theme";
 
 type AppShellProps = {
   activeModule: ModuleDefinition;
@@ -52,14 +59,29 @@ export function AppShell({
   onNavigate,
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [theme, setTheme] = useState<AppTheme>(() =>
+    readBrowserPreferredTheme(),
+  );
 
   const navigate = (moduleId: ModuleId) => {
     onNavigate(moduleId);
     setIsMobileNavOpen(false);
   };
 
+  const toggleTheme = () => {
+    setTheme((currentTheme) => {
+      const nextTheme = getNextTheme(currentTheme);
+      persistTheme(window.localStorage, nextTheme);
+      return nextTheme;
+    });
+  };
+
+  useEffect(() => {
+    applyThemeToDocument(theme);
+  }, [theme]);
+
   return (
-    <div className="min-h-screen bg-app text-app lg:grid lg:grid-cols-[272px_1fr]">
+    <div className="min-h-screen bg-app text-app-text lg:grid lg:grid-cols-[272px_1fr]">
       <aside className="hidden border-r border-line bg-panel lg:block">
         <BrandLockup />
         <NavigationList
@@ -123,13 +145,21 @@ export function AppShell({
               <Search aria-hidden="true" className="size-5" />
             </button>
             <button
-              aria-label="Alternar tema claro escuro"
-              aria-pressed="false"
+              aria-label={
+                theme === "dark"
+                  ? "Alternar para tema claro"
+                  : "Alternar para tema escuro"
+              }
+              aria-pressed={theme === "dark"}
               className="icon-button"
+              onClick={toggleTheme}
               type="button"
             >
-              <Sun aria-hidden="true" className="size-5 dark-icon" />
-              <Moon aria-hidden="true" className="hidden size-5 light-icon" />
+              {theme === "dark" ? (
+                <Sun aria-hidden="true" className="size-5" />
+              ) : (
+                <Moon aria-hidden="true" className="size-5" />
+              )}
             </button>
           </div>
         </header>
