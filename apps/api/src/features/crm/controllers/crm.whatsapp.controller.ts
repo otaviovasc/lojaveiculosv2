@@ -13,8 +13,10 @@ import {
   selectScopedConnection,
 } from "./crm.whatsapp.connectionScope.js";
 import {
+  assertWhatsappList,
   assertWhatsappRead,
-  assertWhatsappWrite,
+  assertWhatsappSend,
+  canWhatsappAssign,
   createRepassesAuth,
   CrmWhatsappValidationError,
   handleWhatsapp,
@@ -38,7 +40,7 @@ export function registerCrmWhatsappRoutes(
   crmFeature.get("/whatsapp/bootstrap", async (context) =>
     handleWhatsapp(context, async () => {
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappRead(serviceContext);
+      const permission = assertWhatsappList(serviceContext);
       const auth = createRepassesAuth(context, serviceContext);
       const rawConnections = await services.repassesCrm.getConnections(auth);
       const connections = normalizeWhatsappConnections(rawConnections);
@@ -66,14 +68,16 @@ export function registerCrmWhatsappRoutes(
         serviceContext,
         whatsappAudit.bootstrap(permission),
       );
+      const canAssignSessions =
+        canWhatsappAssign(serviceContext) &&
+        selectedConnection?.id === authContext.connectionId &&
+        authContext.canAssignSessions;
 
       return context.json({
         agents,
         connections: selectedConnection ? [selectedConnection] : [],
         scope: {
-          canAssignSessions:
-            selectedConnection?.id === authContext.connectionId &&
-            authContext.canAssignSessions,
+          canAssignSessions,
           connectionId: selectedConnection?.id ?? null,
         },
       });
@@ -85,7 +89,7 @@ export function registerCrmWhatsappRoutes(
       const parsed = whatsappSessionsQuerySchema.safeParse(context.req.query());
       if (!parsed.success) throw new CrmWhatsappValidationError();
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappRead(serviceContext);
+      const permission = assertWhatsappList(serviceContext);
       const scope = await resolveWhatsappConnectionScope({
         context,
         repassesCrm: services.repassesCrm,
@@ -111,7 +115,7 @@ export function registerCrmWhatsappRoutes(
         whatsappCreateSessionSchema,
       );
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappWrite(serviceContext);
+      const permission = assertWhatsappSend(serviceContext);
       const audit = whatsappAudit.createSession(permission, input);
       const scope = await resolveWhatsappConnectionScope({
         context,
@@ -160,7 +164,7 @@ export function registerCrmWhatsappRoutes(
     handleWhatsapp(context, async () => {
       const input = await parseWhatsappJson(context, whatsappSendTextSchema);
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappWrite(serviceContext);
+      const permission = assertWhatsappSend(serviceContext);
       const audit = whatsappAudit.sendText(
         permission,
         input.sessionId,

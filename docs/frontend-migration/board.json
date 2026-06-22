@@ -4180,7 +4180,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "ready",
       "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "phase-1-remediation",
@@ -4249,13 +4249,42 @@
             "/#/settings?tab=roles"
           ]
         },
-        "last_evidence_path": "",
-        "last_checked_at": "2026-06-22T21:03:55Z",
+        "last_evidence_path": "reports/visual/lvv2-r006-whatsapp-permission-contract",
+        "last_checked_at": "2026-06-22T21:44:00Z",
         "blockers": [
           "phase-1-audit-006"
         ]
       },
-      "v1_improvement_backport_candidates": []
+      "v1_improvement_backport_candidates": [],
+      "evidence": {
+        "source_parity": [
+          "Read repasses-frontend src/context/CrmContext.tsx and src/hooks/useCrmWhatsApp.ts: V1 preserves CRM agent/owner chat behavior and Repasses-side routing, but does not define V2 permission keys.",
+          "Preserved CRM WhatsApp UI behavior by keeping existing V2 frontend rendering catalog-driven and changing only the backend permission contract exposed to settings roles."
+        ],
+        "backend_contract": [
+          "Added explicit PermissionKey values for crm.whatsapp.list, crm.whatsapp.read, crm.whatsapp.send, crm.whatsapp.assign, crm.whatsapp.close, and crm.whatsapp.toggle_intervention.",
+          "WhatsApp bootstrap/session list now require crm.whatsapp.list; messages and read/unread require crm.whatsapp.read; create/send require crm.whatsapp.send; assign/close/toggle require their matching action permissions.",
+          "WhatsApp proxy operations now assert the crm entitlement plus tenant/store scope before calling the transitional Repasses CRM ACL client.",
+          "Role management exposes the WhatsApp permissions through the CRM permission group and accepts operator overrides through the existing catalog-backed PATCH contract."
+        ],
+        "implementation": [
+          "Split CRM WhatsApp permission descriptors into apps/api/src/domains/identity/domain/crmWhatsappPermissionCatalog.ts to keep the identity catalog under line limits.",
+          "Updated default role templates to mirror prior behavior: read-only lead roles can list/read WhatsApp, and lead-update roles retain operational WhatsApp actions through explicit CRM permissions.",
+          "Documented the WhatsApp permission contract in docs/identity-permissions.md."
+        ],
+        "validation": [
+          "npm install (worktree-local dependency install; package-lock diff reverted because it was install churn only)",
+          "npm run test --workspace @lojaveiculosv2/api -- crm.whatsapp.controller.test.ts crm.whatsapp.scope.test.ts accessPolicy.test.ts updateMembershipAccess.test.ts (33 tests)",
+          "npm run test --workspace @lojaveiculosv2/web -- roleDraft.test.ts",
+          "npm run typecheck --workspace @lojaveiculosv2/api",
+          "npm run typecheck --workspace @lojaveiculosv2/shared",
+          "npm run lint --workspace @lojaveiculosv2/api",
+          "npm run lint --workspace @lojaveiculosv2/shared",
+          "npm run check:lines",
+          "VITE_DEV_API_PROXY_TARGET=http://localhost:8788 npm run build --workspace @lojaveiculosv2/web",
+          "npm run qa:visual -- --slice lvv2-r006-whatsapp-permission-contract --url http://localhost:4175"
+        ]
+      }
     },
     {
       "id": "lvv2-r007-finance-pagination-aggregation",

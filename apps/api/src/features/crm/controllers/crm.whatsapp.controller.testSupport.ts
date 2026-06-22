@@ -1,5 +1,5 @@
 import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
-import type { PermissionKey } from "@lojaveiculosv2/shared";
+import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { vi } from "vitest";
 import type { RepassesCrmClient } from "../../../domains/crm/acl/repassesCrmClient.js";
@@ -8,10 +8,20 @@ import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createCrmFeature } from "./crm.controller.js";
 import { createCrmServices } from "./crmServices.js";
 
+export const defaultWhatsappPermissions = [
+  "crm.whatsapp.assign",
+  "crm.whatsapp.close",
+  "crm.whatsapp.list",
+  "crm.whatsapp.read",
+  "crm.whatsapp.send",
+  "crm.whatsapp.toggle_intervention",
+] satisfies PermissionKey[];
+
 export function createTestApp(
   repassesCrm: RepassesCrmClient,
   options: {
     audit?: AuditSink;
+    entitlements?: EntitlementKey[];
     permissions?: PermissionKey[];
   } = {},
 ) {
@@ -20,14 +30,17 @@ export function createTestApp(
     "/api/v1/crm",
     createCrmFeature({
       contextFactory: async () =>
-        createServiceContext({
-          actor: { id: "user_1", kind: "user" },
-          ...(options.audit ? { audit: options.audit } : {}),
-          permissions: options.permissions ?? ["lead.read", "lead.update"],
-          request: { requestId: "req_1" },
-          storeId: "store_1",
-          tenantId: "tenant_1",
-        }),
+        Object.assign(
+          createServiceContext({
+            actor: { id: "user_1", kind: "user" },
+            ...(options.audit ? { audit: options.audit } : {}),
+            permissions: options.permissions ?? defaultWhatsappPermissions,
+            request: { requestId: "req_1" },
+            storeId: "store_1",
+            tenantId: "tenant_1",
+          }),
+          { entitlements: options.entitlements ?? ["crm"] },
+        ),
       services: createCrmServices({
         ports: { crmRepository: createMemoryCrmRepository() },
         repassesCrmClient: repassesCrm,

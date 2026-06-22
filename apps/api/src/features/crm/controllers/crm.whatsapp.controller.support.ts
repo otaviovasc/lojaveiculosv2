@@ -1,5 +1,5 @@
 import type { AuditOutcome, SafeAuditMetadata } from "@lojaveiculosv2/audit";
-import type { PermissionKey } from "@lojaveiculosv2/shared";
+import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import type { Context } from "hono";
 import type { z } from "zod";
 import {
@@ -10,6 +10,7 @@ import {
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import {
   AuthorizationError,
+  assertEntitlement,
   assertPermission,
 } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
@@ -71,11 +72,32 @@ export function readNumericParam(context: Context, name: string): number {
 }
 
 export function assertWhatsappRead(context: ServiceContext) {
-  return assertWhatsappPermission(context, "lead.read");
+  return assertWhatsappPermission(context, "crm.whatsapp.read");
 }
 
-export function assertWhatsappWrite(context: ServiceContext) {
-  return assertWhatsappPermission(context, "lead.update");
+export function assertWhatsappList(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.list");
+}
+
+export function assertWhatsappSend(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.send");
+}
+
+export function assertWhatsappAssign(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.assign");
+}
+
+export function canWhatsappAssign(context: ServiceContext) {
+  readWhatsappScope(context);
+  return context.permissions.includes("crm.whatsapp.assign");
+}
+
+export function assertWhatsappClose(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.close");
+}
+
+export function assertWhatsappToggleIntervention(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.toggle_intervention");
 }
 
 export async function recordWhatsappAudit(
@@ -163,11 +185,22 @@ function assertWhatsappPermission(
 
 function readWhatsappScope(context: ServiceContext) {
   if (context.storeId && context.tenantId) {
-    return { storeId: context.storeId, tenantId: context.tenantId };
+    const scope = { storeId: context.storeId, tenantId: context.tenantId };
+    assertEntitlement(
+      { ...context, ...scope, entitlements: readEntitlements(context) },
+      "crm",
+    );
+    return scope;
   }
   throw new CrmWhatsappValidationError(
     "CRM WhatsApp routes require tenant and store context.",
   );
+}
+
+function readEntitlements(context: ServiceContext): readonly EntitlementKey[] {
+  if (!("entitlements" in context)) return [];
+  const entitlements = context.entitlements;
+  return Array.isArray(entitlements) ? (entitlements as EntitlementKey[]) : [];
 }
 
 type WhatsappErrorStatus = 400 | 401 | 403 | 404 | 409 | 422 | 429 | 502;

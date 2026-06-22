@@ -56,6 +56,42 @@ describe("updateMembershipAccess", () => {
     );
   });
 
+  it("exposes and accepts explicit WhatsApp permission overrides", async () => {
+    const repository = createRepository();
+    const result = await updateMembershipAccess(
+      createContext(ownerUserId),
+      {
+        membershipId: salesmanMembershipId,
+        overrides: [
+          {
+            allowed: true,
+            permission: "crm.whatsapp.send",
+            reason: "approved",
+          },
+        ],
+        role: "investor",
+      },
+      { roleManagementRepository: repository },
+    );
+
+    expect(repository.updateMembershipAccess).toHaveBeenCalledWith(
+      expect.objectContaining({
+        overrides: [
+          {
+            allowed: true,
+            permission: "crm.whatsapp.send",
+            reason: "approved",
+          },
+        ],
+      }),
+    );
+    expect(
+      result.permissionGroups
+        .find((group) => group.key === "crm")
+        ?.permissions.map((permission) => permission.key),
+    ).toEqual(expect.arrayContaining(["crm.whatsapp.send"]));
+  });
+
   it("blocks owner from assigning owner role", async () => {
     await expect(
       updateMembershipAccess(
