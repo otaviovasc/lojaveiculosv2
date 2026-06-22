@@ -172,7 +172,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "ready",
+      "status": "merged",
       "risk": "medium",
       "parallel_group": "foundation-ui",
       "depends_on": ["lvv2-f000-control-plane"],
@@ -269,8 +269,8 @@
       "pr": {
         "number": 2,
         "labels": ["slice:lvv2-f001-app-shell-dashboard", "agent:auto-merge"],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
