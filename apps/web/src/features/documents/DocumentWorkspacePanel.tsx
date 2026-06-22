@@ -62,7 +62,7 @@ export function DocumentWorkspacePanel({
           </strong>
           <span>
             {selectedFolder
-              ? `${selectedFolder.title} · ${selectedFolder.count} documentos`
+              ? `${selectedFolder.title} · ${selectedFolder.count} ${isResultCapped ? "documentos carregados" : "documentos"}`
               : isResultCapped
                 ? "Pastas e contagens refletem os documentos carregados mais recentes."
               : "Organize por veiculo, venda, lead, financeiro e fiscal."}
@@ -93,7 +93,11 @@ export function DocumentWorkspacePanel({
       {isLoading ? (
         <WorkspaceSkeleton />
       ) : viewMode === "folders" && !selectedFolderKey ? (
-        <FoldersGrid folders={folders} onSelectFolder={onSelectFolder} />
+        <FoldersGrid
+          folders={folders}
+          isResultCapped={isResultCapped}
+          onSelectFolder={onSelectFolder}
+        />
       ) : (
         <>
           {selectedFolder ? (
@@ -120,9 +124,11 @@ export function DocumentWorkspacePanel({
 
 function FoldersGrid({
   folders,
+  isResultCapped,
   onSelectFolder,
 }: {
   folders: readonly DocumentFolder[];
+  isResultCapped: boolean;
   onSelectFolder: (folderKey: string | null) => void;
 }) {
   if (folders.length === 0) {
@@ -142,7 +148,8 @@ function FoldersGrid({
           <strong>{folder.title}</strong>
           <span>{folder.subtitle}</span>
           <small>
-            {folder.count} docs · {folder.issued} emitidos · atualizado{" "}
+            {folder.count} docs{isResultCapped ? " carregados" : ""} ·{" "}
+            {folder.issued} emitidos · atualizado{" "}
             {formatDateTime(folder.latestAt)}
           </small>
         </button>
