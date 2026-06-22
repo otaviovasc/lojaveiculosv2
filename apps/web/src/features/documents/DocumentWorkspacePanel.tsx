@@ -25,6 +25,7 @@ export function DocumentWorkspacePanel({
   documents,
   folders,
   isBusy,
+  isResultCapped,
   isLoading,
   onDownload,
   onSelect,
@@ -36,6 +37,7 @@ export function DocumentWorkspacePanel({
   documents: readonly WorkspaceDocument[];
   folders: readonly DocumentFolder[];
   isBusy: boolean;
+  isResultCapped: boolean;
   isLoading: boolean;
   onDownload: (documentId: string) => Promise<void>;
   onSelect: (document: WorkspaceDocument) => void;
@@ -61,6 +63,8 @@ export function DocumentWorkspacePanel({
           <span>
             {selectedFolder
               ? `${selectedFolder.title} · ${selectedFolder.count} documentos`
+              : isResultCapped
+                ? "Pastas e contagens refletem os documentos carregados mais recentes."
               : "Organize por veiculo, venda, lead, financeiro e fiscal."}
           </span>
         </div>

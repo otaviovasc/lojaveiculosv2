@@ -8,6 +8,7 @@ import {
 } from "./DocumentWorkspacePanel";
 import {
   createRuntimeDocumentsApi,
+  DOCUMENTS_WORKSPACE_LIMIT,
   type DocumentsView,
   errorMessage,
   openDocumentDownload,
@@ -36,9 +37,7 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
   const [view, setView] = useState<DocumentsView>("workspace");
   const [workspaceViewMode, setWorkspaceViewMode] =
     useState<WorkspaceViewMode>("folders");
-  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(
-    null,
-  );
+  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [selectedDocument, setSelectedDocument] =
     useState<WorkspaceDocument | null>(null);
@@ -53,7 +52,7 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
     setStatus({ kind: "loading" });
     try {
       const [nextDocuments, nextTemplates] = await Promise.all([
-        documentsApi.listDocuments(nextFilters),
+        documentsApi.listDocuments({ ...nextFilters, limit: DOCUMENTS_WORKSPACE_LIMIT }),
         documentsApi.listTemplates(),
       ]);
       setDocuments(nextDocuments);
@@ -138,6 +137,7 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
   };
   const counts = summarizeDocuments(documents);
   const folders = buildDocumentFolders(documents);
+  const isResultCapped = documents.length >= DOCUMENTS_WORKSPACE_LIMIT;
   const saveTemplate = async (
     kind: DocumentKind,
     input: UpdateDocumentTemplateInput,
@@ -162,6 +162,8 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
       <DocumentsWorkspaceHeader
         counts={{ ...counts, total: documents.length }}
         filters={filters}
+        isResultCapped={isResultCapped}
+        resultLimit={DOCUMENTS_WORKSPACE_LIMIT}
         onRefresh={() => void refresh()}
         updateFilter={updateFilter}
       />
@@ -191,6 +193,7 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
           documents={documents}
           folders={folders}
           isBusy={isDocumentActionBusy}
+          isResultCapped={isResultCapped}
           isLoading={status.kind === "loading"}
           onDownload={downloadDocument}
           onSelect={setSelectedDocument}

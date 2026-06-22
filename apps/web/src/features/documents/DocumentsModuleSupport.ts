@@ -2,6 +2,8 @@ import { createDocumentsApi, type DocumentsApi } from "./apiClient";
 import { createDocumentsApiOptions } from "./runtimeApi";
 import type { WorkspaceDocument } from "./types";
 
+export const DOCUMENTS_WORKSPACE_LIMIT = 200;
+
 export type WorkspaceStatus =
   | { kind: "error"; message: string }
   | { kind: "loading" }

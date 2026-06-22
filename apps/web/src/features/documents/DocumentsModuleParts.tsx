@@ -48,7 +48,9 @@ export function SelectFilter({
 export function DocumentsWorkspaceHeader({
   counts,
   filters,
+  isResultCapped,
   onRefresh,
+  resultLimit,
   updateFilter,
 }: {
   counts: {
@@ -58,7 +60,9 @@ export function DocumentsWorkspaceHeader({
     total: number;
   };
   filters: ListDocumentsFilters;
+  isResultCapped: boolean;
   onRefresh: () => void;
+  resultLimit: number;
   updateFilter: <Key extends keyof ListDocumentsFilters>(
     key: Key,
     value: ListDocumentsFilters[Key],
@@ -74,8 +78,9 @@ export function DocumentsWorkspaceHeader({
           </span>
           <h2>Documentos compartilhados</h2>
           <p>
-            Arquivos vinculados a veiculos, leads, vendas, pagamentos,
-            financeiro e fiscal em uma unica lista auditada.
+            {isResultCapped
+              ? `Mostrando os ${resultLimit} documentos mais recentes. Use filtros para refinar pastas e contagens.`
+              : "Arquivos vinculados a veiculos, leads, vendas, pagamentos, financeiro e fiscal em uma unica lista auditada."}
           </p>
         </div>
         <button
@@ -90,7 +95,10 @@ export function DocumentsWorkspaceHeader({
       </section>
 
       <section className="documents-summary" aria-label="Resumo de documentos">
-        <Metric label="Total" value={String(counts.total)} />
+        <Metric
+          label={isResultCapped ? "Carregados" : "Total"}
+          value={String(counts.total)}
+        />
         <Metric label="Emitidos" value={String(counts.issued)} />
         <Metric label="Assinatura" value={String(counts.signature)} />
         <Metric label="Contextos" value={String(counts.contexts)} />
