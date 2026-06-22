@@ -153,13 +153,14 @@ export async function loadFinanceWorkspace(
   api: FinanceApi,
   activeType: FinanceEntryType,
 ) {
-  const [entries, summary, recurringEntries] = await Promise.all([
+  const [entries, summary, recurringEntries, commissionRules] = await Promise.all([
     api.listEntries(activeType),
     api.getSummary(),
     api.listRecurringEntries(),
+    api.listCommissionRules(),
   ]);
 
-  return { entries, recurringEntries, summary };
+  return { commissionRules, entries, recurringEntries, summary };
 }
 
 export function filterEntries(

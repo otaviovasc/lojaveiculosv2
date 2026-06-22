@@ -25,10 +25,12 @@ export function FinanceEntryModal({
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState(() => createEntryDraft(activeType));
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (!isOpen) return;
+    setSaveError(null);
     setStep(entry ? 3 : 1);
     setDraft(entry ? entryToDraft(entry) : createEntryDraft(activeType));
   }, [activeType, entry, isOpen]);
@@ -47,9 +49,12 @@ export function FinanceEntryModal({
     event.preventDefault();
     if (!canProceed) return;
     setIsSaving(true);
+    setSaveError(null);
     try {
       await onSubmit(draft);
       onClose();
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : String(error));
     } finally {
       setIsSaving(false);
     }
@@ -91,7 +96,12 @@ export function FinanceEntryModal({
           )}
         </div>
 
-        <footer className="flex flex-col gap-3 border-t border-line bg-app p-5 sm:flex-row sm:items-center sm:justify-between">
+        <footer className="flex flex-col gap-3 border-t border-line bg-app p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          {saveError ? (
+            <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-danger sm:order-first sm:w-full">
+              {saveError}
+            </p>
+          ) : null}
           <div className="flex gap-2">
             {step > 1 && !entry ? (
               <button

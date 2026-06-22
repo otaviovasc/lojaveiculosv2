@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
+import { cancelEntry, exportFinanceCsv, updateEntryFromDraft } from "./financeBillsActions";
 import { FinanceBillsFilters } from "./FinanceBillsFilters";
 import { FinanceBillsHeader } from "./FinanceBillsHeader";
 import { FinanceBillsSummary } from "./FinanceBillsSummary";
+import { CommissionRulesPanel } from "./FinanceCorePanels";
 import { FinanceEntryModal } from "./FinanceEntryModal";
 import { FinanceEntryTable } from "./FinanceEntryTable";
 import { FinanceRecurringBillsPanel } from "./FinanceRecurringBillsPanel";
@@ -20,11 +22,11 @@ import {
   type FinanceToast,
 } from "./financeBillsModel";
 import type {
+  CommissionRule,
   FinanceEntry,
   FinanceEntryType,
   FinanceRecurringEntry,
   FinanceSummary,
-  UpdateFinanceEntryInput,
 } from "./types";
 
 export function FinanceModule({
@@ -36,6 +38,7 @@ export function FinanceModule({
 }) {
   const [activeType, setActiveType] = useState(defaultActiveType);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
+  const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
   const [recurringEntries, setRecurringEntries] = useState<FinanceRecurringEntry[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [runtimeApi, setRuntimeApi] = useState<FinanceApi | null>(api ?? null);
@@ -66,6 +69,7 @@ export function FinanceModule({
     setListState({ kind: "loading" });
     void loadFinanceWorkspace(runtimeApi, activeType)
       .then((payload) => {
+        setCommissionRules(payload.commissionRules);
         setEntries(payload.entries);
         setRecurringEntries(payload.recurringEntries);
         setSummary(payload.summary);
@@ -84,37 +88,26 @@ export function FinanceModule({
 
   const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi) return;
-    if (modalEntry) {
-      await updateEntryFromDraft(runtimeApi, modalEntry.id, draft);
-      setToast({ kind: "success", title: "Lancamento salvo", message: draft.name });
-    } else if (draft.recurrence === "recurring") {
-      await runtimeApi.createRecurringEntry(toRecurringInput(draft));
-      setToast({ kind: "success", title: "Recorrencia criada", message: draft.name });
-    } else {
-      await runtimeApi.createEntryFlow(toEntryInput(draft));
-      setToast({ kind: "success", title: "Lancamento criado", message: draft.name });
+    try {
+      if (modalEntry) {
+        await updateEntryFromDraft(runtimeApi, modalEntry.id, draft);
+        setToast({ kind: "success", title: "Lancamento salvo", message: draft.name });
+      } else if (draft.recurrence === "recurring") {
+        await runtimeApi.createRecurringEntry(toRecurringInput(draft));
+        setToast({ kind: "success", title: "Recorrencia criada", message: draft.name });
+      } else {
+        await runtimeApi.createEntryFlow(toEntryInput(draft));
+        setToast({ kind: "success", title: "Lancamento criado", message: draft.name });
+      }
+      refresh();
+    } catch (error) {
+      setToast({
+        kind: "error",
+        message: error instanceof Error ? error.message : String(error),
+        title: "Erro ao salvar",
+      });
+      throw error;
     }
-    refresh();
-  };
-
-  const exportCsv = () => {
-    const rows = [
-      ["nome", "categoria", "status", "vencimento", "valor_centavos"],
-      ...filteredEntries.map((entry) => [
-        entry.name,
-        entry.category,
-        entry.status,
-        entry.dueAt ?? "",
-        String(entry.amountCents),
-      ]),
-    ];
-    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `financeiro-${activeType}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -124,7 +117,7 @@ export function FinanceModule({
           setModalEntry(null);
           setIsModalOpen(true);
         }}
-        onExport={exportCsv}
+        onExport={() => exportFinanceCsv(filteredEntries, activeType)}
         onReports={() => (window.location.hash = "#/reports")}
       />
       <FinanceTypeTabs
@@ -158,6 +151,12 @@ export function FinanceModule({
         />
       </div>
       <FinanceRecurringBillsPanel items={recurringEntries} />
+      {activeType === "commission" ? (
+        <CommissionRulesPanel
+          items={commissionRules}
+          onCreate={(input) => void runtimeApi?.createCommissionRule(input).then(refresh)}
+        />
+      ) : null}
       {listState.kind === "error" ? (
         <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-danger">
           {listState.message}
@@ -183,56 +182,4 @@ function FinanceToastMessage({ toast }: { toast: FinanceToast }) {
       {toast.title}: {toast.message}
     </div>
   );
-}
-
-async function updateEntryFromDraft(
-  api: FinanceApi,
-  entryId: string,
-  draft: FinanceEntryDraft,
-) {
-  const input = toEntryInput(draft);
-  const update: UpdateFinanceEntryInput = {
-    amountCents: input.amountCents,
-    category: input.category,
-    name: input.name,
-    status: input.status,
-  };
-  if (input.dueAt !== undefined) update.dueAt = input.dueAt;
-  if (input.metadata !== undefined) update.metadata = input.metadata;
-  if (input.paidAt !== undefined) update.paidAt = input.paidAt;
-  if (input.sellerUserId !== undefined) {
-    update.sellerUserId = input.sellerUserId;
-  }
-  await api.updateEntry(entryId, update);
-  if (!draft.documentFile) return;
-  const upload = await api.requestDocumentUpload(entryId, draft.documentFile);
-  await fetch(upload.uploadUrl, {
-    body: draft.documentFile,
-    method: upload.uploadMethod ?? "PUT",
-    ...(upload.uploadHeaders ? { headers: upload.uploadHeaders } : {}),
-  });
-  await api.attachDocument(entryId, {
-    fileName: draft.documentFile.name,
-    fileSizeBytes: draft.documentFile.size,
-    kind: "finance_receipt",
-    mimeType: draft.documentFile.type || "application/octet-stream",
-    storageKey: upload.storageKey,
-    title: draft.documentTitle.trim() || draft.documentFile.name,
-  });
-}
-
-async function cancelEntry(
-  api: FinanceApi | null,
-  entry: FinanceEntry,
-  refresh: () => void,
-  setToast: (toast: FinanceToast) => void,
-) {
-  if (!api || !window.confirm(`Cancelar ${entry.name}?`)) return;
-  await api.cancelEntry(entry.id, "Cancelado pela tela de gastos.");
-  setToast({ kind: "success", title: "Lancamento cancelado", message: entry.name });
-  refresh();
-}
-
-function csvCell(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
 }
