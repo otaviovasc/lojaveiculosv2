@@ -38,8 +38,8 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             Caixa de entrada, detalhe da sessao e continuidade de mensagens.
           </h2>
           <p className="max-w-2xl text-sm font-semibold text-inverse-muted">
-            V2 autentica e audita o acesso; conversas e atendimento continuam no
-            backend CRM transitivo por ACL.
+            Conversas, responsaveis e acoes ficam auditados para continuidade
+            do atendimento.
           </p>
         </div>
         <span className="crm-hero-status">
@@ -51,7 +51,7 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
 
       {inbox.error ? <WhatsappNotice message={inbox.error.message} /> : null}
       {inbox.hasConnection === false ? (
-        <WhatsappNotice message="Nenhuma conexao WhatsApp ativa foi encontrada no CRM transitivo." />
+        <WhatsappNotice message="Nenhuma conexao WhatsApp ativa foi encontrada para a loja." />
       ) : null}
 
       <WhatsappToolbar onSearch={inbox.setSearch} search={inbox.search} />

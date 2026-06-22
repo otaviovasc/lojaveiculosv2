@@ -1,4 +1,4 @@
-export type CrmSurface = "leads" | "whatsapp";
+import type { CrmSurface } from "./crmRouteState";
 
 type CrmSurfaceTabsProps = {
   activeSurface: CrmSurface;
@@ -23,7 +23,7 @@ export function CrmSurfaceTabs({
         onClick={() => onChange("leads")}
         type="button"
       >
-        Pipeline
+        Clientes
       </button>
     </nav>
   );

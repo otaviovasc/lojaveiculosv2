@@ -191,5 +191,5 @@ function readStoreLabel() {
     DEV?: boolean;
     VITE_DEV_STORE_SLUG?: string;
   };
-  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "store scope");
+  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "Loja local" : "Loja atual");
 }

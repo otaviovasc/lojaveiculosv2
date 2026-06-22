@@ -15,7 +15,7 @@ const addonCopy = {
     accent: "green",
     icon: ShieldCheck,
     title: "CRM WhatsApp",
-    subtitle: "Atendimento nativo sem iframe, usando repasses backend.",
+    subtitle: "Atendimento da equipe com conversas e historico por cliente.",
   },
   nfe: {
     accent: "blue",
@@ -44,10 +44,10 @@ export function LockedAddonPanel({ kind }: LockedAddonPanelProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            "Ativacao por permissao e entitlement",
-            "Auditoria obrigatoria por acao",
+            "Ativacao por perfil e modulo",
+            "Historico completo de acoes",
             "Estados mobile sem sobreposicao",
-            "Logs com tenant, store e request id",
+            "Registros por loja, usuario e acao",
           ].map((item) => (
             <div className="flex gap-3 rounded-lg bg-app p-3" key={item}>
               <CheckCircle2

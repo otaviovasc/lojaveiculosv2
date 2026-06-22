@@ -15,8 +15,8 @@ export function FinanceRecurringBillsPanel({
   return (
     <FinancePanel icon={<Repeat2 className="size-5" />} title="Recorrencias">
       <div className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-        V2 permite criar e listar recorrencias auditadas. Edicao, pausa e
-        exclusao de regras ainda nao existem no contrato backend desta slice.
+        Recorrencias podem ser criadas e listadas com auditoria. Edicao, pausa
+        e exclusao de regras seguem como pendencias da fase atual.
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {items.length ? (

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { dashboardStats } from "./dashboardData";
 import { publicStorefrontPreview } from "../features/publicSite/fixtures";
+import {
+  crmSurfaceHash,
+  readCrmSurfaceFromHash,
+} from "../features/crm/crmRouteState";
 import { parseModuleHash } from "./moduleState";
 import { navigationGroups } from "./modules";
 
@@ -35,7 +39,17 @@ describe("App module navigation", () => {
     expect(parseModuleHash("#inventory")).toBe("inventory");
     expect(parseModuleHash("#/public-api")).toBe("public-api");
     expect(parseModuleHash("#/settings?tab=roles")).toBe("settings");
+    expect(parseModuleHash("#/crm?surface=leads")).toBe("customers");
+    expect(parseModuleHash("#/crm?surface=whatsapp")).toBe("crm");
     expect(parseModuleHash("#unknown")).toBe("dashboard");
+  });
+
+  it("keeps CRM surfaces deterministic for visual QA routes", () => {
+    expect(crmSurfaceHash("leads")).toBe("/crm?surface=leads");
+    expect(crmSurfaceHash("whatsapp")).toBe("/crm?surface=whatsapp");
+    expect(readCrmSurfaceFromHash("#/crm?surface=leads")).toBe("leads");
+    expect(readCrmSurfaceFromHash("#/crm?surface=whatsapp")).toBe("whatsapp");
+    expect(readCrmSurfaceFromHash("#/crm")).toBe("whatsapp");
   });
 
   it("keeps dashboard stats aligned with the Loja visual direction", () => {

@@ -19,10 +19,10 @@ export function InventoryListHeader({
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2 text-xs font-black">
             <span className="rounded-full bg-accent-soft px-3 py-1 text-accent-strong">
-              Inventario V2
+              Inventario
             </span>
             <span className="rounded-full bg-blue-soft px-3 py-1 text-app-text">
-              Listing + unidade
+              Anuncio + unidade
             </span>
           </div>
           <h2 className="text-2xl font-black text-app-text lg:text-4xl">
@@ -36,7 +36,7 @@ export function InventoryListHeader({
         </div>
         <div className="flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-sm font-black text-accent-strong">
           <ShieldCheck aria-hidden="true" className="size-4" />
-          Permissoes e auditoria via V2
+          Permissoes e auditoria ativas
         </div>
       </div>
     </section>

@@ -52,7 +52,32 @@ line-count, architecture, typecheck, lint, and test gates.
    findings, green CI, required visual evidence, and no stale board state.
 9. The worker merges the PR unless the PR carries `agent:human-hold`.
 10. The main orchestrator notices merged dependencies and starts newly
-    unblocked slices.
+    unblocked slices only when the current phase gate allows feature work.
+
+## Phase Gate Lifecycle
+
+Phase gates prevent the board from claiming green while an operator surface is
+missing, stale, or only partially represented.
+
+1. Every slice belongs to one explicit phase in `board.json`.
+2. When a phase reaches its planned accomplishment mark, pause non-remediation
+   feature development for that phase.
+3. Run the full phase audit: board validation, regenerated plan check, required
+   visual QA routes, source-parity review against V1/repasses refs, backend
+   contract verification, OpenAPI/doc coverage where applicable, focused tests,
+   and broad validation when practical.
+4. Record each audit finding as an explicit remediation slice in the current
+   phase. The phase and audit stay `blocked`; remediation slices stay startable
+   (`planned` or `ready`) and carry `phase-blocker` labels plus `qa.blockers`.
+5. While the current phase audit is blocked, worker prompts are allowed only for
+   unresolved remediation slices listed in
+   `currentPhase.audit.remediation_slice_ids`. Non-remediation feature slices
+   wait until the phase audit passes.
+6. After all remediation PRs merge, rerun the phase audit. Mark the phase audit
+   `passed` only when there are no unresolved findings, stale evidence paths, or
+   missing surfaces.
+7. Continue to the next non-remediation slice or next phase only after the
+   current phase audit is `passed`.
 
 ## Model Policy
 

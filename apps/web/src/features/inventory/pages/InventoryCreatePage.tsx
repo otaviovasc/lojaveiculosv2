@@ -164,15 +164,15 @@ export function InventoryCreatePage({
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex flex-wrap gap-2">
-              <InventoryBadge>Inventario V2</InventoryBadge>
-              <InventoryBadge tone="blue">R2 media</InventoryBadge>
+              <InventoryBadge>Inventario</InventoryBadge>
+              <InventoryBadge tone="blue">Fotos e videos</InventoryBadge>
             </div>
             <h2 className="text-2xl font-black text-app-text lg:text-4xl">
               Criar veiculo no estoque
             </h2>
             <p className="max-w-3xl text-sm font-bold text-muted">
               Cadastre o anuncio, vincule a unidade operacional e envie uma
-              midia opcional para hospedagem externa.
+              midia opcional para a galeria do veiculo.
             </p>
           </div>
           <div className="flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-sm font-black text-accent-strong">

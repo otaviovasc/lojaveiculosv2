@@ -113,7 +113,7 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
           </h2>
           <p className="max-w-3xl text-sm font-bold text-muted">
             Identidade, contato, WhatsApp, SEO, publicacao e dominio ficam em um
-            contrato auditavel para alimentar vitrine, documentos e billing.
+            cadastro auditavel para alimentar vitrine, documentos e acessos.
           </p>
         </div>
         <button

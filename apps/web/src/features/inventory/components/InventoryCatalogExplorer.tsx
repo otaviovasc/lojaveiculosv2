@@ -18,7 +18,7 @@ export function InventoryCatalogExplorer({
       <div className="grid gap-4">
         <div className="flex flex-wrap gap-2">
           <InventoryBadge>Somente leitura</InventoryBadge>
-          <InventoryBadge tone="blue">Catalogo V2</InventoryBadge>
+          <InventoryBadge tone="blue">Catalogo FIPE</InventoryBadge>
         </div>
         <InventoryCatalogSelector
           api={api}

@@ -1,6 +1,161 @@
 {
   "version": 1,
   "updated_at": "2026-06-22",
+  "current_phase_id": "phase-1-operator-parity",
+  "phases": [
+    {
+      "id": "phase-0-control-plane",
+      "name": "Control Plane Bootstrap",
+      "status": "passed",
+      "scope": "Repository guardrails, migration board, prompt tooling, QA inventory, and worker/reviewer loop contracts.",
+      "started_at": "2026-06-22",
+      "last_checked_at": "2026-06-22T21:03:55Z",
+      "entry_criteria": [
+        "V2 repo exists with frontend migration board and validation tooling."
+      ],
+      "exit_criteria": [
+        "Control-plane tooling validates source refs, target refs, QA commands, and review metadata."
+      ],
+      "audit": {
+        "status": "passed",
+        "source": "PR #1 control-plane merge",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "findings": [],
+        "remediation_slice_ids": []
+      }
+    },
+    {
+      "id": "phase-1-operator-parity",
+      "name": "Operator Parity Gate",
+      "status": "blocked",
+      "scope": "P0 operator surfaces: shell, dashboard, inventory, CRM, finance, commissions, documents, settings, and public storefront readiness.",
+      "started_at": "2026-06-22",
+      "last_checked_at": "2026-06-22T21:03:55Z",
+      "entry_criteria": [
+        "Phase-0 control plane passed.",
+        "P0 slices are assigned owners and routes for deterministic QA."
+      ],
+      "exit_criteria": [
+        "All P0 operator destinations have deterministic routes and current visual evidence.",
+        "Merged slices cannot hide known parity gaps; each blocker has a remediation slice.",
+        "Finance, CRM, documents, settings, and inventory create contracts are represented in UI, tests, and OpenAPI where applicable."
+      ],
+      "audit": {
+        "status": "blocked",
+        "source": "Phase gate audit after PR #11",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "remediation_slice_ids": [
+          "lvv2-r001-recurring-bills-lifecycle",
+          "lvv2-r002-documents-operations-parity",
+          "lvv2-r003-commissions-seller-pdf-report",
+          "lvv2-r004-whatsapp-media-audio-composer",
+          "lvv2-r005-composition-exceptions-burn-down",
+          "lvv2-r006-whatsapp-permission-contract",
+          "lvv2-r007-finance-pagination-aggregation",
+          "lvv2-r008-openapi-finance-crm-settings",
+          "lvv2-r009-inventory-create-partial-failure"
+        ],
+        "findings": [
+          {
+            "id": "phase-1-audit-001",
+            "severity": "blocker",
+            "summary": "Recurring bills can be created/listed, but V1 edit, pause, and delete parity is not implemented.",
+            "remediation_slice_id": "lvv2-r001-recurring-bills-lifecycle"
+          },
+          {
+            "id": "phase-1-audit-002",
+            "severity": "blocker",
+            "summary": "Documents workspace does not yet cover V1 upload, edit, and delete operator parity end to end.",
+            "remediation_slice_id": "lvv2-r002-documents-operations-parity"
+          },
+          {
+            "id": "phase-1-audit-003",
+            "severity": "blocker",
+            "summary": "Commissions preserve seller settlement, but the V1 seller PDF report remains a finance contract gap.",
+            "remediation_slice_id": "lvv2-r003-commissions-seller-pdf-report"
+          },
+          {
+            "id": "phase-1-audit-004",
+            "severity": "blocker",
+            "summary": "WhatsApp text continuity merged, but media and audio composer parity is still missing.",
+            "remediation_slice_id": "lvv2-r004-whatsapp-media-audio-composer"
+          },
+          {
+            "id": "phase-1-audit-005",
+            "severity": "blocker",
+            "summary": "Active frontend composition exceptions remain and need burn-down before the phase can claim green.",
+            "remediation_slice_id": "lvv2-r005-composition-exceptions-burn-down"
+          },
+          {
+            "id": "phase-1-audit-006",
+            "severity": "blocker",
+            "summary": "WhatsApp permissions need an explicit V2 contract instead of relying on ACL drift assumptions.",
+            "remediation_slice_id": "lvv2-r006-whatsapp-permission-contract"
+          },
+          {
+            "id": "phase-1-audit-007",
+            "severity": "blocker",
+            "summary": "Finance totals and exports need all-pages aggregation instead of first-page assumptions.",
+            "remediation_slice_id": "lvv2-r007-finance-pagination-aggregation"
+          },
+          {
+            "id": "phase-1-audit-008",
+            "severity": "blocker",
+            "summary": "OpenAPI docs do not yet describe the merged finance, CRM, and settings operator surfaces.",
+            "remediation_slice_id": "lvv2-r008-openapi-finance-crm-settings"
+          },
+          {
+            "id": "phase-1-audit-009",
+            "severity": "blocker",
+            "summary": "Inventory create needs partial-failure UX and idempotency handling for listing/unit/media steps.",
+            "remediation_slice_id": "lvv2-r009-inventory-create-partial-failure"
+          }
+        ]
+      }
+    },
+    {
+      "id": "phase-2-operational-depth",
+      "name": "Operational Depth",
+      "status": "planned",
+      "scope": "P1/P2 modules that deepen reporting, fiscal, billing, marketplaces, public API, compliance, onboarding, and agency operations after phase 1 passes.",
+      "started_at": null,
+      "last_checked_at": "2026-06-22T21:03:55Z",
+      "entry_criteria": [
+        "phase-1-operator-parity audit status is passed."
+      ],
+      "exit_criteria": [
+        "Each planned module has route coverage, API contract coverage, and owner/reviewer evidence."
+      ],
+      "audit": {
+        "status": "pending",
+        "source": "Not started",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "findings": [],
+        "remediation_slice_ids": []
+      }
+    },
+    {
+      "id": "phase-x-deferred-and-do-not-port",
+      "name": "Deferred And Do Not Port",
+      "status": "deferred",
+      "scope": "Explicitly deferred placeholders plus surfaces that should not be ported from V1/repasses into this product scope.",
+      "started_at": null,
+      "last_checked_at": "2026-06-22T21:03:55Z",
+      "entry_criteria": [
+        "No entry; tracked so deferred scope cannot look like a missing phase-1 surface."
+      ],
+      "exit_criteria": [
+        "Each item stays intentionally deferred or is promoted into a future numbered phase."
+      ],
+      "audit": {
+        "status": "pending",
+        "source": "Board classification",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "findings": [],
+        "remediation_slice_ids": []
+      }
+    }
+  ],
   "repos": {
     "lojaveiculosv2": {
       "relative_path": "."
@@ -53,6 +208,7 @@
       "classification": "migrate-now",
       "surface_type": "foundation",
       "status": "merged",
+      "phase": "phase-0-control-plane",
       "risk": "medium",
       "parallel_group": "foundation",
       "depends_on": [],
@@ -158,7 +314,10 @@
       },
       "pr": {
         "number": 1,
-        "labels": ["slice:lvv2-f000-control-plane", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f000-control-plane",
+          "agent:auto-merge"
+        ],
         "review_status": "merged",
         "merge_status": "merged"
       },
@@ -185,9 +344,12 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "foundation-ui",
-      "depends_on": ["lvv2-f000-control-plane"],
+      "depends_on": [
+        "lvv2-f000-control-plane"
+      ],
       "blocks": [
         "lvv2-f002-inventory-list-catalog",
         "lvv2-f005-crm-leads-pipeline"
@@ -286,7 +448,10 @@
       },
       "pr": {
         "number": 2,
-        "labels": ["slice:lvv2-f001-app-shell-dashboard", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f001-app-shell-dashboard",
+          "agent:auto-merge"
+        ],
         "review_status": "merged",
         "merge_status": "merged"
       },
@@ -297,7 +462,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f001-app-shell-dashboard",
-          "routes": ["/#/dashboard"]
+          "routes": [
+            "/#/dashboard"
+          ]
         },
         "last_evidence_path": "reports/visual/lvv2-f001-app-shell-dashboard/dashboard.txt",
         "last_checked_at": "2026-06-22T17:18:16.013Z",
@@ -313,9 +480,12 @@
       "classification": "migrate-now",
       "surface_type": "screen",
       "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "inventory",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard"
+      ],
       "blocks": [
         "lvv2-f003-inventory-create-edit-media",
         "lvv2-f004-inventory-reserve-sell-workflows"
@@ -422,7 +592,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f002-inventory-list-catalog",
-          "routes": ["/#/inventory"]
+          "routes": [
+            "/#/inventory"
+          ]
         },
         "last_evidence_path": "reports/visual/lvv2-f002-inventory-list-catalog/inventory.txt",
         "last_checked_at": "2026-06-22T18:07:58.912Z",
@@ -437,13 +609,17 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "in-progress",
+      "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "inventory",
-      "depends_on": ["lvv2-f002-inventory-list-catalog"],
+      "depends_on": [
+        "lvv2-f002-inventory-list-catalog"
+      ],
       "blocks": [
         "lvv2-f004-inventory-reserve-sell-workflows",
-        "lvv2-f013-public-site-builder-storefront"
+        "lvv2-f013-public-site-builder-storefront",
+        "lvv2-r009-inventory-create-partial-failure"
       ],
       "source_refs": [
         {
@@ -554,8 +730,8 @@
           "slice:lvv2-f003-inventory-create-edit-media",
           "agent:auto-merge"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -572,7 +748,7 @@
           ]
         },
         "last_evidence_path": "reports/visual/lvv2-f003-inventory-create-edit-media",
-        "last_checked_at": "2026-06-22T16:32:27-03:00",
+        "last_checked_at": "2026-06-22T21:03:55Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
@@ -585,6 +761,7 @@
       "classification": "stacked-after",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "inventory-workflows",
       "depends_on": [
@@ -654,7 +831,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f004-inventory-reserve-sell-workflows",
-          "routes": ["/#/inventory"]
+          "routes": [
+            "/#/inventory"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -674,6 +853,7 @@
       "classification": "migrate-now",
       "surface_type": "screen",
       "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "crm-core",
       "depends_on": [
@@ -798,7 +978,10 @@
       },
       "pr": {
         "number": 6,
-        "labels": ["slice:lvv2-f005-crm-leads-pipeline", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f005-crm-leads-pipeline",
+          "agent:auto-merge"
+        ],
         "review_status": "merged",
         "merge_status": "merged"
       },
@@ -809,10 +992,12 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f005-crm-leads-pipeline",
-          "routes": ["/#/crm"]
+          "routes": [
+            "/#/crm?surface=leads"
+          ]
         },
-        "last_evidence_path": "reports/visual/lvv2-f005-crm-leads-pipeline/crm.txt",
-        "last_checked_at": "2026-06-22T18:31:31Z",
+        "last_evidence_path": "reports/visual/lvv2-f005-crm-leads-pipeline/crm_surface_leads.txt",
+        "last_checked_at": "2026-06-22T21:21:10Z",
         "blockers": []
       },
       "evidence": {
@@ -855,11 +1040,19 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "crm-core",
-      "depends_on": ["lvv2-f005-crm-leads-pipeline"],
-      "blocks": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "depends_on": [
+        "lvv2-f005-crm-leads-pipeline"
+      ],
+      "blocks": [
+        "lvv2-f007-crm-team-settings-tags-connections",
+        "lvv2-r004-whatsapp-media-audio-composer",
+        "lvv2-r006-whatsapp-permission-contract",
+        "lvv2-r008-openapi-finance-crm-settings"
+      ],
       "source_refs": [
         {
           "repo": "lojaveiculos",
@@ -941,10 +1134,10 @@
         "labels": [
           "slice:lvv2-f006-crm-whatsapp-inbox",
           "risk:high",
-          "agent:human-hold"
+          "agent:auto-merge"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass-plus-repasses-acl",
@@ -953,10 +1146,12 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f006-crm-whatsapp-inbox",
-          "routes": ["/#/crm"]
+          "routes": [
+            "/#/crm?surface=whatsapp"
+          ]
         },
-        "last_evidence_path": "reports/visual/lvv2-f006-crm-whatsapp-inbox/crm.txt",
-        "last_checked_at": "2026-06-22T19:38:33Z",
+        "last_evidence_path": "reports/visual/lvv2-f006-crm-whatsapp-inbox/crm_surface_whatsapp.txt",
+        "last_checked_at": "2026-06-22T21:21:10Z",
         "blockers": []
       },
       "evidence": {
@@ -1001,10 +1196,15 @@
       "classification": "stacked-after",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "crm-admin",
-      "depends_on": ["lvv2-f006-crm-whatsapp-inbox"],
-      "blocks": ["lvv2-f008-crm-automation-campaigns-visits"],
+      "depends_on": [
+        "lvv2-f006-crm-whatsapp-inbox"
+      ],
+      "blocks": [
+        "lvv2-f008-crm-automation-campaigns-visits"
+      ],
       "source_refs": [
         {
           "repo": "repasses-frontend",
@@ -1075,7 +1275,11 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f007-crm-team-settings-tags-connections",
-          "routes": ["/#/crm", "/#/settings"]
+          "routes": [
+            "/#/crm?surface=leads",
+            "/#/crm?surface=whatsapp",
+            "/#/settings"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -1091,9 +1295,12 @@
       "classification": "stacked-after",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "medium",
       "parallel_group": "crm-admin",
-      "depends_on": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "depends_on": [
+        "lvv2-f007-crm-team-settings-tags-connections"
+      ],
       "blocks": [],
       "source_refs": [
         {
@@ -1161,7 +1368,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f008-crm-automation-campaigns-visits",
-          "routes": ["/#/crm"]
+          "routes": [
+            "/#/crm"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -1177,12 +1386,18 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "finance",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard"
+      ],
       "blocks": [
         "lvv2-f004-inventory-reserve-sell-workflows",
-        "lvv2-f010-commissions"
+        "lvv2-f010-commissions",
+        "lvv2-r001-recurring-bills-lifecycle",
+        "lvv2-r007-finance-pagination-aggregation",
+        "lvv2-r008-openapi-finance-crm-settings"
       ],
       "source_refs": [
         {
@@ -1292,7 +1507,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f009-finance-expenses-bills",
-          "routes": ["/#/expenses"]
+          "routes": [
+            "/#/expenses"
+          ]
         },
         "last_evidence_path": "reports/visual/lvv2-f009-finance-expenses-bills/expenses.txt",
         "last_checked_at": "2026-06-22T18:45:51Z",
@@ -1307,11 +1524,18 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "ready",
+      "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "finance",
-      "depends_on": ["lvv2-f009-finance-expenses-bills"],
-      "blocks": [],
+      "depends_on": [
+        "lvv2-f009-finance-expenses-bills"
+      ],
+      "blocks": [
+        "lvv2-r003-commissions-seller-pdf-report",
+        "lvv2-r007-finance-pagination-aggregation",
+        "lvv2-r008-openapi-finance-crm-settings"
+      ],
       "source_refs": [
         {
           "repo": "lojaveiculos",
@@ -1390,9 +1614,12 @@
       },
       "pr": {
         "number": 9,
-        "labels": ["slice:lvv2-f010-commissions", "agent:auto-merge"],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "labels": [
+          "slice:lvv2-f010-commissions",
+          "agent:auto-merge"
+        ],
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -1401,10 +1628,12 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f010-commissions",
-          "routes": ["/#/commissions"]
+          "routes": [
+            "/#/commissions"
+          ]
         },
         "last_evidence_path": "reports/visual/lvv2-f010-commissions/commissions.txt",
-        "last_checked_at": "2026-06-22T19:24:50Z",
+        "last_checked_at": "2026-06-22T21:03:55Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
@@ -1417,10 +1646,16 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "documents",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
-      "blocks": ["lvv2-f004-inventory-reserve-sell-workflows"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard"
+      ],
+      "blocks": [
+        "lvv2-f004-inventory-reserve-sell-workflows",
+        "lvv2-r002-documents-operations-parity"
+      ],
       "source_refs": [
         {
           "repo": "lojaveiculos",
@@ -1522,7 +1757,10 @@
       },
       "pr": {
         "number": 5,
-        "labels": ["slice:lvv2-f011-documents-workspace", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f011-documents-workspace",
+          "agent:auto-merge"
+        ],
         "review_status": "merged",
         "merge_status": "merged"
       },
@@ -1533,7 +1771,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f011-documents-workspace",
-          "routes": ["/#/documents"]
+          "routes": [
+            "/#/documents"
+          ]
         },
         "last_evidence_path": "reports/visual/lvv2-f011-documents-workspace/documents.txt",
         "last_checked_at": "2026-06-22T18:19:25.864Z",
@@ -1549,10 +1789,17 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "merged",
+      "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "settings",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
-      "blocks": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard"
+      ],
+      "blocks": [
+        "lvv2-f007-crm-team-settings-tags-connections",
+        "lvv2-r006-whatsapp-permission-contract",
+        "lvv2-r008-openapi-finance-crm-settings"
+      ],
       "source_refs": [
         {
           "repo": "lojaveiculos",
@@ -1589,8 +1836,7 @@
         "number": 3,
         "labels": [
           "slice:lvv2-f012-settings-identity-roles",
-          "risk:high",
-          "agent:human-hold"
+          "risk:high"
         ],
         "review_status": "merged",
         "merge_status": "merged"
@@ -1602,7 +1848,10 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f012-settings-identity-roles",
-          "routes": ["/#/settings", "/#/settings?tab=roles"]
+          "routes": [
+            "/#/settings",
+            "/#/settings?tab=roles"
+          ]
         },
         "last_evidence_path": "reports/visual/lvv2-f012-settings-identity-roles",
         "last_checked_at": "2026-06-22T18:01:45.367Z",
@@ -1652,6 +1901,7 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-1-operator-parity",
       "risk": "medium",
       "parallel_group": "public-site",
       "depends_on": [
@@ -1751,7 +2001,10 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f013-public-site-builder-storefront",
-          "routes": ["/#/public-site", "/"]
+          "routes": [
+            "/#/public-site",
+            "/"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -1769,6 +2022,7 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "medium",
       "parallel_group": "analytics",
       "depends_on": [
@@ -1815,7 +2069,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f014-reports-center", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f014-reports-center",
+          "agent:auto-merge"
+        ],
         "review_status": "not-opened",
         "merge_status": "not-opened"
       },
@@ -1826,7 +2083,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f014-reports-center",
-          "routes": ["/#/reports"]
+          "routes": [
+            "/#/reports"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -1844,6 +2103,7 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "high",
       "parallel_group": "fiscal",
       "depends_on": [
@@ -1904,7 +2164,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f015-fiscal-nfe-service-recipients",
-          "routes": ["/#/fiscal"]
+          "routes": [
+            "/#/fiscal"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -1922,9 +2184,12 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "high",
       "parallel_group": "billing",
-      "depends_on": ["lvv2-f012-settings-identity-roles"],
+      "depends_on": [
+        "lvv2-f012-settings-identity-roles"
+      ],
       "blocks": [
         "lvv2-f017-marketplace-integrations",
         "lvv2-f018-external-api-clients"
@@ -1974,7 +2239,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f016-billing-plans-entitlements",
-          "routes": ["/#/billing"]
+          "routes": [
+            "/#/billing"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -1992,6 +2259,7 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "high",
       "parallel_group": "integrations",
       "depends_on": [
@@ -2048,7 +2316,9 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f017-marketplace-integrations",
-          "routes": ["/#/marketplaces"]
+          "routes": [
+            "/#/marketplaces"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -2066,9 +2336,12 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "high",
       "parallel_group": "integrations",
-      "depends_on": ["lvv2-f016-billing-plans-entitlements"],
+      "depends_on": [
+        "lvv2-f016-billing-plans-entitlements"
+      ],
       "blocks": [],
       "source_refs": [
         {
@@ -2110,11 +2383,15 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f018-external-api-clients",
-          "routes": ["/#/public-api"]
+          "routes": [
+            "/#/public-api"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["API key handling requires secret-redaction review."]
+        "blockers": [
+          "API key handling requires secret-redaction review."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2126,9 +2403,12 @@
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
       "status": "planned",
+      "phase": "phase-2-operational-depth",
       "risk": "medium",
       "parallel_group": "ops",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard"
+      ],
       "blocks": [],
       "source_refs": [],
       "supporting_source_refs": [],
@@ -2168,7 +2448,10 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f019-compliance-internal-health",
-          "routes": ["/#/compliance", "/#/internal-health"]
+          "routes": [
+            "/#/compliance",
+            "/#/internal-health"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -2184,9 +2467,12 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "later-ops",
-      "depends_on": ["lvv2-f002-inventory-list-catalog"],
+      "depends_on": [
+        "lvv2-f002-inventory-list-catalog"
+      ],
       "blocks": [],
       "source_refs": [
         {
@@ -2213,7 +2499,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f020-checklists", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f020-checklists",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2224,11 +2513,15 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f020-checklists",
-          "routes": ["/#/checklists"]
+          "routes": [
+            "/#/checklists"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred until P0/P1 operator workflows are stable."]
+        "blockers": [
+          "Deferred until P0/P1 operator workflows are stable."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2240,9 +2533,12 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "later-ops",
-      "depends_on": ["lvv2-f004-inventory-reserve-sell-workflows"],
+      "depends_on": [
+        "lvv2-f004-inventory-reserve-sell-workflows"
+      ],
       "blocks": [],
       "source_refs": [
         {
@@ -2282,7 +2578,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f021-simulations", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f021-simulations",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2293,7 +2592,9 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f021-simulations",
-          "routes": ["/#/simulations"]
+          "routes": [
+            "/#/simulations"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -2311,6 +2612,7 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-finance",
       "depends_on": [
@@ -2348,7 +2650,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f022-auto-entries", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f022-auto-entries",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2359,11 +2664,15 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f022-auto-entries",
-          "routes": ["/#/auto-entries"]
+          "routes": [
+            "/#/auto-entries"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred; needs finance workflow invariant review."]
+        "blockers": [
+          "Deferred; needs finance workflow invariant review."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2375,9 +2684,12 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-system",
-      "depends_on": ["lvv2-f006-crm-whatsapp-inbox"],
+      "depends_on": [
+        "lvv2-f006-crm-whatsapp-inbox"
+      ],
       "blocks": [],
       "source_refs": [
         {
@@ -2409,7 +2721,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f023-notifications", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f023-notifications",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2420,11 +2735,15 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f023-notifications",
-          "routes": ["/#/notifications"]
+          "routes": [
+            "/#/notifications"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred until notification runtime plan is approved."]
+        "blockers": [
+          "Deferred until notification runtime plan is approved."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2436,6 +2755,7 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-marketing",
       "depends_on": [
@@ -2499,7 +2819,9 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f024-paid-traffic-meta-social",
-          "routes": ["/#/paid-traffic"]
+          "routes": [
+            "/#/paid-traffic"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
@@ -2517,6 +2839,7 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-automation",
       "depends_on": [
@@ -2572,11 +2895,15 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f025-autobot-and-seller-agent",
-          "routes": ["/#/autobot"]
+          "routes": [
+            "/#/autobot"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred until AI agent operational policy is explicit."]
+        "blockers": [
+          "Deferred until AI agent operational policy is explicit."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2588,6 +2915,7 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "deferred",
       "depends_on": [],
@@ -2617,7 +2945,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f026-tutorials-help", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f026-tutorials-help",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2632,7 +2963,9 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred."]
+        "blockers": [
+          "Deferred."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2644,9 +2977,12 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-ops",
-      "depends_on": ["lvv2-f005-crm-leads-pipeline"],
+      "depends_on": [
+        "lvv2-f005-crm-leads-pipeline"
+      ],
       "blocks": [],
       "source_refs": [],
       "supporting_source_refs": [],
@@ -2668,7 +3004,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f027-customers", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f027-customers",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2679,11 +3018,15 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f027-customers",
-          "routes": ["/#/customers"]
+          "routes": [
+            "/#/customers"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred until CRM/customer boundaries are explicit."]
+        "blockers": [
+          "Deferred until CRM/customer boundaries are explicit."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2695,9 +3038,12 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-public-site",
-      "depends_on": ["lvv2-f013-public-site-builder-storefront"],
+      "depends_on": [
+        "lvv2-f013-public-site-builder-storefront"
+      ],
       "blocks": [],
       "source_refs": [],
       "supporting_source_refs": [],
@@ -2719,7 +3065,10 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f028-domain-management", "agent:auto-merge"],
+        "labels": [
+          "slice:lvv2-f028-domain-management",
+          "agent:auto-merge"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2730,11 +3079,15 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f028-domain-management",
-          "routes": ["/#/domain"]
+          "routes": [
+            "/#/domain"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred; currently folded into public-site/settings."]
+        "blockers": [
+          "Deferred; currently folded into public-site/settings."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2746,6 +3099,7 @@
       "classification": "do-not-port",
       "surface_type": "screen",
       "status": "do-not-port",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "do-not-port",
       "depends_on": [],
@@ -2799,7 +3153,9 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f029-repasses-buyer-public-surfaces"],
+        "labels": [
+          "slice:lvv2-f029-repasses-buyer-public-surfaces"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2814,7 +3170,9 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Classified do-not-port."]
+        "blockers": [
+          "Classified do-not-port."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2826,6 +3184,7 @@
       "classification": "do-not-port",
       "surface_type": "screen",
       "status": "do-not-port",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "do-not-port",
       "depends_on": [],
@@ -2879,7 +3238,9 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f030-repasses-auth-profile-admin-surfaces"],
+        "labels": [
+          "slice:lvv2-f030-repasses-auth-profile-admin-surfaces"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -2894,7 +3255,9 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Classified do-not-port."]
+        "blockers": [
+          "Classified do-not-port."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2906,6 +3269,7 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "medium",
       "parallel_group": "later-seller",
       "depends_on": [
@@ -2969,11 +3333,17 @@
         "visual": {
           "required": false,
           "command": "npm run qa:visual -- --slice lvv2-f031-repasses-seller-workspace",
-          "routes": ["/#/crm", "/#/inventory"]
+          "routes": [
+            "/#/crm?surface=leads",
+            "/#/crm?surface=whatsapp",
+            "/#/inventory"
+          ]
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Deferred until seller-specific V2 workspace is designed."]
+        "blockers": [
+          "Deferred until seller-specific V2 workspace is designed."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -2985,9 +3355,12 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-2-operational-depth",
       "risk": "high",
       "parallel_group": "identity",
-      "depends_on": ["lvv2-f012-settings-identity-roles"],
+      "depends_on": [
+        "lvv2-f012-settings-identity-roles"
+      ],
       "blocks": [],
       "source_refs": [
         {
@@ -3064,6 +3437,7 @@
       "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "deferred",
+      "phase": "phase-2-operational-depth",
       "risk": "high",
       "parallel_group": "agency",
       "depends_on": [
@@ -3149,7 +3523,9 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Requires agency pilot decision."]
+        "blockers": [
+          "Requires agency pilot decision."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -3161,6 +3537,7 @@
       "classification": "do-not-port",
       "surface_type": "screen",
       "status": "do-not-port",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "do-not-port",
       "depends_on": [],
@@ -3254,7 +3631,9 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f034-v1-marketing-content-site"],
+        "labels": [
+          "slice:lvv2-f034-v1-marketing-content-site"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -3269,7 +3648,9 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Classified do-not-port for this migration loop."]
+        "blockers": [
+          "Classified do-not-port for this migration loop."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -3281,6 +3662,7 @@
       "classification": "do-not-port",
       "surface_type": "screen",
       "status": "do-not-port",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "do-not-port",
       "depends_on": [],
@@ -3320,7 +3702,9 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f035-v1-consumer-car-buying-funnel"],
+        "labels": [
+          "slice:lvv2-f035-v1-consumer-car-buying-funnel"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -3335,7 +3719,9 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Classified do-not-port for this migration loop."]
+        "blockers": [
+          "Classified do-not-port for this migration loop."
+        ]
       },
       "v1_improvement_backport_candidates": []
     },
@@ -3347,6 +3733,7 @@
       "classification": "do-not-port",
       "surface_type": "screen",
       "status": "do-not-port",
+      "phase": "phase-x-deferred-and-do-not-port",
       "risk": "low",
       "parallel_group": "do-not-port",
       "depends_on": [],
@@ -3375,7 +3762,9 @@
       },
       "pr": {
         "number": null,
-        "labels": ["slice:lvv2-f036-v1-internal-ops"],
+        "labels": [
+          "slice:lvv2-f036-v1-internal-ops"
+        ],
         "review_status": "deferred",
         "merge_status": "not-opened"
       },
@@ -3390,7 +3779,735 @@
         },
         "last_evidence_path": null,
         "last_checked_at": null,
-        "blockers": ["Classified do-not-port for this migration loop."]
+        "blockers": [
+          "Classified do-not-port for this migration loop."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r001-recurring-bills-lifecycle",
+      "name": "Recurring Bills Edit, Pause, And Delete Parity",
+      "domain": "finance",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "high",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f009-finance-expenses-bills"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/components/RecurringEditModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/api/[slug]/admin/bills/recurring/[id]/route.ts"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceRecurringBillsPanel.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/finance/services/FinanceService"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/finance/controllers/finance.controller.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "finance",
+        "notes": "Add explicit recurring lifecycle contracts and UI actions for edit, pause/resume, and delete before phase 1 can pass."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-r001-recurring-bills-lifecycle"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r001-recurring-bills-lifecycle",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r001-recurring-bills-lifecycle",
+          "routes": [
+            "/#/expenses"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-001"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r002-documents-operations-parity",
+      "name": "Documents Upload, Edit, And Delete Parity",
+      "domain": "documents",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "high",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f011-documents-workspace"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/DocumentsCenterView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/documents-center/UploadDocumentModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/documents-center/DeleteConfirmationModal.tsx"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentsModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/documents/controllers/documents.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/documents/controllers/documents.operations.controller.test.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "documents",
+        "notes": "Close the V1 center-document workflow gap for upload, rename/edit metadata, delete/void, permissions, and audit."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-r002-documents-operations-parity"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r002-documents-operations-parity",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r002-documents-operations-parity",
+          "routes": [
+            "/#/documents"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-002"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r003-commissions-seller-pdf-report",
+      "name": "Commissions Seller PDF Report",
+      "domain": "finance",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "medium",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f010-commissions"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/CommissionsView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/api/[slug]/admin/bills/reports/route.ts"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionWorkspace.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionHeader.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/finance/controllers/finance.controller.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "finance/reports",
+        "notes": "Add seller-scoped PDF report export for commission settlement evidence, not just CSV/manual payment."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "medium",
+        "branch": "agent/lvv2-r003-commissions-seller-pdf-report"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r003-commissions-seller-pdf-report",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r003-commissions-seller-pdf-report",
+          "routes": [
+            "/#/commissions"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-003"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r004-whatsapp-media-audio-composer",
+      "name": "WhatsApp Media And Audio Composer Parity",
+      "domain": "crm",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "high",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f006-crm-whatsapp-inbox"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/hooks/useCrmWhatsApp.ts"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/whatsapp/organisms/ChatInput.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/whatsapp/molecules/MediaGrid.tsx"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/CrmWhatsappParts.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/crmWhatsappApi.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/crm/controllers/crm.whatsapp.controller.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm/repasses-acl",
+        "notes": "Promote media/audio send contracts and composer UX from recorded gap to supported WhatsApp behavior."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-r004-whatsapp-media-audio-composer"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r004-whatsapp-media-audio-composer",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r004-whatsapp-media-audio-composer",
+          "routes": [
+            "/#/crm?surface=whatsapp"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-004"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r005-composition-exceptions-burn-down",
+      "name": "Active Composition Exceptions Burn-down",
+      "domain": "platform",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "foundation",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "medium",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f000-control-plane"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/composition-exceptions.json"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/composition-exceptions.json"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/quality/check-frontend-composition.mjs"
+        }
+      ],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "Move active local component/type exceptions into parts/types modules and keep the exception file from becoming permanent debt."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "medium",
+        "branch": "agent/lvv2-r005-composition-exceptions-burn-down"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r005-composition-exceptions-burn-down",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "not-applicable",
+        "required_seed": "none",
+        "stack_profile": "repo-only",
+        "visual": {
+          "required": false,
+          "command": "npm run check:frontend-composition",
+          "routes": []
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-005"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r006-whatsapp-permission-contract",
+      "name": "WhatsApp Permission Contract",
+      "domain": "crm",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "high",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f006-crm-whatsapp-inbox",
+        "lvv2-f012-settings-identity-roles"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/context/CrmContext.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/hooks/useCrmWhatsApp.ts"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/crm/controllers/crm.whatsapp.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/crm/controllers/crm.whatsapp.scope.test.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/identity/domain/permissionCatalog.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/settings/roles/RoleManagementPanel.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm/identity",
+        "notes": "Define and test the exact permissions for list/read/send/assign/close/toggle WhatsApp actions and expose them in role management."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-r006-whatsapp-permission-contract"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r006-whatsapp-permission-contract",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r006-whatsapp-permission-contract",
+          "routes": [
+            "/#/crm?surface=whatsapp",
+            "/#/settings?tab=roles"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-006"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r007-finance-pagination-aggregation",
+      "name": "Finance Pagination And All-pages Aggregation",
+      "domain": "finance",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "high",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f009-finance-expenses-bills",
+        "lvv2-f010-commissions"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/hooks/useBillsData.ts"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/hooks/useCommissionPayables.ts"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/apiClient.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/commissionWorkspaceModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/finance/services/FinanceService/listFinanceEntries.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "finance",
+        "notes": "Ensure summaries, exports, seller payables, and reports aggregate every page rather than the first API page."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-r007-finance-pagination-aggregation"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r007-finance-pagination-aggregation",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r007-finance-pagination-aggregation",
+          "routes": [
+            "/#/expenses",
+            "/#/commissions"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-007"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r008-openapi-finance-crm-settings",
+      "name": "OpenAPI Docs For Finance, CRM, And Settings",
+      "domain": "platform",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "foundation",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "medium",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f005-crm-leads-pipeline",
+        "lvv2-f006-crm-whatsapp-inbox",
+        "lvv2-f009-finance-expenses-bills",
+        "lvv2-f010-commissions",
+        "lvv2-f012-settings-identity-roles"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/finance/controllers/finance.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/crm/controllers/crm.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/crm/controllers/crm.whatsapp.controller.ts"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/docs/controllers/docs.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/docs/controllers/analyticsOpenApi.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/docs/controllers/billingOpenApi.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/docs/controllers/openApiTags.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "api-docs",
+        "notes": "Document merged finance, CRM leads, CRM WhatsApp, and store settings routes in OpenAPI so external docs cannot lag the phase gate."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "medium",
+        "branch": "agent/lvv2-r008-openapi-finance-crm-settings"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r008-openapi-finance-crm-settings",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "not-applicable",
+        "required_seed": "none",
+        "stack_profile": "repo-only",
+        "visual": {
+          "required": false,
+          "command": "npm run test --workspace @lojaveiculosv2/api -- docs.controller.test.ts",
+          "routes": []
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-008"
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-r009-inventory-create-partial-failure",
+      "name": "Inventory Create Partial-failure UX And Idempotency",
+      "domain": "inventory",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "phase": "phase-1-operator-parity",
+      "risk": "high",
+      "parallel_group": "phase-1-remediation",
+      "depends_on": [
+        "lvv2-f003-inventory-create-edit-media"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/veiculos/criar/components/CreateVehicleWizard.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/veiculos/criar/components/PhotoManager.tsx"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/createInventorySubmit.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryCreateFlow.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/pages/InventoryCreatePage.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/vehicle/services/VehicleService/createVehicleListing.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "inventory/media",
+        "notes": "Make listing/unit/media partial failures recoverable and idempotent so retries do not duplicate listings or lose uploaded evidence."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-r009-inventory-create-partial-failure"
+      },
+      "pr": {
+        "labels": [
+          "slice:lvv2-r009-inventory-create-partial-failure",
+          "phase:phase-1",
+          "phase-blocker"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-r009-inventory-create-partial-failure",
+          "routes": [
+            "/#/inventory?view=create&step=review"
+          ]
+        },
+        "last_evidence_path": "",
+        "last_checked_at": "2026-06-22T21:03:55Z",
+        "blockers": [
+          "phase-1-audit-009"
+        ]
       },
       "v1_improvement_backport_candidates": []
     }

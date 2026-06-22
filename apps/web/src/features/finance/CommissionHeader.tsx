@@ -17,7 +17,7 @@ export function CommissionHeader({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <FinanceBadge>Financeiro V2</FinanceBadge>
+            <FinanceBadge>Financeiro</FinanceBadge>
             <FinanceBadge>Comissoes por vendedor</FinanceBadge>
           </div>
           <h2 className="text-2xl font-black text-app-text lg:text-4xl">
@@ -25,7 +25,7 @@ export function CommissionHeader({
           </h2>
           <p className="max-w-3xl text-sm font-bold text-muted">
             Fechamento por vendedor usando lancamentos financeiros do tipo
-            comissao, com pagamento auditado pelo contrato V2 de finance entries.
+            comissao, com pagamento auditado por lancamento da loja.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

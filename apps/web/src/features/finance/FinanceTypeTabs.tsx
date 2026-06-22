@@ -52,7 +52,7 @@ export function FinanceModuleHeader() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <FinanceBadge>Financeiro V2</FinanceBadge>
+            <FinanceBadge>Financeiro</FinanceBadge>
             <FinanceBadge>Anexos opcionais</FinanceBadge>
           </div>
           <h2 className="text-2xl font-black text-app-text lg:text-4xl">

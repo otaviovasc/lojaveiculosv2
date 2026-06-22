@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
-import type { InventoryListingSummary } from "../inventory/model/types";
-import type { ProductCrmApi, ProductCrmLeadQuery } from "./productCrmApi";
+import type { ProductCrmApi } from "./productCrmApi";
 import { CrmPipelineView } from "./CrmPipelineView";
 import {
   createNoteActivityInput,
@@ -18,17 +17,34 @@ import type {
   CreateProductCrmActivityInput,
   CrmLeadStatus,
   ProductCrmLead,
-  ProductCrmLeadActivity,
 } from "./productCrmTypes";
 import type {
   LeadActivitiesById,
   LeadVehicleOption,
 } from "./CrmPipelineViewTypes";
+import {
+  createLeadVehicleOption,
+  listAllMatchingLeads,
+  loadActivitiesByLeadId,
+} from "./crmModuleData";
 import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
-import { CrmSurfaceTabs, type CrmSurface } from "./CrmSurfaceTabs";
+import { CrmSurfaceTabs } from "./CrmSurfaceTabs";
+import {
+  crmSurfaceHash,
+  readCrmSurfaceFromHash,
+  type CrmSurface,
+} from "./crmRouteState";
 
-export function CrmModule({ api }: { api?: ProductCrmApi }) {
-  const [activeSurface, setActiveSurface] = useState<CrmSurface>("whatsapp");
+export function CrmModule({
+  api,
+  routeSurface,
+}: {
+  api?: ProductCrmApi;
+  routeSurface?: CrmSurface;
+}) {
+  const [activeSurface, setActiveSurface] = useState<CrmSurface>(() =>
+    routeSurface ?? readInitialSurface(),
+  );
   const crmApi = useMemo(() => api ?? createRuntimeProductCrmApi(), [api]);
   const [activitiesByLeadId, setActivitiesByLeadId] =
     useState<LeadActivitiesById>({});
@@ -76,6 +92,10 @@ export function CrmModule({ api }: { api?: ProductCrmApi }) {
   useEffect(() => {
     void refreshLeads();
   }, [refreshLeads]);
+
+  useEffect(() => {
+    if (routeSurface) setActiveSurface(routeSurface);
+  }, [routeSurface]);
 
   useEffect(() => {
     let isActive = true;
@@ -160,11 +180,18 @@ export function CrmModule({ api }: { api?: ProductCrmApi }) {
     );
   };
 
+  const changeSurface = (surface: CrmSurface) => {
+    setActiveSurface(surface);
+    if (typeof window !== "undefined") {
+      window.location.hash = crmSurfaceHash(surface);
+    }
+  };
+
   return (
     <>
       <CrmSurfaceTabs
         activeSurface={activeSurface}
-        onChange={setActiveSurface}
+        onChange={changeSurface}
       />
       {activeSurface === "whatsapp" ? (
         <CrmWhatsappInbox />
@@ -194,42 +221,7 @@ export function CrmModule({ api }: { api?: ProductCrmApi }) {
   );
 }
 
-async function loadActivitiesByLeadId(
-  crmApi: ProductCrmApi,
-  leads: ProductCrmLead[],
-): Promise<LeadActivitiesById> {
-  const entries: Array<[string, ProductCrmLeadActivity[]]> = await Promise.all(
-    leads.map(async (lead) => [
-      lead.id,
-      await crmApi.listActivities(lead.id),
-    ]),
-  );
-
-  return Object.fromEntries(entries) as LeadActivitiesById;
-}
-
-async function listAllMatchingLeads(
-  crmApi: ProductCrmApi,
-  query: ProductCrmLeadQuery,
-): Promise<ProductCrmLead[]> {
-  const pageSize = query.limit ?? 100;
-  const leads: ProductCrmLead[] = [];
-  let offset = query.offset ?? 0;
-
-  for (;;) {
-    const page = await crmApi.listLeads({ ...query, limit: pageSize, offset });
-    leads.push(...page);
-    if (page.length < pageSize) return leads;
-    offset += pageSize;
-  }
-}
-
-function createLeadVehicleOption(
-  item: InventoryListingSummary,
-): LeadVehicleOption {
-  return {
-    detail: item.primaryUnit?.plate ?? item.listing.plate ?? item.listing.status,
-    id: item.listing.id,
-    label: item.listing.title,
-  };
+function readInitialSurface(): CrmSurface {
+  if (typeof window === "undefined") return "whatsapp";
+  return readCrmSurfaceFromHash(window.location.hash);
 }
