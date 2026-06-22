@@ -31,13 +31,20 @@
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "test:smoke:api": "npm run test --workspace @lojaveiculosv2/api -- productionSmoke",
+    "migration:inventory": "node tools/frontend-migration/inventory.mjs",
+    "migration:validate-board": "node tools/frontend-migration/validate-board.mjs",
+    "migration:render-plan": "node tools/frontend-migration/render-plan.mjs",
+    "migration:check-plan": "node tools/frontend-migration/check-plan.mjs",
+    "migration:prompt": "node tools/frontend-migration/create-prompt.mjs",
+    "qa:visual": "node tools/frontend-migration/qa-visual.mjs",
     "check:lines": "node tools/quality/check-file-lines.mjs",
     "check:boundaries": "node tools/quality/check-boundaries.mjs",
     "check:env": "node tools/quality/check-env-template.mjs",
     "check:db": "node tools/quality/check-db-schema-conventions.mjs",
     "check:frontend": "node tools/quality/check-frontend-design.mjs",
+    "check:frontend-composition": "node tools/quality/check-frontend-composition.mjs",
     "check:services": "node tools/quality/check-service-contracts.mjs",
-    "validate": "npm run check:lines && npm run check:boundaries && npm run check:env && npm run check:db && npm run check:frontend && npm run check:services && npm run typecheck && npm run lint && npm run test"
+    "validate": "npm run migration:validate-board && npm run migration:check-plan && npm run migration:inventory -- --check && npm run check:lines && npm run check:boundaries && npm run check:env && npm run check:db && npm run check:frontend && npm run check:frontend-composition && npm run check:services && npm run typecheck && npm run lint && npm run test"
   },
   "lint-staged": {
     "*": "prettier --ignore-unknown --write"
