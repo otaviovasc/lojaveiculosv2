@@ -1165,7 +1165,7 @@
           "Read V1 DocumentsCenterView.tsx, DocumentTable.tsx, UploadDocumentModal.tsx, and PdfPreviewModal.tsx.",
           "Kept V1 folder/list workspace pattern, operational filters, status/kind badges, direct preview/download actions, selected-detail workflow, template editing, preview, versions, regenerate, and cancel actions.",
           "Intentionally maps V1 vehicle/general folders to V2 shared document link folders using targetType + targetId so vehicle-linked documents do not drift into general documents.",
-          "Reviewer follow-up: workspace requests the backend max 200-document window and labels capped folder/count views as loaded recent documents so the UI does not imply global counts."
+          "Reviewer follow-up: workspace requests the backend max 200-document window and labels capped header, folder cards, and selected-folder counts as loaded recent documents so the UI does not imply global counts."
         ],
         "backend_contract_notes": [
           "V1 upload and client-side PDF generation were not ported into this slice because V2 source of truth is the shared documents domain with private storage and immutable versions.",
@@ -1205,7 +1205,7 @@
           "routes": ["/#/documents"]
         },
         "last_evidence_path": "reports/visual/lvv2-f011-documents-workspace/documents.txt",
-        "last_checked_at": "2026-06-22T18:09:18.374Z",
+        "last_checked_at": "2026-06-22T18:13:29.760Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
