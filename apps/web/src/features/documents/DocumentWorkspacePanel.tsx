@@ -1,23 +1,11 @@
+import { ArrowLeft, Folder, FolderOpen, List, Upload } from "lucide-react";
+import { DocumentsTable } from "./DocumentWorkspaceTable";
 import {
-  ArrowLeft,
-  Download,
-  FileSearch,
-  Folder,
-  FolderOpen,
-  List,
-} from "lucide-react";
-import {
-  createFolderKey,
-  documentContextLabel,
-  documentFileLabel,
-  documentKindBadge,
-  documentPrimaryParty,
-  documentStatusBadge,
   filterDocumentsByFolder,
   formatDateTime,
   type DocumentFolder,
 } from "./documentsWorkspaceModel";
-import type { WorkspaceDocument } from "./types";
+import type { DocumentKind, WorkspaceDocument } from "./types";
 
 export type WorkspaceViewMode = "folders" | "list";
 
@@ -28,8 +16,11 @@ export function DocumentWorkspacePanel({
   isResultCapped,
   isLoading,
   onDownload,
+  onOpenUpload,
   onSelect,
   onSelectFolder,
+  onDelete,
+  onUpdate,
   onViewModeChange,
   selectedFolderKey,
   viewMode,
@@ -40,8 +31,14 @@ export function DocumentWorkspacePanel({
   isResultCapped: boolean;
   isLoading: boolean;
   onDownload: (documentId: string) => Promise<void>;
+  onOpenUpload: () => void;
   onSelect: (document: WorkspaceDocument) => void;
   onSelectFolder: (folderKey: string | null) => void;
+  onDelete: (document: WorkspaceDocument) => void;
+  onUpdate: (
+    document: WorkspaceDocument,
+    input: { kind: DocumentKind; title: string },
+  ) => Promise<void>;
   onViewModeChange: (mode: WorkspaceViewMode) => void;
   selectedFolderKey: string | null;
   viewMode: WorkspaceViewMode;
@@ -58,35 +55,51 @@ export function DocumentWorkspacePanel({
       <div className="documents-panel-title documents-workspace-title">
         <div>
           <strong>
-            {viewMode === "folders" ? "Pastas de documentos" : "Lista operacional"}
+            {viewMode === "folders"
+              ? "Pastas de documentos"
+              : "Lista operacional"}
           </strong>
           <span>
             {selectedFolder
               ? `${selectedFolder.title} · ${selectedFolder.count} ${isResultCapped ? "documentos carregados" : "documentos"}`
               : isResultCapped
                 ? "Pastas e contagens refletem os documentos carregados mais recentes."
-              : "Organize por veiculo, venda, lead, financeiro e fiscal."}
+                : "Organize por veiculo, venda, lead, financeiro e fiscal."}
           </span>
         </div>
-        <div className="documents-mode-toggle" aria-label="Modo de visualizacao">
+        <div className="documents-workspace-actions">
           <button
-            className={viewMode === "folders" ? "is-active" : ""}
-            onClick={() => onViewModeChange("folders")}
-            title="Ver pastas"
+            className="documents-upload-action"
+            disabled={isBusy}
+            onClick={onOpenUpload}
             type="button"
           >
-            <Folder aria-hidden="true" className="size-4" />
-            Pastas
+            <Upload aria-hidden="true" className="size-4" />
+            Anexar
           </button>
-          <button
-            className={viewMode === "list" ? "is-active" : ""}
-            onClick={() => onViewModeChange("list")}
-            title="Ver lista"
-            type="button"
+          <div
+            className="documents-mode-toggle"
+            aria-label="Modo de visualizacao"
           >
-            <List aria-hidden="true" className="size-4" />
-            Lista
-          </button>
+            <button
+              className={viewMode === "folders" ? "is-active" : ""}
+              onClick={() => onViewModeChange("folders")}
+              title="Ver pastas"
+              type="button"
+            >
+              <Folder aria-hidden="true" className="size-4" />
+              Pastas
+            </button>
+            <button
+              className={viewMode === "list" ? "is-active" : ""}
+              onClick={() => onViewModeChange("list")}
+              title="Ver lista"
+              type="button"
+            >
+              <List aria-hidden="true" className="size-4" />
+              Lista
+            </button>
+          </div>
         </div>
       </div>
 
@@ -114,7 +127,9 @@ export function DocumentWorkspacePanel({
             documents={visibleDocuments}
             isBusy={isBusy}
             onDownload={onDownload}
+            onDelete={onDelete}
             onSelect={onSelect}
+            onUpdate={onUpdate}
           />
         </>
       )}
@@ -153,69 +168,6 @@ function FoldersGrid({
             {formatDateTime(folder.latestAt)}
           </small>
         </button>
-      ))}
-    </div>
-  );
-}
-
-function DocumentsTable({
-  documents,
-  isBusy,
-  onDownload,
-  onSelect,
-}: {
-  documents: readonly WorkspaceDocument[];
-  isBusy: boolean;
-  onDownload: (documentId: string) => Promise<void>;
-  onSelect: (document: WorkspaceDocument) => void;
-}) {
-  if (documents.length === 0) {
-    return <p className="documents-empty">Nenhum documento encontrado.</p>;
-  }
-
-  return (
-    <div className="documents-table documents-rich-table">
-      {documents.map((document) => (
-        <article className="documents-row" key={document.id}>
-          <button
-            className="documents-row-main"
-            onClick={() => onSelect(document)}
-            type="button"
-          >
-            <div>
-              <strong>{document.title}</strong>
-              <small>{document.file.fileName}</small>
-            </div>
-            <span>{documentKindBadge(document)}</span>
-            <span className={`documents-status status-${document.status}`}>
-              {documentStatusBadge(document)}
-            </span>
-            <span>{documentContextLabel(document)}</span>
-            <span>{documentPrimaryParty(document)}</span>
-            <time dateTime={document.uploadedAt}>
-              {formatDateTime(document.uploadedAt)}
-            </time>
-            <span>{documentFileLabel(document)}</span>
-          </button>
-          <div className="documents-row-actions">
-            <button
-              disabled={isBusy}
-              onClick={() => onSelect(document)}
-              title="Visualizar"
-              type="button"
-            >
-              <FileSearch aria-hidden="true" className="size-4" />
-            </button>
-            <button
-              disabled={isBusy}
-              onClick={() => void onDownload(document.id)}
-              title="Baixar"
-              type="button"
-            >
-              <Download aria-hidden="true" className="size-4" />
-            </button>
-          </div>
-        </article>
       ))}
     </div>
   );

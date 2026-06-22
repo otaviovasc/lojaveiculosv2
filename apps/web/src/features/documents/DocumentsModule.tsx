@@ -1,237 +1,113 @@
-import { useEffect, useMemo, useState } from "react";
 import type { DocumentsApi } from "./apiClient";
+import { DocumentDeleteDialog } from "./DocumentDeleteDialog";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentTemplatesPanel } from "./DocumentTemplatesPanel";
-import {
-  DocumentWorkspacePanel,
-  type WorkspaceViewMode,
-} from "./DocumentWorkspacePanel";
-import {
-  createRuntimeDocumentsApi,
-  DOCUMENTS_WORKSPACE_LIMIT,
-  type DocumentsView,
-  errorMessage,
-  openDocumentDownload,
-  replaceDocument,
-  summarizeDocuments,
-  type WorkspaceStatus,
-} from "./DocumentsModuleSupport";
-import { buildDocumentFolders } from "./documentsWorkspaceModel";
-import type {
-  DocumentKind,
-  DocumentPreview,
-  DocumentTemplate,
-  DocumentVersion,
-  ListDocumentsFilters,
-  UpdateDocumentTemplateInput,
-  VoidDocumentInput,
-  WorkspaceDocument,
-} from "./types";
+import { DocumentUploadDialog } from "./DocumentUploadDialog";
+import { DocumentWorkspacePanel } from "./DocumentWorkspacePanel";
+import { DOCUMENTS_WORKSPACE_LIMIT } from "./DocumentsModuleSupport";
+import type { VoidDocumentInput } from "./types";
 import { DocumentsWorkspaceHeader } from "./DocumentsModuleParts";
+import { useDocumentsModuleState } from "./useDocumentsModuleState";
 
 export function DocumentsModule({ api }: { api?: DocumentsApi }) {
-  const documentsApi = useMemo(() => api ?? createRuntimeDocumentsApi(), [api]);
-  const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
-  const [filters, setFilters] = useState<ListDocumentsFilters>({});
-  const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
-  const [view, setView] = useState<DocumentsView>("workspace");
-  const [workspaceViewMode, setWorkspaceViewMode] =
-    useState<WorkspaceViewMode>("folders");
-  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
-  const [isSavingTemplate, setIsSavingTemplate] = useState(false);
-  const [selectedDocument, setSelectedDocument] =
-    useState<WorkspaceDocument | null>(null);
-  const [documentPreview, setDocumentPreview] =
-    useState<DocumentPreview | null>(null);
-  const [documentVersions, setDocumentVersions] = useState<DocumentVersion[]>(
-    [],
-  );
-  const [isDocumentActionBusy, setIsDocumentActionBusy] = useState(false);
-  const [status, setStatus] = useState<WorkspaceStatus>({ kind: "loading" });
-  const refresh = async (nextFilters = filters) => {
-    setStatus({ kind: "loading" });
-    try {
-      const [nextDocuments, nextTemplates] = await Promise.all([
-        documentsApi.listDocuments({ ...nextFilters, limit: DOCUMENTS_WORKSPACE_LIMIT }),
-        documentsApi.listTemplates(),
-      ]);
-      setDocuments(nextDocuments);
-      setSelectedDocument((current) =>
-        current
-          ? (nextDocuments.find((document) => document.id === current.id) ??
-            null)
-          : null,
-      );
-      setTemplates([...nextTemplates]);
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setDocuments([]);
-      setTemplates([]);
-      setStatus({ kind: "error", message: errorMessage(error) });
-    }
-  };
-  const previewDocument = async (documentId: string) => {
-    setIsDocumentActionBusy(true);
-    setDocumentPreview(null);
-    setDocumentVersions([]);
-    try {
-      const [preview, versions] = await Promise.all([
-        documentsApi.previewDocument(documentId),
-        documentsApi.listVersions(documentId),
-      ]);
-      setDocumentPreview(preview);
-      setDocumentVersions(versions);
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
-    } finally {
-      setIsDocumentActionBusy(false);
-    }
-  };
-  const applyDocumentAction = async (
-    action: () => Promise<WorkspaceDocument>,
-  ) => {
-    setIsDocumentActionBusy(true);
-    try {
-      const updated = await action();
-      const [preview, versions] = await Promise.all([
-        documentsApi.previewDocument(updated.id),
-        documentsApi.listVersions(updated.id),
-      ]);
-      setDocuments((current) => replaceDocument(current, updated));
-      setSelectedDocument(updated);
-      setDocumentPreview(preview);
-      setDocumentVersions(versions);
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
-    } finally {
-      setIsDocumentActionBusy(false);
-    }
-  };
-  const downloadDocument = async (documentId: string, versionId?: string) => {
-    setIsDocumentActionBusy(true);
-    try {
-      const download = await documentsApi.downloadDocument(
-        documentId,
-        versionId,
-      );
-      openDocumentDownload(download.downloadUrl);
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
-    } finally {
-      setIsDocumentActionBusy(false);
-    }
-  };
-  useEffect(() => {
-    void refresh();
-  }, []);
-  const updateFilter = <Key extends keyof ListDocumentsFilters>(
-    key: Key,
-    value: ListDocumentsFilters[Key],
-  ) => {
-    const nextFilters = { ...filters, [key]: value };
-    setFilters(nextFilters);
-    setSelectedFolderKey(null);
-    void refresh(nextFilters);
-  };
-  const counts = summarizeDocuments(documents);
-  const folders = buildDocumentFolders(documents);
-  const isResultCapped = documents.length >= DOCUMENTS_WORKSPACE_LIMIT;
-  const saveTemplate = async (
-    kind: DocumentKind,
-    input: UpdateDocumentTemplateInput,
-  ) => {
-    setIsSavingTemplate(true);
-    try {
-      const updated = await documentsApi.updateTemplate(kind, input);
-      setTemplates((current) =>
-        current.map((template) =>
-          template.kind === kind ? updated : template,
-        ),
-      );
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
-    } finally {
-      setIsSavingTemplate(false);
-    }
-  };
+  const state = useDocumentsModuleState(api);
   return (
     <main className="documents-shell">
       <DocumentsWorkspaceHeader
-        counts={{ ...counts, total: documents.length }}
-        filters={filters}
-        isResultCapped={isResultCapped}
+        counts={{ ...state.summaries, total: state.documents.length }}
+        filters={state.filters}
+        isResultCapped={state.isResultCapped}
         resultLimit={DOCUMENTS_WORKSPACE_LIMIT}
-        onRefresh={() => void refresh()}
-        updateFilter={updateFilter}
+        onRefresh={() => void state.refresh()}
+        updateFilter={state.updateFilter}
       />
 
-      {status.kind === "error" ? (
-        <p className="documents-alert">{status.message}</p>
+      {state.status.kind === "error" ? (
+        <p className="documents-alert">{state.status.message}</p>
       ) : null}
       <section className="documents-view-tabs" aria-label="Modo de documentos">
         <button
-          className={view === "workspace" ? "is-active" : ""}
-          onClick={() => setView("workspace")}
+          className={state.view === "workspace" ? "is-active" : ""}
+          onClick={() => state.setView("workspace")}
           type="button"
         >
           Workspace
         </button>
         <button
-          className={view === "templates" ? "is-active" : ""}
-          onClick={() => setView("templates")}
+          className={state.view === "templates" ? "is-active" : ""}
+          onClick={() => state.setView("templates")}
           type="button"
         >
           Modelos
         </button>
       </section>
 
-      {view === "workspace" ? (
+      {state.view === "workspace" ? (
         <DocumentWorkspacePanel
-          documents={documents}
-          folders={folders}
-          isBusy={isDocumentActionBusy}
-          isResultCapped={isResultCapped}
-          isLoading={status.kind === "loading"}
-          onDownload={downloadDocument}
-          onSelect={setSelectedDocument}
-          onSelectFolder={setSelectedFolderKey}
+          documents={state.documents}
+          folders={state.folders}
+          isBusy={state.isDocumentActionBusy}
+          isResultCapped={state.isResultCapped}
+          isLoading={state.status.kind === "loading"}
+          onDownload={state.downloadDocument}
+          onDelete={state.setDocumentToDelete}
+          onOpenUpload={() => state.setIsUploadDialogOpen(true)}
+          onSelect={state.setSelectedDocument}
+          onSelectFolder={state.setSelectedFolderKey}
+          onUpdate={state.updateDocument}
           onViewModeChange={(mode) => {
-            setWorkspaceViewMode(mode);
-            setSelectedFolderKey(null);
+            state.setWorkspaceViewMode(mode);
+            state.setSelectedFolderKey(null);
           }}
-          selectedFolderKey={selectedFolderKey}
-          viewMode={workspaceViewMode}
+          selectedFolderKey={state.selectedFolderKey}
+          viewMode={state.workspaceViewMode}
         />
       ) : (
         <DocumentTemplatesPanel
-          isSaving={isSavingTemplate}
-          onSave={saveTemplate}
-          templates={templates}
+          isSaving={state.isSavingTemplate}
+          onSave={state.saveTemplate}
+          templates={state.templates}
         />
       )}
       <DocumentDetailPanel
-        document={selectedDocument}
-        isBusy={isDocumentActionBusy}
+        document={state.selectedDocument}
+        isBusy={state.isDocumentActionBusy}
         onClose={() => {
-          setSelectedDocument(null);
-          setDocumentPreview(null);
-          setDocumentVersions([]);
+          state.setSelectedDocument(null);
+          state.setDocumentPreview(null);
+          state.setDocumentVersions([]);
         }}
-        onDownload={downloadDocument}
-        onPreview={previewDocument}
+        onDownload={state.downloadDocument}
+        onPreview={state.previewDocument}
         onRegenerate={(documentId) =>
-          applyDocumentAction(() => documentsApi.regenerateDocument(documentId))
-        }
-        onVoid={(documentId, input: VoidDocumentInput) =>
-          applyDocumentAction(() =>
-            documentsApi.voidDocument(documentId, input),
+          state.applyDocumentAction(() =>
+            state.documentsApi.regenerateDocument(documentId),
           )
         }
-        preview={documentPreview}
-        versions={documentVersions}
+        onVoid={(documentId, input: VoidDocumentInput) =>
+          state.applyDocumentAction(() =>
+            state.documentsApi.voidDocument(documentId, input),
+          )
+        }
+        preview={state.documentPreview}
+        versions={state.documentVersions}
+      />
+      <DocumentUploadDialog
+        api={state.documentsApi}
+        isOpen={state.isUploadDialogOpen}
+        onClose={() => state.setIsUploadDialogOpen(false)}
+        onUploaded={(uploadedDocuments) => {
+          state.setDocuments((current) => [...uploadedDocuments, ...current]);
+          state.setStatus({ kind: "ready" });
+          void state.refresh();
+        }}
+        target={state.uploadTarget}
+      />
+      <DocumentDeleteDialog
+        document={state.documentToDelete}
+        isBusy={state.isDocumentActionBusy}
+        onClose={() => state.setDocumentToDelete(null)}
+        onConfirm={() => void state.deleteDocument()}
       />
     </main>
   );

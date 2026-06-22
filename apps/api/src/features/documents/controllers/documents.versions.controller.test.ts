@@ -58,12 +58,15 @@ function createServices(
   overrides: Partial<DocumentServices>,
 ): DocumentServices {
   return {
+    createUploaded: vi.fn(async () => unexpected("createUploaded")),
     download: vi.fn(async () => unexpected("download")),
     listTemplates: vi.fn(async () => []),
     listVersions: vi.fn(async () => []),
     listWorkspace: vi.fn(async () => []),
     preview: vi.fn(async () => unexpected("preview")),
     regenerate: vi.fn(async () => unexpected("regenerate")),
+    requestUpload: vi.fn(async () => unexpected("requestUpload")),
+    updateDocument: vi.fn(async () => unexpected("updateDocument")),
     updateTemplate: vi.fn(async () => unexpected("updateTemplate")),
     void: vi.fn(async () => unexpected("void")),
     ...overrides,

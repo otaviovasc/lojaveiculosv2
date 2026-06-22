@@ -93,6 +93,9 @@ function createServices(
   overrides: Partial<DocumentServices>,
 ): DocumentServices {
   return {
+    createUploaded: vi.fn(async () => {
+      throw new Error("Unexpected create uploaded");
+    }),
     download: vi.fn(async () => {
       throw new Error("Unexpected download");
     }),
@@ -103,6 +106,12 @@ function createServices(
       throw new Error("Unexpected preview");
     }),
     regenerate: vi.fn(async () => document),
+    requestUpload: vi.fn(async () => {
+      throw new Error("Unexpected request upload");
+    }),
+    updateDocument: vi.fn(async () => {
+      throw new Error("Unexpected document update");
+    }),
     updateTemplate: vi.fn(async () => {
       throw new Error("Unexpected template update");
     }),
@@ -124,6 +133,8 @@ function createApp(services: DocumentServices) {
             "documents.download",
             "documents.read",
             "documents.regenerate",
+            "documents.update_metadata",
+            "documents.upload",
             "documents.void",
           ],
           request: { requestId: "req_1" },

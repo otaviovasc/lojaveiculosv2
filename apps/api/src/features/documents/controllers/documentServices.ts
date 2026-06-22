@@ -19,11 +19,28 @@ import { downloadDocument } from "../../../domains/documents/services/DocumentOp
 import { listDocumentVersions } from "../../../domains/documents/services/DocumentOperationService/listDocumentVersions.js";
 import { regenerateDocument } from "../../../domains/documents/services/DocumentOperationService/regenerateDocument.js";
 import { voidDocument } from "../../../domains/documents/services/DocumentOperationService/voidDocument.js";
+import {
+  createUploadedDocument,
+  type CreateUploadedDocumentInput,
+} from "../../../domains/documents/services/DocumentOperationService/createUploadedDocument.js";
+import {
+  requestDocumentUpload,
+  type RequestDocumentUploadInput,
+} from "../../../domains/documents/services/DocumentOperationService/requestDocumentUpload.js";
+import {
+  updateDocumentMetadata,
+  type UpdateDocumentMetadataInput,
+} from "../../../domains/documents/services/DocumentOperationService/updateDocumentMetadata.js";
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createMemoryDocumentRepository } from "../adapters/memoryDocumentRepository.js";
+import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
 
 export type DocumentServices = {
+  createUploaded: (
+    context: ServiceContext,
+    input: CreateUploadedDocumentInput,
+  ) => Promise<LinkedDocument>;
   download: (
     context: ServiceContext,
     input: { documentId: string; versionId?: string | undefined },
@@ -46,6 +63,14 @@ export type DocumentServices = {
   regenerate: (
     context: ServiceContext,
     input: { documentId: string },
+  ) => Promise<LinkedDocument>;
+  requestUpload: (
+    context: ServiceContext,
+    input: RequestDocumentUploadInput,
+  ) => Promise<ObjectUpload>;
+  updateDocument: (
+    context: ServiceContext,
+    input: UpdateDocumentMetadataInput,
   ) => Promise<LinkedDocument>;
   updateTemplate: (
     context: ServiceContext,
@@ -75,6 +100,8 @@ export function createDocumentServices(
   const ports = resolveDocumentPorts(options);
 
   return {
+    createUploaded: (context, input) =>
+      createUploadedDocument(context, input, ports),
     download: (context, input) => downloadDocument(context, input, ports),
     listVersions: (context, input) =>
       listDocumentVersions(context, input, ports),
@@ -83,6 +110,10 @@ export function createDocumentServices(
     listTemplates: (context) => listDocumentTemplates(context, ports),
     preview: (context, input) => previewDocument(context, input, ports),
     regenerate: (context, input) => regenerateDocument(context, input, ports),
+    requestUpload: (context, input) =>
+      requestDocumentUpload(context, input, ports),
+    updateDocument: (context, input) =>
+      updateDocumentMetadata(context, input, ports),
     updateTemplate: (context, input) =>
       updateDocumentTemplate(context, input, ports),
     void: (context, input) => voidDocument(context, input, ports),

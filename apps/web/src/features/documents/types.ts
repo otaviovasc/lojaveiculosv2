@@ -84,6 +84,15 @@ export type DocumentDownload = {
   versionNumber: number;
 };
 
+export type DocumentUpload = {
+  expiresAt: string;
+  publicUrl: string;
+  storageKey: string;
+  uploadHeaders: Record<string, string>;
+  uploadMethod: "PUT";
+  uploadUrl: string;
+};
+
 export type DocumentVersion = {
   createdAt: string;
   file: {
@@ -94,6 +103,30 @@ export type DocumentVersion = {
   id: string;
   metadata: Record<string, unknown>;
   versionNumber: number;
+};
+
+export type RequestDocumentUploadInput = {
+  contentType: string;
+  fileName: string;
+  sizeBytes: number;
+  targetId?: string;
+  targetType?: DocumentLinkTarget;
+};
+
+export type CreateUploadedDocumentInput = {
+  fileName: string;
+  fileSizeBytes: number | null;
+  kind: DocumentKind;
+  mimeType: string | null;
+  storageKey: string;
+  targetId?: string;
+  targetType?: DocumentLinkTarget;
+  title: string;
+};
+
+export type UpdateDocumentInput = {
+  kind?: DocumentKind;
+  title?: string;
 };
 
 export type UpdateDocumentTemplateInput = {

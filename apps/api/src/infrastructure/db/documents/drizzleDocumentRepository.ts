@@ -106,6 +106,7 @@ export function createDrizzleDocumentRepository(
       await db
         .update(documents)
         .set({
+          ...(input.kind ? { kind: input.kind } : {}),
           ...(input.metadata ? { metadata: input.metadata } : {}),
           ...(input.status ? { status: input.status } : {}),
           ...(input.title ? { title: input.title } : {}),

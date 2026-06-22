@@ -1,17 +1,25 @@
 import type {
   DocumentsAuth,
+  CreateUploadedDocumentInput,
   DocumentDownload,
   DocumentKind,
   DocumentPreview,
   DocumentTemplate,
+  DocumentUpload,
   DocumentVersion,
   ListDocumentsFilters,
+  RequestDocumentUploadInput,
+  UpdateDocumentInput,
   UpdateDocumentTemplateInput,
   VoidDocumentInput,
   WorkspaceDocument,
 } from "./types";
 
 export type DocumentsApi = {
+  createUploadedDocument: (
+    input: CreateUploadedDocumentInput,
+  ) => Promise<WorkspaceDocument>;
+  deleteDocument: (documentId: string) => Promise<WorkspaceDocument>;
   downloadDocument: (
     documentId: string,
     versionId?: string,
@@ -23,6 +31,13 @@ export type DocumentsApi = {
   listVersions: (documentId: string) => Promise<DocumentVersion[]>;
   previewDocument: (documentId: string) => Promise<DocumentPreview>;
   regenerateDocument: (documentId: string) => Promise<WorkspaceDocument>;
+  requestDocumentUpload: (
+    input: RequestDocumentUploadInput,
+  ) => Promise<DocumentUpload>;
+  updateDocument: (
+    documentId: string,
+    input: UpdateDocumentInput,
+  ) => Promise<WorkspaceDocument>;
   updateTemplate: (
     kind: DocumentKind,
     input: UpdateDocumentTemplateInput,
@@ -45,6 +60,17 @@ export function createDocumentsApi({
   fetch,
 }: CreateDocumentsApiOptions): DocumentsApi {
   return {
+    createUploadedDocument: (input) =>
+      fetch(documentsRoutes.documents({}, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "POST",
+      }).then(readJson<WorkspaceDocument>),
+    deleteDocument: (documentId) =>
+      fetch(documentsRoutes.document(documentId, baseUrl), {
+        headers: createDocumentsHeaders(auth),
+        method: "DELETE",
+      }).then(readJson<WorkspaceDocument>),
     downloadDocument: (documentId, versionId) =>
       fetch(documentsRoutes.download(documentId, versionId, baseUrl), {
         headers: createDocumentsHeaders(auth),
@@ -76,6 +102,18 @@ export function createDocumentsApi({
         headers: createDocumentsHeaders(auth),
         method: "POST",
       }).then(readJson<WorkspaceDocument>),
+    requestDocumentUpload: (input) =>
+      fetch(documentsRoutes.uploads(baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "POST",
+      }).then(readJson<DocumentUpload>),
+    updateDocument: (documentId, input) =>
+      fetch(documentsRoutes.document(documentId, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "PATCH",
+      }).then(readJson<WorkspaceDocument>),
     updateTemplate: (kind, input) =>
       fetch(documentsRoutes.template(kind, baseUrl), {
         body: JSON.stringify(input),
@@ -92,6 +130,8 @@ export function createDocumentsApi({
 }
 
 export const documentsRoutes = {
+  document: (documentId: string, baseUrl?: string) =>
+    createEndpoint(`/documents/${encodeURIComponent(documentId)}`, baseUrl),
   documents: (filters: ListDocumentsFilters = {}, baseUrl?: string) =>
     createEndpoint(`/documents${createQuery(filters)}`, baseUrl),
   download: (documentId: string, versionId?: string, baseUrl?: string) =>
@@ -115,6 +155,7 @@ export const documentsRoutes = {
     createEndpoint(`/documents/templates/${encodeURIComponent(kind)}`, baseUrl),
   templates: (baseUrl?: string) =>
     createEndpoint("/documents/templates", baseUrl),
+  uploads: (baseUrl?: string) => createEndpoint("/documents/uploads", baseUrl),
   void: (documentId: string, baseUrl?: string) =>
     createEndpoint(
       `/documents/${encodeURIComponent(documentId)}/void`,

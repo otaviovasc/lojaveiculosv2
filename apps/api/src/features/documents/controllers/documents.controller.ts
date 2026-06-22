@@ -9,8 +9,11 @@ import {
   handleDocuments,
 } from "./documents.controller.http.js";
 import {
+  createUploadedDocumentSchema,
   documentTemplateKindSchema,
   listDocumentsQuerySchema,
+  requestDocumentUploadSchema,
+  updateDocumentMetadataSchema,
   updateDocumentTemplateSchema,
   voidDocumentSchema,
 } from "./documents.controller.schemas.js";
@@ -18,6 +21,7 @@ import {
   toDocumentDownloadDto,
   toDocumentPreviewDto,
   toDocumentTemplateDto,
+  toDocumentUploadDto,
   toDocumentVersionDto,
   toDocumentWorkspaceDto,
 } from "./documentResponseDtos.js";
@@ -61,6 +65,24 @@ export function createDocumentsFeature(
     }),
   );
 
+  documentsFeature.post("/", async (context) =>
+    handleDocuments(context, async () => {
+      const input = await parseJson(context, createUploadedDocumentSchema);
+      const serviceContext = await createContext(context);
+      const document = await services.createUploaded(serviceContext, input);
+      return context.json(toDocumentWorkspaceDto(document), 201);
+    }),
+  );
+
+  documentsFeature.post("/uploads", async (context) =>
+    handleDocuments(context, async () => {
+      const input = await parseJson(context, requestDocumentUploadSchema);
+      const serviceContext = await createContext(context);
+      const upload = await services.requestUpload(serviceContext, input);
+      return context.json(toDocumentUploadDto(upload), 201);
+    }),
+  );
+
   documentsFeature.get("/templates", async (context) =>
     handleDocuments(context, async () => {
       const serviceContext = await createContext(context);
@@ -101,6 +123,29 @@ export function createDocumentsFeature(
       return context.json({
         versions: versions.map(toDocumentVersionDto),
       });
+    }),
+  );
+
+  documentsFeature.patch("/:documentId", async (context) =>
+    handleDocuments(context, async () => {
+      const input = await parseJson(context, updateDocumentMetadataSchema);
+      const serviceContext = await createContext(context);
+      const document = await services.updateDocument(serviceContext, {
+        documentId: context.req.param("documentId"),
+        ...input,
+      });
+      return context.json(toDocumentWorkspaceDto(document));
+    }),
+  );
+
+  documentsFeature.delete("/:documentId", async (context) =>
+    handleDocuments(context, async () => {
+      const serviceContext = await createContext(context);
+      const document = await services.void(serviceContext, {
+        documentId: context.req.param("documentId"),
+        reason: "Documento excluido pelo operador.",
+      });
+      return context.json(toDocumentWorkspaceDto(document));
     }),
   );
 

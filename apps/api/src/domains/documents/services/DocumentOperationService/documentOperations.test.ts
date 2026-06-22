@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 import type {
+  CreateObjectUploadInput,
   CreateObjectDownloadInput,
   PutStorageObjectInput,
 } from "../../../../shared/storage/objectStorage.js";
@@ -184,8 +185,16 @@ function createContext(
 function createTestObjectStorage(): ObjectStorage {
   let putCount = 0;
   return {
-    createUpload: vi.fn(async () => {
-      throw new Error("Unexpected upload");
+    createUpload: vi.fn(async (input: CreateObjectUploadInput) => {
+      const storageKey = [...input.scopeSegments, input.fileName].join("/");
+      return {
+        expiresAt: new Date("2026-01-01T00:15:00.000Z"),
+        publicUrl: `https://cdn.local/${storageKey}`,
+        storageKey,
+        uploadHeaders: { "content-type": input.contentType },
+        uploadMethod: "PUT" as const,
+        uploadUrl: `https://upload.local/${storageKey}`,
+      };
     }),
     createDownload: vi.fn(async (input: CreateObjectDownloadInput) => ({
       downloadMethod: "GET" as const,

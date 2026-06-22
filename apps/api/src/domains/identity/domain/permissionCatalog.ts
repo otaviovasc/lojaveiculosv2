@@ -1,6 +1,7 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
 import { defaultRolePermissions } from "./accessPolicy.js";
 import { crmWhatsappPermissionDescriptors } from "./crmWhatsappPermissionCatalog.js";
+import { documentPermissionDescriptors } from "./documentPermissionCatalog.js";
 import { marketplacePermissionGroup } from "./marketplacePermissionCatalog.js";
 
 export type PermissionRisk = "high" | "medium" | "low";
@@ -150,44 +151,7 @@ export const permissionGroups: readonly PermissionGroup[] = [
   {
     key: "documents",
     label: "Documentos",
-    permissions: [
-      permission(
-        "documents.read",
-        "Ler documentos",
-        "Visualizar documentos compartilhados da loja.",
-        "medium",
-      ),
-      permission(
-        "documents.download",
-        "Baixar",
-        "Gerar link de download de documentos.",
-        "high",
-      ),
-      permission(
-        "documents.preview",
-        "Pre-visualizar",
-        "Renderizar previa de documentos.",
-        "medium",
-      ),
-      permission(
-        "documents.regenerate",
-        "Regenerar",
-        "Regenerar documento operacional.",
-        "high",
-      ),
-      permission(
-        "documents.template_update",
-        "Editar modelos",
-        "Alterar clausulas dos documentos da loja.",
-        "high",
-      ),
-      permission(
-        "documents.void",
-        "Cancelar",
-        "Cancelar documentos emitidos.",
-        "high",
-      ),
-    ],
+    permissions: documentPermissionDescriptors,
   },
   {
     key: "platform",
