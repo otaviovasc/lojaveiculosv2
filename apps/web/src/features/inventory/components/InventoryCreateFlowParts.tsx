@@ -9,7 +9,10 @@ import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { InventoryFormState } from "../model/formModel";
 import type { InventoryListingStatus } from "../model/types";
 import { InventoryBadge, InventoryPanel } from "./InventoryFormParts";
-import type { CreateFlowMode, CreateFlowSubmitState } from "./InventoryCreateFlow";
+import type {
+  CreateFlowMode,
+  CreateFlowSubmitState,
+} from "./InventoryCreateFlow";
 
 export const createFlowSteps = [
   "Modo",
@@ -69,13 +72,17 @@ export function ModePanel({
 
 export function CreateSubmitPanel({
   media,
+  onRetryMedia,
   state,
   status,
 }: {
   media: readonly CreateMediaDraft[];
+  onRetryMedia: () => void;
   state: CreateFlowSubmitState;
   status: InventoryListingStatus;
 }) {
+  const submitLocked = state.kind === "submitting" || state.kind === "partial";
+
   return (
     <section className="rounded-lg border border-line bg-panel p-4 shadow-[var(--shadow-panel)]">
       <div className="mb-4 flex flex-wrap gap-2">
@@ -86,7 +93,7 @@ export function CreateSubmitPanel({
       </div>
       <button
         className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse disabled:opacity-70"
-        disabled={state.kind === "submitting"}
+        disabled={submitLocked}
         type="submit"
       >
         {state.kind === "submitting" ? (
@@ -94,9 +101,9 @@ export function CreateSubmitPanel({
         ) : (
           <CheckCircle2 className="size-4" />
         )}
-        {state.kind === "submitting" ? state.label : "Salvar veiculo"}
+        {submitButtonLabel(state)}
       </button>
-      <SubmitStatus state={state} />
+      <SubmitStatus onRetryMedia={onRetryMedia} state={state} />
     </section>
   );
 }
@@ -175,7 +182,13 @@ function ModeButton({
   );
 }
 
-function SubmitStatus({ state }: { state: CreateFlowSubmitState }) {
+function SubmitStatus({
+  onRetryMedia,
+  state,
+}: {
+  onRetryMedia: () => void;
+  state: CreateFlowSubmitState;
+}) {
   if (state.kind === "error") {
     return (
       <p className="mt-3 text-sm font-black text-danger">{state.message}</p>
@@ -188,5 +201,39 @@ function SubmitStatus({ state }: { state: CreateFlowSubmitState }) {
       </p>
     );
   }
+  if (state.kind === "partial") {
+    return (
+      <div className="mt-3 grid gap-3 rounded-lg border border-line bg-app p-3">
+        <p className="text-sm font-black text-danger">{state.message}</p>
+        <p className="text-xs font-bold text-muted">
+          Registro salvo: {state.listingId}. {partialRecoveryCopy(state)}
+        </p>
+        <button
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent-soft px-4 text-sm font-black text-accent-strong"
+          onClick={onRetryMedia}
+          type="button"
+        >
+          <ArrowRight className="size-4" />
+          {state.failedStep === "unit"
+            ? "Retomar unidade e midias"
+            : "Reenviar midias pendentes"}
+        </button>
+      </div>
+    );
+  }
   return null;
+}
+
+function submitButtonLabel(state: CreateFlowSubmitState) {
+  if (state.kind === "submitting") return state.label;
+  if (state.kind === "partial") return "Estoque salvo";
+  return "Salvar veiculo";
+}
+
+function partialRecoveryCopy(
+  state: Extract<CreateFlowSubmitState, { kind: "partial" }>,
+) {
+  return state.failedStep === "unit"
+    ? "Retome a unidade operacional e as midias pendentes sem criar outro estoque."
+    : `Reenvie apenas as ${state.failedMediaIds.length} midias pendentes para evitar duplicar o estoque.`;
 }

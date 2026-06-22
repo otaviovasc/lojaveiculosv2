@@ -24,6 +24,14 @@ export type CreateFlowSubmitState =
   | { kind: "idle" }
   | { kind: "submitting"; label: string }
   | { kind: "success"; listingId: string; mediaCount: number }
+  | {
+      failedMediaIds: readonly string[];
+      failedStep: "media" | "unit";
+      kind: "partial";
+      listingId: string;
+      mediaCount: number;
+      message: string;
+    }
   | { kind: "error"; message: string };
 
 export function InventoryCreateFlow({
@@ -35,6 +43,7 @@ export function InventoryCreateFlow({
   onChange,
   onMediaChange,
   onModeChange,
+  onRetryMedia,
   onSubmit,
   state,
 }: {
@@ -46,6 +55,7 @@ export function InventoryCreateFlow({
   onChange: InventoryFieldChangeHandler;
   onMediaChange: (items: CreateMediaDraft[]) => void;
   onModeChange?: (mode: CreateFlowMode) => void;
+  onRetryMedia: () => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   state: CreateFlowSubmitState;
 }) {
@@ -94,7 +104,12 @@ export function InventoryCreateFlow({
 
       <div className="grid content-start gap-4">
         <InventoryPublicReadiness form={form} media={media} />
-        <CreateSubmitPanel media={media} state={state} status={form.status} />
+        <CreateSubmitPanel
+          media={media}
+          onRetryMedia={onRetryMedia}
+          state={state}
+          status={form.status}
+        />
         <CreateNavigation
           canAdvance={canAdvance}
           isFirst={step === 0}
