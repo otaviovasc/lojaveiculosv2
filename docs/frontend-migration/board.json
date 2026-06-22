@@ -52,7 +52,7 @@
       "priority": "P0",
       "classification": "migrate-now",
       "surface_type": "foundation",
-      "status": "in-progress",
+      "status": "ready",
       "risk": "medium",
       "parallel_group": "foundation",
       "depends_on": [],
@@ -147,8 +147,8 @@
       "pr": {
         "number": 1,
         "labels": ["slice:lvv2-f000-control-plane", "agent:auto-merge"],
-        "review_status": "needs-review",
-        "merge_status": "open"
+        "review_status": "ready-for-merge",
+        "merge_status": "ready-for-merge"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -159,8 +159,8 @@
           "command": "npm run migration:check-plan && npm run migration:inventory -- --check",
           "routes": []
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "https://github.com/otaviovasc/lojaveiculosv2/actions/runs/27969052174",
+        "last_checked_at": "2026-06-22T16:49:03Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
