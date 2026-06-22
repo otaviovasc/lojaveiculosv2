@@ -1216,7 +1216,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "ready",
       "risk": "medium",
       "parallel_group": "finance",
       "depends_on": ["lvv2-f009-finance-expenses-bills"],
@@ -1241,11 +1241,55 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/finance/FinanceModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionWorkspace.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionHeader.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionSummaryCards.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionFiltersPanel.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionSellerList.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionDialogs.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionActions.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionSellerParts.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/commissionWorkspaceModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/commissionWorkspaceModel.test.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/commissionEntryMeta.ts"
         }
       ],
       "backend_contract": {
         "owner": "finance",
-        "notes": "Use V2 commission rules and finance entry pay semantics; do not copy V1 pay-route assumptions blindly."
+        "notes": "Uses V2 /api/v1/finance entries?type=commission, per-entry pay/cancel/update/create lifecycle, and commission-rules create/list. V1 seller-first review, paid/pending distinction, origin/status/period filters, manual bonus, and seller-scoped settlement are preserved; V1 PDF seller report is recorded as a V2 contract gap because finance exposes no report/PDF endpoint yet."
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -1254,9 +1298,9 @@
         "branch": "agent/lvv2-f010-commissions"
       },
       "pr": {
-        "number": null,
+        "number": 9,
         "labels": ["slice:lvv2-f010-commissions", "agent:auto-merge"],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
@@ -1268,8 +1312,8 @@
           "command": "npm run qa:visual -- --slice lvv2-f010-commissions",
           "routes": ["/#/commissions"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "reports/visual/lvv2-f010-commissions/commissions.txt",
+        "last_checked_at": "2026-06-22T19:24:50Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
