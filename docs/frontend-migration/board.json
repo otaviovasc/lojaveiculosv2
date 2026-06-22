@@ -4264,7 +4264,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "in-progress",
       "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "phase-1-remediation",
@@ -4291,7 +4291,23 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/apiClient.test.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/apiRoutes.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/finance/FinanceModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/financeBillsModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/CommissionWorkspace.tsx"
         },
         {
           "repo": "lojaveiculosv2",
@@ -4300,6 +4316,18 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/api/src/domains/finance/services/FinanceService/listFinanceEntries.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/finance/controllers/finance.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/finance/controllers/finance.controller.schemas.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/finance/controllers/financeServices.test.ts"
         }
       ],
       "backend_contract": {
@@ -4318,7 +4346,7 @@
           "phase:phase-1",
           "phase-blocker"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
@@ -4333,8 +4361,8 @@
             "/#/commissions"
           ]
         },
-        "last_evidence_path": "",
-        "last_checked_at": "2026-06-22T21:03:55Z",
+        "last_evidence_path": "reports/visual/lvv2-r007-finance-pagination-aggregation",
+        "last_checked_at": "2026-06-22T21:42:35Z",
         "blockers": [
           "phase-1-audit-007"
         ]

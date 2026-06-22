@@ -1,6 +1,9 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { FinanceEntry } from "../../ports/financeRepository.js";
+import type {
+  FinanceEntry,
+  FinanceEntryBundle,
+} from "../../ports/financeRepository.js";
 import {
   auditFinanceServiceEvent,
   getFinanceRepository,
@@ -25,11 +28,24 @@ export async function getFinanceSummary(
   ports?: FinanceServicePorts,
 ): Promise<FinanceSummary> {
   assertPermission(context, permission);
-  const bundles = await getFinanceRepository(ports).list({
-    limit: 500,
-    storeId: context.storeId,
-    tenantId: context.tenantId,
-  });
+  const repository = getFinanceRepository(ports);
+  const bundles: FinanceEntryBundle[] = [];
+  const limit = 200;
+  let offset = 0;
+
+  for (;;) {
+    const page = await repository.list({
+      limit: limit + 1,
+      offset,
+      storeId: context.storeId,
+      tenantId: context.tenantId,
+    });
+    const pageBundles = page.slice(0, limit);
+    bundles.push(...pageBundles);
+    if (page.length <= limit) break;
+    offset += pageBundles.length;
+  }
+
   const entries = bundles.map((bundle) => bundle.entry);
   const summary = summarizeFinanceEntries(entries);
 

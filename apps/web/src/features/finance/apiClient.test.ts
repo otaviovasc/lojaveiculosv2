@@ -7,6 +7,16 @@ describe("finance api client", () => {
     expect(financeRoutes.entries(undefined, "expense")).toBe(
       "/api/v1/finance/entries?type=expense",
     );
+    expect(
+      financeRoutes.entries(undefined, {
+        limit: 50,
+        offset: 100,
+        status: "pending",
+        type: "commission",
+      }),
+    ).toBe(
+      "/api/v1/finance/entries?limit=50&offset=100&status=pending&type=commission",
+    );
     expect(financeRoutes.documentUploads("entry 1")).toBe(
       "/api/v1/finance/entries/entry%201/documents/uploads",
     );
@@ -110,6 +120,44 @@ describe("finance api client", () => {
       3,
       "/api/v1/finance/entries/entry_1",
       expect.objectContaining({ method: "PATCH" }),
+    );
+  });
+
+  it("loads every finance entry page for aggregate workspaces", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          entries: [{ id: "entry_1" }, { id: "entry_2" }],
+          hasMore: true,
+          nextOffset: 2,
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          entries: [{ id: "entry_3" }],
+          hasMore: false,
+          nextOffset: null,
+        }),
+      );
+    const api = createFinanceApi({ fetch: fetchMock });
+
+    const entries = await api.listAllEntries("commission");
+
+    expect(entries.map((entry) => entry.id)).toEqual([
+      "entry_1",
+      "entry_2",
+      "entry_3",
+    ]);
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "/api/v1/finance/entries?limit=200&offset=0&type=commission",
+      expect.any(Object),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/finance/entries?limit=200&offset=2&type=commission",
+      expect.any(Object),
     );
   });
 });

@@ -71,7 +71,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     if (!runtimeApi) return;
     setIsLoading(true);
     void Promise.all([
-      runtimeApi.listEntries("commission"),
+      runtimeApi.listAllEntries("commission"),
       runtimeApi.listCommissionRules(),
     ])
       .then(([nextEntries, nextRules]) => {

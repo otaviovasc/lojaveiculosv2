@@ -95,7 +95,17 @@ export function createTestFinanceRepository(): TestFinanceRepository {
         .filter((entry) => entry.tenantId === input.tenantId)
         .filter((entry) => !input.type || entry.type === input.type)
         .filter((entry) => !input.status || entry.status === input.status)
-        .slice(0, input.limit)
+        .filter(
+          (entry) =>
+            !input.targetId ||
+            links.some(
+              (link) =>
+                link.entryId === entry.id &&
+                link.targetId === input.targetId &&
+                link.targetType === input.targetType,
+            ),
+        )
+        .slice(input.offset, input.offset + input.limit)
         .map((entry) => ({
           entry,
           links: links.filter((link) => link.entryId === entry.id),

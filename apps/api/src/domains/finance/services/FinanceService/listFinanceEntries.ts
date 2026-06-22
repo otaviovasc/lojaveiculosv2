@@ -17,28 +17,42 @@ const permission = "finance.read";
 
 export type ListFinanceEntriesInput = {
   limit?: number;
+  offset?: number;
   status?: FinanceEntryStatus | null;
   targetId?: string | null;
   targetType?: FinanceLinkTarget | null;
   type?: FinanceEntryType | null;
 };
 
+export type FinanceEntryListResult = {
+  entries: readonly FinanceEntryBundle[];
+  hasMore: boolean;
+  nextOffset: number | null;
+};
+
 export async function listFinanceEntries(
   context: ServiceContext,
   input: ListFinanceEntriesInput,
   ports?: FinanceServicePorts,
-): Promise<readonly FinanceEntryBundle[]> {
+): Promise<FinanceEntryListResult> {
   assertPermission(context, permission);
+  const limit = clampLimit(input.limit);
+  const offset = clampOffset(input.offset);
   const entries = await getFinanceRepository(ports).list({
-    limit: clampLimit(input.limit),
+    limit: limit + 1,
+    offset,
     status: input.status ?? null,
     storeId: context.storeId,
+    targetId: input.targetId ?? null,
+    targetType: input.targetType ?? null,
     tenantId: context.tenantId,
     type: input.type ?? null,
   });
+  const pageEntries = entries.slice(0, limit);
 
   logFinanceServiceEvent(context, "finance_entry.list.read", {
-    count: entries.length,
+    count: pageEntries.length,
+    offset,
     status: input.status ?? null,
     type: input.type ?? null,
   });
@@ -48,7 +62,8 @@ export async function listFinanceEntries(
     category: "data_access",
     entityId: `finance_entries:${context.storeId ?? "unscoped"}`,
     metadata: {
-      count: entries.length,
+      count: pageEntries.length,
+      offset,
       status: input.status ?? null,
       type: input.type ?? null,
     },
@@ -56,10 +71,19 @@ export async function listFinanceEntries(
     summary: "Listed finance entries",
   });
 
-  return entries;
+  return {
+    entries: pageEntries,
+    hasMore: entries.length > limit,
+    nextOffset: entries.length > limit ? offset + pageEntries.length : null,
+  };
 }
 
 function clampLimit(value: number | undefined): number {
   if (!value) return 100;
   return Math.min(Math.max(value, 1), 200);
+}
+
+function clampOffset(value: number | undefined): number {
+  if (!value) return 0;
+  return Math.max(value, 0);
 }
