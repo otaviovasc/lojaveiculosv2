@@ -263,9 +263,9 @@
         "branch": "agent/lvv2-f001-app-shell-dashboard"
       },
       "pr": {
-        "number": null,
+        "number": 2,
         "labels": ["slice:lvv2-f001-app-shell-dashboard", "agent:auto-merge"],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
