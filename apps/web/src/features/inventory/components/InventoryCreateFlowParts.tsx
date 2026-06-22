@@ -206,9 +206,7 @@ function SubmitStatus({
       <div className="mt-3 grid gap-3 rounded-lg border border-line bg-app p-3">
         <p className="text-sm font-black text-danger">{state.message}</p>
         <p className="text-xs font-bold text-muted">
-          Registro salvo: {state.listingId}. Reenvie apenas as{" "}
-          {state.failedMediaIds.length} midias pendentes para evitar duplicar o
-          estoque.
+          Registro salvo: {state.listingId}. {partialRecoveryCopy(state)}
         </p>
         <button
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent-soft px-4 text-sm font-black text-accent-strong"
@@ -216,7 +214,9 @@ function SubmitStatus({
           type="button"
         >
           <ArrowRight className="size-4" />
-          Reenviar midias pendentes
+          {state.failedStep === "unit"
+            ? "Retomar unidade e midias"
+            : "Reenviar midias pendentes"}
         </button>
       </div>
     );
@@ -228,4 +228,12 @@ function submitButtonLabel(state: CreateFlowSubmitState) {
   if (state.kind === "submitting") return state.label;
   if (state.kind === "partial") return "Estoque salvo";
   return "Salvar veiculo";
+}
+
+function partialRecoveryCopy(
+  state: Extract<CreateFlowSubmitState, { kind: "partial" }>,
+) {
+  return state.failedStep === "unit"
+    ? "Retome a unidade operacional e as midias pendentes sem criar outro estoque."
+    : `Reenvie apenas as ${state.failedMediaIds.length} midias pendentes para evitar duplicar o estoque.`;
 }

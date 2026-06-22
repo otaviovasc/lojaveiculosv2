@@ -26,6 +26,7 @@ export type CreateFlowSubmitState =
   | { kind: "success"; listingId: string; mediaCount: number }
   | {
       failedMediaIds: readonly string[];
+      failedStep: "media" | "unit";
       kind: "partial";
       listingId: string;
       mediaCount: number;

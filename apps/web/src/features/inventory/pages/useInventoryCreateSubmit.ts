@@ -55,6 +55,7 @@ export function useInventoryCreateSubmit({
 
       if (result.kind === "saved_with_media_failure") {
         setSubmitState({
+          failedStep: result.failedStep,
           failedMediaIds: result.failedMediaIds,
           kind: "partial",
           listingId: result.listingId,
@@ -90,6 +91,7 @@ export function useInventoryCreateSubmit({
     try {
       const result = await retryInventoryCreateMedia({
         api: await resolveApi(),
+        form,
         listingId: partialState.listingId,
         media: pendingMedia,
         onProgress: ({ label }) =>
