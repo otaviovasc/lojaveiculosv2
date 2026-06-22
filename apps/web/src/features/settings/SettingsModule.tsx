@@ -8,6 +8,7 @@ import { createStoreSettingsPatch } from "./settingsPatch";
 import type {
   RoleManagementView,
   SettingsStatus,
+  SettingsTab,
   StoreSettingsSnapshot,
   UpdateMembershipAccessInput,
 } from "./types";
@@ -16,23 +17,33 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
   const settingsApi = useMemo(() => api ?? createRuntimeSettingsApi(), [api]);
   const [settings, setSettings] = useState<StoreSettingsSnapshot | null>(null);
   const [roles, setRoles] = useState<RoleManagementView | null>(null);
-  const [activeTab, setActiveTab] = useState<"roles" | "store">("store");
+  const [rolesError, setRolesError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] =
+    useState<SettingsTab>(readInitialSettingsTab);
   const [status, setStatus] = useState<SettingsStatus>({ kind: "loading" });
 
   const refresh = async () => {
     setStatus({ kind: "loading" });
-    try {
-      const [nextSettings, nextRoles] = await Promise.all([
-        settingsApi.getStoreSettings(),
-        settingsApi.getRoleManagement(),
-      ]);
-      setSettings(nextSettings);
-      setRoles(nextRoles);
+    setRolesError(null);
+    const [settingsResult, rolesResult] = await Promise.allSettled([
+      settingsApi.getStoreSettings(),
+      settingsApi.getRoleManagement(),
+    ]);
+
+    if (rolesResult.status === "fulfilled") {
+      setRoles(rolesResult.value);
+    } else {
+      setRoles(null);
+      setRolesError(errorMessage(rolesResult.reason));
+    }
+
+    if (settingsResult.status === "fulfilled") {
+      setSettings(settingsResult.value);
       setStatus({ kind: "ready" });
-    } catch (error) {
+    } else {
       setStatus({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(settingsResult.reason),
       });
     }
   };
@@ -121,14 +132,14 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
       <div className="settings-tabs">
         <button
           className={activeTab === "store" ? "is-active" : ""}
-          onClick={() => setActiveTab("store")}
+          onClick={() => selectTab("store", setActiveTab)}
           type="button"
         >
           Loja
         </button>
         <button
           className={activeTab === "roles" ? "is-active" : ""}
-          onClick={() => setActiveTab("roles")}
+          onClick={() => selectTab("roles", setActiveTab)}
           type="button"
         >
           Papeis
@@ -147,6 +158,8 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
           onSave={saveMemberAccess}
           roles={roles}
         />
+      ) : activeTab === "roles" && rolesError ? (
+        <section className="settings-alert">{rolesError}</section>
       ) : (
         <section className="settings-empty">
           <Wand2 aria-hidden="true" className="size-5" />
@@ -162,6 +175,25 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
       ) : null}
     </main>
   );
+}
+
+function readInitialSettingsTab(): SettingsTab {
+  if (typeof window === "undefined") return "store";
+  const query = window.location.hash.split("?")[1] ?? "";
+  return new URLSearchParams(query).get("tab") === "roles" ? "roles" : "store";
+}
+
+function selectTab(
+  tab: SettingsTab,
+  setActiveTab: (tab: SettingsTab) => void,
+) {
+  setActiveTab(tab);
+  if (typeof window === "undefined") return;
+  window.location.hash = tab === "roles" ? "/settings?tab=roles" : "/settings";
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function createRuntimeSettingsApi(): SettingsApi {

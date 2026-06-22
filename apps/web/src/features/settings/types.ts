@@ -120,3 +120,5 @@ export type SettingsStatus =
   | { kind: "ready" }
   | { kind: "saved" }
   | { kind: "saving" };
+
+export type SettingsTab = "roles" | "store";
