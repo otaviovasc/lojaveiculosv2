@@ -13,6 +13,14 @@ export type DocumentsView = "templates" | "workspace";
 
 export function createRuntimeDocumentsApi(): DocumentsApi {
   return {
+    createUploadedDocument: async (input) =>
+      createDocumentsApi(
+        await createDocumentsApiOptions(),
+      ).createUploadedDocument(input),
+    deleteDocument: async (documentId) =>
+      createDocumentsApi(await createDocumentsApiOptions()).deleteDocument(
+        documentId,
+      ),
     downloadDocument: async (documentId, versionId) =>
       createDocumentsApi(await createDocumentsApiOptions()).downloadDocument(
         documentId,
@@ -35,6 +43,15 @@ export function createRuntimeDocumentsApi(): DocumentsApi {
     regenerateDocument: async (documentId) =>
       createDocumentsApi(await createDocumentsApiOptions()).regenerateDocument(
         documentId,
+      ),
+    requestDocumentUpload: async (input) =>
+      createDocumentsApi(
+        await createDocumentsApiOptions(),
+      ).requestDocumentUpload(input),
+    updateDocument: async (documentId, input) =>
+      createDocumentsApi(await createDocumentsApiOptions()).updateDocument(
+        documentId,
+        input,
       ),
     updateTemplate: async (kind, input) =>
       createDocumentsApi(await createDocumentsApiOptions()).updateTemplate(

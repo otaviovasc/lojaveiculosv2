@@ -1,3 +1,9 @@
+import {
+  createUploadedDocumentOperation,
+  documentUploadPaths,
+  documentUploadSchemas,
+} from "./documentUploadOpenApi.js";
+
 export const documentsSchemas = {
   DocumentWorkspaceItem: {
     type: "object",
@@ -100,6 +106,7 @@ export const documentsSchemas = {
       title: { type: "string", minLength: 1 },
     },
   },
+  ...documentUploadSchemas,
 } as const;
 
 export const documentsPaths = {
@@ -138,7 +145,9 @@ export const documentsPaths = {
         "403": { description: "documents.read permission is required." },
       },
     },
+    post: createUploadedDocumentOperation,
   },
+  ...documentUploadPaths,
   "/api/v1/documents/templates": {
     get: {
       tags: ["Documents"],

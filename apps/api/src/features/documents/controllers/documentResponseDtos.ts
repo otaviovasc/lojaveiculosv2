@@ -3,6 +3,7 @@ import type { DocumentTemplate } from "../../../domains/documents/ports/document
 import type { DocumentVersion } from "../../../domains/documents/ports/documentRepository.js";
 import type { DocumentDownloadDescriptor } from "../../../domains/documents/services/DocumentOperationService/downloadDocument.js";
 import type { DocumentPreview } from "../../../domains/documents/preview/documentPreview.js";
+import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
 
 export function toDocumentWorkspaceDto(document: LinkedDocument) {
   return {
@@ -72,5 +73,16 @@ export function toDocumentVersionDto(version: DocumentVersion) {
     id: version.id,
     metadata: version.metadata,
     versionNumber: version.versionNumber,
+  };
+}
+
+export function toDocumentUploadDto(upload: ObjectUpload) {
+  return {
+    expiresAt: upload.expiresAt.toISOString(),
+    publicUrl: upload.publicUrl,
+    storageKey: upload.storageKey,
+    uploadHeaders: upload.uploadHeaders,
+    uploadMethod: upload.uploadMethod,
+    uploadUrl: upload.uploadUrl,
   };
 }

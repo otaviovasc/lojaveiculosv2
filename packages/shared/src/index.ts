@@ -28,6 +28,8 @@ export type PermissionKey =
   | "documents.preview"
   | "documents.regenerate"
   | "documents.template_update"
+  | "documents.update_metadata"
+  | "documents.upload"
   | "documents.void"
   | "external_api.manage"
   | "finance.attach_document"

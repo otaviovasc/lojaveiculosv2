@@ -54,6 +54,38 @@ export const listDocumentsQuerySchema = z.object({
   targetType: z.enum(documentLinkTargets).optional(),
 });
 
+export const requestDocumentUploadSchema = z.object({
+  contentType: z.string().trim().min(1).max(120),
+  fileName: z.string().trim().min(1).max(191),
+  sizeBytes: z.coerce
+    .number()
+    .int()
+    .positive()
+    .max(25 * 1024 * 1024),
+  targetId: z.string().trim().min(1).max(191).optional(),
+  targetType: z.enum(documentLinkTargets).optional(),
+});
+
+export const createUploadedDocumentSchema = z.object({
+  fileName: z.string().trim().min(1).max(191),
+  fileSizeBytes: z.coerce.number().int().nonnegative().nullable(),
+  kind: z.enum(documentKinds),
+  mimeType: z.string().trim().min(1).max(120).nullable(),
+  storageKey: z.string().trim().min(1).max(512),
+  targetId: z.string().trim().min(1).max(191).optional(),
+  targetType: z.enum(documentLinkTargets).optional(),
+  title: z.string().trim().min(1).max(191),
+});
+
+export const updateDocumentMetadataSchema = z
+  .object({
+    kind: z.enum(documentKinds).optional(),
+    title: z.string().trim().min(1).max(191).optional(),
+  })
+  .refine((value) => Boolean(value.kind || value.title), {
+    message: "At least one metadata field is required.",
+  });
+
 export const updateDocumentTemplateSchema = z.object({
   clauses: z.array(z.string().trim().min(1).max(600)).min(1).max(8),
   title: z.string().trim().min(1).max(191),

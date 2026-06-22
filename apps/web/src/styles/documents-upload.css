@@ -1,0 +1,194 @@
+.documents-modal-backdrop {
+  align-items: center;
+  background: var(--color-overlay);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 50;
+}
+
+.documents-upload-dialog,
+.documents-delete-dialog {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-text);
+}
+
+.documents-upload-dialog {
+  display: grid;
+  gap: 1rem;
+  max-height: min(42rem, calc(100vh - 2rem));
+  max-width: 42rem;
+  overflow: auto;
+  padding: 1rem;
+  width: 100%;
+}
+
+.documents-upload-header,
+.documents-upload-actions,
+.documents-delete-dialog footer {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.documents-upload-header div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.documents-upload-header strong,
+.documents-delete-dialog strong {
+  font-weight: 900;
+}
+
+.documents-upload-header span,
+.documents-upload-dropzone span,
+.documents-upload-status,
+.documents-delete-dialog p,
+.documents-delete-dialog small {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.documents-upload-header button,
+.documents-upload-actions button,
+.documents-delete-dialog > button,
+.documents-delete-dialog footer button,
+.documents-upload-item button {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+}
+
+.documents-upload-dropzone {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px dashed var(--color-line-strong);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: grid;
+  gap: 0.375rem;
+  justify-items: center;
+  min-height: 9rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.documents-upload-dropzone input {
+  display: none;
+}
+
+.documents-upload-queue {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  overflow: hidden;
+}
+
+.documents-upload-item {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr) minmax(10rem, 0.35fr) auto;
+  padding: 0.75rem;
+}
+
+.documents-upload-item + .documents-upload-item {
+  border-top: 1px solid var(--color-line);
+}
+
+.documents-upload-item div {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.documents-upload-item small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documents-upload-item input,
+.documents-upload-item select {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-weight: 800;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+}
+
+.documents-upload-progress {
+  width: 100%;
+}
+
+.documents-upload-actions button:last-child,
+.documents-delete-dialog footer button:last-child {
+  background: var(--color-accent);
+  color: var(--color-inverse);
+}
+
+.documents-delete-dialog {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: center;
+  max-width: 24rem;
+  padding: 1rem;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.documents-delete-dialog > button {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.75rem;
+}
+
+.documents-delete-icon {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+  display: flex;
+  height: 3rem;
+  justify-content: center;
+  width: 3rem;
+}
+
+.documents-delete-dialog footer {
+  width: 100%;
+}
+
+.documents-delete-dialog footer button {
+  flex: 1;
+}
+
+@media (max-width: 720px) {
+  .documents-upload-item {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .documents-upload-item select {
+    grid-column: 2 / -1;
+  }
+}

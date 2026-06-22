@@ -129,6 +129,7 @@ export type UpsertDocumentTemplateInput = {
 
 export type UpdateLinkedDocumentInput = {
   documentId: string;
+  kind?: DocumentKind | undefined;
   metadata?: Record<string, unknown> | undefined;
   status?: DocumentStatus | undefined;
   storeId: string;

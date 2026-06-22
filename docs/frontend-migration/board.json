@@ -3870,7 +3870,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "ready",
       "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "phase-1-remediation",
@@ -3900,7 +3900,19 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentUploadDialog.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentWorkspaceTable.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/api/src/features/documents/controllers/documents.controller.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/documents/services/DocumentOperationService/createUploadedDocument.ts"
         },
         {
           "repo": "lojaveiculosv2",
@@ -3909,7 +3921,7 @@
       ],
       "backend_contract": {
         "owner": "documents",
-        "notes": "Close the V1 center-document workflow gap for upload, rename/edit metadata, delete/void, permissions, and audit."
+        "notes": "Implemented V2 documents upload parity with signed upload request plus scoped uploaded-document registration, inline title/type metadata edits, and delete UI mapped to V2 void/audit semantics. Added documents.upload and documents.update_metadata permissions only; existing documents.void remains the destructive action."
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -3918,13 +3930,14 @@
         "branch": "agent/lvv2-r002-documents-operations-parity"
       },
       "pr": {
+        "number": 18,
         "labels": [
           "slice:lvv2-r002-documents-operations-parity",
           "phase:phase-1",
           "phase-blocker"
         ],
-        "review_status": "not-opened",
-        "merge_status": "not-opened"
+        "review_status": "ready-for-merge",
+        "merge_status": "ready-for-merge"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -3937,8 +3950,8 @@
             "/#/documents"
           ]
         },
-        "last_evidence_path": "",
-        "last_checked_at": "2026-06-22T21:03:55Z",
+        "last_evidence_path": "reports/visual/lvv2-r002-documents-operations-parity/documents.txt",
+        "last_checked_at": "2026-06-22T21:51:06Z",
         "blockers": [
           "phase-1-audit-002"
         ]

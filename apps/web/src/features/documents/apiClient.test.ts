@@ -5,6 +5,10 @@ describe("documents api client", () => {
   it("builds documents workspace routes with filters", () => {
     expect(documentsRoutes.documents()).toBe("/api/v1/documents");
     expect(documentsRoutes.templates()).toBe("/api/v1/documents/templates");
+    expect(documentsRoutes.uploads()).toBe("/api/v1/documents/uploads");
+    expect(documentsRoutes.document("document 1")).toBe(
+      "/api/v1/documents/document%201",
+    );
     expect(documentsRoutes.template("sale_contract")).toBe(
       "/api/v1/documents/templates/sale_contract",
     );
@@ -215,9 +219,9 @@ function documentBody(overrides: Record<string, unknown> = {}) {
   };
 }
 
-function jsonResponse(body: unknown) {
+function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     headers: { "Content-Type": "application/json" },
-    status: 200,
+    status,
   });
 }

@@ -138,6 +138,7 @@ export function createTestDocumentRepository(): TestDocumentRepository {
     async update(input: UpdateLinkedDocumentInput) {
       const document = findDocument(documents, input);
       if (!document) throw new Error(`Document not found: ${input.documentId}`);
+      if (input.kind) document.kind = input.kind;
       if (input.metadata) document.metadata = input.metadata;
       if (input.status) document.status = input.status;
       if (input.title) document.title = input.title;

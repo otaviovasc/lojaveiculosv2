@@ -1,4 +1,5 @@
 .documents-back-button,
+.documents-upload-action,
 .documents-mode-toggle button,
 .documents-row-actions button {
   align-items: center;
@@ -20,6 +21,14 @@
   color: var(--color-muted);
   font-size: 0.8125rem;
   font-weight: 800;
+}
+
+.documents-workspace-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 
 .documents-row {
@@ -58,6 +67,7 @@
 
 .documents-mode-toggle button,
 .documents-back-button,
+.documents-upload-action,
 .documents-row-actions button {
   background: var(--color-app);
   border: 1px solid var(--color-line);
@@ -68,6 +78,11 @@
   justify-content: center;
   min-height: 2.25rem;
   padding: 0 0.75rem;
+}
+
+.documents-upload-action {
+  background: var(--color-accent);
+  color: var(--color-inverse);
 }
 
 .documents-mode-toggle button.is-active {
@@ -81,6 +96,24 @@
 
 .documents-row-actions button {
   width: 2.25rem;
+}
+
+.documents-row-editor {
+  display: grid;
+  flex: 1;
+  gap: 0.5rem;
+  grid-template-columns: minmax(12rem, 1fr) minmax(9rem, 0.35fr);
+}
+
+.documents-row-editor input,
+.documents-row-editor select {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-weight: 800;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
 }
 
 .documents-back-button {
@@ -130,6 +163,10 @@
   }
 
   .documents-row-main {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-row-editor {
     grid-template-columns: 1fr;
   }
 

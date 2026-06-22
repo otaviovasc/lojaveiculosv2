@@ -10,9 +10,7 @@ import { createDocumentsFeature } from "./documents.controller.js";
 
 describe("documents controller", () => {
   it("routes workspace filters to the documents service", async () => {
-    const services: DocumentServices = {
-      download: vi.fn(async () => unexpected("download")),
-      listVersions: vi.fn(async () => []),
+    const services = createDocumentServiceStubs({
       listWorkspace: vi.fn(
         async (): Promise<readonly LinkedDocument[]> => [
           {
@@ -36,14 +34,7 @@ describe("documents controller", () => {
           },
         ],
       ),
-      listTemplates: vi.fn(async () => []),
-      preview: vi.fn(async () => unexpected("preview")),
-      regenerate: vi.fn(async () => unexpected("regenerate")),
-      updateTemplate: vi.fn(async () => {
-        throw new Error("Unexpected template update");
-      }),
-      void: vi.fn(async () => unexpected("void")),
-    };
+    });
     const app = createDocumentsTestApp(services);
 
     const response = await app.request(
@@ -83,18 +74,9 @@ describe("documents controller", () => {
   });
 
   it("rejects invalid query filters before calling the service", async () => {
-    const services: DocumentServices = {
-      download: vi.fn(async () => unexpected("download")),
-      listVersions: vi.fn(async () => []),
+    const services = createDocumentServiceStubs({
       listWorkspace: vi.fn(async () => []),
-      listTemplates: vi.fn(async () => []),
-      preview: vi.fn(async () => unexpected("preview")),
-      regenerate: vi.fn(async () => unexpected("regenerate")),
-      updateTemplate: vi.fn(async () => {
-        throw new Error("Unexpected template update");
-      }),
-      void: vi.fn(async () => unexpected("void")),
-    };
+    });
     const app = createDocumentsTestApp(services);
 
     const response = await app.request("/api/v1/documents?status=unknown");
@@ -193,12 +175,15 @@ function createDocumentServiceStubs(
   overrides: Partial<DocumentServices> = {},
 ): DocumentServices {
   return {
+    createUploaded: vi.fn(async () => unexpected("createUploaded")),
     download: vi.fn(async () => unexpected("download")),
     listVersions: vi.fn(async () => []),
     listTemplates: vi.fn(async () => []),
     listWorkspace: vi.fn(async () => []),
     preview: vi.fn(async () => unexpected("preview")),
     regenerate: vi.fn(async () => unexpected("regenerate")),
+    requestUpload: vi.fn(async () => unexpected("requestUpload")),
+    updateDocument: vi.fn(async () => unexpected("updateDocument")),
     updateTemplate: vi.fn(async () => {
       throw new Error("Unexpected template update");
     }),
@@ -221,6 +206,8 @@ function createDocumentsTestApp(services: DocumentServices) {
             "documents.read",
             "documents.regenerate",
             "documents.template_update",
+            "documents.update_metadata",
+            "documents.upload",
             "documents.void",
           ],
           request: { requestId: "req_1" },
