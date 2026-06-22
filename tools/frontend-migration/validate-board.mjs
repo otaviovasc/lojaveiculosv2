@@ -58,10 +58,7 @@ for (const slice of slices) {
   }
 
   for (const dep of slice.depends_on ?? []) {
-    if (
-      !ids.has(dep) &&
-      !slices.some((candidate) => candidate.id === dep)
-    ) {
+    if (!ids.has(dep) && !slices.some((candidate) => candidate.id === dep)) {
       fail(`${slice.id}: dependency does not exist: ${dep}`, failures);
     }
   }
@@ -111,7 +108,10 @@ for (const slice of slices) {
     slice.status === "merged" &&
     (reviewStatus !== "merged" || mergeStatus !== "merged")
   ) {
-    fail(`${slice.id}: merged slice must have merged review/merge status`, failures);
+    fail(
+      `${slice.id}: merged slice must have merged review/merge status`,
+      failures,
+    );
   }
 
   if (
@@ -125,7 +125,10 @@ for (const slice of slices) {
     slice.status === "merged" &&
     (slice.pr?.labels ?? []).includes("agent:human-hold")
   ) {
-    fail(`${slice.id}: merged slice still has agent:human-hold label`, failures);
+    fail(
+      `${slice.id}: merged slice still has agent:human-hold label`,
+      failures,
+    );
   }
 }
 
@@ -154,7 +157,8 @@ function validatePhases(board, failures) {
 
   for (const phase of phases) {
     if (!phase.id) fail("Phase missing id", failures);
-    if (phaseIds.has(phase.id)) fail(`Duplicate phase id: ${phase.id}`, failures);
+    if (phaseIds.has(phase.id))
+      fail(`Duplicate phase id: ${phase.id}`, failures);
     phaseIds.add(phase.id);
     phaseById.set(phase.id, phase);
 
@@ -166,6 +170,12 @@ function validatePhases(board, failures) {
     }
     if (phase.audit?.status && !valid.auditStatus.has(phase.audit.status)) {
       fail(`${phase.id}: invalid audit status ${phase.audit.status}`, failures);
+    }
+    if (phase.audit?.status === "blocked" && phase.status !== "blocked") {
+      fail(
+        `${phase.id}: blocked audit status requires blocked phase status`,
+        failures,
+      );
     }
     if (phase.status === "blocked") validateBlockedPhaseShape(phase, failures);
   }
@@ -190,7 +200,10 @@ function validateBlockedPhaseShape(phase, failures) {
     fail(`${phase.id}: blocked phase must list audit findings`, failures);
   }
   if ((phase.audit?.remediation_slice_ids ?? []).length === 0) {
-    fail(`${phase.id}: blocked phase must list remediation_slice_ids`, failures);
+    fail(
+      `${phase.id}: blocked phase must list remediation_slice_ids`,
+      failures,
+    );
   }
 }
 
@@ -202,17 +215,36 @@ function validatePhaseLinks(board, sliceById, phaseById, failures) {
     for (const remediationId of remediationIds) {
       const slice = sliceById.get(remediationId);
       if (!slice) {
-        fail(`${phase.id}: unknown remediation slice ${remediationId}`, failures);
+        fail(
+          `${phase.id}: unknown remediation slice ${remediationId}`,
+          failures,
+        );
         continue;
       }
       if (slice.phase !== phase.id) {
-        fail(`${remediationId}: remediation slice phase must be ${phase.id}`, failures);
+        fail(
+          `${remediationId}: remediation slice phase must be ${phase.id}`,
+          failures,
+        );
       }
       if (slice.status !== "merged") unmergedRemediationCount += 1;
     }
 
     if (phase.status === "blocked" && unmergedRemediationCount === 0) {
-      fail(`${phase.id}: blocked phase has no unmerged remediation slices`, failures);
+      fail(
+        `${phase.id}: blocked phase has no unmerged remediation slices`,
+        failures,
+      );
+    }
+    if (
+      phase.audit?.status === "blocked" &&
+      unmergedRemediationCount > 0 &&
+      phase.status !== "blocked"
+    ) {
+      fail(
+        `${phase.id}: unresolved remediation slices require blocked phase status`,
+        failures,
+      );
     }
   }
 

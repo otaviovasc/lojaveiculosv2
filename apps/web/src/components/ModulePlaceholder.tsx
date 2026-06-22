@@ -8,9 +8,9 @@ import {
 import type { ModuleDefinition } from "../app/modules";
 
 const readinessItems = [
-  "Permissoes e entitlements definidos antes do rollout",
+  "Permissoes e modulos definidos antes da liberacao",
   "Estados vazios, carregando, erro e bloqueado previstos",
-  "Auditoria, logs escopados e tenant/store id em cada acao",
+  "Historico por loja, usuario e acao",
 ];
 
 export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
@@ -40,7 +40,7 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
               <DatabaseZap aria-hidden="true" className="size-5" />
             </div>
             <div>
-              <p className="eyebrow">Contrato de modulo</p>
+              <p className="eyebrow">Modulo em preparo</p>
               <h3 className="text-xl font-black">Fundacao pronta</h3>
             </div>
           </div>
@@ -67,8 +67,7 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
                 className="mt-0.5 size-5 shrink-0 text-accent"
               />
               <p className="text-sm font-semibold text-muted">
-                Conectar dados reais quando os contratos de servico estiverem
-                estaveis.
+                Conectar dados reais quando o fluxo operacional estiver pronto.
               </p>
             </div>
             <div className="flex gap-3">

@@ -44,8 +44,8 @@ export function LockedAddonPanel({ kind }: LockedAddonPanelProps) {
 
         <div className="grid gap-3 sm:grid-cols-2">
           {[
-            "Ativacao por permissao e entitlement",
-            "Auditoria obrigatoria por acao",
+            "Ativacao por perfil e modulo",
+            "Historico completo de acoes",
             "Estados mobile sem sobreposicao",
             "Registros por loja, usuario e acao",
           ].map((item) => (
