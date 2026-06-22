@@ -52,7 +52,7 @@
       "priority": "P0",
       "classification": "migrate-now",
       "surface_type": "foundation",
-      "status": "ready",
+      "status": "merged",
       "risk": "medium",
       "parallel_group": "foundation",
       "depends_on": [],
@@ -147,8 +147,8 @@
       "pr": {
         "number": 1,
         "labels": ["slice:lvv2-f000-control-plane", "agent:auto-merge"],
-        "review_status": "ready-for-merge",
-        "merge_status": "ready-for-merge"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -172,7 +172,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "ready",
       "risk": "medium",
       "parallel_group": "foundation-ui",
       "depends_on": ["lvv2-f000-control-plane"],
@@ -210,11 +210,51 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/analytics/apiClient.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/analytics/runtimeApi.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/analytics/types.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/analytics/dashboardModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/analytics/DashboardPanels.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/StatCard.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/components.css"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/dashboard.css"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/global.css"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/vite.config.ts"
         }
       ],
       "backend_contract": {
         "owner": "analytics/internal",
-        "notes": "Use DB-backed dashboard/internal summaries where available; V1 dashboard is UI parity evidence only."
+        "notes": "Dashboard reads the V2 GET /api/v1/analytics/dashboard contract, which enforces analytics.read, analytics entitlement, tenant/store scope, logs, and audit. V1 dashboard remains UI parity evidence only."
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -237,8 +277,8 @@
           "command": "npm run qa:visual -- --slice lvv2-f001-app-shell-dashboard",
           "routes": ["/#/dashboard"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "reports/visual/lvv2-f001-app-shell-dashboard/dashboard.txt",
+        "last_checked_at": "2026-06-22T17:18:16.013Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []

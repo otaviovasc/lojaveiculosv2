@@ -62,6 +62,7 @@ export function AppShell({
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
   );
+  const storeLabel = readStoreLabel();
 
   const navigate = (moduleId: ModuleId) => {
     onNavigate(moduleId);
@@ -83,7 +84,7 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-app text-app-text lg:grid lg:grid-cols-[272px_1fr]">
       <aside className="hidden border-r border-line bg-panel lg:block">
-        <BrandLockup />
+        <BrandLockup storeLabel={storeLabel} />
         <NavigationList
           activeModuleId={activeModule.id}
           onNavigate={navigate}
@@ -96,10 +97,11 @@ export function AppShell({
             aria-label="Navegacao mobile"
             aria-modal="true"
             className="mobile-nav-panel"
+            id="mobile-navigation"
             role="dialog"
           >
             <div className="flex items-center justify-between border-b border-line pr-4">
-              <BrandLockup />
+              <BrandLockup storeLabel={storeLabel} />
               <button
                 aria-label="Fechar menu"
                 className="icon-button"
@@ -170,7 +172,7 @@ export function AppShell({
   );
 }
 
-function BrandLockup() {
+function BrandLockup({ storeLabel }: { storeLabel: string }) {
   return (
     <div className="flex h-20 items-center gap-3 px-5">
       <div className="flex size-11 items-center justify-center rounded-lg bg-accent-soft text-accent">
@@ -178,8 +180,16 @@ function BrandLockup() {
       </div>
       <div>
         <p className="text-sm font-black">Loja Veiculos</p>
-        <p className="text-xs font-semibold text-muted">V2 workspace</p>
+        <p className="text-xs font-semibold text-muted">{storeLabel}</p>
       </div>
     </div>
   );
+}
+
+function readStoreLabel() {
+  const env = import.meta.env as {
+    DEV?: boolean;
+    VITE_DEV_STORE_SLUG?: string;
+  };
+  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "store scope");
 }

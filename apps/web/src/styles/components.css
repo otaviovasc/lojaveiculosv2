@@ -67,8 +67,143 @@
   z-index: 10;
 }
 
+.content-frame {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin: 0 auto;
+  max-width: var(--layout-content-max);
+  padding: 1rem;
+}
+
+.panel,
+.module-hero,
+.status-tile {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+}
+
+.module-hero {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1.25rem;
+}
+
+.eyebrow {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.primary-button {
+  align-items: center;
+  background: var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1rem;
+}
+
+.status-tile {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.75rem;
+  min-height: 5rem;
+  padding: 0.875rem;
+}
+
+.addon-icon {
+  align-items: center;
+  border-radius: var(--radius-md);
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.addon-icon-green {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.addon-icon-blue {
+  background: var(--color-blue-soft);
+  color: var(--color-blue-start);
+}
+
+.stat-card {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-inverse);
+  min-height: 10.5rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  position: relative;
+}
+
+.stat-card-green {
+  background: linear-gradient(
+    135deg,
+    var(--color-green-start),
+    var(--color-green-end)
+  );
+}
+
+.stat-card-blue {
+  background: linear-gradient(
+    135deg,
+    var(--color-blue-start),
+    var(--color-blue-end)
+  );
+}
+
+.stat-card-violet {
+  background: linear-gradient(
+    135deg,
+    var(--color-violet-start),
+    var(--color-violet-end)
+  );
+}
+
+.stat-card-pink {
+  background: linear-gradient(
+    135deg,
+    var(--color-pink-start),
+    var(--color-pink-end)
+  );
+}
+
+.bg-white-soft {
+  background: var(--color-inverse-soft);
+}
+
+.text-white-muted {
+  color: var(--color-inverse-muted);
+}
+
+.text-white-ghost {
+  color: var(--color-inverse-ghost);
+}
+
 @media (min-width: 768px) {
   .shell-header {
     padding: 0 1.5rem;
+  }
+
+  .module-hero {
+    align-items: center;
+    flex-direction: row;
   }
 }

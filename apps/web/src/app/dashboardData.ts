@@ -1,46 +1,10 @@
-import {
-  Activity,
-  Bot,
-  CircleDollarSign,
-  Clock3,
-  MessagesSquare,
-  Target,
-} from "lucide-react";
-import type { ComponentType } from "react";
+import { Clock3, MessagesSquare } from "lucide-react";
+import { fallbackDashboardStats } from "../features/analytics/dashboardModel";
+import type { DashboardStatViewModel } from "../features/analytics/types";
 
-export type DashboardStat = {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  tone: "green" | "blue" | "violet" | "pink";
-  value: string;
-};
+export type DashboardStat = DashboardStatViewModel;
 
-export const dashboardStats: DashboardStat[] = [
-  {
-    icon: CircleDollarSign,
-    label: "Faturamento",
-    tone: "green",
-    value: "R$ 0",
-  },
-  {
-    icon: Target,
-    label: "Ticket medio",
-    tone: "blue",
-    value: "R$ 0",
-  },
-  {
-    icon: Activity,
-    label: "Conversao",
-    tone: "violet",
-    value: "0%",
-  },
-  {
-    icon: Bot,
-    label: "Leads IA",
-    tone: "pink",
-    value: "0",
-  },
-];
+export const dashboardStats: DashboardStat[] = fallbackDashboardStats;
 
 export const dashboardPanels = [
   {
