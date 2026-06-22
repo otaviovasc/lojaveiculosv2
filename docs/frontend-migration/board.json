@@ -1,0 +1,2772 @@
+{
+  "version": 1,
+  "updated_at": "2026-06-22",
+  "repos": {
+    "lojaveiculosv2": {
+      "relative_path": "."
+    },
+    "lojaveiculos": {
+      "relative_path": "../lojaveiculos",
+      "worktree_relative_path": "../../../lojaveiculos"
+    },
+    "repasses-frontend": {
+      "relative_path": "../repasses-loja/repasses-frontend",
+      "worktree_relative_path": "../../../repasses-loja/repasses-frontend"
+    }
+  },
+  "model_policy": {
+    "main_orchestrator": "gpt-5.5/xhigh",
+    "control_plane_pr_agents": "gpt-5.5/xhigh",
+    "slice_pr_owner": "gpt-5.5/high",
+    "slice_reviewer": "gpt-5.5/high",
+    "spark_policy": "Spark agents may support exploration or bounded verification only; they may not own PRs."
+  },
+  "worktree_policy": {
+    "directory": ".worktrees",
+    "branch_pattern": "agent/<slice-id>-<short-slug>",
+    "owner_rule": "Each PR-owning worker uses one git worktree and one branch."
+  },
+  "default_review_checklist": [
+    "Read exact V1/repasses source refs and cite code-level parity evidence.",
+    "Preserve good V1 UI/UX close to 1:1; document intentional improvements.",
+    "Use V2 backend contracts for data, permissions, entitlements, audit, and side effects.",
+    "Keep screen files free of local components/types unless tracked as an exception.",
+    "Use design tokens and shared components; no hardcoded component colors.",
+    "Run focused tests plus npm run validate, or document an accepted blocker.",
+    "Run qa:visual when required and attach report path.",
+    "Post GitHub review findings until there are zero unresolved findings.",
+    "Reviewer may post exactly Ready for Merge! only after all findings are resolved."
+  ],
+  "ignored_sources": [
+    {
+      "repo": "lojaveiculos",
+      "path": "src/app/[slug]/admin/login/[[...rest]]/page.tsx",
+      "reason": "Old per-tenant admin login is replaced by V2 Clerk/local auth contracts."
+    }
+  ],
+  "slices": [
+    {
+      "id": "lvv2-f000-control-plane",
+      "name": "Frontend Migration Control Plane",
+      "domain": "platform",
+      "priority": "P0",
+      "classification": "migrate-now",
+      "surface_type": "foundation",
+      "status": "in-progress",
+      "risk": "medium",
+      "parallel_group": "foundation",
+      "depends_on": [],
+      "blocks": [
+        "lvv2-f001-app-shell-dashboard",
+        "lvv2-f002-inventory-list-catalog",
+        "lvv2-f003-inventory-create-edit-media",
+        "lvv2-f004-inventory-reserve-sell-workflows",
+        "lvv2-f005-crm-leads-pipeline",
+        "lvv2-f006-crm-whatsapp-inbox"
+      ],
+      "source_refs": [
+        { "repo": "lojaveiculosv2", "path": "v2-plan.html" },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/maximum-agentic-loop-railway-terraform.md"
+        }
+      ],
+      "supporting_source_refs": [
+        { "repo": "lojaveiculosv2", "path": "AGENTS.md" },
+        { "repo": "lojaveiculosv2", "path": "docs/repo-organization.md" },
+        { "repo": "lojaveiculosv2", "path": "docs/architecture.md" }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/board.json"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/README.md"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/worker-prompt.md"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/reviewer-prompt.md"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/frontend-migration/composition-exceptions.json"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": ".github/pull_request_template.md"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/board-utils.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/validate-board.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/inventory.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/render-plan.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/check-plan.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/create-prompt.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/frontend-migration/qa-visual.mjs"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "tools/quality/check-frontend-composition.mjs"
+        }
+      ],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "No product runtime contract change; adds orchestration, validation, prompt, and QA tooling."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "xhigh",
+        "branch": "agent/lvv2-f000-control-plane"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f000-control-plane", "agent:auto-merge"],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run migration:check-plan && npm run migration:inventory -- --check",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f001-app-shell-dashboard",
+      "name": "App Shell And Dashboard",
+      "domain": "shell",
+      "priority": "P0",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "foundation-ui",
+      "depends_on": ["lvv2-f000-control-plane"],
+      "blocks": [
+        "lvv2-f002-inventory-list-catalog",
+        "lvv2-f005-crm-leads-pipeline"
+      ],
+      "source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/[slug]/admin/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/DashboardView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/AdminSidebar.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/TenantAdminClientLayout.tsx"
+        }
+      ],
+      "target_refs": [
+        { "repo": "lojaveiculosv2", "path": "apps/web/src/app/App.tsx" },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/AppShell.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/DashboardHome.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "analytics/internal",
+        "notes": "Use DB-backed dashboard/internal summaries where available; V1 dashboard is UI parity evidence only."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f001-app-shell-dashboard"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f001-app-shell-dashboard", "agent:auto-merge"],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f001-app-shell-dashboard",
+          "routes": ["/#/dashboard"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f002-inventory-list-catalog",
+      "name": "Inventory List, Filters, And Catalog Management",
+      "domain": "inventory",
+      "priority": "P0",
+      "classification": "migrate-now",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "inventory",
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": [
+        "lvv2-f003-inventory-create-edit-media",
+        "lvv2-f004-inventory-reserve-sell-workflows"
+      ],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/VeiculosView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/MarcasView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/VehicleCard.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/marcas/components/MarcasList.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory",
+          "planned": false
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/pages/InventoryListPage.tsx",
+          "planned": true
+        }
+      ],
+      "backend_contract": {
+        "owner": "inventory",
+        "notes": "Use listing/unit split, catalog endpoints, store-scoped permissions, and workflow-status edit rules."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f002-inventory-list-catalog"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f002-inventory-list-catalog",
+          "agent:auto-merge"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f002-inventory-list-catalog",
+          "routes": ["/#/inventory"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": [
+        "Check if V1 default inventory filter and seller locked-field behavior should be backported when parity gaps are found."
+      ]
+    },
+    {
+      "id": "lvv2-f003-inventory-create-edit-media",
+      "name": "Inventory Create, Edit, Media, And Public Readiness",
+      "domain": "inventory",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "inventory",
+      "depends_on": ["lvv2-f002-inventory-list-catalog"],
+      "blocks": [
+        "lvv2-f004-inventory-reserve-sell-workflows",
+        "lvv2-f013-public-site-builder-storefront"
+      ],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/veiculos/criar/page.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/veiculos/criar/components/CreateVehicleWizard.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/veiculos/criar/components/PhotoManager.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/VehicleEditModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/VehicleModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/pages/InventoryCreatePage.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryMediaWorkspace.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "inventory/media",
+        "notes": "Use V2 listing/unit/media APIs, R2 upload descriptors, per-field permissions, and no V1 Prisma route assumptions."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f003-inventory-create-edit-media"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f003-inventory-create-edit-media",
+          "agent:auto-merge"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f003-inventory-create-edit-media",
+          "routes": ["/#/inventory"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f004-inventory-reserve-sell-workflows",
+      "name": "Reserve, Sell, Test Drive, And Vehicle Workflow Documents",
+      "domain": "inventory",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "inventory-workflows",
+      "depends_on": [
+        "lvv2-f003-inventory-create-edit-media",
+        "lvv2-f009-finance-expenses-bills",
+        "lvv2-f011-documents-workspace"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/MarkAsSoldWizard.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/MarkAsReservedWizard.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/TestDriveWizard.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/mark-as-sold/MarkAsSoldWizard.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryWorkflowPanel.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/vehicle/services/VehicleService/reserveVehicleListing.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/vehicle/services/VehicleService/sellVehicleListing.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "inventory/finance/documents",
+        "notes": "Workflow side effects are V2 canonical: sale/reserve services emit audit, documents, and finance entries."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f004-inventory-reserve-sell-workflows"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f004-inventory-reserve-sell-workflows",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f004-inventory-reserve-sell-workflows",
+          "routes": ["/#/inventory"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Needs orchestrator review because it touches sale/reserve financial and document side effects."
+        ]
+      },
+      "v1_improvement_backport_candidates": [
+        "If the V2 comparison finds live V1 sale-wizard defects, spawn a separate V1 hotfix thread."
+      ]
+    },
+    {
+      "id": "lvv2-f005-crm-leads-pipeline",
+      "name": "Leads List, Kanban, Tasks, And Pipeline Activity",
+      "domain": "crm",
+      "priority": "P0",
+      "classification": "migrate-now",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "crm-core",
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": [
+        "lvv2-f006-crm-whatsapp-inbox",
+        "lvv2-f007-crm-team-settings-tags-connections"
+      ],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/LeadsView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/LeadsKanbanView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/leads/kanban/page.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/leads/components/LeadDetailModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/leads/components/LeadCreateModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/leads/components/TaskCreateModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/CrmModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/CrmPipelineView.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm",
+        "notes": "V2 owns leads and activity history; repasses ids are transitional external refs only."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f005-crm-leads-pipeline"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f005-crm-leads-pipeline", "agent:auto-merge"],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f005-crm-leads-pipeline",
+          "routes": ["/#/crm"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f006-crm-whatsapp-inbox",
+      "name": "CRM WhatsApp Inbox, Session Detail, And Message Continuity",
+      "domain": "crm",
+      "priority": "P0",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "crm-core",
+      "depends_on": ["lvv2-f005-crm-leads-pipeline"],
+      "blocks": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/CrmWhatsappView.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmWhatsApp.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmChatSession.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        { "repo": "repasses-frontend", "path": "src/context/CrmContext.tsx" },
+        { "repo": "repasses-frontend", "path": "src/hooks/useCrmWhatsApp.ts" },
+        { "repo": "repasses-frontend", "path": "src/services/crmSSE.ts" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/whatsapp/organisms/ChatArea.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/whatsapp/organisms/ChatInput.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/whatsapp/molecules/ChatBubble.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/whatsapp/molecules/MediaGrid.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/chat/molecules/ChannelSwitcher.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/chat/molecules/ChannelMessageCounts.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/chat/atoms/ChannelBadge.tsx"
+        }
+      ],
+      "target_refs": [
+        { "repo": "lojaveiculosv2", "path": "apps/web/src/features/crm" },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/crm/acl/repassesCrmClient.ts"
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm/repasses-acl",
+        "notes": "No iframe or bridge auth; V2 terms call repasses backend through ACL for WhatsApp/team workflow continuity."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f006-crm-whatsapp-inbox"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f006-crm-whatsapp-inbox",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-plus-repasses-acl",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local-with-optional-repasses-backend",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f006-crm-whatsapp-inbox",
+          "routes": ["/#/crm"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Complex chat/SSE interactions may need runtime-smoke evidence beyond Obscura."
+        ]
+      },
+      "v1_improvement_backport_candidates": [
+        "Backport only critical live CRM refresh/state bugs found during source parity.",
+        "Check ChatArea/ChatInput media send type drift and ChannelMessageCounts raw fetch auth/baseURL behavior if V1 remains live."
+      ]
+    },
+    {
+      "id": "lvv2-f007-crm-team-settings-tags-connections",
+      "name": "CRM Team, Tags, Settings, Connections, And Integrations",
+      "domain": "crm",
+      "priority": "P1",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "crm-admin",
+      "depends_on": ["lvv2-f006-crm-whatsapp-inbox"],
+      "blocks": ["lvv2-f008-crm-automation-campaigns-visits"],
+      "source_refs": [
+        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmEquipe.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmEtiquetas.tsx"
+        },
+        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmAjustes.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmIntegracoes.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmIntegracoesMultiplas.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/crm/ClosePreferencesModal.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/crm/SortableTagItem.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm",
+          "planned": false
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/settings/roles/RoleManagementPanel.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm/identity",
+        "notes": "Use V2 role/membership model for users and scoped CRM ACL for channel integrations."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f007-crm-team-settings-tags-connections"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f007-crm-team-settings-tags-connections",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-plus-repasses-acl",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local-with-optional-repasses-backend",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f007-crm-team-settings-tags-connections",
+          "routes": ["/#/crm", "/#/settings"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f008-crm-automation-campaigns-visits",
+      "name": "CRM Campaigns, MiniBot, Visits, Scheduling, And Financing Status",
+      "domain": "crm",
+      "priority": "P1",
+      "classification": "stacked-after",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "crm-admin",
+      "depends_on": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmCampaigns.tsx"
+        },
+        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmMiniBot.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmVisitas.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmAgendamentos.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/crm/VisitSchedulerModal.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/crm/FinancingStatusModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm",
+          "planned": false
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/CrmAutomationPanel.tsx",
+          "planned": true
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm/repasses-acl",
+        "notes": "Keep automation/channel behavior scoped by V2 store context and repasses ACL."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f008-crm-automation-campaigns-visits"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f008-crm-automation-campaigns-visits",
+          "agent:auto-merge"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-plus-repasses-acl",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local-with-optional-repasses-backend",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f008-crm-automation-campaigns-visits",
+          "routes": ["/#/crm"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f009-finance-expenses-bills",
+      "name": "Finance Expenses, Bills, Recurring Entries, And Receipts",
+      "domain": "finance",
+      "priority": "P0",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "finance",
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": [
+        "lvv2-f004-inventory-reserve-sell-workflows",
+        "lvv2-f010-commissions"
+      ],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/BillsView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/components/BillsTable.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/components/CreateBillModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/components/RecurringEditModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "finance",
+        "notes": "Use finance_entries, recurrence, document upload descriptors, and target ownership checks."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f009-finance-expenses-bills"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f009-finance-expenses-bills",
+          "agent:auto-merge"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f009-finance-expenses-bills",
+          "routes": ["/#/expenses"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f010-commissions",
+      "name": "Seller Commissions And Payables",
+      "domain": "finance",
+      "priority": "P0",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "finance",
+      "depends_on": ["lvv2-f009-finance-expenses-bills"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/CommissionsView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/hooks/useCommissionPayables.ts"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/bills/components/CommissionCards.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "finance",
+        "notes": "Use V2 commission rules and finance entry pay semantics; do not copy V1 pay-route assumptions blindly."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f010-commissions"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f010-commissions", "agent:auto-merge"],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f010-commissions",
+          "routes": ["/#/commissions"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f011-documents-workspace",
+      "name": "Documents Center, Templates, Versions, Preview, And Download",
+      "domain": "documents",
+      "priority": "P0",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "documents",
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": ["lvv2-f004-inventory-reserve-sell-workflows"],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/DocumentsCenterView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/documents-center/DocumentTable.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/documents-center/UploadDocumentModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/documents-center/PdfPreviewModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentsModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "documents",
+        "notes": "Use shared document domain, private R2 storage, authorized signed downloads, and immutable versions."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f011-documents-workspace"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f011-documents-workspace", "agent:auto-merge"],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f011-documents-workspace",
+          "routes": ["/#/documents"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f012-settings-identity-roles",
+      "name": "Store Settings, Identity, Roles, And Permission Overrides",
+      "domain": "settings",
+      "priority": "P0",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "settings",
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigGeraisView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/configuracoes/components/ConfiguracoesSection.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/settings/SettingsModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/settings/roles/RoleManagementPanel.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "settings/identity",
+        "notes": "Use role templates, overrides, entitlements, permission audit, and store settings service."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f012-settings-identity-roles"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f012-settings-identity-roles",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f012-settings-identity-roles",
+          "routes": ["/#/settings"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Permission changes require orchestrator review."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f013-public-site-builder-storefront",
+      "name": "Public Storefront, Customization, Domain, SEO, And Lead Capture",
+      "domain": "public-site",
+      "priority": "P0",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "public-site",
+      "depends_on": [
+        "lvv2-f003-inventory-create-edit-media",
+        "lvv2-f012-settings-identity-roles"
+      ],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/[slug]/layout.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/[slug]/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/[slug]/ofertas/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/veiculo/[idOrSlug]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/marcas/[marca]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/cidade/[cidadeSlug]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/[dynamicSeo]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/customizar/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigDominioView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/[slug]/components" },
+        { "repo": "lojaveiculos", "path": "src/app/[slug]/ofertas/components" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/CustomizarModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/configuracoes/components/DomainSection.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/publicSite/PublicStorefrontPage.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/settings/SettingsStorefrontDesigner.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "storefront/settings/crm",
+        "notes": "Use published public settings, slug-only public listing lookup, DNS constraints, and V2-owned public lead capture."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f013-public-site-builder-storefront"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f013-public-site-builder-storefront",
+          "agent:auto-merge"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-and-public-host",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f013-public-site-builder-storefront",
+          "routes": ["/#/public-site", "/"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": [
+        "Backport only data-loss fixes around customization persistence if rediscovered."
+      ]
+    },
+    {
+      "id": "lvv2-f014-reports-center",
+      "name": "Unified Reports, Drill-Downs, And PDF Export",
+      "domain": "reports",
+      "priority": "P1",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "analytics",
+      "depends_on": [
+        "lvv2-f009-finance-expenses-bills",
+        "lvv2-f010-commissions",
+        "lvv2-f005-crm-leads-pipeline"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/RelatoriosView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/report-tabs/GeralTab.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/report-tabs/FinanceiroTab.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/SalesListModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/reports/ReportsModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "analytics/reports",
+        "notes": "Use V2 analytics dashboard endpoints and truthful drill-down contracts; do not reintroduce brittle raw SQL assumptions."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f014-reports-center"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f014-reports-center", "agent:auto-merge"],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f014-reports-center",
+          "routes": ["/#/reports"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": [
+        "If V1 report counts or PDF export regressions are rediscovered, spawn a separate V1 hotfix thread."
+      ]
+    },
+    {
+      "id": "lvv2-f015-fiscal-nfe-service-recipients",
+      "name": "Fiscal NF-e/NFS-e, Service Recipients, Issue, Cancel, And Sync",
+      "domain": "fiscal",
+      "priority": "P1",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "fiscal",
+      "depends_on": [
+        "lvv2-f004-inventory-reserve-sell-workflows",
+        "lvv2-f012-settings-identity-roles"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/SpedyNfeView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ServiceRecipientsView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/FiscalEmitModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/FiscalDocumentList.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/fiscal/FiscalModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "fiscal",
+        "notes": "Use V2 SPEDY gateway config, fail-closed fiscal service, audit, and exact NF-e/NFS-e code semantics."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f015-fiscal-nfe-service-recipients"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f015-fiscal-nfe-service-recipients",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f015-fiscal-nfe-service-recipients",
+          "routes": ["/#/fiscal"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Provider path/payload behavior must remain config-driven until certified."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f016-billing-plans-entitlements",
+      "name": "Billing, Plans, Add-ons, Agency Allocation, And Entitlements",
+      "domain": "billing",
+      "priority": "P1",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "billing",
+      "depends_on": ["lvv2-f012-settings-identity-roles"],
+      "blocks": [
+        "lvv2-f017-marketplace-integrations",
+        "lvv2-f018-external-api-clients"
+      ],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigPlanosView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/configuracoes/components/PlanosSection.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/billing/BillingModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "billing",
+        "notes": "Billing controls entitlements; current Asaas runtime exposes readiness, not payment mutation actions."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f016-billing-plans-entitlements"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f016-billing-plans-entitlements",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f016-billing-plans-entitlements",
+          "routes": ["/#/billing"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Billing or entitlement mutation requires orchestrator review."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f017-marketplace-integrations",
+      "name": "Marketplace Provider Accounts, Sync Jobs, And Integration Overview",
+      "domain": "marketplaces",
+      "priority": "P1",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "integrations",
+      "depends_on": [
+        "lvv2-f016-billing-plans-entitlements",
+        "lvv2-f002-inventory-list-catalog"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigIntegracoesView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigIntegracoesMarketplacesView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/UnifiedSyncModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/marketplaces/MarketplaceModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "marketplace",
+        "notes": "Use encrypted provider credentials, OAuth/connect URL, scoped sync jobs, entitlements, and provider gateways."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f017-marketplace-integrations"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f017-marketplace-integrations",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f017-marketplace-integrations",
+          "routes": ["/#/marketplaces"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Provider credentials and OAuth flows require redaction and config review."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f018-external-api-clients",
+      "name": "External API Clients, Keys, Docs, And Idempotent Actions",
+      "domain": "external-api",
+      "priority": "P1",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "high",
+      "parallel_group": "integrations",
+      "depends_on": ["lvv2-f016-billing-plans-entitlements"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigIntegracoesApiView.tsx"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/publicApi/PublicApiModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "externalApi",
+        "notes": "Use scoped API keys, one-time secret display, rate limits, idempotency, and external API auth context."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f018-external-api-clients"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f018-external-api-clients",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "worker-owned-local",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f018-external-api-clients",
+          "routes": ["/#/public-api"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["API key handling requires secret-redaction review."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f019-compliance-internal-health",
+      "name": "Compliance And Internal Health Dashboards",
+      "domain": "compliance",
+      "priority": "P2",
+      "classification": "already-covered-in-v2",
+      "surface_type": "screen",
+      "status": "planned",
+      "risk": "medium",
+      "parallel_group": "ops",
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": [],
+      "source_refs": [],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/compliance/ComplianceModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/internalHealth/InternalHealthModule.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "compliance/internal",
+        "notes": "Use static compliance controls and audit DB-backed internal health where configured."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f019-compliance-internal-health"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f019-compliance-internal-health",
+          "agent:auto-merge"
+        ],
+        "review_status": "not-opened",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": true,
+          "command": "npm run qa:visual -- --slice lvv2-f019-compliance-internal-health",
+          "routes": ["/#/compliance", "/#/internal-health"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": []
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f020-checklists",
+      "name": "Vehicle Checklists",
+      "domain": "operations",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "low",
+      "parallel_group": "later-ops",
+      "depends_on": ["lvv2-f002-inventory-list-catalog"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ChecklistVehiclesView.tsx"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "operations",
+        "notes": "Placeholder until checklist workflow gets a V2 domain contract."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f020-checklists"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f020-checklists", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f020-checklists",
+          "routes": ["/#/checklists"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred until P0/P1 operator workflows are stable."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f021-simulations",
+      "name": "Sales And Financing Simulations",
+      "domain": "sales",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "low",
+      "parallel_group": "later-ops",
+      "depends_on": ["lvv2-f004-inventory-reserve-sell-workflows"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/SimulacoesView.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/SellerInventory.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/credere/SimulationForm.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/crm/CredereSimulationModal.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "sales",
+        "notes": "Deferred until financing/simulation provider boundaries are approved."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f021-simulations"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f021-simulations", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f021-simulations",
+          "routes": ["/#/simulations"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Deferred until provider and business contract are explicit."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f022-auto-entries",
+      "name": "Automatic Finance Entries",
+      "domain": "finance",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-finance",
+      "depends_on": [
+        "lvv2-f009-finance-expenses-bills",
+        "lvv2-f004-inventory-reserve-sell-workflows"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigAutoEntriesView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/configuracoes/components/AutoEntriesSection.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "finance",
+        "notes": "Deferred until automatic-entry rules are defined against V2 finance workflows."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f022-auto-entries"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f022-auto-entries", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f022-auto-entries",
+          "routes": ["/#/auto-entries"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred; needs finance workflow invariant review."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f023-notifications",
+      "name": "Notifications And Push Preferences",
+      "domain": "notifications",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-system",
+      "depends_on": ["lvv2-f006-crm-whatsapp-inbox"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigNotificacoesView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/DashboardPushToggle.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "notifications",
+        "notes": "Deferred until V2 notification provider and device/user scope are approved."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f023-notifications"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f023-notifications", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f023-notifications",
+          "routes": ["/#/notifications"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred until notification runtime plan is approved."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f024-paid-traffic-meta-social",
+      "name": "Paid Traffic, Meta Pixel, Marketing, And Social Media Tools",
+      "domain": "marketing",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-marketing",
+      "depends_on": [
+        "lvv2-f013-public-site-builder-storefront",
+        "lvv2-f005-crm-leads-pipeline"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/MarketingView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/SocialMediaView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/ConfigIntegracoesMetaPixelView.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/MetaFeedModal.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/MetaOrganicTool.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "marketing",
+        "notes": "Deferred; do not port campaign tools until tracking, consent, and V2 lead attribution contracts are explicit."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f024-paid-traffic-meta-social"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f024-paid-traffic-meta-social",
+          "agent:auto-merge"
+        ],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f024-paid-traffic-meta-social",
+          "routes": ["/#/paid-traffic"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Deferred; marketing attribution and consent plan required."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f025-autobot-and-seller-agent",
+      "name": "Autobot And Seller AI Agent",
+      "domain": "automation",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-automation",
+      "depends_on": [
+        "lvv2-f006-crm-whatsapp-inbox",
+        "lvv2-f008-crm-automation-campaigns-visits"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/AutobotView.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/SellerAgent.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/components/PersonalityLab.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "automation/crm",
+        "notes": "Deferred until AI operation ownership, audit, and CRM handoff policy are approved."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f025-autobot-and-seller-agent"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f025-autobot-and-seller-agent",
+          "agent:auto-merge"
+        ],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-plus-repasses-acl",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f025-autobot-and-seller-agent",
+          "routes": ["/#/autobot"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred until AI agent operational policy is explicit."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f026-tutorials-help",
+      "name": "Tutorials And Help Content",
+      "domain": "help",
+      "priority": "defer",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "low",
+      "parallel_group": "deferred",
+      "depends_on": [],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/components/views/TutorialsView.tsx"
+        }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "Do not block core migration on help/tutorial content."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f026-tutorials-help"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f026-tutorials-help", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "none",
+        "stack_profile": "none",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f027-customers",
+      "name": "Customers Contact Workspace",
+      "domain": "customers",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-ops",
+      "depends_on": ["lvv2-f005-crm-leads-pipeline"],
+      "blocks": [],
+      "source_refs": [],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "customers/crm",
+        "notes": "Placeholder only; design customer model after V2 lead identity stabilizes."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f027-customers"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f027-customers", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f027-customers",
+          "routes": ["/#/customers"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred until CRM/customer boundaries are explicit."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f028-domain-management",
+      "name": "Domain Management Runtime Surface",
+      "domain": "public-site",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-public-site",
+      "depends_on": ["lvv2-f013-public-site-builder-storefront"],
+      "blocks": [],
+      "source_refs": [],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "settings/storefront",
+        "notes": "Domain settings are covered inside public-site/settings first; standalone surface is deferred."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f028-domain-management"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f028-domain-management", "agent:auto-merge"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f028-domain-management",
+          "routes": ["/#/domain"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred; currently folded into public-site/settings."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f029-repasses-buyer-public-surfaces",
+      "name": "Repasses Buyer-Facing Marketplace And Experimental Chat Surfaces",
+      "domain": "do-not-port",
+      "priority": "defer",
+      "classification": "do-not-port",
+      "surface_type": "screen",
+      "status": "do-not-port",
+      "risk": "low",
+      "parallel_group": "do-not-port",
+      "depends_on": [],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "repasses-frontend", "path": "src/pages/LandingPage.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/SearchResults.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/SellerProfile.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/VehicleListing.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/WebChat.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/WhatsAppClone.tsx" }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/web-chat/OfferModal.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/web-chat/WhatsAppOptInModal.tsx"
+        }
+      ],
+      "target_refs": [],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "V2 is store-operated OS. Buyer marketplace/web-chat experiments do not port unless a later product decision reclassifies them."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f029-repasses-buyer-public-surfaces"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f029-repasses-buyer-public-surfaces"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "none",
+        "required_seed": "none",
+        "stack_profile": "none",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Classified do-not-port."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f030-repasses-auth-profile-admin-surfaces",
+      "name": "Repasses Auth, Profile, Register, And Admin Surfaces",
+      "domain": "do-not-port",
+      "priority": "defer",
+      "classification": "do-not-port",
+      "surface_type": "screen",
+      "status": "do-not-port",
+      "risk": "low",
+      "parallel_group": "do-not-port",
+      "depends_on": [],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "repasses-frontend", "path": "src/pages/LoginPage.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/Register.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/SignUpPage.tsx" },
+        { "repo": "repasses-frontend", "path": "src/pages/ProfilePage.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/admin/AdminDashboard.tsx"
+        },
+        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmLogin.tsx" }
+      ],
+      "supporting_source_refs": [
+        { "repo": "repasses-frontend", "path": "src/context/ClerkBridge.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/components/ProtectedRoute.tsx"
+        }
+      ],
+      "target_refs": [],
+      "backend_contract": {
+        "owner": "identity",
+        "notes": "Do not port bridge auth, standalone repasses registration, or old admin profile flow. Use V2 Clerk/store membership contracts."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f030-repasses-auth-profile-admin-surfaces"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f030-repasses-auth-profile-admin-surfaces"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "none",
+        "required_seed": "none",
+        "stack_profile": "none",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Classified do-not-port."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f031-repasses-seller-workspace",
+      "name": "Seller Dashboard, Broadcast, And Lightweight Inventory Workspace",
+      "domain": "seller",
+      "priority": "P2",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "medium",
+      "parallel_group": "later-seller",
+      "depends_on": [
+        "lvv2-f006-crm-whatsapp-inbox",
+        "lvv2-f002-inventory-list-catalog"
+      ],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/SellerDashboard.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/SellerBroadcast.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/components/QRCodeDisplay.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/components/WhatsAppConnectionCard.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/seller/components/SaveBar.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/components/ModulePlaceholder.tsx"
+        }
+      ],
+      "backend_contract": {
+        "owner": "crm/inventory/identity",
+        "notes": "Deferred until V2 role-specific seller workspace requirements are explicit."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f031-repasses-seller-workspace"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f031-repasses-seller-workspace",
+          "agent:auto-merge"
+        ],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-plus-repasses-acl",
+        "required_seed": "docker/postgres/seed/product-test-user.sql",
+        "stack_profile": "shared-local-or-worker-owned",
+        "visual": {
+          "required": false,
+          "command": "npm run qa:visual -- --slice lvv2-f031-repasses-seller-workspace",
+          "routes": ["/#/crm", "/#/inventory"]
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Deferred until seller-specific V2 workspace is designed."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f032-auth-onboarding-store-selection",
+      "name": "V1 Auth, Onboarding, Store Chooser, And Agency Signup",
+      "domain": "identity",
+      "priority": "P1",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "high",
+      "parallel_group": "identity",
+      "depends_on": ["lvv2-f012-settings-identity-roles"],
+      "blocks": [],
+      "source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/login/[[...rest]]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/signup/[[...rest]]/page.tsx"
+        },
+        { "repo": "lojaveiculos", "path": "src/app/verify-email/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/choose-store/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/agency/signup/page.tsx" }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/auth",
+          "planned": true
+        }
+      ],
+      "backend_contract": {
+        "owner": "identity",
+        "notes": "Deferred because V2 local/dev currently bypasses UI auth and production Clerk flow needs separate product approval."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f032-auth-onboarding-store-selection"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f032-auth-onboarding-store-selection",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "clerk-production-required",
+        "required_seed": "production-clerk-config",
+        "stack_profile": "future-auth-stack",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": [
+          "Requires orchestrator decision on production auth/onboarding scope."
+        ]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f033-agency-console",
+      "name": "Agency Console, Store Creation, Team Access, And Unified Billing",
+      "domain": "agency",
+      "priority": "P1",
+      "classification": "defer-placeholder",
+      "surface_type": "screen",
+      "status": "deferred",
+      "risk": "high",
+      "parallel_group": "agency",
+      "depends_on": [
+        "lvv2-f012-settings-identity-roles",
+        "lvv2-f016-billing-plans-entitlements"
+      ],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/agency/layout.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/AgencyClientLayout.tsx"
+        },
+        { "repo": "lojaveiculos", "path": "src/app/agency/admin/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/components/AgencySidebar.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/admin/components/AgencyViewContainer.tsx"
+        }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/admin/components/views/DashboardView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/admin/components/views/CreateStoreView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/admin/components/views/TeamAccessView.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/admin/components/views/UnifiedBillingView.tsx"
+        }
+      ],
+      "target_refs": [
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/agency",
+          "planned": true
+        }
+      ],
+      "backend_contract": {
+        "owner": "identity/billing",
+        "notes": "Deferred unless first tenant wave includes agencies; must use V2 tenants/stores and agency billing allocation."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f033-agency-console"
+      },
+      "pr": {
+        "number": null,
+        "labels": [
+          "slice:lvv2-f033-agency-console",
+          "risk:high",
+          "agent:human-hold"
+        ],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "local-bypass-plus-agency-seed",
+        "required_seed": "future-agency-seed",
+        "stack_profile": "future-agency-stack",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Requires agency pilot decision."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f034-v1-marketing-content-site",
+      "name": "V1 Corporate Marketing, Blog, Comparison, And Legal Pages",
+      "domain": "do-not-port",
+      "priority": "defer",
+      "classification": "do-not-port",
+      "surface_type": "screen",
+      "status": "do-not-port",
+      "risk": "low",
+      "parallel_group": "do-not-port",
+      "depends_on": [],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/landing/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/landing1/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/blog/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/blog/[slug]/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/glossario/[term]/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/comparativo/sistemas-revenda/page.tsx"
+        },
+        { "repo": "lojaveiculos", "path": "src/app/vs/[competitor]/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/solucoes/crm-whatsapp/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/solucoes/nota-fiscal/page.tsx"
+        },
+        { "repo": "lojaveiculos", "path": "src/app/comunidade/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/privacy-policy/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/terms-of-service/page.tsx" }
+      ],
+      "supporting_source_refs": [
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/comparativo",
+          "planned": false
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/solucoes",
+          "planned": false
+        },
+        { "repo": "lojaveiculos", "path": "src/app/blog", "planned": false },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/glossario",
+          "planned": false
+        }
+      ],
+      "target_refs": [],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "Corporate acquisition/content site is outside the V2 store-operator OS migration unless separately approved."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f034-v1-marketing-content-site"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f034-v1-marketing-content-site"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "none",
+        "required_seed": "none",
+        "stack_profile": "none",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Classified do-not-port for this migration loop."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f035-v1-consumer-car-buying-funnel",
+      "name": "V1 Consumer Car-Buying Campaign Funnel",
+      "domain": "do-not-port",
+      "priority": "defer",
+      "classification": "do-not-port",
+      "surface_type": "screen",
+      "status": "do-not-port",
+      "risk": "low",
+      "parallel_group": "do-not-port",
+      "depends_on": [],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/comprarcarro/page.tsx" }
+      ],
+      "supporting_source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/comprarcarro/components" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agendar/page.tsx",
+          "planned": false
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/obrigado/page.tsx",
+          "planned": false
+        }
+      ],
+      "target_refs": [],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "Consumer acquisition funnel is not part of first V2 dealership OS migration."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f035-v1-consumer-car-buying-funnel"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f035-v1-consumer-car-buying-funnel"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "none",
+        "required_seed": "none",
+        "stack_profile": "none",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Classified do-not-port for this migration loop."]
+      },
+      "v1_improvement_backport_candidates": []
+    },
+    {
+      "id": "lvv2-f036-v1-internal-ops",
+      "name": "V1 Internal Ops And Developer Log Screens",
+      "domain": "do-not-port",
+      "priority": "defer",
+      "classification": "do-not-port",
+      "surface_type": "screen",
+      "status": "do-not-port",
+      "risk": "low",
+      "parallel_group": "do-not-port",
+      "depends_on": [],
+      "blocks": [],
+      "source_refs": [
+        { "repo": "lojaveiculos", "path": "src/app/admin/dashboard/page.tsx" },
+        { "repo": "lojaveiculos", "path": "src/app/dev-logs/page.tsx" }
+      ],
+      "supporting_source_refs": [],
+      "target_refs": [],
+      "backend_contract": {
+        "owner": "none",
+        "notes": "Internal V1 admin/dev surfaces are not customer-facing V2 store OS screens."
+      },
+      "thread": {
+        "kind": "codex-managed-agent",
+        "model": "gpt-5.5",
+        "reasoning": "high",
+        "branch": "agent/lvv2-f036-v1-internal-ops"
+      },
+      "pr": {
+        "number": null,
+        "labels": ["slice:lvv2-f036-v1-internal-ops"],
+        "review_status": "deferred",
+        "merge_status": "not-opened"
+      },
+      "qa": {
+        "auth_mode": "none",
+        "required_seed": "none",
+        "stack_profile": "none",
+        "visual": {
+          "required": false,
+          "command": "n/a",
+          "routes": []
+        },
+        "last_evidence_path": null,
+        "last_checked_at": null,
+        "blockers": ["Classified do-not-port for this migration loop."]
+      },
+      "v1_improvement_backport_candidates": []
+    }
+  ]
+}
