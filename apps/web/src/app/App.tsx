@@ -27,8 +27,10 @@ export function App() {
         <DashboardHome onNavigate={navigate} />
       ) : activeModuleId === "inventory" ? (
         <InventoryListPage />
+      ) : activeModuleId === "customers" ? (
+        <CrmModule routeSurface="leads" />
       ) : activeModuleId === "crm" ? (
-        <CrmModule />
+        <CrmModule routeSurface="whatsapp" />
       ) : activeModuleId === "billing" ? (
         <BillingModule />
       ) : activeModuleId === "documents" ? (

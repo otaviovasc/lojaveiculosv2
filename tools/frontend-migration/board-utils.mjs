@@ -86,6 +86,8 @@ export const valid = {
     "deferred",
   ]),
   risk: new Set(["low", "medium", "high"]),
+  phaseStatus: new Set(["planned", "active", "blocked", "passed", "deferred"]),
+  auditStatus: new Set(["pending", "passed", "blocked"]),
   status: new Set([
     "planned",
     "in-progress",

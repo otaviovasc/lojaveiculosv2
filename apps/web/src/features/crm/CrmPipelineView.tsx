@@ -19,14 +19,14 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       <section className="crm-hero crm-hero-green">
         <div className="min-w-0 space-y-3">
           <p className="text-xs font-black uppercase tracking-widest text-inverse-muted">
-            CRM Nativo V2
+            Clientes
           </p>
           <h2 className="max-w-3xl text-2xl font-black text-inverse lg:text-4xl">
             Pipeline de leads com lista, tarefas e historico de atividades.
           </h2>
           <p className="max-w-2xl text-sm font-semibold text-inverse-muted">
-            Leads, status e atividades pertencem ao Loja V2 com escopo,
-            permissao e auditoria; WhatsApp segue como integracao transitiva.
+            Acompanhe oportunidades, responsaveis e proximas acoes com
+            permissao e auditoria por loja.
           </p>
         </div>
         <button

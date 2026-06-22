@@ -1,4 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  crmSurfaceHash,
+  readCrmSurfaceFromHash,
+} from "../features/crm/crmRouteState";
 import { defaultModuleId, moduleDefinitions } from "./moduleDefinitions";
 import type { ModuleId } from "./modules";
 
@@ -6,6 +10,10 @@ const moduleIds = new Set(Object.keys(moduleDefinitions));
 
 export function parseModuleHash(hash: string): ModuleId {
   const id = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
+
+  if (id === "crm" && readCrmSurfaceFromHash(hash) === "leads") {
+    return "customers";
+  }
 
   if (moduleIds.has(id)) {
     return id as ModuleId;
@@ -38,9 +46,15 @@ export function useModuleState() {
     setActiveModuleId(moduleId);
 
     if (typeof window !== "undefined") {
-      window.location.hash = `/${moduleId}`;
+      window.location.hash = moduleHash(moduleId);
     }
   }, []);
 
   return { activeModuleId, navigate };
+}
+
+function moduleHash(moduleId: ModuleId) {
+  if (moduleId === "customers") return crmSurfaceHash("leads");
+  if (moduleId === "crm") return crmSurfaceHash("whatsapp");
+  return `/${moduleId}`;
 }

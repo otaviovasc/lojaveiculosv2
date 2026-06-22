@@ -80,12 +80,11 @@ export function DashboardHome({
       ) : null}
 
       <section className="panel p-5 lg:p-6">
-        <p className="eyebrow">V2 guardrails</p>
-        <h2 className="mt-1 text-xl font-black">Sem degradacao escondida</h2>
+        <p className="eyebrow">Controles da loja</p>
+        <h2 className="mt-1 text-xl font-black">Indicadores auditados</h2>
         <p className="mt-3 text-sm font-semibold text-muted">
-          O dashboard le o contrato analytics/internal do V2. A API valida
-          permissao, entitlement, tenant/store scope, logs e auditoria antes de
-          retornar os indicadores da loja.
+          Os indicadores respeitam permissao, modulos ativos, escopo da loja e
+          trilha de auditoria antes de aparecer no painel.
         </p>
       </section>
 

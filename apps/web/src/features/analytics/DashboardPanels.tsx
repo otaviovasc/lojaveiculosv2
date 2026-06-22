@@ -47,8 +47,8 @@ export function DashboardStatusToolbar({
       <article className="dashboard-toolbar-card">
         <ShieldCheck aria-hidden="true" className="size-5 text-accent" />
         <div>
-          <span>Contrato V2</span>
-          <strong>Analytics auditavel</strong>
+          <span>Controles</span>
+          <strong>Indicadores auditaveis</strong>
         </div>
       </article>
       <article className="dashboard-toolbar-card">
@@ -61,8 +61,8 @@ export function DashboardStatusToolbar({
       <article className="dashboard-toolbar-card">
         <Link2 aria-hidden="true" className="size-5 text-accent" />
         <div>
-          <span>Loja local</span>
-          <strong>{dashboard?.storeId ?? "test-store"}</strong>
+          <span>Loja</span>
+          <strong>{dashboard?.storeId ?? "Loja atual"}</strong>
         </div>
       </article>
       <button
@@ -91,7 +91,7 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
 export function DashboardActionPanel({ onNavigate }: DashboardActionPanelProps) {
   const actions = [
     { icon: Car, id: "inventory", label: "Novo estoque" },
-    { icon: Users, id: "crm", label: "CRM leads" },
+    { icon: Users, id: "customers", label: "Clientes" },
     { icon: FileText, id: "documents", label: "Documentos" },
     { icon: ShieldCheck, id: "reports", label: "Relatorios" },
   ] as const;

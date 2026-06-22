@@ -48,9 +48,8 @@ export function ConfirmCommissionPayDialog({
           <p className="text-sm font-bold">{entries.length} lancamento(s)</p>
         </div>
         <p className="rounded-lg border border-line bg-app p-3 text-xs font-bold text-muted">
-          O V2 paga cada finance entry individualmente, preservando auditoria e
-          permissoes por lancamento. O filtro de origem atual tambem limita este
-          fechamento.
+          Cada lancamento sera pago individualmente, preservando auditoria e
+          permissoes. O filtro de origem atual tambem limita este fechamento.
         </p>
         <DialogActions
           confirmIcon={<HandCoins aria-hidden="true" className="size-4" />}

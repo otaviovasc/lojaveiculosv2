@@ -10,11 +10,11 @@ export const dashboardPanels = [
   {
     icon: Clock3,
     label: "Maior tempo em estoque",
-    text: "Preparado para receber metricas de giro assim que inventory service existir.",
+    text: "Preparado para receber metricas de giro do estoque.",
   },
   {
     icon: MessagesSquare,
     label: "Atendimento pendente",
-    text: "Preparado para consumir o CRM sem iframe via repasses backend.",
+    text: "Preparado para acompanhar conversas e oportunidades em aberto.",
   },
 ];

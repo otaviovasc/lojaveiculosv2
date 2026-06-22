@@ -5,7 +5,7 @@ export const defaultModuleId: ModuleId = "dashboard";
 export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
   "auto-entries": {
     action: "Mapear regras",
-    description: "Lancamentos automaticos aguardando contratos do backend.",
+    description: "Lancamentos automaticos aguardando regras operacionais.",
     eyebrow: "Gestao",
     id: "auto-entries",
     title: "Lancamentos",
@@ -22,7 +22,7 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     description: "Cobrancas, planos e add-ons com estados de bloqueio claros.",
     eyebrow: "Financeiro",
     id: "billing",
-    title: "Billing",
+    title: "Assinatura",
   },
   checklists: {
     action: "Criar modelos",
@@ -46,23 +46,22 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     title: "Compliance",
   },
   crm: {
-    action: "Configurar canais",
-    description: "CRM WhatsApp nativo, sem iframe, com repasses auditaveis.",
+    action: "Atender conversas",
+    description: "Conversas de WhatsApp com continuidade para a equipe.",
     eyebrow: "Atendimento",
     id: "crm",
-    title: "CRM",
+    title: "WhatsApp",
   },
   customers: {
-    action: "Unificar contatos",
-    description:
-      "Cadastro de clientes preparado para LGPD e historico comercial.",
-    eyebrow: "Operacao",
+    action: "Organizar leads",
+    description: "Clientes, oportunidades e historico comercial da loja.",
+    eyebrow: "Atendimento",
     id: "customers",
     title: "Clientes",
   },
   dashboard: {
     action: "Acompanhar operacao",
-    description: "Visao inicial com indicadores e guardrails da migracao V2.",
+    description: "Visao inicial com indicadores e alertas da operacao.",
     eyebrow: "Painel",
     id: "dashboard",
     title: "Inicio",

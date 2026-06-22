@@ -15,7 +15,7 @@ export function FinanceBillsHeader({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <FinanceBadge>Financeiro V2</FinanceBadge>
+            <FinanceBadge>Financeiro</FinanceBadge>
             <FinanceBadge>Contas e recibos</FinanceBadge>
           </div>
           <h2 className="text-2xl font-black text-app-text lg:text-4xl">
@@ -23,7 +23,7 @@ export function FinanceBillsHeader({
           </h2>
           <p className="max-w-3xl text-sm font-bold text-muted">
             Fluxo de caixa da loja com vencimentos, status de pagamento,
-            recorrencias e comprovantes anexados por descritores V2.
+            recorrencias e comprovantes vinculados aos lancamentos.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
