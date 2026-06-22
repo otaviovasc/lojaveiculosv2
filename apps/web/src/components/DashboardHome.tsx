@@ -1,58 +1,106 @@
-import { dashboardPanels, dashboardStats } from "../app/dashboardData";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ModuleId } from "../app/modules";
+import {
+  createAnalyticsApi,
+  type AnalyticsApi,
+} from "../features/analytics/apiClient";
+import { createDashboardStats } from "../features/analytics/dashboardModel";
+import {
+  DashboardActionPanel,
+  DashboardErrorState,
+  DashboardKpiGrid,
+  DashboardLeadPanel,
+  DashboardLoadingState,
+  DashboardOperationsPanel,
+  DashboardStatusToolbar,
+} from "../features/analytics/DashboardPanels";
+import { createAnalyticsApiOptions } from "../features/analytics/runtimeApi";
+import type {
+  AnalyticsDashboard,
+  DashboardLoadStatus,
+} from "../features/analytics/types";
+import { getDashboardBodyState } from "../features/analytics/dashboardViewState";
 import { LockedAddonPanel } from "./LockedAddonPanel";
-import { StatCard } from "./StatCard";
 
-export function DashboardHome() {
+export function DashboardHome({
+  api,
+  onNavigate,
+}: {
+  api?: AnalyticsApi;
+  onNavigate: (moduleId: ModuleId) => void;
+}) {
+  const analyticsApi = useMemo(() => api ?? createRuntimeAnalyticsApi(), [api]);
+  const [dashboard, setDashboard] = useState<AnalyticsDashboard | null>(null);
+  const [status, setStatus] = useState<DashboardLoadStatus>({
+    kind: "loading",
+  });
+  const stats = createDashboardStats(dashboard);
+  const bodyState = getDashboardBodyState(status, dashboard);
+
+  const refresh = useCallback(async () => {
+    setStatus({ kind: "loading" });
+    try {
+      setDashboard(await analyticsApi.getDashboard());
+      setStatus({ kind: "ready" });
+    } catch (error) {
+      setStatus({ kind: "error", message: errorMessage(error) });
+    }
+  }, [analyticsApi]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
   return (
     <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8">
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {dashboardStats.map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
-        ))}
-      </section>
+      <DashboardStatusToolbar
+        dashboard={dashboard}
+        isLoading={status.kind === "loading"}
+        onRefresh={() => void refresh()}
+      />
 
-      <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="panel p-5 lg:p-6">
-          <div className="mb-5">
-            <p className="text-xs font-black uppercase tracking-widest text-muted">
-              Operacao
-            </p>
-            <h2 className="text-xl font-black">Fila de decisoes do dia</h2>
+      {status.kind === "error" ? (
+        <DashboardErrorState message={status.message} />
+      ) : null}
+
+      <DashboardKpiGrid stats={stats} />
+
+      {bodyState === "ready" && dashboard ? (
+        <section className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
+          <div className="grid gap-5">
+            <DashboardOperationsPanel dashboard={dashboard} />
+            <DashboardLeadPanel dashboard={dashboard} />
           </div>
+          <DashboardActionPanel onNavigate={onNavigate} />
+        </section>
+      ) : null}
 
-          <div className="grid gap-3 md:grid-cols-2">
-            {dashboardPanels.map((panel) => {
-              const Icon = panel.icon;
+      {bodyState === "loading" ? (
+        <DashboardLoadingState />
+      ) : null}
 
-              return (
-                <article className="rounded-lg bg-app p-4" key={panel.label}>
-                  <div className="mb-3 flex size-10 items-center justify-center rounded-lg bg-panel text-accent">
-                    <Icon aria-hidden="true" className="size-5" />
-                  </div>
-                  <h3 className="font-black">{panel.label}</h3>
-                  <p className="mt-2 text-sm font-semibold text-muted">
-                    {panel.text}
-                  </p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="panel p-5 lg:p-6">
-          <p className="text-xs font-black uppercase tracking-widest text-muted">
-            V2 guardrails
-          </p>
-          <h2 className="mt-1 text-xl font-black">Sem degradacao escondida</h2>
-          <p className="mt-3 text-sm font-semibold text-muted">
-            Cada modulo precisa de inventario, permissao, auditoria, logs
-            escopados, estados visuais completos e plano de migracao antes de
-            substituir o fluxo V1.
-          </p>
-        </div>
+      <section className="panel p-5 lg:p-6">
+        <p className="eyebrow">V2 guardrails</p>
+        <h2 className="mt-1 text-xl font-black">Sem degradacao escondida</h2>
+        <p className="mt-3 text-sm font-semibold text-muted">
+          O dashboard le o contrato analytics/internal do V2. A API valida
+          permissao, entitlement, tenant/store scope, logs e auditoria antes de
+          retornar os indicadores da loja.
+        </p>
       </section>
 
       <LockedAddonPanel kind="crm" />
     </main>
   );
+}
+
+function createRuntimeAnalyticsApi(): AnalyticsApi {
+  return {
+    getDashboard: async () =>
+      createAnalyticsApi(await createAnalyticsApiOptions()).getDashboard(),
+  };
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
 }

@@ -13,6 +13,9 @@ export function StatCard({ stat }: { stat: DashboardStat }) {
         <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-white-muted">
           {stat.label}
         </p>
+        <p className="mt-2 text-xs font-bold text-white-muted">
+          {stat.deltaLabel}
+        </p>
       </div>
       <Icon
         aria-hidden="true"

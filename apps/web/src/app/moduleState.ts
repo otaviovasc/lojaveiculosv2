@@ -38,7 +38,7 @@ export function useModuleState() {
     setActiveModuleId(moduleId);
 
     if (typeof window !== "undefined") {
-      window.location.hash = moduleId;
+      window.location.hash = `/${moduleId}`;
     }
   }, []);
 

@@ -24,7 +24,7 @@ export function App() {
   return (
     <AppShell activeModule={activeModule} onNavigate={navigate}>
       {activeModuleId === "dashboard" ? (
-        <DashboardHome />
+        <DashboardHome onNavigate={navigate} />
       ) : activeModuleId === "inventory" ? (
         <InventoryCreatePage />
       ) : activeModuleId === "crm" ? (
