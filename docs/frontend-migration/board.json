@@ -1205,7 +1205,7 @@
           "routes": ["/#/documents"]
         },
         "last_evidence_path": "reports/visual/lvv2-f011-documents-workspace/documents.txt",
-        "last_checked_at": "2026-06-22T18:13:29.760Z",
+        "last_checked_at": "2026-06-22T18:19:25.864Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
