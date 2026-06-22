@@ -2,6 +2,8 @@ import { createDocumentsApi, type DocumentsApi } from "./apiClient";
 import { createDocumentsApiOptions } from "./runtimeApi";
 import type { WorkspaceDocument } from "./types";
 
+export const DOCUMENTS_WORKSPACE_LIMIT = 200;
+
 export type WorkspaceStatus =
   | { kind: "error"; message: string }
   | { kind: "loading" }
@@ -69,4 +71,14 @@ export function summarizeDocuments(documents: WorkspaceDocument[]) {
 
 export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+export function openDocumentDownload(url: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.rel = "noopener noreferrer";
+  link.target = "_blank";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }

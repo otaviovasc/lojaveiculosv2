@@ -1085,7 +1085,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "in-progress",
       "risk": "medium",
       "parallel_group": "documents",
       "depends_on": ["lvv2-f001-app-shell-dashboard"],
@@ -1114,11 +1114,74 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/documents/DocumentsModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentWorkspacePanel.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/documentsWorkspaceModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentsModuleSupport.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/DocumentsModuleParts.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/apiClient.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/documents/types.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/documents.css"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/documents-workspace.css"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/documents-operations.css"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/global.css"
         }
       ],
       "backend_contract": {
         "owner": "documents",
-        "notes": "Use shared document domain, private R2 storage, authorized signed downloads, and immutable versions."
+        "notes": "Uses V2 documents endpoints GET /api/v1/documents, GET /documents/templates, PUT /documents/templates/:kind, GET /documents/:id/preview, GET /documents/:id/versions, GET /documents/:id/download, POST /documents/:id/regenerate, and POST /documents/:id/void. These enforce documents.* permissions, store/tenant scope, signed private downloads, immutable versions, logs, and audit in the documents domain."
+      },
+      "evidence": {
+        "source_parity_notes": [
+          "Read V1 DocumentsCenterView.tsx, DocumentTable.tsx, UploadDocumentModal.tsx, and PdfPreviewModal.tsx.",
+          "Kept V1 folder/list workspace pattern, operational filters, status/kind badges, direct preview/download actions, selected-detail workflow, template editing, preview, versions, regenerate, and cancel actions.",
+          "Intentionally maps V1 vehicle/general folders to V2 shared document link folders using targetType + targetId so vehicle-linked documents do not drift into general documents.",
+          "Reviewer follow-up: workspace requests the backend max 200-document window and labels capped header, folder cards, and selected-folder counts as loaded recent documents so the UI does not imply global counts."
+        ],
+        "backend_contract_notes": [
+          "V1 upload and client-side PDF generation were not ported into this slice because V2 source of truth is the shared documents domain with private storage and immutable versions.",
+          "API client now exposes backend-supported targetId and limit filters in addition to search, kind, status, and targetType."
+        ],
+        "validation": [
+          "npm run test --workspace @lojaveiculosv2/web -- documents",
+          "npm run typecheck --workspace @lojaveiculosv2/web",
+          "npm run lint --workspace @lojaveiculosv2/web",
+          "npm run check:lines",
+          "npm run check:frontend",
+          "npm run check:frontend-composition",
+          "npm run validate",
+          "npm run build --workspace @lojaveiculosv2/web",
+          "npm run qa:visual -- --slice lvv2-f011-documents-workspace"
+        ]
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -1127,10 +1190,10 @@
         "branch": "agent/lvv2-f011-documents-workspace"
       },
       "pr": {
-        "number": null,
+        "number": 5,
         "labels": ["slice:lvv2-f011-documents-workspace", "agent:auto-merge"],
-        "review_status": "not-opened",
-        "merge_status": "not-opened"
+        "review_status": "needs-review",
+        "merge_status": "open"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -1141,8 +1204,8 @@
           "command": "npm run qa:visual -- --slice lvv2-f011-documents-workspace",
           "routes": ["/#/documents"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "reports/visual/lvv2-f011-documents-workspace/documents.txt",
+        "last_checked_at": "2026-06-22T18:19:25.864Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []

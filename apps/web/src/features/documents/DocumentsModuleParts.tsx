@@ -4,14 +4,10 @@ import type {
   DocumentLinkTarget,
   DocumentStatus,
   ListDocumentsFilters,
-  WorkspaceDocument,
 } from "./types";
 import {
-  kindLabel,
   kindOptions,
-  statusLabel,
   statusOptions,
-  targetLabel,
   targetOptions,
 } from "./documentLabels";
 
@@ -49,65 +45,12 @@ export function SelectFilter({
   );
 }
 
-export function DocumentRow({ document }: { document: WorkspaceDocument }) {
-  return (
-    <article className="documents-row">
-      <div>
-        <strong>{document.title}</strong>
-        <small>{document.file.fileName}</small>
-      </div>
-      <span>{kindLabel(document.kind)}</span>
-      <span className={`documents-status status-${document.status}`}>
-        {statusLabel(document.status)}
-      </span>
-      <span>{targetLabel(document.context.targetType)}</span>
-      <time dateTime={document.uploadedAt}>
-        {formatDate(document.uploadedAt)}
-      </time>
-    </article>
-  );
-}
-
-export function DocumentWorkspacePanel({
-  documents,
-  isLoading,
-  onSelect,
-}: {
-  documents: WorkspaceDocument[];
-  isLoading: boolean;
-  onSelect: (document: WorkspaceDocument) => void;
-}) {
-  return (
-    <section className="documents-panel">
-      <div className="documents-panel-title">
-        <strong>Lista operacional</strong>
-      </div>
-      {isLoading ? (
-        <p className="documents-muted">Carregando documentos.</p>
-      ) : documents.length === 0 ? (
-        <p className="documents-empty">Nenhum documento encontrado.</p>
-      ) : (
-        <div className="documents-table">
-          {documents.map((document) => (
-            <button
-              className="documents-row-action"
-              key={document.id}
-              onClick={() => onSelect(document)}
-              type="button"
-            >
-              <DocumentRow document={document} />
-            </button>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
 export function DocumentsWorkspaceHeader({
   counts,
   filters,
+  isResultCapped,
   onRefresh,
+  resultLimit,
   updateFilter,
 }: {
   counts: {
@@ -117,7 +60,9 @@ export function DocumentsWorkspaceHeader({
     total: number;
   };
   filters: ListDocumentsFilters;
+  isResultCapped: boolean;
   onRefresh: () => void;
+  resultLimit: number;
   updateFilter: <Key extends keyof ListDocumentsFilters>(
     key: Key,
     value: ListDocumentsFilters[Key],
@@ -133,8 +78,9 @@ export function DocumentsWorkspaceHeader({
           </span>
           <h2>Documentos compartilhados</h2>
           <p>
-            Arquivos vinculados a veiculos, leads, vendas, pagamentos,
-            financeiro e fiscal em uma unica lista auditada.
+            {isResultCapped
+              ? `Mostrando os ${resultLimit} documentos mais recentes. Use filtros para refinar pastas e contagens.`
+              : "Arquivos vinculados a veiculos, leads, vendas, pagamentos, financeiro e fiscal em uma unica lista auditada."}
           </p>
         </div>
         <button
@@ -149,7 +95,10 @@ export function DocumentsWorkspaceHeader({
       </section>
 
       <section className="documents-summary" aria-label="Resumo de documentos">
-        <Metric label="Total" value={String(counts.total)} />
+        <Metric
+          label={isResultCapped ? "Carregados" : "Total"}
+          value={String(counts.total)}
+        />
         <Metric label="Emitidos" value={String(counts.issued)} />
         <Metric label="Assinatura" value={String(counts.signature)} />
         <Metric label="Contextos" value={String(counts.contexts)} />
@@ -189,12 +138,4 @@ export function DocumentsWorkspaceHeader({
       </section>
     </>
   );
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "2-digit",
-  }).format(new Date(value));
 }

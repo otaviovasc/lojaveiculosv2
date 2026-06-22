@@ -113,7 +113,9 @@ export type DocumentsAuth = {
 
 export type ListDocumentsFilters = {
   kind?: DocumentKind | "";
+  limit?: number;
   search?: string;
   status?: DocumentStatus | "";
+  targetId?: string;
   targetType?: DocumentLinkTarget | "";
 };

@@ -3,13 +3,20 @@ import type { DocumentsApi } from "./apiClient";
 import { DocumentDetailPanel } from "./DocumentDetailPanel";
 import { DocumentTemplatesPanel } from "./DocumentTemplatesPanel";
 import {
+  DocumentWorkspacePanel,
+  type WorkspaceViewMode,
+} from "./DocumentWorkspacePanel";
+import {
   createRuntimeDocumentsApi,
+  DOCUMENTS_WORKSPACE_LIMIT,
   type DocumentsView,
   errorMessage,
+  openDocumentDownload,
   replaceDocument,
   summarizeDocuments,
   type WorkspaceStatus,
 } from "./DocumentsModuleSupport";
+import { buildDocumentFolders } from "./documentsWorkspaceModel";
 import type {
   DocumentKind,
   DocumentPreview,
@@ -20,10 +27,7 @@ import type {
   VoidDocumentInput,
   WorkspaceDocument,
 } from "./types";
-import {
-  DocumentsWorkspaceHeader,
-  DocumentWorkspacePanel,
-} from "./DocumentsModuleParts";
+import { DocumentsWorkspaceHeader } from "./DocumentsModuleParts";
 
 export function DocumentsModule({ api }: { api?: DocumentsApi }) {
   const documentsApi = useMemo(() => api ?? createRuntimeDocumentsApi(), [api]);
@@ -31,6 +35,9 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
   const [filters, setFilters] = useState<ListDocumentsFilters>({});
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [view, setView] = useState<DocumentsView>("workspace");
+  const [workspaceViewMode, setWorkspaceViewMode] =
+    useState<WorkspaceViewMode>("folders");
+  const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(null);
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [selectedDocument, setSelectedDocument] =
     useState<WorkspaceDocument | null>(null);
@@ -45,7 +52,7 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
     setStatus({ kind: "loading" });
     try {
       const [nextDocuments, nextTemplates] = await Promise.all([
-        documentsApi.listDocuments(nextFilters),
+        documentsApi.listDocuments({ ...nextFilters, limit: DOCUMENTS_WORKSPACE_LIMIT }),
         documentsApi.listTemplates(),
       ]);
       setDocuments(nextDocuments);
@@ -65,6 +72,8 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
   };
   const previewDocument = async (documentId: string) => {
     setIsDocumentActionBusy(true);
+    setDocumentPreview(null);
+    setDocumentVersions([]);
     try {
       const [preview, versions] = await Promise.all([
         documentsApi.previewDocument(documentId),
@@ -78,7 +87,6 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
       setIsDocumentActionBusy(false);
     }
   };
-
   const applyDocumentAction = async (
     action: () => Promise<WorkspaceDocument>,
   ) => {
@@ -107,7 +115,7 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
         documentId,
         versionId,
       );
-      window.open(download.downloadUrl, "_blank", "noopener,noreferrer");
+      openDocumentDownload(download.downloadUrl);
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
@@ -115,21 +123,21 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
       setIsDocumentActionBusy(false);
     }
   };
-
   useEffect(() => {
     void refresh();
   }, []);
-
   const updateFilter = <Key extends keyof ListDocumentsFilters>(
     key: Key,
     value: ListDocumentsFilters[Key],
   ) => {
     const nextFilters = { ...filters, [key]: value };
     setFilters(nextFilters);
+    setSelectedFolderKey(null);
     void refresh(nextFilters);
   };
-
   const counts = summarizeDocuments(documents);
+  const folders = buildDocumentFolders(documents);
+  const isResultCapped = documents.length >= DOCUMENTS_WORKSPACE_LIMIT;
   const saveTemplate = async (
     kind: DocumentKind,
     input: UpdateDocumentTemplateInput,
@@ -149,12 +157,13 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
       setIsSavingTemplate(false);
     }
   };
-
   return (
     <main className="documents-shell">
       <DocumentsWorkspaceHeader
         counts={{ ...counts, total: documents.length }}
         filters={filters}
+        isResultCapped={isResultCapped}
+        resultLimit={DOCUMENTS_WORKSPACE_LIMIT}
         onRefresh={() => void refresh()}
         updateFilter={updateFilter}
       />
@@ -182,8 +191,19 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
       {view === "workspace" ? (
         <DocumentWorkspacePanel
           documents={documents}
+          folders={folders}
+          isBusy={isDocumentActionBusy}
+          isResultCapped={isResultCapped}
           isLoading={status.kind === "loading"}
+          onDownload={downloadDocument}
           onSelect={setSelectedDocument}
+          onSelectFolder={setSelectedFolderKey}
+          onViewModeChange={(mode) => {
+            setWorkspaceViewMode(mode);
+            setSelectedFolderKey(null);
+          }}
+          selectedFolderKey={selectedFolderKey}
+          viewMode={workspaceViewMode}
         />
       ) : (
         <DocumentTemplatesPanel
@@ -195,7 +215,11 @@ export function DocumentsModule({ api }: { api?: DocumentsApi }) {
       <DocumentDetailPanel
         document={selectedDocument}
         isBusy={isDocumentActionBusy}
-        onClose={() => setSelectedDocument(null)}
+        onClose={() => {
+          setSelectedDocument(null);
+          setDocumentPreview(null);
+          setDocumentVersions([]);
+        }}
         onDownload={downloadDocument}
         onPreview={previewDocument}
         onRegenerate={(documentId) =>
