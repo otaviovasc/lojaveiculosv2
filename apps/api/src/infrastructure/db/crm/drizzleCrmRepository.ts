@@ -12,6 +12,7 @@ import type {
   CrmRepository,
   UpdateCrmLeadInput,
 } from "../../../domains/crm/ports/crmRepository.js";
+import { findLeadIdsByVehicleTitle } from "./drizzleCrmLeadSearch.js";
 import { toActivity, toLead } from "./drizzleCrmMappers.js";
 import {
   findLeadVehicleReference,
@@ -141,11 +142,21 @@ export function createDrizzleCrmRepository(
       }
       if (input.source) filters.push(eq(leads.source, input.source));
       if (input.status) filters.push(eq(leads.status, input.status));
+      const vehicleLeadIds = input.search
+        ? await findLeadIdsByVehicleTitle(db, {
+            search: input.search,
+            storeId: input.storeId,
+            tenantId: input.tenantId,
+          })
+        : [];
       const searchFilter = input.search
         ? or(
             ilike(leads.buyerName, `%${input.search}%`),
             ilike(leads.buyerPhone, `%${input.search}%`),
             ilike(leads.buyerEmail, `%${input.search}%`),
+            ...(vehicleLeadIds.length
+              ? [inArray(leads.id, vehicleLeadIds)]
+              : []),
           )
         : undefined;
 

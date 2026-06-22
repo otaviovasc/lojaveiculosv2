@@ -50,4 +50,23 @@ describe("createMemoryCrmRepository", () => {
       repository.listLeads({ ...scope, limit: 1, offset: 1 }),
     ).resolves.toEqual([allLeads[1]]);
   });
+
+  it("searches leads by vehicle title before pagination", async () => {
+    const repository = createMemoryCrmRepository();
+    const matchedLead = await repository.createLead({
+      ...scope,
+      buyerName: "Sem veiculo no nome",
+      source: "manual",
+    });
+    matchedLead.vehicleTitle = "Corolla XEi";
+    await repository.createLead({
+      ...scope,
+      buyerName: "Outro lead",
+      source: "manual",
+    });
+
+    await expect(
+      repository.listLeads({ ...scope, limit: 1, search: "corolla" }),
+    ).resolves.toEqual([matchedLead]);
+  });
 });

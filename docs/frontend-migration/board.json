@@ -730,7 +730,7 @@
           "routes": ["/#/crm"]
         },
         "last_evidence_path": "reports/visual/lvv2-f005-crm-leads-pipeline/crm.txt",
-        "last_checked_at": "2026-06-22T18:26:23Z",
+        "last_checked_at": "2026-06-22T18:31:31Z",
         "blockers": []
       },
       "evidence": {
@@ -750,7 +750,7 @@
       "Migrated CRM into a dense V2 pipeline workspace with hero, stats, search/status/source filters, kanban/list/table modes, create lead panel, editable contact panel, and activity/task timeline.",
       "Kept screen composition files free of local helper components/types by extracting CRM panels, board switcher, table, toolbar, and view props into feature modules.",
       "Added focused model/API tests for filtering/grouping/stats and V2 task activity metadata payloads.",
-      "Reviewer pass added server-side source/listing CRM filters with offset pagination, per-lead activity caching to avoid stale timelines and initial task races, aggregate task stats, and manual lead vehicle selection backed by the V2 inventory list API."
+      "Reviewer pass added server-side source/listing CRM filters with offset pagination and vehicle-title search, per-lead activity caching to avoid stale timelines and initial task races, aggregate task stats, and manual lead vehicle selection backed by the V2 inventory list API."
     ],
     "validation": [
       "npm run typecheck --workspace @lojaveiculosv2/web",
