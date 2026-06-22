@@ -4436,7 +4436,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "in-progress",
+      "status": "ready",
       "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "phase-1-remediation",
@@ -4505,6 +4505,8 @@
           "npm run migration:render-plan",
           "npm run build --workspace @lojaveiculosv2/web",
           "npm run qa:visual -- --slice lvv2-r009-inventory-create-partial-failure --url http://localhost:4173",
+          "gh pr checks 13 --watch --interval 10",
+          "Reviewer comment: Ready for Merge!",
           "npm run validate blocked by unrelated unclassified source lojaveiculos:src/app/[slug]/admin/components/views/InvestorsView.tsx"
         ]
       },
@@ -4521,8 +4523,8 @@
           "phase:phase-1",
           "phase-blocker"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "ready-for-merge",
+        "merge_status": "ready-for-merge"
       },
       "qa": {
         "auth_mode": "local-bypass",
