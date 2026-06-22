@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import type { ChangeEvent, FormEvent } from "react";
+import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
@@ -7,19 +7,15 @@ import {
   type InventoryFieldChangeHandler,
   type InventoryFormState,
 } from "../model/formModel";
-import { submitInventoryCreateFlow } from "../model/createInventorySubmit";
 import { InventoryEditPanel } from "../components/InventoryEditPanel";
 import { InventoryBadge } from "../components/InventoryFormParts";
-import {
-  InventoryCreateFlow,
-  type CreateFlowSubmitState,
-} from "../components/InventoryCreateFlow";
-import { getPublicReadinessIssues } from "../components/InventoryPublicReadiness";
+import { InventoryCreateFlow } from "../components/InventoryCreateFlow";
 import { InventoryStockTable } from "../components/InventoryStockTable";
 import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
 import type { InventoryListingDetail } from "../model/types";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { InventoryRouteState } from "../model/inventoryRouteState";
+import { useInventoryCreateSubmit } from "./useInventoryCreateSubmit";
 
 type SelectionState =
   | { kind: "idle" }
@@ -45,9 +41,6 @@ export function InventoryCreatePage({
   );
   const [refreshToken, setRefreshToken] = useState(0);
   const [selection, setSelection] = useState<SelectionState>({ kind: "idle" });
-  const [submitState, setSubmitState] = useState<CreateFlowSubmitState>({
-    kind: "idle",
-  });
 
   useEffect(() => {
     if (api) {
@@ -96,46 +89,22 @@ export function InventoryCreatePage({
     [],
   );
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleCreated = useCallback((detail: InventoryListingDetail) => {
+    setRefreshToken((current) => current + 1);
+    setSelection({ detail, kind: "ready" });
+  }, []);
 
-    if (form.status !== "draft") {
-      const issues = getPublicReadinessIssues(form, media);
-      if (issues.length > 0) {
-        setSubmitState({
-          kind: "error",
-          message: `Salve como rascunho ou corrija: ${issues.join(", ")}.`,
-        });
-        return;
-      }
-    }
+  const resolveInventoryApi = useCallback(async () => {
+    return runtimeApi ?? createInventoryApi(await createInventoryApiOptions());
+  }, [runtimeApi]);
 
-    setSubmitState({ kind: "submitting", label: "Criando estoque" });
-
-    try {
-      const inventoryApi =
-        runtimeApi ?? createInventoryApi(await createInventoryApiOptions());
-      const result = await submitInventoryCreateFlow({
-        api: inventoryApi,
-        form,
-        media,
-        onProgress: ({ label }) =>
-          setSubmitState({ kind: "submitting", label }),
-      });
-      setRefreshToken((current) => current + 1);
-      setSelection({ detail: result.detail, kind: "ready" });
-      setSubmitState({
-        kind: "success",
-        listingId: result.listingId,
-        mediaCount: result.mediaCount,
-      });
-    } catch (error) {
-      setSubmitState({
-        kind: "error",
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
+  const { handleRetryMedia, handleSubmit, submitState } =
+    useInventoryCreateSubmit({
+      form,
+      media,
+      onCreated: handleCreated,
+      resolveApi: resolveInventoryApi,
+    });
 
   const selectListing = async (listingId: string) => {
     if (!runtimeApi) return;
@@ -195,6 +164,7 @@ export function InventoryCreatePage({
             setForm((current) => ({ ...current, status: "draft" }));
           }
         }}
+        onRetryMedia={() => void handleRetryMedia()}
         onSubmit={(event) => void handleSubmit(event)}
         state={submitState}
       />

@@ -4436,7 +4436,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "in-progress",
       "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "phase-1-remediation",
@@ -4470,12 +4470,43 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/pages/useInventoryCreateSubmit.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/createInventorySubmit.test.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/api/src/domains/vehicle/services/VehicleService/createVehicleListing.ts"
         }
       ],
       "backend_contract": {
         "owner": "inventory/media",
-        "notes": "Make listing/unit/media partial failures recoverable and idempotent so retries do not duplicate listings or lose uploaded evidence."
+        "notes": "Create still uses V2 POST /api/v1/inventory/listings followed by PUT /inventory/listings/:id/unit, then media upload/attach via POST /inventory/listings/:id/media/uploads, signed upload URL, POST /inventory/listings/:id/media, and GET /inventory/listings/:id. The create UI now treats media failures after listing/unit success as saved-record partial success, retries against the saved listing id, and pre-reads the saved listing to skip already-attached media before retry. Existing V2 services enforce inventory.create, tenant/store scope, upload storage-prefix checks, logs, and audit; no broad repository/schema idempotency migration was added in this screen slice."
+      },
+      "evidence": {
+        "source_parity_notes": [
+          "Read V1 src/app/[slug]/admin/veiculos/criar/page.tsx, CreateVehicleWizard.tsx, CreateDraftVehicle.tsx, and PhotoManager.tsx.",
+          "Preserved V1 guided create clarity: mode selection, draft/public readiness split, media step before review, client-side media limits, cover/order semantics, and explicit operator feedback during create.",
+          "Preserved and expanded V1 partial-failure semantics from the separate video upload path: V1 warns that the vehicle was created but video failed; V2 now warns that listing/unit were saved but media attach failed and offers retry.",
+          "Intentional V2 improvement: partial retry is tied to the saved V2 listing id and locks the original save button so retry does not create a duplicate listing."
+        ],
+        "backend_contract_notes": [
+          "V2 listing/unit/media contracts remain authoritative; no V1 multipart create route or Prisma behavior was ported.",
+          "Retry uses existing media upload/create routes and GET listing preflight to skip media already visible on the saved record, covering the hidden-success response-loss case without a broad schema change.",
+          "Remaining backend limit: POST /media has no durable client media idempotency key, so exact de-duplication beyond visible saved media would require a future repository/schema contract."
+        ],
+        "validation": [
+          "npm run test --workspace @lojaveiculosv2/web -- createInventorySubmit",
+          "npm run typecheck --workspace @lojaveiculosv2/web",
+          "npm run lint --workspace @lojaveiculosv2/web",
+          "npm run migration:validate-board",
+          "npm run migration:render-plan",
+          "npm run build --workspace @lojaveiculosv2/web",
+          "npm run qa:visual -- --slice lvv2-r009-inventory-create-partial-failure --url http://localhost:4173",
+          "npm run validate blocked by unrelated unclassified source lojaveiculos:src/app/[slug]/admin/components/views/InvestorsView.tsx"
+        ]
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -4503,8 +4534,8 @@
             "/#/inventory?view=create&step=review"
           ]
         },
-        "last_evidence_path": "",
-        "last_checked_at": "2026-06-22T21:03:55Z",
+        "last_evidence_path": "reports/visual/lvv2-r009-inventory-create-partial-failure",
+        "last_checked_at": "2026-06-22T21:40:43Z",
         "blockers": [
           "phase-1-audit-009"
         ]
