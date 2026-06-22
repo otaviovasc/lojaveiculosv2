@@ -24,8 +24,11 @@ import type {
   LeadActivitiesById,
   LeadVehicleOption,
 } from "./CrmPipelineViewTypes";
+import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
+import { CrmSurfaceTabs, type CrmSurface } from "./CrmSurfaceTabs";
 
 export function CrmModule({ api }: { api?: ProductCrmApi }) {
+  const [activeSurface, setActiveSurface] = useState<CrmSurface>("whatsapp");
   const crmApi = useMemo(() => api ?? createRuntimeProductCrmApi(), [api]);
   const [activitiesByLeadId, setActivitiesByLeadId] =
     useState<LeadActivitiesById>({});
@@ -158,26 +161,36 @@ export function CrmModule({ api }: { api?: ProductCrmApi }) {
   };
 
   return (
-    <CrmPipelineView
-      activities={activeActivities}
-      activeLeadId={activeLeadId}
-      allActivities={statActivities}
-      error={error}
-      filters={filters}
-      isLoading={isLoading}
-      leads={leads}
-      onChangeFilters={setFilters}
-      onChangeViewMode={setViewMode}
-      onCreateActivity={createActivity}
-      onCreateLead={createLead}
-      onRefresh={refreshLeads}
-      onSelectLead={setActiveLeadId}
-      onUpdateLead={updateLeadContact}
-      onUpdateStatus={updateLeadStatus}
-      vehicleOptions={vehicleOptions}
-      viewLeads={filterLeads(leads, filters)}
-      viewMode={viewMode}
-    />
+    <>
+      <CrmSurfaceTabs
+        activeSurface={activeSurface}
+        onChange={setActiveSurface}
+      />
+      {activeSurface === "whatsapp" ? (
+        <CrmWhatsappInbox />
+      ) : (
+        <CrmPipelineView
+          activities={activeActivities}
+          activeLeadId={activeLeadId}
+          allActivities={statActivities}
+          error={error}
+          filters={filters}
+          isLoading={isLoading}
+          leads={leads}
+          onChangeFilters={setFilters}
+          onChangeViewMode={setViewMode}
+          onCreateActivity={createActivity}
+          onCreateLead={createLead}
+          onRefresh={refreshLeads}
+          onSelectLead={setActiveLeadId}
+          onUpdateLead={updateLeadContact}
+          onUpdateStatus={updateLeadStatus}
+          vehicleOptions={vehicleOptions}
+          viewLeads={filterLeads(leads, filters)}
+          viewMode={viewMode}
+        />
+      )}
+    </>
   );
 }
 

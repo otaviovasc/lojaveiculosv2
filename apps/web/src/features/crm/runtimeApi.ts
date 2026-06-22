@@ -3,6 +3,7 @@ import {
   type CreateProductCrmApiOptions,
   type ProductCrmApi,
 } from "./productCrmApi";
+import { createCrmWhatsappApi, type CrmWhatsappApi } from "./crmWhatsappApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
 
 export function createRuntimeProductCrmApi(): ProductCrmApi {
@@ -28,6 +29,52 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
   };
 }
 
+export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
+  return {
+    assignSession: async (sessionId, agentId, connectionId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).assignSession(
+        sessionId,
+        agentId,
+        connectionId,
+      ),
+    bootstrap: async () =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).bootstrap(),
+    closeSession: async (sessionId, mode, connectionId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
+        sessionId,
+        mode,
+        connectionId,
+      ),
+    createSession: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).createSession(
+        input,
+      ),
+    listMessages: async (sessionId, query) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
+        sessionId,
+        query,
+      ),
+    listSessions: async (query) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
+        query,
+      ),
+    markSessionAsRead: async (sessionId, connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).markSessionAsRead(sessionId, connectionId),
+    markSessionAsUnread: async (sessionId, lastReadAt, connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).markSessionAsUnread(sessionId, lastReadAt, connectionId),
+    sendText: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendText(input),
+    toggleIntervention: async (sessionId, connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).toggleIntervention(sessionId, connectionId),
+  };
+}
+
 export async function createProductCrmApiOptions(): Promise<CreateProductCrmApiOptions> {
   const accessToken = await readClerkToken();
 
@@ -38,21 +85,31 @@ export async function createProductCrmApiOptions(): Promise<CreateProductCrmApiO
   };
 }
 
-function createProductCrmAuthFromEnv(
+type CrmRuntimeEnv = {
+  DEV?: boolean;
+  VITE_DEV_CLERK_SESSION_TOKEN?: string;
+  VITE_DEV_CLERK_USER_ID?: string;
+  VITE_DEV_STORE_SLUG?: string;
+};
+
+export function createProductCrmAuthFromEnv(
   accessToken?: string | null,
+  env: CrmRuntimeEnv = import.meta.env,
 ): ProductCrmAuth {
-  const env = import.meta.env as {
-    DEV?: boolean;
-    VITE_DEV_CLERK_USER_ID?: string;
-    VITE_DEV_STORE_SLUG?: string;
-  };
   const clerkUserId =
     env.VITE_DEV_CLERK_USER_ID ?? (env.DEV ? "clerk_test_user" : undefined);
   const storeSlug =
     env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : undefined);
+  const explicitDevToken = env.VITE_DEV_CLERK_SESSION_TOKEN?.trim();
+  const localDevToken =
+    env.DEV && clerkUserId
+      ? (env.VITE_DEV_CLERK_SESSION_TOKEN ??
+        `local-dev-clerk-token:${clerkUserId}`)
+      : undefined;
+  const resolvedAccessToken = accessToken ?? explicitDevToken ?? localDevToken;
 
   return {
-    ...(accessToken ? { accessToken } : {}),
+    ...(resolvedAccessToken ? { accessToken: resolvedAccessToken } : {}),
     ...(clerkUserId ? { clerkUserId } : {}),
     ...(storeSlug ? { storeSlug } : {}),
   };

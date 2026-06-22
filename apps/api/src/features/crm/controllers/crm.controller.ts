@@ -26,6 +26,7 @@ import {
   updateLeadSchema,
 } from "./crm.controller.schemas.js";
 import { crmServices, type CrmServices } from "./crmServices.js";
+import { registerCrmWhatsappRoutes } from "./crm.whatsapp.controller.js";
 
 export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
@@ -107,6 +108,8 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
       return context.json(activity, 201);
     }),
   );
+
+  registerCrmWhatsappRoutes(crmFeature, { createContext, services });
 
   return crmFeature;
 }

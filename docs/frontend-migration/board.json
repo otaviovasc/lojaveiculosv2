@@ -937,13 +937,13 @@
         "branch": "agent/lvv2-f006-crm-whatsapp-inbox"
       },
       "pr": {
-        "number": null,
+        "number": 11,
         "labels": [
           "slice:lvv2-f006-crm-whatsapp-inbox",
           "risk:high",
           "agent:human-hold"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
@@ -955,10 +955,37 @@
           "command": "npm run qa:visual -- --slice lvv2-f006-crm-whatsapp-inbox",
           "routes": ["/#/crm"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
-        "blockers": [
-          "Complex chat/SSE interactions may need runtime-smoke evidence beyond Obscura."
+        "last_evidence_path": "reports/visual/lvv2-f006-crm-whatsapp-inbox/crm.txt",
+        "last_checked_at": "2026-06-22T19:38:33Z",
+        "blockers": []
+      },
+      "evidence": {
+        "source_parity": [
+          "Read V1 CrmWhatsappView.tsx: noted addon/payment iframe shell as legacy context, not the target V2 contract.",
+          "Read repasses CrmWhatsApp.tsx, CrmChatSession.tsx, CrmContext.tsx, useCrmWhatsApp.ts, crmSSE.ts, ChatArea.tsx, ChatInput.tsx, ChatBubble.tsx, MediaGrid.tsx, ChannelSwitcher.tsx, ChannelMessageCounts.tsx, and ChannelBadge.tsx.",
+          "Kept the inbox/list/detail/composer/channel/status shape close to repasses while leaving media upload and SSE as future contract/runtime-smoke work instead of faking unsupported V2 behavior."
+        ],
+        "backend_contract": [
+          "Added V2 /api/v1/crm/whatsapp routes for bootstrap, session list/create/read/unread/assign/close/toggle-intervention, message list, and text send.",
+          "Routes preserve V2 service context/audit entry and delegate WhatsApp continuity to the repasses ACL client.",
+          "HTTP ACL client exchanges the Clerk bearer token through repasses /auth/bridge/clerk and then calls repasses CRM chat endpoints with the repasses bearer token.",
+          "Reviewer pass added V2 lead.read/lead.update permission gates and V2 audit records before/after WhatsApp proxy operations."
+        ],
+        "implementation": [
+          "Added CRM WhatsApp runtime API, types, model helpers, inbox hook, session list, chat header, message list, composer, channel badges, and responsive CRM WhatsApp styles.",
+          "Default CRM surface now opens WhatsApp with a Pipeline tab preserved for the existing leads slice.",
+          "Session reconciliation preserves local optimistic messages/read state, hydrates deep-linked crm_session ids, polls active messages, and refreshes session state on focus/visibility."
+        ],
+        "validation": [
+          "npm run check:lines",
+          "npm run lint",
+          "npm run typecheck --workspace @lojaveiculosv2/api",
+          "npm run typecheck --workspace @lojaveiculosv2/web",
+          "npm run test --workspace @lojaveiculosv2/web -- crmWhatsappApi.test.ts",
+          "npm run test --workspace @lojaveiculosv2/api -- crm.whatsapp.controller.test.ts",
+          "npm run validate",
+          "VITE_DEV_API_PROXY_TARGET=http://localhost:8877 npm run build --workspace @lojaveiculosv2/web",
+          "npm run qa:visual -- --slice lvv2-f006-crm-whatsapp-inbox"
         ]
       },
       "v1_improvement_backport_candidates": [

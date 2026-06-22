@@ -14,10 +14,6 @@ import {
   type InternalMonitoringServices,
 } from "../../features/internal/controllers/internalMonitoringServices.js";
 import { createMarketplaceServices } from "../../features/marketplaces/controllers/marketplaceServices.js";
-import {
-  createCrmServices,
-  type CrmServices,
-} from "../../features/crm/controllers/crmServices.js";
 import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
 import {
   createExternalApiServices,
@@ -70,6 +66,7 @@ import { createRuntimeComplianceServices } from "../compliance/runtimeCompliance
 import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServices.js";
 import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
 import { createAsaasPaymentProviderGateway } from "../billing/asaasPaymentProviderGateway.js";
+import { createRuntimeCrmServices } from "./runtimeCrmServices.js";
 import {
   createDrizzleExternalApiRepository,
   type DrizzleExternalApiClient,
@@ -123,7 +120,7 @@ export function createRuntimeAppOptions(
       },
     }),
     complianceServices: createRuntimeComplianceServices(),
-    crmServices: createRuntimeCrmServices(db),
+    crmServices: createRuntimeCrmServices(db, env),
     documentServices: createRuntimeDocumentServices(db, env),
     externalApiRepository: createDrizzleExternalApiRepository(
       db as unknown as DrizzleExternalApiClient,
@@ -216,10 +213,6 @@ function createRuntimeRoleServices(db: unknown): RoleServices {
       db as unknown as DrizzleRoleManagementClient,
     ),
   );
-}
-
-function createRuntimeCrmServices(db: unknown): CrmServices {
-  return createCrmServices({ drizzleClient: db as DrizzleCrmClient });
 }
 
 function createRuntimeFinanceServices(
