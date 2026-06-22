@@ -42,3 +42,19 @@ custom role definitions during the V1 migration.
 
 Permission and entitlement mutations are critical audit events. If the audit sink
 cannot persist those events, the mutation must fail closed.
+
+## CRM WhatsApp Contract
+
+WhatsApp is a CRM feature, but it does not inherit lead permissions. Operators
+manage these explicit permissions in the CRM group:
+
+- `crm.whatsapp.list`: bootstrap, connection, agent, and session-list reads.
+- `crm.whatsapp.read`: message reads and read-state changes.
+- `crm.whatsapp.send`: create conversations and send outbound messages.
+- `crm.whatsapp.assign`: assign conversations.
+- `crm.whatsapp.close`: close conversations.
+- `crm.whatsapp.toggle_intervention`: toggle manual intervention.
+
+The transitional Repasses CRM backend may still apply its own agent/owner rules,
+but V2 must assert these permissions, tenant/store scope, entitlement context,
+and audit metadata before proxying WhatsApp operations.

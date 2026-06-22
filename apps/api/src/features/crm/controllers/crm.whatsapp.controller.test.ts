@@ -47,7 +47,7 @@ describe("CRM WhatsApp controller", () => {
       action: "crm.whatsapp.sessions.list",
       category: "data_access",
     });
-    expect(auditEvent?.metadata?.permission).toBe("lead.read");
+    expect(auditEvent?.metadata?.permission).toBe("crm.whatsapp.list");
   });
 
   it("scopes bootstrap to the V2 store and exposes assignment capability", async () => {
@@ -85,6 +85,27 @@ describe("CRM WhatsApp controller", () => {
     );
   });
 
+  it("hides bootstrap assignment capability when V2 assign permission is denied", async () => {
+    const repassesCrm = createRepassesCrmStub({
+      getAuthContext: vi.fn(async () => ({
+        canAssignSessions: true,
+        connectionId: 10,
+      })),
+    });
+    const app = createTestApp(repassesCrm, {
+      permissions: ["crm.whatsapp.list", "crm.whatsapp.read"],
+    });
+
+    const response = await app.request("/api/v1/crm/whatsapp/bootstrap", {
+      headers: { Authorization: "Bearer clerk-token", "x-store-slug": "test-store" },
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      scope: { canAssignSessions: false, connectionId: 10 },
+    });
+  });
+
   it("requires Clerk bearer auth for WhatsApp ACL routes", async () => {
     const app = createTestApp(createRepassesCrmStub());
 
@@ -96,7 +117,7 @@ describe("CRM WhatsApp controller", () => {
     });
   });
 
-  it("requires lead read permission before proxying WhatsApp reads", async () => {
+  it("requires WhatsApp list permission before proxying session lists", async () => {
     const repassesCrm = createRepassesCrmStub({ listSessions: vi.fn() });
     const app = createTestApp(repassesCrm, { permissions: ["crm.access"] });
 
@@ -106,12 +127,12 @@ describe("CRM WhatsApp controller", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      message: "Missing permission: lead.read",
+      message: "Missing permission: crm.whatsapp.list",
     });
     expect(repassesCrm.listSessions).not.toHaveBeenCalled();
   });
 
-  it("requires lead update permission and audits WhatsApp text sends", async () => {
+  it("requires WhatsApp send permission and audits WhatsApp text sends", async () => {
     const { audit, record } = createAuditSpy();
     const repassesCrm = createRepassesCrmStub({
       sendText: vi.fn(async () => ({
@@ -126,7 +147,7 @@ describe("CRM WhatsApp controller", () => {
     });
     const app = createTestApp(repassesCrm, {
       audit,
-      permissions: ["lead.read", "lead.update"],
+      permissions: ["crm.whatsapp.list", "crm.whatsapp.send"],
     });
 
     const response = await app.request("/api/v1/crm/whatsapp/send/text", {
@@ -156,11 +177,10 @@ describe("CRM WhatsApp controller", () => {
       entityId: "42",
       outcome: "attempted",
     });
-    expect(record.mock.calls[1]?.[0]).toMatchObject({
-      action: "crm.whatsapp.message.send_text",
-      outcome: "succeeded",
-    });
-    expect(record.mock.calls[0]?.[0]?.metadata?.permission).toBe("lead.update");
+    expect(record.mock.calls[1]?.[0]?.outcome).toBe("succeeded");
+    expect(record.mock.calls[0]?.[0]?.metadata?.permission).toBe(
+      "crm.whatsapp.send",
+    );
   });
 
   it("audits failed WhatsApp mutations before returning upstream errors", async () => {
@@ -183,21 +203,19 @@ describe("CRM WhatsApp controller", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      message: "Forbidden upstream",
-    });
+    await expect(response.json()).resolves.toEqual({ message: "Forbidden upstream" });
     expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
       "attempted",
       "failed",
     ]);
-    expect(record.mock.calls[1]?.[0]?.metadata?.errorName).toBe(
-      "RepassesCrmRequestError",
-    );
+    expect(record.mock.calls[1]?.[0]?.metadata?.errorName).toBe("RepassesCrmRequestError");
   });
 
-  it("requires lead update permission before proxying WhatsApp mutations", async () => {
+  it("requires WhatsApp send permission before proxying outbound messages", async () => {
     const repassesCrm = createRepassesCrmStub({ sendText: vi.fn() });
-    const app = createTestApp(repassesCrm, { permissions: ["lead.read"] });
+    const app = createTestApp(repassesCrm, {
+      permissions: ["crm.whatsapp.list", "crm.whatsapp.read"],
+    });
 
     const response = await app.request("/api/v1/crm/whatsapp/send/text", {
       body: JSON.stringify({ sessionId: 42, text: "Ola" }),
@@ -210,7 +228,7 @@ describe("CRM WhatsApp controller", () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      message: "Missing permission: lead.update",
+      message: "Missing permission: crm.whatsapp.send",
     });
     expect(repassesCrm.sendText).not.toHaveBeenCalled();
   });

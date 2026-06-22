@@ -1,5 +1,6 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
 import { defaultRolePermissions } from "./accessPolicy.js";
+import { crmWhatsappPermissionDescriptors } from "./crmWhatsappPermissionCatalog.js";
 import { marketplacePermissionGroup } from "./marketplacePermissionCatalog.js";
 
 export type PermissionRisk = "high" | "medium" | "low";
@@ -109,6 +110,7 @@ export const permissionGroups: readonly PermissionGroup[] = [
     permissions: [
       permission("crm.access", "Acessar CRM", "Abrir CRM.", "low"),
       permission("crm.manage", "Gerenciar CRM", "Configurar CRM.", "medium"),
+      ...crmWhatsappPermissionDescriptors,
       permission("lead.read", "Ler leads", "Ver oportunidades.", "low"),
       permission(
         "lead.create",

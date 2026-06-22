@@ -11,7 +11,10 @@ import {
   resolveWhatsappConnectionScope,
 } from "./crm.whatsapp.connectionScope.js";
 import {
-  assertWhatsappWrite,
+  assertWhatsappAssign,
+  assertWhatsappClose,
+  assertWhatsappRead,
+  assertWhatsappToggleIntervention,
   handleWhatsapp,
   parseWhatsappJson,
   recordWhatsappMutation,
@@ -31,7 +34,7 @@ export function registerSessionActions(
   crmFeature.post("/whatsapp/sessions/:sessionId/read", async (context) =>
     handleWhatsapp(context, async () => {
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappWrite(serviceContext);
+      const permission = assertWhatsappRead(serviceContext);
       const sessionId = readNumericParam(context, "sessionId");
       const connectionId = readOptionalConnectionId(context);
       const audit = whatsappAudit.markRead(permission, sessionId);
@@ -52,7 +55,7 @@ export function registerSessionActions(
     handleWhatsapp(context, async () => {
       const input = await parseWhatsappJson(context, whatsappMarkUnreadSchema);
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappWrite(serviceContext);
+      const permission = assertWhatsappRead(serviceContext);
       const sessionId = readNumericParam(context, "sessionId");
       const audit = whatsappAudit.markUnread(permission, sessionId, input);
       const { connectionId, ...repassesInput } = input;
@@ -79,7 +82,7 @@ export function registerSessionActions(
         whatsappAssignSessionSchema,
       );
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappWrite(serviceContext);
+      const permission = assertWhatsappAssign(serviceContext);
       const sessionId = readNumericParam(context, "sessionId");
       const audit = whatsappAudit.assignSession(
         permission,
@@ -109,7 +112,7 @@ export function registerSessionActions(
         whatsappCloseSessionSchema,
       );
       const serviceContext = await createContext(context);
-      const permission = assertWhatsappWrite(serviceContext);
+      const permission = assertWhatsappClose(serviceContext);
       const sessionId = readNumericParam(context, "sessionId");
       const audit = whatsappAudit.closeSession(
         permission,
@@ -137,7 +140,7 @@ export function registerSessionActions(
     async (context) =>
       handleWhatsapp(context, async () => {
         const serviceContext = await createContext(context);
-        const permission = assertWhatsappWrite(serviceContext);
+        const permission = assertWhatsappToggleIntervention(serviceContext);
         const sessionId = readNumericParam(context, "sessionId");
         const connectionId = readOptionalConnectionId(context);
         const audit = whatsappAudit.toggleIntervention(permission, sessionId);
