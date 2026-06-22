@@ -1,6 +1,8 @@
 import type {
   CreateProductCrmActivityInput,
   CreateProductCrmLeadInput,
+  CrmLeadSource,
+  CrmLeadStatus,
   ProductCrmAuth,
   ProductCrmLead,
   ProductCrmLeadActivity,
@@ -23,9 +25,12 @@ export type ProductCrmApi = {
 };
 
 export type ProductCrmLeadQuery = {
+  listingId?: string;
   limit?: number;
+  offset?: number;
   search?: string;
-  status?: string;
+  source?: CrmLeadSource;
+  status?: CrmLeadStatus;
 };
 
 export type CreateProductCrmApiOptions = {
@@ -103,8 +108,11 @@ export const productCrmRoutes = {
 
 export function createProductCrmLeadQuery(query: ProductCrmLeadQuery = {}) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "listingId", query.listingId);
   addOptionalParam(params, "limit", query.limit);
+  addOptionalParam(params, "offset", query.offset);
   addOptionalParam(params, "search", query.search);
+  addOptionalParam(params, "source", query.source);
   addOptionalParam(params, "status", query.status);
 
   return params;

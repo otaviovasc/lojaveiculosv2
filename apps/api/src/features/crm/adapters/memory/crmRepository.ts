@@ -74,12 +74,16 @@ export function createMemoryCrmRepository(): CrmRepository {
       return leads
         .filter((lead) => lead.storeId === input.storeId)
         .filter((lead) => lead.tenantId === input.tenantId)
+        .filter(
+          (lead) => !input.listingId || lead.listingId === input.listingId,
+        )
+        .filter((lead) => !input.source || lead.source === input.source)
         .filter((lead) => !input.status || lead.status === input.status)
         .filter((lead) => matchesSearch(lead, input.search))
         .sort(
           (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
         )
-        .slice(0, input.limit);
+        .slice(input.offset ?? 0, (input.offset ?? 0) + input.limit);
     },
     async updateLead(input) {
       const lead = findScopedLead(leads, input.leadId, input);
