@@ -77,7 +77,14 @@ export function RecurrenceStep({
         <button
           className={optionClass(draft.recurrence === recurrence)}
           key={recurrence}
-          onClick={() => onChange({ ...draft, recurrence })}
+          onClick={() =>
+            onChange({
+              ...draft,
+              documentFile: recurrence === "recurring" ? null : draft.documentFile,
+              documentTitle: recurrence === "recurring" ? "" : draft.documentTitle,
+              recurrence,
+            })
+          }
           type="button"
         >
           <Repeat2 aria-hidden="true" className="mb-4 size-5" />
@@ -138,7 +145,9 @@ export function DetailsStep({
         <FinanceInput onChange={setField("notes")} value={draft.notes} />
       </FinanceField>
       {draft.recurrence === "recurring" ? <RecurringFields draft={draft} setField={setField} /> : null}
-      <ReceiptFields draft={draft} setDraft={setDraft} setField={setField} />
+      {draft.recurrence === "once" ? (
+        <ReceiptFields draft={draft} setDraft={setDraft} setField={setField} />
+      ) : null}
     </div>
   );
 }

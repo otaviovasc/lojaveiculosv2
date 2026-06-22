@@ -87,7 +87,7 @@ export function FinanceModule({
     if (!runtimeApi) return;
     try {
       if (modalEntry) {
-        await updateEntryFromDraft(runtimeApi, modalEntry.id, draft);
+        await updateEntryFromDraft(runtimeApi, modalEntry, draft);
         setToast({ kind: "success", title: "Lancamento salvo", message: draft.name });
       } else if (draft.recurrence === "recurring") {
         await runtimeApi.createRecurringEntry(toRecurringInput(draft));

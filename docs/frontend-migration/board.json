@@ -1106,6 +1106,10 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceEntryModalSteps.test.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/finance/FinanceRecurringBillsPanel.tsx"
         },
         {
@@ -1115,6 +1119,10 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/finance/financeBillsActions.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/financeBillsActions.test.ts"
         },
         {
           "repo": "lojaveiculosv2",
@@ -1154,7 +1162,7 @@
           "routes": ["/#/expenses"]
         },
         "last_evidence_path": "reports/visual/lvv2-f009-finance-expenses-bills/expenses.txt",
-        "last_checked_at": "2026-06-22T18:26:46Z",
+        "last_checked_at": "2026-06-22T18:40:00Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []

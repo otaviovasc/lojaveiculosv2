@@ -5,7 +5,7 @@ import type { FinanceEntry, FinanceEntryType, UpdateFinanceEntryInput } from "./
 
 export async function updateEntryFromDraft(
   api: FinanceApi,
-  entryId: string,
+  entry: FinanceEntry,
   draft: FinanceEntryDraft,
 ) {
   const input = toEntryInput(draft);
@@ -16,18 +16,20 @@ export async function updateEntryFromDraft(
     status: input.status,
   };
   if (input.dueAt !== undefined) update.dueAt = input.dueAt;
-  if (input.metadata !== undefined) update.metadata = input.metadata;
+  if (input.metadata !== undefined) {
+    update.metadata = mergeEntryMetadata(entry.metadata, input.metadata);
+  }
   if (input.paidAt !== undefined) update.paidAt = input.paidAt;
   if (input.sellerUserId !== undefined) update.sellerUserId = input.sellerUserId;
-  await api.updateEntry(entryId, update);
+  await api.updateEntry(entry.id, update);
   if (!draft.documentFile) return;
-  const upload = await api.requestDocumentUpload(entryId, draft.documentFile);
+  const upload = await api.requestDocumentUpload(entry.id, draft.documentFile);
   await fetch(upload.uploadUrl, {
     body: draft.documentFile,
     method: upload.uploadMethod ?? "PUT",
     ...(upload.uploadHeaders ? { headers: upload.uploadHeaders } : {}),
   }).then(readUpload);
-  await api.attachDocument(entryId, {
+  await api.attachDocument(entry.id, {
     fileName: draft.documentFile.name,
     fileSizeBytes: draft.documentFile.size,
     kind: "finance_receipt",
@@ -35,6 +37,17 @@ export async function updateEntryFromDraft(
     storageKey: upload.storageKey,
     title: draft.documentTitle.trim() || draft.documentFile.name,
   });
+}
+
+export function mergeEntryMetadata(
+  existing: Record<string, unknown> | undefined,
+  incoming: Record<string, unknown>,
+) {
+  return {
+    ...(existing ?? {}),
+    notes: typeof incoming.notes === "string" ? incoming.notes : existing?.notes,
+    source: existing?.source ?? incoming.source,
+  };
 }
 
 export async function cancelEntry(
