@@ -5,6 +5,7 @@ import { FinanceBillsFilters } from "./FinanceBillsFilters";
 import { FinanceBillsHeader } from "./FinanceBillsHeader";
 import { FinanceBillsSummary } from "./FinanceBillsSummary";
 import { CommissionRulesPanel } from "./FinanceCorePanels";
+import { CommissionWorkspace } from "./CommissionWorkspace";
 import { FinanceEntryModal } from "./FinanceEntryModal";
 import { FinanceEntryTable } from "./FinanceEntryTable";
 import { FinanceRecurringBillsPanel } from "./FinanceRecurringBillsPanel";
@@ -35,7 +36,12 @@ export function FinanceModule({
   api?: FinanceApi;
   defaultActiveType?: FinanceEntryType;
 }) {
-  const [activeType, setActiveType] = useState(defaultActiveType);
+  if (defaultActiveType === "commission") {
+    return api ? <CommissionWorkspace api={api} /> : <CommissionWorkspace />;
+  }
+
+  const [activeType, setActiveType] =
+    useState<FinanceEntryType>(defaultActiveType);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
   const [recurringEntries, setRecurringEntries] = useState<FinanceRecurringEntry[]>([]);
