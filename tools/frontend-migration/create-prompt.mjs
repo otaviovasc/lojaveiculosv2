@@ -16,6 +16,8 @@ if (!["worker", "reviewer"].includes(args.role)) {
   process.exit(1);
 }
 
+validatePhaseGateAccess(args, board, slice);
+
 const templatePath = join(
   repoRoot,
   `docs/frontend-migration/${args.role}-prompt.md`,
@@ -23,6 +25,33 @@ const templatePath = join(
 const template = readFileSync(templatePath, "utf8");
 
 console.log(`${template}\n\n---\n\n${renderContext(slice, board)}`);
+
+function validatePhaseGateAccess(args, board, slice) {
+  if (args.role !== "worker") return;
+
+  const currentPhase = (board.phases ?? []).find(
+    (phase) => phase.id === board.current_phase_id,
+  );
+  if (currentPhase?.audit?.status !== "blocked") return;
+
+  const remediationIds = new Set(
+    currentPhase.audit?.remediation_slice_ids ?? [],
+  );
+  const isUnresolvedRemediation =
+    remediationIds.has(slice.id) && slice.status !== "merged";
+
+  if (isUnresolvedRemediation) return;
+
+  console.error(
+    [
+      `Current phase ${currentPhase.id} is blocked by audit findings.`,
+      `Worker prompts are paused for non-remediation slice ${slice.id}.`,
+      `Start one unresolved remediation slice instead: ${[...remediationIds].join(", ") || "none"}.`,
+      "Use --role reviewer only for review of an already-open PR.",
+    ].join("\n"),
+  );
+  process.exit(1);
+}
 
 function renderContext(slice, board) {
   const phase = (board.phases ?? []).find((item) => item.id === slice.phase);
