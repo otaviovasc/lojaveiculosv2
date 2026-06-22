@@ -17,6 +17,12 @@ emit documents, manage billing, or trigger audited operational workflows.
 ## Architecture Rules
 
 - Follow `docs/repo-organization.md` before adding or moving files.
+- For non-trivial work, also follow
+  `docs/agents/lojaveiculosv2-repo-skill.md`.
+- For Railway, CI/CD, staging, production, or incident work, read
+  `docs/maximum-agentic-loop-railway-terraform.md`,
+  `docs/railway.md`, and the relevant runbook in `docs/runbooks/`.
+- Keep runtime variables documented in `docs/ops/env-vars.md`.
 - Keep backend business logic inside `apps/api/src/domains/<domain>/services/`.
 - Name service folders with PascalCase plus `Service`, for example
   `VehicleService/getVehicle.ts`.
@@ -76,6 +82,12 @@ Run from `lojaveiculosv2/` before handing work back:
 
 ```bash
 npm run validate
+```
+
+For deploy smoke contracts, run:
+
+```bash
+npm run test:smoke:api
 ```
 
 Do not disable lint, tests, type checks, audit checks, or boundary checks to make

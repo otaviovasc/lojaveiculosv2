@@ -30,6 +30,7 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
+    "test:smoke:api": "npm run test --workspace @lojaveiculosv2/api -- productionSmoke",
     "check:lines": "node tools/quality/check-file-lines.mjs",
     "check:boundaries": "node tools/quality/check-boundaries.mjs",
     "check:env": "node tools/quality/check-env-template.mjs",

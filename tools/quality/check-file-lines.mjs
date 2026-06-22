@@ -3,7 +3,13 @@ import { join } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
 const maxLines = 240;
-const ignored = new Set(["node_modules", "dist", "build", ".git"]);
+const ignored = new Set([
+  "node_modules",
+  "dist",
+  "build",
+  ".git",
+  ".terraform",
+]);
 const extensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css", ".md"]);
 
 function extensionOf(path) {
