@@ -1,11 +1,59 @@
 import type { Context } from "hono";
-import { CrmWhatsappValidationError } from "./crm.whatsapp.controller.support.js";
+import type {
+  RepassesCrmAuth,
+  RepassesCrmClient,
+} from "../../../domains/crm/acl/repassesCrmClient.js";
+import { AuthorizationError } from "../../../shared/authorization.js";
+import type { ServiceContext } from "../../../shared/serviceContext.js";
+import {
+  createRepassesAuth,
+  CrmWhatsappValidationError,
+} from "./crm.whatsapp.controller.support.js";
 
 export type WhatsappScopedConnection = {
   id: number;
   lojaSlug?: string;
   status?: string;
 };
+
+export type ResolvedWhatsappConnectionScope = {
+  auth: RepassesCrmAuth;
+  connection: WhatsappScopedConnection;
+  connectionId: number;
+};
+
+export async function resolveWhatsappConnectionScope({
+  context,
+  repassesCrm,
+  requestedConnectionId,
+  serviceContext,
+}: {
+  context: Context;
+  repassesCrm: RepassesCrmClient;
+  requestedConnectionId?: number | undefined;
+  serviceContext: ServiceContext;
+}): Promise<ResolvedWhatsappConnectionScope> {
+  const baseAuth = createRepassesAuth(context, serviceContext);
+  const connections = normalizeWhatsappConnections(
+    await repassesCrm.getConnections(baseAuth),
+  );
+  const connection = selectScopedConnection(connections, context);
+  if (!connection) {
+    throw new AuthorizationError(
+      "CRM WhatsApp connection is not scoped to this store.",
+    );
+  }
+  if (requestedConnectionId && requestedConnectionId !== connection.id) {
+    throw new AuthorizationError(
+      "CRM WhatsApp connection does not belong to this store.",
+    );
+  }
+  return {
+    auth: createRepassesAuth(context, serviceContext, connection.id),
+    connection,
+    connectionId: connection.id,
+  };
+}
 
 export function readOptionalConnectionId(context: Context): number | undefined {
   const raw = context.req.query("connectionId");

@@ -25,10 +25,16 @@ describe("CRM WhatsApp controller", () => {
     expect(repassesCrm.listSessions).toHaveBeenCalledWith(
       expect.objectContaining({
         clerkSessionToken: "clerk-token",
+        repassesConnectionId: 10,
         storeId: "store_1",
         tenantId: "tenant_1",
       }),
-      expect.objectContaining({ limit: 20, offset: 0, search: "ana" }),
+      expect.objectContaining({
+        connectionId: 10,
+        limit: 20,
+        offset: 0,
+        search: "ana",
+      }),
     );
     const auditEvent = record.mock.calls[0]?.[0];
     expect(auditEvent).toMatchObject({
@@ -130,6 +136,7 @@ describe("CRM WhatsApp controller", () => {
     expect(repassesCrm.sendText).toHaveBeenCalledWith(
       expect.objectContaining({
         clerkSessionToken: "clerk-token",
+        repassesConnectionId: 10,
         storeId: "store_1",
         tenantId: "tenant_1",
       }),
@@ -147,6 +154,24 @@ describe("CRM WhatsApp controller", () => {
       outcome: "succeeded",
     });
     expect(record.mock.calls[0]?.[0]?.metadata?.permission).toBe("lead.update");
+  });
+
+  it("rejects stale client connection ids before proxying WhatsApp reads", async () => {
+    const repassesCrm = createRepassesCrmStub({
+      listSessions: vi.fn(async () => []),
+    });
+    const app = createTestApp(repassesCrm);
+
+    const response = await app.request(
+      "/api/v1/crm/whatsapp/sessions?connectionId=99",
+      { headers: { Authorization: "Bearer clerk-token" } },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: "CRM WhatsApp connection does not belong to this store.",
+    });
+    expect(repassesCrm.listSessions).not.toHaveBeenCalled();
   });
 
   it("audits failed WhatsApp mutations before returning upstream errors", async () => {

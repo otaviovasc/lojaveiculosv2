@@ -9,6 +9,7 @@ import {
 import { whatsappAudit } from "./crm.whatsapp.audit.js";
 import {
   normalizeWhatsappConnections,
+  resolveWhatsappConnectionScope,
   selectScopedConnection,
 } from "./crm.whatsapp.connectionScope.js";
 import {
@@ -85,10 +86,16 @@ export function registerCrmWhatsappRoutes(
       if (!parsed.success) throw new CrmWhatsappValidationError();
       const serviceContext = await createContext(context);
       const permission = assertWhatsappRead(serviceContext);
-      const sessions = await services.repassesCrm.listSessions(
-        createRepassesAuth(context, serviceContext, parsed.data.connectionId),
-        parsed.data,
-      );
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: parsed.data.connectionId,
+        serviceContext,
+      });
+      const sessions = await services.repassesCrm.listSessions(scope.auth, {
+        ...parsed.data,
+        connectionId: scope.connectionId,
+      });
       await recordWhatsappAudit(
         serviceContext,
         whatsappAudit.listSessions(permission, parsed.data),
@@ -106,11 +113,17 @@ export function registerCrmWhatsappRoutes(
       const serviceContext = await createContext(context);
       const permission = assertWhatsappWrite(serviceContext);
       const audit = whatsappAudit.createSession(permission, input);
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: input.connectionId,
+        serviceContext,
+      });
       const result = await recordWhatsappMutation(serviceContext, audit, () =>
-        services.repassesCrm.createSession(
-          createRepassesAuth(context, serviceContext, input.connectionId),
-          input,
-        ),
+        services.repassesCrm.createSession(scope.auth, {
+          ...input,
+          connectionId: scope.connectionId,
+        }),
       );
       return context.json(result, 201);
     }),
@@ -124,8 +137,14 @@ export function registerCrmWhatsappRoutes(
       const permission = assertWhatsappRead(serviceContext);
       const sessionId = readNumericParam(context, "sessionId");
       const { connectionId, ...messageQuery } = parsed.data;
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: connectionId,
+        serviceContext,
+      });
       const messages = await services.repassesCrm.listMessages(
-        createRepassesAuth(context, serviceContext, connectionId),
+        scope.auth,
         sessionId,
         messageQuery,
       );
@@ -148,11 +167,14 @@ export function registerCrmWhatsappRoutes(
         input.text,
       );
       const { connectionId, ...repassesInput } = input;
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: connectionId,
+        serviceContext,
+      });
       const message = await recordWhatsappMutation(serviceContext, audit, () =>
-        services.repassesCrm.sendText(
-          createRepassesAuth(context, serviceContext, connectionId),
-          repassesInput,
-        ),
+        services.repassesCrm.sendText(scope.auth, repassesInput),
       );
       return context.json(message, 201);
     }),

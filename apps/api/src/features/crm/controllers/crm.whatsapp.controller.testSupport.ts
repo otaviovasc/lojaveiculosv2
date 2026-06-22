@@ -49,7 +49,9 @@ export function createRepassesCrmStub(
       canAssignSessions: false,
       connectionId: null,
     })),
-    getConnections: vi.fn(),
+    getConnections: vi.fn(async () => ({
+      connections: [{ id: 10, lojaSlug: "test-store", status: "CONNECTED" }],
+    })),
     getConversation: vi.fn(),
     listMessages: vi.fn(),
     listSessions: vi.fn(),

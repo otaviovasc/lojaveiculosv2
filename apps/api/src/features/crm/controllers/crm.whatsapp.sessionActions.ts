@@ -6,10 +6,12 @@ import {
   whatsappMarkUnreadSchema,
 } from "./crm.controller.schemas.js";
 import { whatsappAudit } from "./crm.whatsapp.audit.js";
-import { readOptionalConnectionId } from "./crm.whatsapp.connectionScope.js";
+import {
+  readOptionalConnectionId,
+  resolveWhatsappConnectionScope,
+} from "./crm.whatsapp.connectionScope.js";
 import {
   assertWhatsappWrite,
-  createRepassesAuth,
   handleWhatsapp,
   parseWhatsappJson,
   recordWhatsappMutation,
@@ -33,11 +35,14 @@ export function registerSessionActions(
       const sessionId = readNumericParam(context, "sessionId");
       const connectionId = readOptionalConnectionId(context);
       const audit = whatsappAudit.markRead(permission, sessionId);
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: connectionId,
+        serviceContext,
+      });
       const result = await recordWhatsappMutation(serviceContext, audit, () =>
-        services.repassesCrm.markSessionAsRead(
-          createRepassesAuth(context, serviceContext, connectionId),
-          sessionId,
-        ),
+        services.repassesCrm.markSessionAsRead(scope.auth, sessionId),
       );
       return context.json(result);
     }),
@@ -51,11 +56,17 @@ export function registerSessionActions(
       const sessionId = readNumericParam(context, "sessionId");
       const audit = whatsappAudit.markUnread(permission, sessionId, input);
       const { connectionId, ...repassesInput } = input;
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: connectionId,
+        serviceContext,
+      });
       const result = await recordWhatsappMutation(serviceContext, audit, () =>
-        services.repassesCrm.markSessionAsUnread(
-          createRepassesAuth(context, serviceContext, connectionId),
-          { ...repassesInput, sessionId },
-        ),
+        services.repassesCrm.markSessionAsUnread(scope.auth, {
+          ...repassesInput,
+          sessionId,
+        }),
       );
       return context.json(result);
     }),
@@ -75,11 +86,17 @@ export function registerSessionActions(
         sessionId,
         input.agentId,
       );
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: input.connectionId,
+        serviceContext,
+      });
       const session = await recordWhatsappMutation(serviceContext, audit, () =>
-        services.repassesCrm.assignSession(
-          createRepassesAuth(context, serviceContext, input.connectionId),
-          { agentId: input.agentId, sessionId },
-        ),
+        services.repassesCrm.assignSession(scope.auth, {
+          agentId: input.agentId,
+          sessionId,
+        }),
       );
       return context.json(session);
     }),
@@ -99,11 +116,17 @@ export function registerSessionActions(
         sessionId,
         input.mode,
       );
+      const scope = await resolveWhatsappConnectionScope({
+        context,
+        repassesCrm: services.repassesCrm,
+        requestedConnectionId: input.connectionId,
+        serviceContext,
+      });
       const session = await recordWhatsappMutation(serviceContext, audit, () =>
-        services.repassesCrm.closeSession(
-          createRepassesAuth(context, serviceContext, input.connectionId),
-          { mode: input.mode, sessionId },
-        ),
+        services.repassesCrm.closeSession(scope.auth, {
+          mode: input.mode,
+          sessionId,
+        }),
       );
       return context.json(session);
     }),
@@ -118,14 +141,16 @@ export function registerSessionActions(
         const sessionId = readNumericParam(context, "sessionId");
         const connectionId = readOptionalConnectionId(context);
         const audit = whatsappAudit.toggleIntervention(permission, sessionId);
+        const scope = await resolveWhatsappConnectionScope({
+          context,
+          repassesCrm: services.repassesCrm,
+          requestedConnectionId: connectionId,
+          serviceContext,
+        });
         const session = await recordWhatsappMutation(
           serviceContext,
           audit,
-          () =>
-            services.repassesCrm.toggleIntervention(
-              createRepassesAuth(context, serviceContext, connectionId),
-              sessionId,
-            ),
+          () => services.repassesCrm.toggleIntervention(scope.auth, sessionId),
         );
         return context.json(session);
       }),
