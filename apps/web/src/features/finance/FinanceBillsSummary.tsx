@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock3, Sigma } from "lucide-react";
-import type { FinanceEntry, FinanceSummary } from "./types";
+import type { FinanceEntry } from "./types";
 import {
   summarizeEntries,
   upcomingEntries,
@@ -8,12 +8,10 @@ import { formatCurrency, formatDate } from "./financeBillsFormat";
 
 export function FinanceBillsSummary({
   entries,
-  summary,
   onViewAll,
 }: {
   entries: FinanceEntry[];
   onViewAll: () => void;
-  summary: FinanceSummary | null;
 }) {
   const local = summarizeEntries(entries);
   const upcoming = upcomingEntries(entries);
@@ -21,7 +19,7 @@ export function FinanceBillsSummary({
     {
       icon: Sigma,
       label: "Gastos",
-      value: summary?.expenseAmountCents || local.totalCents,
+      value: local.totalCents,
     },
     { icon: CheckCircle2, label: "Pago", value: local.paidCents },
     { icon: Clock3, label: "Pendente", value: local.pendingCents },

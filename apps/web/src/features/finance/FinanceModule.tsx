@@ -26,7 +26,6 @@ import type {
   FinanceEntry,
   FinanceEntryType,
   FinanceRecurringEntry,
-  FinanceSummary,
 } from "./types";
 
 export function FinanceModule({
@@ -40,7 +39,6 @@ export function FinanceModule({
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
   const [recurringEntries, setRecurringEntries] = useState<FinanceRecurringEntry[]>([]);
-  const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [runtimeApi, setRuntimeApi] = useState<FinanceApi | null>(api ?? null);
   const [filters, setFilters] = useState<FinanceFilters>(initialFinanceFilters);
   const [toast, setToast] = useState<FinanceToast | null>(null);
@@ -72,7 +70,6 @@ export function FinanceModule({
         setCommissionRules(payload.commissionRules);
         setEntries(payload.entries);
         setRecurringEntries(payload.recurringEntries);
-        setSummary(payload.summary);
         setListState({ kind: "ready" });
       })
       .catch((error) => {
@@ -130,7 +127,6 @@ export function FinanceModule({
       <FinanceBillsSummary
         entries={filteredEntries}
         onViewAll={() => tableRef.current?.scrollIntoView({ behavior: "smooth" })}
-        summary={summary}
       />
       <FinanceBillsFilters filters={filters} onChange={setFilters} />
       {toast ? <FinanceToastMessage toast={toast} /> : null}
