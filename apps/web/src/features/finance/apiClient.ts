@@ -234,6 +234,5 @@ function toFinanceEntryList(payload: FinanceEntry[] | FinanceEntryList) {
     entries: payload,
     hasMore: false,
     nextOffset: null,
-    total: payload.length,
   };
 }

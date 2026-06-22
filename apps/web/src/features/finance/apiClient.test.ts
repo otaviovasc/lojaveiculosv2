@@ -131,7 +131,6 @@ describe("finance api client", () => {
           entries: [{ id: "entry_1" }, { id: "entry_2" }],
           hasMore: true,
           nextOffset: 2,
-          total: 2,
         }),
       )
       .mockResolvedValueOnce(
@@ -139,7 +138,6 @@ describe("finance api client", () => {
           entries: [{ id: "entry_3" }],
           hasMore: false,
           nextOffset: null,
-          total: 3,
         }),
       );
     const api = createFinanceApi({ fetch: fetchMock });

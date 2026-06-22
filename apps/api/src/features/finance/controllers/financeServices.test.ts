@@ -39,7 +39,6 @@ describe("finance services", () => {
     expect(firstPage).toMatchObject({
       hasMore: true,
       nextOffset: 2,
-      total: 2,
     });
     expect(firstPage.entries.map((item) => item.name)).toEqual([
       "Primeira",
@@ -48,7 +47,6 @@ describe("finance services", () => {
     expect(secondPage).toMatchObject({
       hasMore: false,
       nextOffset: null,
-      total: 3,
     });
     expect(secondPage.entries.map((item) => item.name)).toEqual(["Terceira"]);
   });

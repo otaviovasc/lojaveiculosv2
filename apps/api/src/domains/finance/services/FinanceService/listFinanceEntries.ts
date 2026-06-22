@@ -28,7 +28,6 @@ export type FinanceEntryListResult = {
   entries: readonly FinanceEntryBundle[];
   hasMore: boolean;
   nextOffset: number | null;
-  total: number;
 };
 
 export async function listFinanceEntries(
@@ -76,7 +75,6 @@ export async function listFinanceEntries(
     entries: pageEntries,
     hasMore: entries.length > limit,
     nextOffset: entries.length > limit ? offset + pageEntries.length : null,
-    total: offset + pageEntries.length,
   };
 }
 

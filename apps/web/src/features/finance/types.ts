@@ -51,7 +51,6 @@ export type FinanceEntryList = {
   entries: readonly FinanceEntry[];
   hasMore: boolean;
   nextOffset: number | null;
-  total: number;
 };
 
 export type CreateFinanceEntryInput = {
