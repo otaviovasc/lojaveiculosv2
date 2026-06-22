@@ -12,6 +12,8 @@ const exceptions = JSON.parse(
 const exceptionPaths = new Set(exceptions.files.map((item) => item.path));
 const failures = [];
 
+runParserRegressionChecks();
+
 for (const file of walk(webRoot).filter(isCompositionFile)) {
   const rel = relative(root, file);
   const source = readFileSync(file, "utf8");
@@ -38,15 +40,10 @@ function findViolations(source, file) {
   const violations = [];
   const localType =
     /^\s*(?:export\s+)?(?:type|interface)\s+[A-Z_a-z]\w*(?:\s|<|=|\{)/gm;
-  const localComponent = /^\s*(?:function|const)\s+([A-Z][A-Za-z0-9_]*)/gm;
-  const exportedComponent = /^\s*export\s+function\s+([A-Z][A-Za-z0-9_]*)/gm;
+  const localComponent =
+    /^\s*(?:export\s+)?(?:default\s+)?(?:function|const)\s+([A-Z][A-Za-z0-9_]*)/gm;
 
   if (localType.test(source)) violations.push("local type/interface");
-
-  const exported = [...source.matchAll(exportedComponent)].map(
-    (match) => match[1],
-  );
-  for (const name of exported) allowedNames.add(name);
 
   for (const match of source.matchAll(localComponent)) {
     const name = match[1];
@@ -54,6 +51,46 @@ function findViolations(source, file) {
   }
 
   return violations;
+}
+
+function runParserRegressionChecks() {
+  const primary = findViolations(
+    'import { type Api } from "./api";\nexport function InventoryPage() { return null; }',
+    "InventoryPage.tsx",
+  );
+  assertNoViolations(primary, "primary export should be allowed");
+
+  const exportedFunction = findViolations(
+    "export function ExtraPanel() { return null; }",
+    "InventoryPage.tsx",
+  );
+  assertViolation(
+    exportedFunction,
+    "local component ExtraPanel",
+    "exported secondary function should be blocked",
+  );
+
+  const exportedConst = findViolations(
+    "export const ExtraPanel = () => null;",
+    "InventoryPage.tsx",
+  );
+  assertViolation(
+    exportedConst,
+    "local component ExtraPanel",
+    "exported secondary const should be blocked",
+  );
+}
+
+function assertNoViolations(violations, label) {
+  if (violations.length === 0) return;
+  console.error(`Composition checker self-test failed: ${label}`);
+  process.exit(1);
+}
+
+function assertViolation(violations, expected, label) {
+  if (violations.includes(expected)) return;
+  console.error(`Composition checker self-test failed: ${label}`);
+  process.exit(1);
 }
 
 function isCompositionFile(file) {
