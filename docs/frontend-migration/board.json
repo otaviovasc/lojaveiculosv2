@@ -476,6 +476,10 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/pages/InventoryListPage.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/inventory/components/InventoryMediaWorkspace.tsx"
         },
         {
@@ -501,6 +505,14 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/inventory/model/createMediaDrafts.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/inventoryRouteState.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/useInventoryRouteSelection.ts"
         }
       ],
       "backend_contract": {
@@ -552,10 +564,15 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f003-inventory-create-edit-media",
-          "routes": ["/#/inventory"]
+          "routes": [
+            "/#/inventory",
+            "/#/inventory?view=create&step=media",
+            "/#/inventory?view=create&step=review",
+            "/#/inventory?listing=10000000-0000-4000-8000-000000000001"
+          ]
         },
-        "last_evidence_path": "reports/visual/lvv2-f003-inventory-create-edit-media/inventory.txt",
-        "last_checked_at": "2026-06-22T16:15:40-03:00",
+        "last_evidence_path": "reports/visual/lvv2-f003-inventory-create-edit-media",
+        "last_checked_at": "2026-06-22T16:32:27-03:00",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []

@@ -1,5 +1,5 @@
 import { ArrowLeft } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
 import { InventoryCatalogExplorer } from "../components/InventoryCatalogExplorer";
@@ -25,6 +25,8 @@ import {
   type InventoryListState,
   type InventoryListStatusFilter,
 } from "../model/listCatalogModel";
+import { readCurrentInventoryRouteState } from "../model/inventoryRouteState";
+import { useInventoryRouteSelection } from "../model/useInventoryRouteSelection";
 import type {
   InventoryCatalogSnapshot,
   InventoryListingDetail,
@@ -33,14 +35,14 @@ import type {
 const initialListQuery: InventoryListQueryInput = { search: "", status: "" };
 
 export function InventoryListPage({ api }: { api?: InventoryApi }) {
-  const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
-    api ?? null,
+  const routeStateRef = useRef(readCurrentInventoryRouteState());
+  const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(api ?? null);
+  const [screenMode, setScreenMode] = useState<"list" | "create">(
+    routeStateRef.current.screenMode,
   );
-  const [screenMode, setScreenMode] = useState<"list" | "create">("list");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<InventoryListStatusFilter>("");
-  const [appliedQuery, setAppliedQuery] =
-    useState<InventoryListQueryInput>(initialListQuery);
+  const [appliedQuery, setAppliedQuery] = useState(initialListQuery);
   const [listState, setListState] = useState<InventoryListState>({
     kind: "loading",
   });
@@ -100,6 +102,13 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     void loadListings(initialListQuery);
   }, [loadListings]);
 
+  useInventoryRouteSelection({
+    api: runtimeApi,
+    routeState: routeStateRef,
+    setDetail,
+    setSelection,
+  });
+
   const refreshListings = () => {
     const query = { search, status };
     setAppliedQuery(query);
@@ -144,11 +153,10 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
             Voltar ao estoque
           </button>
         </section>
-        {runtimeApi ? (
-          <InventoryCreatePage api={runtimeApi} />
-        ) : (
-          <InventoryCreatePage />
-        )}
+        <InventoryCreatePage
+          api={runtimeApi ?? undefined}
+          initialStep={routeStateRef.current.createStep}
+        />
       </>
     );
   }

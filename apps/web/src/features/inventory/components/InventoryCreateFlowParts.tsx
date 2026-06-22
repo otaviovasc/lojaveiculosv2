@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { InventoryFormState } from "../model/formModel";
+import type { InventoryListingStatus } from "../model/types";
 import { InventoryBadge, InventoryPanel } from "./InventoryFormParts";
 import type { CreateFlowMode, CreateFlowSubmitState } from "./InventoryCreateFlow";
 
@@ -68,18 +69,18 @@ export function ModePanel({
 
 export function CreateSubmitPanel({
   media,
-  mode,
   state,
+  status,
 }: {
   media: readonly CreateMediaDraft[];
-  mode: CreateFlowMode;
   state: CreateFlowSubmitState;
+  status: InventoryListingStatus;
 }) {
   return (
     <section className="rounded-lg border border-line bg-panel p-4 shadow-[var(--shadow-panel)]">
       <div className="mb-4 flex flex-wrap gap-2">
         <InventoryBadge>
-          {mode === "draft" ? "rascunho" : "publicacao"}
+          {status === "draft" ? "rascunho" : "publicacao"}
         </InventoryBadge>
         <InventoryBadge tone="blue">{media.length} midias</InventoryBadge>
       </div>

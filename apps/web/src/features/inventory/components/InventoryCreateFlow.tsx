@@ -6,6 +6,7 @@ import type {
   InventoryFormState,
 } from "../model/formModel";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
+import type { InventoryRouteState } from "../model/inventoryRouteState";
 import { InventoryCreateMediaPanel } from "./InventoryCreateMediaPanel";
 import { InventoryPublicReadiness } from "./InventoryPublicReadiness";
 import { ListingPanel, UnitPanel } from "./InventoryListingPanels";
@@ -28,6 +29,7 @@ export type CreateFlowSubmitState =
 export function InventoryCreateFlow({
   api,
   form,
+  initialStep = "mode",
   media,
   onCatalogChange,
   onChange,
@@ -38,6 +40,7 @@ export function InventoryCreateFlow({
 }: {
   api: InventoryApi | null;
   form: InventoryFormState;
+  initialStep?: InventoryRouteState["createStep"];
   media: readonly CreateMediaDraft[];
   onCatalogChange: (catalog: InventoryFormState["catalog"]) => void;
   onChange: InventoryFieldChangeHandler;
@@ -47,7 +50,7 @@ export function InventoryCreateFlow({
   state: CreateFlowSubmitState;
 }) {
   const [mode, setMode] = useState<CreateFlowMode>("quick");
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(() => createStepIndex(initialStep));
   const activeStep = createFlowSteps[step] ?? "Modo";
   const canAdvance = useMemo(
     () => canAdvanceStep(activeStep, form, mode),
@@ -91,7 +94,7 @@ export function InventoryCreateFlow({
 
       <div className="grid content-start gap-4">
         <InventoryPublicReadiness form={form} media={media} />
-        <CreateSubmitPanel media={media} mode={mode} state={state} />
+        <CreateSubmitPanel media={media} state={state} status={form.status} />
         <CreateNavigation
           canAdvance={canAdvance}
           isFirst={step === 0}
@@ -107,4 +110,12 @@ export function InventoryCreateFlow({
       </div>
     </form>
   );
+}
+
+function createStepIndex(step: InventoryRouteState["createStep"]) {
+  if (step === "catalog") return 1;
+  if (step === "media") return 2;
+  if (step === "data") return 3;
+  if (step === "review") return 4;
+  return 0;
 }

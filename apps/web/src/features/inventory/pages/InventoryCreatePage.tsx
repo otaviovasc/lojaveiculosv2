@@ -19,6 +19,7 @@ import { InventoryStockTable } from "../components/InventoryStockTable";
 import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
 import type { InventoryListingDetail } from "../model/types";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
+import type { InventoryRouteState } from "../model/inventoryRouteState";
 
 type SelectionState =
   | { kind: "idle" }
@@ -26,8 +27,17 @@ type SelectionState =
   | { detail: InventoryListingDetail; kind: "ready" }
   | { kind: "error"; message: string };
 
-export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
-  const [form, setForm] = useState(createInitialInventoryForm);
+export function InventoryCreatePage({
+  api,
+  initialStep = "mode",
+}: {
+  api?: InventoryApi | undefined;
+  initialStep?: InventoryRouteState["createStep"];
+}) {
+  const [form, setForm] = useState<InventoryFormState>(() => ({
+    ...createInitialInventoryForm(),
+    status: "available" as const,
+  }));
   const [media, setMedia] = useState<CreateMediaDraft[]>([]);
   const mediaRef = useRef<CreateMediaDraft[]>([]);
   const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
@@ -175,6 +185,7 @@ export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
       <InventoryCreateFlow
         api={runtimeApi}
         form={form}
+        initialStep={initialStep}
         media={media}
         onCatalogChange={handleCatalogChange}
         onChange={setField}
