@@ -229,6 +229,10 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/analytics/dashboardViewState.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/analytics/DashboardPanels.tsx"
         },
         {

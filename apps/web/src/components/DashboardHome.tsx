@@ -19,6 +19,7 @@ import type {
   AnalyticsDashboard,
   DashboardLoadStatus,
 } from "../features/analytics/types";
+import { getDashboardBodyState } from "../features/analytics/dashboardViewState";
 import { LockedAddonPanel } from "./LockedAddonPanel";
 
 export function DashboardHome({
@@ -34,6 +35,7 @@ export function DashboardHome({
     kind: "loading",
   });
   const stats = createDashboardStats(dashboard);
+  const bodyState = getDashboardBodyState(status, dashboard);
 
   const refresh = useCallback(async () => {
     setStatus({ kind: "loading" });
@@ -63,7 +65,7 @@ export function DashboardHome({
 
       <DashboardKpiGrid stats={stats} />
 
-      {dashboard ? (
+      {bodyState === "ready" && dashboard ? (
         <section className="grid gap-5 xl:grid-cols-[1.3fr_0.7fr]">
           <div className="grid gap-5">
             <DashboardOperationsPanel dashboard={dashboard} />
@@ -71,9 +73,11 @@ export function DashboardHome({
           </div>
           <DashboardActionPanel onNavigate={onNavigate} />
         </section>
-      ) : (
+      ) : null}
+
+      {bodyState === "loading" ? (
         <DashboardLoadingState />
-      )}
+      ) : null}
 
       <section className="panel p-5 lg:p-6">
         <p className="eyebrow">V2 guardrails</p>
