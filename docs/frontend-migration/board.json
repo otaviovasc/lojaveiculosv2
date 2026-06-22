@@ -145,10 +145,10 @@
         "branch": "agent/lvv2-f000-control-plane"
       },
       "pr": {
-        "number": null,
+        "number": 1,
         "labels": ["slice:lvv2-f000-control-plane", "agent:auto-merge"],
-        "review_status": "not-opened",
-        "merge_status": "not-opened"
+        "review_status": "needs-review",
+        "merge_status": "open"
       },
       "qa": {
         "auth_mode": "local-bypass",
