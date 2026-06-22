@@ -1189,10 +1189,10 @@
         "branch": "agent/lvv2-f011-documents-workspace"
       },
       "pr": {
-        "number": null,
+        "number": 5,
         "labels": ["slice:lvv2-f011-documents-workspace", "agent:auto-merge"],
-        "review_status": "not-opened",
-        "merge_status": "not-opened"
+        "review_status": "needs-review",
+        "merge_status": "open"
       },
       "qa": {
         "auth_mode": "local-bypass",
