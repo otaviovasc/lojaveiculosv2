@@ -1,25 +1,25 @@
 import { ShieldCheck } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
   createInitialInventoryForm,
-  createInventoryFlowInput,
-  validateInventoryForm,
   type InventoryFieldChangeHandler,
   type InventoryFormState,
 } from "../model/formModel";
+import { submitInventoryCreateFlow } from "../model/createInventorySubmit";
 import { InventoryEditPanel } from "../components/InventoryEditPanel";
 import { InventoryBadge } from "../components/InventoryFormParts";
-import { ListingPanel, UnitPanel } from "../components/InventoryListingPanels";
 import {
-  MediaPanel,
-  SubmitPanel,
-  type SubmitState,
-} from "../components/InventorySidePanels";
+  InventoryCreateFlow,
+  type CreateFlowSubmitState,
+} from "../components/InventoryCreateFlow";
+import { getPublicReadinessIssues } from "../components/InventoryPublicReadiness";
 import { InventoryStockTable } from "../components/InventoryStockTable";
 import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
 import type { InventoryListingDetail } from "../model/types";
+import type { CreateMediaDraft } from "../model/createMediaDrafts";
+import type { InventoryRouteState } from "../model/inventoryRouteState";
 
 type SelectionState =
   | { kind: "idle" }
@@ -27,15 +27,25 @@ type SelectionState =
   | { detail: InventoryListingDetail; kind: "ready" }
   | { kind: "error"; message: string };
 
-export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
-  const [form, setForm] = useState(createInitialInventoryForm);
-  const [file, setFile] = useState<File | null>(null);
+export function InventoryCreatePage({
+  api,
+  initialStep = "mode",
+}: {
+  api?: InventoryApi | undefined;
+  initialStep?: InventoryRouteState["createStep"];
+}) {
+  const [form, setForm] = useState<InventoryFormState>(() => ({
+    ...createInitialInventoryForm(),
+    status: "available" as const,
+  }));
+  const [media, setMedia] = useState<CreateMediaDraft[]>([]);
+  const mediaRef = useRef<CreateMediaDraft[]>([]);
   const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
     api ?? null,
   );
   const [refreshToken, setRefreshToken] = useState(0);
   const [selection, setSelection] = useState<SelectionState>({ kind: "idle" });
-  const [submitState, setSubmitState] = useState<SubmitState>({
+  const [submitState, setSubmitState] = useState<CreateFlowSubmitState>({
     kind: "idle",
   });
 
@@ -49,6 +59,19 @@ export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
       setRuntimeApi(createInventoryApi(options));
     });
   }, [api]);
+
+  useEffect(() => {
+    mediaRef.current = media;
+  }, [media]);
+
+  useEffect(
+    () => () => {
+      for (const item of mediaRef.current) {
+        if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
+      }
+    },
+    [],
+  );
 
   const setField: InventoryFieldChangeHandler =
     (field: keyof InventoryFormState) =>
@@ -75,23 +98,37 @@ export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validationMessage = validateInventoryForm(form);
 
-    if (validationMessage) {
-      setSubmitState({ kind: "error", message: validationMessage });
-      return;
+    if (form.status !== "draft") {
+      const issues = getPublicReadinessIssues(form, media);
+      if (issues.length > 0) {
+        setSubmitState({
+          kind: "error",
+          message: `Salve como rascunho ou corrija: ${issues.join(", ")}.`,
+        });
+        return;
+      }
     }
 
-    setSubmitState({ kind: "submitting" });
+    setSubmitState({ kind: "submitting", label: "Criando estoque" });
 
     try {
       const inventoryApi =
         runtimeApi ?? createInventoryApi(await createInventoryApiOptions());
-      const result = await inventoryApi.createFlow(
-        createInventoryFlowInput(form, file),
-      );
+      const result = await submitInventoryCreateFlow({
+        api: inventoryApi,
+        form,
+        media,
+        onProgress: ({ label }) =>
+          setSubmitState({ kind: "submitting", label }),
+      });
       setRefreshToken((current) => current + 1);
-      setSubmitState({ kind: "success", result });
+      setSelection({ detail: result.detail, kind: "ready" });
+      setSubmitState({
+        kind: "success",
+        listingId: result.listingId,
+        mediaCount: result.mediaCount,
+      });
     } catch (error) {
       setSubmitState({
         kind: "error",
@@ -145,32 +182,22 @@ export function InventoryCreatePage({ api }: { api?: InventoryApi }) {
         </div>
       </section>
 
-      <form
-        className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]"
-        onSubmit={(event) => {
-          void handleSubmit(event);
+      <InventoryCreateFlow
+        api={runtimeApi}
+        form={form}
+        initialStep={initialStep}
+        media={media}
+        onCatalogChange={handleCatalogChange}
+        onChange={setField}
+        onMediaChange={setMedia}
+        onModeChange={(mode) => {
+          if (mode === "draft") {
+            setForm((current) => ({ ...current, status: "draft" }));
+          }
         }}
-      >
-        <div className="grid gap-4">
-          <ListingPanel
-            api={runtimeApi}
-            form={form}
-            onCatalogChange={handleCatalogChange}
-            onChange={setField}
-          />
-          <UnitPanel form={form} onChange={setField} />
-        </div>
-
-        <div className="grid content-start gap-4">
-          <MediaPanel
-            file={file}
-            form={form}
-            onChange={setField}
-            onFileChange={setFile}
-          />
-          <SubmitPanel file={file} state={submitState} />
-        </div>
-      </form>
+        onSubmit={(event) => void handleSubmit(event)}
+        state={submitState}
+      />
 
       {runtimeApi ? (
         <InventoryStockTable
