@@ -1,0 +1,143 @@
+.crm-lead-list,
+.crm-table-wrap,
+.crm-task-box,
+.crm-timeline {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+}
+
+.crm-lead-row {
+  align-items: center;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.875rem;
+  text-align: left;
+  width: 100%;
+}
+
+.crm-lead-row-active {
+  background: var(--color-accent-soft);
+}
+
+.crm-lead-row strong,
+.crm-lead-row small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-lead-row small,
+.crm-muted-cell {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.crm-muted-cell {
+  display: none;
+}
+
+.crm-table-wrap {
+  overflow-x: auto;
+}
+
+.crm-table {
+  border-collapse: collapse;
+  min-width: 44rem;
+  width: 100%;
+}
+
+.crm-table th,
+.crm-table td {
+  border-bottom: 1px solid var(--color-line);
+  font-size: 0.8125rem;
+  padding: 0.875rem;
+  text-align: left;
+}
+
+.crm-table th {
+  color: var(--color-muted);
+  font-size: 0.6875rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.crm-table tr {
+  cursor: pointer;
+}
+
+.crm-table-active {
+  background: var(--color-accent-soft);
+}
+
+.crm-task-box {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.875rem;
+}
+
+.crm-timeline {
+  display: grid;
+}
+
+.crm-timeline-row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: 0.75rem 1fr;
+  padding: 0.875rem;
+}
+
+.crm-timeline-dot {
+  border-radius: 999px;
+  height: 0.75rem;
+  margin-top: 0.25rem;
+  width: 0.75rem;
+}
+
+.crm-timeline-created {
+  background: var(--color-blue-start);
+}
+
+.crm-timeline-activity {
+  background: var(--color-accent);
+}
+
+.crm-timeline-task {
+  background: var(--color-warning);
+}
+
+.crm-timeline-row strong {
+  font-size: 0.8125rem;
+  font-weight: 900;
+}
+
+.crm-timeline-row p,
+.crm-timeline-row small {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.crm-kanban-empty {
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 1rem;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .crm-muted-cell {
+    display: block;
+  }
+}

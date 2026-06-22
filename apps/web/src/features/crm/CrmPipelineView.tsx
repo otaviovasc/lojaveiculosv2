@@ -1,99 +1,78 @@
 import { CircleAlert, RefreshCcw } from "lucide-react";
 import { useMemo } from "react";
 import { ActivityPanel } from "./CrmActivityPanel";
-import {
-  LeadCreatePanel,
-  LeadDetailPanel,
-  PipelineBoard,
-} from "./CrmPipelinePanels";
-import type {
-  CreateProductCrmActivityInput,
-  CreateProductCrmLeadInput,
-  CrmLeadStatus,
-  ProductCrmLead,
-  ProductCrmLeadActivity,
-} from "./productCrmTypes";
+import { LeadBoardByMode } from "./CrmLeadBoard";
+import { LeadCreatePanel } from "./CrmLeadForms";
+import { LeadDetailPanel } from "./CrmLeadDetailPanel";
+import { LeadStatsStrip } from "./CrmLeadStats";
+import { LeadToolbar } from "./CrmLeadToolbar";
+import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 
-export function CrmPipelineView({
-  activities,
-  activeLeadId,
-  error,
-  isLoading,
-  leads,
-  onCreateActivity,
-  onCreateLead,
-  onRefresh,
-  onSelectLead,
-  onUpdateStatus,
-}: {
-  activities: ProductCrmLeadActivity[];
-  activeLeadId: string | null;
-  error: Error | null;
-  isLoading: boolean;
-  leads: ProductCrmLead[];
-  onCreateActivity: (
-    leadId: string,
-    input: CreateProductCrmActivityInput,
-  ) => Promise<void>;
-  onCreateLead: (input: CreateProductCrmLeadInput) => Promise<void>;
-  onRefresh: () => Promise<void>;
-  onSelectLead: (leadId: string) => void;
-  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
-}) {
+export function CrmPipelineView(props: CrmPipelineViewProps) {
   const activeLead = useMemo(
-    () => leads.find((lead) => lead.id === activeLeadId) ?? null,
-    [activeLeadId, leads],
+    () => props.leads.find((lead) => lead.id === props.activeLeadId) ?? null,
+    [props.activeLeadId, props.leads],
   );
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
+    <main className="crm-page">
       <section className="crm-hero crm-hero-green">
         <div className="min-w-0 space-y-3">
           <p className="text-xs font-black uppercase tracking-widest text-inverse-muted">
             CRM Nativo V2
           </p>
           <h2 className="max-w-3xl text-2xl font-black text-inverse lg:text-4xl">
-            Pipeline de leads conectado ao estoque e pronto para WhatsApp IA.
+            Pipeline de leads com lista, tarefas e historico de atividades.
           </h2>
           <p className="max-w-2xl text-sm font-semibold text-inverse-muted">
-            Leads, status e atividades agora pertencem ao Loja V2 com escopo,
-            permissao e auditoria.
+            Leads, status e atividades pertencem ao Loja V2 com escopo,
+            permissao e auditoria; WhatsApp segue como integracao transitiva.
           </p>
         </div>
         <button
           className="crm-hero-status"
-          onClick={() => void onRefresh()}
+          onClick={() => void props.onRefresh()}
           type="button"
         >
           <RefreshCcw aria-hidden="true" className="size-5" />
-          <span>{isLoading ? "Sincronizando" : "Atualizar"}</span>
+          <span>{props.isLoading ? "Sincronizando" : "Atualizar"}</span>
         </button>
       </section>
 
-      {error ? (
+      {props.error ? (
         <section className="crm-note">
           <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
-          <span>{error.message}</span>
+          <span>{props.error.message}</span>
         </section>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-[0.72fr_1.28fr]">
-        <LeadCreatePanel onCreateLead={onCreateLead} />
-        <PipelineBoard
-          activeLeadId={activeLeadId}
-          leads={leads}
-          onSelectLead={onSelectLead}
-        />
+      <LeadStatsStrip activities={props.activities} leads={props.leads} />
+      <LeadToolbar
+        filters={props.filters}
+        mode={props.viewMode}
+        onChangeFilters={props.onChangeFilters}
+        onChangeMode={props.onChangeViewMode}
+      />
+
+      <section className="crm-workspace-grid">
+        <div className="crm-primary-column">
+          <LeadBoardByMode {...props} />
+        </div>
+        <div className="crm-side-column">
+          <LeadCreatePanel onCreateLead={props.onCreateLead} />
+          <LeadDetailPanel
+            lead={activeLead}
+            onUpdateLead={props.onUpdateLead}
+            onUpdateStatus={props.onUpdateStatus}
+          />
+        </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <LeadDetailPanel lead={activeLead} onUpdateStatus={onUpdateStatus} />
-        <ActivityPanel
-          activities={activities}
-          lead={activeLead}
-          onCreateActivity={onCreateActivity}
-        />
-      </section>
+      <ActivityPanel
+        activities={props.activities}
+        lead={activeLead}
+        onCreateActivity={props.onCreateActivity}
+      />
     </main>
   );
 }

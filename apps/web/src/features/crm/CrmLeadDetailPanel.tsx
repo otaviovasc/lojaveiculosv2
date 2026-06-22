@@ -1,0 +1,124 @@
+import { MessageCircle, Save, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { sourceLabels, statusLabels } from "./crmPipelineConfig";
+import type { LeadContactPatch } from "./crmPipelineModels";
+import { formatLeadContact, formatLeadName } from "./crmPipelineModels";
+import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
+
+type LeadDetailPanelProps = {
+  lead: ProductCrmLead | null;
+  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
+  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+};
+
+export function LeadDetailPanel({
+  lead,
+  onUpdateLead,
+  onUpdateStatus,
+}: LeadDetailPanelProps) {
+  const [draft, setDraft] = useState<LeadContactPatch>({});
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft({
+      buyerEmail: lead?.buyerEmail ?? null,
+      buyerName: lead?.buyerName ?? null,
+      buyerPhone: lead?.buyerPhone ?? null,
+    });
+  }, [lead]);
+
+  if (!lead) return <EmptyLeadPanel />;
+
+  const save = async () => {
+    setIsSaving(true);
+    try {
+      await onUpdateLead(lead.id, draft);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <section className="crm-panel">
+      <div className="crm-panel-title crm-panel-title-between">
+        <span>
+          <UserRound aria-hidden="true" className="size-5" />
+          <h3>{formatLeadName(lead)}</h3>
+        </span>
+        <strong>{statusLabels[lead.status]}</strong>
+      </div>
+      <div className="crm-form-grid">
+        <input
+          className="crm-input"
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              buyerName: event.target.value,
+            }))
+          }
+          value={draft.buyerName ?? ""}
+        />
+        <input
+          className="crm-input"
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              buyerPhone: event.target.value,
+            }))
+          }
+          value={draft.buyerPhone ?? ""}
+        />
+        <input
+          className="crm-input"
+          onChange={(event) =>
+            setDraft((current) => ({
+              ...current,
+              buyerEmail: event.target.value,
+            }))
+          }
+          type="email"
+          value={draft.buyerEmail ?? ""}
+        />
+        <button
+          className="crm-action"
+          disabled={isSaving}
+          onClick={() => void save()}
+          type="button"
+        >
+          <Save aria-hidden="true" className="size-4" />
+          {isSaving ? "Salvando" : "Salvar contato"}
+        </button>
+      </div>
+      <div className="crm-lead-summary">
+        <span>{formatLeadContact(lead)}</span>
+        <span>{sourceLabels[lead.source]}</span>
+        <span>{lead.vehicleTitle ?? "Sem veiculo vinculado"}</span>
+      </div>
+      <div className="crm-status-actions">
+        {Object.entries(statusLabels).map(([status, label]) => (
+          <button
+            className={
+              status === lead.status ? "crm-chip crm-chip-active" : "crm-chip"
+            }
+            key={status}
+            onClick={() =>
+              void onUpdateStatus(lead.id, status as CrmLeadStatus)
+            }
+            type="button"
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function EmptyLeadPanel() {
+  return (
+    <section className="crm-panel crm-empty-panel">
+      <MessageCircle aria-hidden="true" className="size-5" />
+      <strong>Selecione um lead</strong>
+    </section>
+  );
+}

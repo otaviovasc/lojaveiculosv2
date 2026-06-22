@@ -86,4 +86,7 @@ export type CreateProductCrmActivityInput = {
   activityType: LeadActivityType;
   content: string;
   direction?: LeadActivityDirection;
+  metadata?: Record<string, unknown>;
+  occurredAt?: string;
+  priority?: number;
 };

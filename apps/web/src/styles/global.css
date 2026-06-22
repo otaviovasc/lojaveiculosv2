@@ -4,6 +4,8 @@
 @import "./dashboard.css";
 @import "./crm.css";
 @import "./crmPipeline.css";
+@import "./crmPipelineLayout.css";
+@import "./crmLeadViews.css";
 @import "./settings.css";
 @import "./settingsForms.css";
 @import "./settingsStorefront.css";

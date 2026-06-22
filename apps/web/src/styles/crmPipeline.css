@@ -17,15 +17,14 @@
   width: 100%;
 }
 
+.crm-textarea {
+  min-height: 5.75rem;
+  resize: vertical;
+}
+
 .crm-input:focus {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-focus);
-}
-
-.crm-pipeline-board {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .crm-stage {
@@ -80,6 +79,15 @@
   width: 100%;
 }
 
+.crm-lead-card small {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  gap: 0.25rem;
+}
+
 .crm-lead-card-active {
   border-color: var(--color-accent);
   box-shadow: var(--shadow-focus);
@@ -109,6 +117,49 @@
 .crm-activity-input {
   display: grid;
   gap: 0.75rem;
+}
+
+.crm-field {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.crm-field > span,
+.crm-lead-summary,
+.crm-panel-title-between,
+.crm-panel-title-between > span,
+.crm-lead-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.crm-field svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-field > span {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.crm-panel-title-between {
+  justify-content: space-between;
+}
+
+.crm-panel-title-between strong {
+  color: var(--color-accent-strong);
+  font-size: 0.75rem;
+}
+
+.crm-lead-summary {
+  color: var(--color-muted);
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  font-weight: 800;
 }
 
 .crm-info-row {
@@ -181,18 +232,8 @@
 }
 
 @media (min-width: 768px) {
-  .crm-pipeline-board {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .crm-lead-detail-grid,
   .crm-status-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1180px) {
-  .crm-pipeline-board {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
