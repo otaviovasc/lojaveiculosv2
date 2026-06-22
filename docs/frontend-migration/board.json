@@ -4515,12 +4515,13 @@
         "branch": "agent/lvv2-r009-inventory-create-partial-failure"
       },
       "pr": {
+        "number": 13,
         "labels": [
           "slice:lvv2-r009-inventory-create-partial-failure",
           "phase:phase-1",
           "phase-blocker"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
