@@ -1154,13 +1154,13 @@
         "branch": "agent/lvv2-f012-settings-identity-roles"
       },
       "pr": {
-        "number": null,
+        "number": 3,
         "labels": [
           "slice:lvv2-f012-settings-identity-roles",
           "risk:high",
           "agent:human-hold"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
