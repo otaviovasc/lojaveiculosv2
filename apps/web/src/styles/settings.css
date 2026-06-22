@@ -87,6 +87,7 @@
 }
 
 .settings-field {
+  position: relative;
   display: grid;
   gap: 0.375rem;
 }

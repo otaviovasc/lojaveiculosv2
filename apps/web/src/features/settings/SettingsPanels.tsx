@@ -1,6 +1,22 @@
-import { Building2, Globe2, Mail, MapPin, Phone, Save } from "lucide-react";
+import {
+  Building2,
+  Clock3,
+  Globe2,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import { SettingsInput, SettingsSection } from "./SettingsPanelParts";
+import {
+  SettingsInput,
+  SettingsSection,
+  SettingsTextarea,
+} from "./SettingsPanelParts";
+import {
+  businessHoursToText,
+  textToBusinessHours,
+} from "./settingsBusinessHours";
 import {
   formatBrazilianDocument,
   formatBrazilianPhone,
@@ -156,6 +172,23 @@ export function SettingsForm({
             value={draft.profile.addressZipCode ?? ""}
           />
         </div>
+        <SettingsTextarea
+          icon={<Clock3 className="size-4" />}
+          label="Horario de funcionamento"
+          onChange={(value) =>
+            setDraft({
+              ...draft,
+              profile: {
+                ...draft.profile,
+                businessHours: textToBusinessHours(value),
+              },
+            })
+          }
+          placeholder={
+            "Segunda a Sexta, 9h as 18h\nSabado, 9h as 14h\nDomingo, Fechado"
+          }
+          value={businessHoursToText(draft.profile.businessHours)}
+        />
       </SettingsSection>
 
       <SettingsSection

@@ -4,8 +4,10 @@ import { createSettingsApi, type SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
 import { SettingsForm } from "./SettingsPanels";
 import { createSettingsApiOptions } from "./runtimeApi";
+import { createStoreSettingsPatch } from "./settingsPatch";
 import type {
   RoleManagementView,
+  SettingsStatus,
   StoreSettingsSnapshot,
   UpdateMembershipAccessInput,
 } from "./types";
@@ -42,11 +44,15 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
   const save = async (next: StoreSettingsSnapshot) => {
     setStatus({ kind: "saving" });
     try {
-      const saved = await settingsApi.updateStoreSettings({
-        identity: next.identity,
-        profile: next.profile,
-        publicSite: next.publicSite,
-      });
+      const saved = await settingsApi.updateStoreSettings(
+        settings
+          ? createStoreSettingsPatch(settings, next)
+          : {
+              identity: next.identity,
+              profile: next.profile,
+              publicSite: next.publicSite,
+            },
+      );
       setSettings(saved);
       setStatus({ kind: "saved" });
     } catch (error) {
@@ -157,13 +163,6 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
     </main>
   );
 }
-
-type SettingsStatus =
-  | { kind: "error"; message: string }
-  | { kind: "loading" }
-  | { kind: "ready" }
-  | { kind: "saved" }
-  | { kind: "saving" };
 
 function createRuntimeSettingsApi(): SettingsApi {
   return {

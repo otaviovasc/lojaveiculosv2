@@ -40,10 +40,6 @@
     {
       "path": "apps/web/src/features/reports/ReportsModule.tsx",
       "reason": "Pre-control-plane local dashboard helpers; remove during reports slice."
-    },
-    {
-      "path": "apps/web/src/features/settings/SettingsModule.tsx",
-      "reason": "Pre-control-plane local load-state type; remove during settings slice."
     }
   ]
 }
