@@ -3,10 +3,7 @@ import {
   type CreateProductCrmApiOptions,
   type ProductCrmApi,
 } from "./productCrmApi";
-import {
-  createCrmWhatsappApi,
-  type CrmWhatsappApi,
-} from "./crmWhatsappApi";
+import { createCrmWhatsappApi, type CrmWhatsappApi } from "./crmWhatsappApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
 
 export function createRuntimeProductCrmApi(): ProductCrmApi {
@@ -60,9 +57,9 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
         query,
       ),
     markSessionAsRead: async (sessionId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).markSessionAsRead(
-        sessionId,
-      ),
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).markSessionAsRead(sessionId),
     markSessionAsUnread: async (sessionId, lastReadAt) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -86,21 +83,31 @@ export async function createProductCrmApiOptions(): Promise<CreateProductCrmApiO
   };
 }
 
-function createProductCrmAuthFromEnv(
+type CrmRuntimeEnv = {
+  DEV?: boolean;
+  VITE_DEV_CLERK_SESSION_TOKEN?: string;
+  VITE_DEV_CLERK_USER_ID?: string;
+  VITE_DEV_STORE_SLUG?: string;
+};
+
+export function createProductCrmAuthFromEnv(
   accessToken?: string | null,
+  env: CrmRuntimeEnv = import.meta.env,
 ): ProductCrmAuth {
-  const env = import.meta.env as {
-    DEV?: boolean;
-    VITE_DEV_CLERK_USER_ID?: string;
-    VITE_DEV_STORE_SLUG?: string;
-  };
   const clerkUserId =
     env.VITE_DEV_CLERK_USER_ID ?? (env.DEV ? "clerk_test_user" : undefined);
   const storeSlug =
     env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : undefined);
+  const explicitDevToken = env.VITE_DEV_CLERK_SESSION_TOKEN?.trim();
+  const localDevToken =
+    env.DEV && clerkUserId
+      ? (env.VITE_DEV_CLERK_SESSION_TOKEN ??
+        `local-dev-clerk-token:${clerkUserId}`)
+      : undefined;
+  const resolvedAccessToken = accessToken ?? explicitDevToken ?? localDevToken;
 
   return {
-    ...(accessToken ? { accessToken } : {}),
+    ...(resolvedAccessToken ? { accessToken: resolvedAccessToken } : {}),
     ...(clerkUserId ? { clerkUserId } : {}),
     ...(storeSlug ? { storeSlug } : {}),
   };

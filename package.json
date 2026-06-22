@@ -16,7 +16,7 @@
     "dev:all": "npm run dev:api & npm run dev",
     "dev:api": "npm run dev --workspace @lojaveiculosv2/api",
     "catalog:sync": "npm run catalog:sync --workspace @lojaveiculosv2/api",
-    "dev:api:local": "APP_ENV=local LOCAL_AUTH_BYPASS=true DEV_CLERK_USER_ID=clerk_test_user DEV_STORE_SLUG=test-store DATABASE_URL=postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2 AUDIT_DATABASE_URL=postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit REPASSES_CRM_API_URL=http://localhost:3001/api/v1 npm run dev:api",
+    "dev:api:local": "APP_ENV=local LOCAL_AUTH_BYPASS=true DEV_CLERK_USER_ID=clerk_test_user DEV_STORE_SLUG=test-store DATABASE_URL=postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2 AUDIT_DATABASE_URL=postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit REPASSES_CRM_LOCAL_DEMO=true npm run dev:api",
     "dev:all:local": "npm run dev:api:local & npm run dev",
     "dev:local": "npm run db:up && npm run db:push:local && npm run db:seed:local && npm run dev:all:local",
     "db:down": "COMPOSE_DISABLE_ENV_FILE=1 docker compose down",
