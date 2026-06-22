@@ -4264,7 +4264,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "in-progress",
+      "status": "merged",
       "phase": "phase-1-operator-parity",
       "risk": "high",
       "parallel_group": "phase-1-remediation",
@@ -4341,13 +4341,14 @@
         "branch": "agent/lvv2-r007-finance-pagination-aggregation"
       },
       "pr": {
+        "number": 14,
         "labels": [
           "slice:lvv2-r007-finance-pagination-aggregation",
           "phase:phase-1",
           "phase-blocker"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -4363,9 +4364,7 @@
         },
         "last_evidence_path": "reports/visual/lvv2-r007-finance-pagination-aggregation",
         "last_checked_at": "2026-06-22T21:42:35Z",
-        "blockers": [
-          "phase-1-audit-007"
-        ]
+        "blockers": []
       },
       "v1_improvement_backport_candidates": []
     },
