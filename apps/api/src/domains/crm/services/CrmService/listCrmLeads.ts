@@ -1,7 +1,11 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { CrmLead, LeadStatus } from "../../ports/crmRepository.js";
+import type {
+  CrmLead,
+  LeadSource,
+  LeadStatus,
+} from "../../ports/crmRepository.js";
 import {
   getCrmRepository,
   requireCrmScope,
@@ -11,8 +15,10 @@ import {
 const permission = "lead.read";
 
 export type ListCrmLeadsInput = {
+  listingId?: string;
   limit?: number;
   search?: string;
+  source?: LeadSource;
   status?: LeadStatus;
 };
 
@@ -29,13 +35,17 @@ export async function listCrmLeads(
     "crm.leads.list.started",
     createServiceLogMetadata(context, {
       limit,
+      listingId: input.listingId ?? null,
       search: input.search ?? null,
+      source: input.source ?? null,
       status: input.status ?? null,
     }),
   );
 
   const leads = await getCrmRepository(ports).listLeads({
+    ...(input.listingId ? { listingId: input.listingId } : {}),
     ...(input.search ? { search: input.search } : {}),
+    ...(input.source ? { source: input.source } : {}),
     ...(input.status ? { status: input.status } : {}),
     limit,
     storeId: scope.storeId as never,

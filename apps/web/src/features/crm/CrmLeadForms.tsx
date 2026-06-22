@@ -1,5 +1,6 @@
 import {
   CalendarClock,
+  CarFront,
   Mail,
   MessageCircle,
   Phone,
@@ -9,18 +10,24 @@ import {
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 import { sourceLabels, sourceOptions } from "./crmPipelineConfig";
+import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
 import type { CrmLeadSource } from "./productCrmTypes";
 
 type LeadCreatePanelProps = {
   onCreateLead: (input: LeadCreateDraft) => Promise<void>;
+  vehicleOptions: LeadVehicleOption[];
 };
 
-export function LeadCreatePanel({ onCreateLead }: LeadCreatePanelProps) {
+export function LeadCreatePanel({
+  onCreateLead,
+  vehicleOptions,
+}: LeadCreatePanelProps) {
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
   const [initialNote, setInitialNote] = useState("");
+  const [listingId, setListingId] = useState("");
   const [source, setSource] = useState<CrmLeadSource>("manual");
   const [taskDueAt, setTaskDueAt] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -34,6 +41,7 @@ export function LeadCreatePanel({ onCreateLead }: LeadCreatePanelProps) {
         buyerName: buyerName.trim() || null,
         buyerPhone: buyerPhone.trim() || null,
         ...(initialNote.trim() ? { initialNote: initialNote.trim() } : {}),
+        ...(listingId.trim() ? { listingId: listingId.trim() } : {}),
         source,
         taskDueAt: taskDueAt || null,
         taskTitle: taskDueAt ? "Retornar contato" : null,
@@ -42,6 +50,7 @@ export function LeadCreatePanel({ onCreateLead }: LeadCreatePanelProps) {
       setBuyerPhone("");
       setBuyerEmail("");
       setInitialNote("");
+      setListingId("");
       setTaskDueAt("");
       setSource("manual");
     } finally {
@@ -93,7 +102,21 @@ export function LeadCreatePanel({ onCreateLead }: LeadCreatePanelProps) {
                 <option key={option} value={option}>
                   {sourceLabels[option]}
                 </option>
-              ))}
+            ))}
+          </select>
+        </CrmField>
+        <CrmField icon={<CarFront />} label="Veiculo">
+          <select
+            className="crm-input"
+            onChange={(event) => setListingId(event.target.value)}
+            value={listingId}
+          >
+            <option value="">Sem vinculo</option>
+            {vehicleOptions.map((vehicle) => (
+              <option key={vehicle.id} value={vehicle.id}>
+                {vehicle.label} - {vehicle.detail}
+              </option>
+            ))}
           </select>
         </CrmField>
         <CrmField icon={<CalendarClock />} label="Follow-up">

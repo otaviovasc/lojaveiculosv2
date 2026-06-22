@@ -14,8 +14,10 @@ export function cleanListLeadsInput(
   input: z.infer<typeof listLeadsQuerySchema>,
 ): ListCrmLeadsInput {
   return {
+    ...(input.listingId ? { listingId: input.listingId } : {}),
     limit: input.limit,
     ...(input.search ? { search: input.search } : {}),
+    ...(input.source ? { source: input.source } : {}),
     ...(input.status ? { status: input.status } : {}),
   };
 }

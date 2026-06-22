@@ -11,9 +11,18 @@ import type {
   ProductCrmLeadActivity,
 } from "./productCrmTypes";
 
+export type LeadActivitiesById = Record<string, ProductCrmLeadActivity[]>;
+
+export type LeadVehicleOption = {
+  detail: string;
+  id: string;
+  label: string;
+};
+
 export type CrmPipelineViewProps = {
   activities: ProductCrmLeadActivity[];
   activeLeadId: string | null;
+  allActivities: ProductCrmLeadActivity[];
   error: Error | null;
   filters: LeadFilters;
   isLoading: boolean;
@@ -29,6 +38,7 @@ export type CrmPipelineViewProps = {
   onSelectLead: (leadId: string) => void;
   onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
   onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  vehicleOptions: LeadVehicleOption[];
   viewLeads: ProductCrmLead[];
   viewMode: CrmViewMode;
 };

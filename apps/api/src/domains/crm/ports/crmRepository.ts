@@ -100,8 +100,10 @@ export type CreateLeadActivityInput = {
 };
 
 export type ListCrmLeadsInput = {
+  listingId?: string;
   limit: number;
   search?: string;
+  source?: LeadSource;
   status?: LeadStatus;
   storeId: StoreId;
   tenantId: TenantId;

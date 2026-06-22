@@ -46,7 +46,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         </section>
       ) : null}
 
-      <LeadStatsStrip activities={props.activities} leads={props.leads} />
+      <LeadStatsStrip activities={props.allActivities} leads={props.leads} />
       <LeadToolbar
         filters={props.filters}
         mode={props.viewMode}
@@ -59,7 +59,10 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           <LeadBoardByMode {...props} />
         </div>
         <div className="crm-side-column">
-          <LeadCreatePanel onCreateLead={props.onCreateLead} />
+          <LeadCreatePanel
+            onCreateLead={props.onCreateLead}
+            vehicleOptions={props.vehicleOptions}
+          />
           <LeadDetailPanel
             lead={activeLead}
             onUpdateLead={props.onUpdateLead}

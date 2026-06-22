@@ -74,6 +74,10 @@ export function createMemoryCrmRepository(): CrmRepository {
       return leads
         .filter((lead) => lead.storeId === input.storeId)
         .filter((lead) => lead.tenantId === input.tenantId)
+        .filter(
+          (lead) => !input.listingId || lead.listingId === input.listingId,
+        )
+        .filter((lead) => !input.source || lead.source === input.source)
         .filter((lead) => !input.status || lead.status === input.status)
         .filter((lead) => matchesSearch(lead, input.search))
         .sort(

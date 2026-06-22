@@ -594,7 +594,10 @@
       "status": "ready",
       "risk": "medium",
       "parallel_group": "crm-core",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard",
+        "lvv2-f002-inventory-list-catalog"
+      ],
       "blocks": [
         "lvv2-f006-crm-whatsapp-inbox",
         "lvv2-f007-crm-team-settings-tags-connections"
@@ -664,13 +667,33 @@
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/crm/CrmLeadTable.tsx"
         },
-        {
-          "repo": "lojaveiculosv2",
-          "path": "apps/web/src/features/crm/crmPipelineModels.ts"
-        },
-        {
-          "repo": "lojaveiculosv2",
-          "path": "apps/web/src/styles/crmPipeline.css"
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/web/src/features/crm/crmPipelineModels.ts"
+    },
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/web/src/features/crm/productCrmApi.ts"
+    },
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/web/src/features/inventory/api/apiClient.ts"
+    },
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/api/src/features/crm/controllers/crm.controller.schemas.ts"
+    },
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/api/src/domains/crm/services/CrmService/listCrmLeads.ts"
+    },
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/api/src/infrastructure/db/crm/drizzleCrmRepository.ts"
+    },
+    {
+      "repo": "lojaveiculosv2",
+      "path": "apps/web/src/styles/crmPipeline.css"
         },
         {
           "repo": "lojaveiculosv2",
@@ -707,7 +730,7 @@
           "routes": ["/#/crm"]
         },
         "last_evidence_path": "reports/visual/lvv2-f005-crm-leads-pipeline/crm.txt",
-        "last_checked_at": "2026-06-22T17:58:01Z",
+        "last_checked_at": "2026-06-22T18:19:59Z",
         "blockers": []
       },
       "evidence": {
@@ -724,16 +747,18 @@
           "V1 dynamic lead columns, import/delete, read/unread, vehicle multi-select, chat modal, financing, test-drive, and deep vehicle workflows were not faked; they require future V2 contracts or later dependent slices."
         ],
         "implementation": [
-          "Migrated CRM into a dense V2 pipeline workspace with hero, stats, search/status/source filters, kanban/list/table modes, create lead panel, editable contact panel, and activity/task timeline.",
-          "Kept screen composition files free of local helper components/types by extracting CRM panels, board switcher, table, toolbar, and view props into feature modules.",
-          "Added focused model/API tests for filtering/grouping/stats and V2 task activity metadata payloads."
-        ],
-        "validation": [
-          "npm run typecheck --workspace @lojaveiculosv2/web",
-          "npm run test --workspace @lojaveiculosv2/web -- crm",
-          "npm run lint --workspace @lojaveiculosv2/web",
-          "npm run check:lines",
-          "npm run check:frontend-composition",
+      "Migrated CRM into a dense V2 pipeline workspace with hero, stats, search/status/source filters, kanban/list/table modes, create lead panel, editable contact panel, and activity/task timeline.",
+      "Kept screen composition files free of local helper components/types by extracting CRM panels, board switcher, table, toolbar, and view props into feature modules.",
+      "Added focused model/API tests for filtering/grouping/stats and V2 task activity metadata payloads.",
+      "Reviewer pass added server-side source/listing CRM list filters, per-lead activity caching to avoid stale timelines and initial task races, aggregate task stats, and manual lead vehicle selection backed by the V2 inventory list API."
+    ],
+    "validation": [
+      "npm run typecheck --workspace @lojaveiculosv2/web",
+      "npm run test --workspace @lojaveiculosv2/web -- crm",
+      "npm run test --workspace @lojaveiculosv2/api -- crmRepository",
+      "npm run lint --workspace @lojaveiculosv2/web",
+      "npm run check:lines",
+      "npm run check:frontend-composition",
           "npm run validate",
           "npm run build --workspace @lojaveiculosv2/web",
           "npm run qa:visual -- --slice lvv2-f005-crm-leads-pipeline"
