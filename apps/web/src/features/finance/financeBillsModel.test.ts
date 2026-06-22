@@ -77,6 +77,24 @@ describe("finance bills model", () => {
       }).map((item) => item.id),
     ).toEqual(["1"]);
   });
+
+  it("keeps undated entries out of date-window filters", () => {
+    const entries = [
+      entry("dated", "Aluguel", "Operacional", "pending", "2026-06-25"),
+      { ...entry("undated", "Despesa sem vencimento", "Outros", "pending", "2026-06-25"), dueAt: null },
+    ];
+
+    expect(
+      filterEntries(entries, { query: "", status: "all", window: "next30" }).map(
+        (item) => item.id,
+      ),
+    ).toEqual(["dated"]);
+    expect(
+      filterEntries(entries, { query: "", status: "all", window: "all" }).map(
+        (item) => item.id,
+      ),
+    ).toEqual(["dated", "undated"]);
+  });
 });
 
 function entry(

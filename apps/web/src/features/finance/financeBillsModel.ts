@@ -177,7 +177,8 @@ export function filterEntries(
     if (query && !`${entry.name} ${entry.category}`.toLowerCase().includes(query)) {
       return false;
     }
-    if (!entry.dueAt || filters.window === "all") return true;
+    if (filters.window === "all") return true;
+    if (!entry.dueAt) return false;
 
     const dueAt = startOfDay(new Date(entry.dueAt));
     if (filters.window === "overdue") {

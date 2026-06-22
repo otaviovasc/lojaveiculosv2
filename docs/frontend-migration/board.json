@@ -1162,7 +1162,7 @@
           "routes": ["/#/expenses"]
         },
         "last_evidence_path": "reports/visual/lvv2-f009-finance-expenses-bills/expenses.txt",
-        "last_checked_at": "2026-06-22T18:40:00Z",
+        "last_checked_at": "2026-06-22T18:45:51Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
