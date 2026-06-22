@@ -23,6 +23,7 @@ export const inventoryPaths = {
         queryParameter("search"),
         queryParameter("status"),
         queryParameter("limit"),
+        queryParameter("offset"),
       ],
       responses: {
         "200": listResponse,

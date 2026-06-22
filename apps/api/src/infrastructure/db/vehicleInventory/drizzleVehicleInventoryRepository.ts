@@ -177,7 +177,7 @@ export function createDrizzleVehicleListingRepository(
         .sort(
           (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
         )
-        .slice(0, input.limit);
+        .slice(input.offset, input.offset + input.limit);
     },
 
     async save(listing) {

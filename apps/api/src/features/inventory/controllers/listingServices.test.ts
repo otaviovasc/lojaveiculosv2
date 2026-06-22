@@ -143,8 +143,44 @@ describe("inventory listing services factory", () => {
     );
 
     expect(result).toMatchObject({
+      hasMore: false,
       items: [{ listing: { id: "listing_1", title: "Fiat Toro" } }],
+      nextOffset: null,
       total: 1,
+    });
+  });
+
+  it("paginates stock summaries without dropping later listings", async () => {
+    const ports = createInMemoryVehiclePorts([
+      createListing({ id: "listing_1", title: "Fiat Toro" }),
+      createListing({ id: "listing_2", title: "Honda Civic" }),
+      createListing({ id: "listing_3", title: "Jeep Compass" }),
+    ]);
+    const services = createInventoryListingServices({ ports });
+
+    const firstPage = await services.listListings(
+      createContext(["inventory.read"]),
+      { limit: 2 },
+    );
+    const secondPage = await services.listListings(
+      createContext(["inventory.read"]),
+      { limit: 2, offset: firstPage.nextOffset ?? 0 },
+    );
+
+    expect(firstPage).toMatchObject({
+      hasMore: true,
+      items: [
+        { listing: { id: "listing_1" } },
+        { listing: { id: "listing_2" } },
+      ],
+      nextOffset: 2,
+      total: 2,
+    });
+    expect(secondPage).toMatchObject({
+      hasMore: false,
+      items: [{ listing: { id: "listing_3" } }],
+      nextOffset: null,
+      total: 3,
     });
   });
 });

@@ -3,6 +3,7 @@ import type { InventoryCatalogVehicleType } from "../model/types";
 
 export type ListInventoryInput = {
   limit?: number;
+  offset?: number;
   search?: string;
   status?: InventoryListingStatus;
 };
@@ -82,6 +83,7 @@ export const inventoryRoutes = {
     const endpoint = createInventoryEndpoint("/inventory/listings", baseUrl);
     const params = new URLSearchParams();
     if (input.limit !== undefined) params.set("limit", String(input.limit));
+    if (input.offset !== undefined) params.set("offset", String(input.offset));
     if (input.search) params.set("search", input.search);
     if (input.status) params.set("status", input.status);
     return params.size > 0 ? `${endpoint}?${params.toString()}` : endpoint;

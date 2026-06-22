@@ -46,13 +46,13 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
       }
       return listing;
     },
-    list: async ({ limit, search, status, storeId, tenantId }) =>
+    list: async ({ limit, offset, search, status, storeId, tenantId }) =>
       [...listings.values()]
         .filter((listing) => listing.storeId === storeId)
         .filter((listing) => listing.tenantId === tenantId)
         .filter((listing) => !status || listing.status === status)
         .filter((listing) => matchesSearch(listing, search))
-        .slice(0, limit),
+        .slice(offset, offset + limit),
     save: async (listing) => {
       listings.set(listing.id, listing);
       return listing;

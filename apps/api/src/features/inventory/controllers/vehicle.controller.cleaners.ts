@@ -61,12 +61,14 @@ export function cleanAttachDocumentRequest(
 
 export function cleanListListingsQuery(input: {
   limit?: number | undefined;
+  offset?: number | undefined;
   search?: string | undefined;
   status?: "available" | "draft" | "inactive" | "reserved" | "sold" | undefined;
 }): Parameters<InventoryListingServices["listListings"]>[1] {
   const result: Parameters<InventoryListingServices["listListings"]>[1] = {};
 
   if (input.limit !== undefined) result.limit = input.limit;
+  if (input.offset !== undefined) result.offset = input.offset;
   if (input.search !== undefined) result.search = input.search;
   if (input.status !== undefined) result.status = input.status;
 

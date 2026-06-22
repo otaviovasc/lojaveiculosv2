@@ -115,7 +115,9 @@ export type InventoryListingSummary = {
 };
 
 export type InventoryListingList = {
+  hasMore: boolean;
   items: readonly InventoryListingSummary[];
+  nextOffset: number | null;
   total: number;
 };
 

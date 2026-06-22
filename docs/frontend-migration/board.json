@@ -294,7 +294,7 @@
       "priority": "P0",
       "classification": "migrate-now",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "ready",
       "risk": "medium",
       "parallel_group": "inventory",
       "depends_on": ["lvv2-f001-app-shell-dashboard"],
@@ -331,12 +331,56 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/inventory/pages/InventoryListPage.tsx",
-          "planned": true
+          "planned": false
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryListingCardGrid.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryListToolbar.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryListHeader.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryCatalogExplorer.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryListSelectionStatus.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/listCatalogModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/api/apiRoutes.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/types.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/vehicle/services/VehicleService/listVehicleListings.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/inventory/controllers/vehicle.controller.schemas.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/app/App.tsx"
         }
       ],
       "backend_contract": {
         "owner": "inventory",
-        "notes": "Use listing/unit split, catalog endpoints, store-scoped permissions, and workflow-status edit rules."
+        "notes": "List page uses GET /api/v1/inventory/listings with V2 listing/unit summary DTOs, offset-based pagination metadata (hasMore/nextOffset), and GET /api/v1/inventory/catalog/* for read-only FIPE catalog exploration. Detail selection reuses existing V2 edit/workflow/media panels, so store scope, inventory.read/update/reserve/sell permissions, audit, and workflow-status rules remain enforced by inventory services."
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -345,12 +389,12 @@
         "branch": "agent/lvv2-f002-inventory-list-catalog"
       },
       "pr": {
-        "number": null,
+        "number": 4,
         "labels": [
           "slice:lvv2-f002-inventory-list-catalog",
           "agent:auto-merge"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
@@ -362,13 +406,11 @@
           "command": "npm run qa:visual -- --slice lvv2-f002-inventory-list-catalog",
           "routes": ["/#/inventory"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "reports/visual/lvv2-f002-inventory-list-catalog/inventory.txt",
+        "last_checked_at": "2026-06-22T18:07:58.912Z",
         "blockers": []
       },
-      "v1_improvement_backport_candidates": [
-        "Check if V1 default inventory filter and seller locked-field behavior should be backported when parity gaps are found."
-      ]
+      "v1_improvement_backport_candidates": []
     },
     {
       "id": "lvv2-f003-inventory-create-edit-media",
