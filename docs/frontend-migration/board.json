@@ -437,7 +437,7 @@
       "priority": "P0",
       "classification": "stacked-after",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "in-progress",
       "risk": "medium",
       "parallel_group": "inventory",
       "depends_on": ["lvv2-f002-inventory-list-catalog"],
@@ -477,11 +477,58 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/inventory/components/InventoryMediaWorkspace.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryCreateFlow.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryCreateFlowParts.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryCreateMediaPanel.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryPublicReadiness.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/createInventorySubmit.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/model/createMediaDrafts.ts"
         }
       ],
       "backend_contract": {
         "owner": "inventory/media",
-        "notes": "Use V2 listing/unit/media APIs, R2 upload descriptors, per-field permissions, and no V1 Prisma route assumptions."
+        "notes": "Create flow uses V2 POST /api/v1/inventory/listings, PUT /inventory/listings/:id/unit, POST /inventory/listings/:id/media/uploads, signed R2 upload URL, POST /inventory/listings/:id/media, and GET /inventory/listings/:id. Edit/media workspace continues to use PATCH listing/unit details plus PATCH/DELETE/reorder media routes. Permission, store/tenant scope, upload storage-prefix checks, public media flags, and audit remain enforced by inventory/media services."
+      },
+      "evidence": {
+        "source_parity_notes": [
+          "Read V1 criar page.tsx, CreateVehicleWizard.tsx, PhotoManager.tsx, VehicleEditModal.tsx, and VehicleModal.tsx.",
+          "Kept V1 guided create sequence with mode choice, catalog/title preparation, media-before-review flow, draft/public readiness distinction, cover-first media ordering, multi-photo upload, one-video limit, alt text, and immediate edit panel after creation.",
+          "Preserved V1 edit/media expectations through V2 InventoryEditPanel and InventoryMediaWorkspace: field editing, unit editing, cover selection, public/hidden media toggles, reorder, delete, and document attachment.",
+          "Intentional V2 improvement: create uploads now use R2 signed descriptors and media rows after listing/unit creation instead of V1 multipart Prisma routes; public status is blocked unless title, catalog, years, price, and at least one photo are present."
+        ],
+        "backend_contract_notes": [
+          "No V1 Prisma route assumptions were ported; all create/edit/media operations use existing V2 inventory API client methods and media upload contracts.",
+          "Frontend media draft limits match the backend media upload schema at 25 MB, with V1-style max 12 photos and 1 video."
+        ],
+        "validation": [
+          "npm run test --workspace @lojaveiculosv2/web -- createMediaDrafts apiClient",
+          "npm run typecheck --workspace @lojaveiculosv2/web",
+          "npm run lint --workspace @lojaveiculosv2/web",
+          "npm run check:lines",
+          "npm run check:frontend",
+          "npm run check:frontend-composition",
+          "npm run validate",
+          "npm run build --workspace @lojaveiculosv2/web",
+          "npm run qa:visual -- --slice lvv2-f003-inventory-create-edit-media"
+        ]
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -490,12 +537,12 @@
         "branch": "agent/lvv2-f003-inventory-create-edit-media"
       },
       "pr": {
-        "number": null,
+        "number": 10,
         "labels": [
           "slice:lvv2-f003-inventory-create-edit-media",
           "agent:auto-merge"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
@@ -507,8 +554,8 @@
           "command": "npm run qa:visual -- --slice lvv2-f003-inventory-create-edit-media",
           "routes": ["/#/inventory"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "reports/visual/lvv2-f003-inventory-create-edit-media/inventory.txt",
+        "last_checked_at": "2026-06-22T16:15:40-03:00",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
