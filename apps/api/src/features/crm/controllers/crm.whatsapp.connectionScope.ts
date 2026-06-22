@@ -3,6 +3,7 @@ import type {
   RepassesCrmAuth,
   RepassesCrmClient,
 } from "../../../domains/crm/acl/repassesCrmClient.js";
+import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
@@ -87,14 +88,17 @@ export function selectScopedConnection(
   connections: WhatsappScopedConnection[],
   context: Context,
 ): WhatsappScopedConnection | null {
-  const storeSlug = context.req.header("x-store-slug");
-  if (storeSlug) {
-    return (
-      connections.find((connection) => connection.lojaSlug === storeSlug) ??
-      null
-    );
-  }
-  return connections.length === 1 ? (connections[0] ?? null) : null;
+  const storeSlug = readWhatsappStoreSlug(context);
+  if (!storeSlug) return null;
+  return (
+    connections.find((connection) => connection.lojaSlug === storeSlug) ?? null
+  );
+}
+
+export function readWhatsappStoreSlug(context: Context): string | null {
+  return (
+    context.req.header("x-store-slug") ?? resolveStoreSlugFromRequest(context)
+  );
 }
 
 function readWhatsappConnection(

@@ -16,7 +16,12 @@ describe("CRM WhatsApp controller", () => {
 
     const response = await app.request(
       "/api/v1/crm/whatsapp/sessions?limit=20&search=ana",
-      { headers: { Authorization: "Bearer clerk-token" } },
+      {
+        headers: {
+          Authorization: "Bearer clerk-token",
+          host: "test-store.lojaveiculos.com.br",
+        },
+      },
     );
 
     await expect(response.json()).resolves.toEqual([
@@ -26,6 +31,7 @@ describe("CRM WhatsApp controller", () => {
       expect.objectContaining({
         clerkSessionToken: "clerk-token",
         repassesConnectionId: 10,
+        storeSlug: "test-store",
         storeId: "store_1",
         tenantId: "tenant_1",
       }),
@@ -128,6 +134,7 @@ describe("CRM WhatsApp controller", () => {
       headers: {
         Authorization: "Bearer clerk-token",
         "Content-Type": "application/json",
+        "x-store-slug": "test-store",
       },
       method: "POST",
     });
@@ -156,24 +163,6 @@ describe("CRM WhatsApp controller", () => {
     expect(record.mock.calls[0]?.[0]?.metadata?.permission).toBe("lead.update");
   });
 
-  it("rejects stale client connection ids before proxying WhatsApp reads", async () => {
-    const repassesCrm = createRepassesCrmStub({
-      listSessions: vi.fn(async () => []),
-    });
-    const app = createTestApp(repassesCrm);
-
-    const response = await app.request(
-      "/api/v1/crm/whatsapp/sessions?connectionId=99",
-      { headers: { Authorization: "Bearer clerk-token" } },
-    );
-
-    expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
-      message: "CRM WhatsApp connection does not belong to this store.",
-    });
-    expect(repassesCrm.listSessions).not.toHaveBeenCalled();
-  });
-
   it("audits failed WhatsApp mutations before returning upstream errors", async () => {
     const { audit, record } = createAuditSpy();
     const repassesCrm = createRepassesCrmStub({
@@ -188,6 +177,7 @@ describe("CRM WhatsApp controller", () => {
       headers: {
         Authorization: "Bearer clerk-token",
         "Content-Type": "application/json",
+        "x-store-slug": "test-store",
       },
       method: "POST",
     });

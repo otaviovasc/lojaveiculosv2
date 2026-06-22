@@ -7,6 +7,7 @@ import {
   RepassesCrmRequestError,
   RepassesCrmUnavailableError,
 } from "../../../domains/crm/acl/repassesCrmClient.js";
+import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import {
   AuthorizationError,
   assertPermission,
@@ -50,7 +51,8 @@ export function createRepassesAuth(
       "CRM WhatsApp requires a Clerk bearer token.",
     );
   }
-  const storeSlug = context.req.header("x-store-slug");
+  const storeSlug =
+    context.req.header("x-store-slug") ?? resolveStoreSlugFromRequest(context);
   return {
     clerkSessionToken: token,
     ...(repassesConnectionId ? { repassesConnectionId } : {}),
