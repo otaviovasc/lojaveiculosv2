@@ -65,16 +65,28 @@
         "lvv2-f006-crm-whatsapp-inbox"
       ],
       "source_refs": [
-        { "repo": "lojaveiculosv2", "path": "v2-plan.html" },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "v2-plan.html"
+        },
         {
           "repo": "lojaveiculosv2",
           "path": "docs/maximum-agentic-loop-railway-terraform.md"
         }
       ],
       "supporting_source_refs": [
-        { "repo": "lojaveiculosv2", "path": "AGENTS.md" },
-        { "repo": "lojaveiculosv2", "path": "docs/repo-organization.md" },
-        { "repo": "lojaveiculosv2", "path": "docs/architecture.md" }
+        {
+          "repo": "lojaveiculosv2",
+          "path": "AGENTS.md"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/repo-organization.md"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "docs/architecture.md"
+        }
       ],
       "target_refs": [
         {
@@ -181,7 +193,10 @@
         "lvv2-f005-crm-leads-pipeline"
       ],
       "source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/[slug]/admin/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/admin/page.tsx"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/[slug]/admin/components/views/DashboardView.tsx"
@@ -198,7 +213,10 @@
         }
       ],
       "target_refs": [
-        { "repo": "lojaveiculosv2", "path": "apps/web/src/app/App.tsx" },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/app/App.tsx"
+        },
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/components/AppShell.tsx"
@@ -294,7 +312,7 @@
       "priority": "P0",
       "classification": "migrate-now",
       "surface_type": "screen",
-      "status": "ready",
+      "status": "merged",
       "risk": "medium",
       "parallel_group": "inventory",
       "depends_on": ["lvv2-f001-app-shell-dashboard"],
@@ -394,8 +412,8 @@
           "slice:lvv2-f002-inventory-list-catalog",
           "agent:auto-merge"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -591,7 +609,7 @@
       "priority": "P0",
       "classification": "migrate-now",
       "surface_type": "screen",
-      "status": "ready",
+      "status": "merged",
       "risk": "medium",
       "parallel_group": "crm-core",
       "depends_on": [
@@ -667,33 +685,33 @@
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/crm/CrmLeadTable.tsx"
         },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/web/src/features/crm/crmPipelineModels.ts"
-    },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/web/src/features/crm/productCrmApi.ts"
-    },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/web/src/features/inventory/api/apiClient.ts"
-    },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/api/src/features/crm/controllers/crm.controller.schemas.ts"
-    },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/api/src/domains/crm/services/CrmService/listCrmLeads.ts"
-    },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/api/src/infrastructure/db/crm/drizzleCrmRepository.ts"
-    },
-    {
-      "repo": "lojaveiculosv2",
-      "path": "apps/web/src/styles/crmPipeline.css"
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/crmPipelineModels.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm/productCrmApi.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/api/apiClient.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/features/crm/controllers/crm.controller.schemas.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/domains/crm/services/CrmService/listCrmLeads.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/api/src/infrastructure/db/crm/drizzleCrmRepository.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/styles/crmPipeline.css"
         },
         {
           "repo": "lojaveiculosv2",
@@ -717,8 +735,8 @@
       "pr": {
         "number": 6,
         "labels": ["slice:lvv2-f005-crm-leads-pipeline", "agent:auto-merge"],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -747,18 +765,18 @@
           "V1 dynamic lead columns, import/delete, read/unread, vehicle multi-select, chat modal, financing, test-drive, and deep vehicle workflows were not faked; they require future V2 contracts or later dependent slices."
         ],
         "implementation": [
-      "Migrated CRM into a dense V2 pipeline workspace with hero, stats, search/status/source filters, kanban/list/table modes, create lead panel, editable contact panel, and activity/task timeline.",
-      "Kept screen composition files free of local helper components/types by extracting CRM panels, board switcher, table, toolbar, and view props into feature modules.",
-      "Added focused model/API tests for filtering/grouping/stats and V2 task activity metadata payloads.",
-      "Reviewer pass added server-side source/listing CRM filters with offset pagination and vehicle-title search, per-lead activity caching to avoid stale timelines and initial task races, aggregate task stats, and manual lead vehicle selection backed by the V2 inventory list API."
-    ],
-    "validation": [
-      "npm run typecheck --workspace @lojaveiculosv2/web",
-      "npm run test --workspace @lojaveiculosv2/web -- crm",
-      "npm run test --workspace @lojaveiculosv2/api -- crmRepository",
-      "npm run lint --workspace @lojaveiculosv2/web",
-      "npm run check:lines",
-      "npm run check:frontend-composition",
+          "Migrated CRM into a dense V2 pipeline workspace with hero, stats, search/status/source filters, kanban/list/table modes, create lead panel, editable contact panel, and activity/task timeline.",
+          "Kept screen composition files free of local helper components/types by extracting CRM panels, board switcher, table, toolbar, and view props into feature modules.",
+          "Added focused model/API tests for filtering/grouping/stats and V2 task activity metadata payloads.",
+          "Reviewer pass added server-side source/listing CRM filters with offset pagination and vehicle-title search, per-lead activity caching to avoid stale timelines and initial task races, aggregate task stats, and manual lead vehicle selection backed by the V2 inventory list API."
+        ],
+        "validation": [
+          "npm run typecheck --workspace @lojaveiculosv2/web",
+          "npm run test --workspace @lojaveiculosv2/web -- crm",
+          "npm run test --workspace @lojaveiculosv2/api -- crmRepository",
+          "npm run lint --workspace @lojaveiculosv2/web",
+          "npm run check:lines",
+          "npm run check:frontend-composition",
           "npm run validate",
           "npm run build --workspace @lojaveiculosv2/web",
           "npm run qa:visual -- --slice lvv2-f005-crm-leads-pipeline"
@@ -793,9 +811,18 @@
         }
       ],
       "supporting_source_refs": [
-        { "repo": "repasses-frontend", "path": "src/context/CrmContext.tsx" },
-        { "repo": "repasses-frontend", "path": "src/hooks/useCrmWhatsApp.ts" },
-        { "repo": "repasses-frontend", "path": "src/services/crmSSE.ts" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/context/CrmContext.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/hooks/useCrmWhatsApp.ts"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/services/crmSSE.ts"
+        },
         {
           "repo": "repasses-frontend",
           "path": "src/components/whatsapp/organisms/ChatArea.tsx"
@@ -826,7 +853,10 @@
         }
       ],
       "target_refs": [
-        { "repo": "lojaveiculosv2", "path": "apps/web/src/features/crm" },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/crm"
+        },
         {
           "repo": "lojaveiculosv2",
           "path": "apps/api/src/domains/crm/acl/repassesCrmClient.ts"
@@ -885,12 +915,18 @@
       "depends_on": ["lvv2-f006-crm-whatsapp-inbox"],
       "blocks": ["lvv2-f008-crm-automation-campaigns-visits"],
       "source_refs": [
-        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmEquipe.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmEquipe.tsx"
+        },
         {
           "repo": "repasses-frontend",
           "path": "src/pages/crm/CrmEtiquetas.tsx"
         },
-        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmAjustes.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmAjustes.tsx"
+        },
         {
           "repo": "repasses-frontend",
           "path": "src/pages/crm/CrmIntegracoes.tsx"
@@ -973,8 +1009,14 @@
           "repo": "repasses-frontend",
           "path": "src/pages/crm/CrmCampaigns.tsx"
         },
-        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmMiniBot.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmVisitas.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmMiniBot.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmVisitas.tsx"
+        },
         {
           "repo": "repasses-frontend",
           "path": "src/pages/crm/CrmAgendamentos.tsx"
@@ -1043,7 +1085,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "ready",
+      "status": "merged",
       "risk": "medium",
       "parallel_group": "finance",
       "depends_on": ["lvv2-f001-app-shell-dashboard"],
@@ -1149,8 +1191,8 @@
           "slice:lvv2-f009-finance-expenses-bills",
           "agent:auto-merge"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -1239,7 +1281,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "in-progress",
+      "status": "merged",
       "risk": "medium",
       "parallel_group": "documents",
       "depends_on": ["lvv2-f001-app-shell-dashboard"],
@@ -1346,8 +1388,8 @@
       "pr": {
         "number": 5,
         "labels": ["slice:lvv2-f011-documents-workspace", "agent:auto-merge"],
-        "review_status": "needs-review",
-        "merge_status": "open"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -1371,15 +1413,11 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "in-progress",
+      "status": "merged",
       "risk": "high",
       "parallel_group": "settings",
-      "depends_on": [
-        "lvv2-f001-app-shell-dashboard"
-      ],
-      "blocks": [
-        "lvv2-f007-crm-team-settings-tags-connections"
-      ],
+      "depends_on": ["lvv2-f001-app-shell-dashboard"],
+      "blocks": ["lvv2-f007-crm-team-settings-tags-connections"],
       "source_refs": [
         {
           "repo": "lojaveiculos",
@@ -1419,8 +1457,8 @@
           "risk:high",
           "agent:human-hold"
         ],
-        "review_status": "needs-review",
-        "merge_status": "not-opened"
+        "review_status": "merged",
+        "merge_status": "merged"
       },
       "qa": {
         "auth_mode": "local-bypass",
@@ -1429,10 +1467,7 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f012-settings-identity-roles",
-          "routes": [
-            "/#/settings",
-            "/#/settings?tab=roles"
-          ]
+          "routes": ["/#/settings", "/#/settings?tab=roles"]
         },
         "last_evidence_path": "reports/visual/lvv2-f012-settings-identity-roles",
         "last_checked_at": "2026-06-22T18:01:45.367Z",
@@ -1490,9 +1525,18 @@
       ],
       "blocks": [],
       "source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/[slug]/layout.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/[slug]/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/[slug]/ofertas/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/layout.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/ofertas/page.tsx"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/[slug]/veiculo/[idOrSlug]/page.tsx"
@@ -1519,8 +1563,14 @@
         }
       ],
       "supporting_source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/[slug]/components" },
-        { "repo": "lojaveiculos", "path": "src/app/[slug]/ofertas/components" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/components"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/[slug]/ofertas/components"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/[slug]/admin/components/CustomizarModal.tsx"
@@ -2566,12 +2616,30 @@
       "depends_on": [],
       "blocks": [],
       "source_refs": [
-        { "repo": "repasses-frontend", "path": "src/pages/LandingPage.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/SearchResults.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/SellerProfile.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/VehicleListing.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/WebChat.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/WhatsAppClone.tsx" }
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/LandingPage.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/SearchResults.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/SellerProfile.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/VehicleListing.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/WebChat.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/WhatsAppClone.tsx"
+        }
       ],
       "supporting_source_refs": [
         {
@@ -2628,18 +2696,36 @@
       "depends_on": [],
       "blocks": [],
       "source_refs": [
-        { "repo": "repasses-frontend", "path": "src/pages/LoginPage.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/Register.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/SignUpPage.tsx" },
-        { "repo": "repasses-frontend", "path": "src/pages/ProfilePage.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/LoginPage.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/Register.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/SignUpPage.tsx"
+        },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/ProfilePage.tsx"
+        },
         {
           "repo": "repasses-frontend",
           "path": "src/pages/admin/AdminDashboard.tsx"
         },
-        { "repo": "repasses-frontend", "path": "src/pages/crm/CrmLogin.tsx" }
+        {
+          "repo": "repasses-frontend",
+          "path": "src/pages/crm/CrmLogin.tsx"
+        }
       ],
       "supporting_source_refs": [
-        { "repo": "repasses-frontend", "path": "src/context/ClerkBridge.tsx" },
+        {
+          "repo": "repasses-frontend",
+          "path": "src/context/ClerkBridge.tsx"
+        },
         {
           "repo": "repasses-frontend",
           "path": "src/components/ProtectedRoute.tsx"
@@ -2777,9 +2863,18 @@
           "repo": "lojaveiculos",
           "path": "src/app/signup/[[...rest]]/page.tsx"
         },
-        { "repo": "lojaveiculos", "path": "src/app/verify-email/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/choose-store/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/agency/signup/page.tsx" }
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/verify-email/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/choose-store/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/signup/page.tsx"
+        }
       ],
       "supporting_source_refs": [],
       "target_refs": [
@@ -2842,12 +2937,18 @@
       ],
       "blocks": [],
       "source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/agency/layout.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/layout.tsx"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/agency/AgencyClientLayout.tsx"
         },
-        { "repo": "lojaveiculos", "path": "src/app/agency/admin/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/agency/admin/page.tsx"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/agency/components/AgencySidebar.tsx"
@@ -2930,17 +3031,38 @@
       "depends_on": [],
       "blocks": [],
       "source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/landing/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/landing1/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/blog/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/blog/[slug]/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/glossario/[term]/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/landing/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/landing1/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/blog/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/blog/[slug]/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/glossario/[term]/page.tsx"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/comparativo/sistemas-revenda/page.tsx"
         },
-        { "repo": "lojaveiculos", "path": "src/app/vs/[competitor]/page.tsx" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/vs/[competitor]/page.tsx"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/solucoes/crm-whatsapp/page.tsx"
@@ -2949,9 +3071,18 @@
           "repo": "lojaveiculos",
           "path": "src/app/solucoes/nota-fiscal/page.tsx"
         },
-        { "repo": "lojaveiculos", "path": "src/app/comunidade/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/privacy-policy/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/terms-of-service/page.tsx" }
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/comunidade/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/privacy-policy/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/terms-of-service/page.tsx"
+        }
       ],
       "supporting_source_refs": [
         {
@@ -2964,7 +3095,11 @@
           "path": "src/app/solucoes",
           "planned": false
         },
-        { "repo": "lojaveiculos", "path": "src/app/blog", "planned": false },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/blog",
+          "planned": false
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/glossario",
@@ -3016,10 +3151,16 @@
       "depends_on": [],
       "blocks": [],
       "source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/comprarcarro/page.tsx" }
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/comprarcarro/page.tsx"
+        }
       ],
       "supporting_source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/comprarcarro/components" },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/comprarcarro/components"
+        },
         {
           "repo": "lojaveiculos",
           "path": "src/app/agendar/page.tsx",
@@ -3076,8 +3217,14 @@
       "depends_on": [],
       "blocks": [],
       "source_refs": [
-        { "repo": "lojaveiculos", "path": "src/app/admin/dashboard/page.tsx" },
-        { "repo": "lojaveiculos", "path": "src/app/dev-logs/page.tsx" }
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/admin/dashboard/page.tsx"
+        },
+        {
+          "repo": "lojaveiculos",
+          "path": "src/app/dev-logs/page.tsx"
+        }
       ],
       "supporting_source_refs": [],
       "target_refs": [],
