@@ -76,6 +76,7 @@ export function createInventoryFeature(
         serviceContext,
         cleanListListingsQuery({
           limit: parsed.data.limit,
+          offset: parsed.data.offset,
           search: parsed.data.search,
           status: parsed.data.status,
         }),

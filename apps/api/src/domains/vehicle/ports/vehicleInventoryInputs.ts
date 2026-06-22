@@ -83,6 +83,7 @@ export type FindVehicleMediaInput = {
 
 export type ListVehicleListingsInput = {
   limit: number;
+  offset: number;
   search: string | null;
   status: VehicleListingStatus | null;
   storeId: string | null;

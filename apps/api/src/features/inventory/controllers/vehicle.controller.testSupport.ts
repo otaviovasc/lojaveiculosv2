@@ -65,6 +65,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       { code: "2024-1", fuelCode: "1", modelYear: 2024, name: "2024 Gasolina" },
     ]),
     listListings: vi.fn(async () => ({
+      hasMore: false,
       items: [
         {
           listing: listingDto(),
@@ -73,6 +74,7 @@ export function createInventoryTestServices(): InventoryListingServices {
           primaryUnit: unitDto(),
         },
       ],
+      nextOffset: null,
       total: 1,
     })),
     reorderMedia: vi.fn(async () => listingDetailResult()),

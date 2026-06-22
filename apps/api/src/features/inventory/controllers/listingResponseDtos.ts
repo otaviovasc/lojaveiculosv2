@@ -54,7 +54,9 @@ export function toDetailDto(detail: VehicleListingDetail) {
 
 export function toListDto(result: VehicleListingListResult) {
   return {
+    hasMore: result.hasMore,
     items: result.items.map(toSummaryDto),
+    nextOffset: result.nextOffset,
     total: result.total,
   };
 }

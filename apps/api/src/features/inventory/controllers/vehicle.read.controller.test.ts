@@ -12,7 +12,9 @@ type ListingDetailBody = {
 };
 
 type ListingListBody = {
+  hasMore?: boolean;
   items?: readonly { listing?: { id?: string } }[];
+  nextOffset?: number | null;
   total?: number;
 };
 
@@ -22,15 +24,18 @@ describe("inventory read routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings?search=toro&status=available&limit=20",
+      "/api/v1/inventory/listings?search=toro&status=available&limit=20&offset=40",
     );
     const body = (await response.json()) as ListingListBody;
 
     expect(response.status).toBe(200);
+    expect(body.hasMore).toBe(false);
+    expect(body.nextOffset).toBeNull();
     expect(body.total).toBe(1);
     expect(body.items?.[0]?.listing?.id).toBe("listing_1");
     expect(services.listListings).toHaveBeenCalledWith(expect.any(Object), {
       limit: 20,
+      offset: 40,
       search: "toro",
       status: "available",
     });

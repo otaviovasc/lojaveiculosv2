@@ -82,13 +82,18 @@ export const inventorySchemas = {
       units: { type: "array", items: { type: "object" } },
     },
   ),
-  InventoryListingList: objectSchema(["items", "total"], {
-    items: {
-      type: "array",
-      items: { $ref: "#/components/schemas/InventoryListingSummary" },
+  InventoryListingList: objectSchema(
+    ["hasMore", "items", "nextOffset", "total"],
+    {
+      hasMore: { type: "boolean" },
+      nextOffset: { type: ["integer", "null"], minimum: 0 },
+      items: {
+        type: "array",
+        items: { $ref: "#/components/schemas/InventoryListingSummary" },
+      },
+      total: { type: "integer", minimum: 0 },
     },
-    total: { type: "integer", minimum: 0 },
-  }),
+  ),
   InventoryListingSummary: objectSchema(
     ["listing", "mediaCount", "primaryMediaUrl", "primaryUnit"],
     {

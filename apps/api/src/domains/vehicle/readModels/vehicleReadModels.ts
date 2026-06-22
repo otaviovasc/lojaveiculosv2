@@ -28,7 +28,9 @@ export type VehicleListingSummary = {
 };
 
 export type VehicleListingListResult = {
+  hasMore: boolean;
   items: readonly VehicleListingSummary[];
+  nextOffset: number | null;
   total: number;
 };
 

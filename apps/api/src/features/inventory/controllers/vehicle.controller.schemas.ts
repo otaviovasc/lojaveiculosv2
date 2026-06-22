@@ -3,6 +3,7 @@ import { listingStatuses } from "./listingServices.js";
 
 export const listListingsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
   search: z.string().trim().min(1).optional(),
   status: z.enum(listingStatuses).optional(),
 });

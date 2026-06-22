@@ -66,11 +66,13 @@ export const validationResponse = {
   },
 } as const;
 
-export function queryParameter(name: "limit" | "search" | "status") {
+export function queryParameter(
+  name: "limit" | "offset" | "search" | "status",
+) {
   return {
     name,
     in: "query",
     required: false,
-    schema: { type: name === "limit" ? "integer" : "string" },
+    schema: { type: ["limit", "offset"].includes(name) ? "integer" : "string" },
   } as const;
 }

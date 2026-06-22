@@ -8,7 +8,7 @@ import { DocumentsModule } from "../features/documents/DocumentsModule";
 import { FinanceModule } from "../features/finance/FinanceModule";
 import { FiscalModule } from "../features/fiscal/FiscalModule";
 import { InternalHealthModule } from "../features/internalHealth/InternalHealthModule";
-import { InventoryCreatePage } from "../features/inventory/pages/InventoryCreatePage";
+import { InventoryListPage } from "../features/inventory/pages/InventoryListPage";
 import { MarketplaceModule } from "../features/marketplaces/MarketplaceModule";
 import { PublicApiModule } from "../features/publicApi/PublicApiModule";
 import { PublicStorefrontPage } from "../features/publicSite/PublicStorefrontPage";
@@ -26,7 +26,7 @@ export function App() {
       {activeModuleId === "dashboard" ? (
         <DashboardHome onNavigate={navigate} />
       ) : activeModuleId === "inventory" ? (
-        <InventoryCreatePage />
+        <InventoryListPage />
       ) : activeModuleId === "crm" ? (
         <CrmModule />
       ) : activeModuleId === "billing" ? (

@@ -133,8 +133,15 @@ describe("createInventoryApi", () => {
     expect(inventoryRoutes.detail("listing 1")).toBe(
       "/api/v1/inventory/listings/listing%201",
     );
-    expect(inventoryRoutes.list({ search: "toro", status: "available" })).toBe(
-      "/api/v1/inventory/listings?search=toro&status=available",
+    expect(
+      inventoryRoutes.list({
+        limit: 100,
+        offset: 200,
+        search: "toro",
+        status: "available",
+      }),
+    ).toBe(
+      "/api/v1/inventory/listings?limit=100&offset=200&search=toro&status=available",
     );
     expect(inventoryRoutes.unit("listing 1")).toBe(
       "/api/v1/inventory/listings/listing%201/unit",
