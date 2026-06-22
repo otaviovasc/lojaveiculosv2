@@ -75,3 +75,59 @@ export const createActivitySchema = z.object({
   occurredAt: z.string().datetime().optional(),
   priority: z.number().int().min(0).max(5).optional(),
 });
+
+export const whatsappSessionsQuerySchema = z.object({
+  agentId: z.coerce.number().int().positive().optional(),
+  connectionId: z.coerce.number().int().positive().optional(),
+  filterByAgent: z
+    .union([z.coerce.boolean(), z.coerce.number().int().positive()])
+    .optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(40),
+  offset: z.coerce.number().int().min(0).default(0),
+  search: z.string().trim().max(120).optional(),
+  sessionId: z.coerce.number().int().positive().optional(),
+  tagIds: z
+    .union([
+      z.string().transform((value) =>
+        value
+          .split(",")
+          .map((item) => Number(item.trim()))
+          .filter((item) => Number.isInteger(item) && item > 0),
+      ),
+      z.array(z.coerce.number().int().positive()),
+    ])
+    .optional(),
+  tagMatchMode: z.enum(["AND", "OR"]).optional(),
+});
+
+export const whatsappMessagesQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+export const whatsappSendTextSchema = z.object({
+  quotedMessageId: z.union([z.number(), z.string()]).optional(),
+  quotedMessageText: z.string().trim().max(2000).optional(),
+  sessionId: z.number().int().positive(),
+  text: z.string().trim().min(1).max(4000),
+});
+
+export const whatsappAssignSessionSchema = z.object({
+  agentId: z.number().int().positive().nullable(),
+});
+
+export const whatsappCreateSessionSchema = z.object({
+  connectionId: z.number().int().positive().optional(),
+  message: z.string().trim().max(4000).optional(),
+  name: z.string().trim().max(191).optional(),
+  phone: z.string().trim().min(8).max(20),
+  scheduledAt: z.string().datetime().optional(),
+});
+
+export const whatsappCloseSessionSchema = z.object({
+  mode: z.enum(["default", "immediate"]).default("default"),
+});
+
+export const whatsappMarkUnreadSchema = z.object({
+  lastReadAt: z.string().datetime().nullable().optional(),
+});

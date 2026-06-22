@@ -3,6 +3,10 @@ import {
   type CreateProductCrmApiOptions,
   type ProductCrmApi,
 } from "./productCrmApi";
+import {
+  createCrmWhatsappApi,
+  type CrmWhatsappApi,
+} from "./crmWhatsappApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
 
 export function createRuntimeProductCrmApi(): ProductCrmApi {
@@ -25,6 +29,50 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
         leadId,
         input,
       ),
+  };
+}
+
+export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
+  return {
+    assignSession: async (sessionId, agentId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).assignSession(
+        sessionId,
+        agentId,
+      ),
+    bootstrap: async () =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).bootstrap(),
+    closeSession: async (sessionId, mode) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
+        sessionId,
+        mode,
+      ),
+    createSession: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).createSession(
+        input,
+      ),
+    listMessages: async (sessionId, query) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
+        sessionId,
+        query,
+      ),
+    listSessions: async (query) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
+        query,
+      ),
+    markSessionAsRead: async (sessionId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).markSessionAsRead(
+        sessionId,
+      ),
+    markSessionAsUnread: async (sessionId, lastReadAt) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).markSessionAsUnread(sessionId, lastReadAt),
+    sendText: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendText(input),
+    toggleIntervention: async (sessionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).toggleIntervention(sessionId),
   };
 }
 

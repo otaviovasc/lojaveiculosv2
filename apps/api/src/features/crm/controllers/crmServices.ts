@@ -13,6 +13,10 @@ import type {
   CrmLead,
   CrmLeadActivity,
 } from "../../../domains/crm/ports/crmRepository.js";
+import {
+  createDisabledRepassesCrmClient,
+  type RepassesCrmClient,
+} from "../../../domains/crm/acl/repassesCrmClient.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import {
@@ -37,6 +41,7 @@ export type CrmServices = {
     context: ServiceContext,
     input: ListCrmLeadsInput,
   ) => Promise<readonly CrmLead[]>;
+  repassesCrm: RepassesCrmClient;
   updateLead: (
     context: ServiceContext,
     input: UpdateCrmLeadInput,
@@ -44,8 +49,16 @@ export type CrmServices = {
 };
 
 export type CreateCrmServicesOptions =
-  | { drizzleClient?: never; ports?: CrmServicePorts }
-  | { drizzleClient: DrizzleCrmClient; ports?: never };
+  | {
+      drizzleClient?: never;
+      ports?: CrmServicePorts;
+      repassesCrmClient?: RepassesCrmClient;
+    }
+  | {
+      drizzleClient: DrizzleCrmClient;
+      ports?: never;
+      repassesCrmClient?: RepassesCrmClient;
+    };
 
 export function createCrmServices(
   options: CreateCrmServicesOptions = {},
@@ -59,6 +72,8 @@ export function createCrmServices(
     listActivities: (context, input) =>
       listLeadActivities(context, input, ports),
     listLeads: (context, input) => listCrmLeads(context, input, ports),
+    repassesCrm:
+      options.repassesCrmClient ?? createDisabledRepassesCrmClient(),
     updateLead: (context, input) => updateCrmLead(context, input, ports),
   };
 }

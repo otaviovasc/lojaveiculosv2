@@ -3,6 +3,8 @@
 @import "./components.css";
 @import "./dashboard.css";
 @import "./crm.css";
+@import "./crmWhatsapp.css";
+@import "./crmWhatsappChat.css";
 @import "./crmPipeline.css";
 @import "./crmPipelineLayout.css";
 @import "./crmLeadViews.css";
