@@ -1,0 +1,17 @@
+.settings-field textarea::placeholder {
+  color: var(--color-muted);
+  font-weight: 700;
+}
+
+.settings-textarea-icon {
+  color: var(--color-accent-strong);
+  display: block;
+  left: 0.75rem;
+  pointer-events: none;
+  position: absolute;
+  top: 2.25rem;
+}
+
+.settings-textarea-icon + textarea {
+  padding-left: 2.25rem;
+}

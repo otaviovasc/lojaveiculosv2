@@ -1112,11 +1112,15 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "in-progress",
       "risk": "high",
       "parallel_group": "settings",
-      "depends_on": ["lvv2-f001-app-shell-dashboard"],
-      "blocks": ["lvv2-f007-crm-team-settings-tags-connections"],
+      "depends_on": [
+        "lvv2-f001-app-shell-dashboard"
+      ],
+      "blocks": [
+        "lvv2-f007-crm-team-settings-tags-connections"
+      ],
       "source_refs": [
         {
           "repo": "lojaveiculos",
@@ -1150,13 +1154,13 @@
         "branch": "agent/lvv2-f012-settings-identity-roles"
       },
       "pr": {
-        "number": null,
+        "number": 3,
         "labels": [
           "slice:lvv2-f012-settings-identity-roles",
           "risk:high",
           "agent:human-hold"
         ],
-        "review_status": "not-opened",
+        "review_status": "needs-review",
         "merge_status": "not-opened"
       },
       "qa": {
@@ -1166,13 +1170,50 @@
         "visual": {
           "required": true,
           "command": "npm run qa:visual -- --slice lvv2-f012-settings-identity-roles",
-          "routes": ["/#/settings"]
+          "routes": [
+            "/#/settings",
+            "/#/settings?tab=roles"
+          ]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
-        "blockers": ["Permission changes require orchestrator review."]
+        "last_evidence_path": "reports/visual/lvv2-f012-settings-identity-roles",
+        "last_checked_at": "2026-06-22T18:01:45.367Z",
+        "blockers": []
       },
-      "v1_improvement_backport_candidates": []
+      "v1_improvement_backport_candidates": [],
+      "evidence": {
+        "source_parity": [
+          "Read lojaveiculos:src/app/[slug]/admin/components/views/ConfigGeraisView.tsx: kept the general settings header/content framing in V2 settings module.",
+          "Read lojaveiculos:src/app/[slug]/admin/configuracoes/components/ConfiguracoesSection.tsx: kept contact, WhatsApp, CEP/city/state, and business-hours workflow; V2 also keeps existing identity/public-site controls."
+        ],
+        "backend_contract": [
+          "Uses GET/PATCH /api/v1/settings/store via apps/web/src/features/settings/apiClient.ts.",
+          "Uses GET /api/v1/identity/roles and PATCH /api/v1/identity/memberships/:membershipId/access for role templates and overrides.",
+          "Verified StoreSettingsService enforces store_profile.manage/store_public_site.manage plus subdomain/custom_domain entitlements and emits store_settings audit events.",
+          "Verified RoleService enforces users.manage, owner/agency target policy, catalog permission overrides, and identity.roles audit events.",
+          "No permission catalog, entitlement, schema, or backend contract mutation was added in this slice."
+        ],
+        "implementation": [
+          "Added V1 business-hours parity in SettingsForm backed by V2 profile.businessHours JSON { text } helpers.",
+          "Changed settings save to send a minimal PATCH diff so unchanged publicSlug/customDomain fields do not trigger unrelated entitlement checks.",
+          "Decoupled roles loading so store settings can render even when identity role management is forbidden.",
+          "Restored V1 CEP lookup behavior with BrasilAPI city/UF autofill and inline loading/error messages.",
+          "Added tab-aware settings hashes so visual QA covers the role override UI at /#/settings?tab=roles.",
+          "Moved SettingsModule load-state type to feature types and removed the settings composition exception.",
+          "Extracted role draft helpers for focused tri-state override tests and preserved the role management panel UI contract."
+        ],
+        "validation": [
+          "npm run test --workspace @lojaveiculosv2/web -- App settingsBusinessHours settingsCep settingsPatch roleDraft settingsMasks",
+          "npm run typecheck --workspace @lojaveiculosv2/web",
+          "npm run lint --workspace @lojaveiculosv2/web",
+          "npm run test --workspace @lojaveiculosv2/api -- StoreSettingsService RoleService",
+          "npm run check:lines",
+          "npm run check:frontend",
+          "npm run check:frontend-composition",
+          "npm run build --workspace @lojaveiculosv2/web",
+          "npm run qa:visual -- --slice lvv2-f012-settings-identity-roles",
+          "npm run validate"
+        ]
+      }
     },
     {
       "id": "lvv2-f013-public-site-builder-storefront",

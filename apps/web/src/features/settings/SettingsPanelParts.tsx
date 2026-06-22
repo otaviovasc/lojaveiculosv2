@@ -26,6 +26,7 @@ export function SettingsInput({
   inputMode,
   label,
   maxLength,
+  onBlur,
   onChange,
   placeholder,
   suffix,
@@ -37,6 +38,7 @@ export function SettingsInput({
   inputMode?: "email" | "numeric" | "search" | "tel" | "text" | "url";
   label: string;
   maxLength?: number;
+  onBlur?: () => void;
   onChange: (value: string) => void;
   placeholder?: string;
   suffix?: string;
@@ -51,6 +53,7 @@ export function SettingsInput({
         <input
           inputMode={inputMode}
           maxLength={maxLength}
+          onBlur={onBlur}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           type={type}
@@ -64,19 +67,25 @@ export function SettingsInput({
 }
 
 export function SettingsTextarea({
+  icon,
   label,
   onChange,
+  placeholder,
   value,
 }: {
+  icon?: ReactNode;
   label: string;
   onChange: (value: string) => void;
+  placeholder?: string;
   value: string;
 }) {
   return (
     <label className="settings-field">
       <span>{label}</span>
+      {icon ? <div className="settings-textarea-icon">{icon}</div> : null}
       <textarea
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         value={value}
       />
     </label>

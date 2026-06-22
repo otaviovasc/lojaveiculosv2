@@ -5,7 +5,7 @@ import type { ModuleId } from "./modules";
 const moduleIds = new Set(Object.keys(moduleDefinitions));
 
 export function parseModuleHash(hash: string): ModuleId {
-  const id = hash.replace(/^#\/?/, "");
+  const id = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
 
   if (moduleIds.has(id)) {
     return id as ModuleId;
