@@ -70,3 +70,13 @@ export function summarizeDocuments(documents: WorkspaceDocument[]) {
 export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
+
+export function openDocumentDownload(url: string) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.rel = "noopener noreferrer";
+  link.target = "_blank";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

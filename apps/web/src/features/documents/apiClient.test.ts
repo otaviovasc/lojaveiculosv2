@@ -29,12 +29,14 @@ describe("documents api client", () => {
     expect(
       documentsRoutes.documents({
         kind: "sale_contract",
+        limit: 150,
         search: "contrato venda",
         status: "issued",
+        targetId: "sale_1",
         targetType: "sale",
       }),
     ).toBe(
-      "/api/v1/documents?search=contrato+venda&kind=sale_contract&status=issued&targetType=sale",
+      "/api/v1/documents?search=contrato+venda&kind=sale_contract&status=issued&targetId=sale_1&targetType=sale&limit=150",
     );
   });
 

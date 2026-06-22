@@ -142,7 +142,9 @@ function createQuery(filters: ListDocumentsFilters): string {
   if (filters.search?.trim()) params.set("search", filters.search.trim());
   if (filters.kind) params.set("kind", filters.kind);
   if (filters.status) params.set("status", filters.status);
+  if (filters.targetId?.trim()) params.set("targetId", filters.targetId.trim());
   if (filters.targetType) params.set("targetType", filters.targetType);
+  if (filters.limit) params.set("limit", String(filters.limit));
   const query = params.toString();
   return query ? `?${query}` : "";
 }
