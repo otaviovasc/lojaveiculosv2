@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
 import type { InventoryListingSummary } from "../inventory/model/types";
-import type { ProductCrmApi } from "./productCrmApi";
+import type { ProductCrmApi, ProductCrmLeadQuery } from "./productCrmApi";
 import { CrmPipelineView } from "./CrmPipelineView";
 import {
   createNoteActivityInput,
@@ -49,7 +49,7 @@ export function CrmModule({ api }: { api?: ProductCrmApi }) {
     setIsLoading(true);
     setError(null);
     try {
-      const nextLeads = await crmApi.listLeads({
+      const nextLeads = await listAllMatchingLeads(crmApi, {
         limit: 100,
         ...(filters.search ? { search: filters.search } : {}),
         ...(filters.source !== "all" ? { source: filters.source } : {}),
@@ -193,6 +193,22 @@ async function loadActivitiesByLeadId(
   );
 
   return Object.fromEntries(entries) as LeadActivitiesById;
+}
+
+async function listAllMatchingLeads(
+  crmApi: ProductCrmApi,
+  query: ProductCrmLeadQuery,
+): Promise<ProductCrmLead[]> {
+  const pageSize = query.limit ?? 100;
+  const leads: ProductCrmLead[] = [];
+  let offset = query.offset ?? 0;
+
+  for (;;) {
+    const page = await crmApi.listLeads({ ...query, limit: pageSize, offset });
+    leads.push(...page);
+    if (page.length < pageSize) return leads;
+    offset += pageSize;
+  }
 }
 
 function createLeadVehicleOption(

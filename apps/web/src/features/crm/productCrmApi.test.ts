@@ -19,6 +19,7 @@ describe("createProductCrmApi", () => {
     await api.listLeads({
       listingId: "11111111-1111-4111-8111-111111111111",
       limit: 100,
+      offset: 200,
       search: "Ana",
       source: "olx",
       status: "contacted",
@@ -27,7 +28,7 @@ describe("createProductCrmApi", () => {
     expect(calls[0]).toMatchObject({
       init: { method: "GET" },
       input:
-        "/api/v1/crm/leads?listingId=11111111-1111-4111-8111-111111111111&limit=100&search=Ana&source=olx&status=contacted",
+        "/api/v1/crm/leads?listingId=11111111-1111-4111-8111-111111111111&limit=100&offset=200&search=Ana&source=olx&status=contacted",
     });
   });
 

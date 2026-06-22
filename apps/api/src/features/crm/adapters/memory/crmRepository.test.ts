@@ -31,4 +31,23 @@ describe("createMemoryCrmRepository", () => {
       }),
     ).resolves.toEqual([matchedLead]);
   });
+
+  it("paginates scoped leads with an offset", async () => {
+    const repository = createMemoryCrmRepository();
+    await repository.createLead({
+      ...scope,
+      buyerName: "Primeiro",
+      source: "manual",
+    });
+    await repository.createLead({
+      ...scope,
+      buyerName: "Segundo",
+      source: "manual",
+    });
+    const allLeads = await repository.listLeads({ ...scope, limit: 10 });
+
+    await expect(
+      repository.listLeads({ ...scope, limit: 1, offset: 1 }),
+    ).resolves.toEqual([allLeads[1]]);
+  });
 });

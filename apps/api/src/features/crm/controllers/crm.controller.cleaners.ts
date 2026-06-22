@@ -16,6 +16,7 @@ export function cleanListLeadsInput(
   return {
     ...(input.listingId ? { listingId: input.listingId } : {}),
     limit: input.limit,
+    offset: input.offset,
     ...(input.search ? { search: input.search } : {}),
     ...(input.source ? { source: input.source } : {}),
     ...(input.status ? { status: input.status } : {}),

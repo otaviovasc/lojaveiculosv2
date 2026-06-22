@@ -17,6 +17,7 @@ const permission = "lead.read";
 export type ListCrmLeadsInput = {
   listingId?: string;
   limit?: number;
+  offset?: number;
   search?: string;
   source?: LeadSource;
   status?: LeadStatus;
@@ -30,12 +31,14 @@ export async function listCrmLeads(
   assertPermission(context, permission);
   const scope = requireCrmScope(context);
   const limit = input.limit ?? 50;
+  const offset = input.offset ?? 0;
 
   context.logger.info(
     "crm.leads.list.started",
     createServiceLogMetadata(context, {
       limit,
       listingId: input.listingId ?? null,
+      offset,
       search: input.search ?? null,
       source: input.source ?? null,
       status: input.status ?? null,
@@ -48,6 +51,7 @@ export async function listCrmLeads(
     ...(input.source ? { source: input.source } : {}),
     ...(input.status ? { status: input.status } : {}),
     limit,
+    offset,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });

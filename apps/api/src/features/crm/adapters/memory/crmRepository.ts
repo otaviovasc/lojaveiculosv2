@@ -83,7 +83,7 @@ export function createMemoryCrmRepository(): CrmRepository {
         .sort(
           (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
         )
-        .slice(0, input.limit);
+        .slice(input.offset ?? 0, (input.offset ?? 0) + input.limit);
     },
     async updateLead(input) {
       const lead = findScopedLead(leads, input.leadId, input);

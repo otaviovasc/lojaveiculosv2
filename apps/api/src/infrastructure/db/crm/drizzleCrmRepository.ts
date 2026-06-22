@@ -154,6 +154,7 @@ export function createDrizzleCrmRepository(
         .from(leads)
         .where(and(...filters, ...(searchFilter ? [searchFilter] : [])))
         .orderBy(desc(leads.updatedAt))
+        .offset(input.offset ?? 0)
         .limit(input.limit);
 
       const references = await findLeadVehicleReferences(db, {
