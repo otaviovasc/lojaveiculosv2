@@ -1,0 +1,80 @@
+import { describe, expect, it } from "vitest";
+import { createServiceContext } from "../../../shared/serviceContext.js";
+import { createFinanceServices } from "./financeServices.js";
+
+describe("finance services", () => {
+  it("paginates finance entries and preserves type/status/target filters", async () => {
+    const services = createFinanceServices();
+    const context = createContext([
+      "finance.create",
+      "finance.read",
+    ]);
+
+    await services.createEntry(context, entry("Primeira", "pending"));
+    await services.createEntry(context, entry("Segunda", "pending"));
+    await services.createEntry(context, entry("Terceira", "pending"));
+    await services.createEntry(context, entry("Paga", "paid"));
+    await services.createEntry(context, {
+      ...entry("Outra origem", "pending"),
+      links: [{ targetId: "sale_other", targetType: "sale" }],
+    });
+
+    const firstPage = await services.listEntries(context, {
+      limit: 2,
+      offset: 0,
+      status: "pending",
+      targetId: "sale_1",
+      targetType: "sale",
+      type: "commission",
+    });
+    const secondPage = await services.listEntries(context, {
+      limit: 2,
+      offset: firstPage.nextOffset ?? 0,
+      status: "pending",
+      targetId: "sale_1",
+      targetType: "sale",
+      type: "commission",
+    });
+
+    expect(firstPage).toMatchObject({
+      hasMore: true,
+      nextOffset: 2,
+      total: 2,
+    });
+    expect(firstPage.entries.map((item) => item.name)).toEqual([
+      "Primeira",
+      "Segunda",
+    ]);
+    expect(secondPage).toMatchObject({
+      hasMore: false,
+      nextOffset: null,
+      total: 3,
+    });
+    expect(secondPage.entries.map((item) => item.name)).toEqual(["Terceira"]);
+  });
+});
+
+function createContext(permissions: string[]) {
+  return createServiceContext({
+    actor: { id: "user_1", kind: "user" },
+    permissions,
+    request: { requestId: "req_1" },
+    storeId: "store_1",
+    tenantId: "tenant_1",
+  });
+}
+
+function entry(name: string, status: "paid" | "pending") {
+  return {
+    amountCents: 10000,
+    category: "Comissao",
+    dueAt: null,
+    links: [{ targetId: "sale_1", targetType: "sale" as const }],
+    metadata: {},
+    name,
+    paidAt: status === "paid" ? new Date("2026-06-22T12:00:00.000Z") : null,
+    sellerUserId: "seller_1",
+    status,
+    type: "commission" as const,
+  };
+}

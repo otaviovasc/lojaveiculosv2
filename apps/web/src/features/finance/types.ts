@@ -47,6 +47,13 @@ export type FinanceEntryBundle = {
   links: readonly FinanceEntryLink[];
 };
 
+export type FinanceEntryList = {
+  entries: readonly FinanceEntry[];
+  hasMore: boolean;
+  nextOffset: number | null;
+  total: number;
+};
+
 export type CreateFinanceEntryInput = {
   amountCents: number;
   category: string;

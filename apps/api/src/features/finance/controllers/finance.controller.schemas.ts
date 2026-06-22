@@ -40,6 +40,7 @@ export const financeDocumentKinds = [
 
 export const listFinanceEntriesQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
   status: z.enum(financeEntryStatuses).optional(),
   targetId: z.string().trim().min(1).optional(),
   targetType: z.enum(financeLinkTargets).optional(),

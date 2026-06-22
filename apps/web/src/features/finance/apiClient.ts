@@ -7,13 +7,18 @@ import type {
   FinanceAuth,
   FinanceDocumentUpload,
   FinanceEntry,
+  FinanceEntryList,
   FinanceEntryBundle,
   FinanceRecurringEntry,
   FinanceSummary,
   FinanceEntryType,
   UpdateFinanceEntryInput,
 } from "./types";
-import { createFinanceHeaders, financeRoutes } from "./apiRoutes";
+import {
+  createFinanceHeaders,
+  financeRoutes,
+  type ListFinanceEntriesInput,
+} from "./apiRoutes";
 import { cleanJson, readJson, readUpload, type JsonBody } from "./apiJson";
 
 export {
@@ -38,7 +43,8 @@ export type FinanceApi = {
     input: CreateFinanceRecurringEntryInput,
   ) => Promise<FinanceRecurringEntry>;
   getSummary: () => Promise<FinanceSummary>;
-  listEntries: (type: FinanceEntryType) => Promise<FinanceEntry[]>;
+  listAllEntries: (type: FinanceEntryType) => Promise<FinanceEntry[]>;
+  listEntries: (input: ListFinanceEntriesInput) => Promise<FinanceEntryList>;
   listCommissionRules: () => Promise<CommissionRule[]>;
   listRecurringEntries: () => Promise<FinanceRecurringEntry[]>;
   payEntry: (entryId: string) => Promise<FinanceEntryBundle>;
@@ -167,14 +173,13 @@ export function createFinanceApi({
       fetch(financeRoutes.summary(baseUrl), {
         headers: createFinanceHeaders(auth),
       }).then(readJson<FinanceSummary>),
-    listEntries: (type) =>
-      fetch(financeRoutes.entries(baseUrl, type), {
+    listAllEntries: (type) => listAllFinanceEntries(fetch, auth, baseUrl, type),
+    listEntries: (input) =>
+      fetch(financeRoutes.entries(baseUrl, input), {
         headers: createFinanceHeaders(auth),
       })
-        .then(readJson<FinanceEntry[] | { entries: FinanceEntry[] }>)
-        .then((payload) =>
-          Array.isArray(payload) ? payload : payload.entries,
-        ),
+        .then(readJson<FinanceEntry[] | FinanceEntryList>)
+        .then(toFinanceEntryList),
     listCommissionRules: () =>
       fetch(financeRoutes.commissionRules(baseUrl), {
         headers: createFinanceHeaders(auth),
@@ -198,5 +203,37 @@ export function createFinanceApi({
         financeRoutes.entry(entryId, baseUrl),
         input,
       ),
+  };
+}
+
+async function listAllFinanceEntries(
+  fetch: typeof globalThis.fetch,
+  auth: FinanceAuth,
+  baseUrl: string | undefined,
+  type: FinanceEntryType,
+): Promise<FinanceEntry[]> {
+  const entries: FinanceEntry[] = [];
+  const limit = 200;
+  let offset = 0;
+  for (;;) {
+    const page = await fetch(
+      financeRoutes.entries(baseUrl, { limit, offset, type }),
+      { headers: createFinanceHeaders(auth) },
+    )
+      .then(readJson<FinanceEntry[] | FinanceEntryList>)
+      .then(toFinanceEntryList);
+    entries.push(...page.entries);
+    if (!page.hasMore || page.nextOffset === null) return entries;
+    offset = page.nextOffset;
+  }
+}
+
+function toFinanceEntryList(payload: FinanceEntry[] | FinanceEntryList) {
+  if (!Array.isArray(payload)) return payload;
+  return {
+    entries: payload,
+    hasMore: false,
+    nextOffset: null,
+    total: payload.length,
   };
 }

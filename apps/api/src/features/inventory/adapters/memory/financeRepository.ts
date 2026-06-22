@@ -98,7 +98,7 @@ export function createMemoryFinanceRepository(): FinanceRepository {
                 link.targetType === input.targetType,
             ),
         )
-        .slice(0, input.limit)
+        .slice(input.offset, input.offset + input.limit)
         .map((entry) => ({
           entry,
           links: links.filter((link) => link.entryId === entry.id),

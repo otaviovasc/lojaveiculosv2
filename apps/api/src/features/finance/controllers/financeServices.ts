@@ -3,7 +3,10 @@ import type { DrizzleFinanceClient } from "../../../infrastructure/db/finance/dr
 import type { FinanceServicePorts } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
 import type { AttachFinanceEntryDocumentInput } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import type { CreateFinanceEntryInput } from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
-import type { ListFinanceEntriesInput } from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
+import type {
+  FinanceEntryListResult,
+  ListFinanceEntriesInput,
+} from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
 import type { RequestFinanceEntryDocumentUploadInput } from "../../../domains/finance/services/FinanceService/requestFinanceEntryDocumentUpload.js";
 import type { UpdateFinanceEntryInput } from "../../../domains/finance/services/FinanceService/updateFinanceEntry.js";
 import type { PayFinanceEntryInput } from "../../../domains/finance/services/FinanceService/payFinanceEntry.js";
@@ -29,7 +32,6 @@ import { createFinanceRecurringEntry } from "../../../domains/finance/services/F
 import { getFinanceSummary } from "../../../domains/finance/services/FinanceService/getFinanceSummary.js";
 import { listCommissionRules } from "../../../domains/finance/services/FinanceService/listCommissionRules.js";
 import { listFinanceEntries } from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
-import { listFinanceEntriesByTarget } from "../../../domains/finance/services/FinanceService/listFinanceEntriesByTarget.js";
 import { listFinanceRecurringEntries } from "../../../domains/finance/services/FinanceService/listFinanceRecurringEntries.js";
 import { payFinanceEntry } from "../../../domains/finance/services/FinanceService/payFinanceEntry.js";
 import { requestFinanceEntryDocumentUpload } from "../../../domains/finance/services/FinanceService/requestFinanceEntryDocumentUpload.js";
@@ -39,6 +41,13 @@ import { createDrizzleDocumentRepository } from "../../../infrastructure/db/docu
 import { createMemoryFinanceRepository } from "../../inventory/adapters/memory/financeRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createTestDocumentRepository } from "../../../domains/documents/testSupportDocumentRepository.js";
+
+export type FinanceEntryListResultDto = Omit<
+  FinanceEntryListResult,
+  "entries"
+> & {
+  entries: readonly FinanceEntry[];
+};
 
 export type FinanceServices = {
   attachDocument: (
@@ -65,7 +74,7 @@ export type FinanceServices = {
   listEntries: (
     context: ServiceContext,
     input: ListFinanceEntriesInput,
-  ) => Promise<readonly FinanceEntry[]>;
+  ) => Promise<FinanceEntryListResultDto>;
   listCommissionRules: (
     context: ServiceContext,
     input: ListCommissionRulesInput,
@@ -116,19 +125,11 @@ export function createFinanceServices(
       createFinanceRecurringEntry(context, input, ports),
     getSummary: (context) => getFinanceSummary(context, ports),
     async listEntries(context, input) {
-      const bundles =
-        input.targetId && input.targetType
-          ? await listFinanceEntriesByTarget(
-              context,
-              {
-                ...(input.limit !== undefined ? { limit: input.limit } : {}),
-                targetId: input.targetId,
-                targetType: input.targetType,
-              },
-              ports,
-            )
-          : await listFinanceEntries(context, input, ports);
-      return bundles.map((bundle) => bundle.entry);
+      const result = await listFinanceEntries(context, input, ports);
+      return {
+        ...result,
+        entries: result.entries.map((bundle) => bundle.entry),
+      };
     },
     listCommissionRules: (context, input) =>
       listCommissionRules(context, input, ports),

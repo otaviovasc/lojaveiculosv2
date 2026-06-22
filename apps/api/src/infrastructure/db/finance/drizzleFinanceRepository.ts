@@ -110,8 +110,9 @@ export function createDrizzleFinanceRepository(
         .select()
         .from(financeEntries)
         .where(and(...filters))
-        .orderBy(desc(financeEntries.updatedAt))
-        .limit(input.limit);
+        .orderBy(desc(financeEntries.updatedAt), desc(financeEntries.id))
+        .limit(input.limit)
+        .offset(input.offset);
       const linkRows = await findLinksForEntries(
         rows.map((row) => row.id),
         scope,

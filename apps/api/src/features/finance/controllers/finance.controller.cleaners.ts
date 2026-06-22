@@ -15,6 +15,7 @@ export function cleanListQuery(
 ) {
   return {
     ...(input.limit !== undefined ? { limit: input.limit } : {}),
+    ...(input.offset !== undefined ? { offset: input.offset } : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
     ...(input.targetId !== undefined ? { targetId: input.targetId } : {}),
     ...(input.targetType !== undefined ? { targetType: input.targetType } : {}),

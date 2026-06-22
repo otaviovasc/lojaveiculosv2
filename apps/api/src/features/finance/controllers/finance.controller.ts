@@ -69,11 +69,11 @@ export function createFinanceFeature(
         throw new FinanceRequestValidationError("Request query is invalid.");
       }
       const serviceContext = await createContext(context);
-      const entries = await services.listEntries(
+      const result = await services.listEntries(
         serviceContext,
         cleanListQuery(parsed.data),
       );
-      return context.json({ entries });
+      return context.json(result);
     }),
   );
 

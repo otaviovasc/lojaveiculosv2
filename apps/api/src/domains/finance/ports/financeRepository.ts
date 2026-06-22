@@ -98,6 +98,7 @@ export type FindFinanceEntryInput = {
 
 export type ListFinanceEntriesInput = {
   limit: number;
+  offset: number;
   status?: FinanceEntryStatus | null;
   storeId: string | null;
   targetId?: string | null;
