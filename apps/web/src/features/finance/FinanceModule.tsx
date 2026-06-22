@@ -1,20 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
-import {
-  CommissionRulesPanel,
-  FinanceSummaryPanel,
-  FinanceRecurringPanel,
-} from "./FinanceCorePanels";
-import { FinanceEntryForm, type FinanceFormState } from "./FinanceEntryForm";
+import { FinanceBillsFilters } from "./FinanceBillsFilters";
+import { FinanceBillsHeader } from "./FinanceBillsHeader";
+import { FinanceBillsSummary } from "./FinanceBillsSummary";
+import { FinanceEntryModal } from "./FinanceEntryModal";
 import { FinanceEntryTable } from "./FinanceEntryTable";
-import { FinanceModuleHeader, FinanceTypeTabs } from "./FinanceTypeTabs";
+import { FinanceRecurringBillsPanel } from "./FinanceRecurringBillsPanel";
+import { FinanceTypeTabs } from "./FinanceTypeTabs";
 import { createFinanceApiOptions } from "./runtimeApi";
+import {
+  filterEntries,
+  initialFinanceFilters,
+  loadFinanceWorkspace,
+  toEntryInput,
+  toRecurringInput,
+  type FinanceEntryDraft,
+  type FinanceFilters,
+  type FinanceListState,
+  type FinanceToast,
+} from "./financeBillsModel";
 import type {
-  CommissionRule,
   FinanceEntry,
   FinanceEntryType,
   FinanceRecurringEntry,
   FinanceSummary,
+  UpdateFinanceEntryInput,
 } from "./types";
 
 export function FinanceModule({
@@ -26,24 +36,26 @@ export function FinanceModule({
 }) {
   const [activeType, setActiveType] = useState(defaultActiveType);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
-  const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
-  const [recurringEntries, setRecurringEntries] = useState<
-    FinanceRecurringEntry[]
-  >([]);
+  const [recurringEntries, setRecurringEntries] = useState<FinanceRecurringEntry[]>([]);
   const [summary, setSummary] = useState<FinanceSummary | null>(null);
   const [runtimeApi, setRuntimeApi] = useState<FinanceApi | null>(api ?? null);
-  const [formState, setFormState] = useState<FinanceFormState>({
-    kind: "idle",
-  });
-  const [listState, setListState] = useState<ListState>({ kind: "loading" });
+  const [filters, setFilters] = useState<FinanceFilters>(initialFinanceFilters);
+  const [toast, setToast] = useState<FinanceToast | null>(null);
+  const [listState, setListState] = useState<FinanceListState>({ kind: "loading" });
   const [refreshToken, setRefreshToken] = useState(0);
+  const [modalEntry, setModalEntry] = useState<FinanceEntry | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const filteredEntries = useMemo(
+    () => filterEntries(entries, filters),
+    [entries, filters],
+  );
 
   useEffect(() => {
     if (api) {
       setRuntimeApi(api);
       return;
     }
-
     void createFinanceApiOptions().then((options) => {
       setRuntimeApi(createFinanceApi(options));
     });
@@ -51,19 +63,12 @@ export function FinanceModule({
 
   useEffect(() => {
     if (!runtimeApi) return;
-
     setListState({ kind: "loading" });
-    void Promise.all([
-      runtimeApi.listEntries(activeType),
-      runtimeApi.getSummary(),
-      runtimeApi.listRecurringEntries(),
-      runtimeApi.listCommissionRules(),
-    ])
-      .then(([nextEntries, nextSummary, nextRecurring, nextRules]) => {
-        setCommissionRules(nextRules);
-        setEntries(nextEntries);
-        setRecurringEntries(nextRecurring);
-        setSummary(nextSummary);
+    void loadFinanceWorkspace(runtimeApi, activeType)
+      .then((payload) => {
+        setEntries(payload.entries);
+        setRecurringEntries(payload.recurringEntries);
+        setSummary(payload.summary);
         setListState({ kind: "ready" });
       })
       .catch((error) => {
@@ -75,116 +80,159 @@ export function FinanceModule({
       });
   }, [activeType, refreshToken, runtimeApi]);
 
-  const submitEntry: Parameters<
-    typeof FinanceEntryForm
-  >[0]["onSubmit"] = async (input) => {
-    if (!runtimeApi) return;
-
-    if (!input.name || !input.category || input.amountCents <= 0) {
-      setFormState({
-        kind: "error",
-        message: "Informe descricao, categoria e valor maior que zero.",
-      });
-      return;
-    }
-
-    setFormState({ kind: "submitting" });
-    try {
-      const result = await runtimeApi.createEntryFlow(input);
-      setFormState({ entryId: result.entry.id, kind: "success" });
-      setRefreshToken((current) => current + 1);
-    } catch (error) {
-      setFormState({
-        kind: "error",
-        message: error instanceof Error ? error.message : String(error),
-      });
-    }
-  };
-
   const refresh = () => setRefreshToken((current) => current + 1);
 
-  const payEntry = async (entry: FinanceEntry) => {
+  const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi) return;
-    await runtimeApi.payEntry(entry.id);
+    if (modalEntry) {
+      await updateEntryFromDraft(runtimeApi, modalEntry.id, draft);
+      setToast({ kind: "success", title: "Lancamento salvo", message: draft.name });
+    } else if (draft.recurrence === "recurring") {
+      await runtimeApi.createRecurringEntry(toRecurringInput(draft));
+      setToast({ kind: "success", title: "Recorrencia criada", message: draft.name });
+    } else {
+      await runtimeApi.createEntryFlow(toEntryInput(draft));
+      setToast({ kind: "success", title: "Lancamento criado", message: draft.name });
+    }
     refresh();
   };
 
-  const cancelEntry = async (entry: FinanceEntry) => {
-    if (!runtimeApi) return;
-    const reason = window.prompt("Motivo do cancelamento") ?? undefined;
-    await runtimeApi.cancelEntry(entry.id, reason);
-    refresh();
-  };
-
-  const editEntry = async (entry: FinanceEntry) => {
-    if (!runtimeApi) return;
-    const name = window.prompt("Descricao", entry.name);
-    if (!name) return;
-    const amount = window.prompt("Valor", String(entry.amountCents / 100));
-    if (!amount) return;
-    await runtimeApi.updateEntry(entry.id, {
-      amountCents: Math.round(Number(amount) * 100),
-      name,
-    });
-    refresh();
+  const exportCsv = () => {
+    const rows = [
+      ["nome", "categoria", "status", "vencimento", "valor_centavos"],
+      ...filteredEntries.map((entry) => [
+        entry.name,
+        entry.category,
+        entry.status,
+        entry.dueAt ?? "",
+        String(entry.amountCents),
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `financeiro-${activeType}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   return (
     <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
-      <FinanceModuleHeader />
+      <FinanceBillsHeader
+        onCreate={() => {
+          setModalEntry(null);
+          setIsModalOpen(true);
+        }}
+        onExport={exportCsv}
+        onReports={() => (window.location.hash = "#/reports")}
+      />
       <FinanceTypeTabs
         activeType={activeType}
         onTypeChange={(type) => {
           setActiveType(type);
-          setFormState({ kind: "idle" });
+          setToast(null);
         }}
       />
-
-      <FinanceSummaryPanel summary={summary} />
-
-      <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-        <FinanceEntryForm
-          activeType={activeType}
-          onSubmit={submitEntry}
-          state={formState}
-        />
+      <FinanceBillsSummary
+        entries={filteredEntries}
+        onViewAll={() => tableRef.current?.scrollIntoView({ behavior: "smooth" })}
+        summary={summary}
+      />
+      <FinanceBillsFilters filters={filters} onChange={setFilters} />
+      {toast ? <FinanceToastMessage toast={toast} /> : null}
+      <div ref={tableRef}>
         <FinanceEntryTable
-          entries={entries}
+          entries={filteredEntries}
           isLoading={listState.kind === "loading"}
-          onCancel={(entry) => void cancelEntry(entry)}
-          onEdit={(entry) => void editEntry(entry)}
-          onPay={(entry) => void payEntry(entry)}
-          type={activeType}
+          onCancel={(entry) => void cancelEntry(runtimeApi, entry, refresh, setToast)}
+          onCreate={() => setIsModalOpen(true)}
+          onEdit={(entry) => {
+            setModalEntry(entry);
+            setIsModalOpen(true);
+          }}
+          onMarkPending={(entry) =>
+            void runtimeApi?.updateEntry(entry.id, { paidAt: null, status: "pending" }).then(refresh)
+          }
+          onPay={(entry) => void runtimeApi?.payEntry(entry.id).then(refresh)}
         />
       </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <FinanceRecurringPanel
-          items={recurringEntries}
-          onCreate={(input) => {
-            if (!runtimeApi) return;
-            void runtimeApi.createRecurringEntry(input).then(refresh);
-          }}
-        />
-        <CommissionRulesPanel
-          items={commissionRules}
-          onCreate={(input) => {
-            if (!runtimeApi) return;
-            void runtimeApi.createCommissionRule(input).then(refresh);
-          }}
-        />
-      </div>
-
+      <FinanceRecurringBillsPanel items={recurringEntries} />
       {listState.kind === "error" ? (
         <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-danger">
           {listState.message}
         </p>
       ) : null}
+      <FinanceEntryModal
+        activeType={activeType}
+        entry={modalEntry}
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setModalEntry(null);
+        }}
+        onSubmit={submitDraft}
+      />
     </main>
   );
 }
 
-type ListState =
-  | { kind: "loading" }
-  | { kind: "ready" }
-  | { kind: "error"; message: string };
+function FinanceToastMessage({ toast }: { toast: FinanceToast }) {
+  return (
+    <div className="rounded-lg border border-line bg-accent-soft p-3 text-sm font-black text-accent-strong">
+      {toast.title}: {toast.message}
+    </div>
+  );
+}
+
+async function updateEntryFromDraft(
+  api: FinanceApi,
+  entryId: string,
+  draft: FinanceEntryDraft,
+) {
+  const input = toEntryInput(draft);
+  const update: UpdateFinanceEntryInput = {
+    amountCents: input.amountCents,
+    category: input.category,
+    name: input.name,
+    status: input.status,
+  };
+  if (input.dueAt !== undefined) update.dueAt = input.dueAt;
+  if (input.metadata !== undefined) update.metadata = input.metadata;
+  if (input.paidAt !== undefined) update.paidAt = input.paidAt;
+  if (input.sellerUserId !== undefined) {
+    update.sellerUserId = input.sellerUserId;
+  }
+  await api.updateEntry(entryId, update);
+  if (!draft.documentFile) return;
+  const upload = await api.requestDocumentUpload(entryId, draft.documentFile);
+  await fetch(upload.uploadUrl, {
+    body: draft.documentFile,
+    method: upload.uploadMethod ?? "PUT",
+    ...(upload.uploadHeaders ? { headers: upload.uploadHeaders } : {}),
+  });
+  await api.attachDocument(entryId, {
+    fileName: draft.documentFile.name,
+    fileSizeBytes: draft.documentFile.size,
+    kind: "finance_receipt",
+    mimeType: draft.documentFile.type || "application/octet-stream",
+    storageKey: upload.storageKey,
+    title: draft.documentTitle.trim() || draft.documentFile.name,
+  });
+}
+
+async function cancelEntry(
+  api: FinanceApi | null,
+  entry: FinanceEntry,
+  refresh: () => void,
+  setToast: (toast: FinanceToast) => void,
+) {
+  if (!api || !window.confirm(`Cancelar ${entry.name}?`)) return;
+  await api.cancelEntry(entry.id, "Cancelado pela tela de gastos.");
+  setToast({ kind: "success", title: "Lancamento cancelado", message: entry.name });
+  refresh();
+}
+
+function csvCell(value: string) {
+  return `"${value.replaceAll('"', '""')}"`;
+}

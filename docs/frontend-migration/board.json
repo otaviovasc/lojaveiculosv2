@@ -1043,7 +1043,7 @@
       "priority": "P0",
       "classification": "already-covered-in-v2",
       "surface_type": "screen",
-      "status": "planned",
+      "status": "ready",
       "risk": "medium",
       "parallel_group": "finance",
       "depends_on": ["lvv2-f001-app-shell-dashboard"],
@@ -1075,11 +1075,51 @@
         {
           "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/finance/FinanceModule.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceBillsHeader.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceBillsSummary.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceBillsFilters.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceEntryTable.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceEntryModal.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceEntryModalSteps.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/FinanceRecurringBillsPanel.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/financeBillsModel.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/financeBillsFormat.ts"
+        },
+        {
+          "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/finance/financeBillsModel.test.ts"
         }
       ],
       "backend_contract": {
         "owner": "finance",
-        "notes": "Use finance_entries, recurrence, document upload descriptors, and target ownership checks."
+        "notes": "Uses V2 /api/v1/finance entries, summary, recurring-entries, payment/cancel/update lifecycle, and finance receipt upload/attach descriptors. Recurring rule edit/delete from V1 is intentionally shown as a V2 contract gap because repository/controller currently expose create/list only."
       },
       "thread": {
         "kind": "codex-managed-agent",
@@ -1105,8 +1145,8 @@
           "command": "npm run qa:visual -- --slice lvv2-f009-finance-expenses-bills",
           "routes": ["/#/expenses"]
         },
-        "last_evidence_path": null,
-        "last_checked_at": null,
+        "last_evidence_path": "reports/visual/lvv2-f009-finance-expenses-bills/expenses.txt",
+        "last_checked_at": "2026-06-22T18:01:01Z",
         "blockers": []
       },
       "v1_improvement_backport_candidates": []
