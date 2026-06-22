@@ -73,7 +73,9 @@ export function SessionList({
             </span>
             <span className="crm-whatsapp-session-meta">
               <ChannelBadge channel={session.channel} />
-              {session.assignedAgent?.name ? session.assignedAgent.name : "Sem dono"}
+              {session.assignedAgent?.name
+                ? session.assignedAgent.name
+                : "Sem dono"}
             </span>
           </span>
           {(session.unreadCount ?? 0) > 0 ? (
@@ -87,12 +89,14 @@ export function SessionList({
 
 export function ChatHeader({
   agents,
+  canAssignSession,
   onAssign,
   onClose,
   onToggleIntervention,
   session,
 }: {
   agents: CrmWhatsappAgent[];
+  canAssignSession: boolean;
   onAssign: (agentId: number | null) => void;
   onClose: () => void;
   onToggleIntervention: () => void;
@@ -123,23 +127,25 @@ export function ChatHeader({
         >
           {session.status === "HUMAN_TAKEOVER" ? <UserRound /> : <Bot />}
         </button>
-        <select
-          aria-label="Atribuir conversa"
-          className="crm-whatsapp-select"
-          onChange={(event) =>
-            onAssign(event.target.value ? Number(event.target.value) : null)
-          }
-          value={session.assignedAgentId ?? ""}
-        >
-          <option value="">Sem atribuicao</option>
-          {agents
-            .filter((agent) => agent.isActive)
-            .map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-        </select>
+        {canAssignSession ? (
+          <select
+            aria-label="Atribuir conversa"
+            className="crm-whatsapp-select"
+            onChange={(event) =>
+              onAssign(event.target.value ? Number(event.target.value) : null)
+            }
+            value={session.assignedAgentId ?? ""}
+          >
+            <option value="">Sem atribuicao</option>
+            {agents
+              .filter((agent) => agent.isActive)
+              .map((agent) => (
+                <option key={agent.id} value={agent.id}>
+                  {agent.name}
+                </option>
+              ))}
+          </select>
+        ) : null}
         <button className="crm-action" onClick={onClose} type="button">
           <CheckCheck aria-hidden="true" className="size-4" />
           Concluir

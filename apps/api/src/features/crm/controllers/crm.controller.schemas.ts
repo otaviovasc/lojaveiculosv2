@@ -101,11 +101,13 @@ export const whatsappSessionsQuerySchema = z.object({
 });
 
 export const whatsappMessagesQuerySchema = z.object({
+  connectionId: z.coerce.number().int().positive().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
 });
 
 export const whatsappSendTextSchema = z.object({
+  connectionId: z.number().int().positive().optional(),
   quotedMessageId: z.union([z.number(), z.string()]).optional(),
   quotedMessageText: z.string().trim().max(2000).optional(),
   sessionId: z.number().int().positive(),
@@ -114,6 +116,7 @@ export const whatsappSendTextSchema = z.object({
 
 export const whatsappAssignSessionSchema = z.object({
   agentId: z.number().int().positive().nullable(),
+  connectionId: z.number().int().positive().optional(),
 });
 
 export const whatsappCreateSessionSchema = z.object({
@@ -125,9 +128,11 @@ export const whatsappCreateSessionSchema = z.object({
 });
 
 export const whatsappCloseSessionSchema = z.object({
+  connectionId: z.number().int().positive().optional(),
   mode: z.enum(["default", "immediate"]).default("default"),
 });
 
 export const whatsappMarkUnreadSchema = z.object({
+  connectionId: z.number().int().positive().optional(),
   lastReadAt: z.string().datetime().nullable().optional(),
 });

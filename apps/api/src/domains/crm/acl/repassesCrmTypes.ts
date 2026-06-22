@@ -17,6 +17,15 @@ export type RepassesCrmMessageQuery = {
 
 export type RepassesCrmAuth = {
   clerkSessionToken: string;
+  repassesConnectionId?: number;
+  storeId?: string;
+  storeSlug?: string;
+  tenantId?: string;
+};
+
+export type RepassesCrmAuthContext = {
+  canAssignSessions: boolean;
+  connectionId: number | null;
 };
 
 export type RepassesCrmClient = {
@@ -39,6 +48,7 @@ export type RepassesCrmClient = {
     },
   ) => Promise<unknown>;
   getAgents: (auth: RepassesCrmAuth) => Promise<unknown>;
+  getAuthContext: (auth: RepassesCrmAuth) => Promise<RepassesCrmAuthContext>;
   getConnections: (auth: RepassesCrmAuth) => Promise<unknown>;
   getConversation: (input: {
     conversationId: string;

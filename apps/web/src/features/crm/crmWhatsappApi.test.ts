@@ -24,7 +24,9 @@ function createFakeFetch(payloads: unknown[]) {
 
 describe("CRM WhatsApp API", () => {
   it("builds V2 WhatsApp routes", () => {
-    expect(crmWhatsappRoutes.bootstrap()).toBe("/api/v1/crm/whatsapp/bootstrap");
+    expect(crmWhatsappRoutes.bootstrap()).toBe(
+      "/api/v1/crm/whatsapp/bootstrap",
+    );
     expect(crmWhatsappRoutes.sessions()).toBe("/api/v1/crm/whatsapp/sessions");
     expect(crmWhatsappRoutes.messages(42)).toBe(
       "/api/v1/crm/whatsapp/messages/42",
@@ -69,5 +71,24 @@ describe("CRM WhatsApp API", () => {
       "x-clerk-user-id": "clerk_1",
       "x-store-slug": "test-store",
     });
+  });
+
+  it("serializes the selected connection for assignment mutations", async () => {
+    const fake = createFakeFetch([{ id: 42 }]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await api.assignSession(42, 7, 10);
+    await api.markSessionAsRead(42, 10);
+    await api.toggleIntervention(42, 10);
+
+    expect(fake.calls[0]?.init?.body).toBe(
+      JSON.stringify({ agentId: 7, connectionId: 10 }),
+    );
+    expect(fake.calls[1]?.input).toBe(
+      "/api/v1/crm/whatsapp/sessions/42/read?connectionId=10",
+    );
+    expect(fake.calls[2]?.input).toBe(
+      "/api/v1/crm/whatsapp/sessions/42/toggle-intervention?connectionId=10",
+    );
   });
 });

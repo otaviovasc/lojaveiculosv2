@@ -1,71 +1,10 @@
-import { Hono } from "hono";
-import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
-import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
-import { createServiceContext } from "../../../shared/serviceContext.js";
-import { createCrmFeature } from "./crm.controller.js";
-import { createCrmServices } from "./crmServices.js";
-import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
-import type { RepassesCrmClient } from "../../../domains/crm/acl/repassesCrmClient.js";
-
-function createTestApp(
-  repassesCrm: RepassesCrmClient,
-  options: {
-    audit?: AuditSink;
-    permissions?: PermissionKey[];
-  } = {},
-) {
-  const app = new Hono();
-  app.route(
-    "/api/v1/crm",
-    createCrmFeature({
-      contextFactory: async () =>
-        createServiceContext({
-          actor: { id: "user_1", kind: "user" },
-          ...(options.audit ? { audit: options.audit } : {}),
-          permissions: options.permissions ?? ["lead.read", "lead.update"],
-          request: { requestId: "req_1" },
-          storeId: "store_1",
-          tenantId: "tenant_1",
-        }),
-      services: createCrmServices({
-        ports: { crmRepository: createMemoryCrmRepository() },
-        repassesCrmClient: repassesCrm,
-      }),
-    }),
-  );
-  return app;
-}
-
-function createRepassesCrmStub(
-  overrides: Partial<RepassesCrmClient> = {},
-): RepassesCrmClient {
-  return {
-    assignSession: vi.fn(),
-    closeSession: vi.fn(),
-    createSession: vi.fn(),
-    getAgents: vi.fn(),
-    getConnections: vi.fn(),
-    getConversation: vi.fn(),
-    listMessages: vi.fn(),
-    listSessions: vi.fn(),
-    markSessionAsRead: vi.fn(),
-    markSessionAsUnread: vi.fn(),
-    sendText: vi.fn(),
-    toggleIntervention: vi.fn(),
-    ...overrides,
-  };
-}
-
-function createAuditSpy() {
-  const record = vi.fn(async (_event: AuditEvent) => undefined);
-  const audit: AuditSink = {
-    record: async (event) => {
-      await record(event);
-    },
-  };
-  return { audit, record };
-}
+import { RepassesCrmRequestError } from "../../../domains/crm/acl/repassesCrmClient.js";
+import {
+  createAuditSpy,
+  createRepassesCrmStub,
+  createTestApp,
+} from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp controller", () => {
   it("proxies session reads through the repasses ACL with Clerk bearer auth", async () => {
@@ -84,7 +23,11 @@ describe("CRM WhatsApp controller", () => {
       { id: 42, uuid: "session_42" },
     ]);
     expect(repassesCrm.listSessions).toHaveBeenCalledWith(
-      { clerkSessionToken: "clerk-token" },
+      expect.objectContaining({
+        clerkSessionToken: "clerk-token",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
       expect.objectContaining({ limit: 20, offset: 0, search: "ana" }),
     );
     const auditEvent = record.mock.calls[0]?.[0];
@@ -93,6 +36,41 @@ describe("CRM WhatsApp controller", () => {
       category: "data_access",
     });
     expect(auditEvent?.metadata?.permission).toBe("lead.read");
+  });
+
+  it("scopes bootstrap to the V2 store and exposes assignment capability", async () => {
+    const repassesCrm = createRepassesCrmStub({
+      getAgents: vi.fn(async () => ({ agents: [{ id: 1, isActive: true }] })),
+      getAuthContext: vi.fn(async () => ({
+        canAssignSessions: true,
+        connectionId: 10,
+      })),
+      getConnections: vi.fn(async () => ({
+        connections: [
+          { id: 9, lojaSlug: "other-store", status: "CONNECTED" },
+          { id: 10, lojaSlug: "test-store", status: "CONNECTED" },
+        ],
+      })),
+    });
+    const app = createTestApp(repassesCrm);
+
+    const response = await app.request("/api/v1/crm/whatsapp/bootstrap", {
+      headers: {
+        Authorization: "Bearer clerk-token",
+        "x-store-slug": "test-store",
+      },
+    });
+
+    await expect(response.json()).resolves.toMatchObject({
+      connections: [{ id: 10, lojaSlug: "test-store" }],
+      scope: { canAssignSessions: true, connectionId: 10 },
+    });
+    expect(repassesCrm.getAgents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        repassesConnectionId: 10,
+        storeSlug: "test-store",
+      }),
+    );
   });
 
   it("requires Clerk bearer auth for WhatsApp ACL routes", async () => {
@@ -150,16 +128,56 @@ describe("CRM WhatsApp controller", () => {
 
     expect(response.status).toBe(201);
     expect(repassesCrm.sendText).toHaveBeenCalledWith(
-      { clerkSessionToken: "clerk-token" },
+      expect.objectContaining({
+        clerkSessionToken: "clerk-token",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
       { sessionId: 42, text: "Ola" },
     );
-    const auditEvent = record.mock.calls[0]?.[0];
-    expect(auditEvent).toMatchObject({
+    expect(record).toHaveBeenCalledTimes(2);
+    expect(record.mock.calls[0]?.[0]).toMatchObject({
       action: "crm.whatsapp.message.send_text",
       category: "data_change",
       entityId: "42",
+      outcome: "attempted",
     });
-    expect(auditEvent?.metadata?.permission).toBe("lead.update");
+    expect(record.mock.calls[1]?.[0]).toMatchObject({
+      action: "crm.whatsapp.message.send_text",
+      outcome: "succeeded",
+    });
+    expect(record.mock.calls[0]?.[0]?.metadata?.permission).toBe("lead.update");
+  });
+
+  it("audits failed WhatsApp mutations before returning upstream errors", async () => {
+    const { audit, record } = createAuditSpy();
+    const repassesCrm = createRepassesCrmStub({
+      sendText: vi.fn(async () => {
+        throw new RepassesCrmRequestError("Forbidden upstream", 403);
+      }),
+    });
+    const app = createTestApp(repassesCrm, { audit });
+
+    const response = await app.request("/api/v1/crm/whatsapp/send/text", {
+      body: JSON.stringify({ connectionId: 10, sessionId: 42, text: "Ola" }),
+      headers: {
+        Authorization: "Bearer clerk-token",
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      message: "Forbidden upstream",
+    });
+    expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
+      "attempted",
+      "failed",
+    ]);
+    expect(record.mock.calls[1]?.[0]?.metadata?.errorName).toBe(
+      "RepassesCrmRequestError",
+    );
   });
 
   it("requires lead update permission before proxying WhatsApp mutations", async () => {

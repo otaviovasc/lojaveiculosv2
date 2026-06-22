@@ -1,8 +1,9 @@
-import type {
-  CrmWhatsappAgent,
-  CrmWhatsappConnection,
-  CrmWhatsappMessage,
-  CrmWhatsappSession,
+import {
+  type CrmWhatsappAgent,
+  type CrmWhatsappConnection,
+  type CrmWhatsappMessage,
+  type CrmWhatsappSession,
+  defaultWhatsappScope,
 } from "./crmWhatsappTypes";
 import type { CrmWhatsappBootstrap } from "./crmWhatsappApi";
 
@@ -13,10 +14,13 @@ export type WhatsappMessageView = CrmWhatsappMessage & {
 
 export function normalizeBootstrap(payload: CrmWhatsappBootstrap) {
   return {
-    agents: Array.isArray(payload.agents) ? payload.agents : payload.agents.agents,
+    agents: Array.isArray(payload.agents)
+      ? payload.agents
+      : payload.agents.agents,
     connections: Array.isArray(payload.connections)
       ? payload.connections
       : payload.connections.connections,
+    scope: payload.scope ?? defaultWhatsappScope,
   };
 }
 
@@ -67,7 +71,8 @@ export function mergeSessionsFromServer(
     const localSession = currentById.get(serverSession.id);
     if (!localSession) return serverSession;
 
-    const localIsNewer = getSessionTimeMs(localSession) > getSessionTimeMs(serverSession);
+    const localIsNewer =
+      getSessionTimeMs(localSession) > getSessionTimeMs(serverSession);
     const localReadIsNewer =
       getSessionReadTimeMs(localSession) > getSessionReadTimeMs(serverSession);
     return {
@@ -81,7 +86,10 @@ export function mergeSessionsFromServer(
         : {}),
       unreadCount: localReadIsNewer
         ? (localSession.unreadCount ?? 0)
-        : Math.max(serverSession.unreadCount ?? 0, localSession.unreadCount ?? 0),
+        : Math.max(
+            serverSession.unreadCount ?? 0,
+            localSession.unreadCount ?? 0,
+          ),
     };
   });
   const localOnly = options.preserveLocalOnly
@@ -97,7 +105,9 @@ export function mergeMessagesFromServer(
   current: WhatsappMessageView[],
   serverMessages: CrmWhatsappMessage[],
 ) {
-  const existingIds = new Set(serverMessages.map((message) => String(message.id)));
+  const existingIds = new Set(
+    serverMessages.map((message) => String(message.id)),
+  );
   const pending = current.filter(
     (message) =>
       message.status === "PENDING" &&
@@ -117,9 +127,7 @@ export function mergeMessagesFromServer(
   );
 }
 
-export function createOptimisticTextMessage(
-  text: string,
-): WhatsappMessageView {
+export function createOptimisticTextMessage(text: string): WhatsappMessageView {
   const clientId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return {
     clientId,
@@ -136,7 +144,8 @@ export function createOptimisticTextMessage(
 export function getSenderLabel(message: CrmWhatsappMessage) {
   const metadata = message.metadata ?? {};
   if (typeof metadata.authorName === "string") return metadata.authorName;
-  if (typeof metadata.senderAgentName === "string") return metadata.senderAgentName;
+  if (typeof metadata.senderAgentName === "string")
+    return metadata.senderAgentName;
   if (message.senderType === "AI") return "IA";
   if (message.senderType === "SYSTEM") return "Sistema";
   if (message.direction === "OUTBOUND") return "Atendente";

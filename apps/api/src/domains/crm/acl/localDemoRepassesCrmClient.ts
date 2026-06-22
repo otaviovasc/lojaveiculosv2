@@ -52,6 +52,13 @@ export function createLocalDemoRepassesCrmClient(): RepassesCrmClient {
       return { scheduled: false, session };
     },
     getAgents: async (auth) => withDemoAuth(auth, agents),
+    getAuthContext: async (auth) =>
+      withDemoAuth(auth, {
+        canAssignSessions:
+          !auth.repassesConnectionId ||
+          auth.repassesConnectionId === connection.id,
+        connectionId: connection.id,
+      }),
     getConnections: async (auth) => withDemoAuth(auth, [connection]),
     getConversation: async () => ({}),
     listMessages: async (_auth, sessionId, query) =>

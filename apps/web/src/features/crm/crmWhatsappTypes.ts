@@ -19,6 +19,7 @@ export type CrmWhatsappAgent = {
 
 export type CrmWhatsappConnection = {
   id: number;
+  lojaSlug?: string | null;
   name: string;
   phone?: string | null;
   provider?: string;
@@ -33,7 +34,10 @@ export type CrmWhatsappTag = {
 };
 
 export type CrmWhatsappSession = {
-  assignedAgent?: Pick<CrmWhatsappAgent, "email" | "id" | "name" | "role"> | null;
+  assignedAgent?: Pick<
+    CrmWhatsappAgent,
+    "email" | "id" | "name" | "role"
+  > | null;
   assignedAgentId?: number | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
@@ -97,9 +101,26 @@ export type CrmWhatsappSessionQuery = {
   sessionId?: number;
 };
 
+export type CrmWhatsappMessageQuery = {
+  connectionId?: number;
+  limit?: number;
+  offset?: number;
+};
+
 export type CrmWhatsappSendTextInput = {
+  connectionId?: number;
   quotedMessageId?: number | string;
   quotedMessageText?: string;
   sessionId: number;
   text: string;
+};
+
+export type CrmWhatsappScope = {
+  canAssignSessions: boolean;
+  connectionId: number | null;
+};
+
+export const defaultWhatsappScope: CrmWhatsappScope = {
+  canAssignSessions: false,
+  connectionId: null,
 };

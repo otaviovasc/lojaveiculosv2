@@ -10,6 +10,7 @@ export type DemoAgent = {
 
 export type DemoConnection = {
   id: number;
+  lojaSlug: string;
   name: string;
   phone: string;
   provider: string;
@@ -49,6 +50,7 @@ export type DemoMessage = {
 export function createLocalDemoRepassesCrmState() {
   const connection: DemoConnection = {
     id: 10,
+    lojaSlug: "test-store",
     name: "WhatsApp Loja Centro",
     phone: "+55 11 99999-0101",
     provider: "evolution",

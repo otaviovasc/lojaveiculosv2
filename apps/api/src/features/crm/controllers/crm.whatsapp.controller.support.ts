@@ -1,4 +1,4 @@
-import type { SafeAuditMetadata } from "@lojaveiculosv2/audit";
+import type { AuditOutcome, SafeAuditMetadata } from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import type { Context } from "hono";
 import type { z } from "zod";
@@ -38,7 +38,11 @@ export async function parseWhatsappJson<Schema extends z.ZodType>(
   return parsed.data;
 }
 
-export function createRepassesAuth(context: Context) {
+export function createRepassesAuth(
+  context: Context,
+  serviceContext: ServiceContext,
+  repassesConnectionId?: number,
+) {
   const authorization = context.req.header("authorization");
   const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) {
@@ -46,7 +50,14 @@ export function createRepassesAuth(context: Context) {
       "CRM WhatsApp requires a Clerk bearer token.",
     );
   }
-  return { clerkSessionToken: token };
+  const storeSlug = context.req.header("x-store-slug");
+  return {
+    clerkSessionToken: token,
+    ...(repassesConnectionId ? { repassesConnectionId } : {}),
+    ...(serviceContext.storeId ? { storeId: serviceContext.storeId } : {}),
+    ...(storeSlug ? { storeSlug } : {}),
+    ...(serviceContext.tenantId ? { tenantId: serviceContext.tenantId } : {}),
+  };
 }
 
 export function readNumericParam(context: Context, name: string): number {
@@ -68,6 +79,8 @@ export function assertWhatsappWrite(context: ServiceContext) {
 export async function recordWhatsappAudit(
   context: ServiceContext,
   input: WhatsappAuditInput,
+  outcome: AuditOutcome = "succeeded",
+  metadata: SafeAuditMetadata = {},
 ) {
   const scope = readWhatsappScope(context);
   await context.audit.record({
@@ -79,13 +92,32 @@ export async function recordWhatsappAudit(
     metadata: {
       permission: input.permission,
       ...(input.metadata ?? {}),
+      ...metadata,
     },
-    outcome: "succeeded",
+    outcome,
     requestId: context.requestId,
     storeId: scope.storeId,
     summary: input.summary,
     tenantId: scope.tenantId,
   });
+}
+
+export async function recordWhatsappMutation<T>(
+  context: ServiceContext,
+  input: WhatsappAuditInput,
+  action: () => Promise<T>,
+): Promise<T> {
+  await recordWhatsappAudit(context, input, "attempted");
+  try {
+    const result = await action();
+    await recordWhatsappAudit(context, input, "succeeded");
+    return result;
+  } catch (error) {
+    await recordWhatsappAudit(context, input, "failed", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+    });
+    throw error;
+  }
 }
 
 export async function handleWhatsapp(

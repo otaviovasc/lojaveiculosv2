@@ -8,3 +8,7 @@ export function readInitialSessionId() {
   const value = Number(new URLSearchParams(query).get("crm_session"));
   return Number.isInteger(value) && value > 0 ? value : null;
 }
+
+export function createConnectionQuery(connectionId: number | null) {
+  return connectionId ? { connectionId } : {};
+}

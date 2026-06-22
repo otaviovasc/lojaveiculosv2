@@ -12,7 +12,10 @@ import {
 import { MessageList } from "./CrmWhatsappMessageParts";
 
 export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
-  const whatsappApi = useMemo(() => api ?? createRuntimeCrmWhatsappApi(), [api]);
+  const whatsappApi = useMemo(
+    () => api ?? createRuntimeCrmWhatsappApi(),
+    [api],
+  );
   const inbox = useCrmWhatsappInbox(whatsappApi);
   const activeSession = inbox.activeSession;
 
@@ -69,19 +72,31 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             <>
               <ChatHeader
                 agents={inbox.agents}
+                canAssignSession={inbox.canAssignSessions}
                 onAssign={(agentId) =>
                   void refreshAfter(() =>
-                    inbox.actions.assignSession(activeSession.id, agentId),
+                    inbox.actions.assignSession(
+                      activeSession.id,
+                      agentId,
+                      inbox.connectionId,
+                    ),
                   )
                 }
                 onClose={() =>
                   void refreshAfter(() =>
-                    inbox.actions.closeSession(activeSession.id, "default"),
+                    inbox.actions.closeSession(
+                      activeSession.id,
+                      "default",
+                      inbox.connectionId,
+                    ),
                   )
                 }
                 onToggleIntervention={() =>
                   void refreshAfter(() =>
-                    inbox.actions.toggleIntervention(activeSession.id),
+                    inbox.actions.toggleIntervention(
+                      activeSession.id,
+                      inbox.connectionId,
+                    ),
                   )
                 }
                 session={activeSession}

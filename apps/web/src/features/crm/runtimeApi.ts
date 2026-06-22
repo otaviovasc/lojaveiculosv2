@@ -31,17 +31,19 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
 
 export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
   return {
-    assignSession: async (sessionId, agentId) =>
+    assignSession: async (sessionId, agentId, connectionId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).assignSession(
         sessionId,
         agentId,
+        connectionId,
       ),
     bootstrap: async () =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).bootstrap(),
-    closeSession: async (sessionId, mode) =>
+    closeSession: async (sessionId, mode, connectionId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
         sessionId,
         mode,
+        connectionId,
       ),
     createSession: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).createSession(
@@ -56,20 +58,20 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
         query,
       ),
-    markSessionAsRead: async (sessionId) =>
+    markSessionAsRead: async (sessionId, connectionId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).markSessionAsRead(sessionId),
-    markSessionAsUnread: async (sessionId, lastReadAt) =>
+      ).markSessionAsRead(sessionId, connectionId),
+    markSessionAsUnread: async (sessionId, lastReadAt, connectionId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).markSessionAsUnread(sessionId, lastReadAt),
+      ).markSessionAsUnread(sessionId, lastReadAt, connectionId),
     sendText: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).sendText(input),
-    toggleIntervention: async (sessionId) =>
+    toggleIntervention: async (sessionId, connectionId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).toggleIntervention(sessionId),
+      ).toggleIntervention(sessionId, connectionId),
   };
 }
 

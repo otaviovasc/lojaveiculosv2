@@ -3,6 +3,7 @@ import {
   RepassesCrmUnavailableError,
   type CreateHttpRepassesCrmClientOptions,
   type RepassesCrmAuth,
+  type RepassesCrmAuthContext,
   type RepassesCrmClient,
   type RepassesCrmMessageQuery,
   type RepassesCrmSessionQuery,
@@ -14,12 +15,16 @@ export {
   RepassesCrmUnavailableError,
   type CreateHttpRepassesCrmClientOptions,
   type RepassesCrmAuth,
+  type RepassesCrmAuthContext,
   type RepassesCrmClient,
   type RepassesCrmMessageQuery,
   type RepassesCrmSessionQuery,
 } from "./repassesCrmTypes.js";
 
 type RepassesBridgeClerkResponse = {
+  connection?: {
+    id?: number;
+  };
   token?: string;
 };
 
@@ -37,7 +42,9 @@ export function createHttpRepassesCrmClient({
 }: CreateHttpRepassesCrmClientOptions): RepassesCrmClient {
   const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
 
-  async function exchangeClerkToken(auth: RepassesCrmAuth): Promise<string> {
+  async function exchangeClerkToken(
+    auth: RepassesCrmAuth,
+  ): Promise<RepassesBridgeClerkResponse> {
     const response = await fetchImpl(`${normalizedBaseUrl}/auth/bridge/clerk`, {
       body: JSON.stringify({ clerkSessionToken: auth.clerkSessionToken }),
       headers: { "Content-Type": "application/json" },
@@ -52,20 +59,22 @@ export function createHttpRepassesCrmClient({
       );
     }
 
-    return payload.token;
+    return payload;
   }
 
   async function requestJson(path: string, options: RequestOptions) {
-    const repassesToken = await exchangeClerkToken(options.auth);
+    const bridge = await exchangeClerkToken(options.auth);
     const url = new URL(`${normalizedBaseUrl}${path}`);
     options.query?.forEach((value, key) => url.searchParams.append(key, value));
 
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${repassesToken}`,
+      Authorization: `Bearer ${bridge.token}`,
       "Content-Type": "application/json",
     };
-    if (options.connectionId) {
-      headers["x-crm-connection-id"] = String(options.connectionId);
+    const connectionId =
+      options.connectionId ?? options.auth.repassesConnectionId;
+    if (connectionId) {
+      headers["x-crm-connection-id"] = String(connectionId);
     }
 
     const response = await fetchImpl(url.toString(), {
@@ -98,6 +107,16 @@ export function createHttpRepassesCrmClient({
         method: "POST",
       }),
     getAgents: (auth) => requestJson("/crm/agents", { auth }),
+    getAuthContext: async (auth) => {
+      const bridge = await exchangeClerkToken(auth);
+      return {
+        canAssignSessions:
+          Boolean(bridge.connection?.id) &&
+          (!auth.repassesConnectionId ||
+            bridge.connection?.id === auth.repassesConnectionId),
+        connectionId: bridge.connection?.id ?? null,
+      };
+    },
     getConnections: (auth) => requestJson("/crm/connections", { auth }),
     getConversation: async () => {
       throw new RepassesCrmRequestError(
@@ -153,6 +172,7 @@ export function createDisabledRepassesCrmClient(): RepassesCrmClient {
     closeSession: unavailable,
     createSession: unavailable,
     getAgents: unavailable,
+    getAuthContext: unavailable,
     getConnections: unavailable,
     getConversation: unavailable,
     listMessages: unavailable,
@@ -200,7 +220,9 @@ async function readJson(response: Response): Promise<unknown> {
   if (!response.ok) {
     const errorPayload = payload as { error?: string; message?: string };
     throw new RepassesCrmRequestError(
-      errorPayload.error ?? errorPayload.message ?? "Repasses CRM request failed.",
+      errorPayload.error ??
+        errorPayload.message ??
+        "Repasses CRM request failed.",
       response.status,
     );
   }

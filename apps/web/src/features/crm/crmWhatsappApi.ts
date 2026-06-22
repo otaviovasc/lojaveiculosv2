@@ -4,7 +4,9 @@ import { createCrmEndpoint } from "./apiClient";
 import type {
   CrmWhatsappAgent,
   CrmWhatsappConnection,
+  CrmWhatsappMessageQuery,
   CrmWhatsappMessage,
+  CrmWhatsappScope,
   CrmWhatsappSendTextInput,
   CrmWhatsappSession,
   CrmWhatsappSessionQuery,
@@ -15,17 +17,20 @@ export type CrmWhatsappBootstrap = {
   connections:
     | { connections: CrmWhatsappConnection[] }
     | CrmWhatsappConnection[];
+  scope?: CrmWhatsappScope;
 };
 
 export type CrmWhatsappApi = {
   assignSession: (
     sessionId: number,
     agentId: number | null,
+    connectionId?: number | null,
   ) => Promise<CrmWhatsappSession>;
   bootstrap: () => Promise<CrmWhatsappBootstrap>;
   closeSession: (
     sessionId: number,
     mode: "default" | "immediate",
+    connectionId?: number | null,
   ) => Promise<CrmWhatsappSession>;
   createSession: (input: {
     connectionId?: number;
@@ -35,18 +40,25 @@ export type CrmWhatsappApi = {
   }) => Promise<{ scheduled?: boolean; session?: CrmWhatsappSession }>;
   listMessages: (
     sessionId: number,
-    query?: { limit?: number; offset?: number },
+    query?: CrmWhatsappMessageQuery,
   ) => Promise<CrmWhatsappMessage[]>;
   listSessions: (
     query?: CrmWhatsappSessionQuery,
   ) => Promise<CrmWhatsappSession[]>;
-  markSessionAsRead: (sessionId: number) => Promise<unknown>;
+  markSessionAsRead: (
+    sessionId: number,
+    connectionId?: number | null,
+  ) => Promise<unknown>;
   markSessionAsUnread: (
     sessionId: number,
     lastReadAt?: string | null,
+    connectionId?: number | null,
   ) => Promise<unknown>;
   sendText: (input: CrmWhatsappSendTextInput) => Promise<CrmWhatsappMessage>;
-  toggleIntervention: (sessionId: number) => Promise<CrmWhatsappSession>;
+  toggleIntervention: (
+    sessionId: number,
+    connectionId?: number | null,
+  ) => Promise<CrmWhatsappSession>;
 };
 
 export type CreateCrmWhatsappApiOptions = {
@@ -75,13 +87,17 @@ export function createCrmWhatsappApi({
     }).then(readJson<T>);
 
   return {
-    assignSession: (sessionId, agentId) =>
+    assignSession: (sessionId, agentId, connectionId) =>
       postJson(crmWhatsappRoutes.assignSession(sessionId, baseUrl), {
         agentId,
+        connectionId,
       }),
     bootstrap: () => getJson(crmWhatsappRoutes.bootstrap(baseUrl)),
-    closeSession: (sessionId, mode) =>
-      postJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl), { mode }),
+    closeSession: (sessionId, mode, connectionId) =>
+      postJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl), {
+        connectionId,
+        mode,
+      }),
     createSession: (input) =>
       postJson(crmWhatsappRoutes.sessions(baseUrl), input),
     listMessages: (sessionId, query) =>
@@ -96,15 +112,24 @@ export function createCrmWhatsappApi({
           createCrmWhatsappSessionQuery(query),
         ]),
       ),
-    markSessionAsRead: (sessionId) =>
-      postJson(crmWhatsappRoutes.markRead(sessionId, baseUrl)),
-    markSessionAsUnread: (sessionId, lastReadAt) =>
+    markSessionAsRead: (sessionId, connectionId) =>
+      postJson(
+        withQuery(crmWhatsappRoutes.markRead(sessionId, baseUrl), [
+          createCrmWhatsappConnectionQuery(connectionId),
+        ]),
+      ),
+    markSessionAsUnread: (sessionId, lastReadAt, connectionId) =>
       postJson(crmWhatsappRoutes.markUnread(sessionId, baseUrl), {
+        connectionId,
         lastReadAt,
       }),
     sendText: (input) => postJson(crmWhatsappRoutes.sendText(baseUrl), input),
-    toggleIntervention: (sessionId) =>
-      postJson(crmWhatsappRoutes.toggleIntervention(sessionId, baseUrl)),
+    toggleIntervention: (sessionId, connectionId) =>
+      postJson(
+        withQuery(crmWhatsappRoutes.toggleIntervention(sessionId, baseUrl), [
+          createCrmWhatsappConnectionQuery(connectionId),
+        ]),
+      ),
   };
 }
 
@@ -144,19 +169,26 @@ export function createCrmWhatsappSessionQuery(
   return params;
 }
 
-function createCrmWhatsappMessageQuery(
-  query: { limit?: number; offset?: number } = {},
-) {
+function createCrmWhatsappMessageQuery(query: CrmWhatsappMessageQuery = {}) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "limit", query.limit);
   addOptionalParam(params, "offset", query.offset);
+  return params;
+}
+
+function createCrmWhatsappConnectionQuery(connectionId?: number | null) {
+  const params = new URLSearchParams();
+  addOptionalParam(params, "connectionId", connectionId ?? undefined);
   return params;
 }
 
 async function readJson<T>(response: Response): Promise<T> {
   const payload = (await response.json()) as { message?: string };
   if (!response.ok) {
-    throw new Error(payload.message ?? `CRM request failed: ${response.status}`);
+    throw new Error(
+      payload.message ?? `CRM request failed: ${response.status}`,
+    );
   }
   return payload as T;
 }
