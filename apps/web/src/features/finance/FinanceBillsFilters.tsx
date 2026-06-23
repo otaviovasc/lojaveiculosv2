@@ -36,35 +36,37 @@ export function FinanceBillsFilters({
         <label className="grid gap-2 text-sm font-black text-app-text">
           Status
           <FinanceSelect
-            onChange={(event) =>
+            onChange={(status) =>
               onChange({
                 ...filters,
-                status: event.target.value as FinanceFilters["status"],
+                status,
               })
             }
+            options={[
+              { label: "Todos", value: "all" },
+              { label: "Pendente", value: "pending" },
+              { label: "Pago", value: "paid" },
+              { label: "Cancelado", value: "cancelled" },
+            ]}
             value={filters.status}
-          >
-            <option value="all">Todos</option>
-            <option value="pending">Pendente</option>
-            <option value="paid">Pago</option>
-            <option value="cancelled">Cancelado</option>
-          </FinanceSelect>
+          />
         </label>
         <label className="grid gap-2 text-sm font-black text-app-text">
           Janela
           <FinanceSelect
-            onChange={(event) =>
+            onChange={(window) =>
               onChange({
                 ...filters,
-                window: event.target.value as FinanceFilters["window"],
+                window,
               })
             }
+            options={[
+              { label: "Proximos 30 dias", value: "next30" },
+              { label: "Vencidos", value: "overdue" },
+              { label: "Todos", value: "all" },
+            ]}
             value={filters.window}
-          >
-            <option value="next30">Proximos 30 dias</option>
-            <option value="overdue">Vencidos</option>
-            <option value="all">Todos</option>
-          </FinanceSelect>
+          />
         </label>
       </div>
     </section>

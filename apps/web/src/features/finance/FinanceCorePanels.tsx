@@ -91,11 +91,15 @@ export function FinanceRecurringPanel({
           <FinanceInput name="nextDueAt" required type="date" />
         </FinanceField>
         <FinanceField label="Frequencia">
-          <FinanceSelect name="frequency">
-            <option value="monthly">Mensal</option>
-            <option value="weekly">Semanal</option>
-            <option value="yearly">Anual</option>
-          </FinanceSelect>
+          <FinanceSelect
+            defaultValue="monthly"
+            name="frequency"
+            options={[
+              { label: "Mensal", value: "monthly" },
+              { label: "Semanal", value: "weekly" },
+              { label: "Anual", value: "yearly" },
+            ]}
+          />
         </FinanceField>
         <input name="type" type="hidden" value="expense" />
         <button

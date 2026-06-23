@@ -97,14 +97,9 @@ function UploadSelect({
     <div className="flex min-w-0 gap-2">
       <InventorySelect
         value={value}
-        onChange={(event) => onChange(event.target.value as InventoryMediaKind)}
-      >
-        {mediaKindOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </InventorySelect>
+        onChange={onChange}
+        options={mediaKindOptions}
+      />
     </div>
   );
 }
@@ -120,16 +115,9 @@ function DocumentSelect({
     <div className="flex min-w-0 gap-2">
       <InventorySelect
         value={value}
-        onChange={(event) =>
-          onChange(event.target.value as InventoryDocumentKind)
-        }
-      >
-        {documentKindOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </InventorySelect>
+        onChange={onChange}
+        options={documentKindOptions}
+      />
     </div>
   );
 }

@@ -1,5 +1,9 @@
 import type { ReactNode } from "react";
 import { Calendar, Search, X } from "lucide-react";
+import {
+  CustomSelect,
+  type CustomSelectOption,
+} from "../../../components/ui/CustomSelect";
 
 export function AgencyStatCard({
   icon,
@@ -57,28 +61,25 @@ export function AgencySearchFilter({
 }
 
 export function AgencySelect({
-  children,
   icon,
   onChange,
+  options,
   value,
 }: {
-  children: ReactNode;
   icon: ReactNode;
   onChange: (value: string) => void;
+  options: readonly CustomSelectOption[];
   value: string;
 }) {
   return (
-    <div className="relative">
-      <select
+    <div>
+      <CustomSelect
+        leftIcon={icon}
+        options={options}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-4 pr-9 py-2.5 bg-app border border-line focus:border-accent/40 rounded-xl text-xs font-black uppercase tracking-wider outline-none appearance-none cursor-pointer"
-      >
-        {children}
-      </select>
-      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
-        {icon}
-      </div>
+        onChange={onChange}
+        className="w-full pl-4 pr-9 py-2.5 bg-app border border-line focus:border-accent/40 rounded-xl text-xs font-black uppercase tracking-wider outline-none cursor-pointer"
+      />
     </div>
   );
 }

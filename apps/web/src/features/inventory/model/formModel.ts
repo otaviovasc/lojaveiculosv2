@@ -25,12 +25,19 @@ export type InventoryFormState = {
   vin: string;
 };
 
-export type InventoryFieldChangeHandler = (
-  field: keyof InventoryFormState,
+export type InventoryEditableField = Exclude<
+  keyof InventoryFormState,
+  "catalog"
+>;
+
+export type InventoryFieldChangeHandler = <
+  Field extends InventoryEditableField,
+>(
+  field: Field,
 ) => (
-  event: ChangeEvent<
-    HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-  >,
+  value:
+    | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    | InventoryFormState[Field],
 ) => void;
 
 export const listingStatusOptions: Array<{

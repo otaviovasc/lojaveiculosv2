@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Store, Globe, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { CustomSelect } from "../../../components/ui/CustomSelect";
 
 export function AgencyCreateStorePage() {
   const navigate = useNavigate();
@@ -96,17 +97,19 @@ export function AgencyCreateStorePage() {
                 <label className="text-xs font-black uppercase text-muted tracking-wider">
                   Plano da Loja
                 </label>
-                <select
+                <CustomSelect
                   value={plan}
-                  onChange={(e) => setPlan(e.target.value)}
+                  onChange={setPlan}
+                  options={[
+                    { label: "START - Básico", value: "START" },
+                    {
+                      label: "PREMIUM PRO - Intermediário",
+                      value: "PREMIUM PRO",
+                    },
+                    { label: "ENTERPRISE - Customizado", value: "ENTERPRISE" },
+                  ]}
                   className="w-full px-4 py-3 bg-app border border-line focus:border-accent/40 rounded-xl text-sm font-bold uppercase tracking-wider outline-none cursor-pointer"
-                >
-                  <option value="START">START - Básico</option>
-                  <option value="PREMIUM PRO">
-                    PREMIUM PRO - Intermediário
-                  </option>
-                  <option value="ENTERPRISE">ENTERPRISE - Customizado</option>
-                </select>
+                />
               </div>
 
               <button

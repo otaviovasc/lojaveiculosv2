@@ -37,13 +37,11 @@ export function ListingPanel({
           />
         </InventoryField>
         <InventoryField label="Status inicial">
-          <InventorySelect onChange={onChange("status")} value={form.status}>
-            {listingStatusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </InventorySelect>
+          <InventorySelect
+            onChange={onChange("status")}
+            options={listingStatusOptions}
+            value={form.status}
+          />
         </InventoryField>
         <InventoryField label="Preco anunciado">
           <InventoryInput

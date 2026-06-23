@@ -77,12 +77,11 @@ export function InventoryWorkflowPanel({
 
   const setField =
     (field: keyof WorkflowForm) =>
-    (
-      event: ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >,
-    ) => {
-      setForm((current) => ({ ...current, [field]: event.target.value }));
+    (value: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string) => {
+      setForm((current) => ({
+        ...current,
+        [field]: typeof value === "string" ? value : value.target.value,
+      }));
     };
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -143,30 +142,28 @@ export function InventoryWorkflowPanel({
             <InventorySelect
               disabled={isSaving}
               onChange={setField("unitId")}
-              value={form.unitId}
-            >
-              <option value="">Selecione</option>
-              {detail.units.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {[unit.stockNumber, unit.plate, unit.status]
+              options={[
+                { label: "Selecione", value: "" },
+                ...detail.units.map((unit) => ({
+                  label: [unit.stockNumber, unit.plate, unit.status]
                     .filter(Boolean)
-                    .join(" / ")}
-                </option>
-              ))}
-            </InventorySelect>
+                    .join(" / "),
+                  value: unit.id,
+                })),
+              ]}
+              value={form.unitId}
+            />
           </InventoryField>
           <InventoryField label="Forma de pagamento">
             <InventorySelect
               disabled={isSaving}
               onChange={setField("paymentMethod")}
+              options={paymentMethods.map(([value, label]) => ({
+                label,
+                value,
+              }))}
               value={form.paymentMethod}
-            >
-              {paymentMethods.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </InventorySelect>
+            />
           </InventoryField>
           <InventoryField label="Cliente comprador">
             <InventoryInput

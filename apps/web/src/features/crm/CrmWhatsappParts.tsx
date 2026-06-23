@@ -10,6 +10,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { useState } from "react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import {
   formatRelativeSessionTime,
   formatSessionName,
@@ -128,23 +129,23 @@ export function ChatHeader({
           {session.status === "HUMAN_TAKEOVER" ? <UserRound /> : <Bot />}
         </button>
         {canAssignSession ? (
-          <select
+          <CustomSelect
             aria-label="Atribuir conversa"
             className="crm-whatsapp-select"
-            onChange={(event) =>
-              onAssign(event.target.value ? Number(event.target.value) : null)
+            onChange={(agentId) => onAssign(agentId ? Number(agentId) : null)}
+            options={[
+              { label: "Sem atribuicao", value: "" },
+              ...agents
+                .filter((agent) => agent.isActive)
+                .map((agent) => ({
+                  label: agent.name,
+                  value: String(agent.id),
+                })),
+            ]}
+            value={
+              session.assignedAgentId ? String(session.assignedAgentId) : ""
             }
-            value={session.assignedAgentId ?? ""}
-          >
-            <option value="">Sem atribuicao</option>
-            {agents
-              .filter((agent) => agent.isActive)
-              .map((agent) => (
-                <option key={agent.id} value={agent.id}>
-                  {agent.name}
-                </option>
-              ))}
-          </select>
+          />
         ) : null}
         <button className="crm-action" onClick={onClose} type="button">
           <CheckCheck aria-hidden="true" className="size-4" />

@@ -635,6 +635,10 @@
       "target_refs": [
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryDetailWorkspace.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/inventory/pages/InventoryCreatePage.tsx"
         },
         {

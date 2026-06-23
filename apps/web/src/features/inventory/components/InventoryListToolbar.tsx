@@ -59,17 +59,10 @@ export function InventoryListToolbar({
           />
           <InventorySelect
             className="w-full pl-10"
-            onChange={(event) =>
-              onStatusChange(event.target.value as InventoryListStatusFilter)
-            }
+            onChange={onStatusChange}
+            options={inventoryListStatusOptions}
             value={status}
-          >
-            {inventoryListStatusOptions.map((option) => (
-              <option key={option.value || "all"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </InventorySelect>
+          />
         </label>
 
         <div className="grid grid-cols-2 gap-3 sm:flex">

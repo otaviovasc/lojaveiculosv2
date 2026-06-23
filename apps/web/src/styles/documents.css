@@ -96,7 +96,7 @@
 }
 
 .documents-search,
-.documents-select select {
+.documents-select .custom-select-trigger {
   background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
@@ -109,7 +109,7 @@
 }
 
 .documents-search input,
-.documents-select select {
+.documents-select .custom-select-trigger {
   color: var(--color-text);
   font-weight: 800;
   outline: none;
@@ -126,7 +126,7 @@
   gap: 0.375rem;
 }
 
-.documents-select select {
+.documents-select .custom-select-trigger {
   padding: 0 0.75rem;
 }
 

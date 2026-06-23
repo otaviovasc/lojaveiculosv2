@@ -166,27 +166,29 @@ export function AgencyStoresCard({
           <AgencySelect
             icon={<SlidersHorizontal className="size-3.5" />}
             onChange={(value) => onSortByChange(value as AgencySort)}
+            options={[
+              { label: "Mais Recentes", value: "recent" },
+              { label: "Mais Antigas", value: "oldest" },
+              { label: "Ordem A-Z", value: "alphabetical" },
+              { label: "Mais Estoque", value: "vehicles" },
+              { label: "Por Status", value: "status" },
+            ]}
             value={sortBy}
-          >
-            <option value="recent">Mais Recentes</option>
-            <option value="oldest">Mais Antigas</option>
-            <option value="alphabetical">Ordem A-Z</option>
-            <option value="vehicles">Mais Estoque</option>
-            <option value="status">Por Status</option>
-          </AgencySelect>
+          />
           <AgencySelect
             icon={<SlidersHorizontal className="size-3.5" />}
             onChange={(value) =>
               onStatusFilterChange(value as AgencyStatusFilter)
             }
+            options={[
+              { label: "Todos Status", value: "all" },
+              { label: "Ativas", value: "active" },
+              { label: "Vencem em Breve", value: "expiring" },
+              { label: "Expiradas", value: "expired" },
+              { label: "Inativas", value: "inactive" },
+            ]}
             value={statusFilter}
-          >
-            <option value="all">Todos Status</option>
-            <option value="active">Ativas</option>
-            <option value="expiring">Vencem em Breve</option>
-            <option value="expired">Expiradas</option>
-            <option value="inactive">Inativas</option>
-          </AgencySelect>
+          />
           <AgencyDateFilter
             from={planEndDateFrom}
             onFromChange={onPlanEndDateFromChange}

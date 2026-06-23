@@ -37,7 +37,9 @@ export function ConfirmCommissionPayDialog({
       <div className="grid gap-4">
         <div className="rounded-lg border border-line bg-app p-4">
           <p className="text-sm font-bold text-muted">Marcar como pago para</p>
-          <p className="text-xl font-black text-app-text">{seller.sellerName}</p>
+          <p className="text-xl font-black text-app-text">
+            {seller.sellerName}
+          </p>
           <p className="text-xs font-bold text-muted">
             {filters.from} ate {filters.to}
           </p>
@@ -85,7 +87,9 @@ export function BonusCommissionDialog({
     notes: "",
     sellerUserId:
       selectedSellerId ??
-      (sellerOptions[0]?.value === "unassigned" ? "" : sellerOptions[0]?.value ?? ""),
+      (sellerOptions[0]?.value === "unassigned"
+        ? ""
+        : (sellerOptions[0]?.value ?? "")),
   });
   const amount = Number(draft.amount.replace(",", "."));
   const canSubmit = draft.name.trim() && Number.isFinite(amount) && amount > 0;
@@ -95,20 +99,18 @@ export function BonusCommissionDialog({
       <div className="grid gap-4 md:grid-cols-2">
         <FinanceField label="Vendedor">
           <FinanceSelect
-            onChange={(event) =>
-              setDraft({ ...draft, sellerUserId: event.target.value })
-            }
+            onChange={(sellerUserId) => setDraft({ ...draft, sellerUserId })}
+            options={[
+              { label: "Sem vendedor vinculado", value: "" },
+              ...sellerOptions
+                .filter((seller) => seller.value !== "unassigned")
+                .map((seller) => ({
+                  label: seller.label,
+                  value: seller.value,
+                })),
+            ]}
             value={draft.sellerUserId}
-          >
-            <option value="">Sem vendedor vinculado</option>
-            {sellerOptions
-              .filter((seller) => seller.value !== "unassigned")
-              .map((seller) => (
-                <option key={seller.value} value={seller.value}>
-                  {seller.label}
-                </option>
-              ))}
-          </FinanceSelect>
+          />
         </FinanceField>
         <FinanceField label="Valor">
           <FinanceInput
@@ -123,20 +125,26 @@ export function BonusCommissionDialog({
         </FinanceField>
         <FinanceField label="Referencia">
           <FinanceInput
-            onChange={(event) => setDraft({ ...draft, name: event.target.value })}
+            onChange={(event) =>
+              setDraft({ ...draft, name: event.target.value })
+            }
             value={draft.name}
           />
         </FinanceField>
         <FinanceField label="Vencimento">
           <FinanceInput
-            onChange={(event) => setDraft({ ...draft, dueAt: event.target.value })}
+            onChange={(event) =>
+              setDraft({ ...draft, dueAt: event.target.value })
+            }
             type="date"
             value={draft.dueAt}
           />
         </FinanceField>
         <FinanceField label="Observacao">
           <FinanceInput
-            onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
+            onChange={(event) =>
+              setDraft({ ...draft, notes: event.target.value })
+            }
             value={draft.notes}
           />
         </FinanceField>

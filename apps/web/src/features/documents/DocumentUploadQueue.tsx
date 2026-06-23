@@ -1,4 +1,5 @@
 import { FileImage, FileText, Trash2 } from "lucide-react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { kindOptions } from "./documentLabels";
 import type { DocumentKind } from "./types";
 
@@ -46,23 +47,21 @@ export function DocumentUploadQueue({
               value={item.title}
             />
           </div>
-          <select
+          <CustomSelect
             disabled={isUploading}
-            onChange={(event) =>
+            onChange={(kind) =>
               onUpdate(item.id, {
-                kind: event.target.value as DocumentKind,
+                kind,
               })
             }
-            value={item.kind}
-          >
-            {kindOptions
+            options={kindOptions
               .filter((option) => option.value)
-              .map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-          </select>
+              .map((option) => ({
+                label: option.label,
+                value: option.value as DocumentKind,
+              }))}
+            value={item.kind}
+          />
           <button
             aria-label="Remover arquivo"
             disabled={isUploading}

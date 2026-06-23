@@ -7,7 +7,9 @@ import {
   Database,
 } from "lucide-react";
 import type { ComponentType } from "react";
-import { motion } from "motion/react";
+import { AnimatedCounter } from "../../components/ui/CountUp";
+import AnimatedContent from "../../components/ui/AnimatedContent";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import type {
   DocumentKind,
   DocumentLinkTarget,
@@ -40,32 +42,33 @@ export function Metric({
   const className = [
     "kpi-card-premium flex items-center gap-3 !p-3 !px-4 !rounded-xl",
     toneClass,
-    "border border-white/10 shadow-sm text-white cursor-default",
+    "border border-white/10 shadow-sm text-white cursor-default transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.015]",
   ].join(" ");
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: idx * 0.04 }}
-      whileHover={{ y: -2, scale: 1.015 }}
-      className={className}
+    <AnimatedContent
+      distance={20}
+      delay={idx * 0.04}
+      duration={0.6}
+      ease="power2.out"
     >
-      {/* Shine highlight */}
-      <div className="gloss-overlay" />
+      <div className={className}>
+        {/* Shine highlight */}
+        <div className="gloss-overlay" />
 
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/10 relative z-10">
-        <KpiIcon className="size-4.5 text-white" />
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/10 relative z-10">
+          <KpiIcon className="size-4.5 text-white" />
+        </div>
+        <div className="min-w-0 relative z-10">
+          <span className="block text-[9px] font-black uppercase tracking-wider text-white/70 leading-none">
+            {label}
+          </span>
+          <strong className="block text-lg font-black text-white mt-1.5 leading-none">
+            <AnimatedCounter value={value} />
+          </strong>
+        </div>
       </div>
-      <div className="min-w-0 relative z-10">
-        <span className="block text-[9px] font-black uppercase tracking-wider text-white/70 leading-none">
-          {label}
-        </span>
-        <strong className="block text-lg font-black text-white mt-1.5 leading-none">
-          {value}
-        </strong>
-      </div>
-    </motion.div>
+    </AnimatedContent>
   );
 }
 
@@ -83,17 +86,12 @@ export function SelectFilter({
   return (
     <label className="documents-select">
       <span>{label}</span>
-      <select
+      <CustomSelect
         className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]"
-        onChange={(event) => onChange(event.target.value)}
+        onChange={onChange}
+        options={options}
         value={value}
-      >
-        {options.map((option) => (
-          <option key={option.value || "all"} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      />
     </label>
   );
 }
@@ -136,17 +134,15 @@ export function DocumentsWorkspaceHeader({
               : "Arquivos vinculados a veículos, leads, vendas, pagamentos, financeiro e fiscal em uma única lista auditada."}
           </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           aria-label="Atualizar documentos"
-          className="inline-flex size-10 items-center justify-center rounded-lg border border-line bg-app-elevated text-muted hover:text-primary hover:border-line-strong transition-all cursor-pointer"
+          className="inline-flex size-10 items-center justify-center rounded-lg border border-line bg-app-elevated text-muted hover:text-primary hover:border-line-strong transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
           onClick={onRefresh}
           title="Atualizar documentos"
           type="button"
         >
           <RefreshCcw aria-hidden="true" className="size-4.5" />
-        </motion.button>
+        </button>
       </section>
 
       <section

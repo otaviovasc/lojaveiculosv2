@@ -1,13 +1,10 @@
 import { ShieldCheck, UserCog } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { CustomSelect } from "../../../components/ui/CustomSelect";
 import type { RoleKey, RoleManagementView } from "../types";
 import { PermissionGroupPanel } from "./PermissionGroupPanel";
 import type { OverrideMode } from "./roleDraft";
-import {
-  createDraft,
-  createOverrides,
-  summarizeDraft,
-} from "./roleDraft";
+import { createDraft, createOverrides, summarizeDraft } from "./roleDraft";
 
 export function RoleManagementPanel({
   isSaving,
@@ -83,22 +80,20 @@ export function RoleManagementPanel({
             <p>{selected.user.email}</p>
             <h3>{selected.user.name ?? selected.user.email}</h3>
           </div>
-          <select
+          <CustomSelect
             disabled={!editable}
-            onChange={(event) =>
+            onChange={(role) =>
               setDraft({
                 overrides: new Map(),
-                role: event.target.value as RoleKey,
+                role,
               })
             }
+            options={availableRoles.map((role) => ({
+              label: role.label,
+              value: role.role,
+            }))}
             value={draft.role}
-          >
-            {availableRoles.map((role) => (
-              <option key={role.role} value={role.role}>
-                {role.label}
-              </option>
-            ))}
-          </select>
+          />
         </div>
 
         <div className="roles-summary">

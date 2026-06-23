@@ -10,11 +10,9 @@ import {
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import type { ModuleId } from "../app/modules";
-import {
-  dashboardQuickActions,
-  getDashboardEntryMotion,
-} from "../features/analytics/dashboardHomeAnimation";
+import { dashboardQuickActions } from "../features/analytics/dashboardHomeAnimation";
 import { MOCK_SELLERS } from "./DashboardHomeData";
+import { DashboardHomeEntry } from "./DashboardHomeEntry";
 
 export function DashboardHomeSidebarPanel({
   onNavigate,
@@ -27,58 +25,57 @@ export function DashboardHomeSidebarPanel({
 }) {
   return (
     <div className="dashboard-sidebar-col">
-      <motion.div
-        {...getDashboardEntryMotion(0.6)}
-        className="glass-panel-branded dashboard-sidebar-panel"
-      >
-        <div className="sidebar-block">
-          <h3 className="sidebar-block-title">
-            <Rocket className="size-4 text-accent" />
-            <span>Ações Comerciais</span>
-          </h3>
-          <button
-            onClick={() => onNavigate("inventory")}
-            className="sidebar-btn-primary group"
-          >
-            <div className="btn-shine-overlay" />
-            <div className="flex items-center gap-3 relative z-10">
-              <Plus className="size-5 text-white" />
-              <span className="text-sm font-black uppercase tracking-wider">
-                Novo Veículo
-              </span>
-            </div>
-            <ArrowRight className="size-4 text-white/70 relative z-10 group-hover:translate-x-0.5 transition-all" />
-          </button>
-          <div className="sidebar-btn-list">
-            {dashboardQuickActions.map((btn) => {
-              const BtnIcon = getQuickActionIcon(btn.id);
-              return (
-                <button
-                  key={btn.id}
-                  onClick={() => onNavigate(btn.id)}
-                  className="sidebar-btn-secondary group"
-                >
-                  <span className="flex items-center gap-3">
-                    <BtnIcon className="size-4 sidebar-btn-secondary-icon" />
-                    <span className="sidebar-btn-secondary-text">
-                      {btn.label}
+      <DashboardHomeEntry delay={0.22}>
+        <div className="glass-panel-branded dashboard-sidebar-panel">
+          <div className="sidebar-block">
+            <h3 className="sidebar-block-title">
+              <Rocket className="size-4 text-accent" />
+              <span>Ações Comerciais</span>
+            </h3>
+            <button
+              onClick={() => onNavigate("inventory")}
+              className="sidebar-btn-primary group"
+            >
+              <div className="btn-shine-overlay" />
+              <div className="flex items-center gap-3 relative z-10">
+                <Plus className="size-5 text-white" />
+                <span className="text-sm font-black uppercase tracking-wider">
+                  Novo Veículo
+                </span>
+              </div>
+              <ArrowRight className="size-4 text-white/70 relative z-10 group-hover:translate-x-0.5 transition-all" />
+            </button>
+            <div className="sidebar-btn-list">
+              {dashboardQuickActions.map((btn) => {
+                const BtnIcon = getQuickActionIcon(btn.id);
+                return (
+                  <button
+                    key={btn.id}
+                    onClick={() => onNavigate(btn.id)}
+                    className="sidebar-btn-secondary group"
+                  >
+                    <span className="flex items-center gap-3">
+                      <BtnIcon className="size-4 sidebar-btn-secondary-icon" />
+                      <span className="sidebar-btn-secondary-text">
+                        {btn.label}
+                      </span>
                     </span>
-                  </span>
-                  <ArrowRight className="size-3.5 text-muted/60 group-hover:translate-x-0.5 group-hover:text-accent transition-all" />
-                </button>
-              );
-            })}
+                    <ArrowRight className="size-3.5 text-muted/60 group-hover:translate-x-0.5 group-hover:text-accent transition-all" />
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          <SidebarDivider />
+          <DashboardSellerPerformance />
+          <SidebarDivider />
+          <DashboardAddonsPanel
+            onNavigate={onNavigate}
+            pushEnabled={pushEnabled}
+            setPushEnabled={setPushEnabled}
+          />
         </div>
-        <SidebarDivider />
-        <DashboardSellerPerformance />
-        <SidebarDivider />
-        <DashboardAddonsPanel
-          onNavigate={onNavigate}
-          pushEnabled={pushEnabled}
-          setPushEnabled={setPushEnabled}
-        />
-      </motion.div>
+      </DashboardHomeEntry>
     </div>
   );
 }

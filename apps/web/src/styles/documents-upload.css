@@ -127,7 +127,7 @@
 }
 
 .documents-upload-item input,
-.documents-upload-item select {
+.documents-upload-item .custom-select-trigger {
   background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
@@ -188,7 +188,7 @@
     grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
-  .documents-upload-item select {
+  .documents-upload-item .custom-select {
     grid-column: 2 / -1;
   }
 }

@@ -24,15 +24,15 @@ export function CatalogSelect({
     <InventoryField label={label}>
       <InventorySelect
         value={value}
-        onChange={(event) => onChange(event.target.value)}
-      >
-        <option value="">Selecionar</option>
-        {options.map((option) => (
-          <option key={option.code} value={option.code}>
-            {option.name}
-          </option>
-        ))}
-      </InventorySelect>
+        onChange={onChange}
+        options={[
+          { label: "Selecionar", value: "" },
+          ...options.map((option) => ({
+            label: option.name,
+            value: option.code,
+          })),
+        ]}
+      />
     </InventoryField>
   );
 }

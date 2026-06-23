@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { sourceLabels, sourceOptions } from "./crmPipelineConfig";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
@@ -91,33 +92,31 @@ export function LeadCreatePanel({
           />
         </CrmField>
         <CrmField icon={<MessageCircle />} label="Origem">
-          <select
+          <CustomSelect
             className="crm-input"
-            onChange={(event) => setSource(event.target.value as CrmLeadSource)}
-            value={source}
-          >
-            {sourceOptions
+            onChange={setSource}
+            options={sourceOptions
               .filter((option) => option !== "all")
-              .map((option) => (
-                <option key={option} value={option}>
-                  {sourceLabels[option]}
-                </option>
-            ))}
-          </select>
+              .map((option) => ({
+                label: sourceLabels[option],
+                value: option,
+              }))}
+            value={source}
+          />
         </CrmField>
         <CrmField icon={<CarFront />} label="Veiculo">
-          <select
+          <CustomSelect
             className="crm-input"
-            onChange={(event) => setListingId(event.target.value)}
+            onChange={setListingId}
+            options={[
+              { label: "Sem vinculo", value: "" },
+              ...vehicleOptions.map((vehicle) => ({
+                label: `${vehicle.label} - ${vehicle.detail}`,
+                value: vehicle.id,
+              })),
+            ]}
             value={listingId}
-          >
-            <option value="">Sem vinculo</option>
-            {vehicleOptions.map((vehicle) => (
-              <option key={vehicle.id} value={vehicle.id}>
-                {vehicle.label} - {vehicle.detail}
-              </option>
-            ))}
-          </select>
+          />
         </CrmField>
         <CrmField icon={<CalendarClock />} label="Follow-up">
           <input

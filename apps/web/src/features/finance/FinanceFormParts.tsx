@@ -1,4 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
+import {
+  CustomSelect,
+  type CustomSelectOption,
+} from "../../components/ui/CustomSelect";
 import type { FinanceEntryStatus, FinanceEntryType } from "./types";
 
 export const financeTypeLabels: Record<FinanceEntryType, string> = {
@@ -68,14 +72,28 @@ export function FinanceInput(props: ComponentProps<"input">) {
   );
 }
 
-export function FinanceSelect(props: ComponentProps<"select">) {
+type FinanceSelectProps<Value extends string = string> = {
+  ariaLabel?: string;
+  className?: string;
+  defaultValue?: Value;
+  disabled?: boolean;
+  name?: string;
+  onChange?: (value: Value) => void;
+  options: readonly CustomSelectOption<Value>[];
+  value?: Value;
+};
+
+export function FinanceSelect<Value extends string = string>({
+  className,
+  ...props
+}: FinanceSelectProps<Value>) {
   return (
-    <select
+    <CustomSelect
       {...props}
       className={[
         "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
         "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
-        props.className,
+        className,
       ]
         .filter(Boolean)
         .join(" ")}

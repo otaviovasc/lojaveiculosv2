@@ -7,7 +7,12 @@ import {
   type FinanceEntryDraft,
 } from "./financeBillsModel";
 import { financeTypeLabels } from "./FinanceFormParts";
-import { DetailsStep, RecurrenceStep, StepHeader, TypeStep } from "./FinanceEntryModalSteps";
+import {
+  DetailsStep,
+  RecurrenceStep,
+  StepHeader,
+  TypeStep,
+} from "./FinanceEntryModalSteps";
 import type { FinanceEntry, FinanceEntryType } from "./types";
 
 export function FinanceEntryModal({
@@ -39,8 +44,11 @@ export function FinanceEntryModal({
 
   const setField =
     (field: keyof FinanceEntryDraft) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setDraft((current) => ({ ...current, [field]: event.target.value }));
+    (value: ChangeEvent<HTMLInputElement> | string) => {
+      setDraft((current) => ({
+        ...current,
+        [field]: typeof value === "string" ? value : value.target.value,
+      }));
     };
   const canProceed =
     step < 3 || Boolean(draft.name.trim() && draft.amount && draft.category);
@@ -92,7 +100,11 @@ export function FinanceEntryModal({
           ) : step === 2 ? (
             <RecurrenceStep draft={draft} onChange={setDraft} />
           ) : (
-            <DetailsStep draft={draft} setField={setField} setDraft={setDraft} />
+            <DetailsStep
+              draft={draft}
+              setField={setField}
+              setDraft={setDraft}
+            />
           )}
         </div>
 

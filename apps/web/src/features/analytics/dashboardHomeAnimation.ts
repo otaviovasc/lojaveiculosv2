@@ -12,11 +12,28 @@ export type DashboardQuickAction = {
   label: string;
 };
 
+export type DashboardContentEntryOptions = {
+  direction?: "horizontal" | "vertical";
+  distance?: number;
+  duration?: number;
+  ease?: string;
+  reverse?: boolean;
+  threshold?: number;
+};
+
 export const DASHBOARD_RESOURCE_CYCLE_MS = 5000;
 export const DASHBOARD_ENTRY_DELAY_SCALE = 0.35;
 export const DASHBOARD_ENTRY_DURATION = 0.18;
 export const DASHBOARD_ENTRY_INITIAL = { opacity: 0, y: 8 };
 export const DASHBOARD_ENTRY_ANIMATE = { opacity: 1, y: 0 };
+export const DASHBOARD_KPI_ENTRY_DELAY_STEP = 0.04;
+export const DASHBOARD_CONTENT_ENTRY_DISTANCE = 20;
+export const DASHBOARD_CONTENT_ENTRY_DURATION = 0.6;
+export const DASHBOARD_CONTENT_ENTRY_EASE = "power2.out";
+export const DASHBOARD_CONTENT_ENTRY_THRESHOLD = 0.1;
+export const DASHBOARD_KPI_ENTRY_DISTANCE = DASHBOARD_CONTENT_ENTRY_DISTANCE;
+export const DASHBOARD_KPI_ENTRY_DURATION = DASHBOARD_CONTENT_ENTRY_DURATION;
+export const DASHBOARD_KPI_ENTRY_EASE = DASHBOARD_CONTENT_ENTRY_EASE;
 export const DASHBOARD_RESOURCE_PRESENCE_INITIAL = false;
 export const DASHBOARD_RESOURCE_PRESENCE_MODE = "sync";
 export const DASHBOARD_RESOURCE_SLIDE_CLASS =
@@ -105,6 +122,21 @@ export function getDashboardEntryMotion(delay: number) {
     motionCache.set(delay, cached);
   }
   return cached;
+}
+
+export function getDashboardContentEntryConfig(
+  delay: number,
+  options: DashboardContentEntryOptions = {},
+) {
+  return {
+    delay,
+    direction: options.direction ?? "vertical",
+    distance: options.distance ?? DASHBOARD_CONTENT_ENTRY_DISTANCE,
+    duration: options.duration ?? DASHBOARD_CONTENT_ENTRY_DURATION,
+    ease: options.ease ?? DASHBOARD_CONTENT_ENTRY_EASE,
+    reverse: options.reverse ?? false,
+    threshold: options.threshold ?? DASHBOARD_CONTENT_ENTRY_THRESHOLD,
+  };
 }
 
 export function getNextDashboardResourceIndex(current: number, total: number) {

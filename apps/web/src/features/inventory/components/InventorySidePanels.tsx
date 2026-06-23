@@ -51,14 +51,9 @@ export function MediaPanel({
             <InventorySelect
               disabled={!file}
               onChange={onChange("mediaKind")}
+              options={mediaKindOptions}
               value={form.mediaKind}
-            >
-              {mediaKindOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </InventorySelect>
+            />
           </InventoryField>
           <InventoryField label="Texto alternativo">
             <InventoryInput

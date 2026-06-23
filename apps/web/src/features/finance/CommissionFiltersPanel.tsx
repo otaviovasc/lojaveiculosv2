@@ -51,16 +51,15 @@ export function CommissionFiltersPanel({
         <label className="grid gap-2 text-sm font-black text-app-text">
           Periodo
           <FinanceSelect
-            onChange={(event) =>
-              setPeriod(event.target.value as CommissionPeriodPreset)
-            }
+            onChange={setPeriod}
+            options={[
+              { label: "Este mes", value: "thisMonth" },
+              { label: "Esta semana", value: "thisWeek" },
+              { label: "Mes passado", value: "lastMonth" },
+              { label: "Customizado", value: "custom" },
+            ]}
             value={filters.period}
-          >
-            <option value="thisMonth">Este mes</option>
-            <option value="thisWeek">Esta semana</option>
-            <option value="lastMonth">Mes passado</option>
-            <option value="custom">Customizado</option>
-          </FinanceSelect>
+          />
         </label>
         <DateField
           label="De"
@@ -75,51 +74,36 @@ export function CommissionFiltersPanel({
         <label className="grid gap-2 text-sm font-black text-app-text">
           Vendedor
           <FinanceSelect
-            onChange={(event) =>
-              onChange({ ...filters, sellerId: event.target.value })
-            }
+            onChange={(sellerId) => onChange({ ...filters, sellerId })}
+            options={[{ label: "Todos", value: "" }, ...sellerOptions]}
             value={filters.sellerId}
-          >
-            <option value="">Todos</option>
-            {sellerOptions.map((seller) => (
-              <option key={seller.value} value={seller.value}>
-                {seller.label}
-              </option>
-            ))}
-          </FinanceSelect>
+          />
         </label>
         <label className="grid gap-2 text-sm font-black text-app-text">
           Status
           <FinanceSelect
-            onChange={(event) =>
+            onChange={(status) =>
               onChange({
                 ...filters,
-                status: event.target.value as CommissionStatusFilter,
+                status,
               })
             }
+            options={[
+              { label: "Todos", value: "all" },
+              { label: "Pendente", value: "pending" },
+              { label: "Pago", value: "paid" },
+              { label: "Cancelado", value: "cancelled" },
+            ]}
             value={filters.status}
-          >
-            <option value="all">Todos</option>
-            <option value="pending">Pendente</option>
-            <option value="paid">Pago</option>
-            <option value="cancelled">Cancelado</option>
-          </FinanceSelect>
+          />
         </label>
         <label className="grid gap-2 text-sm font-black text-app-text">
           Origem
           <FinanceSelect
-            onChange={(event) =>
-              onChange({ ...filters, origin: event.target.value })
-            }
+            onChange={(origin) => onChange({ ...filters, origin })}
+            options={[{ label: "Todas", value: "all" }, ...originOptions]}
             value={filters.origin}
-          >
-            <option value="all">Todas</option>
-            {originOptions.map((origin) => (
-              <option key={origin.value} value={origin.value}>
-                {origin.label}
-              </option>
-            ))}
-          </FinanceSelect>
+          />
         </label>
       </div>
     </section>

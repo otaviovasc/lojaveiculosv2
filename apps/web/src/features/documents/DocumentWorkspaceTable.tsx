@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { kindOptions } from "./documentLabels";
 import { DocumentRowActions } from "./DocumentWorkspaceRowActions";
 import {
@@ -114,18 +115,16 @@ function DocumentRowEditor({
         onChange={(event) => onTitleChange(event.target.value)}
         value={title}
       />
-      <select
-        onChange={(event) => onKindChange(event.target.value as DocumentKind)}
-        value={kind}
-      >
-        {kindOptions
+      <CustomSelect
+        onChange={onKindChange}
+        options={kindOptions
           .filter((option) => option.value)
-          .map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-      </select>
+          .map((option) => ({
+            label: option.label,
+            value: option.value as DocumentKind,
+          }))}
+        value={kind}
+      />
     </div>
   );
 }

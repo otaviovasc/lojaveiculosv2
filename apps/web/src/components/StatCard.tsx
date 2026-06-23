@@ -1,4 +1,5 @@
 import type { DashboardStat } from "../app/dashboardData";
+import { AnimatedCounter } from "./ui/CountUp";
 
 export function StatCard({ stat }: { stat: DashboardStat }) {
   const Icon = stat.icon;
@@ -9,7 +10,9 @@ export function StatCard({ stat }: { stat: DashboardStat }) {
         <div className="mb-4 flex size-12 items-center justify-center rounded-lg bg-white-soft">
           <Icon aria-hidden="true" className="size-6" />
         </div>
-        <p className="text-3xl font-black leading-none">{stat.value}</p>
+        <p className="text-3xl font-black leading-none">
+          <AnimatedCounter value={stat.value} />
+        </p>
         <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-white-muted">
           {stat.label}
         </p>

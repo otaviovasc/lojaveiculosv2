@@ -39,8 +39,11 @@ export function FinanceEntryForm({
 
   const setField =
     (field: keyof FinanceDraft) =>
-    (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setForm((current) => ({ ...current, [field]: event.target.value }));
+    (value: ChangeEvent<HTMLInputElement> | string) => {
+      setForm((current) => ({
+        ...current,
+        [field]: typeof value === "string" ? value : value.target.value,
+      }));
     };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -108,13 +111,14 @@ export function FinanceEntryForm({
             />
           </FinanceField>
           <FinanceField label="Status">
-            <FinanceSelect onChange={setField("status")} value={form.status}>
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {financeStatusLabels[status]}
-                </option>
-              ))}
-            </FinanceSelect>
+            <FinanceSelect
+              onChange={setField("status")}
+              options={statuses.map((status) => ({
+                label: financeStatusLabels[status],
+                value: status,
+              }))}
+              value={form.status}
+            />
           </FinanceField>
           <FinanceField label="Vencimento">
             <FinanceInput

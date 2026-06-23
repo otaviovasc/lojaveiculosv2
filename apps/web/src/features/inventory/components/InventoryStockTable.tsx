@@ -73,18 +73,10 @@ export function InventoryStockTable({
           value={search}
         />
         <InventorySelect
-          onChange={(event) =>
-            setStatus(event.target.value as InventoryListingStatus | "")
-          }
+          onChange={setStatus}
+          options={[{ label: "Todos", value: "" }, ...listingStatusOptions]}
           value={status}
-        >
-          <option value="">Todos</option>
-          {listingStatusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </InventorySelect>
+        />
         <button
           className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse disabled:opacity-70"
           disabled={state.kind === "loading"}

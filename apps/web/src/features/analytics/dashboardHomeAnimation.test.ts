@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
+  DASHBOARD_CONTENT_ENTRY_DISTANCE,
+  DASHBOARD_CONTENT_ENTRY_DURATION,
+  DASHBOARD_CONTENT_ENTRY_EASE,
+  DASHBOARD_CONTENT_ENTRY_THRESHOLD,
   DASHBOARD_ENTRY_INITIAL,
   DASHBOARD_RESOURCE_PRESENCE_INITIAL,
   DASHBOARD_RESOURCE_PRESENCE_MODE,
@@ -9,9 +13,14 @@ import {
   DASHBOARD_ENTRY_ANIMATE,
   DASHBOARD_ENTRY_DELAY_SCALE,
   DASHBOARD_ENTRY_DURATION,
+  DASHBOARD_KPI_ENTRY_DELAY_STEP,
+  DASHBOARD_KPI_ENTRY_DISTANCE,
+  DASHBOARD_KPI_ENTRY_DURATION,
+  DASHBOARD_KPI_ENTRY_EASE,
   getDashboardEntryMotion,
   dashboardResources,
   getDashboardResource,
+  getDashboardContentEntryConfig,
   getNextDashboardResourceIndex,
 } from "./dashboardHomeAnimation";
 
@@ -22,6 +31,42 @@ const dashboardHomeSource = readFileSync(
 const dashboardHomeMainPanelsSource = readFileSync(
   fileURLToPath(
     new URL("../../components/DashboardHomeMainPanels.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const dashboardHomeEntrySource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/DashboardHomeEntry.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const dashboardHomeKpisSource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/DashboardHomeKpis.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const dashboardHomeToolbarSource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/DashboardHomeToolbar.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const dashboardHomeSidebarPanelSource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/DashboardHomeSidebarPanel.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const dashboardLeadSourcesPanelSource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/DashboardLeadSourcesPanel.tsx", import.meta.url),
+  ),
+  "utf8",
+);
+const animatedContentSource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/ui/AnimatedContent.tsx", import.meta.url),
   ),
   "utf8",
 );
@@ -48,6 +93,51 @@ describe("dashboard home animation contract", () => {
     });
     expect(motion.transition.delay).toBeCloseTo(0.07);
     expect(dashboardHomeSource).not.toContain("duration: 0.3");
+  });
+
+  it("keeps dashboard KPI cards aligned with the non-flickering inventory entrance", () => {
+    expect(DASHBOARD_KPI_ENTRY_DELAY_STEP).toBe(0.04);
+    expect(DASHBOARD_KPI_ENTRY_DISTANCE).toBe(DASHBOARD_CONTENT_ENTRY_DISTANCE);
+    expect(DASHBOARD_KPI_ENTRY_DURATION).toBe(DASHBOARD_CONTENT_ENTRY_DURATION);
+    expect(DASHBOARD_KPI_ENTRY_EASE).toBe(DASHBOARD_CONTENT_ENTRY_EASE);
+    expect(DASHBOARD_KPI_ENTRY_DURATION).toBeLessThanOrEqual(0.6);
+  });
+
+  it("routes dashboard card entrances through the hidden-first shared wrapper", () => {
+    expect(getDashboardContentEntryConfig(0.12)).toEqual({
+      delay: 0.12,
+      direction: "vertical",
+      distance: DASHBOARD_CONTENT_ENTRY_DISTANCE,
+      duration: DASHBOARD_CONTENT_ENTRY_DURATION,
+      ease: DASHBOARD_CONTENT_ENTRY_EASE,
+      reverse: false,
+      threshold: DASHBOARD_CONTENT_ENTRY_THRESHOLD,
+    });
+    expect(
+      getDashboardContentEntryConfig(0.2, {
+        direction: "horizontal",
+        distance: 12,
+      }),
+    ).toMatchObject({
+      delay: 0.2,
+      direction: "horizontal",
+      distance: 12,
+    });
+    expect(dashboardHomeEntrySource).toContain("<AnimatedContent");
+    expect(dashboardHomeEntrySource).toContain('trigger = "mount"');
+    expect(animatedContentSource).toContain('visibility: "hidden"');
+    expect(animatedContentSource).toContain("style={hiddenStyle}");
+
+    for (const source of [
+      dashboardHomeKpisSource,
+      dashboardHomeMainPanelsSource,
+      dashboardHomeToolbarSource,
+      dashboardHomeSidebarPanelSource,
+      dashboardLeadSourcesPanelSource,
+    ]) {
+      expect(source).toContain("DashboardHomeEntry");
+      expect(source).not.toContain("getDashboardEntryMotion");
+    }
   });
 
   it("keeps the resource carousel from rendering an exit-only blank frame", () => {

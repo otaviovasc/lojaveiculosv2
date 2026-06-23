@@ -66,20 +66,15 @@ export function EditListingFields({
         </InventoryField>
         <InventoryField label="Status">
           <InventorySelect
-            onChange={(event) =>
+            onChange={(status) =>
               onChange({
                 ...form,
-                status: event.target.value as InventoryEditState["status"],
+                status,
               })
             }
+            options={listingStatusOptions}
             value={form.status}
-          >
-            {listingStatusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </InventorySelect>
+          />
         </InventoryField>
       </div>
       <InventoryCatalogSelector
@@ -148,21 +143,15 @@ function UnitFields({
         </InventoryField>
         <InventoryField label="Status da unidade">
           <InventorySelect
-            onChange={(event) =>
+            onChange={(unitStatus) =>
               onChange({
                 ...form,
-                unitStatus: event.target
-                  .value as InventoryEditState["unitStatus"],
+                unitStatus,
               })
             }
+            options={unitStatusOptions}
             value={form.unitStatus}
-          >
-            {unitStatusOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </InventorySelect>
+          />
         </InventoryField>
       </div>
       <InventoryField label="Numero de estoque">

@@ -1,5 +1,6 @@
 import { LayoutGrid, List, Search, Table2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import {
   listFilterStatuses,
   sourceLabels,
@@ -7,7 +8,6 @@ import {
   statusLabels,
 } from "./crmPipelineConfig";
 import type { CrmViewMode, LeadFilters } from "./crmPipelineModels";
-import type { CrmLeadSource, CrmLeadStatus } from "./productCrmTypes";
 
 export function LeadToolbar({
   filters,
@@ -32,38 +32,34 @@ export function LeadToolbar({
           value={filters.search}
         />
       </label>
-      <select
+      <CustomSelect
         className="crm-input"
-        onChange={(event) =>
+        onChange={(status) =>
           onChangeFilters({
             ...filters,
-            status: event.target.value as CrmLeadStatus | "all",
+            status,
           })
         }
+        options={listFilterStatuses.map((status) => ({
+          label: status === "all" ? "Todas as fases" : statusLabels[status],
+          value: status,
+        }))}
         value={filters.status}
-      >
-        {listFilterStatuses.map((status) => (
-          <option key={status} value={status}>
-            {status === "all" ? "Todas as fases" : statusLabels[status]}
-          </option>
-        ))}
-      </select>
-      <select
+      />
+      <CustomSelect
         className="crm-input"
-        onChange={(event) =>
+        onChange={(source) =>
           onChangeFilters({
             ...filters,
-            source: event.target.value as CrmLeadSource | "all",
+            source,
           })
         }
+        options={sourceOptions.map((source) => ({
+          label: source === "all" ? "Todas as origens" : sourceLabels[source],
+          value: source,
+        }))}
         value={filters.source}
-      >
-        {sourceOptions.map((source) => (
-          <option key={source} value={source}>
-            {source === "all" ? "Todas as origens" : sourceLabels[source]}
-          </option>
-        ))}
-      </select>
+      />
       <div className="crm-segmented" role="group">
         <ModeButton
           active={mode === "kanban"}

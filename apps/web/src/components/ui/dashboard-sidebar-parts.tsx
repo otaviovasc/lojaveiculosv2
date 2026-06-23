@@ -1,7 +1,23 @@
-import { ChevronDown, X } from "lucide-react";
+import {
+  ChevronDown,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Sun,
+  X,
+} from "lucide-react";
 import { useState } from "react";
+import type { ComponentType } from "react";
 import type { AppTheme } from "../../app/theme";
-import type { DashboardSidebarItem } from "./dashboard-sidebar";
+
+export type DashboardSidebarItem<Id extends string = string> = {
+  badge?: number | string;
+  icon: ComponentType<{ className?: string }>;
+  id: Id;
+  shortcut?: string;
+  title: string;
+  group?: string;
+};
 
 export function SidebarWorkspace({
   collapsed,
@@ -186,5 +202,74 @@ export function DashboardSidebarNavItem<Id extends string>({
         </span>
       )}
     </button>
+  );
+}
+
+export function SidebarFooterActions({
+  isCompact,
+  theme,
+  onThemeToggle,
+  onCollapsedChange,
+}: {
+  isCompact: boolean;
+  theme: AppTheme;
+  onThemeToggle: () => void;
+  onCollapsedChange: ((collapsed: boolean) => void) | undefined;
+}) {
+  return (
+    <div className={"flex gap-2 " + (isCompact ? "flex-col" : "items-center")}>
+      <button
+        aria-label={
+          theme === "dark"
+            ? "Alternar para tema claro"
+            : "Alternar para tema escuro"
+        }
+        aria-pressed={theme === "dark"}
+        className={
+          "group theme-toggle-btn h-10 px-3 flex items-center " +
+          (isCompact ? "justify-center w-full" : "flex-1 justify-start gap-2.5")
+        }
+        onClick={onThemeToggle}
+        title={theme === "dark" ? "Tema claro" : "Tema escuro"}
+        type="button"
+      >
+        {theme === "dark" ? (
+          <Sun
+            aria-hidden="true"
+            className="size-4.5 shrink-0 text-warning theme-icon"
+          />
+        ) : (
+          <Moon
+            aria-hidden="true"
+            className="size-4.5 shrink-0 text-violet-start theme-icon"
+          />
+        )}
+        {!isCompact && (
+          <span className="font-semibold text-sm">
+            {theme === "dark" ? "Tema Claro" : "Tema Escuro"}
+          </span>
+        )}
+        <div className="gloss-overlay" />
+      </button>
+
+      {onCollapsedChange && (
+        <button
+          aria-label={isCompact ? "Expandir sidebar" : "Recolher sidebar"}
+          className={
+            "hidden h-10 items-center justify-center rounded-xl border collapse-toggle-btn cursor-pointer lg:flex shrink-0 " +
+            (isCompact ? "w-full" : "w-10")
+          }
+          onClick={() => onCollapsedChange(!isCompact)}
+          title={isCompact ? "Expandir" : "Recolher"}
+          type="button"
+        >
+          {isCompact ? (
+            <PanelLeftOpen aria-hidden="true" className="size-4.5 shrink-0" />
+          ) : (
+            <PanelLeftClose aria-hidden="true" className="size-4.5 shrink-0" />
+          )}
+        </button>
+      )}
+    </div>
   );
 }

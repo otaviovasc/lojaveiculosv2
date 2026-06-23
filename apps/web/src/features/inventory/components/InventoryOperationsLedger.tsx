@@ -90,17 +90,10 @@ export function InventoryOperationsLedger({
         <form className="grid gap-3" onSubmit={(event) => void submit(event)}>
           <InventoryField label="Tipo de custo">
             <InventorySelect
-              onChange={(event) =>
-                setKind(event.target.value as InventoryCostKind)
-              }
+              onChange={setKind}
+              options={costKinds}
               value={kind}
-            >
-              {costKinds.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </InventorySelect>
+            />
           </InventoryField>
           <InventoryField label="Valor">
             <InventoryInput

@@ -20,6 +20,7 @@ export const colorTokens = {
   panel: "var(--color-panel)",
   pinkEnd: "var(--color-pink-end)",
   pinkStart: "var(--color-pink-start)",
+  primary: "var(--color-primary)",
   text: "var(--color-text)",
   violetEnd: "var(--color-violet-end)",
   violetStart: "var(--color-violet-start)",

@@ -1,5 +1,5 @@
 import { ArrowLeft, Folder, FolderOpen, List, Upload } from "lucide-react";
-import { motion } from "motion/react";
+import AnimatedContent from "../../components/ui/AnimatedContent";
 import { DocumentsTable } from "./DocumentWorkspaceTable";
 import {
   filterDocumentsByFolder,
@@ -9,13 +9,6 @@ import {
 import type { DocumentKind, WorkspaceDocument } from "./types";
 
 export type WorkspaceViewMode = "folders" | "list";
-
-const modeToggleBase =
-  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black cursor-pointer border transition-all";
-const selectedModeToggleClass =
-  "bg-accent-soft text-accent-strong border-accent-soft/20";
-const idleModeToggleClass =
-  "bg-app border-line text-muted hover:text-primary hover:border-line-strong";
 
 export function DocumentWorkspacePanel({
   documents,
@@ -59,107 +52,106 @@ export function DocumentWorkspacePanel({
       : documents;
 
   return (
-    <section className="glass-panel-branded documents-panel !p-6 relative overflow-hidden">
-      <div className="documents-panel-title documents-workspace-title">
-        <div>
-          <strong>
-            {viewMode === "folders"
-              ? "Pastas de documentos"
-              : "Lista operacional"}
-          </strong>
-          <span>
-            {selectedFolder
-              ? `${selectedFolder.title} · ${selectedFolder.count} ${isResultCapped ? "documentos carregados" : "documentos"}`
-              : isResultCapped
-                ? "Pastas e contagens refletem os documentos carregados mais recentes."
-                : "Organize por veículo, venda, lead, financeiro e fiscal."}
-          </span>
-        </div>
-        <div className="documents-workspace-actions">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse cursor-pointer shadow-sm disabled:opacity-75"
-            disabled={isBusy}
-            onClick={onOpenUpload}
-            type="button"
-          >
-            <Upload aria-hidden="true" className="size-4" />
-            Anexar
-          </motion.button>
-          <div
-            className="documents-mode-toggle"
-            aria-label="Modo de visualizacao"
-          >
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={[
-                modeToggleBase,
-                viewMode === "folders"
-                  ? selectedModeToggleClass
-                  : idleModeToggleClass,
-              ].join(" ")}
-              onClick={() => onViewModeChange("folders")}
-              title="Ver pastas"
+    <AnimatedContent
+      distance={30}
+      duration={0.8}
+      ease="power3.out"
+      className="w-full"
+    >
+      <section className="glass-panel-branded documents-panel !p-6 relative overflow-hidden">
+        <div className="documents-panel-title documents-workspace-title">
+          <div>
+            <strong>
+              {viewMode === "folders"
+                ? "Pastas de documentos"
+                : "Lista operacional"}
+            </strong>
+            <span>
+              {selectedFolder
+                ? `${selectedFolder.title} · ${selectedFolder.count} ${isResultCapped ? "documentos carregados" : "documentos"}`
+                : isResultCapped
+                  ? "Pastas e contagens refletem os documentos carregados mais recentes."
+                  : "Organize por veículo, venda, lead, financeiro e fiscal."}
+            </span>
+          </div>
+          <div className="documents-workspace-actions">
+            <button
+              className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-75"
+              disabled={isBusy}
+              onClick={onOpenUpload}
               type="button"
             >
-              <Folder aria-hidden="true" className="size-4" />
-              Pastas
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={[
-                modeToggleBase,
-                viewMode === "list"
-                  ? selectedModeToggleClass
-                  : idleModeToggleClass,
-              ].join(" ")}
-              onClick={() => onViewModeChange("list")}
-              title="Ver lista"
-              type="button"
+              <Upload aria-hidden="true" className="size-4" />
+              Anexar
+            </button>
+            <div
+              className="documents-mode-toggle"
+              aria-label="Modo de visualizacao"
             >
-              <List aria-hidden="true" className="size-4" />
-              Lista
-            </motion.button>
+              <button
+                className={
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black cursor-pointer border transition-all duration-200 hover:scale-105 active:scale-95 " +
+                  (viewMode === "folders"
+                    ? "bg-accent-soft text-accent-strong border-accent-soft/20"
+                    : "bg-app border-line text-muted hover:text-primary hover:border-line-strong")
+                }
+                onClick={() => onViewModeChange("folders")}
+                title="Ver pastas"
+                type="button"
+              >
+                <Folder aria-hidden="true" className="size-4" />
+                Pastas
+              </button>
+              <button
+                className={
+                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black cursor-pointer border transition-all duration-200 hover:scale-105 active:scale-95 " +
+                  (viewMode === "list"
+                    ? "bg-accent-soft text-accent-strong border-accent-soft/20"
+                    : "bg-app border-line text-muted hover:text-primary hover:border-line-strong")
+                }
+                onClick={() => onViewModeChange("list")}
+                title="Ver lista"
+                type="button"
+              >
+                <List aria-hidden="true" className="size-4" />
+                Lista
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      {isLoading ? (
-        <WorkspaceSkeleton />
-      ) : viewMode === "folders" && !selectedFolderKey ? (
-        <FoldersGrid
-          folders={folders}
-          isResultCapped={isResultCapped}
-          onSelectFolder={onSelectFolder}
-        />
-      ) : (
-        <>
-          {selectedFolder ? (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 shadow-sm"
-              onClick={() => onSelectFolder(null)}
-              type="button"
-            >
-              <ArrowLeft aria-hidden="true" className="size-3.5" />
-              Todas as pastas
-            </motion.button>
-          ) : null}
-          <DocumentsTable
-            documents={visibleDocuments}
-            isBusy={isBusy}
-            onDownload={onDownload}
-            onDelete={onDelete}
-            onSelect={onSelect}
-            onUpdate={onUpdate}
+        {isLoading ? (
+          <WorkspaceSkeleton />
+        ) : viewMode === "folders" && !selectedFolderKey ? (
+          <FoldersGrid
+            folders={folders}
+            isResultCapped={isResultCapped}
+            onSelectFolder={onSelectFolder}
           />
-        </>
-      )}
-    </section>
+        ) : (
+          <>
+            {selectedFolder ? (
+              <button
+                className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
+                onClick={() => onSelectFolder(null)}
+                type="button"
+              >
+                <ArrowLeft aria-hidden="true" className="size-3.5" />
+                Todas as pastas
+              </button>
+            ) : null}
+            <DocumentsTable
+              documents={visibleDocuments}
+              isBusy={isBusy}
+              onDownload={onDownload}
+              onDelete={onDelete}
+              onSelect={onSelect}
+              onUpdate={onUpdate}
+            />
+          </>
+        )}
+      </section>
+    </AnimatedContent>
   );
 }
 
@@ -179,27 +171,27 @@ function FoldersGrid({
   return (
     <div className="documents-folder-grid">
       {folders.map((folder) => (
-        <motion.button
-          whileHover={{
-            y: -3,
-            scale: 1.015,
-            borderColor: "var(--color-accent)",
-          }}
-          whileTap={{ scale: 0.99 }}
-          className="documents-folder-card cursor-pointer transition-all duration-200"
+        <AnimatedContent
           key={folder.key}
-          onClick={() => onSelectFolder(folder.key)}
-          type="button"
+          distance={20}
+          duration={0.6}
+          ease="power2.out"
         >
-          <FolderOpen aria-hidden="true" className="size-5" />
-          <strong>{folder.title}</strong>
-          <span>{folder.subtitle}</span>
-          <small>
-            {folder.count} docs{isResultCapped ? " carregados" : ""} ·{" "}
-            {folder.issued} emitidos · atualizado{" "}
-            {formatDateTime(folder.latestAt)}
-          </small>
-        </motion.button>
+          <button
+            className="documents-folder-card cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:border-[var(--color-accent)] w-full text-left"
+            onClick={() => onSelectFolder(folder.key)}
+            type="button"
+          >
+            <FolderOpen aria-hidden="true" className="size-5" />
+            <strong>{folder.title}</strong>
+            <span>{folder.subtitle}</span>
+            <small>
+              {folder.count} docs{isResultCapped ? " carregados" : ""} ·{" "}
+              {folder.issued} emitidos · atualizado{" "}
+              {formatDateTime(folder.latestAt)}
+            </small>
+          </button>
+        </AnimatedContent>
       ))}
     </div>
   );

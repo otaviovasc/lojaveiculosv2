@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import JSZip from "jszip";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
   createInventoryApiOptions,
   createInventoryRuntimeHeaders,
 } from "../api/inventoryRuntimeApi";
-import { InventoryEditPanel } from "../components/InventoryEditPanel";
+import { downloadAndZipPhotos } from "../components/zipPhotos";
 import { InventoryListHeader } from "../components/InventoryListHeader";
 import {
   InventoryListingCardGrid,
@@ -21,6 +20,7 @@ import {
   type InventoryActionItem,
 } from "../components/InventoryListModals";
 import { InventoryCreateMode } from "./InventoryCreateMode";
+import { InventoryDetailWorkspace } from "../components/InventoryDetailWorkspace";
 import {
   createInventoryErrorState,
   createListQuery,
@@ -46,7 +46,7 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
   const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
     api ?? null,
   );
-  const [screenMode, setScreenMode] = useState<"list" | "create">(
+  const [screenMode, setScreenMode] = useState<"list" | "create" | "detail">(
     routeStateRef.current.screenMode,
   );
   const [search, setSearch] = useState("");
@@ -120,27 +120,9 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     } else if (action === "zip-photos") {
       setLoadingMore(true);
       try {
-        const details = await runtimeApi?.getListing(item.listing.id);
-        const mediaItems = details?.media || [];
-        if (mediaItems.length === 0) {
-          alert("Nenhuma imagem cadastrada para este veículo.");
-          return;
+        if (runtimeApi) {
+          await downloadAndZipPhotos(runtimeApi, item);
         }
-        const zip = new JSZip();
-        for (let i = 0; i < mediaItems.length; i++) {
-          const url = mediaItems[i]?.url;
-          if (!url) continue;
-          const imgRes = await fetch(url);
-          const blob = await imgRes.blob();
-          zip.file(`foto_${i + 1}.png`, blob);
-        }
-        const content = await zip.generateAsync({ type: "blob" });
-        const zipUrl = URL.createObjectURL(content);
-        const link = document.createElement("a");
-        link.href = zipUrl;
-        link.download = `fotos-${item.listing.title.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.zip`;
-        link.click();
-        URL.revokeObjectURL(zipUrl);
       } catch (err) {
         console.error(err);
         alert("Erro ao baixar fotos do veículo.");
@@ -195,6 +177,12 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     void loadListings(initialListQuery);
   }, [loadListings]);
 
+  useEffect(() => {
+    if (detail && screenMode === "list") {
+      setScreenMode("detail");
+    }
+  }, [detail, screenMode]);
+
   useInventoryRouteSelection({
     api: runtimeApi,
     routeState: routeStateRef,
@@ -205,6 +193,13 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
   const refreshListings = () => {
     setAppliedQuery({ search, status });
     void loadListings({ search, status });
+  };
+
+  const applyStatusFilter = (nextStatus: InventoryListStatusFilter) => {
+    const nextQuery = { search, status: nextStatus };
+    setStatus(nextStatus);
+    setAppliedQuery(nextQuery);
+    void loadListings(nextQuery);
   };
 
   const selectListing = async (listingId: string) => {
@@ -240,6 +235,20 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     );
   }
 
+  if (screenMode === "detail" && runtimeApi && detail) {
+    return (
+      <InventoryDetailWorkspace
+        api={runtimeApi}
+        detail={detail}
+        onBack={() => {
+          setScreenMode("list");
+          setDetail(null);
+        }}
+        onUpdated={handleUpdated}
+      />
+    );
+  }
+
   const summary =
     listState.kind === "ready"
       ? summarizeInventoryList(listState.result)
@@ -250,7 +259,9 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
       <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
       <main className="dashboard-main relative z-10">
         <InventoryListHeader
+          activeStatus={status}
           available={summary.available}
+          onStatusSelect={applyStatusFilter}
           reserved={summary.reserved}
           sold={summary.sold}
           total={summary.total}
@@ -299,15 +310,6 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
             ) : null}
           </section>
         </div>
-        {runtimeApi && detail ? (
-          <div ref={editPanelRef} className="mt-8 border-t border-line pt-8">
-            <InventoryEditPanel
-              api={runtimeApi}
-              detail={detail}
-              onUpdated={handleUpdated}
-            />
-          </div>
-        ) : null}
       </main>
 
       <InventoryListModals

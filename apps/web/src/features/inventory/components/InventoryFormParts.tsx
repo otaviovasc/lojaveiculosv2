@@ -1,4 +1,8 @@
 import type { ComponentProps, ReactNode } from "react";
+import {
+  CustomSelect,
+  type CustomSelectOption,
+} from "../../../components/ui/CustomSelect";
 
 type FieldProps = {
   children: ReactNode;
@@ -57,14 +61,28 @@ export function InventoryInput(props: ComponentProps<"input">) {
   );
 }
 
-export function InventorySelect(props: ComponentProps<"select">) {
+type InventorySelectProps<Value extends string = string> = {
+  ariaLabel?: string;
+  className?: string;
+  defaultValue?: Value;
+  disabled?: boolean;
+  name?: string;
+  onChange?: (value: Value) => void;
+  options: readonly CustomSelectOption<Value>[];
+  value?: Value;
+};
+
+export function InventorySelect<Value extends string = string>({
+  className,
+  ...props
+}: InventorySelectProps<Value>) {
   return (
-    <select
+    <CustomSelect
       {...props}
       className={[
         "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
         "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
-        props.className,
+        className,
       ]
         .filter(Boolean)
         .join(" ")}

@@ -1,7 +1,8 @@
 import { Banknote, Bot, Target, TrendingUp } from "lucide-react";
-import { motion } from "motion/react";
-import { getDashboardEntryMotion } from "../features/analytics/dashboardHomeAnimation";
+import { AnimatedCounter } from "./ui/CountUp";
 import type { createDashboardStats } from "../features/analytics/dashboardModel";
+import { DASHBOARD_KPI_ENTRY_DELAY_STEP } from "../features/analytics/dashboardHomeAnimation";
+import { DashboardHomeEntry } from "./DashboardHomeEntry";
 
 type DashboardStat = ReturnType<typeof createDashboardStats>[number];
 
@@ -11,31 +12,35 @@ export function DashboardHomeKpis({ stats }: { stats: DashboardStat[] }) {
       {stats.map((stat, idx) => {
         const KpiIcon = getKpiIcon(stat.label);
         return (
-          <motion.div
+          <DashboardHomeEntry
             key={stat.label}
-            {...getDashboardEntryMotion(0.2 + idx * 0.05)}
-            whileHover={{ y: -6, scale: 1.02 }}
-            className={`kpi-card-premium ${getKpiToneClass(stat.tone)} group cursor-pointer`}
+            delay={idx * DASHBOARD_KPI_ENTRY_DELAY_STEP}
           >
-            <div className="kpi-card-glow-container">
-              <div className="kpi-card-blob-1 animate-blob-1" />
-              <div className="kpi-card-blob-2 animate-blob-2" />
-            </div>
-            <div className="gloss-overlay" />
-            <div className="kpi-card-content">
-              <div className="kpi-card-header">
-                <div className="kpi-icon-container">
-                  <KpiIcon className="size-5.5 text-white" />
+            <div
+              className={`kpi-card-premium ${getKpiToneClass(stat.tone)} group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02]`}
+            >
+              <div className="kpi-card-glow-container">
+                <div className="kpi-card-blob-1 animate-blob-1" />
+                <div className="kpi-card-blob-2 animate-blob-2" />
+              </div>
+              <div className="gloss-overlay" />
+              <div className="kpi-card-content">
+                <div className="kpi-card-header">
+                  <div className="kpi-icon-container">
+                    <KpiIcon className="size-5.5 text-white" />
+                  </div>
+                  <span className="kpi-card-badge">{stat.deltaLabel}</span>
                 </div>
-                <span className="kpi-card-badge">{stat.deltaLabel}</span>
+                <div className="kpi-card-body">
+                  <p className="kpi-card-label">{stat.label}</p>
+                  <h3 className="kpi-card-value">
+                    <AnimatedCounter value={stat.value} />
+                  </h3>
+                </div>
               </div>
-              <div className="kpi-card-body">
-                <p className="kpi-card-label">{stat.label}</p>
-                <h3 className="kpi-card-value">{stat.value}</h3>
-              </div>
+              <KpiIcon className="kpi-bg-icon text-white" />
             </div>
-            <KpiIcon className="kpi-bg-icon text-white" />
-          </motion.div>
+          </DashboardHomeEntry>
         );
       })}
     </div>

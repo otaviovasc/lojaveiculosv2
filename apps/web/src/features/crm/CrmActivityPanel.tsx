@@ -1,5 +1,6 @@
 import { CalendarPlus, CircleAlert, MessageCircle, Send } from "lucide-react";
 import { useState } from "react";
+import { CustomSelect } from "../../components/ui/CustomSelect";
 import { activityTypeLabels, quickTaskOptions } from "./crmPipelineConfig";
 import {
   createNoteActivityInput,
@@ -70,21 +71,17 @@ export function ActivityPanel({
         <h3>Timeline de {formatLeadName(lead)}</h3>
       </div>
       <div className="crm-activity-input">
-        <select
+        <CustomSelect
           className="crm-input"
-          onChange={(event) =>
-            setActivityType(event.target.value as LeadActivityType)
-          }
-          value={activityType}
-        >
-          {(["note", "call", "whatsapp", "email"] as LeadActivityType[]).map(
-            (type) => (
-              <option key={type} value={type}>
-                {activityTypeLabels[type]}
-              </option>
-            ),
+          onChange={setActivityType}
+          options={(["note", "call", "whatsapp", "email"] as const).map(
+            (type) => ({
+              label: activityTypeLabels[type],
+              value: type,
+            }),
           )}
-        </select>
+          value={activityType}
+        />
         <textarea
           className="crm-input crm-textarea"
           onChange={(event) => setContent(event.target.value)}

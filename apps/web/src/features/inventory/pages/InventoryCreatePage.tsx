@@ -1,5 +1,4 @@
 import { ShieldCheck } from "lucide-react";
-import type { ChangeEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
@@ -67,13 +66,11 @@ export function InventoryCreatePage({
   );
 
   const setField: InventoryFieldChangeHandler =
-    (field: keyof InventoryFormState) =>
-    (
-      event: ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >,
-    ) => {
-      setForm((current) => ({ ...current, [field]: event.target.value }));
+    (field: keyof InventoryFormState) => (value) => {
+      setForm((current) => ({
+        ...current,
+        [field]: typeof value === "string" ? value : value.target.value,
+      }));
     };
 
   const handleCatalogChange = useCallback(
