@@ -1,0 +1,42 @@
+import { FileText, Image as ImageIcon } from "lucide-react";
+
+export function InternalPhotosZone({
+  internalPhotos,
+}: {
+  internalPhotos: readonly { id: string; url: string; filename?: string }[];
+}) {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {internalPhotos.length > 0 ? (
+        internalPhotos.map((photo) => (
+          <div
+            key={photo.id}
+            className="flex flex-col gap-2 p-3 bg-panel border border-line rounded-xl hover:border-line-strong transition-all"
+          >
+            <div className="aspect-[4/3] rounded-lg bg-app border border-line/60 flex items-center justify-center overflow-hidden relative group">
+              {photo.url ? (
+                <img
+                  src={photo.url}
+                  alt={photo.filename || "Arquivo Interno"}
+                  className="size-full object-cover animate-none"
+                />
+              ) : (
+                <FileText className="size-8 text-muted" />
+              )}
+            </div>
+            <span className="text-[11px] font-bold text-app-text truncate">
+              {photo.filename || `Arquivo #${photo.id.substring(0, 6)}`}
+            </span>
+          </div>
+        ))
+      ) : (
+        <div className="col-span-full py-10 text-center flex flex-col items-center justify-center bg-panel/30 border border-line border-dashed rounded-xl">
+          <ImageIcon className="size-8 text-muted mb-2 animate-none" />
+          <p className="text-xs font-bold text-muted">
+            Nenhum arquivo interno anexado.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

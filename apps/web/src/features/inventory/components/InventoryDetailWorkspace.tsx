@@ -1,32 +1,32 @@
 import { useState } from "react";
-import {
-  ArrowLeft,
-  Printer,
-  ChevronRight,
-  DollarSign,
-  Info,
-  Layers,
-  MapPin,
-  ExternalLink,
-  Trash2,
-} from "lucide-react";
+import { Info, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { InventoryApi } from "../api/apiClient";
-import type { InventoryListingDetail } from "../model/types";
-import { getInventoryPlate } from "../model/listCatalogModel";
+import type { InventoryListingDetail, InventoryMedia } from "../model/types";
 import {
-  WorkspaceKPIStrip,
   TechnicalSpecsPanel,
-  PublicPhotosZone,
-  InternalPhotosZone,
   type TabId,
 } from "./InventoryDetailWorkspaceParts";
+import { WorkspaceTopBar } from "./WorkspaceTopBar";
+import { WorkspaceKPIStrip } from "./WorkspaceKPIStrip";
+import { InternalPhotosZone } from "./InternalPhotosZone";
+import { EditSpecsDrawer } from "./EditSpecsDrawer";
+import { InventoryPhotosWorkspace } from "./InventoryPhotosWorkspace";
+import { InventoryDetailFinanceiroTab } from "./InventoryDetailFinanceiroTab";
+import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
+import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
+import { InventoryDetailVendasTab } from "./InventoryDetailVendasTab";
+import { InventoryDetailHistoricoTab } from "./InventoryDetailHistoricoTab";
+import { InventoryDetailVitrineTab } from "./InventoryDetailVitrineTab";
+import {
+  initialOpcionais,
+  initialObservacoes,
+  formatPrice,
+} from "./InventoryDetailWorkspaceMocks";
 
 export function InventoryDetailWorkspace({
-  api,
   detail: initialDetail,
   onBack,
-  onUpdated,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
@@ -36,13 +36,43 @@ export function InventoryDetailWorkspace({
   const [detail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
 
-  // States for interactive demo actions
   const [isFinancingActive, setIsFinancingActive] = useState(false);
   const [isInsuranceActive, setIsInsuranceActive] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
 
+  // General spec editor states
   const primaryUnit = detail.units[0] ?? null;
   const listing = detail.listing;
+
+  const [specs, setSpecs] = useState({
+    plate: primaryUnit?.plate || listing.plate || "SEM PLACA",
+    color: "Cinza Metálico",
+    km: "32.500 km",
+    fuel: listing.catalog?.fuel || "Flex",
+    transmission: "Automático",
+    bodyType: "Sedan",
+    engine: "2.0 Turbo",
+    doors: "4 Portas",
+    modality: "Estoque Próprio",
+    vin: primaryUnit?.vin || "9BRX4285829471180",
+  });
+
+  const [opcionais, setOpcionais] = useState(initialOpcionais);
+
+  const [observacoes, setObservacoes] = useState(initialObservacoes);
+
+  const [notasInternas, setNotasInternas] = useState(
+    "Veículo recebido em excelente estado. Higienização e polimento pendentes.",
+  );
+
+  const [isSpecsOpen, setIsSpecsOpen] = useState(false);
+
+  const [photosList, setPhotosList] = useState(() =>
+    detail.media.filter((m) => m.kind === "photo"),
+  );
+  const internalPhotos = detail.media.filter(
+    (m) => m.kind === "document_preview",
+  );
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -50,28 +80,57 @@ export function InventoryDetailWorkspace({
   };
 
   const handleAction = (action: string) => {
-    showNotification(`Ação executada: ${action}`);
+    showNotification("Ação executada: " + action);
   };
 
-  const formatPrice = (cents: number | null) => {
-    if (cents === null) return "R$ 0";
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-      maximumFractionDigits: 0,
-    }).format(cents / 100);
+  const handleMovePhoto = (from: number, to: number) => {
+    const newPhotos = [...photosList];
+    const item = newPhotos[from];
+    if (!item) return;
+    newPhotos.splice(from, 1);
+    newPhotos.splice(to, 0, item);
+    setPhotosList(newPhotos);
+    showNotification("Ordem das fotos atualizada!");
   };
 
-  const salePrice = listing.priceCents
-    ? formatPrice(listing.priceCents)
-    : "Sob Consulta";
-  const acquisitionPrice = listing.priceCents
-    ? formatPrice(listing.priceCents * 0.82)
-    : "Sob Consulta";
-  const publicPhotos = detail.media.filter((m) => m.kind === "photo");
-  const internalPhotos = detail.media.filter(
-    (m) => m.kind === "document_preview",
-  );
+  const handleDeletePhoto = (id: string) => {
+    setPhotosList((prev) => prev.filter((p) => p.id !== id));
+    showNotification("Foto removida!");
+  };
+
+  const handleToggleOpcional = (id: string) => {
+    setOpcionais((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, checked: !o.checked } : o)),
+    );
+    showNotification("Opcional atualizado!");
+  };
+
+  const handleToggleObservacao = (id: string) => {
+    setObservacoes((prev) =>
+      prev.map((o) => (o.id === id ? { ...o, checked: !o.checked } : o)),
+    );
+    showNotification("Observação especial atualizada!");
+  };
+
+  const handleAddPhotoMock = () => {
+    const newId = "mock-" + Date.now();
+    const newPhoto: InventoryMedia = {
+      id: newId,
+      kind: "photo",
+      url: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=640",
+      altText: "Nova foto",
+      createdAt: new Date().toISOString(),
+      displayOrder: photosList.length + 1,
+      isPublic: true,
+      listingId: listing.id,
+      storageKey: "mock-" + newId,
+      storeId: listing.storeId,
+      tenantId: listing.tenantId,
+      updatedAt: new Date().toISOString(),
+    };
+    setPhotosList((prev) => [...prev, newPhoto]);
+    showNotification("Foto adicionada à galeria!");
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 py-6 text-app-text">
@@ -91,79 +150,24 @@ export function InventoryDetailWorkspace({
       </AnimatePresence>
 
       {/* Top Bar Workspace */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
-        <div className="flex items-center gap-3.5 min-w-0">
-          <button
-            onClick={onBack}
-            className="p-2.5 rounded-xl bg-app-elevated border border-line hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer"
-            title="Voltar ao estoque"
-            type="button"
-          >
-            <ArrowLeft className="size-5" />
-          </button>
-          <div className="min-w-0">
-            <h1 className="text-xl md:text-2xl font-black truncate">
-              {listing.title}
-            </h1>
-            <p className="text-xs font-bold text-muted flex items-center gap-2 mt-0.5">
-              <span className="bg-app-elevated border border-line px-2 py-0.5 rounded uppercase tracking-wider">
-                {primaryUnit?.plate || listing.plate || "Sem Placa"}
-              </span>
-              <span>•</span>
-              <span>ID: {listing.id}</span>
-            </p>
-          </div>
-        </div>
-
-        {/* Main Actions Panel */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => handleAction("Imprimir Ficha")}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
-            type="button"
-          >
-            <Printer className="size-3.5 text-muted" />
-            <span>Imprimir</span>
-          </button>
-          <button
-            onClick={() => handleAction("Transferir Loja")}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
-            type="button"
-          >
-            <MapPin className="size-3.5 text-muted" />
-            <span>Transferir</span>
-          </button>
-          <button
-            onClick={() => handleAction("Devolução")}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
-            type="button"
-          >
-            <Trash2 className="size-3.5 text-danger" />
-            <span>Devolver</span>
-          </button>
-          <button
-            onClick={() => handleAction("Anunciar")}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
-            type="button"
-          >
-            <ExternalLink className="size-3.5 text-violet-500" />
-            <span>Anunciar</span>
-          </button>
-          <button
-            onClick={() => handleAction("Vender")}
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse hover:bg-accent-strong transition-all cursor-pointer"
-            type="button"
-          >
-            <DollarSign className="size-3.5" />
-            <span>Vender</span>
-          </button>
-        </div>
-      </div>
+      <WorkspaceTopBar
+        title={listing.title}
+        plate={specs.plate}
+        id={listing.id}
+        onBack={onBack}
+        onAction={handleAction}
+      />
 
       {/* KPI Strip & Action Pills */}
       <WorkspaceKPIStrip
-        salePrice={salePrice}
-        acquisitionPrice={acquisitionPrice}
+        salePrice={
+          listing.priceCents ? formatPrice(listing.priceCents) : "Sob Consulta"
+        }
+        acquisitionPrice={
+          listing.priceCents
+            ? formatPrice(listing.priceCents * 0.82)
+            : "Sob Consulta"
+        }
         margin="18%"
         stockTime="12 dias"
         renaveStatus="Entrada Concluída"
@@ -221,11 +225,11 @@ export function InventoryDetailWorkspace({
       {/* Workspace Panel Area */}
       <div className="min-h-[400px]">
         {activeTab === "geral" && (
-          <div className="flex flex-col gap-8 max-w-5xl mx-auto">
+          <div className="flex flex-col gap-8 w-full max-w-none">
             {/* Two-Column Section */}
-            <div className="grid gap-6 md:grid-cols-12">
-              {/* Left Column: Photo Area & Description */}
-              <div className="md:col-span-7 flex flex-col gap-5">
+            <div className="grid gap-6 md:grid-cols-12 w-full">
+              {/* Left Column: Photo Area */}
+              <div className="md:col-span-8 flex flex-col gap-5">
                 <div>
                   <h2 className="text-lg font-black text-app-text">
                     Foto de Destaque e Imagens Públicas
@@ -235,21 +239,34 @@ export function InventoryDetailWorkspace({
                   </p>
                 </div>
 
-                <PublicPhotosZone publicPhotos={publicPhotos} />
+                <InventoryPhotosWorkspace
+                  photos={photosList}
+                  onMove={handleMovePhoto}
+                  onDelete={handleDeletePhoto}
+                  onUpload={handleAddPhotoMock}
+                />
               </div>
 
-              {/* Right Column: Details Panel */}
-              <div className="md:col-span-5 flex flex-col gap-4">
+              {/* Right Column: Specs Panel */}
+              <div className="md:col-span-4 flex flex-col gap-4">
                 <TechnicalSpecsPanel
-                  plate={primaryUnit?.plate || listing.plate || "SEM PLACA"}
-                  fuel={listing.catalog?.fuel || "Flex"}
-                  vin={primaryUnit?.vin || "9BRX4285829471180"}
+                  specs={specs}
+                  onEditSpecs={() => setIsSpecsOpen(true)}
+                  opcionais={opcionais}
+                  onToggleOpcional={handleToggleOpcional}
+                  observacoes={observacoes}
+                  onToggleObservacao={handleToggleObservacao}
+                  notasInternas={notasInternas}
+                  onSaveNotasInternas={(notes) => {
+                    setNotasInternas(notes);
+                    showNotification("Notas internas atualizadas!");
+                  }}
                 />
               </div>
             </div>
 
             {/* Below two-column section: Internal Photos */}
-            <div className="flex flex-col gap-4 mt-4">
+            <div className="flex flex-col gap-4 mt-4 w-full">
               <div>
                 <h3 className="text-lg font-black text-app-text">
                   Fotos e Registros Internos
@@ -259,7 +276,6 @@ export function InventoryDetailWorkspace({
                 </p>
               </div>
 
-              {/* Warning/Info Bar */}
               <div className="bg-blue-500/10 text-blue-500 border border-blue-500/20 px-4 py-3 rounded-2xl flex items-center gap-3">
                 <Info className="size-5 shrink-0 animate-pulse text-blue-500" />
                 <p className="text-xs font-bold leading-relaxed">
@@ -270,25 +286,54 @@ export function InventoryDetailWorkspace({
                 </p>
               </div>
 
-              {/* Upload Drop Zone for Internal Photos */}
               <InternalPhotosZone internalPhotos={internalPhotos} />
             </div>
           </div>
         )}
 
-        {activeTab !== "geral" && (
-          <div className="flex flex-col items-center justify-center text-center py-20 bg-panel/30 border border-line border-dashed rounded-2xl">
-            <Layers className="size-10 text-muted/50 mb-3" />
-            <h4 className="text-sm font-black text-app-text capitalize">
-              Painel de {activeTab}
-            </h4>
-            <p className="text-xs font-bold text-muted max-w-sm mt-1">
-              Este submódulo está ativo. Use as ferramentas de ação no topo ou
-              configure o veículo na aba Geral.
-            </p>
-          </div>
-        )}
+        {activeTab === "financeiro" && <InventoryDetailFinanceiroTab />}
+
+        {activeTab === "anuncio" && <InventoryDetailAnuncioTab />}
+
+        {activeTab === "documentos" && <InventoryDetailDocumentosTab />}
+
+        {activeTab === "vendas" && <InventoryDetailVendasTab />}
+
+        {activeTab === "historico" && <InventoryDetailHistoricoTab />}
+
+        {activeTab === "vitrine" && <InventoryDetailVitrineTab />}
+
+        {activeTab !== "geral" &&
+          activeTab !== "financeiro" &&
+          activeTab !== "anuncio" &&
+          activeTab !== "documentos" &&
+          activeTab !== "vendas" &&
+          activeTab !== "historico" &&
+          activeTab !== "vitrine" && (
+            <div className="flex flex-col items-center justify-center text-center py-20 bg-panel/30 border border-line border-dashed rounded-2xl">
+              <Layers className="size-10 text-muted/50 mb-3" />
+              <h4 className="text-sm font-black text-app-text capitalize">
+                Painel de {activeTab}
+              </h4>
+              <p className="text-xs font-bold text-muted max-w-sm mt-1">
+                Este submódulo está ativo. Use as ferramentas de ação no topo ou
+                configure o veículo na aba Geral.
+              </p>
+            </div>
+          )}
       </div>
+
+      {/* Drawers */}
+      <EditSpecsDrawer
+        isOpen={isSpecsOpen}
+        onClose={() => setIsSpecsOpen(false)}
+        specs={specs}
+        onSave={(updatedSpecs) => {
+          setSpecs(updatedSpecs);
+          setIsSpecsOpen(false);
+          showNotification("Especificações técnicas atualizadas!");
+        }}
+      />
     </div>
   );
 }

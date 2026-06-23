@@ -639,6 +639,10 @@
         },
         {
           "repo": "lojaveiculosv2",
+          "path": "apps/web/src/features/inventory/components/InventoryPhotosWorkspace.tsx"
+        },
+        {
+          "repo": "lojaveiculosv2",
           "path": "apps/web/src/features/inventory/pages/InventoryCreatePage.tsx"
         },
         {
