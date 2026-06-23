@@ -5,9 +5,9 @@
   --color-panel: #ffffff;
   --color-line: #dce4ea;
   --color-line-strong: #b8c6d1;
-  --color-accent: #20c77a;
-  --color-accent-strong: #16a765;
-  --color-accent-soft: #ddf8eb;
+  --color-accent: #ed1d24;
+  --color-accent-strong: #dd242a;
+  --color-accent-soft: rgba(237, 29, 36, 0.08);
   --color-app-elevated: #edf3f7;
   --color-blue-start: #2684ff;
   --color-blue-end: #0e68d8;
@@ -26,7 +26,8 @@
   --color-inverse-ghost: rgb(255 255 255 / 0.14);
   --color-header-surface: rgb(247 249 251 / 0.88);
   --color-overlay: rgb(21 34 45 / 0.42);
-  --layout-content-max: 80rem;
+  --color-primary: #15222d;
+  --layout-content-max: 92rem;
   --layout-header-height: 5rem;
   --layout-sidebar-width: 272px;
   --radius-sm: 6px;
@@ -37,27 +38,28 @@
 }
 
 :root[data-theme="dark"] {
-  --color-app: #0f171d;
-  --color-text: #edf4f8;
-  --color-muted: #9fb0bd;
-  --color-panel: #16232c;
-  --color-line: #2d3c47;
-  --color-line-strong: #455865;
-  --color-accent: #20c77a;
-  --color-accent-strong: #63e5aa;
-  --color-accent-soft: rgb(32 199 122 / 0.16);
-  --color-app-elevated: #1d2c36;
+  --color-app: #0b0f19;
+  --color-text: #f3f4f6;
+  --color-muted: #9ca3af;
+  --color-panel: #111827;
+  --color-line: #1f2937;
+  --color-line-strong: #374151;
+  --color-accent: #ff4a51;
+  --color-accent-strong: #ff6e73;
+  --color-accent-soft: rgba(255, 74, 81, 0.14);
+  --color-app-elevated: #1f2937;
   --color-blue-soft: rgb(38 132 255 / 0.18);
   --color-warning: #f5c542;
   --color-danger: #ff7a7a;
-  --color-inverse: #071016;
-  --color-inverse-soft: rgb(7 16 22 / 0.22);
-  --color-inverse-muted: rgb(7 16 22 / 0.7);
-  --color-inverse-ghost: rgb(7 16 22 / 0.16);
-  --color-header-surface: rgb(15 23 29 / 0.9);
-  --color-overlay: rgb(0 0 0 / 0.58);
+  --color-inverse: #030712;
+  --color-inverse-soft: rgb(3 7 18 / 0.22);
+  --color-inverse-muted: rgb(3 7 18 / 0.7);
+  --color-inverse-ghost: rgb(3 7 18 / 0.16);
+  --color-header-surface: rgb(11 15 25 / 0.9);
+  --color-overlay: rgb(0 0 0 / 0.65);
+  --color-primary: #edf4f8;
   --shadow-focus: 0 0 0 3px rgb(99 229 170 / 0.26);
-  --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.26);
+  --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.4);
 }
 
 @theme {
@@ -75,4 +77,5 @@
   --color-inverse: var(--color-inverse);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
+  --color-primary: var(--color-primary);
 }

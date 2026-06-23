@@ -1,18 +1,13 @@
-import {
-  Activity,
-  Bot,
-  CircleDollarSign,
-  Target,
-} from "lucide-react";
+import { Banknote, Bot, Target, TrendingUp } from "lucide-react";
 import type { AnalyticsDashboard, DashboardStatViewModel } from "./types";
 
 const statTones = ["green", "blue", "violet", "pink"] as const;
-const statIcons = [CircleDollarSign, Target, Activity, Bot] as const;
+const statIcons = [Banknote, Target, TrendingUp, Bot] as const;
 
 export const fallbackDashboardStats: DashboardStatViewModel[] = [
   {
     deltaLabel: "aguardando dados",
-    icon: CircleDollarSign,
+    icon: Banknote,
     label: "Faturamento",
     tone: "green",
     value: "R$ 0",
@@ -26,7 +21,7 @@ export const fallbackDashboardStats: DashboardStatViewModel[] = [
   },
   {
     deltaLabel: "funil ativo",
-    icon: Activity,
+    icon: TrendingUp,
     label: "Conversao",
     tone: "violet",
     value: "0%",
@@ -72,7 +67,7 @@ export function createDashboardStats(
   ];
   return defaults.map((stat, index) => ({
     ...stat,
-    icon: statIcons[index] ?? CircleDollarSign,
+    icon: statIcons[index] ?? Banknote,
     tone: statTones[index] ?? "green",
   }));
 }
@@ -82,7 +77,9 @@ export function totalLeads(dashboard: AnalyticsDashboard) {
 }
 
 export function topLeadSources(dashboard: AnalyticsDashboard) {
-  return [...dashboard.leadSources].sort((a, b) => b.value - a.value).slice(0, 4);
+  return [...dashboard.leadSources]
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 4);
 }
 
 export function updatedAtLabel(dashboard: AnalyticsDashboard | null) {

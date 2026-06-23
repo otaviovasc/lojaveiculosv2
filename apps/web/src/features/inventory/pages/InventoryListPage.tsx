@@ -36,7 +36,9 @@ const initialListQuery: InventoryListQueryInput = { search: "", status: "" };
 
 export function InventoryListPage({ api }: { api?: InventoryApi }) {
   const routeStateRef = useRef(readCurrentInventoryRouteState());
-  const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(api ?? null);
+  const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
+    api ?? null,
+  );
   const [screenMode, setScreenMode] = useState<"list" | "create">(
     routeStateRef.current.screenMode,
   );
@@ -64,39 +66,42 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     });
   }, [api]);
 
-  const loadListings = useCallback(async (
-    input: InventoryListQueryInput,
-    mode: "append" | "replace" = "replace",
-  ) => {
-    if (!runtimeApi) return;
+  const loadListings = useCallback(
+    async (
+      input: InventoryListQueryInput,
+      mode: "append" | "replace" = "replace",
+    ) => {
+      if (!runtimeApi) return;
 
-    if (mode === "append") {
-      setLoadingMore(true);
-    } else {
-      setListState({ kind: "loading" });
-    }
-    try {
-      const result = await runtimeApi.listListings(createListQuery(input));
-      setListState((current) => {
-        if (mode !== "append" || current.kind !== "ready") {
-          return { kind: "ready", result };
-        }
+      if (mode === "append") {
+        setLoadingMore(true);
+      } else {
+        setListState({ kind: "loading" });
+      }
+      try {
+        const result = await runtimeApi.listListings(createListQuery(input));
+        setListState((current) => {
+          if (mode !== "append" || current.kind !== "ready") {
+            return { kind: "ready", result };
+          }
 
-        return {
-          kind: "ready",
-          result: {
-            ...result,
-            items: [...current.result.items, ...result.items],
-            total: current.result.items.length + result.items.length,
-          },
-        };
-      });
-    } catch (error) {
-      setListState(createInventoryErrorState(error));
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [runtimeApi]);
+          return {
+            kind: "ready",
+            result: {
+              ...result,
+              items: [...current.result.items, ...result.items],
+              total: current.result.items.length + result.items.length,
+            },
+          };
+        });
+      } catch (error) {
+        setListState(createInventoryErrorState(error));
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [runtimeApi],
+  );
 
   useEffect(() => {
     void loadListings(initialListQuery);
@@ -140,7 +145,7 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
   if (screenMode === "create") {
     return (
       <>
-        <section className="mx-auto max-w-[var(--layout-content-max)] px-4 pt-4 lg:px-6">
+        <section className="mx-auto max-w-[var(--layout-content-max)] px-4 pt-4 lg:px-4">
           <button
             className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent-soft px-4 text-sm font-black text-accent-strong"
             onClick={() => {
@@ -167,7 +172,7 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
       : { available: 0, reserved: 0, sold: 0, total: 0 };
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
+    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-4">
       <InventoryListHeader
         available={summary.available}
         hasMore={listState.kind === "ready" && listState.result.hasMore}
@@ -188,7 +193,9 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <section className="grid content-start gap-4">
-          {listState.kind === "loading" ? <InventoryListingLoadingGrid /> : null}
+          {listState.kind === "loading" ? (
+            <InventoryListingLoadingGrid />
+          ) : null}
           {listState.kind === "error" ? (
             <InventoryListingError message={listState.message} />
           ) : null}
@@ -198,7 +205,8 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
                 items={listState.result.items}
                 onSelect={(listingId) => void selectListing(listingId)}
               />
-              {listState.result.hasMore && listState.result.nextOffset !== null ? (
+              {listState.result.hasMore &&
+              listState.result.nextOffset !== null ? (
                 <InventoryLoadMore
                   loading={loadingMore}
                   onLoadMore={() =>

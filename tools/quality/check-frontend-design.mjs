@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { findFrontendDesignViolations } from "./frontend-design-rules.mjs";
 
 const root = new URL("../../", import.meta.url).pathname;
 const checkedRoots = [
@@ -29,9 +30,6 @@ function walk(dir, files = []) {
   return files;
 }
 
-const hardcodedColorPattern = /#[0-9a-fA-F]{3,8}\b|\brgba?\s*\(|\bhsla?\s*\(/g;
-const runtimeTailwindPattern =
-  /`[^`]*\$\{[^`]*(?:bg|text|border|from|to|via|ring|fill|stroke)-/g;
 const failures = [];
 
 for (const checkedRoot of checkedRoots) {
@@ -39,20 +37,7 @@ for (const checkedRoot of checkedRoots) {
     if (ignoredPathParts.some((part) => file.includes(part))) continue;
 
     const source = readFileSync(file, "utf8");
-    const hardcodedColors = [...source.matchAll(hardcodedColorPattern)];
-    const runtimeClasses = [...source.matchAll(runtimeTailwindPattern)];
-
-    if (hardcodedColors.length > 0) {
-      failures.push(
-        `${file}: hardcoded color found; use design tokens/global CSS`,
-      );
-    }
-
-    if (runtimeClasses.length > 0) {
-      failures.push(
-        `${file}: runtime-generated Tailwind color class found; use explicit variants`,
-      );
-    }
+    failures.push(...findFrontendDesignViolations(file, source));
   }
 }
 

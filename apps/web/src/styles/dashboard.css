@@ -1,166 +1,430 @@
-.dashboard-toolbar {
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: 1fr;
-}
+/* Store Admin Dashboard Stylesheet - Premium Colorful Flat & Gradients */
 
-.dashboard-toolbar-card,
-.dashboard-refresh,
-.dashboard-action-panel,
-.dashboard-action-button,
-.dashboard-decision-tile,
-.dashboard-state-panel {
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-}
-
-.dashboard-toolbar-card {
-  align-items: center;
-  background: var(--color-panel);
-  display: flex;
-  gap: 0.75rem;
-  min-width: 0;
-  padding: 0.875rem 1rem;
-}
-
-.dashboard-toolbar-card span,
-.dashboard-source-row span,
-.dashboard-muted,
-.dashboard-decision-tile p {
-  color: var(--color-muted);
-}
-
-.dashboard-toolbar-card span {
-  display: block;
-  font-size: 0.625rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.dashboard-toolbar-card strong {
-  display: block;
-  font-size: 0.875rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.dashboard-refresh {
-  align-items: center;
-  background: var(--color-panel);
+.store-dashboard {
+  background-color: var(--color-app);
   color: var(--color-text);
-  display: inline-flex;
-  justify-content: center;
-  min-height: 3.875rem;
 }
 
-.dashboard-refresh:disabled {
-  color: var(--color-muted);
-  cursor: progress;
+/* Card layout & Hover transitions */
+.store-card {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  transition:
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
-.dashboard-action-panel {
-  background: var(--color-text);
+.store-card:hover {
   box-shadow: var(--shadow-panel);
-  color: var(--color-inverse);
+  border-color: var(--color-line-strong);
+}
+
+/* Colorful Gradients for Metric KPI Cards */
+.kpi-gradient-green {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+.kpi-gradient-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+.kpi-gradient-violet {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+.kpi-gradient-pink {
+  background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+}
+
+.kpi-card {
+  color: #ffffff;
+  padding: 1.5rem;
+  border-radius: 1.5rem;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    background-color 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-icon-container {
+  width: 2.75rem;
+  height: 2.75rem;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.kpi-bg-icon {
+  position: absolute;
+  right: -0.75rem;
+  bottom: -0.75rem;
+  opacity: 0.08;
+  transform: rotate(12deg);
+  width: 7rem;
+  height: 7rem;
+  pointer-events: none;
+}
+
+/* Toolbar Controls */
+.control-tile {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  padding: 1.125rem 1.25rem;
+  border-radius: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.01);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.control-tile:hover {
+  border-color: var(--color-line-strong);
+}
+
+/* Agenda list item styles */
+.agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.agenda-item:hover {
+  background-color: var(--color-app-elevated);
+  border-color: var(--color-line);
+}
+
+.agenda-date-box {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.25rem;
-}
-
-.dashboard-action-panel h2 {
-  font-size: 1.25rem;
-  font-weight: 900;
-  margin: 0.25rem 0 0;
-}
-
-.dashboard-action-button {
   align-items: center;
-  background: var(--color-inverse-ghost);
-  color: var(--color-inverse);
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Aging Inventory cards */
+.aging-item {
+  padding: 1rem;
+  border-radius: 1rem;
+  background-color: var(--color-app-elevated);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.aging-item:hover {
+  border-color: var(--color-line-strong);
+  background-color: var(--color-panel);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+/* Sidebar action panel elements */
+.action-panel-btn {
+  width: 100%;
   display: flex;
-  font-size: 0.875rem;
-  font-weight: 900;
+  align-items: center;
   justify-content: space-between;
-  min-height: 3rem;
-  padding: 0.75rem;
+  padding: 0.875rem 1.125rem;
+  background-color: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: 1.125rem;
+  font-weight: 750;
+  color: var(--color-text);
+  transition: all 0.2s ease;
+}
+
+.action-panel-btn:hover {
+  background-color: var(--color-panel);
+  border-color: var(--color-line-strong);
+  transform: translateX(2px);
+}
+
+/* Addons section */
+.addon-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   text-align: left;
 }
 
-.dashboard-action-button span {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.625rem;
-  min-width: 0;
+.addon-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
-.dashboard-decision-tile {
-  background: var(--color-app);
-  padding: 1rem;
+.addon-btn-whatsapp {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-color: #047857;
+  color: #ffffff;
 }
 
-.dashboard-decision-icon {
-  align-items: center;
-  background: var(--color-panel);
-  border-radius: var(--radius-md);
-  color: var(--color-accent);
-  display: flex;
-  height: 2.5rem;
-  justify-content: center;
-  margin-bottom: 0.75rem;
-  width: 2.5rem;
+.addon-btn-nfe {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-color: #1e40af;
+  color: #ffffff;
 }
 
-.dashboard-decision-tile h3 {
-  font-weight: 900;
-  margin: 0;
+/* Resource carousel backgrounds */
+.dashboard-resource-api {
+  background: linear-gradient(90deg, #2563eb 0%, #1e40af 100%);
 }
 
-.dashboard-decision-tile p {
-  font-size: 0.875rem;
-  font-weight: 700;
-  margin: 0.5rem 0 0;
+.dashboard-resource-marketing {
+  background: linear-gradient(90deg, #059669 0%, #065f46 100%);
 }
 
-.dashboard-source-row {
-  display: grid;
-  gap: 0.5rem;
+.dashboard-resource-design {
+  background: linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%);
 }
 
-.dashboard-source-row strong,
-.dashboard-source-row span {
-  font-size: 0.875rem;
+/* Carousel controls - Pill style indicators */
+.carousel-dot {
+  height: 6px;
+  width: 6px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
-.dashboard-progress-track {
-  background: var(--color-app-elevated);
+.carousel-dot:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+  transform: scale(1.15);
+}
+
+.carousel-dot-active {
+  width: 20px;
+  background-color: #ffffff;
+}
+
+/* Shimmering Progress Bar */
+.progress-container {
+  height: 7px;
+  width: 100%;
+  background-color: var(--color-app-elevated);
   border-radius: 999px;
-  height: 0.625rem;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+:root[data-theme="dark"] .progress-container {
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
   overflow: hidden;
 }
 
-.dashboard-progress-fill {
-  background: var(--color-accent);
-  border-radius: inherit;
-  height: 100%;
+.progress-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: progress-shimmer 2.5s infinite linear;
 }
 
-.dashboard-state-panel {
-  align-items: center;
-  color: var(--color-muted);
-  display: flex;
-  gap: 0.75rem;
-  padding: 1rem;
-}
-
-.dashboard-state-error {
-  color: var(--color-danger);
-}
-
-@media (min-width: 768px) {
-  .dashboard-toolbar {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+@keyframes progress-shimmer {
+  0% {
+    transform: translateX(-100%);
   }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ==========================================
+   PREMIUM GLASSMORPHISM & GRADIENT STYLES
+   ========================================== */
+
+/* Animated Blobs for Card Backgrounds */
+@keyframes blob-float-one {
+  0% {
+    transform: translate(0px, 0px) scale(1) rotate(0deg);
+  }
+  33% {
+    transform: translate(25px, -35px) scale(1.1) rotate(120deg);
+  }
+  66% {
+    transform: translate(-15px, 15px) scale(0.9) rotate(240deg);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1) rotate(360deg);
+  }
+}
+
+@keyframes blob-float-two {
+  0% {
+    transform: translate(0px, 0px) scale(1.05) rotate(360deg);
+  }
+  50% {
+    transform: translate(-20px, -25px) scale(0.95) rotate(180deg);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1.05) rotate(0deg);
+  }
+}
+
+.animate-blob-1 {
+  animation: blob-float-one 14s infinite ease-in-out;
+}
+
+.animate-blob-2 {
+  animation: blob-float-two 18s infinite ease-in-out;
+}
+
+/* Glassmorphism panel styling that respects theme */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(220, 228, 234, 0.7);
+  box-shadow: 0 8px 30px rgba(21, 34, 45, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 1.5rem;
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .glass-panel {
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+
+.glass-panel:hover {
+  border-color: color-mix(in srgb, var(--color-line-strong) 70%, transparent);
+  box-shadow: 0 10px 28px rgba(21, 34, 45, 0.04);
+}
+
+:root[data-theme="dark"] .glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.36);
+}
+
+/* Premium KPI card glass overlays */
+.kpi-card-premium {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.5rem;
+  padding: 1.625rem;
+  color: #ffffff;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.kpi-card-premium::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.3) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.15) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Conic gradient border animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 12s linear infinite;
+}
+
+/* Hover shine overlay */
+.gloss-overlay {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-25deg);
+  transition: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.kpi-card-premium:hover .gloss-overlay {
+  left: 130%;
+}
+
+/* Progress bar gradients */
+.neon-progress-green {
+  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+.neon-progress-blue {
+  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+}
+.neon-progress-violet {
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+}
+.neon-progress-pink {
+  background: linear-gradient(90deg, #ec4899 0%, #f472b6 100%);
+}
+
+/* Hover card details */
+.hover-scale-subtle {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hover-scale-subtle:hover {
+  transform: translateY(-4px);
+}
+
+/* Glass toggle button background */
+.glass-toggle {
+  background: rgba(0, 0, 0, 0.05);
+}
+:root[data-theme="dark"] .glass-toggle {
+  background: rgba(255, 255, 255, 0.08);
 }

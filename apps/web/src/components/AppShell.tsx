@@ -1,8 +1,12 @@
-import { Menu, Moon, Search, Sun, X } from "lucide-react";
+import { Menu, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { navigationGroups } from "../app/modules";
-import type { ModuleDefinition, ModuleId } from "../app/modules";
+import type {
+  ModuleDefinition,
+  ModuleId,
+  NavigationItem,
+} from "../app/modules";
 import {
   applyThemeToDocument,
   getNextTheme,
@@ -10,6 +14,10 @@ import {
   readBrowserPreferredTheme,
   type AppTheme,
 } from "../app/theme";
+import {
+  DashboardSidebar,
+  type DashboardSidebarItem,
+} from "./ui/dashboard-sidebar";
 
 type AppShellProps = {
   activeModule: ModuleDefinition;
@@ -17,40 +25,19 @@ type AppShellProps = {
   onNavigate: (moduleId: ModuleId) => void;
 };
 
-type NavigationListProps = {
-  activeModuleId: ModuleId;
-  onNavigate: (moduleId: ModuleId) => void;
-};
+const sidebarItems = navigationGroups.flatMap((group) =>
+  group.items.map((item) => ({
+    ...toSidebarItem(item),
+    group: group.label,
+  })),
+);
 
-function NavigationList({ activeModuleId, onNavigate }: NavigationListProps) {
-  return (
-    <nav className="flex flex-col gap-5 p-4" aria-label="Modulos">
-      {navigationGroups.map((group) => (
-        <section className="space-y-2" key={group.label}>
-          <p className="px-2 text-[10px] font-black uppercase tracking-widest text-muted">
-            {group.label}
-          </p>
-          {group.items.map((item) => {
-            const Icon = item.icon;
-            const isActive = item.id === activeModuleId;
-
-            return (
-              <button
-                aria-current={isActive ? "page" : undefined}
-                className={`nav-item ${isActive ? "nav-item-active" : ""}`}
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                type="button"
-              >
-                <Icon aria-hidden="true" className="size-4" />
-                <span>{item.label}</span>
-              </button>
-            );
-          })}
-        </section>
-      ))}
-    </nav>
-  );
+function toSidebarItem(item: NavigationItem): DashboardSidebarItem<ModuleId> {
+  return {
+    icon: item.icon,
+    id: item.id,
+    title: item.label,
+  };
 }
 
 export function AppShell({
@@ -59,6 +46,7 @@ export function AppShell({
   onNavigate,
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
   );
@@ -82,106 +70,104 @@ export function AppShell({
   }, [theme]);
 
   return (
-    <div className="min-h-screen bg-app text-app-text lg:grid lg:grid-cols-[272px_1fr]">
-      <aside className="hidden border-r border-line bg-panel lg:block">
-        <BrandLockup storeLabel={storeLabel} />
-        <NavigationList
-          activeModuleId={activeModule.id}
-          onNavigate={navigate}
+    <div
+      className={
+        "min-h-screen bg-app text-app-text lg:grid " +
+        (isSidebarCollapsed
+          ? "lg:grid-cols-[84px_1fr]"
+          : "lg:grid-cols-[280px_1fr]")
+      }
+    >
+      <aside
+        className={
+          "fixed left-0 top-0 z-30 hidden h-screen transition-[width] duration-300 lg:block " +
+          (isSidebarCollapsed ? "w-[84px]" : "w-[280px]")
+        }
+      >
+        <DashboardSidebar
+          activeId={activeModule.id}
+          collapsed={isSidebarCollapsed}
+          items={sidebarItems}
+          onCollapsedChange={setIsSidebarCollapsed}
+          onSelect={navigate}
+          onThemeToggle={toggleTheme}
+          theme={theme}
+          workspaceMeta={storeLabel}
+          workspaceName="Loja Veiculos"
         />
       </aside>
 
-      {isMobileNavOpen ? (
-        <div className="mobile-nav lg:hidden" role="presentation">
+      <div className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-panel px-4 lg:hidden">
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            aria-label="Abrir Menu"
+            aria-controls="mobile-navigation"
+            aria-expanded={isMobileNavOpen}
+            className="flex size-10 items-center justify-center rounded-md text-app-text transition-colors hover:bg-app-elevated"
+            onClick={() => setIsMobileNavOpen(true)}
+            type="button"
+          >
+            <Menu className="size-5" />
+          </button>
+          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-black italic text-white">
+            LV
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-black text-app-text">
+              Loja Veiculos
+            </p>
+            <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted">
+              {activeModule.title}
+            </p>
+          </div>
+        </div>
+
+        <button
+          aria-label="Mudar Tema"
+          className="flex size-10 items-center justify-center rounded-md text-app-text transition-colors hover:bg-app-elevated"
+          onClick={toggleTheme}
+          type="button"
+        >
+          {theme === "dark" ? (
+            <Sun className="size-5 text-warning" />
+          ) : (
+            <Moon className="size-5 text-violet-start" />
+          )}
+        </button>
+      </div>
+
+      {isMobileNavOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden">
+          <button
+            aria-label="Fechar menu"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsMobileNavOpen(false)}
+            type="button"
+          />
           <aside
-            aria-label="Navegacao mobile"
+            aria-label="Navegação mobile"
             aria-modal="true"
-            className="mobile-nav-panel"
+            className="mobile-nav-enter relative z-50 h-full w-[min(90vw,22rem)] max-w-sm shadow-2xl"
             id="mobile-navigation"
             role="dialog"
           >
-            <div className="flex items-center justify-between border-b border-line pr-4">
-              <BrandLockup storeLabel={storeLabel} />
-              <button
-                aria-label="Fechar menu"
-                className="icon-button"
-                onClick={() => setIsMobileNavOpen(false)}
-                type="button"
-              >
-                <X aria-hidden="true" className="size-5" />
-              </button>
-            </div>
-            <NavigationList
-              activeModuleId={activeModule.id}
-              onNavigate={navigate}
+            <DashboardSidebar
+              activeId={activeModule.id}
+              className="w-full"
+              items={sidebarItems}
+              onClose={() => setIsMobileNavOpen(false)}
+              onSelect={navigate}
+              onThemeToggle={toggleTheme}
+              theme={theme}
+              variant="mobile"
+              workspaceMeta={storeLabel}
+              workspaceName="Loja Veiculos"
             />
           </aside>
         </div>
-      ) : null}
+      )}
 
-      <div className="min-w-0">
-        <header className="shell-header">
-          <div className="flex items-center gap-2">
-            <button
-              aria-label="Abrir menu"
-              aria-controls="mobile-navigation"
-              aria-expanded={isMobileNavOpen}
-              className="icon-button lg:hidden"
-              onClick={() => setIsMobileNavOpen(true)}
-              type="button"
-            >
-              <Menu aria-hidden="true" className="size-5" />
-            </button>
-            <div>
-              <p className="text-xs font-black uppercase tracking-widest text-muted">
-                {activeModule.eyebrow}
-              </p>
-              <h1 className="text-lg font-black lg:text-2xl">
-                {activeModule.title}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button aria-label="Buscar" className="icon-button" type="button">
-              <Search aria-hidden="true" className="size-5" />
-            </button>
-            <button
-              aria-label={
-                theme === "dark"
-                  ? "Alternar para tema claro"
-                  : "Alternar para tema escuro"
-              }
-              aria-pressed={theme === "dark"}
-              className="icon-button"
-              onClick={toggleTheme}
-              type="button"
-            >
-              {theme === "dark" ? (
-                <Sun aria-hidden="true" className="size-5" />
-              ) : (
-                <Moon aria-hidden="true" className="size-5" />
-              )}
-            </button>
-          </div>
-        </header>
-
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function BrandLockup({ storeLabel }: { storeLabel: string }) {
-  return (
-    <div className="flex h-20 items-center gap-3 px-5">
-      <div className="flex size-11 items-center justify-center rounded-lg bg-accent-soft text-accent">
-        LV
-      </div>
-      <div>
-        <p className="text-sm font-black">Loja Veiculos</p>
-        <p className="text-xs font-semibold text-muted">{storeLabel}</p>
-      </div>
+      <div className="min-w-0 lg:col-start-2">{children}</div>
     </div>
   );
 }

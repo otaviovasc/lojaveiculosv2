@@ -20,21 +20,68 @@
 
 .nav-item {
   align-items: center;
-  border-radius: var(--radius-md);
   color: var(--color-muted);
   display: flex;
   font-size: 0.875rem;
-  font-weight: 800;
-  gap: 0.625rem;
-  min-height: 2.5rem;
-  padding: 0.625rem 0.75rem;
+  font-weight: 700;
+  gap: 1rem;
+  min-height: 3rem;
+  padding: 0.625rem 1.625rem;
   text-align: left;
   width: 100%;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-left: 4px solid transparent;
+}
+
+.nav-item:hover {
+  background: var(--color-app-elevated);
+  color: var(--color-text);
+}
+
+.nav-item:hover svg {
+  transform: scale(1.1) rotate(5deg);
+  color: var(--color-accent);
+}
+
+.nav-item svg {
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s ease;
 }
 
 .nav-item-active {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-strong);
+  background: var(--color-accent-soft) !important;
+  color: var(--color-accent) !important;
+  border-left-color: var(--color-accent);
+  box-shadow: inset 4px 0 12px -6px rgba(237, 29, 36, 0.15);
+}
+
+/* Collapsed Hover-expanding Sidebar Mechanics */
+.collapsed-sidebar {
+  width: 76px !important;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.collapsed-sidebar:hover {
+  width: 272px !important;
+}
+
+.collapsed-sidebar .nav-item span,
+.collapsed-sidebar .brand-text,
+.collapsed-sidebar .section-header-title,
+.collapsed-sidebar .toggle-text {
+  opacity: 0;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.collapsed-sidebar:hover .nav-item span,
+.collapsed-sidebar:hover .brand-text,
+.collapsed-sidebar:hover .section-header-title,
+.collapsed-sidebar:hover .toggle-text {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .mobile-nav {
@@ -51,6 +98,22 @@
   max-width: 22rem;
   overflow-y: auto;
   width: min(88vw, 22rem);
+}
+
+.mobile-nav-enter {
+  animation: mobileNavEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes mobileNavEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-0.75rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .shell-header {
