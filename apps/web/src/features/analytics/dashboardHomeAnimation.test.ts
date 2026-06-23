@@ -19,6 +19,12 @@ const dashboardHomeSource = readFileSync(
   fileURLToPath(new URL("../../components/DashboardHome.tsx", import.meta.url)),
   "utf8",
 );
+const dashboardHomeMainPanelsSource = readFileSync(
+  fileURLToPath(
+    new URL("../../components/DashboardHomeMainPanels.tsx", import.meta.url),
+  ),
+  "utf8",
+);
 const appShellSource = readFileSync(
   fileURLToPath(new URL("../../components/AppShell.tsx", import.meta.url)),
   "utf8",
@@ -53,7 +59,7 @@ describe("dashboard home animation contract", () => {
   });
 
   it("keeps resource backgrounds on animated slides, not the static parent", () => {
-    expect(dashboardHomeSource).toContain(
+    expect(dashboardHomeMainPanelsSource).toContain(
       "className={`${DASHBOARD_RESOURCE_SLIDE_CLASS} ${currentResource.panelClass}`}",
     );
     expect(dashboardHomeSource).not.toContain(

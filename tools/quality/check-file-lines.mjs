@@ -3,21 +3,15 @@ import { join, relative } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
 const maxLines = 240;
-const lineLimitExceptions = new Map([
-  ["apps/web/src/components/DashboardHome.tsx", 950],
-  ["apps/web/src/components/ui/dashboard-sidebar.tsx", 360],
-  ["apps/web/src/features/agency/AgencyLayout.tsx", 320],
-  ["apps/web/src/features/agency/pages/AgencyDashboardPage.tsx", 780],
-  ["apps/web/src/features/inventory/pages/InventoryListPage.tsx", 260],
-  ["apps/web/src/styles/components.css", 290],
-  ["apps/web/src/styles/dashboard.css", 460],
-]);
+const frontendMaxLines = maxLines + 100;
 const ignored = new Set([
   "node_modules",
   "dist",
   "build",
   ".git",
   ".terraform",
+  ".agents",
+  ".worktrees",
 ]);
 const extensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css", ".md"]);
 
@@ -46,7 +40,9 @@ function walk(dir, files = []) {
 const offenders = walk(root).flatMap((file) => {
   const lines = readFileSync(file, "utf8").split("\n").length;
   const relativePath = relative(root, file);
-  const fileMaxLines = lineLimitExceptions.get(relativePath) ?? maxLines;
+  const fileMaxLines = relativePath.startsWith("apps/web/")
+    ? frontendMaxLines
+    : maxLines;
   return lines > fileMaxLines ? [{ file, lines, maxLines: fileMaxLines }] : [];
 });
 

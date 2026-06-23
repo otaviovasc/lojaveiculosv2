@@ -81,13 +81,13 @@ emit documents, manage billing, or trigger audited operational workflows.
 Run from `lojaveiculosv2/` before handing work back:
 
 ```bash
-npm run validate
+pnpm run validate
 ```
 
 For deploy smoke contracts, run:
 
 ```bash
-npm run test:smoke:api
+pnpm run test:smoke:api
 ```
 
 Do not disable lint, tests, type checks, audit checks, or boundary checks to make

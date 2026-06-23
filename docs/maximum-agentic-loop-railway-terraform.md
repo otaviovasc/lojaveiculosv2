@@ -27,7 +27,7 @@ Implemented in this repo:
 - CI workflow: `.github/workflows/ci.yml`
 - Staging smoke workflow: `.github/workflows/staging-smoke.yml`
 - Production smoke workflow: `.github/workflows/production-smoke.yml`
-- API smoke script: `npm run test:smoke:api`
+- API smoke script: `pnpm run test:smoke:api`
 - Terraform scaffold for GitHub branch protection:
   `infra/terraform/`
 - Deploy runbook: `docs/runbooks/deploy.md`
@@ -49,7 +49,7 @@ Verified locally:
 - Railway authentication works for the current user.
 - Terraform version: `1.15.6`.
 - GitHub CLI version: `2.92.0`.
-- `npm run validate` passes.
+- `pnpm run validate` passes.
 - `terraform fmt -check -recursive infra/terraform` passes.
 - Terraform staging and production configs validate when provider execution is
   allowed outside the sandbox.
@@ -140,7 +140,7 @@ Allowed automatically:
 
 - read and edit repo files
 - add focused tests
-- run `npm run validate`
+- run `pnpm run validate`
 - inspect bounded non-secret logs
 - open PRs
 - comment on issues
@@ -180,9 +180,9 @@ Prohibited unless specifically requested:
 Run from repo root:
 
 ```bash
-npm run validate
-npm run test:smoke:api
+pnpm run validate
+pnpm run test:smoke:api
 ```
 
 If full validation is too expensive during an investigation, run the narrowest
-workspace checks first and finish with `npm run validate` before handoff.
+workspace checks first and finish with `pnpm run validate` before handoff.

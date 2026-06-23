@@ -28,9 +28,9 @@ migration slice.
   improved.
 - Backend contract notes: endpoints/services used, permissions enforced, and
   any missing contract.
-- Validation: focused tests plus `npm run validate`, or a clearly documented
+- Validation: focused tests plus `pnpm run validate`, or a clearly documented
   blocker that the reviewer can verify.
-- Visual QA for screen slices: `npm run qa:visual -- --slice <slice-id>` and
+- Visual QA for screen slices: `pnpm run qa:visual -- --slice <slice-id>` and
   the saved report path.
 - Board state: update `docs/frontend-migration/board.json` and regenerate
   `v2-plan.html`.

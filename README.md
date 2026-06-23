@@ -41,17 +41,18 @@ lojaveiculosv2/
 Run the full local stack from the repo root:
 
 ```bash
-npm install
-npm run db:up
-npm run db:push:local
-npm run db:seed:local
-npm run dev:all:local
+corepack enable
+pnpm install
+pnpm run db:up
+pnpm run db:push:local
+pnpm run db:seed:local
+pnpm run dev:all:local
 ```
 
 Then open the web app at `http://localhost:5173`. The API listens on
 `http://localhost:8787`, and Vite proxies `/api` to that API.
 
-`npm run dev:all:local` starts the API with:
+`pnpm run dev:all:local` starts the API with:
 
 ```text
 LOCAL_AUTH_BYPASS=true
@@ -68,14 +69,14 @@ external API, fiscal, provider events, users, roles, and entitlements.
 Useful checks:
 
 ```bash
-npm run validate
-npm run test --workspace @lojaveiculosv2/web
-npm run test --workspace @lojaveiculosv2/api
+pnpm run validate
+pnpm --filter @lojaveiculosv2/web test
+pnpm --filter @lojaveiculosv2/api test
 ```
 
 ## Current Package Targets
 
-Checked against npm on 2026-06-16:
+Checked against the package registry on 2026-06-23:
 
 - Vite `8.0.16`
 - React `19.2.7`
@@ -88,6 +89,9 @@ Checked against npm on 2026-06-16:
 - Drizzle Kit `0.31.10`
 - Mikro ORM Core `7.1.4`
 - Hono `4.12.22`
+- React Router DOM `7.18.0`
+- TanStack Query `5.101.1`
+- Sentry `10.60.0`
 - Pino `10.3.0`
 - `@hono/node-server` `2.0.5`
 - `@vitejs/plugin-react` `6.0.2`

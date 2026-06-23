@@ -11,6 +11,16 @@ export async function createInventoryApiOptions(): Promise<CreateInventoryApiOpt
   };
 }
 
+export async function createInventoryRuntimeHeaders() {
+  const token = await readClerkToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  headers["x-store-slug"] = readInventoryStoreSlug();
+  return headers;
+}
+
 function createInventoryAuthFromEnv(
   accessToken?: string | null,
 ): InventoryAuth {
@@ -31,12 +41,20 @@ function createInventoryAuthFromEnv(
   };
 }
 
+function readInventoryStoreSlug() {
+  const env = import.meta.env as {
+    DEV?: boolean;
+    VITE_DEV_STORE_SLUG?: string;
+  };
+  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "test-store");
+}
+
 function readInventoryBaseUrl(): Pick<CreateInventoryApiOptions, "baseUrl"> {
   const env = import.meta.env as { VITE_API_BASE_URL?: string };
   return env.VITE_API_BASE_URL ? { baseUrl: env.VITE_API_BASE_URL } : {};
 }
 
-async function readClerkToken() {
+export async function readClerkToken() {
   const clerk = (window as Window & ClerkRuntime).Clerk;
 
   return (await clerk?.session?.getToken?.()) ?? null;

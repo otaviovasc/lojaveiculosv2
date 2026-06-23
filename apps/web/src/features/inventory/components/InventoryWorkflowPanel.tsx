@@ -1,6 +1,7 @@
 import { Handshake } from "lucide-react";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import type { InventoryApi } from "../api/apiClient";
+import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
 import {
   InventoryField,
   InventoryInput,
@@ -26,6 +27,12 @@ import {
   type WorkflowForm,
 } from "./InventoryWorkflowFormModel";
 import type { InventoryListingDetail } from "../model/types";
+import type { InventoryStoreSettings } from "./InventoryPrintTypes";
+import {
+  InventoryWorkflowPrintActions,
+  InventoryWorkflowPrintPreview,
+  type WorkflowPrintKind,
+} from "./InventoryWorkflowDocuments";
 
 export function InventoryWorkflowPanel({
   api,
@@ -41,6 +48,27 @@ export function InventoryWorkflowPanel({
   const [form, setForm] = useState(() => createWorkflowForm(detail));
   const [state, setState] = useState<WorkflowState>({ kind: "idle" });
   const isSaving = state.kind === "saving";
+  const [activePrint, setActivePrint] = useState<WorkflowPrintKind | null>(
+    null,
+  );
+  const [storeSettings, setStoreSettings] =
+    useState<InventoryStoreSettings>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const headers = await createInventoryRuntimeHeaders();
+        const res = await fetch("/api/v1/settings/store", { headers });
+        if (res.ok) {
+          const data = (await res.json()) as InventoryStoreSettings;
+          setStoreSettings(data);
+        }
+      } catch (err) {
+        console.error("Failed to load store settings", err);
+      }
+    };
+    void fetchSettings();
+  }, []);
 
   useEffect(() => {
     setForm(createWorkflowForm(detail));
@@ -224,7 +252,23 @@ export function InventoryWorkflowPanel({
             mode={mode}
           />
         </div>
+
+        <InventoryWorkflowPrintActions
+          onPrint={setActivePrint}
+          status={detail.listing.status}
+        />
       </form>
+
+      {activePrint && (
+        <InventoryWorkflowPrintPreview
+          activePrint={activePrint}
+          detail={detail}
+          form={form}
+          onClose={() => setActivePrint(null)}
+          primaryUnit={primaryUnit}
+          storeSettings={storeSettings}
+        />
+      )}
     </InventoryPanel>
   );
 }

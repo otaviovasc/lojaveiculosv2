@@ -1,0 +1,119 @@
+/* Panels Grid */
+.dashboard-panels-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+@media (min-width: 1024px) {
+  .dashboard-panels-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.dashboard-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+@media (min-width: 1024px) {
+  .dashboard-main-col {
+    grid-column: span 2 / span 2;
+  }
+}
+
+.dashboard-sidebar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dashboard-sub-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+@media (min-width: 768px) {
+  .dashboard-sub-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Card General Layout */
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.card-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card-header-icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+
+.card-header-icon-blue {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.1);
+}
+:root[data-theme="dark"] .card-header-icon-blue {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+.card-header-icon-violet {
+  background-color: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+  border-color: rgba(139, 92, 246, 0.1);
+}
+:root[data-theme="dark"] .card-header-icon-violet {
+  background-color: rgba(139, 92, 246, 0.2);
+}
+
+.card-header-icon-amber {
+  background-color: rgba(245, 197, 66, 0.1);
+  color: #f5c542;
+  border-color: rgba(245, 197, 66, 0.1);
+}
+:root[data-theme="dark"] .card-header-icon-amber {
+  background-color: rgba(245, 197, 66, 0.2);
+}
+
+.card-header-title {
+  font-size: 0.875rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.card-body {
+  padding: 1.25rem;
+  flex: 1 1 0%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.card-body-centered {
+  justify-content: center;
+  gap: 1.125rem;
+}

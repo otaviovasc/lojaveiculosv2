@@ -1,0 +1,261 @@
+/* Dashboard Sidebar Panel */
+.dashboard-sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.sidebar-block {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sidebar-block-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-btn-primary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    var(--color-accent-strong) 100%
+  );
+  border: 1px solid rgba(237, 29, 36, 0.25);
+  color: #ffffff;
+  border-radius: 1rem;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border: none;
+}
+
+.sidebar-btn-primary:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+/* Shine overlay animation for premium buttons */
+.btn-shine-overlay {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-12deg);
+  transition: 1s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.sidebar-btn-primary:hover .btn-shine-overlay,
+.addon-card-premium:hover .btn-shine-overlay {
+  left: 150%;
+}
+
+.sidebar-btn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar-btn-secondary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem;
+  background-color: rgba(237, 243, 247, 0.4);
+  border: 1px solid rgba(220, 228, 234, 0.4);
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--color-primary);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+:root[data-theme="dark"] .sidebar-btn-secondary {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar-btn-secondary:hover {
+  border-color: rgba(220, 228, 234, 0.7);
+  background-color: var(--color-panel);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+:root[data-theme="dark"] .sidebar-btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-btn-secondary-icon {
+  color: var(--color-muted);
+  opacity: 0.8;
+  transition: color 0.2s ease;
+}
+.sidebar-btn-secondary:hover .sidebar-btn-secondary-icon {
+  color: var(--color-accent);
+}
+
+.sidebar-btn-secondary-text {
+  transition: color 0.2s ease;
+}
+.sidebar-btn-secondary:hover .sidebar-btn-secondary-text {
+  color: var(--color-accent);
+}
+
+.sidebar-block-subtitle {
+  font-size: 0.625rem;
+  font-weight: 900;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Premium Theme Toggle Button */
+.theme-toggle-btn {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Light Theme Mode button - Violet theme */
+:root[data-theme="light"] .theme-toggle-btn {
+  background: linear-gradient(
+    135deg,
+    rgba(143, 107, 255, 0.08) 0%,
+    rgba(113, 78, 230, 0.02) 100%
+  );
+  border-color: rgba(143, 107, 255, 0.25);
+  color: var(--color-violet-end);
+  box-shadow: 0 2px 8px rgba(143, 107, 255, 0.04);
+}
+
+:root[data-theme="light"] .theme-toggle-btn:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(143, 107, 255, 0.16) 0%,
+    rgba(113, 78, 230, 0.06) 100%
+  );
+  border-color: rgba(143, 107, 255, 0.45);
+  color: var(--color-violet-start);
+  box-shadow: 0 4px 12px rgba(143, 107, 255, 0.12);
+  transform: translateY(-1px);
+}
+
+/* Dark Theme Mode button - Amber/Gold theme */
+:root[data-theme="dark"] .theme-toggle-btn {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 197, 66, 0.08) 0%,
+    rgba(245, 197, 66, 0.01) 100%
+  );
+  border-color: rgba(245, 197, 66, 0.2);
+  color: var(--color-warning);
+  box-shadow: 0 2px 8px rgba(245, 197, 66, 0.03);
+}
+
+:root[data-theme="dark"] .theme-toggle-btn:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(245, 197, 66, 0.16) 0%,
+    rgba(245, 197, 66, 0.04) 100%
+  );
+  border-color: rgba(245, 197, 66, 0.45);
+  box-shadow: 0 4px 12px rgba(245, 197, 66, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Shine overlay for theme button */
+.theme-toggle-btn .gloss-overlay {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.18) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  transition: 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.theme-toggle-btn:hover .gloss-overlay {
+  left: 140%;
+}
+
+.theme-toggle-btn .theme-icon {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-toggle-btn:hover .theme-icon {
+  transform: scale(1.15) rotate(15deg);
+}
+
+:root[data-theme="dark"] .theme-toggle-btn:hover .theme-icon {
+  transform: scale(1.15) rotate(180deg);
+}
+
+/* Collapse Toggle Button - Sidebar Footer */
+.collapse-toggle-btn {
+  background-color: rgba(237, 243, 247, 0.4);
+  border: 1px solid rgba(220, 228, 234, 0.4);
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+:root[data-theme="dark"] .collapse-toggle-btn {
+  background-color: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.collapse-toggle-btn:hover {
+  background-color: var(--color-app-elevated);
+  border-color: var(--color-line-strong);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+:root[data-theme="dark"] .collapse-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

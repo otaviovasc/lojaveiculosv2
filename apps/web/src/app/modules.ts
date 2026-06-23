@@ -47,10 +47,7 @@ export type ModuleId =
   | "fiscal"
   | "paid-traffic"
   | "autobot"
-  | "settings"
-  | "notifications"
-  | "compliance"
-  | "internal-health";
+  | "settings";
 
 export type NavigationItem = {
   entitlementKey?: string;
@@ -129,16 +126,6 @@ export const navigationGroups: NavigationGroup[] = [
   },
   {
     label: "Sistema",
-    items: [
-      { icon: Settings, id: "settings", label: "Geral" },
-      { icon: Bell, id: "notifications", label: "Notificacoes" },
-      {
-        entitlementKey: "compliance",
-        icon: ScrollText,
-        id: "compliance",
-        label: "Compliance",
-      },
-      { icon: Gauge, id: "internal-health", label: "Saude" },
-    ],
+    items: [{ icon: Settings, id: "settings", label: "Geral" }],
   },
 ];

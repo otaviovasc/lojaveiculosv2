@@ -23,10 +23,10 @@
 
 ## Validation
 
-- [ ] `npm run migration:validate-board`
-- [ ] `npm run migration:check-plan`
-- [ ] `npm run migration:inventory -- --check`
-- [ ] `npm run check:frontend-composition`
-- [ ] `npm run validate`
+- [ ] `pnpm run migration:validate-board`
+- [ ] `pnpm run migration:check-plan`
+- [ ] `pnpm run migration:inventory -- --check`
+- [ ] `pnpm run check:frontend-composition`
+- [ ] `pnpm run validate`
 - [ ] Visual QA evidence attached when required
 - [ ] Reviewer posted `Ready for Merge!`

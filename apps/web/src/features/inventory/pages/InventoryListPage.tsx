@@ -1,8 +1,10 @@
-import { ArrowLeft } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import JSZip from "jszip";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
-import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
-import { InventoryCatalogExplorer } from "../components/InventoryCatalogExplorer";
+import {
+  createInventoryApiOptions,
+  createInventoryRuntimeHeaders,
+} from "../api/inventoryRuntimeApi";
 import { InventoryEditPanel } from "../components/InventoryEditPanel";
 import { InventoryListHeader } from "../components/InventoryListHeader";
 import {
@@ -10,12 +12,15 @@ import {
   InventoryListingError,
   InventoryListingLoadingGrid,
 } from "../components/InventoryListingCardGrid";
-import { InventoryListSelectionStatus } from "../components/InventoryListSelectionStatus";
 import {
   InventoryListToolbar,
   InventoryLoadMore,
 } from "../components/InventoryListToolbar";
-import { InventoryCreatePage } from "./InventoryCreatePage";
+import {
+  InventoryListModals,
+  type InventoryActionItem,
+} from "../components/InventoryListModals";
+import { InventoryCreateMode } from "./InventoryCreateMode";
 import {
   createInventoryErrorState,
   createListQuery,
@@ -30,7 +35,9 @@ import { useInventoryRouteSelection } from "../model/useInventoryRouteSelection"
 import type {
   InventoryCatalogSnapshot,
   InventoryListingDetail,
+  InventoryListingSummary,
 } from "../model/types";
+import type { InventoryStoreSettings } from "../components/InventoryPrintTypes";
 
 const initialListQuery: InventoryListQueryInput = { search: "", status: "" };
 
@@ -53,17 +60,104 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
   const [selection, setSelection] = useState<InventoryDetailSelectionState>({
     kind: "idle",
   });
-  const [catalog, setCatalog] = useState<InventoryCatalogSnapshot | null>(null);
+  const editPanelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (detail) {
+      setTimeout(() => {
+        editPanelRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 80);
+    }
+  }, [detail]);
+
+  // V1 Migrated Actions and settings states
+  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
+  const [isTestDriveOpen, setIsTestDriveOpen] = useState(false);
+  const [activeSummaryItem, setActiveSummaryItem] =
+    useState<InventoryActionItem | null>(null);
+  const [storeSettings, setStoreSettings] =
+    useState<InventoryStoreSettings>(null);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const headers = await createInventoryRuntimeHeaders();
+        const res = await fetch("/api/v1/settings/store", { headers });
+        if (res.ok) {
+          const data = (await res.json()) as InventoryStoreSettings;
+          setStoreSettings(data);
+        }
+      } catch (err) {
+        console.error("Failed to load store settings", err);
+      }
+    };
+    void fetchSettings();
+  }, []);
+
+  const handleAction = async (
+    action: "template" | "test-drive" | "zip-photos",
+    item: InventoryListingSummary,
+  ) => {
+    if (action === "template") {
+      setListState({ kind: "loading" });
+      try {
+        const details = await runtimeApi?.getListing(item.listing.id);
+        setActiveSummaryItem({ ...item, media: details?.media || [] });
+        setIsTemplateOpen(true);
+      } catch (err) {
+        console.error(err);
+        setActiveSummaryItem({ ...item, media: [] });
+        setIsTemplateOpen(true);
+      } finally {
+        void loadListings(appliedQuery);
+      }
+    } else if (action === "test-drive") {
+      setActiveSummaryItem(item);
+      setIsTestDriveOpen(true);
+    } else if (action === "zip-photos") {
+      setLoadingMore(true);
+      try {
+        const details = await runtimeApi?.getListing(item.listing.id);
+        const mediaItems = details?.media || [];
+        if (mediaItems.length === 0) {
+          alert("Nenhuma imagem cadastrada para este veículo.");
+          return;
+        }
+        const zip = new JSZip();
+        for (let i = 0; i < mediaItems.length; i++) {
+          const url = mediaItems[i]?.url;
+          if (!url) continue;
+          const imgRes = await fetch(url);
+          const blob = await imgRes.blob();
+          zip.file(`foto_${i + 1}.png`, blob);
+        }
+        const content = await zip.generateAsync({ type: "blob" });
+        const zipUrl = URL.createObjectURL(content);
+        const link = document.createElement("a");
+        link.href = zipUrl;
+        link.download = `fotos-${item.listing.title.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.zip`;
+        link.click();
+        URL.revokeObjectURL(zipUrl);
+      } catch (err) {
+        console.error(err);
+        alert("Erro ao baixar fotos do veículo.");
+      } finally {
+        setLoadingMore(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (api) {
       setRuntimeApi(api);
-      return;
+    } else {
+      void createInventoryApiOptions().then((opts) =>
+        setRuntimeApi(createInventoryApi(opts)),
+      );
     }
-
-    void createInventoryApiOptions().then((options) => {
-      setRuntimeApi(createInventoryApi(options));
-    });
   }, [api]);
 
   const loadListings = useCallback(
@@ -72,28 +166,22 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
       mode: "append" | "replace" = "replace",
     ) => {
       if (!runtimeApi) return;
-
-      if (mode === "append") {
-        setLoadingMore(true);
-      } else {
-        setListState({ kind: "loading" });
-      }
+      if (mode === "append") setLoadingMore(true);
+      else setListState({ kind: "loading" });
       try {
         const result = await runtimeApi.listListings(createListQuery(input));
-        setListState((current) => {
-          if (mode !== "append" || current.kind !== "ready") {
-            return { kind: "ready", result };
-          }
-
-          return {
-            kind: "ready",
-            result: {
-              ...result,
-              items: [...current.result.items, ...result.items],
-              total: current.result.items.length + result.items.length,
-            },
-          };
-        });
+        setListState((curr) =>
+          mode !== "append" || curr.kind !== "ready"
+            ? { kind: "ready", result }
+            : {
+                kind: "ready",
+                result: {
+                  ...result,
+                  items: [...curr.result.items, ...result.items],
+                  total: curr.result.items.length + result.items.length,
+                },
+              },
+        );
       } catch (error) {
         setListState(createInventoryErrorState(error));
       } finally {
@@ -115,54 +203,40 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
   });
 
   const refreshListings = () => {
-    const query = { search, status };
-    setAppliedQuery(query);
-    void loadListings(query);
+    setAppliedQuery({ search, status });
+    void loadListings({ search, status });
   };
 
   const selectListing = async (listingId: string) => {
     if (!runtimeApi) return;
-
     setSelection({ kind: "loading", listingId });
     try {
-      const result = await runtimeApi.getListing(listingId);
-      setDetail(result);
+      setDetail(await runtimeApi.getListing(listingId));
       setSelection({ kind: "ready", listingId });
-    } catch (error) {
+    } catch (err) {
       setSelection({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: err instanceof Error ? err.message : String(err),
       });
     }
   };
 
-  const handleUpdated = (result: InventoryListingDetail) => {
-    setDetail(result);
-    setSelection({ kind: "ready", listingId: result.listing.id });
+  const handleUpdated = (res: InventoryListingDetail) => {
+    setDetail(res);
+    setSelection({ kind: "ready", listingId: res.listing.id });
     void loadListings(appliedQuery);
   };
 
   if (screenMode === "create") {
     return (
-      <>
-        <section className="mx-auto max-w-[var(--layout-content-max)] px-4 pt-4 lg:px-4">
-          <button
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent-soft px-4 text-sm font-black text-accent-strong"
-            onClick={() => {
-              setScreenMode("list");
-              void loadListings(appliedQuery);
-            }}
-            type="button"
-          >
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            Voltar ao estoque
-          </button>
-        </section>
-        <InventoryCreatePage
-          api={runtimeApi ?? undefined}
-          initialStep={routeStateRef.current.createStep}
-        />
-      </>
+      <InventoryCreateMode
+        api={runtimeApi ?? undefined}
+        initialStep={routeStateRef.current.createStep}
+        onBack={() => {
+          setScreenMode("list");
+          void loadListings(appliedQuery);
+        }}
+      />
     );
   }
 
@@ -172,76 +246,81 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
       : { available: 0, reserved: 0, sold: 0, total: 0 };
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-4">
-      <InventoryListHeader
-        available={summary.available}
-        hasMore={listState.kind === "ready" && listState.result.hasMore}
-        reserved={summary.reserved}
-        sold={summary.sold}
-        total={summary.total}
-      />
-
-      <InventoryListToolbar
-        loading={listState.kind === "loading"}
-        onCreate={() => setScreenMode("create")}
-        onRefresh={refreshListings}
-        onSearchChange={setSearch}
-        onStatusChange={setStatus}
-        search={search}
-        status={status}
-      />
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <section className="grid content-start gap-4">
-          {listState.kind === "loading" ? (
-            <InventoryListingLoadingGrid />
-          ) : null}
-          {listState.kind === "error" ? (
-            <InventoryListingError message={listState.message} />
-          ) : null}
-          {listState.kind === "ready" ? (
-            <>
-              <InventoryListingCardGrid
-                items={listState.result.items}
-                onSelect={(listingId) => void selectListing(listingId)}
-              />
-              {listState.result.hasMore &&
-              listState.result.nextOffset !== null ? (
-                <InventoryLoadMore
-                  loading={loadingMore}
-                  onLoadMore={() =>
-                    void loadListings(
-                      {
-                        offset: listState.result.nextOffset ?? 0,
-                        search: appliedQuery.search,
-                        status: appliedQuery.status,
-                      },
-                      "append",
-                    )
-                  }
-                />
-              ) : null}
-            </>
-          ) : null}
-        </section>
-
-        <div className="grid content-start gap-4">
-          <InventoryCatalogExplorer
-            api={runtimeApi}
-            catalog={catalog}
-            onCatalogChange={setCatalog}
-          />
-          <InventoryListSelectionStatus state={selection} />
-        </div>
-      </div>
-
-      {runtimeApi && detail ? (
-        <InventoryEditPanel
-          api={runtimeApi}
-          detail={detail}
-          onUpdated={handleUpdated}
+    <div className="relative min-h-screen store-dashboard overflow-hidden">
+      <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
+      <main className="dashboard-main relative z-10">
+        <InventoryListHeader
+          available={summary.available}
+          reserved={summary.reserved}
+          sold={summary.sold}
+          total={summary.total}
         />
-      ) : null}
-    </main>
+        <InventoryListToolbar
+          loading={listState.kind === "loading"}
+          onCreate={() => setScreenMode("create")}
+          onRefresh={refreshListings}
+          onSearchChange={setSearch}
+          onStatusChange={setStatus}
+          search={search}
+          status={status}
+        />
+        <div className="flex flex-col gap-6">
+          <section className="w-full flex flex-col gap-6">
+            {listState.kind === "loading" ? (
+              <InventoryListingLoadingGrid />
+            ) : null}
+            {listState.kind === "error" ? (
+              <InventoryListingError message={listState.message} />
+            ) : null}
+            {listState.kind === "ready" ? (
+              <>
+                <InventoryListingCardGrid
+                  items={listState.result.items}
+                  onSelect={(listingId) => void selectListing(listingId)}
+                  onAction={(action, item) => void handleAction(action, item)}
+                />
+                {listState.result.hasMore &&
+                listState.result.nextOffset !== null ? (
+                  <InventoryLoadMore
+                    loading={loadingMore}
+                    onLoadMore={() =>
+                      void loadListings(
+                        {
+                          offset: listState.result.nextOffset ?? 0,
+                          search: appliedQuery.search,
+                          status: appliedQuery.status,
+                        },
+                        "append",
+                      )
+                    }
+                  />
+                ) : null}
+              </>
+            ) : null}
+          </section>
+        </div>
+        {runtimeApi && detail ? (
+          <div ref={editPanelRef} className="mt-8 border-t border-line pt-8">
+            <InventoryEditPanel
+              api={runtimeApi}
+              detail={detail}
+              onUpdated={handleUpdated}
+            />
+          </div>
+        ) : null}
+      </main>
+
+      <InventoryListModals
+        activeSummaryItem={activeSummaryItem}
+        isTemplateOpen={isTemplateOpen}
+        isTestDriveOpen={isTestDriveOpen}
+        onClose={() => {
+          setIsTemplateOpen(false);
+          setIsTestDriveOpen(false);
+          setActiveSummaryItem(null);
+        }}
+        storeSettings={storeSettings}
+      />
+    </div>
   );
 }

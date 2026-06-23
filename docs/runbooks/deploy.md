@@ -19,12 +19,12 @@
 - Production service branch: `main`.
 - Enable Railway Wait for CI.
 - Healthcheck path: `/health`.
-- API service start command: `npm run start --workspace @lojaveiculosv2/api` or the Railway-detected equivalent for the API service root.
+- API service start command: `pnpm --filter @lojaveiculosv2/api start` or the Railway-detected equivalent for the API service root.
 - Web service build/start depends on the selected Railway strategy. Do not deploy `apps/web/dist` as a committed artifact.
 
 ## Pre-Deploy Checklist
 
-- `npm run validate` passes locally or in CI.
+- `pnpm run validate` passes locally or in CI.
 - Database migrations are backward-compatible.
 - New variables are documented in `docs/ops/env-vars.md`.
 - Rollback notes exist for risky changes.

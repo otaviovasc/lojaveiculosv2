@@ -23,17 +23,17 @@ permissions, audit, billing, and side effects.
 Run these from the `lojaveiculosv2` repo root:
 
 ```bash
-npm run migration:validate-board
-npm run migration:inventory -- --check
-npm run migration:render-plan
-npm run migration:check-plan
-npm run migration:prompt -- --slice <slice-id> --role worker
-npm run migration:prompt -- --slice <slice-id> --role reviewer
-npm run qa:visual -- --slice <slice-id>
-npm run check:frontend-composition
+pnpm run migration:validate-board
+pnpm run migration:inventory -- --check
+pnpm run migration:render-plan
+pnpm run migration:check-plan
+pnpm run migration:prompt -- --slice <slice-id> --role worker
+pnpm run migration:prompt -- --slice <slice-id> --role reviewer
+pnpm run qa:visual -- --slice <slice-id>
+pnpm run check:frontend-composition
 ```
 
-`npm run validate` includes the board, plan freshness, inventory, composition,
+`pnpm run validate` includes the board, plan freshness, inventory, composition,
 line-count, architecture, typecheck, lint, and test gates.
 
 ## Slice Lifecycle

@@ -5,7 +5,7 @@ deployment. Historical V1 migration execution is intentionally deferred.
 
 ## Current Readiness
 
-- `npm run validate` is the required local gate before handoff.
+- `pnpm run validate` is the required local gate before handoff.
 - API runtime uses DB-backed adapters when `DATABASE_URL` is configured.
 - Audit uses a separate DB when `AUDIT_DATABASE_URL` is configured.
 - Inventory, storefront, CRM, finance, documents, billing, settings, identity,
@@ -133,8 +133,8 @@ The API smoke suite covers:
 Run:
 
 ```bash
-npm run test --workspace @lojaveiculosv2/api -- productionSmoke
-npm run validate
+pnpm --filter @lojaveiculosv2/api test -- productionSmoke
+pnpm run validate
 ```
 
 ## Railway Deployment Checklist

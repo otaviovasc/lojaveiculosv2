@@ -100,7 +100,7 @@ Every application table must use the shared `lifecycleColumns` helper:
   on-update behavior
 
 Tables with user-deletable product data should also use `softDeleteColumns`.
-Schema files are checked by `npm run check:db`; do not inline id or timestamp
+Schema files are checked by `pnpm run check:db`; do not inline id or timestamp
 columns in table definitions.
 
 ## Audit Direction

@@ -6,7 +6,7 @@ const expected = await renderFormatted(readBoard());
 const current = readFileSync(planPath, "utf8");
 
 if (current !== expected) {
-  console.error("v2-plan.html is stale. Run npm run migration:render-plan.");
+  console.error("v2-plan.html is stale. Run pnpm run migration:render-plan.");
   process.exit(1);
 }
 

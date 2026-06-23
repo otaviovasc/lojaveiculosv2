@@ -1,5 +1,6 @@
 import { Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import type { DocumentsApi } from "./apiClient";
 import {
   DocumentUploadQueue,
@@ -125,7 +126,7 @@ export function DocumentUploadDialog({
     >
       <section
         aria-label="Anexar documentos"
-        className="documents-upload-dialog"
+        className="glass-panel-branded documents-upload-dialog !p-6 relative overflow-hidden"
         onClick={(event) => event.stopPropagation()}
       >
         <header className="documents-upload-header">
@@ -133,15 +134,18 @@ export function DocumentUploadDialog({
             <strong>Anexar documentos</strong>
             <span>{target.label}</span>
           </div>
-          <button
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             aria-label="Fechar"
+            className="inline-flex size-7 items-center justify-center rounded-full border border-line bg-app-elevated text-muted hover:text-primary transition-all cursor-pointer"
             disabled={isUploading}
             onClick={onClose}
             title="Fechar"
             type="button"
           >
-            <X aria-hidden="true" className="size-4" />
-          </button>
+            <X aria-hidden="true" className="size-3.5" />
+          </motion.button>
         </header>
 
         <label
@@ -164,7 +168,7 @@ export function DocumentUploadDialog({
           />
           <Upload aria-hidden="true" className="size-7" />
           <strong>Selecione ou arraste arquivos</strong>
-          <span>PDFs ou imagens. Pode enviar varios de uma vez.</span>
+          <span>PDFs ou imagens. Pode enviar vários de uma vez.</span>
         </label>
 
         <DocumentUploadQueue
@@ -185,11 +189,21 @@ export function DocumentUploadDialog({
           />
         ) : null}
 
-        <footer className="documents-upload-actions">
-          <button disabled={isUploading} onClick={onClose} type="button">
+        <footer className="documents-upload-actions flex justify-end gap-3 mt-4">
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-app px-4 text-sm font-bold text-app-text hover:bg-app-elevated transition-all cursor-pointer disabled:opacity-50"
+            disabled={isUploading}
+            onClick={onClose}
+            type="button"
+          >
             Cancelar
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm disabled:opacity-70"
             disabled={isUploading}
             onClick={() => {
               void uploadDocuments();
@@ -201,7 +215,7 @@ export function DocumentUploadDialog({
               : items.length <= 1
                 ? "Salvar documento"
                 : `Salvar ${items.length} documentos`}
-          </button>
+          </motion.button>
         </footer>
       </section>
     </div>

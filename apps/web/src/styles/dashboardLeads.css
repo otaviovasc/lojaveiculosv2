@@ -1,0 +1,65 @@
+/* Lead Sources Panel */
+.lead-source-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem; /* space-y-2 */
+}
+
+.lead-source-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem; /* text-xs */
+}
+
+.lead-source-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* gap-2 */
+}
+
+.lead-source-dot {
+  width: 0.5rem; /* w-2 */
+  height: 0.5rem; /* h-2 */
+  border-radius: 9999px; /* rounded-full */
+  flex-shrink: 0;
+}
+
+.lead-source-name {
+  font-weight: 700; /* font-bold */
+  color: var(--color-primary);
+}
+
+.lead-source-value {
+  font-weight: 900; /* font-black */
+}
+
+.lead-source-value-green {
+  color: #10b981; /* text-emerald-500 */
+}
+
+.lead-source-value-blue {
+  color: #3b82f6; /* text-blue-500 */
+}
+
+.lead-source-value-violet {
+  color: #8b5cf6; /* text-violet-500 */
+}
+
+.lead-source-percentage {
+  font-size: 0.625rem; /* text-[10px] */
+  margin-left: 0.25rem; /* ml-1 */
+  color: var(--color-muted);
+  opacity: 0.8;
+  font-weight: 700; /* font-bold */
+}
+
+.lead-source-progress-container {
+  height: 0.625rem; /* h-2.5 */
+  width: 100%;
+  background-color: var(--color-app-elevated);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid
+    color-mix(in srgb, var(--color-line-strong) 10%, transparent);
+}

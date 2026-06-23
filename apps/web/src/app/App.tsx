@@ -4,11 +4,9 @@ import { AppShell } from "../components/AppShell";
 import { ModulePlaceholder } from "../components/ModulePlaceholder";
 import { CrmModule } from "../features/crm/CrmModule";
 import { BillingModule } from "../features/billing/BillingModule";
-import { ComplianceModule } from "../features/compliance/ComplianceModule";
 import { DocumentsModule } from "../features/documents/DocumentsModule";
 import { FinanceModule } from "../features/finance/FinanceModule";
 import { FiscalModule } from "../features/fiscal/FiscalModule";
-import { InternalHealthModule } from "../features/internalHealth/InternalHealthModule";
 import { InventoryListPage } from "../features/inventory/pages/InventoryListPage";
 import { MarketplaceModule } from "../features/marketplaces/MarketplaceModule";
 import { PublicApiModule } from "../features/publicApi/PublicApiModule";
@@ -72,10 +70,6 @@ export function App() {
               <MarketplaceModule />
             ) : activeModuleId === "fiscal" ? (
               <FiscalModule />
-            ) : activeModuleId === "compliance" ? (
-              <ComplianceModule />
-            ) : activeModuleId === "internal-health" ? (
-              <InternalHealthModule />
             ) : activeModuleId === "settings" ? (
               <SettingsModule />
             ) : (

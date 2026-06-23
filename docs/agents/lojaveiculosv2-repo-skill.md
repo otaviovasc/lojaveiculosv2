@@ -41,7 +41,7 @@ Read these when relevant:
 2. Make the smallest behavior-preserving or behavior-changing edit that satisfies the task.
 3. Add or update focused tests when behavior changes.
 4. Run the narrowest useful check first.
-5. Run `npm run validate` before handoff when feasible.
+5. Run `pnpm run validate` before handoff when feasible.
 6. Update docs when commands, env vars, deploy behavior, or operational rules change.
 
 ## Non-Negotiables
@@ -59,11 +59,11 @@ Read these when relevant:
 Prefer this order:
 
 ```bash
-npm run test --workspace <workspace> -- <focused-pattern>
-npm run typecheck --workspace <workspace>
-npm run lint --workspace <workspace>
-npm run validate
+pnpm --filter <workspace> test -- <focused-pattern>
+pnpm --filter <workspace> typecheck
+pnpm --filter <workspace> lint
+pnpm run validate
 ```
 
-If `npm run validate` cannot run, report which narrower checks ran and why full
+If `pnpm run validate` cannot run, report which narrower checks ran and why full
 validation was skipped.

@@ -2320,7 +2320,7 @@
       "name": "Compliance And Internal Health Dashboards",
       "domain": "compliance",
       "priority": "P2",
-      "classification": "already-covered-in-v2",
+      "classification": "defer-placeholder",
       "surface_type": "screen",
       "status": "planned",
       "phase": "phase-2-operational-depth",
@@ -2330,16 +2330,7 @@
       "blocks": [],
       "source_refs": [],
       "supporting_source_refs": [],
-      "target_refs": [
-        {
-          "repo": "lojaveiculosv2",
-          "path": "apps/web/src/features/compliance/ComplianceModule.tsx"
-        },
-        {
-          "repo": "lojaveiculosv2",
-          "path": "apps/web/src/features/internalHealth/InternalHealthModule.tsx"
-        }
-      ],
+      "target_refs": [],
       "backend_contract": {
         "owner": "compliance/internal",
         "notes": "Use static compliance controls and audit DB-backed internal health where configured."

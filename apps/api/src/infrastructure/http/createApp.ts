@@ -35,6 +35,7 @@ import type { CrmRepository } from "../../domains/crm/ports/crmRepository.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
+import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 
 export type CreateAppOptions = {
@@ -61,6 +62,7 @@ export type CreateAppOptions = {
 
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
+  installHttpMiddleware(app);
   app.use("*", createLocalHttpLogger());
   app.use(
     "/api/v1/*",

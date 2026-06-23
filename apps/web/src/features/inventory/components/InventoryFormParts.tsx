@@ -16,12 +16,16 @@ export function InventoryPanel({
   title: string;
 }) {
   return (
-    <section className="rounded-lg border border-line bg-panel p-4 shadow-[var(--shadow-panel)]">
-      <div className="mb-4 flex items-center gap-2 text-accent-strong">
-        {icon}
-        <h3 className="text-sm font-black text-app-text">{title}</h3>
+    <section className="glass-panel-branded dashboard-card">
+      <div className="card-header card-header-gradient border-b border-line/40">
+        <div className="card-header-title-container">
+          <div className="card-header-icon bg-accent-soft text-accent-strong border border-accent-soft/20">
+            {icon}
+          </div>
+          <h3 className="card-header-title">{title}</h3>
+        </div>
       </div>
-      {children}
+      <div className="card-body">{children}</div>
     </section>
   );
 }

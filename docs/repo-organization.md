@@ -118,4 +118,4 @@ Before adding or moving a module:
    implementation details.
 4. Keep files under 240 lines by extracting coherent modules, not by hiding
    complexity in generic helpers.
-5. Run `npm run validate` before handoff.
+5. Run `pnpm run validate` before handoff.

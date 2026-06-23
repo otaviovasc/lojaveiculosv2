@@ -1,0 +1,146 @@
+/* Expansions & Add-ons */
+.addon-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem;
+  background-color: rgba(237, 243, 247, 0.4);
+  border: 1px solid rgba(220, 228, 234, 0.4);
+  border-radius: 1rem;
+}
+:root[data-theme="dark"] .addon-row {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.addon-row-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  color: var(--color-primary);
+}
+
+.addon-row-subtitle {
+  font-size: 0.5625rem;
+  font-weight: 700;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.125rem;
+}
+
+/* Switch toggle styling */
+.switch-toggle {
+  width: 2.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  border-radius: 9999px;
+  padding: 0.25rem;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: none;
+  transition:
+    background-color 0.3s ease,
+    justify-content 0.3s ease;
+}
+
+.switch-toggle-active {
+  background-color: var(--color-accent);
+  justify-content: flex-end;
+}
+
+.switch-toggle-inactive {
+  background-color: var(--color-line);
+  justify-content: flex-start;
+}
+
+.switch-knob {
+  width: 1rem;
+  height: 1rem;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Premium Add-on Cards */
+.addon-card-premium {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  border: none;
+}
+
+.addon-card-premium:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.addon-card-premium-whatsapp {
+  background: linear-gradient(135deg, #10b981 0%, #15803d 100%);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.addon-card-premium-nfe {
+  background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.addon-card-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  position: relative;
+  z-index: 10;
+}
+
+.addon-card-icon-container {
+  width: 2.25rem;
+  height: 2.25rem;
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.addon-card-details {
+  text-align: left;
+}
+
+.addon-card-title {
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+}
+
+.addon-card-subtitle {
+  font-size: 0.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.1em;
+  margin-top: 0.125rem;
+}
+
+.addon-card-badge {
+  padding: 0.125rem 0.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 0.25rem;
+  font-size: 0.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  position: relative;
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}

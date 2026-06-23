@@ -2,6 +2,17 @@
 @import "./tokens.css";
 @import "./components.css";
 @import "./dashboard.css";
+@import "./dashboardPremium.css";
+@import "./dashboardHome.css";
+@import "./dashboardCounters.css";
+@import "./dashboardPanels.css";
+@import "./dashboardAgenda.css";
+@import "./dashboardLeads.css";
+@import "./dashboardPromo.css";
+@import "./dashboardAging.css";
+@import "./dashboardSidebar.css";
+@import "./dashboardSellers.css";
+@import "./dashboardAddons.css";
 @import "./agency.css";
 @import "./crm.css";
 @import "./crmWhatsapp.css";

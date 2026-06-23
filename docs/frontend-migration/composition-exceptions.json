@@ -6,20 +6,12 @@
       "reason": "Pre-control-plane local load-state type; remove during billing slice."
     },
     {
-      "path": "apps/web/src/features/compliance/ComplianceModule.tsx",
-      "reason": "Pre-control-plane local dashboard helpers; remove during compliance slice."
-    },
-    {
       "path": "apps/web/src/features/finance/FinanceModule.tsx",
       "reason": "Pre-control-plane local list-state type; remove during finance slice."
     },
     {
       "path": "apps/web/src/features/fiscal/FiscalModule.tsx",
       "reason": "Pre-control-plane local provider/metric helpers; remove during fiscal slice."
-    },
-    {
-      "path": "apps/web/src/features/internalHealth/InternalHealthModule.tsx",
-      "reason": "Pre-control-plane local dashboard/loading helpers; remove during internal health slice."
     },
     {
       "path": "apps/web/src/features/inventory/components/InventoryMediaWorkspace.tsx",

@@ -1,4 +1,5 @@
 import { ArrowLeft, Folder, FolderOpen, List, Upload } from "lucide-react";
+import { motion } from "motion/react";
 import { DocumentsTable } from "./DocumentWorkspaceTable";
 import {
   filterDocumentsByFolder,
@@ -8,6 +9,13 @@ import {
 import type { DocumentKind, WorkspaceDocument } from "./types";
 
 export type WorkspaceViewMode = "folders" | "list";
+
+const modeToggleBase =
+  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black cursor-pointer border transition-all";
+const selectedModeToggleClass =
+  "bg-accent-soft text-accent-strong border-accent-soft/20";
+const idleModeToggleClass =
+  "bg-app border-line text-muted hover:text-primary hover:border-line-strong";
 
 export function DocumentWorkspacePanel({
   documents,
@@ -51,7 +59,7 @@ export function DocumentWorkspacePanel({
       : documents;
 
   return (
-    <section className="documents-panel">
+    <section className="glass-panel-branded documents-panel !p-6 relative overflow-hidden">
       <div className="documents-panel-title documents-workspace-title">
         <div>
           <strong>
@@ -64,41 +72,57 @@ export function DocumentWorkspacePanel({
               ? `${selectedFolder.title} · ${selectedFolder.count} ${isResultCapped ? "documentos carregados" : "documentos"}`
               : isResultCapped
                 ? "Pastas e contagens refletem os documentos carregados mais recentes."
-                : "Organize por veiculo, venda, lead, financeiro e fiscal."}
+                : "Organize por veículo, venda, lead, financeiro e fiscal."}
           </span>
         </div>
         <div className="documents-workspace-actions">
-          <button
-            className="documents-upload-action"
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse cursor-pointer shadow-sm disabled:opacity-75"
             disabled={isBusy}
             onClick={onOpenUpload}
             type="button"
           >
             <Upload aria-hidden="true" className="size-4" />
             Anexar
-          </button>
+          </motion.button>
           <div
             className="documents-mode-toggle"
             aria-label="Modo de visualizacao"
           >
-            <button
-              className={viewMode === "folders" ? "is-active" : ""}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={[
+                modeToggleBase,
+                viewMode === "folders"
+                  ? selectedModeToggleClass
+                  : idleModeToggleClass,
+              ].join(" ")}
               onClick={() => onViewModeChange("folders")}
               title="Ver pastas"
               type="button"
             >
               <Folder aria-hidden="true" className="size-4" />
               Pastas
-            </button>
-            <button
-              className={viewMode === "list" ? "is-active" : ""}
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={[
+                modeToggleBase,
+                viewMode === "list"
+                  ? selectedModeToggleClass
+                  : idleModeToggleClass,
+              ].join(" ")}
               onClick={() => onViewModeChange("list")}
               title="Ver lista"
               type="button"
             >
               <List aria-hidden="true" className="size-4" />
               Lista
-            </button>
+            </motion.button>
           </div>
         </div>
       </div>
@@ -114,14 +138,16 @@ export function DocumentWorkspacePanel({
       ) : (
         <>
           {selectedFolder ? (
-            <button
-              className="documents-back-button"
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 shadow-sm"
               onClick={() => onSelectFolder(null)}
               type="button"
             >
-              <ArrowLeft aria-hidden="true" className="size-4" />
+              <ArrowLeft aria-hidden="true" className="size-3.5" />
               Todas as pastas
-            </button>
+            </motion.button>
           ) : null}
           <DocumentsTable
             documents={visibleDocuments}
@@ -153,8 +179,14 @@ function FoldersGrid({
   return (
     <div className="documents-folder-grid">
       {folders.map((folder) => (
-        <button
-          className="documents-folder-card"
+        <motion.button
+          whileHover={{
+            y: -3,
+            scale: 1.015,
+            borderColor: "var(--color-accent)",
+          }}
+          whileTap={{ scale: 0.99 }}
+          className="documents-folder-card cursor-pointer transition-all duration-200"
           key={folder.key}
           onClick={() => onSelectFolder(folder.key)}
           type="button"
@@ -167,7 +199,7 @@ function FoldersGrid({
             {folder.issued} emitidos · atualizado{" "}
             {formatDateTime(folder.latestAt)}
           </small>
-        </button>
+        </motion.button>
       ))}
     </div>
   );

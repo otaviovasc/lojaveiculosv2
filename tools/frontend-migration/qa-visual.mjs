@@ -67,7 +67,7 @@ function parseArgs() {
   }
   if (!parsed.slice) {
     die(
-      "Usage: npm run qa:visual -- --slice <id> [--url http://localhost:5173]",
+      "Usage: pnpm run qa:visual -- --slice <id> [--url http://localhost:5173]",
     );
   }
   return parsed;

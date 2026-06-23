@@ -38,13 +38,6 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     id: "commissions",
     title: "Comissoes",
   },
-  compliance: {
-    action: "Revisar controles",
-    description: "LGPD, auditoria, acessos e seguranca operacional.",
-    eyebrow: "Sistema",
-    id: "compliance",
-    title: "Compliance",
-  },
   crm: {
     action: "Atender conversas",
     description: "Conversas de WhatsApp com continuidade para a equipe.",
@@ -102,26 +95,12 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     id: "inventory",
     title: "Inventario",
   },
-  "internal-health": {
-    action: "Verificar sinais",
-    description: "Saude interna, filas, logs escopados e integracoes criticas.",
-    eyebrow: "Sistema",
-    id: "internal-health",
-    title: "Saude",
-  },
   marketplaces: {
     action: "Conectar canais",
     description: "Publicacao de estoque em marketplaces com controle por loja.",
     eyebrow: "Canais",
     id: "marketplaces",
     title: "Marketplaces",
-  },
-  notifications: {
-    action: "Definir alertas",
-    description: "Alertas por papel, loja e prioridade operacional.",
-    eyebrow: "Sistema",
-    id: "notifications",
-    title: "Notificacoes",
   },
   "paid-traffic": {
     action: "Planejar midia",

@@ -152,7 +152,7 @@ function parseArgs() {
   }
   if (!result.slice || !result.role) {
     console.error(
-      "Usage: npm run migration:prompt -- --slice <id> --role worker|reviewer",
+      "Usage: pnpm run migration:prompt -- --slice <id> --role worker|reviewer",
     );
     process.exit(1);
   }

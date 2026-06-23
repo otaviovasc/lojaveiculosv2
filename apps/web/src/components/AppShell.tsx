@@ -109,14 +109,20 @@ export function AppShell({
           >
             <Menu className="size-5" />
           </button>
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-accent text-sm font-black italic text-white">
-            LV
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-black text-app-text">
-              Loja Veiculos
+          <img
+            src={
+              theme === "dark"
+                ? "/icons/logo_lv_white.svg"
+                : "/icons/logo_lv.svg"
+            }
+            alt="Loja Veículos"
+            className="h-7.5 w-auto object-contain select-none mr-1"
+          />
+          <div className="min-w-0 border-l border-line/60 pl-2.5">
+            <p className="truncate text-[11px] font-black uppercase tracking-widest text-primary leading-tight">
+              Loja Veículos
             </p>
-            <p className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <p className="truncate text-[9px] font-black uppercase tracking-widest text-accent mt-0.5">
               {activeModule.title}
             </p>
           </div>

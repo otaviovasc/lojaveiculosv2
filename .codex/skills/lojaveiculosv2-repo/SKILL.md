@@ -26,7 +26,7 @@ Relevant reads:
 Default validation:
 
 ```bash
-npm run validate
+pnpm run validate
 ```
 
 Production Railway access is read-only unless the user explicitly asks for the

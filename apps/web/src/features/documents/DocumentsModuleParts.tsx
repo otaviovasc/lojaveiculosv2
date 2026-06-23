@@ -1,22 +1,71 @@
-import { FileText, RefreshCcw, Search } from "lucide-react";
+import {
+  FileText,
+  RefreshCcw,
+  Search,
+  CheckCircle,
+  PenTool,
+  Database,
+} from "lucide-react";
+import type { ComponentType } from "react";
+import { motion } from "motion/react";
 import type {
   DocumentKind,
   DocumentLinkTarget,
   DocumentStatus,
   ListDocumentsFilters,
 } from "./types";
-import {
-  kindOptions,
-  statusOptions,
-  targetOptions,
-} from "./documentLabels";
+import { kindOptions, statusOptions, targetOptions } from "./documentLabels";
 
-export function Metric({ label, value }: { label: string; value: string }) {
+export function Metric({
+  label,
+  value,
+  tone = "violet",
+  icon: KpiIcon,
+  idx = 0,
+}: {
+  label: string;
+  value: string;
+  tone?: "violet" | "green" | "pink" | "blue";
+  icon: ComponentType<{ className?: string }>;
+  idx?: number;
+}) {
+  const toneClass =
+    tone === "green"
+      ? "kpi-gradient-green"
+      : tone === "blue"
+        ? "kpi-gradient-blue"
+        : tone === "violet"
+          ? "kpi-gradient-violet"
+          : "kpi-gradient-pink";
+  const className = [
+    "kpi-card-premium flex items-center gap-3 !p-3 !px-4 !rounded-xl",
+    toneClass,
+    "border border-white/10 shadow-sm text-white cursor-default",
+  ].join(" ");
+
   return (
-    <article className="documents-metric">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, delay: idx * 0.04 }}
+      whileHover={{ y: -2, scale: 1.015 }}
+      className={className}
+    >
+      {/* Shine highlight */}
+      <div className="gloss-overlay" />
+
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/10 relative z-10">
+        <KpiIcon className="size-4.5 text-white" />
+      </div>
+      <div className="min-w-0 relative z-10">
+        <span className="block text-[9px] font-black uppercase tracking-wider text-white/70 leading-none">
+          {label}
+        </span>
+        <strong className="block text-lg font-black text-white mt-1.5 leading-none">
+          {value}
+        </strong>
+      </div>
+    </motion.div>
   );
 }
 
@@ -34,7 +83,11 @@ export function SelectFilter({
   return (
     <label className="documents-select">
       <span>{label}</span>
-      <select onChange={(event) => onChange(event.target.value)} value={value}>
+      <select
+        className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]"
+        onChange={(event) => onChange(event.target.value)}
+        value={value}
+      >
         {options.map((option) => (
           <option key={option.value || "all"} value={option.value}>
             {option.label}
@@ -70,7 +123,7 @@ export function DocumentsWorkspaceHeader({
 }) {
   return (
     <>
-      <section className="documents-hero">
+      <section className="glass-panel-branded documents-hero !p-5 relative overflow-hidden flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <span className="documents-badge">
             <FileText aria-hidden="true" className="size-4" />
@@ -80,36 +133,65 @@ export function DocumentsWorkspaceHeader({
           <p>
             {isResultCapped
               ? `Mostrando os ${resultLimit} documentos mais recentes. Use filtros para refinar pastas e contagens.`
-              : "Arquivos vinculados a veiculos, leads, vendas, pagamentos, financeiro e fiscal em uma unica lista auditada."}
+              : "Arquivos vinculados a veículos, leads, vendas, pagamentos, financeiro e fiscal em uma única lista auditada."}
           </p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
           aria-label="Atualizar documentos"
-          className="documents-icon-action"
+          className="inline-flex size-10 items-center justify-center rounded-lg border border-line bg-app-elevated text-muted hover:text-primary hover:border-line-strong transition-all cursor-pointer"
           onClick={onRefresh}
           title="Atualizar documentos"
           type="button"
         >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
+          <RefreshCcw aria-hidden="true" className="size-4.5" />
+        </motion.button>
       </section>
 
-      <section className="documents-summary" aria-label="Resumo de documentos">
+      <section
+        className="grid gap-3 grid-cols-2 xl:grid-cols-4"
+        aria-label="Resumo de documentos"
+      >
         <Metric
           label={isResultCapped ? "Carregados" : "Total"}
           value={String(counts.total)}
+          tone="violet"
+          icon={FileText}
+          idx={0}
         />
-        <Metric label="Emitidos" value={String(counts.issued)} />
-        <Metric label="Assinatura" value={String(counts.signature)} />
-        <Metric label="Contextos" value={String(counts.contexts)} />
+        <Metric
+          label="Emitidos"
+          value={String(counts.issued)}
+          tone="green"
+          icon={CheckCircle}
+          idx={1}
+        />
+        <Metric
+          label="Assinatura"
+          value={String(counts.signature)}
+          tone="pink"
+          icon={PenTool}
+          idx={2}
+        />
+        <Metric
+          label="Contextos"
+          value={String(counts.contexts)}
+          tone="blue"
+          icon={Database}
+          idx={3}
+        />
       </section>
 
-      <section className="documents-toolbar" aria-label="Filtros">
+      <section
+        className="glass-panel-branded documents-toolbar !p-5"
+        aria-label="Filtros"
+      >
         <label className="documents-search">
           <Search aria-hidden="true" className="size-4" />
           <input
             onChange={(event) => updateFilter("search", event.target.value)}
-            placeholder="Buscar por titulo ou arquivo"
+            placeholder="Buscar por título ou arquivo"
             value={filters.search ?? ""}
           />
         </label>
