@@ -88,6 +88,7 @@ export const vehicleCatalogVersions = pgTable(
       .notNull()
       .references(() => vehicleCatalogModelFamilies.id),
     name: varchar("name", { length: 191 }).notNull(),
+    providerName: varchar("provider_name", { length: 191 }),
     slug: varchar("slug", { length: 191 }).notNull(),
     vehicleType: vehicleCatalogType("vehicle_type").notNull(),
   },
@@ -143,3 +144,81 @@ export const vehicleCatalogSyncRuns = pgTable("vehicle_catalog_sync_runs", {
   versionsSeen: integer("versions_seen").notNull().default(0),
   yearsSeen: integer("years_seen").notNull().default(0),
 });
+
+export const vehicleCatalogReferences = pgTable(
+  "vehicle_catalog_references",
+  {
+    ...lifecycleColumns,
+    code: varchar("code", { length: 40 }).notNull(),
+    isLatest: boolean("is_latest").notNull().default(false),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    month: varchar("month", { length: 80 }).notNull(),
+    provider: varchar("provider", { length: 40 }).notNull(),
+    rawPayload: jsonb("raw_payload").notNull().default({}),
+  },
+  (table) => [
+    uniqueIndex("vehicle_catalog_references_provider_code_unique").on(
+      table.provider,
+      table.code,
+    ),
+  ],
+);
+
+export const vehicleCatalogPriceHistory = pgTable(
+  "vehicle_catalog_price_history",
+  {
+    ...lifecycleColumns,
+    fipeCode: varchar("fipe_code", { length: 40 }).notNull(),
+    fipeYearCode: varchar("fipe_year_code", { length: 40 }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    priceCents: integer("price_cents"),
+    priceLabel: varchar("price_label", { length: 80 }),
+    provider: varchar("provider", { length: 40 }).notNull(),
+    rawPayload: jsonb("raw_payload").notNull().default({}),
+    referenceCode: varchar("reference_code", { length: 40 }).notNull(),
+    referenceMonth: varchar("reference_month", { length: 80 }).notNull(),
+    vehicleType: vehicleCatalogType("vehicle_type").notNull(),
+  },
+  (table) => [
+    index("vehicle_catalog_price_history_fipe_idx").on(
+      table.vehicleType,
+      table.fipeCode,
+      table.fipeYearCode,
+    ),
+    uniqueIndex("vehicle_catalog_price_history_reference_unique").on(
+      table.provider,
+      table.vehicleType,
+      table.fipeCode,
+      table.fipeYearCode,
+      table.referenceCode,
+    ),
+  ],
+);
+
+export const vehicleCatalogRawResponses = pgTable(
+  "vehicle_catalog_raw_responses",
+  {
+    ...lifecycleColumns,
+    brandCode: varchar("brand_code", { length: 40 }),
+    endpoint: varchar("endpoint", { length: 80 }).notNull(),
+    fipeCode: varchar("fipe_code", { length: 40 }),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    httpStatus: integer("http_status").notNull(),
+    modelCode: varchar("model_code", { length: 40 }),
+    payload: jsonb("payload").notNull(),
+    provider: varchar("provider", { length: 40 }).notNull(),
+    referenceCode: varchar("reference_code", { length: 40 }),
+    requestKey: varchar("request_key", { length: 500 }).notNull(),
+    requestPath: varchar("request_path", { length: 500 }).notNull(),
+    syncRunId: uuid("sync_run_id").references(() => vehicleCatalogSyncRuns.id),
+    vehicleType: vehicleCatalogType("vehicle_type"),
+    yearCode: varchar("year_code", { length: 40 }),
+  },
+  (table) => [
+    index("vehicle_catalog_raw_responses_request_idx").on(
+      table.provider,
+      table.requestKey,
+    ),
+    index("vehicle_catalog_raw_responses_sync_run_idx").on(table.syncRunId),
+  ],
+);

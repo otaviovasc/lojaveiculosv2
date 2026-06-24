@@ -4,6 +4,7 @@ import type {
 } from "../../ports/vehicleCatalogProvider.js";
 import type { VehicleCatalogRepository } from "../../ports/vehicleCatalogRepository.js";
 import type { VehicleInventoryServicePorts } from "../VehicleService/serviceSupport.js";
+export { deriveModelFamilyName } from "../../catalog/catalogNameNormalization.js";
 
 export const vehicleCatalogPermission = "inventory.read";
 export const vehicleCatalogSyncPermission = "inventory.catalog_sync";
@@ -45,13 +46,4 @@ export function normalizeVehicleType(
   vehicleType: VehicleCatalogType | undefined,
 ): VehicleCatalogType {
   return vehicleType ?? "cars";
-}
-
-export function deriveModelFamilyName(versionName: string): string {
-  const clean = versionName.replace(/\s+/g, " ").trim();
-  const split = clean.search(
-    /\s(?:\d|16V|8V|T\.|TB|MPI|TSI|TDI|FLEX|DIESEL|HYBRID|ELETRICO|AUT\.|MEC\.)/i,
-  );
-  const family = split > 0 ? clean.slice(0, split).trim() : clean;
-  return family || clean;
 }

@@ -86,6 +86,29 @@ describe("VehicleService edits", () => {
     expect(event.changes).toEqual([]);
   });
 
+  it("updates internal notes with a dedicated permission and redacted audit", async () => {
+    const context = createContext(["inventory.update_internal_notes"]);
+    const ports = createInMemoryVehiclePorts([createListing()]);
+
+    const listing = await updateVehicleListingDetails(
+      context,
+      { internalNotes: "Preparacao pendente.", listingId: "listing_1" },
+      ports,
+    );
+
+    expect(listing.internalNotes).toBe("Preparacao pendente.");
+    const event = lastAuditEvent(context.audit.record);
+    expect(event.metadata?.permission).toBe("inventory.update_internal_notes");
+    expect(event.metadata?.requiredPermissions).toEqual([
+      "inventory.update_internal_notes",
+    ]);
+    expect(event.changes).toContainEqual({
+      after: "[set]",
+      before: null,
+      path: "internalNotes",
+    });
+  });
+
   it("checks submitted edit permission before scoped listing lookup", async () => {
     const context = createContext([]);
     const ports = createInMemoryVehiclePorts([]);

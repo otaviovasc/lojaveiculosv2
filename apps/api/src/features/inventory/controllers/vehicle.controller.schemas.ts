@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { allowedCreateStatuses } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import { listingStatuses } from "./listingServices.js";
+import {
+  listingCatalogSchema,
+  listingTechnicalSchemaShape,
+  vehicleCatalogTypes,
+} from "./vehicle.controller.schemaParts.js";
 
 export const listListingsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
@@ -9,34 +14,14 @@ export const listListingsQuerySchema = z.object({
   status: z.enum(listingStatuses).optional(),
 });
 
-const vehicleCatalogTypes = ["cars", "motorcycles", "trucks"] as const;
-const listingCatalogSchema = z.object({
-  brandCode: z.string().trim().min(1).nullable(),
-  brandLogoUrl: z.string().trim().url().nullable().optional().default(null),
-  brandName: z.string().trim().min(1).nullable(),
-  fipeCode: z.string().trim().min(1).nullable(),
-  fuel: z.string().trim().min(1).nullable(),
-  modelCode: z.string().trim().min(1).nullable(),
-  modelName: z.string().trim().min(1).nullable(),
-  modelYear: z.number().int().min(1886).max(2100).nullable(),
-  priceCents: z.number().int().nonnegative().nullable().default(null),
-  referenceMonth: z.string().trim().min(1).nullable(),
-  source: z.literal("fipe").nullable(),
-  vehicleType: z.enum(vehicleCatalogTypes).nullable(),
-  yearCode: z.string().trim().min(1).nullable(),
-  yearName: z.string().trim().min(1).nullable(),
-});
-
 export const createListingSchema = z.object({
   catalog: listingCatalogSchema.nullable().optional(),
   description: z.string().trim().min(1).nullable().optional(),
-  manufactureYear: z.number().int().min(1886).max(2100).nullable().optional(),
-  modelYear: z.number().int().min(1886).max(2100).nullable().optional(),
+  ...listingTechnicalSchemaShape,
   plate: z.string().trim().min(1).nullable().default(null),
   priceCents: z.number().int().nonnegative().nullable().optional(),
   status: z.enum(allowedCreateStatuses).optional(),
   title: z.string().trim().min(1),
-  trimName: z.string().trim().min(1).max(160).nullable().optional(),
 });
 
 export const descriptionSchema = z.object({
@@ -51,21 +36,21 @@ export const priceSchema = z.object({
 export const updateListingDetailsSchema = z.object({
   catalog: listingCatalogSchema.nullable().optional(),
   description: z.string().trim().min(1).nullable().optional(),
-  manufactureYear: z.number().int().min(1886).max(2100).nullable().optional(),
-  modelYear: z.number().int().min(1886).max(2100).nullable().optional(),
+  ...listingTechnicalSchemaShape,
   priceCents: z.number().int().nonnegative().nullable().optional(),
   status: z.enum(listingStatuses).optional(),
   title: z.string().trim().min(1).optional(),
-  trimName: z.string().trim().min(1).max(160).nullable().optional(),
 });
 
 export const attachUnitSchema = z.object({
+  colorName: z.string().trim().min(1).max(80).nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
 });
 
 export const updateUnitSchema = z.object({
+  colorName: z.string().trim().min(1).max(80).nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
   status: z.enum(["available", "reserved", "retired", "sold"]).optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
@@ -97,6 +82,11 @@ export const catalogSnapshotQuerySchema = z.object({
   modelCode: z.string().trim().min(1),
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
   yearCode: z.string().trim().min(1),
+});
+
+export const catalogPriceHistoryQuerySchema = z.object({
+  referenceCode: z.string().trim().min(1).optional(),
+  vehicleType: z.enum(vehicleCatalogTypes).optional(),
 });
 
 export const mediaUploadSchema = z.object({

@@ -74,14 +74,14 @@ export function AppShell({
       className={
         "min-h-screen bg-app text-app-text lg:grid " +
         (isSidebarCollapsed
-          ? "lg:grid-cols-[84px_1fr]"
-          : "lg:grid-cols-[280px_1fr]")
+          ? "lg:grid-cols-[72px_1fr]"
+          : "lg:grid-cols-[224px_1fr]")
       }
     >
       <aside
         className={
           "fixed left-0 top-0 z-30 hidden h-screen transition-[width] duration-300 lg:block " +
-          (isSidebarCollapsed ? "w-[84px]" : "w-[280px]")
+          (isSidebarCollapsed ? "w-[72px]" : "w-[224px]")
         }
       >
         <DashboardSidebar

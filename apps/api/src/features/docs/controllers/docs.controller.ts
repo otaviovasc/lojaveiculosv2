@@ -134,6 +134,7 @@ export const openApiDocument = {
     "inventory.read": "Read vehicle inventory.",
     "inventory.create": "Create vehicle inventory records.",
     "inventory.update_description": "Edit descriptive vehicle fields.",
+    "inventory.update_internal_notes": "Edit internal vehicle notes.",
     "inventory.update_price": "Edit vehicle pricing.",
     "inventory.update_status": "Edit vehicle listing lifecycle status.",
     "inventory.update_unit": "Edit physical/unit inventory fields.",

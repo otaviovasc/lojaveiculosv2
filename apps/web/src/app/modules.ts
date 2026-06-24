@@ -98,6 +98,19 @@ export const navigationGroups: NavigationGroup[] = [
     ],
   },
   {
+    label: "Servicos",
+    items: [
+      {
+        entitlementKey: "nfe",
+        icon: FileText,
+        id: "fiscal",
+        label: "NF-e",
+      },
+      { icon: Megaphone, id: "paid-traffic", label: "Trafego" },
+      { icon: Bot, id: "autobot", label: "Autobot" },
+    ],
+  },
+  {
     label: "Canais",
     items: [
       { icon: Palette, id: "public-site", label: "Personalizar" },
@@ -109,19 +122,6 @@ export const navigationGroups: NavigationGroup[] = [
         label: "Marketplaces",
       },
       { icon: KeyRound, id: "public-api", label: "Public API" },
-    ],
-  },
-  {
-    label: "Servicos",
-    items: [
-      {
-        entitlementKey: "nfe",
-        icon: FileText,
-        id: "fiscal",
-        label: "NF-e",
-      },
-      { icon: Megaphone, id: "paid-traffic", label: "Trafego" },
-      { icon: Bot, id: "autobot", label: "Autobot" },
     ],
   },
   {

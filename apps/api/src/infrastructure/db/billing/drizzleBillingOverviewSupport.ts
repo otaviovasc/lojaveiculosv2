@@ -92,6 +92,7 @@ export async function listAllocations(
       planName: plan?.name ?? null,
       storeId: store.id as never,
       storeName: store.tradingName,
+      storeSlug: store.publicSlug,
       subscriptionStatus: subscription?.status ?? null,
     };
   });

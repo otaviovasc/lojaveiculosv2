@@ -21,14 +21,21 @@ export function applyPlateLookupToForm(
   return {
     ...form,
     catalog,
+    colorName: vehicle.color ?? form.colorName,
+    engineDisplacement: vehicle.engine ?? form.engineDisplacement,
+    fuelType: normalizeFuelType(vehicle.fuel) ?? form.fuelType,
     manufactureYear:
       vehicle.manufactureYear !== null
         ? String(vehicle.manufactureYear)
         : form.manufactureYear,
+    mileageKm:
+      vehicle.mileageKm !== null ? String(vehicle.mileageKm) : form.mileageKm,
     modelYear:
       vehicle.modelYear !== null ? String(vehicle.modelYear) : form.modelYear,
     plate: lookup.plate || form.plate,
     title,
+    transmission:
+      normalizeTransmission(vehicle.transmission) ?? form.transmission,
     trimName: vehicle.version ?? vehicle.model ?? form.trimName,
     vin: shouldFillChassis(vehicle.chassis) ? vehicle.chassis : form.vin,
   };
@@ -42,21 +49,27 @@ export function createResaleAnalysisInput(
     form.catalog?.priceCents ?? lookup?.fipe?.priceCents ?? null;
   return {
     acquisitionPriceCents: parsePriceCents(form.acquisitionPrice),
+    bodyType: lookup?.vehicle.bodyType ?? null,
     brand: form.catalog?.brandName ?? lookup?.vehicle.brand ?? null,
+    city: lookup?.vehicle.city ?? null,
     color: lookup?.vehicle.color ?? null,
     fipePriceCents,
     fuel: form.catalog?.fuel ?? lookup?.vehicle.fuel ?? null,
     manufactureYear: parseInteger(form.manufactureYear),
+    marketContext: null,
     metadata: lookup?.metadata ?? [],
     mileageKm: lookup?.vehicle.mileageKm ?? null,
     model: form.catalog?.modelName ?? lookup?.vehicle.model ?? null,
     modelYear: parseInteger(form.modelYear),
+    origin: lookup?.vehicle.origin ?? null,
     plate: nullableText(form.plate || lookup?.plate || ""),
     recommendedAcquisitionPriceCents:
       recommendedAcquisitionCents(fipePriceCents),
     recommendedSellingPriceCents: idealSellPriceCents(fipePriceCents),
     sellingPriceCents: parsePriceCents(form.price),
+    state: lookup?.vehicle.state ?? null,
     transmission: lookup?.vehicle.transmission ?? null,
+    vehicleType: lookup?.vehicle.vehicleType ?? null,
     version: form.trimName || lookup?.vehicle.version || null,
   };
 }
@@ -118,6 +131,40 @@ function shouldFillChassis(value: string | null): value is string {
 function parseInteger(value: string) {
   const number = Number(value);
   return Number.isInteger(number) ? number : null;
+}
+
+function normalizeFuelType(value: string | null) {
+  const normalized = normalize(value);
+  if (!normalized) return null;
+  if (normalized.includes("flex")) return "flex";
+  if (normalized.includes("diesel")) return "diesel";
+  if (normalized.includes("eletric")) return "electric";
+  if (normalized.includes("hibrid") || normalized.includes("hybrid")) {
+    return "hybrid";
+  }
+  if (normalized.includes("etanol") || normalized.includes("alcool")) {
+    return "ethanol";
+  }
+  if (normalized.includes("gasol")) return "gasoline";
+  return "other";
+}
+
+function normalizeTransmission(value: string | null) {
+  const normalized = normalize(value);
+  if (!normalized) return null;
+  if (normalized.includes("cvt")) return "cvt";
+  if (normalized.includes("automatiz")) return "automated";
+  if (normalized.includes("auto")) return "automatic";
+  if (normalized.includes("manual")) return "manual";
+  return "other";
+}
+
+function normalize(value: string | null) {
+  return value
+    ?.normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .trim();
 }
 
 function nullableText(value: string) {

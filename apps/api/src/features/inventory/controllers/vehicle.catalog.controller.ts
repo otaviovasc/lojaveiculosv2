@@ -4,6 +4,7 @@ import type { VehicleCatalogType } from "../../../domains/vehicle/ports/vehicleC
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { InventoryListingServices } from "./listingServices.js";
 import {
+  catalogPriceHistoryQuerySchema,
   catalogQuerySchema,
   catalogSnapshotQuerySchema,
 } from "./vehicle.controller.schemas.js";
@@ -86,6 +87,22 @@ export function registerInventoryCatalogRoutes(
       );
     }),
   );
+
+  inventoryFeature.get(
+    "/catalog/fipe/:fipeCode/years/:yearCode/history",
+    async (context) =>
+      handle(context, async () => {
+        const query = parseQuery(context, catalogPriceHistoryQuerySchema);
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.getCatalogPriceHistory(serviceContext, {
+            fipeCode: context.req.param("fipeCode"),
+            yearCode: context.req.param("yearCode"),
+            ...cleanCatalogPriceHistoryQuery(query),
+          }),
+        );
+      }),
+  );
 }
 
 function parseQuery<Schema extends z.ZodType>(
@@ -115,5 +132,15 @@ function cleanCatalogSnapshotQuery(query: {
     modelCode: query.modelCode,
     yearCode: query.yearCode,
     ...cleanCatalogQuery(query),
+  };
+}
+
+function cleanCatalogPriceHistoryQuery(query: {
+  referenceCode?: string | undefined;
+  vehicleType?: VehicleCatalogType | undefined;
+}) {
+  return {
+    ...cleanCatalogQuery(query),
+    ...(query.referenceCode ? { referenceCode: query.referenceCode } : {}),
   };
 }

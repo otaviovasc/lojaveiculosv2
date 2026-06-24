@@ -109,12 +109,18 @@ export function createInventoryApi({
     postJson<InventoryListingDetail>(inventoryRoutes.listings(baseUrl), {
       description: input.description,
       catalog: input.catalog,
+      doors: input.doors,
+      engineDisplacement: input.engineDisplacement,
+      fuelType: input.fuelType,
+      internalNotes: input.internalNotes,
       manufactureYear: input.manufactureYear,
+      mileageKm: input.mileageKm,
       modelYear: input.modelYear,
       plate: input.plate,
       priceCents: input.priceCents,
       status: input.status,
       title: input.title,
+      transmission: input.transmission,
       trimName: input.trimName,
     });
 
@@ -122,6 +128,7 @@ export function createInventoryApi({
     sendJson<InventoryListingDetail>(
       inventoryRoutes.unit(listingId, baseUrl),
       {
+        colorName: input.colorName,
         plate: input.plate,
         stockNumber: input.stockNumber,
         vin: input.vin,
@@ -200,11 +207,17 @@ export function createInventoryApi({
       {
         description: input.description,
         catalog: input.catalog,
+        doors: input.doors,
+        engineDisplacement: input.engineDisplacement,
+        fuelType: input.fuelType,
+        internalNotes: input.internalNotes,
         manufactureYear: input.manufactureYear,
+        mileageKm: input.mileageKm,
         modelYear: input.modelYear,
         priceCents: input.priceCents,
         status: input.status,
         title: input.title,
+        transmission: input.transmission,
         trimName: input.trimName,
       },
       "PATCH",
@@ -218,6 +231,7 @@ export function createInventoryApi({
     sendJson<InventoryListingDetail>(
       inventoryRoutes.unitDetail(listingId, unitId, baseUrl),
       {
+        colorName: input.colorName,
         plate: input.plate,
         status: input.status,
         stockNumber: input.stockNumber,

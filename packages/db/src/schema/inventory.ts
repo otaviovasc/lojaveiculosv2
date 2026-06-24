@@ -85,6 +85,7 @@ export const vehicleListings = pgTable(
     engineDisplacement: varchar("engine_displacement", { length: 32 }),
     featuredUntil: timestamp("featured_until", { withTimezone: true }),
     fuelType: vehicleFuelType("fuel_type"),
+    internalNotes: text("internal_notes"),
     isVisibleOnPublicSite: boolean("is_visible_on_public_site")
       .notNull()
       .default(false),
@@ -151,6 +152,34 @@ export const vehicleUnits = pgTable(
       table.stockNumber,
     ),
     uniqueIndex("vehicle_units_store_vin_unique").on(table.storeId, table.vin),
+  ],
+);
+
+export const vehiclePlateLookups = pgTable(
+  "vehicle_plate_lookups",
+  {
+    ...lifecycleColumns,
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull(),
+    plate: varchar("plate", { length: 16 }).notNull(),
+    provider: varchar("provider", { length: 80 }).notNull(),
+    responsePayload: jsonb("response_payload").notNull(),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+  },
+  (table) => [
+    index("vehicle_plate_lookups_store_plate_idx").on(
+      table.storeId,
+      table.plate,
+    ),
+    uniqueIndex("vehicle_plate_lookups_store_provider_plate_unique").on(
+      table.storeId,
+      table.provider,
+      table.plate,
+    ),
   ],
 );
 

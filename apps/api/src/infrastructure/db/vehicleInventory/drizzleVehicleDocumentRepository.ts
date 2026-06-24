@@ -8,12 +8,12 @@ import type {
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { DrizzleRepositoryClient } from "../drizzleClient.js";
 import {
-  VehicleInventoryDrizzleScopeError,
   type InsertDocumentLinkRow,
   type InsertDocumentRow,
   type VehicleDocumentLinkRow,
   type VehicleDocumentRow,
 } from "./drizzleVehicleInventoryMappers.js";
+import { VehicleInventoryDrizzleScopeError } from "./drizzleVehicleInventoryScope.js";
 
 export type DrizzleVehicleDocumentClient = DrizzleRepositoryClient<
   VehicleDocumentRow,

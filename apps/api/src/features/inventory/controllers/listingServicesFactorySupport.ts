@@ -26,6 +26,23 @@ export function detailPermissionForListingEdit(
     return "inventory.update_description";
   }
 
+  if (
+    input.catalog !== undefined ||
+    input.doors !== undefined ||
+    input.engineDisplacement !== undefined ||
+    input.fuelType !== undefined ||
+    input.manufactureYear !== undefined ||
+    input.mileageKm !== undefined ||
+    input.modelYear !== undefined ||
+    input.transmission !== undefined ||
+    input.trimName !== undefined
+  ) {
+    return "inventory.update_description";
+  }
+
+  if (input.internalNotes !== undefined) {
+    return "inventory.update_internal_notes";
+  }
   if (input.priceCents !== undefined) return "inventory.update_price";
   if (input.status !== undefined) return "inventory.update_status";
 

@@ -1,12 +1,13 @@
 import {
   vehicleCatalogBrands,
   vehicleCatalogModelFamilies,
+  vehicleCatalogPriceHistory,
   vehicleCatalogSyncRuns,
   vehicleCatalogVersions,
   vehicleCatalogYears,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type { VehicleCatalogRepository } from "../../../domains/vehicle/ports/vehicleCatalogRepository.js";
 import {
@@ -158,6 +159,26 @@ export function createDrizzleVehicleCatalogRepository(
         return latest;
       }, null);
       return { lastSyncedAt, yearCount: rows.length };
+    },
+    async listPriceHistory(input) {
+      const rows = await db
+        .select()
+        .from(vehicleCatalogPriceHistory)
+        .where(
+          and(
+            eq(vehicleCatalogPriceHistory.provider, "fipe"),
+            eq(vehicleCatalogPriceHistory.vehicleType, input.vehicleType),
+            eq(vehicleCatalogPriceHistory.fipeCode, input.fipeCode),
+            eq(vehicleCatalogPriceHistory.fipeYearCode, input.yearCode),
+          ),
+        )
+        .orderBy(asc(vehicleCatalogPriceHistory.referenceCode));
+      return rows.map((row) => ({
+        priceCents: row.priceCents,
+        priceLabel: row.priceLabel,
+        referenceCode: row.referenceCode,
+        referenceMonth: row.referenceMonth,
+      }));
     },
     ...createDrizzleVehicleCatalogWrites(db),
   };

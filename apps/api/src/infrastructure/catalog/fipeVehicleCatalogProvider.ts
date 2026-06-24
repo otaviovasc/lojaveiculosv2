@@ -1,10 +1,24 @@
 import type {
-  VehicleCatalogOption,
   VehicleCatalogProvider,
-  VehicleCatalogSnapshot,
   VehicleCatalogType,
-  VehicleCatalogYearOption,
 } from "../../domains/vehicle/ports/vehicleCatalogProvider.js";
+import {
+  type FipeOption,
+  type FipeReference,
+  type FipeVehicleDetails,
+  parseFipePriceCents,
+  toBrandOption,
+  toCatalogSnapshot,
+  toFipeCodeDetails,
+  toOption,
+  toPriceHistory,
+  toReference,
+  toYearOption,
+} from "./fipeVehicleCatalogMapping.js";
+import {
+  createFipeRawResponseCapture,
+  type FipeRawResponseRecorder,
+} from "./fipeVehicleCatalogRaw.js";
 import { resolveVehicleBrandLogoUrl } from "./vehicleBrandLogoResolver.js";
 
 const defaultBaseUrl = "https://parallelum.com.br/fipe/api/v2";
@@ -19,6 +33,7 @@ export function createFipeVehicleCatalogProvider({
   brandLogoUrlResolver = resolveVehicleBrandLogoUrl,
   fetch = globalThis.fetch,
   maxAttempts = defaultMaxAttempts,
+  rawResponseRecorder,
   requestTimeoutMs = defaultRequestTimeoutMs,
   retryBaseDelayMs = defaultRetryBaseDelayMs,
   sleep = defaultSleep,
@@ -28,6 +43,7 @@ export function createFipeVehicleCatalogProvider({
   brandLogoUrlResolver?: BrandLogoUrlResolver;
   fetch?: typeof globalThis.fetch;
   maxAttempts?: number;
+  rawResponseRecorder?: FipeRawResponseRecorder | undefined;
   requestTimeoutMs?: number;
   retryBaseDelayMs?: number;
   sleep?: (delayMs: number) => Promise<void>;
@@ -51,7 +67,17 @@ export function createFipeVehicleCatalogProvider({
         await sleep(getAttemptDelayMs(attempt, retryBaseDelayMs));
         continue;
       }
-      if (response.ok) return (await response.json()) as T;
+      if (response.ok) {
+        const payload = (await response.json()) as T;
+        await rawResponseRecorder?.(
+          createFipeRawResponseCapture({
+            path,
+            payload,
+            status: response.status,
+          }),
+        );
+        return payload;
+      }
       if (!shouldRetry(response.status) || attempt === attempts) {
         throw new FipeCatalogProviderError(response.status, path);
       }
@@ -63,27 +89,73 @@ export function createFipeVehicleCatalogProvider({
   return {
     getVehicle: async (input) => {
       const details = await request<FipeVehicleDetails>(
-        `/${input.vehicleType}/brands/${input.brandCode}/models/${input.modelCode}/years/${input.yearCode}`,
+        withReference(
+          `/${input.vehicleType}/brands/${input.brandCode}/models/${input.modelCode}/years/${input.yearCode}`,
+          input.referenceCode,
+        ),
       );
       return toCatalogSnapshot({ ...input, details });
     },
-    listBrands: async ({ vehicleType }) =>
-      (await request<FipeOption[]>(`/${vehicleType}/brands`)).map((brand) =>
-        toOption(brand, brandLogoUrlResolver(brand.name)),
-      ),
-    listModels: async ({ brandCode, vehicleType }) =>
+    getVehicleByFipeCode: async (input) => {
+      const details = await request<FipeVehicleDetails>(
+        withReference(
+          `/${input.vehicleType}/${input.fipeCode}/years/${input.yearCode}`,
+          input.referenceCode,
+        ),
+      );
+      return toFipeCodeDetails({ ...input, details });
+    },
+    getVehicleHistory: async (input) => {
+      const details = await request<FipeVehicleDetails>(
+        withReference(
+          `/${input.vehicleType}/${input.fipeCode}/years/${input.yearCode}/history`,
+          input.referenceCode,
+        ),
+      );
+      return toPriceHistory({ ...input, details });
+    },
+    listBrands: async ({ referenceCode, vehicleType }) =>
       (
         await request<FipeOption[]>(
-          `/${vehicleType}/brands/${brandCode}/models`,
+          withReference(`/${vehicleType}/brands`, referenceCode),
+        )
+      ).map((brand) => toBrandOption(brand, brandLogoUrlResolver)),
+    listModels: async ({ brandCode, referenceCode, vehicleType }) =>
+      (
+        await request<FipeOption[]>(
+          withReference(
+            `/${vehicleType}/brands/${brandCode}/models`,
+            referenceCode,
+          ),
         )
       ).map((model) => toOption(model)),
-    listYears: async ({ brandCode, modelCode, vehicleType }) =>
+    listReferences: async () =>
+      (await request<FipeReference[]>("/references")).map(toReference),
+    listYears: async ({ brandCode, modelCode, referenceCode, vehicleType }) =>
       (
         await request<FipeOption[]>(
-          `/${vehicleType}/brands/${brandCode}/models/${modelCode}/years`,
+          withReference(
+            `/${vehicleType}/brands/${brandCode}/models/${modelCode}/years`,
+            referenceCode,
+          ),
+        )
+      ).map(toYearOption),
+    listYearsByFipeCode: async ({ fipeCode, referenceCode, vehicleType }) =>
+      (
+        await request<FipeOption[]>(
+          withReference(`/${vehicleType}/${fipeCode}/years`, referenceCode),
         )
       ).map(toYearOption),
   };
+}
+
+function withReference(
+  path: string,
+  referenceCode: string | undefined,
+): string {
+  return referenceCode
+    ? `${path}?reference=${encodeURIComponent(referenceCode)}`
+    : path;
 }
 
 async function fetchWithTimeout(
@@ -111,80 +183,6 @@ export class FipeCatalogProviderError extends Error {
     super(createFipeCatalogProviderErrorMessage(status, path, cause));
     this.name = "FipeCatalogProviderError";
   }
-}
-
-type FipeOption = {
-  code: string | number;
-  name: string;
-};
-
-type FipeVehicleDetails = {
-  brand: string;
-  codeFipe: string;
-  fuel: string;
-  model: string;
-  modelYear: number;
-  price: string;
-  referenceMonth: string;
-};
-
-function toOption(
-  input: FipeOption,
-  imageUrl: string | null = null,
-): VehicleCatalogOption {
-  return {
-    code: String(input.code),
-    imageUrl,
-    name: input.name,
-  };
-}
-
-function toYearOption(input: FipeOption): VehicleCatalogYearOption {
-  const code = String(input.code);
-  const modelYear = Number.parseInt(code.slice(0, 4), 10);
-  const fuelCode = code.includes("-") ? (code.split("-")[1] ?? null) : null;
-  return {
-    ...toOption(input),
-    fuelCode,
-    modelYear: Number.isFinite(modelYear) ? modelYear : null,
-  };
-}
-
-function toCatalogSnapshot(input: {
-  brandCode: string;
-  details: FipeVehicleDetails;
-  modelCode: string;
-  vehicleType: VehicleCatalogType;
-  yearCode: string;
-}): VehicleCatalogSnapshot {
-  return {
-    brandCode: input.brandCode,
-    brandLogoUrl: null,
-    brandName: input.details.brand,
-    fipeCode: input.details.codeFipe,
-    fuel: input.details.fuel,
-    modelCode: input.modelCode,
-    modelName: input.details.model,
-    modelYear: input.details.modelYear,
-    priceCents: parseFipePriceCents(input.details.price),
-    referenceMonth: input.details.referenceMonth,
-    source: "fipe",
-    vehicleType: input.vehicleType,
-    yearCode: input.yearCode,
-    yearName: String(input.details.modelYear),
-  };
-}
-
-export function parseFipePriceCents(value: string): number | null {
-  const normalized = value
-    .replace(/[^\d,.-]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .trim();
-  if (!normalized) return null;
-  const amount = Number(normalized);
-  if (!Number.isFinite(amount) || amount < 0) return null;
-  return Math.round(amount * 100);
 }
 
 function shouldRetry(status: number): boolean {
@@ -229,3 +227,5 @@ function createFipeCatalogProviderErrorMessage(
   const causeMessage = cause instanceof Error ? `: ${cause.message}` : "";
   return `FIPE catalog request failed before receiving a response: ${path}${causeMessage}`;
 }
+
+export { parseFipePriceCents };

@@ -63,6 +63,12 @@ export const permissionGroups: readonly PermissionGroup[] = [
         "Alterar textos do anuncio.",
         "medium",
       ),
+      permission(
+        "inventory.update_internal_notes",
+        "Editar notas internas",
+        "Alterar notas internas do veiculo.",
+        "medium",
+      ),
       permission("inventory.reserve", "Reservar", "Reservar veiculos.", "high"),
       permission("inventory.sell", "Vender", "Marcar venda.", "high"),
       permission("inventory.cost_create", "Custos", "Criar custos.", "medium"),

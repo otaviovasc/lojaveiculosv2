@@ -38,13 +38,6 @@ export class VehicleInventoryDrizzleMappingError extends Error {
   }
 }
 
-export class VehicleInventoryDrizzleScopeError extends Error {
-  constructor(fieldName: "storeId" | "tenantId") {
-    super(`DB-backed vehicle inventory requires a non-null ${fieldName}`);
-    this.name = "VehicleInventoryDrizzleScopeError";
-  }
-}
-
 export function toVehicleListing(
   row: VehicleListingRow,
   units: readonly VehicleUnit[],
@@ -53,8 +46,13 @@ export function toVehicleListing(
     catalog: readListingCatalog(row.metadata),
     createdAt: row.createdAt,
     description: row.description,
+    doors: row.doors,
+    engineDisplacement: row.engineDisplacement,
+    fuelType: row.fuelType,
     id: row.id,
+    internalNotes: row.internalNotes,
     manufactureYear: row.manufactureYear,
+    mileageKm: row.mileageKm,
     modelYear: row.modelYear,
     plate: units[0]?.plate ?? null,
     priceCents: row.askingPriceCents,
@@ -62,6 +60,7 @@ export function toVehicleListing(
     storeId: row.storeId,
     tenantId: row.tenantId,
     title: row.title,
+    transmission: row.transmission,
     trimName: row.trimName,
     unitIds: units.map((unit) => unit.id),
     updatedAt: row.updatedAt,
@@ -97,6 +96,7 @@ function readListingCatalog(metadata: unknown): VehicleListingCatalog | null {
 
 export function toVehicleUnit(row: VehicleUnitRow): VehicleUnit {
   return {
+    colorName: row.colorName,
     createdAt: row.createdAt,
     id: row.id,
     listingId: row.listingId,

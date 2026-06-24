@@ -7,28 +7,33 @@ import type { VehicleCatalogType } from "../../ports/vehicleCatalogProvider.js";
 import {
   applyLimit,
   createCounts,
+  filterByCode,
   normalizeConcurrency,
   runWithConcurrency,
-  type CatalogSyncCounts,
 } from "../../catalog/syncCatalogSupport.js";
 import {
   listModelsOrSkip,
   listYearsOrSkip,
   shouldSyncVersionYears,
 } from "../../catalog/syncCatalogResume.js";
+import { auditSync, auditSyncFailure } from "../../catalog/syncCatalogAudit.js";
+import { syncCatalogReferences } from "../../catalog/syncCatalogReferences.js";
 import {
-  deriveModelFamilyName,
   getCatalogProvider,
   getCatalogRepository,
   type VehicleCatalogServicePorts,
   vehicleCatalogSyncPermission,
 } from "./serviceSupport.js";
+import { splitVehicleCatalogName } from "../../catalog/catalogNameNormalization.js";
 
 export type SyncVehicleCatalogInput = {
+  brandCodes?: readonly string[] | undefined;
   brandLimit?: number | undefined;
   concurrency?: number;
+  referenceCode?: string | undefined;
   refreshAfterDays?: number | undefined;
   refreshExistingYears?: boolean | undefined;
+  syncYears?: boolean | undefined;
   vehicleType: VehicleCatalogType;
 };
 
@@ -40,6 +45,7 @@ export type SyncVehicleCatalogResult = {
   skippedModelLookups: number;
   skippedYearLookups: number;
   status: "succeeded";
+  referencesSeen: number;
   versionsSeen: number;
   yearsSeen: number;
 };
@@ -65,10 +71,24 @@ export async function syncVehicleCatalog(
       vehicleType: input.vehicleType,
     }),
   );
+  const recordAudit = (
+    event: Parameters<ServiceContext["audit"]["record"]>[0],
+  ) => context.audit.record(event);
 
   try {
+    const referenceSync = await syncCatalogReferences(
+      provider,
+      repository,
+      input.referenceCode,
+    );
     const brands = applyLimit(
-      await provider.listBrands({ vehicleType: input.vehicleType }),
+      filterByCode(
+        await provider.listBrands({
+          referenceCode: referenceSync.referenceCode,
+          vehicleType: input.vehicleType,
+        }),
+        input.brandCodes,
+      ),
       input.brandLimit,
     );
     counts.brandsSeen = brands.length;
@@ -92,15 +112,17 @@ export async function syncVehicleCatalog(
           () =>
             provider.listModels({
               brandCode: brand.code,
+              referenceCode: referenceSync.referenceCode,
               vehicleType: input.vehicleType,
             }),
           brand.code,
         );
         counts.versionsSeen += versions.length;
         for (const version of versions) {
+          const nameParts = splitVehicleCatalogName(version.name);
           const family = await repository.upsertModelFamily({
             brandId: savedBrand.id,
-            name: deriveModelFamilyName(version.name),
+            name: nameParts.modelFamilyName,
             vehicleType: input.vehicleType,
           });
           seenFamilies.add(family.id);
@@ -108,9 +130,11 @@ export async function syncVehicleCatalog(
             brandId: savedBrand.id,
             code: version.code,
             modelFamilyId: family.id,
-            name: version.name,
+            name: nameParts.versionName,
+            providerName: version.name,
             vehicleType: input.vehicleType,
           });
+          if (input.syncYears === false) continue;
           const shouldSyncYears = await shouldSyncVersionYears(
             repository,
             input,
@@ -130,6 +154,7 @@ export async function syncVehicleCatalog(
               provider.listYears({
                 brandCode: brand.code,
                 modelCode: version.code,
+                referenceCode: referenceSync.referenceCode,
                 vehicleType: input.vehicleType,
               }),
             `${brand.code}:${version.code}`,
@@ -150,8 +175,11 @@ export async function syncVehicleCatalog(
     const metadata = {
       freshYearLookupsSkipped,
       isComplete,
+      referenceCode: referenceSync.referenceCode,
+      referencesSeen: referenceSync.referencesSeen,
       skippedModelLookups,
       skippedYearLookups,
+      syncYears: input.syncYears !== false,
     };
     await repository.finishSyncRun({
       counts,
@@ -159,11 +187,20 @@ export async function syncVehicleCatalog(
       runId: run.id,
       status: "succeeded",
     });
-    await auditSync(context, input.vehicleType, run.id, counts, metadata);
+    await auditSync(
+      recordAudit,
+      context,
+      input.vehicleType,
+      run.id,
+      counts,
+      metadata,
+      vehicleCatalogSyncPermission,
+    );
     return {
       ...counts,
       freshYearLookupsSkipped,
       isComplete,
+      referencesSeen: referenceSync.referencesSeen,
       skippedModelLookups: skippedModelLookups.length,
       skippedYearLookups: skippedYearLookups.length,
       status: "succeeded",
@@ -177,63 +214,14 @@ export async function syncVehicleCatalog(
       status: "failed",
     });
     await auditSyncFailure(
+      recordAudit,
       context,
       input.vehicleType,
       run.id,
       counts,
       errorMessage,
+      vehicleCatalogSyncPermission,
     );
     throw error;
   }
-}
-async function auditSync(
-  context: ServiceContext,
-  vehicleType: VehicleCatalogType,
-  runId: string,
-  counts: CatalogSyncCounts,
-  metadata: Record<string, unknown>,
-): Promise<void> {
-  await context.audit.record({
-    action: "vehicle_catalog.sync",
-    actor: context.actor,
-    category: "data_change",
-    entityId: runId,
-    entityType: "vehicle_catalog",
-    metadata: {
-      ...counts,
-      ...metadata,
-      permission: vehicleCatalogSyncPermission,
-    },
-    outcome: "succeeded",
-    requestId: context.requestId,
-    storeId: context.storeId,
-    summary: `Synced FIPE catalog for ${vehicleType}`,
-    tenantId: context.tenantId,
-  });
-}
-
-async function auditSyncFailure(
-  context: ServiceContext,
-  vehicleType: VehicleCatalogType,
-  runId: string,
-  counts: CatalogSyncCounts,
-  errorMessage: string,
-): Promise<void> {
-  await context.audit.record({
-    action: "vehicle_catalog.sync",
-    actor: context.actor,
-    category: "data_change",
-    entityId: runId,
-    entityType: "vehicle_catalog",
-    metadata: {
-      ...counts,
-      errorMessage,
-      permission: vehicleCatalogSyncPermission,
-    },
-    outcome: "failed",
-    requestId: context.requestId,
-    storeId: context.storeId,
-    summary: `Failed FIPE catalog sync for ${vehicleType}`,
-    tenantId: context.tenantId,
-  });
 }

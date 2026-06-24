@@ -8,6 +8,7 @@ type FieldProps = {
   children: ReactNode;
   hint?: string;
   label: string;
+  className?: string | undefined;
 };
 
 export function InventoryPanel({
@@ -35,9 +36,14 @@ export function InventoryPanel({
 }
 
 export const InventoryField = forwardRef<HTMLLabelElement, FieldProps>(
-  function InventoryField({ children, hint, label }, ref) {
+  function InventoryField({ children, hint, label, className }, ref) {
     return (
-      <label className="grid gap-2 text-sm font-black text-app-text" ref={ref}>
+      <label
+        className={["grid gap-2 text-sm font-black text-app-text", className]
+          .filter(Boolean)
+          .join(" ")}
+        ref={ref}
+      >
         <span>{label}</span>
         {children}
         {hint ? (
@@ -55,6 +61,7 @@ export function InventoryInput(props: ComponentProps<"input">) {
       className={[
         "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
         "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
+        "disabled:opacity-50 disabled:bg-app-elevated/50 disabled:cursor-not-allowed disabled:border-line/60",
         props.className,
       ]
         .filter(Boolean)

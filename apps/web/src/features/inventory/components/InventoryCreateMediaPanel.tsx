@@ -91,18 +91,18 @@ export function InventoryCreateMediaPanel({
             ))}
           </div>
         ) : (
-          <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-line bg-app/40 p-4 text-center">
-            <p className="text-sm font-bold text-muted">
+          <div className="rounded-lg border border-dashed border-line bg-app/40 px-4 py-3 text-center">
+            <p className="text-xs font-bold text-muted">
               Nenhuma foto selecionada. A primeira foto publica sera usada como
               capa do anuncio.
             </p>
           </div>
         )}
 
-        <label className="grid min-h-36 cursor-pointer place-items-center rounded-xl border border-dashed border-line bg-app p-4 text-center transition-colors hover:bg-app-elevated">
+        <label className="grid min-h-24 cursor-pointer place-items-center rounded-xl border border-dashed border-line bg-app p-3 text-center transition-colors hover:bg-app-elevated">
           <Upload
             aria-hidden="true"
-            className="mb-2 size-6 text-accent-strong"
+            className="mb-1.5 size-5 text-accent-strong"
           />
           <span className="text-sm font-black text-app-text">
             Enviar fotos, video ou preview

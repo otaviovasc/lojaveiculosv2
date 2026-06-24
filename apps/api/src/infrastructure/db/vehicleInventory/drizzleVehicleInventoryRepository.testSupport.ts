@@ -138,6 +138,7 @@ export function createRows() {
         featuredUntil: null,
         fuelType: null,
         id: "listing_1",
+        internalNotes: null,
         isDeleted: false,
         isVisibleOnPublicSite: false,
         manufactureYear: null,

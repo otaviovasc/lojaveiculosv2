@@ -21,6 +21,7 @@ import { assertGenericUnitStatusAllowed } from "../../policies/workflowStatusPol
 const permission = "inventory.update_unit";
 
 export type UpdateVehicleUnitInput = {
+  colorName?: string | null;
   listingId: string;
   plate?: string | null;
   status?: VehicleUnitStatus;
@@ -54,6 +55,9 @@ export async function updateVehicleUnit(
   const updated = changes.length
     ? await repository.save({
         ...unit,
+        ...(input.colorName !== undefined
+          ? { colorName: input.colorName }
+          : {}),
         ...(input.plate !== undefined ? { plate: input.plate } : {}),
         ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.stockNumber !== undefined
@@ -100,6 +104,7 @@ function createUnitChanges(
   input: UpdateVehicleUnitInput,
 ): AuditFieldChange[] {
   return [
+    changeFor("unit.colorName", unit.colorName, input.colorName),
     changeFor("unit.plate", unit.plate, input.plate),
     changeFor("unit.stockNumber", unit.stockNumber, input.stockNumber),
     changeFor("unit.vin", unit.vin, input.vin),

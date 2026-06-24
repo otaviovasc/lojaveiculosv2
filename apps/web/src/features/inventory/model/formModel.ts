@@ -3,23 +3,33 @@ import type {
   InventoryDocumentKind,
   CreateInventoryFlowInput,
   InventoryCatalogSnapshot,
+  InventoryCreateListingStatus,
+  InventoryFuelType,
   InventoryListingStatus,
   InventoryMediaKind,
+  InventoryTransmission,
   InventoryUnit,
 } from "./types";
 
 export type InventoryFormState = {
   altText: string;
   catalog: InventoryCatalogSnapshot | null;
+  colorName: string;
   description: string;
+  doors: string;
+  engineDisplacement: string;
+  fuelType: InventoryFuelType | "";
+  internalNotes: string;
   manufactureYear: string;
   mediaKind: InventoryMediaKind;
+  mileageKm: string;
   modelYear: string;
   plate: string;
   price: string;
-  status: InventoryListingStatus;
+  status: InventoryCreateListingStatus;
   stockNumber: string;
   title: string;
+  transmission: InventoryTransmission | "";
   trimName: string;
   unitPlate: string;
   vin: string;
@@ -40,7 +50,7 @@ export type InventoryFieldChangeHandler = <
   field: Field,
 ) => (
   value:
-    | ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    | ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     | InventoryFormState[Field],
 ) => void;
 
@@ -53,6 +63,39 @@ export const listingStatusOptions: Array<{
   { label: "Reservado", value: "reserved" },
   { label: "Vendido", value: "sold" },
   { label: "Inativo", value: "inactive" },
+];
+
+export const createListingStatusOptions: Array<{
+  label: string;
+  value: InventoryCreateListingStatus;
+}> = [
+  { label: "Rascunho", value: "draft" },
+  { label: "Disponivel", value: "available" },
+  { label: "Inativo", value: "inactive" },
+];
+
+export const fuelTypeOptions: Array<{
+  label: string;
+  value: InventoryFuelType;
+}> = [
+  { label: "Flex", value: "flex" },
+  { label: "Gasolina", value: "gasoline" },
+  { label: "Etanol", value: "ethanol" },
+  { label: "Diesel", value: "diesel" },
+  { label: "Hibrido", value: "hybrid" },
+  { label: "Eletrico", value: "electric" },
+  { label: "Outro", value: "other" },
+];
+
+export const transmissionOptions: Array<{
+  label: string;
+  value: InventoryTransmission;
+}> = [
+  { label: "Manual", value: "manual" },
+  { label: "Automatico", value: "automatic" },
+  { label: "Automatizado", value: "automated" },
+  { label: "CVT", value: "cvt" },
+  { label: "Outro", value: "other" },
 ];
 
 export const mediaKindOptions: Array<{
@@ -90,15 +133,22 @@ export function createInitialInventoryForm(): InventoryFormState {
   return {
     altText: "",
     catalog: null,
+    colorName: "",
     description: "",
+    doors: "",
+    engineDisplacement: "",
+    fuelType: "",
+    internalNotes: "",
     manufactureYear: "",
     mediaKind: "photo",
+    mileageKm: "",
     modelYear: "",
     plate: "",
     price: "",
     status: "draft",
     stockNumber: "",
     title: "",
+    transmission: "",
     trimName: "",
     unitPlate: "",
     vin: "",
@@ -117,12 +167,18 @@ export function createInventoryFlowInput(
     listing: {
       description: nullableText(form.description),
       catalog: form.catalog,
+      doors: nullableNumber(form.doors),
+      engineDisplacement: nullableText(form.engineDisplacement),
+      fuelType: form.fuelType || null,
+      internalNotes: nullableText(form.internalNotes),
       manufactureYear: nullableNumber(form.manufactureYear),
+      mileageKm: nullableNumber(form.mileageKm),
       modelYear: nullableNumber(form.modelYear),
       plate: nullablePlate(form.plate),
       priceCents: parsePriceCents(form.price),
       status: form.status,
       title: form.title.trim(),
+      transmission: form.transmission || null,
       trimName: nullableText(form.trimName),
     },
     ...(file
@@ -136,6 +192,7 @@ export function createInventoryFlowInput(
         }
       : {}),
     unit: {
+      colorName: nullableText(form.colorName),
       plate: nullablePlate(form.unitPlate || form.plate),
       stockNumber: nullableText(form.stockNumber),
       vin: nullableText(form.vin),

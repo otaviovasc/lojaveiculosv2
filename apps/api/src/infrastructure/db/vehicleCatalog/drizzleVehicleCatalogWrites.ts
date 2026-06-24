@@ -1,6 +1,8 @@
 import {
   vehicleCatalogBrands,
   vehicleCatalogModelFamilies,
+  vehicleCatalogPriceHistory,
+  vehicleCatalogReferences,
   vehicleCatalogVersions,
   vehicleCatalogYears,
 } from "@lojaveiculosv2/db";
@@ -21,6 +23,8 @@ type CatalogWrites = Pick<
   VehicleCatalogRepository,
   | "upsertBrand"
   | "upsertModelFamily"
+  | "upsertPriceHistory"
+  | "upsertReferences"
   | "upsertSnapshotDetails"
   | "upsertVersion"
   | "upsertYear"
@@ -123,6 +127,7 @@ export function createDrizzleVehicleCatalogWrites(
         isActive: true,
         modelFamilyId: input.modelFamilyId,
         name: input.name,
+        providerName: input.providerName ?? input.name,
         slug: slugify(input.name),
         vehicleType: input.vehicleType,
       });
@@ -151,6 +156,82 @@ export function createDrizzleVehicleCatalogWrites(
           .update(vehicleCatalogYears)
           .set(values)
           .where(eq(vehicleCatalogYears.id, existing.id));
+      }
+    },
+    async upsertReferences(input) {
+      const now = new Date();
+      await db
+        .update(vehicleCatalogReferences)
+        .set({ isLatest: false })
+        .where(eq(vehicleCatalogReferences.provider, "fipe"));
+
+      for (const reference of input) {
+        const [existing] = await db
+          .select()
+          .from(vehicleCatalogReferences)
+          .where(
+            and(
+              eq(vehicleCatalogReferences.provider, "fipe"),
+              eq(vehicleCatalogReferences.code, reference.code),
+            ),
+          );
+        const values = {
+          isLatest: reference.isLatest,
+          lastSeenAt: now,
+          month: reference.month,
+          rawPayload: reference.rawPayload ?? reference,
+        };
+        if (existing) {
+          await db
+            .update(vehicleCatalogReferences)
+            .set(values)
+            .where(eq(vehicleCatalogReferences.id, existing.id));
+        } else {
+          await db.insert(vehicleCatalogReferences).values({
+            ...values,
+            code: reference.code,
+            provider: "fipe",
+          });
+        }
+      }
+    },
+    async upsertPriceHistory(input) {
+      const now = new Date();
+      for (const entry of input.entries) {
+        const [existing] = await db
+          .select()
+          .from(vehicleCatalogPriceHistory)
+          .where(
+            and(
+              eq(vehicleCatalogPriceHistory.provider, "fipe"),
+              eq(vehicleCatalogPriceHistory.vehicleType, input.vehicleType),
+              eq(vehicleCatalogPriceHistory.fipeCode, input.fipeCode),
+              eq(vehicleCatalogPriceHistory.fipeYearCode, input.yearCode),
+              eq(vehicleCatalogPriceHistory.referenceCode, entry.referenceCode),
+            ),
+          );
+        const values = {
+          lastSeenAt: now,
+          priceCents: entry.priceCents,
+          priceLabel: entry.priceLabel,
+          rawPayload: entry.rawPayload ?? entry,
+          referenceMonth: entry.referenceMonth,
+        };
+        if (existing) {
+          await db
+            .update(vehicleCatalogPriceHistory)
+            .set(values)
+            .where(eq(vehicleCatalogPriceHistory.id, existing.id));
+        } else {
+          await db.insert(vehicleCatalogPriceHistory).values({
+            ...values,
+            fipeCode: input.fipeCode,
+            fipeYearCode: input.yearCode,
+            provider: "fipe",
+            referenceCode: entry.referenceCode,
+            vehicleType: input.vehicleType,
+          });
+        }
       }
     },
   };

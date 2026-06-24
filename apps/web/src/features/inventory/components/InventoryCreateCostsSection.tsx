@@ -1,7 +1,7 @@
 import { Calculator, Sparkles } from "lucide-react";
-import { useState, type ChangeEvent } from "react";
+import { useState } from "react";
 import type {
-  InventoryEditableField,
+  InventoryFieldChangeHandler,
   InventoryFormState,
 } from "../model/formModel";
 import {
@@ -17,11 +17,7 @@ export function InventoryCreateCostsSection({
   onChange,
 }: {
   form: InventoryFormState;
-  onChange: (
-    field: InventoryEditableField,
-  ) => (
-    value: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
-  ) => void;
+  onChange: InventoryFieldChangeHandler;
 }) {
   const fipePriceCents = form.catalog?.priceCents ?? null;
   const acquisitionCents = recommendedAcquisitionCents(fipePriceCents);

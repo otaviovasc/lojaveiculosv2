@@ -3,15 +3,22 @@ import type {
   VehicleDocumentKind,
   VehicleDocumentTargetType,
   VehicleListingCatalog,
+  VehicleFuelType,
   VehicleListingStatus,
   VehicleMediaKind,
+  VehicleTransmission,
   VehicleUnitStatus,
 } from "./vehicleInventoryTypes.js";
 
 export type CreateVehicleListingRecord = {
   catalog: VehicleListingCatalog | null;
   description: string | null;
+  doors?: number | null;
+  engineDisplacement?: string | null;
+  fuelType?: VehicleFuelType | null;
+  internalNotes?: string | null;
   manufactureYear: number | null;
+  mileageKm?: number | null;
   modelYear: number | null;
   plate: string | null;
   priceCents: number | null;
@@ -19,10 +26,12 @@ export type CreateVehicleListingRecord = {
   storeId: string | null;
   tenantId: string | null;
   title: string;
+  transmission?: VehicleTransmission | null;
   trimName: string | null;
 };
 
 export type CreateVehicleUnitRecord = {
+  colorName?: string | null;
   listingId: string;
   plate: string | null;
   status: VehicleUnitStatus;

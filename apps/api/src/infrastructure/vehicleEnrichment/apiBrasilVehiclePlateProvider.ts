@@ -2,12 +2,11 @@ import {
   type InventoryPlateFipeReference,
   type InventoryPlateLookupResponse,
   type InventoryPlateMetadataItem,
-} from "../../features/inventory/controllers/inventoryEnrichmentTypes.js";
+} from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
 
 const defaultBaseUrl = "https://gateway.apibrasil.io/api/v2";
 const defaultDadosPath = "/vehicles/base/000/dados";
-
 export type ApiBrasilVehiclePlateProvider = {
   lookupPlate: (input: {
     plate: string;
@@ -34,9 +33,9 @@ export function createApiBrasilVehiclePlateProvider({
         );
       }
 
-      const response = await fetch(
-        `${baseUrl.replace(/\/$/, "")}${dadosPath}`,
-        {
+      let response: Response;
+      try {
+        response = await fetch(`${baseUrl.replace(/\/$/, "")}${dadosPath}`, {
           body: JSON.stringify({ placa: normalizePlate(plate) }),
           headers: {
             Accept: "application/json",
@@ -44,8 +43,13 @@ export function createApiBrasilVehiclePlateProvider({
             "Content-Type": "application/json",
           },
           method: "POST",
-        },
-      );
+        });
+      } catch {
+        throw new InventoryEnrichmentProviderError(
+          "Plate lookup provider request failed.",
+          503,
+        );
+      }
 
       if (!response.ok) {
         throw new InventoryEnrichmentProviderError(

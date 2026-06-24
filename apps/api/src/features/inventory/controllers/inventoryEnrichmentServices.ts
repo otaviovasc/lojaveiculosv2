@@ -5,6 +5,7 @@ import {
 } from "../../../shared/serviceContext.js";
 import { createApiBrasilVehiclePlateProvider } from "../../../infrastructure/vehicleEnrichment/apiBrasilVehiclePlateProvider.js";
 import { createOpenAiVehicleAnalysisProvider } from "../../../infrastructure/vehicleEnrichment/openAiVehicleAnalysisProvider.js";
+import type { VehiclePlateLookupRepository } from "../../../domains/vehicle/ports/vehicleEnrichmentRepository.js";
 import type {
   InventoryPlateLookupResponse,
   InventoryResaleAnalysisRequest,
@@ -12,6 +13,7 @@ import type {
 } from "./inventoryEnrichmentTypes.js";
 
 const permission = "inventory.read";
+const defaultPlateLookupCacheTtlMs = 30 * 24 * 60 * 60 * 1000;
 
 export type InventoryEnrichmentServices = {
   analyzeResale: (
@@ -37,35 +39,42 @@ export type VehiclePlateProvider = {
 };
 
 export function createInventoryEnrichmentServices({
-  analysisProvider = createOpenAiVehicleAnalysisProvider({
-    apiKey: process.env.API_OPENAI_KEY,
-    model: process.env.API_OPENAI_MODEL ?? "gpt-5-mini",
-  }),
-  plateProvider = createApiBrasilVehiclePlateProvider({
-    ...(process.env.API_PLACA_BASE_URL
-      ? { baseUrl: process.env.API_PLACA_BASE_URL }
-      : {}),
-    ...(process.env.API_PLACA_DADOS_PATH
-      ? { dadosPath: process.env.API_PLACA_DADOS_PATH }
-      : {}),
-    token: process.env.API_PLACA_KEY,
-  }),
+  analysisProvider,
+  plateLookupCacheTtlMs = defaultPlateLookupCacheTtlMs,
+  plateLookupRepository,
+  plateProvider,
 }: {
   analysisProvider?: VehicleAnalysisProvider;
+  plateLookupCacheTtlMs?: number;
+  plateLookupRepository?: VehiclePlateLookupRepository;
   plateProvider?: VehiclePlateProvider;
 } = {}): InventoryEnrichmentServices {
+  const getAnalysisProvider = analysisProvider
+    ? () => analysisProvider
+    : lazy(createDefaultAnalysisProvider);
+  const getPlateProvider = plateProvider
+    ? () => plateProvider
+    : lazy(createDefaultPlateProvider);
+
   return {
     analyzeResale: (context, input) =>
       withInventoryEnrichmentAudit(
         context,
         "inventory.enrichment.ai_analyze",
-        () => analysisProvider.analyze(input),
+        () => getAnalysisProvider().analyze(input),
       ),
     lookupPlate: (context, input) =>
       withInventoryEnrichmentAudit(
         context,
         "inventory.enrichment.plate_lookup",
-        () => plateProvider.lookupPlate({ plate: normalizePlate(input.plate) }),
+        () =>
+          lookupPlateWithCache({
+            context,
+            plate: input.plate,
+            plateLookupCacheTtlMs,
+            plateLookupRepository,
+            plateProvider: getPlateProvider(),
+          }),
       ),
   };
 }
@@ -122,4 +131,75 @@ async function withInventoryEnrichmentAudit<T>(
 
 function normalizePlate(plate: string) {
   return plate.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+}
+
+async function lookupPlateWithCache({
+  context,
+  plate,
+  plateLookupCacheTtlMs,
+  plateLookupRepository,
+  plateProvider,
+}: {
+  context: ServiceContext;
+  plate: string;
+  plateLookupCacheTtlMs: number;
+  plateLookupRepository?: VehiclePlateLookupRepository | undefined;
+  plateProvider: VehiclePlateProvider;
+}) {
+  const normalizedPlate = normalizePlate(plate);
+  if (plateLookupRepository && context.storeId && context.tenantId) {
+    const minFetchedAt = new Date(Date.now() - plateLookupCacheTtlMs);
+    const cached = await plateLookupRepository.findLatest({
+      minFetchedAt,
+      plate: normalizedPlate,
+      provider: "apibrasil",
+      storeId: context.storeId,
+      tenantId: context.tenantId,
+    });
+    if (cached) return cached.response;
+  }
+
+  const result = await plateProvider.lookupPlate({ plate: normalizedPlate });
+  if (plateLookupRepository && context.storeId && context.tenantId) {
+    await plateLookupRepository.upsert({
+      fetchedAt: new Date(),
+      plate: normalizePlate(result.plate || normalizedPlate),
+      provider: "apibrasil",
+      response: result,
+      storeId: context.storeId,
+      tenantId: context.tenantId,
+    });
+  }
+  return result;
+}
+
+function createDefaultAnalysisProvider(): VehicleAnalysisProvider {
+  return createOpenAiVehicleAnalysisProvider({
+    apiKey: process.env.API_OPENAI_KEY,
+    model:
+      process.env.API_OPENAI_INVENTORY_RESALE_MODEL ??
+      process.env.API_OPENAI_DEFAULT_MODEL ??
+      process.env.API_OPENAI_MODEL ??
+      "gpt-5.4-mini",
+  });
+}
+
+function createDefaultPlateProvider(): VehiclePlateProvider {
+  return createApiBrasilVehiclePlateProvider({
+    ...(process.env.API_PLACA_BASE_URL
+      ? { baseUrl: process.env.API_PLACA_BASE_URL }
+      : {}),
+    ...(process.env.API_PLACA_DADOS_PATH
+      ? { dadosPath: process.env.API_PLACA_DADOS_PATH }
+      : {}),
+    token: process.env.API_PLACA_KEY,
+  });
+}
+
+function lazy<T>(create: () => T): () => T {
+  let value: T | null = null;
+  return () => {
+    value ??= create();
+    return value;
+  };
 }

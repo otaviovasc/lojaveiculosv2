@@ -13,9 +13,13 @@ describe("inventory enrichment form helpers", () => {
     const result = applyPlateLookupToForm(form, lookupPayload());
 
     expect(result).toMatchObject({
+      colorName: "Branca",
+      fuelType: "flex",
       manufactureYear: "2023",
+      mileageKm: "60000",
       modelYear: "2023",
       plate: "ABC1D23",
+      transmission: "automatic",
       title: "Fiat Strada Ranch 2023",
       trimName: "Ranch",
       vin: "",
@@ -39,12 +43,18 @@ describe("inventory enrichment form helpers", () => {
 
     expect(input).toMatchObject({
       acquisitionPriceCents: 8651000,
+      bodyType: null,
       brand: "Fiat",
+      city: "Belo Horizonte",
       fipePriceCents: 10550000,
+      marketContext: null,
       model: "Strada Ranch",
+      origin: "Nacional",
       recommendedAcquisitionPriceCents: 8651000,
       recommendedSellingPriceCents: 10233500,
       sellingPriceCents: 10233500,
+      state: "MG",
+      vehicleType: "Automovel",
     });
     expect(hasEnoughDataForAnalysis(form, lookupPayload())).toBe(true);
   });

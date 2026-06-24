@@ -22,11 +22,19 @@ describe("inventory catalog controller", () => {
     const snapshotResponse = await app.request(
       "/api/v1/inventory/catalog/snapshot?vehicleType=cars&brandCode=21&modelCode=4828&yearCode=2024-1",
     );
+    const historyResponse = await app.request(
+      "/api/v1/inventory/catalog/fipe/001267-0/years/2024-1/history?vehicleType=cars",
+    );
 
     await expect(snapshotResponse.json()).resolves.toMatchObject({
       brandName: "Fiat",
       modelName: "Toro Volcano",
       priceCents: 12690000,
+      source: "fipe",
+    });
+    await expect(historyResponse.json()).resolves.toMatchObject({
+      entries: [{ referenceCode: "334" }],
+      fipeCode: "001267-0",
       source: "fipe",
     });
     expect(services.listCatalogBrands).toHaveBeenCalledWith(expect.anything(), {
@@ -41,6 +49,14 @@ describe("inventory catalog controller", () => {
       {
         brandCode: "21",
         modelCode: "4828",
+        vehicleType: "cars",
+        yearCode: "2024-1",
+      },
+    );
+    expect(services.getCatalogPriceHistory).toHaveBeenCalledWith(
+      expect.anything(),
+      {
+        fipeCode: "001267-0",
         vehicleType: "cars",
         yearCode: "2024-1",
       },

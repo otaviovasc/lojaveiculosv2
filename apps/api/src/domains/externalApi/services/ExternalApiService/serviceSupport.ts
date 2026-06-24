@@ -20,6 +20,7 @@ export const externalApiAssignableScopes = [
   "inventory.reserve",
   "inventory.sell",
   "inventory.update_description",
+  "inventory.update_internal_notes",
   "inventory.update_price",
   "inventory.update_status",
   "inventory.update_unit",

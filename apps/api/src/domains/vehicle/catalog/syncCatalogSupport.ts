@@ -16,6 +16,15 @@ export function applyLimit<T>(
   return limit && limit > 0 ? items.slice(0, limit) : items;
 }
 
+export function filterByCode<T extends { code: string }>(
+  items: readonly T[],
+  codes: readonly string[] | undefined,
+): readonly T[] {
+  if (!codes?.length) return items;
+  const allowed = new Set(codes);
+  return items.filter((item) => allowed.has(item.code));
+}
+
 export function normalizeConcurrency(value: number | undefined): number {
   return Math.max(1, Math.min(8, value ?? 2));
 }

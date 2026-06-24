@@ -28,6 +28,15 @@ import {
   type InventoryCreateDraft,
 } from "../model/inventoryCreateDraft";
 import { useInventoryCreateStores } from "./useInventoryCreateStores";
+import type {
+  InventoryPlateLookupResponse,
+  InventoryResaleAnalysisResponse,
+} from "../model/enrichmentTypes";
+import {
+  createResaleAnalysisInput,
+  hasEnoughDataForAnalysis,
+} from "../model/inventoryEnrichment";
+import type { Loadable } from "../components/InventoryCreateEnrichmentParts";
 
 export function InventoryCreatePage({
   api,
@@ -48,6 +57,13 @@ export function InventoryCreatePage({
   const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
     api ?? null,
   );
+  const [lookup, setLookup] = useState<InventoryPlateLookupResponse | null>(
+    null,
+  );
+  const [analysisState, setAnalysisState] = useState<
+    Loadable<InventoryResaleAnalysisResponse>
+  >({ kind: "idle" });
+  const [autoRunAnalysis, setAutoRunAnalysis] = useState(false);
 
   const stores = useInventoryCreateStores(setForm);
 
@@ -85,6 +101,29 @@ export function InventoryCreatePage({
     });
   }, [form, media, savedDraft]);
 
+  useEffect(() => {
+    if (!autoRunAnalysis || !runtimeApi || !lookup) return;
+    if (!hasEnoughDataForAnalysis(form, lookup)) return;
+    setAutoRunAnalysis(false);
+    setAnalysisState({ kind: "loading" });
+    void runtimeApi
+      .analyzeResale(createResaleAnalysisInput(form, lookup))
+      .then((value) => {
+        setAnalysisState({ kind: "success", value });
+        setForm((current) =>
+          current.description.trim()
+            ? current
+            : { ...current, description: value.suggestedDescription },
+        );
+      })
+      .catch((error: unknown) => {
+        setAnalysisState({
+          kind: "error",
+          message: error instanceof Error ? error.message : String(error),
+        });
+      });
+  }, [autoRunAnalysis, form, lookup, runtimeApi, setForm]);
+
   useEffect(
     () => () => {
       for (const item of mediaRef.current) {
@@ -96,7 +135,13 @@ export function InventoryCreatePage({
 
   const setField = useCallback(
     (field: InventoryEditableField) =>
-      (value: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string) => {
+      (
+        value:
+          | ChangeEvent<
+              HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+            >
+          | string,
+      ) => {
         setForm((current) => ({
           ...current,
           [field]: typeof value === "string" ? value : value.target.value,
@@ -117,6 +162,38 @@ export function InventoryCreatePage({
     },
     [],
   );
+
+  const handleLookupComplete = useCallback(
+    (result: InventoryPlateLookupResponse) => {
+      setLookup(result);
+      setAnalysisState({ kind: "idle" });
+      if (hasEnoughDataForAnalysis(form, result)) {
+        setAutoRunAnalysis(true);
+      }
+    },
+    [form],
+  );
+
+  const handleGenerateAnalysis = useCallback(async () => {
+    if (!runtimeApi) return;
+    setAnalysisState({ kind: "loading" });
+    try {
+      const value = await runtimeApi.analyzeResale(
+        createResaleAnalysisInput(form, lookup),
+      );
+      setAnalysisState({ kind: "success", value });
+      setForm((current) =>
+        current.description.trim()
+          ? current
+          : { ...current, description: value.suggestedDescription },
+      );
+    } catch (error) {
+      setAnalysisState({
+        kind: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }, [form, lookup, runtimeApi, setForm]);
 
   const handleCreated = useCallback((_detail: InventoryListingDetail) => {
     clearInventoryCreateDraft();
@@ -146,16 +223,12 @@ export function InventoryCreatePage({
     });
 
   return (
-    <main className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-6 px-4 py-6 animate-fade-in text-app-text">
-      <div className="flex flex-col gap-4 border-b border-line pb-5 lg:flex-row lg:items-center lg:justify-between">
-        <div className="min-w-0 space-y-1">
+    <main className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col px-4 pb-12 animate-fade-in text-app-text">
+      <div className="flex flex-col gap-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
           <h2 className="text-2xl font-black tracking-wide uppercase lg:text-3xl">
             Cadastrar Veículo
           </h2>
-          <p className="max-w-3xl text-xs font-bold text-muted">
-            Busque pela placa, selecione o catálogo FIPE em ordem e complete os
-            dados que o backend usa para criar anúncio, unidade e mídias.
-          </p>
         </div>
         {onBack ? (
           <button
@@ -185,7 +258,7 @@ export function InventoryCreatePage({
 
       <form
         onSubmit={(event) => void handleSubmit(event)}
-        className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.65fr)]"
+        className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,0.6fr)]"
       >
         <InventoryCreateForm
           api={runtimeApi}
@@ -196,6 +269,7 @@ export function InventoryCreatePage({
           onCatalogChange={handleCatalogChange}
           onMediaChange={setMedia}
           onSetFormDirect={setForm}
+          onLookupComplete={handleLookupComplete}
         />
         <InventoryCreateSidebar
           form={form}
@@ -204,6 +278,11 @@ export function InventoryCreatePage({
           submitState={submitState}
           onRetryMedia={() => void handleRetryMedia()}
           isSubmitting={submitState.kind === "submitting"}
+          analysisState={analysisState}
+          canAnalyze={Boolean(
+            runtimeApi && hasEnoughDataForAnalysis(form, lookup),
+          )}
+          onGenerateAnalysis={() => void handleGenerateAnalysis()}
         />
       </form>
     </main>

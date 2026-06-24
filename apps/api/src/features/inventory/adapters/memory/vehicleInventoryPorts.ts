@@ -148,7 +148,13 @@ function createListingRecord(
   return {
     ...record,
     createdAt: now,
+    doors: record.doors ?? null,
+    engineDisplacement: record.engineDisplacement ?? null,
+    fuelType: record.fuelType ?? null,
     id: `listing_${sequence}`,
+    internalNotes: record.internalNotes ?? null,
+    mileageKm: record.mileageKm ?? null,
+    transmission: record.transmission ?? null,
     unitIds: [],
     updatedAt: now,
   };
@@ -161,6 +167,7 @@ function createUnitRecord(
   const now = new Date();
   return {
     ...record,
+    colorName: record.colorName ?? null,
     createdAt: now,
     id: `unit_${sequence}`,
     updatedAt: now,

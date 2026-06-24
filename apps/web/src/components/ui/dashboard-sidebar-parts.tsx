@@ -166,14 +166,14 @@ export function DashboardSidebarNavItem<Id extends string>({
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.title : undefined}
       className={
-        "group relative flex min-h-10 items-center rounded-xl text-sm transition-all duration-200 cursor-pointer " +
+        "group relative flex min-h-9 items-center rounded-lg text-[13px] transition-all duration-200 cursor-pointer " +
         (active
           ? "bg-accent-soft border border-accent/15 text-accent font-black shadow-sm"
           : "text-muted hover:bg-app-elevated/60 hover:text-app-text border border-transparent") +
         " " +
         (collapsed
           ? "justify-center px-2"
-          : "justify-between gap-3 px-3 hover:translate-x-0.5")
+          : "justify-between gap-2.5 px-2.5 hover:translate-x-0.5")
       }
       onClick={() => onSelect(item.id)}
       title={collapsed ? item.title : undefined}
@@ -181,12 +181,12 @@ export function DashboardSidebarNavItem<Id extends string>({
     >
       {/* Visual Accent Strip for Active Item */}
       {active && !collapsed && (
-        <span className="absolute left-0 top-2 bottom-2 w-1 rounded-r bg-accent" />
+        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-accent" />
       )}
 
       <span className="flex min-w-0 items-center gap-2.5 relative z-10">
-        <span className="flex size-5 shrink-0 items-center justify-center">
-          <Icon className="size-4.5 transition-transform duration-300 group-hover:scale-110" />
+        <span className="flex size-4.5 shrink-0 items-center justify-center">
+          <Icon className="size-4 transition-transform duration-300 group-hover:scale-110" />
         </span>
         {collapsed ? null : <span className="truncate">{item.title}</span>}
       </span>

@@ -52,6 +52,7 @@ const tables = [
       "last_synced_at",
       "model_family_id",
       "name",
+      "provider_name",
       "slug",
       "vehicle_type",
     ],
@@ -79,6 +80,83 @@ const tables = [
     name: "vehicle_catalog_years",
     orderBy: ["version_id", "fipe_year_code"],
   },
+  {
+    columns: [
+      "id",
+      "created_at",
+      "updated_at",
+      "brands_seen",
+      "error_message",
+      "finished_at",
+      "metadata",
+      "model_families_seen",
+      "provider",
+      "started_at",
+      "status",
+      "vehicle_type",
+      "versions_seen",
+      "years_seen",
+    ],
+    name: "vehicle_catalog_sync_runs",
+    orderBy: ["started_at", "id"],
+  },
+  {
+    columns: [
+      "id",
+      "created_at",
+      "updated_at",
+      "code",
+      "is_latest",
+      "last_seen_at",
+      "month",
+      "provider",
+      "raw_payload",
+    ],
+    name: "vehicle_catalog_references",
+    orderBy: ["provider", "code"],
+  },
+  {
+    columns: [
+      "id",
+      "created_at",
+      "updated_at",
+      "fipe_code",
+      "fipe_year_code",
+      "last_seen_at",
+      "price_cents",
+      "price_label",
+      "provider",
+      "raw_payload",
+      "reference_code",
+      "reference_month",
+      "vehicle_type",
+    ],
+    name: "vehicle_catalog_price_history",
+    orderBy: ["vehicle_type", "fipe_code", "fipe_year_code", "reference_code"],
+  },
+  {
+    columns: [
+      "id",
+      "created_at",
+      "updated_at",
+      "brand_code",
+      "endpoint",
+      "fetched_at",
+      "fipe_code",
+      "http_status",
+      "model_code",
+      "payload",
+      "provider",
+      "reference_code",
+      "request_key",
+      "request_path",
+      "sync_run_id",
+      "vehicle_type",
+      "year_code",
+    ],
+    name: "vehicle_catalog_raw_responses",
+    orderBy: ["fetched_at", "id"],
+  },
 ];
 
 const sql = postgres(process.env.DATABASE_URL ?? localDatabaseUrl, { max: 1 });
@@ -91,10 +169,14 @@ try {
     "BEGIN;",
     "",
     "TRUNCATE",
+    "  vehicle_catalog_raw_responses,",
+    "  vehicle_catalog_price_history,",
     "  vehicle_catalog_years,",
     "  vehicle_catalog_versions,",
     "  vehicle_catalog_model_families,",
-    "  vehicle_catalog_brands;",
+    "  vehicle_catalog_brands,",
+    "  vehicle_catalog_references,",
+    "  vehicle_catalog_sync_runs;",
     "",
   ];
 
@@ -161,6 +243,8 @@ function formatValue(value) {
   }
   if (typeof value === "boolean") return value ? "true" : "false";
   if (typeof value === "number") return String(value);
+  if (typeof value === "object")
+    return `${formatString(JSON.stringify(value))}::jsonb`;
   return formatString(String(value));
 }
 

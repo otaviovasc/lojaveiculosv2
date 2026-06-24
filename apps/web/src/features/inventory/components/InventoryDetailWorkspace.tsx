@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Info, Layers } from "lucide-react";
+import { Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail, InventoryMedia } from "../model/types";
@@ -23,17 +23,27 @@ import {
   initialObservacoes,
   formatPrice,
 } from "./InventoryDetailWorkspaceMocks";
+import {
+  InventoryDetailEmptyTab,
+  InventoryDetailWorkspaceTabs,
+} from "./InventoryDetailWorkspaceTabs";
+import {
+  formatFuelType,
+  formatTransmission,
+} from "./InventoryDetailFormatters";
 
 export function InventoryDetailWorkspace({
+  api,
   detail: initialDetail,
   onBack,
+  onUpdated,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
   onBack: () => void;
   onUpdated: (detail: InventoryListingDetail) => void;
 }) {
-  const [detail] = useState(initialDetail);
+  const [detail, setDetail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
 
   const [isFinancingActive, setIsFinancingActive] = useState(false);
@@ -46,13 +56,18 @@ export function InventoryDetailWorkspace({
 
   const [specs, setSpecs] = useState({
     plate: primaryUnit?.plate || listing.plate || "SEM PLACA",
-    color: "Cinza Metálico",
-    km: "32.500 km",
-    fuel: listing.catalog?.fuel || "Flex",
-    transmission: "Automático",
+    color: primaryUnit?.colorName || "Não informado",
+    km: listing.mileageKm
+      ? `${listing.mileageKm.toLocaleString("pt-BR")} km`
+      : "Não informado",
+    fuel:
+      formatFuelType(listing.fuelType) ||
+      listing.catalog?.fuel ||
+      "Não informado",
+    transmission: formatTransmission(listing.transmission),
     bodyType: "Sedan",
-    engine: "2.0 Turbo",
-    doors: "4 Portas",
+    engine: listing.engineDisplacement || "Não informado",
+    doors: listing.doors ? `${listing.doors} portas` : "Não informado",
     modality: "Estoque Próprio",
     vin: primaryUnit?.vin || "9BRX4285829471180",
   });
@@ -62,7 +77,7 @@ export function InventoryDetailWorkspace({
   const [observacoes, setObservacoes] = useState(initialObservacoes);
 
   const [notasInternas, setNotasInternas] = useState(
-    "Veículo recebido em excelente estado. Higienização e polimento pendentes.",
+    listing.internalNotes ?? "",
   );
 
   const [isSpecsOpen, setIsSpecsOpen] = useState(false);
@@ -191,36 +206,10 @@ export function InventoryDetailWorkspace({
         }}
       />
 
-      {/* Main Tabs Navigation */}
-      <div className="border-b border-line overflow-x-auto select-none no-scrollbar">
-        <nav className="flex gap-6 min-w-max">
-          {(
-            [
-              "geral",
-              "financeiro",
-              "anuncio",
-              "documentos",
-              "vendas",
-              "historico",
-              "vitrine",
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={
-                "pb-4 text-sm font-black transition-all border-b-2 cursor-pointer relative capitalize " +
-                (activeTab === tab
-                  ? "border-accent text-accent"
-                  : "border-transparent text-muted hover:text-app-text")
-              }
-              type="button"
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-      </div>
+      <InventoryDetailWorkspaceTabs
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
 
       {/* Workspace Panel Area */}
       <div className="min-h-[400px]">
@@ -258,8 +247,7 @@ export function InventoryDetailWorkspace({
                   onToggleObservacao={handleToggleObservacao}
                   notasInternas={notasInternas}
                   onSaveNotasInternas={(notes) => {
-                    setNotasInternas(notes);
-                    showNotification("Notas internas atualizadas!");
+                    void handleSaveInternalNotes(notes);
                   }}
                 />
               </div>
@@ -303,24 +291,7 @@ export function InventoryDetailWorkspace({
 
         {activeTab === "vitrine" && <InventoryDetailVitrineTab />}
 
-        {activeTab !== "geral" &&
-          activeTab !== "financeiro" &&
-          activeTab !== "anuncio" &&
-          activeTab !== "documentos" &&
-          activeTab !== "vendas" &&
-          activeTab !== "historico" &&
-          activeTab !== "vitrine" && (
-            <div className="flex flex-col items-center justify-center text-center py-20 bg-panel/30 border border-line border-dashed rounded-2xl">
-              <Layers className="size-10 text-muted/50 mb-3" />
-              <h4 className="text-sm font-black text-app-text capitalize">
-                Painel de {activeTab}
-              </h4>
-              <p className="text-xs font-bold text-muted max-w-sm mt-1">
-                Este submódulo está ativo. Use as ferramentas de ação no topo ou
-                configure o veículo na aba Geral.
-              </p>
-            </div>
-          )}
+        <InventoryDetailEmptyTab activeTab={activeTab} />
       </div>
 
       {/* Drawers */}
@@ -336,4 +307,18 @@ export function InventoryDetailWorkspace({
       />
     </div>
   );
+
+  async function handleSaveInternalNotes(notes: string) {
+    try {
+      const updated = await api.updateListingDetails(listing.id, {
+        internalNotes: notes.trim() ? notes.trim() : null,
+      });
+      setDetail(updated);
+      setNotasInternas(updated.listing.internalNotes ?? "");
+      onUpdated(updated);
+      showNotification("Notas internas atualizadas!");
+    } catch {
+      showNotification("Não foi possível salvar as notas internas.");
+    }
+  }
 }

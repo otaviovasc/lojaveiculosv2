@@ -6,6 +6,20 @@ export type VehicleListingStatus =
   | "inactive";
 
 export type VehicleUnitStatus = "available" | "reserved" | "sold" | "retired";
+export type VehicleFuelType =
+  | "diesel"
+  | "electric"
+  | "ethanol"
+  | "flex"
+  | "gasoline"
+  | "hybrid"
+  | "other";
+export type VehicleTransmission =
+  | "automated"
+  | "automatic"
+  | "cvt"
+  | "manual"
+  | "other";
 
 export type VehicleMediaKind = "document_preview" | "photo" | "video";
 
@@ -47,8 +61,13 @@ export type VehicleListing = {
   catalog: VehicleListingCatalog | null;
   createdAt: Date;
   description: string | null;
+  doors: number | null;
+  engineDisplacement: string | null;
+  fuelType: VehicleFuelType | null;
   id: string;
+  internalNotes: string | null;
   manufactureYear: number | null;
+  mileageKm: number | null;
   modelYear: number | null;
   plate: string | null;
   priceCents: number | null;
@@ -56,12 +75,14 @@ export type VehicleListing = {
   storeId: string | null;
   tenantId: string | null;
   title: string;
+  transmission: VehicleTransmission | null;
   trimName: string | null;
   unitIds: readonly string[];
   updatedAt: Date;
 };
 
 export type VehicleUnit = {
+  colorName: string | null;
   createdAt: Date;
   id: string;
   listingId: string;

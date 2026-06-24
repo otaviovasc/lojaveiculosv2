@@ -199,8 +199,13 @@ function listingDetail(
       catalog: null,
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
+      doors: null,
+      engineDisplacement: null,
+      fuelType: null,
       id: "listing_1",
+      internalNotes: null,
       manufactureYear: null,
+      mileageKm: null,
       modelYear: null,
       plate: "ABC1D23",
       priceCents: 12000000,
@@ -208,6 +213,7 @@ function listingDetail(
       storeId: "store_1",
       tenantId: "tenant_1",
       title: "Inventory title",
+      transmission: null,
       trimName: null,
       unitIds: [],
       updatedAt: "2026-01-01T00:00:00.000Z",
@@ -223,6 +229,7 @@ function listingDetail(
 
 function unitRecord(): InventoryListingDetail["units"][number] {
   return {
+    colorName: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     id: "unit_1",
     listingId: "listing_1",

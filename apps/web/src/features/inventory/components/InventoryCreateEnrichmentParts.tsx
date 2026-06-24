@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   BadgeCheck,
   Bot,
+  Info,
   LoaderCircle,
   RefreshCw,
 } from "lucide-react";
@@ -24,13 +25,6 @@ export function LookupStatus({
 }: {
   state: Loadable<InventoryPlateLookupResponse>;
 }) {
-  if (state.kind === "idle") {
-    return (
-      <p className="text-xs font-bold text-muted">
-        Se a consulta falhar, continue preenchendo manualmente.
-      </p>
-    );
-  }
   if (state.kind === "loading") {
     return (
       <StateMessage icon={<LoaderCircle />} text="Consultando APIBrasil." />
@@ -41,6 +35,7 @@ export function LookupStatus({
       <StateMessage danger icon={<AlertTriangle />} text={state.message} />
     );
   }
+  if (state.kind === "idle") return null;
 
   const lookup = state.value;
   const facts = [
@@ -138,7 +133,20 @@ function AnalysisStatus({
   }
   return (
     <div className="mt-4 flex flex-col gap-3">
-      <p className="text-sm font-black text-app-text">{state.value.summary}</p>
+      <div className="rounded-lg border border-line bg-panel p-3">
+        <span className="text-xs font-black uppercase tracking-wide text-muted">
+          Score de risco do negócio
+        </span>
+        <div className="mt-1 flex items-end gap-2">
+          <strong className="text-2xl font-black text-app-text">
+            {state.value.dealRiskScore}
+          </strong>
+          <span className="pb-1 text-xs font-black text-muted">/100</span>
+        </div>
+        <p className="mt-2 text-xs font-bold text-muted">
+          {state.value.summary}
+        </p>
+      </div>
       <div className="grid gap-2">
         {state.value.topics.map((topic) => (
           <TopicRow key={`${topic.code}:${topic.title}`} topic={topic} />
@@ -152,14 +160,18 @@ function AnalysisStatus({
 }
 
 function TopicRow({ topic }: { topic: InventoryResaleTopic }) {
-  const positive = topic.type === "positive";
+  const icon =
+    topic.type === "positive" ? (
+      <BadgeCheck className="mt-0.5 size-4 shrink-0 text-accent-strong" />
+    ) : topic.type === "negative" ? (
+      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" />
+    ) : (
+      <Info className="mt-0.5 size-4 shrink-0 text-muted" />
+    );
+
   return (
     <div className="flex gap-3 rounded-lg border border-line bg-panel p-3">
-      {positive ? (
-        <BadgeCheck className="mt-0.5 size-4 shrink-0 text-accent-strong" />
-      ) : (
-        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-danger" />
-      )}
+      {icon}
       <div className="min-w-0 space-y-1">
         <strong className="text-xs font-black text-app-text">
           {topic.code} - {topic.title}

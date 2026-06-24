@@ -207,6 +207,7 @@ describe("createInventoryApi", () => {
         vehicle: {},
       },
       {
+        dealRiskScore: 22,
         riskLevel: "low",
         suggestedDescription: "Descricao gerada.",
         summary: "Baixo risco.",
@@ -218,20 +219,26 @@ describe("createInventoryApi", () => {
     await api.lookupPlate({ plate: "ABC1D23" });
     await api.analyzeResale({
       acquisitionPriceCents: null,
+      bodyType: null,
       brand: "Fiat",
+      city: null,
       color: null,
       fipePriceCents: null,
       fuel: null,
       manufactureYear: null,
+      marketContext: null,
       metadata: [],
       mileageKm: null,
       model: "Strada",
       modelYear: 2023,
+      origin: null,
       plate: "ABC1D23",
       recommendedAcquisitionPriceCents: null,
       recommendedSellingPriceCents: null,
       sellingPriceCents: null,
+      state: null,
       transmission: null,
+      vehicleType: null,
       version: "Ranch",
     });
 

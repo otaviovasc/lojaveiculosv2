@@ -1,10 +1,12 @@
 import type {
   InventoryResaleAnalysisRequest,
   InventoryResaleAnalysisResponse,
-} from "../../features/inventory/controllers/inventoryEnrichmentTypes.js";
+  InventoryResaleTopic,
+} from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
+import { createVehicleMarketContext } from "./vehicleMarketSignals.js";
 
-const defaultModel = "gpt-5-mini";
+const defaultModel = "gpt-5.4-mini";
 const responsesUrl = "https://api.openai.com/v1/responses";
 
 export type OpenAiVehicleAnalysisProvider = {
@@ -56,6 +58,11 @@ function createOpenAiRequest(
   model: string,
   input: InventoryResaleAnalysisRequest,
 ) {
+  const vehicle = {
+    ...input,
+    marketContext: createVehicleMarketContext(input),
+  };
+
   return {
     input: [
       {
@@ -64,6 +71,14 @@ function createOpenAiRequest(
             text: [
               "Voce e um avaliador comercial de loja brasileira de seminovos.",
               "Analise liquidez, risco de margem, FIPE, km por ano, cor, cambio, combustivel e versao.",
+              "O objetivo principal e gerar um dealRiskScore de 0 a 100, onde 0 e risco muito baixo e 100 e risco muito alto para a loja.",
+              "Mantenha riskLevel coerente: low 0-33, medium 34-66, high 67-100.",
+              "Use codigos W para pontos positivos, L para riscos e N para contexto neutro/observacao.",
+              "Gere 4 a 7 topicos e inclua topicos N somente quando eles adicionarem contexto util.",
+              "Use marketContext.signals quando existirem. Sem signal, nao mencione 0 km chines ou locadora.",
+              "Se houver signal de locadora/frota, nao afirme passagem por locadora sem dado explicito.",
+              "Na faixa R$ 150 mil a R$ 250 mil, avalie pressao de 0 km chines apenas quando o signal existir.",
+              "Se houver signal de consignado, avalie se consignado bem contratado reduziria risco de capital, sem tratar como recomendacao juridica.",
               "Seja pratico, especifico e escreva em portugues do Brasil.",
               "Nao invente historico, unico dono, revisoes, blindagem ou estado de conservacao sem dados.",
             ].join(" "),
@@ -80,7 +95,7 @@ function createOpenAiRequest(
                 recommendedAcquisition: "18% abaixo da FIPE",
                 recommendedSelling: "3% abaixo da FIPE",
               },
-              vehicle: input,
+              vehicle,
             }),
             type: "input_text",
           },
@@ -104,6 +119,7 @@ function createOpenAiRequest(
 const analysisSchema = {
   additionalProperties: false,
   properties: {
+    dealRiskScore: { maximum: 100, minimum: 0, type: "integer" },
     riskLevel: { enum: ["low", "medium", "high"], type: "string" },
     suggestedDescription: { type: "string" },
     summary: { type: "string" },
@@ -111,10 +127,10 @@ const analysisSchema = {
       items: {
         additionalProperties: false,
         properties: {
-          code: { enum: ["W", "L"], type: "string" },
+          code: { enum: ["W", "L", "N"], type: "string" },
           message: { type: "string" },
           title: { type: "string" },
-          type: { enum: ["positive", "negative"], type: "string" },
+          type: { enum: ["positive", "negative", "neutral"], type: "string" },
         },
         required: ["type", "code", "title", "message"],
         type: "object",
@@ -122,7 +138,13 @@ const analysisSchema = {
       type: "array",
     },
   },
-  required: ["summary", "riskLevel", "topics", "suggestedDescription"],
+  required: [
+    "summary",
+    "riskLevel",
+    "dealRiskScore",
+    "topics",
+    "suggestedDescription",
+  ],
   type: "object",
 };
 
@@ -170,9 +192,23 @@ function isAnalysisResponse(
 ): value is InventoryResaleAnalysisResponse {
   return (
     typeof value.summary === "string" &&
+    Number.isInteger(value.dealRiskScore) &&
+    value.dealRiskScore >= 0 &&
+    value.dealRiskScore <= 100 &&
     ["low", "medium", "high"].includes(value.riskLevel) &&
     Array.isArray(value.topics) &&
+    value.topics.every(isAnalysisTopic) &&
     typeof value.suggestedDescription === "string"
+  );
+}
+
+function isAnalysisTopic(value: InventoryResaleTopic) {
+  return (
+    value &&
+    typeof value.message === "string" &&
+    typeof value.title === "string" &&
+    ["L", "N", "W"].includes(value.code) &&
+    ["negative", "neutral", "positive"].includes(value.type)
   );
 }
 

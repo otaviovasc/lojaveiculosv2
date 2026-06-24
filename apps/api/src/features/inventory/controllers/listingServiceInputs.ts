@@ -13,6 +13,7 @@ export function cleanAttachInput(
   };
 
   if (input.plate !== undefined) result.plate = input.plate;
+  if (input.colorName !== undefined) result.colorName = input.colorName;
   if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;
   if (input.vin !== undefined) result.vin = input.vin;
 
@@ -29,12 +30,24 @@ export function cleanCreateInput(
 
   if (input.catalog !== undefined) result.catalog = input.catalog;
   if (input.description !== undefined) result.description = input.description;
+  if (input.doors !== undefined) result.doors = input.doors;
+  if (input.engineDisplacement !== undefined) {
+    result.engineDisplacement = input.engineDisplacement;
+  }
+  if (input.fuelType !== undefined) result.fuelType = input.fuelType;
+  if (input.internalNotes !== undefined) {
+    result.internalNotes = input.internalNotes;
+  }
   if (input.manufactureYear !== undefined) {
     result.manufactureYear = input.manufactureYear;
   }
+  if (input.mileageKm !== undefined) result.mileageKm = input.mileageKm;
   if (input.modelYear !== undefined) result.modelYear = input.modelYear;
   if (input.priceCents !== undefined) result.priceCents = input.priceCents;
   if (input.status !== undefined) result.status = input.status;
+  if (input.transmission !== undefined) {
+    result.transmission = input.transmission;
+  }
   if (input.trimName !== undefined) result.trimName = input.trimName;
 
   return result;
@@ -65,13 +78,25 @@ export function cleanUpdateListingInput(
 
   if (input.catalog !== undefined) result.catalog = input.catalog;
   if (input.description !== undefined) result.description = input.description;
+  if (input.doors !== undefined) result.doors = input.doors;
+  if (input.engineDisplacement !== undefined) {
+    result.engineDisplacement = input.engineDisplacement;
+  }
+  if (input.fuelType !== undefined) result.fuelType = input.fuelType;
+  if (input.internalNotes !== undefined) {
+    result.internalNotes = input.internalNotes;
+  }
   if (input.manufactureYear !== undefined) {
     result.manufactureYear = input.manufactureYear;
   }
+  if (input.mileageKm !== undefined) result.mileageKm = input.mileageKm;
   if (input.modelYear !== undefined) result.modelYear = input.modelYear;
   if (input.priceCents !== undefined) result.priceCents = input.priceCents;
   if (input.status !== undefined) result.status = input.status;
   if (input.title !== undefined) result.title = input.title;
+  if (input.transmission !== undefined) {
+    result.transmission = input.transmission;
+  }
   if (input.trimName !== undefined) result.trimName = input.trimName;
 
   return result;
@@ -85,6 +110,7 @@ export function cleanUpdateUnitInput(
     unitId: input.unitId,
   };
 
+  if (input.colorName !== undefined) result.colorName = input.colorName;
   if (input.plate !== undefined) result.plate = input.plate;
   if (input.status !== undefined) result.status = input.status;
   if (input.stockNumber !== undefined) result.stockNumber = input.stockNumber;

@@ -5,6 +5,27 @@ export type InventoryListingStatus =
   | "reserved"
   | "sold";
 
+export type InventoryCreateListingStatus = Extract<
+  InventoryListingStatus,
+  "available" | "draft" | "inactive"
+>;
+
+export type InventoryFuelType =
+  | "diesel"
+  | "electric"
+  | "ethanol"
+  | "flex"
+  | "gasoline"
+  | "hybrid"
+  | "other";
+
+export type InventoryTransmission =
+  | "automated"
+  | "automatic"
+  | "cvt"
+  | "manual"
+  | "other";
+
 export type InventoryMediaKind = "document_preview" | "photo" | "video";
 
 export type InventoryDocumentKind =

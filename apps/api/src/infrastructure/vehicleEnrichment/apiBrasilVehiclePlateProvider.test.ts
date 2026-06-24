@@ -48,6 +48,23 @@ describe("APIBrasil vehicle plate provider", () => {
     });
   });
 
+  it("maps network failures to provider 503 errors", async () => {
+    const provider = createApiBrasilVehiclePlateProvider({
+      fetch: async () => {
+        throw new TypeError("fetch failed");
+      },
+      token: "bearer-token",
+    });
+
+    await expect(
+      provider.lookupPlate({ plate: "ABC1D23" }),
+    ).rejects.toMatchObject({
+      message: "Plate lookup provider request failed.",
+      name: "InventoryEnrichmentProviderError",
+      statusCode: 503,
+    });
+  });
+
   it("normalizes nested vehicle, metadata, and highest-score FIPE data", () => {
     const result = normalizeApiBrasilPlateResponse(
       {

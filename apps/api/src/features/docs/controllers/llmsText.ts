@@ -57,6 +57,7 @@ export const llmsText = `# Loja Veiculos API
 - inventory.read: required to read vehicle inventory.
 - inventory.create: reserved for vehicle creation workflows.
 - inventory.update_description: reserved for descriptive inventory edits.
+- inventory.update_internal_notes: reserved for internal vehicle note edits.
 - inventory.update_price: reserved for price edits.
 - inventory.update_status: reserved for listing lifecycle edits.
 - inventory.update_unit: reserved for physical/unit inventory edits.

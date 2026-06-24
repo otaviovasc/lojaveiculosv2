@@ -37,6 +37,7 @@ describe("syncVehicleCatalog", () => {
     expect(result).toMatchObject({
       freshYearLookupsSkipped: 1,
       isComplete: true,
+      referencesSeen: 1,
       skippedModelLookups: 0,
       skippedYearLookups: 0,
       yearsSeen: 1,
@@ -64,10 +65,72 @@ describe("syncVehicleCatalog", () => {
 
     expect(result).toMatchObject({
       isComplete: false,
+      referencesSeen: 1,
       skippedModelLookups: 1,
       skippedYearLookups: 0,
       versionsSeen: 0,
     });
+  });
+
+  it("stores normalized model families and version names", async () => {
+    const upsertModelFamily = vi.fn<
+      VehicleCatalogRepository["upsertModelFamily"]
+    >(async (input) => ({
+      code: input.name.toLowerCase(),
+      id: input.name.toLowerCase(),
+      name: input.name,
+    }));
+    const upsertVersion = vi.fn<VehicleCatalogRepository["upsertVersion"]>(
+      async (input) => ({ id: input.code }),
+    );
+
+    await syncVehicleCatalog(
+      createSyncContext(),
+      { refreshExistingYears: true, vehicleType: "cars" },
+      {
+        catalogProvider: createProvider({
+          listModels: async () => [
+            { code: "x3-30", name: "X3 XDRIVE 30 M Sport 2.0 TB Aut." },
+          ],
+        }),
+        catalogRepository: createRepository({
+          upsertModelFamily,
+          upsertVersion,
+        }),
+      },
+    );
+
+    expect(upsertModelFamily).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "X3" }),
+    );
+    expect(upsertVersion).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: "XDRIVE 30 M Sport 2.0 TB Aut.",
+        providerName: "X3 XDRIVE 30 M Sport 2.0 TB Aut.",
+      }),
+    );
+  });
+
+  it("can refresh brands and versions without year lookups", async () => {
+    const listYears = vi.fn<VehicleCatalogProvider["listYears"]>(async () => [
+      { code: "2024-1", fuelCode: "1", modelYear: 2024, name: "2024" },
+    ]);
+
+    const result = await syncVehicleCatalog(
+      createSyncContext(),
+      { syncYears: false, vehicleType: "cars" },
+      {
+        catalogProvider: createProvider({ listYears }),
+        catalogRepository: createRepository(),
+      },
+    );
+
+    expect(result).toMatchObject({
+      isComplete: true,
+      versionsSeen: 2,
+      yearsSeen: 0,
+    });
+    expect(listYears).not.toHaveBeenCalled();
   });
 });
 
@@ -86,12 +149,20 @@ function createProvider(
     getVehicle: async () => {
       throw new Error("not used");
     },
+    getVehicleByFipeCode: async () => {
+      throw new Error("not used");
+    },
+    getVehicleHistory: async () => {
+      throw new Error("not used");
+    },
+    listReferences: async () => [{ code: "334", month: "junho/2026" }],
     listBrands: async () => [{ code: "21", name: "Fiat" }],
     listModels: async () => [
       { code: "fresh", name: "Toro Volcano" },
       { code: "missing", name: "Pulse Audace" },
     ],
     listYears: async () => [],
+    listYearsByFipeCode: async () => [],
     ...overrides,
   };
 }
@@ -112,6 +183,7 @@ function createRepository(
     }),
     listBrands: async () => [],
     listModelFamilies: async () => [],
+    listPriceHistory: async () => [],
     listVersions: async () => [],
     listYears: async () => [],
     upsertBrand: async (input) => ({ id: input.code }),
@@ -120,6 +192,8 @@ function createRepository(
       id: input.name.toLowerCase(),
       name: input.name,
     }),
+    upsertPriceHistory: async () => undefined,
+    upsertReferences: async () => undefined,
     upsertSnapshotDetails: async () => undefined,
     upsertVersion: async (input) => ({ id: input.code }),
     upsertYear: async () => undefined,

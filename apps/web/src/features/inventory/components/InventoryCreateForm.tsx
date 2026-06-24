@@ -1,12 +1,15 @@
 import type { ChangeEvent, Dispatch, SetStateAction } from "react";
-import { Building2, Car, ClipboardList } from "lucide-react";
+import { Car, ClipboardList } from "lucide-react";
 import {
-  listingStatusOptions,
+  createListingStatusOptions,
+  fuelTypeOptions,
+  transmissionOptions,
   type InventoryEditableField,
   type InventoryFormState,
 } from "../model/formModel";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { InventoryApi } from "../api/apiClient";
+import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import {
   InventoryField,
@@ -17,6 +20,12 @@ import {
 import { InventoryCreateCostsSection } from "./InventoryCreateCostsSection";
 import { InventoryCreateMediaPanel } from "./InventoryCreateMediaPanel";
 import { InventoryCreateEnrichmentPanel } from "./InventoryCreateEnrichmentPanel";
+import {
+  SectionPanel,
+  StatusOptionIcon,
+  choiceButtonClassName,
+  statusButtonClassName,
+} from "./InventoryCreateFormParts";
 interface InventoryCreateFormProps {
   api: InventoryApi | null;
   form: InventoryFormState;
@@ -25,11 +34,14 @@ interface InventoryCreateFormProps {
   onChange: (
     field: InventoryEditableField,
   ) => (
-    value: ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string,
+    value:
+      | ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+      | string,
   ) => void;
   onCatalogChange: (catalog: InventoryFormState["catalog"]) => void;
   onMediaChange: (media: CreateMediaDraft[]) => void;
   onSetFormDirect: Dispatch<SetStateAction<InventoryFormState>>;
+  onLookupComplete: (result: InventoryPlateLookupResponse) => void;
 }
 
 export function InventoryCreateForm({
@@ -41,43 +53,71 @@ export function InventoryCreateForm({
   onCatalogChange,
   onMediaChange,
   onSetFormDirect,
+  onLookupComplete,
 }: InventoryCreateFormProps) {
   return (
     <div className="flex flex-col gap-6">
       <InventoryCreateEnrichmentPanel
         api={api}
         form={form}
+        onLookupComplete={onLookupComplete}
         onSetFormDirect={onSetFormDirect}
       />
 
-      <SectionPanel
-        icon={<Building2 className="size-5" />}
-        title="Contexto da Loja"
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <InventoryField label="Loja Operacional *">
-            <InventorySelect
-              ariaLabel="Selecione a loja"
-              onChange={(value) => onChange("storeId")(value)}
-              options={stores.map((s) => ({ label: s.name, value: s.id }))}
-              value={form.storeId}
-            />
-          </InventoryField>
-          <InventoryField label="Status inicial no estoque">
-            <InventorySelect
-              ariaLabel="Selecione o status inicial"
-              onChange={(value) => onChange("status")(value)}
-              options={listingStatusOptions}
-              value={form.status}
-            />
-          </InventoryField>
-        </div>
-      </SectionPanel>
+      <InventoryCreateMediaPanel items={media} onChange={onMediaChange} />
 
       <SectionPanel
         icon={<Car className="size-5" />}
         title="Identificação do Veículo"
       >
+        <div className="flex flex-wrap gap-x-6 gap-y-4 items-start border-b border-line/60 pb-4 mb-4 text-xs">
+          <div className="flex flex-col gap-1.5">
+            <span className="font-black text-muted uppercase tracking-wider text-[10px]">
+              Loja Operacional *
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {stores.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={choiceButtonClassName(form.storeId === s.id)}
+                  onClick={() => onChange("storeId")(s.id)}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="font-black text-muted uppercase tracking-wider text-[10px]">
+              Status inicial no estoque
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {createListingStatusOptions.map((opt) => {
+                const selected = form.status === opt.value;
+                return (
+                  <button
+                    aria-pressed={selected}
+                    key={opt.value}
+                    type="button"
+                    className={statusButtonClassName(opt.value, selected)}
+                    onClick={() => onChange("status")(opt.value)}
+                  >
+                    <StatusOptionIcon status={opt.value} />
+                    <span>{opt.label}</span>
+                    {selected ? (
+                      <span
+                        aria-hidden="true"
+                        className="ml-0.5 size-1.5 rounded-full bg-current"
+                      />
+                    ) : null}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <InventoryField label="Placa">
             <InventoryInput
@@ -107,14 +147,27 @@ export function InventoryCreateForm({
       <SectionPanel
         icon={<ClipboardList className="size-5" />}
         title="Catálogo FIPE"
-        subtitle="Selecione em ordem: tipo, marca, modelo, versão e ano."
+        subtitle="Selecione em ordem: tipo, marca, modelo, ano e versão."
       >
         <InventoryCatalogSelector
           api={api}
           catalog={form.catalog}
           onCatalogChange={onCatalogChange}
+          onYearChange={(year) => {
+            if (year) {
+              onSetFormDirect((current) => ({
+                ...current,
+                modelYear: String(year),
+                manufactureYear: current.manufactureYear
+                  ? current.manufactureYear
+                  : String(year),
+              }));
+            }
+          }}
         />
       </SectionPanel>
+
+      <InventoryCreateCostsSection form={form} onChange={onChange} />
 
       <SectionPanel
         icon={<Car className="size-5" />}
@@ -144,6 +197,55 @@ export function InventoryCreateForm({
               value={form.trimName}
             />
           </InventoryField>
+          <InventoryField label="Cor">
+            <InventoryInput
+              onChange={onChange("colorName")}
+              placeholder="Ex: Branco"
+              value={form.colorName}
+            />
+          </InventoryField>
+          <InventoryField label="Quilometragem">
+            <InventoryInput
+              inputMode="numeric"
+              onChange={onChange("mileageKm")}
+              placeholder="Ex: 32500"
+              type="number"
+              value={form.mileageKm}
+            />
+          </InventoryField>
+          <InventoryField label="Combustível">
+            <InventorySelect
+              onChange={onChange("fuelType")}
+              options={[{ label: "Selecione", value: "" }, ...fuelTypeOptions]}
+              value={form.fuelType}
+            />
+          </InventoryField>
+          <InventoryField label="Câmbio">
+            <InventorySelect
+              onChange={onChange("transmission")}
+              options={[
+                { label: "Selecione", value: "" },
+                ...transmissionOptions,
+              ]}
+              value={form.transmission}
+            />
+          </InventoryField>
+          <InventoryField label="Motor">
+            <InventoryInput
+              onChange={onChange("engineDisplacement")}
+              placeholder="Ex: 2.0 Turbo"
+              value={form.engineDisplacement}
+            />
+          </InventoryField>
+          <InventoryField label="Portas">
+            <InventoryInput
+              inputMode="numeric"
+              onChange={onChange("doors")}
+              placeholder="Ex: 4"
+              type="number"
+              value={form.doors}
+            />
+          </InventoryField>
         </div>
         <InventoryField label="Título de Anúncio *">
           <InventoryInput
@@ -159,40 +261,14 @@ export function InventoryCreateForm({
             value={form.description}
           />
         </InventoryField>
+        <InventoryField label="Notas Internas">
+          <InventoryTextarea
+            onChange={onChange("internalNotes")}
+            placeholder="Observações internas da loja, pendências, preparação, origem da negociação."
+            value={form.internalNotes}
+          />
+        </InventoryField>
       </SectionPanel>
-
-      <InventoryCreateMediaPanel items={media} onChange={onMediaChange} />
-
-      <InventoryCreateCostsSection form={form} onChange={onChange} />
     </div>
-  );
-}
-
-function SectionPanel({
-  children,
-  icon,
-  subtitle,
-  title,
-}: {
-  children: React.ReactNode;
-  icon: React.ReactNode;
-  subtitle?: string;
-  title: string;
-}) {
-  return (
-    <section className="glass-panel-branded flex flex-col gap-5 rounded-2xl border border-line bg-panel p-6 shadow-[var(--shadow-panel)]">
-      <header className="flex flex-col gap-1 border-b border-line pb-4">
-        <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-app-text">
-          <span className="grid size-8 place-items-center rounded-md bg-accent-soft text-accent-strong border border-accent-soft/20">
-            {icon}
-          </span>
-          {title}
-        </h3>
-        {subtitle ? (
-          <p className="text-xs font-bold text-muted">{subtitle}</p>
-        ) : null}
-      </header>
-      <div className="flex flex-col gap-4">{children}</div>
-    </section>
   );
 }

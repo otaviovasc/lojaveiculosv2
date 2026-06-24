@@ -38,6 +38,7 @@ const allPermissions = [
   "inventory.reserve",
   "inventory.sell",
   "inventory.update_description",
+  "inventory.update_internal_notes",
   "inventory.update_price",
   "inventory.update_status",
   "inventory.update_unit",
@@ -57,7 +58,6 @@ const allPermissions = [
   "tenant.manage",
   "users.manage",
 ] satisfies PermissionKey[];
-
 export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
   {
     agency: allPermissions,
@@ -95,6 +95,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "inventory.reserve",
       "inventory.sell",
       "inventory.update_description",
+      "inventory.update_internal_notes",
       "inventory.update_price",
       "inventory.update_unit",
       "lead.create",
@@ -145,6 +146,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "inventory.read",
       "inventory.reserve",
       "inventory.update_description",
+      "inventory.update_internal_notes",
       "inventory.update_unit",
       "lead.create",
       "lead.read",
@@ -182,6 +184,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "inventory.reserve",
       "inventory.sell",
       "inventory.update_description",
+      "inventory.update_internal_notes",
       "inventory.update_price",
       "inventory.update_unit",
       "lead.create",

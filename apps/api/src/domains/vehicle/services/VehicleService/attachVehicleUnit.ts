@@ -13,6 +13,7 @@ import {
 const permission = "inventory.create";
 
 export type AttachVehicleUnitInput = {
+  colorName?: string | null;
   listingId: string;
   plate?: string | null;
   stockNumber?: string | null;
@@ -38,6 +39,7 @@ export async function attachVehicleUnit(
     input.listingId,
   );
   const unit = await getUnitRepository(ports).create({
+    colorName: input.colorName ?? null,
     listingId: listing.id,
     plate: input.plate ?? listing.plate,
     status: "available",

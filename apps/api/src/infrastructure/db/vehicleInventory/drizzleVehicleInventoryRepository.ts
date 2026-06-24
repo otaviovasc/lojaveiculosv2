@@ -2,11 +2,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import { vehicleListings } from "@lojaveiculosv2/db";
 import type { DrizzleRepositoryClient } from "../drizzleClient.js";
 import type {
-  CreateVehicleListingRecord,
-  FindVehicleListingInput,
-  ListVehicleChildrenInput,
-  ListVehicleListingsInput,
-  VehicleListing,
   VehicleListingRepository,
   VehicleMediaRepository,
   VehicleDocumentRepository,
@@ -24,11 +19,14 @@ import {
   requireReturnedRow,
   toDbListingStatus,
   toVehicleListing,
-  VehicleInventoryDrizzleScopeError,
   type InsertVehicleListingRow,
   type UpdateVehicleListingRow,
   type VehicleListingRow,
 } from "./drizzleVehicleInventoryMappers.js";
+import {
+  isVehicleInventoryUuid,
+  requireDbScope,
+} from "./drizzleVehicleInventoryScope.js";
 import {
   findListingUnits,
   findListingsUnits,
@@ -109,13 +107,19 @@ export function createDrizzleVehicleListingRepository(
         .values({
           askingPriceCents: record.priceCents,
           description: record.description,
+          doors: record.doors ?? null,
+          engineDisplacement: record.engineDisplacement ?? null,
+          fuelType: record.fuelType ?? null,
+          internalNotes: record.internalNotes ?? null,
           manufactureYear: record.manufactureYear,
           metadata: createListingMetadata(record.catalog),
+          mileageKm: record.mileageKm ?? null,
           modelYear: record.modelYear,
           status: toDbListingStatus(record.status),
           storeId: scope.storeId,
           tenantId: scope.tenantId,
           title: record.title,
+          transmission: record.transmission ?? null,
           trimName: record.trimName,
         })
         .returning();
@@ -128,7 +132,7 @@ export function createDrizzleVehicleListingRepository(
 
     async findById(input) {
       const scope = requireDbScope(input);
-      if (!isUuid(input.listingId)) return null;
+      if (!isVehicleInventoryUuid(input.listingId)) return null;
       const [row] = await listingDb
         .select()
         .from(vehicleListings)
@@ -187,11 +191,17 @@ export function createDrizzleVehicleListingRepository(
         .set({
           askingPriceCents: listing.priceCents,
           description: listing.description,
+          doors: listing.doors,
+          engineDisplacement: listing.engineDisplacement,
+          fuelType: listing.fuelType,
+          internalNotes: listing.internalNotes,
           manufactureYear: listing.manufactureYear,
           metadata: createListingMetadata(listing.catalog),
+          mileageKm: listing.mileageKm,
           modelYear: listing.modelYear,
           status: toDbListingStatus(listing.status),
           title: listing.title,
+          transmission: listing.transmission,
           trimName: listing.trimName,
           updatedAt: listing.updatedAt,
         })
@@ -212,24 +222,4 @@ export function createDrizzleVehicleListingRepository(
       );
     },
   };
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-    value,
-  );
-}
-
-function requireDbScope(
-  record:
-    | CreateVehicleListingRecord
-    | FindVehicleListingInput
-    | ListVehicleChildrenInput
-    | ListVehicleListingsInput
-    | VehicleListing,
-): { storeId: string; tenantId: string } {
-  if (!record.storeId) throw new VehicleInventoryDrizzleScopeError("storeId");
-  if (!record.tenantId) throw new VehicleInventoryDrizzleScopeError("tenantId");
-
-  return { storeId: record.storeId, tenantId: record.tenantId };
 }

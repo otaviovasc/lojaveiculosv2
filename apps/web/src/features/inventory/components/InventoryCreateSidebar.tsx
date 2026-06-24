@@ -4,6 +4,8 @@ import type { CreateMediaDraft } from "../model/createMediaDrafts";
 import type { CreateFlowSubmitState } from "./InventoryCreateFlow";
 import { parsePriceCents } from "../model/formModel";
 import { inventoryStatusLabels } from "../model/listCatalogModel";
+import type { InventoryResaleAnalysisResponse } from "../model/enrichmentTypes";
+import { AnalysisPanel, type Loadable } from "./InventoryCreateEnrichmentParts";
 
 interface InventoryCreateSidebarProps {
   form: InventoryFormState;
@@ -12,6 +14,9 @@ interface InventoryCreateSidebarProps {
   submitState: CreateFlowSubmitState;
   onRetryMedia: () => void;
   isSubmitting: boolean;
+  analysisState: Loadable<InventoryResaleAnalysisResponse>;
+  canAnalyze: boolean;
+  onGenerateAnalysis: () => void;
 }
 
 export function InventoryCreateSidebar({
@@ -21,6 +26,9 @@ export function InventoryCreateSidebar({
   submitState,
   onRetryMedia,
   isSubmitting,
+  analysisState,
+  canAnalyze,
+  onGenerateAnalysis,
 }: InventoryCreateSidebarProps) {
   const selectedStore = stores.find((s) => s.id === form.storeId);
 
@@ -53,9 +61,10 @@ export function InventoryCreateSidebar({
   const previewPhoto = media[0]?.previewUrl || null;
 
   return (
-    <aside className="flex flex-col gap-6">
-      <div className="xl:sticky xl:top-6">
-        <PreviewCard
+    <aside className="xl:sticky xl:top-6 flex flex-col self-start w-full max-h-[calc(100vh-3rem)] overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pr-1">
+      <div className="glass-panel-branded overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)] flex flex-col divide-y divide-line/60">
+        {/* Preview Content */}
+        <PreviewCardContent
           previewPhoto={previewPhoto}
           selectedStoreName={selectedStore?.name ?? null}
           statusLabel={inventoryStatusLabels[form.status]}
@@ -64,22 +73,36 @@ export function InventoryCreateSidebar({
           acquisitionPrice={formatCurrency(form.acquisitionPrice)}
           sellPrice={formatCurrency(form.price)}
         />
-      </div>
-      <div className="xl:sticky xl:top-[26rem]">
-        <ProgressCard
-          checklist={checklist}
-          completedCount={completedCount}
-          isSubmitting={isSubmitting}
-          onRetryMedia={onRetryMedia}
-          progressPercentage={progressPercentage}
-          submitState={submitState}
-        />
+
+        {/* Progress Content */}
+        <div className="p-5 flex flex-col gap-5 bg-panel">
+          <ProgressCardContent
+            checklist={checklist}
+            completedCount={completedCount}
+            isSubmitting={isSubmitting}
+            onRetryMedia={onRetryMedia}
+            progressPercentage={progressPercentage}
+            submitState={submitState}
+          />
+        </div>
+
+        {/* Analysis Content */}
+        <div className="p-5 flex flex-col gap-3 bg-panel">
+          <h4 className="text-xs font-black uppercase tracking-wider text-app-text">
+            Análise de Revenda
+          </h4>
+          <AnalysisPanel
+            canAnalyze={canAnalyze}
+            onGenerate={onGenerateAnalysis}
+            state={analysisState}
+          />
+        </div>
       </div>
     </aside>
   );
 }
 
-function PreviewCard({
+function PreviewCardContent({
   previewPhoto,
   selectedStoreName,
   statusLabel,
@@ -97,8 +120,8 @@ function PreviewCard({
   sellPrice: string;
 }) {
   return (
-    <section className="glass-panel-branded overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)]">
-      <div className="relative aspect-video w-full bg-app-elevated flex items-center justify-center border-b border-line">
+    <>
+      <div className="relative aspect-video w-full bg-app-elevated flex items-center justify-center border-b border-line/60">
         {previewPhoto ? (
           <img
             src={previewPhoto}
@@ -151,11 +174,11 @@ function PreviewCard({
           </div>
         </div>
       </div>
-    </section>
+    </>
   );
 }
 
-function ProgressCard({
+function ProgressCardContent({
   checklist,
   completedCount,
   isSubmitting,
@@ -171,7 +194,7 @@ function ProgressCard({
   submitState: CreateFlowSubmitState;
 }) {
   return (
-    <section className="glass-panel-branded rounded-2xl border border-line bg-panel p-5 shadow-[var(--shadow-panel)] flex flex-col gap-5">
+    <>
       <div className="flex items-center justify-between border-b border-line pb-4">
         <div className="space-y-1">
           <h4 className="text-sm font-black uppercase tracking-wider">
@@ -236,7 +259,7 @@ function ProgressCard({
         submitState={submitState}
         onRetryMedia={onRetryMedia}
       />
-    </section>
+    </>
   );
 }
 

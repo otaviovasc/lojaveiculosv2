@@ -18,12 +18,14 @@ import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/serv
 import type { DrizzleVehicleInventoryClient } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { GetVehicleCatalogSnapshotInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogSnapshot.js";
+import type { GetVehicleCatalogPriceHistoryInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogPriceHistory.js";
 import type { ListVehicleCatalogBrandsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogBrands.js";
 import type { ListVehicleCatalogModelsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogModels.js";
 import type { ListVehicleCatalogVersionsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogVersions.js";
 import type { ListVehicleCatalogYearsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogYears.js";
 import type {
   VehicleCatalogOption,
+  VehicleCatalogPriceHistory,
   VehicleCatalogSnapshot,
   VehicleCatalogYearOption,
 } from "../../../domains/vehicle/ports/vehicleCatalogProvider.js";
@@ -87,6 +89,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: GetVehicleCatalogSnapshotInput,
   ) => Promise<VehicleCatalogSnapshot>;
+  getCatalogPriceHistory: (
+    context: ServiceContext,
+    input: GetVehicleCatalogPriceHistoryInput,
+  ) => Promise<VehicleCatalogPriceHistory>;
   listListings: (
     context: ServiceContext,
     input: ListVehicleListingsInput,
@@ -150,6 +156,7 @@ export type InventoryListingServices = {
 };
 
 type AttachListingInput = {
+  colorName?: string | null | undefined;
   listingId: string;
   plate?: string | null | undefined;
   stockNumber?: string | null | undefined;
@@ -159,12 +166,18 @@ type AttachListingInput = {
 type CreateListingInput = {
   catalog?: CreateVehicleListingInput["catalog"] | undefined;
   description?: string | null | undefined;
+  doors?: CreateVehicleListingInput["doors"] | undefined;
+  engineDisplacement?: CreateVehicleListingInput["engineDisplacement"];
+  fuelType?: CreateVehicleListingInput["fuelType"];
+  internalNotes?: CreateVehicleListingInput["internalNotes"];
   manufactureYear?: number | null | undefined;
+  mileageKm?: CreateVehicleListingInput["mileageKm"] | undefined;
   modelYear?: number | null | undefined;
   plate: string | null;
   priceCents?: number | null | undefined;
   status?: VehicleListingStatus | undefined;
   title: string;
+  transmission?: CreateVehicleListingInput["transmission"];
   trimName?: string | null | undefined;
 };
 

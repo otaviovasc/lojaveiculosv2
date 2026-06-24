@@ -13,6 +13,7 @@ describe("createBillingOverview", () => {
           planName: "Agency",
           storeId: "store_1" as never,
           storeName: "Loja Centro",
+          storeSlug: "loja-centro",
           subscriptionStatus: "active",
         },
       ],

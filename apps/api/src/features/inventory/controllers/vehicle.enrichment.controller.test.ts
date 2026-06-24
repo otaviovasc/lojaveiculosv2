@@ -63,6 +63,7 @@ describe("inventory enrichment controller", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
+      dealRiskScore: 18,
       riskLevel: "low",
       topics: [{ code: "W" }],
     });
@@ -103,6 +104,7 @@ function createEnrichmentTestApp(
 
 function createEnrichmentServices(): InventoryEnrichmentServices {
   const analysis: InventoryResaleAnalysisResponse = {
+    dealRiskScore: 18,
     riskLevel: "low",
     suggestedDescription: "Descricao gerada.",
     summary: "Baixo risco comercial.",

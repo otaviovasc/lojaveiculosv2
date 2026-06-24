@@ -39,6 +39,7 @@ type BillingAllocation = {
   planName?: string | undefined;
   storeId?: string | undefined;
   storeName?: string | undefined;
+  storeSlug?: string | undefined;
   subscriptionStatus?: string | undefined;
 };
 
@@ -162,7 +163,8 @@ export function mapBillingOverviewToStores(data: unknown) {
     return {
       id: item.storeId ?? String(idx),
       nome_da_loja: storeName,
-      subdominio: storeName.toLowerCase().replace(/[^a-z0-9]/g, ""),
+      subdominio:
+        item.storeSlug ?? storeName.toLowerCase().replace(/[^a-z0-9]/g, ""),
       plano: item.planName ?? "START",
       status_assinatura:
         item.subscriptionStatus === "active" ? "ATIVA" : "INATIVA",
@@ -189,6 +191,7 @@ function readBillingAllocation(value: unknown): BillingAllocation {
     planName: readString(value.planName),
     storeId: readString(value.storeId),
     storeName: readString(value.storeName),
+    storeSlug: readString(value.storeSlug),
     subscriptionStatus: readString(value.subscriptionStatus),
   };
 }

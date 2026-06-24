@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "catalog:normalize-names": "tsx src/jobs/normalizeVehicleCatalogNames.ts",
     "catalog:sync": "tsx src/jobs/syncVehicleCatalog.ts",
     "build": "tsc -b",
     "start": "node dist/main.js",

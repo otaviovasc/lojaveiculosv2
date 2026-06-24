@@ -2,64 +2,26 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { LoaderCircle, Search, Sparkles } from "lucide-react";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryFormState } from "../model/formModel";
-import {
-  applyPlateLookupToForm,
-  createResaleAnalysisInput,
-  hasEnoughDataForAnalysis,
-} from "../model/inventoryEnrichment";
-import type {
-  InventoryPlateLookupResponse,
-  InventoryResaleAnalysisResponse,
-} from "../model/enrichmentTypes";
-import { InventoryField, InventoryInput } from "./InventoryFormParts";
-import {
-  AnalysisPanel,
-  LookupStatus,
-  type Loadable,
-} from "./InventoryCreateEnrichmentParts";
+import { applyPlateLookupToForm } from "../model/inventoryEnrichment";
+import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
+import { InventoryInput } from "./InventoryFormParts";
+import { LookupStatus, type Loadable } from "./InventoryCreateEnrichmentParts";
 
 export function InventoryCreateEnrichmentPanel({
   api,
   form,
+  onLookupComplete,
   onSetFormDirect,
 }: {
   api: InventoryApi | null;
   form: InventoryFormState;
+  onLookupComplete: (result: InventoryPlateLookupResponse) => void;
   onSetFormDirect: Dispatch<SetStateAction<InventoryFormState>>;
 }) {
   const [scanPlate, setScanPlate] = useState(form.plate);
   const [plateState, setPlateState] = useState<
     Loadable<InventoryPlateLookupResponse>
   >({ kind: "idle" });
-  const [analysisState, setAnalysisState] = useState<
-    Loadable<InventoryResaleAnalysisResponse>
-  >({ kind: "idle" });
-  const lookup = plateState.kind === "success" ? plateState.value : null;
-  const canAnalyze = api && hasEnoughDataForAnalysis(form, lookup);
-
-  const runAnalysis = async (
-    analysisForm = form,
-    analysisLookup = lookup,
-    applyDescription = true,
-  ) => {
-    if (!api) return;
-    setAnalysisState({ kind: "loading" });
-    try {
-      const analysis = await api.analyzeResale(
-        createResaleAnalysisInput(analysisForm, analysisLookup),
-      );
-      setAnalysisState({ kind: "success", value: analysis });
-      if (applyDescription) {
-        onSetFormDirect((current) =>
-          current.description.trim()
-            ? current
-            : { ...current, description: analysis.suggestedDescription },
-        );
-      }
-    } catch (error) {
-      setAnalysisState({ kind: "error", message: errorMessage(error) });
-    }
-  };
 
   const handleLookup = async () => {
     const plate = normalizePlate(scanPlate);
@@ -73,36 +35,33 @@ export function InventoryCreateEnrichmentPanel({
     }
 
     setPlateState({ kind: "loading" });
-    setAnalysisState({ kind: "idle" });
     try {
       const result = await api.lookupPlate({ plate });
-      const filledForm = applyPlateLookupToForm(form, result);
       onSetFormDirect((current) => applyPlateLookupToForm(current, result));
       setPlateState({ kind: "success", value: result });
-      if (hasEnoughDataForAnalysis(filledForm, result)) {
-        await runAnalysis(filledForm, result);
-      }
+      onLookupComplete(result);
     } catch (error) {
       setPlateState({ kind: "error", message: errorMessage(error) });
     }
   };
 
   return (
-    <section className="glass-panel-branded flex flex-col gap-5 rounded-2xl border border-line bg-panel p-6 shadow-[var(--shadow-panel)]">
-      <header className="flex flex-col gap-1 border-b border-line pb-4">
-        <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-app-text">
-          <span className="grid size-8 place-items-center rounded-md bg-accent-soft text-accent-strong border border-accent-soft/20">
+    <section className="glass-panel-branded flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5 shadow-[var(--shadow-panel)]">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="grid size-8 shrink-0 place-items-center rounded-md bg-accent-soft text-accent-strong border border-accent-soft/20">
             <Sparkles className="size-4" />
           </span>
-          Início Rápido
-        </h3>
-        <p className="text-xs font-bold text-muted">
-          Consulte a placa, revise o preenchimento e gere a análise comercial.
-        </p>
-      </header>
-
-      <InventoryField label="Placa do Veículo">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <div className="min-w-0">
+            <h3 className="text-sm font-black uppercase tracking-wider text-app-text">
+              Início Rápido
+            </h3>
+            <p className="text-xs font-bold text-muted">
+              Consulte a placa e revise o preenchimento.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2 sm:min-w-0 sm:flex-1 sm:max-w-md">
           <InventoryInput
             className="w-full font-mono tracking-widest sm:text-center"
             onChange={(event) => setScanPlate(event.target.value.toUpperCase())}
@@ -110,7 +69,7 @@ export function InventoryCreateEnrichmentPanel({
             value={scanPlate}
           />
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-xs font-black text-inverse transition-all hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-75"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-xs font-black text-inverse transition-all hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-75 whitespace-nowrap shrink-0"
             disabled={plateState.kind === "loading"}
             onClick={() => void handleLookup()}
             type="button"
@@ -123,14 +82,9 @@ export function InventoryCreateEnrichmentPanel({
             <span>Consultar placa</span>
           </button>
         </div>
-      </InventoryField>
+      </header>
 
       <LookupStatus state={plateState} />
-      <AnalysisPanel
-        canAnalyze={Boolean(canAnalyze)}
-        onGenerate={() => void runAnalysis(form, lookup, false)}
-        state={analysisState}
-      />
     </section>
   );
 }

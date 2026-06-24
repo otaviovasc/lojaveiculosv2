@@ -85,6 +85,7 @@ import {
 } from "./vehicleCatalog/drizzleVehicleCatalogRepository.js";
 import { createR2ObjectStorageFromEnv } from "../storage/r2ObjectStorage.js";
 import { createFipeVehicleCatalogProvider } from "../catalog/fipeVehicleCatalogProvider.js";
+import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
 
 export function createRuntimeAppOptions(
   env: Record<string, string | undefined> = process.env,
@@ -129,6 +130,10 @@ export function createRuntimeAppOptions(
     financeServices: createRuntimeFinanceServices(db, env),
     fiscalServices: createRuntimeFiscalServices(db, env),
     ...(identityVerifier ? { identityVerifier } : {}),
+    inventoryEnrichmentServices: createRuntimeInventoryEnrichmentServices(
+      db,
+      env,
+    ),
     inventoryListingServices: createRuntimeInventoryServices(db, env),
     internalMonitoringServices: auditDb
       ? createRuntimeInternalMonitoringServices(auditDb)

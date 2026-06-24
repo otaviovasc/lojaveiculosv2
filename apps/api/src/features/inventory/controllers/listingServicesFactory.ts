@@ -1,5 +1,6 @@
 import { addVehicleCost } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
 import { getVehicleCatalogSnapshot } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogSnapshot.js";
+import { getVehicleCatalogPriceHistory } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogPriceHistory.js";
 import { listVehicleCatalogBrands } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogBrands.js";
 import { listVehicleCatalogModels } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogModels.js";
 import { listVehicleCatalogVersions } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogVersions.js";
@@ -55,11 +56,8 @@ export function createInventoryListingServices(
       );
     },
     async attachListingUnit(context, input) {
-      const unit = await attachVehicleUnit(
-        context,
-        cleanAttachInput(input),
-        ports,
-      );
+      const unitInput = cleanAttachInput(input);
+      const unit = await attachVehicleUnit(context, unitInput, ports);
       return loadInventoryListingDetailDto(
         context,
         unit.listingId,
@@ -130,6 +128,9 @@ export function createInventoryListingServices(
     },
     async getCatalogSnapshot(context, input) {
       return getVehicleCatalogSnapshot(context, input, ports);
+    },
+    async getCatalogPriceHistory(context, input) {
+      return getVehicleCatalogPriceHistory(context, input, ports);
     },
     async listListings(context, input) {
       return toListDto(await listVehicleListings(context, input, ports));

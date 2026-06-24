@@ -112,6 +112,7 @@ function createUnitRepository(
     create: vi.fn(async (record: CreateVehicleUnitRecord) => {
       const unit: VehicleUnit = {
         ...record,
+        colorName: record.colorName ?? null,
         createdAt: testNow,
         id: `unit_${nextSequence()}`,
         updatedAt: testNow,

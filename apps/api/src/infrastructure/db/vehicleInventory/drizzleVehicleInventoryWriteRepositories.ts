@@ -13,12 +13,12 @@ import {
   toDbUnitStatus,
   toVehicleMedia,
   toVehicleUnit,
-  VehicleInventoryDrizzleScopeError,
   type InsertVehicleMediaRow,
   type InsertVehicleUnitRow,
   type VehicleMediaRow,
   type VehicleUnitRow,
 } from "./drizzleVehicleInventoryMappers.js";
+import { VehicleInventoryDrizzleScopeError } from "./drizzleVehicleInventoryScope.js";
 import {
   findListingsMedia,
   findListingsUnits,
@@ -45,6 +45,7 @@ export function createDrizzleVehicleUnitRepository(
       const [row] = await db
         .insert(vehicleUnits)
         .values({
+          colorName: record.colorName ?? null,
           listingId: record.listingId,
           plate: record.plate,
           status: toDbUnitStatus(record.status),
@@ -88,6 +89,7 @@ export function createDrizzleVehicleUnitRepository(
       const [row] = await db
         .update(vehicleUnits)
         .set({
+          colorName: unit.colorName,
           plate: unit.plate,
           status: toDbUnitStatus(unit.status),
           stockNumber: unit.stockNumber,

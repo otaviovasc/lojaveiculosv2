@@ -1,25 +1,14 @@
 import { inventoryFinanceSchemas } from "./inventoryFinanceOpenApiSchemas.js";
-
-const vehicleDocumentKinds = [
-  "buyer_document",
-  "delivery_term",
-  "inspection",
-  "internal",
-  "invoice",
-  "other",
-  "power_of_attorney",
-  "reservation_receipt",
-  "sale_contract",
-  "sale_receipt",
-  "test_drive",
-  "vehicle_registration",
-] as const;
+import {
+  listingTechnicalSchemas,
+  objectSchema,
+  unitIdentitySchemas,
+  vehicleDocumentKinds,
+} from "./inventoryOpenApiSchemaParts.js";
 
 export const inventorySchemas = {
   AttachListingUnitRequest: objectSchema([], {
-    plate: { type: ["string", "null"], minLength: 1 },
-    stockNumber: { type: ["string", "null"], minLength: 1 },
-    vin: { type: ["string", "null"], minLength: 1 },
+    ...unitIdentitySchemas,
   }),
   ChangeListingStatusRequest: objectSchema(["status"], {
     status: {
@@ -29,6 +18,7 @@ export const inventorySchemas = {
   }),
   CreateListingRequest: objectSchema(["title"], {
     description: { type: ["string", "null"], minLength: 1 },
+    ...listingTechnicalSchemas,
     plate: { type: ["string", "null"], minLength: 1, default: null },
     priceCents: { type: ["integer", "null"], minimum: 0 },
     status: {
@@ -58,6 +48,7 @@ export const inventorySchemas = {
   InventoryListing: objectSchema(["id", "status", "title"], {
     createdAt: { type: "string", format: "date-time" },
     description: { type: ["string", "null"] },
+    ...listingTechnicalSchemas,
     id: { type: "string" },
     plate: { type: ["string", "null"] },
     priceCents: { type: ["integer", "null"], minimum: 0 },
@@ -140,6 +131,7 @@ export const inventorySchemas = {
   }),
   UpdateListingDetailsRequest: objectSchema([], {
     description: { type: ["string", "null"], minLength: 1 },
+    ...listingTechnicalSchemas,
     priceCents: { type: ["integer", "null"], minimum: 0 },
     status: {
       type: "string",
@@ -151,13 +143,14 @@ export const inventorySchemas = {
     priceCents: { type: ["integer", "null"], minimum: 0 },
   }),
   UpdateListingUnitRequest: objectSchema([], {
-    plate: { type: ["string", "null"], minLength: 1 },
+    colorName: unitIdentitySchemas.colorName,
+    plate: unitIdentitySchemas.plate,
     status: {
       type: "string",
       enum: ["available", "reserved", "sold", "retired"],
     },
-    stockNumber: { type: ["string", "null"], minLength: 1 },
-    vin: { type: ["string", "null"], minLength: 1 },
+    stockNumber: unitIdentitySchemas.stockNumber,
+    vin: unitIdentitySchemas.vin,
   }),
   VehicleMediaCreated: objectSchema(["mediaId", "status", "url"], {
     mediaId: { type: "string" },
@@ -220,17 +213,5 @@ export function jsonRequest(schemaName: keyof typeof inventorySchemas) {
         schema: { $ref: `#/components/schemas/${schemaName}` },
       },
     },
-  } as const;
-}
-
-function objectSchema(
-  required: readonly string[],
-  properties: Record<string, unknown>,
-) {
-  return {
-    type: "object",
-    additionalProperties: false,
-    required,
-    properties,
   } as const;
 }

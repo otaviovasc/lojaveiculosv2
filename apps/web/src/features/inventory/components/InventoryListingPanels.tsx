@@ -1,6 +1,6 @@
 import { Car, PackagePlus } from "lucide-react";
 import {
-  listingStatusOptions,
+  createListingStatusOptions,
   type InventoryFieldChangeHandler,
   type InventoryFormState,
 } from "../model/formModel";
@@ -39,7 +39,7 @@ export function ListingPanel({
         <InventoryField label="Status inicial">
           <InventorySelect
             onChange={onChange("status")}
-            options={listingStatusOptions}
+            options={createListingStatusOptions}
             value={form.status}
           />
         </InventoryField>

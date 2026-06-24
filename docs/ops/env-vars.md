@@ -64,8 +64,11 @@ secrets for CI-only values.
 | `API_PLACA_KEY`                         | No       | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.   |
 | `API_PLACA_BASE_URL`                    | No       | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`. |
 | `API_PLACA_DADOS_PATH`                  | No       | staging, production | No     | Defaults to `/vehicles/base/000/dados`.            |
+| `API_PLACA_CACHE_TTL_DAYS`              | No       | staging, production | No     | Plate lookup reuse window. Defaults to `30`.       |
 | `API_OPENAI_KEY`                        | No       | staging, production | Yes    | OpenAI API key for inventory resale analysis.      |
-| `API_OPENAI_MODEL`                      | No       | staging, production | No     | Defaults to `gpt-5-mini`.                          |
+| `API_OPENAI_DEFAULT_MODEL`              | No       | staging, production | No     | Defaults AI tasks to `gpt-5.4-mini`.               |
+| `API_OPENAI_INVENTORY_RESALE_MODEL`     | No       | staging, production | No     | Optional override for inventory resale analysis.   |
+| `API_OPENAI_MODEL`                      | No       | staging, production | No     | Legacy fallback after task-specific model vars.    |
 | `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                  |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`           | No       | staging, production | Yes    | OpenTelemetry collector endpoint.                  |
 
@@ -77,10 +80,13 @@ secrets for CI-only values.
 | `FIPE_API_TOKEN`                       | No       | staging, production        | Yes    | Optional FIPE subscription token, sent as `X-Subscription-Token`.                             |
 | `FIPE_CATALOG_SYNC_VEHICLE_TYPES`      | No       | local, staging, production | No     | Comma-separated `cars`, `motorcycles`, `trucks`. Defaults to `cars`.                          |
 | `FIPE_CATALOG_SYNC_CONCURRENCY`        | No       | local, staging, production | No     | Brand worker count, capped by service logic. Defaults to `1`.                                 |
+| `FIPE_CATALOG_SYNC_BRAND_CODES`        | No       | local, staging, production | No     | Optional comma-separated FIPE brand codes for targeted raw-data refreshes.                    |
 | `FIPE_CATALOG_SYNC_BRAND_LIMIT`        | No       | local                      | No     | Optional local/testing limit for brands per run.                                              |
 | `FIPE_CATALOG_SYNC_HTTP_MAX_ATTEMPTS`  | No       | local, staging, production | No     | HTTP attempts for retryable FIPE responses. Defaults to `5`.                                  |
+| `FIPE_CATALOG_SYNC_INCLUDE_YEARS`      | No       | local, staging, production | No     | Set `false` to refresh only brands, model families, and versions before year backfill.        |
 | `FIPE_CATALOG_SYNC_HTTP_TIMEOUT_MS`    | No       | local, staging, production | No     | Per-request FIPE HTTP timeout in milliseconds. Defaults to `30000`.                           |
 | `FIPE_CATALOG_SYNC_HTTP_RETRY_BASE_MS` | No       | local, staging, production | No     | Exponential retry base delay in milliseconds. Defaults to `1000`.                             |
+| `FIPE_CATALOG_SYNC_REFERENCE_CODE`     | No       | local, staging, production | No     | Optional FIPE reference month code. Defaults to the latest code returned by `/references`.    |
 | `FIPE_CATALOG_SYNC_REFRESH_AFTER_DAYS` | No       | local, staging, production | No     | Refresh existing version years after this age. Defaults to `30`; `0` only fills missing rows. |
 | `FIPE_CATALOG_SYNC_REFRESH_EXISTING`   | No       | local, staging, production | No     | Set `true` to force a full refresh of existing version-year lookups.                          |
 
@@ -88,6 +94,9 @@ Parallelum FIPE brand responses currently include `code` and `name`, but no
 logo URL. The catalog sync enriches brands from the legacy `brands.json` logo
 catalog, including aliases like `GM - Chevrolet` and `VW - VolksWagen`, and
 persists the resolved URL to `vehicle_catalog_brands.logo_url`.
+The sync also stores raw FIPE JSON responses in
+`vehicle_catalog_raw_responses` for provider-evidence audits and parser
+validation.
 
 ## CI Smoke Test Secrets
 

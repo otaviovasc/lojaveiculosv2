@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDrizzleVehicleInventoryRepositories } from "./drizzleVehicleInventoryRepository.js";
-import {
-  VehicleInventoryDrizzleMappingError,
-  VehicleInventoryDrizzleScopeError,
-} from "./drizzleVehicleInventoryMappers.js";
+import { VehicleInventoryDrizzleMappingError } from "./drizzleVehicleInventoryMappers.js";
+import { VehicleInventoryDrizzleScopeError } from "./drizzleVehicleInventoryScope.js";
 import {
   createFakeDb,
   createRows,

@@ -67,6 +67,7 @@ export type BillingStoreAllocation = {
   planName: string | null;
   storeId: string;
   storeName: string;
+  storeSlug: string;
   subscriptionStatus: BillingSubscription["status"] | null;
 };
 

@@ -100,18 +100,23 @@ export function DashboardSidebar<Id extends string = string>({
 
       <nav
         aria-label="Modulos"
-        className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-3 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {mainItems.map((item) => {
           const showHeader = item.group && item.group !== lastGroup;
           if (showHeader) lastGroup = item.group;
           return (
-            <div key={item.id} className="flex flex-col gap-1">
+            <div key={item.id} className="flex flex-col gap-0.5">
               {showHeader &&
                 (isCompact ? (
                   <div className="h-px bg-line/60 my-2 mx-1" />
                 ) : (
-                  <div className="px-3 pt-4 pb-1.5 text-[9px] font-black uppercase tracking-widest text-muted/50 dark:text-muted/40">
+                  <div
+                    className={
+                      "px-2.5 pb-1 text-[9px] font-black uppercase tracking-widest text-muted/50 dark:text-muted/40 " +
+                      (lastGroup === undefined ? "pt-1" : "pt-4")
+                    }
+                  >
                     {item.group}
                   </div>
                 ))}
@@ -126,7 +131,7 @@ export function DashboardSidebar<Id extends string = string>({
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-2 border-t border-line/60 px-3 py-3 bg-panel/10">
+      <div className="mt-auto flex flex-col gap-2 border-t border-line/60 px-2.5 py-3 bg-panel/10">
         {isCompact ? (
           <>
             {/* Mocked Profile Icon in compact mode */}

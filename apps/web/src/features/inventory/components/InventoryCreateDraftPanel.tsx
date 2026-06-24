@@ -16,7 +16,7 @@ export function InventoryCreateDraftPanel({
   }).format(new Date(draft.updatedAt));
 
   return (
-    <section className="rounded-xl border border-line bg-panel p-4 shadow-[var(--shadow-panel)]">
+    <section className="rounded-xl border border-line bg-panel p-4 shadow-[var(--shadow-panel)] mb-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="space-y-1">
           <h3 className="text-sm font-black uppercase tracking-wide text-app-text">

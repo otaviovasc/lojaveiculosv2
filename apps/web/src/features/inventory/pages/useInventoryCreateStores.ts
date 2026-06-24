@@ -16,6 +16,7 @@ type BillingStoreAllocationDto = {
   planName: string | null;
   storeId: string;
   storeName: string;
+  storeSlug: string;
   subscriptionStatus: string | null;
 };
 
@@ -76,7 +77,7 @@ function mapBillingStores(data: unknown) {
     return {
       id: allocation.storeId ?? String(index),
       name,
-      slug: name.toLowerCase().replace(/[^a-z0-9]/g, ""),
+      slug: allocation.storeSlug ?? slugifyStoreName(name),
     };
   });
 }
@@ -85,4 +86,8 @@ function isBillingAllocation(
   value: unknown,
 ): value is BillingStoreAllocationDto {
   return typeof value === "object" && value !== null;
+}
+
+function slugifyStoreName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
 }

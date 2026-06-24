@@ -79,6 +79,88 @@ describe("FIPE vehicle catalog provider", () => {
     );
   });
 
+  it("records raw FIPE responses with request metadata", async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(
+      new Response(JSON.stringify([{ code: 7, name: "BMW" }]), {
+        status: 200,
+      }),
+    );
+    const rawResponseRecorder = vi.fn(async () => undefined);
+    const provider = createFipeVehicleCatalogProvider({
+      baseUrl: "https://fipe.example.test/api/",
+      fetch,
+      rawResponseRecorder,
+    });
+
+    await provider.listBrands({ referenceCode: "334", vehicleType: "cars" });
+
+    expect(fetch).toHaveBeenCalledWith(
+      "https://fipe.example.test/api/cars/brands?reference=334",
+      expect.anything(),
+    );
+    expect(rawResponseRecorder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        endpoint: "brands",
+        httpStatus: 200,
+        provider: "fipe",
+        referenceCode: "334",
+        requestPath: "/cars/brands?reference=334",
+        vehicleType: "cars",
+      }),
+    );
+  });
+
+  it("maps FIPE references and price history", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify([{ code: 334, month: "junho/2026" }]), {
+          status: 200,
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            brand: "BMW",
+            codeFipe: "009327-0",
+            fuel: "Gasolina",
+            model: "X3 XDRIVE 30 M Sport 2.0 TB Aut.",
+            modelYear: 2026,
+            priceHistory: [
+              { month: "junho/2026", price: "R$ 470.354,00", reference: 334 },
+            ],
+            vehicleType: 1,
+          }),
+          { status: 200 },
+        ),
+      );
+    const provider = createFipeVehicleCatalogProvider({
+      baseUrl: "https://fipe.example.test/api/",
+      fetch,
+    });
+
+    await expect(provider.listReferences()).resolves.toEqual([
+      { code: "334", month: "junho/2026" },
+    ]);
+    await expect(
+      provider.getVehicleHistory({
+        fipeCode: "009327-0",
+        referenceCode: "334",
+        vehicleType: "cars",
+        yearCode: "2026-6",
+      }),
+    ).resolves.toMatchObject({
+      entries: [
+        {
+          priceCents: 47035400,
+          priceLabel: "R$ 470.354,00",
+          referenceCode: "334",
+        },
+      ],
+      fipeCode: "009327-0",
+    });
+  });
+
   it("retries FIPE requests that fail before receiving a response", async () => {
     const fetch = vi
       .fn<typeof globalThis.fetch>()

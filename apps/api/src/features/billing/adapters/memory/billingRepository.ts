@@ -118,6 +118,7 @@ function toOverview(
         planName: "Growth",
         storeId: storeId as never,
         storeName: "Loja principal",
+        storeSlug: "test-store",
         subscriptionStatus: "trialing",
       },
     ],

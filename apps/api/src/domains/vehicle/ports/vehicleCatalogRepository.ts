@@ -1,4 +1,6 @@
 import type {
+  VehicleCatalogPriceHistoryEntry,
+  VehicleCatalogReference,
   VehicleCatalogOption,
   VehicleCatalogSnapshot,
   VehicleCatalogType,
@@ -67,12 +69,31 @@ export type VehicleCatalogRepository = {
     vehicleType: VehicleCatalogType;
     versionCode: string;
   }) => Promise<VehicleCatalogVersionYearSyncState | null>;
+  listPriceHistory: (input: {
+    fipeCode: string;
+    vehicleType: VehicleCatalogType;
+    yearCode: string;
+  }) => Promise<readonly VehicleCatalogPriceHistoryEntry[]>;
   upsertBrand: (input: {
     code: string;
     imageUrl?: string | null;
     name: string;
     vehicleType: VehicleCatalogType;
   }) => Promise<{ id: string }>;
+  upsertReferences: (
+    input: readonly (VehicleCatalogReference & {
+      isLatest: boolean;
+      rawPayload?: unknown;
+    })[],
+  ) => Promise<void>;
+  upsertPriceHistory: (input: {
+    entries: readonly (VehicleCatalogPriceHistoryEntry & {
+      rawPayload?: unknown;
+    })[];
+    fipeCode: string;
+    vehicleType: VehicleCatalogType;
+    yearCode: string;
+  }) => Promise<void>;
   upsertModelFamily: (input: {
     brandId: string;
     name: string;
@@ -84,6 +105,7 @@ export type VehicleCatalogRepository = {
     code: string;
     modelFamilyId: string;
     name: string;
+    providerName?: string | null;
     vehicleType: VehicleCatalogType;
   }) => Promise<{ id: string }>;
   upsertYear: (input: {
