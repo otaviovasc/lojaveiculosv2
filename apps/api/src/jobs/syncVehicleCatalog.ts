@@ -38,6 +38,11 @@ async function main(): Promise<void> {
       ...(process.env.FIPE_API_BASE_URL
         ? { baseUrl: process.env.FIPE_API_BASE_URL }
         : {}),
+      maxAttempts:
+        parseOptionalPositiveInt("FIPE_CATALOG_SYNC_HTTP_MAX_ATTEMPTS") ?? 5,
+      retryBaseDelayMs:
+        parseOptionalPositiveInt("FIPE_CATALOG_SYNC_HTTP_RETRY_BASE_MS") ??
+        1_000,
       ...(process.env.FIPE_API_TOKEN
         ? { token: process.env.FIPE_API_TOKEN }
         : {}),
@@ -51,6 +56,12 @@ async function main(): Promise<void> {
       {
         brandLimit: parseOptionalPositiveInt("FIPE_CATALOG_SYNC_BRAND_LIMIT"),
         concurrency: parseConcurrency(),
+        refreshAfterDays:
+          parseOptionalNonNegativeInt("FIPE_CATALOG_SYNC_REFRESH_AFTER_DAYS") ??
+          30,
+        refreshExistingYears: parseBoolean(
+          "FIPE_CATALOG_SYNC_REFRESH_EXISTING",
+        ),
         vehicleType,
       },
       ports,
@@ -69,8 +80,8 @@ function createAuditSink() {
 }
 
 function parseConcurrency(): number {
-  const value = Number(process.env.FIPE_CATALOG_SYNC_CONCURRENCY ?? 2);
-  return Number.isFinite(value) ? value : 2;
+  const value = Number(process.env.FIPE_CATALOG_SYNC_CONCURRENCY ?? 1);
+  return Number.isFinite(value) ? value : 1;
 }
 
 function parseOptionalPositiveInt(name: string): number | undefined {
@@ -78,6 +89,17 @@ function parseOptionalPositiveInt(name: string): number | undefined {
   if (!raw) return undefined;
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+function parseOptionalNonNegativeInt(name: string): number | undefined {
+  const raw = process.env[name];
+  if (!raw) return undefined;
+  const value = Number(raw);
+  return Number.isInteger(value) && value >= 0 ? value : undefined;
+}
+
+function parseBoolean(name: string): boolean {
+  return process.env[name] === "true";
 }
 
 function parseVehicleTypes(): readonly VehicleCatalogType[] {

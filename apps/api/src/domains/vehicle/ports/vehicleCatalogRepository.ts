@@ -22,6 +22,11 @@ export type VehicleCatalogSyncCounts = {
   yearsSeen: number;
 };
 
+export type VehicleCatalogVersionYearSyncState = {
+  lastSyncedAt: Date | null;
+  yearCount: number;
+};
+
 export type VehicleCatalogRepository = {
   createSyncRun: (input: {
     provider: "fipe";
@@ -57,6 +62,11 @@ export type VehicleCatalogRepository = {
     vehicleType: VehicleCatalogType;
     versionCode: string;
   }) => Promise<readonly VehicleCatalogYearOption[]>;
+  getVersionYearSyncState: (input: {
+    brandCode: string;
+    vehicleType: VehicleCatalogType;
+    versionCode: string;
+  }) => Promise<VehicleCatalogVersionYearSyncState | null>;
   upsertBrand: (input: {
     code: string;
     name: string;

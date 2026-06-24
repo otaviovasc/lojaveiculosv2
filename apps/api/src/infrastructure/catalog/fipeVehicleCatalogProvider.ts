@@ -7,24 +7,38 @@ import type {
 } from "../../domains/vehicle/ports/vehicleCatalogProvider.js";
 
 const defaultBaseUrl = "https://parallelum.com.br/fipe/api/v2";
+const defaultMaxAttempts = 5;
+const defaultRetryBaseDelayMs = 1_000;
+const maxRetryDelayMs = 60_000;
 
 export function createFipeVehicleCatalogProvider({
   baseUrl = defaultBaseUrl,
   fetch = globalThis.fetch,
+  maxAttempts = defaultMaxAttempts,
+  retryBaseDelayMs = defaultRetryBaseDelayMs,
+  sleep = defaultSleep,
   token,
 }: {
   baseUrl?: string;
   fetch?: typeof globalThis.fetch;
+  maxAttempts?: number;
+  retryBaseDelayMs?: number;
+  sleep?: (delayMs: number) => Promise<void>;
   token?: string | undefined;
 } = {}): VehicleCatalogProvider {
   const request = async <T>(path: string): Promise<T> => {
-    const response = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
-      headers: token ? { "X-Subscription-Token": token } : {},
-    });
-    if (!response.ok) {
-      throw new FipeCatalogProviderError(response.status, path);
+    const attempts = Math.max(1, maxAttempts);
+    for (let attempt = 1; attempt <= attempts; attempt += 1) {
+      const response = await fetch(`${baseUrl.replace(/\/$/, "")}${path}`, {
+        headers: token ? { "X-Subscription-Token": token } : {},
+      });
+      if (response.ok) return (await response.json()) as T;
+      if (!shouldRetry(response.status) || attempt === attempts) {
+        throw new FipeCatalogProviderError(response.status, path);
+      }
+      await sleep(getRetryDelayMs(response, attempt, retryBaseDelayMs));
     }
-    return (await response.json()) as T;
+    throw new Error("FIPE catalog request exhausted retry attempts.");
   };
 
   return {
@@ -52,7 +66,10 @@ export function createFipeVehicleCatalogProvider({
 }
 
 export class FipeCatalogProviderError extends Error {
-  constructor(status: number, path: string) {
+  constructor(
+    readonly status: number,
+    readonly path: string,
+  ) {
     super(`FIPE catalog request failed with status ${status}: ${path}`);
     this.name = "FipeCatalogProviderError";
   }
@@ -122,4 +139,32 @@ export function parseFipePriceCents(value: string): number | null {
   const amount = Number(normalized);
   if (!Number.isFinite(amount) || amount < 0) return null;
   return Math.round(amount * 100);
+}
+
+function shouldRetry(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function getRetryDelayMs(
+  response: Response,
+  attempt: number,
+  retryBaseDelayMs: number,
+): number {
+  return Math.min(
+    readRetryAfterMs(response) ?? retryBaseDelayMs * 2 ** (attempt - 1),
+    maxRetryDelayMs,
+  );
+}
+
+function readRetryAfterMs(response: Response): number | null {
+  const value = response.headers.get("retry-after");
+  if (!value) return null;
+  const seconds = Number(value);
+  if (Number.isFinite(seconds) && seconds >= 0) return seconds * 1_000;
+  const dateMs = Date.parse(value);
+  return Number.isFinite(dateMs) ? Math.max(0, dateMs - Date.now()) : null;
+}
+
+async function defaultSleep(delayMs: number): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
 }

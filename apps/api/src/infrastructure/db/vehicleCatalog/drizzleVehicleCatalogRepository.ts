@@ -135,6 +135,25 @@ export function createDrizzleVehicleCatalogRepository(
         name: row.name,
       }));
     },
+    async getVersionYearSyncState(input) {
+      const version = await findVersion(db, input);
+      if (!version) return null;
+      const rows = await db
+        .select({ lastSyncedAt: vehicleCatalogYears.lastSyncedAt })
+        .from(vehicleCatalogYears)
+        .where(
+          and(
+            eq(vehicleCatalogYears.versionId, version.id),
+            eq(vehicleCatalogYears.isActive, true),
+          ),
+        );
+      const lastSyncedAt = rows.reduce<Date | null>((latest, row) => {
+        if (!row.lastSyncedAt) return latest;
+        if (!latest || row.lastSyncedAt > latest) return row.lastSyncedAt;
+        return latest;
+      }, null);
+      return { lastSyncedAt, yearCount: rows.length };
+    },
     ...createDrizzleVehicleCatalogWrites(db),
   };
 }

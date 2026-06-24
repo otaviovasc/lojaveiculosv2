@@ -12,6 +12,11 @@ import {
   type CatalogSyncCounts,
 } from "../../catalog/syncCatalogSupport.js";
 import {
+  listModelsOrSkip,
+  listYearsOrSkip,
+  shouldSyncVersionYears,
+} from "../../catalog/syncCatalogResume.js";
+import {
   deriveModelFamilyName,
   getCatalogProvider,
   getCatalogRepository,
@@ -22,12 +27,17 @@ import {
 export type SyncVehicleCatalogInput = {
   brandLimit?: number | undefined;
   concurrency?: number;
+  refreshAfterDays?: number | undefined;
+  refreshExistingYears?: boolean | undefined;
   vehicleType: VehicleCatalogType;
 };
 
 export type SyncVehicleCatalogResult = {
   brandsSeen: number;
+  freshYearLookupsSkipped: number;
+  isComplete: boolean;
   modelFamiliesSeen: number;
+  skippedModelLookups: number;
   skippedYearLookups: number;
   status: "succeeded";
   versionsSeen: number;
@@ -63,7 +73,9 @@ export async function syncVehicleCatalog(
     );
     counts.brandsSeen = brands.length;
     const seenFamilies = new Set<string>();
+    const skippedModelLookups: string[] = [];
     const skippedYearLookups: string[] = [];
+    let freshYearLookupsSkipped = 0;
     await runWithConcurrency(
       brands,
       normalizeConcurrency(input.concurrency),
@@ -73,10 +85,16 @@ export async function syncVehicleCatalog(
           name: brand.name,
           vehicleType: input.vehicleType,
         });
-        const versions = await provider.listModels({
-          brandCode: brand.code,
-          vehicleType: input.vehicleType,
-        });
+        const versions = await listModelsOrSkip(
+          context,
+          skippedModelLookups,
+          () =>
+            provider.listModels({
+              brandCode: brand.code,
+              vehicleType: input.vehicleType,
+            }),
+          brand.code,
+        );
         counts.versionsSeen += versions.length;
         for (const version of versions) {
           const family = await repository.upsertModelFamily({
@@ -92,6 +110,18 @@ export async function syncVehicleCatalog(
             name: version.name,
             vehicleType: input.vehicleType,
           });
+          const shouldSyncYears = await shouldSyncVersionYears(
+            repository,
+            input,
+            {
+              brandCode: brand.code,
+              versionCode: version.code,
+            },
+          );
+          if (!shouldSyncYears) {
+            freshYearLookupsSkipped += 1;
+            continue;
+          }
           const years = await listYearsOrSkip(
             context,
             skippedYearLookups,
@@ -114,7 +144,14 @@ export async function syncVehicleCatalog(
       },
     );
     counts.modelFamiliesSeen = seenFamilies.size;
-    const metadata = { skippedYearLookups };
+    const isComplete =
+      skippedModelLookups.length === 0 && skippedYearLookups.length === 0;
+    const metadata = {
+      freshYearLookupsSkipped,
+      isComplete,
+      skippedModelLookups,
+      skippedYearLookups,
+    };
     await repository.finishSyncRun({
       counts,
       metadata,
@@ -124,6 +161,9 @@ export async function syncVehicleCatalog(
     await auditSync(context, input.vehicleType, run.id, counts, metadata);
     return {
       ...counts,
+      freshYearLookupsSkipped,
+      isComplete,
+      skippedModelLookups: skippedModelLookups.length,
       skippedYearLookups: skippedYearLookups.length,
       status: "succeeded",
     };
@@ -143,27 +183,6 @@ export async function syncVehicleCatalog(
       errorMessage,
     );
     throw error;
-  }
-}
-
-async function listYearsOrSkip<T>(
-  context: ServiceContext,
-  skipped: string[],
-  read: () => Promise<readonly T[]>,
-  key: string,
-): Promise<readonly T[]> {
-  try {
-    return await read();
-  } catch (error) {
-    skipped.push(key);
-    context.logger.warn(
-      "vehicle_catalog.sync.year_lookup.skipped",
-      createServiceLogMetadata(context, {
-        error: error instanceof Error ? error.message : String(error),
-        key,
-      }),
-    );
-    return [];
   }
 }
 

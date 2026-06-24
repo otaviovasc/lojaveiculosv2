@@ -45,6 +45,10 @@ export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository
     listModelFamilies: async () => models,
     listVersions: async () => versions,
     listYears: async () => years,
+    getVersionYearSyncState: async () => ({
+      lastSyncedAt: new Date(),
+      yearCount: years.length,
+    }),
     upsertBrand: async (input) => ({ id: input.code }),
     upsertModelFamily: async (input) => ({
       code: input.name.toLowerCase(),
