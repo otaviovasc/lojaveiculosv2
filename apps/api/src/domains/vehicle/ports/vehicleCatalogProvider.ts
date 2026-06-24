@@ -2,6 +2,7 @@ export type VehicleCatalogType = "cars" | "motorcycles" | "trucks";
 
 export type VehicleCatalogOption = {
   code: string;
+  imageUrl?: string | null;
   name: string;
 };
 
@@ -12,6 +13,7 @@ export type VehicleCatalogYearOption = VehicleCatalogOption & {
 
 export type VehicleCatalogSnapshot = {
   brandCode: string;
+  brandLogoUrl?: string | null;
   brandName: string;
   fipeCode: string | null;
   fuel: string | null;

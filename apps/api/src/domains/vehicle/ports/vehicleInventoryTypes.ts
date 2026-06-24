@@ -28,6 +28,7 @@ export type VehicleDocumentTargetType = "vehicle_listing" | "vehicle_unit";
 
 export type VehicleListingCatalog = {
   brandCode: string | null;
+  brandLogoUrl?: string | null;
   brandName: string | null;
   fipeCode: string | null;
   fuel: string | null;

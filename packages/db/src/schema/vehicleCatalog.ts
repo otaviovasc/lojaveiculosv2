@@ -33,6 +33,7 @@ export const vehicleCatalogBrands = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
+    logoUrl: varchar("logo_url", { length: 500 }),
     name: varchar("name", { length: 120 }).notNull(),
     slug: varchar("slug", { length: 120 }).notNull(),
     vehicleType: vehicleCatalogType("vehicle_type").notNull(),

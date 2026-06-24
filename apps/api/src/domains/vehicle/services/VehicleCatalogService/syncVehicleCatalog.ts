@@ -82,6 +82,7 @@ export async function syncVehicleCatalog(
       async (brand) => {
         const savedBrand = await repository.upsertBrand({
           code: brand.code,
+          imageUrl: brand.imageUrl ?? null,
           name: brand.name,
           vehicleType: input.vehicleType,
         });
@@ -185,7 +186,6 @@ export async function syncVehicleCatalog(
     throw error;
   }
 }
-
 async function auditSync(
   context: ServiceContext,
   vehicleType: VehicleCatalogType,

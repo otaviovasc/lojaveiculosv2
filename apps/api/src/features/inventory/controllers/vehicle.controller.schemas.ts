@@ -12,6 +12,7 @@ export const listListingsQuerySchema = z.object({
 const vehicleCatalogTypes = ["cars", "motorcycles", "trucks"] as const;
 const listingCatalogSchema = z.object({
   brandCode: z.string().trim().min(1).nullable(),
+  brandLogoUrl: z.string().trim().url().nullable().optional().default(null),
   brandName: z.string().trim().min(1).nullable(),
   fipeCode: z.string().trim().min(1).nullable(),
   fuel: z.string().trim().min(1).nullable(),

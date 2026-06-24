@@ -4,6 +4,7 @@ export function createMemoryVehicleCatalogProvider(): VehicleCatalogProvider {
   return {
     getVehicle: async () => ({
       brandCode: "21",
+      brandLogoUrl: null,
       brandName: "Fiat",
       fipeCode: "001267-0",
       fuel: "Flex",
@@ -17,7 +18,7 @@ export function createMemoryVehicleCatalogProvider(): VehicleCatalogProvider {
       yearCode: "2024-1",
       yearName: "2024 Gasolina",
     }),
-    listBrands: async () => [{ code: "21", name: "Fiat" }],
+    listBrands: async () => [{ code: "21", imageUrl: null, name: "Fiat" }],
     listModels: async () => [{ code: "4828", name: "Toro Volcano" }],
     listYears: async () => [
       {

@@ -42,6 +42,7 @@ export type InventoryCatalogVersionOption = InventoryCatalogOption & {
 
 export type InventoryCatalogSnapshot = {
   brandCode: string | null;
+  brandLogoUrl?: string | null;
   brandName: string | null;
   fipeCode: string | null;
   fuel: string | null;

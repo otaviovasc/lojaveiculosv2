@@ -1,7 +1,7 @@
 import type { VehicleCatalogRepository } from "../../../../domains/vehicle/ports/vehicleCatalogRepository.js";
 
 export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository {
-  const brands = [{ code: "21", name: "Fiat" }];
+  const brands = [{ code: "21", imageUrl: null, name: "Fiat" }];
   const models = [{ code: "toro", name: "Toro" }];
   const versions = [
     {
@@ -28,6 +28,7 @@ export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository
     finishSyncRun: async () => undefined,
     getSnapshot: async (input) => ({
       brandCode: input.brandCode,
+      brandLogoUrl: null,
       brandName: "Fiat",
       fipeCode: "001267-0",
       fuel: "Flex",

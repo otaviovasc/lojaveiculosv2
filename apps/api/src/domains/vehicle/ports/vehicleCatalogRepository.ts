@@ -69,6 +69,7 @@ export type VehicleCatalogRepository = {
   }) => Promise<VehicleCatalogVersionYearSyncState | null>;
   upsertBrand: (input: {
     code: string;
+    imageUrl?: string | null;
     name: string;
     vehicleType: VehicleCatalogType;
   }) => Promise<{ id: string }>;

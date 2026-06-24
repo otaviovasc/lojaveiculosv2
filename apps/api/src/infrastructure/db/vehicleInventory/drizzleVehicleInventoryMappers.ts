@@ -79,6 +79,7 @@ function readListingCatalog(metadata: unknown): VehicleListingCatalog | null {
   const catalog = metadata.catalog;
   return {
     brandCode: readString(catalog.brandCode),
+    brandLogoUrl: readString(catalog.brandLogoUrl),
     brandName: readString(catalog.brandName),
     fipeCode: readString(catalog.fipeCode),
     fuel: readString(catalog.fuel),

@@ -37,6 +37,7 @@ export function createDrizzleVehicleCatalogWrites(
       });
       const values = seen({
         isActive: true,
+        logoUrl: input.imageUrl ?? null,
         name: input.name,
         slug: slugify(input.name),
       });

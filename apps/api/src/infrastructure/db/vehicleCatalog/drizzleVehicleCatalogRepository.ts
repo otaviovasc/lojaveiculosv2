@@ -57,6 +57,7 @@ export function createDrizzleVehicleCatalogRepository(
       if (!brand) return null;
       return {
         brandCode: input.brandCode,
+        brandLogoUrl: brand.logoUrl,
         brandName: brand.name,
         fipeCode: year.fipeCode,
         fuel: year.fuel,
@@ -81,7 +82,11 @@ export function createDrizzleVehicleCatalogRepository(
             eq(vehicleCatalogBrands.isActive, true),
           ),
         );
-      return rows.map((row) => ({ code: row.fipeCode, name: row.name }));
+      return rows.map((row) => ({
+        code: row.fipeCode,
+        imageUrl: row.logoUrl,
+        name: row.name,
+      }));
     },
     async listModelFamilies(input) {
       const brand = await findBrand(db, input);

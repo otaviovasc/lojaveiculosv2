@@ -40,6 +40,8 @@ async function main(): Promise<void> {
         : {}),
       maxAttempts:
         parseOptionalPositiveInt("FIPE_CATALOG_SYNC_HTTP_MAX_ATTEMPTS") ?? 5,
+      requestTimeoutMs:
+        parseOptionalPositiveInt("FIPE_CATALOG_SYNC_HTTP_TIMEOUT_MS") ?? 30_000,
       retryBaseDelayMs:
         parseOptionalPositiveInt("FIPE_CATALOG_SYNC_HTTP_RETRY_BASE_MS") ??
         1_000,

@@ -79,9 +79,15 @@ secrets for CI-only values.
 | `FIPE_CATALOG_SYNC_CONCURRENCY`        | No       | local, staging, production | No     | Brand worker count, capped by service logic. Defaults to `1`.                                 |
 | `FIPE_CATALOG_SYNC_BRAND_LIMIT`        | No       | local                      | No     | Optional local/testing limit for brands per run.                                              |
 | `FIPE_CATALOG_SYNC_HTTP_MAX_ATTEMPTS`  | No       | local, staging, production | No     | HTTP attempts for retryable FIPE responses. Defaults to `5`.                                  |
+| `FIPE_CATALOG_SYNC_HTTP_TIMEOUT_MS`    | No       | local, staging, production | No     | Per-request FIPE HTTP timeout in milliseconds. Defaults to `30000`.                           |
 | `FIPE_CATALOG_SYNC_HTTP_RETRY_BASE_MS` | No       | local, staging, production | No     | Exponential retry base delay in milliseconds. Defaults to `1000`.                             |
 | `FIPE_CATALOG_SYNC_REFRESH_AFTER_DAYS` | No       | local, staging, production | No     | Refresh existing version years after this age. Defaults to `30`; `0` only fills missing rows. |
 | `FIPE_CATALOG_SYNC_REFRESH_EXISTING`   | No       | local, staging, production | No     | Set `true` to force a full refresh of existing version-year lookups.                          |
+
+Parallelum FIPE brand responses currently include `code` and `name`, but no
+logo URL. The catalog sync enriches brands from the legacy `brands.json` logo
+catalog, including aliases like `GM - Chevrolet` and `VW - VolksWagen`, and
+persists the resolved URL to `vehicle_catalog_brands.logo_url`.
 
 ## CI Smoke Test Secrets
 
