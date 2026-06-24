@@ -23,6 +23,10 @@ export type InventoryFormState = {
   trimName: string;
   unitPlate: string;
   vin: string;
+  storeId: string;
+  modality: string;
+  acquisitionPrice: string;
+  vehicleType: string;
 };
 
 export type InventoryEditableField = Exclude<
@@ -98,6 +102,10 @@ export function createInitialInventoryForm(): InventoryFormState {
     trimName: "",
     unitPlate: "",
     vin: "",
+    storeId: "",
+    modality: "Estoque próprio",
+    acquisitionPrice: "",
+    vehicleType: "Carro",
   };
 }
 
@@ -139,7 +147,14 @@ export function validateInventoryForm(form: InventoryFormState): string | null {
   if (!form.title.trim()) return "Informe o titulo do anuncio.";
 
   if (form.price.trim() && parsePriceCents(form.price) === null) {
-    return "Informe um preco valido.";
+    return "Informe um preco de venda valido.";
+  }
+
+  if (
+    form.acquisitionPrice.trim() &&
+    parsePriceCents(form.acquisitionPrice) === null
+  ) {
+    return "Informe um valor de entrada valido.";
   }
 
   return null;

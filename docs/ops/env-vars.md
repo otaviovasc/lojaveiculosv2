@@ -50,19 +50,24 @@ secrets for CI-only values.
 
 ## Integrations
 
-| Name                                    | Required | Environments        | Secret | Notes                                          |
-| --------------------------------------- | -------- | ------------------- | ------ | ---------------------------------------------- |
-| `ASAAS_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when Asaas config is complete. |
-| `ASAAS_API_URL`                         | Yes      | staging, production | No     | Asaas API base URL.                            |
-| `ASAAS_API_KEY`                         | Yes      | staging, production | Yes    | Asaas API key.                                 |
-| `ASAAS_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | Asaas webhook secret.                          |
-| `ASAAS_WEBHOOK_URL`                     | Yes      | staging, production | No     | Public webhook URL.                            |
-| `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when SPEDY config is complete. |
-| `SPEDY_API_URL`                         | Yes      | staging, production | No     | SPEDY API base URL.                            |
-| `SPEDY_API_TOKEN`                       | Yes      | staging, production | Yes    | SPEDY API token.                               |
-| `SPEDY_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | SPEDY webhook secret.                          |
-| `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.              |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`           | No       | staging, production | Yes    | OpenTelemetry collector endpoint.              |
+| Name                                    | Required | Environments        | Secret | Notes                                              |
+| --------------------------------------- | -------- | ------------------- | ------ | -------------------------------------------------- |
+| `ASAAS_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when Asaas config is complete.     |
+| `ASAAS_API_URL`                         | Yes      | staging, production | No     | Asaas API base URL.                                |
+| `ASAAS_API_KEY`                         | Yes      | staging, production | Yes    | Asaas API key.                                     |
+| `ASAAS_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | Asaas webhook secret.                              |
+| `ASAAS_WEBHOOK_URL`                     | Yes      | staging, production | No     | Public webhook URL.                                |
+| `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when SPEDY config is complete.     |
+| `SPEDY_API_URL`                         | Yes      | staging, production | No     | SPEDY API base URL.                                |
+| `SPEDY_API_TOKEN`                       | Yes      | staging, production | Yes    | SPEDY API token.                                   |
+| `SPEDY_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | SPEDY webhook secret.                              |
+| `API_PLACA_KEY`                         | No       | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.   |
+| `API_PLACA_BASE_URL`                    | No       | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`. |
+| `API_PLACA_DADOS_PATH`                  | No       | staging, production | No     | Defaults to `/vehicles/base/000/dados`.            |
+| `API_OPENAI_KEY`                        | No       | staging, production | Yes    | OpenAI API key for inventory resale analysis.      |
+| `API_OPENAI_MODEL`                      | No       | staging, production | No     | Defaults to `gpt-5-mini`.                          |
+| `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                  |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`           | No       | staging, production | Yes    | OpenTelemetry collector endpoint.                  |
 
 ## CI Smoke Test Secrets
 

@@ -1,6 +1,8 @@
 import type {
   AuditEntityReference,
+  AuditFailureTier,
   AuditFieldChange,
+  AuditOutcome,
   SafeAuditMetadata,
 } from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
@@ -203,27 +205,28 @@ export async function auditVehicleServiceEvent(
       | "vehicle_operation"
       | "vehicle_sale"
       | "vehicle_unit";
+    failureTier?: AuditFailureTier;
     metadata?: SafeAuditMetadata;
+    outcome?: AuditOutcome;
     permission: PermissionKey;
     relatedEntities?: readonly AuditEntityReference[];
     summary: string;
   },
 ): Promise<void> {
+  const failureTier = input.failureTier ?? context.auditFailureTier;
   await context.audit.record({
     action: input.action,
     actor: context.actor,
     category: input.category,
     entityId: input.entityId,
     entityType: input.entityType ?? "vehicle_listing",
-    metadata: {
-      permission: input.permission,
-      ...(input.metadata ?? {}),
-    },
-    outcome: "succeeded",
+    metadata: { permission: input.permission, ...(input.metadata ?? {}) },
+    outcome: input.outcome ?? "succeeded",
     requestId: context.requestId,
     storeId: context.storeId,
     summary: input.summary,
     tenantId: context.tenantId,
+    ...(failureTier ? { failureTier } : {}),
     ...(input.changes ? { changes: input.changes } : {}),
     ...(input.relatedEntities
       ? { relatedEntities: input.relatedEntities }

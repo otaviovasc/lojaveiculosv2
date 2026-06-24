@@ -63,6 +63,7 @@ export function createDrizzleVehicleCatalogRepository(
         modelCode: version.fipeCode,
         modelName: version.name,
         modelYear: year.modelYear,
+        priceCents: year.priceCents,
         referenceMonth: year.referenceMonth,
         source: "fipe",
         vehicleType: input.vehicleType,

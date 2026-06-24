@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { readInventoryRouteState } from "./inventoryRouteState";
+import {
+  inventoryCreateHash,
+  inventoryListHash,
+  readInventoryRouteState,
+} from "./inventoryRouteState";
 
 describe("inventory route state", () => {
   it("reads create visual QA steps from the hash query", () => {
-    expect(readInventoryRouteState("#/inventory?view=create&step=media")).toEqual({
+    expect(
+      readInventoryRouteState("#/inventory?view=create&step=media"),
+    ).toEqual({
       createStep: "media",
+      listingId: null,
+      screenMode: "create",
+    });
+  });
+
+  it("reads the dedicated vehicle creation hash path", () => {
+    expect(readInventoryRouteState("#/inventory/create/catalog")).toEqual({
+      createStep: "catalog",
       listingId: null,
       screenMode: "create",
     });
@@ -20,5 +34,11 @@ describe("inventory route state", () => {
       listingId: "10000000-0000-4000-8000-000000000001",
       screenMode: "list",
     });
+  });
+
+  it("builds stable inventory list and creation hashes", () => {
+    expect(inventoryListHash()).toBe("/inventory");
+    expect(inventoryCreateHash()).toBe("/inventory/create");
+    expect(inventoryCreateHash("media")).toBe("/inventory/create/media");
   });
 });

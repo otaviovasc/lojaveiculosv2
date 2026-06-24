@@ -74,6 +74,10 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}`,
       baseUrl,
     ),
+  plateLookup: (baseUrl?: string) =>
+    createInventoryEndpoint("/inventory/enrichment/plate", baseUrl),
+  resaleAnalysis: (baseUrl?: string) =>
+    createInventoryEndpoint("/inventory/enrichment/resale-analysis", baseUrl),
   costs: (listingId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/listings/${encodeURIComponent(listingId)}/costs`,

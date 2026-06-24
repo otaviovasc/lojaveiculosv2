@@ -26,6 +26,7 @@ describe("inventory catalog controller", () => {
     await expect(snapshotResponse.json()).resolves.toMatchObject({
       brandName: "Fiat",
       modelName: "Toro Volcano",
+      priceCents: 12690000,
       source: "fipe",
     });
     expect(services.listCatalogBrands).toHaveBeenCalledWith(expect.anything(), {

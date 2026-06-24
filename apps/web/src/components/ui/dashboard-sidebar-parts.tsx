@@ -62,41 +62,76 @@ export function SidebarWorkspace({
       </div>
 
       <div className="flex items-center gap-2">
-        <button
-          className="group flex min-w-0 flex-1 items-center justify-between rounded-xl px-2.5 py-2 text-left border border-line/50 bg-app-elevated/30 hover:bg-app-elevated/70 hover:border-line-strong/50 transition-all duration-300 cursor-pointer shadow-sm"
-          onClick={() => setIsOpen((current) => !current)}
-          type="button"
-        >
-          <span className="flex min-w-0 items-center gap-2.5">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-panel dark:bg-white/5 shadow-inner border border-line-strong/10 group-hover:scale-105 transition-transform duration-300 p-1.5">
-              <img
-                src={
-                  theme === "dark"
-                    ? "/icons/logo_lv_white.svg"
-                    : "/icons/logo_lv.svg"
-                }
-                alt="Loja"
-                className="size-full object-contain select-none"
+        <div className="relative min-w-0 flex-1">
+          <button
+            className="group flex w-full min-w-0 items-center justify-between rounded-xl px-2.5 py-2 text-left border border-line/50 bg-app-elevated/30 hover:bg-app-elevated/70 hover:border-line-strong/50 transition-all duration-300 cursor-pointer shadow-sm"
+            onClick={() => setIsOpen((current) => !current)}
+            type="button"
+          >
+            <span className="flex min-w-0 items-center gap-2.5">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-panel dark:bg-white/5 shadow-inner border border-line-strong/10 group-hover:scale-105 transition-transform duration-300 p-1.5">
+                <img
+                  src={
+                    theme === "dark"
+                      ? "/icons/logo_lv_white.svg"
+                      : "/icons/logo_lv.svg"
+                  }
+                  alt="Loja"
+                  className="size-full object-contain select-none"
+                />
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <span className="truncate text-xs.5 font-black text-primary leading-tight group-hover:text-accent transition-colors">
+                  {name}
+                </span>
+                <span className="truncate text-[9px] font-black uppercase tracking-widest text-muted mt-0.5 flex items-center gap-1.5">
+                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  {meta}
+                </span>
+              </span>
+            </span>
+            <ChevronDown
+              aria-hidden="true"
+              className={
+                "size-3.5 shrink-0 text-muted transition-transform duration-300 " +
+                (isOpen
+                  ? "rotate-180 text-accent"
+                  : "group-hover:text-app-text")
+              }
+            />
+          </button>
+
+          {isOpen ? (
+            <>
+              <button
+                aria-label="Fechar seletor de loja"
+                className="fixed inset-0 z-40 cursor-default bg-transparent"
+                onClick={() => setIsOpen(false)}
+                type="button"
               />
-            </span>
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-xs.5 font-black text-primary leading-tight group-hover:text-accent transition-colors">
-                {name}
-              </span>
-              <span className="truncate text-[9px] font-black uppercase tracking-widest text-muted mt-0.5 flex items-center gap-1.5">
-                <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                {meta}
-              </span>
-            </span>
-          </span>
-          <ChevronDown
-            aria-hidden="true"
-            className={
-              "size-3.5 shrink-0 text-muted transition-transform duration-300 " +
-              (isOpen ? "rotate-180 text-accent" : "group-hover:text-app-text")
-            }
-          />
-        </button>
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-line bg-panel p-1.5 shadow-xl backdrop-blur-md">
+                <button
+                  className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-black text-accent bg-accent-soft border border-accent/10 transition-colors cursor-pointer"
+                  onClick={() => setIsOpen(false)}
+                  type="button"
+                >
+                  {name}
+                </button>
+                <div className="mx-2 my-1.5 h-px bg-line/60" />
+                <button
+                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-muted transition-colors hover:bg-app-elevated hover:text-app-text cursor-pointer"
+                  onClick={() => setIsOpen(false)}
+                  type="button"
+                >
+                  <span className="text-base leading-none font-bold text-accent">
+                    +
+                  </span>
+                  Criar loja
+                </button>
+              </div>
+            </>
+          ) : null}
+        </div>
 
         {onClose ? (
           <button
@@ -109,37 +144,6 @@ export function SidebarWorkspace({
           </button>
         ) : null}
       </div>
-
-      {isOpen ? (
-        <>
-          <button
-            aria-label="Fechar seletor de loja"
-            className="fixed inset-0 z-40 cursor-default bg-transparent"
-            onClick={() => setIsOpen(false)}
-            type="button"
-          />
-          <div className="absolute left-4 right-4 top-[5.25rem] z-50 rounded-xl border border-line bg-panel p-1.5 shadow-xl backdrop-blur-md">
-            <button
-              className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-black text-accent bg-accent-soft border border-accent/10 transition-colors cursor-pointer"
-              onClick={() => setIsOpen(false)}
-              type="button"
-            >
-              {name}
-            </button>
-            <div className="mx-2 my-1.5 h-px bg-line/60" />
-            <button
-              className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-muted transition-colors hover:bg-app-elevated hover:text-app-text cursor-pointer"
-              onClick={() => setIsOpen(false)}
-              type="button"
-            >
-              <span className="text-base leading-none font-bold text-accent">
-                +
-              </span>
-              Criar loja
-            </button>
-          </div>
-        </>
-      ) : null}
     </div>
   );
 }

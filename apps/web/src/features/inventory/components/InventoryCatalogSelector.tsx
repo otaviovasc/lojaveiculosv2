@@ -110,65 +110,82 @@ export function InventoryCatalogSelector({
   }, [api, brandCode, versionCode, vehicleType, yearCode]);
 
   return (
-    <div className="grid gap-4 lg:grid-cols-5">
-      <CatalogSelect
-        label="Tipo"
-        value={vehicleType}
-        onChange={(value) => {
-          setVehicleType(value as InventoryCatalogVehicleType);
-          resetCatalog(
-            setBrandCode,
-            setModelFamilyCode,
-            setVersionCode,
-            setYearCode,
-            onCatalogChange,
-          );
-        }}
-        options={[
-          { code: "cars", name: "Carro" },
-          { code: "motorcycles", name: "Moto" },
-          { code: "trucks", name: "Caminhao" },
-        ]}
-      />
-      <CatalogSelect
-        label="Marca FIPE"
-        value={brandCode}
-        onChange={(value) => {
-          setBrandCode(value);
-          setModelFamilyCode("");
-          setVersionCode("");
-          setYearCode("");
-          onCatalogChange(null);
-        }}
-        options={brands}
-      />
-      <CatalogSelect
-        label="Modelo"
-        value={modelFamilyCode}
-        onChange={(value) => {
-          setModelFamilyCode(value);
-          setVersionCode("");
-          setYearCode("");
-          onCatalogChange(null);
-        }}
-        options={models}
-      />
-      <CatalogSelect
-        label="Versao FIPE"
-        value={versionCode}
-        onChange={(value) => {
-          setVersionCode(value);
-          setYearCode("");
-          onCatalogChange(null);
-        }}
-        options={versions}
-      />
-      <CatalogSelect
-        label="Ano FIPE"
-        value={yearCode}
-        onChange={setYearCode}
-        options={years}
-      />
+    <div className="flex flex-col gap-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <CatalogSelect
+          label="Tipo"
+          value={vehicleType}
+          onChange={(value) => {
+            setVehicleType(value as InventoryCatalogVehicleType);
+            resetCatalog(
+              setBrandCode,
+              setModelFamilyCode,
+              setVersionCode,
+              setYearCode,
+              onCatalogChange,
+            );
+          }}
+          options={[
+            { code: "cars", name: "Carro" },
+            { code: "motorcycles", name: "Moto" },
+            { code: "trucks", name: "Caminhao" },
+          ]}
+        />
+        <CatalogSelect
+          label="Marca FIPE"
+          kind="brand"
+          combobox
+          disabled={!api || brands.length === 0}
+          value={brandCode}
+          onChange={(value) => {
+            setBrandCode(value);
+            setModelFamilyCode("");
+            setVersionCode("");
+            setYearCode("");
+            setModels([]);
+            setVersions([]);
+            setYears([]);
+            onCatalogChange(null);
+          }}
+          options={brands}
+        />
+        <CatalogSelect
+          label="Modelo"
+          combobox
+          disabled={!brandCode}
+          value={modelFamilyCode}
+          onChange={(value) => {
+            setModelFamilyCode(value);
+            setVersionCode("");
+            setYearCode("");
+            setVersions([]);
+            setYears([]);
+            onCatalogChange(null);
+          }}
+          options={models}
+        />
+        <CatalogSelect
+          label="Versao FIPE"
+          combobox
+          disabled={!modelFamilyCode}
+          value={versionCode}
+          onChange={(value) => {
+            setVersionCode(value);
+            setYearCode("");
+            setYears([]);
+            onCatalogChange(null);
+          }}
+          options={versions}
+        />
+        <CatalogSelect
+          label="Ano FIPE"
+          combobox
+          disabled={!versionCode}
+          value={yearCode}
+          onChange={setYearCode}
+          options={years}
+        />
+      </div>
       <CatalogStatus catalog={catalog} state={state} />
     </div>
   );

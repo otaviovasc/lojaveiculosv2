@@ -24,7 +24,11 @@ export type InventoryDocumentKind =
 export type InventoryDocumentTargetType = "vehicle_listing" | "vehicle_unit";
 export type InventoryCatalogVehicleType = "cars" | "motorcycles" | "trucks";
 
-export type InventoryCatalogOption = { code: string; name: string };
+export type InventoryCatalogOption = {
+  code: string;
+  imageUrl?: string | null;
+  name: string;
+};
 
 export type InventoryCatalogYearOption = InventoryCatalogOption & {
   fuelCode: string | null;
@@ -44,6 +48,7 @@ export type InventoryCatalogSnapshot = {
   modelCode: string | null;
   modelName: string | null;
   modelYear: number | null;
+  priceCents: number | null;
   referenceMonth: string | null;
   source: "fipe" | null;
   vehicleType: InventoryCatalogVehicleType | null;

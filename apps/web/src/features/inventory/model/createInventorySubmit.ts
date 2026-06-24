@@ -1,5 +1,9 @@
 import type { InventoryApi } from "../api/apiClient";
-import { createInventoryFlowInput, validateInventoryForm } from "./formModel";
+import {
+  createInventoryFlowInput,
+  validateInventoryForm,
+  parsePriceCents,
+} from "./formModel";
 import { uploadInventoryFile } from "./mediaWorkspaceTypes";
 import type { CreateMediaDraft } from "./createMediaDrafts";
 import type { InventoryFormState } from "./formModel";
@@ -60,6 +64,22 @@ export async function submitInventoryCreateFlow({
       mediaCount: media.length,
       message: createUnitFailureMessage(error),
     };
+  }
+
+  if (form.acquisitionPrice) {
+    const acquisitionPriceCents = parsePriceCents(form.acquisitionPrice);
+    if (acquisitionPriceCents !== null && acquisitionPriceCents > 0) {
+      onProgress({ label: "Registrando valor de entrada" });
+      try {
+        detail = await api.addCost(listingId, {
+          amountCents: acquisitionPriceCents,
+          kind: "acquisition",
+          description: "Valor de Entrada",
+        });
+      } catch (error) {
+        console.error("Failed to add acquisition cost:", error);
+      }
+    }
   }
 
   const attachedMediaIds: string[] = [];

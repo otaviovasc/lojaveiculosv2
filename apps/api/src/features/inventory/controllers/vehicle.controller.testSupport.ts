@@ -44,6 +44,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       modelCode: "4828",
       modelName: "Toro Volcano",
       modelYear: 2024,
+      priceCents: 12690000,
       referenceMonth: "junho de 2026",
       source: "fipe" as const,
       vehicleType: "cars" as const,

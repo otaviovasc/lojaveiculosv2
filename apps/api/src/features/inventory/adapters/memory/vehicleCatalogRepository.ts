@@ -34,6 +34,7 @@ export function createMemoryVehicleCatalogRepository(): VehicleCatalogRepository
       modelCode: input.versionCode,
       modelName: "Toro Volcano 2.0 16V 4x4 TB Diesel Aut.",
       modelYear: 2024,
+      priceCents: 12690000,
       referenceMonth: "junho de 2026",
       source: "fipe",
       vehicleType: input.vehicleType,

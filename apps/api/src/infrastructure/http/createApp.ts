@@ -15,6 +15,7 @@ import type { InternalMonitoringServices } from "../../features/internal/control
 import { createMarketplaceFeature } from "../../features/marketplaces/controllers/marketplace.controller.js";
 import type { MarketplaceServices } from "../../features/marketplaces/controllers/marketplaceServices.js";
 import type { InventoryListingServices } from "../../features/inventory/controllers/listingServices.js";
+import type { InventoryEnrichmentServices } from "../../features/inventory/controllers/inventoryEnrichmentServices.js";
 import { docsFeature } from "../../features/docs/controllers/docs.controller.js";
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import type { CrmServices } from "../../features/crm/controllers/crmServices.js";
@@ -52,6 +53,7 @@ export type CreateAppOptions = {
   identityVerifier?: HttpIdentityVerifier;
   internalMonitoringServices?: InternalMonitoringServices;
   marketplaceServices?: MarketplaceServices;
+  inventoryEnrichmentServices?: InventoryEnrichmentServices;
   inventoryListingServices?: InventoryListingServices;
   publicStorefrontRepository?: PublicStorefrontRepository;
   publicStorefrontCrmRepository?: CrmRepository;
@@ -103,6 +105,9 @@ export function createApp(options: CreateAppOptions = {}) {
         createHttpServiceContext(context, contextOptions),
       ...(options.inventoryListingServices
         ? { services: options.inventoryListingServices }
+        : {}),
+      ...(options.inventoryEnrichmentServices
+        ? { enrichmentServices: options.inventoryEnrichmentServices }
         : {}),
     }),
   );

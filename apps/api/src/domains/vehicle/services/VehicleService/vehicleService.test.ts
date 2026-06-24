@@ -34,6 +34,8 @@ describe("VehicleService", () => {
       expect.objectContaining({
         action: "vehicle_listing.create",
         entityId: "listing_1",
+        failureTier: "important",
+        outcome: "succeeded",
       }),
     );
   });

@@ -5,13 +5,19 @@ export type InventoryRouteState = {
 };
 
 export function readInventoryRouteState(hash: string): InventoryRouteState {
+  const path = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
   const query = hash.split("?")[1] ?? "";
   const params = new URLSearchParams(query);
+  const segments = path.split("/").filter(Boolean);
+  const isCreatePath =
+    segments[0] === "inventory" &&
+    (segments[1] === "create" || segments[1] === "new");
 
   return {
-    createStep: readCreateStep(params.get("step")),
+    createStep: readCreateStep(params.get("step") ?? segments[2] ?? null),
     listingId: params.get("listing"),
-    screenMode: params.get("view") === "create" ? "create" : "list",
+    screenMode:
+      params.get("view") === "create" || isCreatePath ? "create" : "list",
   };
 }
 
@@ -27,8 +33,11 @@ export function readCurrentInventoryRouteState() {
   return readInventoryRouteState(window.location.hash);
 }
 
-function readCreateStep(value: string | null): InventoryRouteState["createStep"] {
+function readCreateStep(
+  value: string | null,
+): InventoryRouteState["createStep"] {
   if (
+    value === "mode" ||
     value === "catalog" ||
     value === "data" ||
     value === "media" ||
@@ -38,4 +47,23 @@ function readCreateStep(value: string | null): InventoryRouteState["createStep"]
   }
 
   return "mode";
+}
+
+export function inventoryListHash() {
+  return "/inventory";
+}
+
+export function inventoryCreateHash(
+  step: InventoryRouteState["createStep"] = "mode",
+) {
+  return step === "mode" ? "/inventory/create" : `/inventory/create/${step}`;
+}
+
+export function writeInventoryScreenHash(
+  screenMode: "create" | "detail" | "list",
+  step: InventoryRouteState["createStep"] = "mode",
+) {
+  if (typeof window === "undefined" || screenMode === "detail") return;
+  window.location.hash =
+    screenMode === "create" ? inventoryCreateHash(step) : inventoryListHash();
 }

@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react";
+import { forwardRef, type ComponentProps, type ReactNode } from "react";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -34,17 +34,19 @@ export function InventoryPanel({
   );
 }
 
-export function InventoryField({ children, hint, label }: FieldProps) {
-  return (
-    <label className="grid gap-2 text-sm font-black text-app-text">
-      <span>{label}</span>
-      {children}
-      {hint ? (
-        <span className="text-xs font-bold text-muted">{hint}</span>
-      ) : null}
-    </label>
-  );
-}
+export const InventoryField = forwardRef<HTMLLabelElement, FieldProps>(
+  function InventoryField({ children, hint, label }, ref) {
+    return (
+      <label className="grid gap-2 text-sm font-black text-app-text" ref={ref}>
+        <span>{label}</span>
+        {children}
+        {hint ? (
+          <span className="text-xs font-bold text-muted">{hint}</span>
+        ) : null}
+      </label>
+    );
+  },
+);
 
 export function InventoryInput(props: ComponentProps<"input">) {
   return (

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { allowedCreateStatuses } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import { listingStatuses } from "./listingServices.js";
 
 export const listListingsQuerySchema = z.object({
@@ -17,6 +18,7 @@ const listingCatalogSchema = z.object({
   modelCode: z.string().trim().min(1).nullable(),
   modelName: z.string().trim().min(1).nullable(),
   modelYear: z.number().int().min(1886).max(2100).nullable(),
+  priceCents: z.number().int().nonnegative().nullable().default(null),
   referenceMonth: z.string().trim().min(1).nullable(),
   source: z.literal("fipe").nullable(),
   vehicleType: z.enum(vehicleCatalogTypes).nullable(),
@@ -31,7 +33,7 @@ export const createListingSchema = z.object({
   modelYear: z.number().int().min(1886).max(2100).nullable().optional(),
   plate: z.string().trim().min(1).nullable().default(null),
   priceCents: z.number().int().nonnegative().nullable().optional(),
-  status: z.enum(listingStatuses).optional(),
+  status: z.enum(allowedCreateStatuses).optional(),
   title: z.string().trim().min(1),
   trimName: z.string().trim().min(1).max(160).nullable().optional(),
 });

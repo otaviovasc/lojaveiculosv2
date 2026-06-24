@@ -36,9 +36,8 @@
 
 .custom-select-value {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .custom-select-chevron {
@@ -83,6 +82,11 @@
   padding: 0.5rem 0.625rem;
   text-align: left;
   width: 100%;
+}
+
+.custom-select-option > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .custom-select-option[data-active="true"] {

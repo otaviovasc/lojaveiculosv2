@@ -78,10 +78,30 @@ export async function handle(
       return context.json({ message: error.message }, error.statusCode);
     }
 
+    const providerStatusCode = readProviderStatusCode(error);
+    if (providerStatusCode) {
+      return context.json(
+        { message: error instanceof Error ? error.message : "Provider error." },
+        providerStatusCode,
+      );
+    }
+
     context.error = error instanceof Error ? error : new Error(String(error));
 
     return context.json({ message: "Internal server error." }, 500);
   }
+}
+
+function readProviderStatusCode(error: unknown): 502 | 503 | null {
+  if (!(error instanceof Error)) return null;
+  const statusCode = (error as Error & { statusCode?: unknown }).statusCode;
+  if (
+    error.name === "InventoryEnrichmentProviderError" &&
+    (statusCode === 502 || statusCode === 503)
+  ) {
+    return statusCode;
+  }
+  return null;
 }
 
 export class RequestValidationError extends Error {

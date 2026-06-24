@@ -38,6 +38,7 @@ describe("App module navigation", () => {
 
   it("parses hash module state without a router dependency", () => {
     expect(parseModuleHash("#inventory")).toBe("inventory");
+    expect(parseModuleHash("#/inventory/create")).toBe("inventory");
     expect(parseModuleHash("#/public-api")).toBe("public-api");
     expect(parseModuleHash("#/settings?tab=roles")).toBe("settings");
     expect(parseModuleHash("#/crm?surface=leads")).toBe("customers");

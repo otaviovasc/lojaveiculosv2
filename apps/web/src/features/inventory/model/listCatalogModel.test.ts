@@ -76,6 +76,7 @@ function summary(
         modelCode: "123",
         modelName: "Corolla",
         modelYear: 2025,
+        priceCents: 12345678,
         referenceMonth: "junho/2026",
         source: "fipe",
         vehicleType: "cars",

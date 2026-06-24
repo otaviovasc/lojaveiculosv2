@@ -113,6 +113,7 @@ export const vehicleCatalogYears = pgTable(
     lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
     modelYear: integer("model_year"),
     name: varchar("name", { length: 120 }).notNull(),
+    priceCents: integer("price_cents"),
     referenceMonth: varchar("reference_month", { length: 80 }),
     versionId: uuid("version_id")
       .notNull()

@@ -8,6 +8,7 @@ import {
   inventoryListingServices,
   type InventoryListingServices,
 } from "./listingServices.js";
+import type { InventoryEnrichmentServices } from "./inventoryEnrichmentServices.js";
 import {
   handle,
   parseJson,
@@ -32,6 +33,7 @@ import {
 import { registerInventoryMediaRoutes } from "./vehicle.media.controller.js";
 import { registerInventoryCatalogRoutes } from "./vehicle.catalog.controller.js";
 import { registerInventoryWorkflowRoutes } from "./vehicle.workflow.controller.js";
+import { registerInventoryEnrichmentRoutes } from "./vehicle.enrichment.controller.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
 
@@ -41,6 +43,7 @@ export type InventoryContextFactory = (
 
 export type CreateInventoryFeatureOptions = {
   contextFactory?: InventoryContextFactory;
+  enrichmentServices?: InventoryEnrichmentServices;
   services?: InventoryListingServices;
 };
 
@@ -184,6 +187,11 @@ export function createInventoryFeature(
   registerInventoryMediaRoutes(inventoryFeature, services, createContext);
   registerInventoryCatalogRoutes(inventoryFeature, services, createContext);
   registerInventoryWorkflowRoutes(inventoryFeature, services, createContext);
+  registerInventoryEnrichmentRoutes(
+    inventoryFeature,
+    createContext,
+    options.enrichmentServices,
+  );
 
   inventoryFeature.patch("/listings/:listingId/status", async (context) =>
     handle(context, async () => {

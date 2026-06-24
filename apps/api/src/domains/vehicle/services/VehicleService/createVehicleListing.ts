@@ -1,4 +1,7 @@
-import { assertPermission } from "../../../../shared/authorization.js";
+import {
+  assertPermission,
+  AuthorizationError,
+} from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type {
   VehicleListing,
@@ -14,6 +17,7 @@ import {
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
 
 const permission = "inventory.create";
+const allowedCreateStatuses = ["draft", "inactive", "available"] as const;
 
 export type CreateVehicleListingInput = {
   catalog?: VehicleListingCatalog | null;
@@ -27,13 +31,68 @@ export type CreateVehicleListingInput = {
   trimName?: string | null;
 };
 
+function requireStoreScope(context: ServiceContext): {
+  storeId: string;
+  tenantId: string;
+} {
+  if (context.storeId && context.tenantId) {
+    return { storeId: context.storeId, tenantId: context.tenantId };
+  }
+  throw new AuthorizationError(
+    "Vehicle listing creation requires a store-scoped context.",
+  );
+}
+
+async function auditPermissionDenial(
+  context: ServiceContext,
+  reason: "missing_scope" | "missing_permission" | "invalid_status",
+): Promise<void> {
+  await auditVehicleServiceEvent(context, {
+    action: "vehicle_listing.create",
+    category: "data_change",
+    entityId: "n/a",
+    failureTier: "important",
+    metadata: { denialReason: reason, permission },
+    outcome: "denied",
+    permission,
+    summary: "Vehicle listing creation denied",
+  });
+}
+
 export async function createVehicleListing(
   context: ServiceContext,
   input: CreateVehicleListingInput,
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
-  assertPermission(context, permission);
-  assertGenericListingStatusAllowed(input.status);
+  try {
+    assertPermission(context, permission);
+  } catch (error) {
+    await auditPermissionDenial(context, "missing_permission");
+    throw error;
+  }
+
+  let scope: { storeId: string; tenantId: string };
+  try {
+    scope = requireStoreScope(context);
+  } catch (error) {
+    await auditPermissionDenial(context, "missing_scope");
+    throw error;
+  }
+
+  try {
+    assertGenericListingStatusAllowed(input.status);
+    if (
+      input.status &&
+      !(allowedCreateStatuses as readonly string[]).includes(input.status)
+    ) {
+      throw new AuthorizationError(
+        `Listing status ${input.status} cannot be set on creation.`,
+      );
+    }
+  } catch (error) {
+    await auditPermissionDenial(context, "invalid_status");
+    throw error;
+  }
 
   logVehicleServiceEvent(context, "vehicle_listing.create.started", {
     plate: input.plate,
@@ -49,8 +108,8 @@ export async function createVehicleListing(
     plate: input.plate,
     priceCents: input.priceCents ?? null,
     status: input.status ?? "draft",
-    storeId: context.storeId,
-    tenantId: context.tenantId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
     title: input.title,
     trimName: input.trimName ?? input.catalog?.modelName ?? null,
   });
@@ -59,6 +118,7 @@ export async function createVehicleListing(
     action: "vehicle_listing.create",
     category: "data_change",
     entityId: listing.id,
+    failureTier: "important",
     metadata: {
       status: listing.status,
       title: listing.title,
@@ -70,3 +130,5 @@ export async function createVehicleListing(
 
   return listing;
 }
+
+export { allowedCreateStatuses };

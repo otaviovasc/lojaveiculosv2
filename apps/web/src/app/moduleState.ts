@@ -9,7 +9,8 @@ import type { ModuleId } from "./modules";
 const moduleIds = new Set(Object.keys(moduleDefinitions));
 
 export function parseModuleHash(hash: string): ModuleId {
-  const id = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
+  const path = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
+  const id = path.split("/").filter(Boolean)[0] ?? "";
 
   if (id === "crm" && readCrmSurfaceFromHash(hash) === "leads") {
     return "customers";

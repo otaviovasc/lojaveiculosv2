@@ -196,4 +196,55 @@ describe("createInventoryApi", () => {
       vin: "vin_2",
     });
   });
+
+  it("routes plate lookup and resale analysis through inventory enrichment", async () => {
+    const fake = createFakeFetch([
+      {
+        fipe: null,
+        metadata: [],
+        plate: "ABC1D23",
+        source: "apibrasil",
+        vehicle: {},
+      },
+      {
+        riskLevel: "low",
+        suggestedDescription: "Descricao gerada.",
+        summary: "Baixo risco.",
+        topics: [],
+      },
+    ]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await api.lookupPlate({ plate: "ABC1D23" });
+    await api.analyzeResale({
+      acquisitionPriceCents: null,
+      brand: "Fiat",
+      color: null,
+      fipePriceCents: null,
+      fuel: null,
+      manufactureYear: null,
+      metadata: [],
+      mileageKm: null,
+      model: "Strada",
+      modelYear: 2023,
+      plate: "ABC1D23",
+      recommendedAcquisitionPriceCents: null,
+      recommendedSellingPriceCents: null,
+      sellingPriceCents: null,
+      transmission: null,
+      version: "Ranch",
+    });
+
+    expect(callAt(fake.calls, 0).input).toBe(
+      "/api/v1/inventory/enrichment/plate",
+    );
+    expect(bodyOf(callAt(fake.calls, 0))).toEqual({ plate: "ABC1D23" });
+    expect(callAt(fake.calls, 1).input).toBe(
+      "/api/v1/inventory/enrichment/resale-analysis",
+    );
+    expect(bodyOf(callAt(fake.calls, 1))).toMatchObject({
+      brand: "Fiat",
+      model: "Strada",
+    });
+  });
 });

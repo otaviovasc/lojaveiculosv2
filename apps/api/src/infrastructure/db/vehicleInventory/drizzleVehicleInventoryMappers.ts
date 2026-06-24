@@ -85,6 +85,7 @@ function readListingCatalog(metadata: unknown): VehicleListingCatalog | null {
     modelCode: readString(catalog.modelCode),
     modelName: readString(catalog.modelName),
     modelYear: readNumber(catalog.modelYear),
+    priceCents: readNumber(catalog.priceCents),
     referenceMonth: readString(catalog.referenceMonth),
     source: catalog.source === "fipe" ? "fipe" : null,
     vehicleType: readVehicleType(catalog.vehicleType),

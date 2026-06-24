@@ -103,10 +103,23 @@ function toCatalogSnapshot(input: {
     modelCode: input.modelCode,
     modelName: input.details.model,
     modelYear: input.details.modelYear,
+    priceCents: parseFipePriceCents(input.details.price),
     referenceMonth: input.details.referenceMonth,
     source: "fipe",
     vehicleType: input.vehicleType,
     yearCode: input.yearCode,
     yearName: String(input.details.modelYear),
   };
+}
+
+export function parseFipePriceCents(value: string): number | null {
+  const normalized = value
+    .replace(/[^\d,.-]/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .trim();
+  if (!normalized) return null;
+  const amount = Number(normalized);
+  if (!Number.isFinite(amount) || amount < 0) return null;
+  return Math.round(amount * 100);
 }

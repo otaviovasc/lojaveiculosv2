@@ -18,6 +18,7 @@ export type VehicleCatalogSnapshot = {
   modelCode: string;
   modelName: string;
   modelYear: number | null;
+  priceCents: number | null;
   referenceMonth: string | null;
   source: "fipe";
   vehicleType: VehicleCatalogType;

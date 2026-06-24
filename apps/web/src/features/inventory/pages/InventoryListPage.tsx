@@ -1,10 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { createInventoryApi, type InventoryApi } from "../api/apiClient";
-import {
-  createInventoryApiOptions,
-  createInventoryRuntimeHeaders,
-} from "../api/inventoryRuntimeApi";
-import { downloadAndZipPhotos } from "../components/zipPhotos";
+import type { InventoryApi } from "../api/apiClient";
 import { InventoryListHeader } from "../components/InventoryListHeader";
 import {
   InventoryListingCardGrid,
@@ -15,212 +9,50 @@ import {
   InventoryListToolbar,
   InventoryLoadMore,
 } from "../components/InventoryListToolbar";
-import {
-  InventoryListModals,
-  type InventoryActionItem,
-} from "../components/InventoryListModals";
+import { InventoryListingTable } from "../components/InventoryListingTable";
+import { InventoryListModals } from "../components/InventoryListModals";
 import { InventoryCreateMode } from "./InventoryCreateMode";
 import { InventoryDetailWorkspace } from "../components/InventoryDetailWorkspace";
-import {
-  createInventoryErrorState,
-  createListQuery,
-  summarizeInventoryList,
-  type InventoryDetailSelectionState,
-  type InventoryListQueryInput,
-  type InventoryListState,
-  type InventoryListStatusFilter,
-} from "../model/listCatalogModel";
-import { readCurrentInventoryRouteState } from "../model/inventoryRouteState";
-import { useInventoryRouteSelection } from "../model/useInventoryRouteSelection";
-import type {
-  InventoryCatalogSnapshot,
-  InventoryListingDetail,
-  InventoryListingSummary,
-} from "../model/types";
-import type { InventoryStoreSettings } from "../components/InventoryPrintTypes";
-
-const initialListQuery: InventoryListQueryInput = { search: "", status: "" };
+import { useInventoryList } from "../model/useInventoryList";
 
 export function InventoryListPage({ api }: { api?: InventoryApi }) {
-  const routeStateRef = useRef(readCurrentInventoryRouteState());
-  const [runtimeApi, setRuntimeApi] = useState<InventoryApi | null>(
-    api ?? null,
-  );
-  const [screenMode, setScreenMode] = useState<"list" | "create" | "detail">(
-    routeStateRef.current.screenMode,
-  );
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<InventoryListStatusFilter>("");
-  const [appliedQuery, setAppliedQuery] = useState(initialListQuery);
-  const [listState, setListState] = useState<InventoryListState>({
-    kind: "loading",
-  });
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [detail, setDetail] = useState<InventoryListingDetail | null>(null);
-  const [selection, setSelection] = useState<InventoryDetailSelectionState>({
-    kind: "idle",
-  });
-  const editPanelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (detail) {
-      setTimeout(() => {
-        editPanelRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 80);
-    }
-  }, [detail]);
-
-  // V1 Migrated Actions and settings states
-  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
-  const [isTestDriveOpen, setIsTestDriveOpen] = useState(false);
-  const [activeSummaryItem, setActiveSummaryItem] =
-    useState<InventoryActionItem | null>(null);
-  const [storeSettings, setStoreSettings] =
-    useState<InventoryStoreSettings>(null);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const headers = await createInventoryRuntimeHeaders();
-        const res = await fetch("/api/v1/settings/store", { headers });
-        if (res.ok) {
-          const data = (await res.json()) as InventoryStoreSettings;
-          setStoreSettings(data);
-        }
-      } catch (err) {
-        console.error("Failed to load store settings", err);
-      }
-    };
-    void fetchSettings();
-  }, []);
-
-  const handleAction = async (
-    action: "template" | "test-drive" | "zip-photos",
-    item: InventoryListingSummary,
-  ) => {
-    if (action === "template") {
-      setListState({ kind: "loading" });
-      try {
-        const details = await runtimeApi?.getListing(item.listing.id);
-        setActiveSummaryItem({ ...item, media: details?.media || [] });
-        setIsTemplateOpen(true);
-      } catch (err) {
-        console.error(err);
-        setActiveSummaryItem({ ...item, media: [] });
-        setIsTemplateOpen(true);
-      } finally {
-        void loadListings(appliedQuery);
-      }
-    } else if (action === "test-drive") {
-      setActiveSummaryItem(item);
-      setIsTestDriveOpen(true);
-    } else if (action === "zip-photos") {
-      setLoadingMore(true);
-      try {
-        if (runtimeApi) {
-          await downloadAndZipPhotos(runtimeApi, item);
-        }
-      } catch (err) {
-        console.error(err);
-        alert("Erro ao baixar fotos do veículo.");
-      } finally {
-        setLoadingMore(false);
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (api) {
-      setRuntimeApi(api);
-    } else {
-      void createInventoryApiOptions().then((opts) =>
-        setRuntimeApi(createInventoryApi(opts)),
-      );
-    }
-  }, [api]);
-
-  const loadListings = useCallback(
-    async (
-      input: InventoryListQueryInput,
-      mode: "append" | "replace" = "replace",
-    ) => {
-      if (!runtimeApi) return;
-      if (mode === "append") setLoadingMore(true);
-      else setListState({ kind: "loading" });
-      try {
-        const result = await runtimeApi.listListings(createListQuery(input));
-        setListState((curr) =>
-          mode !== "append" || curr.kind !== "ready"
-            ? { kind: "ready", result }
-            : {
-                kind: "ready",
-                result: {
-                  ...result,
-                  items: [...curr.result.items, ...result.items],
-                  total: curr.result.items.length + result.items.length,
-                },
-              },
-        );
-      } catch (error) {
-        setListState(createInventoryErrorState(error));
-      } finally {
-        setLoadingMore(false);
-      }
-    },
-    [runtimeApi],
-  );
-
-  useEffect(() => {
-    void loadListings(initialListQuery);
-  }, [loadListings]);
-
-  useEffect(() => {
-    if (detail && screenMode === "list") {
-      setScreenMode("detail");
-    }
-  }, [detail, screenMode]);
-
-  useInventoryRouteSelection({
-    api: runtimeApi,
-    routeState: routeStateRef,
+  const {
+    routeStateRef,
+    runtimeApi,
+    screenMode,
+    setScreenMode,
+    search,
+    setSearch,
+    status,
+    setStatus,
+    appliedQuery,
+    listState,
+    loadingMore,
+    detail,
     setDetail,
-    setSelection,
-  });
-
-  const refreshListings = () => {
-    setAppliedQuery({ search, status });
-    void loadListings({ search, status });
-  };
-
-  const applyStatusFilter = (nextStatus: InventoryListStatusFilter) => {
-    const nextQuery = { search, status: nextStatus };
-    setStatus(nextStatus);
-    setAppliedQuery(nextQuery);
-    void loadListings(nextQuery);
-  };
-
-  const selectListing = async (listingId: string) => {
-    if (!runtimeApi) return;
-    setSelection({ kind: "loading", listingId });
-    try {
-      setDetail(await runtimeApi.getListing(listingId));
-      setSelection({ kind: "ready", listingId });
-    } catch (err) {
-      setSelection({
-        kind: "error",
-        message: err instanceof Error ? err.message : String(err),
-      });
-    }
-  };
-
-  const handleUpdated = (res: InventoryListingDetail) => {
-    setDetail(res);
-    setSelection({ kind: "ready", listingId: res.listing.id });
-    void loadListings(appliedQuery);
-  };
+    selection,
+    isTemplateOpen,
+    setIsTemplateOpen,
+    isTestDriveOpen,
+    setIsTestDriveOpen,
+    activeSummaryItem,
+    setActiveSummaryItem,
+    storeSettings,
+    viewMode,
+    handleViewModeChange,
+    sortBy,
+    setSortBy,
+    visibleColumns,
+    handleColumnToggle,
+    loadListings,
+    refreshListings,
+    applyStatusFilter,
+    selectListing,
+    handleUpdated,
+    handleAction,
+    sortedItems,
+    unfilteredSummary,
+  } = useInventoryList(api);
 
   if (screenMode === "create") {
     return (
@@ -249,10 +81,12 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     );
   }
 
-  const summary =
-    listState.kind === "ready"
-      ? summarizeInventoryList(listState.result)
-      : { available: 0, reserved: 0, sold: 0, total: 0 };
+  const summary = unfilteredSummary || {
+    available: 0,
+    reserved: 0,
+    sold: 0,
+    total: 0,
+  };
 
   return (
     <div className="relative min-h-screen store-dashboard overflow-hidden">
@@ -274,6 +108,12 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
           onStatusChange={setStatus}
           search={search}
           status={status}
+          viewMode={viewMode}
+          onViewModeChange={handleViewModeChange}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          visibleColumns={visibleColumns}
+          onColumnToggle={handleColumnToggle}
         />
         <div className="flex flex-col gap-6">
           <section className="w-full flex flex-col gap-6">
@@ -285,11 +125,20 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
             ) : null}
             {listState.kind === "ready" ? (
               <>
-                <InventoryListingCardGrid
-                  items={listState.result.items}
-                  onSelect={(listingId) => void selectListing(listingId)}
-                  onAction={(action, item) => void handleAction(action, item)}
-                />
+                {viewMode === "cards" ? (
+                  <InventoryListingCardGrid
+                    items={sortedItems}
+                    onSelect={(listingId) => void selectListing(listingId)}
+                    onAction={(action, item) => void handleAction(action, item)}
+                  />
+                ) : (
+                  <InventoryListingTable
+                    items={sortedItems}
+                    onSelect={(listingId) => void selectListing(listingId)}
+                    onAction={(action, item) => void handleAction(action, item)}
+                    visibleColumns={visibleColumns}
+                  />
+                )}
                 {listState.result.hasMore &&
                 listState.result.nextOffset !== null ? (
                   <InventoryLoadMore

@@ -1,12 +1,5 @@
-import {
-  ArrowDown,
-  ArrowUp,
-  ImageUp,
-  Trash2,
-  Upload,
-  Video,
-} from "lucide-react";
-import { useState, type ChangeEvent, type ReactNode } from "react";
+import { ImageUp, Upload } from "lucide-react";
+import { useState, type ChangeEvent } from "react";
 import {
   buildCreateMediaDrafts,
   createMediaLimits,
@@ -15,11 +8,8 @@ import {
   type CreateMediaDraft,
   type CreateMediaReject,
 } from "../model/createMediaDrafts";
-import {
-  InventoryBadge,
-  InventoryInput,
-  InventoryPanel,
-} from "./InventoryFormParts";
+import { InventoryPanel } from "./InventoryFormParts";
+import { InventoryCreateMediaCard } from "./InventoryCreateMediaCard";
 
 export function InventoryCreateMediaPanel({
   items,
@@ -29,6 +19,7 @@ export function InventoryCreateMediaPanel({
   onChange: (items: CreateMediaDraft[]) => void;
 }) {
   const [rejected, setRejected] = useState<CreateMediaReject[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleFiles = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -50,35 +41,36 @@ export function InventoryCreateMediaPanel({
 
   const photoCount = items.filter((item) => item.kind === "photo").length;
   const videoCount = items.filter((item) => item.kind === "video").length;
+  const reorderTo = (from: number, to: number) => {
+    if (from === to || from < 0 || to < 0 || from >= items.length) return;
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    if (!moved) return;
+    next.splice(Math.min(to, next.length), 0, moved);
+    onChange(next.map((item, displayOrder) => ({ ...item, displayOrder })));
+  };
 
   return (
     <InventoryPanel icon={<ImageUp className="size-5" />} title="Fotos e video">
       <div className="grid gap-4">
-        <label className="grid min-h-36 cursor-pointer place-items-center rounded-lg border border-dashed border-line bg-app p-4 text-center">
-          <Upload aria-hidden="true" className="mb-2 size-6 text-accent-strong" />
-          <span className="text-sm font-black text-app-text">
-            Enviar fotos, video ou preview
-          </span>
-          <span className="text-xs font-bold text-muted">
-            {photoCount}/{createMediaLimits.maxPhotos} fotos · {videoCount}/
-            {createMediaLimits.maxVideos} video · ate 25 MB
-          </span>
-          <input
-            accept="image/*,video/*,application/pdf"
-            className="sr-only"
-            multiple
-            onChange={handleFiles}
-            type="file"
-          />
-        </label>
-
         {items.length > 0 ? (
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {items.map((item, index) => (
-              <CreateMediaCard
+              <InventoryCreateMediaCard
                 item={item}
                 index={index}
                 key={item.id}
+                onDragEnd={() => setDraggedIndex(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDragStart={(event) => {
+                  setDraggedIndex(index);
+                  event.dataTransfer.effectAllowed = "move";
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (draggedIndex !== null) reorderTo(draggedIndex, index);
+                  setDraggedIndex(null);
+                }}
                 onAltText={(altText) =>
                   onChange(
                     items.map((candidate) =>
@@ -99,10 +91,34 @@ export function InventoryCreateMediaPanel({
             ))}
           </div>
         ) : (
-          <p className="text-sm font-bold text-muted">
-            A primeira foto publica sera usada como capa do anuncio.
-          </p>
+          <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-line bg-app/40 p-4 text-center">
+            <p className="text-sm font-bold text-muted">
+              Nenhuma foto selecionada. A primeira foto publica sera usada como
+              capa do anuncio.
+            </p>
+          </div>
         )}
+
+        <label className="grid min-h-36 cursor-pointer place-items-center rounded-xl border border-dashed border-line bg-app p-4 text-center transition-colors hover:bg-app-elevated">
+          <Upload
+            aria-hidden="true"
+            className="mb-2 size-6 text-accent-strong"
+          />
+          <span className="text-sm font-black text-app-text">
+            Enviar fotos, video ou preview
+          </span>
+          <span className="text-xs font-bold text-muted">
+            {photoCount}/{createMediaLimits.maxPhotos} fotos · {videoCount}/
+            {createMediaLimits.maxVideos} video · ate 25 MB
+          </span>
+          <input
+            accept="image/*,video/*,application/pdf"
+            className="sr-only"
+            multiple
+            onChange={handleFiles}
+            type="file"
+          />
+        </label>
 
         {rejected.length > 0 ? (
           <div className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-danger">
@@ -115,100 +131,6 @@ export function InventoryCreateMediaPanel({
   );
 }
 
-function CreateMediaCard({
-  item,
-  index,
-  onAltText,
-  onMove,
-  onRemove,
-}: {
-  item: CreateMediaDraft;
-  index: number;
-  onAltText: (value: string) => void;
-  onMove: (direction: -1 | 1) => void;
-  onRemove: () => void;
-}) {
-  return (
-    <article className="grid gap-3 rounded-lg border border-line bg-panel p-3">
-      <CreateMediaPreview item={item} />
-      <div className="flex items-center justify-between gap-2">
-        <InventoryBadge tone={index === 0 && item.kind === "photo" ? "accent" : "blue"}>
-          {index === 0 && item.kind === "photo" ? "capa" : item.kind}
-        </InventoryBadge>
-        <div className="flex gap-1">
-          <IconButton label="Subir" onClick={() => onMove(-1)}>
-            <ArrowUp className="size-4" />
-          </IconButton>
-          <IconButton label="Descer" onClick={() => onMove(1)}>
-            <ArrowDown className="size-4" />
-          </IconButton>
-          <IconButton label="Remover" onClick={onRemove}>
-            <Trash2 className="size-4" />
-          </IconButton>
-        </div>
-      </div>
-      <InventoryInput
-        aria-label="Texto alternativo"
-        onChange={(event) => onAltText(event.target.value)}
-        value={item.altText}
-      />
-    </article>
-  );
-}
-
-function CreateMediaPreview({ item }: { item: CreateMediaDraft }) {
-  if (item.kind === "photo" && item.previewUrl) {
-    return (
-      <img
-        alt={item.altText || "Preview da foto"}
-        className="aspect-video w-full rounded-lg bg-app object-cover"
-        src={item.previewUrl}
-      />
-    );
-  }
-
-  if (item.kind === "video" && item.previewUrl) {
-    return (
-      <video
-        className="aspect-video w-full rounded-lg bg-app object-cover"
-        muted
-        src={item.previewUrl}
-      />
-    );
-  }
-
-  return (
-    <div className="grid aspect-video place-items-center rounded-lg bg-accent-soft text-sm font-black text-accent-strong">
-      <Video aria-hidden="true" className="mb-2 size-5" />
-      {item.file.name}
-    </div>
-  );
-}
-
-function IconButton({
-  children,
-  label,
-  onClick,
-}: {
-  children: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      aria-label={label}
-      className="icon-button"
-      onClick={onClick}
-      title={label}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
 function formatRejects(rejected: readonly CreateMediaReject[]) {
-  return rejected
-    .map((item) => `${item.fileName}: ${item.reason}`)
-    .join(" ");
+  return rejected.map((item) => `${item.fileName}: ${item.reason}`).join(" ");
 }

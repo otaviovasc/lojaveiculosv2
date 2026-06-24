@@ -100,6 +100,7 @@ export function createDrizzleVehicleCatalogWrites(
           fipeCode: input.fipeCode,
           fuel: input.fuel,
           modelYear: input.modelYear,
+          priceCents: input.priceCents,
           referenceMonth: input.referenceMonth,
         })
         .where(

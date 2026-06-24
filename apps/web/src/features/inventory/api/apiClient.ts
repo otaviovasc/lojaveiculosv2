@@ -13,6 +13,11 @@ import type {
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
 } from "../model/types";
+import type {
+  InventoryPlateLookupResponse,
+  InventoryResaleAnalysisRequest,
+  InventoryResaleAnalysisResponse,
+} from "../model/enrichmentTypes";
 import {
   createInventoryCatalogApi,
   type InventoryCatalogApi,
@@ -52,6 +57,12 @@ export type InventoryApi = {
     input: CreateInventoryListingInput,
   ) => Promise<InventoryListingDetail>;
   getListing: (listingId: string) => Promise<InventoryListingDetail>;
+  lookupPlate: (input: {
+    plate: string;
+  }) => Promise<InventoryPlateLookupResponse>;
+  analyzeResale: (
+    input: InventoryResaleAnalysisRequest,
+  ) => Promise<InventoryResaleAnalysisResponse>;
   listListings: (input?: ListInventoryInput) => Promise<InventoryListingList>;
   reserveListing: (
     listingId: string,
@@ -130,6 +141,18 @@ export function createInventoryApi({
       },
     );
 
+  const lookupPlate = (input: { plate: string }) =>
+    postJson<InventoryPlateLookupResponse>(
+      inventoryRoutes.plateLookup(baseUrl),
+      input,
+    );
+
+  const analyzeResale = (input: InventoryResaleAnalysisRequest) =>
+    postJson<InventoryResaleAnalysisResponse>(
+      inventoryRoutes.resaleAnalysis(baseUrl),
+      input,
+    );
+
   const reserveListing = (
     listingId: string,
     input: ReserveInventoryListingInput,
@@ -205,6 +228,7 @@ export function createInventoryApi({
 
   return {
     addCost,
+    analyzeResale,
     attachUnit,
     createFlow: async (input) => {
       const listing = await createListing(input.listing);
@@ -228,6 +252,7 @@ export function createInventoryApi({
     },
     createListing,
     getListing,
+    lookupPlate,
     ...catalogApi,
     listListings,
     ...mediaApi,

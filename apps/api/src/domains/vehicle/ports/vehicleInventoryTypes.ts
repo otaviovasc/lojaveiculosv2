@@ -34,6 +34,7 @@ export type VehicleListingCatalog = {
   modelCode: string | null;
   modelName: string | null;
   modelYear: number | null;
+  priceCents: number | null;
   referenceMonth: string | null;
   source: "fipe" | null;
   vehicleType: "cars" | "motorcycles" | "trucks" | null;
