@@ -1,16 +1,30 @@
-import { useState } from "react";
-import { CustomSelect } from "../../components/ui/CustomSelect";
-import { kindOptions } from "./documentLabels";
-import { DocumentRowActions } from "./DocumentWorkspaceRowActions";
 import {
-  documentContextLabel,
+  Bot,
+  CarFront,
+  Download,
+  FileSearch,
+  FolderArchive,
+  Layers3,
+  Trash2,
+  UploadCloud,
+} from "lucide-react";
+import type { ReactNode } from "react";
+import { MercosulPlateBadge } from "../inventory/components/InventoryListingCardGrid";
+import {
+  documentActorLabel,
+  documentOrigin,
+  documentOriginLabel,
+  documentScope,
+  documentScopeLabel,
+  documentVehicleInfo,
+} from "./documentDisplayModel";
+import {
   documentFileLabel,
   documentKindBadge,
-  documentPrimaryParty,
   documentStatusBadge,
   formatDateTime,
 } from "./documentsWorkspaceModel";
-import type { DocumentKind, WorkspaceDocument } from "./types";
+import type { WorkspaceDocument } from "./types";
 
 export function DocumentsTable({
   documents,
@@ -18,79 +32,80 @@ export function DocumentsTable({
   onDelete,
   onDownload,
   onSelect,
-  onUpdate,
+  selectedDocumentId = null,
 }: {
   documents: readonly WorkspaceDocument[];
   isBusy: boolean;
   onDelete: (document: WorkspaceDocument) => void;
   onDownload: (documentId: string) => Promise<void>;
   onSelect: (document: WorkspaceDocument) => void;
-  onUpdate: (
-    document: WorkspaceDocument,
-    input: { kind: DocumentKind; title: string },
-  ) => Promise<void>;
+  selectedDocumentId?: string | null;
 }) {
-  const [editingDocumentId, setEditingDocumentId] = useState<string | null>(
-    null,
-  );
-  const [editTitle, setEditTitle] = useState("");
-  const [editKind, setEditKind] = useState<DocumentKind>("other");
-  const [savingDocumentId, setSavingDocumentId] = useState<string | null>(null);
-
-  if (documents.length === 0) {
-    return <p className="documents-empty">Nenhum documento encontrado.</p>;
-  }
-
-  const startEditing = (document: WorkspaceDocument) => {
-    setEditingDocumentId(document.id);
-    setEditTitle(document.title);
-    setEditKind(document.kind);
-  };
-
-  const cancelEditing = () => {
-    setEditingDocumentId(null);
-    setEditTitle("");
-    setEditKind("other");
-  };
-
-  const saveEditing = async (document: WorkspaceDocument) => {
-    setSavingDocumentId(document.id);
-    try {
-      await onUpdate(document, { kind: editKind, title: editTitle.trim() });
-      cancelEditing();
-    } finally {
-      setSavingDocumentId(null);
-    }
-  };
+  if (documents.length === 0) return null;
 
   return (
-    <div className="documents-table documents-rich-table">
+    <div className="documents-list">
       {documents.map((document) => {
-        const isEditing = editingDocumentId === document.id;
+        const isSelected = selectedDocumentId === document.id;
+
         return (
-          <article className="documents-row" key={document.id}>
-            {isEditing ? (
-              <DocumentRowEditor
-                kind={editKind}
-                onKindChange={setEditKind}
-                onTitleChange={setEditTitle}
-                title={editTitle}
+          <article
+            className={
+              isSelected
+                ? "documents-list-item is-selected"
+                : "documents-list-item"
+            }
+            key={document.id}
+          >
+            <button
+              className="documents-list-main"
+              onClick={() => onSelect(document)}
+              type="button"
+            >
+              <div className="documents-list-title">
+                <strong>{document.title}</strong>
+                <span>{document.file.fileName}</span>
+              </div>
+
+              <div className="documents-list-badges">
+                <DocumentOriginBadge document={document} />
+                <DocumentScopeBadge document={document} />
+                <span className={`documents-status status-${document.status}`}>
+                  {documentStatusBadge(document)}
+                </span>
+              </div>
+
+              <div className="documents-list-meta">
+                <DocumentUnitMeta document={document} />
+                <span>{documentKindBadge(document)}</span>
+                <time dateTime={document.uploadedAt}>
+                  {formatDateTime(document.uploadedAt)}
+                </time>
+                <span>{documentActorLabel(document)}</span>
+                <span>{documentFileLabel(document)}</span>
+              </div>
+            </button>
+
+            <div className="documents-row-actions">
+              <IconAction
+                disabled={isBusy}
+                icon={<FileSearch aria-hidden="true" className="size-4" />}
+                label="Visualizar documento"
+                onClick={() => onSelect(document)}
               />
-            ) : (
-              <DocumentRowReadOnly document={document} onSelect={onSelect} />
-            )}
-            <DocumentRowActions
-              document={document}
-              isBusy={isBusy}
-              isEditing={isEditing}
-              isSaving={savingDocumentId === document.id}
-              onCancel={cancelEditing}
-              onDelete={onDelete}
-              onDownload={onDownload}
-              onEdit={startEditing}
-              onSave={saveEditing}
-              onSelect={onSelect}
-            />
+              <IconAction
+                disabled={isBusy}
+                icon={<Download aria-hidden="true" className="size-4" />}
+                label="Baixar documento"
+                onClick={() => void onDownload(document.id)}
+              />
+              <IconAction
+                disabled={isBusy || document.status === "voided"}
+                icon={<Trash2 aria-hidden="true" className="size-4" />}
+                label="Excluir documento"
+                onClick={() => onDelete(document)}
+              />
+            </div>
           </article>
         );
       })}
@@ -98,64 +113,74 @@ export function DocumentsTable({
   );
 }
 
-function DocumentRowEditor({
-  kind,
-  onKindChange,
-  onTitleChange,
-  title,
-}: {
-  kind: DocumentKind;
-  onKindChange: (kind: DocumentKind) => void;
-  onTitleChange: (title: string) => void;
-  title: string;
-}) {
+function DocumentUnitMeta({ document }: { document: WorkspaceDocument }) {
+  const vehicle = documentVehicleInfo(document);
+  if (!vehicle) return <span>Geral</span>;
+
   return (
-    <div className="documents-row-editor">
-      <input
-        onChange={(event) => onTitleChange(event.target.value)}
-        value={title}
-      />
-      <CustomSelect
-        onChange={onKindChange}
-        options={kindOptions
-          .filter((option) => option.value)
-          .map((option) => ({
-            label: option.label,
-            value: option.value as DocumentKind,
-          }))}
-        value={kind}
-      />
-    </div>
+    <span className="documents-unit-meta">
+      {vehicle.plate ? <MercosulPlateBadge plate={vehicle.plate} /> : null}
+      <span>{[vehicle.label, vehicle.vin].filter(Boolean).join(" · ")}</span>
+    </span>
   );
 }
 
-function DocumentRowReadOnly({
+export function DocumentOriginBadge({
   document,
-  onSelect,
 }: {
   document: WorkspaceDocument;
-  onSelect: (document: WorkspaceDocument) => void;
+}) {
+  const origin = documentOrigin(document);
+  const Icon = origin === "manual" ? UploadCloud : Bot;
+  return (
+    <span className={`documents-origin-badge origin-${origin}`}>
+      <Icon aria-hidden="true" className="size-3.5" />
+      {documentOriginLabel(document)}
+    </span>
+  );
+}
+
+export function DocumentScopeBadge({
+  document,
+}: {
+  document: WorkspaceDocument;
+}) {
+  const scope = documentScope(document);
+  const Icon =
+    scope === "multiple_vehicles"
+      ? Layers3
+      : scope === "vehicle"
+        ? CarFront
+        : FolderArchive;
+  return (
+    <span className={`documents-scope-badge scope-${scope}`}>
+      <Icon aria-hidden="true" className="size-3.5" />
+      {documentScopeLabel(document)}
+    </span>
+  );
+}
+
+function IconAction({
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  disabled?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
 }) {
   return (
     <button
-      className="documents-row-main"
-      onClick={() => onSelect(document)}
+      aria-label={label}
+      className="documents-icon-button"
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
       type="button"
     >
-      <div>
-        <strong>{document.title}</strong>
-        <small>{document.file.fileName}</small>
-      </div>
-      <span>{documentKindBadge(document)}</span>
-      <span className={`documents-status status-${document.status}`}>
-        {documentStatusBadge(document)}
-      </span>
-      <span>{documentContextLabel(document)}</span>
-      <span>{documentPrimaryParty(document)}</span>
-      <time dateTime={document.uploadedAt}>
-        {formatDateTime(document.uploadedAt)}
-      </time>
-      <span>{documentFileLabel(document)}</span>
+      {icon}
     </button>
   );
 }

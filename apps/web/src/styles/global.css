@@ -28,10 +28,14 @@
 @import "./billing.css";
 @import "./billing-panels.css";
 @import "./documents.css";
-@import "./documents-workspace.css";
+@import "./documents-command.css";
+@import "./documents-command-navigation.css";
+@import "./documents-command-table.css";
 @import "./documents-operations.css";
 @import "./documents-upload.css";
+@import "./documents-upload-queue.css";
 @import "./documents-templates.css";
+@import "./documents-template-paper.css";
 @import "./internal.css";
 @import "./internalLists.css";
 @import "./internalDashboard.css";

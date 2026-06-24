@@ -31,6 +31,8 @@ Each persistent environment should contain:
 
 - Full loop: `docs/maximum-agentic-loop-railway-terraform.md`
 - Deploy runbook: `docs/runbooks/deploy.md`
+- Basic V1 to V2 migration runbook:
+  `docs/runbooks/v1-to-v2-basic-migration.md`
 - Incident runbook: `docs/runbooks/incidents.md`
 - Rollback runbook: `docs/runbooks/rollback.md`
 - Variables: `docs/ops/env-vars.md`

@@ -113,6 +113,20 @@ export type RequestDocumentUploadInput = {
   targetType?: DocumentLinkTarget;
 };
 
+export type VehicleDocumentTargetType = Extract<
+  DocumentLinkTarget,
+  "vehicle_unit"
+>;
+
+export type RequestVehicleDocumentUploadInput = {
+  contentType: string;
+  fileName: string;
+  kind: DocumentKind;
+  sizeBytes: number;
+  targetId: string;
+  targetType: VehicleDocumentTargetType;
+};
+
 export type CreateUploadedDocumentInput = {
   fileName: string;
   fileSizeBytes: number | null;
@@ -124,8 +138,16 @@ export type CreateUploadedDocumentInput = {
   title: string;
 };
 
+export type CreateVehicleUploadedDocumentInput = CreateUploadedDocumentInput & {
+  targetId: string;
+  targetType: VehicleDocumentTargetType;
+};
+
 export type UpdateDocumentInput = {
   kind?: DocumentKind;
+  linkRole?: string;
+  targetId?: string;
+  targetType?: DocumentLinkTarget;
   title?: string;
 };
 

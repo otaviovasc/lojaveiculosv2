@@ -1,0 +1,174 @@
+.documents-template-paper {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.9rem;
+  min-height: 43rem;
+  padding: 1.15rem;
+}
+
+.documents-generated-paper {
+  min-height: 34rem;
+}
+
+.documents-template-paper-heading {
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding-bottom: 1rem;
+}
+
+.documents-template-paper-brand,
+.documents-template-paper-title,
+.documents-template-paper-brand div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.documents-template-paper-brand {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.documents-template-paper-brand > span {
+  align-items: center;
+  background: var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: var(--color-inverse);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 950;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.documents-template-paper-brand strong,
+.documents-template-paper-title strong {
+  font-size: 0.92rem;
+  font-weight: 950;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.documents-template-paper-title {
+  justify-items: end;
+  text-align: right;
+}
+
+.documents-template-paper-intro,
+.documents-template-paper-clauses p {
+  color: var(--color-text);
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.documents-template-paper-section,
+.documents-template-paper-clauses {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.documents-template-paper-section h3,
+.documents-template-paper-clauses h3 {
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
+  font-size: 0.76rem;
+  font-weight: 950;
+  margin: 0;
+  padding-bottom: 0.35rem;
+  text-transform: uppercase;
+}
+
+.documents-template-paper-fields {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.documents-template-paper-fields div {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.2rem;
+  min-height: 3.35rem;
+  padding: 0.52rem;
+}
+
+.documents-template-paper-fields dd {
+  font-size: 0.8rem;
+  font-weight: 900;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.documents-template-paper-clauses {
+  gap: 0.65rem;
+}
+
+.documents-template-paper-clauses p {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 0.75rem;
+}
+
+.documents-template-paper-clauses span {
+  color: var(--color-accent-strong);
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 950;
+  margin-bottom: 0.15rem;
+  text-transform: uppercase;
+}
+
+.documents-template-paper-check {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 900;
+  gap: 0.45rem;
+  padding: 0.55rem;
+}
+
+.documents-template-paper-signatures {
+  align-self: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 2rem;
+}
+
+.documents-template-paper-signatures span {
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding-top: 0.45rem;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .documents-template-paper-heading,
+  .documents-template-paper-fields,
+  .documents-template-paper-signatures {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-template-paper-heading {
+    display: grid;
+  }
+
+  .documents-template-paper-title {
+    justify-items: start;
+    text-align: left;
+  }
+}

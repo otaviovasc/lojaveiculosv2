@@ -139,8 +139,11 @@ export function createTestDocumentRepository(): TestDocumentRepository {
       const document = findDocument(documents, input);
       if (!document) throw new Error(`Document not found: ${input.documentId}`);
       if (input.kind) document.kind = input.kind;
+      if (input.linkRole) document.linkRole = input.linkRole;
       if (input.metadata) document.metadata = input.metadata;
       if (input.status) document.status = input.status;
+      if (input.targetId) document.targetId = input.targetId;
+      if (input.targetType) document.targetType = input.targetType;
       if (input.title) document.title = input.title;
       document.updatedAt = new Date();
       if (input.status === "issued") document.uploadedAt = document.updatedAt;

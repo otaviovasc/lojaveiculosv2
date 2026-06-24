@@ -1,5 +1,14 @@
-import { FileImage, FileText, Trash2 } from "lucide-react";
-import { CustomSelect } from "../../components/ui/CustomSelect";
+import {
+  CheckCircle2,
+  FileImage,
+  FileText,
+  Loader2,
+  Trash2,
+} from "lucide-react";
+import {
+  InventoryInput,
+  InventorySelect,
+} from "../inventory/components/InventoryFormParts";
 import { kindOptions } from "./documentLabels";
 import type { DocumentKind } from "./types";
 
@@ -7,6 +16,8 @@ export type UploadQueueItem = {
   file: File;
   id: string;
   kind: DocumentKind;
+  progress?: number;
+  status?: "queued" | "uploading" | "done" | "error";
   title: string;
 };
 
@@ -27,54 +38,104 @@ export function DocumentUploadQueue({
   if (items.length === 0) return null;
 
   return (
-    <div className="documents-upload-queue">
-      {items.map((item) => (
-        <article className="documents-upload-item" key={item.id}>
-          {item.file.type.startsWith("image/") ? (
-            <FileImage aria-hidden="true" className="size-4" />
-          ) : (
-            <FileText aria-hidden="true" className="size-4" />
-          )}
-          <div>
-            <small>
-              {item.file.name} · {formatFileSize(item.file.size)}
-            </small>
-            <input
+    <section className="documents-upload-queue" aria-label="Fila de envio">
+      <header className="documents-upload-queue-header">
+        <strong>
+          {items.length === 1
+            ? "1 arquivo selecionado"
+            : `${items.length} arquivos selecionados`}
+        </strong>
+        <span>Revise título e tipo antes de salvar.</span>
+      </header>
+      <div className="documents-upload-list">
+        {items.map((item, index) => (
+          <article className="documents-upload-item" key={item.id}>
+            <span className="documents-upload-file-icon">
+              {item.file.type.startsWith("image/") ? (
+                <FileImage aria-hidden="true" className="size-4" />
+              ) : (
+                <FileText aria-hidden="true" className="size-4" />
+              )}
+            </span>
+            <div className="documents-upload-item-main">
+              <small>
+                {item.file.name} · {formatFileSize(item.file.size)}
+              </small>
+              <label>
+                <span>Título do documento</span>
+                <InventoryInput
+                  aria-label={`Título do arquivo ${item.file.name}`}
+                  disabled={isUploading}
+                  onChange={(event) =>
+                    onUpdate(item.id, { title: event.target.value })
+                  }
+                  placeholder={`Documento ${index + 1}`}
+                  value={item.title}
+                />
+              </label>
+            </div>
+            <label className="documents-upload-kind-field">
+              <span>Tipo</span>
+              <InventorySelect
+                ariaLabel={`Tipo do arquivo ${item.file.name}`}
+                disabled={isUploading}
+                onChange={(kind) =>
+                  onUpdate(item.id, {
+                    kind,
+                  })
+                }
+                options={kindOptions
+                  .filter((option) => option.value)
+                  .map((option) => ({
+                    label: option.label,
+                    value: option.value as DocumentKind,
+                  }))}
+                value={item.kind}
+              />
+            </label>
+            <UploadItemStatus item={item} />
+            <button
+              aria-label={`Remover ${item.file.name}`}
               disabled={isUploading}
-              onChange={(event) =>
-                onUpdate(item.id, { title: event.target.value })
-              }
-              value={item.title}
-            />
-          </div>
-          <CustomSelect
-            disabled={isUploading}
-            onChange={(kind) =>
-              onUpdate(item.id, {
-                kind,
-              })
-            }
-            options={kindOptions
-              .filter((option) => option.value)
-              .map((option) => ({
-                label: option.label,
-                value: option.value as DocumentKind,
-              }))}
-            value={item.kind}
-          />
-          <button
-            aria-label="Remover arquivo"
-            disabled={isUploading}
-            onClick={() => onRemove(item.id)}
-            title="Remover arquivo"
-            type="button"
-          >
-            <Trash2 aria-hidden="true" className="size-4" />
-          </button>
-        </article>
-      ))}
-    </div>
+              onClick={() => onRemove(item.id)}
+              title="Remover arquivo"
+              type="button"
+            >
+              <Trash2 aria-hidden="true" className="size-4" />
+            </button>
+          </article>
+        ))}
+      </div>
+    </section>
   );
+}
+
+function UploadItemStatus({ item }: { item: UploadQueueItem }) {
+  const status = item.status ?? "queued";
+  if (status === "uploading") {
+    return (
+      <span className="documents-upload-item-status" data-status={status}>
+        <Loader2 aria-hidden="true" className="size-4" />
+        Enviando
+      </span>
+    );
+  }
+  if (status === "done") {
+    return (
+      <span className="documents-upload-item-status" data-status={status}>
+        <CheckCircle2 aria-hidden="true" className="size-4" />
+        Pronto
+      </span>
+    );
+  }
+  if (status === "error") {
+    return (
+      <span className="documents-upload-item-status" data-status={status}>
+        Falhou
+      </span>
+    );
+  }
+  return <span className="documents-upload-item-status">Na fila</span>;
 }
 
 function formatFileSize(size: number) {

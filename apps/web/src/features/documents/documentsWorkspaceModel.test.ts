@@ -1,23 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
-  buildDocumentFolders,
+  buildDocumentTopLevelGroups,
   createFolderKey,
   documentPrimaryParty,
-  filterDocumentsByFolder,
+  filterDocumentsByGroup,
 } from "./documentsWorkspaceModel";
 import type { WorkspaceDocument } from "./types";
 
 describe("documents workspace model", () => {
-  it("groups folders by V2 document link target instead of document kind", () => {
+  it("groups documents into exactly 2 top-level groups (geral + unidades)", () => {
     const documents = [
       createDocument({
         id: "doc_1",
         kind: "sale_contract",
-        metadata: {
-          buyerName: "Ana Cliente",
-          plate: "ABC1D23",
-          vehicleTitle: "Fiat Toro Volcano 2023",
-        },
+        metadata: { plate: "ABC1D23" },
         targetId: "listing_1",
         targetType: "vehicle_listing",
         uploadedAt: "2026-06-01T10:00:00.000Z",
@@ -26,7 +22,7 @@ describe("documents workspace model", () => {
         id: "doc_2",
         kind: "sale_receipt",
         targetId: "listing_1",
-        targetType: "vehicle_listing",
+        targetType: "vehicle_unit",
         uploadedAt: "2026-06-02T10:00:00.000Z",
       }),
       createDocument({
@@ -35,26 +31,60 @@ describe("documents workspace model", () => {
         targetId: "store_1",
         targetType: "store",
       }),
+      createDocument({
+        id: "doc_4",
+        kind: "other",
+        targetId: "lead_1",
+        targetType: "lead",
+      }),
     ];
 
-    const folders = buildDocumentFolders(documents);
+    const groups = buildDocumentTopLevelGroups(documents);
 
-    expect(folders).toHaveLength(2);
-    expect(folders[0]).toMatchObject({
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({
       count: 2,
-      key: "vehicle_listing:listing_1",
-      latestAt: "2026-06-02T10:00:00.000Z",
-      subtitle: "Veiculo · ABC1D23",
-      title: "Fiat Toro Volcano 2023",
-    });
-    expect(folders[1]).toMatchObject({
-      count: 1,
-      key: "store:store_1",
+      key: "geral",
+      latestAt: "2026-06-01T09:00:00.000Z",
       title: "Documentos gerais",
+    });
+    expect(groups[1]).toMatchObject({
+      count: 2,
+      key: "veiculos",
+      latestAt: "2026-06-02T10:00:00.000Z",
+      title: "Unidades",
     });
   });
 
-  it("filters visible documents by selected folder key", () => {
+  it("returns both groups when documents list is empty", () => {
+    const groups = buildDocumentTopLevelGroups([]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((group) => group.key)).toEqual(["geral", "veiculos"]);
+  });
+
+  it("counts issued and pendingSignature documents per group", () => {
+    const documents = [
+      createDocument({
+        id: "doc_issued",
+        status: "issued",
+        targetId: "listing_1",
+        targetType: "vehicle_listing",
+      }),
+      createDocument({
+        id: "doc_signed",
+        status: "pending_signature",
+        targetId: "listing_1",
+        targetType: "vehicle_listing",
+      }),
+    ];
+
+    const groups = buildDocumentTopLevelGroups(documents);
+    const vehicles = groups.find((group) => group.key === "veiculos");
+    expect(vehicles?.issued).toBe(1);
+    expect(vehicles?.pendingSignature).toBe(1);
+  });
+
+  it("filters documents by selected group key (geral excludes unit-linked)", () => {
     const vehicleDocument = createDocument({
       id: "doc_vehicle",
       targetId: "listing_1",
@@ -65,14 +95,31 @@ describe("documents workspace model", () => {
       targetId: "store_1",
       targetType: "store",
     });
+    const leadDocument = createDocument({
+      id: "doc_lead",
+      targetId: "lead_1",
+      targetType: "lead",
+    });
 
     expect(createFolderKey(vehicleDocument)).toBe("vehicle_listing:listing_1");
     expect(
-      filterDocumentsByFolder(
-        [vehicleDocument, storeDocument],
-        "vehicle_listing:listing_1",
+      filterDocumentsByGroup(
+        [vehicleDocument, storeDocument, leadDocument],
+        "geral",
+      ),
+    ).toEqual([storeDocument, leadDocument]);
+    expect(
+      filterDocumentsByGroup(
+        [vehicleDocument, storeDocument, leadDocument],
+        "veiculos",
       ),
     ).toEqual([vehicleDocument]);
+    expect(
+      filterDocumentsByGroup(
+        [vehicleDocument, storeDocument, leadDocument],
+        null,
+      ),
+    ).toEqual([vehicleDocument, storeDocument, leadDocument]);
     expect(documentPrimaryParty(storeDocument)).toBe("Sem cliente informado");
   });
 });

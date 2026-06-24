@@ -119,5 +119,19 @@ function summary(
       updatedAt: "2026-01-01T00:00:00.000Z",
       vin: null,
     },
+    units: [
+      {
+        createdAt: "2026-01-01T00:00:00.000Z",
+        id: "unit_1",
+        listingId: id,
+        plate: "ABC1D23",
+        status: "available",
+        stockNumber: "STK-1",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+        vin: null,
+      },
+    ],
   };
 }

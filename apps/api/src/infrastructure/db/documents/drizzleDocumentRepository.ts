@@ -9,6 +9,7 @@ import type {
   LinkedDocument,
   ListDocumentsInput,
 } from "../../../domains/documents/ports/documentRepository.js";
+import { toInsertLink, updateDocumentLink } from "./drizzleDocumentLinks.js";
 import { createDrizzleDocumentTemplateMethods } from "./drizzleDocumentTemplates.js";
 import {
   createDrizzleDocumentVersionMethods,
@@ -18,7 +19,6 @@ import {
 type DocumentRow = InferSelectModel<typeof documents>;
 type InsertDocumentRow = InferInsertModel<typeof documents>;
 type DocumentLinkRow = InferSelectModel<typeof documentLinks>;
-type InsertDocumentLinkRow = InferInsertModel<typeof documentLinks>;
 
 export type DrizzleDocumentClient = PostgresJsDatabase<typeof schema>;
 
@@ -121,6 +121,7 @@ export function createDrizzleDocumentRepository(
             eq(documents.isDeleted, false),
           ),
         );
+      await updateDocumentLink(db, input);
       const document = await findScopedDocument(db, input);
       if (!document) throw new Error(`Document not found: ${input.documentId}`);
       return document;
@@ -189,20 +190,6 @@ function toInsertDocument(input: CreateLinkedDocumentInput): InsertDocumentRow {
     storeId: input.storeId,
     tenantId: input.tenantId,
     title: input.title,
-  };
-}
-
-function toInsertLink(
-  input: CreateLinkedDocumentInput,
-  documentId: string,
-): InsertDocumentLinkRow {
-  return {
-    documentId,
-    linkRole: input.linkRole,
-    storeId: input.storeId,
-    targetId: input.targetId,
-    targetType: input.targetType,
-    tenantId: input.tenantId,
   };
 }
 

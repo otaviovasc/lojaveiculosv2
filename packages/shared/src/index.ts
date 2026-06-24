@@ -28,6 +28,7 @@ export type PermissionKey =
   | "documents.preview"
   | "documents.regenerate"
   | "documents.template_update"
+  | "documents.update_links"
   | "documents.update_metadata"
   | "documents.upload"
   | "documents.void"

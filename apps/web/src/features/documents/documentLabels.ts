@@ -18,13 +18,19 @@ export function targetLabel(target: DocumentLinkTarget) {
 
 export const kindOptions: Array<{ label: string; value: DocumentKind | "" }> = [
   { label: "Todos os tipos", value: "" },
+  { label: "Cadastro comprador", value: "buyer_document" },
   { label: "Contrato", value: "sale_contract" },
+  { label: "Documento da unidade", value: "vehicle_registration" },
+  { label: "Financeiro", value: "finance_receipt" },
+  { label: "Interno", value: "internal" },
+  { label: "Nota fiscal", value: "invoice" },
+  { label: "Outro", value: "other" },
+  { label: "Procuração", value: "power_of_attorney" },
   { label: "Recibo", value: "sale_receipt" },
   { label: "Reserva", value: "reservation_receipt" },
-  { label: "Financeiro", value: "finance_receipt" },
-  { label: "Cadastro comprador", value: "buyer_document" },
+  { label: "Termo de entrega", value: "delivery_term" },
+  { label: "Test drive", value: "test_drive" },
   { label: "Vistoria", value: "inspection" },
-  { label: "Interno", value: "internal" },
 ];
 
 export const statusOptions: Array<{
@@ -45,7 +51,7 @@ export const targetOptions: Array<{
   value: DocumentLinkTarget | "";
 }> = [
   { label: "Todos os contextos", value: "" },
-  { label: "Veiculo", value: "vehicle_listing" },
+  { label: "Anúncio do veículo", value: "vehicle_listing" },
   { label: "Unidade", value: "vehicle_unit" },
   { label: "Lead", value: "lead" },
   { label: "Venda", value: "sale" },

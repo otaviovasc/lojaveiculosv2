@@ -1,34 +1,36 @@
 import {
+  documentLinks,
+  documents,
+  documentVersions,
   vehicleListings,
   vehicleMedia,
   vehicleUnits,
 } from "@lojaveiculosv2/db";
 import type { DrizzleVehicleInventoryClient } from "./drizzleVehicleInventoryRepository.js";
 import type {
-  InsertVehicleListingRow,
-  InsertVehicleMediaRow,
-  InsertVehicleUnitRow,
   UpdateVehicleListingRow,
   UpdateVehicleUnitRow,
+  VehicleDocumentLinkRow,
+  VehicleDocumentRow,
   VehicleListingRow,
   VehicleMediaRow,
   VehicleUnitRow,
 } from "./drizzleVehicleInventoryMappers.js";
+import {
+  createRows,
+  type DocumentVersionRow,
+  type InsertRecord,
+  type StoredRows,
+  type UpdateRecord,
+} from "./drizzleVehicleInventoryRepository.testRows.js";
 
-type InsertRecord =
-  | InsertVehicleListingRow
-  | InsertVehicleMediaRow
-  | InsertVehicleUnitRow;
-type UpdateRecord = UpdateVehicleListingRow | UpdateVehicleUnitRow;
-
-type StoredRows = {
-  listings: VehicleListingRow[];
-  media: VehicleMediaRow[];
-  units: VehicleUnitRow[];
-};
+export { createRows } from "./drizzleVehicleInventoryRepository.testRows.js";
 
 export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
   const rows: StoredRows = {
+    documentLinks: initialRows.documentLinks ?? [],
+    documentVersions: initialRows.documentVersions ?? [],
+    documents: initialRows.documents ?? [],
     listings: initialRows.listings ?? [],
     media: initialRows.media ?? [],
     units: initialRows.units ?? [],
@@ -66,6 +68,36 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
                 return [row];
               }
 
+              if (table === documents) {
+                const row = {
+                  ...rowFactory.document(),
+                  ...(record as Partial<VehicleDocumentRow>),
+                  id: `document_${rows.documents.length + 1}`,
+                };
+                rows.documents.push(row);
+                return [row];
+              }
+
+              if (table === documentLinks) {
+                const row = {
+                  ...rowFactory.documentLink(),
+                  ...(record as Partial<VehicleDocumentLinkRow>),
+                  id: `document_link_${rows.documentLinks.length + 1}`,
+                };
+                rows.documentLinks.push(row);
+                return [row];
+              }
+
+              if (table === documentVersions) {
+                const row = {
+                  ...rowFactory.documentVersion(),
+                  ...(record as Partial<DocumentVersionRow>),
+                  id: `document_version_${rows.documentVersions.length + 1}`,
+                };
+                rows.documentVersions.push(row);
+                return [row];
+              }
+
               const row = {
                 ...rowFactory.unit(),
                 ...(record as Partial<VehicleUnitRow>),
@@ -85,6 +117,9 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
             async where() {
               if (table === vehicleListings) return rows.listings;
               if (table === vehicleMedia) return rows.media;
+              if (table === documents) return rows.documents;
+              if (table === documentLinks) return rows.documentLinks;
+              if (table === documentVersions) return rows.documentVersions;
               return rows.units;
             },
           };

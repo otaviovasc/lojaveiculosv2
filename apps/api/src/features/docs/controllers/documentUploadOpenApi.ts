@@ -61,6 +61,12 @@ export const documentUploadSchemas = {
     additionalProperties: false,
     properties: {
       kind: { type: "string" },
+      linkRole: { type: "string", minLength: 1, maxLength: 80 },
+      targetId: { type: "string" },
+      targetType: {
+        type: "string",
+        enum: ["store", "vehicle_listing", "vehicle_unit"],
+      },
       title: { type: "string" },
     },
   },
@@ -88,9 +94,12 @@ export const documentUploadPaths = {
   "/api/v1/documents/{documentId}": {
     patch: {
       tags: ["Documents"],
-      summary: "Update document title or kind",
+      summary: "Update document metadata or primary link",
       operationId: "updateDocumentMetadata",
-      security: [{ bearerAuth: ["documents.update_metadata"] }],
+      security: [
+        { bearerAuth: ["documents.update_metadata"] },
+        { bearerAuth: ["documents.update_links"] },
+      ],
       parameters: [pathDocumentId()],
       requestBody: jsonRequest("UpdateDocumentMetadataRequest"),
       responses: {
@@ -98,7 +107,8 @@ export const documentUploadPaths = {
         "400": { description: "Request body is invalid." },
         "401": { description: "Authentication is required." },
         "403": {
-          description: "documents.update_metadata permission is required.",
+          description:
+            "documents.update_metadata and/or documents.update_links permission is required for the changed fields.",
         },
         "404": { description: "Document was not found." },
       },

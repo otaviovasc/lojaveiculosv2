@@ -31,36 +31,42 @@ const defaults: Record<
   delivery_term: {
     title: "Termo de entrega",
     clauses: [
-      "As partes registram a entrega do veiculo descrito e a ciencia das condicoes cadastradas.",
-      "O comprador declara ter recebido o veiculo e os documentos informados pela loja.",
+      "A loja declara que entregou o veiculo {{vehicle.title}}, placa {{vehicle.plate}}, ao comprador {{buyer.name}}, que assume a posse direta nesta data.",
+      "O comprador declara ter vistoriado o veiculo, recebido as informacoes essenciais da venda e conferido os documentos disponiveis.",
+      "A partir da entrega, multas, tributos, guarda, uso e demais responsabilidades de circulacao seguem as condicoes registradas na venda.",
     ],
   },
   power_of_attorney: {
     title: "Procuracao",
     clauses: [
-      "Documento-base para poderes de transferencia conforme dados da venda registrada.",
-      "A loja deve revisar os dados das partes antes de usar este documento fora do sistema.",
+      "O comprador {{buyer.name}} autoriza os poderes necessarios para transferencia e regularizacao do veiculo {{vehicle.title}}, placa {{vehicle.plate}}.",
+      "Os poderes ficam limitados aos atos administrativos vinculados a esta venda e aos dados cadastrados no sistema.",
+      "Antes de uso externo, a loja deve conferir documentos pessoais, dados do veiculo, reconhecimento de firma e exigencias locais.",
     ],
   },
   reservation_receipt: {
     title: "Recibo de sinal",
     clauses: [
-      "A loja declara o recebimento do sinal informado para reserva do veiculo descrito.",
-      "A reserva deve manter trilha de auditoria do comprador, valor, metodo e operador.",
+      "A loja declara ter recebido de {{buyer.name}} o sinal de {{finance.signalAmount}} para reserva do veiculo {{vehicle.title}}, placa {{vehicle.plate}}.",
+      "O valor recebido foi registrado com a forma de pagamento {{finance.paymentMethod}} e fica vinculado a negociacao deste veiculo.",
+      "A reserva nao transfere propriedade do veiculo e deve seguir o prazo, as condicoes comerciais e a trilha de auditoria da operacao.",
     ],
   },
   sale_contract: {
     title: "Contrato de compra e venda",
     clauses: [
-      "Contrato-base de compra e venda gerado a partir da venda registrada no sistema.",
-      "As condicoes comerciais seguem os valores, veiculo e comprador informados nesta operacao.",
+      "A loja vende a {{buyer.name}} o veiculo {{vehicle.title}}, placa {{vehicle.plate}}, conforme dados cadastrados na operacao.",
+      "O preco ajustado para a venda e de {{finance.salePrice}}, pago conforme a forma {{finance.paymentMethod}} e demais lancamentos vinculados.",
+      "O comprador declara ciencia das caracteristicas, estado de conservacao, documentos apresentados e responsabilidades posteriores a entrega.",
+      "As partes reconhecem que este contrato foi gerado a partir dos dados registrados no sistema e deve ser conferido antes de assinatura.",
     ],
   },
   sale_receipt: {
     title: "Recibo de venda",
     clauses: [
-      "A loja registra o recebimento do valor informado para a venda do veiculo.",
-      "Este recibo acompanha a venda registrada e seus respectivos pagamentos.",
+      "A loja registra o recebimento de {{finance.salePrice}} referente a venda do veiculo {{vehicle.title}} ao comprador {{buyer.name}}.",
+      "O pagamento foi associado a forma {{finance.paymentMethod}} e aos lancamentos financeiros vinculados a esta operacao.",
+      "Este recibo acompanha a venda registrada e deve ser arquivado junto aos demais documentos do veiculo.",
     ],
   },
 };

@@ -13,7 +13,7 @@ type ListingDetailBody = {
 
 type ListingListBody = {
   hasMore?: boolean;
-  items?: readonly { listing?: { id?: string } }[];
+  items?: readonly { listing?: { id?: string }; units?: unknown[] }[];
   nextOffset?: number | null;
   total?: number;
 };
@@ -33,6 +33,7 @@ describe("inventory read routes", () => {
     expect(body.nextOffset).toBeNull();
     expect(body.total).toBe(1);
     expect(body.items?.[0]?.listing?.id).toBe("listing_1");
+    expect(body.items?.[0]?.units).toHaveLength(1);
     expect(services.listListings).toHaveBeenCalledWith(expect.any(Object), {
       limit: 20,
       offset: 40,

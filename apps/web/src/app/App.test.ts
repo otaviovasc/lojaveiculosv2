@@ -5,7 +5,7 @@ import {
   crmSurfaceHash,
   readCrmSurfaceFromHash,
 } from "../features/crm/crmRouteState";
-import { parseModuleHash } from "./moduleState";
+import { parseModuleHash, parseModuleLocation } from "./moduleState";
 import { navigationGroups } from "./modules";
 
 describe("App module navigation", () => {
@@ -44,6 +44,12 @@ describe("App module navigation", () => {
     expect(parseModuleHash("#/crm?surface=leads")).toBe("customers");
     expect(parseModuleHash("#/crm?surface=whatsapp")).toBe("crm");
     expect(parseModuleHash("#unknown")).toBe("dashboard");
+  });
+
+  it("parses direct document paths when no valid hash module exists", () => {
+    expect(
+      parseModuleLocation({ hash: "#unknown", pathname: "/documents" }),
+    ).toBe("documents");
   });
 
   it("keeps CRM surfaces deterministic for visual QA routes", () => {

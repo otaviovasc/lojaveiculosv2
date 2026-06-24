@@ -1,70 +1,98 @@
 import { kindLabel, statusLabel, targetLabel } from "./documentLabels";
+import { isVehicleDocumentTargetType } from "./documentDisplayModel";
 import type { WorkspaceDocument } from "./types";
 
-export type DocumentFolder = {
+// Two structural top-level groups covering all 9 DocumentLinkTarget types:
+// - "geral": store-linked documents (NOT tied to any vehicle)
+// - "veiculos": vehicle-linked documents (vehicle_listing + vehicle_unit)
+// All 7 non-vehicle target types (lead, sale, sale_payment, finance_entry,
+// financing_inquiry, fiscal_document, store) map to "geral".
+export type DocumentTopGroup = {
   count: number;
   issued: number;
-  key: string;
+  key: "geral" | "veiculos";
   latestAt: string;
   pendingSignature: number;
   subtitle: string;
-  targetId: string;
-  targetType: WorkspaceDocument["context"]["targetType"];
   title: string;
 };
 
-export function buildDocumentFolders(
+export function buildDocumentTopLevelGroups(
   documents: readonly WorkspaceDocument[],
-): DocumentFolder[] {
-  const groups = new Map<string, WorkspaceDocument[]>();
+): DocumentTopGroup[] {
+  const geralDocs = documents.filter(
+    (d) => !isVehicleDocumentTargetType(d.context.targetType),
+  );
+  const unitDocs = documents.filter((d) =>
+    isVehicleDocumentTargetType(d.context.targetType),
+  );
 
-  for (const document of documents) {
-    const key = createFolderKey(document);
-    groups.set(key, [...(groups.get(key) ?? []), document]);
+  const groups: DocumentTopGroup[] = [];
+
+  if (geralDocs.length > 0 || documents.length === 0) {
+    groups.push(buildGroup("geral", geralDocs));
+  }
+  if (unitDocs.length > 0 || documents.length === 0) {
+    groups.push(buildGroup("veiculos", unitDocs));
   }
 
-  return [...groups.values()]
-    .map((folderDocuments) => {
-      const [first] = folderDocuments;
-      if (!first) throw new Error("Document folder cannot be empty.");
-      const latest = folderDocuments.reduce((current, document) =>
-        new Date(document.uploadedAt) > new Date(current.uploadedAt)
-          ? document
-          : current,
-      );
-      return {
-        count: folderDocuments.length,
-        issued: folderDocuments.filter((document) => document.status === "issued")
-          .length,
-        key: createFolderKey(first),
-        latestAt: latest.uploadedAt,
-        pendingSignature: folderDocuments.filter(
-          (document) => document.status === "pending_signature",
-        ).length,
-        subtitle: folderSubtitle(first),
-        targetId: first.context.targetId,
-        targetType: first.context.targetType,
-        title: folderTitle(first),
-      };
-    })
-    .sort((left, right) => {
-      const vehiclePriority =
-        Number(isVehicleFolder(right)) - Number(isVehicleFolder(left));
-      if (vehiclePriority !== 0) return vehiclePriority;
-      return new Date(right.latestAt).getTime() - new Date(left.latestAt).getTime();
-    });
+  return groups;
+}
+
+function buildGroup(
+  key: "geral" | "veiculos",
+  docs: readonly WorkspaceDocument[],
+): DocumentTopGroup {
+  const latest = docs.reduce<WorkspaceDocument | undefined>(
+    (current, document) =>
+      !current || new Date(document.uploadedAt) > new Date(current.uploadedAt)
+        ? document
+        : current,
+    undefined,
+  );
+
+  return {
+    count: docs.length,
+    issued: docs.filter((d) => d.status === "issued").length,
+    key,
+    latestAt: latest?.uploadedAt ?? new Date().toISOString(),
+    pendingSignature: docs.filter((d) => d.status === "pending_signature")
+      .length,
+    subtitle: groupSubtitle(key),
+    title: groupTitle(key),
+  };
+}
+
+function groupTitle(key: "geral" | "veiculos"): string {
+  return key === "geral" ? "Documentos gerais" : "Unidades";
+}
+
+function groupSubtitle(key: "geral" | "veiculos"): string {
+  return key === "geral"
+    ? "Documentos da loja sem vínculo com unidade"
+    : "Recibos, contratos e termos vinculados a unidades";
+}
+
+export function filterDocumentsByGroup(
+  documents: readonly WorkspaceDocument[],
+  groupKey: string | null,
+) {
+  if (!groupKey) return documents;
+  if (groupKey === "geral") {
+    return documents.filter(
+      (d) => !isVehicleDocumentTargetType(d.context.targetType),
+    );
+  }
+  if (groupKey === "veiculos") {
+    return documents.filter((d) =>
+      isVehicleDocumentTargetType(d.context.targetType),
+    );
+  }
+  return documents;
 }
 
 export function createFolderKey(document: WorkspaceDocument) {
   return `${document.context.targetType}:${document.context.targetId}`;
-}
-
-export function filterDocumentsByFolder(
-  documents: readonly WorkspaceDocument[],
-  folderKey: string | null,
-) {
-  if (!folderKey) return documents;
-  return documents.filter((document) => createFolderKey(document) === folderKey);
 }
 
 export function documentPrimaryParty(document: WorkspaceDocument) {
@@ -106,42 +134,6 @@ export function formatDateTime(value: string) {
     month: "2-digit",
     year: "2-digit",
   }).format(new Date(value));
-}
-
-function folderTitle(document: WorkspaceDocument) {
-  if (document.context.targetType === "store") return "Documentos gerais";
-  return (
-    readMetadataString(document, [
-      "vehicleTitle",
-      "vehicleName",
-      "listingTitle",
-      "unitTitle",
-      "targetTitle",
-      "targetName",
-      "saleTitle",
-      "leadName",
-      "buyerName",
-    ]) ?? documentContextLabel(document)
-  );
-}
-
-function folderSubtitle(document: WorkspaceDocument) {
-  const plate = readMetadataString(document, [
-    "plate",
-    "licensePlate",
-    "plateFinal",
-    "vehiclePlate",
-  ]);
-  const party = documentPrimaryParty(document);
-  const context = targetLabel(document.context.targetType);
-
-  return plate ? `${context} · ${plate}` : `${context} · ${party}`;
-}
-
-function isVehicleFolder(folder: DocumentFolder) {
-  return (
-    folder.targetType === "vehicle_listing" || folder.targetType === "vehicle_unit"
-  );
 }
 
 function readMetadataString(

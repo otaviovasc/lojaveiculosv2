@@ -72,7 +72,6 @@ const documentKinds = [
   "test_drive",
   "vehicle_registration",
 ] as const;
-const documentTargetTypes = ["vehicle_listing", "vehicle_unit"] as const;
 export const catalogQuerySchema = z.object({
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
 });
@@ -133,8 +132,8 @@ export const documentUploadSchema = z.object({
     .int()
     .positive()
     .max(25 * 1024 * 1024),
-  targetId: z.string().trim().min(1).optional(),
-  targetType: z.enum(documentTargetTypes).optional(),
+  targetId: z.string().trim().min(1),
+  targetType: z.literal("vehicle_unit"),
 });
 
 export const attachDocumentSchema = z.object({
@@ -144,8 +143,8 @@ export const attachDocumentSchema = z.object({
   linkRole: z.string().trim().min(1).max(80).optional(),
   mimeType: z.string().trim().min(1).max(120).nullable().optional(),
   storageKey: z.string().trim().min(1),
-  targetId: z.string().trim().min(1).optional(),
-  targetType: z.enum(documentTargetTypes).optional(),
+  targetId: z.string().trim().min(1),
+  targetType: z.literal("vehicle_unit"),
   title: z.string().trim().min(1).max(191),
 });
 

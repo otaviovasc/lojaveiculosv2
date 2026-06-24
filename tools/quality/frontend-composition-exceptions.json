@@ -1,0 +1,37 @@
+{
+  "description": "Temporary exceptions for pre-existing composition files that still declare local components or local types. New screen/module/page/view/workspace files should not be added here without a tracked cleanup reason.",
+  "files": [
+    {
+      "path": "apps/web/src/features/billing/BillingModule.tsx",
+      "reason": "Pre-existing local load-state type; remove during billing cleanup."
+    },
+    {
+      "path": "apps/web/src/features/finance/FinanceModule.tsx",
+      "reason": "Pre-existing local list-state type; remove during finance cleanup."
+    },
+    {
+      "path": "apps/web/src/features/fiscal/FiscalModule.tsx",
+      "reason": "Pre-existing local provider/metric helpers; remove during fiscal cleanup."
+    },
+    {
+      "path": "apps/web/src/features/inventory/components/InventoryMediaWorkspace.tsx",
+      "reason": "Pre-existing local media readiness helpers; remove during inventory media cleanup."
+    },
+    {
+      "path": "apps/web/src/features/inventory/pages/InventoryCreatePage.tsx",
+      "reason": "Pre-existing local selection type; remove during inventory create cleanup."
+    },
+    {
+      "path": "apps/web/src/features/marketplaces/MarketplaceModule.tsx",
+      "reason": "Pre-existing local load-state type; remove during marketplace cleanup."
+    },
+    {
+      "path": "apps/web/src/features/publicApi/PublicApiModule.tsx",
+      "reason": "Pre-existing local load-state type; remove during public API cleanup."
+    },
+    {
+      "path": "apps/web/src/features/reports/ReportsModule.tsx",
+      "reason": "Pre-existing local dashboard helpers; remove during reports cleanup."
+    }
+  ]
+}

@@ -1,10 +1,33 @@
-import { Ban, Download, FileSearch, RefreshCcw, X } from "lucide-react";
+import {
+  Download,
+  Edit3,
+  FileSearch,
+  Link2,
+  RefreshCcw,
+  Trash2,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
-import AnimatedContent from "../../components/ui/AnimatedContent";
+import type { ReactNode } from "react";
+import { DocumentMetadataEditor } from "./DocumentMetadataEditor";
+import { DocumentGeneratedPreview } from "./DocumentGeneratedPreview";
+import {
+  DocumentOriginBadge,
+  DocumentScopeBadge,
+} from "./DocumentWorkspaceTable";
+import {
+  documentActorLabel,
+  documentOrigin,
+  documentScopeLabel,
+  documentVehicleInfo,
+  formatFileSizeLabel,
+} from "./documentDisplayModel";
+import { kindLabel, statusLabel } from "./documentLabels";
+import { documentFileLabel, formatDateTime } from "./documentsWorkspaceModel";
 import type {
+  DocumentKind,
   DocumentPreview,
   DocumentVersion,
-  VoidDocumentInput,
   WorkspaceDocument,
 } from "./types";
 
@@ -12,183 +35,234 @@ export function DocumentDetailPanel({
   document,
   isBusy,
   onClose,
+  onDelete,
   onDownload,
+  onManageLinks,
   onPreview,
   onRegenerate,
-  onVoid,
+  onUpdate,
   preview,
   versions,
 }: {
   document: WorkspaceDocument | null;
   isBusy: boolean;
   onClose: () => void;
+  onDelete: (document: WorkspaceDocument) => void;
   onDownload: (documentId: string, versionId?: string) => Promise<void>;
+  onManageLinks: (document: WorkspaceDocument) => void;
   onPreview: (documentId: string) => Promise<void>;
   onRegenerate: (documentId: string) => Promise<void>;
-  onVoid: (documentId: string, input: VoidDocumentInput) => Promise<void>;
+  onUpdate: (
+    document: WorkspaceDocument,
+    input: { kind: DocumentKind; title: string },
+  ) => Promise<WorkspaceDocument | null>;
   preview: DocumentPreview | null;
   versions: DocumentVersion[];
 }) {
-  const [voidReason, setVoidReason] = useState("");
+  const [isEditingMetadata, setIsEditingMetadata] = useState(false);
 
   useEffect(() => {
     if (document) void onPreview(document.id);
-    setVoidReason("");
+  }, [document?.id]);
+
+  useEffect(() => {
+    if (!document) return;
+    setIsEditingMetadata(false);
   }, [document?.id]);
 
   if (!document) return null;
-  const history = operationHistory(document);
+
+  const vehicle = documentVehicleInfo(document);
+  const isAutomatic = documentOrigin(document) === "automatic";
+  const isVoided = document.status === "voided";
 
   return (
-    <AnimatedContent
-      distance={40}
-      direction="horizontal"
-      duration={0.8}
-      ease="power3.out"
+    <section
+      aria-label="Documento aberto"
+      className="documents-detail-panel documents-selected-document-panel"
     >
-      <aside
-        className="glass-panel-branded documents-detail-panel !p-6 relative overflow-hidden"
-        aria-label="Detalhe do documento"
-      >
-        <div className="documents-detail-title">
-          <div>
-            <strong>{document.title}</strong>
-            <span>{document.kind}</span>
-          </div>
-          <button
-            aria-label="Fechar"
-            className="inline-flex size-7 items-center justify-center rounded-full border border-line bg-app-elevated text-muted hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
-            onClick={onClose}
-            title="Fechar"
-            type="button"
-          >
-            <X aria-hidden="true" className="size-3.5" />
-          </button>
+      <header className="documents-detail-header">
+        <div>
+          <span>Documento aberto</span>
+          <strong>{document.title}</strong>
         </div>
-
-        <div className="documents-detail-actions grid grid-cols-3 gap-2">
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-app-elevated text-xs font-bold text-app-text hover:border-line-strong hover:bg-app-elevated/80 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-70"
-            disabled={isBusy}
-            onClick={() => void onPreview(document.id)}
-            type="button"
-          >
-            <FileSearch aria-hidden="true" className="size-3.5" />
-            Preview
-          </button>
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-app-elevated text-xs font-bold text-app-text hover:border-line-strong hover:bg-app-elevated/80 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-70"
-            disabled={isBusy}
-            onClick={() => void onDownload(document.id)}
-            type="button"
-          >
-            <Download aria-hidden="true" className="size-3.5" />
-            Baixar
-          </button>
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-app-elevated text-xs font-bold text-app-text hover:border-line-strong hover:bg-app-elevated/80 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-70"
-            disabled={isBusy || document.status === "voided"}
-            onClick={() => void onRegenerate(document.id)}
-            type="button"
-          >
-            <RefreshCcw aria-hidden="true" className="size-3.5" />
-            Regenerar
-          </button>
-        </div>
-
-        <label className="documents-void-reason grid gap-2">
-          <span>Motivo do cancelamento</span>
-          <textarea
-            className="min-h-20 rounded-lg border border-line bg-app px-3 py-2 text-sm font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]"
-            onChange={(event) => setVoidReason(event.target.value)}
-            value={voidReason}
-          />
-        </label>
         <button
-          className="documents-danger-action inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-red-500/20 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer font-bold text-sm disabled:opacity-50"
-          disabled={isBusy || document.status === "voided"}
-          onClick={() =>
-            void onVoid(document.id, {
-              ...(voidReason.trim() ? { reason: voidReason.trim() } : {}),
-            })
-          }
+          aria-label="Fechar detalhes"
+          className="documents-icon-button"
+          onClick={onClose}
+          title="Fechar detalhes"
           type="button"
         >
-          <Ban aria-hidden="true" className="size-4" />
-          Cancelar documento
+          <X aria-hidden="true" className="size-4" />
         </button>
+      </header>
 
-        <div className="documents-preview">
-          {(preview?.sections ?? []).map((section) => (
-            <section key={section.heading}>
-              <strong>{section.heading}</strong>
-              {section.lines.map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-            </section>
-          ))}
-        </div>
+      <div className="documents-detail-badges">
+        <DocumentOriginBadge document={document} />
+        <DocumentScopeBadge document={document} />
+      </div>
 
-        <div className="documents-history">
-          <strong>Historico</strong>
-          {history.length === 0 ? (
-            <p>Nenhuma operacao registrada.</p>
-          ) : (
-            history.map((item, index) => (
-              <p key={`${item.action}-${index}`}>
-                {item.action} · {formatDate(item.at)}
-              </p>
-            ))
-          )}
-        </div>
+      <section className="documents-preview-card">
+        <DocumentGeneratedPreview document={document} preview={preview} />
+      </section>
 
-        <div className="documents-version-list">
-          <strong>Versoes</strong>
-          {versions.length === 0 ? (
-            <p>Nenhuma versao gerada.</p>
-          ) : (
-            versions.map((version) => (
-              <button
-                disabled={isBusy}
-                key={version.id}
-                onClick={() => void onDownload(document.id, version.id)}
-                title={`Baixar versao ${version.versionNumber}`}
-                type="button"
-              >
-                <span>v{version.versionNumber}</span>
-                <span>{formatDate(version.createdAt)}</span>
-                <Download aria-hidden="true" className="size-4" />
-              </button>
-            ))
-          )}
-        </div>
-      </aside>
-    </AnimatedContent>
+      <div className="documents-detail-actions">
+        <ActionButton
+          disabled={isBusy}
+          icon={<FileSearch aria-hidden="true" className="size-4" />}
+          label="Visualizar"
+          onClick={() => void onPreview(document.id)}
+        />
+        <ActionButton
+          disabled={isBusy}
+          icon={<Download aria-hidden="true" className="size-4" />}
+          label="Baixar"
+          onClick={() => void onDownload(document.id)}
+        />
+        <ActionButton
+          disabled={isBusy || !isAutomatic || isVoided}
+          icon={<RefreshCcw aria-hidden="true" className="size-4" />}
+          label="Regenerar"
+          onClick={() => void onRegenerate(document.id)}
+        />
+      </div>
+
+      {isEditingMetadata ? (
+        <DocumentMetadataEditor
+          document={document}
+          isBusy={isBusy}
+          onCancel={() => setIsEditingMetadata(false)}
+          onSaved={() => setIsEditingMetadata(false)}
+          onUpdate={onUpdate}
+        />
+      ) : null}
+
+      <dl className="documents-detail-meta">
+        <Meta label="Escopo" value={documentScopeLabel(document)} />
+        <Meta
+          label="Unidade"
+          value={
+            vehicle
+              ? [vehicle.plate, vehicle.label, vehicle.vin]
+                  .filter(Boolean)
+                  .join(" · ")
+              : "Geral"
+          }
+        />
+        <Meta label="Tipo" value={kindLabel(document.kind)} />
+        <Meta label="Status" value={statusLabel(document.status)} />
+        <Meta label="Arquivo" value={document.file.fileName} />
+        <Meta label="Metadados" value={documentFileLabel(document)} />
+        <Meta label="MIME" value={document.file.mimeType ?? "Indisponível"} />
+        <Meta
+          label="Tamanho"
+          value={formatFileSizeLabel(document.file.fileSizeBytes)}
+        />
+        <Meta label="Criado" value={formatDateTime(document.createdAt)} />
+        <Meta
+          label="Enviado/emitido"
+          value={formatDateTime(document.uploadedAt)}
+        />
+        <Meta label="Responsável" value={documentActorLabel(document)} />
+        <Meta label="Processo" value={readSourceProcess(document)} />
+      </dl>
+
+      <section className="documents-linked-list">
+        <strong>Vínculos</strong>
+        {vehicle ? (
+          <p>
+            {[vehicle.plate, vehicle.label, vehicle.vin]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        ) : (
+          <p>Geral</p>
+        )}
+      </section>
+
+      <section className="documents-version-list">
+        <strong>Versões</strong>
+        {versions.length === 0 ? (
+          <p>Nenhuma versão carregada.</p>
+        ) : (
+          versions.map((version) => (
+            <button
+              disabled={isBusy}
+              key={version.id}
+              onClick={() => void onDownload(document.id, version.id)}
+              title={`Baixar versão ${version.versionNumber}`}
+              type="button"
+            >
+              <span>v{version.versionNumber}</span>
+              <span>{formatDateTime(version.createdAt)}</span>
+              <span>{formatFileSizeLabel(version.file.fileSizeBytes)}</span>
+              <Download aria-hidden="true" className="size-4" />
+            </button>
+          ))
+        )}
+      </section>
+
+      <footer className="documents-detail-secondary">
+        <button
+          disabled={isBusy || isVoided}
+          onClick={() => setIsEditingMetadata(true)}
+          type="button"
+        >
+          <Edit3 aria-hidden="true" className="size-4" />
+          Editar
+        </button>
+        <button onClick={() => onManageLinks(document)} type="button">
+          <Link2 aria-hidden="true" className="size-4" />
+          Gerenciar vínculos
+        </button>
+        <button
+          disabled={isBusy || isVoided}
+          onClick={() => onDelete(document)}
+          type="button"
+        >
+          <Trash2 aria-hidden="true" className="size-4" />
+          Excluir
+        </button>
+      </footer>
+    </section>
   );
 }
 
-type OperationHistoryItem = {
-  action: string;
-  at: string;
-};
-
-function operationHistory(document: WorkspaceDocument): OperationHistoryItem[] {
-  const value = document.metadata.operationHistory;
-  if (!Array.isArray(value)) return [];
-  return value.filter(isOperationHistoryItem);
+function ActionButton({
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  disabled?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button disabled={disabled} onClick={onClick} type="button">
+      {icon}
+      {label}
+    </button>
+  );
 }
 
-function isOperationHistoryItem(value: unknown): value is OperationHistoryItem {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Record<string, unknown>;
-  return typeof item.action === "string" && typeof item.at === "string";
+function Meta({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    month: "2-digit",
-  }).format(new Date(value));
+function readSourceProcess(document: WorkspaceDocument) {
+  const value =
+    document.metadata.systemProcess ??
+    document.metadata.workflowName ??
+    document.metadata.sourceProcess ??
+    document.metadata.template;
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : "Indisponível";
 }

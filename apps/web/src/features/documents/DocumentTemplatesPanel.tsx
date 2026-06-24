@@ -1,6 +1,12 @@
 import { Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import AnimatedContent from "../../components/ui/AnimatedContent";
+import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
+import { kindLabel } from "./documentLabels";
+import {
+  renderDocumentTemplatePreview,
+  variableSample,
+  type DocumentTemplateDraft,
+} from "./documentTemplatePreviewModel";
 import type {
   DocumentKind,
   DocumentTemplate,
@@ -29,13 +35,18 @@ export function DocumentTemplatesPanel({
 
   useEffect(() => setDraft(createDraft(selected)), [selected]);
 
-  const previewLines = useMemo(
-    () => draft.clauses.map(applySampleVariables),
-    [draft.clauses],
+  const previewKind = selected?.kind ?? templates[0]?.kind ?? "sale_contract";
+  const preview = useMemo(
+    () => renderDocumentTemplatePreview(draft, previewKind),
+    [draft, previewKind],
   );
   const canSave =
     draft.title.trim().length > 0 &&
     draft.clauses.every((clause) => clause.trim().length > 0);
+  const isDirty =
+    draft.title !== selected?.title ||
+    draft.clauses.length !== selected?.clauses.length ||
+    draft.clauses.some((clause, index) => clause !== selected?.clauses[index]);
 
   if (!selected) {
     return (
@@ -45,161 +56,153 @@ export function DocumentTemplatesPanel({
 
   return (
     <section className="documents-template-layout">
-      <AnimatedContent
-        distance={30}
-        direction="horizontal"
-        duration={0.8}
-        ease="power3.out"
-      >
-        <aside className="glass-panel-branded documents-template-list !p-4 gap-2 relative overflow-hidden">
-          {templates.map((template) => (
+      <header className="documents-template-picker-bar">
+        <label className="documents-template-picker">
+          <span>Modelo</span>
+          <select
+            onChange={(event) => {
+              const nextTemplate = templates.find(
+                (template) => template.kind === event.target.value,
+              );
+              if (nextTemplate) setSelectedKind(nextTemplate.kind);
+            }}
+            value={selected.kind}
+          >
+            {templates.map((template) => (
+              <option key={template.kind} value={template.kind}>
+                {template.title}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="documents-template-picker-summary">
+          <span>{kindLabel(selected.kind)}</span>
+          <strong>{selected.title}</strong>
+          <small>
+            {isDirty
+              ? "Alterações não salvas"
+              : selected.isCustomized
+                ? "Personalizado"
+                : "Padrão"}
+          </small>
+        </div>
+      </header>
+
+      <section className="documents-template-editor">
+        <header className="documents-template-editor-header">
+          <div>
+            <span>{kindLabel(selected.kind)}</span>
+            <strong>{draft.title || selected.title}</strong>
+          </div>
+          <small>{isDirty ? "Alterações não salvas" : "Sem alterações"}</small>
+        </header>
+
+        <label className="documents-template-field">
+          <span>Título do documento</span>
+          <input
+            onChange={(event) =>
+              setDraft({ ...draft, title: event.target.value })
+            }
+            value={draft.title}
+          />
+        </label>
+
+        <div className="documents-template-field">
+          <div className="documents-template-field-title">
+            <span>Cláusulas</span>
             <button
-              className={[
-                template.kind === selected.kind
-                  ? "documents-template-item is-active"
-                  : "documents-template-item",
-                "cursor-pointer w-full text-left transition-all duration-200 hover:scale-102 active:scale-98",
-              ].join(" ")}
-              key={template.kind}
-              onClick={() => setSelectedKind(template.kind)}
+              aria-label="Adicionar cláusula"
+              onClick={() =>
+                setDraft({ ...draft, clauses: [...draft.clauses, ""] })
+              }
+              title="Adicionar cláusula"
               type="button"
             >
-              <strong>{template.title}</strong>
-              <span>{template.isCustomized ? "Personalizado" : "Padrão"}</span>
+              <Plus aria-hidden="true" className="size-4" />
             </button>
-          ))}
-        </aside>
-      </AnimatedContent>
-
-      <AnimatedContent
-        distance={30}
-        duration={0.8}
-        ease="power3.out"
-        className="w-full"
-      >
-        <section className="glass-panel-branded documents-template-editor !p-6 relative overflow-hidden flex flex-col gap-6">
-          <label className="documents-template-field grid gap-2">
-            <span>Título do documento</span>
-            <input
-              className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]"
-              onChange={(event) =>
-                setDraft({ ...draft, title: event.target.value })
-              }
-              value={draft.title}
-            />
-          </label>
-
-          <div className="documents-template-field grid gap-2">
-            <div className="documents-template-field-title flex justify-between items-center">
-              <span>Cláusulas</span>
-              <button
-                aria-label="Adicionar cláusula"
-                className="inline-flex size-8 items-center justify-center rounded-lg border border-line bg-app-elevated text-muted hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
-                onClick={() =>
-                  setDraft({ ...draft, clauses: [...draft.clauses, ""] })
+          </div>
+          {draft.clauses.map((clause, index) => (
+            <div className="documents-template-clause" key={index}>
+              <textarea
+                aria-label={`Cláusula ${index + 1}`}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    clauses: draft.clauses.map((item, itemIndex) =>
+                      itemIndex === index ? event.target.value : item,
+                    ),
+                  })
                 }
-                title="Adicionar cláusula"
+                value={clause}
+              />
+              <button
+                aria-label={`Remover cláusula ${index + 1}`}
+                className="documents-template-remove"
+                disabled={draft.clauses.length === 1}
+                onClick={() =>
+                  setDraft({
+                    ...draft,
+                    clauses: draft.clauses.filter(
+                      (_item, itemIndex) => itemIndex !== index,
+                    ),
+                  })
+                }
+                title="Remover cláusula"
                 type="button"
               >
-                <Plus aria-hidden="true" className="size-4" />
+                <Trash2 aria-hidden="true" className="size-4" />
               </button>
             </div>
-            {draft.clauses.map((clause, index) => (
-              <div
-                className="documents-template-clause flex gap-2 items-stretch"
-                key={index}
-              >
-                <textarea
-                  aria-label={`Cláusula ${index + 1}`}
-                  className="flex-1 min-h-20 rounded-lg border border-line bg-app px-3 py-2 text-sm font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]"
-                  onChange={(event) =>
-                    setDraft({
-                      ...draft,
-                      clauses: draft.clauses.map((item, itemIndex) =>
-                        itemIndex === index ? event.target.value : item,
-                      ),
-                    })
-                  }
-                  value={clause}
-                />
-                <button
-                  aria-label={`Remover cláusula ${index + 1}`}
-                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-30"
-                  disabled={draft.clauses.length === 1}
-                  onClick={() =>
-                    setDraft({
-                      ...draft,
-                      clauses: draft.clauses.filter(
-                        (_item, itemIndex) => itemIndex !== index,
-                      ),
-                    })
-                  }
-                  title="Remover cláusula"
-                  type="button"
-                >
-                  <Trash2 aria-hidden="true" className="size-4" />
-                </button>
-              </div>
-            ))}
-          </div>
+          ))}
+        </div>
 
-          <div className="documents-template-vars">
-            {selected.availableVariables.map((variable) => (
-              <code key={variable}>{variable}</code>
-            ))}
-          </div>
-
-          <div className="documents-template-preview">
-            <strong>{draft.title}</strong>
-            {previewLines.map((line) => (
-              <p key={line}>{line}</p>
-            ))}
-          </div>
-
-          <div className="documents-template-actions flex justify-end gap-3 mt-4">
-            <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-app px-4 text-sm font-bold text-app-text hover:bg-app-elevated transition-all duration-200 hover:scale-102 active:scale-98 cursor-pointer"
-              onClick={() =>
-                setDraft({
-                  clauses: [...selected.defaultClauses],
-                  title: selected.defaultTitle,
-                })
-              }
-              type="button"
-            >
-              <RotateCcw aria-hidden="true" className="size-4" />
-              Restaurar padrão
-            </button>
-            <button
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-75"
-              disabled={isSaving || !canSave}
-              onClick={() => void onSave(selected.kind, draft)}
-              type="button"
-            >
-              <Save aria-hidden="true" className="size-4" />
-              {isSaving ? "Salvando" : "Salvar modelo"}
-            </button>
-          </div>
+        <section className="documents-template-vars" aria-label="Variáveis">
+          {selected.availableVariables.map((variable) => (
+            <code key={variable}>
+              <span>{variable}</span>
+              <small>{variableSample(variable)}</small>
+            </code>
+          ))}
         </section>
-      </AnimatedContent>
+
+        <footer className="documents-template-actions">
+          <button
+            onClick={() =>
+              setDraft({
+                clauses: [...selected.defaultClauses],
+                title: selected.defaultTitle,
+              })
+            }
+            type="button"
+          >
+            <RotateCcw aria-hidden="true" className="size-4" />
+            Restaurar padrão
+          </button>
+          <button
+            disabled={isSaving || !canSave || !isDirty}
+            onClick={() => void onSave(selected.kind, draft)}
+            type="button"
+          >
+            <Save aria-hidden="true" className="size-4" />
+            {isSaving ? "Salvando" : "Salvar modelo"}
+          </button>
+        </footer>
+      </section>
+
+      <DocumentTemplatePreview
+        isCustomized={selected.isCustomized || isDirty}
+        kind={selected.kind}
+        preview={preview}
+      />
     </section>
   );
 }
 
-function createDraft(template: DocumentTemplate | undefined) {
+function createDraft(
+  template: DocumentTemplate | undefined,
+): DocumentTemplateDraft {
   return {
     clauses: [...(template?.clauses ?? [])],
     title: template?.title ?? "",
   };
-}
-
-function applySampleVariables(value: string) {
-  return value
-    .replaceAll("{{buyer.name}}", "Ana Cliente")
-    .replaceAll("{{buyer.document}}", "000.000.000-00")
-    .replaceAll("{{vehicle.title}}", "Fiat Toro Volcano 2023")
-    .replaceAll("{{vehicle.plate}}", "ABC1D23")
-    .replaceAll("{{finance.paymentMethod}}", "PIX")
-    .replaceAll("{{finance.salePrice}}", "R$ 126.900")
-    .replaceAll("{{finance.signalAmount}}", "R$ 5.000");
 }

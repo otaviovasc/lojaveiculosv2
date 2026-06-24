@@ -80,11 +80,33 @@ export const createUploadedDocumentSchema = z.object({
 export const updateDocumentMetadataSchema = z
   .object({
     kind: z.enum(documentKinds).optional(),
+    linkRole: z.string().trim().min(1).max(80).optional(),
+    targetId: z.string().trim().min(1).max(191).optional(),
+    targetType: z.enum(documentLinkTargets).optional(),
     title: z.string().trim().min(1).max(191).optional(),
   })
-  .refine((value) => Boolean(value.kind || value.title), {
-    message: "At least one metadata field is required.",
-  });
+  .refine(
+    (value) =>
+      Boolean(
+        value.kind ||
+        value.linkRole ||
+        value.targetId ||
+        value.targetType ||
+        value.title,
+      ),
+    {
+      message: "At least one metadata field is required.",
+    },
+  )
+  .refine(
+    (value) =>
+      !value.targetType ||
+      value.targetType === "store" ||
+      Boolean(value.targetId),
+    {
+      message: "Vehicle document links require a target id.",
+    },
+  );
 
 export const updateDocumentTemplateSchema = z.object({
   clauses: z.array(z.string().trim().min(1).max(600)).min(1).max(8),

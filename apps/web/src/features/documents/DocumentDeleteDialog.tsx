@@ -57,7 +57,7 @@ export function DocumentDeleteDialog({
               Cancelar
             </button>
             <button
-              className="flex-1 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-red-600 text-white font-bold text-sm cursor-pointer shadow-sm hover:bg-red-700 transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-50"
+              className="documents-danger-confirm"
               disabled={isBusy}
               onClick={onConfirm}
               type="button"

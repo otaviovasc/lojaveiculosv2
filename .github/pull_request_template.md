@@ -1,7 +1,6 @@
-## Slice
+## Context
 
-- Slice id:
-- Board status:
+- Scope:
 - Dependencies:
 
 ## What Changed
@@ -23,10 +22,6 @@
 
 ## Validation
 
-- [ ] `pnpm run migration:validate-board`
-- [ ] `pnpm run migration:check-plan`
-- [ ] `pnpm run migration:inventory -- --check`
 - [ ] `pnpm run check:frontend-composition`
 - [ ] `pnpm run validate`
 - [ ] Visual QA evidence attached when required
-- [ ] Reviewer posted `Ready for Merge!`

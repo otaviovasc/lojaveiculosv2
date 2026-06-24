@@ -1,55 +1,45 @@
-import { ArrowLeft, Folder, FolderOpen, List, Upload } from "lucide-react";
+import { ArrowLeft, FolderOpen, Upload } from "lucide-react";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import { DocumentsTable } from "./DocumentWorkspaceTable";
 import {
-  filterDocumentsByFolder,
+  filterDocumentsByGroup,
   formatDateTime,
-  type DocumentFolder,
+  type DocumentTopGroup,
 } from "./documentsWorkspaceModel";
-import type { DocumentKind, WorkspaceDocument } from "./types";
-
-export type WorkspaceViewMode = "folders" | "list";
+import type { WorkspaceDocument } from "./types";
 
 export function DocumentWorkspacePanel({
   documents,
-  folders,
+  topGroups,
+  hasMore,
   isBusy,
-  isResultCapped,
   isLoading,
+  isLoadingMore,
   onDownload,
   onOpenUpload,
   onSelect,
   onSelectFolder,
   onDelete,
-  onUpdate,
-  onViewModeChange,
+  onLoadMore,
   selectedFolderKey,
-  viewMode,
 }: {
   documents: readonly WorkspaceDocument[];
-  folders: readonly DocumentFolder[];
+  topGroups: readonly DocumentTopGroup[];
+  hasMore: boolean;
   isBusy: boolean;
-  isResultCapped: boolean;
   isLoading: boolean;
+  isLoadingMore: boolean;
   onDownload: (documentId: string) => Promise<void>;
   onOpenUpload: () => void;
   onSelect: (document: WorkspaceDocument) => void;
   onSelectFolder: (folderKey: string | null) => void;
   onDelete: (document: WorkspaceDocument) => void;
-  onUpdate: (
-    document: WorkspaceDocument,
-    input: { kind: DocumentKind; title: string },
-  ) => Promise<void>;
-  onViewModeChange: (mode: WorkspaceViewMode) => void;
+  onLoadMore: () => void;
   selectedFolderKey: string | null;
-  viewMode: WorkspaceViewMode;
 }) {
-  const selectedFolder =
-    folders.find((folder) => folder.key === selectedFolderKey) ?? null;
-  const visibleDocuments =
-    viewMode === "folders"
-      ? filterDocumentsByFolder(documents, selectedFolderKey)
-      : documents;
+  const selectedGroup =
+    topGroups.find((group) => group.key === selectedFolderKey) ?? null;
+  const visibleDocuments = filterDocumentsByGroup(documents, selectedFolderKey);
 
   return (
     <AnimatedContent
@@ -62,16 +52,14 @@ export function DocumentWorkspacePanel({
         <div className="documents-panel-title documents-workspace-title">
           <div>
             <strong>
-              {viewMode === "folders"
-                ? "Pastas de documentos"
-                : "Lista operacional"}
+              {selectedGroup ? selectedGroup.title : "Workspace de documentos"}
             </strong>
             <span>
-              {selectedFolder
-                ? `${selectedFolder.title} · ${selectedFolder.count} ${isResultCapped ? "documentos carregados" : "documentos"}`
-                : isResultCapped
-                  ? "Pastas e contagens refletem os documentos carregados mais recentes."
-                  : "Organize por veículo, venda, lead, financeiro e fiscal."}
+              {selectedGroup
+                ? `${selectedGroup.subtitle} · ${selectedGroup.count} ${hasMore ? "documentos carregados" : "documentos"}`
+                : hasMore
+                  ? "Grupos refletem os documentos carregados mais recentes."
+                  : "Documentos da loja organizados por grupos estruturais."}
             </span>
           </div>
           <div className="documents-workspace-actions">
@@ -84,70 +72,60 @@ export function DocumentWorkspacePanel({
               <Upload aria-hidden="true" className="size-4" />
               Anexar
             </button>
-            <div
-              className="documents-mode-toggle"
-              aria-label="Modo de visualizacao"
-            >
-              <button
-                className={
-                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black cursor-pointer border transition-all duration-200 hover:scale-105 active:scale-95 " +
-                  (viewMode === "folders"
-                    ? "bg-accent-soft text-accent-strong border-accent-soft/20"
-                    : "bg-app border-line text-muted hover:text-primary hover:border-line-strong")
-                }
-                onClick={() => onViewModeChange("folders")}
-                title="Ver pastas"
-                type="button"
-              >
-                <Folder aria-hidden="true" className="size-4" />
-                Pastas
-              </button>
-              <button
-                className={
-                  "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black cursor-pointer border transition-all duration-200 hover:scale-105 active:scale-95 " +
-                  (viewMode === "list"
-                    ? "bg-accent-soft text-accent-strong border-accent-soft/20"
-                    : "bg-app border-line text-muted hover:text-primary hover:border-line-strong")
-                }
-                onClick={() => onViewModeChange("list")}
-                title="Ver lista"
-                type="button"
-              >
-                <List aria-hidden="true" className="size-4" />
-                Lista
-              </button>
-            </div>
           </div>
         </div>
 
         {isLoading ? (
           <WorkspaceSkeleton />
-        ) : viewMode === "folders" && !selectedFolderKey ? (
-          <FoldersGrid
-            folders={folders}
-            isResultCapped={isResultCapped}
+        ) : !selectedFolderKey ? (
+          <GroupsGrid
+            topGroups={topGroups}
+            hasMore={hasMore}
             onSelectFolder={onSelectFolder}
           />
         ) : (
           <>
-            {selectedFolder ? (
-              <button
-                className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
-                onClick={() => onSelectFolder(null)}
-                type="button"
-              >
-                <ArrowLeft aria-hidden="true" className="size-3.5" />
-                Todas as pastas
-              </button>
-            ) : null}
+            <button
+              className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
+              onClick={() => onSelectFolder(null)}
+              type="button"
+            >
+              <ArrowLeft aria-hidden="true" className="size-3.5" />
+              Voltar para visao geral
+            </button>
             <DocumentsTable
               documents={visibleDocuments}
               isBusy={isBusy}
               onDownload={onDownload}
               onDelete={onDelete}
               onSelect={onSelect}
-              onUpdate={onUpdate}
             />
+            {hasMore && !isLoading ? (
+              <div className="flex justify-center py-4">
+                <button
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent-soft px-6 text-sm font-black text-accent-strong disabled:opacity-70 cursor-pointer border border-accent-soft/20 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
+                  disabled={isLoadingMore}
+                  onClick={onLoadMore}
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    className={`size-4 ${isLoadingMore ? "animate-spin" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  <span>Carregar mais</span>
+                </button>
+              </div>
+            ) : null}
           </>
         )}
       </section>
@@ -155,40 +133,39 @@ export function DocumentWorkspacePanel({
   );
 }
 
-function FoldersGrid({
-  folders,
-  isResultCapped,
+function GroupsGrid({
+  topGroups,
+  hasMore,
   onSelectFolder,
 }: {
-  folders: readonly DocumentFolder[];
-  isResultCapped: boolean;
+  topGroups: readonly DocumentTopGroup[];
+  hasMore: boolean;
   onSelectFolder: (folderKey: string | null) => void;
 }) {
-  if (folders.length === 0) {
-    return <p className="documents-empty">Nenhuma pasta encontrada.</p>;
+  if (topGroups.length === 0) {
+    return <p className="documents-empty">Nenhum grupo encontrado.</p>;
   }
 
   return (
-    <div className="documents-folder-grid">
-      {folders.map((folder) => (
+    <div className="documents-top-groups-grid">
+      {topGroups.map((group) => (
         <AnimatedContent
-          key={folder.key}
+          key={group.key}
           distance={20}
           duration={0.6}
           ease="power2.out"
         >
           <button
             className="documents-folder-card cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.015] hover:border-[var(--color-accent)] w-full text-left"
-            onClick={() => onSelectFolder(folder.key)}
+            onClick={() => onSelectFolder(group.key)}
             type="button"
           >
             <FolderOpen aria-hidden="true" className="size-5" />
-            <strong>{folder.title}</strong>
-            <span>{folder.subtitle}</span>
+            <strong>{group.title}</strong>
+            <span>{group.subtitle}</span>
             <small>
-              {folder.count} docs{isResultCapped ? " carregados" : ""} ·{" "}
-              {folder.issued} emitidos · atualizado{" "}
-              {formatDateTime(folder.latestAt)}
+              {group.count} docs{hasMore ? " carregados" : ""} · {group.issued}{" "}
+              emitidos · atualizado {formatDateTime(group.latestAt)}
             </small>
           </button>
         </AnimatedContent>

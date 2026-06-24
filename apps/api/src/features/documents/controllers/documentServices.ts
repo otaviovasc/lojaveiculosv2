@@ -31,6 +31,7 @@ import {
   updateDocumentMetadata,
   type UpdateDocumentMetadataInput,
 } from "../../../domains/documents/services/DocumentOperationService/updateDocumentMetadata.js";
+import { createDrizzleDocumentLinkTargetValidator } from "../../../infrastructure/db/documents/drizzleDocumentLinkTargets.js";
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createMemoryDocumentRepository } from "../adapters/memoryDocumentRepository.js";
@@ -128,6 +129,9 @@ function resolveDocumentPorts(
   if ("drizzleClient" in options) {
     return {
       documentRepository: createDrizzleDocumentRepository(
+        options.drizzleClient,
+      ),
+      linkTargetValidator: createDrizzleDocumentLinkTargetValidator(
         options.drizzleClient,
       ),
       ...(options.objectStorage

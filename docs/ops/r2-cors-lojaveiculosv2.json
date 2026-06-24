@@ -1,0 +1,15 @@
+[
+  {
+    "AllowedOrigins": [
+      "http://localhost:5173",
+      "https://app-v2.lojaveiculos.com.br",
+      "https://app.lojaveiculos.com.br",
+      "https://lojaveiculos.com.br",
+      "https://www.lojaveiculos.com.br"
+    ],
+    "AllowedMethods": ["PUT", "GET", "HEAD"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]

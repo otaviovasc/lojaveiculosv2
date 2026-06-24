@@ -1,19 +1,22 @@
-import { Upload, X } from "lucide-react";
+import { FolderOpen, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import type { DocumentsApi } from "./apiClient";
 import {
   DocumentUploadQueue,
   type UploadQueueItem,
 } from "./DocumentUploadQueue";
-import type { DocumentLinkTarget, WorkspaceDocument } from "./types";
+import type { WorkspaceDocument } from "./types";
 
-export type DocumentUploadTarget = {
-  label: string;
-  targetId?: string;
-  targetType?: DocumentLinkTarget;
-};
+export type DocumentUploadTarget =
+  | { label: string; mode: "general" }
+  | {
+      label: string;
+      listingId: string;
+      mode: "vehicle_unit";
+      targetId: string;
+      targetType: "vehicle_unit";
+    };
 
 export function DocumentUploadDialog({
   api,
@@ -32,6 +35,10 @@ export function DocumentUploadDialog({
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const canUpload =
+    !isUploading &&
+    items.length > 0 &&
+    items.every((item) => item.title.trim().length > 0);
 
   useEffect(() => {
     if (!isOpen) {
@@ -57,6 +64,8 @@ export function DocumentUploadDialog({
         file,
         id: `${file.name}:${file.size}:${file.lastModified}:${crypto.randomUUID()}`,
         kind: "other" as const,
+        progress: 0,
+        status: "queued" as const,
         title: file.name,
       })),
     ]);
@@ -73,47 +82,104 @@ export function DocumentUploadDialog({
 
   const uploadDocuments = async () => {
     if (items.length === 0) {
-      setStatus("Selecione ao menos um arquivo para upload.");
+      setStatus("Selecione ao menos um arquivo para envio.");
       return;
     }
     if (items.some((item) => !item.title.trim())) {
-      setStatus("Todos os arquivos precisam de um titulo.");
+      setStatus("Todos os arquivos precisam de um título.");
       return;
     }
 
     setIsUploading(true);
     setStatus(null);
+    setItems((current) =>
+      current.map((item) => ({ ...item, progress: 0, status: "queued" })),
+    );
     const uploaded: WorkspaceDocument[] = [];
 
     try {
       for (const [index, item] of items.entries()) {
-        setStatus(`${index + 1}/${items.length} - ${item.file.name}`);
+        setStatus(
+          `Enviando ${index + 1} de ${items.length}: ${item.file.name}`,
+        );
         setProgress(Math.round((index / items.length) * 100));
-        const upload = await api.requestDocumentUpload({
-          contentType: item.file.type || "application/octet-stream",
-          fileName: item.file.name,
-          sizeBytes: item.file.size,
-        });
+        setItems((current) =>
+          current.map((entry) =>
+            entry.id === item.id
+              ? { ...entry, progress: 10, status: "uploading" }
+              : entry,
+          ),
+        );
+        const upload =
+          target.mode === "vehicle_unit"
+            ? await api.requestVehicleDocumentUpload(target.listingId, {
+                contentType: item.file.type || "application/octet-stream",
+                fileName: item.file.name,
+                kind: item.kind,
+                sizeBytes: item.file.size,
+                targetId: target.targetId,
+                targetType: target.targetType,
+              })
+            : await api.requestDocumentUpload({
+                contentType: item.file.type || "application/octet-stream",
+                fileName: item.file.name,
+                sizeBytes: item.file.size,
+              });
         await fetch(upload.uploadUrl, {
           body: item.file,
           headers: upload.uploadHeaders,
           method: upload.uploadMethod,
         }).then(readDocumentUploadResponse);
-        uploaded.push(
-          await api.createUploadedDocument({
-            fileName: item.file.name,
-            fileSizeBytes: item.file.size,
-            kind: item.kind,
-            mimeType: item.file.type || null,
-            storageKey: upload.storageKey,
-            title: item.title.trim(),
-          }),
+        setItems((current) =>
+          current.map((entry) =>
+            entry.id === item.id
+              ? { ...entry, progress: 75, status: "uploading" }
+              : entry,
+          ),
+        );
+        if (target.mode === "vehicle_unit") {
+          uploaded.push(
+            await api.createVehicleUploadedDocument(target.listingId, {
+              fileName: item.file.name,
+              fileSizeBytes: item.file.size,
+              kind: item.kind,
+              mimeType: item.file.type || null,
+              storageKey: upload.storageKey,
+              targetId: target.targetId,
+              targetType: target.targetType,
+              title: item.title.trim(),
+            }),
+          );
+        } else {
+          uploaded.push(
+            await api.createUploadedDocument({
+              fileName: item.file.name,
+              fileSizeBytes: item.file.size,
+              kind: item.kind,
+              mimeType: item.file.type || null,
+              storageKey: upload.storageKey,
+              title: item.title.trim(),
+            }),
+          );
+        }
+        setItems((current) =>
+          current.map((entry) =>
+            entry.id === item.id
+              ? { ...entry, progress: 100, status: "done" }
+              : entry,
+          ),
         );
         setProgress(Math.round(((index + 1) / items.length) * 100));
       }
+      setStatus("Documentos salvos com sucesso.");
       onUploaded(uploaded);
       onClose();
     } catch (error) {
+      setItems((current) =>
+        current.map((item) =>
+          item.status === "uploading" ? { ...item, status: "error" } : item,
+        ),
+      );
       setStatus(error instanceof Error ? error.message : String(error));
     } finally {
       setIsUploading(false);
@@ -128,13 +194,17 @@ export function DocumentUploadDialog({
       <AnimatedContent distance={30} duration={0.4} ease="power2.out">
         <section
           aria-label="Anexar documentos"
+          aria-modal="true"
           className="glass-panel-branded documents-upload-dialog !p-6 relative overflow-hidden"
           onClick={(event) => event.stopPropagation()}
+          role="dialog"
         >
           <header className="documents-upload-header">
             <div>
-              <strong>Anexar documentos</strong>
-              <span>{target.label}</span>
+              <strong>Enviar documentos</strong>
+              <span>
+                Inclua arquivos, revise metadados e salve na pasta certa.
+              </span>
             </div>
             <button
               aria-label="Fechar"
@@ -148,11 +218,28 @@ export function DocumentUploadDialog({
             </button>
           </header>
 
+          <section
+            aria-label="Destino selecionado"
+            className="documents-upload-destination"
+          >
+            <FolderOpen aria-hidden="true" className="size-5" />
+            <div>
+              <span>Pasta de destino</span>
+              <strong>{target.label}</strong>
+            </div>
+            <small>
+              {target.mode === "vehicle_unit"
+                ? "Vinculado à unidade do veículo"
+                : "Documentos gerais da loja"}
+            </small>
+          </section>
+
           <label
             className="documents-upload-dropzone"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               event.preventDefault();
+              if (isUploading) return;
               addFiles(Array.from(event.dataTransfer.files));
             }}
           >
@@ -160,6 +247,7 @@ export function DocumentUploadDialog({
               accept="application/pdf,image/*"
               disabled={isUploading}
               multiple
+              aria-label="Selecionar documentos para envio"
               onChange={(event) => {
                 addFiles(Array.from(event.currentTarget.files ?? []));
                 event.currentTarget.value = "";
@@ -182,11 +270,18 @@ export function DocumentUploadDialog({
 
           {status ? <p className="documents-upload-status">{status}</p> : null}
           {isUploading ? (
-            <progress
-              className="documents-upload-progress"
-              value={progress}
-              max={100}
-            />
+            <div className="documents-upload-progress-block">
+              <div>
+                <span>Progresso do envio</span>
+                <strong>{progress}%</strong>
+              </div>
+              <progress
+                aria-label="Progresso do envio"
+                className="documents-upload-progress"
+                value={progress}
+                max={100}
+              />
+            </div>
           ) : null}
 
           <footer className="documents-upload-actions flex justify-end gap-3 mt-4">
@@ -200,7 +295,7 @@ export function DocumentUploadDialog({
             </button>
             <button
               className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-70"
-              disabled={isUploading}
+              disabled={!canUpload}
               onClick={() => {
                 void uploadDocuments();
               }}
@@ -223,7 +318,7 @@ export async function readDocumentUploadResponse(
   response: Response,
 ): Promise<void> {
   if (!response.ok) {
-    throw new Error(`Document upload failed with status ${response.status}`);
+    throw new Error(`Falha no envio do documento. Status ${response.status}.`);
   }
 }
 

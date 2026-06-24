@@ -61,7 +61,7 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
   },
   documents: {
     action: "Organizar arquivos",
-    description: "Documentos de venda, compra e financiamento por veiculo.",
+    description: "Documentos de venda, compra e financiamento por unidade.",
     eyebrow: "Operacao",
     id: "documents",
     title: "Documentos",

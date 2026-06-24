@@ -5,7 +5,7 @@ const root = new URL("../../", import.meta.url).pathname;
 const webRoot = join(root, "apps/web/src");
 const exceptions = JSON.parse(
   readFileSync(
-    join(root, "docs/frontend-migration/composition-exceptions.json"),
+    join(root, "tools/quality/frontend-composition-exceptions.json"),
     "utf8",
   ),
 );

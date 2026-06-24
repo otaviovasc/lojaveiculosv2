@@ -6,6 +6,12 @@ describe("documents api client", () => {
     expect(documentsRoutes.documents()).toBe("/api/v1/documents");
     expect(documentsRoutes.templates()).toBe("/api/v1/documents/templates");
     expect(documentsRoutes.uploads()).toBe("/api/v1/documents/uploads");
+    expect(documentsRoutes.vehicleUploads("listing 1")).toBe(
+      "/api/v1/inventory/listings/listing%201/documents/uploads",
+    );
+    expect(documentsRoutes.vehicleDocuments("listing 1")).toBe(
+      "/api/v1/inventory/listings/listing%201/documents",
+    );
     expect(documentsRoutes.document("document 1")).toBe(
       "/api/v1/documents/document%201",
     );
@@ -152,6 +158,88 @@ describe("documents api client", () => {
     );
   });
 
+  it("runs vehicle unit upload operations through inventory routes", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          expiresAt: "2026-01-01T10:05:00.000Z",
+          storageKey: "tenants/tenant/stores/store/listings/listing_1/doc.pdf",
+          uploadHeaders: { "content-type": "application/pdf" },
+          uploadMethod: "PUT",
+          uploadUrl: "https://upload.local/doc.pdf",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(vehicleDocumentBody()));
+    const api = createDocumentsApi({
+      auth: { clerkUserId: "clerk_1", storeSlug: "loja" },
+      fetch: fetchMock,
+    });
+
+    const upload = await api.requestVehicleDocumentUpload("listing_1", {
+      contentType: "application/pdf",
+      fileName: "manual.pdf",
+      kind: "other",
+      sizeBytes: 1024,
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
+    });
+    const created = await api.createVehicleUploadedDocument("listing_1", {
+      fileName: "manual.pdf",
+      fileSizeBytes: 1024,
+      kind: "other",
+      mimeType: "application/pdf",
+      storageKey: upload.storageKey,
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
+      title: "Documento manual",
+    });
+
+    expect(created).toMatchObject({
+      context: {
+        linkRole: "primary",
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
+      },
+      file: {
+        fileName: "manual.pdf",
+        fileSizeBytes: 1024,
+        mimeType: "application/pdf",
+      },
+      title: "Documento manual",
+    });
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "/api/v1/inventory/listings/listing_1/documents/uploads",
+    );
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      body: JSON.stringify({
+        contentType: "application/pdf",
+        fileName: "manual.pdf",
+        kind: "other",
+        sizeBytes: 1024,
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
+      }),
+      method: "POST",
+    });
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+      "/api/v1/inventory/listings/listing_1/documents",
+    );
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      body: JSON.stringify({
+        fileName: "manual.pdf",
+        fileSizeBytes: 1024,
+        kind: "other",
+        mimeType: "application/pdf",
+        storageKey: upload.storageKey,
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
+        title: "Documento manual",
+      }),
+      method: "POST",
+    });
+  });
+
   it("lists workspace documents with auth headers", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
       jsonResponse({
@@ -213,6 +301,26 @@ function documentBody(overrides: Record<string, unknown> = {}) {
     metadata: {},
     status: "issued",
     title: "Contrato",
+    updatedAt: "2026-01-01T10:00:00.000Z",
+    uploadedAt: "2026-01-01T10:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function vehicleDocumentBody(overrides: Record<string, unknown> = {}) {
+  return {
+    createdAt: "2026-01-01T10:00:00.000Z",
+    fileName: "manual.pdf",
+    fileSizeBytes: 1024,
+    id: "vehicle_document_1",
+    kind: "other",
+    linkRole: "primary",
+    metadata: { manualUpload: true },
+    mimeType: "application/pdf",
+    status: "draft",
+    targetId: "unit_1",
+    targetType: "vehicle_unit",
+    title: "Documento manual",
     updatedAt: "2026-01-01T10:00:00.000Z",
     uploadedAt: "2026-01-01T10:00:00.000Z",
     ...overrides,

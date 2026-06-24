@@ -18,7 +18,7 @@ import type {
 
 type DocumentsActionState = {
   documentToDelete: WorkspaceDocument | null;
-  documentsApi: DocumentsApi;
+  documentsApi: DocumentsApi | null;
   setDocumentPreview: Dispatch<SetStateAction<DocumentPreview | null>>;
   setDocumentToDelete: Dispatch<SetStateAction<WorkspaceDocument | null>>;
   setDocumentVersions: Dispatch<SetStateAction<DocumentVersion[]>>;
@@ -43,14 +43,19 @@ export function useDocumentsModuleActions({
   setStatus,
   setTemplates,
 }: DocumentsActionState) {
+  function requireApi(): DocumentsApi {
+    if (!documentsApi) throw new Error("API de documentos indisponível.");
+    return documentsApi;
+  }
+
   const previewDocument = async (documentId: string) => {
     setIsDocumentActionBusy(true);
     setDocumentPreview(null);
     setDocumentVersions([]);
     try {
       const [preview, versions] = await Promise.all([
-        documentsApi.previewDocument(documentId),
-        documentsApi.listVersions(documentId),
+        requireApi().previewDocument(documentId),
+        requireApi().listVersions(documentId),
       ]);
       setDocumentPreview(preview);
       setDocumentVersions(versions);
@@ -68,16 +73,18 @@ export function useDocumentsModuleActions({
     try {
       const updated = await action();
       const [preview, versions] = await Promise.all([
-        documentsApi.previewDocument(updated.id),
-        documentsApi.listVersions(updated.id),
+        requireApi().previewDocument(updated.id),
+        requireApi().listVersions(updated.id),
       ]);
       setDocuments((current) => replaceDocument(current, updated));
       setSelectedDocument(updated);
       setDocumentPreview(preview);
       setDocumentVersions(versions);
       setStatus({ kind: "ready" });
+      return updated;
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
+      return null;
     } finally {
       setIsDocumentActionBusy(false);
     }
@@ -88,15 +95,26 @@ export function useDocumentsModuleActions({
     input: UpdateDocumentInput,
   ) => {
     const title = input.title?.trim();
-    if (!title) {
+    const nextInput: UpdateDocumentInput = { ...input };
+    if ("title" in input) {
+      if (!title) {
+        setStatus({
+          kind: "error",
+          message: "O título do documento é obrigatório.",
+        });
+        return null;
+      }
+      nextInput.title = title;
+    }
+    if (Object.keys(nextInput).length === 0) {
       setStatus({
         kind: "error",
-        message: "O titulo do documento e obrigatorio.",
+        message: "Informe ao menos uma alteração no documento.",
       });
-      return;
+      return null;
     }
-    await applyDocumentAction(() =>
-      documentsApi.updateDocument(document.id, { ...input, title }),
+    return applyDocumentAction(() =>
+      requireApi().updateDocument(document.id, nextInput),
     );
   };
 
@@ -104,7 +122,7 @@ export function useDocumentsModuleActions({
     if (!documentToDelete) return;
     setIsDocumentActionBusy(true);
     try {
-      const updated = await documentsApi.deleteDocument(documentToDelete.id);
+      const updated = await requireApi().deleteDocument(documentToDelete.id);
       setDocuments((current) => replaceDocument(current, updated));
       setSelectedDocument((current) =>
         current?.id === updated.id ? updated : current,
@@ -121,7 +139,7 @@ export function useDocumentsModuleActions({
   const downloadDocument = async (documentId: string, versionId?: string) => {
     setIsDocumentActionBusy(true);
     try {
-      const download = await documentsApi.downloadDocument(
+      const download = await requireApi().downloadDocument(
         documentId,
         versionId,
       );
@@ -140,7 +158,7 @@ export function useDocumentsModuleActions({
   ) => {
     setIsSavingTemplate(true);
     try {
-      const updated = await documentsApi.updateTemplate(kind, input);
+      const updated = await requireApi().updateTemplate(kind, input);
       setTemplates((current) =>
         current.map((template) =>
           template.kind === kind ? updated : template,

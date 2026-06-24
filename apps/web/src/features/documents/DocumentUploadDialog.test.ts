@@ -5,7 +5,7 @@ describe("document upload dialog", () => {
   it("rejects failed signed upload responses before registration", async () => {
     await expect(
       readDocumentUploadResponse(new Response(null, { status: 403 })),
-    ).rejects.toThrow("Document upload failed with status 403");
+    ).rejects.toThrow("Falha no envio do documento. Status 403.");
   });
 
   it("accepts successful signed upload responses", async () => {

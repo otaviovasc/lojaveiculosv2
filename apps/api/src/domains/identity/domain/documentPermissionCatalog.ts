@@ -38,6 +38,12 @@ export const documentPermissionDescriptors = [
     risk: "high",
   },
   {
+    description: "Alterar vinculos de documentos com loja e unidades.",
+    key: "documents.update_links",
+    label: "Gerenciar vinculos",
+    risk: "high",
+  },
+  {
     description: "Enviar e registrar documentos externos.",
     key: "documents.upload",
     label: "Anexar documentos",

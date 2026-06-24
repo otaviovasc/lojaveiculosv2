@@ -4,6 +4,8 @@ import type {
   VehicleDocument,
   VehicleDocumentKind,
   VehicleDocumentTargetType,
+  VehicleListing,
+  VehicleUnit,
 } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
@@ -53,6 +55,7 @@ export async function attachVehicleDocument(
     fileSizeBytes: input.fileSizeBytes ?? null,
     kind: input.kind,
     linkRole: input.linkRole ?? "primary",
+    metadata: createManualDocumentMetadata(context, target),
     mimeType: input.mimeType ?? null,
     status: "draft",
     storageKey: input.storageKey,
@@ -101,10 +104,49 @@ async function resolveDocumentTarget(
       listingId: listing.id,
       unitId: input.targetId ?? "",
     });
-    return { targetId: unit.id, targetType: "vehicle_unit" as const };
+    return {
+      listing,
+      targetId: unit.id,
+      targetType: "vehicle_unit" as const,
+      unit,
+    };
   }
 
-  return { targetId: listing.id, targetType: "vehicle_listing" as const };
+  return {
+    listing,
+    targetId: listing.id,
+    targetType: "vehicle_listing" as const,
+  };
+}
+
+function createManualDocumentMetadata(
+  context: ServiceContext,
+  target: {
+    listing: VehicleListing;
+    targetId: string;
+    targetType: VehicleDocumentTargetType;
+    unit?: VehicleUnit;
+  },
+) {
+  return {
+    manualUpload: true,
+    operationHistory: [
+      {
+        action: "uploaded",
+        actorId: context.actor.id,
+        at: new Date(),
+      },
+    ],
+    vehicle: {
+      catalog: target.listing.catalog,
+      listingId: target.listing.id,
+      plate: target.unit?.plate ?? target.listing.plate,
+      stockNumber: target.unit?.stockNumber ?? null,
+      title: target.listing.title,
+      unitId: target.unit?.id ?? null,
+      vin: target.unit?.vin ?? null,
+    },
+  };
 }
 
 function assertStorageScope(

@@ -125,6 +125,7 @@ export type InventoryListingSummary = {
   mediaCount: number;
   primaryMediaUrl: string | null;
   primaryUnit: InventoryUnit | null;
+  units: readonly InventoryUnit[];
 };
 
 export type InventoryListingList = {

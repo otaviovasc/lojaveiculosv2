@@ -82,6 +82,7 @@ export const llmsText = `# Loja Veiculos API
 - documents.download: required to generate authorized document download descriptors.
 - documents.preview: required to render document previews.
 - documents.regenerate: required to regenerate operational documents.
+- documents.update_links: required to change document store/unit links.
 - documents.void: required to cancel issued/shared documents.
 - audit.read: required to read the internal health and audit snapshot.
 
@@ -142,6 +143,7 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/documents/{documentId}/download: returns a short-lived scoped R2 signed GET descriptor without exposing raw storage keys; accepts optional versionId; requires documents.download.
 - GET /api/v1/documents/{documentId}/preview: renders a metadata-based document preview; requires documents.preview.
 - GET /api/v1/documents/{documentId}/versions: lists immutable generated versions in newest-first order; requires documents.read.
+- PATCH /api/v1/documents/{documentId}: updates title/kind and the primary store/unit link; requires documents.update_metadata and/or documents.update_links for changed fields.
 - POST /api/v1/documents/{documentId}/regenerate: renders a new private PDF object, appends an immutable version, and points the document to the latest version; requires documents.regenerate.
 - POST /api/v1/documents/{documentId}/void: voids a scoped document with optional reason; requires documents.void.
 

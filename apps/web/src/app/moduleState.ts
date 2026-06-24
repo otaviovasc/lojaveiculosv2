@@ -8,7 +8,7 @@ import type { ModuleId } from "./modules";
 
 const moduleIds = new Set(Object.keys(moduleDefinitions));
 
-export function parseModuleHash(hash: string): ModuleId {
+function parseModuleHashCandidate(hash: string): ModuleId | undefined {
   const path = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
   const id = path.split("/").filter(Boolean)[0] ?? "";
 
@@ -20,7 +20,31 @@ export function parseModuleHash(hash: string): ModuleId {
     return id as ModuleId;
   }
 
+  return undefined;
+}
+
+export function parseModuleHash(hash: string): ModuleId {
+  return parseModuleHashCandidate(hash) ?? defaultModuleId;
+}
+
+export function parseModulePath(pathname: string): ModuleId {
+  const id = pathname.replace(/^\/+/, "").split("/")[0] ?? "";
+
+  if (moduleIds.has(id)) {
+    return id as ModuleId;
+  }
+
   return defaultModuleId;
+}
+
+export function parseModuleLocation(location: {
+  hash: string;
+  pathname: string;
+}): ModuleId {
+  return (
+    parseModuleHashCandidate(location.hash) ??
+    parseModulePath(location.pathname)
+  );
 }
 
 function getCurrentModule(): ModuleId {
@@ -28,7 +52,7 @@ function getCurrentModule(): ModuleId {
     return defaultModuleId;
   }
 
-  return parseModuleHash(window.location.hash);
+  return parseModuleLocation(window.location);
 }
 
 export function useModuleState() {

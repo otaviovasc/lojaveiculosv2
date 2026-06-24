@@ -1,5 +1,6 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { documentLinks, documents } from "@lojaveiculosv2/db";
+import { documentLinks, documents, documentVersions } from "@lojaveiculosv2/db";
+import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type {
   CreateVehicleDocumentRecord,
   ListVehicleDocumentsInput,
@@ -7,6 +8,7 @@ import type {
   VehicleDocumentRepository,
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { DrizzleRepositoryClient } from "../drizzleClient.js";
+import { toInsertVersion } from "../documents/drizzleDocumentVersions.js";
 import {
   type InsertDocumentLinkRow,
   type InsertDocumentRow,
@@ -14,6 +16,9 @@ import {
   type VehicleDocumentRow,
 } from "./drizzleVehicleInventoryMappers.js";
 import { VehicleInventoryDrizzleScopeError } from "./drizzleVehicleInventoryScope.js";
+
+type VehicleDocumentVersionRow = InferSelectModel<typeof documentVersions>;
+type InsertDocumentVersionRow = InferInsertModel<typeof documentVersions>;
 
 export type DrizzleVehicleDocumentClient = DrizzleRepositoryClient<
   VehicleDocumentRow,
@@ -24,6 +29,11 @@ export type DrizzleVehicleDocumentClient = DrizzleRepositoryClient<
     VehicleDocumentLinkRow,
     InsertDocumentLinkRow,
     Partial<InsertDocumentLinkRow>
+  > &
+  DrizzleRepositoryClient<
+    VehicleDocumentVersionRow,
+    InsertDocumentVersionRow,
+    Partial<InsertDocumentVersionRow>
   >;
 
 export function createDrizzleVehicleDocumentRepository(
@@ -38,6 +48,11 @@ export function createDrizzleVehicleDocumentRepository(
     VehicleDocumentLinkRow,
     InsertDocumentLinkRow,
     Partial<InsertDocumentLinkRow>
+  >;
+  const versionDb = db as DrizzleRepositoryClient<
+    VehicleDocumentVersionRow,
+    InsertDocumentVersionRow,
+    Partial<InsertDocumentVersionRow>
   >;
 
   return {
@@ -81,6 +96,17 @@ export function createDrizzleVehicleDocumentRepository(
           "Drizzle adapter did not return inserted document link.",
         );
       }
+      await versionDb.insert(documentVersions).values(
+        toInsertVersion(
+          {
+            ...record,
+            documentId: documentRow.id,
+            storeId: scope.storeId,
+            tenantId: scope.tenantId,
+          },
+          1,
+        ),
+      );
 
       return toVehicleDocument(documentRow, linkRow);
     },

@@ -87,6 +87,46 @@ describe("documents operation controller", () => {
       }),
     );
   });
+
+  it("routes document link update requests", async () => {
+    const services = createServices({
+      updateDocument: vi.fn(async () => ({
+        ...document,
+        linkRole: "primary",
+        targetId: "unit_1",
+        targetType: "vehicle_unit" as const,
+      })),
+    });
+
+    const response = await createApp(services).request(
+      "/api/v1/documents/document_1",
+      {
+        body: JSON.stringify({
+          linkRole: "primary",
+          targetId: "unit_1",
+          targetType: "vehicle_unit",
+        }),
+        method: "PATCH",
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.updateDocument).toHaveBeenCalledWith(expect.any(Object), {
+      documentId: "document_1",
+      linkRole: "primary",
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
+    });
+    const payload = (await response.json()) as unknown as {
+      context: { targetId: string; targetType: string };
+    };
+    expect(payload.context).toEqual(
+      expect.objectContaining({
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
+      }),
+    );
+  });
 });
 
 function createServices(
@@ -133,6 +173,7 @@ function createApp(services: DocumentServices) {
             "documents.download",
             "documents.read",
             "documents.regenerate",
+            "documents.update_links",
             "documents.update_metadata",
             "documents.upload",
             "documents.void",

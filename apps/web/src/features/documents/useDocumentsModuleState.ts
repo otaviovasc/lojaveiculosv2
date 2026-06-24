@@ -1,16 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { DocumentsApi } from "./apiClient";
-import type { DocumentUploadTarget } from "./DocumentUploadDialog";
-import type { WorkspaceViewMode } from "./DocumentWorkspacePanel";
 import {
-  createRuntimeDocumentsApi,
-  DOCUMENTS_WORKSPACE_LIMIT,
+  DOCUMENTS_PAGE_SIZE,
   type DocumentsView,
   errorMessage,
   summarizeDocuments,
   type WorkspaceStatus,
 } from "./DocumentsModuleSupport";
-import { buildDocumentFolders } from "./documentsWorkspaceModel";
 import { useDocumentsModuleActions } from "./useDocumentsModuleActions";
 import type {
   DocumentPreview,
@@ -20,14 +16,11 @@ import type {
   WorkspaceDocument,
 } from "./types";
 
-export function useDocumentsModuleState(api?: DocumentsApi) {
-  const documentsApi = useMemo(() => api ?? createRuntimeDocumentsApi(), [api]);
+export function useDocumentsModuleState(api: DocumentsApi | null) {
   const [documents, setDocuments] = useState<WorkspaceDocument[]>([]);
   const [filters, setFilters] = useState<ListDocumentsFilters>({});
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [view, setView] = useState<DocumentsView>("workspace");
-  const [workspaceViewMode, setWorkspaceViewMode] =
-    useState<WorkspaceViewMode>("folders");
   const [selectedFolderKey, setSelectedFolderKey] = useState<string | null>(
     null,
   );
@@ -44,36 +37,53 @@ export function useDocumentsModuleState(api?: DocumentsApi) {
     useState<WorkspaceDocument | null>(null);
   const [isDocumentActionBusy, setIsDocumentActionBusy] = useState(false);
   const [status, setStatus] = useState<WorkspaceStatus>({ kind: "loading" });
+  const [, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore] = useState(false);
 
-  const refresh = async (nextFilters = filters) => {
-    setStatus({ kind: "loading" });
-    try {
-      const [nextDocuments, nextTemplates] = await Promise.all([
-        documentsApi.listDocuments({
-          ...nextFilters,
-          limit: DOCUMENTS_WORKSPACE_LIMIT,
-        }),
-        documentsApi.listTemplates(),
-      ]);
-      setDocuments(nextDocuments);
-      setSelectedDocument((current) =>
-        current
-          ? (nextDocuments.find((document) => document.id === current.id) ??
-            null)
-          : null,
-      );
-      setTemplates([...nextTemplates]);
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setDocuments([]);
-      setTemplates([]);
-      setStatus({ kind: "error", message: errorMessage(error) });
-    }
-  };
+  const refresh = useCallback(
+    async (nextFilters = filters) => {
+      if (!api) return;
+      setStatus({ kind: "loading" });
+      try {
+        const [nextDocuments, nextTemplates] = await Promise.all([
+          api.listDocuments({
+            ...nextFilters,
+            limit: DOCUMENTS_PAGE_SIZE,
+          }),
+          api.listTemplates(),
+        ]);
+        setDocuments(nextDocuments);
+        setHasMore(false);
+        setSelectedDocument((current) =>
+          current
+            ? (nextDocuments.find((document) => document.id === current.id) ??
+              null)
+            : null,
+        );
+        setTemplates([...nextTemplates]);
+        setStatus({ kind: "ready" });
+      } catch (error) {
+        setDocuments([]);
+        setTemplates([]);
+        setStatus({ kind: "error", message: errorMessage(error) });
+      }
+    },
+    [api, filters],
+  );
+
+  const resetAndReload = useCallback(() => {
+    setOffset(0);
+    void refresh(filters);
+  }, [refresh, filters]);
+
+  const loadMore = useCallback(() => {
+    setHasMore(false);
+  }, []);
 
   const actions = useDocumentsModuleActions({
     documentToDelete,
-    documentsApi,
+    documentsApi: api,
     setDocumentPreview,
     setDocumentToDelete,
     setDocumentVersions,
@@ -86,21 +96,32 @@ export function useDocumentsModuleState(api?: DocumentsApi) {
   });
 
   useEffect(() => {
-    void refresh();
-  }, []);
+    if (api) void refresh(filters);
+  }, [api]);
 
-  const updateFilter = <Key extends keyof ListDocumentsFilters>(
-    key: Key,
-    value: ListDocumentsFilters[Key],
-  ) => {
-    const nextFilters = { ...filters, [key]: value };
-    setFilters(nextFilters);
-    setSelectedFolderKey(null);
-    void refresh(nextFilters);
-  };
+  const updateFilter = useCallback(
+    <Key extends keyof ListDocumentsFilters>(
+      key: Key,
+      value: ListDocumentsFilters[Key],
+    ) => {
+      const nextFilters = { ...filters, [key]: value };
+      setFilters(nextFilters);
+      setSelectedFolderKey(null);
+      setOffset(0);
+      void refresh(nextFilters);
+    },
+    [filters, refresh],
+  );
 
-  const folders = buildDocumentFolders(documents);
-  const uploadTarget: DocumentUploadTarget = { label: "Documentos gerais" };
+  const replaceFilters = useCallback(
+    (nextFilters: ListDocumentsFilters) => {
+      setFilters(nextFilters);
+      setSelectedFolderKey(null);
+      setOffset(0);
+      void refresh(nextFilters);
+    },
+    [refresh],
+  );
 
   return {
     applyDocumentAction: actions.applyDocumentAction,
@@ -109,16 +130,17 @@ export function useDocumentsModuleState(api?: DocumentsApi) {
     documentToDelete,
     documentVersions,
     documents,
-    documentsApi,
+    documentsApi: api,
     downloadDocument: actions.downloadDocument,
     filters,
-    folders,
+    hasMore,
     isDocumentActionBusy,
-    isResultCapped: documents.length >= DOCUMENTS_WORKSPACE_LIMIT,
+    isLoadingMore,
     isSavingTemplate,
     isUploadDialogOpen,
+    loadMore,
     previewDocument: actions.previewDocument,
-    refresh,
+    resetAndReload,
     saveTemplate: actions.saveTemplate,
     selectedDocument,
     selectedFolderKey,
@@ -131,14 +153,12 @@ export function useDocumentsModuleState(api?: DocumentsApi) {
     setSelectedFolderKey,
     setStatus,
     setView,
-    setWorkspaceViewMode,
     status,
     summaries: summarizeDocuments(documents),
     templates,
     updateDocument: actions.updateDocument,
     updateFilter,
-    uploadTarget,
+    replaceFilters,
     view,
-    workspaceViewMode,
   };
 }

@@ -194,6 +194,8 @@ describe("inventory media routes", () => {
           mimeType: "application/pdf",
           storageKey:
             "tenants/tenant_1/stores/store_1/listings/listing_1/registration.pdf",
+          targetId: "unit_1",
+          targetType: "vehicle_unit",
           title: "Registration",
         }),
         method: "POST",
@@ -211,6 +213,8 @@ describe("inventory media routes", () => {
         mimeType: "application/pdf",
         storageKey:
           "tenants/tenant_1/stores/store_1/listings/listing_1/registration.pdf",
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
         title: "Registration",
       },
     );

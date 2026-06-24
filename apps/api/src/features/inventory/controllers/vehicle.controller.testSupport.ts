@@ -91,6 +91,7 @@ export function createInventoryTestServices(): InventoryListingServices {
           mediaCount: 1,
           primaryMediaUrl: "https://cdn.local/front.jpg",
           primaryUnit: unitDto(),
+          units: [unitDto()],
         },
       ],
       nextOffset: null,

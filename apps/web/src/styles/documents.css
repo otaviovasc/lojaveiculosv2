@@ -227,7 +227,7 @@
   }
 
   .documents-toolbar {
-    grid-template-columns: minmax(16rem, 1fr) repeat(3, minmax(10rem, 0.55fr));
+    grid-template-columns: minmax(16rem, 1fr) repeat(2, minmax(10rem, 0.55fr));
   }
 }
 

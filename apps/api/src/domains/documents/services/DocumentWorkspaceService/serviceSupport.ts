@@ -1,9 +1,11 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { DocumentRepository } from "../../ports/documentRepository.js";
+import type { DocumentLinkTargetValidator } from "../../ports/documentLinkTargetValidator.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 
 export type DocumentWorkspaceServicePorts = {
   documentRepository: DocumentRepository;
+  linkTargetValidator?: DocumentLinkTargetValidator | undefined;
   objectStorage?: ObjectStorage | undefined;
 };
 

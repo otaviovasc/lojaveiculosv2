@@ -147,6 +147,7 @@ export const openApiDocument = {
     "documents.download": "Generate scoped document download descriptors.",
     "documents.preview": "Render scoped document previews.",
     "documents.regenerate": "Regenerate scoped operational documents.",
+    "documents.update_links": "Change scoped document store/unit links.",
     "documents.void": "Void scoped documents.",
     "marketplace.read": "Read OLX/Mercado Livre account and sync status.",
     "marketplace.manage": "Connect or pause marketplace accounts.",

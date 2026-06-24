@@ -25,6 +25,7 @@ export type VehicleListingSummary = {
   mediaCount: number;
   primaryMediaUrl: string | null;
   primaryUnit: VehicleUnit | null;
+  units: readonly VehicleUnit[];
 };
 
 export type VehicleListingListResult = {
@@ -68,5 +69,6 @@ export function createListingSummary(input: {
     mediaCount: input.media.length,
     primaryMediaUrl: orderedMedia[0]?.url ?? null,
     primaryUnit: input.units[0] ?? null,
+    units: input.units,
   };
 }

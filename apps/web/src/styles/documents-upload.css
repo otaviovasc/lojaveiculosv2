@@ -1,8 +1,8 @@
 .documents-modal-backdrop {
-  align-items: center;
   background: var(--color-overlay);
   display: flex;
   inset: 0;
+  align-items: center;
   justify-content: center;
   padding: 1rem;
   position: fixed;
@@ -21,8 +21,8 @@
 .documents-upload-dialog {
   display: grid;
   gap: 1rem;
-  max-height: min(42rem, calc(100vh - 2rem));
-  max-width: 42rem;
+  max-height: min(44rem, calc(100vh - 2rem));
+  max-width: 46rem;
   overflow: auto;
   padding: 1rem;
   width: 100%;
@@ -31,8 +31,8 @@
 .documents-upload-header,
 .documents-upload-actions,
 .documents-delete-dialog footer {
-  align-items: center;
   display: flex;
+  align-items: center;
   gap: 0.75rem;
   justify-content: space-between;
 }
@@ -40,6 +40,7 @@
 .documents-upload-header div {
   display: grid;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .documents-upload-header strong,
@@ -49,6 +50,13 @@
 
 .documents-upload-header span,
 .documents-upload-dropzone span,
+.documents-upload-destination span,
+.documents-upload-destination small,
+.documents-upload-queue-header span,
+.documents-upload-item-main label span,
+.documents-upload-kind-field span,
+.documents-upload-item-status,
+.documents-upload-progress-block span,
 .documents-upload-status,
 .documents-delete-dialog p,
 .documents-delete-dialog small {
@@ -62,25 +70,61 @@
 .documents-delete-dialog > button,
 .documents-delete-dialog footer button,
 .documents-upload-item button {
-  align-items: center;
   background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-text);
   display: inline-flex;
+  align-items: center;
   font-weight: 900;
   justify-content: center;
   min-height: 2.5rem;
   padding: 0 0.75rem;
 }
 
-.documents-upload-dropzone {
+.documents-upload-header button:disabled,
+.documents-upload-actions button:disabled,
+.documents-delete-dialog > button:disabled,
+.documents-delete-dialog footer button:disabled,
+.documents-upload-item button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.documents-upload-destination {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: 0.875rem;
   align-items: center;
+}
+
+.documents-upload-destination > svg {
+  color: var(--color-accent-strong);
+}
+
+.documents-upload-destination div {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.documents-upload-destination strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documents-upload-dropzone {
   background: var(--color-app);
   border: 1px dashed var(--color-line-strong);
   border-radius: var(--radius-md);
   cursor: pointer;
   display: grid;
+  align-items: center;
   gap: 0.375rem;
   justify-items: center;
   min-height: 9rem;
@@ -88,57 +132,58 @@
   text-align: center;
 }
 
+.documents-upload-dropzone:hover {
+  background: var(--color-app-elevated);
+  border-color: var(--color-accent-strong);
+}
+
+.documents-upload-dropzone:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.documents-upload-scope {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .documents-upload-dropzone input {
   display: none;
 }
 
-.documents-upload-queue {
+.documents-upload-progress-block {
+  background: var(--color-app-elevated);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   display: grid;
-  overflow: hidden;
-}
-
-.documents-upload-item {
-  align-items: center;
-  display: grid;
-  gap: 0.75rem;
-  grid-template-columns: auto minmax(0, 1fr) minmax(10rem, 0.35fr) auto;
+  gap: 0.5rem;
   padding: 0.75rem;
 }
 
-.documents-upload-item + .documents-upload-item {
-  border-top: 1px solid var(--color-line);
+.documents-upload-progress-block div {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
 }
 
-.documents-upload-item div {
-  display: grid;
-  gap: 0.375rem;
-  min-width: 0;
-}
-
-.documents-upload-item small {
-  color: var(--color-muted);
-  font-size: 0.75rem;
-  font-weight: 800;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.documents-upload-item input,
-.documents-upload-item .custom-select-trigger {
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-  font-weight: 800;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
+.documents-upload-progress-block strong {
+  font-size: 0.875rem;
+  font-weight: 900;
 }
 
 .documents-upload-progress {
+  accent-color: var(--color-accent);
+  height: 0.5rem;
   width: 100%;
+}
+
+.documents-upload-status {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  margin: 0;
+  padding: 0.75rem;
 }
 
 .documents-upload-actions button:last-child,
@@ -165,11 +210,11 @@
 }
 
 .documents-delete-icon {
-  align-items: center;
   background: var(--color-app-elevated);
   border-radius: var(--radius-md);
   color: var(--color-danger);
   display: flex;
+  align-items: center;
   height: 3rem;
   justify-content: center;
   width: 3rem;
@@ -183,12 +228,57 @@
   flex: 1;
 }
 
+.documents-danger-confirm {
+  background: var(--color-danger);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-inverse);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  font-size: 0.875rem;
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.documents-danger-confirm:hover:not(:disabled) {
+  transform: scale(1.02);
+}
+
+.documents-danger-confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 @media (max-width: 720px) {
-  .documents-upload-item {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+  .documents-upload-dialog {
+    max-height: calc(100vh - 1rem);
+    padding: 0.875rem;
   }
 
-  .documents-upload-item .custom-select {
+  .documents-upload-destination {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .documents-upload-destination small {
     grid-column: 2 / -1;
+  }
+
+  .documents-upload-scope {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-upload-actions {
+    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }

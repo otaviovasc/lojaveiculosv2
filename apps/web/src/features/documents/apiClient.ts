@@ -1,6 +1,7 @@
 import type {
   DocumentsAuth,
   CreateUploadedDocumentInput,
+  CreateVehicleUploadedDocumentInput,
   DocumentDownload,
   DocumentKind,
   DocumentPreview,
@@ -9,6 +10,7 @@ import type {
   DocumentVersion,
   ListDocumentsFilters,
   RequestDocumentUploadInput,
+  RequestVehicleDocumentUploadInput,
   UpdateDocumentInput,
   UpdateDocumentTemplateInput,
   VoidDocumentInput,
@@ -18,6 +20,10 @@ import type {
 export type DocumentsApi = {
   createUploadedDocument: (
     input: CreateUploadedDocumentInput,
+  ) => Promise<WorkspaceDocument>;
+  createVehicleUploadedDocument: (
+    listingId: string,
+    input: CreateVehicleUploadedDocumentInput,
   ) => Promise<WorkspaceDocument>;
   deleteDocument: (documentId: string) => Promise<WorkspaceDocument>;
   downloadDocument: (
@@ -33,6 +39,10 @@ export type DocumentsApi = {
   regenerateDocument: (documentId: string) => Promise<WorkspaceDocument>;
   requestDocumentUpload: (
     input: RequestDocumentUploadInput,
+  ) => Promise<DocumentUpload>;
+  requestVehicleDocumentUpload: (
+    listingId: string,
+    input: RequestVehicleDocumentUploadInput,
   ) => Promise<DocumentUpload>;
   updateDocument: (
     documentId: string,
@@ -66,6 +76,14 @@ export function createDocumentsApi({
         headers: createDocumentsHeaders(auth),
         method: "POST",
       }).then(readJson<WorkspaceDocument>),
+    createVehicleUploadedDocument: (listingId, input) =>
+      fetch(documentsRoutes.vehicleDocuments(listingId, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "POST",
+      })
+        .then(readJson<VehicleUploadedDocumentResponse>)
+        .then(mapVehicleUploadedDocument),
     deleteDocument: (documentId) =>
       fetch(documentsRoutes.document(documentId, baseUrl), {
         headers: createDocumentsHeaders(auth),
@@ -104,6 +122,12 @@ export function createDocumentsApi({
       }).then(readJson<WorkspaceDocument>),
     requestDocumentUpload: (input) =>
       fetch(documentsRoutes.uploads(baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "POST",
+      }).then(readJson<DocumentUpload>),
+    requestVehicleDocumentUpload: (listingId, input) =>
+      fetch(documentsRoutes.vehicleUploads(listingId, baseUrl), {
         body: JSON.stringify(input),
         headers: createDocumentsHeaders(auth),
         method: "POST",
@@ -156,6 +180,16 @@ export const documentsRoutes = {
   templates: (baseUrl?: string) =>
     createEndpoint("/documents/templates", baseUrl),
   uploads: (baseUrl?: string) => createEndpoint("/documents/uploads", baseUrl),
+  vehicleDocuments: (listingId: string, baseUrl?: string) =>
+    createEndpoint(
+      `/inventory/listings/${encodeURIComponent(listingId)}/documents`,
+      baseUrl,
+    ),
+  vehicleUploads: (listingId: string, baseUrl?: string) =>
+    createEndpoint(
+      `/inventory/listings/${encodeURIComponent(listingId)}/documents/uploads`,
+      baseUrl,
+    ),
   void: (documentId: string, baseUrl?: string) =>
     createEndpoint(
       `/documents/${encodeURIComponent(documentId)}/void`,
@@ -203,7 +237,51 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`Documents request failed with status ${response.status}`);
+    throw new Error(
+      `Falha na requisição de documentos. Status ${response.status}.`,
+    );
   }
   return (await response.json()) as T;
+}
+
+type VehicleUploadedDocumentResponse = {
+  createdAt: string;
+  fileName: string;
+  fileSizeBytes: number | null;
+  id: string;
+  kind: DocumentKind;
+  linkRole: string;
+  metadata: Record<string, unknown>;
+  mimeType: string | null;
+  status: WorkspaceDocument["status"];
+  targetId: string;
+  targetType: WorkspaceDocument["context"]["targetType"];
+  title: string;
+  updatedAt: string;
+  uploadedAt: string;
+};
+
+function mapVehicleUploadedDocument(
+  document: VehicleUploadedDocumentResponse,
+): WorkspaceDocument {
+  return {
+    context: {
+      linkRole: document.linkRole,
+      targetId: document.targetId,
+      targetType: document.targetType,
+    },
+    createdAt: document.createdAt,
+    file: {
+      fileName: document.fileName,
+      fileSizeBytes: document.fileSizeBytes,
+      mimeType: document.mimeType,
+    },
+    id: document.id,
+    kind: document.kind,
+    metadata: document.metadata,
+    status: document.status,
+    title: document.title,
+    updatedAt: document.updatedAt,
+    uploadedAt: document.uploadedAt,
+  };
 }

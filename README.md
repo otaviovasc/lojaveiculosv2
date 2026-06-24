@@ -31,6 +31,7 @@ lojaveiculosv2/
 │   ├── architecture.md
 │   ├── feature-inventory.md
 │   ├── migration.md
+│   ├── runbooks/v1-to-v2-basic-migration.md
 │   └── railway.md
 └── tools/
     └── quality/   # Local checks agents must keep green

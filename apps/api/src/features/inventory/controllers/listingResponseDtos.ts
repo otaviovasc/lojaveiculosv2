@@ -77,5 +77,10 @@ function toSummaryDto(summary: VehicleListingSummary) {
           updatedAt: summary.primaryUnit.updatedAt.toISOString(),
         }
       : null,
+    units: summary.units.map((unit) => ({
+      ...unit,
+      createdAt: unit.createdAt.toISOString(),
+      updatedAt: unit.updatedAt.toISOString(),
+    })),
   };
 }
