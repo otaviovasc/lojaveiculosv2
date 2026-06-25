@@ -147,6 +147,26 @@ export function createMemoryFinanceRepository(): FinanceRepository {
         ...(input.status !== undefined ? { status: input.status } : {}),
         updatedAt: new Date(),
       };
+      if (input.links !== undefined) {
+        for (const link of [...links]) {
+          if (link.entryId === updated.id) links.splice(links.indexOf(link), 1);
+        }
+        links.push(
+          ...input.links.map((link) => {
+            const item: FinanceEntryLink = {
+              ...link,
+              createdAt: new Date(),
+              entryId: updated.id,
+              id: `finance_entry_link_${linkSequence}`,
+              storeId: updated.storeId,
+              tenantId: updated.tenantId,
+              updatedAt: new Date(),
+            };
+            linkSequence += 1;
+            return item;
+          }),
+        );
+      }
       entries.splice(entries.indexOf(current), 1, updated);
       return {
         entry: updated,

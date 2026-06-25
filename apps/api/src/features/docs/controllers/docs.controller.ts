@@ -8,6 +8,7 @@ import {
 } from "./documentOperationsOpenApi.js";
 import { documentsPaths, documentsSchemas } from "./documentsOpenApi.js";
 import { externalApiPaths, externalApiSchemas } from "./externalApiOpenApi.js";
+import { financePaths, financeSchemas } from "./financeOpenApi.js";
 import { fiscalPaths, fiscalSchemas } from "./fiscalOpenApi.js";
 import { identityPaths, identitySchemas } from "./identityOpenApi.js";
 import {
@@ -70,6 +71,7 @@ export const openApiDocument = {
     ...storefrontPaths,
     ...identityPaths,
     ...billingPaths,
+    ...financePaths,
     ...fiscalPaths,
     ...analyticsPaths,
     ...compliancePaths,
@@ -101,6 +103,7 @@ export const openApiDocument = {
     schemas: {
       ...inventorySchemas,
       ...billingSchemas,
+      ...financeSchemas,
       ...fiscalSchemas,
       ...analyticsSchemas,
       ...complianceSchemas,
@@ -131,6 +134,11 @@ export const openApiDocument = {
     "analytics.read": "Read commercial analytics dashboards.",
     "compliance.manage": "Read and operate LGPD/security posture controls.",
     "fiscal.manage": "Operate fiscal provider and NF-e document lifecycle.",
+    "finance.read": "Read finance entries, summaries, and rules.",
+    "finance.create": "Create finance entries, recurring entries, and rules.",
+    "finance.update": "Update, pay, cancel, and void finance entries.",
+    "finance.attach_document":
+      "Request uploads and attach documents to finance entries.",
     "inventory.read": "Read vehicle inventory.",
     "inventory.create": "Create vehicle inventory records.",
     "inventory.update_description": "Edit descriptive vehicle fields.",

@@ -2,7 +2,14 @@ import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { DrizzleFinanceClient } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
 import type { FinanceServicePorts } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
 import type { AttachFinanceEntryDocumentInput } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
-import type { CreateFinanceEntryInput } from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
+import type {
+  CreateFinanceEntryInput,
+  CreateFinanceEntryResult,
+} from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
+import type {
+  FinanceEntryDetail,
+  GetFinanceEntryDetailInput,
+} from "../../../domains/finance/services/FinanceService/getFinanceEntryDetail.js";
 import type {
   FinanceEntryListResult,
   ListFinanceEntriesInput,
@@ -29,6 +36,7 @@ import { cancelFinanceEntry } from "../../../domains/finance/services/FinanceSer
 import { createCommissionRule } from "../../../domains/finance/services/FinanceService/createCommissionRule.js";
 import { createFinanceEntry } from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
 import { createFinanceRecurringEntry } from "../../../domains/finance/services/FinanceService/createFinanceRecurringEntry.js";
+import { getFinanceEntryDetail } from "../../../domains/finance/services/FinanceService/getFinanceEntryDetail.js";
 import { getFinanceSummary } from "../../../domains/finance/services/FinanceService/getFinanceSummary.js";
 import { listCommissionRules } from "../../../domains/finance/services/FinanceService/listCommissionRules.js";
 import { listFinanceEntries } from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
@@ -62,7 +70,7 @@ export type FinanceServices = {
   createEntry: (
     context: ServiceContext,
     input: CreateFinanceEntryInput,
-  ) => Promise<FinanceEntryBundle>;
+  ) => Promise<CreateFinanceEntryResult>;
   createCommissionRule: (
     context: ServiceContext,
     input: CreateCommissionRuleInput,
@@ -75,6 +83,14 @@ export type FinanceServices = {
     context: ServiceContext,
     input: CancelFinanceEntryInput,
   ) => Promise<FinanceEntryBundle>;
+  deleteEntry: (
+    context: ServiceContext,
+    input: CancelFinanceEntryInput,
+  ) => Promise<FinanceEntryBundle>;
+  getEntry: (
+    context: ServiceContext,
+    input: GetFinanceEntryDetailInput,
+  ) => Promise<FinanceEntryDetail>;
   getSummary: (context: ServiceContext) => Promise<FinanceSummary>;
   listEntries: (
     context: ServiceContext,
@@ -143,6 +159,11 @@ export function createFinanceServices(
       transactionRunner.runInTransaction((txPorts) =>
         createFinanceRecurringEntry(context, input, txPorts),
       ),
+    deleteEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        cancelFinanceEntry(context, input, txPorts),
+      ),
+    getEntry: (context, input) => getFinanceEntryDetail(context, input, ports),
     getSummary: (context) => getFinanceSummary(context, ports),
     async listEntries(context, input) {
       const result = await listFinanceEntries(context, input, ports);

@@ -11,6 +11,11 @@ import type {
   SaveSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
 import type { SalesServicePorts } from "../../../domains/sales/services/SalesService/serviceSupport.js";
+import {
+  createClientTransactionRunner,
+  createPassthroughTransactionRunner,
+  type TransactionRunner,
+} from "../../../shared/transaction.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 
 export type SalesServices = {
@@ -39,20 +44,37 @@ export type SalesServices = {
 };
 
 export type CreateSalesServicesOptions =
-  | { drizzleClient: DrizzleSalesClient; ports?: never }
-  | { drizzleClient?: never; ports?: SalesServicePorts };
+  | {
+      drizzleClient: DrizzleSalesClient;
+      ports?: never;
+      transactionRunner?: TransactionRunner<SalesServicePorts>;
+    }
+  | {
+      drizzleClient?: never;
+      ports?: SalesServicePorts;
+      transactionRunner?: TransactionRunner<SalesServicePorts>;
+    };
 
 export function createSalesServices(
   options: CreateSalesServicesOptions = {},
 ): SalesServices {
   const ports = resolvePorts(options);
+  const transactionRunner = resolveTransactionRunner(options, ports);
 
   return {
-    createDraft: (context, input) => createSaleDraft(context, input, ports),
+    createDraft: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        createSaleDraft(context, input, txPorts),
+      ),
     list: (context, input) => listSales(context, input, ports),
-    transition: (context, input) => transitionSale(context, input, ports),
+    transition: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        transitionSale(context, input, txPorts),
+      ),
     updateDraft: (context, saleId, input) =>
-      updateSaleDraft(context, saleId, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        updateSaleDraft(context, saleId, input, txPorts),
+      ),
   };
 }
 
@@ -64,6 +86,22 @@ function resolvePorts(options: CreateSalesServicesOptions): SalesServicePorts {
     };
   }
   return { salesRepository: createMemorySalesRepository() };
+}
+
+function resolveTransactionRunner(
+  options: CreateSalesServicesOptions,
+  ports: SalesServicePorts,
+): TransactionRunner<SalesServicePorts> {
+  if (options.transactionRunner) return options.transactionRunner;
+  if ("drizzleClient" in options) {
+    return createClientTransactionRunner<SalesServicePorts, DrizzleSalesClient>(
+      options.drizzleClient,
+      (client) => ({
+        salesRepository: createDrizzleSalesRepository(client),
+      }),
+    );
+  }
+  return createPassthroughTransactionRunner(ports);
 }
 
 export const salesServices = createSalesServices();

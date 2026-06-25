@@ -38,6 +38,30 @@ export const financeDocumentKinds = [
   "vehicle_registration",
 ] as const;
 
+const financeEntryLinkSchema = z.object({
+  targetId: z.string().trim().min(1),
+  targetType: z.enum(financeLinkTargets),
+});
+
+const financeDocumentUploadFields = {
+  contentType: z.string().trim().min(1).max(120),
+  fileName: z.string().trim().min(1).max(191),
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(25 * 1024 * 1024),
+} as const;
+
+const createFinanceEntryDocumentUploadSchema = z
+  .object(financeDocumentUploadFields)
+  .extend({
+    kind: z.enum(financeDocumentKinds).default("finance_receipt"),
+    linkRole: z.string().trim().min(1).max(80).optional(),
+    metadata: z.record(z.string(), z.unknown()).default({}),
+    title: z.string().trim().min(1).max(191).optional(),
+  });
+
 export const listFinanceEntriesQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),
   offset: z.coerce.number().int().nonnegative().optional(),
@@ -50,15 +74,9 @@ export const listFinanceEntriesQuerySchema = z.object({
 export const createFinanceEntrySchema = z.object({
   amountCents: z.number().int().positive(),
   category: z.string().trim().min(1).max(120),
+  documentUpload: createFinanceEntryDocumentUploadSchema.optional(),
   dueAt: z.coerce.date().nullable().optional(),
-  links: z
-    .array(
-      z.object({
-        targetId: z.string().trim().min(1),
-        targetType: z.enum(financeLinkTargets),
-      }),
-    )
-    .default([]),
+  links: z.array(financeEntryLinkSchema).default([]),
   metadata: z.record(z.string(), z.unknown()).default({}),
   name: z.string().trim().min(1).max(191),
   paidAt: z.coerce.date().nullable().optional(),
@@ -71,6 +89,7 @@ export const updateFinanceEntrySchema = z.object({
   amountCents: z.number().int().positive().optional(),
   category: z.string().trim().min(1).max(120).optional(),
   dueAt: z.coerce.date().nullable().optional(),
+  links: z.array(financeEntryLinkSchema).optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   name: z.string().trim().min(1).max(191).optional(),
   paidAt: z.coerce.date().nullable().optional(),
@@ -123,13 +142,7 @@ export const listCommissionRulesQuerySchema = z.object({
 });
 
 export const financeDocumentUploadSchema = z.object({
-  contentType: z.string().trim().min(1).max(120),
-  fileName: z.string().trim().min(1).max(191),
-  sizeBytes: z
-    .number()
-    .int()
-    .positive()
-    .max(25 * 1024 * 1024),
+  ...financeDocumentUploadFields,
 });
 
 export const attachFinanceDocumentSchema = z.object({

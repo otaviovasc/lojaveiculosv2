@@ -7,6 +7,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type {
   FinanceEntryStatus,
   FinanceEntryBundle,
+  FinanceLinkTarget,
 } from "../../ports/financeRepository.js";
 import {
   auditFinanceServiceEvent,
@@ -23,6 +24,10 @@ export type UpdateFinanceEntryInput = {
   category?: string;
   dueAt?: Date | null;
   entryId: string;
+  links?: readonly {
+    targetId: string;
+    targetType: FinanceLinkTarget;
+  }[];
   metadata?: Record<string, unknown>;
   name?: string;
   paidAt?: Date | null;
@@ -42,7 +47,7 @@ export async function updateFinanceEntry(
     repository,
     input.entryId,
   );
-  const changes = createFinanceEntryChanges(current.entry, input);
+  const changes = createFinanceEntryChanges(current, input);
 
   logFinanceServiceEvent(context, "finance_entry.update.started", {
     changedFields: changes.map((change) => change.path),
@@ -71,9 +76,10 @@ export async function updateFinanceEntry(
 }
 
 function createFinanceEntryChanges(
-  entry: FinanceEntryBundle["entry"],
+  current: FinanceEntryBundle,
   input: UpdateFinanceEntryInput,
 ): AuditFieldChange[] {
+  const entry = current.entry;
   return [
     changeFor("amountCents", entry.amountCents, input.amountCents),
     changeFor("category", entry.category, input.category),
@@ -89,6 +95,11 @@ function createFinanceEntryChanges(
     ),
     changeFor("name", entry.name, input.name),
     changeFor(
+      "links",
+      serializeLinks(current.links),
+      serializeLinks(input.links),
+    ),
+    changeFor(
       "paidAt",
       entry.paidAt?.toISOString() ?? null,
       dateValue(input.paidAt),
@@ -96,6 +107,20 @@ function createFinanceEntryChanges(
     changeFor("sellerUserId", entry.sellerUserId, input.sellerUserId),
     changeFor("status", entry.status, input.status),
   ].filter((change): change is AuditFieldChange => Boolean(change));
+}
+
+function serializeLinks(
+  links:
+    | readonly {
+        targetId: string;
+        targetType: FinanceLinkTarget;
+      }[]
+    | undefined,
+): SafeAuditMetadataValue | undefined {
+  return links?.map((link) => ({
+    targetId: link.targetId,
+    targetType: link.targetType,
+  }));
 }
 
 function dateValue(value: Date | null | undefined): string | null | undefined {

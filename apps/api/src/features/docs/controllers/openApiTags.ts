@@ -14,6 +14,10 @@ export const openApiTags = [
     description: "Store commercial, inventory, finance, and funnel metrics.",
   },
   {
+    name: "Finance",
+    description: "Store-scoped finance entries, rules, and attachments.",
+  },
+  {
     name: "Compliance",
     description: "LGPD, access review, audit export, and security posture.",
   },

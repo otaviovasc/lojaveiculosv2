@@ -16,6 +16,14 @@ export const llmsText = `# Loja Veiculos API
 - Issue fiscal document: POST /api/v1/fiscal/documents
 - Cancel fiscal document: POST /api/v1/fiscal/documents/{documentId}/cancel
 - Sync fiscal status: POST /api/v1/fiscal/documents/{documentId}/status-sync
+- Finance summary: GET /api/v1/finance/summary
+- List finance entries: GET /api/v1/finance/entries
+- Create finance entry: POST /api/v1/finance/entries
+- Get finance entry: GET /api/v1/finance/entries/{entryId}
+- Update finance entry: PATCH /api/v1/finance/entries/{entryId}
+- Delete finance entry: DELETE /api/v1/finance/entries/{entryId}
+- Request finance document upload: POST /api/v1/finance/entries/{entryId}/documents/uploads
+- Attach finance document: POST /api/v1/finance/entries/{entryId}/documents
 - Analytics dashboard: GET /api/v1/analytics/dashboard
 - Compliance snapshot: GET /api/v1/compliance/snapshot
 - Marketplace overview: GET /api/v1/marketplaces/overview
@@ -75,6 +83,10 @@ export const llmsText = `# Loja Veiculos API
 - analytics.read: required to read reports and commercial dashboards.
 - compliance.manage: required to read and operate LGPD/security controls.
 - fiscal.manage: required to operate SPEDY/NF-e lifecycle workflows.
+- finance.read: required to read finance entries, summaries, rules, and documents.
+- finance.create: required to create finance entries, recurring entries, and commission rules.
+- finance.update: required to update, pay, cancel, or delete finance entries.
+- finance.attach_document: required to request uploads and attach finance entry documents.
 - marketplace.read: required to read OLX/Mercado Livre connection status.
 - marketplace.manage: required to connect or pause marketplace accounts.
 - marketplace.inventory_sync: required to queue inventory sync jobs.
@@ -128,6 +140,20 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/fiscal/documents: records one fiscal issue attempt and persists provider status; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
 - POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
 - POST /api/v1/fiscal/documents/{documentId}/status-sync: reconciles one persisted fiscal document status with the configured gateway state; requires fiscal.manage and nfe entitlement.
+
+## Current finance endpoints
+- GET /api/v1/finance/summary: returns revenue, expense, pending, and balance totals for the current store; requires finance.read.
+- GET /api/v1/finance/entries: lists finance entries with type, status, target link, limit, and offset filters; requires finance.read.
+- POST /api/v1/finance/entries: creates one finance entry with optional links and an optional draft document upload request; requires finance.create and finance.attach_document when documentUpload is present.
+- GET /api/v1/finance/entries/{entryId}: returns one finance entry with links and attached documents; requires finance.read.
+- PATCH /api/v1/finance/entries/{entryId}: updates finance entry fields and can replace entry links; requires finance.update.
+- DELETE /api/v1/finance/entries/{entryId}: marks an entry cancelled with an optional reason query parameter; requires finance.update.
+- POST /api/v1/finance/entries/{entryId}/pay: marks an entry paid; requires finance.update.
+- POST /api/v1/finance/entries/{entryId}/cancel: marks an entry cancelled with JSON reason; requires finance.update.
+- POST /api/v1/finance/entries/{entryId}/documents/uploads: returns scoped PUT upload instructions for finance documents; requires finance.attach_document.
+- POST /api/v1/finance/entries/{entryId}/documents: attaches an uploaded document to a finance entry; requires finance.attach_document.
+- GET /api/v1/finance/recurring-entries and POST /api/v1/finance/recurring-entries: list and create recurring finance entries.
+- GET /api/v1/finance/commission-rules and POST /api/v1/finance/commission-rules: list and create commission rules.
 
 ## Current analytics endpoints
 - GET /api/v1/analytics/dashboard: returns DB-backed inventory, finance, lead funnel, source attribution, and KPI snapshots; requires analytics.read and analytics entitlement.

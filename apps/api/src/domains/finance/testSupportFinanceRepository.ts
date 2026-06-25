@@ -22,6 +22,7 @@ export function createTestFinanceRepository(): TestFinanceRepository {
   const entries: FinanceEntry[] = [];
   const links: FinanceEntryLink[] = [];
   const recurringEntries: FinanceRecurringEntry[] = [];
+  let linkSequence = 1;
 
   return {
     commissionRules,
@@ -49,17 +50,19 @@ export function createTestFinanceRepository(): TestFinanceRepository {
         id: `finance_entry_${entries.length + 1}`,
         updatedAt: now,
       };
-      const entryLinks = input.links.map(
-        (link, index): FinanceEntryLink => ({
+      const entryLinks = input.links.map((link): FinanceEntryLink => {
+        const item: FinanceEntryLink = {
           ...link,
           createdAt: now,
           entryId: entry.id,
-          id: `finance_entry_link_${links.length + index + 1}`,
+          id: `finance_entry_link_${linkSequence}`,
           storeId: input.storeId,
           tenantId: input.tenantId,
           updatedAt: now,
-        }),
-      );
+        };
+        linkSequence += 1;
+        return item;
+      });
       entries.push(entry);
       links.push(...entryLinks);
       return { entry, links: entryLinks };
@@ -154,6 +157,27 @@ export function createTestFinanceRepository(): TestFinanceRepository {
         ...(input.status !== undefined ? { status: input.status } : {}),
         updatedAt: new Date(),
       };
+      if (input.links !== undefined) {
+        for (const link of [...links]) {
+          if (link.entryId === updated.id) links.splice(links.indexOf(link), 1);
+        }
+        const now = new Date();
+        links.push(
+          ...input.links.map((link): FinanceEntryLink => {
+            const item: FinanceEntryLink = {
+              ...link,
+              createdAt: now,
+              entryId: updated.id,
+              id: `finance_entry_link_${linkSequence}`,
+              storeId: updated.storeId,
+              tenantId: updated.tenantId,
+              updatedAt: now,
+            };
+            linkSequence += 1;
+            return item;
+          }),
+        );
+      }
       entries.splice(entries.indexOf(current), 1, updated);
       return {
         entry: updated,

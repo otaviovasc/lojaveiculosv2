@@ -112,6 +112,10 @@ export type UpdateFinanceEntryInput = {
   category?: string;
   dueAt?: Date | null;
   entryId: string;
+  links?: readonly {
+    targetId: string;
+    targetType: FinanceLinkTarget;
+  }[];
   metadata?: Record<string, unknown>;
   name?: string;
   paidAt?: Date | null;

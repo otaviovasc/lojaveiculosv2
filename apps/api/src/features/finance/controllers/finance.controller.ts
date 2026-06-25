@@ -89,6 +89,16 @@ export function createFinanceFeature(
     }),
   );
 
+  financeFeature.get("/entries/:entryId", async (context) =>
+    handleFinance(context, async () => {
+      const serviceContext = await createContext(context);
+      const detail = await services.getEntry(serviceContext, {
+        entryId: context.req.param("entryId"),
+      });
+      return context.json(detail);
+    }),
+  );
+
   financeFeature.patch("/entries/:entryId", async (context) =>
     handleFinance(context, async () => {
       const input = await parseJson(context, updateFinanceEntrySchema);
@@ -97,6 +107,17 @@ export function createFinanceFeature(
         serviceContext,
         cleanUpdateEntryInput(context.req.param("entryId"), input),
       );
+      return context.json(bundle);
+    }),
+  );
+
+  financeFeature.delete("/entries/:entryId", async (context) =>
+    handleFinance(context, async () => {
+      const serviceContext = await createContext(context);
+      const bundle = await services.deleteEntry(serviceContext, {
+        entryId: context.req.param("entryId"),
+        reason: context.req.query("reason")?.trim() || "deleted",
+      });
       return context.json(bundle);
     }),
   );

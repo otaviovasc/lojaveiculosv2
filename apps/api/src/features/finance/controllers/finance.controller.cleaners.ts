@@ -29,6 +29,9 @@ export function cleanCreateEntryInput(
   return {
     amountCents: input.amountCents,
     category: input.category,
+    ...(input.documentUpload
+      ? { documentUpload: cleanDocumentUpload(input.documentUpload) }
+      : {}),
     dueAt: input.dueAt ?? null,
     links: input.links,
     metadata: input.metadata,
@@ -67,6 +70,7 @@ export function cleanUpdateEntryInput(
       : {}),
     ...(input.category !== undefined ? { category: input.category } : {}),
     ...(input.dueAt !== undefined ? { dueAt: input.dueAt } : {}),
+    ...(input.links !== undefined ? { links: input.links } : {}),
     ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
     ...(input.name !== undefined ? { name: input.name } : {}),
     ...(input.paidAt !== undefined ? { paidAt: input.paidAt } : {}),
@@ -74,6 +78,21 @@ export function cleanUpdateEntryInput(
       ? { sellerUserId: input.sellerUserId }
       : {}),
     ...(input.status !== undefined ? { status: input.status } : {}),
+  };
+}
+
+function cleanDocumentUpload(
+  input: z.infer<typeof createFinanceEntrySchema>["documentUpload"],
+) {
+  if (!input) return input;
+  return {
+    contentType: input.contentType,
+    fileName: input.fileName,
+    kind: input.kind,
+    ...(input.linkRole !== undefined ? { linkRole: input.linkRole } : {}),
+    metadata: input.metadata,
+    sizeBytes: input.sizeBytes,
+    ...(input.title !== undefined ? { title: input.title } : {}),
   };
 }
 

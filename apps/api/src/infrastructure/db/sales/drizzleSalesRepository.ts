@@ -101,7 +101,15 @@ async function replacePayments(
   saleId: string,
   payments: readonly SaveSalePaymentInput[] = [],
 ): Promise<readonly PaymentRow[]> {
-  await db.delete(salePayments).where(eq(salePayments.saleId, saleId));
+  await db
+    .delete(salePayments)
+    .where(
+      and(
+        eq(salePayments.saleId, saleId),
+        eq(salePayments.storeId, scope.storeId),
+        eq(salePayments.tenantId, scope.tenantId),
+      ),
+    );
   if (!payments.length) return [];
   return db
     .insert(salePayments)

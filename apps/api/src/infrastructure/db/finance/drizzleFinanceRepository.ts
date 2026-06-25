@@ -37,8 +37,7 @@ export function createDrizzleFinanceRepository(
         .insert(commissionRules)
         .values(toInsertCommissionRule(input))
         .returning();
-      if (!row)
-        throw new Error("Drizzle adapter did not return commission rule.");
+      if (!row) throw new Error("Missing commission rule row.");
       return toCommissionRule(row);
     },
     async createEntry(input) {
@@ -51,8 +50,7 @@ export function createDrizzleFinanceRepository(
         .insert(financeEntries)
         .values(toInsertEntry(input))
         .returning();
-      if (!entryRow)
-        throw new Error("Drizzle adapter did not return finance entry.");
+      if (!entryRow) throw new Error("Missing finance entry row.");
       const linkRows = input.links.length
         ? await db
             .insert(financeEntryLinks)
@@ -155,6 +153,13 @@ export function createDrizzleFinanceRepository(
     },
     async updateEntry(input) {
       const scope = requireFinanceScope(input);
+      if (input.links !== undefined) {
+        await validateFinanceLinkTargets(db, {
+          links: input.links,
+          storeId: scope.storeId,
+          tenantId: scope.tenantId,
+        });
+      }
       const [row] = await db
         .update(financeEntries)
         .set(toUpdateEntry(input))
@@ -167,6 +172,22 @@ export function createDrizzleFinanceRepository(
         )
         .returning();
       if (!row) throw new FinanceEntryDrizzleNotFoundError(input.entryId);
+      if (input.links !== undefined) {
+        await db
+          .delete(financeEntryLinks)
+          .where(
+            and(
+              eq(financeEntryLinks.entryId, row.id),
+              eq(financeEntryLinks.storeId, scope.storeId),
+              eq(financeEntryLinks.tenantId, scope.tenantId),
+            ),
+          );
+        if (input.links.length) {
+          await db
+            .insert(financeEntryLinks)
+            .values(input.links.map((link) => toInsertLink(row, row.id, link)));
+        }
+      }
       const linkRows = await findLinksForEntries([row.id], scope);
       return { entry: toEntry(row), links: linkRows.map(toLink) };
     },

@@ -41,6 +41,10 @@ describe("finance transaction composition", () => {
     ],
     ["createEntry", (services) => services.createEntry(context(), entry())],
     [
+      "deleteEntry",
+      (services) => services.deleteEntry(context(), { entryId: "entry_1" }),
+    ],
+    [
       "createRecurringEntry",
       (services) =>
         services.createRecurringEntry(context(), {

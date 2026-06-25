@@ -45,7 +45,7 @@ export function toInsertEntry(input: CreateFinanceEntryInput): InsertEntryRow {
 }
 
 export function toInsertLink(
-  input: CreateFinanceEntryInput,
+  input: { storeId: string; tenantId: string },
   entryId: string,
   link: CreateFinanceEntryInput["links"][number],
 ): InsertLinkRow {

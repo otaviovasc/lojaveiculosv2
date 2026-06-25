@@ -59,6 +59,17 @@ describe("API docs routes", () => {
       $ref: "#/components/schemas/UpsertVehicleUnitAcquisitionRequest",
     });
     expect(
+      openApiDocument.paths["/api/v1/finance/entries"].post.security,
+    ).toEqual([{ bearerAuth: ["finance.create"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/finance/entries/{entryId}"].get.security,
+    ).toEqual([{ bearerAuth: ["finance.read"] }]);
+    expect(
+      openApiDocument.paths[
+        "/api/v1/finance/entries/{entryId}/documents/uploads"
+      ].post.security,
+    ).toEqual([{ bearerAuth: ["finance.attach_document"] }]);
+    expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
         .post.security,
     ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
@@ -119,8 +130,20 @@ describe("API docs routes", () => {
         "power_of_attorney",
       ]),
     );
+    expect(
+      openApiDocument.components.schemas.CreateFinanceEntryRequest.properties
+        .documentUpload,
+    ).toEqual({
+      $ref: "#/components/schemas/CreateFinanceEntryDocumentUploadRequest",
+    });
+    expect(
+      openApiDocument.components.schemas.FinanceEntryDetail.required,
+    ).toEqual(["entry", "links", "documents"]);
     expect(openApiDocument["x-scopes"]["inventory.read"]).toContain(
       "Read vehicle inventory",
+    );
+    expect(openApiDocument["x-scopes"]["finance.attach_document"]).toContain(
+      "attach documents",
     );
     expect(openApiDocument["x-finance-side-effects"].linkTargets).toEqual(
       expect.arrayContaining(["sale", "sale_payment", "vehicle_cost"]),
