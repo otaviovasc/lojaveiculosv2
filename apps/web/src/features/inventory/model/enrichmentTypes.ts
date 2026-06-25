@@ -18,6 +18,7 @@ export type InventoryPlateFipeReference = {
 };
 
 export type InventoryPlateVehicle = {
+  aspiration: string | null;
   bodyType: string | null;
   brand: string | null;
   chassis: string | null;

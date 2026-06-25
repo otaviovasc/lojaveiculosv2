@@ -7,7 +7,7 @@ import {
 import { uploadInventoryFile } from "./mediaWorkspaceTypes";
 import type { CreateMediaDraft } from "./createMediaDrafts";
 import type { InventoryFormState } from "./formModel";
-import type { InventoryListingDetail } from "./types";
+import type { CreateInventoryUnitInput, InventoryListingDetail } from "./types";
 
 export type InventoryCreateSubmitProgress = {
   label: string;
@@ -50,9 +50,14 @@ export async function submitInventoryCreateFlow({
   let detail = await api.createListing(input.listing);
   const listingId = detail.listing.id;
 
-  onProgress({ label: "Vinculando unidade" });
   try {
-    detail = await api.attachUnit(listingId, input.unit);
+    detail = await attachInventoryUnits({
+      api,
+      detail,
+      listingId,
+      onProgress,
+      units: input.units ?? [input.unit],
+    });
   } catch (error) {
     return {
       attachedMediaCount: 0,
@@ -134,7 +139,13 @@ export async function retryInventoryCreateMedia({
 }): Promise<Extract<InventoryCreateSubmitResult, { kind: "complete" }>> {
   let detail = await api.getListing(listingId);
   if (form) {
-    detail = await ensureInventoryUnitAttached(api, listingId, form, detail);
+    detail = await ensureInventoryUnitAttached({
+      api,
+      detail,
+      form,
+      listingId,
+      onProgress,
+    });
   }
 
   const pending = media.filter((item) => !isMediaAlreadyAttached(detail, item));
@@ -172,6 +183,34 @@ async function attachInventoryCreateMediaItem(
     kind: item.kind,
     storageKey: upload.storageKey,
   });
+}
+
+async function attachInventoryUnits({
+  api,
+  detail,
+  listingId,
+  onProgress,
+  units,
+}: {
+  api: InventoryApi;
+  detail: InventoryListingDetail;
+  listingId: string;
+  onProgress: (progress: InventoryCreateSubmitProgress) => void;
+  units: readonly CreateInventoryUnitInput[];
+}) {
+  let updated = detail;
+
+  for (const [index, unit] of units.entries()) {
+    onProgress({
+      label:
+        units.length > 1
+          ? `Vinculando unidade ${index + 1}/${units.length}`
+          : "Vinculando unidade",
+    });
+    updated = await api.attachUnit(listingId, unit);
+  }
+
+  return updated;
 }
 
 function isMediaAlreadyAttached(
@@ -216,14 +255,52 @@ async function refreshListingDetail(
   }
 }
 
-async function ensureInventoryUnitAttached(
-  api: InventoryApi,
-  listingId: string,
-  form: InventoryFormState,
-  detail: InventoryListingDetail,
-) {
-  if (detail.units.length > 0) return detail;
-
+async function ensureInventoryUnitAttached({
+  api,
+  detail,
+  form,
+  listingId,
+  onProgress,
+}: {
+  api: InventoryApi;
+  detail: InventoryListingDetail;
+  form: InventoryFormState;
+  listingId: string;
+  onProgress: (progress: InventoryCreateSubmitProgress) => void;
+}) {
   const input = createInventoryFlowInput(form, null);
-  return api.attachUnit(listingId, input.unit);
+  const pendingUnits = listPendingUnits(detail, input.units ?? [input.unit]);
+
+  if (pendingUnits.length === 0) return detail;
+
+  return attachInventoryUnits({
+    api,
+    detail,
+    listingId,
+    onProgress,
+    units: pendingUnits,
+  });
+}
+
+function listPendingUnits(
+  detail: InventoryListingDetail,
+  expectedUnits: readonly CreateInventoryUnitInput[],
+) {
+  const existingCounts = new Map<string, number>();
+  for (const unit of detail.units) {
+    const key = unitColorKey(unit);
+    existingCounts.set(key, (existingCounts.get(key) ?? 0) + 1);
+  }
+
+  return expectedUnits.filter((unit) => {
+    const key = unitColorKey(unit);
+    const count = existingCounts.get(key) ?? 0;
+    if (count <= 0) return true;
+    existingCounts.set(key, count - 1);
+    return false;
+  });
+}
+
+function unitColorKey(input: { colorName?: string | null }) {
+  return input.colorName ?? "";
 }

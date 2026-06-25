@@ -5,6 +5,7 @@ import {
   Clock3,
   FileText,
   PauseCircle,
+  Wrench,
 } from "lucide-react";
 import type { InventoryListingStatus } from "../model/types";
 
@@ -49,6 +50,15 @@ export function statusButtonClassName(
 ) {
   const base =
     "inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border-2 px-3 text-xs font-bold transition-all";
+
+  if (status === "in_preparation") {
+    return [
+      base,
+      selected
+        ? "border-warning bg-warning/20 text-warning ring-2 ring-warning/25"
+        : "border-warning/20 bg-app text-warning hover:bg-warning/10",
+    ].join(" ");
+  }
 
   if (status === "available") {
     return [
@@ -101,6 +111,9 @@ export function StatusOptionIcon({
 }) {
   const className = "size-3.5 shrink-0";
 
+  if (status === "in_preparation") {
+    return <Wrench aria-hidden="true" className={className} />;
+  }
   if (status === "available") {
     return <CircleCheck aria-hidden="true" className={className} />;
   }

@@ -1,4 +1,7 @@
-import type { InventoryFormState } from "./formModel";
+import {
+  createInitialInventoryForm,
+  type InventoryFormState,
+} from "./formModel";
 
 const draftStorageKey = "lojaveiculosv2:inventory:create:draft";
 
@@ -18,8 +21,15 @@ export function loadInventoryCreateDraft(
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<InventoryCreateDraft>;
     if (!parsed.form || !parsed.updatedAt) return null;
+    const initialForm = createInitialInventoryForm();
     return {
-      form: parsed.form,
+      form: {
+        ...initialForm,
+        ...parsed.form,
+        colorStock: Array.isArray(parsed.form.colorStock)
+          ? parsed.form.colorStock
+          : initialForm.colorStock,
+      },
       mediaFileNames: Array.isArray(parsed.mediaFileNames)
         ? parsed.mediaFileNames.filter(
             (item): item is string => typeof item === "string",
@@ -60,12 +70,21 @@ export function hasDraftContent(
       form.plate.trim() ||
       form.vin.trim() ||
       form.stockNumber.trim() ||
+      form.colorName ||
+      form.colorStock.some(hasColorStockDraftContent) ||
       form.description.trim() ||
       form.price.trim() ||
       form.acquisitionPrice.trim() ||
       form.catalog,
     )
   );
+}
+
+function hasColorStockDraftContent(
+  row: InventoryFormState["colorStock"][number],
+) {
+  const quantity = row.quantity.trim();
+  return Boolean(row.colorName || (quantity && quantity !== "1"));
 }
 
 function safeStorage() {

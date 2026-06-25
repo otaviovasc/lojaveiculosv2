@@ -18,6 +18,7 @@ export type CatalogState =
 export function CatalogSelect({
   combobox = false,
   disabled = false,
+  displayValue,
   kind = "default",
   label,
   onChange,
@@ -25,9 +26,11 @@ export function CatalogSelect({
   value,
   placeholder,
   className,
+  required,
 }: {
   combobox?: boolean;
   disabled?: boolean;
+  displayValue?: string | undefined;
   kind?: "brand" | "default";
   label: string;
   onChange: (value: string) => void;
@@ -35,11 +38,13 @@ export function CatalogSelect({
   value: string;
   placeholder?: string | undefined;
   className?: string | undefined;
+  required?: boolean | undefined;
 }) {
   if (combobox) {
     return (
       <CatalogCombobox
         disabled={disabled}
+        displayValue={displayValue}
         kind={kind}
         label={label}
         onChange={onChange}
@@ -47,12 +52,13 @@ export function CatalogSelect({
         value={value}
         placeholder={placeholder}
         className={className}
+        required={required}
       />
     );
   }
 
   return (
-    <InventoryField label={label} className={className}>
+    <InventoryField label={label} className={className} required={required}>
       <InventorySelect
         disabled={disabled}
         value={value}
@@ -76,6 +82,7 @@ export function CatalogSelect({
 
 function CatalogCombobox({
   disabled,
+  displayValue,
   kind,
   label,
   onChange,
@@ -83,8 +90,10 @@ function CatalogCombobox({
   value,
   placeholder,
   className,
+  required,
 }: {
   disabled: boolean;
+  displayValue?: string | undefined;
   kind: "brand" | "default";
   label: string;
   onChange: (value: string) => void;
@@ -92,12 +101,13 @@ function CatalogCombobox({
   value: string;
   placeholder?: string | undefined;
   className?: string | undefined;
+  required?: boolean | undefined;
 }) {
   const rootRef = useRef<HTMLLabelElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const selected = options.find((option) => option.code === value);
-  const [query, setQuery] = useState(selected?.name ?? "");
+  const [query, setQuery] = useState(selected?.name ?? displayValue ?? "");
   const [open, setOpen] = useState(false);
   const selectedName = selected?.name;
   const filtered = useMemo(() => {
@@ -167,8 +177,8 @@ function CatalogCombobox({
   }, [open]);
 
   useEffect(() => {
-    setQuery(selectedName ?? "");
-  }, [selectedName]);
+    setQuery(selectedName ?? displayValue ?? "");
+  }, [displayValue, selectedName]);
 
   useEffect(() => {
     if (!open) return;
@@ -183,7 +193,12 @@ function CatalogCombobox({
   }, [open]);
 
   return (
-    <InventoryField label={label} ref={rootRef} className={className}>
+    <InventoryField
+      label={label}
+      ref={rootRef}
+      className={className}
+      required={required}
+    >
       <div className="relative w-full" ref={triggerRef}>
         <InventoryInput
           aria-autocomplete="list"
@@ -193,6 +208,9 @@ function CatalogCombobox({
           disabled={disabled}
           onBlur={() => {
             if (selected && query !== selected.name) setQuery(selected.name);
+            if (!selected && displayValue && query !== displayValue) {
+              setQuery(displayValue);
+            }
           }}
           onChange={(event) => {
             setQuery(event.target.value);

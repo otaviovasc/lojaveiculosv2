@@ -1,10 +1,13 @@
-import type { ChangeEvent, Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import { Car, ClipboardList } from "lucide-react";
 import {
   createListingStatusOptions,
+  engineAspirationOptions,
+  engineDisplacementOptions,
   fuelTypeOptions,
+  isZeroKmInventoryForm,
   transmissionOptions,
-  type InventoryEditableField,
+  type InventoryFieldChangeHandler,
   type InventoryFormState,
 } from "../model/formModel";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
@@ -13,10 +16,12 @@ import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import {
   InventoryField,
+  InventoryColorSelect,
   InventoryInput,
   InventorySelect,
   InventoryTextarea,
 } from "./InventoryFormParts";
+import { InventoryColorStockEditor } from "./InventoryColorStockEditor";
 import { InventoryCreateCostsSection } from "./InventoryCreateCostsSection";
 import { InventoryCreateMediaPanel } from "./InventoryCreateMediaPanel";
 import { InventoryCreateEnrichmentPanel } from "./InventoryCreateEnrichmentPanel";
@@ -31,13 +36,7 @@ interface InventoryCreateFormProps {
   form: InventoryFormState;
   media: readonly CreateMediaDraft[];
   stores: Array<{ id: string; name: string; slug: string }>;
-  onChange: (
-    field: InventoryEditableField,
-  ) => (
-    value:
-      | ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-      | string,
-  ) => void;
+  onChange: InventoryFieldChangeHandler;
   onCatalogChange: (catalog: InventoryFormState["catalog"]) => void;
   onMediaChange: (media: CreateMediaDraft[]) => void;
   onSetFormDirect: Dispatch<SetStateAction<InventoryFormState>>;
@@ -55,6 +54,11 @@ export function InventoryCreateForm({
   onSetFormDirect,
   onLookupComplete,
 }: InventoryCreateFormProps) {
+  const isZeroKm = isZeroKmInventoryForm(form);
+  const colorStockValue = form.colorStock.some((row) => row.colorName)
+    ? form.colorStock
+    : [{ colorName: form.colorName, quantity: "1" }];
+
   return (
     <div className="flex flex-col gap-6">
       <InventoryCreateEnrichmentPanel
@@ -73,7 +77,10 @@ export function InventoryCreateForm({
         <div className="flex flex-wrap gap-x-6 gap-y-4 items-start border-b border-line/60 pb-4 mb-4 text-xs">
           <div className="flex flex-col gap-1.5">
             <span className="font-black text-muted uppercase tracking-wider text-[10px]">
-              Loja Operacional *
+              Loja Operacional
+              <span className="text-accent-strong ml-1" aria-hidden="true">
+                *
+              </span>
             </span>
             <div className="flex flex-wrap gap-1.5">
               {stores.map((s) => (
@@ -164,6 +171,8 @@ export function InventoryCreateForm({
               }));
             }
           }}
+          manufactureYear={form.manufactureYear}
+          onManufactureYearChange={onChange("manufactureYear")}
         />
       </SectionPanel>
 
@@ -173,54 +182,59 @@ export function InventoryCreateForm({
         icon={<Car className="size-5" />}
         title="Especificações e Anúncio"
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <InventoryField label="Ano Fabricação">
-            <InventoryInput
-              onChange={onChange("manufactureYear")}
-              placeholder="Ex: 2021"
-              type="number"
-              value={form.manufactureYear}
-            />
-          </InventoryField>
-          <InventoryField label="Ano Modelo">
-            <InventoryInput
-              onChange={onChange("modelYear")}
-              placeholder="Ex: 2022"
-              type="number"
-              value={form.modelYear}
-            />
-          </InventoryField>
-          <InventoryField label="Versão">
-            <InventoryInput
-              onChange={onChange("trimName")}
-              placeholder="Ex: Comfort 1.0"
-              value={form.trimName}
-            />
-          </InventoryField>
-          <InventoryField label="Cor">
-            <InventoryInput
-              onChange={onChange("colorName")}
-              placeholder="Ex: Branco"
-              value={form.colorName}
-            />
-          </InventoryField>
-          <InventoryField label="Quilometragem">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+          {isZeroKm ? (
+            <InventoryField
+              className="sm:col-span-2 lg:col-span-12"
+              label="Cores em estoque"
+              required
+            >
+              <InventoryColorStockEditor
+                onChange={(colorStock) =>
+                  onSetFormDirect((current) => ({
+                    ...current,
+                    colorName:
+                      colorStock.find((row) => row.colorName)?.colorName ??
+                      current.colorName,
+                    colorStock,
+                  }))
+                }
+                value={colorStockValue}
+              />
+            </InventoryField>
+          ) : (
+            <InventoryField className="lg:col-span-4" label="Cor" required>
+              <InventoryColorSelect
+                onChange={onChange("colorName")}
+                value={form.colorName}
+              />
+            </InventoryField>
+          )}
+          <InventoryField
+            className="lg:col-span-4"
+            label="Quilometragem"
+            required
+          >
             <InventoryInput
               inputMode="numeric"
+              min={0}
               onChange={onChange("mileageKm")}
               placeholder="Ex: 32500"
               type="number"
               value={form.mileageKm}
             />
           </InventoryField>
-          <InventoryField label="Combustível">
+          <InventoryField className="lg:col-span-4" label="Combustível">
             <InventorySelect
               onChange={onChange("fuelType")}
               options={[{ label: "Selecione", value: "" }, ...fuelTypeOptions]}
               value={form.fuelType}
             />
           </InventoryField>
-          <InventoryField label="Câmbio">
+          <InventoryField
+            className="lg:col-span-3 lg:col-start-1"
+            label="Câmbio"
+          >
             <InventorySelect
               onChange={onChange("transmission")}
               options={[
@@ -230,14 +244,27 @@ export function InventoryCreateForm({
               value={form.transmission}
             />
           </InventoryField>
-          <InventoryField label="Motor">
-            <InventoryInput
+          <InventoryField className="lg:col-span-3" label="Litragem">
+            <InventorySelect
               onChange={onChange("engineDisplacement")}
-              placeholder="Ex: 2.0 Turbo"
+              options={[
+                { label: "Selecione", value: "" },
+                ...engineDisplacementOptions,
+              ]}
               value={form.engineDisplacement}
             />
           </InventoryField>
-          <InventoryField label="Portas">
+          <InventoryField className="lg:col-span-3" label="Aspiração">
+            <InventorySelect
+              onChange={onChange("engineAspiration")}
+              options={[
+                { label: "Selecione", value: "" },
+                ...engineAspirationOptions,
+              ]}
+              value={form.engineAspiration}
+            />
+          </InventoryField>
+          <InventoryField className="lg:col-span-3" label="Portas">
             <InventoryInput
               inputMode="numeric"
               onChange={onChange("doors")}
@@ -247,7 +274,7 @@ export function InventoryCreateForm({
             />
           </InventoryField>
         </div>
-        <InventoryField label="Título de Anúncio *">
+        <InventoryField label="Título de Anúncio" required>
           <InventoryInput
             onChange={onChange("title")}
             placeholder="Ex: Hyundai HB20 Comfort 1.0 2021"

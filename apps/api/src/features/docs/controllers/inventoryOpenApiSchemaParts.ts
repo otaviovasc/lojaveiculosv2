@@ -1,3 +1,9 @@
+import {
+  vehicleColorValues,
+  vehicleEngineAspirationValues,
+  vehicleEngineDisplacementValues,
+} from "@lojaveiculosv2/shared";
+
 export const vehicleDocumentKinds = [
   "buyer_document",
   "delivery_term",
@@ -33,10 +39,13 @@ const vehicleTransmissions = [
 
 export const listingTechnicalSchemas = {
   doors: { type: ["integer", "null"], minimum: 1, maximum: 12 },
+  engineAspiration: {
+    type: ["string", "null"],
+    enum: vehicleEngineAspirationValues,
+  },
   engineDisplacement: {
     type: ["string", "null"],
-    minLength: 1,
-    maxLength: 32,
+    enum: vehicleEngineDisplacementValues,
   },
   fuelType: { type: ["string", "null"], enum: vehicleFuelTypes },
   internalNotes: { type: ["string", "null"], minLength: 1 },
@@ -48,7 +57,7 @@ export const listingTechnicalSchemas = {
 } as const;
 
 export const unitIdentitySchemas = {
-  colorName: { type: ["string", "null"], minLength: 1, maxLength: 80 },
+  colorName: { type: ["string", "null"], enum: vehicleColorValues },
   plate: { type: ["string", "null"], minLength: 1 },
   stockNumber: { type: ["string", "null"], minLength: 1 },
   vin: { type: ["string", "null"], minLength: 1 },

@@ -8,6 +8,7 @@ import type { InventoryApi } from "../api/apiClient";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import {
   InventoryField,
+  InventoryColorSelect,
   InventoryInput,
   InventoryPanel,
   InventorySelect,
@@ -89,6 +90,12 @@ export function UnitPanel({
   return (
     <InventoryPanel icon={<PackagePlus className="size-5" />} title="Unidade">
       <div className="grid gap-4 md:grid-cols-3">
+        <InventoryField label="Cor">
+          <InventoryColorSelect
+            onChange={onChange("colorName")}
+            value={form.colorName}
+          />
+        </InventoryField>
         <InventoryField label="Numero de estoque">
           <InventoryInput
             onChange={onChange("stockNumber")}

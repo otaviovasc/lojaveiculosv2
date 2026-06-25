@@ -63,7 +63,14 @@ export function cleanListListingsQuery(input: {
   limit?: number | undefined;
   offset?: number | undefined;
   search?: string | undefined;
-  status?: "available" | "draft" | "inactive" | "reserved" | "sold" | undefined;
+  status?:
+    | "available"
+    | "draft"
+    | "inactive"
+    | "reserved"
+    | "sold"
+    | "in_preparation"
+    | undefined;
 }): Parameters<InventoryListingServices["listListings"]>[1] {
   const result: Parameters<InventoryListingServices["listListings"]>[1] = {};
 
@@ -134,7 +141,12 @@ export function cleanUpdateListingRequest(
     >[1]["catalog"];
     description?: string | null | undefined;
     doors?: number | null | undefined;
-    engineDisplacement?: string | null | undefined;
+    engineAspiration?: Parameters<
+      InventoryListingServices["updateListingDetails"]
+    >[1]["engineAspiration"];
+    engineDisplacement?: Parameters<
+      InventoryListingServices["updateListingDetails"]
+    >[1]["engineDisplacement"];
     fuelType?: Parameters<
       InventoryListingServices["updateListingDetails"]
     >[1]["fuelType"];
@@ -149,6 +161,7 @@ export function cleanUpdateListingRequest(
       | "inactive"
       | "reserved"
       | "sold"
+      | "in_preparation"
       | undefined;
     title?: string | undefined;
     transmission?: Parameters<
@@ -164,6 +177,9 @@ export function cleanUpdateListingRequest(
   if (input.catalog !== undefined) result.catalog = input.catalog;
   if (input.description !== undefined) result.description = input.description;
   if (input.doors !== undefined) result.doors = input.doors;
+  if (input.engineAspiration !== undefined) {
+    result.engineAspiration = input.engineAspiration;
+  }
   if (input.engineDisplacement !== undefined) {
     result.engineDisplacement = input.engineDisplacement;
   }
@@ -191,9 +207,17 @@ export function cleanUpdateUnitRequest(
   listingId: string,
   unitId: string,
   input: {
-    colorName?: string | null | undefined;
+    colorName?: Parameters<
+      InventoryListingServices["updateListingUnit"]
+    >[1]["colorName"];
     plate?: string | null | undefined;
-    status?: "available" | "reserved" | "retired" | "sold" | undefined;
+    status?:
+      | "available"
+      | "reserved"
+      | "retired"
+      | "sold"
+      | "in_preparation"
+      | undefined;
     stockNumber?: string | null | undefined;
     vin?: string | null | undefined;
   },

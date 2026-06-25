@@ -1,7 +1,10 @@
+import type { VehicleColor } from "@lojaveiculosv2/shared";
 import type {
   InventoryCatalogSnapshot,
   InventoryDocumentKind,
   InventoryDocumentTargetType,
+  InventoryEngineAspiration,
+  InventoryEngineDisplacement,
   InventoryFuelType,
   InventoryCreateListingStatus,
   InventoryListingStatus,
@@ -29,6 +32,8 @@ export type {
   InventoryCreateListingStatus,
   InventoryDocumentKind,
   InventoryDocumentTargetType,
+  InventoryEngineAspiration,
+  InventoryEngineDisplacement,
   InventoryFuelType,
   InventoryListingStatus,
   InventoryMediaKind,
@@ -44,6 +49,7 @@ export type {
   CreateInventoryCostInput,
   InventoryCostKind,
 } from "./operationTypes";
+export type { VehicleColor as InventoryVehicleColor };
 
 export type InventoryBuyerInput = {
   address?: string | null;
@@ -76,7 +82,8 @@ export type InventoryListing = {
   createdAt: string;
   description: string | null;
   doors: number | null;
-  engineDisplacement: string | null;
+  engineAspiration: InventoryEngineAspiration | null;
+  engineDisplacement: InventoryEngineDisplacement | null;
   fuelType: InventoryFuelType | null;
   id: string;
   internalNotes: string | null;
@@ -96,12 +103,12 @@ export type InventoryListing = {
 };
 
 export type InventoryUnit = {
-  colorName: string | null;
+  colorName: VehicleColor | null;
   createdAt: string;
   id: string;
   listingId: string;
   plate: string | null;
-  status: "available" | "reserved" | "retired" | "sold";
+  status: "available" | "reserved" | "retired" | "sold" | "in_preparation";
   stockNumber: string | null;
   storeId: string | null;
   tenantId: string | null;
@@ -145,7 +152,8 @@ export type CreateInventoryListingInput = {
   catalog?: InventoryCatalogSnapshot | null;
   description?: string | null;
   doors?: number | null;
-  engineDisplacement?: string | null;
+  engineAspiration?: InventoryEngineAspiration | null;
+  engineDisplacement?: InventoryEngineDisplacement | null;
   fuelType?: InventoryFuelType | null;
   internalNotes?: string | null;
   manufactureYear?: number | null;
@@ -160,7 +168,7 @@ export type CreateInventoryListingInput = {
 };
 
 export type CreateInventoryUnitInput = {
-  colorName?: string | null;
+  colorName?: VehicleColor | null;
   plate?: string | null;
   stockNumber?: string | null;
   vin?: string | null;
@@ -193,13 +201,15 @@ export type CreateInventoryFlowInput = {
   listing: CreateInventoryListingInput;
   media?: CreateInventoryMediaInput & { file: File };
   unit: CreateInventoryUnitInput;
+  units?: readonly CreateInventoryUnitInput[];
 };
 
 export type UpdateInventoryListingInput = {
   catalog?: InventoryCatalogSnapshot | null;
   description?: string | null;
   doors?: number | null;
-  engineDisplacement?: string | null;
+  engineAspiration?: InventoryEngineAspiration | null;
+  engineDisplacement?: InventoryEngineDisplacement | null;
   fuelType?: InventoryFuelType | null;
   internalNotes?: string | null;
   manufactureYear?: number | null;
@@ -213,7 +223,7 @@ export type UpdateInventoryListingInput = {
 };
 
 export type UpdateInventoryUnitInput = {
-  colorName?: string | null;
+  colorName?: VehicleColor | null;
   plate?: string | null;
   status?: InventoryUnit["status"];
   stockNumber?: string | null;

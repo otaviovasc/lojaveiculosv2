@@ -111,6 +111,7 @@ function toPlateLookupResponse(
     plate: readString(record.plate) ?? fallbackPlate,
     source: "apibrasil",
     vehicle: {
+      aspiration: readString(vehicle.aspiration),
       bodyType: readString(vehicle.bodyType),
       brand: readString(vehicle.brand),
       chassis: readString(vehicle.chassis),

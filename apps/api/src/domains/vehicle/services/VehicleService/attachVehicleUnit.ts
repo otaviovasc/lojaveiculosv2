@@ -1,5 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type { VehicleColor } from "@lojaveiculosv2/shared";
 import type { VehicleUnit } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
@@ -13,7 +14,7 @@ import {
 const permission = "inventory.create";
 
 export type AttachVehicleUnitInput = {
-  colorName?: string | null;
+  colorName?: VehicleColor | null;
   listingId: string;
   plate?: string | null;
   stockNumber?: string | null;
@@ -42,7 +43,8 @@ export async function attachVehicleUnit(
     colorName: input.colorName ?? null,
     listingId: listing.id,
     plate: input.plate ?? listing.plate,
-    status: "available",
+    status:
+      listing.status === "in_preparation" ? "in_preparation" : "available",
     stockNumber: input.stockNumber ?? null,
     storeId: context.storeId,
     tenantId: context.tenantId,

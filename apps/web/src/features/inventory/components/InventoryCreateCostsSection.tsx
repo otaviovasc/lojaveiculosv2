@@ -67,7 +67,7 @@ export function InventoryCreateCostsSection({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <InventoryField label="Valor de aquisição *">
+        <InventoryField label="Valor de aquisição" required>
           <InventoryInput
             inputMode="decimal"
             onChange={onChange("acquisitionPrice")}
@@ -75,7 +75,7 @@ export function InventoryCreateCostsSection({
             value={form.acquisitionPrice}
           />
         </InventoryField>
-        <InventoryField label="Valor de venda anunciado *">
+        <InventoryField label="Valor de venda anunciado" required>
           <InventoryInput
             inputMode="decimal"
             onChange={onChange("price")}

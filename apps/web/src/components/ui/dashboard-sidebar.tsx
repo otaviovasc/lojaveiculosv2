@@ -155,9 +155,9 @@ export function DashboardSidebar<Id extends string = string>({
           </>
         ) : (
           <>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               {/* User Profile (to the left of settings) */}
-              <div className="flex flex-1 items-center gap-2.5 min-w-0 px-2 py-1.5">
+              <div className="flex flex-1 items-center gap-2 min-w-0 pl-1 pr-0 py-1.5">
                 <div className="size-9 bg-accent-soft text-accent rounded-full flex items-center justify-center font-bold shrink-0 border border-accent/15">
                   <User className="size-4.5" />
                 </div>
@@ -175,7 +175,7 @@ export function DashboardSidebar<Id extends string = string>({
                       autoCapitalize="words"
                       spellCheck={false}
                       className={
-                        "w-full text-xs font-black text-primary bg-transparent pl-2.5 pr-8.5 py-1.5 rounded-md border transition-all duration-300 focus:outline-none focus:ring-1 " +
+                        "w-full text-[11px] font-black text-primary bg-transparent pl-2.5 pr-8.5 py-1.5 rounded-md border transition-all duration-300 focus:outline-none focus:ring-1 " +
                         (isEditing
                           ? "border-accent/40 bg-app-elevated/45 focus:border-accent focus:ring-accent/20"
                           : "border-line/45 hover:border-line-strong/60 bg-transparent disabled:cursor-default")
@@ -219,7 +219,7 @@ export function DashboardSidebar<Id extends string = string>({
                       </div>
                     </button>
                   </div>
-                  <span className="truncate text-[9px] font-black uppercase tracking-widest text-muted pl-2.5">
+                  <span className="truncate text-[8px] font-black uppercase tracking-widest text-muted pl-2.5">
                     Administrador
                   </span>
                 </div>

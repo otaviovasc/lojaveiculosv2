@@ -1,8 +1,8 @@
 import {
-  type InventoryPlateFipeReference,
   type InventoryPlateLookupResponse,
   type InventoryPlateMetadataItem,
 } from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
+import { pickFipeReference } from "./apiBrasilFipeReference.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
 
 const defaultBaseUrl = "https://gateway.apibrasil.io/api/v2";
@@ -86,6 +86,12 @@ export function normalizeApiBrasilPlateResponse(
     plate: findString(candidates, ["placa"]) ?? normalizePlate(fallbackPlate),
     source: "apibrasil",
     vehicle: {
+      aspiration: findString(candidates, [
+        "aspiracao",
+        "aspiração",
+        "sobrealimentacao",
+        "sobrealimentação",
+      ]),
       bodyType: findString(candidates, ["tipo_carroceria", "carroceria"]),
       brand: findString(candidates, ["marca", "MARCA"]),
       chassis: findString(candidates, ["chassi", "chassis"]),
@@ -113,42 +119,6 @@ function readProviderError(payload: unknown) {
   if (root.error === true)
     return findString([root], ["message"]) ?? "Plate lookup failed.";
   return null;
-}
-
-function pickFipeReference(
-  root: Record<string, unknown>,
-  envelope: Record<string, unknown>,
-  data: Record<string, unknown>,
-  extra: Record<string, unknown>,
-): InventoryPlateFipeReference | null {
-  const fipeValue = data.fipe ?? extra.fipe ?? envelope.fipe ?? root.fipe;
-  const fipeRoot = asRecord(fipeValue);
-  const rawItems = Array.isArray(fipeValue)
-    ? fipeValue
-    : Array.isArray(fipeRoot?.dados)
-      ? fipeRoot.dados
-      : Array.isArray(data.fipes)
-        ? data.fipes
-        : [];
-  const items = rawItems.flatMap((item) => {
-    const record = asRecord(item);
-    return record ? [record] : [];
-  });
-  const best = items.sort((a, b) => scoreOf(b) - scoreOf(a))[0];
-  if (!best) return null;
-
-  const priceLabel = findString([best], ["texto_valor", "valor", "preco"]);
-  return {
-    brandName: findString([best], ["texto_marca", "marca"]),
-    code: findString([best], ["codigo_fipe", "codigoFipe"]),
-    fuel: findString([best], ["combustivel"]),
-    modelName: findString([best], ["texto_modelo", "modelo"]),
-    modelYear: findNumber([best], ["ano_modelo", "anoModelo"]),
-    priceCents: parseCurrencyCents(priceLabel),
-    priceLabel,
-    referenceMonth: findString([best], ["mes_referencia", "referencia"]),
-    score: findNumber([best], ["score"]),
-  };
 }
 
 function buildMetadata(
@@ -198,30 +168,12 @@ function findNumber(
   return Number.isFinite(number) ? number : null;
 }
 
-function parseCurrencyCents(value: string | null): number | null {
-  if (!value) return null;
-  const normalized = value
-    .replace(/[^\d,.-]/g, "")
-    .replace(/\./g, "")
-    .replace(",", ".")
-    .trim();
-  if (!normalized) return null;
-  const amount = Number(normalized);
-  return Number.isFinite(amount) && amount >= 0
-    ? Math.round(amount * 100)
-    : null;
-}
-
 function readCaseInsensitive(record: Record<string, unknown>, key: string) {
   if (key in record) return record[key];
   const match = Object.keys(record).find(
     (candidate) => candidate.toLowerCase() === key.toLowerCase(),
   );
   return match ? record[match] : undefined;
-}
-
-function scoreOf(record: Record<string, unknown>) {
-  return findNumber([record], ["score"]) ?? 0;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {

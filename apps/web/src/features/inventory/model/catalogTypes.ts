@@ -1,13 +1,19 @@
+import type {
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
+} from "@lojaveiculosv2/shared";
+
 export type InventoryListingStatus =
   | "available"
   | "draft"
   | "inactive"
   | "reserved"
-  | "sold";
+  | "sold"
+  | "in_preparation";
 
 export type InventoryCreateListingStatus = Extract<
   InventoryListingStatus,
-  "available" | "draft" | "inactive"
+  "available" | "draft" | "inactive" | "in_preparation"
 >;
 
 export type InventoryFuelType =
@@ -25,6 +31,9 @@ export type InventoryTransmission =
   | "cvt"
   | "manual"
   | "other";
+
+export type InventoryEngineAspiration = VehicleEngineAspiration;
+export type InventoryEngineDisplacement = VehicleEngineDisplacement;
 
 export type InventoryMediaKind = "document_preview" | "photo" | "video";
 

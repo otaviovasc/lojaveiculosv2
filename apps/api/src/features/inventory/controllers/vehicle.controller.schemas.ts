@@ -1,3 +1,4 @@
+import { vehicleColorValues } from "@lojaveiculosv2/shared";
 import { z } from "zod";
 import { allowedCreateStatuses } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import { listingStatuses } from "./listingServices.js";
@@ -6,6 +7,7 @@ import {
   listingTechnicalSchemaShape,
   vehicleCatalogTypes,
 } from "./vehicle.controller.schemaParts.js";
+import { listingDescriptionTextSchema } from "./vehicleDescriptionRichText.js";
 
 export const listListingsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
@@ -14,9 +16,11 @@ export const listListingsQuerySchema = z.object({
   status: z.enum(listingStatuses).optional(),
 });
 
+const vehicleColorSchema = z.enum(vehicleColorValues);
+
 export const createListingSchema = z.object({
   catalog: listingCatalogSchema.nullable().optional(),
-  description: z.string().trim().min(1).nullable().optional(),
+  description: listingDescriptionTextSchema.nullable().optional(),
   ...listingTechnicalSchemaShape,
   plate: z.string().trim().min(1).nullable().default(null),
   priceCents: z.number().int().nonnegative().nullable().optional(),
@@ -25,7 +29,7 @@ export const createListingSchema = z.object({
 });
 
 export const descriptionSchema = z.object({
-  description: z.string().trim().min(1),
+  description: listingDescriptionTextSchema,
 });
 
 export const priceSchema = z.object({
@@ -35,7 +39,7 @@ export const priceSchema = z.object({
 
 export const updateListingDetailsSchema = z.object({
   catalog: listingCatalogSchema.nullable().optional(),
-  description: z.string().trim().min(1).nullable().optional(),
+  description: listingDescriptionTextSchema.nullable().optional(),
   ...listingTechnicalSchemaShape,
   priceCents: z.number().int().nonnegative().nullable().optional(),
   status: z.enum(listingStatuses).optional(),
@@ -43,16 +47,18 @@ export const updateListingDetailsSchema = z.object({
 });
 
 export const attachUnitSchema = z.object({
-  colorName: z.string().trim().min(1).max(80).nullable().optional(),
+  colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
 });
 
 export const updateUnitSchema = z.object({
-  colorName: z.string().trim().min(1).max(80).nullable().optional(),
+  colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
-  status: z.enum(["available", "reserved", "retired", "sold"]).optional(),
+  status: z
+    .enum(["available", "reserved", "retired", "sold", "in_preparation"])
+    .optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
 });

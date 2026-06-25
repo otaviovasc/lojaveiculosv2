@@ -14,17 +14,22 @@ import type {
   InventoryCatalogVersionOption,
   InventoryCatalogYearOption,
 } from "../model/types";
+import { InventoryField, InventoryInput } from "./InventoryFormParts";
 
 export function InventoryCatalogSelector({
   api,
   catalog,
   onCatalogChange,
   onYearChange,
+  manufactureYear,
+  onManufactureYearChange,
 }: {
   api: InventoryApi | null;
   catalog: InventoryCatalogSnapshot | null;
   onCatalogChange: (catalog: InventoryCatalogSnapshot | null) => void;
   onYearChange?: (year: number | null) => void;
+  manufactureYear?: string | undefined;
+  onManufactureYearChange?: ((value: string) => void) | undefined;
 }) {
   const [vehicleType, setVehicleType] = useState<InventoryCatalogVehicleType>(
     catalog?.vehicleType ?? "cars",
@@ -53,7 +58,6 @@ export function InventoryCatalogSelector({
     onCatalogChangeRef.current = onCatalogChange;
   }, [onCatalogChange]);
 
-  // Load brands
   useEffect(() => {
     if (!api) return;
     setState({ kind: "loading" });
@@ -66,7 +70,6 @@ export function InventoryCatalogSelector({
       .catch((error) => setState(toErrorState(error)));
   }, [api, vehicleType]);
 
-  // Load models for selected brand
   useEffect(() => {
     if (!api || !brandCode) {
       setModels([]);
@@ -86,7 +89,6 @@ export function InventoryCatalogSelector({
       .catch((error) => setState(toErrorState(error)));
   }, [api, brandCode, vehicleType]);
 
-  // Load versions and then load their years in parallel
   useEffect(() => {
     if (!api || !brandCode || !modelFamilyCode) {
       setAllVersions([]);
@@ -102,7 +104,6 @@ export function InventoryCatalogSelector({
       .then(async (versionsList) => {
         setAllVersions(versionsList);
 
-        // Fetch years for all versions in parallel
         try {
           const yearsResults = await Promise.all(
             versionsList.map((v) =>
@@ -128,7 +129,6 @@ export function InventoryCatalogSelector({
             }
           }
 
-          // Sort years descending
           uniqueYears.sort((a, b) => {
             const yearA = a.modelYear ?? 0;
             const yearB = b.modelYear ?? 0;
@@ -145,7 +145,6 @@ export function InventoryCatalogSelector({
       .catch((error) => setState(toErrorState(error)));
   }, [api, brandCode, modelFamilyCode, vehicleType]);
 
-  // Load years if we have a versionCode but no modelFamilyCode (e.g. initial draft load)
   useEffect(() => {
     if (!api || !brandCode || !versionCode || modelFamilyCode) return;
     setState({ kind: "loading" });
@@ -158,7 +157,6 @@ export function InventoryCatalogSelector({
       .catch((error) => setState(toErrorState(error)));
   }, [api, brandCode, versionCode, vehicleType, modelFamilyCode]);
 
-  // Load version option placeholder if we have a versionCode but no modelFamilyCode (e.g. initial draft load)
   useEffect(() => {
     if (!api || !brandCode || !versionCode || modelFamilyCode) return;
     if (catalog) {
@@ -173,7 +171,6 @@ export function InventoryCatalogSelector({
     }
   }, [api, brandCode, versionCode, vehicleType, modelFamilyCode, catalog]);
 
-  // Sync snapshot when both versionCode and yearCode are present
   useEffect(() => {
     if (!api || !brandCode || !versionCode || !yearCode) return;
     setState({ kind: "loading" });
@@ -193,9 +190,10 @@ export function InventoryCatalogSelector({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-7">
         <CatalogSelect
           label="Tipo"
+          required
           value={vehicleType}
           className="sm:col-span-1 xl:col-span-1"
           onChange={(value) => {
@@ -220,9 +218,13 @@ export function InventoryCatalogSelector({
         />
         <CatalogSelect
           label="Marca FIPE"
+          required
           kind="brand"
           combobox
           disabled={!api || brands.length === 0}
+          displayValue={
+            !brandCode ? (catalog?.brandName ?? undefined) : undefined
+          }
           value={brandCode}
           className="sm:col-span-1 xl:col-span-2"
           placeholder={!api ? "Carregando..." : "Digite para buscar..."}
@@ -242,10 +244,14 @@ export function InventoryCatalogSelector({
         />
         <CatalogSelect
           label="Modelo"
+          required
           combobox
           disabled={!brandCode}
+          displayValue={
+            !modelFamilyCode ? (catalog?.modelName ?? undefined) : undefined
+          }
           value={modelFamilyCode}
-          className="sm:col-span-1 xl:col-span-2"
+          className="sm:col-span-2 xl:col-span-2"
           placeholder={
             !brandCode ? "Selecione a marca primeiro" : "Digite para buscar..."
           }
@@ -262,9 +268,11 @@ export function InventoryCatalogSelector({
           options={models}
         />
         <CatalogSelect
-          label="Ano FIPE"
+          label="Ano Modelo"
+          required
           combobox
           disabled={!modelFamilyCode}
+          displayValue={!yearCode ? catalogYearDisplay(catalog) : undefined}
           value={yearCode}
           className="sm:col-span-1 xl:col-span-1"
           placeholder={!modelFamilyCode ? "Modelo antes" : "Ex. 2026"}
@@ -273,14 +281,12 @@ export function InventoryCatalogSelector({
             setVersionCode("");
             onCatalogChange(null);
 
-            // Filter compatible versions
             const versionCodesForYear = yearToVersionsMap[value] || [];
             const filtered = allVersions.filter((v) =>
               versionCodesForYear.includes(v.code),
             );
             setFilteredVersions(filtered);
 
-            // Autofill year fields in form if possible
             const selectedYearOpt = years.find((y) => y.code === value);
             if (selectedYearOpt?.modelYear && onYearChange) {
               onYearChange(selectedYearOpt.modelYear);
@@ -288,12 +294,32 @@ export function InventoryCatalogSelector({
           }}
           options={years}
         />
+        {manufactureYear !== undefined && onManufactureYearChange ? (
+          <InventoryField
+            className="sm:col-span-1 xl:col-span-1"
+            label="Ano Fab."
+            required
+          >
+            <InventoryInput
+              className="w-full"
+              min={0}
+              onChange={(event) => onManufactureYearChange(event.target.value)}
+              placeholder="Ex: 2021"
+              type="number"
+              value={manufactureYear}
+            />
+          </InventoryField>
+        ) : null}
         <CatalogSelect
           label="Versão FIPE"
+          required
           combobox
           disabled={!yearCode}
+          displayValue={
+            !versionCode ? (catalog?.modelName ?? undefined) : undefined
+          }
           value={versionCode}
-          className="sm:col-span-2 xl:col-span-6"
+          className="sm:col-span-2 xl:col-span-7"
           placeholder={
             !yearCode ? "Selecione o ano primeiro" : "Digite para buscar..."
           }
@@ -306,5 +332,13 @@ export function InventoryCatalogSelector({
       </div>
       <CatalogStatus catalog={catalog} state={state} />
     </div>
+  );
+}
+
+function catalogYearDisplay(catalog: InventoryCatalogSnapshot | null) {
+  if (!catalog) return undefined;
+  return (
+    catalog.yearName ??
+    (catalog.modelYear ? String(catalog.modelYear) : undefined)
   );
 }

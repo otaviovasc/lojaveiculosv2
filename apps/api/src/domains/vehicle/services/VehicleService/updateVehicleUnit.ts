@@ -1,4 +1,5 @@
 import type { AuditFieldChange } from "@lojaveiculosv2/audit";
+import type { VehicleColor } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type {
@@ -21,7 +22,7 @@ import { assertGenericUnitStatusAllowed } from "../../policies/workflowStatusPol
 const permission = "inventory.update_unit";
 
 export type UpdateVehicleUnitInput = {
-  colorName?: string | null;
+  colorName?: VehicleColor | null;
   listingId: string;
   plate?: string | null;
   status?: VehicleUnitStatus;

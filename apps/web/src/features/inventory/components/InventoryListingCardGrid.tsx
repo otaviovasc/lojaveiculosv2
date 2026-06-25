@@ -254,18 +254,22 @@ export function StatusPill({ status }: { status: InventoryListingStatus }) {
       ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
       : status === "reserved"
         ? "bg-warning/10 text-warning border border-warning/20"
-        : status === "sold"
-          ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-          : "bg-panel text-muted border border-line";
+        : status === "in_preparation"
+          ? "bg-warning/10 text-warning border border-warning/20"
+          : status === "sold"
+            ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+            : "bg-panel text-muted border border-line";
 
   const dotColor =
     status === "available"
       ? "bg-emerald-500"
       : status === "reserved"
         ? "bg-warning"
-        : status === "sold"
-          ? "bg-blue-500"
-          : "bg-muted";
+        : status === "in_preparation"
+          ? "bg-warning"
+          : status === "sold"
+            ? "bg-blue-500"
+            : "bg-muted";
 
   return (
     <span

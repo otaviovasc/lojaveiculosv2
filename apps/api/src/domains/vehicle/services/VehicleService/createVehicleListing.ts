@@ -6,6 +6,8 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type {
   VehicleListing,
   VehicleListingCatalog,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
   VehicleFuelType,
   VehicleListingStatus,
   VehicleTransmission,
@@ -19,13 +21,19 @@ import {
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
 
 const permission = "inventory.create";
-const allowedCreateStatuses = ["draft", "inactive", "available"] as const;
+const allowedCreateStatuses = [
+  "draft",
+  "inactive",
+  "available",
+  "in_preparation",
+] as const;
 
 export type CreateVehicleListingInput = {
   catalog?: VehicleListingCatalog | null;
   description?: string | null;
   doors?: number | null;
-  engineDisplacement?: string | null;
+  engineAspiration?: VehicleEngineAspiration | null;
+  engineDisplacement?: VehicleEngineDisplacement | null;
   fuelType?: VehicleFuelType | null;
   internalNotes?: string | null;
   manufactureYear?: number | null;
@@ -112,6 +120,7 @@ export async function createVehicleListing(
     catalog: input.catalog ?? null,
     description: input.description ?? null,
     doors: input.doors ?? null,
+    engineAspiration: input.engineAspiration ?? null,
     engineDisplacement: input.engineDisplacement ?? null,
     fuelType: input.fuelType ?? null,
     internalNotes: input.internalNotes ?? null,

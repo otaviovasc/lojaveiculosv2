@@ -1,3 +1,9 @@
+import {
+  getVehicleColorLabel,
+  normalizeVehicleEngineAspiration,
+  normalizeVehicleEngineDisplacement,
+  normalizeVehicleColor,
+} from "@lojaveiculosv2/shared";
 import type { InventoryCatalogSnapshot } from "./catalogTypes";
 import type { InventoryFormState } from "./formModel";
 import { parsePriceCents } from "./formModel";
@@ -21,8 +27,13 @@ export function applyPlateLookupToForm(
   return {
     ...form,
     catalog,
-    colorName: vehicle.color ?? form.colorName,
-    engineDisplacement: vehicle.engine ?? form.engineDisplacement,
+    colorName: normalizeVehicleColor(vehicle.color) || form.colorName,
+    engineAspiration:
+      normalizeVehicleEngineAspiration(vehicle.aspiration ?? vehicle.engine) ||
+      form.engineAspiration,
+    engineDisplacement:
+      normalizeVehicleEngineDisplacement(vehicle.engine) ||
+      form.engineDisplacement,
     fuelType: normalizeFuelType(vehicle.fuel) ?? form.fuelType,
     manufactureYear:
       vehicle.manufactureYear !== null
@@ -52,7 +63,8 @@ export function createResaleAnalysisInput(
     bodyType: lookup?.vehicle.bodyType ?? null,
     brand: form.catalog?.brandName ?? lookup?.vehicle.brand ?? null,
     city: lookup?.vehicle.city ?? null,
-    color: lookup?.vehicle.color ?? null,
+    color:
+      getVehicleColorLabel(form.colorName) || (lookup?.vehicle.color ?? null),
     fipePriceCents,
     fuel: form.catalog?.fuel ?? lookup?.vehicle.fuel ?? null,
     manufactureYear: parseInteger(form.manufactureYear),

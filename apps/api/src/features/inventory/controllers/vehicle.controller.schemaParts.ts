@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  vehicleEngineAspirationValues,
+  vehicleEngineDisplacementValues,
+} from "@lojaveiculosv2/shared";
 
 export const vehicleCatalogTypes = ["cars", "motorcycles", "trucks"] as const;
 export const vehicleFuelTypes = [
@@ -37,7 +41,11 @@ export const listingCatalogSchema = z.object({
 
 export const listingTechnicalSchemaShape = {
   doors: z.number().int().positive().max(12).nullable().optional(),
-  engineDisplacement: z.string().trim().min(1).max(32).nullable().optional(),
+  engineAspiration: z.enum(vehicleEngineAspirationValues).nullable().optional(),
+  engineDisplacement: z
+    .enum(vehicleEngineDisplacementValues)
+    .nullable()
+    .optional(),
   fuelType: z.enum(vehicleFuelTypes).nullable().optional(),
   internalNotes: z.string().trim().min(1).nullable().optional(),
   manufactureYear: z.number().int().min(1886).max(2100).nullable().optional(),

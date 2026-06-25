@@ -1,11 +1,29 @@
+import type {
+  VehicleColor,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
+} from "@lojaveiculosv2/shared";
+
+export type {
+  VehicleColor,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
+};
+
 export type VehicleListingStatus =
   | "draft"
   | "available"
   | "reserved"
   | "sold"
-  | "inactive";
+  | "inactive"
+  | "in_preparation";
 
-export type VehicleUnitStatus = "available" | "reserved" | "sold" | "retired";
+export type VehicleUnitStatus =
+  | "available"
+  | "reserved"
+  | "sold"
+  | "retired"
+  | "in_preparation";
 export type VehicleFuelType =
   | "diesel"
   | "electric"
@@ -62,7 +80,8 @@ export type VehicleListing = {
   createdAt: Date;
   description: string | null;
   doors: number | null;
-  engineDisplacement: string | null;
+  engineAspiration: VehicleEngineAspiration | null;
+  engineDisplacement: VehicleEngineDisplacement | null;
   fuelType: VehicleFuelType | null;
   id: string;
   internalNotes: string | null;
@@ -82,7 +101,7 @@ export type VehicleListing = {
 };
 
 export type VehicleUnit = {
-  colorName: string | null;
+  colorName: VehicleColor | null;
   createdAt: Date;
   id: string;
   listingId: string;

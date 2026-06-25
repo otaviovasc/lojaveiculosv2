@@ -5,6 +5,8 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type {
   VehicleListing,
   VehicleListingCatalog,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
   VehicleFuelType,
   VehicleListingStatus,
   VehicleTransmission,
@@ -23,7 +25,8 @@ export type UpdateVehicleListingDetailsInput = {
   catalog?: VehicleListingCatalog | null;
   description?: string | null;
   doors?: number | null;
-  engineDisplacement?: string | null;
+  engineAspiration?: VehicleEngineAspiration | null;
+  engineDisplacement?: VehicleEngineDisplacement | null;
   fuelType?: VehicleFuelType | null;
   internalNotes?: string | null;
   listingId: string;
@@ -63,6 +66,9 @@ export async function updateVehicleListingDetails(
           : {}),
         ...(input.catalog !== undefined ? { catalog: input.catalog } : {}),
         ...(input.doors !== undefined ? { doors: input.doors } : {}),
+        ...(input.engineAspiration !== undefined
+          ? { engineAspiration: input.engineAspiration }
+          : {}),
         ...(input.engineDisplacement !== undefined
           ? { engineDisplacement: input.engineDisplacement }
           : {}),
@@ -134,6 +140,7 @@ function requiredPermissionsForInput(
   if (
     input.catalog !== undefined ||
     input.doors !== undefined ||
+    input.engineAspiration !== undefined ||
     input.engineDisplacement !== undefined ||
     input.fuelType !== undefined ||
     input.manufactureYear !== undefined ||
@@ -163,6 +170,11 @@ function createListingChanges(
     changeFor("title", listing.title, input.title),
     changeFor("description", listing.description, input.description),
     changeFor("doors", listing.doors, input.doors),
+    changeFor(
+      "engineAspiration",
+      listing.engineAspiration,
+      input.engineAspiration,
+    ),
     changeFor(
       "engineDisplacement",
       listing.engineDisplacement,

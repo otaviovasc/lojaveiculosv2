@@ -13,7 +13,9 @@ describe("inventory enrichment form helpers", () => {
     const result = applyPlateLookupToForm(form, lookupPayload());
 
     expect(result).toMatchObject({
-      colorName: "Branca",
+      colorName: "white",
+      engineAspiration: "turbo",
+      engineDisplacement: "2.0",
       fuelType: "flex",
       manufactureYear: "2023",
       mileageKm: "60000",
@@ -77,12 +79,13 @@ function lookupPayload(): InventoryPlateLookupResponse {
     plate: "ABC1D23",
     source: "apibrasil",
     vehicle: {
+      aspiration: "Turbo",
       bodyType: null,
       brand: "Fiat",
       chassis: "*****12345",
       city: "Belo Horizonte",
       color: "Branca",
-      engine: null,
+      engine: "1984",
       fuel: "Flex",
       manufactureYear: 2023,
       mileageKm: 60000,

@@ -1,4 +1,10 @@
-import { forwardRef, type ComponentProps, type ReactNode } from "react";
+import {
+  forwardRef,
+  type ComponentProps,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { vehicleColorOptions, type VehicleColor } from "@lojaveiculosv2/shared";
 import {
   CustomSelect,
   type CustomSelectOption,
@@ -6,22 +12,22 @@ import {
 
 type FieldProps = {
   children: ReactNode;
-  hint?: string;
+  hint?: string | undefined;
   label: string;
   className?: string | undefined;
+  required?: boolean | undefined;
 };
 
-export function InventoryPanel({
-  children,
-  icon,
-  title,
-}: {
-  children: ReactNode;
-  icon: ReactNode;
-  title: string;
-}) {
+export const InventoryPanel = forwardRef<
+  HTMLElement,
+  {
+    children: ReactNode;
+    icon: ReactNode;
+    title: string;
+  }
+>(function InventoryPanel({ children, icon, title }, ref) {
   return (
-    <section className="glass-panel-branded dashboard-card">
+    <section className="glass-panel-branded dashboard-card" ref={ref}>
       <div className="card-header card-header-gradient border-b border-line/40">
         <div className="card-header-title-container">
           <div className="card-header-icon bg-accent-soft text-accent-strong border border-accent-soft/20">
@@ -33,10 +39,10 @@ export function InventoryPanel({
       <div className="card-body">{children}</div>
     </section>
   );
-}
+});
 
 export const InventoryField = forwardRef<HTMLLabelElement, FieldProps>(
-  function InventoryField({ children, hint, label, className }, ref) {
+  function InventoryField({ children, hint, label, className, required }, ref) {
     return (
       <label
         className={["grid gap-2 text-sm font-black text-app-text", className]
@@ -44,7 +50,14 @@ export const InventoryField = forwardRef<HTMLLabelElement, FieldProps>(
           .join(" ")}
         ref={ref}
       >
-        <span>{label}</span>
+        <span>
+          {label}
+          {required ? (
+            <span className="text-accent-strong ml-1" aria-hidden="true">
+              *
+            </span>
+          ) : null}
+        </span>
         {children}
         {hint ? (
           <span className="text-xs font-bold text-muted">{hint}</span>
@@ -59,7 +72,7 @@ export function InventoryInput(props: ComponentProps<"input">) {
     <input
       {...props}
       className={[
-        "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
+        "w-full min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
         "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
         "disabled:opacity-50 disabled:bg-app-elevated/50 disabled:cursor-not-allowed disabled:border-line/60",
         props.className,
@@ -99,6 +112,56 @@ export function InventorySelect<Value extends string = string>({
   );
 }
 
+type InventoryColorSelectProps = {
+  className?: string;
+  onChange: (value: VehicleColor | "") => void;
+  value: VehicleColor | "";
+};
+
+export function InventoryColorSelect({
+  className,
+  onChange,
+  value,
+}: InventoryColorSelectProps) {
+  const options: CustomSelectOption<VehicleColor | "">[] = [
+    { label: "Selecione", value: "" },
+    ...vehicleColorOptions.map((option) => ({
+      label: (
+        <VehicleColorOptionLabel label={option.label} swatch={option.swatch} />
+      ),
+      value: option.value,
+    })),
+  ];
+
+  return (
+    <InventorySelect
+      {...(className !== undefined ? { className } : {})}
+      onChange={onChange}
+      options={options}
+      value={value}
+    />
+  );
+}
+
+export function VehicleColorOptionLabel({
+  label,
+  swatch,
+}: {
+  label: string;
+  swatch: string;
+}) {
+  return (
+    <span className="vehicle-color-option">
+      <span
+        aria-hidden="true"
+        className="vehicle-color-swatch"
+        style={createColorSwatchStyle(swatch)}
+      />
+      <span>{label}</span>
+    </span>
+  );
+}
+
 export function InventoryTextarea(props: ComponentProps<"textarea">) {
   return (
     <textarea
@@ -112,6 +175,10 @@ export function InventoryTextarea(props: ComponentProps<"textarea">) {
         .join(" ")}
     />
   );
+}
+
+function createColorSwatchStyle(swatch: string) {
+  return { "--vehicle-color-swatch": swatch } as CSSProperties;
 }
 
 export function InventoryBadge({

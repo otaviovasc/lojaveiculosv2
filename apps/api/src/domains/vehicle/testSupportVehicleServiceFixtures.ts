@@ -24,6 +24,7 @@ export function createListing(
     createdAt: testNow,
     description: null,
     doors: null,
+    engineAspiration: null,
     engineDisplacement: null,
     fuelType: null,
     id: "listing_1",

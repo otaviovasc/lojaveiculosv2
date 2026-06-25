@@ -149,6 +149,7 @@ function createListingRecord(
     ...record,
     createdAt: now,
     doors: record.doors ?? null,
+    engineAspiration: record.engineAspiration ?? null,
     engineDisplacement: record.engineDisplacement ?? null,
     fuelType: record.fuelType ?? null,
     id: `listing_${sequence}`,

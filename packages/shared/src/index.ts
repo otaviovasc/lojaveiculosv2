@@ -89,3 +89,6 @@ export type RoleKey =
   | "owner"
   | "salesman"
   | "supervisor";
+
+export * from "./vehicleColors.js";
+export * from "./vehicleTechnicalSpecs.js";

@@ -1,4 +1,5 @@
 import type { AttachVehicleDocumentInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
+import type { AttachVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import type { AddVehicleCostInput } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
 import type { CreateVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
@@ -43,6 +44,7 @@ export const listingStatuses = [
   "inactive",
   "reserved",
   "sold",
+  "in_preparation",
 ] as const;
 
 export type VehicleMediaResult = {
@@ -157,7 +159,7 @@ export type InventoryListingServices = {
 };
 
 type AttachListingInput = {
-  colorName?: string | null | undefined;
+  colorName?: AttachVehicleUnitInput["colorName"] | undefined;
   listingId: string;
   plate?: string | null | undefined;
   stockNumber?: string | null | undefined;
@@ -168,6 +170,7 @@ type CreateListingInput = {
   catalog?: CreateVehicleListingInput["catalog"] | undefined;
   description?: string | null | undefined;
   doors?: CreateVehicleListingInput["doors"] | undefined;
+  engineAspiration?: CreateVehicleListingInput["engineAspiration"];
   engineDisplacement?: CreateVehicleListingInput["engineDisplacement"];
   fuelType?: CreateVehicleListingInput["fuelType"];
   internalNotes?: CreateVehicleListingInput["internalNotes"];

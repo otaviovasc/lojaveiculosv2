@@ -111,6 +111,7 @@ export function createRows() {
         deletedAt: null,
         description: null,
         doors: null,
+        engineAspiration: null,
         engineDisplacement: null,
         featuredUntil: null,
         fuelType: null,

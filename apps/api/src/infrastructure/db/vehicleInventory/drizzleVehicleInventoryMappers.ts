@@ -1,4 +1,9 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import {
+  coerceVehicleColor,
+  normalizeVehicleEngineAspiration,
+  normalizeVehicleEngineDisplacement,
+} from "@lojaveiculosv2/shared";
 import type {
   documentLinks,
   documents,
@@ -23,11 +28,9 @@ export type VehicleDocumentRow = InferSelectModel<typeof documents>;
 export type InsertDocumentRow = InferInsertModel<typeof documents>;
 export type VehicleDocumentLinkRow = InferSelectModel<typeof documentLinks>;
 export type InsertDocumentLinkRow = InferInsertModel<typeof documentLinks>;
-
 export type VehicleUnitRow = InferSelectModel<typeof vehicleUnits>;
 export type InsertVehicleUnitRow = InferInsertModel<typeof vehicleUnits>;
 export type UpdateVehicleUnitRow = Partial<InsertVehicleUnitRow>;
-
 export type VehicleMediaRow = InferSelectModel<typeof vehicleMedia>;
 export type InsertVehicleMediaRow = InferInsertModel<typeof vehicleMedia>;
 
@@ -47,7 +50,10 @@ export function toVehicleListing(
     createdAt: row.createdAt,
     description: row.description,
     doors: row.doors,
-    engineDisplacement: row.engineDisplacement,
+    engineAspiration: normalizeVehicleEngineAspiration(row.engineAspiration),
+    engineDisplacement: normalizeVehicleEngineDisplacement(
+      row.engineDisplacement,
+    ),
     fuelType: row.fuelType,
     id: row.id,
     internalNotes: row.internalNotes,
@@ -56,7 +62,7 @@ export function toVehicleListing(
     modelYear: row.modelYear,
     plate: units[0]?.plate ?? null,
     priceCents: row.askingPriceCents,
-    status: toDomainListingStatus(row.status),
+    status: toDomainListingStatus(row.status, units),
     storeId: row.storeId,
     tenantId: row.tenantId,
     title: row.title,
@@ -96,7 +102,7 @@ function readListingCatalog(metadata: unknown): VehicleListingCatalog | null {
 
 export function toVehicleUnit(row: VehicleUnitRow): VehicleUnit {
   return {
-    colorName: row.colorName,
+    colorName: coerceVehicleColor(row.colorName),
     createdAt: row.createdAt,
     id: row.id,
     listingId: row.listingId,
@@ -130,33 +136,28 @@ export function toVehicleMedia(row: VehicleMediaRow): VehicleMedia {
 export function toDbListingStatus(
   status: VehicleListingStatus,
 ): InsertVehicleListingRow["status"] {
-  switch (status) {
-    case "available":
-      return "published";
-    case "draft":
-      return "draft";
-    case "inactive":
-      return "unpublished";
-    case "reserved":
-      return "reserved";
-    case "sold":
-      return "sold_out";
-  }
+  const map: Record<VehicleListingStatus, InsertVehicleListingRow["status"]> = {
+    available: "published",
+    draft: "draft",
+    inactive: "unpublished",
+    in_preparation: "in_preparation",
+    reserved: "reserved",
+    sold: "sold_out",
+  };
+  return map[status];
 }
 
 export function toDbUnitStatus(
   status: VehicleUnitStatus,
 ): InsertVehicleUnitRow["status"] {
-  switch (status) {
-    case "available":
-      return "available";
-    case "reserved":
-      return "reserved";
-    case "retired":
-      return "inactive";
-    case "sold":
-      return "sold";
-  }
+  const map: Record<VehicleUnitStatus, InsertVehicleUnitRow["status"]> = {
+    available: "available",
+    reserved: "reserved",
+    retired: "inactive",
+    sold: "sold",
+    in_preparation: "in_preparation",
+  };
+  return map[status];
 }
 
 export function requireReturnedRow<Row>(
@@ -168,50 +169,56 @@ export function requireReturnedRow<Row>(
       `Drizzle adapter did not receive a returned row for ${operation}`,
     );
   }
-
   return row;
 }
 
 function toDomainListingStatus(
   status: VehicleListingRow["status"],
+  units: readonly VehicleUnit[],
 ): VehicleListingStatus {
-  switch (status) {
-    case "draft":
-      return "draft";
-    case "published":
-      return "available";
-    case "reserved":
-      return "reserved";
-    case "sold_out":
-      return "sold";
-    case "unpublished":
-      return "inactive";
-    case "archived":
-      throw new VehicleInventoryDrizzleMappingError(
-        "DB listing status archived has no VehicleService equivalent",
-      );
+  if (status === "in_preparation") return "in_preparation";
+  if (status === "unpublished") {
+    return units.some((u) => u.status === "in_preparation")
+      ? "in_preparation"
+      : "inactive";
   }
+  const map: Record<
+    Exclude<
+      VehicleListingRow["status"],
+      "unpublished" | "archived" | "in_preparation"
+    >,
+    VehicleListingStatus
+  > = {
+    draft: "draft",
+    published: "available",
+    reserved: "reserved",
+    sold_out: "sold",
+  };
+  if (status === "archived") {
+    throw new VehicleInventoryDrizzleMappingError(
+      "DB listing status archived has no VehicleService equivalent",
+    );
+  }
+  return map[status];
 }
 
 function toDomainUnitStatus(
   status: VehicleUnitRow["status"],
 ): VehicleUnitStatus {
-  switch (status) {
-    case "available":
-      return "available";
-    case "reserved":
-      return "reserved";
-    case "sold":
-      return "sold";
-    case "inactive":
-      return "retired";
-    case "acquired":
-    case "delivered":
-    case "in_preparation":
-      throw new VehicleInventoryDrizzleMappingError(
-        `DB unit status ${status} has no VehicleService equivalent`,
-      );
+  const map: Partial<Record<VehicleUnitRow["status"], VehicleUnitStatus>> = {
+    available: "available",
+    reserved: "reserved",
+    sold: "sold",
+    inactive: "retired",
+    in_preparation: "in_preparation",
+  };
+  const mapped = map[status];
+  if (!mapped) {
+    throw new VehicleInventoryDrizzleMappingError(
+      `DB unit status ${status} has no VehicleService equivalent`,
+    );
   }
+  return mapped;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

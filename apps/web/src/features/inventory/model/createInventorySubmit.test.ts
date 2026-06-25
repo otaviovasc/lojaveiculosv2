@@ -5,12 +5,111 @@ import {
   submitInventoryCreateFlow,
 } from "./createInventorySubmit";
 import type { CreateMediaDraft } from "./createMediaDrafts";
-import { createInitialInventoryForm } from "./formModel";
-import type { InventoryListingDetail } from "./types";
+import {
+  createInitialInventoryForm,
+  type InventoryFormState,
+} from "./formModel";
+import type { InventoryListingDetail, InventoryUnit } from "./types";
 
 describe("inventory create submit", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it("requires mileage while accepting 0 km", async () => {
+    const blankMileageApi = createSubmitApi();
+
+    await expect(
+      submitInventoryCreateFlow({
+        api: blankMileageApi,
+        form: { ...createForm(), mileageKm: "" },
+        media: [],
+        onProgress: vi.fn(),
+      }),
+    ).rejects.toThrow("Informe a quilometragem do veiculo, mesmo para 0 km.");
+
+    expect(blankMileageApi.createListing).not.toHaveBeenCalled();
+
+    const zeroKmApi = createSubmitApi();
+
+    await expect(
+      submitInventoryCreateFlow({
+        api: zeroKmApi,
+        form: { ...createForm(), mileageKm: "0" },
+        media: [],
+        onProgress: vi.fn(),
+      }),
+    ).resolves.toMatchObject({ kind: "complete" });
+
+    expect(zeroKmApi.createListing).toHaveBeenCalledWith(
+      expect.objectContaining({ mileageKm: 0 }),
+    );
+  });
+
+  it("requires color before creating inventory", async () => {
+    const api = createSubmitApi();
+
+    await expect(
+      submitInventoryCreateFlow({
+        api,
+        form: {
+          ...createForm(),
+          colorName: "",
+          colorStock: [{ colorName: "", quantity: "1" }],
+          mileageKm: "12000",
+        },
+        media: [],
+        onProgress: vi.fn(),
+      }),
+    ).rejects.toThrow("Informe a cor do veiculo.");
+
+    expect(api.createListing).not.toHaveBeenCalled();
+  });
+
+  it("creates one listing and multiple units for 0 km color stock", async () => {
+    const attachedUnits: InventoryUnit[] = [];
+    const attachUnit: InventoryApi["attachUnit"] = async (
+      _listingId,
+      input,
+    ) => {
+      attachedUnits.push(
+        unitRecord({
+          colorName: input.colorName ?? null,
+          id: `unit_${attachedUnits.length + 1}`,
+        }),
+      );
+      return listingDetail({ units: [...attachedUnits] });
+    };
+    const api = createSubmitApi({
+      attachUnit: vi.fn(attachUnit),
+    });
+
+    await expect(
+      submitInventoryCreateFlow({
+        api,
+        form: {
+          ...createForm(),
+          colorName: "",
+          colorStock: [
+            { colorName: "white", quantity: "2" },
+            { colorName: "black", quantity: "1" },
+          ],
+          mileageKm: "0",
+        },
+        media: [],
+        onProgress: vi.fn(),
+      }),
+    ).resolves.toMatchObject({ kind: "complete" });
+
+    expect(api.createListing).toHaveBeenCalledTimes(1);
+    expect(api.attachUnit).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(api.attachUnit).mock.calls.map((call) => call[1])).toEqual(
+      [
+        { colorName: "white", plate: null, stockNumber: null, vin: null },
+        { colorName: "white", plate: null, stockNumber: null, vin: null },
+        { colorName: "black", plate: null, stockNumber: null, vin: null },
+      ],
+    );
   });
 
   it("returns a saved-record state when media attach fails after create", async () => {
@@ -119,7 +218,7 @@ describe("inventory create submit", () => {
           url: "https://cdn.local/front.jpg",
         },
       ],
-      units: [unitRecord()],
+      units: [unitRecord({ colorName: "white" })],
     });
     const api = createSubmitApi({
       getListing: vi.fn(async () => detail),
@@ -143,9 +242,11 @@ describe("inventory create submit", () => {
   });
 });
 
-function createForm() {
+function createForm(): InventoryFormState {
   return {
     ...createInitialInventoryForm(),
+    colorName: "white",
+    mileageKm: "0",
     status: "draft" as const,
     title: "Inventory title",
   };
@@ -200,6 +301,7 @@ function listingDetail(
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
       doors: null,
+      engineAspiration: null,
       engineDisplacement: null,
       fuelType: null,
       id: "listing_1",
@@ -227,7 +329,9 @@ function listingDetail(
   };
 }
 
-function unitRecord(): InventoryListingDetail["units"][number] {
+function unitRecord(
+  overrides: Partial<InventoryListingDetail["units"][number]> = {},
+): InventoryListingDetail["units"][number] {
   return {
     colorName: null,
     createdAt: "2026-01-01T00:00:00.000Z",
@@ -240,5 +344,6 @@ function unitRecord(): InventoryListingDetail["units"][number] {
     tenantId: "tenant_1",
     updatedAt: "2026-01-01T00:00:00.000Z",
     vin: null,
+    ...overrides,
   };
 }

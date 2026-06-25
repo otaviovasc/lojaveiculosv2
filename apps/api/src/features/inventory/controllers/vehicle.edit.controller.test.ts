@@ -64,6 +64,29 @@ describe("inventory canonical edit routes", () => {
     );
   });
 
+  it("allows in-preparation unit edits through validation", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/listings/listing_1/units/unit_1",
+      {
+        body: JSON.stringify({ status: "in_preparation" }),
+        method: "PATCH",
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.updateListingUnit).toHaveBeenCalledWith(
+      expect.any(Object),
+      {
+        listingId: "listing_1",
+        status: "in_preparation",
+        unitId: "unit_1",
+      },
+    );
+  });
+
   it("maps vehicle unit not found failures", async () => {
     const services = createInventoryTestServices();
     vi.mocked(services.updateListingUnit).mockRejectedValue(

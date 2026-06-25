@@ -1,9 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { AuthorizationError } from "../../../shared/authorization.js";
-import {
-  createServiceContext,
-  type ServiceContext,
-} from "../../../shared/serviceContext.js";
+import { createServiceContext } from "../../../shared/serviceContext.js";
 import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   createInventoryTestApp,
@@ -100,6 +97,22 @@ describe("inventory listing routes", () => {
         vin: "vin_1",
       },
     );
+  });
+
+  it("rejects non-enum unit colors before calling services", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/listings/listing_1/unit",
+      {
+        body: JSON.stringify({ colorName: "Branco" }),
+        method: "PUT",
+      },
+    );
+
+    expect(response.status).toBe(400);
+    expect(services.attachListingUnit).not.toHaveBeenCalled();
   });
 
   it("wires status changes to the planned service name", async () => {
@@ -207,9 +220,7 @@ describe("inventory listing routes", () => {
       headers: { "x-request-id": "req_1" },
     });
 
-    const [[serviceContext]] = vi.mocked(services.getListing).mock.calls as [
-      [ServiceContext, unknown],
-    ];
+    const [serviceContext] = vi.mocked(services.getListing).mock.calls[0]!;
 
     expect(serviceContext.requestId).toBe("req_1");
     expect(serviceContext.actor).toEqual({ id: "user_1", kind: "user" });

@@ -70,7 +70,8 @@ export function useInventoryList(api?: InventoryApi) {
   } | null>(null);
 
   const [viewMode, setViewMode] = useState<"list" | "cards">(() => {
-    const saved = localStorage.getItem(
+    if (typeof window === "undefined") return "list";
+    const saved = window.localStorage?.getItem?.(
       "lojaveiculosv2:inventory_view_preference",
     );
     return saved === "cards" || saved === "list" ? saved : "list";
@@ -92,7 +93,12 @@ export function useInventoryList(api?: InventoryApi) {
 
   const handleViewModeChange = (mode: "list" | "cards") => {
     setViewMode(mode);
-    localStorage.setItem("lojaveiculosv2:inventory_view_preference", mode);
+    if (typeof window !== "undefined") {
+      window.localStorage?.setItem?.(
+        "lojaveiculosv2:inventory_view_preference",
+        mode,
+      );
+    }
   };
 
   const handleColumnToggle = (key: string, visible: boolean) => {

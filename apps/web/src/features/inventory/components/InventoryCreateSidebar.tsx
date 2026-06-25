@@ -87,10 +87,7 @@ export function InventoryCreateSidebar({
         </div>
 
         {/* Analysis Content */}
-        <div className="p-5 flex flex-col gap-3 bg-panel">
-          <h4 className="text-xs font-black uppercase tracking-wider text-app-text">
-            Análise de Revenda
-          </h4>
+        <div className="p-5 flex flex-col gap-4 bg-panel">
           <AnalysisPanel
             canAnalyze={canAnalyze}
             onGenerate={onGenerateAnalysis}

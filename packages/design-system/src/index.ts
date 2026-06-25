@@ -10,6 +10,7 @@ export const colorTokens = {
   danger: "var(--color-danger)",
   greenEnd: "var(--color-green-end)",
   greenStart: "var(--color-green-start)",
+  greenSoft: "var(--color-green-soft)",
   inverse: "var(--color-inverse)",
   inverseGhost: "var(--color-inverse-ghost)",
   inverseMuted: "var(--color-inverse-muted)",

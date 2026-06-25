@@ -123,6 +123,7 @@ function createEnrichmentServices(): InventoryEnrichmentServices {
     plate: "ABC1D23",
     source: "apibrasil",
     vehicle: {
+      aspiration: null,
       bodyType: null,
       brand: "Fiat",
       chassis: null,

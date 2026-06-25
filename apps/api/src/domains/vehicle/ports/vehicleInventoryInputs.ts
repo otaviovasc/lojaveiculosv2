@@ -2,6 +2,9 @@ import type {
   VehicleDocument,
   VehicleDocumentKind,
   VehicleDocumentTargetType,
+  VehicleColor,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
   VehicleListingCatalog,
   VehicleFuelType,
   VehicleListingStatus,
@@ -14,7 +17,8 @@ export type CreateVehicleListingRecord = {
   catalog: VehicleListingCatalog | null;
   description: string | null;
   doors?: number | null;
-  engineDisplacement?: string | null;
+  engineAspiration?: VehicleEngineAspiration | null;
+  engineDisplacement?: VehicleEngineDisplacement | null;
   fuelType?: VehicleFuelType | null;
   internalNotes?: string | null;
   manufactureYear: number | null;
@@ -31,7 +35,7 @@ export type CreateVehicleListingRecord = {
 };
 
 export type CreateVehicleUnitRecord = {
-  colorName?: string | null;
+  colorName?: VehicleColor | null;
   listingId: string;
   plate: string | null;
   status: VehicleUnitStatus;

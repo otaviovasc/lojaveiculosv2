@@ -75,6 +75,7 @@ function createListingRepository(
     create: vi.fn(async (record: CreateVehicleListingRecord) => {
       const listing = createListing({
         ...record,
+        engineAspiration: record.engineAspiration ?? null,
         id: `listing_${nextSequence()}`,
         unitIds: [],
       });

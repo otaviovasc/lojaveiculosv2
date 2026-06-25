@@ -4,6 +4,7 @@ import type { InventoryApi } from "../api/apiClient";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
 import {
   InventoryField,
+  InventoryColorSelect,
   InventoryInput,
   InventorySelect,
   InventoryTextarea,
@@ -12,6 +13,7 @@ import type { InventoryListingDetail, InventoryUnit } from "../model/types";
 
 export type InventoryEditState = {
   catalog: InventoryListingDetail["listing"]["catalog"];
+  colorName: InventoryUnit["colorName"] | "";
   description: string;
   manufactureYear: string;
   modelYear: string;
@@ -48,14 +50,14 @@ export function EditListingFields({
         <CarFront aria-hidden="true" className="size-4 text-accent-strong" />
         Anuncio
       </div>
-      <InventoryField label="Titulo">
+      <InventoryField label="Titulo" required>
         <InventoryInput
           onChange={(event) => onChange({ ...form, title: event.target.value })}
           value={form.title}
         />
       </InventoryField>
       <div className="grid gap-4 sm:grid-cols-2">
-        <InventoryField label="Preco">
+        <InventoryField label="Preco" required>
           <InventoryInput
             inputMode="decimal"
             onChange={(event) =>
@@ -64,7 +66,7 @@ export function EditListingFields({
             value={form.price}
           />
         </InventoryField>
-        <InventoryField label="Status">
+        <InventoryField label="Status" required>
           <InventorySelect
             onChange={(status) =>
               onChange({
@@ -81,6 +83,18 @@ export function EditListingFields({
         api={api}
         catalog={form.catalog}
         onCatalogChange={setCatalog}
+        onYearChange={(year) => {
+          if (!year) return;
+          onChange({
+            ...form,
+            manufactureYear: form.manufactureYear || String(year),
+            modelYear: String(year),
+          });
+        }}
+        manufactureYear={form.manufactureYear}
+        onManufactureYearChange={(value) =>
+          onChange({ ...form, manufactureYear: value })
+        }
       />
       <InventoryField label="Descricao">
         <InventoryTextarea
@@ -133,6 +147,17 @@ function UnitFields({
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
+        <InventoryField label="Cor">
+          <InventoryColorSelect
+            onChange={(colorName) =>
+              onChange({
+                ...form,
+                colorName,
+              })
+            }
+            value={form.colorName || ""}
+          />
+        </InventoryField>
         <InventoryField label="Placa">
           <InventoryInput
             onChange={(event) =>
@@ -141,7 +166,7 @@ function UnitFields({
             value={form.plate}
           />
         </InventoryField>
-        <InventoryField label="Status da unidade">
+        <InventoryField label="Status da unidade" required>
           <InventorySelect
             onChange={(unitStatus) =>
               onChange({

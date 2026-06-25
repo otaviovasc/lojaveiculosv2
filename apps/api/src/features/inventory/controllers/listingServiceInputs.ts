@@ -31,6 +31,9 @@ export function cleanCreateInput(
   if (input.catalog !== undefined) result.catalog = input.catalog;
   if (input.description !== undefined) result.description = input.description;
   if (input.doors !== undefined) result.doors = input.doors;
+  if (input.engineAspiration !== undefined) {
+    result.engineAspiration = input.engineAspiration;
+  }
   if (input.engineDisplacement !== undefined) {
     result.engineDisplacement = input.engineDisplacement;
   }
@@ -79,6 +82,9 @@ export function cleanUpdateListingInput(
   if (input.catalog !== undefined) result.catalog = input.catalog;
   if (input.description !== undefined) result.description = input.description;
   if (input.doors !== undefined) result.doors = input.doors;
+  if (input.engineAspiration !== undefined) {
+    result.engineAspiration = input.engineAspiration;
+  }
   if (input.engineDisplacement !== undefined) {
     result.engineDisplacement = input.engineDisplacement;
   }

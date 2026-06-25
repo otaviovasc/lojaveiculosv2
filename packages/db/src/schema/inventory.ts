@@ -11,11 +11,13 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { vehicleEngineAspirationValues } from "@lojaveiculosv2/shared";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
 export const vehicleListingStatus = pgEnum("vehicle_listing_status", [
   "draft",
+  "in_preparation",
   "published",
   "reserved",
   "sold_out",
@@ -57,6 +59,11 @@ export const vehicleTransmission = pgEnum("vehicle_transmission", [
   "other",
 ]);
 
+export const vehicleEngineAspiration = pgEnum(
+  "vehicle_engine_aspiration",
+  vehicleEngineAspirationValues,
+);
+
 export const vehicleMediaKind = pgEnum("vehicle_media_kind", [
   "photo",
   "video",
@@ -82,6 +89,7 @@ export const vehicleListings = pgTable(
     condition: vehicleCondition("condition").notNull().default("used"),
     description: text("description"),
     doors: integer("doors"),
+    engineAspiration: vehicleEngineAspiration("engine_aspiration"),
     engineDisplacement: varchar("engine_displacement", { length: 32 }),
     featuredUntil: timestamp("featured_until", { withTimezone: true }),
     fuelType: vehicleFuelType("fuel_type"),
@@ -123,7 +131,7 @@ export const vehicleUnits = pgTable(
     ...softDeleteColumns,
     acquisitionDate: timestamp("acquisition_date", { withTimezone: true }),
     acquisitionPriceCents: integer("acquisition_price_cents"),
-    colorName: varchar("color_name", { length: 80 }),
+    colorName: varchar("color_name", { length: 64 }),
     listingId: uuid("listing_id")
       .notNull()
       .references(() => vehicleListings.id),

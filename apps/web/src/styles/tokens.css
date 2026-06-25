@@ -14,6 +14,7 @@
   --color-blue-soft: rgb(38 132 255 / 0.14);
   --color-green-start: #20c77a;
   --color-green-end: #16a765;
+  --color-green-soft: rgba(32, 199, 122, 0.08);
   --color-pink-start: #f45da6;
   --color-pink-end: #d83f89;
   --color-violet-start: #8f6bff;
@@ -50,6 +51,7 @@
   --color-accent-soft: rgba(255, 74, 81, 0.14);
   --color-app-elevated: #1f2937;
   --color-blue-soft: rgb(38 132 255 / 0.18);
+  --color-green-soft: rgba(32, 199, 122, 0.14);
   --color-warning: #f5c542;
   --color-danger: #ff7a7a;
   --color-inverse: #030712;
@@ -74,6 +76,9 @@
   --color-accent-strong: var(--color-accent-strong);
   --color-accent-soft: var(--color-accent-soft);
   --color-blue-soft: var(--color-blue-soft);
+  --color-green-start: var(--color-green-start);
+  --color-green-end: var(--color-green-end);
+  --color-green-soft: var(--color-green-soft);
   --color-inverse: var(--color-inverse);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);

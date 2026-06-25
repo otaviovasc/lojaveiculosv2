@@ -60,6 +60,7 @@ export function detailPermissionForListingEdit(
   if (
     input.catalog !== undefined ||
     input.doors !== undefined ||
+    input.engineAspiration !== undefined ||
     input.engineDisplacement !== undefined ||
     input.fuelType !== undefined ||
     input.manufactureYear !== undefined ||

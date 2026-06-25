@@ -62,6 +62,7 @@ describe("createInventoryEnrichmentServices", () => {
       plate: "ABC1D23",
       source: "apibrasil" as const,
       vehicle: {
+        aspiration: null,
         bodyType: null,
         brand: "Fiat",
         chassis: null,

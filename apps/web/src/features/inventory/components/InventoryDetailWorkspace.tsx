@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail, InventoryMedia } from "../model/types";
 import {
@@ -56,7 +57,7 @@ export function InventoryDetailWorkspace({
 
   const [specs, setSpecs] = useState({
     plate: primaryUnit?.plate || listing.plate || "SEM PLACA",
-    color: primaryUnit?.colorName || "Não informado",
+    color: getVehicleColorLabel(primaryUnit?.colorName) || "Não informado",
     km: listing.mileageKm
       ? `${listing.mileageKm.toLocaleString("pt-BR")} km`
       : "Não informado",

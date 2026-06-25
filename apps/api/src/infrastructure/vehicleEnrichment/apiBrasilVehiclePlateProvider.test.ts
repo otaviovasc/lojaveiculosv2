@@ -74,8 +74,10 @@ describe("APIBrasil vehicle plate provider", () => {
             anoModelo: "2023",
             cor: "Branca",
             extra: {
+              aspiracao: "Turbo",
               caixa_cambio: "Automatica",
               combustivel: "Flex",
+              cilindradas: 1984,
               municipio: "Belo Horizonte",
               tipo_veiculo: "Automovel",
               uf_placa: "MG",
@@ -121,7 +123,9 @@ describe("APIBrasil vehicle plate provider", () => {
       score: 101,
     });
     expect(result.vehicle).toMatchObject({
+      aspiration: "Turbo",
       brand: "Fiat",
+      engine: "1984",
       fuel: "Flex",
       transmission: "Automatica",
       version: "Ranch",
@@ -129,6 +133,39 @@ describe("APIBrasil vehicle plate provider", () => {
     expect(result.metadata).toContainEqual({
       label: "Municipio",
       value: "Belo Horizonte",
+    });
+  });
+
+  it("normalizes single-object FIPE references from provider payloads", () => {
+    const result = normalizeApiBrasilPlateResponse(
+      {
+        data: {
+          dados: {
+            anoModelo: "2023",
+            fipe: {
+              ano_modelo: "2023",
+              codigo_fipe: "008123-4",
+              combustivel: "Gasolina",
+              mes_referencia: "junho de 2026",
+              texto_marca: "Audi",
+              texto_modelo: "A3 2.0 TFSI",
+              texto_valor: "R$ 120.500,00",
+            },
+            marca: "Audi",
+            modelo: "A3",
+            placa: "ABC1D23",
+          },
+        },
+      },
+      "ABC1D23",
+    );
+
+    expect(result.fipe).toMatchObject({
+      brandName: "Audi",
+      code: "008123-4",
+      modelName: "A3 2.0 TFSI",
+      modelYear: 2023,
+      priceCents: 12050000,
     });
   });
 });

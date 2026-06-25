@@ -110,6 +110,7 @@ export function createInventoryApi({
       description: input.description,
       catalog: input.catalog,
       doors: input.doors,
+      engineAspiration: input.engineAspiration,
       engineDisplacement: input.engineDisplacement,
       fuelType: input.fuelType,
       internalNotes: input.internalNotes,
@@ -208,6 +209,7 @@ export function createInventoryApi({
         description: input.description,
         catalog: input.catalog,
         doors: input.doors,
+        engineAspiration: input.engineAspiration,
         engineDisplacement: input.engineDisplacement,
         fuelType: input.fuelType,
         internalNotes: input.internalNotes,
@@ -247,7 +249,12 @@ export function createInventoryApi({
     createFlow: async (input) => {
       const listing = await createListing(input.listing);
       const listingId = listing.listing.id;
-      const unit = await attachUnit(listingId, input.unit);
+      const unitInputs = input.units?.length ? input.units : [input.unit];
+      let unit = listing;
+
+      for (const unitInput of unitInputs) {
+        unit = await attachUnit(listingId, unitInput);
+      }
 
       if (!input.media) return { listing, unit };
 

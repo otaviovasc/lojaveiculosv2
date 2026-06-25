@@ -94,6 +94,7 @@ function summary(
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
       doors: null,
+      engineAspiration: null,
       engineDisplacement: null,
       fuelType: null,
       id,

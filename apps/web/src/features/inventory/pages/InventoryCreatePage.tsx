@@ -144,7 +144,10 @@ export function InventoryCreatePage({
       ) => {
         setForm((current) => ({
           ...current,
-          [field]: typeof value === "string" ? value : value.target.value,
+          [field]:
+            typeof value === "object" && value !== null && "target" in value
+              ? value.target.value
+              : value,
         }));
       },
     [],

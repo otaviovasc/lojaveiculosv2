@@ -32,6 +32,7 @@ export const inventoryListStatusOptions: Array<{
   { label: "Todos os status", value: "" },
   { label: "Rascunho", value: "draft" },
   { label: "Disponivel", value: "available" },
+  { label: "Em preparação", value: "in_preparation" },
   { label: "Reservado", value: "reserved" },
   { label: "Vendido", value: "sold" },
   { label: "Inativo", value: "inactive" },
@@ -43,6 +44,7 @@ export const inventoryStatusLabels: Record<InventoryListingStatus, string> = {
   inactive: "Inativo",
   reserved: "Reservado",
   sold: "Vendido",
+  in_preparation: "Em preparação",
 };
 
 export function createInventoryErrorState(error: unknown): InventoryListState {

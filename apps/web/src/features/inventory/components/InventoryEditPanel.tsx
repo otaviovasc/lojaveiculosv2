@@ -13,6 +13,7 @@ import { InventoryMediaWorkspace } from "./InventoryMediaWorkspace";
 import { InventoryOperationsLedger } from "./InventoryOperationsLedger";
 import { InventoryWorkflowPanel } from "./InventoryWorkflowPanel";
 import type { InventoryListingDetail, InventoryUnit } from "../model/types";
+import { nullableRichTextDescription } from "../model/richTextDescription";
 
 type SaveState =
   | { kind: "idle" }
@@ -58,7 +59,7 @@ export function InventoryEditPanel({
     try {
       let updated = await api.updateListingDetails(detail.listing.id, {
         catalog: form.catalog,
-        description: nullableText(form.description),
+        description: nullableRichTextDescription(form.description),
         manufactureYear: nullableNumber(form.manufactureYear),
         modelYear: nullableNumber(form.modelYear),
         priceCents,
@@ -69,6 +70,7 @@ export function InventoryEditPanel({
 
       if (primaryUnit) {
         updated = await api.updateUnit(detail.listing.id, primaryUnit.id, {
+          colorName: form.colorName || null,
           plate: nullablePlate(form.plate),
           status: form.unitStatus,
           stockNumber: nullableText(form.stockNumber),
@@ -159,6 +161,7 @@ function createEditState(
 ): InventoryEditState {
   return {
     catalog: detail.listing.catalog,
+    colorName: unit?.colorName ?? "",
     description: detail.listing.description ?? "",
     manufactureYear: detail.listing.manufactureYear
       ? String(detail.listing.manufactureYear)
