@@ -21,6 +21,10 @@
 @import "./crmPipeline.css";
 @import "./crmPipelineLayout.css";
 @import "./crmLeadViews.css";
+@import "./crmClients.css";
+@import "./crmClientKanban.css";
+@import "./crmClientCards.css";
+@import "./crmClientForms.css";
 @import "./settings.css";
 @import "./settingsForms.css";
 @import "./settingsStorefront.css";

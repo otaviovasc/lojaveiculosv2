@@ -1,9 +1,6 @@
 import type { InventoryListingSummary } from "../inventory/model/types";
 import type { ProductCrmApi, ProductCrmLeadQuery } from "./productCrmApi";
-import type {
-  ProductCrmLead,
-  ProductCrmLeadActivity,
-} from "./productCrmTypes";
+import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
 import type {
   LeadActivitiesById,
   LeadVehicleOption,
@@ -14,10 +11,7 @@ export async function loadActivitiesByLeadId(
   leads: ProductCrmLead[],
 ): Promise<LeadActivitiesById> {
   const entries: Array<[string, ProductCrmLeadActivity[]]> = await Promise.all(
-    leads.map(async (lead) => [
-      lead.id,
-      await crmApi.listActivities(lead.id),
-    ]),
+    leads.map(async (lead) => [lead.id, await crmApi.listActivities(lead.id)]),
   );
 
   return Object.fromEntries(entries) as LeadActivitiesById;
@@ -43,8 +37,13 @@ export function createLeadVehicleOption(
   item: InventoryListingSummary,
 ): LeadVehicleOption {
   return {
-    detail: item.primaryUnit?.plate ?? item.listing.plate ?? item.listing.status,
+    detail:
+      item.primaryUnit?.plate ?? item.listing.plate ?? item.listing.status,
     id: item.listing.id,
     label: item.listing.title,
+    imageUrl: item.primaryMediaUrl,
+    priceCents: item.listing.priceCents,
+    manufactureYear: item.listing.manufactureYear,
+    modelYear: item.listing.modelYear,
   };
 }

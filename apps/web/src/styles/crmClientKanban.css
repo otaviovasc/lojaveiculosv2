@@ -1,0 +1,94 @@
+.crm-client-kanban {
+  align-items: flex-start;
+  display: flex;
+  gap: 1rem;
+  min-height: 34rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+
+.crm-client-stage {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex: 0 0 18rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 31rem;
+  padding: 0.75rem;
+}
+
+.crm-client-stage-header,
+.crm-client-stage-title {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.crm-client-stage-header {
+  border-bottom: 1px solid var(--color-line);
+  justify-content: space-between;
+  padding-bottom: 0.625rem;
+}
+
+.crm-client-stage-pill {
+  border-radius: var(--radius-sm);
+  font-size: 0.6875rem;
+  font-weight: 900;
+  padding: 0.25rem 0.5rem;
+  text-transform: uppercase;
+}
+
+.crm-client-stage-pill-new {
+  background: var(--color-blue-soft);
+  color: var(--color-blue-start);
+}
+
+.crm-client-stage-pill-contacted,
+.crm-client-stage-pill-qualified {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.crm-client-stage-pill-negotiating {
+  background: var(--color-green-soft);
+  color: var(--color-green-start);
+}
+
+.crm-client-stage-pill-won {
+  background: var(--color-green-start);
+  color: var(--color-inverse);
+}
+
+.crm-client-stage-pill-lost {
+  background: var(--color-app-elevated);
+  color: var(--color-muted);
+}
+
+.crm-client-stage-count,
+.crm-client-empty-stage {
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.crm-client-stage-count {
+  font-weight: 900;
+}
+
+.crm-client-stage-body {
+  display: grid;
+  gap: 0.75rem;
+  max-height: 32rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.crm-client-empty-stage {
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 2rem 1rem;
+  text-align: center;
+}

@@ -42,8 +42,8 @@ export function CrmModule({
   api?: ProductCrmApi;
   routeSurface?: CrmSurface;
 }) {
-  const [activeSurface, setActiveSurface] = useState<CrmSurface>(() =>
-    routeSurface ?? readInitialSurface(),
+  const [activeSurface, setActiveSurface] = useState<CrmSurface>(
+    () => routeSurface ?? readInitialSurface(),
   );
   const crmApi = useMemo(() => api ?? createRuntimeProductCrmApi(), [api]);
   const [activitiesByLeadId, setActivitiesByLeadId] =
@@ -78,9 +78,7 @@ export function CrmModule({
       setLeads(nextLeads);
       setActivitiesByLeadId(nextActivities);
       setActiveLeadId((current) =>
-        nextLeads.some((lead) => lead.id === current)
-          ? current
-          : (nextLeads[0]?.id ?? null),
+        nextLeads.some((lead) => lead.id === current) ? current : null,
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught : new Error(String(caught)));
@@ -152,7 +150,6 @@ export function CrmModule({
     setLeads((current) =>
       current.map((item) => (item.id === lead.id ? lead : item)),
     );
-    setActiveLeadId(lead.id);
   };
 
   const updateLeadContact = async (leadId: string, input: LeadContactPatch) => {
@@ -188,36 +185,26 @@ export function CrmModule({
   };
 
   return (
-    <>
-      <CrmSurfaceTabs
-        activeSurface={activeSurface}
-        onChange={changeSurface}
-      />
-      {activeSurface === "whatsapp" ? (
-        <CrmWhatsappInbox />
-      ) : (
-        <CrmPipelineView
-          activities={activeActivities}
-          activeLeadId={activeLeadId}
-          allActivities={statActivities}
-          error={error}
-          filters={filters}
-          isLoading={isLoading}
-          leads={leads}
-          onChangeFilters={setFilters}
-          onChangeViewMode={setViewMode}
-          onCreateActivity={createActivity}
-          onCreateLead={createLead}
-          onRefresh={refreshLeads}
-          onSelectLead={setActiveLeadId}
-          onUpdateLead={updateLeadContact}
-          onUpdateStatus={updateLeadStatus}
-          vehicleOptions={vehicleOptions}
-          viewLeads={filterLeads(leads, filters)}
-          viewMode={viewMode}
-        />
-      )}
-    </>
+    <CrmPipelineView
+      activities={activeActivities}
+      activeLeadId={activeLeadId}
+      allActivities={statActivities}
+      error={error}
+      filters={filters}
+      isLoading={isLoading}
+      leads={leads}
+      onChangeFilters={setFilters}
+      onChangeViewMode={setViewMode}
+      onCreateActivity={createActivity}
+      onCreateLead={createLead}
+      onRefresh={refreshLeads}
+      onSelectLead={setActiveLeadId}
+      onUpdateLead={updateLeadContact}
+      onUpdateStatus={updateLeadStatus}
+      vehicleOptions={vehicleOptions}
+      viewLeads={filterLeads(leads, filters)}
+      viewMode={viewMode}
+    />
   );
 }
 

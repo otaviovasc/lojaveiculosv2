@@ -17,6 +17,10 @@ export type LeadVehicleOption = {
   detail: string;
   id: string;
   label: string;
+  imageUrl?: string | null;
+  priceCents?: number | null;
+  manufactureYear?: number | null;
+  modelYear?: number | null;
 };
 
 export type CrmPipelineViewProps = {
@@ -35,10 +39,31 @@ export type CrmPipelineViewProps = {
   ) => Promise<void>;
   onCreateLead: (input: LeadCreateDraft) => Promise<void>;
   onRefresh: () => Promise<void>;
-  onSelectLead: (leadId: string) => void;
+  onSelectLead: (leadId: string | null) => void;
   onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
   onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
   viewLeads: ProductCrmLead[];
   viewMode: CrmViewMode;
 };
+
+export type CrmLeadDetailFullPageProps = {
+  lead: ProductCrmLead;
+  activities: ProductCrmLeadActivity[];
+  onBack: () => void;
+  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
+  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  onCreateActivity: (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => Promise<void>;
+};
+
+export type TabOption =
+  | "visao_geral"
+  | "timeline"
+  | "casos"
+  | "contratos"
+  | "financeiro"
+  | "anexos"
+  | "portal";
