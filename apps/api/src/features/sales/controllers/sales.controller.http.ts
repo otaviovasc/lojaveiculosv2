@@ -10,6 +10,14 @@ import {
   SaleNotFoundError,
   SaleReadinessError,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
+import {
+  VehicleListingNotFoundError,
+  VehicleUnitNotFoundError,
+} from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
+import {
+  VehicleWorkflowStateError,
+  VehicleWorkflowValidationError,
+} from "../../../domains/vehicle/workflows/vehicleSaleWorkflowRules.js";
 
 export async function parseSalesJson<Schema extends z.ZodType>(
   context: Context,
@@ -46,6 +54,18 @@ export async function handleSales(
     }
     if (error instanceof SaleNotFoundError) {
       return context.json({ message: error.message }, 404);
+    }
+    if (
+      error instanceof VehicleListingNotFoundError ||
+      error instanceof VehicleUnitNotFoundError
+    ) {
+      return context.json({ message: error.message }, 404);
+    }
+    if (error instanceof VehicleWorkflowValidationError) {
+      return context.json({ message: error.message }, 400);
+    }
+    if (error instanceof VehicleWorkflowStateError) {
+      return context.json({ message: error.message }, 409);
     }
     if (error instanceof AuthorizationError) {
       return context.json({ message: error.message }, 403);

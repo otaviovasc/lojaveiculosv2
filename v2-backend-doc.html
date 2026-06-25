@@ -1,0 +1,4598 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Loja Veiculos V2 Living Plan</title>
+    <style>
+      :root {
+        --bg: #f5f7fb;
+        --ink: #12212f;
+        --muted: #5c6b78;
+        --line: #d7e0e8;
+        --panel: #ffffff;
+        --panel-2: #eef4f8;
+        --green: #13b981;
+        --green-dark: #08785b;
+        --blue: #246bfe;
+        --blue-soft: #dce9ff;
+        --purple: #8357e8;
+        --purple-soft: #eee6ff;
+        --yellow: #e9b824;
+        --yellow-soft: #fff2c2;
+        --red: #ef4c56;
+        --red-soft: #ffe3e6;
+        --teal-soft: #dff8f3;
+        --mint: #e1faed;
+        --sky: #e2f0ff;
+        --violet: #efe8ff;
+        --amber: #fff4cc;
+        --rose: #ffe8ea;
+        --sidebar: 268px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family:
+          "Avenir Next", "Avenir", "Segoe UI", "Trebuchet MS", "Helvetica Neue",
+          Arial, sans-serif;
+        line-height: 1.5;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .app-shell {
+        display: grid;
+        grid-template-columns: var(--sidebar) minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .side-panel {
+        position: sticky;
+        top: 0;
+        align-self: start;
+        height: 100vh;
+        overflow: auto;
+        background: #12212f;
+        color: #ffffff;
+        padding: 22px 18px;
+        border-right: 1px solid #0b1620;
+      }
+
+      .side-panel strong {
+        display: block;
+        font-size: 18px;
+      }
+
+      .side-panel p {
+        color: #b9c7d5;
+        font-size: 13px;
+      }
+
+      .side-panel a {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 38px;
+        color: #eaf1f7;
+        text-decoration: none;
+        border: 1px solid #2b4053;
+        border-radius: 8px;
+        margin-top: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .side-panel a:hover,
+      .side-panel a:focus-visible {
+        border-color: #6ea4ff;
+        background: #1b3145;
+        outline: none;
+      }
+
+      .sidebar-label {
+        margin: 22px 0 8px;
+        color: #8fa4b8;
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .guardrail-stack {
+        display: grid;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .guardrail-mini {
+        display: grid;
+        grid-template-columns: 12px 1fr;
+        gap: 8px;
+        align-items: start;
+        color: #d8e5f0;
+        font-size: 12px;
+      }
+
+      .guardrail-mini::before {
+        width: 10px;
+        height: 10px;
+        margin-top: 4px;
+        border-radius: 50%;
+        background: var(--green);
+        content: "";
+      }
+
+      main {
+        width: min(100%, 1280px);
+        margin: 0 auto;
+        padding: 28px 24px 56px;
+      }
+
+      header {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+        gap: 20px;
+        align-items: end;
+        padding: 14px 0 20px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.15;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        font-size: clamp(34px, 5vw, 58px);
+      }
+
+      h2 {
+        font-size: 24px;
+        margin-top: 36px;
+        letter-spacing: -0.02em;
+      }
+
+      h3 {
+        font-size: 18px;
+        margin-top: 22px;
+      }
+
+      p {
+        color: var(--muted);
+        margin: 10px 0 0;
+      }
+
+      section {
+        padding: 14px 0;
+        scroll-margin-top: 16px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+
+      th,
+      td {
+        text-align: left;
+        vertical-align: top;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      th {
+        font-size: 13px;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      code {
+        background: #edf3f7;
+        padding: 2px 5px;
+        border-radius: 4px;
+      }
+
+      .hero-metrics,
+      .console-grid,
+      .progress-grid,
+      .relation-canvas,
+      .flow-stage-grid {
+        display: grid;
+        gap: 12px;
+      }
+
+      .hero-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .metric {
+        min-height: 96px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        transition:
+          transform 180ms ease,
+          border-color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      .metric:hover {
+        transform: translateY(-2px);
+        border-color: #b5cffd;
+        box-shadow: 0 12px 24px rgba(19, 26, 42, 0.08);
+      }
+
+      .metric span,
+      .eyebrow {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .metric strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 24px;
+        line-height: 1.05;
+      }
+
+      .console-grid {
+        grid-template-columns: 1.1fr 0.9fr;
+        margin-top: 18px;
+      }
+
+      .console-card,
+      .flow-panel,
+      .map-detail,
+      .db-detail,
+      .relation-node,
+      .dashboard-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .dashboard-panel h3,
+      .dashboard-panel h2,
+      .console-card h3,
+      .console-card h2,
+      .flow-panel h3,
+      .flow-panel h2,
+      .map-detail h3,
+      .db-detail h3 {
+        margin-top: 0;
+      }
+
+      .progress-grid {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        margin-top: 14px;
+      }
+
+      .progress-card {
+        min-height: 142px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .progress-card strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 18px;
+      }
+
+      .bar {
+        height: 9px;
+        overflow: hidden;
+        background: #e6eef4;
+        border-radius: 999px;
+        margin-top: 12px;
+      }
+
+      .bar > span {
+        display: block;
+        height: 100%;
+        background: var(--green);
+      }
+
+      .bar.warn > span {
+        background: var(--yellow);
+      }
+
+      .bar.open > span {
+        background: var(--blue);
+      }
+
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        background: color-mix(in srgb, var(--bg) 94%, transparent);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .navlinks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .navlinks a,
+      .tab-button,
+      .map-node,
+      .db-node,
+      .chip-button {
+        color: var(--ink);
+        text-decoration: none;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .tab-button[aria-selected="true"],
+      .map-node.is-active,
+      .db-node.is-active,
+      .chip-button.is-active {
+        border-color: var(--blue);
+        background: var(--blue-soft);
+        color: #103a89;
+      }
+
+      .tab-button:focus-visible,
+      .map-node:focus-visible,
+      .db-node:focus-visible,
+      .chip-button:focus-visible,
+      .navlinks a:focus-visible {
+        outline: 3px solid #9ec1ff;
+        outline-offset: 2px;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .open {
+        background: #fff5d6;
+        color: #876200;
+      }
+
+      .recommended {
+        background: #dbf8eb;
+        color: #087246;
+      }
+
+      .blocked {
+        background: #ffe2e2;
+        color: #a02828;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .tile {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+        min-height: 132px;
+      }
+
+      .tile strong {
+        display: block;
+        margin-bottom: 8px;
+      }
+
+      .schema-board {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .schema-domain {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .schema-domain h3 {
+        margin-top: 0;
+      }
+
+      .schema-domain ul {
+        margin: 12px 0 0;
+        padding-left: 20px;
+      }
+
+      .schema-domain li {
+        margin: 8px 0;
+      }
+
+      .relation-list {
+        margin-top: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px 18px;
+      }
+
+      .relation-list li {
+        margin: 8px 0;
+      }
+
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .score {
+        min-height: 104px;
+        padding: 14px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+      }
+
+      .score span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .score strong {
+        display: block;
+        margin-top: 8px;
+        font-size: 24px;
+      }
+
+      .worklane {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .freshness {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .lane {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 16px;
+      }
+
+      .lane ol,
+      .lane ul {
+        margin: 12px 0 0;
+        padding-left: 20px;
+      }
+
+      .lane li {
+        margin: 8px 0;
+      }
+
+      .architecture-shell {
+        display: grid;
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .arch-strip {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .arch-step,
+      .arch-card,
+      .gate-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+      }
+
+      .arch-step {
+        min-height: 118px;
+        border-top: 5px solid var(--green);
+      }
+
+      .arch-step:nth-child(2) {
+        border-top-color: var(--blue);
+      }
+
+      .arch-step:nth-child(3) {
+        border-top-color: var(--yellow);
+      }
+
+      .arch-step:nth-child(4) {
+        border-top-color: var(--purple);
+      }
+
+      .arch-step:nth-child(5) {
+        border-top-color: var(--red);
+      }
+
+      .arch-step span,
+      .arch-card span,
+      .gate-card span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .arch-step strong,
+      .arch-card strong,
+      .gate-card strong {
+        display: block;
+        margin-top: 6px;
+      }
+
+      .arch-grid {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 14px;
+      }
+
+      .domain-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .domain-pill {
+        border-radius: 8px;
+        padding: 12px;
+        background: var(--mint);
+        border: 1px solid #b9edcf;
+      }
+
+      .domain-pill:nth-child(2) {
+        background: var(--sky);
+        border-color: #b9dafd;
+      }
+
+      .domain-pill:nth-child(3) {
+        background: var(--amber);
+        border-color: #eed889;
+      }
+
+      .domain-pill:nth-child(4) {
+        background: var(--violet);
+        border-color: #d9cafd;
+      }
+
+      .domain-pill:nth-child(5) {
+        background: var(--rose);
+        border-color: #f7c5ca;
+      }
+
+      .domain-pill:nth-child(6) {
+        background: #e8fbf7;
+        border-color: #b6ede2;
+      }
+
+      .domain-pill strong {
+        display: block;
+      }
+
+      .map-layout {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .domain-map {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .map-node {
+        min-height: 126px;
+        text-align: left;
+        white-space: normal;
+        border-left: 6px solid var(--green);
+      }
+
+      .map-node:nth-child(2) {
+        border-left-color: var(--blue);
+      }
+
+      .map-node:nth-child(3) {
+        border-left-color: var(--yellow);
+      }
+
+      .map-node:nth-child(4) {
+        border-left-color: var(--purple);
+      }
+
+      .map-node:nth-child(5) {
+        border-left-color: var(--red);
+      }
+
+      .map-node:nth-child(6) {
+        border-left-color: #00a99d;
+      }
+
+      .map-node:nth-child(7) {
+        border-left-color: #ff7a45;
+      }
+
+      .map-node:nth-child(8) {
+        border-left-color: #64748b;
+      }
+
+      .map-node strong,
+      .db-node strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .map-node span,
+      .db-node span {
+        display: block;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .detail-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+      }
+
+      .detail-list li {
+        margin: 7px 0;
+      }
+
+      .flow-tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .flow-stage-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        margin-top: 14px;
+      }
+
+      .flow-stage {
+        min-height: 168px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px;
+        border-top: 5px solid var(--blue);
+      }
+
+      .flow-stage:nth-child(2) {
+        border-top-color: var(--purple);
+      }
+
+      .flow-stage:nth-child(3) {
+        border-top-color: var(--green);
+      }
+
+      .flow-stage:nth-child(4) {
+        border-top-color: var(--yellow);
+      }
+
+      .flow-stage:nth-child(5) {
+        border-top-color: var(--red);
+      }
+
+      .flow-stage span {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .flow-stage strong {
+        display: block;
+        margin-top: 8px;
+      }
+
+      .flow-stage p {
+        font-size: 13px;
+      }
+
+      .db-explorer {
+        display: grid;
+        grid-template-columns: 0.95fr 1.05fr;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .db-node-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .db-node {
+        min-height: 112px;
+        text-align: left;
+        white-space: normal;
+      }
+
+      .relation-canvas {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: 12px;
+      }
+
+      .relation-node {
+        min-height: 118px;
+      }
+
+      .relation-node span {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 900;
+        text-transform: uppercase;
+      }
+
+      .search-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .search-row input {
+        min-height: 40px;
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+        color: var(--ink);
+        background: var(--panel);
+      }
+
+      .chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .gate-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .gate-card {
+        min-height: 112px;
+      }
+
+      .arch-list {
+        margin: 12px 0 0;
+        padding-left: 20px;
+      }
+
+      .arch-list li {
+        margin: 8px 0;
+      }
+
+      .life-stage-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .life-stage {
+        position: relative;
+        min-height: 134px;
+        border-radius: 12px;
+        border: 1px solid #cbdaf0;
+        background: linear-gradient(180deg, #f9fbff 0%, #eef5ff 100%);
+        padding: 14px;
+      }
+
+      .life-stage::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        border-top: 4px solid;
+        border-image: linear-gradient(90deg, #246bfe, #13b981) 1;
+        opacity: 0.35;
+        pointer-events: none;
+      }
+
+      .life-stage strong {
+        display: block;
+        margin-top: 6px;
+      }
+
+      .life-stage p {
+        margin: 6px 0 0;
+      }
+
+      .doc-matrix {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .doc-card {
+        border-radius: 10px;
+        border: 1px solid #cfdcf0;
+        padding: 12px;
+        background: var(--panel);
+      }
+
+      .doc-card h4 {
+        margin: 0 0 6px;
+      }
+
+      .doc-card .muted {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .doc-card p {
+        margin: 8px 0 0;
+        color: var(--ink);
+      }
+
+      .doc-card.requires-audit {
+        background: #dff3ff;
+        border-color: #a9d5ff;
+      }
+
+      .doc-card strong.badge {
+        display: inline-block;
+        margin-top: 8px;
+        font-size: 11px;
+        background: #e4f4e6;
+        border: 1px solid #b9edcf;
+        border-radius: 999px;
+        padding: 3px 8px;
+      }
+
+      @media (max-width: 780px) {
+        .app-shell {
+          display: block;
+        }
+
+        .side-panel {
+          position: static;
+          height: auto;
+          border-right: 0;
+        }
+
+        main {
+          padding: 20px 14px 42px;
+        }
+
+        header {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 30px;
+        }
+
+        .hero-metrics,
+        .console-grid,
+        .progress-grid,
+        .map-layout,
+        .domain-map,
+        .flow-stage-grid,
+        .db-explorer,
+        .db-node-grid,
+        .relation-canvas,
+        .life-stage-grid,
+        .doc-matrix {
+          grid-template-columns: 1fr;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .schema-board {
+          grid-template-columns: 1fr;
+        }
+
+        .scoreboard,
+        .arch-grid,
+        .arch-strip,
+        .gate-grid,
+        .worklane {
+          grid-template-columns: 1fr;
+        }
+
+        .domain-grid {
+          grid-template-columns: 1fr;
+        }
+
+        th,
+        td {
+          display: block;
+          width: 100%;
+        }
+
+        tr {
+          display: block;
+          border-bottom: 1px solid var(--line);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="side-panel" aria-label="V2 onboarding and navigation">
+        <strong>LojaV2 Plan Console</strong>
+        <p>
+          Architecture-map-first live document for agents working on the V2
+          product surface. Read the map, route the request, check DB relations,
+          then inspect the decision log.
+        </p>
+
+        <div class="sidebar-label">Onboarding path</div>
+        <a href="#developer-map">1. Architecture map <span>Map</span></a>
+        <a href="#request-flow">2. Request flow <span>Flow</span></a>
+        <a href="#database">3. DB explorer <span>Data</span></a>
+        <a href="#status">4. Progress dashboard <span>Gate</span></a>
+        <a href="#decisions">5. Decisions <span>Log</span></a>
+
+        <div class="sidebar-label">Guardrails</div>
+        <div class="guardrail-stack">
+          <div class="guardrail-mini">
+            Pure V2 DTOs; no legacy-shaped user-visible contracts.
+          </div>
+          <div class="guardrail-mini">
+            Tenant/store scope is explicit in context and repository filters.
+          </div>
+          <div class="guardrail-mini">
+            Writes and sensitive reads produce actor-linked audit evidence.
+          </div>
+          <div class="guardrail-mini">
+            AI WhatsApp assistant uses audited domain tools, never direct DB
+            access.
+          </div>
+        </div>
+      </aside>
+      <main>
+        <header>
+          <div>
+            <span class="eyebrow">V2 architecture and migration plan</span>
+            <h1>Loja Veiculos V2 Living Plan</h1>
+            <p>
+              Interactive decision console for consolidating lojaveiculos and
+              the CRM frontend into a typed, observable, auditable, AI-friendly
+              SaaS OS for vehicle retailers.
+            </p>
+            <p class="muted">
+              Product model: stores operate inventory, reservations, sales,
+              billing, documents, and audit. Public storefront visitors can view
+              stock and submit interest, but they do not mutate inventory.
+            </p>
+          </div>
+          <div class="hero-metrics" aria-label="Current plan health">
+            <div class="metric">
+              <span>Runtime target</span>
+              <strong>Railway V2</strong>
+              <p>
+                V2 services and databases move toward one private-adjacent
+                platform.
+              </p>
+            </div>
+            <div class="metric">
+              <span>Canonical slice</span>
+              <strong>Inventory + FIPE</strong>
+              <p>
+                Listings, units, cached catalog, media, docs, costs, and audit.
+              </p>
+            </div>
+            <div class="metric">
+              <span>Quality gate</span>
+              <strong>Validate green</strong>
+              <p>
+                Typecheck, lint, tests, contract checks, and file-size
+                guardrails.
+              </p>
+            </div>
+            <div class="metric">
+              <span>Next risk</span>
+              <strong>Reservation</strong>
+              <p>
+                Store actor, customer snapshot, signal, document, status
+                transition, payment draft, audit.
+              </p>
+            </div>
+          </div>
+        </header>
+
+        <nav class="topbar" aria-label="Plan sections">
+          <div class="navlinks">
+            <a href="#status">Status</a>
+            <a href="#worklane">Worklane</a>
+            <a href="#developer-map">Map</a>
+            <a href="#request-flow">Request Flow</a>
+            <a href="#database">Database</a>
+            <a href="#questions">Questions</a>
+            <a href="#decisions">Decisions</a>
+          </div>
+          <span class="status recommended">Live architecture console</span>
+        </nav>
+
+        <div class="freshness" aria-label="Plan freshness">
+          <span class="status recommended">Updated 2026-06-25</span>
+          <span class="status recommended">Confidence 93%</span>
+          <span class="status recommended"
+            >Active proof: Finance core + canonical sales/reservation
+            workflow</span
+          >
+        </div>
+
+        <section id="console-overview" aria-label="V2 guardrail dashboard">
+          <div class="console-grid">
+            <div class="dashboard-panel">
+              <span class="eyebrow">Operational density</span>
+              <h2>Progress / Guardrail Dashboard</h2>
+              <p>
+                V2 is past scaffold: core inventory is DB-backed, audited, and
+                routed through ports/adapters. The remaining risk is turning
+                adjacent workflows into the same canonical pattern.
+              </p>
+              <div class="progress-grid">
+                <div class="progress-card">
+                  <span class="eyebrow">Identity / tenancy</span>
+                  <strong>Validated boundary</strong>
+                  <div class="bar"><span style="width: 86%"></span></div>
+                  <p>
+                    Clerk actor, tenant, store, role, permission overrides, and
+                    public host resolution.
+                  </p>
+                </div>
+                <div class="progress-card">
+                  <span class="eyebrow">Inventory core</span>
+                  <strong>Canonical active</strong>
+                  <div class="bar"><span style="width: 82%"></span></div>
+                  <p>
+                    Listing/unit split, media, docs, costs, price/status
+                    history, DB adapters.
+                  </p>
+                </div>
+                <div class="progress-card">
+                  <span class="eyebrow">Reservation workflow</span>
+                  <strong>Canonical backend active</strong>
+                  <div class="bar"><span style="width: 72%"></span></div>
+                  <p>
+                    Inventory and sales draft reserve/close now share finance,
+                    document, status, and audit workflow finalization.
+                  </p>
+                </div>
+                <div class="progress-card">
+                  <span class="eyebrow">CRM / assistant</span>
+                  <strong>Bridge first</strong>
+                  <div class="bar open"><span style="width: 44%"></span></div>
+                  <p>
+                    CRM read-only mapped; WhatsApp AI must call audited domain
+                    tools.
+                  </p>
+                </div>
+                <div class="progress-card">
+                  <span class="eyebrow">Finance</span>
+                  <strong>Slice 1 active</strong>
+                  <div class="bar open"><span style="width: 48%"></span></div>
+                  <p>
+                    Edit, pay, cancel, recur, vehicle expenses, dashboard KPIs,
+                    commission rules, and audit deltas.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="dashboard-panel">
+              <span class="eyebrow">Current locks</span>
+              <h2>No-Regret Decisions</h2>
+              <ul class="detail-list">
+                <li>
+                  FIPE is cached in V2 tables; UI dropdowns never call FIPE
+                  directly.
+                </li>
+                <li>
+                  Vehicle <code>reserved</code> status is a workflow, not a bare
+                  status flip.
+                </li>
+                <li>
+                  Sales draft reserve/close must reuse the canonical vehicle
+                  workflow finalizer; they must not create duplicate
+                  sale/payment rows or parallel finance/document logic.
+                </li>
+                <li>
+                  Vehicle lifecycle transitions (reserved/sold/status updates)
+                  must include actor-linked logs and before/after diff capture.
+                </li>
+                <li>
+                  Reserved units must always generate a reservation receipt
+                  document before status lock.
+                </li>
+                <li>
+                  Sold state must emit exactly 4 sale document kinds:
+                  sale_contract, sale_receipt, delivery_term, power_of_attorney.
+                </li>
+                <li>
+                  Finance Slice 1 owns manual and recurring entries, pay/cancel
+                  workflows, vehicle-linked expense views, dashboard KPIs,
+                  commission rules, and R2-backed evidence.
+                </li>
+                <li>
+                  Finance mutations must audit actor, permission, reason,
+                  before/after values, linked entity ids, recurrence id,
+                  payment/cancel state, commission rule id, and attachment
+                  references.
+                </li>
+                <li>
+                  Repasses backend remains CRM source of truth during frontend
+                  migration.
+                </li>
+                <li>
+                  Audit database is separate; product tables do not depend on
+                  audit tables.
+                </li>
+                <li>
+                  Railway is the primary deploy target for V2
+                  services/databases.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>North Star</h2>
+          <p>
+            Build V2 as the durable main product surface: Vite + React frontend,
+            scoped backend domains and feature controllers, strong typing,
+            auditable services, enforceable permissions, and a migration path
+            from current Loja V1 data without feature degradation.
+          </p>
+          <p>
+            Current WILL: V2 is the canonical architecture surface and contracts
+            must be contract-driven and reusable across frontend/backend. V2
+            will not keep scaffold responses or workaround behavior as
+            user-visible behavior, and it will not preserve compatibility-shaped
+            contracts from legacy systems. Canonical V2 DTOs must drive both API
+            and UI contracts for inventory, FIPE-backed vehicle catalog, media
+            gallery, and documents. Vehicle listing + unit split is the
+            foundation, not an optional refactor.
+          </p>
+          <p>
+            The architecture is now explicitly lifecycle-first: listing
+            creation, listing publication, offer/hold, reservation, sale, and
+            post-sale doc/ledger completion are the canonical state machine for
+            V2.
+          </p>
+        </section>
+
+        <section id="vehicle-foundation">
+          <h2>Vehicle as foundation</h2>
+          <p>
+            Everything in V2 is built around <code>vehicle_listings</code> +
+            <code>vehicle_units</code> and their lifecycle, not around legacy
+            mixed objects. This keeps inventory, costs, documents, media, and
+            sales accounting on one consistent graph.
+          </p>
+          <div class="life-stage-grid" aria-label="Vehicle lifecycle stages">
+            <div class="life-stage">
+              <span class="eyebrow">Stage 1</span>
+              <strong>Discover</strong>
+              <p>
+                Catalog-backed listing creation with FIPE selection, media
+                upload, and complete public/admin payloads.
+              </p>
+            </div>
+            <div class="life-stage">
+              <span class="eyebrow">Stage 2</span>
+              <strong>Publish</strong>
+              <p>
+                Visibility/status transitions become persisted entity events
+                with actor + before/after deltas.
+              </p>
+            </div>
+            <div class="life-stage">
+              <span class="eyebrow">Stage 3</span>
+              <strong>Reserve</strong>
+              <p>
+                Reservation is a transactional workflow: store user action,
+                customer snapshot, signal, document, status update, and payment
+                draft.
+              </p>
+            </div>
+            <div class="life-stage">
+              <span class="eyebrow">Stage 4</span>
+              <strong>Sell</strong>
+              <p>
+                Sale creation attaches unit, creates sale documents, and
+                generates financial links.
+              </p>
+            </div>
+            <div class="life-stage">
+              <span class="eyebrow">Stage 5</span>
+              <strong>Close</strong>
+              <p>
+                Post-sale handoff records delivery, settlement, tax/doc links,
+                and immutable audit evidence.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="vehicle-backend-audit">
+          <h2>Vehicle Backend Audit</h2>
+          <p>
+            Audit date: <code>2026-06-25</code>. Current V2 backend uses
+            <code>vehicle_listings</code> as the canonical commercial listing
+            and <code>vehicle_units</code> as the canonical physical/stock item.
+            They work together: listings own public/admin presentation, pricing,
+            catalog snapshot, visibility, media, and search; units own plate,
+            VIN, stock number, color, acquisition state, unit costs,
+            reservation/sale locking, and the sold unit reference.
+          </p>
+          <div class="grid">
+            <div class="tile">
+              <strong>Implemented vehicle tables</strong>
+              <p>
+                <code>vehicle_listings</code>, <code>vehicle_units</code>,
+                <code>vehicle_media</code>, <code>vehicle_plate_lookups</code>,
+                <code>vehicle_costs</code>, <code>vehicle_price_history</code>,
+                <code>vehicle_status_history</code>, FIPE catalog tables,
+                <code>lead_vehicle_interests</code>, and
+                <code>vehicle_provider_listings</code> all have backend schema
+                and at least one runtime read/write path.
+              </p>
+            </div>
+            <div class="tile">
+              <strong>Shared document model</strong>
+              <p>
+                There is no standalone <code>vehicle_documents</code>,
+                <code>vehicle_document_kinds</code>, or
+                <code>sale_documents</code>
+                table in V2. Vehicle and sale documents are stored in
+                <code>documents</code> and connected by
+                <code>document_links.target_type</code> values such as
+                <code>vehicle_listing</code>, <code>vehicle_unit</code>,
+                <code>sale</code>, and <code>sale_payment</code>.
+              </p>
+            </div>
+            <div class="tile">
+              <strong>Backend hardening completed</strong>
+              <p>
+                Broad listing edits now record price/status history,
+                reserve/sell now guard invalid current states, reserve/sell
+                write both listing and unit status history, sales draft
+                reserve/close reuse the same workflow finalizer inside the sales
+                transaction runner, and workflow validation/state errors are
+                mapped to client 400/409 responses instead of generic 500s.
+              </p>
+            </div>
+            <div class="tile">
+              <strong>Remaining vehicle backend gaps</strong>
+              <p>
+                Public listing publish needs explicit slug/visibility workflow;
+                reservation expiry/release/cancel needs a first-class workflow;
+                marketplace projections need stricter deleted/status/media
+                scoping before production sync.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Repositories In Scope</h2>
+          <div class="grid">
+            <div class="tile">
+              <strong>lojaveiculos</strong>
+              <p>
+                Current main product. Source of broad feature behavior,
+                dashboard design direction, database pain, and migration
+                requirements.
+              </p>
+            </div>
+            <div class="tile">
+              <strong>repasses-frontend</strong>
+              <p>
+                CRM frontend source. Keep CRM learnings and working flows,
+                remove dead product surface, and migrate CRM UI into V2.
+              </p>
+            </div>
+            <div class="tile">
+              <strong>repasses-lojaveiculos-backend</strong>
+              <p>
+                CRM backend remains separate for now. Integration should use the
+                same Clerk instance rather than iframe bridge auth.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2>Evidence Needed Before Architecture Locks</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Evidence</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Production performance</td>
+                <td>
+                  Render service metrics, logs, deploy history, Postgres
+                  metrics, bandwidth, slow operations, crash/restart history.
+                </td>
+                <td><span class="status open">Open</span></td>
+              </tr>
+              <tr>
+                <td>Database redesign</td>
+                <td>
+                  Current Prisma schema, SQL query patterns, heavy pages,
+                  reports, indexes, table sizes, migration constraints,
+                  backup/restore process.
+                </td>
+                <td>
+                  <span class="status open">Partially captured</span>
+                  Prisma schema inventory created. Still need production
+                  profiling: row counts, null rates, orphan checks, table sizes,
+                  and slow query evidence.
+                </td>
+              </tr>
+              <tr>
+                <td>Vehicle audit and log hardening</td>
+                <td>
+                  Scope of required audit + immutable logs for reserved/sold
+                  transitions, status/price changes, and sensitive finance
+                  mutations.
+                </td>
+                <td><span class="status open">Open</span></td>
+              </tr>
+              <tr>
+                <td>Finance attachments</td>
+                <td>
+                  Required model for R2 object references, integrity metadata,
+                  expiry policy, and immutable attachment chain for
+                  <code>finance_entries</code>.
+                </td>
+                <td><span class="status open">Open</span></td>
+              </tr>
+              <tr>
+                <td>CRM migration</td>
+                <td>
+                  CRM route inventory, active user workflows, Clerk setup,
+                  backend API contracts, iframe bridge behavior, dead-code map.
+                </td>
+                <td>
+                  <span class="status recommended">First slice mapped</span>
+                  Active CRM routes, token bridge behavior, SSE entrypoints, API
+                  client assumptions, and dead-code risks were mapped from the
+                  copied Repasses repos.
+                </td>
+              </tr>
+              <tr>
+                <td>Billing</td>
+                <td>
+                  Current billing model, Asaas account/API constraints, webhook
+                  events, agency billing rules, payment-link banking
+                  aspirations.
+                </td>
+                <td><span class="status open">Open</span></td>
+              </tr>
+              <tr>
+                <td>Security and permissions</td>
+                <td>
+                  Role types, store membership model, sensitive operations,
+                  public tenant-page boundaries, audit actor requirements.
+                </td>
+                <td>
+                  <span class="status recommended"
+                    >First boundary validated</span
+                  >
+                  Protected inventory routes require authenticated user context.
+                  Store scope can resolve from explicit
+                  <code>x-store-slug</code> or
+                  <code>storename.lojaveiculos.com.br</code>.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>MCP And Access Setup</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Setup</th>
+                <th>Decision</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Railway</td>
+                <td>
+                  Install/authenticate Railway CLI, then run
+                  <code>railway mcp install --agent codex</code> for local MCP,
+                  or use the hosted remote MCP with OAuth if local CLI context
+                  is not desired. Prefer local MCP for coding-agent work because
+                  it shares CLI auth and project context.
+                </td>
+                <td>
+                  <span class="status recommended">Use official MCP</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Render</td>
+                <td>
+                  Use Render's hosted MCP server at
+                  <code>https://mcp.render.com/mcp</code>. Add it to
+                  <code>~/.codex/config.toml</code> with
+                  <code
+                    >codex mcp add render --url https://mcp.render.com/mcp
+                    --bearer-token-env-var RENDER_API_KEY</code
+                  >. Store the Render API key in the local shell environment,
+                  not in the repo or this document.
+                </td>
+                <td>
+                  <span class="status recommended">Use official MCP</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Codex</td>
+                <td>
+                  MCP servers are configured in
+                  <code>~/.codex/config.toml</code> or project
+                  <code>.codex/config.toml</code>. Current machine sees Railway
+                  and Render MCP configured. Railway CLI read access works after
+                  linking project
+                  <code>8fc6ad24-2852-45c0-b9d7-13444d7c3af5</code>, but the
+                  Railway MCP tool still returns Unauthorized until Codex
+                  reloads the refreshed <code>railway setup agent</code> config.
+                  Render tools were not exposed as callable tools in this
+                  session.
+                </td>
+                <td>
+                  <span class="status open">CLI works, MCP reload pending</span>
+                </td>
+              </tr>
+              <tr>
+                <td>Secrets</td>
+                <td>
+                  Never paste API keys or database URLs into this plan or chat.
+                  Add tokens through provider CLI auth, OAuth, local environment
+                  variables, or a local uncommitted config.
+                </td>
+                <td><span class="status recommended">Local only</span></td>
+              </tr>
+              <tr>
+                <td>Production access</td>
+                <td>
+                  MCP and database access are live production. Default behavior
+                  is read-only diagnostics and summarized reporting. No variable
+                  changes, deploy changes, scaling, database writes, or raw
+                  customer payload dumps without explicit approval.
+                </td>
+                <td>
+                  <span class="status recommended">Read-only default</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Current Production Topology</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>System</th>
+                <th>Current Host</th>
+                <th>Implication</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>lojaveiculos Next app</td>
+                <td>Render</td>
+                <td>
+                  Current main product runtime and dashboard/customer-facing
+                  app. Render MCP is the first production diagnostics source.
+                </td>
+              </tr>
+              <tr>
+                <td>lojaveiculos production database</td>
+                <td>Render Postgres</td>
+                <td>
+                  Database redesign and migration planning must start from
+                  Render Postgres metrics, table shape, backups, and query
+                  behavior.
+                </td>
+              </tr>
+              <tr>
+                <td>repasses backend</td>
+                <td>Railway</td>
+                <td>
+                  CRM backend remains separate for now. Railway MCP is required
+                  for logs, metrics, service configuration, and its Postgres.
+                </td>
+              </tr>
+              <tr>
+                <td>repasses frontend</td>
+                <td>Railway</td>
+                <td>
+                  Source of CRM UI behavior to migrate into V2, then deprecate.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Intranet Direction</h3>
+          <p>
+            Same-domain routing can work across providers through DNS and public
+            HTTPS. Same-intranet/private service communication is different:
+            Render private networking applies to services in the same Render
+            workspace and region, while Railway private networking applies
+            inside a Railway project environment. If private service-to-service
+            traffic is a hard V2 requirement, the recommended target is
+            consolidating runtime services onto one provider or adding a
+            deliberate cross-provider private networking layer.
+          </p>
+        </section>
+
+        <section>
+          <h2>Subsidies To Gather</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Priority</th>
+                <th>Artifact</th>
+                <th>Why It Matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Read-only production observability access</td>
+                <td>
+                  Logs, metrics, deploys, restarts, slow endpoints, database
+                  pressure, and bandwidth should drive the V2 architecture
+                  order.
+                </td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Recent production DB backup or sanitized dump</td>
+                <td>
+                  Needed for schema redesign, table-size analysis, query
+                  inventory, index planning, and migration rehearsals.
+                </td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>Top customer workflows and feature usage</td>
+                <td>
+                  Prevents degrading paid workflows while we remove dead code
+                  and consolidate CRM behavior.
+                </td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>
+                  Design references from current dashboard, CRM lock state, and
+                  SPEDY lock state
+                </td>
+                <td>
+                  Gives agents concrete visual constraints for flat colorful UI,
+                  icon-only controls, responsive PWA behavior, and no-overlap
+                  states.
+                </td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>Billing and Asaas requirements</td>
+                <td>
+                  Custom discounts, agency billing, banking/payment links,
+                  taxes, settlement timing, permissions, and audit need schema
+                  support from day zero.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section>
+          <h2>Initial Recommended Direction</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Decision</th>
+                <th>Recommendation</th>
+                <th>Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Plan artifact</td>
+                <td><span class="status recommended">Use this file</span></td>
+                <td>
+                  Keep decisions in plain HTML so progress stays visible and
+                  easy for agents to inspect without depending on app runtime.
+                </td>
+              </tr>
+              <tr>
+                <td>MCP priority</td>
+                <td><span class="status recommended">Render first</span></td>
+                <td>
+                  Render owns the current production pain: service metrics,
+                  logs, deploy history, and database signals for Loja.
+                </td>
+              </tr>
+              <tr>
+                <td>Railway priority</td>
+                <td><span class="status recommended">Second</span></td>
+                <td>
+                  Use Railway MCP only for active services/databases running
+                  there or for planned V2 infrastructure experiments.
+                </td>
+              </tr>
+              <tr>
+                <td>Secret handling</td>
+                <td>
+                  <span class="status recommended">Never paste secrets</span>
+                </td>
+                <td>
+                  Tokens should be added to the local MCP client config or
+                  secret store, then verified by a harmless read-only tool call.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="status">
+          <h2>V2 Canonical Status</h2>
+          <div class="scoreboard">
+            <div class="score">
+              <span>Repo</span>
+              <strong>Initialized</strong>
+              <p>Local Git repo with hooks and baseline validation.</p>
+            </div>
+            <div class="score">
+              <span>Quality Gate</span>
+              <strong>Passing</strong>
+              <p>
+                <code>npm run validate</code> green after local DB runtime
+                slice.
+              </p>
+            </div>
+            <div class="score">
+              <span>Database</span>
+              <strong>Docker + Drizzle</strong>
+              <p>
+                Product and audit Postgres run locally with guarded push
+                scripts.
+              </p>
+            </div>
+            <div class="score">
+              <span>Current Slice</span>
+              <strong>Slice 1 Finance Core</strong>
+              <p>
+                Finance backend/frontend is now the active slice alongside
+                vehicle lifecycle hardening. Current work covers edit/pay/cancel
+                entries, recurring entries, vehicle-linked expense views,
+                dashboard KPIs, commission rules, R2 evidence attachments, and
+                immutable before/after audit logs.
+              </p>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Workspace</td>
+                <td><span class="status recommended">Created</span></td>
+                <td>
+                  <code>./lojaveiculosv2</code> npm workspace with
+                  <code>apps/web</code>, <code>apps/api</code>, and shared
+                  packages.
+                </td>
+              </tr>
+              <tr>
+                <td>Architecture guardrails</td>
+                <td><span class="status recommended">Created</span></td>
+                <td>
+                  Domain services, feature controllers, service context, audit
+                  sink, production access rules, file-line checks, env checks,
+                  and import boundary checks. HTTP route protection maps auth
+                  failures to explicit 401/403 responses.
+                </td>
+              </tr>
+              <tr>
+                <td>Validation</td>
+                <td><span class="status recommended">Passing</span></td>
+                <td>
+                  <code>npm run validate</code> passes in
+                  <code>lojaveiculosv2</code>: custom checks, typecheck, lint,
+                  and tests. Last confirmed after local Docker DB runtime, seed,
+                  and safety-gate work on 2026-06-17.
+                </td>
+              </tr>
+              <tr>
+                <td>Local database runtime</td>
+                <td><span class="status recommended">Validated</span></td>
+                <td>
+                  Added <code>docker-compose.yml</code> with separate product
+                  and audit Postgres services, Drizzle config for both schemas,
+                  local-only guarded <code>db:push</code> scripts, and an
+                  idempotent SQL seed for <code>test-store</code>,
+                  <code>clerk_test_user</code>, role template permissions, store
+                  membership, and entitlements. DB-backed smoke checks pass for
+                  health, public storefront resolution, and protected inventory
+                  404 behavior.
+                </td>
+              </tr>
+              <tr>
+                <td>Runtime safety</td>
+                <td><span class="status recommended">Guarded</span></td>
+                <td>
+                  API startup now fails outside local/test when
+                  <code>DATABASE_URL</code> is missing or still an unresolved
+                  Railway reference. Trusted identity headers are accepted only
+                  in local/test, keeping production blocked until Clerk token
+                  verification is wired.
+                </td>
+              </tr>
+              <tr>
+                <td>Audit persistence</td>
+                <td><span class="status recommended">Validated</span></td>
+                <td>
+                  Added a Drizzle-backed audit sink for
+                  <code>audit_events</code>, runtime
+                  <code>AUDIT_DATABASE_URL</code> bootstrap, production
+                  fail-fast when audit DB config is missing/unresolved, and HTTP
+                  injection for protected and public service contexts. Local
+                  smoke confirmed a public storefront request inserts an audit
+                  row.
+                </td>
+              </tr>
+              <tr>
+                <td>Clerk production auth</td>
+                <td>
+                  <span class="status recommended">Boundary implemented</span>
+                </td>
+                <td>
+                  Added a Clerk bearer-token verifier using
+                  <code>@clerk/backend</code>, injected it into runtime service
+                  context, and made DB-backed production startup fail if
+                  <code>CLERK_SECRET_KEY</code> is missing. Local/test may still
+                  use trusted identity headers for seeded development, but
+                  production no longer trusts <code>x-clerk-user-id</code>.
+                  Resolved service actors now use internal V2 user ids with
+                  Clerk id retained as <code>externalId</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>Public listing detail</td>
+                <td>
+                  <span class="status recommended">Contract implemented</span>
+                </td>
+                <td>
+                  Added
+                  <code
+                    >GET /api/v1/public/storefront/listings/{listingSlug}</code
+                  >
+                  with host-based store resolution, published/visible listing
+                  checks, public media gallery payload, scoped logs, audit,
+                  route tests, Drizzle adapter tests, OpenAPI metadata, and Vite
+                  API client support. Local DB smoke confirms missing listings
+                  map to 404 under the seeded store without adding demo stock.
+                </td>
+              </tr>
+              <tr>
+                <td>Public detail UI</td>
+                <td><span class="status recommended">Implemented</span></td>
+                <td>
+                  Vite public storefront cards now open a native detail panel
+                  that calls <code>getListing(slug)</code>, renders
+                  loading/error/retry states, and displays the first public
+                  media item when available. The component was split to satisfy
+                  the file line-count guard.
+                </td>
+              </tr>
+              <tr>
+                <td>Local V2 repo</td>
+                <td><span class="status recommended">Committed</span></td>
+                <td>
+                  Initialized Git inside <code>lojaveiculosv2</code> and created
+                  baseline commit <code>60e4599</code> after the pre-commit hook
+                  ran formatting plus full validation.
+                </td>
+              </tr>
+              <tr>
+                <td>Pipeline gates</td>
+                <td><span class="status recommended">Enforced</span></td>
+                <td>
+                  Added Husky pre-commit and pre-push hooks,
+                  Prettier/lint-staged, frontend design checks, service contract
+                  checks, and kept
+                  <code>npm run validate</code> as the local quality gate.
+                </td>
+              </tr>
+              <tr>
+                <td>Package audit</td>
+                <td><span class="status open">Open</span></td>
+                <td>
+                  npm reports 7 audit findings from the initial package graph.
+                  Do not run <code>npm audit fix --force</code> without
+                  reviewing breaking changes.
+                </td>
+              </tr>
+              <tr>
+                <td>Audit database</td>
+                <td><span class="status recommended">Started</span></td>
+                <td>
+                  Separate Railway Postgres for audit. Audit storage schema
+                  lives in <code>packages/audit-db</code> with audit events,
+                  actors, entities, requests, and sink failure tables. Product
+                  schema lives in <code>packages/db</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>Product database</td>
+                <td>
+                  <span class="status recommended">Foundation implemented</span>
+                </td>
+                <td>
+                  Drizzle schema now covers identity, store profiles, inventory
+                  listing/unit split, documents, leads, CRM mappings, sales,
+                  finance, billing, banking reserve tables, integrations,
+                  fiscal, external API, provider events, and migration metadata.
+                </td>
+              </tr>
+              <tr>
+                <td>V1 schema inventory</td>
+                <td><span class="status recommended">Created</span></td>
+                <td>
+                  <code>lojaveiculosv2/docs/v1-schema-inventory.md</code> maps
+                  the current 39-model Prisma schema into V2 migration contexts
+                  and flags high-risk JSON/id/naming issues.
+                </td>
+              </tr>
+              <tr>
+                <td>Original brief findings</td>
+                <td><span class="status recommended">Created</span></td>
+                <td>
+                  <code>lojaveiculosv2/docs/original-brief-findings.md</code>
+                  turns the first brief into implementation branches and records
+                  design findings from current dashboard, CRM, SPEDY, and
+                  sidebar code.
+                </td>
+              </tr>
+              <tr>
+                <td>V2 product shell</td>
+                <td><span class="status recommended">Expanded</span></td>
+                <td>
+                  Vite app now has a router-like module state, responsive shell,
+                  dashboard stat cards, module placeholders, locked add-on
+                  panel, design token exports, and split CSS token/component
+                  files under the line-count gate.
+                </td>
+              </tr>
+              <tr>
+                <td>Identity slice</td>
+                <td><span class="status recommended">Started</span></td>
+                <td>
+                  Added role permission policy, store context resolver,
+                  entitlement types, permission override schema, store
+                  entitlement schema, and audit-on-context-resolution tests.
+                  Authenticated HTTP requests can resolve store scope from
+                  <code>x-store-slug</code> or the public store subdomain.
+                </td>
+              </tr>
+              <tr>
+                <td>API docs</td>
+                <td><span class="status recommended">Started</span></td>
+                <td>
+                  Added deterministic <code>/llms.txt</code> and
+                  <code>/api/v1/openapi.json</code> routes with auth, scopes,
+                  inventory route metadata, public storefront route metadata,
+                  and external API safety guidance.
+                </td>
+              </tr>
+              <tr>
+                <td>Migration tooling</td>
+                <td><span class="status recommended">Guarded</span></td>
+                <td>
+                  Added local-only dump profiling runbook/tooling for safe V1
+                  data analysis. It is designed for disposable local restores
+                  and summarized output, not direct production reads. The
+                  current local backup expands to a tar/custom PostgreSQL
+                  archive with
+                  <code>db_lojaveiculos</code> plus Prisma shadow databases, so
+                  it must be converted with <code>pg_restore</code> before
+                  profiling. The profiler now rejects binary/custom/tar inputs
+                  clearly instead of reporting false zero-table output.
+                </td>
+              </tr>
+              <tr>
+                <td>Inventory vertical slice</td>
+                <td><span class="status recommended">Validated</span></td>
+                <td>
+                  Inventory API routes and canonical
+                  <code>VehicleService</code> listing/unit domain services are
+                  consolidated around repository ports, scoped logs, permission
+                  checks, audit, route tests, OpenAPI metadata, and
+                  <code>/llms.txt</code>. Inventory controllers now reject
+                  public contexts and require authenticated store-scoped users.
+                  Checkpoint: <code>cc87e00</code>, then protected route context
+                  validated on 2026-06-17.
+                </td>
+              </tr>
+              <tr>
+                <td>Store access context</td>
+                <td><span class="status recommended">Validated</span></td>
+                <td>
+                  Added host-based store slug resolver for
+                  <code>storename.lojaveiculos.com.br</code>, wired it into HTTP
+                  service context fallback, and kept explicit
+                  <code>x-store-slug</code> for admin/API override during Clerk
+                  bootstrap.
+                </td>
+              </tr>
+              <tr>
+                <td>Public storefront stock</td>
+                <td><span class="status recommended">Validated</span></td>
+                <td>
+                  Added
+                  <code>GET /api/v1/public/storefront/listings</code> using
+                  host-resolved store slug, explicit
+                  <code>public_storefront.read</code> context permission,
+                  published/visible listing repository filters, OpenAPI docs,
+                  and a native Vite <code>public-site</code> stock view. The web
+                  module now has a typed same-origin API client plus loading,
+                  empty, error, retry, and ready states.
+                </td>
+              </tr>
+              <tr>
+                <td>Runtime DB adapters</td>
+                <td><span class="status recommended">Wired</span></td>
+                <td>
+                  Runtime app options create a Postgres.js + Drizzle client from
+                  <code>DATABASE_URL</code> and inject DB-backed store access,
+                  public storefront, and inventory listing services. When local
+                  config is absent, tests and local-only fallback can still use
+                  memory adapters explicitly.
+                </td>
+              </tr>
+              <tr>
+                <td>Inventory DB adapter</td>
+                <td>
+                  <span class="status recommended">Factory validated</span>
+                </td>
+                <td>
+                  Added an infrastructure-layer Drizzle adapter for the vehicle
+                  inventory repository ports. It uses injected DB clients only,
+                  keeps domain services Drizzle-free, rejects missing
+                  tenant/store scope, and fails fast on unsupported DB statuses.
+                  Checkpoint:
+                  <code>ab0133b</code>. A service factory now selects memory
+                  ports by default or injected DB-backed ports without
+                  controller changes. Factory checkpoint: <code>c6374ab</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>Contract parity</td>
+                <td><span class="status open">In progress</span></td>
+                <td>
+                  Canonical V2 DTOs are now the contract source for inventory
+                  read endpoints. Compatibility-shaped contracts and placeholder
+                  <code>not_implemented</code> response bodies are being removed
+                  from user-visible contracts.
+                </td>
+              </tr>
+              <tr>
+                <td>CRM frontend shell</td>
+                <td>
+                  <span class="status recommended">First slice validated</span>
+                </td>
+                <td>
+                  Added native V2 CRM shell contracts for embedded/standalone
+                  bootstrap, bridge refresh messages, token refresh handling,
+                  <code>Authorization</code> and
+                  <code>x-crm-agent-id</code> headers, SSE status placeholder,
+                  login panel, inbox, and conversation panel without real
+                  backend calls or secrets. Checkpoint: <code>ab0133b</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>Inventory media path</td>
+                <td><span class="status recommended">Implemented</span></td>
+                <td>
+                  Inventory creation + unit setup are now covered with R2-backed
+                  media URL generation for listing photos and unit media upload
+                  inputs. Document attachment contracts remain to be completed;
+                  upload URL support and metadata shape should reuse the same
+                  media governance and audit trail pattern for canonical parity.
+                  <code>R2_UPLOAD_URL_EXPIRES_SECONDS</code> and R2 env
+                  placeholders are now documented and required for local-to-prod
+                  media parity.
+                </td>
+              </tr>
+              <tr>
+                <td>Finance entries</td>
+                <td>
+                  <span class="status recommended">Backend implemented</span>
+                </td>
+                <td>
+                  Backend now supports scoped entry
+                  create/list/detail/edit/delete-as-cancel, pay/cancel actions,
+                  recurring entry create/list, target-link filters, link
+                  replacement on update, permission-scoped routes, OpenAPI/LLMS
+                  docs, and actor-audited service operations.
+                </td>
+              </tr>
+              <tr>
+                <td>Finance dashboard</td>
+                <td><span class="status open">In progress</span></td>
+                <td>
+                  Dashboard must summarize receivables, payables, paid, overdue,
+                  canceled, recurring projections, vehicle-linked expenses,
+                  sale-linked revenue, and commission accrual/payout state
+                  without bypassing the finance service/query ports.
+                </td>
+              </tr>
+              <tr>
+                <td>Commission rules</td>
+                <td><span class="status open">Planned</span></td>
+                <td>
+                  Commission rules must be store-scoped, versioned, auditable,
+                  and linked to sellers/sales before creating commission finance
+                  entries. Rule changes need before/after audit evidence and
+                  must not rewrite historical accruals without an explicit
+                  adjustment entry.
+                </td>
+              </tr>
+              <tr>
+                <td>Finance entry attachments</td>
+                <td>
+                  <span class="status open">Backend upload implemented</span>
+                </td>
+                <td>
+                  Backend issues scoped document upload URLs, can attach
+                  uploaded shared
+                  <code>documents</code> rows to <code>finance_entries</code>,
+                  and supports optional draft document upload creation while
+                  creating a finance entry. Replace/remove flows, checksum
+                  enforcement, and cleanup/invalidation policy remain pending.
+                </td>
+              </tr>
+              <tr>
+                <td>Vehicle creation/edit</td>
+                <td>
+                  <span class="status recommended">Canonical slice active</span>
+                </td>
+                <td>
+                  Backoffice inventory now has a V2-native creation/setup path,
+                  stock search table, row selection, canonical listing detail
+                  loading, listing edit form, and unit edit form. Backend routes
+                  include
+                  <code>PATCH /api/v1/inventory/listings/{listingId}</code> and
+                  <code
+                    >PATCH
+                    /api/v1/inventory/listings/{listingId}/units/{unitId}</code
+                  >. Write services record scoped logs and audit rows with actor
+                  context plus field-level <code>before</code>/<code
+                    >after</code
+                  >
+                  changes, explicitly capturing who changed what and which
+                  fields changed.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="worklane">
+          <h2>Active Worklane</h2>
+          <div class="worklane">
+            <div class="lane">
+              <h3>Governance Enforcement (Pending)</h3>
+              <p>
+                Architecture and pattern enforcement is active but still pending
+                across the codebase; this lane tracks required controls before
+                each slice is considered complete.
+              </p>
+              <ul>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce
+                  <code
+                    >apps/api/src/domains/&lt;domain&gt;/services/*Service/*.ts</code
+                  >
+                  as the canonical domain service file pattern for all new and
+                  migrated features.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce feature-scoped controller boundaries: controllers stay
+                  under
+                  <code>apps/api/src/features/&lt;feature&gt;/controllers</code>
+                  and map transport concerns only.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Keep strict ports/adapters separation so domain services
+                  depend on interfaces and not on Drizzle/DB/client transport
+                  details.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Keep tenant/store scoping explicit in context and repository
+                  filters for all cross-store operations.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Require permission checks in every service method that reads
+                  or writes business-critical data.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Require audit/log usage in all write paths and sensitive read
+                  paths with actor correlation and field-level
+                  <code>before</code>/<code>after</code> deltas.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce strict typing in service boundaries, repository ports,
+                  request/response contracts, and UI state shapes; avoid
+                  implicit any and loose DTOs.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce no oversized files via project file-size guardrails
+                  and planned refactors where the lines exceed limits.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce frontend tokenized design system usage and forbid
+                  hardcoded colors outside token definitions.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce no visual overlap in responsive layouts (cards,
+                  modals, overlays, and fixed-position layers).
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Enforce accurate <code>.env.example</code> and environment
+                  docs aligned with runtime-required variables.
+                </li>
+                <li>
+                  <span class="status open">Pending</span>
+                  Keep pipeline guardrails active (tests + typecheck/lint +
+                  formatting + pre-commit/pre-push hooks) as required gates for
+                  every delivery.
+                </li>
+              </ul>
+            </div>
+            <div class="lane">
+              <h3>Now</h3>
+              <ol>
+                <li>
+                  Completed: local Docker product and audit Postgres with
+                  healthchecks and Drizzle push scripts.
+                </li>
+                <li>
+                  Completed: idempotent SQL seed for test tenant, store, owner
+                  user, role template, membership, entitlements, and
+                  permissions.
+                </li>
+                <li>
+                  Completed: runtime Drizzle bootstrap for store access, public
+                  storefront, and inventory adapters.
+                </li>
+                <li>
+                  Completed: production safety gates for unresolved DB URLs and
+                  local/test-only trusted identity headers.
+                </li>
+                <li>
+                  Completed: inventory service factory can use memory ports by
+                  default or injected Drizzle-backed ports.
+                </li>
+                <li>
+                  Completed: exact Repasses read-only CRM chat endpoints and DTO
+                  contracts are mapped into V2 web route helpers.
+                </li>
+                <li>
+                  Completed: typed CRM read-only fetch client and injectable
+                  HTTP identity context factory in <code>864fad0</code>.
+                </li>
+                <li>
+                  Completed: production StoreAccessRepository Drizzle adapter
+                  plus DB-free adapter tests in <code>a022e2d</code>.
+                </li>
+                <li>
+                  Completed: protected inventory routes use authenticated
+                  service context and map auth failures cleanly.
+                </li>
+                <li>
+                  Completed: public store subdomains resolve store slugs for
+                  HTTP context fallback.
+                </li>
+                <li>
+                  Completed: public storefront stock read route plus Vite
+                  public-site preview.
+                </li>
+                <li>
+                  Completed: public-site web module consumes storefront API
+                  contract with loading, empty, error, and retry states.
+                </li>
+                <li>
+                  Completed: inventory creation and unit binding flow now
+                  includes listing-to-unit setup checks for media uploads.
+                </li>
+                <li>
+                  Completed: real inventory detail contracts + backoffice stock
+                  list/search table are active and backed by product DB through
+                  repository ports/adapters.
+                </li>
+                <li>
+                  Completed: canonical inventory read/list contract migration
+                  removed compatibility-shaped and scaffold
+                  <code>not_implemented</code> pathways from user-visible
+                  inventory contracts.
+                </li>
+                <li>
+                  Completed: listing media gallery payload now includes item
+                  order, visibility, alt metadata, and document links where
+                  relevant.
+                </li>
+                <li>
+                  Completed: vehicle creation/edit flow is V2-native, with
+                  listing/unit edit routes, typed web client methods, edit
+                  screens, and field-level audit changes.
+                </li>
+                <li>
+                  Completed: FIPE-backed catalog routes now provide
+                  brand/model/year selectors through backend ports instead of
+                  browser-side hardcoded data.
+                </li>
+                <li>
+                  Completed: selected FIPE catalog data persists as a listing
+                  snapshot in metadata plus normalized year/version fields.
+                </li>
+                <li>
+                  Completed: vehicle operations ledger adds costs, price
+                  history, status history, API route, UI panel, and audited
+                  service writes.
+                </li>
+                <li>
+                  Completed: FIPE sync records sync runs, tolerates individual
+                  year lookup failures, and supports bounded local runs with
+                  <code>FIPE_CATALOG_SYNC_BRAND_LIMIT</code>.
+                </li>
+                <li>
+                  Completed: finance schema/docs decisions for entry links,
+                  document linkage, recurring entries, commission rules, and
+                  audit deltas were defined as part of active Slice 1 planning.
+                </li>
+                <li>
+                  Completed: reservation workflow route emits reservation
+                  receipt, captures buyer snapshot and signal/down-payment
+                  context, creates sale/payment + finance link, and transitions
+                  listing/unit status with status history.
+                </li>
+                <li>
+                  Completed: sold workflow route emits
+                  <code>sale_contract</code>, <code>sale_receipt</code>,
+                  <code>delivery_term</code>, and
+                  <code>power_of_attorney</code>, creates sale/payment + finance
+                  link, and transitions listing/unit status with status history.
+                </li>
+                <li>
+                  Completed: vehicle backend hardening maps workflow
+                  validation/state errors to 400/409 and prevents reserve/sell
+                  from invalid terminal states.
+                </li>
+                <li>
+                  Completed: backend <code>vehicle_checklists</code> slice adds
+                  scoped repository adapters, domain services, audited unit
+                  routes, OpenAPI/LLMS docs, permissions, seed grants, and typed
+                  web API contracts.
+                </li>
+                <li>
+                  Completed: finance backend entry CRUD now covers scoped
+                  create/list/detail/edit/delete-as-cancel, pay/cancel,
+                  recurring entry create/list, commission rule create/list, link
+                  replacement, optional create-time draft document upload,
+                  standalone upload URL issuance, document attachment,
+                  OpenAPI/LLMS docs, and audit coverage.
+                </li>
+                <li>
+                  Completed: sales draft reserve/close now run through a single
+                  transaction bundle that updates sales lifecycle plus
+                  listing/unit status, generated documents, finance entry links,
+                  and status history through the canonical vehicle workflow
+                  finalizer.
+                </li>
+                <li>
+                  Pending: AI WhatsApp assistant must call audited domain tools
+                  through permissions, never direct DB access.
+                </li>
+                <li>
+                  Pending: finance frontend integration, recurring-entry
+                  generation jobs, vehicle-linked expense views, reconcile
+                  views, attachment replace/remove, checksum enforcement, and R2
+                  cleanup/invalidation governance.
+                </li>
+                <li>
+                  Pending: reservation expiry/release/cancel workflow should
+                  release listing/unit state, attach reason/audit evidence, and
+                  reconcile or cancel signal finance entries.
+                </li>
+                <li>
+                  Pending: publish workflow for public listings must issue slug
+                  + visibility state intentionally, not as an implicit listing
+                  edit side effect.
+                </li>
+                <li>
+                  Pending: marketplace projection hardening for
+                  deleted/status/media scoping before production portal sync.
+                </li>
+                <li>
+                  Pending: R2 object policy must be complete for public and
+                  internal media/document URLs (TTL, cleanup, invalidation,
+                  audit for mutations).
+                </li>
+                <li>
+                  Keep this living plan updated with decisions, slices, and
+                  validation status.
+                </li>
+              </ol>
+            </div>
+            <div class="lane">
+              <h3>Next Candidate Slices</h3>
+              <ul>
+                <li>
+                  Add reservation expiry/release/cancel workflow with scoped
+                  audit, finance signal reversal/cancel behavior, and
+                  listing/unit unlock rules.
+                </li>
+                <li>
+                  Harden sale transition state-machine rules so draft, pending,
+                  closed, and cancelled transitions reject invalid reversals
+                  without explicit correction workflow.
+                </li>
+                <li>
+                  Connect delivery/test-drive readiness views to persisted
+                  <code>vehicle_checklists</code> rows.
+                </li>
+                <li>
+                  Add explicit publish/unpublish route that owns public slug
+                  generation, <code>is_visible_on_public_site</code>, and public
+                  listing status rules.
+                </li>
+                <li>
+                  Complete finance follow-through: frontend integration,
+                  recurring-entry generation jobs, vehicle-linked expense view,
+                  reconcile views, and attachment replace/remove with checksum
+                  validation and R2 cleanup policy.
+                </li>
+                <li>
+                  Expose assistant-safe inventory tools for search, get detail,
+                  update price, change status, and add cost with per-tool audit
+                  records.
+                </li>
+                <li>
+                  Add end-to-end migration rehearsal for V1 vehicles into V2
+                  listing/unit/media/cost tables using local sanitized dumps.
+                </li>
+                <li>
+                  CRM shell state wired to the typed Repasses read-only client
+                  without runtime demo data.
+                </li>
+                <li>
+                  Migration rehearsal reports from the local V1 dump, summarized
+                  and redacted.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="lifecycle-documents">
+          <h2>Lifecycle documentation policy (required)</h2>
+          <p>
+            V2 documents are emitted by lifecycle events, not by manual ad hoc
+            page actions. Every emitted vehicle document is persisted in the
+            shared
+            <code>documents</code> table, linked through
+            <code>document_links</code> to <code>vehicle_listing</code>,
+            <code>vehicle_unit</code>, <code>sale</code>, or
+            <code>sale_payment</code> targets, and recorded in audit with actor,
+            tenant, store, and correlation context.
+          </p>
+          <div class="doc-matrix">
+            <div class="doc-card requires-audit">
+              <h4>Reserva (On reserve)</h4>
+              <span class="muted">Required in reserve workflow</span>
+              <p>
+                Generated by
+                <code>POST /inventory/listings/{listingId}/reserve</code> when a
+                store records a signal payment.
+              </p>
+              <strong class="badge"
+                >Event: <code>reservation.receipt.issued</code></strong
+              >
+            </div>
+            <div class="doc-card requires-audit">
+              <h4>Contrato de venda</h4>
+              <span class="muted">Required on sold</span>
+              <p>
+                Signed-off contract snapshot for agreed final price, unit
+                snapshot, and purchase terms.
+              </p>
+              <strong class="badge"
+                >Event: <code>sale.document.contract_generated</code></strong
+              >
+            </div>
+            <div class="doc-card requires-audit">
+              <h4>Recibo de pagamento</h4>
+              <span class="muted">Required on sold</span>
+              <p>
+                Split by settlement type, installment count, and gateway/payment
+                source.
+              </p>
+              <strong class="badge"
+                >Event:
+                <code>sale.document.payment_receipt_issued</code></strong
+              >
+            </div>
+            <div class="doc-card requires-audit">
+              <h4>Entrega + transferência</h4>
+              <span class="muted">Required on sold</span>
+              <p>
+                Checklist of key delivery and ownership transfer docs; one
+                grouped payload for legal handoff.
+              </p>
+              <strong class="badge"
+                >Event:
+                <code>sale.document.delivery_handover_issued</code></strong
+              >
+            </div>
+          </div>
+          <div class="timeline">
+            <div class="timeline-card">
+              <h3>Media as first-class product surface</h3>
+              <ul>
+                <li>
+                  <strong>R2 upload URLs</strong> and media metadata are bound
+                  to listing and unit gallery entries.
+                </li>
+                <li>
+                  <strong>CRUD is auditable:</strong> add, reorder, delete, and
+                  privacy changes create audit evidence.
+                </li>
+                <li>
+                  <strong>Resolution policy:</strong> use signed URLs for write
+                  paths and immutable URL references for reads.
+                </li>
+              </ul>
+            </div>
+            <div class="timeline-card">
+              <h3>Audit actor and change trail</h3>
+              <ul>
+                <li>
+                  Finance mutations must emit actor-linked audit entries with
+                  before/after values for amount, status, due/paid/canceled
+                  dates, category, vehicle/sale links, recurring rule,
+                  commission rule, reconciliation target, and attachment
+                  references.
+                </li>
+                <li>
+                  All workflow transitions (publish, reserved, sold, delivered)
+                  include actor context and before/after field diffs.
+                </li>
+                <li>
+                  Public reads can also emit read-audit only for sensitive
+                  inventory/finance contexts.
+                </li>
+                <li>
+                  No feature route is considered complete without audit test
+                  coverage + audit event shape confirmation.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="developer-map">
+          <h2>Architecture Console</h2>
+          <p>
+            Use this before editing. It shows the canonical request path, the
+            bounded contexts that matter now, and the gates that every slice
+            must pass before it is considered V2-grade.
+          </p>
+          <div class="architecture-shell">
+            <div class="map-layout">
+              <div class="domain-map" aria-label="Clickable LojaV2 domain map">
+                <button
+                  class="map-node is-active"
+                  type="button"
+                  data-map-key="identity"
+                  aria-pressed="true"
+                >
+                  <strong>Identity / Tenancy</strong>
+                  <span
+                    >Clerk actor, tenant, store, membership, role template,
+                    permission overrides.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="inventory"
+                  aria-pressed="false"
+                >
+                  <strong>Inventory</strong>
+                  <span
+                    >Listings, units, FIPE cache, media, docs, cost and
+                    lifecycle ledger.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="reservation"
+                  aria-pressed="false"
+                >
+                  <strong>Reservation Workflow</strong>
+                  <span
+                    >Store actor, customer snapshot, signal amount, document,
+                    status transition, sale/payment draft.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="sales"
+                  aria-pressed="false"
+                >
+                  <strong>Sales Closure</strong>
+                  <span
+                    >4-doc bundle, finance integration, unit/listing lockout,
+                    and delivery handoff.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="crm"
+                  aria-pressed="false"
+                >
+                  <strong>CRM / Repasses</strong>
+                  <span
+                    >Native V2 shell with Repasses backend as transitional
+                    source of truth.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="assistant"
+                  aria-pressed="false"
+                >
+                  <strong>AI WhatsApp Assistant</strong>
+                  <span
+                    >Audited domain tools with permissions; no direct DB
+                    writes.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="billing"
+                  aria-pressed="false"
+                >
+                  <strong>Billing / Finance</strong>
+                  <span
+                    >Slice 1 finance core, Asaas, subscriptions, settlements,
+                    commissions, reports.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="audit"
+                  aria-pressed="false"
+                >
+                  <strong>Audit</strong>
+                  <span
+                    >Separate append-only evidence database for actors,
+                    entities, jobs, webhooks.</span
+                  >
+                </button>
+                <button
+                  class="map-node"
+                  type="button"
+                  data-map-key="railway"
+                  aria-pressed="false"
+                >
+                  <strong>Railway Runtime</strong>
+                  <span
+                    >Primary V2 deploy target with service reference variables
+                    and guarded DB pushes.</span
+                  >
+                </button>
+              </div>
+              <aside class="map-detail" aria-live="polite">
+                <span class="eyebrow">Selected context</span>
+                <h3 id="map-title">Identity / Tenancy</h3>
+                <p id="map-summary">
+                  Clerk actor, tenant, store, membership, role templates, and
+                  permission override resolution create the V2 context boundary.
+                </p>
+                <ul class="detail-list" id="map-details">
+                  <li>
+                    <code>tenant -> stores</code> is the account and public-page
+                    boundary.
+                  </li>
+                  <li>
+                    Protected inventory routes require authenticated membership.
+                  </li>
+                  <li>Public storefront reads resolve store slug from host.</li>
+                </ul>
+              </aside>
+            </div>
+
+            <div class="gate-grid" aria-label="Architecture gates">
+              <div class="gate-card">
+                <span>Permission Gate</span>
+                <strong>Explicit Access</strong>
+                <p>
+                  Every service asserts a <code>PermissionKey</code>, including
+                  public and assistant-safe operations.
+                </p>
+              </div>
+              <div class="gate-card">
+                <span>Audit Gate</span>
+                <strong>Queryable Evidence</strong>
+                <p>
+                  Writes and sensitive reads capture actor, entity, metadata,
+                  outcome, and before/after deltas where relevant.
+                </p>
+              </div>
+              <div class="gate-card">
+                <span>Scope Gate</span>
+                <strong>No Tenant Bleed</strong>
+                <p>
+                  Store-scoped data must carry explicit filters in repository
+                  adapters and never rely on UI-provided trust.
+                </p>
+              </div>
+              <div class="gate-card">
+                <span>Contract Gate</span>
+                <strong>AI-Readable API</strong>
+                <p>
+                  OpenAPI, <code>/llms.txt</code>, web clients, and DTOs stay in
+                  lockstep with implemented behavior.
+                </p>
+              </div>
+            </div>
+
+            <section id="request-flow" class="flow-panel">
+              <span class="eyebrow">Request-flow view</span>
+              <h2>Canonical Request Path</h2>
+              <p>
+                Pick a workflow to see how LojaV2 routes UI actions, public
+                reads, background jobs, and assistant commands through the same
+                bounded service pattern.
+              </p>
+              <div
+                class="flow-tabs"
+                role="tablist"
+                aria-label="Request flow scenarios"
+              >
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="true"
+                  data-flow-key="inventory"
+                >
+                  Inventory edit
+                </button>
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-flow-key="public"
+                >
+                  Public storefront
+                </button>
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-flow-key="reservation"
+                >
+                  Reservation
+                </button>
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-flow-key="assistant"
+                >
+                  WhatsApp AI
+                </button>
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-flow-key="fipe"
+                >
+                  FIPE sync
+                </button>
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-flow-key="finance"
+                >
+                  Finance core
+                </button>
+                <button
+                  class="tab-button"
+                  type="button"
+                  role="tab"
+                  aria-selected="false"
+                  data-flow-key="sales"
+                >
+                  Sales close
+                </button>
+              </div>
+              <div
+                class="flow-stage-grid"
+                id="flow-stages"
+                aria-live="polite"
+              ></div>
+            </section>
+
+            <div class="arch-grid">
+              <div class="arch-card">
+                <span>Start Here</span>
+                <strong>File Map For Agents</strong>
+                <ul class="arch-list">
+                  <li>
+                    Domain behavior:
+                    <code
+                      >apps/api/src/domains/&lt;domain&gt;/services/*Service/*.ts</code
+                    >.
+                  </li>
+                  <li>
+                    HTTP/API shape:
+                    <code
+                      >apps/api/src/features/&lt;feature&gt;/controllers</code
+                    >.
+                  </li>
+                  <li>
+                    Database schema: <code>packages/db/src/schema</code> with
+                    English <code>lower_snake_case</code>.
+                  </li>
+                  <li>
+                    Adapters:
+                    <code>apps/api/src/infrastructure/db/&lt;domain&gt;</code>
+                    and provider-specific infrastructure folders.
+                  </li>
+                  <li>
+                    Frontend modules: <code>apps/web/src/features</code> using
+                    shared API clients and tokenized components.
+                  </li>
+                  <li>
+                    Migration evidence: <code>docs/migration.md</code> and
+                    <code>tools/migration</code> using sanitized/local dumps
+                    only.
+                  </li>
+                </ul>
+              </div>
+              <div class="arch-card">
+                <span>Current Locks</span>
+                <strong>Decisions That Must Survive Compaction</strong>
+                <ul class="arch-list">
+                  <li>
+                    FIPE is an upstream source, not a runtime UI dependency;
+                    dropdowns read the cached catalog DB.
+                  </li>
+                  <li>
+                    Vehicle status <code>reserved</code> needs a reservation
+                    workflow and document, not a bare status flip.
+                  </li>
+                  <li>
+                    Finance Slice 1 is the canonical ledger surface:
+                    edit/pay/cancel, recurring entries, vehicle expenses,
+                    dashboard KPIs, commission rules, and audit deltas.
+                  </li>
+                  <li>
+                    The AI WhatsApp layer is a tool-call orchestrator over
+                    audited services.
+                  </li>
+                  <li>
+                    CRM migrates frontend-first; Repasses backend stays
+                    authoritative until a deliberate backend migration slice.
+                  </li>
+                  <li>
+                    Railway is the target production platform for V2 services
+                    and databases.
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="database">
+          <h2>Database View</h2>
+          <p>
+            Living schema board for V2. Tables stay here as recommendations
+            until the related question is answered, then move to confirmed. All
+            product tables use English snake_case names, UUID primary keys,
+            timezone-aware timestamps, and Drizzle schema helpers. Store-scoped
+            operational data must carry both <code>tenant_id</code> and
+            <code>store_id</code>
+            unless the table is explicitly global, tenant-only, or audit-only.
+          </p>
+
+          <div
+            class="db-explorer"
+            aria-label="Database relations visualization and explorer"
+          >
+            <div class="db-detail">
+              <span class="eyebrow">DB relation explorer</span>
+              <h3>Explore By Domain</h3>
+              <p>
+                Click a domain to inspect anchor tables, ownership boundaries,
+                and cross-domain relations. The long schema board below remains
+                the source of detailed table notes.
+              </p>
+              <div class="search-row">
+                <input
+                  id="db-search"
+                  type="search"
+                  placeholder="Filter tables, e.g. vehicle, audit, crm"
+                  aria-label="Filter database relation nodes"
+                />
+                <button class="chip-button" type="button" id="db-clear">
+                  Clear
+                </button>
+              </div>
+              <div class="chip-row" aria-label="Relation shortcuts">
+                <button
+                  class="chip-button is-active"
+                  type="button"
+                  data-db-key="identity"
+                >
+                  Identity
+                </button>
+                <button
+                  class="chip-button"
+                  type="button"
+                  data-db-key="inventory"
+                >
+                  Inventory
+                </button>
+                <button class="chip-button" type="button" data-db-key="fipe">
+                  FIPE
+                </button>
+                <button
+                  class="chip-button"
+                  type="button"
+                  data-db-key="operations"
+                >
+                  Operations ledger
+                </button>
+                <button class="chip-button" type="button" data-db-key="sales">
+                  Sales docs
+                </button>
+                <button class="chip-button" type="button" data-db-key="crm">
+                  CRM
+                </button>
+                <button class="chip-button" type="button" data-db-key="billing">
+                  Finance
+                </button>
+                <button class="chip-button" type="button" data-db-key="audit">
+                  Audit
+                </button>
+              </div>
+              <div
+                class="relation-canvas"
+                id="relation-canvas"
+                aria-live="polite"
+              ></div>
+            </div>
+
+            <div class="db-detail">
+              <span class="eyebrow">Selected relation</span>
+              <h3 id="db-title">Identity / Tenancy</h3>
+              <p id="db-summary">
+                Tenant and store scope are the root of LojaV2 authorization,
+                storefront resolution, billing, and reporting.
+              </p>
+              <div class="db-node-grid" id="db-nodes"></div>
+            </div>
+          </div>
+
+          <div class="schema-board">
+            <div class="schema-domain">
+              <h3>Identity And Tenancy</h3>
+              <p>
+                <span class="status recommended">Confirmed foundation</span>
+              </p>
+              <ul>
+                <li>
+                  <code>tenants</code>: billing/account container for one
+                  customer or agency.
+                </li>
+                <li>
+                  <code>stores</code>: dealership/location/public tenant page
+                  under a tenant, with unique slug for
+                  <code>slug.lojaveiculos.com.br</code>.
+                </li>
+                <li>
+                  <code>store_domains</code>: future custom-domain mapping to a
+                  store, with verification and canonical-domain flags.
+                </li>
+                <li>
+                  <code>users</code>: internal user identity mapped to Clerk
+                  actor data.
+                </li>
+                <li>
+                  <code>store_memberships</code>: user access to one store with
+                  role template.
+                </li>
+                <li>
+                  <code>role_templates</code>: assignable system role templates
+                  such as owner, agency, admin, supervisor, salesman.
+                </li>
+                <li>
+                  <code>role_template_permissions</code>: default permission
+                  grants per role template.
+                </li>
+                <li>
+                  <code>membership_permission_overrides</code>: per-user
+                  allow/deny overrides.
+                </li>
+                <li>
+                  <code>store_entitlements</code>: feature access per store with
+                  activation window.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>Inventory</h3>
+              <p>
+                <span class="status recommended"
+                  >Listing/unit split confirmed</span
+                >
+              </p>
+              <ul>
+                <li>
+                  <code>vehicle_listings</code>: public/admin listing,
+                  searchable specs, pricing, visibility.
+                </li>
+                <li>
+                  <code>vehicle_units</code>: physical sellable units,
+                  plate/VIN/color/acquisition state.
+                </li>
+                <li>
+                  <code>vehicle_catalog_brands</code>: normalized FIPE brand
+                  catalog.
+                </li>
+                <li>
+                  <code>vehicle_catalog_model_families</code>: model families
+                  derived from FIPE version labels.
+                </li>
+                <li>
+                  <code>vehicle_catalog_versions</code>: FIPE model/version/trim
+                  rows with stable upstream codes.
+                </li>
+                <li>
+                  <code>vehicle_catalog_years</code>: year/fuel options per FIPE
+                  version.
+                </li>
+                <li>
+                  <code>vehicle_catalog_sync_runs</code>: cron/job telemetry,
+                  counts, and failures.
+                </li>
+                <li>
+                  <code>vehicle_catalog_references</code>: FIPE reference months
+                  and latest-reference marker.
+                </li>
+                <li>
+                  <code>vehicle_catalog_price_history</code>: historical FIPE
+                  prices by reference month.
+                </li>
+                <li>
+                  <code>vehicle_catalog_raw_responses</code>: provider evidence
+                  for sync/parser audits.
+                </li>
+                <li>
+                  <code>vehicle_media</code>: photos, videos, ordering,
+                  visibility, metadata for listings.
+                </li>
+                <li>
+                  <code>vehicle_plate_lookups</code>: store-scoped plate
+                  enrichment cache for APIBrasil lookup responses.
+                </li>
+                <li>
+                  <code>vehicle_costs</code>: acquisition, prep, repair,
+                  transport, fees.
+                </li>
+                <li>
+                  <code>vehicle_price_history</code>: price changes with actor
+                  and reason.
+                </li>
+                <li>
+                  <code>vehicle_status_history</code>: listing/unit lifecycle
+                  and sale transitions.
+                </li>
+                <li>
+                  <code>vehicle_checklists</code>: physical readiness and
+                  condition checks for units.
+                </li>
+                <li>
+                  <code>lead_vehicle_interests</code>: CRM lead interest links
+                  to listings and optional units.
+                </li>
+                <li>
+                  <code>vehicle_provider_listings</code>: marketplace/provider
+                  projection ids for published listings.
+                </li>
+                <li>
+                  <code>documents</code> + <code>document_links</code>: shared
+                  document storage for vehicle listing/unit/sale targets.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>Sales And Finance</h3>
+              <p><span class="status recommended">Recommended</span></p>
+              <ul>
+                <li>
+                  <code>sales</code>: closed vehicle sale attached to sold unit
+                  plus listing snapshot.
+                </li>
+                <li>
+                  <code>sale_items</code>: vehicle, service, insurance,
+                  transfer, or add-on lines attached to a sale.
+                </li>
+                <li>
+                  <code>sale_payments</code>: payment method, installments,
+                  settlement status.
+                </li>
+                <li>
+                  <code>documents</code> + <code>document_links</code>:
+                  sale/reservation document bundle links; no standalone sale
+                  document table.
+                </li>
+                <li>
+                  <code>finance_entries</code>: store expenses, revenues,
+                  commissions, sale-generated entries, pay/cancel state,
+                  due/paid dates, and recurrence source when generated.
+                </li>
+                <li>
+                  <code>finance_entry_links</code>: typed links from entries to
+                  unit, listing, sale, lead, or document.
+                </li>
+                <li>
+                  <code>finance_recurring_entries</code>: store-scoped recurring
+                  entry templates for fixed expenses/revenues with next-run
+                  state.
+                </li>
+                <li>
+                  <code>commission_rules</code>: store-scoped seller/team
+                  commission rules with versioned percentage/fixed formulas and
+                  activation windows.
+                </li>
+                <li>
+                  <code>commissions</code>: seller commission accruals,
+                  adjustments, payouts, and source rule snapshot.
+                </li>
+                <li>
+                  <code>financing_inquiries</code>: financing simulation/request
+                  lifecycle tied to lead and listing, optionally unit.
+                </li>
+                <li>
+                  <code>financing_conditions</code>:
+                  bank/installment/rate/status options per inquiry.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>CRM Bridge</h3>
+              <p>
+                <span class="status recommended"
+                  >First migration slice mapped</span
+                >
+              </p>
+              <ul>
+                <li>
+                  <code>crm_bridge_identities</code>: V2 user/store identity
+                  snapshot used to issue bridge credentials.
+                </li>
+                <li>
+                  <code>crm_connection_mappings</code>: V2 store to repasses
+                  connection/workspace ids.
+                </li>
+                <li>
+                  <code>crm_agent_mappings</code>: V2 user/Clerk actor to
+                  repasses CRM agent ids.
+                </li>
+                <li>
+                  <code>crm_lead_mappings</code>: local lead/contact reference
+                  to repasses session/contact ids.
+                </li>
+                <li>
+                  <code>crm_tag_mappings</code>: V2 column/tag reference to
+                  repasses tags and column tags.
+                </li>
+                <li>
+                  <code>crm_sync_events</code>: idempotent inbound/outbound CRM
+                  sync events and retries.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>Billing And Banking</h3>
+              <p>
+                <span class="status open"
+                  >Research complete, decision pending</span
+                >
+              </p>
+              <ul>
+                <li>
+                  <code>plans</code> and <code>plan_features</code>: product
+                  plan catalog and limits.
+                </li>
+                <li>
+                  <code>addons</code>: paid add-on catalog mapped to feature
+                  entitlements.
+                </li>
+                <li>
+                  <code>billing_customers</code>: Asaas/customer payer profile
+                  per tenant.
+                </li>
+                <li>
+                  <code>subscriptions</code>: local tenant subscription
+                  aggregate.
+                </li>
+                <li>
+                  <code>subscription_items</code>: plan/add-on lines, optionally
+                  scoped to a store.
+                </li>
+                <li>
+                  <code>payments</code>: provider payment mirror,
+                  invoice/Pix/paid status.
+                </li>
+                <li>
+                  <code>provider_events</code>: webhook idempotency and provider
+                  payload capture.
+                </li>
+                <li>
+                  <code>payment_links</code>: customer-created links through our
+                  platform key.
+                </li>
+                <li>
+                  <code>settlements</code>: retained funds, fee/tax, release
+                  schedule.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>Integrations And Fiscal</h3>
+              <p><span class="status open">Recommended</span></p>
+              <ul>
+                <li>
+                  <code>integration_accounts</code>: provider credentials/status
+                  by store.
+                </li>
+                <li>
+                  <code>integration_jobs</code>: import/export/webhook
+                  processing state.
+                </li>
+                <li>
+                  <code>plate_lookup_requests</code>: plate lookup request and
+                  response summary.
+                </li>
+                <li>
+                  <code>fiscal_documents</code>: NFE/NFCE document lifecycle and
+                  provider ids.
+                </li>
+                <li>
+                  <code>fiscal_document_links</code>: typed links to sale, lead,
+                  finance entry, or standalone store event.
+                </li>
+                <li>
+                  <code>fiscal_events</code>: cancellation, correction, webhook,
+                  retry events.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>External API</h3>
+              <p><span class="status open">Recommended</span></p>
+              <ul>
+                <li>
+                  <code>api_clients</code>: external API apps and public
+                  metadata.
+                </li>
+                <li>
+                  <code>api_client_keys</code>: hashed secrets, scopes,
+                  rotation, revocation.
+                </li>
+                <li>
+                  <code>api_request_logs</code>: non-sensitive request metadata
+                  and rate-limit data.
+                </li>
+                <li>
+                  <code>api_webhooks</code>: outgoing webhook subscriptions by
+                  store.
+                </li>
+                <li>
+                  <code>api_webhook_deliveries</code>: delivery attempts and
+                  retry state.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>Audit Database</h3>
+              <p><span class="status recommended">Decided</span></p>
+              <ul>
+                <li>
+                  <code>audit_events</code>: central append-only event table in
+                  separate Postgres.
+                </li>
+                <li>
+                  <code>audit_event_payloads</code>: optional large/redacted
+                  payload side table.
+                </li>
+                <li>
+                  <code>audit_webhook_events</code>: critical inbound webhook
+                  audit trail.
+                </li>
+                <li>
+                  <code>audit_service_runs</code>: background jobs, migrations,
+                  sync batches.
+                </li>
+                <li>
+                  Runtime slice writes service audit calls to
+                  <code>audit_events</code>; actor/entity/request rollups remain
+                  a follow-up once upsert uniqueness is defined.
+                </li>
+              </ul>
+            </div>
+
+            <div class="schema-domain">
+              <h3>Local And Production DB Ops</h3>
+              <p><span class="status recommended">Local verified</span></p>
+              <ul>
+                <li>
+                  <code>lojaveiculosv2-postgres</code>: local product Postgres
+                  on port <code>54321</code>.
+                </li>
+                <li>
+                  <code>lojaveiculosv2-audit-postgres</code>: local audit
+                  Postgres on port <code>54322</code>.
+                </li>
+                <li>
+                  <code>npm run db:push:local</code>: local-only Drizzle push
+                  with host guard and force mode for disposable dev DBs.
+                </li>
+                <li>
+                  <code>npm run db:seed:local</code>: idempotent SQL seed for
+                  the test tenant, store, owner user, role template, membership,
+                  entitlements, and permissions.
+                </li>
+                <li>
+                  Production Railway DBs must use service reference variables;
+                  default push scripts reject non-local database hosts.
+                </li>
+                <li>
+                  DB-backed production runtime also requires
+                  <code>CLERK_SECRET_KEY</code> and verifies
+                  <code>Authorization: Bearer</code> before resolving store
+                  access.
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <h3>Primary Relations</h3>
+          <ul class="relation-list">
+            <li>
+              <code>tenants.id</code> -> <code>stores.tenant_id</code>,
+              <code>users.tenant_id</code>,
+              <code>billing_accounts.tenant_id</code>,
+              <code>subscriptions.tenant_id</code>.
+            </li>
+            <li>
+              <code>stores.slug</code> resolves public subdomain requests;
+              explicit <code>x-store-slug</code> remains the authenticated
+              admin/API override until Clerk route contracts are final.
+            </li>
+            <li>
+              <code>stores.id</code> -> store-scoped operational tables:
+              inventory, sales, expenses, CRM links, integrations, fiscal,
+              external API, and entitlements.
+            </li>
+            <li>
+              <code>users.id</code> -> <code>store_memberships.user_id</code>,
+              sale seller fields, commissions, price history actor fields, and
+              audit actor references.
+            </li>
+            <li>
+              <code>vehicle_listings.id</code> -> listing media, listing price
+              history, public analytics, financing inquiries, optional sale
+              listing snapshots, and one or many vehicle units.
+            </li>
+            <li>
+              <code>vehicle_units.id</code> -> document links, checklists,
+              acquisition/prep costs, unit status history, finance links, lead
+              interests, and the sale when sold.
+            </li>
+            <li>
+              <code>vehicle_plate_lookups.id</code> -> scoped enrichment cache
+              evidence for plate lookup responses; not a vehicle source of
+              truth.
+            </li>
+            <li>
+              <code>lead_vehicle_interests.id</code> -> CRM lead-to-listing/unit
+              interest links.
+            </li>
+            <li>
+              <code>vehicle_provider_listings.id</code> -> marketplace/provider
+              listing projection ids attached to
+              <code>integration_accounts</code>.
+            </li>
+            <li>
+              <code>sales.id</code> -> sold unit, listing snapshot, sale items,
+              sale payments, commissions, fiscal documents, and financing
+              conversion links.
+            </li>
+            <li>
+              <code>documents.id</code> ->
+              <code>document_links.document_id</code> for reservation receipt,
+              sale contract, sale receipt, delivery term, power of attorney,
+              registration, inspection, buyer, and internal documents.
+            </li>
+            <li>
+              <code>finance_entries.id</code> -> typed finance links for unit
+              costs, sale-generated revenue/commission/transfer/insurance,
+              listing marketing costs, and store operating expenses.
+            </li>
+            <li>
+              <code>finance_recurring_entries.id</code> -> recurring
+              expense/revenue templates and next-run state; generated instances
+              are normal <code>finance_entries</code>.
+            </li>
+            <li>
+              <code>commission_rules.id</code> -> commission policy source for
+              generated <code>commissions</code> and commission finance entries;
+              historical accruals keep a rule snapshot in metadata.
+            </li>
+            <li>
+              <code>api_clients.id</code> -> keys, request logs, webhook
+              subscriptions, and webhook deliveries.
+            </li>
+            <li>
+              Audit rows reference product entities by string ids plus
+              <code>tenant_id</code>, <code>store_id</code>,
+              <code>actor_user_id</code>, and <code>correlation_id</code>; no
+              product table depends on the audit database.
+            </li>
+          </ul>
+
+          <h3>DB Research Queue</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Branch</th>
+                <th>Current Research</th>
+                <th>Expected Output</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Inventory, sales, finance</td>
+                <td>
+                  <span class="status recommended">Explorer complete</span>
+                </td>
+                <td>
+                  V1 uses <code>Veiculo</code>, <code>FotosVeiculo</code>,
+                  <code>Entry</code>, <code>Sale</code>,
+                  <code>SalePayment</code>, <code>Document</code>, and financing
+                  data hidden in JSON. Key migration risk:
+                  <code>Veiculo.stockByColor</code>,
+                  <code>Entry.metadata</code>,
+                  <code>Document.metadata/pdfData</code>, commission settings
+                  JSON, and financing simulation JSON.
+                </td>
+              </tr>
+              <tr>
+                <td>Listing/unit attachment map</td>
+                <td>
+                  <span class="status recommended">Explorer complete</span>
+                </td>
+                <td>
+                  Sales attach to <code>vehicle_units</code> with listing
+                  snapshots. Unit costs/checklists/documents attach to units.
+                  Financing starts at inquiry plus listing, optionally unit.
+                  Fiscal and generic documents need typed links.
+                </td>
+              </tr>
+              <tr>
+                <td>Identity, permissions, billing</td>
+                <td>
+                  <span class="status recommended">Explorer complete</span>
+                </td>
+                <td>
+                  V1 overloads <code>Loja</code> as store, tenant, public site,
+                  and billing state. <code>ownerClerkId</code> acts as the
+                  implicit account boundary. V2 should move billing to
+                  <code>tenants</code>, keep access in
+                  <code>store_memberships</code>, and scope add-ons through
+                  subscription items plus store entitlements. Resolver-critical
+                  migration evidence: unique public slugs, custom domains,
+                  malformed host behavior, and tenant/store collision handling.
+                </td>
+              </tr>
+              <tr>
+                <td>CRM integration</td>
+                <td>
+                  <span class="status recommended">Explorer complete</span>
+                </td>
+                <td>
+                  Repasses remains CRM source of truth. V2 should store external
+                  mappings, bridge identity snapshots, and idempotent sync
+                  events, not mirror repasses internals. Current iframe bridge
+                  depends on signed tokens and localStorage; same-Clerk native
+                  integration remains the target.
+                </td>
+              </tr>
+              <tr>
+                <td>CRM frontend migration</td>
+                <td>
+                  <span class="status recommended">Read-only API mapped</span>
+                </td>
+                <td>
+                  Start with <code>CrmContext</code>, <code>AuthContext</code>,
+                  <code>src/lib/api.ts</code>, <code>CrmLogin</code>, and the
+                  main <code>CrmWhatsApp</code> shell. Preserve
+                  <code>CRM_REQUEST_BRIDGE_REFRESH</code>,
+                  <code>CRM_BRIDGE_TOKEN_REFRESH</code>,
+                  <code>embedded=1</code>, <code>Authorization</code>,
+                  <code>x-crm-agent-id</code>, <code>POST /auth/bridge</code>,
+                  <code>POST /crm/agents/login</code>,
+                  <code>POST /crm/sse/ticket</code>, and
+                  <code>GET /crm/sse</code>. Read-only chat uses
+                  <code>GET /crm/chat/sessions</code> and
+                  <code>GET /crm/chat/messages/:sessionId</code> with
+                  <code>Authorization</code> and <code>x-crm-agent-id</code>.
+                  Defer message-send endpoints to phase 2 because they mutate
+                  external WhatsApp/provider state. Also defer campaigns,
+                  agendas, visits, labels, integrations, and minibot until chat
+                  read is native in V2. V2 web now has typed read-only route
+                  helpers and query serializers for these contracts. The next
+                  checkpoint adds the typed fetch client with injected
+                  <code>fetch</code>, base URL, and auth state. Checkpoint:
+                  <code>864fad0</code>.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="decisions">
+          <h2>Decision Log</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Decision</th>
+                <th>Implication</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>2026-06-17</td>
+                <td>
+                  Storefront tenancy resolves from
+                  <code>storename.lojaveiculos.com.br</code>. Admin/API context
+                  can still use explicit <code>x-store-slug</code> during Clerk
+                  integration.
+                </td>
+                <td>
+                  Public stock routes must use a host-resolved store context.
+                  Protected routes must keep user membership checks through
+                  <code>StoreAccessRepository</code> before reading or mutating
+                  store data.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Inventory write surfaces must use canonical V2 routes and
+                  DTOs, not compatibility-shaped legacy adapters or workaround
+                  endpoints. Vehicle edits must audit actor, entity, changed
+                  fields, and before/after values.
+                </td>
+                <td>
+                  The product direction is a real V2 inventory surface: create
+                  listings, attach units, upload R2 media, search stock, select
+                  a vehicle, edit listing data, edit unit data, and return
+                  canonical detail DTOs after each mutation.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Cached catalog must drive every FIPE dropdown and be refreshed
+                  by a scheduled sync job.
+                </td>
+                <td>
+                  V2 will persist FIPE catalog in
+                  <code>vehicle_catalog_brands</code> ->
+                  <code>vehicle_catalog_model_families</code> ->
+                  <code>vehicle_catalog_versions</code> ->
+                  <code>vehicle_catalog_years</code>. Dropdown APIs read from DB
+                  (never hit FIPE directly), and selected catalog details are
+                  lazily cached on listing snapshots for audit, migration
+                  safety, and rendering fallback.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Media gallery and document attachments are first-class V2
+                  entities, not secondary helpers.
+                </td>
+                <td>
+                  Listing photos, unit media, and vehicle documents must flow
+                  through canonical DTOs and persist with actor-linked audit
+                  records when edited, attached, or removed.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Finance entries are a production slice with dedicated
+                  front-end and backend contracts.
+                </td>
+                <td>
+                  Slice 1 finance core must support typed linking to units,
+                  listings, sales, leads, and documents; edit/pay/cancel
+                  actions; recurring-entry generation; vehicle-linked expense
+                  views; dashboard KPIs; commission rules; scoped permissions;
+                  and predictable reporting-friendly projections.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Finance mutations require field-level before/after audit
+                  evidence.
+                </td>
+                <td>
+                  Create, edit, pay, cancel, recurrence generation/cancellation,
+                  vehicle-link changes, commission-rule changes, and attachment
+                  changes must capture actor, permission, reason, entity links,
+                  previous values, next values, correlation id, and outcome.
+                  Historical commission accruals are adjusted by explicit
+                  entries, not silently rewritten.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Financial entry attachments must use R2 object references with
+                  full integrity and audit trail.
+                </td>
+                <td>
+                  Every attach/replace/remove action for
+                  <code>finance_entries</code>
+                  must capture actor, checksum/mime/size, object reference
+                  lifecycle, and immutable audit evidence.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Vehicle audit and log hardening is mandatory for lifecycle
+                  transitions.
+                </td>
+                <td>
+                  Reserve, sold, pricing, and status workflows require
+                  before/after diffs, sensitive-read audit evidence, and
+                  query/service correlation IDs across logs and audit writes.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Marking a vehicle as <code>reserved</code> is a reservation
+                  workflow, not only a status change.
+                </td>
+                <td>
+                  V2 must support emitting a reservation document when a listing
+                  or unit becomes reserved. The workflow should capture buyer
+                  identity, signal/down-payment amount when present, actor,
+                  linked vehicle unit, generated document, and audit trail.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-18</td>
+                <td>
+                  Sold vehicles must emit four mandatory documents and seal the
+                  lifecycle state transition.
+                </td>
+                <td>
+                  Closing a sale must emit
+                  <code>sale_contract</code>, <code>sale_receipt</code>,
+                  <code>delivery_term</code>, and
+                  <code>power_of_attorney</code> in one closure flow. These
+                  links must be immutable once issued and traceable through
+                  audit + correlation IDs.
+                </td>
+              </tr>
+              <tr>
+                <td>2026-06-17</td>
+                <td>
+                  Public storefront stock reads use a separate
+                  <code>/api/v1/public/storefront</code> feature and
+                  <code>public_storefront.read</code> permission instead of
+                  opening protected <code>/api/v1/inventory</code> routes.
+                </td>
+                <td>
+                  Admin inventory remains user/member protected. Public stock
+                  queries must apply repository-level filters for published,
+                  visible, non-deleted listings before returning vehicle data.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="questions">
+          <h2>Question Log</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Question</th>
+                <th>Recommended Answer</th>
+                <th>Resolution</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>
+                  Which infrastructure source should become the first source of
+                  truth for production diagnostics: Render only, Railway only,
+                  or both?
+                </td>
+                <td>
+                  Start with Render for current Loja production and add Railway
+                  only for services that are actually deployed there.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Render hosts lojaveiculos and its production Postgres. Railway
+                  hosts repasses backend, repasses Postgres, and repasses
+                  frontend.
+                </td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>
+                  For V2 production, should services that require private
+                  service-to-service traffic be consolidated onto one provider?
+                </td>
+                <td>
+                  Yes. Pick one primary runtime platform for V2 app/API/database
+                  adjacency, then keep the other provider only for transitional
+                  services until migration is complete.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Same intranet/private runtime is a target requirement.
+                </td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td>
+                  Which provider should be the primary V2 runtime for private
+                  app/API/database adjacency: Render or Railway?
+                </td>
+                <td>
+                  Render, unless metrics or cost prove otherwise. Loja
+                  production app and production database already live there, so
+                  it is the lower-risk base for V1-to-V2 migration. Railway
+                  should stay as the CRM backend/frontend host during
+                  transition.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Railway is the primary deploy target because it is more
+                  flexible and can host V2 in the same project as repasses
+                  backend/frontend.
+                </td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td>
+                  Should V2 start as a separate folder named
+                  <code>./lojaveiculosv2</code> with new code, new DB tables,
+                  and a migrated CRM frontend?
+                </td>
+                <td>
+                  Yes. Keep V2 isolated from the weak V1 architecture while
+                  using V1 and repasses frontend as evidence sources.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Folder skeleton created.
+                </td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td>
+                  Which ORM should own the first V2 schema: Drizzle or Mikro
+                  ORM?
+                </td>
+                <td>
+                  Drizzle. V2 needs explicit schema review, migration clarity,
+                  English naming enforcement, and query visibility for
+                  performance.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Drizzle selected. Baseline UUID and timestamp conventions are
+                  enforced through shared schema helpers and
+                  <code>npm run check:db</code>.
+                </td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td>
+                  Which vertical slice should become the first real V2
+                  implementation after the shell: identity/tenant/store,
+                  inventory, CRM frontend, billing, or public tenant page?
+                </td>
+                <td>
+                  Identity/tenant/store with permissions and audit. Every other
+                  feature depends on actor, tenant, store, role, entitlement,
+                  and audit context.
+                </td>
+                <td>
+                  <span class="status recommended">Started</span>
+                  Identity policy, store context resolution, role permissions,
+                  entitlement contracts, and audit-on-context-resolution are now
+                  in V2.
+                </td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td>
+                  Should V2 permissions be mostly role templates with per-user
+                  overrides, or should every store build fully custom roles?
+                </td>
+                <td>
+                  Start with role templates plus per-user permission overrides.
+                  Fully custom roles can come later if customers actually need
+                  role authoring, but per-field overrides solve the current
+                  price vs description requirement immediately.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Role templates plus per-user overrides. Shared authorization
+                  helpers now enforce permissions and entitlements with
+                  structured denial logs.
+                </td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td>
+                  Should V2 model tenancy as <code>tenant -> stores</code>, with
+                  every store-scoped operational table carrying both
+                  <code>tenant_id</code> and <code>store_id</code>?
+                </td>
+                <td>
+                  Yes. Treat <code>tenant</code> as the account/billing/agency
+                  container and <code>store</code> as the
+                  dealership/location/public page boundary. Store-scoped tables
+                  should carry both ids for permission checks, agency-wide
+                  reporting, billing, migration, audit correlation, and indexed
+                  queries.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Confirmed. V2 will use <code>tenant -> stores</code>, and
+                  store-scoped operational tables will carry both ids.
+                </td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td>
+                  Should inventory split public/admin listings from physical
+                  sellable units, instead of keeping one overloaded
+                  <code>vehicles</code> table?
+                </td>
+                <td>
+                  Yes. Use <code>vehicle_listings</code> for the searchable
+                  product/listing and <code>vehicle_units</code> for physical
+                  stock items. Used cars usually have one listing and one unit;
+                  0km cars can have one listing with many units across
+                  colors/VINs. This replaces V1 <code>stockByColor</code> JSON
+                  with relational stock and makes sales, documents, costs, and
+                  status history precise.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Confirmed. Inventory will split listings from physical units:
+                  used cars normally map one listing to one unit; 0km cars can
+                  map one listing to many units.
+                </td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td>
+                  Should public tenant pages resolve store scope from the
+                  subdomain, a path segment, or only an explicit header?
+                </td>
+                <td>
+                  Resolve from <code>storename.lojaveiculos.com.br</code> for
+                  public storefronts. Keep explicit <code>x-store-slug</code> as
+                  the authenticated admin/API override while Clerk and route
+                  contracts are finalized.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Implemented host parser and HTTP service-context fallback.
+                  Custom domains stay as a future <code>store_domains</code>
+                  lookup rather than guessing from arbitrary hosts.
+                </td>
+              </tr>
+              <tr>
+                <td>11</td>
+                <td>
+                  Should the public vehicle stock page reuse protected inventory
+                  endpoints or get its own public read feature?
+                </td>
+                <td>
+                  Use a separate public storefront feature. It should resolve
+                  the store from the host, assert an explicit public read
+                  permission, and return only published plus visible listings.
+                </td>
+                <td>
+                  <span class="status recommended">Answered</span>
+                  Implemented as
+                  <code>GET /api/v1/public/storefront/listings</code>
+                  with a public Drizzle repository adapter, service tests, route
+                  tests, OpenAPI metadata, and V2 web storefront view.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+    </div>
+    <script>
+      const mapData = {
+        identity: {
+          title: "Identity / Tenancy",
+          summary:
+            "Clerk actor, tenant, store, membership, role templates, and permission override resolution create the V2 context boundary.",
+          details: [
+            "<code>tenant -> stores</code> separates billing/account ownership from dealership/public-page scope.",
+            "Protected inventory routes require authenticated store membership before data access.",
+            "Public storefront reads resolve <code>storename.lojaveiculos.com.br</code> from host and keep explicit <code>x-store-slug</code> for admin/API override during Clerk bootstrap.",
+          ],
+        },
+        inventory: {
+          title: "Inventory",
+          summary:
+            "The active vertical slice owns listing/unit split, cached FIPE selectors, media gallery, documents, costs, price history, and status history.",
+          details: [
+            "<code>vehicle_listings</code> is the public/admin listing; <code>vehicle_units</code> is the physical sellable stock item.",
+            "Repository ports keep domain services free of Drizzle and provider details.",
+            "All write paths record scoped logs and audit rows with field-level before/after deltas.",
+          ],
+        },
+        reservation: {
+          title: "Reservation Workflow",
+          summary:
+            "Reservation is a business workflow, not just setting vehicle status to reserved.",
+          details: [
+            "Required route: <code>POST /inventory/listings/{listingId}/reserve</code>.",
+            "Capture customer identity snapshot, signal/down-payment amount, linked unit, generated reservation receipt, and reservation sale draft.",
+            "Status transition from <code>draft/published</code> to <code>reserved</code> is executed transactionally where possible.",
+            "Permission key: <code>inventory.reserve</code>; actor, store, entity, and generated receipt are written to audit.",
+          ],
+        },
+        crm: {
+          title: "CRM / Repasses",
+          summary:
+            "V2 migrates the CRM frontend first while Repasses remains the backend source of truth.",
+          details: [
+            "Preserve bridge refresh messages, <code>Authorization</code>, <code>x-crm-agent-id</code>, SSE ticketing, and read-only chat contracts.",
+            "V2 should store external mappings and sync events, not clone Repasses internals.",
+            "Message-send, campaigns, agendas, visits, labels, integrations, and minibot remain later slices.",
+          ],
+        },
+        assistant: {
+          title: "AI WhatsApp Assistant",
+          summary:
+            "Assistant actions are tool calls into audited domain services with permissions and scoped context.",
+          details: [
+            "No direct DB access from assistant runtime.",
+            "Candidate tools: search inventory, get detail, update price, change status, and add cost.",
+            "Each tool call needs actor/source/correlation context and an audit row.",
+          ],
+        },
+        sales: {
+          title: "Sales Closure",
+          summary:
+            "A sold transition closes lifecycle and emits a constrained document bundle.",
+          details: [
+            "Required bundle of 4 documents: <code>sale_contract</code>, <code>sale_receipt</code>, <code>delivery_term</code>, and <code>power_of_attorney</code>.",
+            "Create sale, sale items, sale payments, sale commissions, and finance links in one guarded unit of work.",
+            "Each document is stored in shared <code>documents</code>, linked through <code>document_links</code>, and referenced in audit trails.",
+          ],
+        },
+        billing: {
+          title: "Billing / Finance / Reports",
+          summary:
+            "Slice 1 finance core owns ledger operations and dashboard evidence; Asaas billing, banking/payment links, and settlements follow through provider slices.",
+          details: [
+            "Billing belongs to tenants; feature access is scoped through subscription items plus store entitlements.",
+            "Finance entries link to units, listings, sales, leads, documents, commission accruals, recurring entries, and store operating expenses.",
+            "Slice 1 includes edit, pay, cancel, recurring entry generation, vehicle-linked expense views, dashboard KPIs, and commission rule management.",
+            "Commission rules are versioned and auditable; historical accruals require explicit adjustment entries instead of silent rewrites.",
+            "Finance evidence should use shared document links or an explicit future attachment model; no <code>finance_entry_attachments</code> table exists today.",
+            "Every finance mutation captures actor, permission, reason, linked ids, before/after values, correlation id, and outcome.",
+            "Provider webhooks require idempotency and audit capture.",
+          ],
+        },
+        audit: {
+          title: "Audit",
+          summary:
+            "Audit is a separate append-only evidence database used by services, jobs, migrations, webhooks, and assistant tools.",
+          details: [
+            "<code>audit_events</code> is active; actor/entity/request rollups remain follow-up once uniqueness is defined.",
+            "Product tables reference audit only by emitted identifiers and metadata, never by foreign key.",
+            "Production runtime fails fast when audit DB config is missing or unresolved.",
+          ],
+        },
+        railway: {
+          title: "Railway Runtime",
+          summary:
+            "Railway is the primary V2 deploy target for services and databases, while Render remains the current V1 production evidence source.",
+          details: [
+            "Use service reference variables for production databases and secrets.",
+            "Local DB push scripts reject non-local hosts unless explicitly guarded for disposable development.",
+            "Railway MCP/CLI are for diagnostics and deployment operations only with explicit approval for mutations.",
+          ],
+        },
+      };
+
+      const flowData = {
+        inventory: [
+          [
+            "Surface",
+            "Backoffice inventory UI selects a listing/unit and submits canonical edit DTOs.",
+          ],
+          [
+            "Controller",
+            "Feature controller validates route params/body and resolves authenticated store context.",
+          ],
+          [
+            "Service",
+            "VehicleService asserts inventory permission and computes field-level changes.",
+          ],
+          [
+            "Adapters",
+            "Inventory repository applies tenant/store filters; R2 and catalog adapters stay outside domain rules.",
+          ],
+          [
+            "Evidence",
+            "Audit row records actor, vehicle entity, changed fields, before/after values, and outcome.",
+          ],
+        ],
+        public: [
+          [
+            "Surface",
+            "Public storefront calls same-origin API from host-resolved store page.",
+          ],
+          [
+            "Controller",
+            "Public storefront feature resolves store slug from host and rejects protected inventory routes.",
+          ],
+          [
+            "Service",
+            "Public read service asserts public_storefront.read and returns only canonical public DTOs.",
+          ],
+          [
+            "Adapters",
+            "Repository filters published, visible, non-deleted listings and public media.",
+          ],
+          [
+            "Evidence",
+            "Sensitive reads remain scoped and can emit audit/log evidence without exposing customer payloads.",
+          ],
+        ],
+        reservation: [
+          [
+            "Surface",
+            "Backoffice reserve action by store user captures customer, signal amount, unit/listing, and document intent.",
+          ],
+          [
+            "Controller",
+            "Reserve route validates workflow payload and refuses bare status-only transitions.",
+          ],
+          [
+            "Service",
+            "Reservation service asserts inventory.reserve and prepares sale/payment draft state.",
+          ],
+          [
+            "Adapters",
+            "Document, sale, payment, unit status, and listing status writes stay transactional where practical.",
+          ],
+          [
+            "Evidence",
+            "Audit links store actor, customer context, reservation receipt, payment draft, and status transition.",
+          ],
+        ],
+        assistant: [
+          [
+            "Surface",
+            "WhatsApp AI receives customer/admin intent with source and correlation context.",
+          ],
+          [
+            "Controller",
+            "Assistant tool router maps intent to an allowlisted domain tool.",
+          ],
+          [
+            "Service",
+            "Domain service enforces the same permissions as human UI workflows.",
+          ],
+          [
+            "Adapters",
+            "Tool calls use repository/provider adapters, never raw SQL from assistant code.",
+          ],
+          [
+            "Evidence",
+            "Every tool call records actor/source, inputs summary, entity, result, and failure reason.",
+          ],
+        ],
+        fipe: [
+          [
+            "Surface",
+            "Vehicle creation dropdowns request cached brand/model/version/year selectors.",
+          ],
+          [
+            "Controller",
+            "Catalog API returns DB-backed selector DTOs and never proxies browser traffic to FIPE.",
+          ],
+          [
+            "Service",
+            "Catalog service reads cache and sync service handles bounded refresh jobs.",
+          ],
+          [
+            "Adapters",
+            "FIPE adapter runs in job context and persists brands, families, versions, years, and sync runs.",
+          ],
+          [
+            "Evidence",
+            "Sync runs record counts, individual year failures, bounds, and retry-safe telemetry.",
+          ],
+        ],
+        sales: [
+          [
+            "Surface",
+            "Backoffice marks reserved unit as sold and selects closure policy.",
+          ],
+          [
+            "Controller",
+            "Controller validates sale payload with customer confirmation, payment references, and signed document intent.",
+          ],
+          [
+            "Service",
+            "Sales service builds sale aggregate, 4-doc bundle, and finance entry links from unit/listing snapshot.",
+          ],
+          [
+            "Adapters",
+            "Writes touch sale, sale_items, sale_payments, vehicle_costs linkages, and document rows with versioned keys.",
+          ],
+          [
+            "Evidence",
+            "Audit records before/after on vehicle status + unit status + document bundle creation + actor trace.",
+          ],
+        ],
+        finance: [
+          [
+            "Surface",
+            "Finance dashboard, ledger table, vehicle expense panel, and commission settings call canonical finance clients.",
+          ],
+          [
+            "Controller",
+            "Finance routes validate entry edit/pay/cancel, recurring rule, vehicle-link, attachment, and commission-rule payloads.",
+          ],
+          [
+            "Service",
+            "Finance service asserts scoped permissions, computes before/after deltas, generates recurring entries, and refuses silent commission rewrites.",
+          ],
+          [
+            "Adapters",
+            "Repositories persist finance entries, links, recurring rules, commission rules/accruals, attachments, and dashboard projections through tenant/store filters.",
+          ],
+          [
+            "Evidence",
+            "Audit records actor, reason, permission, amount/status/date/category/link changes, recurrence id, commission rule id, attachment refs, correlation id, and outcome.",
+          ],
+        ],
+      };
+
+      const dbData = {
+        identity: {
+          title: "Identity / Tenancy",
+          summary:
+            "Tenant and store scope are the root of LojaV2 authorization, storefront resolution, billing, and reporting.",
+          nodes: [
+            ["tenants", "Account, billing, agency, and reporting container."],
+            [
+              "stores",
+              "Dealership/location/public tenant page with unique slug.",
+            ],
+            ["users", "Internal user mapped to Clerk actor data."],
+            [
+              "store_memberships",
+              "User access to one store with role template and overrides.",
+            ],
+          ],
+          relations: [
+            ["tenants.id", "stores.tenant_id"],
+            ["stores.slug", "public storefront host resolver"],
+            ["users.id", "store_memberships.user_id"],
+            ["store_memberships", "role templates + permission overrides"],
+          ],
+        },
+        inventory: {
+          title: "Inventory Core",
+          summary:
+            "Inventory splits public/admin listing data from physical units and attaches media, documents, lifecycle events, and sale context.",
+          nodes: [
+            [
+              "vehicle_listings",
+              "Public/admin listing, specs, pricing, visibility.",
+            ],
+            [
+              "vehicle_units",
+              "Physical sellable unit with plate/VIN/color/acquisition state.",
+            ],
+            [
+              "vehicle_media",
+              "Photos, videos, ordering, visibility, metadata.",
+            ],
+            [
+              "vehicle_plate_lookups",
+              "Scoped plate enrichment cache for provider responses.",
+            ],
+            [
+              "vehicle_provider_listings",
+              "Marketplace/provider projection ids per integration account and listing.",
+            ],
+            [
+              "documents / document_links",
+              "Shared vehicle listing/unit/sale document records and links.",
+            ],
+          ],
+          relations: [
+            ["vehicle_listings.id", "vehicle_units.listing_id"],
+            ["vehicle_listings.id", "vehicle_media.listing_id"],
+            [
+              "vehicle_listings.id",
+              "document_links.target_id when target_type=vehicle_listing",
+            ],
+            [
+              "vehicle_units.id",
+              "document_links.target_id when target_type=vehicle_unit",
+            ],
+            ["vehicle_units.id", "sales.vehicle_unit_id when sold"],
+          ],
+        },
+        sales: {
+          title: "Sales closure",
+          summary:
+            "Single flow for sold transitions: sale aggregate, document bundle, finance entries, and actor audit.",
+          nodes: [
+            [
+              "sales",
+              "Canonical sale aggregate with buyer, unit, listing snapshot, and status.",
+            ],
+            [
+              "documents / document_links",
+              "Reservation receipt plus sale contract, receipt, delivery term, and power of attorney links.",
+            ],
+            [
+              "sale_payments",
+              "Payment plan, channel, paid flags, and reconciliation references.",
+            ],
+            [
+              "finance_entries",
+              "Revenue/commission/expense movements linked to store + entity.",
+            ],
+          ],
+          relations: [
+            ["sales.id", "document_links.target_id when target_type=sale"],
+            ["sales.id", "sale_payments.sale_id"],
+            ["sales.id", "finance_entry_links.sale_id"],
+            ["finance_entries.id", "finance_entry_links.finance_entry_id"],
+          ],
+        },
+        fipe: {
+          title: "FIPE Catalog Cache",
+          summary:
+            "FIPE is upstream source data cached into V2 tables so runtime dropdowns and listing snapshots are stable.",
+          nodes: [
+            ["vehicle_catalog_brands", "Normalized FIPE brands."],
+            [
+              "vehicle_catalog_model_families",
+              "Model families derived from version labels.",
+            ],
+            [
+              "vehicle_catalog_versions",
+              "FIPE version/trim rows with stable upstream codes.",
+            ],
+            ["vehicle_catalog_years", "Year/fuel options per version."],
+            [
+              "vehicle_catalog_references",
+              "FIPE reference months and latest marker.",
+            ],
+            [
+              "vehicle_catalog_price_history",
+              "Historical FIPE prices by reference.",
+            ],
+            [
+              "vehicle_catalog_raw_responses",
+              "Provider evidence for sync/parser audits.",
+            ],
+          ],
+          relations: [
+            ["brands.id", "model_families.brand_id"],
+            ["model_families.id", "versions.model_family_id"],
+            ["versions.id", "years.version_id"],
+            ["sync_runs.id", "catalog refresh telemetry and failures"],
+          ],
+        },
+        operations: {
+          title: "Operations Ledger",
+          summary:
+            "Costs, price history, status history, checklists, and documents explain how a vehicle changed over time.",
+          nodes: [
+            ["vehicle_costs", "Acquisition, prep, repair, transport, fees."],
+            ["vehicle_price_history", "Price changes with actor and reason."],
+            [
+              "vehicle_status_history",
+              "Listing/unit lifecycle and sale transitions.",
+            ],
+            ["vehicle_checklists", "Physical readiness and condition checks."],
+          ],
+          relations: [
+            ["vehicle_units.id", "vehicle_costs.vehicle_unit_id"],
+            ["vehicle_listings.id", "vehicle_price_history.listing_id"],
+            ["vehicle_units.id", "vehicle_status_history.unit_id"],
+            ["users.id", "actor fields and audit correlation"],
+          ],
+        },
+        crm: {
+          title: "CRM / Repasses Bridge",
+          summary:
+            "V2 keeps mappings and idempotent sync events while Repasses remains CRM source of truth during migration.",
+          nodes: [
+            [
+              "crm_bridge_identities",
+              "V2 user/store identity snapshot for bridge credentials.",
+            ],
+            [
+              "crm_connection_mappings",
+              "Store to Repasses connection/workspace ids.",
+            ],
+            [
+              "crm_agent_mappings",
+              "V2 user/Clerk actor to Repasses agent ids.",
+            ],
+            [
+              "crm_sync_events",
+              "Inbound/outbound CRM sync event and retry state.",
+            ],
+            [
+              "lead_vehicle_interests",
+              "Lead interest links to listings and optional units.",
+            ],
+          ],
+          relations: [
+            ["stores.id", "crm_connection_mappings.store_id"],
+            ["users.id", "crm_agent_mappings.user_id"],
+            ["leads", "crm_lead_mappings"],
+            ["sync_events", "idempotent Repasses bridge operations"],
+          ],
+        },
+        billing: {
+          title: "Finance Core / Billing",
+          summary:
+            "Finance Slice 1 is store-scoped ledger operations; billing data remains tenant-rooted and later provider slices attach through entitlements and settlements.",
+          nodes: [
+            [
+              "finance_entries",
+              "Manual and generated ledger entries with edit/pay/cancel state.",
+            ],
+            [
+              "finance_entry_links",
+              "Typed links to vehicle units, listings, sales, leads, and documents.",
+            ],
+            [
+              "finance_recurring_entries",
+              "Recurring expense/revenue templates with next-run state.",
+            ],
+            [
+              "commission_rules / commissions",
+              "Versioned seller/team rules, accruals, adjustments, and payouts.",
+            ],
+            ["plans / plan_features", "Product plan catalog and limits."],
+            [
+              "subscriptions / subscription_items",
+              "Tenant subscription aggregate and add-on lines.",
+            ],
+            ["payments", "Provider payment mirror, invoice/Pix/paid status."],
+            ["settlements", "Retained funds, fee/tax, release schedule."],
+          ],
+          relations: [
+            ["vehicle_units.id", "finance_entry_links.vehicle_unit_id"],
+            [
+              "finance_recurring_entries.id",
+              "recurring templates generate finance_entries",
+            ],
+            [
+              "commission_rules.id",
+              "commissions.rule_id + finance entry snapshot",
+            ],
+            ["tenants.id", "subscriptions.tenant_id"],
+            ["subscription_items", "store-scoped add-ons where needed"],
+            ["provider_events", "Asaas webhook idempotency"],
+            ["store_entitlements", "feature access from billing decisions"],
+          ],
+        },
+        audit: {
+          title: "Audit Database",
+          summary:
+            "Audit is independent from product schema and records actor/entity/request evidence for services, webhooks, jobs, and migrations.",
+          nodes: [
+            ["audit_events", "Central append-only event table."],
+            [
+              "audit_event_payloads",
+              "Optional large/redacted payload side table.",
+            ],
+            ["audit_webhook_events", "Critical inbound webhook audit trail."],
+            [
+              "audit_service_runs",
+              "Background jobs, migrations, sync batches.",
+            ],
+          ],
+          relations: [
+            ["product entity ids", "string references in audit events"],
+            ["tenant_id / store_id", "audit correlation fields"],
+            ["actor_user_id", "Clerk/internal actor evidence"],
+            ["correlation_id", "request/job traceability"],
+          ],
+        },
+      };
+
+      const setActive = (nodes, activeNode, className = "is-active") => {
+        nodes.forEach((node) => {
+          const active = node === activeNode;
+          node.classList.toggle(className, active);
+          if (node.hasAttribute("aria-pressed"))
+            node.setAttribute("aria-pressed", String(active));
+          if (node.hasAttribute("aria-selected"))
+            node.setAttribute("aria-selected", String(active));
+        });
+      };
+
+      const renderMap = (key, activeNode) => {
+        const item = mapData[key];
+        if (!item) return;
+        document.getElementById("map-title").textContent = item.title;
+        document.getElementById("map-summary").textContent = item.summary;
+        document.getElementById("map-details").innerHTML = item.details
+          .map((detail) => `<li>${detail}</li>`)
+          .join("");
+        setActive(document.querySelectorAll("[data-map-key]"), activeNode);
+      };
+
+      const renderFlow = (key, activeNode) => {
+        const stages = flowData[key] || flowData.inventory;
+        document.getElementById("flow-stages").innerHTML = stages
+          .map(
+            ([title, body], index) => `
+              <div class="flow-stage">
+                <span>0${index + 1}</span>
+                <strong>${title}</strong>
+                <p>${body}</p>
+              </div>
+            `,
+          )
+          .join("");
+        if (activeNode)
+          setActive(document.querySelectorAll("[data-flow-key]"), activeNode);
+      };
+
+      const renderDb = (key, activeNode) => {
+        const item = dbData[key] || dbData.identity;
+        document.getElementById("db-title").textContent = item.title;
+        document.getElementById("db-summary").textContent = item.summary;
+        document.getElementById("db-nodes").innerHTML = item.nodes
+          .map(
+            ([name, body]) =>
+              `<div class="db-node"><strong><code>${name}</code></strong><span>${body}</span></div>`,
+          )
+          .join("");
+        document.getElementById("relation-canvas").innerHTML = item.relations
+          .map(
+            ([from, to]) =>
+              `<div class="relation-node" data-relation-text="${from} ${to}"><span>${from}</span><p>${to}</p></div>`,
+          )
+          .join("");
+        if (activeNode)
+          setActive(document.querySelectorAll("[data-db-key]"), activeNode);
+      };
+
+      document.querySelectorAll("[data-map-key]").forEach((node) => {
+        node.addEventListener("click", () =>
+          renderMap(node.dataset.mapKey, node),
+        );
+      });
+
+      document.querySelectorAll("[data-flow-key]").forEach((node) => {
+        node.addEventListener("click", () =>
+          renderFlow(node.dataset.flowKey, node),
+        );
+      });
+
+      document.querySelectorAll("[data-db-key]").forEach((node) => {
+        node.addEventListener("click", () =>
+          renderDb(node.dataset.dbKey, node),
+        );
+      });
+
+      document
+        .getElementById("db-search")
+        .addEventListener("input", (event) => {
+          const query = event.target.value.trim().toLowerCase();
+          document
+            .querySelectorAll(".relation-node, #db-nodes .db-node")
+            .forEach((node) => {
+              const text = node.textContent.toLowerCase();
+              node.hidden = query.length > 0 && !text.includes(query);
+            });
+        });
+
+      document.getElementById("db-clear").addEventListener("click", () => {
+        document.getElementById("db-search").value = "";
+        document
+          .querySelectorAll(".relation-node, #db-nodes .db-node")
+          .forEach((node) => {
+            node.hidden = false;
+          });
+      });
+
+      renderFlow("inventory");
+      renderDb("identity");
+    </script>
+  </body>
+</html>

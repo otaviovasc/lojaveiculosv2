@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   VehicleWorkflowStateError,
   VehicleWorkflowValidationError,
-} from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
+} from "../../../domains/vehicle/workflows/vehicleSaleWorkflowRules.js";
 import {
   createInventoryTestApp,
   createInventoryTestServices,

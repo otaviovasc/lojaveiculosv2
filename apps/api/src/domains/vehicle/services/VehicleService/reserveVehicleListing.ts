@@ -1,25 +1,18 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
-import { createReservationFinanceEntry } from "../../finance/vehicleFinanceEntries.js";
-import { buildReservationReceiptDocument } from "../../documents/vehicleWorkflowDocuments.js";
-import { storeWorkflowDocument } from "../../documents/storeWorkflowDocument.js";
 import type { VehicleBuyerSnapshot } from "../../ports/vehicleSalesRepository.js";
-import type {
-  VehicleListing,
-  VehicleUnit,
-} from "../../ports/vehicleInventoryRepository.js";
+import { completeReservationWorkflow } from "../../workflows/vehicleSaleWorkflow.js";
+import {
+  assertReservableVehicleState,
+  VehicleWorkflowValidationError,
+} from "../../workflows/vehicleSaleWorkflowRules.js";
 import {
   actorUserId,
   auditVehicleServiceEvent,
   findScopedListing,
   findScopedUnit,
-  getDocumentRepository,
-  getDocumentTemplateRepository,
-  getFinanceRepository,
   getListingRepository,
-  getMediaStorage,
-  getOperationsRepository,
   getSalesRepository,
   getUnitRepository,
   logVehicleServiceEvent,
@@ -58,7 +51,7 @@ export async function reserveVehicleListing(
     input.listingId,
   );
   const unit = await findScopedUnit(context, unitRepository, input);
-  assertReservationState(listing, unit);
+  assertReservableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents)
     throw new VehicleWorkflowValidationError("salePriceCents");
@@ -77,67 +70,17 @@ export async function reserveVehicleListing(
     status: "pending",
     unit,
   });
-  const financeEntry = await createReservationFinanceEntry({
-    financeRepository: getFinanceRepository(ports),
+  const workflow = await completeReservationWorkflow(context, {
+    buyer: input.buyer,
     listing,
     paymentMethod: input.paymentMethod,
+    ports,
+    reason: input.reason,
     sale,
-    sellerUserId: actorUserId(context),
     signalAmountCents: input.signalAmountCents,
     unit,
   });
-  const reservedListing = {
-    ...listing,
-    status: "reserved",
-    updatedAt: new Date(),
-  } as const;
-
-  const document = buildReservationReceiptDocument({
-    buyer: input.buyer,
-    listing: reservedListing,
-    paymentMethod: input.paymentMethod,
-    sale,
-    signalAmountCents: input.signalAmountCents,
-    template: await getWorkflowTemplate(context, ports, "reservation_receipt"),
-    unit,
-  });
-  const storedDocument = await storeWorkflowDocument(
-    {
-      ...document,
-      createdByUserId: actorUserId(context),
-    },
-    getMediaStorage(ports),
-  );
-  const createdDocument =
-    await getDocumentRepository(ports).create(storedDocument);
-  const updatedListing = await listingRepository.save(reservedListing);
-  await unitRepository.save({
-    ...unit,
-    status: "reserved",
-    updatedAt: new Date(),
-  });
-  await getOperationsRepository(ports).createStatusHistory({
-    actorUserId: actorUserId(context),
-    fromStatus: listing.status,
-    listingId: listing.id,
-    reason: input.reason ?? "Reservation workflow",
-    storeId: context.storeId,
-    target: "listing",
-    tenantId: context.tenantId,
-    toStatus: "reserved",
-    unitId: null,
-  });
-  await getOperationsRepository(ports).createStatusHistory({
-    actorUserId: actorUserId(context),
-    fromStatus: unit.status,
-    listingId: listing.id,
-    reason: input.reason ?? "Reservation workflow",
-    storeId: context.storeId,
-    target: "unit",
-    tenantId: context.tenantId,
-    toStatus: "reserved",
-    unitId: unit.id,
-  });
+  const [createdDocument] = workflow.documents;
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.reserve",
@@ -147,59 +90,18 @@ export async function reserveVehicleListing(
     metadata: {
       saleId: sale.sale.id,
       salePaymentId: sale.payment?.id ?? null,
-      documentId: createdDocument.id,
-      documentStorageKey: createdDocument.storageKey,
-      financeEntryId: financeEntry.entry.id,
+      documentId: createdDocument?.id ?? null,
+      documentStorageKey: createdDocument?.storageKey ?? null,
+      financeEntryId: workflow.financeEntry.entry.id,
       signalAmountCents: input.signalAmountCents,
     },
     permission,
     relatedEntities: [
       { id: sale.sale.id, type: "vehicle_sale" },
-      { id: financeEntry.entry.id, type: "finance_entry" },
+      { id: workflow.financeEntry.entry.id, type: "finance_entry" },
     ],
     summary: "Reserved vehicle listing and emitted signal receipt",
   });
 
-  return updatedListing;
-}
-
-function assertReservationState(listing: VehicleListing, unit: VehicleUnit) {
-  if (listing.status !== "available") {
-    throw new VehicleWorkflowStateError(
-      `Vehicle listing must be available to reserve; current status is ${listing.status}.`,
-    );
-  }
-  if (unit.status !== "available") {
-    throw new VehicleWorkflowStateError(
-      `Vehicle unit must be available to reserve; current status is ${unit.status}.`,
-    );
-  }
-}
-
-async function getWorkflowTemplate(
-  context: ServiceContext,
-  ports: VehicleInventoryServicePorts | undefined,
-  kind: "reservation_receipt",
-) {
-  const repository = getDocumentTemplateRepository(ports);
-  if (!repository || !context.storeId || !context.tenantId) return null;
-  return repository.findTemplate({
-    kind,
-    storeId: context.storeId,
-    tenantId: context.tenantId,
-  });
-}
-
-export class VehicleWorkflowValidationError extends Error {
-  constructor(fieldName: string) {
-    super(`Vehicle workflow requires ${fieldName}`);
-    this.name = "VehicleWorkflowValidationError";
-  }
-}
-
-export class VehicleWorkflowStateError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "VehicleWorkflowStateError";
-  }
+  return workflow.updatedListing;
 }

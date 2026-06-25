@@ -1,9 +1,12 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { DrizzleSalesClient } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
 import { createDrizzleSalesRepository } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
+import {
+  createDrizzleVehicleInventoryRepositories,
+  type DrizzleVehicleInventoryClient,
+} from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import { createSaleDraft } from "../../../domains/sales/services/SalesService/createSaleDraft.js";
 import { listSales } from "../../../domains/sales/services/SalesService/listSales.js";
-import { transitionSale } from "../../../domains/sales/services/SalesService/transitionSale.js";
 import { updateSaleDraft } from "../../../domains/sales/services/SalesService/updateSaleDraft.js";
 import type {
   ListSalesInput,
@@ -11,12 +14,18 @@ import type {
   SaveSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
 import type { SalesServicePorts } from "../../../domains/sales/services/SalesService/serviceSupport.js";
+import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   createClientTransactionRunner,
   createPassthroughTransactionRunner,
   type TransactionRunner,
 } from "../../../shared/transaction.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
+import { createMemoryVehicleInventoryPorts } from "../../inventory/adapters/memory/vehicleInventoryPorts.js";
+import {
+  transitionSaleWithWorkflow,
+  type SalesWorkflowPorts,
+} from "./salesWorkflowTransition.js";
 
 export type SalesServices = {
   createDraft: (
@@ -47,19 +56,28 @@ export type CreateSalesServicesOptions =
   | {
       drizzleClient: DrizzleSalesClient;
       ports?: never;
-      transactionRunner?: TransactionRunner<SalesServicePorts>;
+      transactionRunner?: TransactionRunner<SalesWorkflowPorts>;
+      workflowAdapter?: SalesWorkflowAdapter;
+      workflowPorts?: never;
     }
   | {
       drizzleClient?: never;
       ports?: SalesServicePorts;
-      transactionRunner?: TransactionRunner<SalesServicePorts>;
+      transactionRunner?: TransactionRunner<SalesWorkflowPorts>;
+      workflowAdapter?: never;
+      workflowPorts?: VehicleInventoryServicePorts;
     };
+
+export type SalesWorkflowAdapter = (
+  client: DrizzleSalesClient,
+) => VehicleInventoryServicePorts;
 
 export function createSalesServices(
   options: CreateSalesServicesOptions = {},
 ): SalesServices {
-  const ports = resolvePorts(options);
-  const transactionRunner = resolveTransactionRunner(options, ports);
+  const ports = resolveSalesPorts(options);
+  const workflowPorts = resolveWorkflowPorts(options, ports);
+  const transactionRunner = resolveTransactionRunner(options, workflowPorts);
 
   return {
     createDraft: (context, input) =>
@@ -69,7 +87,7 @@ export function createSalesServices(
     list: (context, input) => listSales(context, input, ports),
     transition: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
-        transitionSale(context, input, txPorts),
+        transitionSaleWithWorkflow(context, input, txPorts),
       ),
     updateDraft: (context, saleId, input) =>
       transactionRunner.runInTransaction((txPorts) =>
@@ -78,7 +96,9 @@ export function createSalesServices(
   };
 }
 
-function resolvePorts(options: CreateSalesServicesOptions): SalesServicePorts {
+function resolveSalesPorts(
+  options: CreateSalesServicesOptions,
+): SalesServicePorts {
   if ("ports" in options && options.ports) return options.ports;
   if ("drizzleClient" in options) {
     return {
@@ -88,20 +108,56 @@ function resolvePorts(options: CreateSalesServicesOptions): SalesServicePorts {
   return { salesRepository: createMemorySalesRepository() };
 }
 
+function resolveWorkflowPorts(
+  options: CreateSalesServicesOptions,
+  salesPorts: SalesServicePorts,
+): SalesWorkflowPorts {
+  if ("workflowPorts" in options && options.workflowPorts) {
+    return { ...salesPorts, vehiclePorts: options.workflowPorts };
+  }
+  if ("drizzleClient" in options) {
+    return createDrizzleWorkflowPorts(options, options.drizzleClient);
+  }
+  return {
+    ...salesPorts,
+    vehiclePorts: createMemoryVehicleInventoryPorts(),
+  };
+}
+
 function resolveTransactionRunner(
   options: CreateSalesServicesOptions,
-  ports: SalesServicePorts,
-): TransactionRunner<SalesServicePorts> {
+  ports: SalesWorkflowPorts,
+): TransactionRunner<SalesWorkflowPorts> {
   if (options.transactionRunner) return options.transactionRunner;
   if ("drizzleClient" in options) {
-    return createClientTransactionRunner<SalesServicePorts, DrizzleSalesClient>(
-      options.drizzleClient,
-      (client) => ({
-        salesRepository: createDrizzleSalesRepository(client),
-      }),
+    return createClientTransactionRunner<
+      SalesWorkflowPorts,
+      DrizzleSalesClient
+    >(options.drizzleClient, (client) =>
+      createDrizzleWorkflowPorts(options, client),
     );
   }
   return createPassthroughTransactionRunner(ports);
 }
+
+function createDrizzleWorkflowPorts(
+  options: CreateSalesServicesOptions,
+  client: DrizzleSalesClient,
+): SalesWorkflowPorts {
+  const workflowAdapter =
+    "drizzleClient" in options
+      ? (options.workflowAdapter ?? createDefaultWorkflowAdapter)
+      : createDefaultWorkflowAdapter;
+
+  return {
+    salesRepository: createDrizzleSalesRepository(client),
+    vehiclePorts: workflowAdapter(client),
+  };
+}
+
+const createDefaultWorkflowAdapter: SalesWorkflowAdapter = (client) =>
+  createDrizzleVehicleInventoryRepositories(
+    client as unknown as DrizzleVehicleInventoryClient,
+  );
 
 export const salesServices = createSalesServices();

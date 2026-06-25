@@ -1,7 +1,14 @@
 import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
+import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
+import {
+  createInMemoryVehiclePorts,
+  createListing,
+} from "../../../domains/vehicle/services/VehicleService/testSupport.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
+import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import { createSalesFeature } from "./sales.controller.js";
+import { createSalesServices } from "./salesServices.js";
 
 const storeId = "store-1";
 const tenantId = "tenant-1";
@@ -43,6 +50,8 @@ describe("sales controller", () => {
     );
     expect(reserveResponse.status).toBe(409);
     const payload = await readJson<TestReadinessError>(reserveResponse);
+    expect(payload.missingFields).toContain("listing");
+    expect(payload.missingFields).toContain("buyer");
     expect(payload.missingFields).toContain("lead");
     expect(payload.missingFields).toContain("seller");
     expect(payload.missingFields).toContain("payment_principal_coverage");
@@ -51,10 +60,12 @@ describe("sales controller", () => {
   it("reserves complete sale drafts", async () => {
     const app = createTestApp();
     const createResponse = await requestJson(app, "/sales/drafts", {
+      buyerSnapshot: { name: "Maria" },
       documentPolicySnapshot: {
         requiredDocumentKinds: ["sale_contract"],
       },
       leadId: "lead-1",
+      listingId: "listing_1",
       payments: [
         {
           amountCents: 5000000,
@@ -65,7 +76,7 @@ describe("sales controller", () => {
       salePriceCents: 5000000,
       selectedDocumentKinds: ["sale_contract"],
       sellerUserId: "seller-1",
-      unitId: "unit-1",
+      unitId: "unit_1",
     });
     const created = await readJson<TestSale>(createResponse);
 
@@ -82,6 +93,23 @@ describe("sales controller", () => {
 
 function createTestApp() {
   const app = new Hono();
+  const vehiclePorts = createInMemoryVehiclePorts([
+    createListing({
+      priceCents: 5000000,
+      status: "available",
+      storeId,
+      tenantId,
+      unitIds: ["unit_1"],
+    }),
+  ]);
+  vehiclePorts.units.set(
+    "unit_1",
+    createUnit({ listingId: "listing_1", status: "available" }),
+  );
+  const services = createSalesServices({
+    ports: { salesRepository: createMemorySalesRepository() },
+    workflowPorts: vehiclePorts,
+  });
   app.route(
     "/sales",
     createSalesFeature({
@@ -99,6 +127,7 @@ function createTestApp() {
           storeId,
           tenantId,
         }),
+      services,
     }),
   );
   return app;
@@ -129,3 +158,21 @@ type TestSaleList = {
 type TestReadinessError = {
   missingFields: string[];
 };
+
+function createUnit(input: Partial<VehicleUnit> = {}): VehicleUnit {
+  const now = new Date("2026-01-01T00:00:00.000Z");
+  return {
+    colorName: null,
+    createdAt: now,
+    id: "unit_1",
+    listingId: "listing_1",
+    plate: "ABC1D23",
+    status: "available",
+    stockNumber: null,
+    storeId,
+    tenantId,
+    updatedAt: now,
+    vin: null,
+    ...input,
+  };
+}

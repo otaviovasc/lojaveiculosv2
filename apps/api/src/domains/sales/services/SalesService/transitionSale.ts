@@ -1,6 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { SaleStatus } from "../../ports/salesRepository.js";
+import type { SaleRecord, SaleStatus } from "../../ports/salesRepository.js";
 import {
   auditSalesServiceEvent,
   collectMissingSaleFields,
@@ -19,10 +19,15 @@ export type TransitionSaleServiceInput = {
   status: Exclude<SaleStatus, "draft">;
 };
 
+export type TransitionSaleServiceHooks = {
+  afterTransition?: (sale: SaleRecord) => Promise<void>;
+};
+
 export async function transitionSale(
   context: ServiceContext,
   input: TransitionSaleServiceInput,
   ports?: SalesServicePorts,
+  hooks: TransitionSaleServiceHooks = {},
 ) {
   const permission = permissionForStatus(input.status);
   assertPermission(context, permission);
@@ -53,6 +58,10 @@ export async function transitionSale(
     saleId: input.saleId,
     status: input.status,
   });
+
+  if (hooks.afterTransition) {
+    await hooks.afterTransition(sale);
+  }
 
   await auditSalesServiceEvent(context, {
     action: `sale.${input.status}`,

@@ -38,6 +38,10 @@ import {
   createDrizzleAuditSink,
   type DrizzleAuditSinkClient,
 } from "./audit/drizzleAuditSink.js";
+import {
+  createDrizzleDocumentRepository,
+  type DrizzleDocumentClient,
+} from "./documents/drizzleDocumentRepository.js";
 import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
 import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
@@ -53,6 +57,10 @@ import {
   type DrizzleBillingClient,
 } from "./billing/drizzleBillingRepository.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
+import {
+  createDrizzleVehicleInventoryRepositories,
+  type DrizzleVehicleInventoryClient,
+} from "./vehicleInventory/drizzleVehicleInventoryRepository.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
 import { createRuntimeAnalyticsServices } from "../analytics/runtimeAnalyticsServices.js";
 import { createRuntimeComplianceServices } from "../compliance/runtimeComplianceServices.js";
@@ -138,7 +146,7 @@ export function createRuntimeAppOptions(
       db as unknown as DrizzleCrmClient,
     ),
     roleServices: createRuntimeRoleServices(db),
-    salesServices: createRuntimeSalesServices(db),
+    salesServices: createRuntimeSalesServices(db, env),
     settingsServices: createRuntimeSettingsServices(db),
     storeAccessRepository: createDrizzleStoreAccessRepository(
       db as unknown as DrizzleStoreAccessClient,
@@ -184,9 +192,23 @@ function createRuntimeRoleServices(db: unknown): RoleServices {
   );
 }
 
-function createRuntimeSalesServices(db: unknown): SalesServices {
+function createRuntimeSalesServices(
+  db: unknown,
+  env: Record<string, string | undefined>,
+): SalesServices {
+  const mediaStorage = createR2ObjectStorageFromEnv(env);
+
   return createSalesServices({
     drizzleClient: db as DrizzleSalesClient,
+    workflowAdapter: (client) => ({
+      ...createDrizzleVehicleInventoryRepositories(
+        client as unknown as DrizzleVehicleInventoryClient,
+      ),
+      documentTemplateRepository: createDrizzleDocumentRepository(
+        client as unknown as DrizzleDocumentClient,
+      ),
+      ...(mediaStorage ? { mediaStorage } : {}),
+    }),
   });
 }
 

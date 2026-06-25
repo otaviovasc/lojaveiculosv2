@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import type { SalesServicePorts } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import type { TransactionRunner } from "../../../shared/transaction.js";
+import { createMemoryVehicleInventoryPorts } from "../../inventory/adapters/memory/vehicleInventoryPorts.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import { createSalesServices } from "./salesServices.js";
+import type { SalesWorkflowPorts } from "./salesWorkflowTransition.js";
 
 describe("sales transaction composition", () => {
   const cases: readonly [
@@ -27,7 +28,7 @@ describe("sales transaction composition", () => {
 
   it.each(cases)("%s runs inside the transaction runner", async (_, call) => {
     const error = new Error("transaction required");
-    const runner: TransactionRunner<SalesServicePorts> = {
+    const runner: TransactionRunner<SalesWorkflowPorts> = {
       runInTransaction: vi.fn(async () => {
         throw error;
       }),
@@ -35,6 +36,7 @@ describe("sales transaction composition", () => {
     const services = createSalesServices({
       ports: { salesRepository: createMemorySalesRepository() },
       transactionRunner: runner,
+      workflowPorts: createMemoryVehicleInventoryPorts(),
     });
 
     await expect(call(services)).rejects.toThrow(error);

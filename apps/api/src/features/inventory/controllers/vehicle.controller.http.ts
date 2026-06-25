@@ -12,7 +12,7 @@ import { VehicleCostMissingUnitError } from "../../../domains/vehicle/services/V
 import {
   VehicleWorkflowStateError,
   VehicleWorkflowValidationError,
-} from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
+} from "../../../domains/vehicle/workflows/vehicleSaleWorkflowRules.js";
 import {
   VehicleListingNotFoundError,
   VehicleMediaNotFoundError,
