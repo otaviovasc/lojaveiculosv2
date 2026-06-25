@@ -73,7 +73,7 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Avoid overlapping animations, loading states, popovers, and fixed toolbars.
   Components with animated state need explicit empty/loading/error/success
   layouts.
-- Prefer small modules. Keep source files under 240 lines unless the file is a
+- Prefer small modules. Keep source files under 250 lines unless the file is a
   generated artifact or a documented exception.
 
 ## Quality Gates

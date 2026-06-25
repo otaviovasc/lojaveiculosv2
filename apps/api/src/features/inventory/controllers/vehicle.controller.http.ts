@@ -8,6 +8,7 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { VehicleMediaStorageScopeError } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import { VehicleDocumentStorageScopeError } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
+import { VehicleCostMissingUnitError } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
 import {
   VehicleListingNotFoundError,
   VehicleMediaNotFoundError,
@@ -47,7 +48,10 @@ export async function handle(
       return context.json({ message: error.message }, 400);
     }
 
-    if (error instanceof VehicleWorkflowStatusError) {
+    if (
+      error instanceof VehicleCostMissingUnitError ||
+      error instanceof VehicleWorkflowStatusError
+    ) {
       return context.json({ message: error.message }, 400);
     }
 

@@ -49,6 +49,7 @@ describe("document unit folder options", () => {
 
 function summary(): InventoryListingSummary {
   const unit = {
+    colorName: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     id: "unit_1",
     listingId: "listing_1",
@@ -66,8 +67,13 @@ function summary(): InventoryListingSummary {
       catalog: null,
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
+      doors: null,
+      engineDisplacement: null,
+      fuelType: null,
       id: "listing_1",
+      internalNotes: null,
       manufactureYear: null,
+      mileageKm: null,
       modelYear: null,
       plate: null,
       priceCents: null,
@@ -75,6 +81,7 @@ function summary(): InventoryListingSummary {
       storeId: "store_1",
       tenantId: "tenant_1",
       title: "Fiat Toro Volcano",
+      transmission: null,
       trimName: null,
       unitIds: ["unit_1"],
       updatedAt: "2026-01-01T00:00:00.000Z",

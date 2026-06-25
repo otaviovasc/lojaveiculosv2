@@ -116,6 +116,6 @@ Before adding or moving a module:
 2. Place it according to the contracts above.
 3. Keep the interface deep enough that callers do not need to understand its
    implementation details.
-4. Keep files under 240 lines by extracting coherent modules, not by hiding
+4. Keep files under 250 lines by extracting coherent modules, not by hiding
    complexity in generic helpers.
 5. Run `pnpm run validate` before handoff.

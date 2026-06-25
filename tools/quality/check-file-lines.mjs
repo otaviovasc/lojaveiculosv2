@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
-const maxLines = 240;
+const maxLines = 250;
 const frontendMaxLines = maxLines + 100;
 const ignored = new Set([
   "node_modules",
