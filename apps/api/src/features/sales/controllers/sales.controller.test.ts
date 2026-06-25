@@ -96,7 +96,7 @@ function createTestApp() {
   const vehiclePorts = createInMemoryVehiclePorts([
     createListing({
       priceCents: 5000000,
-      status: "available",
+      status: "published",
       storeId,
       tenantId,
       unitIds: ["unit_1"],

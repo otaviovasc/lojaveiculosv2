@@ -46,7 +46,7 @@ describe("inventory listing transaction composition", () => {
       (services) =>
         services.changeListingStatus(context(), {
           listingId: "listing_1",
-          status: "inactive",
+          status: "unpublished",
         }),
     ],
     [
@@ -126,7 +126,7 @@ describe("inventory listing transaction composition", () => {
     };
     const services = createInventoryListingServices({
       ports: createInMemoryVehiclePorts([
-        createListing({ status: "available", unitIds: ["unit_1"] }),
+        createListing({ status: "published", unitIds: ["unit_1"] }),
       ]),
       transactionRunner: runner,
     });

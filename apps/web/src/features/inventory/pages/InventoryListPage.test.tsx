@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 describe("InventoryListPage", () => {
-  it("applies a status filter when a summary card is clicked", async () => {
+  it("applies listing status filters from the toolbar", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(new Response("{}", { status: 200 })),
@@ -40,29 +40,28 @@ describe("InventoryListPage", () => {
     );
 
     await user.click(
-      screen.getByRole("button", {
-        name: "Filtrar estoque por Disponíveis",
-      }),
+      screen.getByRole("button", { name: "Filtrar por status" }),
     );
+    await user.click(await screen.findByRole("option", { name: "Publicado" }));
 
     await waitFor(() =>
       expect(api.listListings).toHaveBeenLastCalledWith({
         limit: 100,
-        status: "available",
+        status: "published",
       }),
     );
     const statusFilter = screen.getByRole("button", {
       name: "Filtrar por status",
     });
-    expect(within(statusFilter).getByText("Disponivel")).toBeVisible();
+    expect(within(statusFilter).getByText("Publicado")).toBeVisible();
   });
 });
 
 function createInventoryApiStub() {
   const items = [
-    summary("listing_available", "available"),
-    summary("listing_reserved", "reserved"),
-    summary("listing_sold", "sold"),
+    summary("listing_available", "published", "available"),
+    summary("listing_reserved", "published", "reserved"),
+    summary("listing_sold", "sold_out", "sold"),
   ];
 
   const listListings = vi.fn(async (input?: ListInventoryInput) => {
@@ -87,6 +86,7 @@ function createInventoryApiStub() {
 function summary(
   id: string,
   status: InventoryListingSummary["listing"]["status"],
+  unitStatus: InventoryListingSummary["units"][number]["status"],
 ): InventoryListingSummary {
   return {
     listing: {
@@ -107,7 +107,7 @@ function summary(
       status,
       storeId: "store_1",
       tenantId: "tenant_1",
-      title: `Veiculo ${status}`,
+      title: `Veiculo ${unitStatus}`,
       transmission: null,
       trimName: null,
       unitIds: ["unit_1"],
@@ -121,7 +121,7 @@ function summary(
       id: "unit_1",
       listingId: id,
       plate: "ABC1D23",
-      status: "available",
+      status: unitStatus,
       stockNumber: "STK-1",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -135,7 +135,7 @@ function summary(
         id: "unit_1",
         listingId: id,
         plate: "ABC1D23",
-        status: "available",
+        status: unitStatus,
         stockNumber: "STK-1",
         storeId: "store_1",
         tenantId: "tenant_1",

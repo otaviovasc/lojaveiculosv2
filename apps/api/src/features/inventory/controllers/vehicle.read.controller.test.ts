@@ -24,7 +24,7 @@ describe("inventory read routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings?search=toro&status=available&limit=20&offset=40",
+      "/api/v1/inventory/listings?search=toro&status=published&limit=20&offset=40",
     );
     const body = (await response.json()) as ListingListBody;
 
@@ -38,7 +38,7 @@ describe("inventory read routes", () => {
       limit: 20,
       offset: 40,
       search: "toro",
-      status: "available",
+      status: "published",
     });
   });
 

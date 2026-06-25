@@ -88,38 +88,45 @@ describe("production smoke contracts", () => {
     });
   });
 
-  it("keeps inventory reserve and sell routes wired before production rollout", async () => {
+  it("keeps inventory unit reserve, sell, and release routes wired before production rollout", async () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);
 
     const reserveResponse = await app.request(
-      "/api/v1/inventory/listings/listing_1/reserve",
+      "/api/v1/inventory/units/unit_1/reserve",
       {
         body: JSON.stringify({
           buyer: { name: "Buyer" },
           paymentMethod: "pix",
           signalAmountCents: 100000,
-          unitId: "unit_1",
         }),
         method: "POST",
       },
     );
     const sellResponse = await app.request(
-      "/api/v1/inventory/listings/listing_1/sell",
+      "/api/v1/inventory/units/unit_1/sell",
       {
         body: JSON.stringify({
           buyer: { name: "Buyer" },
           paymentMethod: "pix",
-          unitId: "unit_1",
         }),
+        method: "POST",
+      },
+    );
+    const releaseResponse = await app.request(
+      "/api/v1/inventory/units/unit_1/reservation/release",
+      {
+        body: JSON.stringify({ reason: "Cliente desistiu" }),
         method: "POST",
       },
     );
 
     expect(reserveResponse.status).toBe(201);
     expect(sellResponse.status).toBe(201);
+    expect(releaseResponse.status).toBe(200);
     expect(services.reserveListing).toHaveBeenCalledOnce();
     expect(services.sellListing).toHaveBeenCalledOnce();
+    expect(services.releaseReservation).toHaveBeenCalledOnce();
   });
 
   it("keeps public storefront lead capture connected to CRM and audit", async () => {

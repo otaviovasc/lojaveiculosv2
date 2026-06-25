@@ -1,4 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { salePayments, sales } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -21,6 +22,43 @@ export function createDrizzleVehicleSalesRepository(
   db: DrizzleVehicleSalesClient,
 ): VehicleSalesRepository {
   return {
+    async cancelPending(input) {
+      const [saleRow] = await db
+        .update(sales)
+        .set({
+          closedAt: null,
+          overrideReason: input.reason,
+          status: "cancelled",
+        })
+        .where(
+          and(
+            eq(sales.id, input.saleId),
+            eq(sales.storeId, input.storeId ?? ""),
+            eq(sales.tenantId, input.tenantId ?? ""),
+            eq(sales.status, "pending"),
+          ),
+        )
+        .returning();
+      if (!saleRow) throw new Error(`Pending sale not found: ${input.saleId}`);
+
+      const paymentRows = await db
+        .update(salePayments)
+        .set({ status: "cancelled" })
+        .where(
+          and(
+            eq(salePayments.saleId, input.saleId),
+            eq(salePayments.storeId, input.storeId ?? ""),
+            eq(salePayments.tenantId, input.tenantId ?? ""),
+            eq(salePayments.status, "pending"),
+          ),
+        )
+        .returning();
+
+      return {
+        payment: paymentRows[0] ? toPayment(paymentRows[0]) : null,
+        sale: toSale(saleRow),
+      };
+    },
     async create(input) {
       const [saleRow] = await db
         .insert(sales)
@@ -36,6 +74,34 @@ export function createDrizzleVehicleSalesRepository(
         throw new Error("Drizzle adapter did not return payment.");
 
       return { payment: toPayment(paymentRow), sale: toSale(saleRow) };
+    },
+    async findPendingByUnit(input) {
+      const [saleRow] = await db
+        .select()
+        .from(sales)
+        .where(
+          and(
+            eq(sales.unitId, input.unitId),
+            eq(sales.storeId, input.storeId ?? ""),
+            eq(sales.tenantId, input.tenantId ?? ""),
+            eq(sales.status, "pending"),
+          ),
+        );
+      if (!saleRow) return null;
+      const [paymentRow] = await db
+        .select()
+        .from(salePayments)
+        .where(
+          and(
+            eq(salePayments.saleId, saleRow.id),
+            eq(salePayments.storeId, input.storeId ?? ""),
+            eq(salePayments.tenantId, input.tenantId ?? ""),
+          ),
+        );
+      return {
+        payment: paymentRow ? toPayment(paymentRow) : null,
+        sale: toSale(saleRow),
+      };
     },
   };
 }

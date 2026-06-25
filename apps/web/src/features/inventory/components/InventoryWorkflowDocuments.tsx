@@ -21,7 +21,7 @@ export function InventoryWorkflowPrintActions({
   status,
   onPrint,
 }: {
-  status: InventoryListingDetail["listing"]["status"];
+  status: InventoryListingDetail["units"][number]["status"] | null;
   onPrint: (kind: WorkflowPrintKind) => void;
 }) {
   if (status !== "reserved" && status !== "sold") return null;

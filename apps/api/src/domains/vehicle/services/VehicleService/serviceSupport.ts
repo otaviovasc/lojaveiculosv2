@@ -169,6 +169,22 @@ export async function findScopedUnit(
   return unit;
 }
 
+export async function findScopedUnitById(
+  context: ServiceContext,
+  repository: VehicleUnitRepository,
+  unitId: string,
+): Promise<VehicleUnit> {
+  const unit = await repository.findById({
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+    unitId,
+  });
+
+  if (!unit) throw new VehicleUnitNotFoundError(unitId);
+
+  return unit;
+}
+
 export async function findScopedMedia(
   context: ServiceContext,
   repository: VehicleMediaRepository,

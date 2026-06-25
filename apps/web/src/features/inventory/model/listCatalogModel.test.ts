@@ -19,20 +19,20 @@ describe("inventory list catalog model", () => {
       offset: 200,
       search: "toro",
     });
-    expect(createListQuery({ search: "", status: "available" })).toEqual({
+    expect(createListQuery({ search: "", status: "published" })).toEqual({
       limit: 100,
-      status: "available",
+      status: "published",
     });
   });
 
-  it("summarizes loaded inventory by workflow status", () => {
+  it("summarizes loaded inventory by unit workflow status", () => {
     const result: InventoryListingList = {
       hasMore: false,
       items: [
         summary("listing_1", "available"),
         summary("listing_2", "reserved"),
         summary("listing_3", "sold"),
-        summary("listing_4", "draft"),
+        summary("listing_4", "inactive"),
       ],
       nextOffset: null,
       total: 4,
@@ -64,8 +64,15 @@ describe("inventory list catalog model", () => {
 
 function summary(
   id: string,
-  status: InventoryListingSummary["listing"]["status"],
+  unitStatus: InventoryListingSummary["units"][number]["status"],
 ): InventoryListingSummary {
+  const listingStatus =
+    unitStatus === "sold"
+      ? "sold_out"
+      : id.endsWith("_4")
+        ? "draft"
+        : "published";
+
   return {
     listing: {
       catalog: {
@@ -96,7 +103,7 @@ function summary(
       modelYear: 2025,
       plate: null,
       priceCents: 12345678,
-      status,
+      status: listingStatus,
       storeId: "store_1",
       tenantId: "tenant_1",
       title: "Toyota Corolla XEI",
@@ -113,7 +120,7 @@ function summary(
       id: "unit_1",
       listingId: id,
       plate: "ABC1D23",
-      status: "available",
+      status: unitStatus,
       stockNumber: "STK-1",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -127,7 +134,7 @@ function summary(
         id: "unit_1",
         listingId: id,
         plate: "ABC1D23",
-        status: "available",
+        status: unitStatus,
         stockNumber: "STK-1",
         storeId: "store_1",
         tenantId: "tenant_1",

@@ -24,7 +24,7 @@ describe("VehicleService edits", () => {
         description: "Updated",
         listingId: "listing_1",
         priceCents: 10000000,
-        status: "available",
+        status: "published",
         title: "Updated Vehicle",
       },
       ports,
@@ -33,7 +33,7 @@ describe("VehicleService edits", () => {
     expect(listing).toMatchObject({
       description: "Updated",
       priceCents: 10000000,
-      status: "available",
+      status: "published",
       title: "Updated Vehicle",
     });
     const event = lastAuditEvent(context.audit.record);
@@ -61,7 +61,7 @@ describe("VehicleService edits", () => {
       path: "priceCents",
     });
     expect(event.changes).toContainEqual({
-      after: "available",
+      after: "published",
       before: "draft",
       path: "status",
     });
@@ -89,7 +89,7 @@ describe("VehicleService edits", () => {
       expect.objectContaining({
         fromStatus: "draft",
         target: "listing",
-        toStatus: "available",
+        toStatus: "published",
       }),
     ]);
   });
@@ -166,7 +166,7 @@ describe("VehicleService edits", () => {
       {
         listingId: "listing_1",
         plate: "DEF4G56",
-        status: "retired",
+        status: "inactive",
         stockNumber: "stock_2",
         unitId: unit.id,
         vin: "vin_2",
@@ -176,7 +176,7 @@ describe("VehicleService edits", () => {
 
     expect(updated).toMatchObject({
       plate: "DEF4G56",
-      status: "retired",
+      status: "inactive",
       stockNumber: "stock_2",
       vin: "vin_2",
     });
@@ -206,7 +206,7 @@ describe("VehicleService edits", () => {
       path: "unit.vin",
     });
     expect(event.changes).toContainEqual({
-      after: "retired",
+      after: "inactive",
       before: "available",
       path: "unit.status",
     });

@@ -19,7 +19,6 @@ export const vehicleListingStatus = pgEnum("vehicle_listing_status", [
   "draft",
   "in_preparation",
   "published",
-  "reserved",
   "sold_out",
   "unpublished",
   "archived",

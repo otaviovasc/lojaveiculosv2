@@ -33,12 +33,12 @@ describe("sales workflow transition", () => {
 
     expect(sale.id).toBe(draft.id);
     expect(sale.status).toBe("pending");
-    expect(vehiclePorts.listings.get("listing_1")?.status).toBe("reserved");
+    expect(vehiclePorts.listings.get("listing_1")?.status).toBe("published");
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("reserved");
     expect(vehiclePorts.documents.size).toBe(1);
     expect(vehiclePorts.financeRepository.entries).toHaveLength(1);
     expect(vehiclePorts.financeRepository.entries[0]?.amountCents).toBe(100000);
-    expect(vehiclePorts.operationsRepository.statuses).toHaveLength(2);
+    expect(vehiclePorts.operationsRepository.statuses).toHaveLength(1);
     expect(vehiclePorts.salesRepository.sales).toHaveLength(0);
     expectFinanceLinkedToSale(vehiclePorts, draft.id);
   });
@@ -63,7 +63,7 @@ describe("sales workflow transition", () => {
 
     expect(sale.id).toBe(draft.id);
     expect(sale.status).toBe("closed");
-    expect(vehiclePorts.listings.get("listing_1")?.status).toBe("sold");
+    expect(vehiclePorts.listings.get("listing_1")?.status).toBe("sold_out");
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
     expect(vehiclePorts.documents.size).toBe(4);
     expect(vehiclePorts.financeRepository.entries).toHaveLength(1);
@@ -75,6 +75,40 @@ describe("sales workflow transition", () => {
     expect(vehiclePorts.salesRepository.sales).toHaveLength(0);
     expectFinanceLinkedToSale(vehiclePorts, draft.id);
   });
+
+  it("cancels a pending sales reservation through the canonical release workflow", async () => {
+    const { services, vehiclePorts } = createHarness("available");
+    const draft = await services.createDraft(context(["sale.draft"]), {
+      ...completeDraft(),
+      payments: [
+        {
+          amountCents: 100000,
+          method: "pix",
+          principalCents: 5000000,
+        },
+      ],
+    });
+    await services.transition(context(["sale.reserve"]), {
+      saleId: draft.id,
+      status: "pending",
+    });
+
+    const sale = await services.transition(
+      context(["inventory.reserve", "sale.cancel"]),
+      {
+        overrideReason: "Cliente desistiu",
+        saleId: draft.id,
+        status: "cancelled",
+      },
+    );
+
+    expect(sale.status).toBe("cancelled");
+    expect(sale.payments[0]?.status).toBe("cancelled");
+    expect(vehiclePorts.listings.get("listing_1")?.status).toBe("published");
+    expect(vehiclePorts.units.get("unit_1")?.status).toBe("available");
+    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("cancelled");
+    expect(vehiclePorts.operationsRepository.statuses).toHaveLength(2);
+  });
 });
 
 function createHarness(status: "available" | "reserved"): {
@@ -84,7 +118,7 @@ function createHarness(status: "available" | "reserved"): {
   const vehiclePorts = createInMemoryVehiclePorts([
     createListing({
       priceCents: 5000000,
-      status,
+      status: "published",
       storeId,
       tenantId,
       unitIds: ["unit_1"],

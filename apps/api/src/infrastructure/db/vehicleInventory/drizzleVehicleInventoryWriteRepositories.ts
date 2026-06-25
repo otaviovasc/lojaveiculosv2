@@ -66,7 +66,6 @@ export function createDrizzleVehicleUnitRepository(
         .where(
           and(
             eq(vehicleUnits.id, input.unitId),
-            eq(vehicleUnits.listingId, input.listingId),
             eq(vehicleUnits.storeId, input.storeId ?? ""),
             eq(vehicleUnits.tenantId, input.tenantId ?? ""),
             eq(vehicleUnits.isDeleted, false),
@@ -74,7 +73,9 @@ export function createDrizzleVehicleUnitRepository(
           ),
         );
 
-      return row ? toVehicleUnit(row) : null;
+      if (!row) return null;
+      if (input.listingId && row.listingId !== input.listingId) return null;
+      return toVehicleUnit(row);
     },
     async listByListingIds(input) {
       const units = await findListingsUnits(db, input.listingIds);

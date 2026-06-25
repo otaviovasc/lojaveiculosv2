@@ -89,12 +89,12 @@ describe("VehicleService", () => {
     );
     const listing = await changeVehicleStatus(
       context,
-      { listingId: "listing_1", status: "available" },
+      { listingId: "listing_1", status: "published" },
       ports,
     );
 
     expect(unit.id).toBe("unit_1");
-    expect(listing.status).toBe("available");
+    expect(listing.status).toBe("published");
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "vehicle_listing.status.change" }),
     );

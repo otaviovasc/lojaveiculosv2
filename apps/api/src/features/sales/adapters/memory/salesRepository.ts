@@ -66,6 +66,10 @@ export function createMemorySalesRepository(): SalesRepository {
         closedAt: input.closedAt ?? null,
         overrideReason: input.overrideReason ?? null,
         overrideRequiredFields: input.overrideRequiredFields ?? false,
+        payments:
+          input.status === "cancelled"
+            ? cancelPendingPayments(current.payments)
+            : current.payments,
         status: input.status,
         updatedAt: new Date(),
       };
@@ -82,6 +86,16 @@ export function createMemorySalesRepository(): SalesRepository {
       return next;
     },
   };
+}
+
+function cancelPendingPayments(
+  payments: readonly SalePaymentLine[],
+): readonly SalePaymentLine[] {
+  return payments.map((payment) =>
+    payment.status === "pending"
+      ? { ...payment, status: "cancelled" as const }
+      : payment,
+  );
 }
 
 function mergeSaleInput(

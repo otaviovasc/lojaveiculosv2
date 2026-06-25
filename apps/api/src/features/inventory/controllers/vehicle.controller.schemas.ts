@@ -57,7 +57,15 @@ export const updateUnitSchema = z.object({
   colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
   status: z
-    .enum(["available", "reserved", "retired", "sold", "in_preparation"])
+    .enum([
+      "acquired",
+      "available",
+      "delivered",
+      "inactive",
+      "in_preparation",
+      "reserved",
+      "sold",
+    ])
     .optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
@@ -212,7 +220,7 @@ export const reserveListingSchema = z.object({
   reason: z.string().trim().min(1).nullable().optional(),
   salePriceCents: z.number().int().positive().nullable().optional(),
   signalAmountCents: z.number().int().positive(),
-  unitId: z.string().trim().min(1),
+  unitId: z.string().trim().min(1).optional(),
 });
 
 export const sellListingSchema = z.object({
@@ -221,5 +229,10 @@ export const sellListingSchema = z.object({
   paymentMethod: z.string().trim().min(1).default("pix"),
   reason: z.string().trim().min(1).nullable().optional(),
   salePriceCents: z.number().int().positive().nullable().optional(),
-  unitId: z.string().trim().min(1),
+  unitId: z.string().trim().min(1).optional(),
+});
+
+export const releaseReservationSchema = z.object({
+  reason: z.string().trim().min(1).nullable().optional(),
+  saleId: z.string().trim().min(1).nullable().optional(),
 });

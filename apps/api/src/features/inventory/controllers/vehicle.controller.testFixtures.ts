@@ -65,7 +65,7 @@ export function listingDto() {
     modelYear: null,
     plate: "ABC1D23",
     priceCents: 12000000,
-    status: "available" as const,
+    status: "published" as const,
     storeId: "store_1",
     tenantId: "tenant_1",
     title: "Fiat Toro",

@@ -9,6 +9,7 @@ import type {
   InventoryChecklist,
   InventoryListingDetail,
   InventoryListingList,
+  ReleaseInventoryReservationInput,
   ReserveInventoryListingInput,
   SellInventoryListingInput,
   UpdateInventoryChecklistInput,
@@ -57,12 +58,16 @@ export type InventoryApi = {
     listingId: string,
     unitId: string,
   ) => Promise<readonly InventoryChecklist[]>;
-  reserveListing: (
-    listingId: string,
+  releaseReservation: (
+    unitId: string,
+    input: ReleaseInventoryReservationInput,
+  ) => Promise<InventoryListingDetail>;
+  reserveUnit: (
+    unitId: string,
     input: ReserveInventoryListingInput,
   ) => Promise<InventoryListingDetail>;
-  sellListing: (
-    listingId: string,
+  sellUnit: (
+    unitId: string,
     input: SellInventoryListingInput,
   ) => Promise<InventoryListingDetail>;
   updateListingDetails: (

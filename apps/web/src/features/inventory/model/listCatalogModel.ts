@@ -31,20 +31,20 @@ export const inventoryListStatusOptions: Array<{
 }> = [
   { label: "Todos os status", value: "" },
   { label: "Rascunho", value: "draft" },
-  { label: "Disponivel", value: "available" },
   { label: "Em preparação", value: "in_preparation" },
-  { label: "Reservado", value: "reserved" },
-  { label: "Vendido", value: "sold" },
-  { label: "Inativo", value: "inactive" },
+  { label: "Publicado", value: "published" },
+  { label: "Esgotado", value: "sold_out" },
+  { label: "Fora do ar", value: "unpublished" },
+  { label: "Arquivado", value: "archived" },
 ];
 
 export const inventoryStatusLabels: Record<InventoryListingStatus, string> = {
-  available: "Disponivel",
+  archived: "Arquivado",
   draft: "Rascunho",
-  inactive: "Inativo",
-  reserved: "Reservado",
-  sold: "Vendido",
   in_preparation: "Em preparação",
+  published: "Publicado",
+  sold_out: "Esgotado",
+  unpublished: "Fora do ar",
 };
 
 export function createInventoryErrorState(error: unknown): InventoryListState {
@@ -67,9 +67,14 @@ export function summarizeInventoryList(result: InventoryListingList) {
   return result.items.reduce(
     (summary, item) => ({
       available:
-        summary.available + (item.listing.status === "available" ? 1 : 0),
-      reserved: summary.reserved + (item.listing.status === "reserved" ? 1 : 0),
-      sold: summary.sold + (item.listing.status === "sold" ? 1 : 0),
+        summary.available +
+        item.units.filter((unit) => unit.status === "available").length,
+      reserved:
+        summary.reserved +
+        item.units.filter((unit) => unit.status === "reserved").length,
+      sold:
+        summary.sold +
+        item.units.filter((unit) => unit.status === "sold").length,
       total: summary.total + 1,
     }),
     { available: 0, reserved: 0, sold: 0, total: 0 },

@@ -1,6 +1,7 @@
 import { inventoryFinanceSchemas } from "./inventoryFinanceOpenApiSchemas.js";
 import { inventoryChecklistSchemas } from "./inventoryChecklistOpenApiSchemas.js";
 import { inventoryAcquisitionSchemas } from "./inventoryAcquisitionOpenApiSchemas.js";
+import { inventoryWorkflowSchemas } from "./inventoryWorkflowOpenApiSchemas.js";
 import {
   listingTechnicalSchemas,
   objectSchema,
@@ -15,7 +16,14 @@ export const inventorySchemas = {
   ChangeListingStatusRequest: objectSchema(["status"], {
     status: {
       type: "string",
-      enum: ["draft", "available", "reserved", "sold", "inactive"],
+      enum: [
+        "archived",
+        "draft",
+        "in_preparation",
+        "published",
+        "sold_out",
+        "unpublished",
+      ],
     },
   }),
   CreateListingRequest: objectSchema(["title"], {
@@ -25,7 +33,7 @@ export const inventorySchemas = {
     priceCents: { type: ["integer", "null"], minimum: 0 },
     status: {
       type: "string",
-      enum: ["draft", "available", "reserved", "sold", "inactive"],
+      enum: ["draft", "in_preparation", "published", "unpublished"],
     },
     title: { type: "string", minLength: 1 },
   }),
@@ -42,13 +50,7 @@ export const inventorySchemas = {
   ...inventoryAcquisitionSchemas,
   ...inventoryChecklistSchemas,
   ...inventoryFinanceSchemas,
-  InventoryBuyer: objectSchema(["name"], {
-    address: { type: ["string", "null"], minLength: 1 },
-    document: { type: ["string", "null"], minLength: 1 },
-    email: { type: ["string", "null"], format: "email" },
-    name: { type: "string", minLength: 1 },
-    phone: { type: ["string", "null"], minLength: 1 },
-  }),
+  ...inventoryWorkflowSchemas,
   InventoryListing: objectSchema(["id", "status", "title"], {
     createdAt: { type: "string", format: "date-time" },
     description: { type: ["string", "null"] },
@@ -58,7 +60,14 @@ export const inventorySchemas = {
     priceCents: { type: ["integer", "null"], minimum: 0 },
     status: {
       type: "string",
-      enum: ["draft", "available", "reserved", "sold", "inactive"],
+      enum: [
+        "archived",
+        "draft",
+        "in_preparation",
+        "published",
+        "sold_out",
+        "unpublished",
+      ],
     },
     title: { type: "string" },
     updatedAt: { type: "string", format: "date-time" },
@@ -115,25 +124,6 @@ export const inventorySchemas = {
       sizeBytes: { type: "integer", minimum: 1, maximum: 26214400 },
     },
   ),
-  ReserveVehicleListingRequest: objectSchema(
-    ["buyer", "signalAmountCents", "unitId"],
-    {
-      buyer: { $ref: "#/components/schemas/InventoryBuyer" },
-      paymentMethod: { type: "string", minLength: 1, default: "pix" },
-      reason: { type: ["string", "null"], minLength: 1 },
-      salePriceCents: { type: ["integer", "null"], minimum: 1 },
-      signalAmountCents: { type: "integer", minimum: 1 },
-      unitId: { type: "string", minLength: 1 },
-    },
-  ),
-  SellVehicleListingRequest: objectSchema(["buyer", "unitId"], {
-    buyer: { $ref: "#/components/schemas/InventoryBuyer" },
-    paidAmountCents: { type: ["integer", "null"], minimum: 1 },
-    paymentMethod: { type: "string", minLength: 1, default: "pix" },
-    reason: { type: ["string", "null"], minLength: 1 },
-    salePriceCents: { type: ["integer", "null"], minimum: 1 },
-    unitId: { type: "string", minLength: 1 },
-  }),
   UpdateListingDescriptionRequest: objectSchema(["description"], {
     description: { type: "string", minLength: 1 },
   }),
@@ -143,7 +133,14 @@ export const inventorySchemas = {
     priceCents: { type: ["integer", "null"], minimum: 0 },
     status: {
       type: "string",
-      enum: ["draft", "available", "reserved", "sold", "inactive"],
+      enum: [
+        "archived",
+        "draft",
+        "in_preparation",
+        "published",
+        "sold_out",
+        "unpublished",
+      ],
     },
     title: { type: "string", minLength: 1 },
   }),
@@ -155,7 +152,15 @@ export const inventorySchemas = {
     plate: unitIdentitySchemas.plate,
     status: {
       type: "string",
-      enum: ["available", "reserved", "sold", "retired"],
+      enum: [
+        "acquired",
+        "available",
+        "delivered",
+        "inactive",
+        "in_preparation",
+        "reserved",
+        "sold",
+      ],
     },
     stockNumber: unitIdentitySchemas.stockNumber,
     vin: unitIdentitySchemas.vin,

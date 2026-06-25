@@ -2,6 +2,7 @@ import { inventorySchemas, jsonRequest } from "./inventoryOpenApiSchemas.js";
 import { inventoryAcquisitionPaths } from "./inventoryAcquisitionOpenApi.js";
 import { inventoryFinancePaths } from "./inventoryFinanceOpenApi.js";
 import { inventoryChecklistPaths } from "./inventoryChecklistOpenApi.js";
+import { inventoryWorkflowPaths } from "./inventoryWorkflowOpenApi.js";
 import {
   authResponses,
   detailResponse,
@@ -185,40 +186,7 @@ export const inventoryPaths = {
   },
   ...inventoryChecklistPaths,
   ...inventoryFinancePaths,
-  "/api/v1/inventory/listings/{listingId}/reserve": {
-    post: {
-      tags: ["Inventory"],
-      summary: "Reserve listing",
-      description:
-        "Reserves a listing unit, records buyer/signal payment data, emits reservation_receipt, and creates linked finance_entries.",
-      operationId: "reserveInventoryListing",
-      security: [{ bearerAuth: ["inventory.reserve"] }],
-      parameters: [listingIdParameter],
-      requestBody: jsonRequest("ReserveVehicleListingRequest"),
-      responses: {
-        "201": detailResponse,
-        ...validationResponse,
-        ...authResponses,
-      },
-    },
-  },
-  "/api/v1/inventory/listings/{listingId}/sell": {
-    post: {
-      tags: ["Inventory"],
-      summary: "Sell listing",
-      description:
-        "Sells a listing unit, emits sale documents, and creates linked finance_entries for sale/payment accounting.",
-      operationId: "sellInventoryListing",
-      security: [{ bearerAuth: ["inventory.sell"] }],
-      parameters: [listingIdParameter],
-      requestBody: jsonRequest("SellVehicleListingRequest"),
-      responses: {
-        "201": detailResponse,
-        ...validationResponse,
-        ...authResponses,
-      },
-    },
-  },
+  ...inventoryWorkflowPaths,
   "/api/v1/inventory/listings/{listingId}/status": {
     patch: {
       tags: ["Inventory"],

@@ -70,21 +70,34 @@ describe("API docs routes", () => {
       ].post.security,
     ).toEqual([{ bearerAuth: ["finance.attach_document"] }]);
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
-        .post.security,
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/reserve"].post
+        .security,
     ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/sell"].post
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/sell"].post
         .security,
     ).toEqual([{ bearerAuth: ["inventory.sell"] }]);
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
-        .post.requestBody.content["application/json"].schema,
+      openApiDocument.paths[
+        "/api/v1/inventory/units/{unitId}/reservation/release"
+      ].post.security,
+    ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/reserve"].post
+        .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/ReserveVehicleListingRequest" });
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/sell"].post
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/sell"].post
         .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/SellVehicleListingRequest" });
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
+        .post.deprecated,
+    ).toBe(true);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/sell"].post
+        .deprecated,
+    ).toBe(true);
     expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
         .requestBody.content["application/json"].schema,

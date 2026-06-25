@@ -7,7 +7,7 @@ import type { InventoryUnit } from "../model/types";
 export type WorkflowMode = "reserve" | "sell";
 export type WorkflowState =
   | { kind: "error"; message: string }
-  | { kind: "idle" | "saving" | "saved"; mode?: WorkflowMode };
+  | { kind: "idle" | "saving" | "saved"; mode?: WorkflowMode | "release" };
 
 export function ModeButton({
   active,
@@ -98,9 +98,11 @@ export function WorkflowStatus({ state }: { state: WorkflowState }) {
   if (state.kind === "saved") {
     return (
       <p className="text-sm font-black text-accent-strong">
-        {state.mode === "reserve"
-          ? "Reserva registrada pela loja."
-          : "Venda registrada pela loja."}
+        {state.mode === "release"
+          ? "Reserva liberada pela loja."
+          : state.mode === "reserve"
+            ? "Reserva registrada pela loja."
+            : "Venda registrada pela loja."}
       </p>
     );
   }
@@ -108,9 +110,11 @@ export function WorkflowStatus({ state }: { state: WorkflowState }) {
   if (state.kind === "saving") {
     return (
       <p className="text-sm font-black text-muted">
-        {state.mode === "reserve"
-          ? "Registrando reserva."
-          : "Registrando venda."}
+        {state.mode === "release"
+          ? "Liberando reserva."
+          : state.mode === "reserve"
+            ? "Registrando reserva."
+            : "Registrando venda."}
       </p>
     );
   }

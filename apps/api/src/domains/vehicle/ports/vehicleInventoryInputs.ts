@@ -81,7 +81,7 @@ export type FindVehicleListingInput = {
 };
 
 export type FindVehicleUnitInput = {
-  listingId: string;
+  listingId?: string | undefined;
   storeId: string | null;
   tenantId: string | null;
   unitId: string;

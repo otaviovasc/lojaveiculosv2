@@ -11,7 +11,7 @@ import {
   actorUserId,
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getListingRepository,
   getSalesRepository,
   getUnitRepository,
@@ -23,7 +23,7 @@ const permission = "inventory.sell";
 
 export type SellVehicleListingInput = {
   buyer: VehicleBuyerSnapshot;
-  listingId: string;
+  listingId?: string | undefined;
   paidAmountCents?: number | null | undefined;
   paymentMethod: string;
   reason?: string | null | undefined;
@@ -38,19 +38,22 @@ export async function sellVehicleListing(
 ) {
   assertPermission(context, permission);
   assertStoreUserActor(context);
-  logVehicleServiceEvent(context, "vehicle_listing.sell.started", {
-    listingId: input.listingId,
+  logVehicleServiceEvent(context, "vehicle_unit.sell.started", {
+    listingId: input.listingId ?? null,
     unitId: input.unitId,
   });
 
   const listingRepository = getListingRepository(ports);
   const unitRepository = getUnitRepository(ports);
+  const unit = await findScopedUnitById(context, unitRepository, input.unitId);
+  if (input.listingId && unit.listingId !== input.listingId) {
+    throw new VehicleWorkflowValidationError("matching listingId");
+  }
   const listing = await findScopedListing(
     context,
     listingRepository,
-    input.listingId,
+    unit.listingId,
   );
-  const unit = await findScopedUnit(context, unitRepository, input);
   assertSellableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents)
@@ -82,24 +85,27 @@ export async function sellVehicleListing(
   });
 
   await auditVehicleServiceEvent(context, {
-    action: "vehicle_listing.sell",
+    action: "vehicle_unit.sell",
     category: "data_change",
-    changes: [{ after: "sold", before: listing.status, path: "status" }],
-    entityId: listing.id,
+    changes: [{ after: "sold", before: unit.status, path: "unit.status" }],
+    entityId: unit.id,
+    entityType: "vehicle_unit",
     metadata: {
       documentCount: workflow.documents.length,
       documentIds: workflow.documents.map((document) => document.id),
       financeEntryId: workflow.financeEntry.entry.id,
+      listingId: listing.id,
       saleId: sale.sale.id,
       salePaymentId: sale.payment?.id ?? null,
       salePriceCents,
     },
     permission,
     relatedEntities: [
+      { id: listing.id, type: "vehicle_listing" },
       { id: sale.sale.id, type: "vehicle_sale" },
       { id: workflow.financeEntry.entry.id, type: "finance_entry" },
     ],
-    summary: "Sold vehicle listing and emitted sale document bundle",
+    summary: "Sold vehicle unit and emitted sale document bundle",
   });
 
   return workflow.updatedListing;

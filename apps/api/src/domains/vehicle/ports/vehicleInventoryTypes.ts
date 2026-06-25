@@ -11,19 +11,21 @@ export type {
 };
 
 export type VehicleListingStatus =
+  | "archived"
   | "draft"
-  | "available"
-  | "reserved"
-  | "sold"
-  | "inactive"
-  | "in_preparation";
+  | "in_preparation"
+  | "published"
+  | "sold_out"
+  | "unpublished";
 
 export type VehicleUnitStatus =
+  | "acquired"
   | "available"
+  | "delivered"
+  | "inactive"
+  | "in_preparation"
   | "reserved"
-  | "sold"
-  | "retired"
-  | "in_preparation";
+  | "sold";
 export type VehicleFuelType =
   | "diesel"
   | "electric"

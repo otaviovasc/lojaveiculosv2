@@ -47,11 +47,6 @@ export async function completeReservationWorkflow(
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
-  const reservedListing = {
-    ...input.listing,
-    status: "reserved",
-    updatedAt: new Date(),
-  } as const;
   const financeEntry = await createReservationFinanceEntry({
     financeRepository: getFinanceRepository(input.ports),
     listing: input.listing,
@@ -63,7 +58,7 @@ export async function completeReservationWorkflow(
   });
   const document = buildReservationReceiptDocument({
     buyer: input.buyer,
-    listing: reservedListing,
+    listing: input.listing,
     paymentMethod: input.paymentMethod,
     sale: input.sale,
     signalAmountCents: input.signalAmountCents,
@@ -77,11 +72,12 @@ export async function completeReservationWorkflow(
   const createdDocument = await getDocumentRepository(input.ports).create(
     storedDocument,
   );
-  const updatedListing = await getListingRepository(input.ports).save(
-    reservedListing,
-  );
   await saveUnitStatus(context, input, "reserved");
-  return { documents: [createdDocument], financeEntry, updatedListing };
+  return {
+    documents: [createdDocument],
+    financeEntry,
+    updatedListing: input.listing,
+  };
 }
 
 export async function completeSaleWorkflow(
@@ -96,11 +92,6 @@ export async function completeSaleWorkflow(
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
-  const soldListing = {
-    ...input.listing,
-    status: "sold",
-    updatedAt: new Date(),
-  } as const;
   const financeEntry = await createSaleFinanceEntry({
     financeRepository: getFinanceRepository(input.ports),
     listing: input.listing,
@@ -112,7 +103,7 @@ export async function completeSaleWorkflow(
   const workflowTemplates = await getWorkflowTemplates(context, input.ports);
   const documents = buildSoldDocuments({
     buyer: input.buyer,
-    listing: soldListing,
+    listing: input.listing,
     paymentMethod: input.paymentMethod,
     sale: input.sale,
     ...(workflowTemplates ? { templates: workflowTemplates } : {}),
@@ -128,10 +119,8 @@ export async function completeSaleWorkflow(
       await getDocumentRepository(input.ports).create(storedDocument),
     );
   }
-  const updatedListing = await getListingRepository(input.ports).save(
-    soldListing,
-  );
   await saveUnitStatus(context, input, "sold");
+  const updatedListing = await syncListingSoldOutStatus(context, input);
   return { documents: createdDocuments, financeEntry, updatedListing };
 }
 
@@ -152,17 +141,6 @@ async function saveUnitStatus(
   });
   await getOperationsRepository(input.ports).createStatusHistory({
     actorUserId: actorUserId(context),
-    fromStatus: input.listing.status,
-    listingId: input.listing.id,
-    reason: input.reason ?? workflowReason(status),
-    storeId: context.storeId,
-    target: "listing",
-    tenantId: context.tenantId,
-    toStatus: status,
-    unitId: null,
-  });
-  await getOperationsRepository(input.ports).createStatusHistory({
-    actorUserId: actorUserId(context),
     fromStatus: input.unit.status,
     listingId: input.listing.id,
     reason: input.reason ?? workflowReason(status),
@@ -172,6 +150,48 @@ async function saveUnitStatus(
     toStatus: status,
     unitId: input.unit.id,
   });
+}
+
+async function syncListingSoldOutStatus(
+  context: ServiceContext,
+  input: {
+    listing: VehicleListing;
+    ports: VehicleInventoryServicePorts | undefined;
+    reason?: string | null | undefined;
+    unit: VehicleUnit;
+  },
+): Promise<VehicleListing> {
+  const units = await getUnitRepository(input.ports).listByListingIds({
+    listingIds: [input.listing.id],
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
+  const hasOpenStock = units.some((unit) =>
+    ["acquired", "available", "in_preparation", "reserved"].includes(
+      unit.status,
+    ),
+  );
+  if (hasOpenStock || input.listing.status === "sold_out") {
+    return input.listing;
+  }
+
+  const updatedListing = await getListingRepository(input.ports).save({
+    ...input.listing,
+    status: "sold_out",
+    updatedAt: new Date(),
+  });
+  await getOperationsRepository(input.ports).createStatusHistory({
+    actorUserId: actorUserId(context),
+    fromStatus: input.listing.status,
+    listingId: input.listing.id,
+    reason: input.reason ?? workflowReason("sold"),
+    storeId: context.storeId,
+    target: "listing",
+    tenantId: context.tenantId,
+    toStatus: "sold_out",
+    unitId: null,
+  });
+  return updatedListing;
 }
 
 async function getWorkflowTemplate(

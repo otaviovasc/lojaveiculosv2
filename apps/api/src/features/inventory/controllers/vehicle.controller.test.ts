@@ -122,7 +122,7 @@ describe("inventory listing routes", () => {
     const response = await app.request(
       "/api/v1/inventory/listings/listing_1/status",
       {
-        body: JSON.stringify({ status: "available" }),
+        body: JSON.stringify({ status: "published" }),
         method: "PATCH",
       },
     );
@@ -132,7 +132,7 @@ describe("inventory listing routes", () => {
       expect.any(Object),
       {
         listingId: "listing_1",
-        status: "available",
+        status: "published",
       },
     );
   });

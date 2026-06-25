@@ -4,16 +4,16 @@ import type {
 } from "@lojaveiculosv2/shared";
 
 export type InventoryListingStatus =
-  | "available"
+  | "archived"
   | "draft"
-  | "inactive"
-  | "reserved"
-  | "sold"
-  | "in_preparation";
+  | "in_preparation"
+  | "published"
+  | "sold_out"
+  | "unpublished";
 
 export type InventoryCreateListingStatus = Extract<
   InventoryListingStatus,
-  "available" | "draft" | "inactive" | "in_preparation"
+  "draft" | "in_preparation" | "published" | "unpublished"
 >;
 
 export type InventoryFuelType =

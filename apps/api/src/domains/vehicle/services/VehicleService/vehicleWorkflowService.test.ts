@@ -12,7 +12,7 @@ describe("VehicleService workflow documents", () => {
   it("reserves a vehicle and emits the signal receipt document", async () => {
     const context = createContext(["inventory.create", "inventory.reserve"]);
     const ports = createInMemoryVehiclePorts([
-      createListing({ status: "available", unitIds: ["unit_1"] }),
+      createListing({ status: "published", unitIds: ["unit_1"] }),
     ]);
     await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
 
@@ -28,7 +28,7 @@ describe("VehicleService workflow documents", () => {
       ports,
     );
 
-    expect(listing.status).toBe("reserved");
+    expect(listing.status).toBe("published");
     expect(ports.units.get("unit_1")?.status).toBe("reserved");
     const operationsRepository = ports.operationsRepository;
     if (!operationsRepository) throw new Error("Expected operations port.");
@@ -39,11 +39,6 @@ describe("VehicleService workflow documents", () => {
         tenantId: "tenant_1",
       }),
     ).resolves.toEqual([
-      expect.objectContaining({
-        fromStatus: "available",
-        target: "listing",
-        toStatus: "reserved",
-      }),
       expect.objectContaining({
         fromStatus: "available",
         target: "unit",
@@ -72,14 +67,14 @@ describe("VehicleService workflow documents", () => {
       ports.financeRepository.links.map((link) => link.targetType),
     ).toEqual(["sale", "sale_payment", "vehicle_listing", "vehicle_unit"]);
     expect(context.audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "vehicle_listing.reserve" }),
+      expect.objectContaining({ action: "vehicle_unit.reserve" }),
     );
   });
 
   it("sells a vehicle and emits the four sale documents", async () => {
     const context = createContext(["inventory.create", "inventory.sell"]);
     const ports = createInMemoryVehiclePorts([
-      createListing({ status: "reserved", unitIds: ["unit_1"] }),
+      createListing({ status: "published", unitIds: ["unit_1"] }),
     ]);
     await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
 
@@ -94,7 +89,7 @@ describe("VehicleService workflow documents", () => {
       ports,
     );
 
-    expect(listing.status).toBe("sold");
+    expect(listing.status).toBe("sold_out");
     expect(ports.units.get("unit_1")?.status).toBe("sold");
     const operationsRepository = ports.operationsRepository;
     if (!operationsRepository) throw new Error("Expected operations port.");
@@ -106,15 +101,15 @@ describe("VehicleService workflow documents", () => {
       }),
     ).resolves.toEqual([
       expect.objectContaining({
-        fromStatus: "reserved",
-        target: "listing",
-        toStatus: "sold",
-      }),
-      expect.objectContaining({
         fromStatus: "available",
         target: "unit",
         toStatus: "sold",
         unitId: "unit_1",
+      }),
+      expect.objectContaining({
+        fromStatus: "published",
+        target: "listing",
+        toStatus: "sold_out",
       }),
     ]);
     expect(
@@ -134,7 +129,7 @@ describe("VehicleService workflow documents", () => {
       }),
     ]);
     expect(context.audit.record).toHaveBeenCalledWith(
-      expect.objectContaining({ action: "vehicle_listing.sell" }),
+      expect.objectContaining({ action: "vehicle_unit.sell" }),
     );
   });
 
@@ -144,7 +139,7 @@ describe("VehicleService workflow documents", () => {
       actor: { id: "public", kind: "public" as const },
     };
     const ports = createInMemoryVehiclePorts([
-      createListing({ status: "available", unitIds: ["unit_1"] }),
+      createListing({ status: "published", unitIds: ["unit_1"] }),
     ]);
     await attachVehicleUnit(
       createContext(["inventory.create"]),
@@ -187,7 +182,7 @@ describe("VehicleService workflow documents", () => {
   it("rejects workflow transitions from terminal listing states", async () => {
     const context = createContext(["inventory.create", "inventory.reserve"]);
     const ports = createInMemoryVehiclePorts([
-      createListing({ status: "sold", unitIds: ["unit_1"] }),
+      createListing({ status: "sold_out", unitIds: ["unit_1"] }),
     ]);
     await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
 
@@ -203,7 +198,7 @@ describe("VehicleService workflow documents", () => {
         },
         ports,
       ),
-    ).rejects.toThrow("must be available to reserve");
+    ).rejects.toThrow("must be published to reserve");
 
     expect(ports.documents.size).toBe(0);
     expect(ports.financeRepository.entries).toEqual([]);

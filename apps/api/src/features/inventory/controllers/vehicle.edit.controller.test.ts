@@ -14,7 +14,7 @@ describe("inventory canonical edit routes", () => {
       body: JSON.stringify({
         description: "Updated canonical description",
         priceCents: 12100000,
-        status: "available",
+        status: "published",
         title: "Fiat Toro Volcano",
       }),
       method: "PATCH",
@@ -27,7 +27,7 @@ describe("inventory canonical edit routes", () => {
         description: "Updated canonical description",
         listingId: "listing_1",
         priceCents: 12100000,
-        status: "available",
+        status: "published",
         title: "Fiat Toro Volcano",
       },
     );
@@ -42,7 +42,7 @@ describe("inventory canonical edit routes", () => {
       {
         body: JSON.stringify({
           plate: "DEF4G56",
-          status: "retired",
+          status: "inactive",
           stockNumber: "stock_2",
           vin: "vin_2",
         }),
@@ -56,7 +56,7 @@ describe("inventory canonical edit routes", () => {
       {
         listingId: "listing_1",
         plate: "DEF4G56",
-        status: "retired",
+        status: "inactive",
         stockNumber: "stock_2",
         unitId: "unit_1",
         vin: "vin_2",

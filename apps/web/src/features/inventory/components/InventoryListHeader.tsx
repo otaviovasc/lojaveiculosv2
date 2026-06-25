@@ -31,21 +31,21 @@ export function InventoryListHeader({
       value: available,
       tone: "green",
       icon: CheckCircle2,
-      status: "available",
+      status: "",
     },
     {
       label: "Reservados",
       value: reserved,
       tone: "pink",
       icon: Clock,
-      status: "reserved",
+      status: "",
     },
     {
       label: "Vendidos",
       value: sold,
       tone: "blue",
       icon: TrendingUp,
-      status: "sold",
+      status: "",
     },
   ] satisfies Array<{
     icon: typeof Car;
@@ -59,7 +59,7 @@ export function InventoryListHeader({
     <div className="flex flex-wrap gap-3">
       {stats.map((stat, idx) => {
         const KpiIcon = stat.icon;
-        const isActive = activeStatus === stat.status;
+        const isActive = stat.status !== "" && activeStatus === stat.status;
         const toneClass =
           stat.tone === "green"
             ? "kpi-gradient-green"

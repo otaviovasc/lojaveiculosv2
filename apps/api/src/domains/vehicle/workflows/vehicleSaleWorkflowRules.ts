@@ -7,9 +7,9 @@ export function assertReservableVehicleState(
   listing: VehicleListing,
   unit: VehicleUnit,
 ): void {
-  if (listing.status !== "available") {
+  if (listing.status !== "published") {
     throw new VehicleWorkflowStateError(
-      `Vehicle listing must be available to reserve; current status is ${listing.status}.`,
+      `Vehicle listing must be published to reserve a unit; current status is ${listing.status}.`,
     );
   }
   if (unit.status !== "available") {
@@ -23,9 +23,9 @@ export function assertSellableVehicleState(
   listing: VehicleListing,
   unit: VehicleUnit,
 ): void {
-  if (listing.status !== "available" && listing.status !== "reserved") {
+  if (listing.status !== "published") {
     throw new VehicleWorkflowStateError(
-      `Vehicle listing must be available or reserved to sell; current status is ${listing.status}.`,
+      `Vehicle listing must be published to sell a unit; current status is ${listing.status}.`,
     );
   }
   if (unit.status !== "available" && unit.status !== "reserved") {

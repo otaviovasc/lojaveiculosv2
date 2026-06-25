@@ -1,0 +1,98 @@
+import { jsonRequest } from "./inventoryOpenApiSchemas.js";
+import {
+  authResponses,
+  detailResponse,
+  listingIdParameter,
+  unitIdParameter,
+  validationResponse,
+} from "./inventoryOpenApiParts.js";
+
+export const inventoryWorkflowPaths = {
+  "/api/v1/inventory/listings/{listingId}/reserve": {
+    post: {
+      deprecated: true,
+      tags: ["Inventory"],
+      summary: "Reserve unit through deprecated listing route",
+      description:
+        "Deprecated compatibility route. Prefer POST /api/v1/inventory/units/{unitId}/reserve.",
+      operationId: "reserveInventoryListing",
+      security: [{ bearerAuth: ["inventory.reserve"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("ReserveVehicleListingRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/listings/{listingId}/sell": {
+    post: {
+      deprecated: true,
+      tags: ["Inventory"],
+      summary: "Sell unit through deprecated listing route",
+      description:
+        "Deprecated compatibility route. Prefer POST /api/v1/inventory/units/{unitId}/sell.",
+      operationId: "sellInventoryListing",
+      security: [{ bearerAuth: ["inventory.sell"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("SellVehicleListingRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/units/{unitId}/reserve": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Reserve unit",
+      description:
+        "Reserves a vehicle unit, records buyer/signal payment data, emits reservation_receipt, and creates linked finance_entries.",
+      operationId: "reserveInventoryUnit",
+      security: [{ bearerAuth: ["inventory.reserve"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("ReserveVehicleListingRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/units/{unitId}/sell": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Sell unit",
+      description:
+        "Sells a vehicle unit, emits sale documents, and creates linked finance_entries for sale/payment accounting.",
+      operationId: "sellInventoryUnit",
+      security: [{ bearerAuth: ["inventory.sell"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("SellVehicleListingRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/units/{unitId}/reservation/release": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Release unit reservation",
+      description:
+        "Releases a reserved vehicle unit, cancels the pending reservation sale/payment, cancels the pending signal finance entry, and writes audit evidence.",
+      operationId: "releaseInventoryUnitReservation",
+      security: [{ bearerAuth: ["inventory.reserve"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("ReleaseVehicleReservationRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+} as const;

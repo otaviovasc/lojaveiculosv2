@@ -12,7 +12,7 @@ import { createInventoryListingServices } from "./listingServices.js";
 
 describe("inventory reserve/sell rollback", () => {
   it("rolls back reserve writes when status history fails", async () => {
-    const ports = await createWorkflowPorts("available");
+    const ports = await createWorkflowPorts();
     const error = new Error("status history failed");
     const services = createInventoryListingServices({
       ports,
@@ -29,11 +29,11 @@ describe("inventory reserve/sell rollback", () => {
       }),
     ).rejects.toThrow(error);
 
-    expectNoWorkflowWrites(ports, "available");
+    expectNoWorkflowWrites(ports, "published");
   });
 
   it("rolls back sell writes when status history fails", async () => {
-    const ports = await createWorkflowPorts("reserved");
+    const ports = await createWorkflowPorts();
     const error = new Error("status history failed");
     const services = createInventoryListingServices({
       ports,
@@ -49,12 +49,14 @@ describe("inventory reserve/sell rollback", () => {
       }),
     ).rejects.toThrow(error);
 
-    expectNoWorkflowWrites(ports, "reserved");
+    expectNoWorkflowWrites(ports, "published");
   });
 });
 
-async function createWorkflowPorts(status: "available" | "reserved") {
-  const ports = createInMemoryVehiclePorts([createListing({ status })]);
+async function createWorkflowPorts() {
+  const ports = createInMemoryVehiclePorts([
+    createListing({ status: "published" }),
+  ]);
   await attachVehicleUnit(
     workflowContext("inventory.create"),
     { listingId: "listing_1" },
@@ -130,7 +132,7 @@ function copyArray<T>(target: T[], source: readonly T[]) {
 
 function expectNoWorkflowWrites(
   ports: TestVehicleInventoryPorts,
-  listingStatus: "available" | "reserved",
+  listingStatus: "published",
 ) {
   expect(ports.listings.get("listing_1")?.status).toBe(listingStatus);
   expect(ports.units.get("unit_1")?.status).toBe("available");

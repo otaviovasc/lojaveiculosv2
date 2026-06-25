@@ -250,26 +250,22 @@ export function EmptyCatalog({ body, title }: { body: string; title: string }) {
 
 export function StatusPill({ status }: { status: InventoryListingStatus }) {
   const tone =
-    status === "available"
+    status === "published"
       ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-      : status === "reserved"
+      : status === "in_preparation"
         ? "bg-warning/10 text-warning border border-warning/20"
-        : status === "in_preparation"
-          ? "bg-warning/10 text-warning border border-warning/20"
-          : status === "sold"
-            ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-            : "bg-panel text-muted border border-line";
+        : status === "sold_out"
+          ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+          : "bg-panel text-muted border border-line";
 
   const dotColor =
-    status === "available"
+    status === "published"
       ? "bg-emerald-500"
-      : status === "reserved"
+      : status === "in_preparation"
         ? "bg-warning"
-        : status === "in_preparation"
-          ? "bg-warning"
-          : status === "sold"
-            ? "bg-blue-500"
-            : "bg-muted";
+        : status === "sold_out"
+          ? "bg-blue-500"
+          : "bg-muted";
 
   return (
     <span

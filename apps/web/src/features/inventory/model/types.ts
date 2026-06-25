@@ -75,7 +75,7 @@ export type ReserveInventoryListingInput = {
   reason?: string | null;
   salePriceCents?: number | null;
   signalAmountCents: number;
-  unitId: string;
+  unitId?: string;
 };
 
 export type SellInventoryListingInput = {
@@ -84,7 +84,12 @@ export type SellInventoryListingInput = {
   paymentMethod?: string;
   reason?: string | null;
   salePriceCents?: number | null;
-  unitId: string;
+  unitId?: string;
+};
+
+export type ReleaseInventoryReservationInput = {
+  reason?: string | null;
+  saleId?: string | null;
 };
 
 export type InventoryListing = {
@@ -118,7 +123,14 @@ export type InventoryUnit = {
   id: string;
   listingId: string;
   plate: string | null;
-  status: "available" | "reserved" | "retired" | "sold" | "in_preparation";
+  status:
+    | "acquired"
+    | "available"
+    | "delivered"
+    | "inactive"
+    | "in_preparation"
+    | "reserved"
+    | "sold";
   stockNumber: string | null;
   storeId: string | null;
   tenantId: string | null;

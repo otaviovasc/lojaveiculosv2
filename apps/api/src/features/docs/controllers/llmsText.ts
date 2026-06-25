@@ -52,8 +52,9 @@ export const llmsText = `# Loja Veiculos API
 - Update unit checklist: PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}
 - Request listing media upload: POST /api/v1/inventory/listings/{listingId}/media/uploads
 - Attach uploaded listing media: POST /api/v1/inventory/listings/{listingId}/media
-- Reserve listing: POST /api/v1/inventory/listings/{listingId}/reserve
-- Sell listing: POST /api/v1/inventory/listings/{listingId}/sell
+- Reserve unit: POST /api/v1/inventory/units/{unitId}/reserve
+- Sell unit: POST /api/v1/inventory/units/{unitId}/sell
+- Release unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/release
 - Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
 
 ## Authentication
@@ -75,8 +76,8 @@ export const llmsText = `# Loja Veiculos API
 - inventory.cost_create: required to create vehicle costs and linked finance entries.
 - inventory.checklist_read: required to read vehicle readiness checklists.
 - inventory.checklist_update: required to create and update vehicle readiness checklists.
-- inventory.reserve: required to reserve vehicle inventory and emit a reservation receipt.
-- inventory.sell: required to sell vehicle inventory and emit sale documents.
+- inventory.reserve: required to reserve or release vehicle unit reservations and emit reservation receipts.
+- inventory.sell: required to sell vehicle units and emit sale documents.
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
 - billing.manage: required to read billing and mutate store entitlements.
@@ -122,8 +123,10 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
 - POST /api/v1/inventory/listings/{listingId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions.
 - POST /api/v1/inventory/listings/{listingId}/media: records uploaded R2 object as listing media after scoped storage validation.
-- POST /api/v1/inventory/listings/{listingId}/reserve: reserves a unit, emits reservation_receipt, and creates linked finance entries.
-- POST /api/v1/inventory/listings/{listingId}/sell: sells a unit, emits sale documents, and creates linked finance entries.
+- POST /api/v1/inventory/units/{unitId}/reserve: reserves a unit, emits reservation_receipt, and creates linked finance entries.
+- POST /api/v1/inventory/units/{unitId}/sell: sells a unit, emits sale documents, and creates linked finance entries.
+- POST /api/v1/inventory/units/{unitId}/reservation/release: releases a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
+- POST /api/v1/inventory/listings/{listingId}/reserve and /sell: deprecated compatibility wrappers that require unitId in the request body.
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
 
 ## Current identity endpoints

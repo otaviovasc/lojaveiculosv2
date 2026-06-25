@@ -138,10 +138,10 @@ describe("createInventoryApi", () => {
         limit: 100,
         offset: 200,
         search: "toro",
-        status: "available",
+        status: "published",
       }),
     ).toBe(
-      "/api/v1/inventory/listings?limit=100&offset=200&search=toro&status=available",
+      "/api/v1/inventory/listings?limit=100&offset=200&search=toro&status=published",
     );
     expect(inventoryRoutes.unit("listing 1")).toBe(
       "/api/v1/inventory/listings/listing%201/unit",
@@ -173,12 +173,12 @@ describe("createInventoryApi", () => {
     await api.updateListingDetails("listing_1", {
       description: "Updated",
       priceCents: 13000000,
-      status: "available",
+      status: "published",
       title: "Updated title",
     });
     await api.updateUnit("listing_1", "unit_1", {
       plate: "DEF4G56",
-      status: "reserved",
+      status: "inactive",
       stockNumber: "stock_2",
       vin: "vin_2",
     });
@@ -190,7 +190,7 @@ describe("createInventoryApi", () => {
     expect(bodyOf(callAt(fake.calls, 0))).toEqual({
       description: "Updated",
       priceCents: 13000000,
-      status: "available",
+      status: "published",
       title: "Updated title",
     });
     expect(callAt(fake.calls, 1).input).toBe(
@@ -199,7 +199,7 @@ describe("createInventoryApi", () => {
     expect(callAt(fake.calls, 1).init?.method).toBe("PATCH");
     expect(bodyOf(callAt(fake.calls, 1))).toEqual({
       plate: "DEF4G56",
-      status: "reserved",
+      status: "inactive",
       stockNumber: "stock_2",
       vin: "vin_2",
     });

@@ -64,12 +64,12 @@ export function cleanListListingsQuery(input: {
   offset?: number | undefined;
   search?: string | undefined;
   status?:
-    | "available"
+    | "archived"
     | "draft"
-    | "inactive"
-    | "reserved"
-    | "sold"
     | "in_preparation"
+    | "published"
+    | "sold_out"
+    | "unpublished"
     | undefined;
 }): Parameters<InventoryListingServices["listListings"]>[1] {
   const result: Parameters<InventoryListingServices["listListings"]>[1] = {};
@@ -156,12 +156,12 @@ export function cleanUpdateListingRequest(
     modelYear?: number | null | undefined;
     priceCents?: number | null | undefined;
     status?:
-      | "available"
+      | "archived"
       | "draft"
-      | "inactive"
-      | "reserved"
-      | "sold"
       | "in_preparation"
+      | "published"
+      | "sold_out"
+      | "unpublished"
       | undefined;
     title?: string | undefined;
     transmission?: Parameters<
@@ -212,11 +212,13 @@ export function cleanUpdateUnitRequest(
     >[1]["colorName"];
     plate?: string | null | undefined;
     status?:
+      | "acquired"
       | "available"
-      | "reserved"
-      | "retired"
-      | "sold"
+      | "delivered"
+      | "inactive"
       | "in_preparation"
+      | "reserved"
+      | "sold"
       | undefined;
     stockNumber?: string | null | undefined;
     vin?: string | null | undefined;

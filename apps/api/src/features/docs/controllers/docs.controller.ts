@@ -151,8 +151,8 @@ export const openApiDocument = {
     "inventory.checklist_update":
       "Create and update vehicle readiness checklists.",
     "inventory.reserve":
-      "Reserve vehicle listings and emit reservation receipts.",
-    "inventory.sell": "Sell vehicle listings and emit sale document bundles.",
+      "Reserve or release vehicle units and emit reservation receipts.",
+    "inventory.sell": "Sell vehicle units and emit sale document bundles.",
     "inventory.delete": "Delete vehicle inventory records.",
     "documents.read": "Read shared store-scoped documents.",
     "documents.download": "Generate scoped document download descriptors.",
@@ -172,8 +172,10 @@ export const openApiDocument = {
     "vehicle-cost":
       "POST /api/v1/inventory/listings/{listingId}/costs creates an expense finance_entries row linked to vehicle_cost plus listing/unit context.",
     reserve:
-      "POST /api/v1/inventory/listings/{listingId}/reserve creates finance_entries linked to reservation sale/payment context.",
-    sell: "POST /api/v1/inventory/listings/{listingId}/sell creates finance_entries linked to sale and sale_payment context.",
+      "POST /api/v1/inventory/units/{unitId}/reserve creates finance_entries linked to reservation sale/payment context.",
+    release:
+      "POST /api/v1/inventory/units/{unitId}/reservation/release cancels pending reservation finance_entries linked to sale_payment context.",
+    sell: "POST /api/v1/inventory/units/{unitId}/sell creates finance_entries linked to sale and sale_payment context.",
     linkTargets: [
       "sale",
       "sale_payment",

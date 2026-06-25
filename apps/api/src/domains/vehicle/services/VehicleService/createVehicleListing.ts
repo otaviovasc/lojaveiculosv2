@@ -23,9 +23,9 @@ import { assertGenericListingStatusAllowed } from "../../policies/workflowStatus
 const permission = "inventory.create";
 const allowedCreateStatuses = [
   "draft",
-  "inactive",
-  "available",
   "in_preparation",
+  "published",
+  "unpublished",
 ] as const;
 
 export type CreateVehicleListingInput = {

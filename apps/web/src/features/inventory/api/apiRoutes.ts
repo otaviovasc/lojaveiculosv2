@@ -154,14 +154,19 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}/media/uploads`,
       baseUrl,
     ),
-  reserve: (listingId: string, baseUrl?: string) =>
+  reserve: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/reserve`,
+      `/inventory/units/${encodeURIComponent(unitId)}/reserve`,
       baseUrl,
     ),
-  sell: (listingId: string, baseUrl?: string) =>
+  releaseReservation: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/sell`,
+      `/inventory/units/${encodeURIComponent(unitId)}/reservation/release`,
+      baseUrl,
+    ),
+  sell: (unitId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/sell`,
       baseUrl,
     ),
   documentUploads: (listingId: string, baseUrl?: string) =>

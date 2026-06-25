@@ -16,6 +16,7 @@ import type {
 import type { VehicleUnitAcquisitionInput } from "../../../domains/vehicle/services/VehicleService/manageVehicleUnitAcquisition.js";
 import type { ReorderVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
 import type { ReserveVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
+import type { ReleaseVehicleReservationInput } from "../../../domains/vehicle/services/VehicleService/releaseVehicleReservation.js";
 import type { RequestVehicleDocumentUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
 import type { RequestVehicleMediaUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleMediaUpload.js";
 import type { SellVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/sellVehicleListing.js";
@@ -54,12 +55,12 @@ export type {
 } from "./listingServiceOptions.js";
 
 export const listingStatuses = [
-  "available",
+  "archived",
   "draft",
-  "inactive",
-  "reserved",
-  "sold",
   "in_preparation",
+  "published",
+  "sold_out",
+  "unpublished",
 ] as const;
 
 export type VehicleMediaResult = {
@@ -170,6 +171,10 @@ export type InventoryListingServices = {
   reserveListing: (
     context: ServiceContext,
     input: ReserveVehicleListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  releaseReservation: (
+    context: ServiceContext,
+    input: ReleaseVehicleReservationInput,
   ) => Promise<InventoryListingDetailResponse>;
   updateListingDescription: (
     context: ServiceContext,

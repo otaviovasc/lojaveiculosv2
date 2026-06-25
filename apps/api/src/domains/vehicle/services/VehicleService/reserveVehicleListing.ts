@@ -11,7 +11,7 @@ import {
   actorUserId,
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getListingRepository,
   getSalesRepository,
   getUnitRepository,
@@ -23,7 +23,7 @@ const permission = "inventory.reserve";
 
 export type ReserveVehicleListingInput = {
   buyer: VehicleBuyerSnapshot;
-  listingId: string;
+  listingId?: string | undefined;
   paymentMethod: string;
   reason?: string | null | undefined;
   salePriceCents?: number | null | undefined;
@@ -38,19 +38,22 @@ export async function reserveVehicleListing(
 ) {
   assertPermission(context, permission);
   assertStoreUserActor(context);
-  logVehicleServiceEvent(context, "vehicle_listing.reserve.started", {
-    listingId: input.listingId,
+  logVehicleServiceEvent(context, "vehicle_unit.reserve.started", {
+    listingId: input.listingId ?? null,
     unitId: input.unitId,
   });
 
   const listingRepository = getListingRepository(ports);
   const unitRepository = getUnitRepository(ports);
+  const unit = await findScopedUnitById(context, unitRepository, input.unitId);
+  if (input.listingId && unit.listingId !== input.listingId) {
+    throw new VehicleWorkflowValidationError("matching listingId");
+  }
   const listing = await findScopedListing(
     context,
     listingRepository,
-    input.listingId,
+    unit.listingId,
   );
-  const unit = await findScopedUnit(context, unitRepository, input);
   assertReservableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents)
@@ -83,11 +86,13 @@ export async function reserveVehicleListing(
   const [createdDocument] = workflow.documents;
 
   await auditVehicleServiceEvent(context, {
-    action: "vehicle_listing.reserve",
+    action: "vehicle_unit.reserve",
     category: "data_change",
-    changes: [{ after: "reserved", before: listing.status, path: "status" }],
-    entityId: listing.id,
+    changes: [{ after: "reserved", before: unit.status, path: "unit.status" }],
+    entityId: unit.id,
+    entityType: "vehicle_unit",
     metadata: {
+      listingId: listing.id,
       saleId: sale.sale.id,
       salePaymentId: sale.payment?.id ?? null,
       documentId: createdDocument?.id ?? null,
@@ -97,10 +102,11 @@ export async function reserveVehicleListing(
     },
     permission,
     relatedEntities: [
+      { id: listing.id, type: "vehicle_listing" },
       { id: sale.sale.id, type: "vehicle_sale" },
       { id: workflow.financeEntry.entry.id, type: "finance_entry" },
     ],
-    summary: "Reserved vehicle listing and emitted signal receipt",
+    summary: "Reserved vehicle unit and emitted signal receipt",
   });
 
   return workflow.updatedListing;

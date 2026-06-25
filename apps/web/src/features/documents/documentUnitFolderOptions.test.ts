@@ -79,7 +79,7 @@ function summary(): InventoryListingSummary {
       modelYear: null,
       plate: null,
       priceCents: null,
-      status: "available",
+      status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",
       title: "Fiat Toro Volcano",

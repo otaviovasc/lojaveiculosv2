@@ -3,6 +3,7 @@ import { attachVehicleDocument } from "../../../domains/vehicle/services/Vehicle
 import { attachVehicleUnit } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import { changeVehicleStatus } from "../../../domains/vehicle/services/VehicleService/changeVehicleStatus.js";
 import { createVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
+import { releaseVehicleReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleReservation.js";
 import { reserveVehicleListing } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
 import { sellVehicleListing } from "../../../domains/vehicle/services/VehicleService/sellVehicleListing.js";
 import { updateVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
@@ -30,6 +31,7 @@ type InventoryTransactionalServices = Pick<
   | "attachVehicleDocument"
   | "changeListingStatus"
   | "createChecklist"
+  | "releaseReservation"
   | "reserveListing"
   | "sellListing"
   | "updateListingDetails"
@@ -116,6 +118,19 @@ export function createInventoryTransactionalServices(input: {
         transactionRunner,
         (transactionPorts) =>
           reserveVehicleListing(context, reserveInput, transactionPorts),
+      );
+      return loadInventoryListingDetailDto(
+        context,
+        listing.id,
+        ports,
+        "inventory.reserve",
+      );
+    },
+    async releaseReservation(context, releaseInput) {
+      const listing = await runVehicleInventoryMutation(
+        transactionRunner,
+        (transactionPorts) =>
+          releaseVehicleReservation(context, releaseInput, transactionPorts),
       );
       return loadInventoryListingDetailDto(
         context,

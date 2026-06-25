@@ -3,12 +3,10 @@ import type {
   VehicleUnitStatus,
 } from "../ports/vehicleInventoryRepository.js";
 
-const workflowOnlyStatuses = ["reserved", "sold"] as const;
-
 export class VehicleWorkflowStatusError extends Error {
-  constructor(status: VehicleListingStatus) {
+  constructor(entity: "listing" | "unit", status: string) {
     super(
-      `Listing status ${status} must be changed through the canonical workflow.`,
+      `Vehicle ${entity} status ${status} must be changed through the canonical workflow.`,
     );
     this.name = "VehicleWorkflowStatusError";
   }
@@ -17,9 +15,8 @@ export class VehicleWorkflowStatusError extends Error {
 export function assertGenericListingStatusAllowed(
   status: VehicleListingStatus | undefined,
 ) {
-  if (!status) return;
-  if ((workflowOnlyStatuses as readonly string[]).includes(status)) {
-    throw new VehicleWorkflowStatusError(status);
+  if (status === "sold_out") {
+    throw new VehicleWorkflowStatusError("listing", status);
   }
 }
 
@@ -27,7 +24,7 @@ export function assertGenericUnitStatusAllowed(
   status: VehicleUnitStatus | undefined,
 ) {
   if (!status) return;
-  if ((workflowOnlyStatuses as readonly string[]).includes(status)) {
-    throw new VehicleWorkflowStatusError(status as VehicleListingStatus);
+  if (status === "reserved" || status === "sold") {
+    throw new VehicleWorkflowStatusError("unit", status);
   }
 }

@@ -155,6 +155,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       uploadUrl: "https://upload.local/front.jpg",
     })),
     reserveListing: vi.fn(async () => listingDetailResult()),
+    releaseReservation: vi.fn(async () => listingDetailResult()),
     sellListing: vi.fn(async () => listingDetailResult()),
     updateListingDescription: vi.fn(async () => listingDetailResult()),
     updateListingDetails: vi.fn(async () => listingDetailResult()),

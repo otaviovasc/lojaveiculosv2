@@ -53,14 +53,14 @@ describe("VehicleService create listing denials", () => {
     );
   });
 
-  it("rejects workflow-only statuses on creation and audits the denial", async () => {
+  it("rejects aggregate-only statuses on creation and audits the denial", async () => {
     const context = createContext(["inventory.create"]);
     const ports = createInMemoryVehiclePorts();
 
     await expect(
       createVehicleListing(
         context,
-        { plate: "ABC1D23", title: "Civic", status: "reserved" },
+        { plate: "ABC1D23", title: "Civic", status: "sold_out" },
         ports,
       ),
     ).rejects.toThrow("must be changed through the canonical workflow");

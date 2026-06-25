@@ -78,6 +78,19 @@ export function createDrizzleSalesRepository(
         .where(scopedSaleWhere(input, input.saleId))
         .returning();
       if (!row) throw new Error(`Sale not found: ${input.saleId}`);
+      if (input.status === "cancelled") {
+        await db
+          .update(salePayments)
+          .set({ status: "cancelled" })
+          .where(
+            and(
+              eq(salePayments.saleId, input.saleId),
+              eq(salePayments.storeId, input.storeId),
+              eq(salePayments.tenantId, input.tenantId),
+              eq(salePayments.status, "pending"),
+            ),
+          );
+      }
       return toSaleRecord(row, await findPayments(db, input, input.saleId));
     },
     async updateDraft(scope, saleId, input) {

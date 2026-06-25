@@ -138,7 +138,7 @@ function createUnitRepository(
     findById: vi.fn(async ({ listingId, storeId, tenantId, unitId }) => {
       const unit = units.get(unitId);
       if (!unit) return null;
-      if (unit.listingId !== listingId) return null;
+      if (listingId && unit.listingId !== listingId) return null;
       if (unit.storeId !== storeId || unit.tenantId !== tenantId) return null;
       return unit;
     }),

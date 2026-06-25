@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import {
   CircleCheck,
   CircleDollarSign,
-  Clock3,
   FileText,
   PauseCircle,
   Wrench,
@@ -60,7 +59,7 @@ export function statusButtonClassName(
     ].join(" ");
   }
 
-  if (status === "available") {
+  if (status === "published") {
     return [
       base,
       selected
@@ -69,16 +68,7 @@ export function statusButtonClassName(
     ].join(" ");
   }
 
-  if (status === "reserved") {
-    return [
-      base,
-      selected
-        ? "border-warning bg-warning/20 text-warning ring-2 ring-warning/25"
-        : "border-warning/20 bg-app text-warning hover:bg-warning/10",
-    ].join(" ");
-  }
-
-  if (status === "sold") {
+  if (status === "sold_out") {
     return [
       base,
       selected
@@ -87,7 +77,7 @@ export function statusButtonClassName(
     ].join(" ");
   }
 
-  if (status === "inactive") {
+  if (status === "archived" || status === "unpublished") {
     return [
       base,
       selected
@@ -114,16 +104,13 @@ export function StatusOptionIcon({
   if (status === "in_preparation") {
     return <Wrench aria-hidden="true" className={className} />;
   }
-  if (status === "available") {
+  if (status === "published") {
     return <CircleCheck aria-hidden="true" className={className} />;
   }
-  if (status === "reserved") {
-    return <Clock3 aria-hidden="true" className={className} />;
-  }
-  if (status === "sold") {
+  if (status === "sold_out") {
     return <CircleDollarSign aria-hidden="true" className={className} />;
   }
-  if (status === "inactive") {
+  if (status === "archived" || status === "unpublished") {
     return <PauseCircle aria-hidden="true" className={className} />;
   }
 

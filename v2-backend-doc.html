@@ -1175,8 +1175,9 @@
                   sale/payment rows or parallel finance/document logic.
                 </li>
                 <li>
-                  Vehicle lifecycle transitions (reserved/sold/status updates)
-                  must include actor-linked logs and before/after diff capture.
+                  Vehicle lifecycle transitions (unit reserved/sold/released and
+                  listing publication/status updates) must include actor-linked
+                  logs and before/after diff capture.
                 </li>
                 <li>
                   Reserved units must always generate a reservation receipt
@@ -1233,10 +1234,10 @@
             foundation, not an optional refactor.
           </p>
           <p>
-            The architecture is now explicitly lifecycle-first: listing
-            creation, listing publication, offer/hold, reservation, sale, and
-            post-sale doc/ledger completion are the canonical state machine for
-            V2.
+            The architecture is now explicitly lifecycle-first: listing creation
+            and publication are listing-owned; reservation, release, sale,
+            delivery, and post-sale doc/ledger completion are unit-owned
+            workflows in the canonical state machine for V2.
           </p>
         </section>
 
@@ -1270,16 +1271,17 @@
               <strong>Reserve</strong>
               <p>
                 Reservation is a transactional workflow: store user action,
-                customer snapshot, signal, document, status update, and payment
-                draft.
+                selected vehicle unit, customer snapshot, signal, document, unit
+                status update, and payment draft.
               </p>
             </div>
             <div class="life-stage">
               <span class="eyebrow">Stage 4</span>
               <strong>Sell</strong>
               <p>
-                Sale creation attaches unit, creates sale documents, and
-                generates financial links.
+                Sale creation closes the selected unit, creates sale documents,
+                generates financial links, and marks the listing sold-out only
+                when no open units remain.
               </p>
             </div>
             <div class="life-stage">
@@ -1334,20 +1336,34 @@
               <strong>Backend hardening completed</strong>
               <p>
                 Broad listing edits now record price/status history,
-                reserve/sell now guard invalid current states, reserve/sell
-                write both listing and unit status history, sales draft
-                reserve/close reuse the same workflow finalizer inside the sales
-                transaction runner, and workflow validation/state errors are
-                mapped to client 400/409 responses instead of generic 500s.
+                reserve/sell now guard invalid listing + unit states,
+                reservation writes unit status history only, sale writes unit
+                status history and listing <code>sold_out</code> history only
+                when stock is exhausted, sales draft reserve/close reuse the
+                same workflow finalizer inside the sales transaction runner, and
+                workflow validation/state errors are mapped to client 400/409
+                responses instead of generic 500s.
               </p>
             </div>
             <div class="tile">
               <strong>Remaining vehicle backend gaps</strong>
               <p>
                 Public listing publish needs explicit slug/visibility workflow;
-                reservation expiry/release/cancel needs a first-class workflow;
+                reservation expiry/cancel needs a first-class workflow;
                 marketplace projections need stricter deleted/status/media
                 scoping before production sync.
+              </p>
+            </div>
+            <div class="tile">
+              <strong>Known listing/unit logic debt</strong>
+              <p>
+                Routes and docs now make unit reserve/sell/release primary, but
+                follow-up cleanup should remove compatibility naming such as
+                <code>reserveVehicleListing</code>,
+                <code>sellVehicleListing</code>, and
+                <code>ReserveVehicleListingRequest</code>. UI/status filters
+                must continue treating listing status as publication state and
+                unit status as stock lifecycle state.
               </p>
             </div>
           </div>
@@ -2363,14 +2379,16 @@
                   Completed: reservation workflow route emits reservation
                   receipt, captures buyer snapshot and signal/down-payment
                   context, creates sale/payment + finance link, and transitions
-                  listing/unit status with status history.
+                  unit status with status history.
                 </li>
                 <li>
                   Completed: sold workflow route emits
                   <code>sale_contract</code>, <code>sale_receipt</code>,
                   <code>delivery_term</code>, and
                   <code>power_of_attorney</code>, creates sale/payment + finance
-                  link, and transitions listing/unit status with status history.
+                  link, transitions unit status with status history, and marks
+                  listing <code>sold_out</code> only when open stock is
+                  exhausted.
                 </li>
                 <li>
                   Completed: vehicle backend hardening maps workflow
@@ -2393,10 +2411,10 @@
                 </li>
                 <li>
                   Completed: sales draft reserve/close now run through a single
-                  transaction bundle that updates sales lifecycle plus
-                  listing/unit status, generated documents, finance entry links,
-                  and status history through the canonical vehicle workflow
-                  finalizer.
+                  transaction bundle that updates sales lifecycle plus unit
+                  status, generated documents, finance entry links, and listing
+                  <code>sold_out</code> aggregation through the canonical
+                  vehicle workflow finalizer.
                 </li>
                 <li>
                   Pending: AI WhatsApp assistant must call audited domain tools
@@ -2501,8 +2519,8 @@
               <span class="muted">Required in reserve workflow</span>
               <p>
                 Generated by
-                <code>POST /inventory/listings/{listingId}/reserve</code> when a
-                store records a signal payment.
+                <code>POST /inventory/units/{unitId}/reserve</code> when a store
+                records a signal payment for a physical vehicle unit.
               </p>
               <strong class="badge"
                 >Event: <code>reservation.receipt.issued</code></strong
@@ -2573,8 +2591,9 @@
                   references.
                 </li>
                 <li>
-                  All workflow transitions (publish, reserved, sold, delivered)
-                  include actor context and before/after field diffs.
+                  All workflow transitions (listing publish plus unit reserve,
+                  release, sold, and delivered) include actor context and
+                  before/after field diffs.
                 </li>
                 <li>
                   Public reads can also emit read-audit only for sensitive
@@ -3706,9 +3725,10 @@
                   transitions.
                 </td>
                 <td>
-                  Reserve, sold, pricing, and status workflows require
-                  before/after diffs, sensitive-read audit evidence, and
-                  query/service correlation IDs across logs and audit writes.
+                  Unit reserve/sold/release, pricing, and listing publication
+                  workflows require before/after diffs, sensitive-read audit
+                  evidence, and query/service correlation IDs across logs and
+                  audit writes.
                 </td>
               </tr>
               <tr>
@@ -3718,10 +3738,10 @@
                   workflow, not only a status change.
                 </td>
                 <td>
-                  V2 must support emitting a reservation document when a listing
-                  or unit becomes reserved. The workflow should capture buyer
-                  identity, signal/down-payment amount when present, actor,
-                  linked vehicle unit, generated document, and audit trail.
+                  V2 must support emitting a reservation document when a unit
+                  becomes reserved. The workflow should capture buyer identity,
+                  signal/down-payment amount when present, actor, linked vehicle
+                  unit, generated document, and audit trail.
                 </td>
               </tr>
               <tr>
@@ -4007,11 +4027,11 @@
         reservation: {
           title: "Reservation Workflow",
           summary:
-            "Reservation is a business workflow, not just setting vehicle status to reserved.",
+            "Reservation is a unit-owned business workflow, not a listing status flip.",
           details: [
-            "Required route: <code>POST /inventory/listings/{listingId}/reserve</code>.",
+            "Primary route: <code>POST /inventory/units/{unitId}/reserve</code>; release uses <code>POST /inventory/units/{unitId}/reservation/release</code>.",
             "Capture customer identity snapshot, signal/down-payment amount, linked unit, generated reservation receipt, and reservation sale draft.",
-            "Status transition from <code>draft/published</code> to <code>reserved</code> is executed transactionally where possible.",
+            "Unit transition from <code>available</code> to <code>reserved</code> is executed transactionally where possible; listing remains publication/commercial state.",
             "Permission key: <code>inventory.reserve</code>; actor, store, entity, and generated receipt are written to audit.",
           ],
         },

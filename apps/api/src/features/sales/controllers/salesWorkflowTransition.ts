@@ -1,4 +1,5 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { assertPermission } from "../../../shared/authorization.js";
 import type {
   SalePaymentLine,
   SaleRecord,
@@ -6,8 +7,12 @@ import type {
 import { transitionSale } from "../../../domains/sales/services/SalesService/transitionSale.js";
 import {
   SaleReadinessError,
+  findScopedSale,
+  getSalesRepository,
+  requireSaleScope,
   type SalesServicePorts,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
+import { releaseVehicleReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleReservation.js";
 import { assertStoreUserActor } from "../../../domains/vehicle/authorization/storeWorkflowActor.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
@@ -48,6 +53,26 @@ export async function transitionSaleWithWorkflow(
   ports: SalesWorkflowPorts,
 ): Promise<SaleRecord> {
   if (input.status === "cancelled") {
+    const current = await findScopedSale(
+      getSalesRepository(ports),
+      requireSaleScope(context),
+      input.saleId,
+    );
+    if (current.status === "pending" && current.unitId) {
+      assertPermission(context, "sale.cancel");
+      const payment = requireWorkflowPayment(current);
+      await releaseVehicleReservation(
+        context,
+        {
+          pendingSale: toVehicleSaleBundle(current, "pending", payment),
+          reason: input.overrideReason,
+          saleId: current.id,
+          unitId: current.unitId,
+        },
+        ports.vehiclePorts,
+      );
+      return transitionSale(context, input, ports);
+    }
     return transitionSale(context, input, ports);
   }
 

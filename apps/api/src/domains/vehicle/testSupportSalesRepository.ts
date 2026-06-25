@@ -16,6 +16,31 @@ export function createTestVehicleSalesRepository(): TestVehicleSalesRepository {
   const sales: VehicleSale[] = [];
 
   return {
+    async cancelPending(input): Promise<VehicleSaleBundle> {
+      const sale = sales.find(
+        (item) =>
+          item.id === input.saleId &&
+          item.status === "pending" &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
+      );
+      if (!sale) throw new Error(`Pending sale not found: ${input.saleId}`);
+      const now = new Date();
+      const updatedSale: VehicleSale = {
+        ...sale,
+        status: "cancelled",
+        updatedAt: now,
+      };
+      sales.splice(sales.indexOf(sale), 1, updatedSale);
+      const payment = payments.find((item) => item.saleId === input.saleId);
+      const updatedPayment = payment
+        ? ({ ...payment, status: "cancelled", updatedAt: now } as const)
+        : null;
+      if (payment && updatedPayment) {
+        payments.splice(payments.indexOf(payment), 1, updatedPayment);
+      }
+      return { payment: updatedPayment, sale: updatedSale };
+    },
     payments,
     sales,
     async create(input: CreateVehicleSaleInput): Promise<VehicleSaleBundle> {
@@ -35,6 +60,20 @@ export function createTestVehicleSalesRepository(): TestVehicleSalesRepository {
       };
       payments.push(payment);
       return { payment, sale };
+    },
+    async findPendingByUnit(input): Promise<VehicleSaleBundle | null> {
+      const sale = sales.find(
+        (item) =>
+          item.unitId === input.unitId &&
+          item.status === "pending" &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
+      );
+      if (!sale) return null;
+      return {
+        payment: payments.find((item) => item.saleId === sale.id) ?? null,
+        sale,
+      };
     },
   };
 }

@@ -107,11 +107,11 @@ export function InventoryWorkflowPanel({
       const input = buildWorkflowInput(form, salePriceCents as number);
       const updated =
         mode === "reserve"
-          ? await api.reserveListing(detail.listing.id, {
+          ? await api.reserveUnit(form.unitId, {
               ...input,
               signalAmountCents: signalAmountCents as number,
             })
-          : await api.sellListing(detail.listing.id, {
+          : await api.sellUnit(form.unitId, {
               ...input,
               ...(paidAmountCents !== undefined ? { paidAmountCents } : {}),
             });
@@ -124,6 +124,27 @@ export function InventoryWorkflowPanel({
       });
     }
   };
+  const releaseReservation = async () => {
+    if (!form.unitId) {
+      setState({ kind: "error", message: "Selecione a unidade." });
+      return;
+    }
+    setState({ kind: "saving", mode: "release" });
+    try {
+      const updated = await api.releaseReservation(form.unitId, {
+        reason: form.reason.trim() ? form.reason.trim() : null,
+      });
+      onUpdated(updated);
+      setState({ kind: "saved", mode: "release" });
+    } catch (error) {
+      setState({
+        kind: "error",
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+  const selectedUnit =
+    detail.units.find((unit) => unit.id === form.unitId) ?? primaryUnit;
 
   return (
     <InventoryPanel
@@ -244,15 +265,23 @@ export function InventoryWorkflowPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <WorkflowStatus state={state} />
           <WorkflowSubmitButton
-            isDisabled={isSaving || !primaryUnit}
+            isDisabled={isSaving || !selectedUnit}
             isSaving={isSaving}
             mode={mode}
           />
+          <button
+            className="min-h-11 rounded-lg bg-app px-4 text-sm font-black text-app-text disabled:opacity-70"
+            disabled={isSaving || selectedUnit?.status !== "reserved"}
+            onClick={() => void releaseReservation()}
+            type="button"
+          >
+            Liberar reserva
+          </button>
         </div>
 
         <InventoryWorkflowPrintActions
           onPrint={setActivePrint}
-          status={detail.listing.status}
+          status={selectedUnit?.status ?? null}
         />
       </form>
 

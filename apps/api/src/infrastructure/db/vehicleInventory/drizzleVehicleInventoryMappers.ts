@@ -137,12 +137,12 @@ export function toDbListingStatus(
   status: VehicleListingStatus,
 ): InsertVehicleListingRow["status"] {
   const map: Record<VehicleListingStatus, InsertVehicleListingRow["status"]> = {
-    available: "published",
+    archived: "archived",
     draft: "draft",
-    inactive: "unpublished",
     in_preparation: "in_preparation",
-    reserved: "reserved",
-    sold: "sold_out",
+    published: "published",
+    sold_out: "sold_out",
+    unpublished: "unpublished",
   };
   return map[status];
 }
@@ -151,11 +151,13 @@ export function toDbUnitStatus(
   status: VehicleUnitStatus,
 ): InsertVehicleUnitRow["status"] {
   const map: Record<VehicleUnitStatus, InsertVehicleUnitRow["status"]> = {
+    acquired: "acquired",
     available: "available",
-    reserved: "reserved",
-    retired: "inactive",
-    sold: "sold",
+    delivered: "delivered",
+    inactive: "inactive",
     in_preparation: "in_preparation",
+    reserved: "reserved",
+    sold: "sold",
   };
   return map[status];
 }
@@ -174,31 +176,16 @@ export function requireReturnedRow<Row>(
 
 function toDomainListingStatus(
   status: VehicleListingRow["status"],
-  units: readonly VehicleUnit[],
+  _units: readonly VehicleUnit[],
 ): VehicleListingStatus {
-  if (status === "in_preparation") return "in_preparation";
-  if (status === "unpublished") {
-    return units.some((u) => u.status === "in_preparation")
-      ? "in_preparation"
-      : "inactive";
-  }
-  const map: Record<
-    Exclude<
-      VehicleListingRow["status"],
-      "unpublished" | "archived" | "in_preparation"
-    >,
-    VehicleListingStatus
-  > = {
+  const map: Record<VehicleListingRow["status"], VehicleListingStatus> = {
+    archived: "archived",
     draft: "draft",
-    published: "available",
-    reserved: "reserved",
-    sold_out: "sold",
+    in_preparation: "in_preparation",
+    published: "published",
+    sold_out: "sold_out",
+    unpublished: "unpublished",
   };
-  if (status === "archived") {
-    throw new VehicleInventoryDrizzleMappingError(
-      "DB listing status archived has no VehicleService equivalent",
-    );
-  }
   return map[status];
 }
 
@@ -206,11 +193,13 @@ function toDomainUnitStatus(
   status: VehicleUnitRow["status"],
 ): VehicleUnitStatus {
   const map: Partial<Record<VehicleUnitRow["status"], VehicleUnitStatus>> = {
+    acquired: "acquired",
     available: "available",
+    delivered: "delivered",
+    inactive: "inactive",
+    in_preparation: "in_preparation",
     reserved: "reserved",
     sold: "sold",
-    inactive: "retired",
-    in_preparation: "in_preparation",
   };
   const mapped = map[status];
   if (!mapped) {

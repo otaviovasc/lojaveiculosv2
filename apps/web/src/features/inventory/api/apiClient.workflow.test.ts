@@ -21,45 +21,48 @@ function bodyOf(call: FetchCall) {
 }
 
 describe("createInventoryApi workflow methods", () => {
-  it("reserves and sells listings through workflow routes", async () => {
+  it("reserves, sells, and releases units through workflow routes", async () => {
     const fake = createFakeFetch();
     const api = createInventoryApi({ fetch: fake.fetch });
 
-    await api.reserveListing("listing_1", {
+    await api.reserveUnit("unit_1", {
       buyer: { document: "000", name: "Buyer" },
       paymentMethod: "pix",
       salePriceCents: 12000000,
       signalAmountCents: 100000,
-      unitId: "unit_1",
     });
-    await api.sellListing("listing_1", {
+    await api.sellUnit("unit_1", {
       buyer: { email: "buyer@example.com", name: "Buyer" },
       paidAmountCents: 12000000,
       paymentMethod: "bank_transfer",
       salePriceCents: 12000000,
-      unitId: "unit_1",
+    });
+    await api.releaseReservation("unit_1", {
+      reason: "Cliente desistiu",
+      saleId: "sale_1",
     });
 
-    expect(fake.calls[0]?.input).toBe(
-      "/api/v1/inventory/listings/listing_1/reserve",
-    );
+    expect(fake.calls[0]?.input).toBe("/api/v1/inventory/units/unit_1/reserve");
     expect(fake.calls[0]?.init?.method).toBe("POST");
     expect(bodyOf(fake.calls[0] as FetchCall)).toEqual({
       buyer: { document: "000", name: "Buyer" },
       paymentMethod: "pix",
       salePriceCents: 12000000,
       signalAmountCents: 100000,
-      unitId: "unit_1",
     });
-    expect(fake.calls[1]?.input).toBe(
-      "/api/v1/inventory/listings/listing_1/sell",
-    );
+    expect(fake.calls[1]?.input).toBe("/api/v1/inventory/units/unit_1/sell");
     expect(bodyOf(fake.calls[1] as FetchCall)).toEqual({
       buyer: { email: "buyer@example.com", name: "Buyer" },
       paidAmountCents: 12000000,
       paymentMethod: "bank_transfer",
       salePriceCents: 12000000,
-      unitId: "unit_1",
+    });
+    expect(fake.calls[2]?.input).toBe(
+      "/api/v1/inventory/units/unit_1/reservation/release",
+    );
+    expect(bodyOf(fake.calls[2] as FetchCall)).toEqual({
+      reason: "Cliente desistiu",
+      saleId: "sale_1",
     });
   });
 });

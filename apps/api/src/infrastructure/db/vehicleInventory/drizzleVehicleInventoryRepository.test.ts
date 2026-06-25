@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { createDrizzleVehicleInventoryRepositories } from "./drizzleVehicleInventoryRepository.js";
-import { VehicleInventoryDrizzleMappingError } from "./drizzleVehicleInventoryMappers.js";
+import {
+  VehicleInventoryDrizzleMappingError,
+  type VehicleUnitRow,
+} from "./drizzleVehicleInventoryMappers.js";
 import { VehicleInventoryDrizzleScopeError } from "./drizzleVehicleInventoryScope.js";
 import {
   createFakeDb,
@@ -22,7 +25,7 @@ describe("Drizzle vehicle inventory repositories", () => {
       modelYear: null,
       plate: "ABC1D23",
       priceCents: 12000000,
-      status: "available",
+      status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",
       title: "Civic EXL",
@@ -31,7 +34,7 @@ describe("Drizzle vehicle inventory repositories", () => {
     const unit = await unitRepository.create({
       listingId: listing.id,
       plate: "ABC1D23",
-      status: "retired",
+      status: "inactive",
       stockNumber: "stock_1",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -53,13 +56,13 @@ describe("Drizzle vehicle inventory repositories", () => {
     expect(listing).toMatchObject({
       id: "listing_1",
       plate: null,
-      status: "available",
+      status: "published",
       unitIds: [],
     });
     expect(unit).toMatchObject({
       id: "unit_1",
       plate: "ABC1D23",
-      status: "retired",
+      status: "inactive",
     });
   });
 
@@ -148,7 +151,7 @@ describe("Drizzle vehicle inventory repositories", () => {
     expect(listing).toMatchObject({
       id: listingId,
       plate: "ABC1D23",
-      status: "sold",
+      status: "sold_out",
       unitIds: ["unit_1"],
     });
   });
@@ -187,11 +190,11 @@ describe("Drizzle vehicle inventory repositories", () => {
     ).rejects.toBeInstanceOf(VehicleInventoryDrizzleScopeError);
   });
 
-  it("fails fast on DB statuses outside the current VehicleService port", async () => {
+  it("fails fast on DB unit statuses outside the current VehicleService port", async () => {
     const rows = createRows();
     const db = createFakeDb({
-      listings: [rows.listing({ status: "archived" })],
-      units: [],
+      listings: [rows.listing()],
+      units: [rows.unit({ status: "unknown" as VehicleUnitRow["status"] })],
     });
     const { listingRepository } = createDrizzleVehicleInventoryRepositories(db);
 

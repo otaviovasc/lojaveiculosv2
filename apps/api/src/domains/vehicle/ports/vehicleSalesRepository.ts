@@ -66,6 +66,23 @@ export type VehicleSaleBundle = {
   sale: VehicleSale;
 };
 
+export type FindPendingVehicleSaleByUnitInput = {
+  storeId: string | null;
+  tenantId: string | null;
+  unitId: string;
+};
+
+export type CancelVehicleSaleInput = {
+  reason: string | null;
+  saleId: string;
+  storeId: string | null;
+  tenantId: string | null;
+};
+
 export type VehicleSalesRepository = {
+  cancelPending: (input: CancelVehicleSaleInput) => Promise<VehicleSaleBundle>;
   create: (input: CreateVehicleSaleInput) => Promise<VehicleSaleBundle>;
+  findPendingByUnit: (
+    input: FindPendingVehicleSaleByUnitInput,
+  ) => Promise<VehicleSaleBundle | null>;
 };

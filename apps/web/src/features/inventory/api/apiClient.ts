@@ -123,18 +123,24 @@ export function createInventoryApi({
       input,
     );
 
-  const reserveListing = (
-    listingId: string,
-    input: ReserveInventoryListingInput,
+  const releaseReservation = (
+    unitId: string,
+    input: { reason?: string | null; saleId?: string | null },
   ) =>
     postJson<InventoryListingDetail>(
-      inventoryRoutes.reserve(listingId, baseUrl),
+      inventoryRoutes.releaseReservation(unitId, baseUrl),
       input,
     );
 
-  const sellListing = (listingId: string, input: SellInventoryListingInput) =>
+  const reserveUnit = (unitId: string, input: ReserveInventoryListingInput) =>
     postJson<InventoryListingDetail>(
-      inventoryRoutes.sell(listingId, baseUrl),
+      inventoryRoutes.reserve(unitId, baseUrl),
+      input,
+    );
+
+  const sellUnit = (unitId: string, input: SellInventoryListingInput) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.sell(unitId, baseUrl),
       input,
     );
 
@@ -270,8 +276,9 @@ export function createInventoryApi({
     listChecklists,
     listListings,
     ...mediaApi,
-    reserveListing,
-    sellListing,
+    releaseReservation,
+    reserveUnit,
+    sellUnit,
     updateChecklist,
     updateListingDetails,
     updateUnit,

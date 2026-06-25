@@ -77,11 +77,11 @@ export const listingStatusOptions: Array<{
   value: InventoryListingStatus;
 }> = [
   { label: "Rascunho", value: "draft" },
-  { label: "Disponivel", value: "available" },
   { label: "Em preparação", value: "in_preparation" },
-  { label: "Reservado", value: "reserved" },
-  { label: "Vendido", value: "sold" },
-  { label: "Inativo", value: "inactive" },
+  { label: "Publicado", value: "published" },
+  { label: "Esgotado", value: "sold_out" },
+  { label: "Fora do ar", value: "unpublished" },
+  { label: "Arquivado", value: "archived" },
 ];
 
 export const createListingStatusOptions: Array<{
@@ -89,9 +89,9 @@ export const createListingStatusOptions: Array<{
   value: InventoryCreateListingStatus;
 }> = [
   { label: "Rascunho", value: "draft" },
-  { label: "Disponivel", value: "available" },
   { label: "Em preparação", value: "in_preparation" },
-  { label: "Inativo", value: "inactive" },
+  { label: "Publicado", value: "published" },
+  { label: "Fora do ar", value: "unpublished" },
 ];
 
 export const fuelTypeOptions: Array<{
@@ -153,11 +153,11 @@ export const unitStatusOptions: Array<{
   label: string;
   value: InventoryUnit["status"];
 }> = [
+  { label: "Adquirida", value: "acquired" },
   { label: "Disponivel", value: "available" },
+  { label: "Entregue", value: "delivered" },
+  { label: "Inativa", value: "inactive" },
   { label: "Em preparação", value: "in_preparation" },
-  { label: "Reservada", value: "reserved" },
-  { label: "Vendida", value: "sold" },
-  { label: "Retirada", value: "retired" },
 ];
 
 export function createInitialInventoryForm(): InventoryFormState {
