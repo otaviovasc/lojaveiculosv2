@@ -17,6 +17,7 @@ export function inventorySummariesToUnitFolderOptions(
       label: summary.listing.title,
       listingId: summary.listing.id,
       plate: unit.plate ?? summary.listing.plate,
+      primaryMediaUrl: summary.primaryMediaUrl,
       stockNumber: unit.stockNumber,
       targetType: "vehicle_unit" as const,
       unitId: unit.id,

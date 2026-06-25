@@ -1,0 +1,157 @@
+/* Documents table sheet header (select-all + selection actions at top-left of the table). */
+
+.documents-table-sheet-header {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: space-between;
+  min-height: 2.1rem;
+  padding: 0.3rem 0.75rem;
+}
+
+.documents-table-sheet-header[data-has-selection="true"] {
+  background: color-mix(
+    in srgb,
+    var(--color-accent-soft) 60%,
+    var(--color-app-elevated)
+  );
+  border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+}
+
+.documents-table-sheet-header-start {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.documents-table-sheet-header-checkbox {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 1.1rem;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  width: 1.1rem;
+}
+
+.documents-table-sheet-header-checkbox:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.documents-table-sheet-header-checkbox-box {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1.5px solid var(--color-line);
+  border-radius: 0.35rem;
+  color: var(--color-inverse);
+  display: inline-flex;
+  height: 1.1rem;
+  justify-content: center;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+  width: 1.1rem;
+}
+
+.documents-table-sheet-header-checkbox[aria-checked="true"]
+  .documents-table-sheet-header-checkbox-box,
+.documents-table-sheet-header-checkbox[aria-checked="mixed"]
+  .documents-table-sheet-header-checkbox-box {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.documents-table-sheet-header-label {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.documents-table-sheet-header-count {
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  margin-left: 0.35rem;
+}
+
+.documents-table-sheet-header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.documents-table-sheet-header-pill {
+  align-items: center;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 999px;
+  color: var(--color-inverse);
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.65rem;
+  text-transform: uppercase;
+}
+
+.documents-table-sheet-header-icon-button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.85rem;
+  justify-content: center;
+  padding: 0 0.4rem;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.documents-table-sheet-header-icon-button:hover {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.documents-table-sheet-header-download {
+  align-items: center;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.74rem;
+  font-weight: 900;
+  gap: 0.35rem;
+  height: 1.85rem;
+  letter-spacing: 0.02em;
+  padding: 0 0.7rem;
+  text-transform: uppercase;
+  transition: background 0.15s ease;
+}
+
+.documents-table-sheet-header-download:hover:not(:disabled) {
+  background: var(--color-accent-strong);
+}
+
+.documents-table-sheet-header-download:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

@@ -11,10 +11,7 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { DocumentMetadataEditor } from "./DocumentMetadataEditor";
 import { DocumentGeneratedPreview } from "./DocumentGeneratedPreview";
-import {
-  DocumentOriginBadge,
-  DocumentScopeBadge,
-} from "./DocumentWorkspaceTable";
+import { DocumentOriginBadge, DocumentScopeBadge } from "./DocumentBadges";
 import {
   documentActorLabel,
   documentOrigin,

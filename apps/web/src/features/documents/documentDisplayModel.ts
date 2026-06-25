@@ -2,10 +2,7 @@ import { kindLabel, statusLabel, targetLabel } from "./documentLabels";
 import {
   readMetadataArray,
   readMetadataNumber,
-  readMetadataRecord,
   readMetadataString,
-  readRecord,
-  readRecordString,
 } from "./documentMetadataReaders";
 import type {
   DocumentKind,
@@ -13,6 +10,16 @@ import type {
   DocumentStatus,
   WorkspaceDocument,
 } from "./types";
+import { isVehicleDocumentTargetType } from "./documentVehicleInfoModel";
+
+export {
+  documentVehicleInfo,
+  isVehicleDocumentTargetType,
+  type DocumentVehicleInfo,
+  type DocumentVehicleOption,
+} from "./documentVehicleInfoModel";
+import { documentVehicleInfo } from "./documentVehicleInfoModel";
+import type { DocumentVehicleInfo } from "./documentVehicleInfoModel";
 
 export type DocumentOrigin = "automatic" | "manual";
 export type DocumentScope = "general" | "multiple_vehicles" | "vehicle";
@@ -27,21 +34,6 @@ export type DocumentsWorkspaceFilters = {
   status: DocumentStatus | "";
   vehicleId: string;
 };
-
-export type DocumentVehicleInfo = {
-  id: string;
-  label: string;
-  listingId: string | null;
-  plate: string | null;
-  stockNumber: string | null;
-  targetType: "vehicle_listing" | "vehicle_unit";
-  unitId: string | null;
-  vin: string | null;
-};
-
-export type DocumentVehicleOption = DocumentVehicleInfo;
-
-const VEHICLE_TARGET_TYPES = ["vehicle_listing", "vehicle_unit"] as const;
 
 export function documentOrigin(document: WorkspaceDocument): DocumentOrigin {
   // TODO(documents-api): replace this inference with a backend origin/source enum.
@@ -59,7 +51,9 @@ export function documentScope(document: WorkspaceDocument): DocumentScope {
   const vehicleIds = readMetadataArray(document, ["vehicleIds", "vehicles"]);
   if (vehicleIds.length > 1) return "multiple_vehicles";
 
-  return isVehicleLinkedDocument(document) ? "vehicle" : "general";
+  return isVehicleDocumentTargetType(document.context.targetType)
+    ? "vehicle"
+    : "general";
 }
 
 export function documentScopeLabel(document: WorkspaceDocument) {
@@ -91,64 +85,6 @@ export function documentActorLabel(document: WorkspaceDocument) {
   );
 }
 
-export function documentVehicleInfo(
-  document: WorkspaceDocument,
-): DocumentVehicleInfo | null {
-  const targetType = document.context.targetType;
-  if (!isVehicleDocumentTargetType(targetType)) return null;
-
-  const vehicle = readMetadataRecord(document, "vehicle");
-  const catalog = readRecord(vehicle?.catalog);
-  const isUnitTarget = targetType === "vehicle_unit";
-  const catalogLabel = [
-    readRecordString(catalog, ["brandName"]),
-    readRecordString(catalog, ["modelName"]),
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const explicitLabel =
-    readMetadataString(document, [
-      "unitTitle",
-      "unitLabel",
-      "vehicleTitle",
-      "vehicleLabel",
-    ]) ?? readRecordString(vehicle, ["title", "label"]);
-  const label =
-    explicitLabel ?? (catalogLabel || targetLabel(document.context.targetType));
-  const unitId =
-    readMetadataString(document, ["unitId", "vehicleUnitId"]) ??
-    readRecordString(vehicle, ["unitId"]);
-  const listingId =
-    readMetadataString(document, ["listingId", "vehicleListingId"]) ??
-    readRecordString(vehicle, ["listingId"]) ??
-    (targetType === "vehicle_listing" ? document.context.targetId : null);
-
-  return {
-    id:
-      unitId ??
-      readRecordString(
-        vehicle,
-        isUnitTarget ? ["id", "listingId"] : ["listingId", "id"],
-      ) ??
-      document.context.targetId,
-    label,
-    listingId,
-    plate:
-      readMetadataString(document, ["plate", "licensePlate"]) ??
-      readRecordString(vehicle, ["plate", "licensePlate"]),
-    stockNumber:
-      readMetadataString(document, ["stockNumber"]) ??
-      readRecordString(vehicle, ["stockNumber"]),
-    targetType,
-    unitId:
-      unitId ??
-      (targetType === "vehicle_unit" ? document.context.targetId : null),
-    vin:
-      readMetadataString(document, ["vin", "chassis", "chassi"]) ??
-      readRecordString(vehicle, ["vin", "chassis", "chassi"]),
-  };
-}
-
 export function summarizeWorkspaceDocuments(
   documents: readonly WorkspaceDocument[],
 ) {
@@ -178,8 +114,8 @@ export function summarizeWorkspaceDocuments(
 
 export function buildDocumentVehicleOptions(
   documents: readonly WorkspaceDocument[],
-): DocumentVehicleOption[] {
-  const options = new Map<string, DocumentVehicleOption>();
+): DocumentVehicleInfo[] {
+  const options = new Map<string, DocumentVehicleInfo>();
   for (const document of documents) {
     const vehicle = documentUnitFolderInfo(document);
     if (vehicle) options.set(vehicle.id, vehicle);
@@ -266,16 +202,6 @@ export function formatFileSizeLabel(value: number | null) {
   if (value == null) return "Tamanho indisponível";
   if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function isVehicleLinkedDocument(document: WorkspaceDocument) {
-  return isVehicleDocumentTargetType(document.context.targetType);
-}
-
-export function isVehicleDocumentTargetType(
-  targetType: DocumentLinkTarget,
-): targetType is DocumentVehicleInfo["targetType"] {
-  return (VEHICLE_TARGET_TYPES as readonly string[]).includes(targetType);
 }
 
 function documentSearchText(document: WorkspaceDocument) {

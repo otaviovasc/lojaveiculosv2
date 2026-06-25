@@ -2,43 +2,38 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { createDocumentsApi, type DocumentsApi } from "./apiClient";
 import { createDocumentsApiOptions } from "./runtimeApi";
-import { DocumentDeleteDialog } from "./DocumentDeleteDialog";
-import { DocumentDetailPanel } from "./DocumentDetailPanel";
-import { DocumentManageLinksDialog } from "./DocumentManageLinksDialog";
-import { DocumentTemplatesDialog } from "./DocumentTemplatesDialog";
-import { DocumentsFiltersPanel } from "./DocumentsFiltersPanel";
-import { DocumentsFolderNavigator } from "./DocumentsFolderNavigator";
+import { DocumentsFolderSidebar } from "./DocumentsFolderSidebar";
 import {
-  DocumentsEmptyState,
-  DocumentsListHeading,
-  DocumentsTableSkeleton,
-} from "./DocumentsModuleParts";
-import { DocumentsSummaryCards } from "./DocumentsSummaryCards";
-import { DocumentsTable } from "./DocumentWorkspaceTable";
+  DocumentsKpiSummary,
+  type DocumentOriginFilter,
+} from "./DocumentsKpiSummary";
+import { DocumentsWorkspaceBody } from "./DocumentsWorkspaceBody";
+import {
+  DocumentsWorkspaceDialogs,
+  type DocumentsMobileTab,
+} from "./DocumentsWorkspaceDialogs";
+import { DocumentsWorkspaceTopBar } from "./DocumentsWorkspaceTopBar";
+import { DEFAULT_DOCUMENTS_SORT } from "./documentsWorkspaceDefaults";
 import {
   filterDocumentsForFolder,
   filterDocumentsForWorkspace,
-  hasActiveDocumentFilters,
   summarizeWorkspaceDocuments,
+  type DocumentVehicleOption,
   type DocumentsFolderKey,
-  type DocumentsWorkspaceFilters,
 } from "./documentDisplayModel";
+import {
+  EMPTY_DOCUMENT_FILTERS,
+  filterByOrigin,
+  hasActiveDocumentFilters,
+  sortDocuments,
+  type DocumentsSortKey,
+  type DocumentsWorkspaceFilters,
+} from "./documentWorkspaceFilters";
 import { resolveDocumentUploadTarget } from "./documentUploadTarget";
-import { DocumentUploadDialog } from "./DocumentUploadDialog";
 import { useDocumentUnitFolders } from "./useDocumentUnitFolders";
+import { useDocumentsBulkSelection } from "./useDocumentsBulkSelection";
 import { useDocumentsModuleState } from "./useDocumentsModuleState";
 import type { WorkspaceDocument } from "./types";
-
-const emptyFilters: DocumentsWorkspaceFilters = {
-  dateFrom: "",
-  dateTo: "",
-  kind: "",
-  origin: "all",
-  scope: "all",
-  search: "",
-  status: "",
-  vehicleId: "",
-};
 
 export function DocumentsModule({
   api,
@@ -50,12 +45,17 @@ export function DocumentsModule({
   const [runtimeApi, setRuntimeApi] = useState<DocumentsApi | null>(
     api ?? null,
   );
-  const [filters, setFilters] =
-    useState<DocumentsWorkspaceFilters>(emptyFilters);
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
-  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
   const [selectedFolderKey, setSelectedFolderKey] =
-    useState<DocumentsFolderKey | null>(null);
+    useState<DocumentsFolderKey>("general");
+  const [originFilter, setOriginFilter] = useState<DocumentOriginFilter>("all");
+  const [sortBy, setSortBy] = useState<DocumentsSortKey>(
+    DEFAULT_DOCUMENTS_SORT,
+  );
+  const [filters, setFilters] = useState<DocumentsWorkspaceFilters>(
+    EMPTY_DOCUMENT_FILTERS,
+  );
+  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<DocumentsMobileTab>("documentos");
   const [linkDocument, setLinkDocument] = useState<WorkspaceDocument | null>(
     null,
   );
@@ -73,72 +73,129 @@ export function DocumentsModule({
   const state = useDocumentsModuleState(runtimeApi);
   const unitFolders = useDocumentUnitFolders(state.documents, inventoryApi);
   const vehicleOptions = unitFolders.options;
+
   const folderDocuments = useMemo(
     () => filterDocumentsForFolder(state.documents, selectedFolderKey),
     [selectedFolderKey, state.documents],
   );
-  const visibleDocuments = useMemo(
-    () => filterDocumentsForWorkspace(folderDocuments, filters),
-    [filters, folderDocuments],
+  const originScoped = useMemo(
+    () => filterByOrigin(folderDocuments, originFilter),
+    [folderDocuments, originFilter],
   );
-  const summary = summarizeWorkspaceDocuments(state.documents);
+  const filteredDocuments = useMemo(
+    () => filterDocumentsForWorkspace(originScoped, filters),
+    [originScoped, filters],
+  );
+  const sortedVisible = useMemo(
+    () => sortDocuments(filteredDocuments, sortBy),
+    [filteredDocuments, sortBy],
+  );
+  const summary = useMemo(
+    () => buildKpiSummary(state.documents),
+    [state.documents],
+  );
+
   const hasFilters = hasActiveDocumentFilters(filters);
   const isLoading = state.status.kind === "loading";
   const errorMessage =
     state.status.kind === "error" ? state.status.message : null;
-  const selectedUnit = selectedFolderKey?.startsWith("unit:")
-    ? vehicleOptions.find(
+
+  const selectedUnit = selectedFolderKey.startsWith("unit:")
+    ? (vehicleOptions.find(
         (vehicle) => selectedFolderKey === `unit:${vehicle.id}`,
-      )
+      ) ?? null)
     : null;
-  const selectedFolderTitle =
+  const folderTitle =
     selectedFolderKey === "general"
       ? "Geral"
       : (selectedUnit?.label ?? "Unidade");
+  const folderSubtitle =
+    selectedFolderKey === "general"
+      ? "Loja e documentos sem unidade"
+      : "Documentos desta unidade";
+
   const uploadTarget = resolveDocumentUploadTarget(
     selectedFolderKey,
     selectedUnit,
   );
+  const showUpload = Boolean(uploadTarget);
+  const uploadTitle = uploadTarget
+    ? "Enviar documento para esta pasta"
+    : "Esta unidade ainda nao tem vinculo de anuncio para envio";
 
-  const updateFilters = useCallback(
-    (nextFilters: DocumentsWorkspaceFilters) => {
-      setFilters(nextFilters);
-    },
+  const selection = useDocumentsBulkSelection(sortedVisible);
+  const visibleSelectedCount = selection.visibleSelectedCount;
+
+  const setFilter = useCallback(
+    <Key extends keyof DocumentsWorkspaceFilters>(
+      key: Key,
+      value: DocumentsWorkspaceFilters[Key],
+    ) => setFilters((current) => ({ ...current, [key]: value })),
     [],
   );
-
-  const resetFilters = useCallback(() => {
-    setFilters(emptyFilters);
-  }, []);
+  const resetFilters = useCallback(
+    () => setFilters(EMPTY_DOCUMENT_FILTERS),
+    [],
+  );
+  const clearAllFilters = useCallback(() => {
+    setOriginFilter("all");
+    resetFilters();
+  }, [resetFilters]);
 
   const selectDocument = (document: WorkspaceDocument) => {
     state.setDocumentPreview(null);
     state.setDocumentVersions([]);
     state.setSelectedDocument(document);
   };
-
   const closeDetail = () => {
     state.setSelectedDocument(null);
     state.setDocumentPreview(null);
     state.setDocumentVersions([]);
   };
-
   const selectFolder = (folderKey: DocumentsFolderKey) => {
     setSelectedFolderKey(folderKey);
-    resetFilters();
-    closeDetail();
-    setIsMobileFiltersOpen(false);
+    setMobileTab("documentos");
+    selection.clear();
   };
+  const openMobileFolders = useCallback(() => setMobileTab("pastas"), []);
+
+  const onDownloadSelected = useCallback(
+    () => selection.downloadSelected(state.downloadDocument),
+    [selection, state.downloadDocument],
+  );
 
   return (
     <div className="documents-page relative min-h-screen store-dashboard overflow-hidden">
       <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
       <main className="documents-main dashboard-main relative z-10">
-        <DocumentsSummaryCards summary={summary} />
+        <DocumentsWorkspaceTopBar
+          folderSubtitle={folderSubtitle}
+          folderTitle={folderTitle}
+          isRefreshing={isLoading}
+          isUploading={!runtimeApi || !uploadTarget}
+          onOpenFolders={openMobileFolders}
+          onOpenTemplates={() => setIsTemplatesDialogOpen(true)}
+          onRefresh={() => void state.resetAndReload()}
+          onUpload={() => state.setIsUploadDialogOpen(true)}
+          selectedKey={selectedFolderKey}
+          showUpload={showUpload}
+          unitLabel={selectedUnit ? selectedUnit.label : null}
+          uploadTitle={uploadTitle}
+        />
+
+        <DocumentsKpiSummary
+          activeOrigin={originFilter}
+          isLoading={isLoading}
+          onOriginSelect={setOriginFilter}
+          summary={summary}
+        />
 
         {errorMessage ? (
-          <section className="documents-state documents-error-state">
-            <strong>Não foi possível carregar os documentos</strong>
+          <section
+            className="documents-state documents-error-state"
+            role="alert"
+          >
+            <strong>Nao foi possivel carregar os documentos</strong>
             <p>{errorMessage}</p>
             <button onClick={() => void state.resetAndReload()} type="button">
               Tentar novamente
@@ -148,7 +205,7 @@ export function DocumentsModule({
 
         <section className="documents-command-layout">
           <div className="documents-desktop-folders">
-            <DocumentsFolderNavigator
+            <DocumentsFolderSidebar
               documents={state.documents}
               isLoading={unitFolders.status === "loading"}
               onSelect={selectFolder}
@@ -157,167 +214,86 @@ export function DocumentsModule({
             />
           </div>
 
-          <section
-            className="documents-list-panel"
-            aria-label="Lista de documentos"
-          >
-            {state.selectedDocument ? (
-              <DocumentDetailPanel
-                document={state.selectedDocument}
-                isBusy={state.isDocumentActionBusy}
-                onClose={closeDetail}
-                onDelete={state.setDocumentToDelete}
-                onDownload={state.downloadDocument}
-                onManageLinks={setLinkDocument}
-                onPreview={state.previewDocument}
-                onRegenerate={async (documentId) => {
-                  await state.applyDocumentAction(() =>
-                    runtimeApi!.regenerateDocument(documentId),
-                  );
-                }}
-                onUpdate={state.updateDocument}
-                preview={state.documentPreview}
-                versions={state.documentVersions}
-              />
-            ) : (
-              <>
-                <DocumentsListHeading
-                  isUploadDisabled={!runtimeApi || !uploadTarget}
-                  isRefreshing={isLoading}
-                  onOpenFolders={() => setIsMobileFiltersOpen(true)}
-                  onOpenTemplates={() => setIsTemplatesDialogOpen(true)}
-                  onRefresh={() => void state.resetAndReload()}
-                  onUpload={() => state.setIsUploadDialogOpen(true)}
-                  showUpload={Boolean(selectedFolderKey)}
-                  subtitle={
-                    selectedFolderKey
-                      ? `${visibleDocuments.length} de ${folderDocuments.length} documentos nesta pasta`
-                      : "Escolha Geral ou uma unidade para listar documentos"
-                  }
-                  title={
-                    selectedFolderKey
-                      ? selectedFolderTitle
-                      : "Selecione uma pasta"
-                  }
-                  uploadTitle={
-                    uploadTarget
-                      ? "Enviar documento para esta pasta"
-                      : "Esta unidade ainda não tem vínculo de anúncio para envio"
-                  }
-                />
-
-                {isLoading ? <DocumentsTableSkeleton /> : null}
-                {!isLoading && !errorMessage && !selectedFolderKey ? (
-                  <DocumentsEmptyState
-                    title="Selecione uma pasta"
-                    description="Escolha Geral ou uma unidade na navegação para ver os documentos daquela pasta."
-                  />
-                ) : null}
-                {!isLoading &&
-                selectedFolderKey &&
-                folderDocuments.length > 0 ? (
-                  <DocumentsFiltersPanel
-                    filters={filters}
-                    onChange={updateFilters}
-                    onReset={resetFilters}
-                  />
-                ) : null}
-                {!isLoading &&
-                !errorMessage &&
-                selectedFolderKey &&
-                folderDocuments.length > 0 &&
-                visibleDocuments.length === 0 ? (
-                  <DocumentsEmptyState
-                    title="Nenhum documento corresponde aos filtros desta pasta"
-                    description="Tente alterar origem, tipo, status, período ou busca."
-                  />
-                ) : null}
-                {!isLoading &&
-                !errorMessage &&
-                selectedFolderKey &&
-                folderDocuments.length === 0 ? (
-                  <DocumentsEmptyState
-                    title="Nenhum documento nesta pasta"
-                    description="Envios manuais e documentos emitidos para esta pasta aparecerão aqui."
-                  />
-                ) : null}
-                {!isLoading && visibleDocuments.length > 0 ? (
-                  <DocumentsTable
-                    documents={visibleDocuments}
-                    isBusy={state.isDocumentActionBusy}
-                    onDelete={state.setDocumentToDelete}
-                    onDownload={state.downloadDocument}
-                    onSelect={selectDocument}
-                  />
-                ) : null}
-                {hasFilters ? (
-                  <button
-                    className="documents-clear-filters"
-                    onClick={resetFilters}
-                    type="button"
-                  >
-                    Limpar filtros
-                  </button>
-                ) : null}
-              </>
-            )}
-          </section>
+          <DocumentsWorkspaceBody
+            api={runtimeApi}
+            clearAllFilters={clearAllFilters}
+            errorMessage={errorMessage}
+            filters={filters}
+            folderDocuments={folderDocuments}
+            hasActiveFilters={hasFilters}
+            isLoading={isLoading}
+            onCloseDetail={closeDetail}
+            onDownloadDocument={state.downloadDocument}
+            onDownloadSelected={() => {
+              void onDownloadSelected();
+            }}
+            onKindChange={(value) => setFilter("kind", value)}
+            onOriginSelect={setOriginFilter}
+            onPreviewDocument={state.previewDocument}
+            onSearchChange={(value) => setFilter("search", value)}
+            onSelectDocument={selectDocument}
+            onSetDocumentToDelete={state.setDocumentToDelete}
+            onSetFilter={setFilter}
+            onSetLinkDocument={setLinkDocument}
+            onSortChange={setSortBy}
+            onStatusChange={(value) => setFilter("status", value)}
+            onUploadClick={() => state.setIsUploadDialogOpen(true)}
+            originFilter={originFilter}
+            search={filters.search}
+            selectedFolderKey={selectedFolderKey}
+            showUpload={showUpload}
+            sortBy={sortBy}
+            sortedVisible={sortedVisible}
+            state={state}
+            selection={selection}
+            updateDocument={state.updateDocument}
+            visibleSelectedCount={visibleSelectedCount}
+          />
         </section>
       </main>
 
-      {isMobileFiltersOpen ? (
-        <div
-          className="documents-modal-backdrop"
-          onClick={() => setIsMobileFiltersOpen(false)}
-        >
-          <div
-            className="documents-mobile-filters"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <DocumentsFolderNavigator
-              documents={state.documents}
-              isLoading={unitFolders.status === "loading"}
-              onSelect={selectFolder}
-              selectedKey={selectedFolderKey}
-              vehicleOptions={vehicleOptions}
-            />
-          </div>
-        </div>
-      ) : null}
-
-      {runtimeApi && uploadTarget ? (
-        <DocumentUploadDialog
-          api={runtimeApi}
-          isOpen={state.isUploadDialogOpen}
-          onClose={() => state.setIsUploadDialogOpen(false)}
-          onUploaded={(uploadedDocuments) => {
-            state.setDocuments((current) => [...uploadedDocuments, ...current]);
-            state.setStatus({ kind: "ready" });
-            void state.resetAndReload();
-          }}
-          target={uploadTarget}
-        />
-      ) : null}
-      <DocumentManageLinksDialog
-        document={linkDocument}
-        isBusy={state.isDocumentActionBusy}
-        onClose={() => setLinkDocument(null)}
-        onSave={state.updateDocument}
-        vehicleOptions={vehicleOptions}
-      />
-      <DocumentTemplatesDialog
-        isOpen={isTemplatesDialogOpen}
-        isSaving={state.isSavingTemplate}
-        onClose={() => setIsTemplatesDialogOpen(false)}
-        onSave={state.saveTemplate}
+      <DocumentsWorkspaceDialogs
+        canUpload={Boolean(runtimeApi && uploadTarget)}
+        deleteDocument={state.deleteDocument}
+        documentToDelete={state.documentToDelete}
+        documents={state.documents}
+        isDocumentActionBusy={state.isDocumentActionBusy}
+        isRefreshing={isLoading}
+        isSavingTemplate={state.isSavingTemplate}
+        isTemplatesDialogOpen={isTemplatesDialogOpen}
+        isUploadDialogOpen={state.isUploadDialogOpen}
+        linkDocument={linkDocument}
+        mobileTab={mobileTab}
+        onMobileTabChange={setMobileTab}
+        onRefresh={state.resetAndReload}
+        onSelectFolder={selectFolder}
+        onUpdateDocument={state.updateDocument}
+        onUpload={() => state.setIsUploadDialogOpen(true)}
+        runtimeApi={runtimeApi}
+        saveTemplate={state.saveTemplate}
+        selectedFolderTitle={folderTitle}
+        selectedKey={selectedFolderKey}
+        setDocumentToDelete={state.setDocumentToDelete}
+        setIsTemplatesDialogOpen={setIsTemplatesDialogOpen}
+        setIsUploadDialogOpen={state.setIsUploadDialogOpen}
+        setLinkDocument={setLinkDocument}
+        showUpload={showUpload}
         templates={state.templates}
-      />
-      <DocumentDeleteDialog
-        document={state.documentToDelete}
-        isBusy={state.isDocumentActionBusy}
-        onClose={() => state.setDocumentToDelete(null)}
-        onConfirm={() => void state.deleteDocument()}
+        unitFoldersStatus={unitFolders.status}
+        uploadTarget={uploadTarget}
+        uploadTitle={uploadTitle}
+        vehicleOptions={vehicleOptions as readonly DocumentVehicleOption[]}
       />
     </div>
   );
+}
+
+function buildKpiSummary(documents: readonly WorkspaceDocument[]) {
+  const base = summarizeWorkspaceDocuments(documents);
+  return {
+    automatic: base.automatic,
+    manual: base.manual,
+    total: base.total,
+    vehicles: base.linkedToVehicles,
+  };
 }

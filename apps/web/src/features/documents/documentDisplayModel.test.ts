@@ -7,6 +7,7 @@ import {
   filterDocumentsForWorkspace,
   summarizeWorkspaceDocuments,
 } from "./documentDisplayModel";
+import { filterByOrigin, sortByCreatedDesc } from "./documentWorkspaceFilters";
 import type { WorkspaceDocument } from "./types";
 
 describe("document display model", () => {
@@ -148,6 +149,44 @@ describe("document display model", () => {
     expect(
       filterDocumentsForFolder([vehicleDocument, generalDocument], "general"),
     ).toEqual([generalDocument]);
+  });
+
+  it("filters by origin keeping automatic and manual separable", () => {
+    const automatic = createDocument({ id: "auto" });
+    const manual = createDocument({
+      id: "manual",
+      metadata: { manualUpload: true },
+    });
+
+    expect(filterByOrigin([automatic, manual], "all")).toEqual([
+      automatic,
+      manual,
+    ]);
+    expect(filterByOrigin([automatic, manual], "automatic")).toEqual([
+      automatic,
+    ]);
+    expect(filterByOrigin([automatic, manual], "manual")).toEqual([manual]);
+  });
+
+  it("sorts by createdAt descending without mutating the input", () => {
+    const newest = createDocument({
+      id: "newest",
+      createdAt: "2026-06-10T09:00:00.000Z",
+    });
+    const middle = createDocument({
+      id: "middle",
+      createdAt: "2026-06-05T09:00:00.000Z",
+    });
+    const oldest = createDocument({
+      id: "oldest",
+      createdAt: "2026-06-01T09:00:00.000Z",
+    });
+    const input = [middle, oldest, newest];
+
+    const sorted = sortByCreatedDesc(input);
+
+    expect(sorted).toEqual([newest, middle, oldest]);
+    expect(input).toEqual([middle, oldest, newest]);
   });
 });
 

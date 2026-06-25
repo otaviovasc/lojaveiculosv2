@@ -26,6 +26,7 @@ describe("document unit folder options", () => {
       label: "Rótulo antigo",
       listingId: "listing_1",
       plate: null,
+      primaryMediaUrl: null,
       stockNumber: null,
       targetType: "vehicle_unit",
       unitId: "unit_1",
