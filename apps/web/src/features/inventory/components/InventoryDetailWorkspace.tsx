@@ -96,7 +96,22 @@ export function InventoryDetailWorkspace({
   };
 
   const handleAction = (action: string) => {
+    if (action === "Vender") {
+      openSaleWorkspace();
+      return;
+    }
     showNotification("Ação executada: " + action);
+  };
+
+  const openSaleWorkspace = () => {
+    const params = new URLSearchParams();
+    params.set("listingId", listing.id);
+    params.set("listingTitle", listing.title);
+    if (listing.priceCents)
+      params.set("priceCents", String(listing.priceCents));
+    if (primaryUnit?.id) params.set("unitId", primaryUnit.id);
+    if (primaryUnit?.plate) params.set("unitLabel", primaryUnit.plate);
+    window.location.hash = `/sales?${params.toString()}`;
   };
 
   const handleMovePhoto = (from: number, to: number) => {
@@ -280,7 +295,13 @@ export function InventoryDetailWorkspace({
           </div>
         )}
 
-        {activeTab === "financeiro" && <InventoryDetailFinanceiroTab />}
+        {activeTab === "financeiro" && (
+          <InventoryDetailFinanceiroTab
+            api={api}
+            listingId={listing.id}
+            unit={primaryUnit}
+          />
+        )}
 
         {activeTab === "anuncio" && <InventoryDetailAnuncioTab />}
 

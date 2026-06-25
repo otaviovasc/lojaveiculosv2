@@ -13,6 +13,7 @@ import {
   Megaphone,
   MessageCircle,
   Palette,
+  BadgeDollarSign,
   Receipt,
   ScrollText,
   Settings,
@@ -30,6 +31,7 @@ export type NavigationGroup = {
 export type ModuleId =
   | "dashboard"
   | "inventory"
+  | "sales"
   | "customers"
   | "crm"
   | "documents"
@@ -70,6 +72,7 @@ export const navigationGroups: NavigationGroup[] = [
     items: [
       { icon: Home, id: "dashboard", label: "Inicio" },
       { icon: Car, id: "inventory", label: "Veiculos" },
+      { icon: BadgeDollarSign, id: "sales", label: "Vendas" },
       { icon: Users, id: "customers", label: "Clientes" },
       {
         entitlementKey: "crm",

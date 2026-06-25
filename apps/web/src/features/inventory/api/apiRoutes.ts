@@ -8,6 +8,11 @@ export type ListInventoryInput = {
   status?: InventoryListingStatus;
 };
 
+export type ListVehicleSuppliersInput = {
+  limit?: number;
+  search?: string;
+};
+
 type CatalogInput = {
   vehicleType?: InventoryCatalogVehicleType;
 };
@@ -115,6 +120,18 @@ export const inventoryRoutes = {
   },
   listings: (baseUrl?: string) =>
     createInventoryEndpoint("/inventory/listings", baseUrl),
+  suppliers: (input: ListVehicleSuppliersInput = {}, baseUrl?: string) => {
+    const endpoint = createInventoryEndpoint("/inventory/suppliers", baseUrl);
+    const params = new URLSearchParams();
+    if (input.limit !== undefined) params.set("limit", String(input.limit));
+    if (input.search) params.set("search", input.search);
+    return params.size > 0 ? `${endpoint}?${params.toString()}` : endpoint;
+  },
+  supplier: (supplierId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/suppliers/${encodeURIComponent(supplierId)}`,
+      baseUrl,
+    ),
   media: (listingId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/listings/${encodeURIComponent(listingId)}/media`,
@@ -167,6 +184,13 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(
         listingId,
       )}/units/${encodeURIComponent(unitId)}`,
+      baseUrl,
+    ),
+  unitAcquisition: (listingId: string, unitId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(
+        listingId,
+      )}/units/${encodeURIComponent(unitId)}/acquisition`,
       baseUrl,
     ),
 } as const;

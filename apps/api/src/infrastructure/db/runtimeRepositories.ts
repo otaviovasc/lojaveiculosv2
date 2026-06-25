@@ -20,6 +20,10 @@ import {
   type SettingsServices,
 } from "../../features/settings/controllers/settingsServices.js";
 import {
+  createSalesServices,
+  type SalesServices,
+} from "../../features/sales/controllers/salesServices.js";
+import {
   createRoleServices,
   type RoleServices,
 } from "../../features/identity/controllers/roleServices.js";
@@ -37,6 +41,7 @@ import {
 import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
 import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
+import type { DrizzleSalesClient } from "./sales/drizzleSalesRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
 import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
 import {
@@ -133,6 +138,7 @@ export function createRuntimeAppOptions(
       db as unknown as DrizzleCrmClient,
     ),
     roleServices: createRuntimeRoleServices(db),
+    salesServices: createRuntimeSalesServices(db),
     settingsServices: createRuntimeSettingsServices(db),
     storeAccessRepository: createDrizzleStoreAccessRepository(
       db as unknown as DrizzleStoreAccessClient,
@@ -176,6 +182,12 @@ function createRuntimeRoleServices(db: unknown): RoleServices {
       db as unknown as DrizzleRoleManagementClient,
     ),
   );
+}
+
+function createRuntimeSalesServices(db: unknown): SalesServices {
+  return createSalesServices({
+    drizzleClient: db as DrizzleSalesClient,
+  });
 }
 
 function createRuntimeFinanceServices(

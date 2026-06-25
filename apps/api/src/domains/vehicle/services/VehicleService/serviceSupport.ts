@@ -1,11 +1,4 @@
-import type {
-  AuditEntityReference,
-  AuditFailureTier,
-  AuditFieldChange,
-  AuditOutcome,
-  SafeAuditMetadata,
-} from "@lojaveiculosv2/audit";
-import type { PermissionKey } from "@lojaveiculosv2/shared";
+import type { SafeAuditMetadata } from "@lojaveiculosv2/audit";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -24,12 +17,13 @@ import type { DocumentRepository } from "../../../documents/ports/documentReposi
 import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
 import type { VehicleChecklistRepository } from "../../ports/vehicleChecklistRepository.js";
+import type { VehicleAcquisitionRepository } from "../../ports/vehicleAcquisitionRepository.js";
 import type { VehicleCatalogProvider } from "../../ports/vehicleCatalogProvider.js";
 import type { VehicleCatalogRepository } from "../../ports/vehicleCatalogRepository.js";
 import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
 import type { VehicleInventoryServicePorts } from "./types.js";
 export type { VehicleInventoryServicePorts } from "./types.js";
-
+export { auditVehicleServiceEvent } from "./auditVehicleServiceEvent.js";
 export class VehicleInventoryRepositoryError extends Error {
   constructor(portName: string) {
     super(`Vehicle inventory repository port is not configured: ${portName}`);
@@ -61,6 +55,13 @@ export class VehicleMediaNotFoundError extends Error {
   constructor(mediaId: string) {
     super(`Vehicle media not found: ${mediaId}`);
     this.name = "VehicleMediaNotFoundError";
+  }
+}
+
+export class VehicleSupplierNotFoundError extends Error {
+  constructor(supplierId: string) {
+    super(`Vehicle supplier not found: ${supplierId}`);
+    this.name = "VehicleSupplierNotFoundError";
   }
 }
 
@@ -116,6 +117,12 @@ export function getSalesRepository(
   ports: VehicleInventoryServicePorts | undefined,
 ): VehicleSalesRepository {
   return requirePort(ports?.salesRepository, "salesRepository");
+}
+
+export function getAcquisitionRepository(
+  ports: VehicleInventoryServicePorts | undefined,
+): VehicleAcquisitionRepository {
+  return requirePort(ports?.acquisitionRepository, "acquisitionRepository");
 }
 
 export function getMediaStorage(
@@ -196,51 +203,4 @@ function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     value,
   );
-}
-
-export async function auditVehicleServiceEvent(
-  context: ServiceContext,
-  input: {
-    action: string;
-    category: "data_access" | "data_change";
-    changes?: readonly AuditFieldChange[];
-    entityId: string;
-    entityType?:
-      | "vehicle_document"
-      | "vehicle_checklist"
-      | "vehicle_listing"
-      | "vehicle_media"
-      | "vehicle_operation"
-      | "vehicle_sale"
-      | "vehicle_unit";
-    failureTier?: AuditFailureTier;
-    metadata?: SafeAuditMetadata;
-    outcome?: AuditOutcome;
-    permission: PermissionKey;
-    relatedEntities?: readonly AuditEntityReference[];
-    summary: string;
-  },
-): Promise<void> {
-  const failureTier = input.failureTier ?? context.auditFailureTier;
-  await context.audit.record({
-    action: input.action,
-    actor: context.actor,
-    category: input.category,
-    entityId: input.entityId,
-    entityType: input.entityType ?? "vehicle_listing",
-    metadata: { permission: input.permission, ...(input.metadata ?? {}) },
-    outcome: input.outcome ?? "succeeded",
-    requestId: context.requestId,
-    storeId: context.storeId,
-    summary: input.summary,
-    tenantId: context.tenantId,
-    ...(failureTier ? { failureTier } : {}),
-    ...(input.changes ? { changes: input.changes } : {}),
-    ...(input.relatedEntities
-      ? { relatedEntities: input.relatedEntities }
-      : {}),
-    ...(context.correlationId ? { correlationId: context.correlationId } : {}),
-    ...(context.request ? { request: context.request } : {}),
-    ...(context.source ? { source: context.source } : {}),
-  });
 }

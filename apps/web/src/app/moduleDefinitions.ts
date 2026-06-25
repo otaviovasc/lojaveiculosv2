@@ -131,6 +131,13 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     id: "reports",
     title: "Relatorios",
   },
+  sales: {
+    action: "Fechar venda",
+    description: "Rascunhos, reservas e fechamento com lead e veiculo ligados.",
+    eyebrow: "Operacao",
+    id: "sales",
+    title: "Vendas",
+  },
   settings: {
     action: "Revisar parametros",
     description: "Configuracoes de loja, usuarios, papeis e preferencias.",

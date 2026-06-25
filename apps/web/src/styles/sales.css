@@ -1,0 +1,57 @@
+.sales-input {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+  width: 100%;
+}
+
+.sales-input:focus-visible,
+.sales-primary-button:focus-visible,
+.sales-secondary-button:focus-visible,
+.sales-check-row:focus-within {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.sales-primary-button,
+.sales-secondary-button {
+  align-items: center;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0 1rem;
+}
+
+.sales-primary-button {
+  background: var(--color-accent);
+  color: var(--color-inverse);
+}
+
+.sales-secondary-button {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+.sales-check-row {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  display: flex;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  gap: 0.625rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
+}

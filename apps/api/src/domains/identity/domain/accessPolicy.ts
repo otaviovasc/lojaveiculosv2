@@ -1,5 +1,9 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
-
+import {
+  saleLifecyclePermissions,
+  saleSellerPermissions,
+  saleSupervisorPermissions,
+} from "./saleAccessPolicy.js";
 const allPermissions = [
   "audit.read",
   "analytics.read",
@@ -55,6 +59,7 @@ const allPermissions = [
   "marketplace.listing_update",
   "marketplace.manage",
   "marketplace.read",
+  ...saleLifecyclePermissions,
   "store.manage",
   "store_profile.manage",
   "store_public_site.manage",
@@ -114,6 +119,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "marketplace.listing_update",
       "marketplace.manage",
       "marketplace.read",
+      ...saleLifecyclePermissions,
       "store.manage",
       "store_profile.manage",
       "store_public_site.manage",
@@ -162,6 +168,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "lead.update",
       "marketplace.read",
       "marketplace.listing_update",
+      ...saleSellerPermissions,
     ],
     supervisor: [
       "analytics.read",
@@ -207,42 +214,12 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "marketplace.listing_publish",
       "marketplace.listing_update",
       "marketplace.read",
+      ...saleSupervisorPermissions,
     ],
   };
 
-export type PermissionOverride = {
-  allowed: boolean;
-  permission: PermissionKey;
-};
-
-export type PermissionDecision =
-  | { allowed: true }
-  | { allowed: false; reason: string };
-
-export function resolvePermissions(input: {
-  overrides?: readonly PermissionOverride[];
-  role: RoleKey;
-}): PermissionKey[] {
-  const permissions = new Set(defaultRolePermissions[input.role]);
-
-  for (const override of input.overrides ?? []) {
-    if (override.allowed) {
-      permissions.add(override.permission);
-    } else {
-      permissions.delete(override.permission);
-    }
-  }
-
-  return [...permissions].sort();
-}
-
-export function canAccess(
-  permissions: readonly string[],
-  permission: PermissionKey,
-): PermissionDecision {
-  if (permissions.includes(permission)) {
-    return { allowed: true };
-  }
-
-  return { allowed: false, reason: `Missing permission: ${permission}` };
-}
+export { canAccess, resolvePermissions } from "./permissionResolver.js";
+export type {
+  PermissionDecision,
+  PermissionOverride,
+} from "./permissionResolver.js";

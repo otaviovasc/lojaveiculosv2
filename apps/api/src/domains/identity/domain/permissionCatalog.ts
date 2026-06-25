@@ -124,6 +124,29 @@ export const permissionGroups: readonly PermissionGroup[] = [
     ],
   },
   {
+    key: "sales",
+    label: "Vendas",
+    permissions: [
+      permission("sale.read", "Ler vendas", "Visualizar vendas.", "low"),
+      permission(
+        "sale.draft",
+        "Rascunhos",
+        "Criar e editar rascunhos.",
+        "medium",
+      ),
+      permission("sale.reserve", "Reservar", "Reservar venda.", "high"),
+      permission("sale.close", "Fechar", "Concluir venda.", "high"),
+      permission("sale.correct", "Corrigir", "Corrigir venda fechada.", "high"),
+      permission("sale.cancel", "Cancelar", "Cancelar venda.", "high"),
+      permission(
+        "sale.override_required_fields",
+        "Ignorar obrigatorios",
+        "Prosseguir com pendencias documentadas.",
+        "high",
+      ),
+    ],
+  },
+  {
     key: "crm",
     label: "CRM",
     permissions: [

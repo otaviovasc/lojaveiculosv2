@@ -7,11 +7,20 @@ import type {
 
 const now = new Date("2026-01-01T00:00:00.000Z");
 
-export function createTestOperationsRepository(): VehicleOperationsRepository {
+export type TestVehicleOperationsRepository = VehicleOperationsRepository & {
+  costs: VehicleCost[];
+  prices: VehiclePriceHistoryEntry[];
+  statuses: VehicleStatusHistoryEntry[];
+};
+
+export function createTestOperationsRepository(): TestVehicleOperationsRepository {
   const costs: VehicleCost[] = [];
   const prices: VehiclePriceHistoryEntry[] = [];
   const statuses: VehicleStatusHistoryEntry[] = [];
   return {
+    costs,
+    prices,
+    statuses,
     createCost: async (record) => {
       const cost = {
         ...record,

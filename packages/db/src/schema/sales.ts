@@ -1,9 +1,11 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
+  text,
   timestamp,
   uuid,
   varchar,
@@ -34,10 +36,24 @@ export const sales = pgTable(
     ...softDeleteColumns,
     buyerSnapshot: jsonb("buyer_snapshot").notNull().default({}),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    correctionOfSaleId: uuid("correction_of_sale_id"),
+    documentPolicySnapshot: jsonb("document_policy_snapshot")
+      .notNull()
+      .default({}),
+    isCurrentRevision: boolean("is_current_revision").notNull().default(true),
     leadId: uuid("lead_id").references(() => leads.id),
     listingId: uuid("listing_id").references(() => vehicleListings.id),
     listingSnapshot: jsonb("listing_snapshot").notNull().default({}),
-    salePriceCents: integer("sale_price_cents").notNull(),
+    overrideReason: text("override_reason"),
+    overrideRequiredFields: boolean("override_required_fields")
+      .notNull()
+      .default(false),
+    revision: integer("revision").notNull().default(1),
+    salePriceCents: integer("sale_price_cents"),
+    saleSourceSnapshot: jsonb("sale_source_snapshot").notNull().default({}),
+    selectedDocumentKinds: jsonb("selected_document_kinds")
+      .notNull()
+      .default([]),
     sellerUserId: uuid("seller_user_id").references(() => users.id),
     status: saleStatus("status").notNull().default("draft"),
     storeId: uuid("store_id")
@@ -46,12 +62,12 @@ export const sales = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    unitId: uuid("unit_id")
-      .notNull()
-      .references(() => vehicleUnits.id),
+    unitId: uuid("unit_id").references(() => vehicleUnits.id),
   },
   (table) => [
     index("sales_closed_at_idx").on(table.closedAt),
+    index("sales_lead_id_idx").on(table.leadId),
+    index("sales_listing_id_idx").on(table.listingId),
     index("sales_seller_user_id_idx").on(table.sellerUserId),
     index("sales_store_status_idx").on(table.storeId, table.status),
     index("sales_unit_id_idx").on(table.unitId),
@@ -86,7 +102,12 @@ export const salePayments = pgTable(
   {
     ...lifecycleColumns,
     amountCents: integer("amount_cents").notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }),
+    extraCents: integer("extra_cents").notNull().default(0),
+    installments: integer("installments"),
+    metadata: jsonb("metadata").notNull().default({}),
     method: varchar("method", { length: 80 }).notNull(),
+    principalCents: integer("principal_cents").notNull().default(0),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     providerPaymentId: varchar("provider_payment_id", { length: 191 }),
     saleId: uuid("sale_id")

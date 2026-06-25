@@ -6,27 +6,34 @@ import type {
   VehicleSalesRepository,
 } from "./ports/vehicleSalesRepository.js";
 
-export function createTestVehicleSalesRepository(): VehicleSalesRepository {
-  let paymentSequence = 1;
-  let saleSequence = 1;
+export type TestVehicleSalesRepository = VehicleSalesRepository & {
+  payments: VehicleSalePayment[];
+  sales: VehicleSale[];
+};
+
+export function createTestVehicleSalesRepository(): TestVehicleSalesRepository {
+  const payments: VehicleSalePayment[] = [];
+  const sales: VehicleSale[] = [];
 
   return {
+    payments,
+    sales,
     async create(input: CreateVehicleSaleInput): Promise<VehicleSaleBundle> {
       const now = new Date();
-      const sale = createSale(input, saleSequence, now);
-      saleSequence += 1;
+      const sale = createSale(input, sales.length + 1, now);
+      sales.push(sale);
       if (!input.payment) return { payment: null, sale };
 
       const payment: VehicleSalePayment = {
         ...input.payment,
         createdAt: now,
-        id: `sale_payment_${paymentSequence}`,
+        id: `sale_payment_${payments.length + 1}`,
         saleId: sale.id,
         storeId: sale.storeId,
         tenantId: sale.tenantId,
         updatedAt: now,
       };
-      paymentSequence += 1;
+      payments.push(payment);
       return { payment, sale };
     },
   };

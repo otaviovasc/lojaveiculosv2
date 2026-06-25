@@ -27,6 +27,8 @@ import { createInventoryFeature } from "../../features/inventory/controllers/veh
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
 import { createSettingsFeature } from "../../features/settings/controllers/settings.controller.js";
 import type { SettingsServices } from "../../features/settings/controllers/settingsServices.js";
+import { createSalesFeature } from "../../features/sales/controllers/sales.controller.js";
+import type { SalesServices } from "../../features/sales/controllers/salesServices.js";
 import { createRolesFeature } from "../../features/identity/controllers/roles.controller.js";
 import type { RoleServices } from "../../features/identity/controllers/roleServices.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
@@ -58,6 +60,7 @@ export type CreateAppOptions = {
   publicStorefrontRepository?: PublicStorefrontRepository;
   publicStorefrontCrmRepository?: CrmRepository;
   roleServices?: RoleServices;
+  salesServices?: SalesServices;
   settingsServices?: SettingsServices;
   storeAccessRepository?: StoreAccessRepository;
 };
@@ -201,6 +204,14 @@ export function createApp(options: CreateAppOptions = {}) {
       contextFactory: (context) =>
         createHttpServiceContext(context, contextOptions),
       ...(options.crmServices ? { services: options.crmServices } : {}),
+    }),
+  );
+  app.route(
+    "/api/v1/sales",
+    createSalesFeature({
+      contextFactory: (context) =>
+        createHttpServiceContext(context, contextOptions),
+      ...(options.salesServices ? { services: options.salesServices } : {}),
     }),
   );
   app.route(

@@ -16,6 +16,7 @@ import {
 import {
   VehicleListingNotFoundError,
   VehicleMediaNotFoundError,
+  VehicleSupplierNotFoundError,
   VehicleUnitNotFoundError,
 } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
@@ -141,17 +142,20 @@ function isVehicleInventoryNotFoundError(
   | VehicleListingNotFoundError
   | VehicleChecklistNotFoundError
   | VehicleMediaNotFoundError
+  | VehicleSupplierNotFoundError
   | VehicleUnitNotFoundError {
   return (
     error instanceof VehicleListingNotFoundError ||
     error instanceof VehicleChecklistNotFoundError ||
     error instanceof VehicleMediaNotFoundError ||
+    error instanceof VehicleSupplierNotFoundError ||
     error instanceof VehicleUnitNotFoundError ||
     (error instanceof Error &&
       [
         "VehicleListingNotFoundError",
         "VehicleChecklistNotFoundError",
         "VehicleMediaNotFoundError",
+        "VehicleSupplierNotFoundError",
         "VehicleUnitNotFoundError",
       ].includes(error.name))
   );

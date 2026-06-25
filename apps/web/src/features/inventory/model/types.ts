@@ -49,6 +49,16 @@ export type {
   CreateInventoryCostInput,
   InventoryCostKind,
 } from "./operationTypes";
+export type {
+  CreateVehicleSupplierInput,
+  UpdateVehicleSupplierInput,
+  UpsertVehicleUnitAcquisitionInput,
+  VehicleAcquisitionChannel,
+  VehicleAcquisitionCommissionTiming,
+  VehicleSupplier,
+  VehicleSupplierKind,
+  VehicleUnitAcquisition,
+} from "./acquisitionTypes";
 export type { VehicleColor as InventoryVehicleColor };
 
 export type InventoryBuyerInput = {

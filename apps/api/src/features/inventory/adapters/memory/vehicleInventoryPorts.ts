@@ -21,6 +21,7 @@ import { createMemoryVehicleChecklistRepository } from "./vehicleChecklistReposi
 import { createMemoryVehicleMediaStorage } from "./vehicleMediaStorage.js";
 import { createMemoryVehicleOperationsRepository } from "./vehicleOperationsRepository.js";
 import { createMemoryVehicleSalesRepository } from "./vehicleSalesRepository.js";
+import { createMemoryVehicleAcquisitionRepository } from "./vehicleAcquisitionRepository.js";
 
 export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePorts {
   const listings = new Map<string, VehicleListing>();
@@ -128,6 +129,7 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
   const operationsRepository = createMemoryVehicleOperationsRepository();
 
   return {
+    acquisitionRepository: createMemoryVehicleAcquisitionRepository(),
     catalogProvider: createMemoryVehicleCatalogProvider(),
     catalogRepository: createMemoryVehicleCatalogRepository(),
     checklistRepository: createMemoryVehicleChecklistRepository(),

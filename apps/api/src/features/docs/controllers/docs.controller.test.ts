@@ -49,6 +49,16 @@ describe("API docs routes", () => {
         .security,
     ).toEqual([{ bearerAuth: ["inventory.cost_create"] }]);
     expect(
+      openApiDocument.paths["/api/v1/inventory/suppliers"].post.security,
+    ).toEqual([{ bearerAuth: ["inventory.update_unit"] }]);
+    expect(
+      openApiDocument.paths[
+        "/api/v1/inventory/listings/{listingId}/units/{unitId}/acquisition"
+      ].put.requestBody.content["application/json"].schema,
+    ).toEqual({
+      $ref: "#/components/schemas/UpsertVehicleUnitAcquisitionRequest",
+    });
+    expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
         .post.security,
     ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);

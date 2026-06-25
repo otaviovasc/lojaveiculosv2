@@ -12,6 +12,7 @@ import { MarketplaceModule } from "../features/marketplaces/MarketplaceModule";
 import { PublicApiModule } from "../features/publicApi/PublicApiModule";
 import { PublicStorefrontPage } from "../features/publicSite/PublicStorefrontPage";
 import { ReportsModule } from "../features/reports/ReportsModule";
+import { SalesModule } from "../features/sales/SalesModule";
 import { SettingsModule } from "../features/settings/SettingsModule";
 import { moduleDefinitions } from "./moduleDefinitions";
 import { useModuleState } from "./moduleState";
@@ -50,6 +51,8 @@ export function App() {
               <InventoryListPage />
             ) : activeModuleId === "customers" ? (
               <CrmModule routeSurface="leads" />
+            ) : activeModuleId === "sales" ? (
+              <SalesModule />
             ) : activeModuleId === "crm" ? (
               <CrmModule routeSurface="whatsapp" />
             ) : activeModuleId === "billing" ? (

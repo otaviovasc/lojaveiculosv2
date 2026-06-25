@@ -1,4 +1,5 @@
 import { inventorySchemas, jsonRequest } from "./inventoryOpenApiSchemas.js";
+import { inventoryAcquisitionPaths } from "./inventoryAcquisitionOpenApi.js";
 import { inventoryFinancePaths } from "./inventoryFinanceOpenApi.js";
 import { inventoryChecklistPaths } from "./inventoryChecklistOpenApi.js";
 import {
@@ -151,6 +152,7 @@ export const inventoryPaths = {
       },
     },
   },
+  ...inventoryAcquisitionPaths,
   "/api/v1/inventory/listings/{listingId}/media/uploads": {
     post: {
       tags: ["Inventory"],

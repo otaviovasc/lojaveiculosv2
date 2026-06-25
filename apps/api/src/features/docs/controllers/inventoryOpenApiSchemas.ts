@@ -1,5 +1,6 @@
 import { inventoryFinanceSchemas } from "./inventoryFinanceOpenApiSchemas.js";
 import { inventoryChecklistSchemas } from "./inventoryChecklistOpenApiSchemas.js";
+import { inventoryAcquisitionSchemas } from "./inventoryAcquisitionOpenApiSchemas.js";
 import {
   listingTechnicalSchemas,
   objectSchema,
@@ -38,6 +39,7 @@ export const inventorySchemas = {
     },
     storageKey: { type: "string", minLength: 1 },
   }),
+  ...inventoryAcquisitionSchemas,
   ...inventoryChecklistSchemas,
   ...inventoryFinanceSchemas,
   InventoryBuyer: objectSchema(["name"], {

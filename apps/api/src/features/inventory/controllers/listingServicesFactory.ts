@@ -9,6 +9,16 @@ import { createVehicleMedia } from "../../../domains/vehicle/services/VehicleSer
 import { deleteVehicleMedia } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import { listVehicleChecklists } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
 import { listVehicleListings } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
+import {
+  archiveVehicleSupplier,
+  createVehicleSupplier,
+  listVehicleSuppliers,
+  updateVehicleSupplier,
+} from "../../../domains/vehicle/services/VehicleService/manageVehicleSuppliers.js";
+import {
+  getVehicleUnitAcquisition,
+  upsertVehicleUnitAcquisition,
+} from "../../../domains/vehicle/services/VehicleService/manageVehicleUnitAcquisition.js";
 import { reorderVehicleMedia } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
 import { requestVehicleDocumentUpload } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
 import { requestVehicleMediaUpload } from "../../../domains/vehicle/services/VehicleService/requestVehicleMediaUpload.js";
@@ -41,6 +51,8 @@ export function createInventoryListingServices(
 
   return {
     ...createInventoryTransactionalServices({ ports, transactionRunner }),
+    archiveVehicleSupplier: (context, input) =>
+      archiveVehicleSupplier(context, input, ports),
     async createListing(context, input) {
       const listing = await createVehicleListing(
         context,
@@ -68,6 +80,8 @@ export function createInventoryListingServices(
         url: media.url,
       };
     },
+    createVehicleSupplier: (context, input) =>
+      createVehicleSupplier(context, input, ports),
     async deleteMedia(context, input) {
       const media = await deleteVehicleMedia(context, input, ports);
       return loadInventoryListingDetailDto(
@@ -80,6 +94,8 @@ export function createInventoryListingServices(
     async getListing(context, input) {
       return loadInventoryListingDetailDto(context, input.listingId, ports);
     },
+    getVehicleUnitAcquisition: (context, input) =>
+      getVehicleUnitAcquisition(context, input, ports),
     async getCatalogSnapshot(context, input) {
       return getVehicleCatalogSnapshot(context, input, ports);
     },
@@ -92,6 +108,8 @@ export function createInventoryListingServices(
     async listChecklists(context, input) {
       return listVehicleChecklists(context, input, ports);
     },
+    listVehicleSuppliers: (context, input) =>
+      listVehicleSuppliers(context, input, ports),
     async listCatalogBrands(context, input) {
       return listVehicleCatalogBrands(context, input, ports);
     },
@@ -137,5 +155,9 @@ export function createInventoryListingServices(
         "inventory.media_update",
       );
     },
+    updateVehicleSupplier: (context, input) =>
+      updateVehicleSupplier(context, input, ports),
+    upsertVehicleUnitAcquisition: (context, input) =>
+      upsertVehicleUnitAcquisition(context, input, ports),
   };
 }

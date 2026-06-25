@@ -9,9 +9,7 @@ import type {
   CreateVehicleMediaRecord,
   CreateVehicleUnitRecord,
   ListVehicleChildrenInput,
-  ListVehicleDocumentsInput,
   VehicleDocument,
-  VehicleDocumentRepository,
   VehicleMedia,
   VehicleListing,
   VehicleListingRepository,
@@ -21,16 +19,28 @@ import type {
 } from "./ports/vehicleInventoryRepository.js";
 import { createTestVehicleMediaStorage } from "./testSupportMediaStorage.js";
 import { createTestOperationsRepository } from "./testSupportOperations.js";
-import { createTestVehicleSalesRepository } from "./testSupportSalesRepository.js";
+import type { TestVehicleOperationsRepository } from "./testSupportOperations.js";
+import {
+  createTestVehicleSalesRepository,
+  type TestVehicleSalesRepository,
+} from "./testSupportSalesRepository.js";
+import {
+  createTestVehicleAcquisitionRepository,
+  type TestVehicleAcquisitionRepository,
+} from "./testSupportAcquisitionRepository.js";
 import type { VehicleInventoryServicePorts } from "./services/VehicleService/serviceSupport.js";
+import { createTestVehicleDocumentRepository } from "./testSupportVehicleDocumentRepository.js";
 import { createListing, testNow } from "./testSupportVehicleServiceFixtures.js";
 
 export type TestVehicleInventoryPorts = VehicleInventoryServicePorts & {
+  acquisitionRepository: TestVehicleAcquisitionRepository;
   checklistRepository: TestVehicleChecklistRepository;
   documents: Map<string, VehicleDocument>;
   financeRepository: TestFinanceRepository;
   listings: Map<string, VehicleListing>;
   media: Map<string, VehicleMedia>;
+  operationsRepository: TestVehicleOperationsRepository;
+  salesRepository: TestVehicleSalesRepository;
   units: Map<string, VehicleUnit>;
 };
 
@@ -45,14 +55,14 @@ export function createInMemoryVehiclePorts(
   let documentSequence = 1;
   let mediaSequence = 1;
   let unitSequence = 1;
-
   const listingRepository = createListingRepository(
     listings,
     () => listingSequence++,
   );
 
   return {
-    documentRepository: createDocumentRepository(
+    acquisitionRepository: createTestVehicleAcquisitionRepository(),
+    documentRepository: createTestVehicleDocumentRepository(
       documents,
       () => documentSequence++,
     ),
@@ -178,42 +188,6 @@ function createMediaRepository(
       return updated;
     }),
   };
-}
-
-function createDocumentRepository(
-  documents: Map<string, VehicleDocument>,
-  nextSequence: () => number,
-): VehicleDocumentRepository {
-  return {
-    create: vi.fn(async (record: CreateVehicleDocumentRecord) => {
-      const document: VehicleDocument = {
-        ...record,
-        createdAt: testNow,
-        id: `document_${nextSequence()}`,
-        metadata: record.metadata ?? {},
-        updatedAt: testNow,
-        uploadedAt: testNow,
-      };
-      documents.set(document.id, document);
-      return document;
-    }),
-    listByListing: vi.fn(async (input: ListVehicleDocumentsInput) =>
-      [...documents.values()].filter((document) =>
-        isScopedDocument(document, input),
-      ),
-    ),
-  };
-}
-
-function isScopedDocument(
-  document: VehicleDocument,
-  input: ListVehicleDocumentsInput,
-) {
-  return (
-    [input.listingId, ...input.unitIds].includes(document.targetId) &&
-    document.storeId === input.storeId &&
-    document.tenantId === input.tenantId
-  );
 }
 
 function matchesSearch(

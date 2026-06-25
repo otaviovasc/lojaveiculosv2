@@ -12,8 +12,10 @@ import type { VehicleChecklistRepository } from "../../ports/vehicleChecklistRep
 import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
 import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
+import type { VehicleAcquisitionRepository } from "../../ports/vehicleAcquisitionRepository.js";
 
 export type VehicleInventoryServicePorts = {
+  acquisitionRepository?: VehicleAcquisitionRepository;
   catalogProvider?: VehicleCatalogProvider;
   catalogRepository?: VehicleCatalogRepository;
   checklistRepository?: VehicleChecklistRepository;

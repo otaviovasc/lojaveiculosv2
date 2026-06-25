@@ -38,6 +38,17 @@ export function LeadDetailPanel({
     }
   };
 
+  const startSale = () => {
+    const params = new URLSearchParams();
+    params.set("leadId", lead.id);
+    if (lead.buyerName) params.set("buyerName", lead.buyerName);
+    if (lead.buyerPhone) params.set("buyerPhone", lead.buyerPhone);
+    if (lead.buyerEmail) params.set("buyerEmail", lead.buyerEmail);
+    if (lead.listingId) params.set("listingId", lead.listingId);
+    if (lead.vehicleTitle) params.set("listingTitle", lead.vehicleTitle);
+    window.location.hash = `/sales?${params.toString()}`;
+  };
+
   return (
     <section className="crm-panel">
       <div className="crm-panel-title crm-panel-title-between">
@@ -87,6 +98,10 @@ export function LeadDetailPanel({
         >
           <Save aria-hidden="true" className="size-4" />
           {isSaving ? "Salvando" : "Salvar contato"}
+        </button>
+        <button className="crm-action" onClick={startSale} type="button">
+          <UserRound aria-hidden="true" className="size-4" />
+          Iniciar venda
         </button>
       </div>
       <div className="crm-lead-summary">

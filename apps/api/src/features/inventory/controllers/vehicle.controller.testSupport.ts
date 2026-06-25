@@ -11,6 +11,10 @@ import {
   listingDto,
   unitDto,
 } from "./vehicle.controller.testFixtures.js";
+import {
+  acquisitionResult,
+  supplierResult,
+} from "./vehicle.acquisition.controller.fixtures.js";
 
 export { listingDetailResult } from "./vehicle.controller.testFixtures.js";
 
@@ -30,11 +34,13 @@ export function createInventoryTestApp(
 export function createInventoryTestServices(): InventoryListingServices {
   return {
     addVehicleCost: vi.fn(async () => listingDetailResult()),
+    archiveVehicleSupplier: vi.fn(async () => supplierResult()),
     attachListingUnit: vi.fn(async () => listingDetailResult()),
     attachVehicleDocument: vi.fn(async () => listingDetailResult()),
     changeListingStatus: vi.fn(async () => listingDetailResult()),
     createChecklist: vi.fn(async () => listingDetailResult()),
     createListing: vi.fn(async () => listingDetailResult()),
+    createVehicleSupplier: vi.fn(async () => supplierResult()),
     createMedia: vi.fn(async () => ({
       listingId: "listing_1",
       mediaId: "media_1",
@@ -78,6 +84,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       yearCode: "2024-1",
     })),
     getListing: vi.fn(async () => listingDetailResult()),
+    getVehicleUnitAcquisition: vi.fn(async () => acquisitionResult()),
     listChecklists: vi.fn(async () => [
       {
         completedAt: null,
@@ -127,6 +134,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       nextOffset: null,
       total: 1,
     })),
+    listVehicleSuppliers: vi.fn(async () => [supplierResult()]),
     reorderMedia: vi.fn(async () => listingDetailResult()),
     requestDocumentUpload: vi.fn(async () => ({
       expiresAt: new Date("2026-01-01T00:15:00.000Z"),
@@ -153,6 +161,8 @@ export function createInventoryTestServices(): InventoryListingServices {
     updateChecklist: vi.fn(async () => listingDetailResult()),
     updateListingPrice: vi.fn(async () => listingDetailResult()),
     updateListingUnit: vi.fn(async () => listingDetailResult()),
+    updateVehicleSupplier: vi.fn(async () => supplierResult()),
+    upsertVehicleUnitAcquisition: vi.fn(async () => acquisitionResult()),
     updateMedia: vi.fn(async () => listingDetailResult()),
   };
 }

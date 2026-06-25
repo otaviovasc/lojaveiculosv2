@@ -8,6 +8,12 @@ import type { ListVehicleListingsInput } from "../../../domains/vehicle/services
 import type { CreateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
 import type { ListVehicleChecklistsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
 import type { UpdateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
+import type {
+  CreateVehicleSupplierInput,
+  ListVehicleSuppliersInput,
+  UpdateVehicleSupplierInput,
+} from "../../../domains/vehicle/services/VehicleService/manageVehicleSuppliers.js";
+import type { VehicleUnitAcquisitionInput } from "../../../domains/vehicle/services/VehicleService/manageVehicleUnitAcquisition.js";
 import type { ReorderVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
 import type { ReserveVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
 import type { RequestVehicleDocumentUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
@@ -19,10 +25,11 @@ import type { UpdateVehicleUnitInput } from "../../../domains/vehicle/services/V
 import type { VehicleListingStatus } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { VehicleMediaUpload } from "../../../domains/vehicle/ports/vehicleMediaStorage.js";
 import type { VehicleChecklist } from "../../../domains/vehicle/ports/vehicleChecklistRepository.js";
-import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
-import type { DrizzleVehicleInventoryClient } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
+import type {
+  VehicleSupplier,
+  VehicleUnitAcquisition,
+} from "../../../domains/vehicle/ports/vehicleAcquisitionRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import type { TransactionRunner } from "../../../shared/transaction.js";
 import type { GetVehicleCatalogSnapshotInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogSnapshot.js";
 import type { GetVehicleCatalogPriceHistoryInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogPriceHistory.js";
 import type { ListVehicleCatalogBrandsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogBrands.js";
@@ -41,6 +48,10 @@ import {
   type InventoryListingListResponse,
 } from "./listingResponseDtos.js";
 import { createInventoryListingServices } from "./listingServicesFactory.js";
+export type {
+  CreateInventoryListingServicesOptions,
+  DrizzleVehicleInventoryAdapter,
+} from "./listingServiceOptions.js";
 
 export const listingStatuses = [
   "available",
@@ -60,6 +71,10 @@ export type VehicleMediaResult = {
 };
 
 export type InventoryListingServices = {
+  archiveVehicleSupplier: (
+    context: ServiceContext,
+    input: { supplierId: string },
+  ) => Promise<VehicleSupplier>;
   attachListingUnit: (
     context: ServiceContext,
     input: AttachListingInput,
@@ -84,6 +99,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: CreateListingInput,
   ) => Promise<InventoryListingDetailResponse>;
+  createVehicleSupplier: (
+    context: ServiceContext,
+    input: CreateVehicleSupplierInput,
+  ) => Promise<VehicleSupplier>;
   createMedia: (
     context: ServiceContext,
     input: CreateVehicleMediaInput,
@@ -96,6 +115,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: { listingId: string },
   ) => Promise<InventoryListingDetailResponse>;
+  getVehicleUnitAcquisition: (
+    context: ServiceContext,
+    input: { listingId: string; unitId: string },
+  ) => Promise<VehicleUnitAcquisition | null>;
   getCatalogSnapshot: (
     context: ServiceContext,
     input: GetVehicleCatalogSnapshotInput,
@@ -112,6 +135,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: ListVehicleChecklistsInput,
   ) => Promise<readonly VehicleChecklist[]>;
+  listVehicleSuppliers: (
+    context: ServiceContext,
+    input: ListVehicleSuppliersInput,
+  ) => Promise<readonly VehicleSupplier[]>;
   listCatalogBrands: (
     context: ServiceContext,
     input: ListVehicleCatalogBrandsInput,
@@ -168,6 +195,14 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: UpdateVehicleChecklistInput,
   ) => Promise<InventoryListingDetailResponse>;
+  updateVehicleSupplier: (
+    context: ServiceContext,
+    input: UpdateVehicleSupplierInput,
+  ) => Promise<VehicleSupplier>;
+  upsertVehicleUnitAcquisition: (
+    context: ServiceContext,
+    input: VehicleUnitAcquisitionInput,
+  ) => Promise<VehicleUnitAcquisition>;
   sellListing: (
     context: ServiceContext,
     input: SellVehicleListingInput,
@@ -200,24 +235,6 @@ type CreateListingInput = {
   transmission?: CreateVehicleListingInput["transmission"];
   trimName?: string | null | undefined;
 };
-
-export type DrizzleVehicleInventoryAdapter = (
-  client: DrizzleVehicleInventoryClient,
-) => VehicleInventoryServicePorts;
-
-export type CreateInventoryListingServicesOptions =
-  | {
-      drizzleAdapter?: never;
-      drizzleClient?: never;
-      ports?: VehicleInventoryServicePorts;
-      transactionRunner?: TransactionRunner<VehicleInventoryServicePorts>;
-    }
-  | {
-      drizzleAdapter?: DrizzleVehicleInventoryAdapter;
-      drizzleClient: DrizzleVehicleInventoryClient;
-      ports?: never;
-      transactionRunner?: TransactionRunner<VehicleInventoryServicePorts>;
-    };
 
 export const inventoryListingServices = createInventoryListingServices();
 export { createInventoryListingServices };

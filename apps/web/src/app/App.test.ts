@@ -15,6 +15,7 @@ describe("App module navigation", () => {
     expect(firstGroup?.items.map((item) => item.id)).toEqual([
       "dashboard",
       "inventory",
+      "sales",
       "customers",
       "crm",
       "documents",

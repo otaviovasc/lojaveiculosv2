@@ -1,13 +1,23 @@
 import { useState } from "react";
 import { FileSpreadsheet, CheckCircle2, Sparkles } from "lucide-react";
 import { NotesBlockField } from "./NotesBlockField";
-import { FinanceiroPessoasCard } from "./FinanceiroPessoasCard";
 import { FinanceiroCustosSection } from "./FinanceiroCustosSection";
 import { FinanceiroCashFlowSection } from "./FinanceiroCashFlowSection";
+import { VehicleAcquisitionCard } from "./VehicleAcquisitionCard";
+import type { InventoryApi } from "../api/apiClient";
+import type { InventoryUnit } from "../model/types";
 import type { CostItem } from "./FinanceiroCustosSection";
 import type { TransactionItem } from "./FinanceiroCashFlowSection";
 
-export function InventoryDetailFinanceiroTab() {
+export function InventoryDetailFinanceiroTab({
+  api,
+  listingId,
+  unit,
+}: {
+  api: InventoryApi;
+  listingId: string;
+  unit: InventoryUnit | null;
+}) {
   const [financials] = useState({
     entrada: 12000000, // R$ 120.000
     venda: 15000000, // R$ 150.000
@@ -19,13 +29,6 @@ export function InventoryDetailFinanceiroTab() {
     veiculo: "Parachoques necessitam retoques e polimento.",
     etiqueta: "Laudo Dekra aprovado com apontamento de pintura.",
     servico: "Revisão de óleo e filtros agendada para sexta-feira.",
-  });
-
-  const [pessoas, setPessoas] = useState({
-    proprietario: "Geraldo Alckmin",
-    fornecedor: "Vip Leilões",
-    exProprietario: "Marisa Letícia",
-    captadores: ["Carlos Cunha", "Ana Paula"],
   });
 
   const [costs, setCosts] = useState<CostItem[]>([
@@ -200,11 +203,7 @@ export function InventoryDetailFinanceiroTab() {
           </div>
         </div>
 
-        {/* Card 3: Pessoas */}
-        <FinanceiroPessoasCard
-          pessoas={pessoas}
-          onSave={(data) => setPessoas(data)}
-        />
+        <VehicleAcquisitionCard api={api} listingId={listingId} unit={unit} />
       </div>
 
       {/* Section 1: Custos */}
