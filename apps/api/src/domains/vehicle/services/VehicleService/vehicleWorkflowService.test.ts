@@ -29,6 +29,28 @@ describe("VehicleService workflow documents", () => {
     );
 
     expect(listing.status).toBe("reserved");
+    expect(ports.units.get("unit_1")?.status).toBe("reserved");
+    const operationsRepository = ports.operationsRepository;
+    if (!operationsRepository) throw new Error("Expected operations port.");
+    await expect(
+      operationsRepository.listStatusHistoryByListing({
+        listingId: "listing_1",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        fromStatus: "available",
+        target: "listing",
+        toStatus: "reserved",
+      }),
+      expect.objectContaining({
+        fromStatus: "available",
+        target: "unit",
+        toStatus: "reserved",
+        unitId: "unit_1",
+      }),
+    ]);
     const [document] = [...ports.documents.values()];
     expect(document).toMatchObject({
       fileName: "reservation_receipt-listing_1.pdf",
@@ -73,6 +95,28 @@ describe("VehicleService workflow documents", () => {
     );
 
     expect(listing.status).toBe("sold");
+    expect(ports.units.get("unit_1")?.status).toBe("sold");
+    const operationsRepository = ports.operationsRepository;
+    if (!operationsRepository) throw new Error("Expected operations port.");
+    await expect(
+      operationsRepository.listStatusHistoryByListing({
+        listingId: "listing_1",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        fromStatus: "reserved",
+        target: "listing",
+        toStatus: "sold",
+      }),
+      expect.objectContaining({
+        fromStatus: "available",
+        target: "unit",
+        toStatus: "sold",
+        unitId: "unit_1",
+      }),
+    ]);
     expect(
       [...ports.documents.values()].map((document) => document.kind),
     ).toEqual([
@@ -138,6 +182,31 @@ describe("VehicleService workflow documents", () => {
     ).rejects.toThrow(
       "Vehicle workflow requires authenticated store user actor.",
     );
+  });
+
+  it("rejects workflow transitions from terminal listing states", async () => {
+    const context = createContext(["inventory.create", "inventory.reserve"]);
+    const ports = createInMemoryVehiclePorts([
+      createListing({ status: "sold", unitIds: ["unit_1"] }),
+    ]);
+    await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
+
+    await expect(
+      reserveVehicleListing(
+        context,
+        {
+          buyer: buyer(),
+          listingId: "listing_1",
+          paymentMethod: "pix",
+          signalAmountCents: 100000,
+          unitId: "unit_1",
+        },
+        ports,
+      ),
+    ).rejects.toThrow("must be available to reserve");
+
+    expect(ports.documents.size).toBe(0);
+    expect(ports.financeRepository.entries).toEqual([]);
   });
 });
 

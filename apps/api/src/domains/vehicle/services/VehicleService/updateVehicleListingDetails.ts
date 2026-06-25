@@ -17,6 +17,7 @@ import {
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
+import { recordListingOperationsLedger } from "../../operations/recordListingOperationsLedger.js";
 
 export type UpdateVehicleListingDetailsInput = {
   catalog?: VehicleListingCatalog | null;
@@ -90,6 +91,7 @@ export async function updateVehicleListingDetails(
         updatedAt: new Date(),
       })
     : listing;
+  await recordListingOperationsLedger(context, listing, updated, input, ports);
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.details.update",

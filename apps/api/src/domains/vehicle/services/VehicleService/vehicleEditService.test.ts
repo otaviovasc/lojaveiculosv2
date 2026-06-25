@@ -65,6 +65,33 @@ describe("VehicleService edits", () => {
       before: "draft",
       path: "status",
     });
+    const operationsRepository = ports.operationsRepository;
+    if (!operationsRepository) throw new Error("Expected operations port.");
+    await expect(
+      operationsRepository.listPriceHistoryByListing({
+        listingId: "listing_1",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        newPriceCents: 10000000,
+        oldPriceCents: 9500000,
+      }),
+    ]);
+    await expect(
+      operationsRepository.listStatusHistoryByListing({
+        listingId: "listing_1",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    ).resolves.toEqual([
+      expect.objectContaining({
+        fromStatus: "draft",
+        target: "listing",
+        toStatus: "available",
+      }),
+    ]);
   });
 
   it("allows no-op listing edits with the submitted write permission", async () => {

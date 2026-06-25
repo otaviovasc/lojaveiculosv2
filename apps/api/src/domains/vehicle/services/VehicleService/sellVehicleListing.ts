@@ -5,6 +5,10 @@ import { storeWorkflowDocument } from "../../documents/storeWorkflowDocument.js"
 import { buildSoldDocuments } from "../../documents/vehicleWorkflowDocuments.js";
 import { createSaleFinanceEntry } from "../../finance/vehicleFinanceEntries.js";
 import type { VehicleBuyerSnapshot } from "../../ports/vehicleSalesRepository.js";
+import type {
+  VehicleListing,
+  VehicleUnit,
+} from "../../ports/vehicleInventoryRepository.js";
 import {
   actorUserId,
   auditVehicleServiceEvent,
@@ -21,7 +25,10 @@ import {
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
-import { VehicleWorkflowValidationError } from "./reserveVehicleListing.js";
+import {
+  VehicleWorkflowStateError,
+  VehicleWorkflowValidationError,
+} from "./reserveVehicleListing.js";
 
 const permission = "inventory.sell";
 
@@ -55,6 +62,7 @@ export async function sellVehicleListing(
     input.listingId,
   );
   const unit = await findScopedUnit(context, unitRepository, input);
+  assertSaleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents)
     throw new VehicleWorkflowValidationError("salePriceCents");
@@ -123,6 +131,17 @@ export async function sellVehicleListing(
     toStatus: "sold",
     unitId: null,
   });
+  await getOperationsRepository(ports).createStatusHistory({
+    actorUserId: actorUserId(context),
+    fromStatus: unit.status,
+    listingId: listing.id,
+    reason: input.reason ?? "Sale workflow",
+    storeId: context.storeId,
+    target: "unit",
+    tenantId: context.tenantId,
+    toStatus: "sold",
+    unitId: unit.id,
+  });
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.sell",
@@ -146,6 +165,19 @@ export async function sellVehicleListing(
   });
 
   return updatedListing;
+}
+
+function assertSaleState(listing: VehicleListing, unit: VehicleUnit) {
+  if (listing.status !== "available" && listing.status !== "reserved") {
+    throw new VehicleWorkflowStateError(
+      `Vehicle listing must be available or reserved to sell; current status is ${listing.status}.`,
+    );
+  }
+  if (unit.status !== "available" && unit.status !== "reserved") {
+    throw new VehicleWorkflowStateError(
+      `Vehicle unit must be available or reserved to sell; current status is ${unit.status}.`,
+    );
+  }
 }
 
 async function getWorkflowTemplates(

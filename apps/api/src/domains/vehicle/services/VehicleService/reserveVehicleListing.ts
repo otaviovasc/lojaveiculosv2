@@ -5,6 +5,10 @@ import { createReservationFinanceEntry } from "../../finance/vehicleFinanceEntri
 import { buildReservationReceiptDocument } from "../../documents/vehicleWorkflowDocuments.js";
 import { storeWorkflowDocument } from "../../documents/storeWorkflowDocument.js";
 import type { VehicleBuyerSnapshot } from "../../ports/vehicleSalesRepository.js";
+import type {
+  VehicleListing,
+  VehicleUnit,
+} from "../../ports/vehicleInventoryRepository.js";
 import {
   actorUserId,
   auditVehicleServiceEvent,
@@ -54,6 +58,7 @@ export async function reserveVehicleListing(
     input.listingId,
   );
   const unit = await findScopedUnit(context, unitRepository, input);
+  assertReservationState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents)
     throw new VehicleWorkflowValidationError("salePriceCents");
@@ -122,6 +127,17 @@ export async function reserveVehicleListing(
     toStatus: "reserved",
     unitId: null,
   });
+  await getOperationsRepository(ports).createStatusHistory({
+    actorUserId: actorUserId(context),
+    fromStatus: unit.status,
+    listingId: listing.id,
+    reason: input.reason ?? "Reservation workflow",
+    storeId: context.storeId,
+    target: "unit",
+    tenantId: context.tenantId,
+    toStatus: "reserved",
+    unitId: unit.id,
+  });
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_listing.reserve",
@@ -147,6 +163,19 @@ export async function reserveVehicleListing(
   return updatedListing;
 }
 
+function assertReservationState(listing: VehicleListing, unit: VehicleUnit) {
+  if (listing.status !== "available") {
+    throw new VehicleWorkflowStateError(
+      `Vehicle listing must be available to reserve; current status is ${listing.status}.`,
+    );
+  }
+  if (unit.status !== "available") {
+    throw new VehicleWorkflowStateError(
+      `Vehicle unit must be available to reserve; current status is ${unit.status}.`,
+    );
+  }
+}
+
 async function getWorkflowTemplate(
   context: ServiceContext,
   ports: VehicleInventoryServicePorts | undefined,
@@ -165,5 +194,12 @@ export class VehicleWorkflowValidationError extends Error {
   constructor(fieldName: string) {
     super(`Vehicle workflow requires ${fieldName}`);
     this.name = "VehicleWorkflowValidationError";
+  }
+}
+
+export class VehicleWorkflowStateError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "VehicleWorkflowStateError";
   }
 }
