@@ -1,225 +1,119 @@
-import * as schema from "@lojaveiculosv2/db";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
-import {
-  createFinanceServices,
-  type FinanceServices,
-} from "../../features/finance/controllers/financeServices.js";
-import {
-  createInternalMonitoringServices,
-  type InternalMonitoringServices,
-} from "../../features/internal/controllers/internalMonitoringServices.js";
-import { createMarketplaceServices } from "../../features/marketplaces/controllers/marketplaceServices.js";
-import { createBillingServices } from "../../features/billing/controllers/billingServices.js";
-import {
-  createExternalApiServices,
-  type ExternalApiServices,
-} from "../../features/externalApi/controllers/externalApiServices.js";
-import {
-  createSettingsServices,
-  type SettingsServices,
-} from "../../features/settings/controllers/settingsServices.js";
-import {
-  createSalesServices,
-  type SalesServices,
-} from "../../features/sales/controllers/salesServices.js";
-import {
-  createRoleServices,
-  type RoleServices,
-} from "../../features/identity/controllers/roleServices.js";
 import type { CreateAppOptions } from "../http/createApp.js";
 import {
-  createDrizzleStoreAccessRepository,
-  type DrizzleStoreAccessClient,
-} from "./identity/drizzleStoreAccessRepository.js";
-import { createDrizzlePublicStorefrontRepository } from "./storefront/drizzlePublicStorefrontRepository.js";
-import type { DrizzlePublicStorefrontClient } from "./storefront/drizzlePublicStorefrontQueryTypes.js";
+  createR2ObjectStorageFromEnv,
+  validateR2ObjectStorageEnv,
+} from "../storage/r2ObjectStorage.js";
+import { createRuntimeHttpAppOptions } from "./runtimeAppOptions.js";
 import {
-  createDrizzleAuditSink,
-  type DrizzleAuditSinkClient,
-} from "./audit/drizzleAuditSink.js";
-import {
-  createDrizzleDocumentRepository,
-  type DrizzleDocumentClient,
-} from "./documents/drizzleDocumentRepository.js";
-import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
-import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
-import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
-import type { DrizzleSalesClient } from "./sales/drizzleSalesRepository.js";
-import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
-import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
-import {
-  createDrizzleRoleManagementRepository,
-  type DrizzleRoleManagementClient,
-} from "./roles/drizzleRoleManagementRepository.js";
-import {
-  createDrizzleBillingRepository,
-  type DrizzleBillingClient,
-} from "./billing/drizzleBillingRepository.js";
-import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
-import {
-  createDrizzleVehicleInventoryRepositories,
-  type DrizzleVehicleInventoryClient,
-} from "./vehicleInventory/drizzleVehicleInventoryRepository.js";
-import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
-import { createRuntimeAnalyticsServices } from "../analytics/runtimeAnalyticsServices.js";
-import { createRuntimeComplianceServices } from "../compliance/runtimeComplianceServices.js";
-import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServices.js";
-import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
-import { createAsaasPaymentProviderGateway } from "../billing/asaasPaymentProviderGateway.js";
-import { createRuntimeCrmServices } from "./runtimeCrmServices.js";
-import {
-  createDrizzleExternalApiRepository,
-  type DrizzleExternalApiClient,
-} from "./externalApi/drizzleExternalApiRepository.js";
-import {
+  assertRuntimeIdentityVerifierConfig,
   allowsMemoryRuntimeFallback,
   createAuditDb,
   createRuntimeIdentityVerifier,
+  resolveRuntimeDatabaseUrl,
   RuntimeDatabaseConfigError,
 } from "./runtimeConfig.js";
+import {
+  closeRuntimeResources,
+  createIdempotentResource,
+  createProductDb,
+  type RuntimeResource,
+} from "./runtimeResources.js";
 
 export { RuntimeDatabaseConfigError } from "./runtimeConfig.js";
-import { createR2ObjectStorageFromEnv } from "../storage/r2ObjectStorage.js";
-import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
-import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
+export type { RuntimeResource } from "./runtimeResources.js";
+
+export type RuntimeAppDependencies = {
+  appOptions: CreateAppOptions;
+  close: () => Promise<void>;
+  resources: readonly RuntimeResource[];
+};
 
 export function createRuntimeAppOptions(
   env: Record<string, string | undefined> = process.env,
 ): CreateAppOptions {
-  const databaseUrl = env.DATABASE_URL;
+  const runtime = createRuntimeAppDependencies(env);
+  if (runtime.resources.length > 0) {
+    void runtime.close().catch(() => undefined);
+    throw new RuntimeDatabaseConfigError(
+      "createRuntimeAppOptions cannot manage DB-backed runtime resources; use createRuntimeAppDependencies.",
+    );
+  }
+  return runtime.appOptions;
+}
 
-  if (!databaseUrl || databaseUrl.startsWith("${{")) {
-    if (!allowsMemoryRuntimeFallback(env)) {
-      throw new RuntimeDatabaseConfigError(
-        "DATABASE_URL must be configured before starting the API outside local/test.",
-      );
-    }
+export function createRuntimeAppDependencies(
+  env: Record<string, string | undefined> = process.env,
+): RuntimeAppDependencies {
+  const databaseUrl = resolveRuntimeDatabaseUrl(
+    env,
+    "DATABASE_URL",
+    "DATABASE_URL must be configured before starting the API outside local/test.",
+  );
 
-    return {};
+  if (!databaseUrl) {
+    return {
+      appOptions: {},
+      close: async () => undefined,
+      resources: [],
+    };
   }
 
-  const db = createProductDb(databaseUrl, env);
-  const auditDb = createAuditDb(env);
-  const audit = auditDb
-    ? createDrizzleAuditSink(auditDb as unknown as DrizzleAuditSinkClient)
-    : null;
-  const identityVerifier = createRuntimeIdentityVerifier(env);
-
-  return {
-    analyticsServices: createRuntimeAnalyticsServices(db),
-    ...(audit ? { audit } : {}),
-    billingServices: createBillingServices({
-      ports: {
-        billingRepository: createDrizzleBillingRepository(
-          db as DrizzleBillingClient,
-        ),
-        paymentProviderGateway: createAsaasPaymentProviderGateway(env),
-      },
-    }),
-    complianceServices: createRuntimeComplianceServices(),
-    crmServices: createRuntimeCrmServices(db, env),
-    documentServices: createRuntimeDocumentServices(db, env),
-    externalApiRepository: createDrizzleExternalApiRepository(
-      db as unknown as DrizzleExternalApiClient,
-    ),
-    externalApiServices: createRuntimeExternalApiServices(db),
-    financeServices: createRuntimeFinanceServices(db, env),
-    fiscalServices: createRuntimeFiscalServices(db, env),
-    ...(identityVerifier ? { identityVerifier } : {}),
-    inventoryEnrichmentServices: createRuntimeInventoryEnrichmentServices(
-      db,
-      env,
-    ),
-    inventoryListingServices: createRuntimeInventoryServices(db, env),
-    internalMonitoringServices: auditDb
-      ? createRuntimeInternalMonitoringServices(auditDb)
-      : createInternalMonitoringServices(),
-    marketplaceServices: createMarketplaceServices({
-      drizzleClient: db as DrizzleMarketplaceClient,
-      gatewayRegistry: createMarketplaceGatewayRegistry(env),
-    }),
-    publicStorefrontRepository: createDrizzlePublicStorefrontRepository(
-      db as unknown as DrizzlePublicStorefrontClient,
-    ),
-    publicStorefrontCrmRepository: createDrizzleCrmRepository(
-      db as unknown as DrizzleCrmClient,
-    ),
-    roleServices: createRuntimeRoleServices(db),
-    salesServices: createRuntimeSalesServices(db, env),
-    settingsServices: createRuntimeSettingsServices(db),
-    storeAccessRepository: createDrizzleStoreAccessRepository(
-      db as unknown as DrizzleStoreAccessClient,
-    ),
-  };
-}
-
-function createProductDb(
-  databaseUrl: string,
-  env: Record<string, string | undefined>,
-) {
-  const client = postgres(databaseUrl, {
-    max: Number(env.DB_POOL_MAX ?? 5),
-  });
-  return drizzle(client, { schema });
-}
-
-function createRuntimeExternalApiServices(db: unknown): ExternalApiServices {
-  return createExternalApiServices({
-    drizzleClient: db as DrizzleExternalApiClient,
-  });
-}
-
-function createRuntimeInternalMonitoringServices(
-  auditDb: unknown,
-): InternalMonitoringServices {
-  return createInternalMonitoringServices({
-    auditDrizzleClient: auditDb as DrizzleInternalMonitoringClient,
-  });
-}
-
-function createRuntimeSettingsServices(db: unknown): SettingsServices {
-  return createSettingsServices({
-    drizzleClient: db as DrizzleStoreSettingsClient,
-  });
-}
-
-function createRuntimeRoleServices(db: unknown): RoleServices {
-  return createRoleServices(
-    createDrizzleRoleManagementRepository(
-      db as unknown as DrizzleRoleManagementClient,
-    ),
+  resolveRuntimeDatabaseUrl(
+    env,
+    "AUDIT_DATABASE_URL",
+    "AUDIT_DATABASE_URL must be configured before starting DB-backed API runtime outside local/test.",
   );
-}
+  assertRuntimeIdentityVerifierConfig(env);
+  assertRuntimeObjectStorageConfig(env);
 
-function createRuntimeSalesServices(
-  db: unknown,
-  env: Record<string, string | undefined>,
-): SalesServices {
-  const mediaStorage = createR2ObjectStorageFromEnv(env);
-
-  return createSalesServices({
-    drizzleClient: db as DrizzleSalesClient,
-    workflowAdapter: (client) => ({
-      ...createDrizzleVehicleInventoryRepositories(
-        client as unknown as DrizzleVehicleInventoryClient,
-      ),
-      documentTemplateRepository: createDrizzleDocumentRepository(
-        client as unknown as DrizzleDocumentClient,
-      ),
-      ...(mediaStorage ? { mediaStorage } : {}),
-    }),
-  });
-}
-
-function createRuntimeFinanceServices(
-  db: unknown,
-  env: Record<string, string | undefined>,
-): FinanceServices {
+  const productDb = createProductDb(databaseUrl, env);
+  const auditDatabase = createAuditDb(env);
   const objectStorage = createR2ObjectStorageFromEnv(env);
+  const resources: RuntimeResource[] = [
+    productDb.resource,
+    ...(auditDatabase
+      ? [
+          createIdempotentResource({
+            close: auditDatabase.close,
+            name: auditDatabase.name,
+          }),
+        ]
+      : []),
+    ...(objectStorage?.close
+      ? [
+          createIdempotentResource({
+            close: async () => objectStorage.close?.(),
+            name: "object-storage",
+          }),
+        ]
+      : []),
+  ];
 
-  return createFinanceServices({
-    drizzleClient: db as DrizzleFinanceClient,
-    ...(objectStorage ? { objectStorage } : {}),
-  });
+  try {
+    return {
+      appOptions: createRuntimeHttpAppOptions({
+        auditDb: auditDatabase?.db ?? null,
+        db: productDb.db,
+        env,
+        identityVerifier: createRuntimeIdentityVerifier(env),
+        objectStorage,
+      }),
+      close: () => closeRuntimeResources(resources),
+      resources,
+    };
+  } catch (error) {
+    void closeRuntimeResources(resources).catch(() => undefined);
+    throw error;
+  }
+}
+
+function assertRuntimeObjectStorageConfig(
+  env: Record<string, string | undefined>,
+): void {
+  const hasObjectStorage = validateR2ObjectStorageEnv(env);
+  if (!hasObjectStorage && !allowsMemoryRuntimeFallback(env)) {
+    throw new RuntimeDatabaseConfigError(
+      "R2 object storage must be configured before document services start.",
+    );
+  }
 }

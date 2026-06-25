@@ -56,6 +56,11 @@ describe("R2 object storage", () => {
     expect(() =>
       createR2ObjectStorageFromEnv({
         R2_BUCKET_NAME: "bucket",
+      }),
+    ).toThrow(R2ObjectStorageConfigError);
+    expect(() =>
+      createR2ObjectStorageFromEnv({
+        R2_BUCKET_NAME: "bucket",
         R2_ENDPOINT: "https://account.r2.cloudflarestorage.com",
       }),
     ).toThrow(R2ObjectStorageConfigError);

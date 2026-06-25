@@ -3,6 +3,7 @@ import {
   type DocumentServices,
 } from "../../features/documents/controllers/documentServices.js";
 import type { DrizzleDocumentClient } from "../db/documents/drizzleDocumentRepository.js";
+import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import { createMemoryObjectStorage } from "../storage/memoryObjectStorage.js";
 import { createR2ObjectStorageFromEnv } from "../storage/r2ObjectStorage.js";
 import {
@@ -13,8 +14,10 @@ import {
 export function createRuntimeDocumentServices(
   db: unknown,
   env: Record<string, string | undefined>,
+  runtimeObjectStorage?: ObjectStorage | null,
 ): DocumentServices {
-  const objectStorage = createR2ObjectStorageFromEnv(env);
+  const objectStorage =
+    runtimeObjectStorage ?? createR2ObjectStorageFromEnv(env);
   if (!objectStorage && !allowsMemoryRuntimeFallback(env)) {
     throw new RuntimeDatabaseConfigError(
       "R2 object storage must be configured before document services start.",

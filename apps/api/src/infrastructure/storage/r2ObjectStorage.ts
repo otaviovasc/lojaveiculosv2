@@ -71,6 +71,7 @@ export function createR2ObjectStorage(
   });
 
   return {
+    close: () => client.destroy(),
     async createUpload(input) {
       const storageKey = createStorageKey(input, uniqueId());
       const command = new PutObjectCommand({
@@ -125,7 +126,7 @@ export function createR2ObjectStorage(
 export function createR2ObjectStorageFromEnv(
   env: Record<string, string | undefined>,
 ): ObjectStorage | null {
-  if (!env.R2_BUCKET_NAME && !env.R2_ENDPOINT) return null;
+  if (!validateR2ObjectStorageEnv(env)) return null;
 
   return createR2ObjectStorage({
     accessKeyId: requireEnv(env, "R2_ACCESS_KEY_ID"),
@@ -142,6 +143,26 @@ export function createR2ObjectStorageFromEnv(
       300,
     ),
   });
+}
+
+export function validateR2ObjectStorageEnv(
+  env: Record<string, string | undefined>,
+): boolean {
+  const hasAnyConfig = [
+    "R2_ACCESS_KEY_ID",
+    "R2_BUCKET_NAME",
+    "R2_ENDPOINT",
+    "R2_PUBLIC_BASE_URL",
+    "R2_SECRET_ACCESS_KEY",
+  ].some((key) => Boolean(env[key]));
+  if (!hasAnyConfig) return false;
+
+  requireEnv(env, "R2_ACCESS_KEY_ID");
+  requireEnv(env, "R2_BUCKET_NAME");
+  requireEnv(env, "R2_ENDPOINT");
+  requireEnv(env, "R2_PUBLIC_BASE_URL");
+  requireEnv(env, "R2_SECRET_ACCESS_KEY");
+  return true;
 }
 
 function assertRequired(

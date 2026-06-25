@@ -39,6 +39,7 @@ export type ObjectDownload = {
 };
 
 export type ObjectStorage = {
+  close?: () => Promise<void> | void;
   createDownload: (input: CreateObjectDownloadInput) => Promise<ObjectDownload>;
   createUpload: (input: CreateObjectUploadInput) => Promise<ObjectUpload>;
   getPublicUrl: (storageKey: string) => string;
