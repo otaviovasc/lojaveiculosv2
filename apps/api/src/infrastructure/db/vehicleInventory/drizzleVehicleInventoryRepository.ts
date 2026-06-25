@@ -7,6 +7,7 @@ import type {
   VehicleDocumentRepository,
   VehicleUnitRepository,
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
+import type { VehicleChecklistRepository } from "../../../domains/vehicle/ports/vehicleChecklistRepository.js";
 import type { VehicleOperationsRepository } from "../../../domains/vehicle/ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../../domains/vehicle/ports/vehicleSalesRepository.js";
 import type { FinanceRepository } from "../../../domains/finance/ports/financeRepository.js";
@@ -43,6 +44,10 @@ import {
   type DrizzleVehicleDocumentClient,
 } from "./drizzleVehicleDocumentRepository.js";
 import {
+  createDrizzleVehicleChecklistRepository,
+  type DrizzleVehicleChecklistClient,
+} from "./drizzleVehicleChecklistRepository.js";
+import {
   createDrizzleVehicleOperationsRepository,
   type DrizzleVehicleOperationsClient,
 } from "./drizzleVehicleOperationsRepository.js";
@@ -61,6 +66,7 @@ export type DrizzleVehicleInventoryClient = DrizzleVehicleListingClient &
   DrizzleFinanceClient &
   DrizzleVehicleOperationsClient &
   DrizzleVehicleSalesClient &
+  DrizzleVehicleChecklistClient &
   DrizzleVehicleMediaClient &
   DrizzleVehicleUnitClient;
 
@@ -69,6 +75,7 @@ export function createDrizzleVehicleInventoryRepositories(
 ): {
   listingRepository: VehicleListingRepository;
   mediaRepository: VehicleMediaRepository;
+  checklistRepository: VehicleChecklistRepository;
   financeRepository: FinanceRepository;
   operationsRepository: VehicleOperationsRepository;
   salesRepository: VehicleSalesRepository;
@@ -76,6 +83,7 @@ export function createDrizzleVehicleInventoryRepositories(
   documentRepository: VehicleDocumentRepository;
 } {
   const listingRepository = createDrizzleVehicleListingRepository(db);
+  const checklistRepository = createDrizzleVehicleChecklistRepository(db);
   const documentRepository = createDrizzleVehicleDocumentRepository(db);
   const financeRepository = createDrizzleFinanceRepository(db);
   const mediaRepository = createDrizzleVehicleMediaRepository(db);
@@ -84,6 +92,7 @@ export function createDrizzleVehicleInventoryRepositories(
   const unitRepository = createDrizzleVehicleUnitRepository(db);
 
   return {
+    checklistRepository,
     documentRepository,
     financeRepository,
     listingRepository,

@@ -5,6 +5,9 @@ import type { CreateVehicleListingInput } from "../../../domains/vehicle/service
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import type { ListVehicleListingsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
+import type { CreateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
+import type { ListVehicleChecklistsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
+import type { UpdateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
 import type { ReorderVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
 import type { ReserveVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
 import type { RequestVehicleDocumentUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
@@ -15,6 +18,7 @@ import type { UpdateVehicleMediaInput } from "../../../domains/vehicle/services/
 import type { UpdateVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleUnit.js";
 import type { VehicleListingStatus } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { VehicleMediaUpload } from "../../../domains/vehicle/ports/vehicleMediaStorage.js";
+import type { VehicleChecklist } from "../../../domains/vehicle/ports/vehicleChecklistRepository.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import type { DrizzleVehicleInventoryClient } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
@@ -72,6 +76,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: { listingId: string; status: VehicleListingStatus },
   ) => Promise<InventoryListingDetailResponse>;
+  createChecklist: (
+    context: ServiceContext,
+    input: CreateVehicleChecklistInput,
+  ) => Promise<InventoryListingDetailResponse>;
   createListing: (
     context: ServiceContext,
     input: CreateListingInput,
@@ -100,6 +108,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: ListVehicleListingsInput,
   ) => Promise<InventoryListingListResponse>;
+  listChecklists: (
+    context: ServiceContext,
+    input: ListVehicleChecklistsInput,
+  ) => Promise<readonly VehicleChecklist[]>;
   listCatalogBrands: (
     context: ServiceContext,
     input: ListVehicleCatalogBrandsInput,
@@ -151,6 +163,10 @@ export type InventoryListingServices = {
   updateListingUnit: (
     context: ServiceContext,
     input: UpdateVehicleUnitInput,
+  ) => Promise<InventoryListingDetailResponse>;
+  updateChecklist: (
+    context: ServiceContext,
+    input: UpdateVehicleChecklistInput,
   ) => Promise<InventoryListingDetailResponse>;
   sellListing: (
     context: ServiceContext,

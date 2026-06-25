@@ -1,4 +1,4 @@
-import type { documentVersions } from "@lojaveiculosv2/db";
+import type { documentVersions, vehicleChecklists } from "@lojaveiculosv2/db";
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
 import type {
   InsertDocumentLinkRow,
@@ -19,18 +19,27 @@ export type DocumentVersionRow = InferSelectModel<typeof documentVersions>;
 export type InsertDocumentVersionRow = InferInsertModel<
   typeof documentVersions
 >;
+export type VehicleChecklistRow = InferSelectModel<typeof vehicleChecklists>;
+export type InsertVehicleChecklistRow = InferInsertModel<
+  typeof vehicleChecklists
+>;
 
 export type InsertRecord =
   | InsertDocumentLinkRow
   | InsertDocumentRow
   | InsertDocumentVersionRow
+  | InsertVehicleChecklistRow
   | InsertVehicleListingRow
   | InsertVehicleMediaRow
   | InsertVehicleUnitRow;
 
-export type UpdateRecord = UpdateVehicleListingRow | UpdateVehicleUnitRow;
+export type UpdateRecord =
+  | Partial<VehicleChecklistRow>
+  | UpdateVehicleListingRow
+  | UpdateVehicleUnitRow;
 
 export type StoredRows = {
+  checklists: VehicleChecklistRow[];
   documentLinks: VehicleDocumentLinkRow[];
   documentVersions: DocumentVersionRow[];
   documents: VehicleDocumentRow[];
@@ -43,6 +52,26 @@ export function createRows() {
   const now = new Date("2026-01-01T00:00:00.000Z");
 
   return {
+    checklist(
+      overrides: Partial<VehicleChecklistRow> = {},
+    ): VehicleChecklistRow {
+      return {
+        completedAt: null,
+        completedByUserId: null,
+        createdAt: now,
+        id: "checklist_1",
+        items: [
+          { id: "item_1", label: "Manual", notes: null, status: "pending" },
+        ],
+        name: "Entrega",
+        status: "pending",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+        unitId: "unit_1",
+        updatedAt: now,
+        ...overrides,
+      };
+    },
     document(overrides: Partial<VehicleDocumentRow> = {}): VehicleDocumentRow {
       return {
         createdAt: now,

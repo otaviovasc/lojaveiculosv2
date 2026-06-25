@@ -149,6 +149,14 @@ describe("createInventoryApi", () => {
     expect(inventoryRoutes.unitDetail("listing 1", "unit 1")).toBe(
       "/api/v1/inventory/listings/listing%201/units/unit%201",
     );
+    expect(inventoryRoutes.checklists("listing 1", "unit 1")).toBe(
+      "/api/v1/inventory/listings/listing%201/units/unit%201/checklists",
+    );
+    expect(
+      inventoryRoutes.checklistDetail("listing 1", "unit 1", "checklist 1"),
+    ).toBe(
+      "/api/v1/inventory/listings/listing%201/units/unit%201/checklists/checklist%201",
+    );
     expect(createInventoryHeaders({ storeSlug: "test-store" })).toEqual({
       "Content-Type": "application/json",
       "x-store-slug": "test-store",
@@ -194,6 +202,58 @@ describe("createInventoryApi", () => {
       status: "reserved",
       stockNumber: "stock_2",
       vin: "vin_2",
+    });
+  });
+
+  it("lists, creates, and updates vehicle checklists", async () => {
+    const fake = createFakeFetch([
+      {
+        checklists: [
+          {
+            completedAt: null,
+            completedByUserId: null,
+            createdAt: "2026-01-01T00:00:00.000Z",
+            id: "checklist_1",
+            items: [],
+            name: "Entrega",
+            status: "pending",
+            storeId: "store_1",
+            tenantId: "tenant_1",
+            unitId: "unit_1",
+            updatedAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      },
+      listingDetailPayload(),
+      listingDetailPayload(),
+    ]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await api.listChecklists("listing_1", "unit_1");
+    await api.createChecklist("listing_1", "unit_1", {
+      items: [{ label: "Manual" }],
+      name: "Entrega",
+    });
+    await api.updateChecklist("listing_1", "unit_1", "checklist_1", {
+      items: [{ id: "item_1", label: "Manual", status: "passed" }],
+      status: "passed",
+    });
+
+    expect(callAt(fake.calls, 0).input).toBe(
+      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists",
+    );
+    expect(callAt(fake.calls, 1).init?.method).toBe("POST");
+    expect(bodyOf(callAt(fake.calls, 1))).toEqual({
+      items: [{ label: "Manual" }],
+      name: "Entrega",
+    });
+    expect(callAt(fake.calls, 2).input).toBe(
+      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists/checklist_1",
+    );
+    expect(callAt(fake.calls, 2).init?.method).toBe("PATCH");
+    expect(bodyOf(callAt(fake.calls, 2))).toEqual({
+      items: [{ id: "item_1", label: "Manual", status: "passed" }],
+      status: "passed",
     });
   });
 

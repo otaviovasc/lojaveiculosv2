@@ -83,6 +83,27 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}/costs`,
       baseUrl,
     ),
+  checklists: (listingId: string, unitId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(
+        listingId,
+      )}/units/${encodeURIComponent(unitId)}/checklists`,
+      baseUrl,
+    ),
+  checklistDetail: (
+    listingId: string,
+    unitId: string,
+    checklistId: string,
+    baseUrl?: string,
+  ) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(
+        listingId,
+      )}/units/${encodeURIComponent(unitId)}/checklists/${encodeURIComponent(
+        checklistId,
+      )}`,
+      baseUrl,
+    ),
   list: (input: ListInventoryInput, baseUrl?: string) => {
     const endpoint = createInventoryEndpoint("/inventory/listings", baseUrl);
     const params = new URLSearchParams();

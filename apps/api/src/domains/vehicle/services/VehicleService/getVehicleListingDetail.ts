@@ -4,6 +4,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   auditVehicleServiceEvent,
   findScopedListing,
+  getChecklistRepository,
   getListingRepository,
   getDocumentRepository,
   getMediaRepository,
@@ -65,9 +66,16 @@ export async function getVehicleListingDetail(
         }),
       ])
     : [[], [], []];
+  const checklists = ports?.checklistRepository
+    ? await getChecklistRepository(ports).listByUnitIds({
+        ...scope,
+        unitIds: units.map((unit) => unit.id),
+      })
+    : [];
 
   logVehicleServiceEvent(context, "vehicle_listing.detail.read", {
     listingId: listing.id,
+    checklistCount: checklists.length,
     documentCount: documents.length,
     costCount: costs.length,
     mediaCount: media.length,
@@ -83,6 +91,7 @@ export async function getVehicleListingDetail(
     metadata: {
       mediaCount: media.length,
       permission: effectivePermission,
+      checklistCount: checklists.length,
       costCount: costs.length,
       documentCount: documents.length,
       priceHistoryCount: priceHistory.length,
@@ -94,6 +103,7 @@ export async function getVehicleListingDetail(
   });
 
   return createListingDetail({
+    checklists,
     costs,
     documents,
     listing,

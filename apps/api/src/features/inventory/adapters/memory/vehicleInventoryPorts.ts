@@ -17,6 +17,7 @@ import type { VehicleInventoryServicePorts } from "../../../../domains/vehicle/s
 import { createMemoryFinanceRepository } from "./financeRepository.js";
 import { createMemoryVehicleCatalogProvider } from "./vehicleCatalogProvider.js";
 import { createMemoryVehicleCatalogRepository } from "./vehicleCatalogRepository.js";
+import { createMemoryVehicleChecklistRepository } from "./vehicleChecklistRepository.js";
 import { createMemoryVehicleMediaStorage } from "./vehicleMediaStorage.js";
 import { createMemoryVehicleOperationsRepository } from "./vehicleOperationsRepository.js";
 import { createMemoryVehicleSalesRepository } from "./vehicleSalesRepository.js";
@@ -129,6 +130,7 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
   return {
     catalogProvider: createMemoryVehicleCatalogProvider(),
     catalogRepository: createMemoryVehicleCatalogRepository(),
+    checklistRepository: createMemoryVehicleChecklistRepository(),
     documentRepository,
     financeRepository: createMemoryFinanceRepository(),
     listingRepository,

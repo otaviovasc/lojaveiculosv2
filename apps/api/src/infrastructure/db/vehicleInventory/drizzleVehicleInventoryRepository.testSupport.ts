@@ -2,6 +2,7 @@ import {
   documentLinks,
   documents,
   documentVersions,
+  vehicleChecklists,
   vehicleListings,
   vehicleMedia,
   vehicleUnits,
@@ -17,6 +18,11 @@ import type {
   VehicleUnitRow,
 } from "./drizzleVehicleInventoryMappers.js";
 import {
+  filterChecklistRows,
+  updateFirstMatchingChecklist,
+  type SqlPredicate,
+} from "./drizzleVehicleChecklistPredicate.testSupport.js";
+import {
   createRows,
   type DocumentVersionRow,
   type InsertRecord,
@@ -28,6 +34,7 @@ export { createRows } from "./drizzleVehicleInventoryRepository.testRows.js";
 
 export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
   const rows: StoredRows = {
+    checklists: initialRows.checklists ?? [],
     documentLinks: initialRows.documentLinks ?? [],
     documentVersions: initialRows.documentVersions ?? [],
     documents: initialRows.documents ?? [],
@@ -98,6 +105,16 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
                 return [row];
               }
 
+              if (table === vehicleChecklists) {
+                const row = {
+                  ...rowFactory.checklist(),
+                  ...(record as Partial<StoredRows["checklists"][number]>),
+                  id: `checklist_${rows.checklists.length + 1}`,
+                };
+                rows.checklists.push(row);
+                return [row];
+              }
+
               const row = {
                 ...rowFactory.unit(),
                 ...(record as Partial<VehicleUnitRow>),
@@ -114,12 +131,15 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
       return {
         from(table: unknown) {
           return {
-            async where() {
+            async where(predicate?: SqlPredicate) {
               if (table === vehicleListings) return rows.listings;
               if (table === vehicleMedia) return rows.media;
               if (table === documents) return rows.documents;
               if (table === documentLinks) return rows.documentLinks;
               if (table === documentVersions) return rows.documentVersions;
+              if (table === vehicleChecklists) {
+                return filterChecklistRows(rows.checklists, predicate);
+              }
               return rows.units;
             },
           };
@@ -131,13 +151,21 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
         set(record: UpdateRecord) {
           updated.push(record);
           return {
-            where() {
+            where(predicate?: SqlPredicate) {
               return {
                 async returning() {
                   if (table === vehicleListings) {
                     return updateFirst(
                       rows.listings,
                       record as UpdateVehicleListingRow,
+                    );
+                  }
+
+                  if (table === vehicleChecklists) {
+                    return updateFirstMatchingChecklist(
+                      rows.checklists,
+                      record as Partial<StoredRows["checklists"][number]>,
+                      predicate,
                     );
                   }
 

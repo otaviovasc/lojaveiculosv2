@@ -1,5 +1,6 @@
 import { inventorySchemas, jsonRequest } from "./inventoryOpenApiSchemas.js";
 import { inventoryFinancePaths } from "./inventoryFinanceOpenApi.js";
+import { inventoryChecklistPaths } from "./inventoryChecklistOpenApi.js";
 import {
   authResponses,
   detailResponse,
@@ -180,6 +181,7 @@ export const inventoryPaths = {
       },
     },
   },
+  ...inventoryChecklistPaths,
   ...inventoryFinancePaths,
   "/api/v1/inventory/listings/{listingId}/reserve": {
     post: {

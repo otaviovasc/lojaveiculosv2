@@ -1,15 +1,18 @@
 import type {
   CreateInventoryFlowInput,
   CreateInventoryFlowResult,
+  CreateInventoryChecklistInput,
   CreateInventoryCostInput,
   CreateInventoryListingInput,
   CreateInventoryMediaInput,
   CreateInventoryUnitInput,
   InventoryAuth,
+  InventoryChecklist,
   InventoryListingDetail,
   InventoryListingList,
   ReserveInventoryListingInput,
   SellInventoryListingInput,
+  UpdateInventoryChecklistInput,
   UpdateInventoryListingInput,
   UpdateInventoryUnitInput,
 } from "../model/types";
@@ -50,6 +53,11 @@ export type InventoryApi = {
     listingId: string,
     input: CreateInventoryCostInput,
   ) => Promise<InventoryListingDetail>;
+  createChecklist: (
+    listingId: string,
+    unitId: string,
+    input: CreateInventoryChecklistInput,
+  ) => Promise<InventoryListingDetail>;
   createFlow: (
     input: CreateInventoryFlowInput,
   ) => Promise<CreateInventoryFlowResult>;
@@ -64,6 +72,10 @@ export type InventoryApi = {
     input: InventoryResaleAnalysisRequest,
   ) => Promise<InventoryResaleAnalysisResponse>;
   listListings: (input?: ListInventoryInput) => Promise<InventoryListingList>;
+  listChecklists: (
+    listingId: string,
+    unitId: string,
+  ) => Promise<readonly InventoryChecklist[]>;
   reserveListing: (
     listingId: string,
     input: ReserveInventoryListingInput,
@@ -75,6 +87,12 @@ export type InventoryApi = {
   updateListingDetails: (
     listingId: string,
     input: UpdateInventoryListingInput,
+  ) => Promise<InventoryListingDetail>;
+  updateChecklist: (
+    listingId: string,
+    unitId: string,
+    checklistId: string,
+    input: UpdateInventoryChecklistInput,
   ) => Promise<InventoryListingDetail>;
   updateUnit: (
     listingId: string,
@@ -149,6 +167,20 @@ export function createInventoryApi({
       },
     );
 
+  const createChecklist = (
+    listingId: string,
+    unitId: string,
+    input: CreateInventoryChecklistInput,
+  ) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.checklists(listingId, unitId, baseUrl),
+      {
+        items: input.items,
+        name: input.name,
+        status: input.status,
+      },
+    );
+
   const lookupPlate = (input: { plate: string }) =>
     postJson<InventoryPlateLookupResponse>(
       inventoryRoutes.plateLookup(baseUrl),
@@ -199,6 +231,13 @@ export function createInventoryApi({
       headers: createInventoryHeaders(auth),
     }).then(readJson<InventoryListingList>);
 
+  const listChecklists = (listingId: string, unitId: string) =>
+    fetch(inventoryRoutes.checklists(listingId, unitId, baseUrl), {
+      headers: createInventoryHeaders(auth),
+    })
+      .then(readJson<{ checklists: InventoryChecklist[] }>)
+      .then((payload) => payload.checklists);
+
   const updateListingDetails = (
     listingId: string,
     input: UpdateInventoryListingInput,
@@ -242,10 +281,27 @@ export function createInventoryApi({
       "PATCH",
     );
 
+  const updateChecklist = (
+    listingId: string,
+    unitId: string,
+    checklistId: string,
+    input: UpdateInventoryChecklistInput,
+  ) =>
+    sendJson<InventoryListingDetail>(
+      inventoryRoutes.checklistDetail(listingId, unitId, checklistId, baseUrl),
+      {
+        items: input.items,
+        name: input.name,
+        status: input.status,
+      },
+      "PATCH",
+    );
+
   return {
     addCost,
     analyzeResale,
     attachUnit,
+    createChecklist,
     createFlow: async (input) => {
       const listing = await createListing(input.listing);
       const listingId = listing.listing.id;
@@ -275,10 +331,12 @@ export function createInventoryApi({
     getListing,
     lookupPlate,
     ...catalogApi,
+    listChecklists,
     listListings,
     ...mediaApi,
     reserveListing,
     sellListing,
+    updateChecklist,
     updateListingDetails,
     updateUnit,
   };

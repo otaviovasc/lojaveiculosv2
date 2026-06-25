@@ -39,6 +39,9 @@ export const llmsText = `# Loja Veiculos API
 - Attach listing unit: PUT /api/v1/inventory/listings/{listingId}/unit
 - Update listing unit: PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}
 - Create vehicle cost: POST /api/v1/inventory/listings/{listingId}/costs
+- List unit checklists: GET /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists
+- Create unit checklist: POST /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists
+- Update unit checklist: PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}
 - Request listing media upload: POST /api/v1/inventory/listings/{listingId}/media/uploads
 - Attach uploaded listing media: POST /api/v1/inventory/listings/{listingId}/media
 - Reserve listing: POST /api/v1/inventory/listings/{listingId}/reserve
@@ -62,6 +65,8 @@ export const llmsText = `# Loja Veiculos API
 - inventory.update_status: reserved for listing lifecycle edits.
 - inventory.update_unit: reserved for physical/unit inventory edits.
 - inventory.cost_create: required to create vehicle costs and linked finance entries.
+- inventory.checklist_read: required to read vehicle readiness checklists.
+- inventory.checklist_update: required to create and update vehicle readiness checklists.
 - inventory.reserve: required to reserve vehicle inventory and emit a reservation receipt.
 - inventory.sell: required to sell vehicle inventory and emit sale documents.
 - inventory.delete: reserved for vehicle deletion workflows.
@@ -100,6 +105,9 @@ export const llmsText = `# Loja Veiculos API
 - PUT /api/v1/inventory/listings/{listingId}/unit: attaches an operational unit; requires inventory.create.
 - PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}: updates physical/unit fields; workflow statuses are blocked.
 - POST /api/v1/inventory/listings/{listingId}/costs: records a vehicle cost and creates linked finance entry rows.
+- GET /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists: lists persisted readiness checklists for a scoped unit.
+- POST /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists: creates a readiness checklist and returns the updated listing detail.
+- PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
 - POST /api/v1/inventory/listings/{listingId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions.
 - POST /api/v1/inventory/listings/{listingId}/media: records uploaded R2 object as listing media after scoped storage validation.
 - POST /api/v1/inventory/listings/{listingId}/reserve: reserves a unit, emits reservation_receipt, and creates linked finance entries.

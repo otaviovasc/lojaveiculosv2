@@ -9,6 +9,12 @@ export type InventoryListingListResponse = ReturnType<typeof toListDto>;
 
 export function toDetailDto(detail: VehicleListingDetail) {
   return {
+    checklists: detail.checklists.map((checklist) => ({
+      ...checklist,
+      completedAt: checklist.completedAt?.toISOString() ?? null,
+      createdAt: checklist.createdAt.toISOString(),
+      updatedAt: checklist.updatedAt.toISOString(),
+    })),
     costs: detail.costs.map((cost) => ({
       ...cost,
       costDate: cost.costDate.toISOString(),

@@ -7,6 +7,7 @@ import { listVehicleCatalogYears } from "../../../domains/vehicle/services/Vehic
 import { createVehicleListing } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import { createVehicleMedia } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import { deleteVehicleMedia } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
+import { listVehicleChecklists } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
 import { listVehicleListings } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
 import { reorderVehicleMedia } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
 import { requestVehicleDocumentUpload } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
@@ -87,6 +88,9 @@ export function createInventoryListingServices(
     },
     async listListings(context, input) {
       return toListDto(await listVehicleListings(context, input, ports));
+    },
+    async listChecklists(context, input) {
+      return listVehicleChecklists(context, input, ports);
     },
     async listCatalogBrands(context, input) {
       return listVehicleCatalogBrands(context, input, ports);

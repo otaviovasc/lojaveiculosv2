@@ -139,6 +139,9 @@ export const openApiDocument = {
     "inventory.update_status": "Edit vehicle listing lifecycle status.",
     "inventory.update_unit": "Edit physical/unit inventory fields.",
     "inventory.cost_create": "Create vehicle costs and linked finance entries.",
+    "inventory.checklist_read": "Read vehicle readiness checklists.",
+    "inventory.checklist_update":
+      "Create and update vehicle readiness checklists.",
     "inventory.reserve":
       "Reserve vehicle listings and emit reservation receipts.",
     "inventory.sell": "Sell vehicle listings and emit sale document bundles.",

@@ -116,7 +116,42 @@ export type InventoryUnit = {
   vin: string | null;
 };
 
+export type InventoryChecklistStatus =
+  | "failed"
+  | "in_progress"
+  | "passed"
+  | "pending"
+  | "waived";
+
+export type InventoryChecklistItemStatus =
+  | "failed"
+  | "passed"
+  | "pending"
+  | "waived";
+
+export type InventoryChecklistItem = {
+  id: string;
+  label: string;
+  notes: string | null;
+  status: InventoryChecklistItemStatus;
+};
+
+export type InventoryChecklist = {
+  completedAt: string | null;
+  completedByUserId: string | null;
+  createdAt: string;
+  id: string;
+  items: readonly InventoryChecklistItem[];
+  name: string;
+  status: InventoryChecklistStatus;
+  storeId: string | null;
+  tenantId: string | null;
+  unitId: string;
+  updatedAt: string;
+};
+
 export type InventoryListingDetail = {
+  checklists: readonly InventoryChecklist[];
   costs: readonly InventoryCost[];
   documents: readonly InventoryDocument[];
   listing: InventoryListing;
@@ -228,6 +263,25 @@ export type UpdateInventoryUnitInput = {
   status?: InventoryUnit["status"];
   stockNumber?: string | null;
   vin?: string | null;
+};
+
+export type UpsertInventoryChecklistItemInput = {
+  id?: string;
+  label: string;
+  notes?: string | null;
+  status?: InventoryChecklistItemStatus;
+};
+
+export type CreateInventoryChecklistInput = {
+  items: readonly UpsertInventoryChecklistItemInput[];
+  name: string;
+  status?: InventoryChecklistStatus;
+};
+
+export type UpdateInventoryChecklistInput = {
+  items?: readonly UpsertInventoryChecklistItemInput[];
+  name?: string;
+  status?: InventoryChecklistStatus;
 };
 
 export type CreateInventoryFlowResult = {

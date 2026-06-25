@@ -294,6 +294,7 @@ function listingDetail(
   overrides: Partial<InventoryListingDetail> = {},
 ): InventoryListingDetail {
   return {
+    checklists: [],
     costs: [],
     documents: [],
     listing: {
@@ -328,7 +329,6 @@ function listingDetail(
     ...overrides,
   };
 }
-
 function unitRecord(
   overrides: Partial<InventoryListingDetail["units"][number]> = {},
 ): InventoryListingDetail["units"][number] {

@@ -9,8 +9,10 @@ import type {
   VehiclePriceHistoryEntry,
   VehicleStatusHistoryEntry,
 } from "../ports/vehicleOperationsRepository.js";
+import type { VehicleChecklist } from "../ports/vehicleChecklistRepository.js";
 
 export type VehicleListingDetail = {
+  checklists: readonly VehicleChecklist[];
   costs: readonly VehicleCost[];
   documents: readonly VehicleDocument[];
   listing: VehicleListing;
@@ -36,6 +38,7 @@ export type VehicleListingListResult = {
 };
 
 export function createListingDetail(input: {
+  checklists?: readonly VehicleChecklist[];
   documents?: readonly VehicleDocument[];
   costs?: readonly VehicleCost[];
   listing: VehicleListing;
@@ -45,6 +48,7 @@ export function createListingDetail(input: {
   units: readonly VehicleUnit[];
 }): VehicleListingDetail {
   return {
+    checklists: input.checklists ?? [],
     costs: input.costs ?? [],
     documents: input.documents ?? [],
     listing: input.listing,

@@ -175,6 +175,29 @@ export const costSchema = z.object({
   unitId: z.string().trim().min(1).optional(),
 });
 
+const checklistItemSchema = z.object({
+  id: z.string().trim().min(1).optional(),
+  label: z.string().trim().min(1).max(160),
+  notes: z.string().trim().min(1).max(500).nullable().optional(),
+  status: z.enum(["failed", "passed", "pending", "waived"]).default("pending"),
+});
+
+export const createChecklistSchema = z.object({
+  items: z.array(checklistItemSchema).min(1),
+  name: z.string().trim().min(1).max(120),
+  status: z
+    .enum(["failed", "in_progress", "passed", "pending", "waived"])
+    .optional(),
+});
+
+export const updateChecklistSchema = z.object({
+  items: z.array(checklistItemSchema).min(1).optional(),
+  name: z.string().trim().min(1).max(120).optional(),
+  status: z
+    .enum(["failed", "in_progress", "passed", "pending", "waived"])
+    .optional(),
+});
+
 const buyerSchema = z.object({
   address: z.string().trim().min(1).nullable().optional(),
   document: z.string().trim().min(1).nullable().optional(),

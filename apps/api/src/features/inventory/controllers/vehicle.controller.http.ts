@@ -18,6 +18,10 @@ import {
   VehicleMediaNotFoundError,
   VehicleUnitNotFoundError,
 } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
+import {
+  VehicleChecklistNotFoundError,
+  VehicleChecklistValidationError,
+} from "../../../domains/vehicle/checklists/vehicleChecklistSupport.js";
 import { VehicleWorkflowStatusError } from "../../../domains/vehicle/policies/workflowStatusPolicy.js";
 
 export async function parseJson<Schema extends z.ZodType>(
@@ -61,6 +65,7 @@ export async function handle(
 
     if (
       error instanceof VehicleWorkflowValidationError ||
+      error instanceof VehicleChecklistValidationError ||
       error instanceof VehicleCostMissingUnitError
     ) {
       return context.json({ message: error.message }, 400);
@@ -134,15 +139,18 @@ function isVehicleInventoryNotFoundError(
   error: unknown,
 ): error is
   | VehicleListingNotFoundError
+  | VehicleChecklistNotFoundError
   | VehicleMediaNotFoundError
   | VehicleUnitNotFoundError {
   return (
     error instanceof VehicleListingNotFoundError ||
+    error instanceof VehicleChecklistNotFoundError ||
     error instanceof VehicleMediaNotFoundError ||
     error instanceof VehicleUnitNotFoundError ||
     (error instanceof Error &&
       [
         "VehicleListingNotFoundError",
+        "VehicleChecklistNotFoundError",
         "VehicleMediaNotFoundError",
         "VehicleUnitNotFoundError",
       ].includes(error.name))

@@ -50,6 +50,16 @@ describe("inventory listing transaction composition", () => {
         }),
     ],
     [
+      "createChecklist",
+      (services) =>
+        services.createChecklist(context(), {
+          items: [{ label: "Manual", status: "pending" }],
+          listingId: "listing_1",
+          name: "Entrega",
+          unitId: "unit_1",
+        }),
+    ],
+    [
       "reserveListing",
       (services) =>
         services.reserveListing(context(), {
@@ -76,6 +86,16 @@ describe("inventory listing transaction composition", () => {
         services.updateListingDetails(context(), {
           listingId: "listing_1",
           title: "Updated",
+        }),
+    ],
+    [
+      "updateChecklist",
+      (services) =>
+        services.updateChecklist(context(), {
+          checklistId: "vehicle_checklist_1",
+          items: [{ id: "item_1", label: "Manual", status: "passed" }],
+          listingId: "listing_1",
+          unitId: "unit_1",
         }),
     ],
     [
@@ -122,6 +142,8 @@ function context() {
     permissions: [
       "inventory.cost_create",
       "inventory.create",
+      "inventory.checklist_read",
+      "inventory.checklist_update",
       "inventory.document_attach",
       "inventory.read",
       "inventory.reserve",

@@ -6,6 +6,13 @@ import {
   type InventoryContextFactory,
   type InventoryListingServices,
 } from "./vehicle.controller.js";
+import {
+  listingDetailResult,
+  listingDto,
+  unitDto,
+} from "./vehicle.controller.testFixtures.js";
+
+export { listingDetailResult } from "./vehicle.controller.testFixtures.js";
 
 export function createInventoryTestApp(
   services: InventoryListingServices,
@@ -26,6 +33,7 @@ export function createInventoryTestServices(): InventoryListingServices {
     attachListingUnit: vi.fn(async () => listingDetailResult()),
     attachVehicleDocument: vi.fn(async () => listingDetailResult()),
     changeListingStatus: vi.fn(async () => listingDetailResult()),
+    createChecklist: vi.fn(async () => listingDetailResult()),
     createListing: vi.fn(async () => listingDetailResult()),
     createMedia: vi.fn(async () => ({
       listingId: "listing_1",
@@ -70,6 +78,28 @@ export function createInventoryTestServices(): InventoryListingServices {
       yearCode: "2024-1",
     })),
     getListing: vi.fn(async () => listingDetailResult()),
+    listChecklists: vi.fn(async () => [
+      {
+        completedAt: null,
+        completedByUserId: null,
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        id: "checklist_1",
+        items: [
+          {
+            id: "item_1",
+            label: "Manual",
+            notes: null,
+            status: "passed" as const,
+          },
+        ],
+        name: "Entrega",
+        status: "in_progress" as const,
+        storeId: "store_1",
+        tenantId: "tenant_1",
+        unitId: "unit_1",
+        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+    ]),
     listCatalogBrands: vi.fn(async () => [{ code: "21", name: "Fiat" }]),
     listCatalogModels: vi.fn(async () => [{ code: "toro", name: "Toro" }]),
     listCatalogVersions: vi.fn(async () => [
@@ -120,102 +150,10 @@ export function createInventoryTestServices(): InventoryListingServices {
     sellListing: vi.fn(async () => listingDetailResult()),
     updateListingDescription: vi.fn(async () => listingDetailResult()),
     updateListingDetails: vi.fn(async () => listingDetailResult()),
+    updateChecklist: vi.fn(async () => listingDetailResult()),
     updateListingPrice: vi.fn(async () => listingDetailResult()),
     updateListingUnit: vi.fn(async () => listingDetailResult()),
     updateMedia: vi.fn(async () => listingDetailResult()),
-  };
-}
-
-export function listingDetailResult() {
-  return {
-    costs: [],
-    documents: [
-      {
-        createdAt: "2026-01-01T00:00:00.000Z",
-        fileName: "document.pdf",
-        fileSizeBytes: 4096,
-        id: "document_1",
-        kind: "vehicle_registration" as const,
-        linkRole: "primary",
-        metadata: {},
-        mimeType: "application/pdf",
-        status: "draft" as const,
-        storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/document.pdf",
-        storeId: "store_1",
-        targetId: "listing_1",
-        targetType: "vehicle_listing" as const,
-        tenantId: "tenant_1",
-        title: "Registration",
-        updatedAt: "2026-01-01T00:00:00.000Z",
-        uploadedAt: "2026-01-01T00:00:00.000Z",
-      },
-    ],
-    listing: listingDto(),
-    media: [
-      {
-        altText: "Front photo",
-        createdAt: "2026-01-01T00:00:00.000Z",
-        displayOrder: 0,
-        id: "media_1",
-        isPublic: true,
-        kind: "photo" as const,
-        listingId: "listing_1",
-        storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
-        storeId: "store_1",
-        tenantId: "tenant_1",
-        updatedAt: "2026-01-01T00:00:00.000Z",
-        url: "https://cdn.local/front.jpg",
-      },
-    ],
-    priceHistory: [],
-    status: "ready" as const,
-    statusHistory: [],
-    units: [unitDto()],
-  };
-}
-
-function listingDto() {
-  return {
-    catalog: null,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    description: "Clean vehicle",
-    doors: null,
-    engineAspiration: null,
-    engineDisplacement: null,
-    fuelType: null,
-    id: "listing_1",
-    internalNotes: null,
-    manufactureYear: null,
-    mileageKm: null,
-    modelYear: null,
-    plate: "ABC1D23",
-    priceCents: 12000000,
-    status: "available" as const,
-    storeId: "store_1",
-    tenantId: "tenant_1",
-    title: "Fiat Toro",
-    transmission: null,
-    trimName: null,
-    unitIds: ["unit_1"],
-    updatedAt: "2026-01-01T00:00:00.000Z",
-  };
-}
-
-function unitDto() {
-  return {
-    colorName: null,
-    createdAt: "2026-01-01T00:00:00.000Z",
-    id: "unit_1",
-    listingId: "listing_1",
-    plate: "ABC1D23",
-    status: "available" as const,
-    stockNumber: "stock_1",
-    storeId: "store_1",
-    tenantId: "tenant_1",
-    updatedAt: "2026-01-01T00:00:00.000Z",
-    vin: "vin_1",
   };
 }
 
@@ -224,6 +162,8 @@ export async function createUserContext() {
     actor: { id: "user_1", kind: "user" },
     permissions: [
       "inventory.create",
+      "inventory.checklist_read",
+      "inventory.checklist_update",
       "inventory.document_attach",
       "inventory.media_delete",
       "inventory.media_update",

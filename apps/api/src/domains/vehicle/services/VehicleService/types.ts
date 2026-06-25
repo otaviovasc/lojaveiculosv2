@@ -8,6 +8,7 @@ import type {
 } from "../../ports/vehicleInventoryRepository.js";
 import type { VehicleCatalogProvider } from "../../ports/vehicleCatalogProvider.js";
 import type { VehicleCatalogRepository } from "../../ports/vehicleCatalogRepository.js";
+import type { VehicleChecklistRepository } from "../../ports/vehicleChecklistRepository.js";
 import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
 import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
@@ -15,6 +16,7 @@ import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.
 export type VehicleInventoryServicePorts = {
   catalogProvider?: VehicleCatalogProvider;
   catalogRepository?: VehicleCatalogRepository;
+  checklistRepository?: VehicleChecklistRepository;
   documentRepository?: VehicleDocumentRepository;
   documentTemplateRepository?: Pick<DocumentRepository, "findTemplate">;
   financeRepository?: FinanceRepository;

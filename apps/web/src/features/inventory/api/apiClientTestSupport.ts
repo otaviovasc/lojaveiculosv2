@@ -35,6 +35,7 @@ export function bodyOf(call: FetchCall) {
 
 export function listingDetailPayload() {
   return {
+    checklists: [],
     costs: [],
     listing: {
       catalog: null,

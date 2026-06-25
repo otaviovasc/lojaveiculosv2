@@ -1,4 +1,5 @@
 import { inventoryFinanceSchemas } from "./inventoryFinanceOpenApiSchemas.js";
+import { inventoryChecklistSchemas } from "./inventoryChecklistOpenApiSchemas.js";
 import {
   listingTechnicalSchemas,
   objectSchema,
@@ -37,6 +38,7 @@ export const inventorySchemas = {
     },
     storageKey: { type: "string", minLength: 1 },
   }),
+  ...inventoryChecklistSchemas,
   ...inventoryFinanceSchemas,
   InventoryBuyer: objectSchema(["name"], {
     address: { type: ["string", "null"], minLength: 1 },
@@ -61,11 +63,15 @@ export const inventorySchemas = {
     unitIds: { type: "array", items: { type: "string" } },
   }),
   InventoryListingDetail: objectSchema(
-    ["documents", "listing", "media", "status", "units"],
+    ["checklists", "documents", "listing", "media", "status", "units"],
     {
       documents: {
         type: "array",
         items: { $ref: "#/components/schemas/VehicleDocument" },
+      },
+      checklists: {
+        type: "array",
+        items: { $ref: "#/components/schemas/VehicleChecklist" },
       },
       listing: { $ref: "#/components/schemas/InventoryListing" },
       media: { type: "array", items: { type: "object" } },

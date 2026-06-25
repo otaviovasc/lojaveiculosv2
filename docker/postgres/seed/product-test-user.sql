@@ -283,6 +283,8 @@ WHERE NOT EXISTS (
 INSERT INTO role_template_permissions (role_template_id, permission_key)
 VALUES
   ('55555555-5555-4555-8555-555555555555', 'inventory.catalog_sync'),
+  ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_read'),
+  ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_update'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.cost_create'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.read'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.create'),
@@ -376,7 +378,7 @@ INSERT INTO store_public_site_settings (
   theme
 )
 VALUES (
-  'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1600&q=80',
+  'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407812109-dada8899-642c-410c-964d-7bca6d0b845e-bmw-m3-verde-3.jpg',
   true,
   'showroom',
   'Estoque revisado, pronta entrega e atendimento direto pelo WhatsApp.',
@@ -435,16 +437,27 @@ INSERT INTO vehicle_listings (
   trim_name
 )
 VALUES
-  ('10000000-0000-4000-8000-000000000001', 12690000, 'used', 'Unico dono, revisoes em dia, pneus novos e garantia de procedencia.', 4, '2.0', 'flex', true, 2022, '{"catalog": {"brandName": "Fiat", "modelName": "Toro", "modelYear": 2023, "source": "fipe", "vehicleType": "cars"}}'::jsonb, 32000, 2023, 'fiat-toro-volcano-2023', 'published', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Fiat Toro Volcano 2023', 'automatic', 'Volcano'),
-  ('10000000-0000-4000-8000-000000000002', 9870000, 'used', 'SUV completo com multimidia, camera de re e historico de manutencao.', 4, '1.8', 'flex', true, 2021, '{"catalog": {"brandName": "Jeep", "modelName": "Renegade", "modelYear": 2022, "source": "fipe", "vehicleType": "cars"}}'::jsonb, 41000, 2022, 'jeep-renegade-longitude-2022', 'published', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Jeep Renegade Longitude 2022', 'automatic', 'Longitude'),
+  ('10000000-0000-4000-8000-000000000001', 18990000, 'used', 'Sedan preto com pacote Prestige Plus, interior conservado, revisoes em dia e garantia de procedencia.', 4, '2.0', 'gasoline', true, 2021, '{"catalog": {"brandCode": "6", "brandLogoUrl": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Audi_logo_detail.svg", "brandName": "Audi", "modelCode": "8771", "modelName": "A4 Prestige Plus 2.0 TFSI 190cv S tronic", "modelYear": 2022, "source": "fipe", "vehicleType": "cars", "yearCode": "2022-1", "yearName": "2022 Gasolina"}}'::jsonb, 32000, 2022, 'audi-a4-prestige-plus-preto-2022', 'published', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Audi A4 Prestige Plus 2.0 TFSI 2022', 'automatic', 'Prestige Plus'),
+  ('10000000-0000-4000-8000-000000000002', 75990000, 'new', 'BMW M3 Competition M com unidades em preto e verde, 3.0 Bi-TB 510cv, pronta entrega e configuracao para testar estoque multiunidade.', 4, '3.0', 'gasoline', true, 2025, '{"catalog": {"brandCode": "7", "brandLogoUrl": "https://upload.wikimedia.org/wikipedia/commons/6/66/BMW_logo_%28white_%2B_grey_background_circle%29.svg", "brandName": "BMW", "modelCode": "9482", "modelName": "M3 Competition M 3.0 Bi-TB 510cv", "modelYear": 2025, "source": "fipe", "vehicleType": "cars", "yearCode": "2025-1", "yearName": "2025 Gasolina"}}'::jsonb, 0, 2025, 'bmw-m3-competition-m-2025', 'published', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'BMW M3 Competition M 2025', 'automatic', 'Competition M'),
   ('10000000-0000-4000-8000-000000000003', 6850000, 'used', 'Hatch economico para giro rapido de estoque, laudo aprovado.', 4, '1.0', 'flex', false, 2020, '{"catalog": {"brandName": "Hyundai", "modelName": "HB20", "modelYear": 2021, "source": "fipe", "vehicleType": "cars"}}'::jsonb, 52000, 2021, 'hyundai-hb20-comfort-2021', 'reserved', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Hyundai HB20 Comfort 2021', 'manual', 'Comfort'),
   ('10000000-0000-4000-8000-000000000004', 14990000, 'used', 'Pickup vendida no piloto local, mantendo historico para documentos e comissao.', 4, '2.8', 'diesel', false, 2020, '{"catalog": {"brandName": "Toyota", "modelName": "Hilux", "modelYear": 2021, "source": "fipe", "vehicleType": "cars"}}'::jsonb, 69000, 2021, 'toyota-hilux-srx-2021', 'sold_out', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Toyota Hilux SRX 2021', 'automatic', 'SRX')
 ON CONFLICT (id) DO UPDATE SET
   asking_price_cents = EXCLUDED.asking_price_cents,
+  condition = EXCLUDED.condition,
   description = EXCLUDED.description,
+  doors = EXCLUDED.doors,
+  engine_displacement = EXCLUDED.engine_displacement,
+  fuel_type = EXCLUDED.fuel_type,
   is_visible_on_public_site = EXCLUDED.is_visible_on_public_site,
+  manufacture_year = EXCLUDED.manufacture_year,
+  metadata = EXCLUDED.metadata,
+  mileage_km = EXCLUDED.mileage_km,
+  model_year = EXCLUDED.model_year,
   public_slug = EXCLUDED.public_slug,
   status = EXCLUDED.status,
+  title = EXCLUDED.title,
+  transmission = EXCLUDED.transmission,
+  trim_name = EXCLUDED.trim_name,
   updated_at = now();
 
 INSERT INTO vehicle_units (
@@ -461,11 +474,23 @@ INSERT INTO vehicle_units (
   vin
 )
 VALUES
-  ('11000000-0000-4000-8000-000000000001', now() - interval '45 days', 11000000, 'Prata', '10000000-0000-4000-8000-000000000001', 'ABC1D23', 'available', 'LV-0001', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000001'),
-  ('11000000-0000-4000-8000-000000000002', now() - interval '31 days', 8700000, 'Cinza', '10000000-0000-4000-8000-000000000002', 'DEF4G56', 'available', 'LV-0002', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000002'),
+  ('11000000-0000-4000-8000-000000000001', now() - interval '45 days', 17100000, 'Preto', '10000000-0000-4000-8000-000000000001', 'ABC1D23', 'available', 'LV-A4-PRETO', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WAU00000000000001'),
+  ('11000000-0000-4000-8000-000000000002', now() - interval '10 days', 68900000, 'Preto', '10000000-0000-4000-8000-000000000002', null, 'available', 'LV-M3-PRETO', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WBS00000000000002'),
   ('11000000-0000-4000-8000-000000000003', now() - interval '22 days', 6100000, 'Branco', '10000000-0000-4000-8000-000000000003', 'GHI7J89', 'reserved', 'LV-0003', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000003'),
-  ('11000000-0000-4000-8000-000000000004', now() - interval '70 days', 13200000, 'Preto', '10000000-0000-4000-8000-000000000004', 'JKL0M12', 'sold', 'LV-0004', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000004')
-ON CONFLICT (id) DO NOTHING;
+  ('11000000-0000-4000-8000-000000000004', now() - interval '70 days', 13200000, 'Preto', '10000000-0000-4000-8000-000000000004', 'JKL0M12', 'sold', 'LV-0004', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000004'),
+  ('11000000-0000-4000-8000-000000000005', now() - interval '8 days', 69200000, 'Verde', '10000000-0000-4000-8000-000000000002', null, 'available', 'LV-M3-VERDE', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WBS00000000000005')
+ON CONFLICT (id) DO UPDATE SET
+  acquisition_date = EXCLUDED.acquisition_date,
+  acquisition_price_cents = EXCLUDED.acquisition_price_cents,
+  color_name = EXCLUDED.color_name,
+  listing_id = EXCLUDED.listing_id,
+  plate = EXCLUDED.plate,
+  status = EXCLUDED.status,
+  stock_number = EXCLUDED.stock_number,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  vin = EXCLUDED.vin,
+  updated_at = now();
 
 INSERT INTO vehicle_media (
   id,
@@ -474,16 +499,33 @@ INSERT INTO vehicle_media (
   is_public,
   kind,
   listing_id,
+  metadata,
   storage_key,
   store_id,
   tenant_id,
   url
 )
 VALUES
-  ('12000000-0000-4000-8000-000000000001', 'Fiat Toro Volcano dianteira', 1, true, 'photo', '10000000-0000-4000-8000-000000000001', 'seed/fiat-toro-front.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://images.unsplash.com/photo-1549927681-0b673b8243ab?auto=format&fit=crop&w=1200&q=80'),
-  ('12000000-0000-4000-8000-000000000002', 'Jeep Renegade Longitude lateral', 1, true, 'photo', '10000000-0000-4000-8000-000000000002', 'seed/jeep-renegade-side.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=1200&q=80'),
-  ('12000000-0000-4000-8000-000000000003', 'Laudo cautelar HB20', 1, false, 'document_preview', '10000000-0000-4000-8000-000000000003', 'seed/hb20-laudo.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://cdn.local/seed/hb20-laudo.pdf')
-ON CONFLICT (id) DO NOTHING;
+  ('12000000-0000-4000-8000-000000000001', 'Audi A4 preto dianteira', 0, true, 'photo', '10000000-0000-4000-8000-000000000001', '{"contentType": "image/jpeg", "fileName": "audi-a4-preto-1.jpg", "sizeBytes": 144488, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000001/photo/1782407801644-bd8dd971-8e59-418f-9e65-5cdd1c5046f1-audi-a4-preto-1.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000001/photo/1782407801644-bd8dd971-8e59-418f-9e65-5cdd1c5046f1-audi-a4-preto-1.jpg'),
+  ('12000000-0000-4000-8000-000000000002', 'Audi A4 preto lateral', 1, true, 'photo', '10000000-0000-4000-8000-000000000001', '{"contentType": "image/jpeg", "fileName": "audi-a4-preto-2.jpeg", "sizeBytes": 15701, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000001/photo/1782407803425-e5dab261-c732-4a7e-8ada-75768d00c2a9-audi-a4-preto-2.jpeg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000001/photo/1782407803425-e5dab261-c732-4a7e-8ada-75768d00c2a9-audi-a4-preto-2.jpeg'),
+  ('12000000-0000-4000-8000-000000000003', 'Audi A4 preto traseira', 2, true, 'photo', '10000000-0000-4000-8000-000000000001', '{"contentType": "image/jpeg", "fileName": "audi-a4-preto-3.jpeg", "sizeBytes": 43445, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000001/photo/1782407804841-d61696ef-372f-4701-8910-86fd8e487813-audi-a4-preto-3.jpeg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000001/photo/1782407804841-d61696ef-372f-4701-8910-86fd8e487813-audi-a4-preto-3.jpeg'),
+  ('12000000-0000-4000-8000-000000000004', 'BMW M3 preto dianteira', 0, true, 'photo', '10000000-0000-4000-8000-000000000002', '{"contentType": "image/webp", "fileName": "bmw-m3-preto-1.webp", "sizeBytes": 84376, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407806409-bb4385a0-3929-4af3-a4c3-a67f6b9b4f79-bmw-m3-preto-1.webp', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407806409-bb4385a0-3929-4af3-a4c3-a67f6b9b4f79-bmw-m3-preto-1.webp'),
+  ('12000000-0000-4000-8000-000000000005', 'BMW M3 preto lateral', 1, true, 'photo', '10000000-0000-4000-8000-000000000002', '{"contentType": "image/jpeg", "fileName": "bmw-m3-preto-2.jpg", "sizeBytes": 37252, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407807717-58d02b8c-b2e7-4993-ba01-14995bc1b757-bmw-m3-preto-2.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407807717-58d02b8c-b2e7-4993-ba01-14995bc1b757-bmw-m3-preto-2.jpg'),
+  ('12000000-0000-4000-8000-000000000006', 'BMW M3 verde dianteira', 2, true, 'photo', '10000000-0000-4000-8000-000000000002', '{"contentType": "image/webp", "fileName": "bmw-m3-verde-1.webp", "sizeBytes": 66148, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407809307-81ecf89e-b6b5-4184-9fa9-c8426567ba60-bmw-m3-verde-1.webp', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407809307-81ecf89e-b6b5-4184-9fa9-c8426567ba60-bmw-m3-verde-1.webp'),
+  ('12000000-0000-4000-8000-000000000007', 'BMW M3 verde detalhe', 3, true, 'photo', '10000000-0000-4000-8000-000000000002', '{"contentType": "image/avif", "fileName": "bmw-m3-verde-2.avif", "sizeBytes": 36664, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407810773-8eae51e7-2cd8-4706-af1b-e0b668549a43-bmw-m3-verde-2.avif', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407810773-8eae51e7-2cd8-4706-af1b-e0b668549a43-bmw-m3-verde-2.avif'),
+  ('12000000-0000-4000-8000-000000000008', 'BMW M3 verde traseira', 4, true, 'photo', '10000000-0000-4000-8000-000000000002', '{"contentType": "image/jpeg", "fileName": "bmw-m3-verde-3.jpg", "sizeBytes": 219260, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407812109-dada8899-642c-410c-964d-7bca6d0b845e-bmw-m3-verde-3.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/listings/10000000-0000-4000-8000-000000000002/photo/1782407812109-dada8899-642c-410c-964d-7bca6d0b845e-bmw-m3-verde-3.jpg')
+ON CONFLICT (id) DO UPDATE SET
+  alt_text = EXCLUDED.alt_text,
+  display_order = EXCLUDED.display_order,
+  is_public = EXCLUDED.is_public,
+  kind = EXCLUDED.kind,
+  listing_id = EXCLUDED.listing_id,
+  metadata = EXCLUDED.metadata,
+  storage_key = EXCLUDED.storage_key,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  url = EXCLUDED.url,
+  updated_at = now();
 
 INSERT INTO vehicle_costs (
   id,
@@ -606,9 +648,17 @@ INSERT INTO lead_visits (
   tenant_id
 )
 VALUES
-  ('23000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', '20000000-0000-4000-8000-000000000001', 'Test drive da Toro com avaliacao de troca.', now() + interval '1 day', 'scheduled', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('23000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', '20000000-0000-4000-8000-000000000001', 'Test drive do Audi A4 com avaliacao de troca.', now() + interval '1 day', 'scheduled', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('23000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', '20000000-0000-4000-8000-000000000002', 'Enviar proposta de financiamento antes da visita.', now() + interval '3 days', 'scheduled', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  assigned_user_id = EXCLUDED.assigned_user_id,
+  lead_id = EXCLUDED.lead_id,
+  notes = EXCLUDED.notes,
+  scheduled_at = EXCLUDED.scheduled_at,
+  status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO crm_connection_mappings (
   id,
@@ -654,9 +704,16 @@ INSERT INTO crm_lead_mappings (
   tenant_id
 )
 VALUES
-  ('26000000-0000-4000-8000-000000000001', 'whatsapp', '20000000-0000-4000-8000-000000000001', 'contact_ana_silva', 'session_ana_toro', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('26000000-0000-4000-8000-000000000002', 'whatsapp', '20000000-0000-4000-8000-000000000002', 'contact_marcos_lima', 'session_marcos_renegade', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (repasses_session_id) DO NOTHING;
+  ('26000000-0000-4000-8000-000000000001', 'whatsapp', '20000000-0000-4000-8000-000000000001', 'contact_ana_silva', 'session_ana_a4', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('26000000-0000-4000-8000-000000000002', 'whatsapp', '20000000-0000-4000-8000-000000000002', 'contact_marcos_lima', 'session_marcos_m3', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (id) DO UPDATE SET
+  channel = EXCLUDED.channel,
+  lead_id = EXCLUDED.lead_id,
+  repasses_contact_id = EXCLUDED.repasses_contact_id,
+  repasses_session_id = EXCLUDED.repasses_session_id,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO crm_tag_mappings (
   id,
@@ -684,9 +741,17 @@ INSERT INTO crm_sync_events (
   tenant_id
 )
 VALUES
-  ('28000000-0000-4000-8000-000000000001', 'seed.session.ana_toro', 'session.updated', '{"sessionId": "session_ana_toro", "status": "open"}'::jsonb, now() - interval '2 hours', 'processed', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('28000000-0000-4000-8000-000000000002', 'seed.lead.marcos', 'lead.created', '{"sessionId": "session_marcos_renegade", "source": "whatsapp"}'::jsonb, now() - interval '1 day', 'processed', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (event_key) DO NOTHING;
+  ('28000000-0000-4000-8000-000000000001', 'seed.session.ana_a4', 'session.updated', '{"sessionId": "session_ana_a4", "status": "open"}'::jsonb, now() - interval '2 hours', 'processed', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('28000000-0000-4000-8000-000000000002', 'seed.lead.marcos_m3', 'lead.created', '{"sessionId": "session_marcos_m3", "source": "whatsapp"}'::jsonb, now() - interval '1 day', 'processed', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (id) DO UPDATE SET
+  event_key = EXCLUDED.event_key,
+  event_type = EXCLUDED.event_type,
+  payload = EXCLUDED.payload,
+  processed_at = EXCLUDED.processed_at,
+  status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO sales (
   id,
@@ -756,10 +821,22 @@ INSERT INTO finance_entries (
 )
 VALUES
   ('40000000-0000-4000-8000-000000000001', 14650000, 'vehicle_sale', now() - interval '10 days', '{"paymentMethod": "pix_financing"}'::jsonb, 'Venda Toyota Hilux SRX', now() - interval '10 days', '99999999-9999-4999-8999-999999999999', 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'revenue'),
-  ('40000000-0000-4000-8000-000000000002', 185000, 'preparation', now() - interval '20 days', '{"vendor": "Oficina parceira"}'::jsonb, 'Revisao Fiat Toro', now() - interval '19 days', null, 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'expense'),
+  ('40000000-0000-4000-8000-000000000002', 185000, 'preparation', now() - interval '20 days', '{"vendor": "Oficina parceira"}'::jsonb, 'Revisao Audi A4', now() - interval '19 days', null, 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'expense'),
   ('40000000-0000-4000-8000-000000000003', 219750, 'sales_commission', now() + interval '5 days', '{"basis": "1.5% sobre venda Hilux"}'::jsonb, 'Comissao venda Hilux', null, '99999999-9999-4999-8999-999999999999', 'pending', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'commission'),
-  ('40000000-0000-4000-8000-000000000004', 9870000, 'vehicle_sale', now() + interval '7 days', '{"leadId": "20000000-0000-4000-8000-000000000002"}'::jsonb, 'Proposta Jeep Renegade', null, '99999999-9999-4999-8999-999999999999', 'pending', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'revenue')
-ON CONFLICT (id) DO NOTHING;
+  ('40000000-0000-4000-8000-000000000004', 75990000, 'vehicle_sale', now() + interval '7 days', '{"leadId": "20000000-0000-4000-8000-000000000002"}'::jsonb, 'Proposta BMW M3 Competition M', null, '99999999-9999-4999-8999-999999999999', 'pending', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'revenue')
+ON CONFLICT (id) DO UPDATE SET
+  amount_cents = EXCLUDED.amount_cents,
+  category = EXCLUDED.category,
+  due_at = EXCLUDED.due_at,
+  metadata = EXCLUDED.metadata,
+  name = EXCLUDED.name,
+  paid_at = EXCLUDED.paid_at,
+  seller_user_id = EXCLUDED.seller_user_id,
+  status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  type = EXCLUDED.type,
+  updated_at = now();
 
 INSERT INTO finance_entry_links (id, entry_id, target_id, target_type, store_id, tenant_id)
 VALUES
@@ -851,13 +928,24 @@ VALUES (
   '10000000-0000-4000-8000-000000000001',
   '{"downPaymentCents": 4000000}'::jsonb,
   'banco_demo',
-  'fin_seed_ana_toro',
+  'fin_seed_ana_a4',
   'approved',
   '66666666-6666-4666-8666-666666666666',
   '77777777-7777-4777-8777-777777777777',
   '11000000-0000-4000-8000-000000000001'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  completed_at = EXCLUDED.completed_at,
+  lead_id = EXCLUDED.lead_id,
+  listing_id = EXCLUDED.listing_id,
+  metadata = EXCLUDED.metadata,
+  provider = EXCLUDED.provider,
+  provider_inquiry_id = EXCLUDED.provider_inquiry_id,
+  status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  unit_id = EXCLUDED.unit_id,
+  updated_at = now();
 
 INSERT INTO financing_conditions (
   id,
@@ -911,11 +999,24 @@ INSERT INTO documents (
 )
 VALUES
   ('51000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', 'contrato-hilux.pdf', 248000, 'sale_contract', '{"saleId": "30000000-0000-4000-8000-000000000001", "saleTitle": "Venda Toyota Hilux SRX", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/contrato-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Contrato de venda Hilux', now() - interval '11 days'),
-  ('51000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', 'recibo-sinal-hb20.pdf', 142000, 'reservation_receipt', '{"listingId": "10000000-0000-4000-8000-000000000003", "listingTitle": "Fiat Toro Volcano 2021", "vehicleTitle": "Fiat Toro Volcano 2021", "plate": "KJQ9M88", "leadId": "20000000-0000-4000-8000-000000000002", "leadName": "Marcos Lima"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-sinal-hb20.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de reserva HB20', now() - interval '3 days'),
-  ('51000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'laudo-toro.pdf', 184000, 'inspection', '{"unitId": "11000000-0000-4000-8000-000000000001", "unitTitle": "Fiat Toro 1.6 Volcano 2023", "plate": "ABC1D23", "buyerName": "Ana Silva", "documentType": "Laudo cautelar"}'::jsonb, 'application/pdf', 'signed', 'seed/documents/laudo-toro.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Laudo cautelar Toro', now() - interval '19 days'),
+  ('51000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', 'recibo-sinal-hb20.pdf', 142000, 'reservation_receipt', '{"listingId": "10000000-0000-4000-8000-000000000003", "listingTitle": "Hyundai HB20 Comfort 2021", "vehicleTitle": "Hyundai HB20 Comfort 2021", "plate": "GHI7J89", "leadId": "20000000-0000-4000-8000-000000000002", "leadName": "Marcos Lima"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-sinal-hb20.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de reserva HB20', now() - interval '3 days'),
+  ('51000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'laudo-audi-a4.pdf', 184000, 'inspection', '{"unitId": "11000000-0000-4000-8000-000000000001", "unitTitle": "Audi A4 Prestige Plus 2.0 TFSI 2022", "plate": "ABC1D23", "buyerName": "Ana Silva", "documentType": "Laudo cautelar"}'::jsonb, 'application/pdf', 'signed', 'seed/documents/laudo-audi-a4.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Laudo cautelar Audi A4', now() - interval '19 days'),
   ('51000000-0000-4000-8000-000000000004', '88888888-8888-4888-8888-888888888888', 'documento-loja.pdf', 124000, 'internal', '{"documentCategory": "Documento geral", "reference": "Documento interno de oficina", "notes": "Importado em grupo geral."}'::jsonb, 'application/pdf', 'issued', 'seed/documents/documento-loja.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Protocolo interno', now() - interval '4 days'),
   ('51000000-0000-4000-8000-000000000005', '99999999-9999-4999-8999-999999999999', 'recibo-pagamento-hilux.pdf', 132000, 'finance_receipt', '{"paymentId": "32000000-0000-4000-8000-000000000001", "financeTitle": "Pagamento de entrada", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "method": "Pix"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-pagamento-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Comprovante de pagamento', now() - interval '2 days')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  created_by_user_id = EXCLUDED.created_by_user_id,
+  file_name = EXCLUDED.file_name,
+  file_size_bytes = EXCLUDED.file_size_bytes,
+  kind = EXCLUDED.kind,
+  metadata = EXCLUDED.metadata,
+  mime_type = EXCLUDED.mime_type,
+  status = EXCLUDED.status,
+  storage_key = EXCLUDED.storage_key,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  title = EXCLUDED.title,
+  uploaded_at = EXCLUDED.uploaded_at,
+  updated_at = now();
 
 INSERT INTO document_links (id, document_id, link_role, store_id, target_id, target_type, tenant_id)
 VALUES
@@ -924,7 +1025,14 @@ VALUES
   ('52000000-0000-4000-8000-000000000003', '51000000-0000-4000-8000-000000000003', 'inspection', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000001', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
   ('52000000-0000-4000-8000-000000000004', '51000000-0000-4000-8000-000000000004', 'primary', '66666666-6666-4666-8666-666666666666', '66666666-6666-4666-8666-666666666666', 'store', '77777777-7777-4777-8777-777777777777'),
   ('52000000-0000-4000-8000-000000000005', '51000000-0000-4000-8000-000000000005', 'primary', '66666666-6666-4666-8666-666666666666', '32000000-0000-4000-8000-000000000001', 'sale_payment', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (document_id, target_type, target_id, link_role) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  document_id = EXCLUDED.document_id,
+  link_role = EXCLUDED.link_role,
+  store_id = EXCLUDED.store_id,
+  target_id = EXCLUDED.target_id,
+  target_type = EXCLUDED.target_type,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO document_versions (
   id,
@@ -1144,9 +1252,14 @@ INSERT INTO vehicle_provider_listings (
   tenant_id
 )
 VALUES
-  ('82000000-0000-4000-8000-000000000001', '80000000-0000-4000-8000-000000000001', 'olx_seed_toro', '10000000-0000-4000-8000-000000000001', '{"status": "published"}'::jsonb, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('82000000-0000-4000-8000-000000000002', '80000000-0000-4000-8000-000000000001', 'olx_seed_renegade', '10000000-0000-4000-8000-000000000002', '{"status": "published"}'::jsonb, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (account_id, listing_id) DO NOTHING;
+  ('82000000-0000-4000-8000-000000000001', '80000000-0000-4000-8000-000000000001', 'olx_seed_audi_a4', '10000000-0000-4000-8000-000000000001', '{"status": "published"}'::jsonb, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('82000000-0000-4000-8000-000000000002', '80000000-0000-4000-8000-000000000001', 'olx_seed_bmw_m3', '10000000-0000-4000-8000-000000000002', '{"status": "published"}'::jsonb, '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (account_id, listing_id) DO UPDATE SET
+  external_id = EXCLUDED.external_id,
+  metadata = EXCLUDED.metadata,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO fiscal_documents (
   id,

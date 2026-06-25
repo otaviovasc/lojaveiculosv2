@@ -29,6 +29,8 @@ const allPermissions = [
   "finance.update",
   "fiscal.manage",
   "inventory.catalog_sync",
+  "inventory.checklist_read",
+  "inventory.checklist_update",
   "inventory.cost_create",
   "inventory.create",
   "inventory.delete",
@@ -88,6 +90,8 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "finance.read",
       "finance.update",
       "fiscal.manage",
+      "inventory.checklist_read",
+      "inventory.checklist_update",
       "inventory.create",
       "inventory.delete",
       "inventory.document_attach",
@@ -122,6 +126,7 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "documents.download",
       "documents.preview",
       "finance.read",
+      "inventory.checklist_read",
       "inventory.read",
       "crm.whatsapp.list",
       "crm.whatsapp.read",
@@ -142,6 +147,8 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "documents.upload",
       "finance.create",
       "finance.read",
+      "inventory.checklist_read",
+      "inventory.checklist_update",
       "inventory.create",
       "inventory.document_attach",
       "inventory.media_update",
@@ -179,6 +186,8 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "finance.create",
       "finance.read",
       "finance.update",
+      "inventory.checklist_read",
+      "inventory.checklist_update",
       "inventory.create",
       "inventory.document_attach",
       "inventory.media_delete",
@@ -235,8 +244,5 @@ export function canAccess(
     return { allowed: true };
   }
 
-  return {
-    allowed: false,
-    reason: `Missing permission: ${permission}`,
-  };
+  return { allowed: false, reason: `Missing permission: ${permission}` };
 }

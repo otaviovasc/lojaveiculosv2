@@ -73,6 +73,18 @@ export const permissionGroups: readonly PermissionGroup[] = [
       permission("inventory.sell", "Vender", "Marcar venda.", "high"),
       permission("inventory.cost_create", "Custos", "Criar custos.", "medium"),
       permission(
+        "inventory.checklist_read",
+        "Ler checklists",
+        "Ver checklists de veiculos.",
+        "low",
+      ),
+      permission(
+        "inventory.checklist_update",
+        "Editar checklists",
+        "Atualizar preparacao e entrega.",
+        "medium",
+      ),
+      permission(
         "inventory.media_update",
         "Midia",
         "Gerenciar fotos.",

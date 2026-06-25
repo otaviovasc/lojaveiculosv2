@@ -1,6 +1,8 @@
 import { vi } from "vitest";
 import type { TestFinanceRepository } from "../finance/testSupportFinanceRepository.js";
 import { createTestFinanceRepository } from "../finance/testSupportFinanceRepository.js";
+import type { TestVehicleChecklistRepository } from "./testSupportChecklists.js";
+import { createTestVehicleChecklistRepository } from "./testSupportChecklists.js";
 import type {
   CreateVehicleDocumentRecord,
   CreateVehicleListingRecord,
@@ -24,6 +26,7 @@ import type { VehicleInventoryServicePorts } from "./services/VehicleService/ser
 import { createListing, testNow } from "./testSupportVehicleServiceFixtures.js";
 
 export type TestVehicleInventoryPorts = VehicleInventoryServicePorts & {
+  checklistRepository: TestVehicleChecklistRepository;
   documents: Map<string, VehicleDocument>;
   financeRepository: TestFinanceRepository;
   listings: Map<string, VehicleListing>;
@@ -53,6 +56,7 @@ export function createInMemoryVehiclePorts(
       documents,
       () => documentSequence++,
     ),
+    checklistRepository: createTestVehicleChecklistRepository(),
     documents,
     financeRepository: createTestFinanceRepository(),
     listingRepository,

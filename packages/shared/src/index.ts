@@ -40,6 +40,8 @@ export type PermissionKey =
   | "fiscal.manage"
   | "inventory.create"
   | "inventory.catalog_sync"
+  | "inventory.checklist_read"
+  | "inventory.checklist_update"
   | "inventory.cost_create"
   | "inventory.delete"
   | "inventory.document_attach"

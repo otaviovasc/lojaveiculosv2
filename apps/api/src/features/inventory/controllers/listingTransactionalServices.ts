@@ -2,8 +2,10 @@ import { addVehicleCost } from "../../../domains/vehicle/services/VehicleService
 import { attachVehicleDocument } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
 import { attachVehicleUnit } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import { changeVehicleStatus } from "../../../domains/vehicle/services/VehicleService/changeVehicleStatus.js";
+import { createVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
 import { reserveVehicleListing } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
 import { sellVehicleListing } from "../../../domains/vehicle/services/VehicleService/sellVehicleListing.js";
+import { updateVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
 import { updateVehicleListingDetails } from "../../../domains/vehicle/services/VehicleService/updateVehicleListingDetails.js";
 import { updateVehiclePrice } from "../../../domains/vehicle/services/VehicleService/updateVehiclePrice.js";
 import { updateVehicleUnit } from "../../../domains/vehicle/services/VehicleService/updateVehicleUnit.js";
@@ -27,9 +29,11 @@ type InventoryTransactionalServices = Pick<
   | "attachListingUnit"
   | "attachVehicleDocument"
   | "changeListingStatus"
+  | "createChecklist"
   | "reserveListing"
   | "sellListing"
   | "updateListingDetails"
+  | "updateChecklist"
   | "updateListingPrice"
   | "updateListingUnit"
 >;
@@ -96,6 +100,17 @@ export function createInventoryTransactionalServices(input: {
         "inventory.update_status",
       );
     },
+    async createChecklist(context, checklistInput) {
+      await runVehicleInventoryMutation(transactionRunner, (transactionPorts) =>
+        createVehicleChecklist(context, checklistInput, transactionPorts),
+      );
+      return loadInventoryListingDetailDto(
+        context,
+        checklistInput.listingId,
+        ports,
+        "inventory.checklist_update",
+      );
+    },
     async reserveListing(context, reserveInput) {
       const listing = await runVehicleInventoryMutation(
         transactionRunner,
@@ -137,6 +152,17 @@ export function createInventoryTransactionalServices(input: {
         listing.id,
         ports,
         detailPermissionForListingEdit(detailsInput),
+      );
+    },
+    async updateChecklist(context, checklistInput) {
+      await runVehicleInventoryMutation(transactionRunner, (transactionPorts) =>
+        updateVehicleChecklist(context, checklistInput, transactionPorts),
+      );
+      return loadInventoryListingDetailDto(
+        context,
+        checklistInput.listingId,
+        ports,
+        "inventory.checklist_update",
       );
     },
     async updateListingPrice(context, priceInput) {

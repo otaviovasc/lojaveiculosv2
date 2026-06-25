@@ -14,6 +14,14 @@ export const unitIdParameter = {
   description: "Inventory unit identifier.",
 } as const;
 
+export const checklistIdParameter = {
+  name: "checklistId",
+  in: "path",
+  required: true,
+  schema: { type: "string", minLength: 1 },
+  description: "Vehicle checklist identifier.",
+} as const;
+
 export const detailResponse = {
   description: "Canonical V2 inventory listing detail.",
   content: {
@@ -66,9 +74,7 @@ export const validationResponse = {
   },
 } as const;
 
-export function queryParameter(
-  name: "limit" | "offset" | "search" | "status",
-) {
+export function queryParameter(name: "limit" | "offset" | "search" | "status") {
   return {
     name,
     in: "query",

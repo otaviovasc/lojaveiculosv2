@@ -23,6 +23,7 @@ import type { FinanceRepository } from "../../../finance/ports/financeRepository
 import type { DocumentRepository } from "../../../documents/ports/documentRepository.js";
 import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
+import type { VehicleChecklistRepository } from "../../ports/vehicleChecklistRepository.js";
 import type { VehicleCatalogProvider } from "../../ports/vehicleCatalogProvider.js";
 import type { VehicleCatalogRepository } from "../../ports/vehicleCatalogRepository.js";
 import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
@@ -85,6 +86,12 @@ export function getDocumentRepository(
   ports: VehicleInventoryServicePorts | undefined,
 ): VehicleDocumentRepository {
   return requirePort(ports?.documentRepository, "documentRepository");
+}
+
+export function getChecklistRepository(
+  ports: VehicleInventoryServicePorts | undefined,
+): VehicleChecklistRepository {
+  return requirePort(ports?.checklistRepository, "checklistRepository");
 }
 
 export function getDocumentTemplateRepository(
@@ -200,6 +207,7 @@ export async function auditVehicleServiceEvent(
     entityId: string;
     entityType?:
       | "vehicle_document"
+      | "vehicle_checklist"
       | "vehicle_listing"
       | "vehicle_media"
       | "vehicle_operation"

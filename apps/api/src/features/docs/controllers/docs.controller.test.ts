@@ -68,6 +68,11 @@ describe("API docs routes", () => {
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
         .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/CreateVehicleCostRequest" });
+    expect(
+      openApiDocument.paths[
+        "/api/v1/inventory/listings/{listingId}/units/{unitId}/checklists"
+      ].post.requestBody.content["application/json"].schema,
+    ).toEqual({ $ref: "#/components/schemas/CreateVehicleChecklistRequest" });
     expect(openApiDocument.components.schemas.VehicleMediaUpload).toEqual(
       expect.objectContaining({
         required: [
@@ -82,9 +87,19 @@ describe("API docs routes", () => {
     );
     expect(openApiDocument.components.schemas.InventoryListingDetail).toEqual(
       expect.objectContaining({
-        required: ["documents", "listing", "media", "status", "units"],
+        required: [
+          "checklists",
+          "documents",
+          "listing",
+          "media",
+          "status",
+          "units",
+        ],
       }),
     );
+    expect(
+      openApiDocument.components.schemas.VehicleChecklistStatus.enum,
+    ).toEqual(["failed", "in_progress", "passed", "pending", "waived"]);
     expect(openApiDocument.components.schemas.VehicleDocumentKind.enum).toEqual(
       expect.arrayContaining([
         "reservation_receipt",
