@@ -65,5 +65,10 @@ pnpm --filter <workspace> lint
 pnpm run validate
 ```
 
+Validation tiers are explicit: `validate:commit` is for pre-commit,
+`validate:push` is the full local gate, `validate:ci` is CI, and `validate`
+aliases `validate:push`. New `check:*` guardrails must be added to
+`validate:core-guardrails`; `check:validation` enforces that wiring.
+
 If `pnpm run validate` cannot run, report which narrower checks ran and why full
 validation was skipped.

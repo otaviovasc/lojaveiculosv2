@@ -17,6 +17,7 @@ import type { VehicleMediaUpload } from "../../../domains/vehicle/ports/vehicleM
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import type { DrizzleVehicleInventoryClient } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import type { TransactionRunner } from "../../../shared/transaction.js";
 import type { GetVehicleCatalogSnapshotInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogSnapshot.js";
 import type { GetVehicleCatalogPriceHistoryInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogPriceHistory.js";
 import type { ListVehicleCatalogBrandsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogBrands.js";
@@ -190,11 +191,13 @@ export type CreateInventoryListingServicesOptions =
       drizzleAdapter?: never;
       drizzleClient?: never;
       ports?: VehicleInventoryServicePorts;
+      transactionRunner?: TransactionRunner<VehicleInventoryServicePorts>;
     }
   | {
       drizzleAdapter?: DrizzleVehicleInventoryAdapter;
       drizzleClient: DrizzleVehicleInventoryClient;
       ports?: never;
+      transactionRunner?: TransactionRunner<VehicleInventoryServicePorts>;
     };
 
 export const inventoryListingServices = createInventoryListingServices();

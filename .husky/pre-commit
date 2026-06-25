@@ -1,3 +1,2 @@
 pnpm exec lint-staged
-pnpm run test:pre-commit
-pnpm run validate
+pnpm run validate:commit

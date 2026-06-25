@@ -33,6 +33,9 @@ Rules:
   adapters.
 - Service files under `domains/*/services/**` are public business entrypoints:
   they must accept `ServiceContext`, assert permissions, log, and audit.
+- Cross-repository mutations should run through the shared transaction runner
+  seam in feature/runtime composition. Domain modules receive transaction-bound
+  ports; they do not import Drizzle or transaction clients.
 
 ## Frontend Folder Contract
 
@@ -118,4 +121,17 @@ Before adding or moving a module:
    implementation details.
 4. Keep files under 250 lines by extracting coherent modules, not by hiding
    complexity in generic helpers.
-5. Run `pnpm run validate` before handoff.
+5. Run focused checks first, then `pnpm run validate` before handoff.
+
+## Validation Tiers
+
+- `pnpm run validate:commit`: fast commit guardrails used by pre-commit after
+  `lint-staged`.
+- `pnpm run validate:push`: full local gate used by pre-push and by
+  `pnpm run validate`.
+- `pnpm run validate:ci`: CI gate. Keep deployment smoke checks separate.
+- `pnpm run check:validation`: verifies hooks, CI, and every `check:*` script
+  stay wired into `validate:core-guardrails`.
+
+When adding a new quality checker, name it `check:<area>` and add it to
+`validate:core-guardrails`; `check:validation` enforces this.

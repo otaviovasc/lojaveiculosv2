@@ -34,7 +34,6 @@
     "test": "pnpm -r --if-present test",
     "test:dashboard-animation": "pnpm --filter @lojaveiculosv2/web test -- dashboardHomeAnimation",
     "test:frontend-design": "vitest run tools/quality/frontend-design-rules.test.mjs",
-    "test:pre-commit": "pnpm run test:dashboard-animation && pnpm run test:frontend-design",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api test -- productionSmoke",
     "check:lines": "node tools/quality/check-file-lines.mjs",
     "check:boundaries": "node tools/quality/check-boundaries.mjs",
@@ -43,7 +42,12 @@
     "check:frontend": "node tools/quality/check-frontend-design.mjs",
     "check:frontend-composition": "node tools/quality/check-frontend-composition.mjs",
     "check:services": "node tools/quality/check-service-contracts.mjs",
-    "validate": "pnpm run check:lines && pnpm run check:boundaries && pnpm run check:env && pnpm run check:db && pnpm run check:frontend && pnpm run check:frontend-composition && pnpm run check:services && pnpm run typecheck && pnpm run lint && pnpm run test"
+    "check:validation": "node tools/quality/check-validation-pipeline.mjs",
+    "validate:core-guardrails": "pnpm run check:lines && pnpm run check:boundaries && pnpm run check:env && pnpm run check:db && pnpm run check:frontend && pnpm run check:frontend-composition && pnpm run check:services && pnpm run check:validation",
+    "validate:commit": "pnpm run validate:core-guardrails && pnpm run test:frontend-design",
+    "validate:push": "pnpm run validate:core-guardrails && pnpm run typecheck && pnpm run lint && pnpm run test",
+    "validate:ci": "pnpm run validate:push",
+    "validate": "pnpm run validate:push"
   },
   "lint-staged": {
     "*": "prettier --ignore-unknown --write"

@@ -2,10 +2,6 @@ import * as schema from "@lojaveiculosv2/db";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
-  createInventoryListingServices,
-  type InventoryListingServices,
-} from "../../features/inventory/controllers/listingServices.js";
-import {
   createFinanceServices,
   type FinanceServices,
 } from "../../features/finance/controllers/financeServices.js";
@@ -39,15 +35,7 @@ import {
   type DrizzleAuditSinkClient,
 } from "./audit/drizzleAuditSink.js";
 import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
-import {
-  createDrizzleVehicleInventoryRepositories,
-  type DrizzleVehicleInventoryClient,
-} from "./vehicleInventory/drizzleVehicleInventoryRepository.js";
 import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
-import {
-  createDrizzleDocumentRepository,
-  type DrizzleDocumentClient,
-} from "./documents/drizzleDocumentRepository.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
 import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
@@ -79,12 +67,8 @@ import {
 } from "./runtimeConfig.js";
 
 export { RuntimeDatabaseConfigError } from "./runtimeConfig.js";
-import {
-  createDrizzleVehicleCatalogRepository,
-  type DrizzleVehicleCatalogClient,
-} from "./vehicleCatalog/drizzleVehicleCatalogRepository.js";
 import { createR2ObjectStorageFromEnv } from "../storage/r2ObjectStorage.js";
-import { createFipeVehicleCatalogProvider } from "../catalog/fipeVehicleCatalogProvider.js";
+import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
 import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
 
 export function createRuntimeAppOptions(
@@ -169,32 +153,6 @@ function createProductDb(
 function createRuntimeExternalApiServices(db: unknown): ExternalApiServices {
   return createExternalApiServices({
     drizzleClient: db as DrizzleExternalApiClient,
-  });
-}
-
-function createRuntimeInventoryServices(
-  db: unknown,
-  env: Record<string, string | undefined>,
-): InventoryListingServices {
-  const mediaStorage = createR2ObjectStorageFromEnv(env);
-  const catalogProvider = createFipeVehicleCatalogProvider({
-    ...(env.FIPE_API_BASE_URL ? { baseUrl: env.FIPE_API_BASE_URL } : {}),
-    ...(env.FIPE_API_TOKEN ? { token: env.FIPE_API_TOKEN } : {}),
-  });
-
-  return createInventoryListingServices({
-    drizzleAdapter: (client) => ({
-      ...createDrizzleVehicleInventoryRepositories(client),
-      catalogRepository: createDrizzleVehicleCatalogRepository(
-        client as unknown as DrizzleVehicleCatalogClient,
-      ),
-      catalogProvider,
-      documentTemplateRepository: createDrizzleDocumentRepository(
-        client as unknown as DrizzleDocumentClient,
-      ),
-      ...(mediaStorage ? { mediaStorage } : {}),
-    }),
-    drizzleClient: db as DrizzleVehicleInventoryClient,
   });
 }
 

@@ -1,7 +1,15 @@
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import { type UpdateVehicleListingDetailsInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleListingDetails.js";
-import { createDrizzleVehicleInventoryRepositories } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
+import {
+  createDrizzleVehicleInventoryRepositories,
+  type DrizzleVehicleInventoryClient,
+} from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
+import {
+  createClientTransactionRunner,
+  createPassthroughTransactionRunner,
+  type TransactionRunner,
+} from "../../../shared/transaction.js";
 import { createMemoryVehicleInventoryPorts } from "../adapters/memory/vehicleInventoryPorts.js";
 import type { CreateInventoryListingServicesOptions } from "./listingServices.js";
 
@@ -17,6 +25,29 @@ export function resolveVehicleInventoryPorts(
   }
 
   return createMemoryVehicleInventoryPorts();
+}
+
+export function resolveVehicleInventoryTransactionRunner(
+  options: CreateInventoryListingServicesOptions,
+  ports: VehicleInventoryServicePorts,
+): TransactionRunner<VehicleInventoryServicePorts> {
+  if (options.transactionRunner) return options.transactionRunner;
+  if ("drizzleClient" in options) {
+    const adapter =
+      options.drizzleAdapter ?? createDrizzleVehicleInventoryRepositories;
+    return createClientTransactionRunner<
+      VehicleInventoryServicePorts,
+      DrizzleVehicleInventoryClient
+    >(options.drizzleClient, adapter);
+  }
+  return createPassthroughTransactionRunner(ports);
+}
+
+export function runVehicleInventoryMutation<TResult>(
+  transactionRunner: TransactionRunner<VehicleInventoryServicePorts>,
+  operation: (ports: VehicleInventoryServicePorts) => Promise<TResult>,
+): Promise<TResult> {
+  return transactionRunner.runInTransaction(operation);
 }
 
 export function detailPermissionForListingEdit(

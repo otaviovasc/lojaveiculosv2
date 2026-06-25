@@ -43,6 +43,24 @@ rule is directional dependency: domains own business modules and ports; features
 own delivery modules and feature-local adapters; infrastructure owns real
 provider adapters.
 
+## Transaction Direction
+
+Cross-repository product mutations use the transaction runner seam from
+`apps/api/src/shared/transaction.ts`. Domains still receive ports and remain
+ignorant of Drizzle. Feature service composition decides whether a mutation uses
+a passthrough runner, for memory/test adapters, or a client-backed runner that
+rebuilds ports from the transaction client.
+
+Use this pattern when one user action writes multiple product tables or when a
+repository method performs validation plus linked inserts that must commit
+together. Current examples include vehicle reserve/sell/cost/status/document
+workflows, finance entry/document mutations, and document create/update
+mutations. The seam provides product database atomicity; object storage and
+provider calls are external side effects and are not rolled back by Postgres.
+Avoid holding a transaction open across external IO unless the workflow cannot
+yet be shortened without changing persisted identifiers. Do not add ad hoc
+Drizzle transactions inside domain services.
+
 ## CRM Boundary
 
 The CRM frontend will move into `apps/web`. V2 owns leads from cutover onward:

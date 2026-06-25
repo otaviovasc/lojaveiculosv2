@@ -33,7 +33,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Validate repo
-        run: pnpm run validate
+        run: pnpm run validate:ci
 
       - name: API smoke contracts
         run: pnpm run test:smoke:api

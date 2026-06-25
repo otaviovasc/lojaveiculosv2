@@ -36,6 +36,11 @@ import { createDrizzleDocumentRepository } from "../../../infrastructure/db/docu
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createMemoryDocumentRepository } from "../adapters/memoryDocumentRepository.js";
 import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
+import {
+  createClientTransactionRunner,
+  createPassthroughTransactionRunner,
+  type TransactionRunner,
+} from "../../../shared/transaction.js";
 
 export type DocumentServices = {
   createUploaded: (
@@ -88,21 +93,26 @@ export type CreateDocumentServicesOptions =
       drizzleClient?: never;
       objectStorage?: never;
       ports?: DocumentWorkspaceServicePorts;
+      transactionRunner?: TransactionRunner<DocumentWorkspaceServicePorts>;
     }
   | {
       drizzleClient: DrizzleDocumentClient;
       objectStorage?: ObjectStorage;
       ports?: never;
+      transactionRunner?: TransactionRunner<DocumentWorkspaceServicePorts>;
     };
 
 export function createDocumentServices(
   options: CreateDocumentServicesOptions = {},
 ): DocumentServices {
   const ports = resolveDocumentPorts(options);
+  const transactionRunner = resolveDocumentTransactionRunner(options, ports);
 
   return {
     createUploaded: (context, input) =>
-      createUploadedDocument(context, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        createUploadedDocument(context, input, txPorts),
+      ),
     download: (context, input) => downloadDocument(context, input, ports),
     listVersions: (context, input) =>
       listDocumentVersions(context, input, ports),
@@ -114,10 +124,17 @@ export function createDocumentServices(
     requestUpload: (context, input) =>
       requestDocumentUpload(context, input, ports),
     updateDocument: (context, input) =>
-      updateDocumentMetadata(context, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        updateDocumentMetadata(context, input, txPorts),
+      ),
     updateTemplate: (context, input) =>
-      updateDocumentTemplate(context, input, ports),
-    void: (context, input) => voidDocument(context, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        updateDocumentTemplate(context, input, txPorts),
+      ),
+    void: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        voidDocument(context, input, txPorts),
+      ),
   };
 }
 
@@ -127,22 +144,43 @@ function resolveDocumentPorts(
   if ("ports" in options && options.ports) return options.ports;
 
   if ("drizzleClient" in options) {
-    return {
-      documentRepository: createDrizzleDocumentRepository(
-        options.drizzleClient,
-      ),
-      linkTargetValidator: createDrizzleDocumentLinkTargetValidator(
-        options.drizzleClient,
-      ),
-      ...(options.objectStorage
-        ? { objectStorage: options.objectStorage }
-        : {}),
-    };
+    return createDrizzleDocumentPorts(
+      options.drizzleClient,
+      options.objectStorage,
+    );
   }
 
   return {
     documentRepository: createMemoryDocumentRepository(),
     objectStorage: createMemoryObjectStorage(),
+  };
+}
+
+function resolveDocumentTransactionRunner(
+  options: CreateDocumentServicesOptions,
+  ports: DocumentWorkspaceServicePorts,
+): TransactionRunner<DocumentWorkspaceServicePorts> {
+  if (options.transactionRunner) return options.transactionRunner;
+  if ("drizzleClient" in options) {
+    return createClientTransactionRunner<
+      DocumentWorkspaceServicePorts,
+      DrizzleDocumentClient
+    >(options.drizzleClient, (client) =>
+      createDrizzleDocumentPorts(client, options.objectStorage),
+    );
+  }
+  return createPassthroughTransactionRunner(ports);
+}
+
+function createDrizzleDocumentPorts(
+  drizzleClient: DrizzleDocumentClient,
+  objectStorage: ObjectStorage | undefined,
+): DocumentWorkspaceServicePorts {
+  return {
+    documentRepository: createDrizzleDocumentRepository(drizzleClient),
+    linkTargetValidator:
+      createDrizzleDocumentLinkTargetValidator(drizzleClient),
+    ...(objectStorage ? { objectStorage } : {}),
   };
 }
 

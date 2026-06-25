@@ -78,6 +78,13 @@ emit documents, manage billing, or trigger audited operational workflows.
 
 ## Quality Gates
 
+Use the validation tier that matches the action:
+
+- `pnpm run validate:commit` is the fast pre-commit guardrail.
+- `pnpm run validate:push` is the full pre-push gate.
+- `pnpm run validate` aliases the full pre-push gate and remains the default
+  handoff command.
+
 Run from `lojaveiculosv2/` before handing work back:
 
 ```bash

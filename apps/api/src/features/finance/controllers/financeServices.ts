@@ -41,6 +41,11 @@ import { createDrizzleDocumentRepository } from "../../../infrastructure/db/docu
 import { createMemoryFinanceRepository } from "../../inventory/adapters/memory/financeRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createTestDocumentRepository } from "../../../domains/documents/testSupportDocumentRepository.js";
+import {
+  createClientTransactionRunner,
+  createPassthroughTransactionRunner,
+  type TransactionRunner,
+} from "../../../shared/transaction.js";
 
 export type FinanceEntryListResultDto = Omit<
   FinanceEntryListResult,
@@ -102,27 +107,42 @@ export type CreateFinanceServicesOptions =
       drizzleClient?: never;
       objectStorage?: never;
       ports?: FinanceServicePorts;
+      transactionRunner?: TransactionRunner<FinanceServicePorts>;
     }
   | {
       drizzleClient: DrizzleFinanceClient;
       objectStorage?: FinanceServicePorts["objectStorage"];
       ports?: never;
+      transactionRunner?: TransactionRunner<FinanceServicePorts>;
     };
 
 export function createFinanceServices(
   options: CreateFinanceServicesOptions = {},
 ): FinanceServices {
   const ports = resolveFinancePorts(options);
+  const transactionRunner = resolveFinanceTransactionRunner(options, ports);
 
   return {
     attachDocument: (context, input) =>
-      attachFinanceEntryDocument(context, input, ports),
-    cancelEntry: (context, input) => cancelFinanceEntry(context, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        attachFinanceEntryDocument(context, input, txPorts),
+      ),
+    cancelEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        cancelFinanceEntry(context, input, txPorts),
+      ),
     createCommissionRule: (context, input) =>
-      createCommissionRule(context, input, ports),
-    createEntry: (context, input) => createFinanceEntry(context, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        createCommissionRule(context, input, txPorts),
+      ),
+    createEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        createFinanceEntry(context, input, txPorts),
+      ),
     createRecurringEntry: (context, input) =>
-      createFinanceRecurringEntry(context, input, ports),
+      transactionRunner.runInTransaction((txPorts) =>
+        createFinanceRecurringEntry(context, input, txPorts),
+      ),
     getSummary: (context) => getFinanceSummary(context, ports),
     async listEntries(context, input) {
       const result = await listFinanceEntries(context, input, ports);
@@ -135,10 +155,16 @@ export function createFinanceServices(
       listCommissionRules(context, input, ports),
     listRecurringEntries: (context, input) =>
       listFinanceRecurringEntries(context, input, ports),
-    payEntry: (context, input) => payFinanceEntry(context, input, ports),
+    payEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        payFinanceEntry(context, input, txPorts),
+      ),
     requestDocumentUpload: (context, input) =>
       requestFinanceEntryDocumentUpload(context, input, ports),
-    updateEntry: (context, input) => updateFinanceEntry(context, input, ports),
+    updateEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        updateFinanceEntry(context, input, txPorts),
+      ),
   };
 }
 
@@ -148,21 +174,43 @@ function resolveFinancePorts(
   if ("ports" in options && options.ports) return options.ports;
 
   if ("drizzleClient" in options) {
-    return {
-      documentRepository: createDrizzleDocumentRepository(
-        options.drizzleClient,
-      ),
-      financeRepository: createDrizzleFinanceRepository(options.drizzleClient),
-      ...(options.objectStorage
-        ? { objectStorage: options.objectStorage }
-        : {}),
-    };
+    return createDrizzleFinancePorts(
+      options.drizzleClient,
+      options.objectStorage,
+    );
   }
 
   return {
     documentRepository: createTestDocumentRepository(),
     financeRepository: createMemoryFinanceRepository(),
     objectStorage: createMemoryObjectStorage(),
+  };
+}
+
+function resolveFinanceTransactionRunner(
+  options: CreateFinanceServicesOptions,
+  ports: FinanceServicePorts,
+): TransactionRunner<FinanceServicePorts> {
+  if (options.transactionRunner) return options.transactionRunner;
+  if ("drizzleClient" in options) {
+    return createClientTransactionRunner<
+      FinanceServicePorts,
+      DrizzleFinanceClient
+    >(options.drizzleClient, (client) =>
+      createDrizzleFinancePorts(client, options.objectStorage),
+    );
+  }
+  return createPassthroughTransactionRunner(ports);
+}
+
+function createDrizzleFinancePorts(
+  drizzleClient: DrizzleFinanceClient,
+  objectStorage: FinanceServicePorts["objectStorage"] | undefined,
+): FinanceServicePorts {
+  return {
+    documentRepository: createDrizzleDocumentRepository(drizzleClient),
+    financeRepository: createDrizzleFinanceRepository(drizzleClient),
+    ...(objectStorage ? { objectStorage } : {}),
   };
 }
 
