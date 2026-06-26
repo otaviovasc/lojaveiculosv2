@@ -9,20 +9,28 @@ export function useInventoryRouteSelection({
   routeState,
   setDetail,
   setSelection,
+  setSelectedUnitId,
 }: {
   api: InventoryApi | null;
   routeState: MutableRefObject<InventoryRouteState>;
   setDetail: (detail: InventoryListingDetail | null) => void;
   setSelection: (selection: InventoryDetailSelectionState) => void;
+  setSelectedUnitId: (unitId: string | null) => void;
 }) {
   useEffect(() => {
     if (!api || !routeState.current.listingId) return;
     const listingId = routeState.current.listingId;
-    routeState.current = { ...routeState.current, listingId: null };
+    const unitId = routeState.current.unitId;
+    routeState.current = {
+      ...routeState.current,
+      listingId: null,
+      unitId: null,
+    };
     setSelection({ kind: "loading", listingId });
     void api
       .getListing(listingId)
       .then((result) => {
+        setSelectedUnitId(unitId);
         setDetail(result);
         setSelection({ kind: "ready", listingId });
       })
@@ -32,5 +40,5 @@ export function useInventoryRouteSelection({
           message: error instanceof Error ? error.message : String(error),
         }),
       );
-  }, [api, routeState, setDetail, setSelection]);
+  }, [api, routeState, setDetail, setSelection, setSelectedUnitId]);
 }

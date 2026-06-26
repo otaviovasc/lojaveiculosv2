@@ -92,7 +92,11 @@ export function InventoryCreateFlow({
           />
         ) : null}
         {activeStep === "Midia" ? (
-          <InventoryCreateMediaPanel items={media} onChange={onMediaChange} />
+          <InventoryCreateMediaPanel
+            form={form}
+            items={media}
+            onChange={onMediaChange}
+          />
         ) : null}
         {activeStep === "Dados" ? (
           <UnitPanel form={form} onChange={onChange} />

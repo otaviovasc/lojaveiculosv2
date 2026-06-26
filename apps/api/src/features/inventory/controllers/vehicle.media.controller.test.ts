@@ -10,7 +10,7 @@ describe("inventory media routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/media/uploads",
+      "/api/v1/inventory/units/unit_1/media/uploads",
       {
         body: JSON.stringify({
           contentType: "image/jpeg",
@@ -25,8 +25,7 @@ describe("inventory media routes", () => {
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual(
       expect.objectContaining({
-        storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+        storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
         uploadMethod: "PUT",
       }),
     );
@@ -36,8 +35,8 @@ describe("inventory media routes", () => {
         contentType: "image/jpeg",
         fileName: "front.jpg",
         kind: "photo",
-        listingId: "listing_1",
         sizeBytes: 2048,
+        unitId: "unit_1",
       },
     );
   });
@@ -46,34 +45,28 @@ describe("inventory media routes", () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);
 
-    const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/media",
-      {
-        body: JSON.stringify({
-          altText: "Front photo",
-          kind: "photo",
-          storageKey:
-            "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
-        }),
-        method: "POST",
-      },
-    );
+    const response = await app.request("/api/v1/inventory/units/unit_1/media", {
+      body: JSON.stringify({
+        altText: "Front photo",
+        kind: "photo",
+        storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
+      }),
+      method: "POST",
+    });
 
     expect(response.status).toBe(201);
     expect(await response.json()).toEqual({
-      listingId: "listing_1",
       mediaId: "media_1",
-      storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
       status: "created",
+      unitId: "unit_1",
       url: "https://cdn.local/front.jpg",
     });
     expect(services.createMedia).toHaveBeenCalledWith(expect.any(Object), {
       altText: "Front photo",
       kind: "photo",
-      listingId: "listing_1",
-      storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
+      unitId: "unit_1",
     });
   });
 
@@ -82,7 +75,7 @@ describe("inventory media routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/media/media_1",
+      "/api/v1/inventory/units/unit_1/media/media_1",
       {
         body: JSON.stringify({
           altText: "Updated front photo",
@@ -98,8 +91,8 @@ describe("inventory media routes", () => {
       altText: "Updated front photo",
       displayOrder: 2,
       isPublic: false,
-      listingId: "listing_1",
       mediaId: "media_1",
+      unitId: "unit_1",
     });
   });
 
@@ -108,14 +101,14 @@ describe("inventory media routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/media/media_1",
+      "/api/v1/inventory/units/unit_1/media/media_1",
       { method: "DELETE" },
     );
 
     expect(response.status).toBe(200);
     expect(services.deleteMedia).toHaveBeenCalledWith(expect.any(Object), {
-      listingId: "listing_1",
       mediaId: "media_1",
+      unitId: "unit_1",
     });
   });
 
@@ -124,7 +117,7 @@ describe("inventory media routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/media/reorder",
+      "/api/v1/inventory/units/unit_1/media/reorder",
       {
         body: JSON.stringify({
           items: [
@@ -142,7 +135,7 @@ describe("inventory media routes", () => {
         { displayOrder: 0, mediaId: "media_2" },
         { displayOrder: 1, mediaId: "media_1" },
       ],
-      listingId: "listing_1",
+      unitId: "unit_1",
     });
   });
 

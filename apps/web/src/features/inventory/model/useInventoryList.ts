@@ -50,6 +50,9 @@ export function useInventoryList(api?: InventoryApi) {
   });
   const [loadingMore, setLoadingMore] = useState(false);
   const [detail, setDetail] = useState<InventoryListingDetail | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(
+    routeStateRef.current.unitId,
+  );
   const [selection, setSelection] = useState<InventoryDetailSelectionState>({
     kind: "idle",
   });
@@ -222,6 +225,7 @@ export function useInventoryList(api?: InventoryApi) {
     routeState: routeStateRef,
     setDetail,
     setSelection,
+    setSelectedUnitId,
   });
 
   const refreshListings = () => {
@@ -237,8 +241,9 @@ export function useInventoryList(api?: InventoryApi) {
     void loadListings(nextQuery);
   };
 
-  const selectListing = async (listingId: string) => {
+  const selectListing = async (listingId: string, unitId?: string | null) => {
     if (!runtimeApi) return;
+    setSelectedUnitId(unitId ?? null);
     setSelection({ kind: "loading", listingId });
     try {
       setDetail(await runtimeApi.getListing(listingId));
@@ -311,6 +316,7 @@ export function useInventoryList(api?: InventoryApi) {
     loadingMore,
     detail,
     setDetail,
+    selectedUnitId,
     selection,
     editPanelRef,
     isTemplateOpen,

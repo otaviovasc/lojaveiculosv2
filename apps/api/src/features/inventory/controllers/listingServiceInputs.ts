@@ -61,8 +61,8 @@ export function cleanCreateMediaInput(
 ): CreateVehicleMediaInput {
   const result: CreateVehicleMediaInput = {
     kind: input.kind,
-    listingId: input.listingId,
     storageKey: input.storageKey,
+    unitId: input.unitId,
   };
 
   if (input.altText !== undefined) result.altText = input.altText;

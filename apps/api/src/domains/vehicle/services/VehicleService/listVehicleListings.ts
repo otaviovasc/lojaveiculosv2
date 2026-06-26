@@ -42,10 +42,14 @@ export async function listVehicleListings(
   });
   const pageListings = listings.slice(0, limit);
   const listingIds = pageListings.map((listing) => listing.id);
-  const [units, media] = await Promise.all([
-    getUnitRepository(ports).listByListingIds({ ...scope, listingIds }),
-    getMediaRepository(ports).listByListingIds({ ...scope, listingIds }),
-  ]);
+  const units = await getUnitRepository(ports).listByListingIds({
+    ...scope,
+    listingIds,
+  });
+  const media = await getMediaRepository(ports).listByUnitIds({
+    ...scope,
+    unitIds: units.map((unit) => unit.id),
+  });
 
   logVehicleServiceEvent(context, "vehicle_listing.list.read", {
     count: pageListings.length,
@@ -73,7 +77,11 @@ export async function listVehicleListings(
     items: pageListings.map((listing) =>
       createListingSummary({
         listing,
-        media: media.filter((item) => item.listingId === listing.id),
+        media: media.filter((item) =>
+          units
+            .filter((unit) => unit.listingId === listing.id)
+            .some((unit) => unit.id === item.unitId),
+        ),
         units: units.filter((unit) => unit.listingId === listing.id),
       }),
     ),

@@ -18,6 +18,13 @@ type ListingListBody = {
   total?: number;
 };
 
+type UnitListBody = {
+  hasMore?: boolean;
+  items?: readonly { listing?: { id?: string }; unit?: { id?: string } }[];
+  nextOffset?: number | null;
+  total?: number;
+};
+
 describe("inventory read routes", () => {
   it("wires list listing requests to the service boundary", async () => {
     const services = createInventoryTestServices();
@@ -39,6 +46,26 @@ describe("inventory read routes", () => {
       offset: 40,
       search: "toro",
       status: "published",
+    });
+  });
+
+  it("wires list unit requests to the service boundary", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/units?search=toro&status=available&limit=20&offset=40",
+    );
+    const body = (await response.json()) as UnitListBody;
+
+    expect(response.status).toBe(200);
+    expect(body.items?.[0]?.listing?.id).toBe("listing_1");
+    expect(body.items?.[0]?.unit?.id).toBe("unit_1");
+    expect(services.listUnits).toHaveBeenCalledWith(expect.any(Object), {
+      limit: 20,
+      offset: 40,
+      search: "toro",
+      status: "available",
     });
   });
 

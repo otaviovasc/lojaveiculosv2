@@ -25,7 +25,22 @@ export type MediaRow = {
   altText: string | null;
   displayOrder: number;
   kind: PublicVehicleMedia["kind"];
+  unitId: string;
   url: string;
+};
+
+export type UnitRow = {
+  colorName: string | null;
+  id: string;
+  status:
+    | "acquired"
+    | "available"
+    | "delivered"
+    | "inactive"
+    | "in_preparation"
+    | "reserved"
+    | "sold";
+  stockNumber: string | null;
 };
 
 export type PublicSiteRow = {
@@ -106,7 +121,14 @@ export type DrizzlePublicStorefrontClient = {
       altText: unknown;
       displayOrder: unknown;
       kind: unknown;
+      unitId: unknown;
       url: unknown;
     }): SelectFromBuilder<MediaRow>;
+    (selection: {
+      colorName: unknown;
+      id: unknown;
+      status: unknown;
+      stockNumber: unknown;
+    }): SelectFromBuilder<UnitRow>;
   };
 };

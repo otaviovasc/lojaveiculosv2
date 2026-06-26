@@ -8,6 +8,7 @@ import {
   createInventoryListingServices,
   type DrizzleVehicleInventoryAdapter,
 } from "./listingServices.js";
+import { attachVehicleUnit } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import type { DrizzleVehicleInventoryClient } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 
 describe("inventory listing services factory", () => {
@@ -56,25 +57,30 @@ describe("inventory listing services factory", () => {
     const ports = createInMemoryVehiclePorts([createListing()]);
     const services = createInventoryListingServices({ ports });
     const context = createContext(["inventory.create"]);
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1" },
+      ports,
+    );
 
     const upload = await services.requestMediaUpload(context, {
       contentType: "image/jpeg",
       fileName: "front.jpg",
       kind: "photo",
-      listingId: "listing_1",
       sizeBytes: 1024,
+      unitId: unit.id,
     });
     const media = await services.createMedia(context, {
       kind: "photo",
-      listingId: "listing_1",
       storageKey: upload.storageKey,
+      unitId: unit.id,
     });
 
     expect(media).toEqual({
-      listingId: "listing_1",
       mediaId: "media_1",
       storageKey: upload.storageKey,
       status: "created",
+      unitId: unit.id,
       url: `https://cdn.local/${upload.storageKey}`,
     });
   });

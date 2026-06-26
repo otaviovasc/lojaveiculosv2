@@ -9,6 +9,7 @@ import { createVehicleMedia } from "../../../domains/vehicle/services/VehicleSer
 import { deleteVehicleMedia } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import { listVehicleChecklists } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
 import { listVehicleListings } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
+import { listVehicleUnits } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
 import {
   archiveVehicleSupplier,
   createVehicleSupplier,
@@ -24,6 +25,7 @@ import { requestVehicleDocumentUpload } from "../../../domains/vehicle/services/
 import { requestVehicleMediaUpload } from "../../../domains/vehicle/services/VehicleService/requestVehicleMediaUpload.js";
 import { updateVehicleDescription } from "../../../domains/vehicle/services/VehicleService/updateVehicleDescription.js";
 import { updateVehicleMedia } from "../../../domains/vehicle/services/VehicleService/updateVehicleMedia.js";
+import { getUnitRepository } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   cleanCreateInput,
   cleanCreateMediaInput,
@@ -33,7 +35,7 @@ import type {
   CreateInventoryListingServicesOptions,
   InventoryListingServices,
 } from "./listingServices.js";
-import { toListDto } from "./listingResponseDtos.js";
+import { toListDto, toUnitListDto } from "./listingResponseDtos.js";
 import {
   resolveVehicleInventoryPorts,
   resolveVehicleInventoryTransactionRunner,
@@ -73,10 +75,10 @@ export function createInventoryListingServices(
         ports,
       );
       return {
-        listingId: media.listingId,
         mediaId: media.id,
         storageKey: media.storageKey,
         status: "created",
+        unitId: media.unitId,
         url: media.url,
       };
     },
@@ -86,7 +88,7 @@ export function createInventoryListingServices(
       const media = await deleteVehicleMedia(context, input, ports);
       return loadInventoryListingDetailDto(
         context,
-        media.listingId,
+        await findListingIdForUnit(context, media.unitId, ports),
         ports,
         "inventory.media_delete",
       );
@@ -104,6 +106,9 @@ export function createInventoryListingServices(
     },
     async listListings(context, input) {
       return toListDto(await listVehicleListings(context, input, ports));
+    },
+    async listUnits(context, input) {
+      return toUnitListDto(await listVehicleUnits(context, input, ports));
     },
     async listChecklists(context, input) {
       return listVehicleChecklists(context, input, ports);
@@ -129,7 +134,7 @@ export function createInventoryListingServices(
       await reorderVehicleMedia(context, input, ports);
       return loadInventoryListingDetailDto(
         context,
-        input.listingId,
+        await findListingIdForUnit(context, input.unitId, ports),
         ports,
         "inventory.media_update",
       );
@@ -150,7 +155,7 @@ export function createInventoryListingServices(
       const media = await updateVehicleMedia(context, input, ports);
       return loadInventoryListingDetailDto(
         context,
-        media.listingId,
+        await findListingIdForUnit(context, media.unitId, ports),
         ports,
         "inventory.media_update",
       );
@@ -160,4 +165,19 @@ export function createInventoryListingServices(
     upsertVehicleUnitAcquisition: (context, input) =>
       upsertVehicleUnitAcquisition(context, input, ports),
   };
+}
+
+async function findListingIdForUnit(
+  context: Parameters<InventoryListingServices["getListing"]>[0],
+  unitId: string,
+  ports: ReturnType<typeof resolveVehicleInventoryPorts>,
+): Promise<string> {
+  const unit = await getUnitRepository(ports).findById({
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+    unitId,
+  });
+
+  if (!unit) throw new Error(`Vehicle unit not found: ${unitId}`);
+  return unit.listingId;
 }

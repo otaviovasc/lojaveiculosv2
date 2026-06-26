@@ -4,15 +4,10 @@ import { motion, AnimatePresence } from "motion/react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail, InventoryMedia } from "../model/types";
-import {
-  TechnicalSpecsPanel,
-  type TabId,
-} from "./InventoryDetailWorkspaceParts";
+import type { TabId } from "./InventoryDetailWorkspaceParts";
 import { WorkspaceTopBar } from "./WorkspaceTopBar";
 import { WorkspaceKPIStrip } from "./WorkspaceKPIStrip";
-import { InternalPhotosZone } from "./InternalPhotosZone";
 import { EditSpecsDrawer } from "./EditSpecsDrawer";
-import { InventoryPhotosWorkspace } from "./InventoryPhotosWorkspace";
 import { InventoryDetailFinanceiroTab } from "./InventoryDetailFinanceiroTab";
 import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
@@ -32,17 +27,20 @@ import {
   formatFuelType,
   formatTransmission,
 } from "./InventoryDetailFormatters";
+import { InventoryDetailGeneralTab } from "./InventoryDetailGeneralTab";
 
 export function InventoryDetailWorkspace({
   api,
   detail: initialDetail,
   onBack,
   onUpdated,
+  selectedUnitId,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
   onBack: () => void;
   onUpdated: (detail: InventoryListingDetail) => void;
+  selectedUnitId?: string | null;
 }) {
   const [detail, setDetail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
@@ -52,7 +50,10 @@ export function InventoryDetailWorkspace({
   const [notification, setNotification] = useState<string | null>(null);
 
   // General spec editor states
-  const primaryUnit = detail.units[0] ?? null;
+  const primaryUnit =
+    detail.units.find((unit) => unit.id === selectedUnitId) ??
+    detail.units[0] ??
+    null;
   const listing = detail.listing;
 
   const [specs, setSpecs] = useState({
@@ -83,11 +84,17 @@ export function InventoryDetailWorkspace({
 
   const [isSpecsOpen, setIsSpecsOpen] = useState(false);
 
+  const primaryUnitId = primaryUnit?.id ?? null;
   const [photosList, setPhotosList] = useState(() =>
-    detail.media.filter((m) => m.kind === "photo"),
+    detail.media.filter(
+      (m) =>
+        m.kind === "photo" && (!primaryUnitId || m.unitId === primaryUnitId),
+    ),
   );
   const internalPhotos = detail.media.filter(
-    (m) => m.kind === "document_preview",
+    (m) =>
+      m.kind === "document_preview" &&
+      (!primaryUnitId || m.unitId === primaryUnitId),
   );
 
   const showNotification = (msg: string) => {
@@ -153,10 +160,10 @@ export function InventoryDetailWorkspace({
       createdAt: new Date().toISOString(),
       displayOrder: photosList.length + 1,
       isPublic: true,
-      listingId: listing.id,
       storageKey: "mock-" + newId,
       storeId: listing.storeId,
       tenantId: listing.tenantId,
+      unitId: primaryUnit?.id ?? "",
       updatedAt: new Date().toISOString(),
     };
     setPhotosList((prev) => [...prev, newPhoto]);
@@ -230,69 +237,23 @@ export function InventoryDetailWorkspace({
       {/* Workspace Panel Area */}
       <div className="min-h-[400px]">
         {activeTab === "geral" && (
-          <div className="flex flex-col gap-8 w-full max-w-none">
-            {/* Two-Column Section */}
-            <div className="grid gap-6 md:grid-cols-12 w-full">
-              {/* Left Column: Photo Area */}
-              <div className="md:col-span-8 flex flex-col gap-5">
-                <div>
-                  <h2 className="text-lg font-black text-app-text">
-                    Foto de Destaque e Imagens Públicas
-                  </h2>
-                  <p className="text-xs text-muted font-bold mt-0.5">
-                    Essas imagens serão exibidas no portal público de vendas.
-                  </p>
-                </div>
-
-                <InventoryPhotosWorkspace
-                  photos={photosList}
-                  onMove={handleMovePhoto}
-                  onDelete={handleDeletePhoto}
-                  onUpload={handleAddPhotoMock}
-                />
-              </div>
-
-              {/* Right Column: Specs Panel */}
-              <div className="md:col-span-4 flex flex-col gap-4">
-                <TechnicalSpecsPanel
-                  specs={specs}
-                  onEditSpecs={() => setIsSpecsOpen(true)}
-                  opcionais={opcionais}
-                  onToggleOpcional={handleToggleOpcional}
-                  observacoes={observacoes}
-                  onToggleObservacao={handleToggleObservacao}
-                  notasInternas={notasInternas}
-                  onSaveNotasInternas={(notes) => {
-                    void handleSaveInternalNotes(notes);
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Below two-column section: Internal Photos */}
-            <div className="flex flex-col gap-4 mt-4 w-full">
-              <div>
-                <h3 className="text-lg font-black text-app-text">
-                  Fotos e Registros Internos
-                </h3>
-                <p className="text-xs text-muted font-bold mt-0.5">
-                  Arquivos para controle interno da equipe comercial.
-                </p>
-              </div>
-
-              <div className="bg-blue-500/10 text-blue-500 border border-blue-500/20 px-4 py-3 rounded-2xl flex items-center gap-3">
-                <Info className="size-5 shrink-0 animate-pulse text-blue-500" />
-                <p className="text-xs font-bold leading-relaxed">
-                  <strong>Atenção:</strong> Estas fotos são estritamente para
-                  uso interno (avaliações, pequenos reparos, etc.) e{" "}
-                  <strong>NÃO</strong> serão publicadas em anúncios ou feeds
-                  externos.
-                </p>
-              </div>
-
-              <InternalPhotosZone internalPhotos={internalPhotos} />
-            </div>
-          </div>
+          <InventoryDetailGeneralTab
+            internalPhotos={internalPhotos}
+            notasInternas={notasInternas}
+            observacoes={observacoes}
+            onAddPhoto={handleAddPhotoMock}
+            onDeletePhoto={handleDeletePhoto}
+            onMovePhoto={handleMovePhoto}
+            onSaveNotasInternas={(notes) => {
+              void handleSaveInternalNotes(notes);
+            }}
+            onToggleObservacao={handleToggleObservacao}
+            onToggleOpcional={handleToggleOpcional}
+            opcionais={opcionais}
+            photosList={photosList}
+            setIsSpecsOpen={setIsSpecsOpen}
+            specs={specs}
+          />
         )}
 
         {activeTab === "financeiro" && (

@@ -14,11 +14,20 @@ export type PublicVehicleMedia = {
   altText: string | null;
   displayOrder: number;
   kind: "document_preview" | "photo" | "video";
+  unitColorName: string | null;
+  unitId: string;
   url: string;
+};
+
+export type PublicVehicleMediaGroup = {
+  colorName: string | null;
+  media: readonly PublicVehicleMedia[];
+  unitId: string;
 };
 
 export type PublicVehicleListingDetail = PublicVehicleListing & {
   media: readonly PublicVehicleMedia[];
+  mediaGroups: readonly PublicVehicleMediaGroup[];
 };
 
 export type PublicStorefrontData = {

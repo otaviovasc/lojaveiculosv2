@@ -31,21 +31,21 @@ export function InventoryListHeader({
       value: available,
       tone: "green",
       icon: CheckCircle2,
-      status: "",
+      status: "available",
     },
     {
       label: "Reservados",
       value: reserved,
       tone: "pink",
       icon: Clock,
-      status: "",
+      status: "reserved",
     },
     {
       label: "Vendidos",
       value: sold,
       tone: "blue",
       icon: TrendingUp,
-      status: "",
+      status: "sold",
     },
   ] satisfies Array<{
     icon: typeof Car;

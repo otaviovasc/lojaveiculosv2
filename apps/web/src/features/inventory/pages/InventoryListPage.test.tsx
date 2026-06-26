@@ -25,7 +25,7 @@ afterEach(() => {
 });
 
 describe("InventoryListPage", () => {
-  it("applies listing status filters from the toolbar", async () => {
+  it("applies unit status filters from the toolbar", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(new Response("{}", { status: 200 })),
@@ -42,18 +42,18 @@ describe("InventoryListPage", () => {
     await user.click(
       screen.getByRole("button", { name: "Filtrar por status" }),
     );
-    await user.click(await screen.findByRole("option", { name: "Publicado" }));
+    await user.click(await screen.findByRole("option", { name: "Reservado" }));
 
     await waitFor(() =>
       expect(api.listListings).toHaveBeenLastCalledWith({
         limit: 100,
-        status: "published",
+        status: "reserved",
       }),
     );
     const statusFilter = screen.getByRole("button", {
       name: "Filtrar por status",
     });
-    expect(within(statusFilter).getByText("Publicado")).toBeVisible();
+    expect(within(statusFilter).getByText("Reservado")).toBeVisible();
   });
 });
 
@@ -66,7 +66,9 @@ function createInventoryApiStub() {
 
   const listListings = vi.fn(async (input?: ListInventoryInput) => {
     const filtered = input?.status
-      ? items.filter((item) => item.listing.status === input.status)
+      ? items.filter((item) =>
+          item.units.some((unit) => unit.status === input.status),
+        )
       : items;
     return {
       hasMore: false,

@@ -1,4 +1,5 @@
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -133,7 +134,7 @@ export const vehicleUnits = pgTable(
     colorName: varchar("color_name", { length: 64 }),
     listingId: uuid("listing_id")
       .notNull()
-      .references(() => vehicleListings.id),
+      .references((): AnyPgColumn => vehicleListings.id),
     plate: varchar("plate", { length: 16 }),
     status: vehicleUnitStatus("status").notNull().default("acquired"),
     stockNumber: varchar("stock_number", { length: 80 }),
@@ -199,9 +200,9 @@ export const vehicleMedia = pgTable(
     displayOrder: integer("display_order").notNull().default(0),
     isPublic: boolean("is_public").notNull().default(true),
     kind: vehicleMediaKind("kind").notNull().default("photo"),
-    listingId: uuid("listing_id")
+    unitId: uuid("unit_id")
       .notNull()
-      .references(() => vehicleListings.id),
+      .references((): AnyPgColumn => vehicleUnits.id),
     metadata: jsonb("metadata").notNull().default({}),
     storageKey: text("storage_key").notNull(),
     storeId: uuid("store_id")
@@ -213,10 +214,7 @@ export const vehicleMedia = pgTable(
     url: text("url").notNull(),
   },
   (table) => [
-    index("vehicle_media_listing_order_idx").on(
-      table.listingId,
-      table.displayOrder,
-    ),
+    index("vehicle_media_unit_order_idx").on(table.unitId, table.displayOrder),
     index("vehicle_media_store_id_idx").on(table.storeId),
     index("vehicle_media_tenant_id_idx").on(table.tenantId),
   ],

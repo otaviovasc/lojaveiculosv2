@@ -33,19 +33,19 @@ export function createInventoryMediaApi({
   sendJson: SendJson;
 }) {
   const requestMediaUpload = (
-    listingId: string,
+    unitId: string,
     input: CreateInventoryMediaInput & { file: File },
   ) =>
     postJson<InventoryMediaUpload>(
-      inventoryRoutes.mediaUploads(listingId, baseUrl),
+      inventoryRoutes.mediaUploads(unitId, baseUrl),
       mediaUploadBody(input.file, { kind: input.kind }),
     );
 
   const createMedia = (
-    listingId: string,
+    unitId: string,
     input: CreateInventoryMediaInput & { storageKey: string },
   ) =>
-    postJson<InventoryMediaRecord>(inventoryRoutes.media(listingId, baseUrl), {
+    postJson<InventoryMediaRecord>(inventoryRoutes.media(unitId, baseUrl), {
       altText: input.altText,
       displayOrder: input.displayOrder,
       kind: input.kind,
@@ -53,28 +53,28 @@ export function createInventoryMediaApi({
     });
 
   const updateMedia = (
-    listingId: string,
+    unitId: string,
     mediaId: string,
     input: UpdateInventoryMediaInput,
   ) =>
     sendJson<InventoryListingDetail>(
-      inventoryRoutes.mediaDetail(listingId, mediaId, baseUrl),
+      inventoryRoutes.mediaDetail(unitId, mediaId, baseUrl),
       input,
       "PATCH",
     );
 
-  const deleteMedia = (listingId: string, mediaId: string) =>
-    fetch(inventoryRoutes.mediaDetail(listingId, mediaId, baseUrl), {
+  const deleteMedia = (unitId: string, mediaId: string) =>
+    fetch(inventoryRoutes.mediaDetail(unitId, mediaId, baseUrl), {
       headers: createInventoryHeaders(auth),
       method: "DELETE",
     }).then(readInventoryJson<InventoryListingDetail>);
 
   const reorderMedia = (
-    listingId: string,
+    unitId: string,
     items: ReadonlyArray<{ displayOrder: number; mediaId: string }>,
   ) =>
     sendJson<InventoryListingDetail>(
-      inventoryRoutes.mediaReorder(listingId, baseUrl),
+      inventoryRoutes.mediaReorder(unitId, baseUrl),
       { items },
       "PATCH",
     );

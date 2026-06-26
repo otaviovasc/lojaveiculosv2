@@ -46,6 +46,22 @@ describe("document unit folder options", () => {
       }),
     ]);
   });
+
+  it("keeps all units from grouped inventory summaries", () => {
+    const grouped = summary();
+    const firstUnit = grouped.units[0]!;
+    const secondUnit = {
+      ...firstUnit,
+      id: "unit_2",
+      stockNumber: "STK-2",
+    };
+
+    expect(
+      inventorySummariesToUnitFolderOptions([
+        { ...grouped, units: [firstUnit, secondUnit] },
+      ]).map((option) => option.id),
+    ).toEqual(["unit_1", "unit_2"]);
+  });
 });
 
 function summary(): InventoryListingSummary {

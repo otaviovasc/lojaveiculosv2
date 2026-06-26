@@ -10,7 +10,7 @@ import {
 import { useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import { InventoryBadge, InventoryInput } from "./InventoryFormParts";
-import type { InventoryListingDetail, InventoryMedia } from "../model/types";
+import type { InventoryMedia } from "../model/types";
 import type {
   IconActionProps,
   InventoryMediaRun,
@@ -18,14 +18,16 @@ import type {
 
 export function InventoryMediaGrid({
   api,
-  detail,
+  media,
   run,
+  unitId,
 }: {
   api: InventoryApi;
-  detail: InventoryListingDetail;
+  media: readonly InventoryMedia[];
   run: InventoryMediaRun;
+  unitId: string;
 }) {
-  if (detail.media.length === 0) {
+  if (media.length === 0) {
     return (
       <p className="text-sm font-bold text-muted">Nenhuma midia enviada.</p>
     );
@@ -33,14 +35,15 @@ export function InventoryMediaGrid({
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {detail.media.map((media, index) => (
+      {media.map((item, index) => (
         <MediaCard
           api={api}
-          detail={detail}
           index={index}
-          key={media.id}
-          media={media}
+          key={item.id}
+          media={item}
+          mediaItems={media}
           run={run}
+          unitId={unitId}
         />
       ))}
     </div>
@@ -49,28 +52,29 @@ export function InventoryMediaGrid({
 
 function MediaCard({
   api,
-  detail,
   index,
   media,
+  mediaItems,
   run,
+  unitId,
 }: {
   api: InventoryApi;
-  detail: InventoryListingDetail;
   index: number;
   media: InventoryMedia;
+  mediaItems: readonly InventoryMedia[];
   run: InventoryMediaRun;
+  unitId: string;
 }) {
   const [altText, setAltText] = useState(media.altText ?? "");
-  const listingId = detail.listing.id;
   const saveAlt = () =>
     run("Salvando midia", () =>
-      api.updateMedia(listingId, media.id, { altText: altText.trim() || null }),
+      api.updateMedia(unitId, media.id, { altText: altText.trim() || null }),
     );
   const togglePublic = () =>
     run("Atualizando midia", () =>
-      api.updateMedia(listingId, media.id, { isPublic: !media.isPublic }),
+      api.updateMedia(unitId, media.id, { isPublic: !media.isPublic }),
     );
-  const coverId = firstPublicPhoto(detail.media)?.id;
+  const coverId = firstPublicPhoto(mediaItems)?.id;
 
   return (
     <article className="grid min-w-0 gap-3 rounded-lg border border-line bg-panel p-3">
@@ -83,20 +87,20 @@ function MediaCard({
           {media.kind === "photo" ? (
             <IconAction
               label="Definir capa"
-              onClick={() => setCover(api, detail, media, run)}
+              onClick={() => setCover(api, mediaItems, media, run, unitId)}
             >
               <Star className="size-4" />
             </IconAction>
           ) : null}
           <IconAction
             label="Subir"
-            onClick={() => reorder(api, detail, index, -1, run)}
+            onClick={() => reorder(api, mediaItems, index, -1, run, unitId)}
           >
             <ArrowUp className="size-4" />
           </IconAction>
           <IconAction
             label="Descer"
-            onClick={() => reorder(api, detail, index, 1, run)}
+            onClick={() => reorder(api, mediaItems, index, 1, run, unitId)}
           >
             <ArrowDown className="size-4" />
           </IconAction>
@@ -114,7 +118,7 @@ function MediaCard({
             label="Remover"
             onClick={() =>
               void run("Removendo midia", () =>
-                api.deleteMedia(listingId, media.id),
+                api.deleteMedia(unitId, media.id),
               )
             }
           >
@@ -172,12 +176,13 @@ function IconAction({ children, label, onClick }: IconActionProps) {
 
 function reorder(
   api: InventoryApi,
-  detail: InventoryListingDetail,
+  mediaItems: readonly InventoryMedia[],
   index: number,
   direction: -1 | 1,
   run: InventoryMediaRun,
+  unitId: string,
 ) {
-  const next = [...detail.media];
+  const next = [...mediaItems];
   const target = index + direction;
   const currentItem = next[index];
   const targetItem = next[target];
@@ -186,7 +191,7 @@ function reorder(
   next[target] = currentItem;
   void run("Reordenando midia", () =>
     api.reorderMedia(
-      detail.listing.id,
+      unitId,
       next.map((item, displayOrder) => ({ displayOrder, mediaId: item.id })),
     ),
   );
@@ -194,18 +199,19 @@ function reorder(
 
 function setCover(
   api: InventoryApi,
-  detail: InventoryListingDetail,
+  mediaItems: readonly InventoryMedia[],
   media: InventoryMedia,
   run: InventoryMediaRun,
+  unitId: string,
 ) {
   const ordered = [
     media,
-    ...detail.media.filter((item) => item.id !== media.id),
+    ...mediaItems.filter((item) => item.id !== media.id),
   ].map((item, displayOrder) => ({ displayOrder, mediaId: item.id }));
   void run("Definindo capa publica", async () => {
     if (!media.isPublic) {
-      await api.updateMedia(detail.listing.id, media.id, { isPublic: true });
+      await api.updateMedia(unitId, media.id, { isPublic: true });
     }
-    return api.reorderMedia(detail.listing.id, ordered);
+    return api.reorderMedia(unitId, ordered);
   });
 }

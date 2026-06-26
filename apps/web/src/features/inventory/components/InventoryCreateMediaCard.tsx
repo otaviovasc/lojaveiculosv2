@@ -1,7 +1,16 @@
 import { ArrowLeft, ArrowRight, Move, Trash2, Video } from "lucide-react";
 import type { DragEvent, ReactNode } from "react";
 import type { CreateMediaDraft } from "../model/createMediaDrafts";
-import { InventoryBadge, InventoryInput } from "./InventoryFormParts";
+import {
+  InventoryBadge,
+  InventoryInput,
+  InventorySelect,
+} from "./InventoryFormParts";
+
+export type CreateMediaUnitOption = {
+  label: string;
+  value: string;
+};
 
 export function InventoryCreateMediaCard({
   index,
@@ -13,6 +22,8 @@ export function InventoryCreateMediaCard({
   onDrop,
   onMove,
   onRemove,
+  onUnitChange,
+  unitOptions = [],
 }: {
   index: number;
   item: CreateMediaDraft;
@@ -23,8 +34,11 @@ export function InventoryCreateMediaCard({
   onDrop: (event: DragEvent<HTMLElement>) => void;
   onMove: (direction: -1 | 1) => void;
   onRemove: () => void;
+  onUnitChange?: (value: string) => void;
+  unitOptions?: readonly CreateMediaUnitOption[];
 }) {
   const isCover = index === 0 && item.kind === "photo";
+  const unitValue = item.unitDraftId ?? unitOptions[0]?.value ?? "";
 
   return (
     <article
@@ -64,6 +78,15 @@ export function InventoryCreateMediaCard({
         onChange={(event) => onAltText(event.target.value)}
         value={item.altText}
       />
+      {unitOptions.length > 1 && onUnitChange ? (
+        <InventorySelect
+          ariaLabel="Unidade da midia"
+          className="min-h-10"
+          onChange={onUnitChange}
+          options={unitOptions}
+          value={unitValue}
+        />
+      ) : null}
     </article>
   );
 }

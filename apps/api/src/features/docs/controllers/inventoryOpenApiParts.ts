@@ -14,6 +14,14 @@ export const unitIdParameter = {
   description: "Inventory unit identifier.",
 } as const;
 
+export const mediaIdParameter = {
+  name: "mediaId",
+  in: "path",
+  required: true,
+  schema: { type: "string", minLength: 1 },
+  description: "Vehicle media identifier.",
+} as const;
+
 export const checklistIdParameter = {
   name: "checklistId",
   in: "path",
@@ -36,6 +44,15 @@ export const listResponse = {
   content: {
     "application/json": {
       schema: { $ref: "#/components/schemas/InventoryListingList" },
+    },
+  },
+} as const;
+
+export const unitListResponse = {
+  description: "Canonical V2 inventory unit list.",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/InventoryUnitList" },
     },
   },
 } as const;

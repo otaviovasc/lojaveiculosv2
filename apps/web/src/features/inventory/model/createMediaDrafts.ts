@@ -13,6 +13,7 @@ export type CreateMediaDraft = {
   id: string;
   kind: InventoryMediaKind;
   previewUrl: string | null;
+  unitDraftId?: string;
 };
 
 export type CreateMediaReject = {
@@ -24,10 +25,12 @@ export function buildCreateMediaDrafts({
   current,
   files,
   previewUrl,
+  unitDraftId,
 }: {
   current: readonly CreateMediaDraft[];
   files: readonly File[];
   previewUrl?: (file: File) => string | null;
+  unitDraftId?: string | undefined;
 }) {
   const accepted = [...current];
   const rejected: CreateMediaReject[] = [];
@@ -68,6 +71,7 @@ export function buildCreateMediaDrafts({
       id: createDraftId(file, accepted.length),
       kind,
       previewUrl: previewUrl?.(file) ?? null,
+      ...(unitDraftId ? { unitDraftId } : {}),
     });
 
     if (kind === "photo") photoCount += 1;

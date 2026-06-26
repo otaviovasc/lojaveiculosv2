@@ -42,11 +42,10 @@ export function createInventoryTestServices(): InventoryListingServices {
     createListing: vi.fn(async () => listingDetailResult()),
     createVehicleSupplier: vi.fn(async () => supplierResult()),
     createMedia: vi.fn(async () => ({
-      listingId: "listing_1",
       mediaId: "media_1",
-      storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
       status: "created" as const,
+      unitId: "unit_1",
       url: "https://cdn.local/front.jpg",
     })),
     deleteMedia: vi.fn(async () => listingDetailResult()),
@@ -134,6 +133,21 @@ export function createInventoryTestServices(): InventoryListingServices {
       nextOffset: null,
       total: 1,
     })),
+    listUnits: vi.fn(async () => ({
+      hasMore: false,
+      items: [
+        {
+          listing: listingDto(),
+          mediaCount: 1,
+          primaryMediaUrl: "https://cdn.local/front.jpg",
+          primaryUnit: unitDto(),
+          unit: unitDto(),
+          units: [unitDto()],
+        },
+      ],
+      nextOffset: null,
+      total: 1,
+    })),
     listVehicleSuppliers: vi.fn(async () => [supplierResult()]),
     reorderMedia: vi.fn(async () => listingDetailResult()),
     requestDocumentUpload: vi.fn(async () => ({
@@ -148,8 +162,7 @@ export function createInventoryTestServices(): InventoryListingServices {
     requestMediaUpload: vi.fn(async () => ({
       expiresAt: new Date("2026-01-01T00:15:00.000Z"),
       publicUrl: "https://cdn.local/front.jpg",
-      storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
       uploadHeaders: { "content-type": "image/jpeg" },
       uploadMethod: "PUT" as const,
       uploadUrl: "https://upload.local/front.jpg",

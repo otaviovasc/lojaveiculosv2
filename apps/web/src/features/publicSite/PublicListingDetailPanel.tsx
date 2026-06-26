@@ -1,6 +1,6 @@
 import { RefreshCcw, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { LeadCaptureForm } from "./LeadCaptureForm";
 import { HeroMedia, MediaStrip } from "./PublicListingGallery";
 import type {
@@ -93,15 +93,37 @@ function ListingDetailContent({
   ) => Promise<PublicStorefrontLeadResult>;
 }) {
   const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
+  const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
+  const mediaGroups = useMemo(
+    () => detail.listing.mediaGroups.filter((group) => group.media.length > 0),
+    [detail.listing.mediaGroups],
+  );
+  const activeGroup =
+    mediaGroups.find((group) => group.unitId === selectedUnitId) ??
+    mediaGroups[0] ??
+    null;
+  const activeMedia = activeGroup?.media.length
+    ? activeGroup.media
+    : detail.listing.media;
   const selectedMedia =
-    detail.listing.media.find((item) => item.url === selectedMediaUrl) ??
-    detail.listing.media[0] ??
+    activeMedia.find((item) => item.url === selectedMediaUrl) ??
+    activeMedia[0] ??
     null;
   const heroUrl = selectedMedia?.url ?? detail.listing.thumbnailUrl;
 
   useEffect(() => {
-    setSelectedMediaUrl(detail.listing.media[0]?.url ?? null);
-  }, [detail.listing.slug, detail.listing.media]);
+    const firstGroup = mediaGroups[0] ?? null;
+    setSelectedUnitId(firstGroup?.unitId ?? null);
+    setSelectedMediaUrl(
+      firstGroup?.media[0]?.url ?? detail.listing.media[0]?.url ?? null,
+    );
+  }, [detail.listing.slug, detail.listing.media, mediaGroups]);
+
+  const handleGroupSelect = (unitId: string) => {
+    const nextGroup = mediaGroups.find((group) => group.unitId === unitId);
+    setSelectedUnitId(unitId);
+    setSelectedMediaUrl(nextGroup?.media[0]?.url ?? null);
+  };
 
   return (
     <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
@@ -111,8 +133,13 @@ function ListingDetailContent({
           heroUrl={heroUrl}
           kind={selectedMedia?.kind ?? "photo"}
         />
+        <UnitMediaTabs
+          groups={mediaGroups}
+          onSelect={handleGroupSelect}
+          selectedUnitId={activeGroup?.unitId ?? null}
+        />
         <MediaStrip
-          media={detail.listing.media}
+          media={activeMedia}
           onSelect={setSelectedMediaUrl}
           selectedUrl={selectedMedia?.url ?? null}
         />
@@ -132,13 +159,45 @@ function ListingDetailContent({
         <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black text-muted">
           <Metric label="Ano" value={detail.listing.modelYear ?? "-"} />
           <Metric label="Km" value={formatMileage(detail.listing.mileageKm)} />
-          <Metric label="Fotos" value={detail.listing.media.length} />
+          <Metric label="Fotos" value={activeMedia.length} />
         </div>
         <LeadCaptureForm
           listingSlug={detail.listing.slug}
           onSubmitInterest={onSubmitInterest}
         />
       </div>
+    </div>
+  );
+}
+
+function UnitMediaTabs({
+  groups,
+  onSelect,
+  selectedUnitId,
+}: {
+  groups: readonly {
+    colorName: string | null;
+    media: readonly unknown[];
+    unitId: string;
+  }[];
+  onSelect: (unitId: string) => void;
+  selectedUnitId: string | null;
+}) {
+  if (groups.length <= 1) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2" aria-label="Variantes">
+      {groups.map((group) => (
+        <button
+          className="rounded-md border border-line bg-panel px-3 py-2 text-xs font-black text-app-text"
+          data-selected={group.unitId === selectedUnitId ? "true" : undefined}
+          key={group.unitId}
+          onClick={() => onSelect(group.unitId)}
+          type="button"
+        >
+          {group.colorName ?? "Unidade"}
+        </button>
+      ))}
     </div>
   );
 }

@@ -2,6 +2,7 @@ export type InventoryRouteState = {
   createStep: "catalog" | "data" | "media" | "mode" | "review";
   listingId: string | null;
   screenMode: "create" | "list";
+  unitId: string | null;
 };
 
 export function readInventoryRouteState(hash: string): InventoryRouteState {
@@ -18,6 +19,7 @@ export function readInventoryRouteState(hash: string): InventoryRouteState {
     listingId: params.get("listing"),
     screenMode:
       params.get("view") === "create" || isCreatePath ? "create" : "list",
+    unitId: params.get("unit"),
   };
 }
 
@@ -27,6 +29,7 @@ export function readCurrentInventoryRouteState() {
       createStep: "mode",
       listingId: null,
       screenMode: "list",
+      unitId: null,
     } satisfies InventoryRouteState;
   }
 

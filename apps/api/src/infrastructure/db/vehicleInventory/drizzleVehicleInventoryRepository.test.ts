@@ -12,6 +12,7 @@ import {
 
 describe("Drizzle vehicle inventory repositories", () => {
   const listingId = "00000000-0000-4000-8000-000000000001";
+  const unitId = "00000000-0000-4000-8000-000000000002";
 
   it("creates listing and unit records using the product inventory schema", async () => {
     const db = createFakeDb();
@@ -102,11 +103,10 @@ describe("Drizzle vehicle inventory repositories", () => {
       displayOrder: 1,
       isPublic: true,
       kind: "photo",
-      listingId,
-      storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
       storeId: "store_1",
       tenantId: "tenant_1",
+      unitId,
       url: "https://cdn.local/front.jpg",
     });
 
@@ -115,9 +115,8 @@ describe("Drizzle vehicle inventory repositories", () => {
         altText: "Front photo",
         displayOrder: 1,
         kind: "photo",
-        listingId,
-        storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+        storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
+        unitId,
       }),
     ]);
     expect(media).toMatchObject({

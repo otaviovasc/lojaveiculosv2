@@ -7,9 +7,11 @@ import type {
 import {
   auditVehicleServiceEvent,
   findScopedListing,
+  findScopedUnitById,
   getListingRepository,
   getMediaRepository,
   getMediaStorage,
+  getUnitRepository,
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
@@ -20,8 +22,8 @@ export type CreateVehicleMediaInput = {
   altText?: string | null;
   displayOrder?: number;
   kind: VehicleMediaKind;
-  listingId: string;
   storageKey: string;
+  unitId: string;
 };
 
 export async function createVehicleMedia(
@@ -30,12 +32,17 @@ export async function createVehicleMedia(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleMedia> {
   assertPermission(context, permission);
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-  const expectedPrefix = createStoragePrefix(context, listing.id);
+  const expectedPrefix = createStoragePrefix(context, unit.id);
 
   if (!input.storageKey.startsWith(expectedPrefix)) {
     throw new VehicleMediaStorageScopeError();
@@ -45,6 +52,7 @@ export async function createVehicleMedia(
     kind: input.kind,
     listingId: listing.id,
     storageKey: input.storageKey,
+    unitId: unit.id,
   });
 
   const media = await getMediaRepository(ports).create({
@@ -52,10 +60,10 @@ export async function createVehicleMedia(
     displayOrder: input.displayOrder ?? 0,
     isPublic: true,
     kind: input.kind,
-    listingId: listing.id,
     storageKey: input.storageKey,
     storeId: context.storeId,
     tenantId: context.tenantId,
+    unitId: unit.id,
     url: getMediaStorage(ports).getPublicUrl(input.storageKey),
   });
 
@@ -68,10 +76,14 @@ export async function createVehicleMedia(
       kind: media.kind,
       listingId: listing.id,
       storageKey: media.storageKey,
+      unitId: unit.id,
     },
     permission,
-    relatedEntities: [{ id: listing.id, type: "vehicle_listing" }],
-    summary: "Attached vehicle media to listing",
+    relatedEntities: [
+      { id: unit.id, type: "vehicle_unit" },
+      { id: listing.id, type: "vehicle_listing" },
+    ],
+    summary: "Attached vehicle media to unit",
   });
 
   return media;
@@ -79,15 +91,15 @@ export async function createVehicleMedia(
 
 export class VehicleMediaStorageScopeError extends Error {
   constructor() {
-    super("Vehicle media storage key is outside the scoped listing folder.");
+    super("Vehicle media storage key is outside the scoped unit folder.");
     this.name = "VehicleMediaStorageScopeError";
   }
 }
 
-function createStoragePrefix(context: ServiceContext, listingId: string) {
+function createStoragePrefix(context: ServiceContext, unitId: string) {
   if (!context.tenantId || !context.storeId) {
     throw new Error("Vehicle media creation requires tenant and store scope.");
   }
 
-  return `tenants/${context.tenantId}/stores/${context.storeId}/listings/${listingId}/`;
+  return `tenants/${context.tenantId}/stores/${context.storeId}/units/${unitId}/`;
 }

@@ -9,6 +9,8 @@ import type {
   ListVehicleChildrenInput,
   ListVehicleDocumentsInput,
   ListVehicleListingsInput,
+  ListVehicleUnitChildrenInput,
+  ListVehicleUnitsInput,
 } from "./vehicleInventoryInputs.js";
 import type {
   VehicleDocument,
@@ -33,6 +35,7 @@ export type VehicleUnitRepository = {
   listByListingIds: (
     input: ListVehicleChildrenInput,
   ) => Promise<readonly VehicleUnit[]>;
+  list: (input: ListVehicleUnitsInput) => Promise<readonly VehicleUnit[]>;
   save: (unit: VehicleUnit) => Promise<VehicleUnit>;
 };
 
@@ -42,6 +45,9 @@ export type VehicleMediaRepository = {
   findById: (input: FindVehicleMediaInput) => Promise<VehicleMedia | null>;
   listByListingIds: (
     input: ListVehicleChildrenInput,
+  ) => Promise<readonly VehicleMedia[]>;
+  listByUnitIds: (
+    input: ListVehicleUnitChildrenInput,
   ) => Promise<readonly VehicleMedia[]>;
   save: (media: VehicleMedia) => Promise<VehicleMedia>;
 };

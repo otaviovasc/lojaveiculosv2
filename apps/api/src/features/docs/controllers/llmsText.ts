@@ -38,7 +38,8 @@ export const llmsText = `# Loja Veiculos API
 - Create external API client: POST /api/v1/external-api/clients
 - Revoke external API client: POST /api/v1/external-api/clients/{clientId}/revoke
 - Admin observability snapshot: GET /api/v1/internal/health
-- List inventory stock: GET /api/v1/inventory/listings
+- List inventory units: GET /api/v1/inventory/units
+- List inventory listing groups: GET /api/v1/inventory/listings
 - Create listing: POST /api/v1/inventory/listings
 - Get listing: GET /api/v1/inventory/listings/{listingId}
 - Update listing details: PATCH /api/v1/inventory/listings/{listingId}
@@ -50,8 +51,8 @@ export const llmsText = `# Loja Veiculos API
 - List unit checklists: GET /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists
 - Create unit checklist: POST /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists
 - Update unit checklist: PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}
-- Request listing media upload: POST /api/v1/inventory/listings/{listingId}/media/uploads
-- Attach uploaded listing media: POST /api/v1/inventory/listings/{listingId}/media
+- Request unit media upload: POST /api/v1/inventory/units/{unitId}/media/uploads
+- Attach uploaded unit media: POST /api/v1/inventory/units/{unitId}/media
 - Reserve unit: POST /api/v1/inventory/units/{unitId}/reserve
 - Sell unit: POST /api/v1/inventory/units/{unitId}/sell
 - Release unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/release
@@ -105,11 +106,12 @@ export const llmsText = `# Loja Veiculos API
 - audit.read: required to read the internal health and audit snapshot.
 
 ## Current inventory endpoints
-- GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br; thumbnailUrl is the first public photo by displayOrder.
+- GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br; thumbnailUrl is the first public photo from the deterministic default unit gallery.
 - GET /api/v1/public/storefront/settings: returns public-safe hero, SEO, contact, and branding settings for a published store.
-- GET /api/v1/public/storefront/listings/{listingSlug}: returns one published, visible vehicle plus ordered public media.
+- GET /api/v1/public/storefront/listings/{listingSlug}: returns one published, visible vehicle plus unit/color media groups.
 - POST /api/v1/public/storefront/listings/{listingSlug}/leads: creates a V2 CRM lead from public buyer interest.
-- GET /api/v1/inventory/listings: returns canonical V2 stock list DTOs; requires inventory.read.
+- GET /api/v1/inventory/units: returns canonical V2 stock list DTOs, one row per vehicle_unit; requires inventory.read.
+- GET /api/v1/inventory/listings: returns listing-group DTOs; requires inventory.read.
 - POST /api/v1/inventory/listings: creates a listing and returns canonical V2 listing detail; requires inventory.create.
 - GET /api/v1/inventory/listings/{listingId}: returns canonical V2 listing detail with units and media; requires inventory.read.
 - PATCH /api/v1/inventory/listings/{listingId}: updates listing details; workflow statuses are blocked.
@@ -121,12 +123,14 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists: lists persisted readiness checklists for a scoped unit.
 - POST /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists: creates a readiness checklist and returns the updated listing detail.
 - PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
-- POST /api/v1/inventory/listings/{listingId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions.
-- POST /api/v1/inventory/listings/{listingId}/media: records uploaded R2 object as listing media after scoped storage validation.
+- POST /api/v1/inventory/units/{unitId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions scoped to the unit folder.
+- POST /api/v1/inventory/units/{unitId}/media: records uploaded R2 object as unit media after scoped storage validation.
+- PATCH /api/v1/inventory/units/{unitId}/media/reorder: reorders unit media and returns the updated listing detail.
+- PATCH /api/v1/inventory/units/{unitId}/media/{mediaId}: updates unit media metadata and visibility.
+- DELETE /api/v1/inventory/units/{unitId}/media/{mediaId}: deletes one unit media record and returns the updated listing detail.
 - POST /api/v1/inventory/units/{unitId}/reserve: reserves a unit, emits reservation_receipt, and creates linked finance entries.
 - POST /api/v1/inventory/units/{unitId}/sell: sells a unit, emits sale documents, and creates linked finance entries.
 - POST /api/v1/inventory/units/{unitId}/reservation/release: releases a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
-- POST /api/v1/inventory/listings/{listingId}/reserve and /sell: deprecated compatibility wrappers that require unitId in the request body.
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
 
 ## Current identity endpoints

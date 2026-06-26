@@ -65,7 +65,7 @@ export async function getPublicVehicleListing(
     entityId: listing.slug,
     entityType: "vehicle_listing",
     metadata: {
-      mediaCount: listing.media.length,
+      mediaCount: countPublicMedia(listing),
       permission,
       storeSlug: input.storeSlug,
     },
@@ -77,4 +77,12 @@ export async function getPublicVehicleListing(
   });
 
   return { listing, store: { name: store.name, slug: store.slug } };
+}
+
+function countPublicMedia(listing: PublicVehicleListingDetail): number {
+  const groupedCount = listing.mediaGroups.reduce(
+    (total, group) => total + group.media.length,
+    0,
+  );
+  return groupedCount || listing.media.length;
 }

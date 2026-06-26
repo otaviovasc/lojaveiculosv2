@@ -102,7 +102,7 @@ export function CrmModule({
       .then((options) =>
         createInventoryApi(options).listListings({
           limit: 50,
-          status: "published",
+          status: "available",
         }),
       )
       .then((result) => {

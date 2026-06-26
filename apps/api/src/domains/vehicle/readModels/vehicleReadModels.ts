@@ -37,6 +37,20 @@ export type VehicleListingListResult = {
   total: number;
 };
 
+export type VehicleUnitSummary = {
+  listing: VehicleListing;
+  mediaCount: number;
+  primaryMediaUrl: string | null;
+  unit: VehicleUnit;
+};
+
+export type VehicleUnitListResult = {
+  hasMore: boolean;
+  items: readonly VehicleUnitSummary[];
+  nextOffset: number | null;
+  total: number;
+};
+
 export function createListingDetail(input: {
   checklists?: readonly VehicleChecklist[];
   documents?: readonly VehicleDocument[];
@@ -74,5 +88,23 @@ export function createListingSummary(input: {
     primaryMediaUrl: orderedMedia[0]?.url ?? null,
     primaryUnit: input.units[0] ?? null,
     units: input.units,
+  };
+}
+
+export function createUnitSummary(input: {
+  listing: VehicleListing;
+  media: readonly VehicleMedia[];
+  unit: VehicleUnit;
+}): VehicleUnitSummary {
+  const unitMedia = input.media.filter((item) => item.unitId === input.unit.id);
+  const orderedMedia = [...unitMedia].sort(
+    (left, right) => left.displayOrder - right.displayOrder,
+  );
+
+  return {
+    listing: input.listing,
+    mediaCount: unitMedia.length,
+    primaryMediaUrl: orderedMedia[0]?.url ?? null,
+    unit: input.unit,
   };
 }

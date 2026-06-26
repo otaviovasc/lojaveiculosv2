@@ -2,10 +2,13 @@ import type {
   VehicleListingDetail,
   VehicleListingListResult,
   VehicleListingSummary,
+  VehicleUnitListResult,
+  VehicleUnitSummary,
 } from "../../../domains/vehicle/readModels/vehicleReadModels.js";
 
 export type InventoryListingDetailResponse = ReturnType<typeof toDetailDto>;
 export type InventoryListingListResponse = ReturnType<typeof toListDto>;
+export type InventoryUnitListResponse = ReturnType<typeof toUnitListDto>;
 
 export function toDetailDto(detail: VehicleListingDetail) {
   return {
@@ -67,6 +70,15 @@ export function toListDto(result: VehicleListingListResult) {
   };
 }
 
+export function toUnitListDto(result: VehicleUnitListResult) {
+  return {
+    hasMore: result.hasMore,
+    items: result.items.map(toUnitSummaryDto),
+    nextOffset: result.nextOffset,
+    total: result.total,
+  };
+}
+
 function toSummaryDto(summary: VehicleListingSummary) {
   return {
     listing: {
@@ -88,5 +100,34 @@ function toSummaryDto(summary: VehicleListingSummary) {
       createdAt: unit.createdAt.toISOString(),
       updatedAt: unit.updatedAt.toISOString(),
     })),
+  };
+}
+
+function toUnitSummaryDto(summary: VehicleUnitSummary) {
+  return {
+    listing: {
+      ...summary.listing,
+      createdAt: summary.listing.createdAt.toISOString(),
+      updatedAt: summary.listing.updatedAt.toISOString(),
+    },
+    mediaCount: summary.mediaCount,
+    primaryMediaUrl: summary.primaryMediaUrl,
+    primaryUnit: {
+      ...summary.unit,
+      createdAt: summary.unit.createdAt.toISOString(),
+      updatedAt: summary.unit.updatedAt.toISOString(),
+    },
+    unit: {
+      ...summary.unit,
+      createdAt: summary.unit.createdAt.toISOString(),
+      updatedAt: summary.unit.updatedAt.toISOString(),
+    },
+    units: [
+      {
+        ...summary.unit,
+        createdAt: summary.unit.createdAt.toISOString(),
+        updatedAt: summary.unit.updatedAt.toISOString(),
+      },
+    ],
   };
 }

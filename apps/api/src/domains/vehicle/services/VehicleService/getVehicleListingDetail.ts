@@ -39,10 +39,14 @@ export async function getVehicleListingDetail(
   );
   const scope = { storeId: context.storeId, tenantId: context.tenantId };
   const listingIds = [listing.id];
-  const [units, media] = await Promise.all([
-    getUnitRepository(ports).listByListingIds({ ...scope, listingIds }),
-    getMediaRepository(ports).listByListingIds({ ...scope, listingIds }),
-  ]);
+  const units = await getUnitRepository(ports).listByListingIds({
+    ...scope,
+    listingIds,
+  });
+  const media = await getMediaRepository(ports).listByUnitIds({
+    ...scope,
+    unitIds: units.map((unit) => unit.id),
+  });
   const documents = ports?.documentRepository
     ? await getDocumentRepository(ports).listByListing({
         ...scope,

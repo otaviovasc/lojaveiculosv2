@@ -68,7 +68,11 @@ export function InventoryCreateForm({
         onSetFormDirect={onSetFormDirect}
       />
 
-      <InventoryCreateMediaPanel items={media} onChange={onMediaChange} />
+      <InventoryCreateMediaPanel
+        form={form}
+        items={media}
+        onChange={onMediaChange}
+      />
 
       <SectionPanel
         icon={<Car className="size-5" />}

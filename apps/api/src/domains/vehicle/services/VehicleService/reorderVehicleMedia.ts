@@ -3,10 +3,10 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { VehicleMedia } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
-  findScopedListing,
   findScopedMedia,
-  getListingRepository,
+  findScopedUnitById,
   getMediaRepository,
+  getUnitRepository,
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
@@ -15,7 +15,7 @@ const permission = "inventory.media_update";
 
 export type ReorderVehicleMediaInput = {
   items: readonly { displayOrder: number; mediaId: string }[];
-  listingId: string;
+  unitId: string;
 };
 
 export async function reorderVehicleMedia(
@@ -24,23 +24,23 @@ export async function reorderVehicleMedia(
   ports?: VehicleInventoryServicePorts,
 ): Promise<readonly VehicleMedia[]> {
   assertPermission(context, permission);
-  await findScopedListing(
+  const unit = await findScopedUnitById(
     context,
-    getListingRepository(ports),
-    input.listingId,
+    getUnitRepository(ports),
+    input.unitId,
   );
   const repository = getMediaRepository(ports);
   const updated: VehicleMedia[] = [];
 
   logVehicleServiceEvent(context, "vehicle_media.reorder.started", {
     itemCount: input.items.length,
-    listingId: input.listingId,
+    unitId: input.unitId,
   });
 
   for (const item of input.items) {
     const media = await findScopedMedia(context, repository, {
-      listingId: input.listingId,
       mediaId: item.mediaId,
+      unitId: input.unitId,
     });
     if (media.displayOrder === item.displayOrder) {
       updated.push(media);
@@ -58,12 +58,16 @@ export async function reorderVehicleMedia(
   await auditVehicleServiceEvent(context, {
     action: "vehicle_media.reorder",
     category: "data_change",
-    entityId: input.listingId,
+    entityId: input.unitId,
+    entityType: "vehicle_unit",
     metadata: {
       itemCount: input.items.length,
+      listingId: unit.listingId,
       mediaIds: input.items.map((item) => item.mediaId),
+      unitId: input.unitId,
     },
     permission,
+    relatedEntities: [{ id: unit.listingId, type: "vehicle_listing" }],
     summary: "Reordered vehicle media gallery",
   });
 

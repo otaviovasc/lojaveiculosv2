@@ -13,6 +13,7 @@ describe("inventory route state", () => {
       createStep: "media",
       listingId: null,
       screenMode: "create",
+      unitId: null,
     });
   });
 
@@ -21,18 +22,20 @@ describe("inventory route state", () => {
       createStep: "catalog",
       listingId: null,
       screenMode: "create",
+      unitId: null,
     });
   });
 
   it("reads listing detail visual QA state from the hash query", () => {
     expect(
       readInventoryRouteState(
-        "#/inventory?listing=10000000-0000-4000-8000-000000000001",
+        "#/inventory?listing=10000000-0000-4000-8000-000000000001&unit=11000000-0000-4000-8000-000000000005",
       ),
     ).toEqual({
       createStep: "mode",
       listingId: "10000000-0000-4000-8000-000000000001",
       screenMode: "list",
+      unitId: "11000000-0000-4000-8000-000000000005",
     });
   });
 

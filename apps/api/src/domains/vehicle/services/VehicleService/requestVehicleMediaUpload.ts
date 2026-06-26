@@ -5,8 +5,10 @@ import type { VehicleMediaUpload } from "../../ports/vehicleMediaStorage.js";
 import {
   auditVehicleServiceEvent,
   findScopedListing,
+  findScopedUnitById,
   getListingRepository,
   getMediaStorage,
+  getUnitRepository,
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
@@ -17,8 +19,8 @@ export type RequestVehicleMediaUploadInput = {
   contentType: string;
   fileName: string;
   kind: VehicleMediaKind;
-  listingId: string;
   sizeBytes: number;
+  unitId: string;
 };
 
 export async function requestVehicleMediaUpload(
@@ -27,10 +29,15 @@ export async function requestVehicleMediaUpload(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleMediaUpload> {
   assertPermission(context, permission);
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
   const scope = requireStoreScope(context);
 
@@ -39,27 +46,31 @@ export async function requestVehicleMediaUpload(
     kind: input.kind,
     listingId: listing.id,
     sizeBytes: input.sizeBytes,
+    unitId: unit.id,
   });
 
   const upload = await getMediaStorage(ports).createUpload({
     contentType: input.contentType,
     fileName: input.fileName,
-    scopeSegments: createVehicleObjectScope(scope, listing.id, input.kind),
+    scopeSegments: createVehicleObjectScope(scope, unit.id, input.kind),
     sizeBytes: input.sizeBytes,
   });
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_media.upload.request",
     category: "data_change",
-    entityId: listing.id,
+    entityId: unit.id,
+    entityType: "vehicle_unit",
     metadata: {
       kind: input.kind,
       listingId: listing.id,
       sizeBytes: input.sizeBytes,
       storageKey: upload.storageKey,
+      unitId: unit.id,
       uploadCorrelationId: context.requestId,
     },
     permission,
+    relatedEntities: [{ id: listing.id, type: "vehicle_listing" }],
     summary: "Requested vehicle media upload URL",
   });
 
@@ -76,7 +87,7 @@ function requireStoreScope(context: ServiceContext) {
 
 function createVehicleObjectScope(
   scope: { storeId: string; tenantId: string },
-  listingId: string,
+  unitId: string,
   category: string,
 ) {
   return [
@@ -84,8 +95,8 @@ function createVehicleObjectScope(
     scope.tenantId,
     "stores",
     scope.storeId,
-    "listings",
-    listingId,
+    "units",
+    unitId,
     category,
   ];
 }

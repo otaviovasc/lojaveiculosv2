@@ -23,7 +23,25 @@ const listing = {
       altText: "Front photo",
       displayOrder: 0,
       kind: "photo" as const,
+      unitColorName: "Preto",
+      unitId: "unit_1",
       url: "https://cdn.local/front.jpg",
+    },
+  ],
+  mediaGroups: [
+    {
+      colorName: "Preto",
+      media: [
+        {
+          altText: "Front photo",
+          displayOrder: 0,
+          kind: "photo" as const,
+          unitColorName: "Preto",
+          unitId: "unit_1",
+          url: "https://cdn.local/front.jpg",
+        },
+      ],
+      unitId: "unit_1",
     },
   ],
   mileageKm: 32000,

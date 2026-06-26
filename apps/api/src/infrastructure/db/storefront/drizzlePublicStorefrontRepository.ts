@@ -1,21 +1,22 @@
-import { and, asc, eq, isNotNull, isNull, or } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import {
   storePublicSiteSettings,
   stores,
   vehicleListings,
-  vehicleMedia,
 } from "@lojaveiculosv2/db";
 import type {
   PublicStorefrontRepository,
   PublicVehicleListingDetail,
-  PublicVehicleMedia,
-  PublicVehicleListing,
 } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
-import type {
-  DrizzlePublicStorefrontClient,
-  ListingRow,
-} from "./drizzlePublicStorefrontQueryTypes.js";
+import { findListingGallery } from "./drizzlePublicStorefrontGallery.js";
+import {
+  PublicStorefrontDataInvariantError,
+  toPublicVehicleListing,
+} from "./drizzlePublicStorefrontListingMapper.js";
+import type { DrizzlePublicStorefrontClient } from "./drizzlePublicStorefrontQueryTypes.js";
 import { findPublicSiteBySlug } from "./drizzlePublicStorefrontSite.js";
+
+export { PublicStorefrontDataInvariantError };
 
 export function createDrizzlePublicStorefrontRepository(
   db: DrizzlePublicStorefrontClient,
@@ -87,15 +88,16 @@ export function createDrizzlePublicStorefrontRepository(
 
       if (!listing) return null;
 
-      const media = await findListingMedia(db, {
+      const gallery = await findListingGallery(db, {
         listingId: listing.listingId,
         storeId: input.storeId,
         tenantId: input.tenantId,
       });
 
       return {
-        ...toPublicVehicleListing(listing, firstPhotoUrl(media)),
-        media,
+        ...toPublicVehicleListing(listing, gallery.thumbnailUrl),
+        media: gallery.defaultMedia,
+        mediaGroups: gallery.mediaGroups,
       } satisfies PublicVehicleListingDetail;
     },
 
@@ -127,48 +129,16 @@ export function createDrizzlePublicStorefrontRepository(
 
       return Promise.all(
         rows.map(async (row) => {
-          const media = await findListingMedia(db, {
+          const gallery = await findListingGallery(db, {
             listingId: row.listingId,
             storeId: input.storeId,
             tenantId: input.tenantId,
           });
-          return toPublicVehicleListing(row, firstPhotoUrl(media));
+          return toPublicVehicleListing(row, gallery.thumbnailUrl);
         }),
       );
     },
   };
-}
-
-async function findListingMedia(
-  db: DrizzlePublicStorefrontClient,
-  input: { listingId: string; storeId: string; tenantId: string },
-): Promise<readonly PublicVehicleMedia[]> {
-  const rows = await db
-    .select({
-      altText: vehicleMedia.altText,
-      displayOrder: vehicleMedia.displayOrder,
-      kind: vehicleMedia.kind,
-      url: vehicleMedia.url,
-    })
-    .from(vehicleMedia)
-    .where(
-      and(
-        eq(vehicleMedia.listingId, input.listingId),
-        eq(vehicleMedia.storeId, input.storeId),
-        eq(vehicleMedia.tenantId, input.tenantId),
-        eq(vehicleMedia.isPublic, true),
-        eq(vehicleMedia.isDeleted, false),
-        isNull(vehicleMedia.deletedAt),
-      ),
-    )
-    .orderBy(asc(vehicleMedia.displayOrder))
-    .limit(48);
-
-  return rows;
-}
-
-function firstPhotoUrl(media: readonly PublicVehicleMedia[]) {
-  return media.find((item) => item.kind === "photo")?.url ?? null;
 }
 
 function createPublicStoreLookupCondition(storeLookupKey: string) {
@@ -180,33 +150,3 @@ function createPublicStoreLookupCondition(storeLookupKey: string) {
     ),
   );
 }
-
-function toPublicVehicleListing(
-  row: ListingRow,
-  thumbnailUrl: string | null,
-): PublicVehicleListing {
-  return {
-    description: row.description,
-    id: row.listingId,
-    manufactureYear: row.manufactureYear,
-    mileageKm: row.mileageKm,
-    modelYear: row.modelYear,
-    priceCents: row.priceCents,
-    slug: assertPublicSlug(row.slug),
-    status: "available",
-    thumbnailUrl,
-    title: row.title,
-  };
-}
-
-function assertPublicSlug(slug: string | null): string {
-  if (!slug) {
-    throw new PublicStorefrontDataInvariantError(
-      "Published public listing is missing public_slug.",
-    );
-  }
-
-  return slug;
-}
-
-export class PublicStorefrontDataInvariantError extends Error {}

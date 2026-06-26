@@ -26,6 +26,7 @@ export const testPublicStorefrontListing = {
   id: "listing_1",
   manufactureYear: 2022,
   media: [],
+  mediaGroups: [],
   mileageKm: 32000,
   modelYear: 2023,
   priceCents: 12690000,

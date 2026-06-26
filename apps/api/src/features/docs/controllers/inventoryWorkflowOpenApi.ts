@@ -2,48 +2,11 @@ import { jsonRequest } from "./inventoryOpenApiSchemas.js";
 import {
   authResponses,
   detailResponse,
-  listingIdParameter,
   unitIdParameter,
   validationResponse,
 } from "./inventoryOpenApiParts.js";
 
 export const inventoryWorkflowPaths = {
-  "/api/v1/inventory/listings/{listingId}/reserve": {
-    post: {
-      deprecated: true,
-      tags: ["Inventory"],
-      summary: "Reserve unit through deprecated listing route",
-      description:
-        "Deprecated compatibility route. Prefer POST /api/v1/inventory/units/{unitId}/reserve.",
-      operationId: "reserveInventoryListing",
-      security: [{ bearerAuth: ["inventory.reserve"] }],
-      parameters: [listingIdParameter],
-      requestBody: jsonRequest("ReserveVehicleListingRequest"),
-      responses: {
-        "201": detailResponse,
-        ...validationResponse,
-        ...authResponses,
-      },
-    },
-  },
-  "/api/v1/inventory/listings/{listingId}/sell": {
-    post: {
-      deprecated: true,
-      tags: ["Inventory"],
-      summary: "Sell unit through deprecated listing route",
-      description:
-        "Deprecated compatibility route. Prefer POST /api/v1/inventory/units/{unitId}/sell.",
-      operationId: "sellInventoryListing",
-      security: [{ bearerAuth: ["inventory.sell"] }],
-      parameters: [listingIdParameter],
-      requestBody: jsonRequest("SellVehicleListingRequest"),
-      responses: {
-        "201": detailResponse,
-        ...validationResponse,
-        ...authResponses,
-      },
-    },
-  },
   "/api/v1/inventory/units/{unitId}/reserve": {
     post: {
       tags: ["Inventory"],

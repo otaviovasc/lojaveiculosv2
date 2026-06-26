@@ -40,7 +40,7 @@ export function InventoryListingTable({
   },
 }: {
   items: readonly InventoryListingSummary[];
-  onSelect: (listingId: string) => void;
+  onSelect: (listingId: string, unitId?: string | null) => void;
   onAction?: (
     action: "template" | "test-drive" | "zip-photos",
     item: InventoryListingSummary,
@@ -90,8 +90,10 @@ export function InventoryListingTable({
 
             return (
               <tr
-                key={listing.id}
-                onClick={() => onSelect(listing.id)}
+                key={item.primaryUnit?.id ?? listing.id}
+                onClick={() =>
+                  onSelect(listing.id, item.primaryUnit?.id ?? null)
+                }
                 className="group cursor-pointer hover:bg-line/20 transition-all duration-150"
               >
                 {/* Fotos */}

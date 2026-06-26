@@ -210,10 +210,10 @@ describe("inventory create submit", () => {
           id: "media_1",
           isPublic: true,
           kind: "photo",
-          listingId: "listing_1",
-          storageKey: "tenants/t/stores/s/listings/listing_1/photo/front.jpg",
+          storageKey: "tenants/t/stores/s/units/unit_1/photo/front.jpg",
           storeId: "store_1",
           tenantId: "tenant_1",
+          unitId: "unit_1",
           updatedAt: "2026-01-01T00:00:00.000Z",
           url: "https://cdn.local/front.jpg",
         },
@@ -267,7 +267,7 @@ function createSubmitApi(overrides: Partial<InventoryApi> = {}): InventoryApi {
   const upload = {
     expiresAt: "2026-01-01T00:15:00.000Z",
     publicUrl: "https://cdn.local/front.jpg",
-    storageKey: "tenants/t/stores/s/listings/listing_1/photo/front.jpg",
+    storageKey: "tenants/t/stores/s/units/unit_1/photo/front.jpg",
     uploadHeaders: { "content-type": "image/jpeg" },
     uploadMethod: "PUT" as const,
     uploadUrl: "https://upload.local/front.jpg",
@@ -278,10 +278,10 @@ function createSubmitApi(overrides: Partial<InventoryApi> = {}): InventoryApi {
     createFlow: vi.fn(),
     createListing: vi.fn(async () => listingDetail()),
     createMedia: vi.fn(async () => ({
-      listingId: "listing_1",
       mediaId: "media_1",
       status: "created" as const,
       storageKey: upload.storageKey,
+      unitId: "unit_1",
       url: upload.publicUrl,
     })),
     getListing: vi.fn(async () => listingDetail()),
@@ -289,7 +289,6 @@ function createSubmitApi(overrides: Partial<InventoryApi> = {}): InventoryApi {
     ...overrides,
   } as unknown as InventoryApi;
 }
-
 function listingDetail(
   overrides: Partial<InventoryListingDetail> = {},
 ): InventoryListingDetail {

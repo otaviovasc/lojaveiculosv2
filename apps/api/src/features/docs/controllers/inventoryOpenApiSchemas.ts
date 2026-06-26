@@ -2,6 +2,7 @@ import { inventoryFinanceSchemas } from "./inventoryFinanceOpenApiSchemas.js";
 import { inventoryChecklistSchemas } from "./inventoryChecklistOpenApiSchemas.js";
 import { inventoryAcquisitionSchemas } from "./inventoryAcquisitionOpenApiSchemas.js";
 import { inventoryWorkflowSchemas } from "./inventoryWorkflowOpenApiSchemas.js";
+import { inventoryMediaSchemas } from "./inventoryMediaOpenApiSchemas.js";
 import {
   listingTechnicalSchemas,
   objectSchema,
@@ -37,19 +38,10 @@ export const inventorySchemas = {
     },
     title: { type: "string", minLength: 1 },
   }),
-  CreateVehicleMediaRequest: objectSchema(["storageKey"], {
-    altText: { type: ["string", "null"], minLength: 1, maxLength: 191 },
-    displayOrder: { type: "integer", minimum: 0 },
-    kind: {
-      type: "string",
-      enum: ["document_preview", "photo", "video"],
-      default: "photo",
-    },
-    storageKey: { type: "string", minLength: 1 },
-  }),
   ...inventoryAcquisitionSchemas,
   ...inventoryChecklistSchemas,
   ...inventoryFinanceSchemas,
+  ...inventoryMediaSchemas,
   ...inventoryWorkflowSchemas,
   InventoryListing: objectSchema(["id", "status", "title"], {
     createdAt: { type: "string", format: "date-time" },
@@ -73,6 +65,28 @@ export const inventorySchemas = {
     updatedAt: { type: "string", format: "date-time" },
     unitIds: { type: "array", items: { type: "string" } },
   }),
+  InventoryUnit: objectSchema(["id", "listingId", "status"], {
+    colorName: { type: ["string", "null"] },
+    createdAt: { type: "string", format: "date-time" },
+    id: { type: "string" },
+    listingId: { type: "string" },
+    plate: { type: ["string", "null"] },
+    status: {
+      type: "string",
+      enum: [
+        "acquired",
+        "available",
+        "delivered",
+        "inactive",
+        "in_preparation",
+        "reserved",
+        "sold",
+      ],
+    },
+    stockNumber: { type: ["string", "null"] },
+    updatedAt: { type: "string", format: "date-time" },
+    vin: { type: ["string", "null"] },
+  }),
   InventoryListingDetail: objectSchema(
     ["checklists", "documents", "listing", "media", "status", "units"],
     {
@@ -87,7 +101,10 @@ export const inventorySchemas = {
       listing: { $ref: "#/components/schemas/InventoryListing" },
       media: { type: "array", items: { type: "object" } },
       status: { type: "string", enum: ["ready"] },
-      units: { type: "array", items: { type: "object" } },
+      units: {
+        type: "array",
+        items: { $ref: "#/components/schemas/InventoryUnit" },
+      },
     },
   ),
   InventoryListingList: objectSchema(
@@ -103,25 +120,52 @@ export const inventorySchemas = {
     },
   ),
   InventoryListingSummary: objectSchema(
-    ["listing", "mediaCount", "primaryMediaUrl", "primaryUnit"],
+    ["listing", "mediaCount", "primaryMediaUrl", "primaryUnit", "units"],
     {
       listing: { $ref: "#/components/schemas/InventoryListing" },
       mediaCount: { type: "integer", minimum: 0 },
       primaryMediaUrl: { type: ["string", "null"] },
-      primaryUnit: { type: ["object", "null"] },
+      primaryUnit: {
+        oneOf: [
+          { $ref: "#/components/schemas/InventoryUnit" },
+          { type: "null" },
+        ],
+      },
+      unit: { $ref: "#/components/schemas/InventoryUnit" },
+      units: {
+        type: "array",
+        items: { $ref: "#/components/schemas/InventoryUnit" },
+      },
     },
   ),
-  RequestVehicleMediaUploadRequest: objectSchema(
-    ["contentType", "fileName", "sizeBytes"],
+  InventoryUnitList: objectSchema(["hasMore", "items", "nextOffset", "total"], {
+    hasMore: { type: "boolean" },
+    nextOffset: { type: ["integer", "null"], minimum: 0 },
+    items: {
+      type: "array",
+      items: { $ref: "#/components/schemas/InventoryUnitSummary" },
+    },
+    total: { type: "integer", minimum: 0 },
+  }),
+  InventoryUnitSummary: objectSchema(
+    [
+      "listing",
+      "mediaCount",
+      "primaryMediaUrl",
+      "primaryUnit",
+      "unit",
+      "units",
+    ],
     {
-      contentType: { type: "string", minLength: 1, maxLength: 120 },
-      fileName: { type: "string", minLength: 1, maxLength: 191 },
-      kind: {
-        type: "string",
-        enum: ["document_preview", "photo", "video"],
-        default: "photo",
+      listing: { $ref: "#/components/schemas/InventoryListing" },
+      mediaCount: { type: "integer", minimum: 0 },
+      primaryMediaUrl: { type: ["string", "null"] },
+      primaryUnit: { $ref: "#/components/schemas/InventoryUnit" },
+      unit: { $ref: "#/components/schemas/InventoryUnit" },
+      units: {
+        type: "array",
+        items: { $ref: "#/components/schemas/InventoryUnit" },
       },
-      sizeBytes: { type: "integer", minimum: 1, maximum: 26214400 },
     },
   ),
   UpdateListingDescriptionRequest: objectSchema(["description"], {
@@ -165,11 +209,6 @@ export const inventorySchemas = {
     stockNumber: unitIdentitySchemas.stockNumber,
     vin: unitIdentitySchemas.vin,
   }),
-  VehicleMediaCreated: objectSchema(["mediaId", "status", "url"], {
-    mediaId: { type: "string" },
-    status: { type: "string", enum: ["created"] },
-    url: { type: "string" },
-  }),
   VehicleDocument: objectSchema(["id", "kind", "status", "title"], {
     fileName: { type: "string" },
     id: { type: "string" },
@@ -195,27 +234,6 @@ export const inventorySchemas = {
     description:
       "Vehicle document kind, including reservation_receipt and sale bundle documents: sale_contract, sale_receipt, delivery_term, power_of_attorney.",
   },
-  VehicleMediaUpload: objectSchema(
-    [
-      "expiresAt",
-      "publicUrl",
-      "storageKey",
-      "uploadHeaders",
-      "uploadMethod",
-      "uploadUrl",
-    ],
-    {
-      expiresAt: { type: "string", format: "date-time" },
-      publicUrl: { type: "string" },
-      storageKey: { type: "string" },
-      uploadHeaders: {
-        type: "object",
-        additionalProperties: { type: "string" },
-      },
-      uploadMethod: { type: "string", enum: ["PUT"] },
-      uploadUrl: { type: "string" },
-    },
-  ),
 } as const;
 
 export function jsonRequest(schemaName: keyof typeof inventorySchemas) {

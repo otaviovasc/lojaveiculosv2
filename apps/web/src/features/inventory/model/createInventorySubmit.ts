@@ -4,14 +4,25 @@ import {
   validateInventoryForm,
   parsePriceCents,
 } from "./formModel";
-import { uploadInventoryFile } from "./mediaWorkspaceTypes";
 import type { CreateMediaDraft } from "./createMediaDrafts";
 import type { InventoryFormState } from "./formModel";
-import type { CreateInventoryUnitInput, InventoryListingDetail } from "./types";
+import type { InventoryListingDetail } from "./types";
+import type { InventoryCreateSubmitProgress } from "./createInventorySubmitTypes";
+import {
+  attachInventoryCreateMediaItem,
+  createMediaFailureMessage,
+  isMediaAlreadyAttached,
+  refreshListingDetail,
+} from "./createInventorySubmitMedia";
+import {
+  attachedUnitDraftIds,
+  attachInventoryUnits,
+  createUnitFailureMessage,
+  ensureInventoryUnitAttached,
+  unitIdForDraft,
+} from "./createInventorySubmitUnits";
 
-export type InventoryCreateSubmitProgress = {
-  label: string;
-};
+export type { InventoryCreateSubmitProgress } from "./createInventorySubmitTypes";
 
 export type InventoryCreateSubmitResult =
   | {
@@ -50,14 +61,17 @@ export async function submitInventoryCreateFlow({
   let detail = await api.createListing(input.listing);
   const listingId = detail.listing.id;
 
+  let unitDraftIds = new Map<string, string>();
   try {
-    detail = await attachInventoryUnits({
+    const attached = await attachInventoryUnits({
       api,
       detail,
       listingId,
       onProgress,
       units: input.units ?? [input.unit],
     });
+    detail = attached.detail;
+    unitDraftIds = attached.unitDraftIds;
   } catch (error) {
     return {
       attachedMediaCount: 0,
@@ -94,7 +108,11 @@ export async function submitInventoryCreateFlow({
       label: `Enviando midia ${item.displayOrder + 1}/${media.length}`,
     });
     try {
-      await attachInventoryCreateMediaItem(api, listingId, item);
+      await attachInventoryCreateMediaItem(
+        api,
+        unitIdForDraft(item, unitDraftIds, detail),
+        item,
+      );
       attachedMediaIds.push(item.id);
     } catch (error) {
       return {
@@ -139,22 +157,31 @@ export async function retryInventoryCreateMedia({
 }): Promise<Extract<InventoryCreateSubmitResult, { kind: "complete" }>> {
   let detail = await api.getListing(listingId);
   if (form) {
-    detail = await ensureInventoryUnitAttached({
+    const attached = await ensureInventoryUnitAttached({
       api,
       detail,
       form,
       listingId,
       onProgress,
     });
+    detail = attached.detail;
   }
 
-  const pending = media.filter((item) => !isMediaAlreadyAttached(detail, item));
+  const unitDraftIds = attachedUnitDraftIds(detail);
+  const pending = media.filter((item) => {
+    const unitId = unitIdForDraft(item, unitDraftIds, detail);
+    return !isMediaAlreadyAttached(detail, item, unitId);
+  });
 
   for (const item of pending) {
     onProgress({
       label: `Reenviando midia ${item.displayOrder + 1}/${media.length}`,
     });
-    await attachInventoryCreateMediaItem(api, listingId, item);
+    await attachInventoryCreateMediaItem(
+      api,
+      unitIdForDraft(item, unitDraftIds, detail),
+      item,
+    );
   }
 
   detail = await refreshListingDetail(api, listingId, detail);
@@ -165,142 +192,4 @@ export async function retryInventoryCreateMedia({
     listingId,
     mediaCount: media.length,
   };
-}
-
-async function attachInventoryCreateMediaItem(
-  api: InventoryApi,
-  listingId: string,
-  item: CreateMediaDraft,
-) {
-  const upload = await api.requestMediaUpload(listingId, {
-    file: item.file,
-    kind: item.kind,
-  });
-  await uploadInventoryFile(item.file, upload);
-  await api.createMedia(listingId, {
-    altText: mediaAltText(item),
-    displayOrder: item.displayOrder,
-    kind: item.kind,
-    storageKey: upload.storageKey,
-  });
-}
-
-async function attachInventoryUnits({
-  api,
-  detail,
-  listingId,
-  onProgress,
-  units,
-}: {
-  api: InventoryApi;
-  detail: InventoryListingDetail;
-  listingId: string;
-  onProgress: (progress: InventoryCreateSubmitProgress) => void;
-  units: readonly CreateInventoryUnitInput[];
-}) {
-  let updated = detail;
-
-  for (const [index, unit] of units.entries()) {
-    onProgress({
-      label:
-        units.length > 1
-          ? `Vinculando unidade ${index + 1}/${units.length}`
-          : "Vinculando unidade",
-    });
-    updated = await api.attachUnit(listingId, unit);
-  }
-
-  return updated;
-}
-
-function isMediaAlreadyAttached(
-  detail: InventoryListingDetail,
-  item: CreateMediaDraft,
-) {
-  const altText = mediaAltText(item);
-
-  return detail.media.some(
-    (media) =>
-      media.kind === item.kind &&
-      media.displayOrder === item.displayOrder &&
-      (media.altText === altText || media.storageKey.endsWith(item.file.name)),
-  );
-}
-
-function createMediaFailureMessage(error: unknown) {
-  const detail = error instanceof Error ? error.message : String(error);
-
-  return `Estoque salvo, mas uma ou mais midias nao foram anexadas. ${detail}`;
-}
-
-function createUnitFailureMessage(error: unknown) {
-  const detail = error instanceof Error ? error.message : String(error);
-
-  return `Estoque salvo, mas a unidade operacional nao foi vinculada. ${detail}`;
-}
-
-function mediaAltText(item: CreateMediaDraft) {
-  return item.altText.trim() || item.file.name;
-}
-
-async function refreshListingDetail(
-  api: InventoryApi,
-  listingId: string,
-  fallback: InventoryListingDetail,
-) {
-  try {
-    return await api.getListing(listingId);
-  } catch {
-    return fallback;
-  }
-}
-
-async function ensureInventoryUnitAttached({
-  api,
-  detail,
-  form,
-  listingId,
-  onProgress,
-}: {
-  api: InventoryApi;
-  detail: InventoryListingDetail;
-  form: InventoryFormState;
-  listingId: string;
-  onProgress: (progress: InventoryCreateSubmitProgress) => void;
-}) {
-  const input = createInventoryFlowInput(form, null);
-  const pendingUnits = listPendingUnits(detail, input.units ?? [input.unit]);
-
-  if (pendingUnits.length === 0) return detail;
-
-  return attachInventoryUnits({
-    api,
-    detail,
-    listingId,
-    onProgress,
-    units: pendingUnits,
-  });
-}
-
-function listPendingUnits(
-  detail: InventoryListingDetail,
-  expectedUnits: readonly CreateInventoryUnitInput[],
-) {
-  const existingCounts = new Map<string, number>();
-  for (const unit of detail.units) {
-    const key = unitColorKey(unit);
-    existingCounts.set(key, (existingCounts.get(key) ?? 0) + 1);
-  }
-
-  return expectedUnits.filter((unit) => {
-    const key = unitColorKey(unit);
-    const count = existingCounts.get(key) ?? 0;
-    if (count <= 0) return true;
-    existingCounts.set(key, count - 1);
-    return false;
-  });
-}
-
-function unitColorKey(input: { colorName?: string | null }) {
-  return input.colorName ?? "";
 }

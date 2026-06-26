@@ -71,17 +71,30 @@ export async function findListingsUnits(
 }
 
 export async function findListingsMedia(
-  db: DrizzleVehicleMediaReadClient,
+  db: DrizzleVehicleInventoryReadClient,
   listingIds: readonly string[],
 ): Promise<readonly VehicleMedia[]> {
   if (listingIds.length === 0) return [];
+  const units = await findListingsUnits(db, listingIds);
+
+  return findUnitsMedia(
+    db,
+    units.map((unit) => unit.id),
+  );
+}
+
+export async function findUnitsMedia(
+  db: DrizzleVehicleMediaReadClient,
+  unitIds: readonly string[],
+): Promise<readonly VehicleMedia[]> {
+  if (unitIds.length === 0) return [];
   const mediaDb = db as DrizzleVehicleMediaReadClient;
   const rows = await mediaDb
     .select()
     .from(vehicleMedia)
     .where(
       and(
-        inArray(vehicleMedia.listingId, [...listingIds]),
+        inArray(vehicleMedia.unitId, [...unitIds]),
         eq(vehicleMedia.isDeleted, false),
         isNull(vehicleMedia.deletedAt),
       ),

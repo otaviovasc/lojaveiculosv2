@@ -254,15 +254,25 @@ export function createInventoryApi({
       }
 
       if (!input.media) return { listing, unit };
+      if (unitInputs.length !== 1) {
+        throw new Error(
+          "Inventory media upload requires a single target unit in createFlow.",
+        );
+      }
 
-      const upload = await mediaApi.requestMediaUpload(listingId, input.media);
+      const unitId = unit.units.at(-1)?.id;
+      if (!unitId) {
+        throw new Error("Inventory media upload requires an attached unit.");
+      }
+
+      const upload = await mediaApi.requestMediaUpload(unitId, input.media);
       await fetch(upload.uploadUrl, {
         body: input.media.file,
         headers: upload.uploadHeaders,
         method: upload.uploadMethod,
       }).then(readUpload);
       const media = await mediaApi.createMedia(
-        listingId,
+        unitId,
         cleanMediaInput(input.media, upload.storageKey),
       );
 

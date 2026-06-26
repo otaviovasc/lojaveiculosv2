@@ -39,7 +39,7 @@ export function InventoryListingCardGrid({
   onAction,
 }: {
   items: readonly InventoryListingSummary[];
-  onSelect: (listingId: string) => void;
+  onSelect: (listingId: string, unitId?: string | null) => void;
   onAction?:
     | ((
         action: "template" | "test-drive" | "zip-photos",
@@ -61,7 +61,7 @@ export function InventoryListingCardGrid({
       {items.map((item) => (
         <InventoryListingCard
           item={item}
-          key={item.listing.id}
+          key={item.primaryUnit?.id ?? item.listing.id}
           onSelect={onSelect}
           onAction={onAction}
         />
@@ -99,7 +99,7 @@ function InventoryListingCard({
   onAction,
 }: {
   item: InventoryListingSummary;
-  onSelect: (listingId: string) => void;
+  onSelect: (listingId: string, unitId?: string | null) => void;
   onAction?:
     | ((
         action: "template" | "test-drive" | "zip-photos",
@@ -119,7 +119,7 @@ function InventoryListingCard({
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ duration: 0.2 }}
       className="glass-panel-branded flex flex-col h-full group cursor-pointer relative overflow-hidden border border-line hover:border-accent/40 shadow-sm"
-      onClick={() => onSelect(listing.id)}
+      onClick={() => onSelect(listing.id, item.primaryUnit?.id ?? null)}
     >
       {/* Photo with Overlay on Hover */}
       <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-app-elevated border-b border-line/30">

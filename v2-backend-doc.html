@@ -1254,7 +1254,7 @@
               <span class="eyebrow">Stage 1</span>
               <strong>Discover</strong>
               <p>
-                Catalog-backed listing creation with FIPE selection, media
+                Catalog-backed listing creation with FIPE selection, unit media
                 upload, and complete public/admin payloads.
               </p>
             </div>
@@ -1302,8 +1302,8 @@
             <code>vehicle_listings</code> as the canonical commercial listing
             and <code>vehicle_units</code> as the canonical physical/stock item.
             They work together: listings own public/admin presentation, pricing,
-            catalog snapshot, visibility, media, and search; units own plate,
-            VIN, stock number, color, acquisition state, unit costs,
+            catalog snapshot, visibility, and search; units own plate, VIN,
+            stock number, color, acquisition state, unit costs, unit media,
             reservation/sale locking, and the sold unit reference.
           </p>
           <div class="grid">
@@ -2108,10 +2108,10 @@
                 <td><span class="status recommended">Implemented</span></td>
                 <td>
                   Inventory creation + unit setup are now covered with R2-backed
-                  media URL generation for listing photos and unit media upload
-                  inputs. Document attachment contracts remain to be completed;
-                  upload URL support and metadata shape should reuse the same
-                  media governance and audit trail pattern for canonical parity.
+                  media URL generation for unit-owned photos and upload inputs.
+                  Document attachment contracts remain to be completed; upload
+                  URL support and metadata shape should reuse the same media
+                  governance and audit trail pattern for canonical parity.
                   <code>R2_UPLOAD_URL_EXPIRES_SECONDS</code> and R2 env
                   placeholders are now documented and required for local-to-prod
                   media parity.
@@ -2342,9 +2342,8 @@
                   inventory contracts.
                 </li>
                 <li>
-                  Completed: listing media gallery payload now includes item
-                  order, visibility, alt metadata, and document links where
-                  relevant.
+                  Completed: unit media gallery payload now includes item order,
+                  visibility, alt metadata, and document links where relevant.
                 </li>
                 <li>
                   Completed: vehicle creation/edit flow is V2-native, with
@@ -3445,14 +3444,14 @@
               audit actor references.
             </li>
             <li>
-              <code>vehicle_listings.id</code> -> listing media, listing price
-              history, public analytics, financing inquiries, optional sale
-              listing snapshots, and one or many vehicle units.
+              <code>vehicle_listings.id</code> -> listing price history, public
+              analytics, financing inquiries, optional sale listing snapshots,
+              and one or many vehicle units.
             </li>
             <li>
               <code>vehicle_units.id</code> -> document links, checklists,
-              acquisition/prep costs, unit status history, finance links, lead
-              interests, and the sale when sold.
+              vehicle media, acquisition/prep costs, unit status history,
+              finance links, lead interests, and the sale when sold.
             </li>
             <li>
               <code>vehicle_plate_lookups.id</code> -> scoped enrichment cache
@@ -3671,9 +3670,9 @@
                   entities, not secondary helpers.
                 </td>
                 <td>
-                  Listing photos, unit media, and vehicle documents must flow
-                  through canonical DTOs and persist with actor-linked audit
-                  records when edited, attached, or removed.
+                  Unit photos/media and vehicle documents must flow through
+                  canonical DTOs and persist with actor-linked audit records
+                  when edited, attached, or removed.
                 </td>
               </tr>
               <tr>
@@ -4314,7 +4313,7 @@
           ],
           relations: [
             ["vehicle_listings.id", "vehicle_units.listing_id"],
-            ["vehicle_listings.id", "vehicle_media.listing_id"],
+            ["vehicle_units.id", "vehicle_media.unit_id"],
             [
               "vehicle_listings.id",
               "document_links.target_id when target_type=vehicle_listing",

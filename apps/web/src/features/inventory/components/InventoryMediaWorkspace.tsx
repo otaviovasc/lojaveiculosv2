@@ -1,10 +1,11 @@
 import { ImageUp } from "lucide-react";
 import { useState } from "react";
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import type { InventoryApi } from "../api/apiClient";
 import { InventoryDocumentList } from "./InventoryDocumentList";
 import { InventoryMediaGrid } from "./InventoryMediaGrid";
 import { InventoryUploadActions } from "./InventoryUploadActions";
-import { InventoryPanel } from "./InventoryFormParts";
+import { InventoryPanel, InventorySelect } from "./InventoryFormParts";
 import type { InventoryListingDetail } from "../model/types";
 import type {
   InventoryMediaRun,
@@ -21,6 +22,15 @@ export function InventoryMediaWorkspace({
   onUpdated: (detail: InventoryListingDetail) => void;
 }) {
   const [state, setState] = useState<InventoryMediaState>({ kind: "idle" });
+  const [selectedUnitId, setSelectedUnitId] = useState(
+    () => detail.units[0]?.id ?? "",
+  );
+  const currentUnitId = detail.units.some((unit) => unit.id === selectedUnitId)
+    ? selectedUnitId
+    : (detail.units[0]?.id ?? "");
+  const selectedMedia = currentUnitId
+    ? detail.media.filter((item) => item.unitId === currentUnitId)
+    : detail.media;
 
   const run: InventoryMediaRun = async (label, action) => {
     setState({ kind: "busy", label });
@@ -41,9 +51,25 @@ export function InventoryMediaWorkspace({
       title="Midia e documentos"
     >
       <div className="grid gap-4">
-        <MediaReadiness detail={detail} />
-        <InventoryUploadActions api={api} detail={detail} run={run} />
-        <InventoryMediaGrid api={api} detail={detail} run={run} />
+        <UnitMediaSelect
+          detail={detail}
+          onChange={setSelectedUnitId}
+          value={currentUnitId}
+        />
+        <MediaReadiness media={selectedMedia} />
+        <InventoryUploadActions
+          api={api}
+          detail={detail}
+          media={selectedMedia}
+          run={run}
+          unitId={currentUnitId}
+        />
+        <InventoryMediaGrid
+          api={api}
+          media={selectedMedia}
+          run={run}
+          unitId={currentUnitId}
+        />
         <InventoryDocumentList detail={detail} />
         <WorkspaceStatus state={state} />
       </div>
@@ -51,11 +77,38 @@ export function InventoryMediaWorkspace({
   );
 }
 
-function MediaReadiness({ detail }: { detail: InventoryListingDetail }) {
-  const publicPhotos = detail.media.filter(
+function UnitMediaSelect({
+  detail,
+  onChange,
+  value,
+}: {
+  detail: InventoryListingDetail;
+  onChange: (unitId: string) => void;
+  value: string;
+}) {
+  if (detail.units.length <= 1) return null;
+
+  return (
+    <InventorySelect
+      ariaLabel="Unidade da galeria"
+      onChange={onChange}
+      options={detail.units.map((unit, index) => ({
+        label:
+          [getVehicleColorLabel(unit.colorName), unit.plate, unit.stockNumber]
+            .filter(Boolean)
+            .join(" · ") || `Unidade ${index + 1}`,
+        value: unit.id,
+      }))}
+      value={value}
+    />
+  );
+}
+
+function MediaReadiness({ media }: { media: InventoryListingDetail["media"] }) {
+  const publicPhotos = media.filter(
     (item) => item.kind === "photo" && item.isPublic,
   );
-  const hiddenItems = detail.media.filter((item) => !item.isPublic).length;
+  const hiddenItems = media.filter((item) => !item.isPublic).length;
   const cover = publicPhotos.at(0);
 
   return (

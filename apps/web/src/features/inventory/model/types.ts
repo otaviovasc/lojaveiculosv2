@@ -138,6 +138,8 @@ export type InventoryUnit = {
   vin: string | null;
 };
 
+export type InventoryUnitStatus = InventoryUnit["status"];
+
 export type InventoryChecklistStatus =
   | "failed"
   | "in_progress"

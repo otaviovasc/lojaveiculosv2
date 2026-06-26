@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import { createInventoryApi } from "../api/apiClient";
-import { listingStatusOptions } from "../model/formModel";
+import { inventoryListStatusOptions } from "../model/listCatalogModel";
 import {
   InventoryBadge,
   InventoryInput,
@@ -12,8 +12,8 @@ import {
 } from "./InventoryFormParts";
 import type {
   InventoryListingList,
-  InventoryListingStatus,
   InventoryListingSummary,
+  InventoryUnitStatus,
 } from "../model/types";
 
 type StockState =
@@ -32,7 +32,7 @@ export function InventoryStockTable({
   refreshToken?: number;
 }) {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<InventoryListingStatus | "">("");
+  const [status, setStatus] = useState<InventoryUnitStatus | "">("");
   const [state, setState] = useState<StockState>({ kind: "idle" });
 
   const load = async () => {
@@ -74,7 +74,7 @@ export function InventoryStockTable({
         />
         <InventorySelect
           onChange={setStatus}
-          options={[{ label: "Todos", value: "" }, ...listingStatusOptions]}
+          options={inventoryListStatusOptions}
           value={status}
         />
         <button
@@ -140,13 +140,16 @@ function StockRows({
         </thead>
         <tbody>
           {items.map((item) => (
-            <tr key={item.listing.id} className="border-t border-line">
+            <tr
+              key={item.primaryUnit?.id ?? item.listing.id}
+              className="border-t border-line"
+            >
               <td className="px-3 py-3 font-black text-app-text">
                 {item.listing.title}
               </td>
               <td className="px-3 py-3">
                 <InventoryBadge tone="blue">
-                  {item.listing.status}
+                  {item.primaryUnit?.status ?? item.listing.status}
                 </InventoryBadge>
               </td>
               <td className="px-3 py-3 font-bold text-muted">

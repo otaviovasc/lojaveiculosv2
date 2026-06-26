@@ -188,13 +188,13 @@ export async function findScopedUnitById(
 export async function findScopedMedia(
   context: ServiceContext,
   repository: VehicleMediaRepository,
-  input: { listingId: string; mediaId: string },
+  input: { mediaId: string; unitId: string },
 ): Promise<VehicleMedia> {
   const media = await repository.findById({
-    listingId: input.listingId,
     mediaId: input.mediaId,
     storeId: context.storeId,
     tenantId: context.tenantId,
+    unitId: input.unitId,
   });
 
   if (!media) throw new VehicleMediaNotFoundError(input.mediaId);

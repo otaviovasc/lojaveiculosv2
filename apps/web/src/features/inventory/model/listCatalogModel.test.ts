@@ -19,9 +19,9 @@ describe("inventory list catalog model", () => {
       offset: 200,
       search: "toro",
     });
-    expect(createListQuery({ search: "", status: "published" })).toEqual({
+    expect(createListQuery({ search: "", status: "available" })).toEqual({
       limit: 100,
-      status: "published",
+      status: "available",
     });
   });
 

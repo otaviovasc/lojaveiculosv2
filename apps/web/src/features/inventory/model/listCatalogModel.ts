@@ -4,9 +4,10 @@ import type {
   InventoryListingList,
   InventoryListingStatus,
   InventoryListingSummary,
+  InventoryUnitStatus,
 } from "./types";
 
-export type InventoryListStatusFilter = InventoryListingStatus | "";
+export type InventoryListStatusFilter = InventoryUnitStatus | "";
 
 export type InventoryListQueryInput = {
   offset?: number;
@@ -30,12 +31,13 @@ export const inventoryListStatusOptions: Array<{
   value: InventoryListStatusFilter;
 }> = [
   { label: "Todos os status", value: "" },
-  { label: "Rascunho", value: "draft" },
+  { label: "Adquirido", value: "acquired" },
   { label: "Em preparação", value: "in_preparation" },
-  { label: "Publicado", value: "published" },
-  { label: "Esgotado", value: "sold_out" },
-  { label: "Fora do ar", value: "unpublished" },
-  { label: "Arquivado", value: "archived" },
+  { label: "Disponível", value: "available" },
+  { label: "Reservado", value: "reserved" },
+  { label: "Vendido", value: "sold" },
+  { label: "Entregue", value: "delivered" },
+  { label: "Inativo", value: "inactive" },
 ];
 
 export const inventoryStatusLabels: Record<InventoryListingStatus, string> = {

@@ -103,6 +103,11 @@ describe("VehicleService", () => {
   it("requests scoped media uploads and stores confirmed media records", async () => {
     const context = createContext(["inventory.create"]);
     const ports = createInMemoryVehiclePorts([createListing()]);
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1", stockNumber: "stock_1" },
+      ports,
+    );
 
     const upload = await requestVehicleMediaUpload(
       context,
@@ -110,8 +115,8 @@ describe("VehicleService", () => {
         contentType: "image/jpeg",
         fileName: "front.jpg",
         kind: "photo",
-        listingId: "listing_1",
         sizeBytes: 2048,
+        unitId: unit.id,
       },
       ports,
     );
@@ -120,19 +125,19 @@ describe("VehicleService", () => {
       {
         altText: "Front photo",
         kind: "photo",
-        listingId: "listing_1",
         storageKey: upload.storageKey,
+        unitId: unit.id,
       },
       ports,
     );
 
     expect(upload.storageKey).toBe(
-      "tenants/tenant_1/stores/store_1/listings/listing_1/photo/front.jpg",
+      "tenants/tenant_1/stores/store_1/units/unit_1/photo/front.jpg",
     );
     expect(media).toMatchObject({
       altText: "Front photo",
       id: "media_1",
-      listingId: "listing_1",
+      unitId: "unit_1",
       url: `https://cdn.local/${upload.storageKey}`,
     });
     expect(context.audit.record).toHaveBeenCalledWith(
@@ -143,15 +148,19 @@ describe("VehicleService", () => {
   it("rejects media storage keys outside the scoped listing folder", async () => {
     const context = createContext(["inventory.create"]);
     const ports = createInMemoryVehiclePorts([createListing()]);
+    const unit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1", stockNumber: "stock_1" },
+      ports,
+    );
 
     await expect(
       createVehicleMedia(
         context,
         {
           kind: "photo",
-          listingId: "listing_1",
-          storageKey:
-            "tenants/tenant_1/stores/store_2/listings/listing_1/front.jpg",
+          unitId: unit.id,
+          storageKey: "tenants/tenant_1/stores/store_2/units/unit_1/front.jpg",
         },
         ports,
       ),
@@ -173,14 +182,14 @@ describe("VehicleService", () => {
         contentType: "image/jpeg",
         fileName: "front.jpg",
         kind: "photo",
-        listingId: "listing_1",
         sizeBytes: 2048,
+        unitId: "unit_1",
       },
       ports,
     );
     await createVehicleMedia(
       context,
-      { kind: "photo", listingId: "listing_1", storageKey: upload.storageKey },
+      { kind: "photo", storageKey: upload.storageKey, unitId: "unit_1" },
       ports,
     );
 

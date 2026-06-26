@@ -1,7 +1,7 @@
 import type { InventoryListingServices } from "./listingServices.js";
 
 export function cleanCreateMediaRequest(
-  listingId: string,
+  unitId: string,
   input: {
     altText?: string | null | undefined;
     displayOrder?: number | undefined;
@@ -11,8 +11,8 @@ export function cleanCreateMediaRequest(
 ): Parameters<InventoryListingServices["createMedia"]>[1] {
   const result: Parameters<InventoryListingServices["createMedia"]>[1] = {
     kind: input.kind,
-    listingId,
     storageKey: input.storageKey,
+    unitId,
   };
 
   if (input.altText !== undefined) result.altText = input.altText;
@@ -112,8 +112,8 @@ export function cleanRequestDocumentUploadRequest(
 }
 
 export function cleanUpdateMediaRequest(
-  listingId: string,
   mediaId: string,
+  unitId: string,
   input: {
     altText?: string | null | undefined;
     displayOrder?: number | undefined;
@@ -121,8 +121,8 @@ export function cleanUpdateMediaRequest(
   },
 ): Parameters<InventoryListingServices["updateMedia"]>[1] {
   const result: Parameters<InventoryListingServices["updateMedia"]>[1] = {
-    listingId,
     mediaId,
+    unitId,
   };
 
   if (input.altText !== undefined) result.altText = input.altText;

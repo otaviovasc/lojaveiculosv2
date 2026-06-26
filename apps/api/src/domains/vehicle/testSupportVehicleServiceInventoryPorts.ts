@@ -1,14 +1,19 @@
 import { vi } from "vitest";
-import type { TestFinanceRepository } from "../finance/testSupportFinanceRepository.js";
-import { createTestFinanceRepository } from "../finance/testSupportFinanceRepository.js";
-import type { TestVehicleChecklistRepository } from "./testSupportChecklists.js";
-import { createTestVehicleChecklistRepository } from "./testSupportChecklists.js";
+import {
+  createTestFinanceRepository,
+  type TestFinanceRepository,
+} from "../finance/testSupportFinanceRepository.js";
+import {
+  createTestVehicleChecklistRepository,
+  type TestVehicleChecklistRepository,
+} from "./testSupportChecklists.js";
 import type {
   CreateVehicleDocumentRecord,
   CreateVehicleListingRecord,
   CreateVehicleMediaRecord,
   CreateVehicleUnitRecord,
   ListVehicleChildrenInput,
+  ListVehicleUnitChildrenInput,
   VehicleDocument,
   VehicleMedia,
   VehicleListing,
@@ -31,6 +36,11 @@ import {
 import type { VehicleInventoryServicePorts } from "./services/VehicleService/serviceSupport.js";
 import { createTestVehicleDocumentRepository } from "./testSupportVehicleDocumentRepository.js";
 import { createListing, testNow } from "./testSupportVehicleServiceFixtures.js";
+import {
+  isScopedChild,
+  isScopedMediaForListings,
+  matchesSearch,
+} from "./testSupportVehicleInventoryPredicates.js";
 
 export type TestVehicleInventoryPorts = VehicleInventoryServicePorts & {
   acquisitionRepository: TestVehicleAcquisitionRepository;
@@ -72,7 +82,7 @@ export function createInMemoryVehiclePorts(
     listingRepository,
     listings,
     media,
-    mediaRepository: createMediaRepository(media, () => mediaSequence++),
+    mediaRepository: createMediaRepository(media, units, () => mediaSequence++),
     mediaStorage: createTestVehicleMediaStorage(),
     operationsRepository: createTestOperationsRepository(),
     salesRepository: createTestVehicleSalesRepository(),
@@ -145,6 +155,13 @@ function createUnitRepository(
     listByListingIds: vi.fn(async (input: ListVehicleChildrenInput) =>
       [...units.values()].filter((unit) => isScopedChild(unit, input)),
     ),
+    list: vi.fn(async ({ limit, offset, status, storeId, tenantId }) =>
+      [...units.values()]
+        .filter((unit) => unit.storeId === storeId)
+        .filter((unit) => unit.tenantId === tenantId)
+        .filter((unit) => !status || unit.status === status)
+        .slice(offset, offset + limit),
+    ),
     save: vi.fn(async (unit: VehicleUnit) => {
       const updated = { ...unit, updatedAt: new Date() };
       units.set(unit.id, updated);
@@ -155,6 +172,7 @@ function createUnitRepository(
 
 function createMediaRepository(
   media: Map<string, VehicleMedia>,
+  units: Map<string, VehicleUnit>,
   nextSequence: () => number,
 ): VehicleMediaRepository {
   return {
@@ -172,15 +190,27 @@ function createMediaRepository(
       media.delete(item.id);
       return { ...item, updatedAt: new Date() };
     }),
-    findById: vi.fn(async ({ listingId, mediaId, storeId, tenantId }) => {
+    findById: vi.fn(async ({ mediaId, storeId, tenantId, unitId }) => {
       const item = media.get(mediaId);
       if (!item) return null;
-      if (item.listingId !== listingId) return null;
+      if (item.unitId !== unitId) return null;
       if (item.storeId !== storeId || item.tenantId !== tenantId) return null;
       return item;
     }),
     listByListingIds: vi.fn(async (input: ListVehicleChildrenInput) =>
-      [...media.values()].filter((item) => isScopedChild(item, input)),
+      [...media.values()].filter((item) =>
+        isScopedMediaForListings(item, units, input),
+      ),
+    ),
+    listByUnitIds: vi.fn(
+      async ({ storeId, tenantId, unitIds }: ListVehicleUnitChildrenInput) => {
+        return [...media.values()].filter(
+          (item) =>
+            unitIds.includes(item.unitId) &&
+            item.storeId === storeId &&
+            item.tenantId === tenantId,
+        );
+      },
     ),
     save: vi.fn(async (item: VehicleMedia) => {
       const updated = { ...item, updatedAt: new Date() };
@@ -188,31 +218,4 @@ function createMediaRepository(
       return updated;
     }),
   };
-}
-
-function matchesSearch(
-  listing: VehicleListing,
-  search: string | null,
-): boolean {
-  if (!search) return true;
-  const normalized = search.toLowerCase();
-
-  return [listing.title, listing.plate, listing.description]
-    .filter(Boolean)
-    .some((value) => value?.toLowerCase().includes(normalized));
-}
-
-function isScopedChild(
-  item: {
-    listingId: string;
-    storeId: string | null;
-    tenantId: string | null;
-  },
-  input: ListVehicleChildrenInput,
-): boolean {
-  return (
-    input.listingIds.includes(item.listingId) &&
-    item.storeId === input.storeId &&
-    item.tenantId === input.tenantId
-  );
 }

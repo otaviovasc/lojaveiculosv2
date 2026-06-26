@@ -1,11 +1,11 @@
-import type { InventoryAuth, InventoryListingStatus } from "../model/types";
+import type { InventoryAuth, InventoryUnitStatus } from "../model/types";
 import type { InventoryCatalogVehicleType } from "../model/types";
 
 export type ListInventoryInput = {
   limit?: number;
   offset?: number;
   search?: string;
-  status?: InventoryListingStatus;
+  status?: InventoryUnitStatus;
 };
 
 export type ListVehicleSuppliersInput = {
@@ -110,7 +110,7 @@ export const inventoryRoutes = {
       baseUrl,
     ),
   list: (input: ListInventoryInput, baseUrl?: string) => {
-    const endpoint = createInventoryEndpoint("/inventory/listings", baseUrl);
+    const endpoint = createInventoryEndpoint("/inventory/units", baseUrl);
     const params = new URLSearchParams();
     if (input.limit !== undefined) params.set("limit", String(input.limit));
     if (input.offset !== undefined) params.set("offset", String(input.offset));
@@ -132,26 +132,24 @@ export const inventoryRoutes = {
       `/inventory/suppliers/${encodeURIComponent(supplierId)}`,
       baseUrl,
     ),
-  media: (listingId: string, baseUrl?: string) =>
+  media: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/media`,
+      `/inventory/units/${encodeURIComponent(unitId)}/media`,
       baseUrl,
     ),
-  mediaDetail: (listingId: string, mediaId: string, baseUrl?: string) =>
+  mediaDetail: (unitId: string, mediaId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(
-        listingId,
-      )}/media/${encodeURIComponent(mediaId)}`,
+      `/inventory/units/${encodeURIComponent(unitId)}/media/${encodeURIComponent(mediaId)}`,
       baseUrl,
     ),
-  mediaReorder: (listingId: string, baseUrl?: string) =>
+  mediaReorder: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/media/reorder`,
+      `/inventory/units/${encodeURIComponent(unitId)}/media/reorder`,
       baseUrl,
     ),
-  mediaUploads: (listingId: string, baseUrl?: string) =>
+  mediaUploads: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/media/uploads`,
+      `/inventory/units/${encodeURIComponent(unitId)}/media/uploads`,
       baseUrl,
     ),
   reserve: (unitId: string, baseUrl?: string) =>

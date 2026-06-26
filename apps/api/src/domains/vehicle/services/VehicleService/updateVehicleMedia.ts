@@ -4,10 +4,10 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { VehicleMedia } from "../../ports/vehicleInventoryRepository.js";
 import {
   auditVehicleServiceEvent,
-  findScopedListing,
   findScopedMedia,
-  getListingRepository,
+  findScopedUnitById,
   getMediaRepository,
+  getUnitRepository,
   logVehicleServiceEvent,
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
@@ -18,8 +18,8 @@ export type UpdateVehicleMediaInput = {
   altText?: string | null;
   displayOrder?: number;
   isPublic?: boolean;
-  listingId: string;
   mediaId: string;
+  unitId: string;
 };
 
 export async function updateVehicleMedia(
@@ -28,10 +28,10 @@ export async function updateVehicleMedia(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleMedia> {
   assertPermission(context, permission);
-  await findScopedListing(
+  const unit = await findScopedUnitById(
     context,
-    getListingRepository(ports),
-    input.listingId,
+    getUnitRepository(ports),
+    input.unitId,
   );
   const repository = getMediaRepository(ports);
   const media = await findScopedMedia(context, repository, input);
@@ -39,8 +39,8 @@ export async function updateVehicleMedia(
 
   logVehicleServiceEvent(context, "vehicle_media.update.started", {
     changedFields: changes.map((change) => change.path),
-    listingId: input.listingId,
     mediaId: input.mediaId,
+    unitId: input.unitId,
   });
 
   const updated = changes.length
@@ -63,10 +63,14 @@ export async function updateVehicleMedia(
     entityType: "vehicle_media",
     metadata: {
       changedFields: changes.map((change) => change.path),
-      listingId: input.listingId,
+      listingId: unit.listingId,
+      unitId: input.unitId,
     },
     permission,
-    relatedEntities: [{ id: input.listingId, type: "vehicle_listing" }],
+    relatedEntities: [
+      { id: input.unitId, type: "vehicle_unit" },
+      { id: unit.listingId, type: "vehicle_listing" },
+    ],
     summary: "Updated vehicle media",
   });
 

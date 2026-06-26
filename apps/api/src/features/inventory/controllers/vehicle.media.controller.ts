@@ -24,78 +24,72 @@ export function registerInventoryMediaRoutes(
   services: InventoryListingServices,
   createContext: CreateContext,
 ) {
-  inventoryFeature.post("/listings/:listingId/media/uploads", async (context) =>
+  inventoryFeature.post("/units/:unitId/media/uploads", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, mediaUploadSchema);
       const serviceContext = await createContext(context);
       const result = await services.requestMediaUpload(serviceContext, {
         ...input,
-        listingId: context.req.param("listingId"),
+        unitId: context.req.param("unitId"),
       });
 
       return context.json(result, 201);
     }),
   );
 
-  inventoryFeature.post("/listings/:listingId/media", async (context) =>
+  inventoryFeature.post("/units/:unitId/media", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, createMediaSchema);
       const serviceContext = await createContext(context);
       const result = await services.createMedia(
         serviceContext,
-        cleanCreateMediaRequest(context.req.param("listingId"), input),
+        cleanCreateMediaRequest(context.req.param("unitId"), input),
       );
 
       return context.json(result, 201);
     }),
   );
 
-  inventoryFeature.patch(
-    "/listings/:listingId/media/reorder",
-    async (context) =>
-      handle(context, async () => {
-        const input = await parseJson(context, reorderMediaSchema);
-        const serviceContext = await createContext(context);
-        const result = await services.reorderMedia(serviceContext, {
-          items: input.items,
-          listingId: context.req.param("listingId"),
-        });
+  inventoryFeature.patch("/units/:unitId/media/reorder", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, reorderMediaSchema);
+      const serviceContext = await createContext(context);
+      const result = await services.reorderMedia(serviceContext, {
+        items: input.items,
+        unitId: context.req.param("unitId"),
+      });
 
-        return context.json(result);
-      }),
+      return context.json(result);
+    }),
   );
 
-  inventoryFeature.patch(
-    "/listings/:listingId/media/:mediaId",
-    async (context) =>
-      handle(context, async () => {
-        const input = await parseJson(context, updateMediaSchema);
-        const serviceContext = await createContext(context);
-        const result = await services.updateMedia(
-          serviceContext,
-          cleanUpdateMediaRequest(
-            context.req.param("listingId"),
-            context.req.param("mediaId"),
-            input,
-          ),
-        );
+  inventoryFeature.patch("/units/:unitId/media/:mediaId", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, updateMediaSchema);
+      const serviceContext = await createContext(context);
+      const result = await services.updateMedia(
+        serviceContext,
+        cleanUpdateMediaRequest(
+          context.req.param("mediaId"),
+          context.req.param("unitId"),
+          input,
+        ),
+      );
 
-        return context.json(result);
-      }),
+      return context.json(result);
+    }),
   );
 
-  inventoryFeature.delete(
-    "/listings/:listingId/media/:mediaId",
-    async (context) =>
-      handle(context, async () => {
-        const serviceContext = await createContext(context);
-        const result = await services.deleteMedia(serviceContext, {
-          listingId: context.req.param("listingId"),
-          mediaId: context.req.param("mediaId"),
-        });
+  inventoryFeature.delete("/units/:unitId/media/:mediaId", async (context) =>
+    handle(context, async () => {
+      const serviceContext = await createContext(context);
+      const result = await services.deleteMedia(serviceContext, {
+        mediaId: context.req.param("mediaId"),
+        unitId: context.req.param("unitId"),
+      });
 
-        return context.json(result);
-      }),
+      return context.json(result);
+    }),
   );
 
   inventoryFeature.post(

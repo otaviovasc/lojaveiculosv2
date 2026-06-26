@@ -50,10 +50,10 @@ export type CreateVehicleMediaRecord = {
   displayOrder: number;
   isPublic: boolean;
   kind: VehicleMediaKind;
-  listingId: string;
   storageKey: string;
   storeId: string | null;
   tenantId: string | null;
+  unitId: string;
   url: string;
 };
 
@@ -88,10 +88,10 @@ export type FindVehicleUnitInput = {
 };
 
 export type FindVehicleMediaInput = {
-  listingId: string;
   mediaId: string;
   storeId: string | null;
   tenantId: string | null;
+  unitId: string;
 };
 
 export type ListVehicleListingsInput = {
@@ -103,10 +103,24 @@ export type ListVehicleListingsInput = {
   tenantId: string | null;
 };
 
+export type ListVehicleUnitsInput = {
+  limit: number;
+  offset: number;
+  status: VehicleUnitStatus | null;
+  storeId: string | null;
+  tenantId: string | null;
+};
+
 export type ListVehicleChildrenInput = {
   listingIds: readonly string[];
   storeId: string | null;
   tenantId: string | null;
+};
+
+export type ListVehicleUnitChildrenInput = {
+  storeId: string | null;
+  tenantId: string | null;
+  unitIds: readonly string[];
 };
 
 export type ListVehicleDocumentsInput = {

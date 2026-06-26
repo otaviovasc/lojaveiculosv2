@@ -1,9 +1,4 @@
 import type {
-  CreateVehicleListingRecord,
-  CreateVehicleDocumentRecord,
-  CreateVehicleMediaRecord,
-  CreateVehicleUnitRecord,
-  ListVehicleDocumentsInput,
   VehicleDocument,
   VehicleDocumentRepository,
   VehicleMedia,
@@ -22,6 +17,15 @@ import { createMemoryVehicleMediaStorage } from "./vehicleMediaStorage.js";
 import { createMemoryVehicleOperationsRepository } from "./vehicleOperationsRepository.js";
 import { createMemoryVehicleSalesRepository } from "./vehicleSalesRepository.js";
 import { createMemoryVehicleAcquisitionRepository } from "./vehicleAcquisitionRepository.js";
+import {
+  createDocumentRecord,
+  createListingRecord,
+  createMediaRecord,
+  createUnitRecord,
+  isScopedDocument,
+  matchesSearch,
+  saveMapValue,
+} from "./vehicleInventoryRecords.js";
 
 export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePorts {
   const listings = new Map<string, VehicleListing>();
@@ -82,6 +86,12 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
           unit.storeId === storeId &&
           unit.tenantId === tenantId,
       ),
+    list: async ({ limit, offset, status, storeId, tenantId }) =>
+      [...units.values()]
+        .filter((unit) => unit.storeId === storeId)
+        .filter((unit) => unit.tenantId === tenantId)
+        .filter((unit) => !status || unit.status === status)
+        .slice(offset, offset + limit),
     save: async (unit) => saveMapValue(units, unit),
   };
 
@@ -96,17 +106,27 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
       media.delete(item.id);
       return { ...item, updatedAt: new Date() };
     },
-    findById: async ({ listingId, mediaId, storeId, tenantId }) => {
+    findById: async ({ mediaId, storeId, tenantId, unitId }) => {
       const item = media.get(mediaId);
       if (!item) return null;
-      if (item.listingId !== listingId) return null;
+      if (item.unitId !== unitId) return null;
       if (item.storeId !== storeId || item.tenantId !== tenantId) return null;
       return item;
     },
     listByListingIds: async ({ listingIds, storeId, tenantId }) =>
+      [...media.values()].filter((item) => {
+        const unit = units.get(item.unitId);
+        return (
+          unit &&
+          listingIds.includes(unit.listingId) &&
+          item.storeId === storeId &&
+          item.tenantId === tenantId
+        );
+      }),
+    listByUnitIds: async ({ storeId, tenantId, unitIds }) =>
       [...media.values()].filter(
         (item) =>
-          listingIds.includes(item.listingId) &&
+          unitIds.includes(item.unitId) &&
           item.storeId === storeId &&
           item.tenantId === tenantId,
       ),
@@ -142,100 +162,4 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
     salesRepository: createMemoryVehicleSalesRepository(),
     unitRepository,
   };
-}
-
-function createListingRecord(
-  record: CreateVehicleListingRecord,
-  sequence: number,
-): VehicleListing {
-  const now = new Date();
-  return {
-    ...record,
-    createdAt: now,
-    doors: record.doors ?? null,
-    engineAspiration: record.engineAspiration ?? null,
-    engineDisplacement: record.engineDisplacement ?? null,
-    fuelType: record.fuelType ?? null,
-    id: `listing_${sequence}`,
-    internalNotes: record.internalNotes ?? null,
-    mileageKm: record.mileageKm ?? null,
-    transmission: record.transmission ?? null,
-    unitIds: [],
-    updatedAt: now,
-  };
-}
-
-function createUnitRecord(
-  record: CreateVehicleUnitRecord,
-  sequence: number,
-): VehicleUnit {
-  const now = new Date();
-  return {
-    ...record,
-    colorName: record.colorName ?? null,
-    createdAt: now,
-    id: `unit_${sequence}`,
-    updatedAt: now,
-  };
-}
-
-function createMediaRecord(
-  record: CreateVehicleMediaRecord,
-  sequence: number,
-): VehicleMedia {
-  const now = new Date();
-  return {
-    ...record,
-    createdAt: now,
-    id: `media_${sequence}`,
-    updatedAt: now,
-  };
-}
-
-function createDocumentRecord(
-  record: CreateVehicleDocumentRecord,
-  sequence: number,
-): VehicleDocument {
-  const now = new Date();
-  return {
-    ...record,
-    createdAt: now,
-    id: `document_${sequence}`,
-    metadata: record.metadata ?? {},
-    updatedAt: now,
-    uploadedAt: now,
-  };
-}
-
-function saveMapValue<T extends { id: string }>(
-  map: Map<string, T>,
-  item: T,
-): T {
-  const updated = { ...item, updatedAt: new Date() };
-  map.set(item.id, updated);
-  return updated;
-}
-
-function matchesSearch(
-  listing: VehicleListing,
-  search: string | null,
-): boolean {
-  if (!search) return true;
-  const normalized = search.toLowerCase();
-
-  return [listing.title, listing.plate, listing.description]
-    .filter(Boolean)
-    .some((value) => value?.toLowerCase().includes(normalized));
-}
-
-function isScopedDocument(
-  document: VehicleDocument,
-  input: ListVehicleDocumentsInput,
-) {
-  const allowedTargetIds = [input.listingId, ...input.unitIds];
-  return (
-    allowedTargetIds.includes(document.targetId) &&
-    document.storeId === input.storeId &&
-    document.tenantId === input.tenantId
-  );
 }

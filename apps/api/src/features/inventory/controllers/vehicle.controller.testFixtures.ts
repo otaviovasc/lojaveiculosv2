@@ -33,11 +33,10 @@ export function listingDetailResult() {
         id: "media_1",
         isPublic: true,
         kind: "photo" as const,
-        listingId: "listing_1",
-        storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/front.jpg",
+        storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
         storeId: "store_1",
         tenantId: "tenant_1",
+        unitId: "unit_1",
         updatedAt: "2026-01-01T00:00:00.000Z",
         url: "https://cdn.local/front.jpg",
       },

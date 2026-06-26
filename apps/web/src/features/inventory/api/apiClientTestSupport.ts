@@ -65,6 +65,20 @@ export function listingDetailPayload() {
     priceHistory: [],
     status: "ready",
     statusHistory: [],
-    units: [],
+    units: [
+      {
+        colorName: null,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        id: "unit_1",
+        listingId: "listing_1",
+        plate: "ABC1D23",
+        status: "available",
+        stockNumber: null,
+        storeId: "store_1",
+        tenantId: "tenant_1",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+        vin: null,
+      },
+    ],
   };
 }

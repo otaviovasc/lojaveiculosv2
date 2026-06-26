@@ -48,7 +48,11 @@ describe("createPublicStorefrontApi", () => {
       calls.push({ init, input });
       return new Response(
         JSON.stringify({
-          listing: { ...publicStorefrontPreview.listings[0], media: [] },
+          listing: {
+            ...publicStorefrontPreview.listings[0],
+            media: [],
+            mediaGroups: [],
+          },
           store: publicStorefrontPreview.store,
         }),
         {

@@ -17,11 +17,15 @@ import {
 export function InventoryUploadActions({
   api,
   detail,
+  media,
   run,
+  unitId,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
+  media: InventoryListingDetail["media"];
   run: InventoryMediaRun;
+  unitId: string;
 }) {
   const [mediaKind, setMediaKind] = useState<InventoryMediaKind>("photo");
   const [documentKind, setDocumentKind] = useState<InventoryDocumentKind>(
@@ -33,14 +37,15 @@ export function InventoryUploadActions({
     if (!file) return;
     void run("Enviando midia", async () => {
       const listingId = detail.listing.id;
-      const upload = await api.requestMediaUpload(listingId, {
+      if (!unitId) throw new Error("Selecione uma unidade para anexar midia.");
+      const upload = await api.requestMediaUpload(unitId, {
         file,
         kind: mediaKind,
       });
       await uploadInventoryFile(file, upload);
-      await api.createMedia(listingId, {
+      await api.createMedia(unitId, {
         altText: file.name,
-        displayOrder: detail.media.length,
+        displayOrder: media.length,
         kind: mediaKind,
         storageKey: upload.storageKey,
       });

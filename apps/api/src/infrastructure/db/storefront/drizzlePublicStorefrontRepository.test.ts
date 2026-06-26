@@ -4,6 +4,7 @@ import {
   stores,
   vehicleListings,
   vehicleMedia,
+  vehicleUnits,
 } from "@lojaveiculosv2/db";
 import { createDrizzlePublicStorefrontRepository } from "./drizzlePublicStorefrontRepository.js";
 import { createFakePublicStorefrontDb } from "./drizzlePublicStorefrontRepository.testSupport.js";
@@ -38,6 +39,7 @@ describe("Drizzle public storefront repository", () => {
       stores,
       storePublicSiteSettings,
       vehicleListings,
+      vehicleUnits,
       vehicleMedia,
     ]);
   });
@@ -90,12 +92,110 @@ describe("Drizzle public storefront repository", () => {
             altText: "Front photo",
             displayOrder: 0,
             kind: "photo",
+            unitColorName: "Preto",
+            unitId: "unit_1",
             url: "https://cdn.local/front.jpg",
+          },
+        ],
+        mediaGroups: [
+          {
+            colorName: "Preto",
+            media: [
+              {
+                altText: "Front photo",
+                displayOrder: 0,
+                kind: "photo",
+                unitColorName: "Preto",
+                unitId: "unit_1",
+                url: "https://cdn.local/front.jpg",
+              },
+            ],
+            unitId: "unit_1",
           },
         ],
         slug: "fiat-toro-2023",
       }),
     );
-    expect(db.queriedTables).toEqual([vehicleListings, vehicleMedia]);
+    expect(db.queriedTables).toEqual([
+      vehicleListings,
+      vehicleUnits,
+      vehicleMedia,
+    ]);
+  });
+
+  it("keeps one listing detail with unit color media groups", async () => {
+    const db = createFakePublicStorefrontDb({
+      media: [
+        {
+          altText: "Green front",
+          displayOrder: 0,
+          kind: "photo",
+          unitId: "unit_green",
+          url: "https://cdn.local/m3-green-front.jpg",
+        },
+        {
+          altText: "Black front",
+          displayOrder: 0,
+          kind: "photo",
+          unitId: "unit_black",
+          url: "https://cdn.local/m3-black-front.jpg",
+        },
+      ],
+      units: [
+        {
+          colorName: "Verde",
+          id: "unit_green",
+          status: "available",
+          stockNumber: "M3-GREEN",
+        },
+        {
+          colorName: "Preto",
+          id: "unit_black",
+          status: "available",
+          stockNumber: "M3-BLACK",
+        },
+      ],
+    });
+    const repository = createDrizzlePublicStorefrontRepository(db);
+
+    const listing = await repository.findPublicListingDetail({
+      listingSlug: "fiat-toro-2023",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+    });
+
+    expect(listing).toEqual(
+      expect.objectContaining({
+        media: [
+          expect.objectContaining({
+            unitColorName: "Preto",
+            unitId: "unit_black",
+            url: "https://cdn.local/m3-black-front.jpg",
+          }),
+        ],
+        mediaGroups: [
+          expect.objectContaining({
+            colorName: "Preto",
+            media: [
+              expect.objectContaining({
+                unitId: "unit_black",
+                url: "https://cdn.local/m3-black-front.jpg",
+              }),
+            ],
+            unitId: "unit_black",
+          }),
+          expect.objectContaining({
+            colorName: "Verde",
+            media: [
+              expect.objectContaining({
+                unitId: "unit_green",
+                url: "https://cdn.local/m3-green-front.jpg",
+              }),
+            ],
+            unitId: "unit_green",
+          }),
+        ],
+      }),
+    );
   });
 });

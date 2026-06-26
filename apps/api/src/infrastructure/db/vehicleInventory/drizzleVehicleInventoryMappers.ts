@@ -124,10 +124,10 @@ export function toVehicleMedia(row: VehicleMediaRow): VehicleMedia {
     id: row.id,
     isPublic: row.isPublic,
     kind: row.kind,
-    listingId: row.listingId,
     storageKey: row.storageKey,
     storeId: row.storeId,
     tenantId: row.tenantId,
+    unitId: row.unitId,
     updatedAt: row.updatedAt,
     url: row.url,
   };

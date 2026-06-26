@@ -123,10 +123,10 @@ export type VehicleMedia = {
   id: string;
   isPublic: boolean;
   kind: VehicleMediaKind;
-  listingId: string;
   storageKey: string;
   storeId: string | null;
   tenantId: string | null;
+  unitId: string;
   updatedAt: Date;
   url: string;
 };

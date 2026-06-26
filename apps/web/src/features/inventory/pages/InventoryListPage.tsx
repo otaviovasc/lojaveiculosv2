@@ -30,6 +30,7 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
     loadingMore,
     detail,
     setDetail,
+    selectedUnitId,
     selection,
     isTemplateOpen,
     setIsTemplateOpen,
@@ -72,6 +73,7 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
       <InventoryDetailWorkspace
         api={runtimeApi}
         detail={detail}
+        selectedUnitId={selectedUnitId}
         onBack={() => {
           setScreenMode("list");
           setDetail(null);
@@ -128,13 +130,17 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
                 {viewMode === "cards" ? (
                   <InventoryListingCardGrid
                     items={sortedItems}
-                    onSelect={(listingId) => void selectListing(listingId)}
+                    onSelect={(listingId, unitId) =>
+                      void selectListing(listingId, unitId)
+                    }
                     onAction={(action, item) => void handleAction(action, item)}
                   />
                 ) : (
                   <InventoryListingTable
                     items={sortedItems}
-                    onSelect={(listingId) => void selectListing(listingId)}
+                    onSelect={(listingId, unitId) =>
+                      void selectListing(listingId, unitId)
+                    }
                     onAction={(action, item) => void handleAction(action, item)}
                     visibleColumns={visibleColumns}
                   />

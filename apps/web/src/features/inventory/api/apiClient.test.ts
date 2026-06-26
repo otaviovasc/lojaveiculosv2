@@ -74,16 +74,16 @@ describe("createInventoryApi", () => {
       listingDetailPayload(),
       {
         publicUrl: "https://cdn.local/front.jpg",
-        storageKey: "tenants/t/stores/s/listings/listing_1/front.jpg",
+        storageKey: "tenants/t/stores/s/units/unit_1/front.jpg",
         uploadHeaders: { "content-type": "image/jpeg" },
         uploadMethod: "PUT",
         uploadUrl: "https://upload.local/front.jpg",
       },
       {
-        listingId: "listing_1",
         mediaId: "media_1",
-        storageKey: "tenants/t/stores/s/listings/listing_1/front.jpg",
+        storageKey: "tenants/t/stores/s/units/unit_1/front.jpg",
         status: "created",
+        unitId: "unit_1",
         url: "https://cdn.local/front.jpg",
       },
     ]);
@@ -101,7 +101,7 @@ describe("createInventoryApi", () => {
     });
 
     expect(callAt(fake.calls, 2).input).toBe(
-      "/api/v1/inventory/listings/listing_1/media/uploads",
+      "/api/v1/inventory/units/unit_1/media/uploads",
     );
     expect(bodyOf(callAt(fake.calls, 2))).toEqual({
       contentType: "image/jpeg",
@@ -118,14 +118,43 @@ describe("createInventoryApi", () => {
       },
     });
     expect(callAt(fake.calls, 4).input).toBe(
-      "/api/v1/inventory/listings/listing_1/media",
+      "/api/v1/inventory/units/unit_1/media",
     );
     expect(bodyOf(callAt(fake.calls, 4))).toMatchObject({
       altText: "Front view",
       displayOrder: 0,
       kind: "photo",
-      storageKey: "tenants/t/stores/s/listings/listing_1/front.jpg",
+      storageKey: "tenants/t/stores/s/units/unit_1/front.jpg",
     });
+  });
+
+  it("rejects ambiguous multi-unit media in legacy createFlow", async () => {
+    const file = new File(["image-bytes"], "front.jpg", {
+      type: "image/jpeg",
+    });
+    const fake = createFakeFetch([
+      listingDetailPayload(),
+      listingDetailPayload(),
+      listingDetailPayload(),
+    ]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await expect(
+      api.createFlow({
+        listing: { plate: null, title: "Inventory title" },
+        media: {
+          displayOrder: 0,
+          file,
+          kind: "photo",
+        },
+        unit: {},
+        units: [{ colorName: "black" }, { colorName: "green" }],
+      }),
+    ).rejects.toThrow(
+      "Inventory media upload requires a single target unit in createFlow.",
+    );
+
+    expect(fake.calls).toHaveLength(3);
   });
 
   it("keeps route helpers and headers explicit", () => {
@@ -138,10 +167,10 @@ describe("createInventoryApi", () => {
         limit: 100,
         offset: 200,
         search: "toro",
-        status: "published",
+        status: "available",
       }),
     ).toBe(
-      "/api/v1/inventory/listings?limit=100&offset=200&search=toro&status=published",
+      "/api/v1/inventory/units?limit=100&offset=200&search=toro&status=available",
     );
     expect(inventoryRoutes.unit("listing 1")).toBe(
       "/api/v1/inventory/listings/listing%201/unit",

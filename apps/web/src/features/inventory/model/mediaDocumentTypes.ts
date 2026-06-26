@@ -14,10 +14,10 @@ export type InventoryMediaUpload = {
 };
 
 export type InventoryMediaRecord = {
-  listingId: string;
   mediaId: string;
   status: "created";
   storageKey?: string;
+  unitId: string;
   url: string;
 };
 
@@ -28,10 +28,10 @@ export type InventoryMedia = {
   id: string;
   isPublic: boolean;
   kind: InventoryMediaKind;
-  listingId: string;
   storageKey: string;
   storeId: string | null;
   tenantId: string | null;
+  unitId: string;
   updatedAt: string;
   url: string;
 };

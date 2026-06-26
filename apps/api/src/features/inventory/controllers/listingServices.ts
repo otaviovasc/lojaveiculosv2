@@ -5,6 +5,7 @@ import type { CreateVehicleListingInput } from "../../../domains/vehicle/service
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import type { ListVehicleListingsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
+import type { ListVehicleUnitsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
 import type { CreateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
 import type { ListVehicleChecklistsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
 import type { UpdateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
@@ -47,27 +48,20 @@ import type { VehicleCatalogVersionOption } from "../../../domains/vehicle/ports
 import {
   type InventoryListingDetailResponse,
   type InventoryListingListResponse,
+  type InventoryUnitListResponse,
 } from "./listingResponseDtos.js";
 import { createInventoryListingServices } from "./listingServicesFactory.js";
+export { listingStatuses } from "./vehicle.controller.statuses.js";
 export type {
   CreateInventoryListingServicesOptions,
   DrizzleVehicleInventoryAdapter,
 } from "./listingServiceOptions.js";
 
-export const listingStatuses = [
-  "archived",
-  "draft",
-  "in_preparation",
-  "published",
-  "sold_out",
-  "unpublished",
-] as const;
-
 export type VehicleMediaResult = {
-  listingId: string;
   mediaId: string;
   storageKey: string;
   status: "created";
+  unitId: string;
   url: string;
 };
 
@@ -132,6 +126,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: ListVehicleListingsInput,
   ) => Promise<InventoryListingListResponse>;
+  listUnits: (
+    context: ServiceContext,
+    input: ListVehicleUnitsInput,
+  ) => Promise<InventoryUnitListResponse>;
   listChecklists: (
     context: ServiceContext,
     input: ListVehicleChecklistsInput,

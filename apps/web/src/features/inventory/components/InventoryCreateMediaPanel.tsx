@@ -1,5 +1,6 @@
 import { ImageUp, Upload } from "lucide-react";
 import { useState, type ChangeEvent, type DragEvent } from "react";
+import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import {
   buildCreateMediaDrafts,
   createMediaLimits,
@@ -8,13 +9,17 @@ import {
   type CreateMediaDraft,
   type CreateMediaReject,
 } from "../model/createMediaDrafts";
+import { createInventoryUnitsInput } from "../model/formModel";
+import type { InventoryFormState } from "../model/formModel";
 import { InventoryPanel } from "./InventoryFormParts";
 import { InventoryCreateMediaCard } from "./InventoryCreateMediaCard";
 
 export function InventoryCreateMediaPanel({
+  form,
   items,
   onChange,
 }: {
+  form: InventoryFormState;
   items: readonly CreateMediaDraft[];
   onChange: (items: CreateMediaDraft[]) => void;
 }) {
@@ -25,6 +30,7 @@ export function InventoryCreateMediaPanel({
   const addFiles = (files: File[]) => {
     if (files.length === 0) return;
 
+    const defaultUnitDraftId = createUnitOptions(form)[0]?.value;
     const next = buildCreateMediaDrafts({
       current: items,
       files,
@@ -32,6 +38,7 @@ export function InventoryCreateMediaPanel({
         file.type.startsWith("image/") || file.type.startsWith("video/")
           ? URL.createObjectURL(file)
           : null,
+      unitDraftId: defaultUnitDraftId,
     });
 
     onChange(next.accepted);
@@ -80,6 +87,7 @@ export function InventoryCreateMediaPanel({
 
   const photoCount = items.filter((item) => item.kind === "photo").length;
   const videoCount = items.filter((item) => item.kind === "video").length;
+  const unitOptions = createUnitOptions(form);
   const reorderTo = (from: number, to: number) => {
     if (from === to || from < 0 || to < 0 || from >= items.length) return;
     const next = [...items];
@@ -126,6 +134,16 @@ export function InventoryCreateMediaPanel({
                   if (item.previewUrl) URL.revokeObjectURL(item.previewUrl);
                   onChange(removeCreateMediaDraft(items, item.id));
                 }}
+                onUnitChange={(unitDraftId) =>
+                  onChange(
+                    items.map((candidate) =>
+                      candidate.id === item.id
+                        ? { ...candidate, unitDraftId }
+                        : candidate,
+                    ),
+                  )
+                }
+                unitOptions={unitOptions}
               />
             ))}
           </div>
@@ -190,4 +208,14 @@ export function InventoryCreateMediaPanel({
 
 function formatRejects(rejected: readonly CreateMediaReject[]) {
   return rejected.map((item) => `${item.fileName}: ${item.reason}`).join(" ");
+}
+
+function createUnitOptions(form: InventoryFormState) {
+  return createInventoryUnitsInput(form).map((unit, index) => ({
+    label:
+      [getVehicleColorLabel(unit.colorName), unit.stockNumber]
+        .filter(Boolean)
+        .join(" · ") || `Unidade ${index + 1}`,
+    value: String(index),
+  }));
 }

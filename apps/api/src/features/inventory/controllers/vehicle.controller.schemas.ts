@@ -1,7 +1,12 @@
 import { vehicleColorValues } from "@lojaveiculosv2/shared";
 import { z } from "zod";
 import { allowedCreateStatuses } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
-import { listingStatuses } from "./listingServices.js";
+import {
+  documentKinds,
+  listingStatuses,
+  mediaKinds,
+  unitStatuses,
+} from "./vehicle.controller.statuses.js";
 import {
   listingCatalogSchema,
   listingTechnicalSchemaShape,
@@ -14,6 +19,13 @@ export const listListingsQuerySchema = z.object({
   offset: z.coerce.number().int().nonnegative().optional(),
   search: z.string().trim().min(1).optional(),
   status: z.enum(listingStatuses).optional(),
+});
+
+export const listUnitsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).optional(),
+  offset: z.coerce.number().int().nonnegative().optional(),
+  search: z.string().trim().min(1).optional(),
+  status: z.enum(unitStatuses).optional(),
 });
 
 const vehicleColorSchema = z.enum(vehicleColorValues);
@@ -56,36 +68,10 @@ export const attachUnitSchema = z.object({
 export const updateUnitSchema = z.object({
   colorName: vehicleColorSchema.nullable().optional(),
   plate: z.string().trim().min(1).nullable().optional(),
-  status: z
-    .enum([
-      "acquired",
-      "available",
-      "delivered",
-      "inactive",
-      "in_preparation",
-      "reserved",
-      "sold",
-    ])
-    .optional(),
+  status: z.enum(unitStatuses).optional(),
   stockNumber: z.string().trim().min(1).nullable().optional(),
   vin: z.string().trim().min(1).nullable().optional(),
 });
-
-const mediaKinds = ["document_preview", "photo", "video"] as const;
-const documentKinds = [
-  "buyer_document",
-  "delivery_term",
-  "inspection",
-  "internal",
-  "invoice",
-  "other",
-  "power_of_attorney",
-  "reservation_receipt",
-  "sale_receipt",
-  "sale_contract",
-  "test_drive",
-  "vehicle_registration",
-] as const;
 export const catalogQuerySchema = z.object({
   vehicleType: z.enum(vehicleCatalogTypes).optional(),
 });

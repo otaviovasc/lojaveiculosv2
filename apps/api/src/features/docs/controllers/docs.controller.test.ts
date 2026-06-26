@@ -40,9 +40,8 @@ describe("API docs routes", () => {
         .patch.security,
     ).toEqual([{ bearerAuth: ["inventory.update_status"] }]);
     expect(
-      openApiDocument.paths[
-        "/api/v1/inventory/listings/{listingId}/media/uploads"
-      ].post.security,
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/media/uploads"]
+        .post.security,
     ).toEqual([{ bearerAuth: ["inventory.create"] }]);
     expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
@@ -90,14 +89,13 @@ describe("API docs routes", () => {
       openApiDocument.paths["/api/v1/inventory/units/{unitId}/sell"].post
         .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/SellVehicleListingRequest" });
+    const paths = openApiDocument.paths as Record<string, unknown>;
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/reserve"]
-        .post.deprecated,
-    ).toBe(true);
+      paths["/api/v1/inventory/listings/{listingId}/reserve"],
+    ).toBeUndefined();
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/sell"].post
-        .deprecated,
-    ).toBe(true);
+      paths["/api/v1/inventory/listings/{listingId}/sell"],
+    ).toBeUndefined();
     expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
         .requestBody.content["application/json"].schema,
