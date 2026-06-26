@@ -3,14 +3,17 @@ import { attachVehicleDocument } from "../../../domains/vehicle/services/Vehicle
 import { attachVehicleUnit } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import { changeVehicleStatus } from "../../../domains/vehicle/services/VehicleService/changeVehicleStatus.js";
 import { createVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
-import { releaseVehicleReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleReservation.js";
-import { reserveVehicleListing } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
-import { sellVehicleListing } from "../../../domains/vehicle/services/VehicleService/sellVehicleListing.js";
+import { releaseVehicleUnitReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleUnitReservation.js";
+import { reserveVehicleUnit } from "../../../domains/vehicle/services/VehicleService/reserveVehicleUnit.js";
+import { sellVehicleUnit } from "../../../domains/vehicle/services/VehicleService/sellVehicleUnit.js";
 import { updateVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
 import { updateVehicleListingDetails } from "../../../domains/vehicle/services/VehicleService/updateVehicleListingDetails.js";
 import { updateVehiclePrice } from "../../../domains/vehicle/services/VehicleService/updateVehiclePrice.js";
 import { updateVehicleUnit } from "../../../domains/vehicle/services/VehicleService/updateVehicleUnit.js";
-import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
+import {
+  getUnitRepository,
+  type VehicleInventoryServicePorts,
+} from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import type { TransactionRunner } from "../../../shared/transaction.js";
 import {
   cleanAttachInput,
@@ -31,9 +34,9 @@ type InventoryTransactionalServices = Pick<
   | "attachVehicleDocument"
   | "changeListingStatus"
   | "createChecklist"
-  | "releaseReservation"
-  | "reserveListing"
-  | "sellListing"
+  | "releaseUnitReservation"
+  | "reserveUnit"
+  | "sellUnit"
   | "updateListingDetails"
   | "updateChecklist"
   | "updateListingPrice"
@@ -53,7 +56,7 @@ export function createInventoryTransactionalServices(input: {
       );
       return loadInventoryListingDetailDto(
         context,
-        costInput.listingId,
+        await findListingIdForUnit(context, costInput.unitId, ports),
         ports,
         "inventory.cost_create",
       );
@@ -78,13 +81,9 @@ export function createInventoryTransactionalServices(input: {
         (transactionPorts) =>
           attachVehicleDocument(context, documentInput, transactionPorts),
       );
-      const listingId =
-        document.targetType === "vehicle_listing"
-          ? document.targetId
-          : documentInput.listingId;
       return loadInventoryListingDetailDto(
         context,
-        listingId,
+        await findListingIdForUnit(context, documentInput.unitId, ports),
         ports,
         "inventory.document_attach",
       );
@@ -108,16 +107,16 @@ export function createInventoryTransactionalServices(input: {
       );
       return loadInventoryListingDetailDto(
         context,
-        checklistInput.listingId,
+        await findListingIdForUnit(context, checklistInput.unitId, ports),
         ports,
         "inventory.checklist_update",
       );
     },
-    async reserveListing(context, reserveInput) {
+    async reserveUnit(context, reserveInput) {
       const listing = await runVehicleInventoryMutation(
         transactionRunner,
         (transactionPorts) =>
-          reserveVehicleListing(context, reserveInput, transactionPorts),
+          reserveVehicleUnit(context, reserveInput, transactionPorts),
       );
       return loadInventoryListingDetailDto(
         context,
@@ -126,11 +125,15 @@ export function createInventoryTransactionalServices(input: {
         "inventory.reserve",
       );
     },
-    async releaseReservation(context, releaseInput) {
+    async releaseUnitReservation(context, releaseInput) {
       const listing = await runVehicleInventoryMutation(
         transactionRunner,
         (transactionPorts) =>
-          releaseVehicleReservation(context, releaseInput, transactionPorts),
+          releaseVehicleUnitReservation(
+            context,
+            releaseInput,
+            transactionPorts,
+          ),
       );
       return loadInventoryListingDetailDto(
         context,
@@ -139,11 +142,11 @@ export function createInventoryTransactionalServices(input: {
         "inventory.reserve",
       );
     },
-    async sellListing(context, sellInput) {
+    async sellUnit(context, sellInput) {
       const listing = await runVehicleInventoryMutation(
         transactionRunner,
         (transactionPorts) =>
-          sellVehicleListing(context, sellInput, transactionPorts),
+          sellVehicleUnit(context, sellInput, transactionPorts),
       );
       return loadInventoryListingDetailDto(
         context,
@@ -175,7 +178,7 @@ export function createInventoryTransactionalServices(input: {
       );
       return loadInventoryListingDetailDto(
         context,
-        checklistInput.listingId,
+        await findListingIdForUnit(context, checklistInput.unitId, ports),
         ports,
         "inventory.checklist_update",
       );
@@ -211,4 +214,19 @@ export function createInventoryTransactionalServices(input: {
       );
     },
   };
+}
+
+async function findListingIdForUnit(
+  context: Parameters<InventoryListingServices["getListing"]>[0],
+  unitId: string,
+  ports: VehicleInventoryServicePorts,
+): Promise<string> {
+  const unit = await getUnitRepository(ports).findById({
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+    unitId,
+  });
+
+  if (!unit) throw new Error(`Vehicle unit not found: ${unitId}`);
+  return unit.listingId;
 }

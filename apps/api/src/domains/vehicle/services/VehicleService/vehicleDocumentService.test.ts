@@ -32,12 +32,9 @@ describe("Vehicle document service", () => {
       {
         fileName: "registration.pdf",
         kind: "vehicle_registration",
-        listingId: "listing_1",
-        storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/documents/registration.pdf",
-        targetId: unit.id,
-        targetType: "vehicle_unit",
+        storageKey: `tenants/tenant_1/stores/store_1/units/${unit.id}/documents/registration.pdf`,
         title: "CRLV",
+        unitId: unit.id,
       },
       ports,
     );

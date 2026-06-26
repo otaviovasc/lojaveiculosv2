@@ -16,11 +16,11 @@ import type {
 } from "../../../domains/vehicle/services/VehicleService/manageVehicleSuppliers.js";
 import type { VehicleUnitAcquisitionInput } from "../../../domains/vehicle/services/VehicleService/manageVehicleUnitAcquisition.js";
 import type { ReorderVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
-import type { ReserveVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleListing.js";
-import type { ReleaseVehicleReservationInput } from "../../../domains/vehicle/services/VehicleService/releaseVehicleReservation.js";
+import type { ReserveVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleUnit.js";
+import type { ReleaseVehicleUnitReservationInput } from "../../../domains/vehicle/services/VehicleService/releaseVehicleUnitReservation.js";
 import type { RequestVehicleDocumentUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
 import type { RequestVehicleMediaUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleMediaUpload.js";
-import type { SellVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/sellVehicleListing.js";
+import type { SellVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/sellVehicleUnit.js";
 import type { UpdateVehicleListingDetailsInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleListingDetails.js";
 import type { UpdateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleMedia.js";
 import type { UpdateVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleUnit.js";
@@ -112,7 +112,7 @@ export type InventoryListingServices = {
   ) => Promise<InventoryListingDetailResponse>;
   getVehicleUnitAcquisition: (
     context: ServiceContext,
-    input: { listingId: string; unitId: string },
+    input: { unitId: string },
   ) => Promise<VehicleUnitAcquisition | null>;
   getCatalogSnapshot: (
     context: ServiceContext,
@@ -166,13 +166,13 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: RequestVehicleDocumentUploadInput,
   ) => Promise<VehicleMediaUpload>;
-  reserveListing: (
+  reserveUnit: (
     context: ServiceContext,
-    input: ReserveVehicleListingInput,
+    input: ReserveVehicleUnitInput,
   ) => Promise<InventoryListingDetailResponse>;
-  releaseReservation: (
+  releaseUnitReservation: (
     context: ServiceContext,
-    input: ReleaseVehicleReservationInput,
+    input: ReleaseVehicleUnitReservationInput,
   ) => Promise<InventoryListingDetailResponse>;
   updateListingDescription: (
     context: ServiceContext,
@@ -206,9 +206,9 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: VehicleUnitAcquisitionInput,
   ) => Promise<VehicleUnitAcquisition>;
-  sellListing: (
+  sellUnit: (
     context: ServiceContext,
-    input: SellVehicleListingInput,
+    input: SellVehicleUnitInput,
   ) => Promise<InventoryListingDetailResponse>;
 };
 

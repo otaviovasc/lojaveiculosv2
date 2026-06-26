@@ -14,7 +14,7 @@ import {
 import {
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getChecklistRepository,
   getListingRepository,
   getUnitRepository,
@@ -26,7 +26,6 @@ const permission = "inventory.checklist_update";
 
 export type CreateVehicleChecklistInput = {
   items: readonly VehicleChecklistItemInput[];
-  listingId: string;
   name: string;
   status?: VehicleChecklistStatus | undefined;
   unitId: string;
@@ -38,12 +37,16 @@ export async function createVehicleChecklist(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleChecklist> {
   assertPermission(context, permission);
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-  const unit = await findScopedUnit(context, getUnitRepository(ports), input);
   const items = normalizeChecklistItems(input.items);
   const status = resolveChecklistStatus({
     explicitStatus: input.status,

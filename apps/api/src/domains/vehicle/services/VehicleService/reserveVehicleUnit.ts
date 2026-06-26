@@ -2,9 +2,9 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
 import type { VehicleBuyerSnapshot } from "../../ports/vehicleSalesRepository.js";
-import { completeSaleWorkflow } from "../../workflows/vehicleSaleWorkflow.js";
+import { completeReservationWorkflow } from "../../workflows/vehicleSaleWorkflow.js";
 import {
-  assertSellableVehicleState,
+  assertReservableVehicleState,
   VehicleWorkflowValidationError,
 } from "../../workflows/vehicleSaleWorkflowRules.js";
 import {
@@ -19,85 +19,81 @@ import {
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
 
-const permission = "inventory.sell";
+const permission = "inventory.reserve";
 
-export type SellVehicleListingInput = {
+export type ReserveVehicleUnitInput = {
   buyer: VehicleBuyerSnapshot;
-  listingId?: string | undefined;
-  paidAmountCents?: number | null | undefined;
   paymentMethod: string;
   reason?: string | null | undefined;
   salePriceCents?: number | null | undefined;
+  signalAmountCents: number;
   unitId: string;
 };
 
-export async function sellVehicleListing(
+export async function reserveVehicleUnit(
   context: ServiceContext,
-  input: SellVehicleListingInput,
+  input: ReserveVehicleUnitInput,
   ports?: VehicleInventoryServicePorts,
 ) {
   assertPermission(context, permission);
   assertStoreUserActor(context);
-  logVehicleServiceEvent(context, "vehicle_unit.sell.started", {
-    listingId: input.listingId ?? null,
+  logVehicleServiceEvent(context, "vehicle_unit.reserve.started", {
     unitId: input.unitId,
   });
 
   const listingRepository = getListingRepository(ports);
   const unitRepository = getUnitRepository(ports);
   const unit = await findScopedUnitById(context, unitRepository, input.unitId);
-  if (input.listingId && unit.listingId !== input.listingId) {
-    throw new VehicleWorkflowValidationError("matching listingId");
-  }
   const listing = await findScopedListing(
     context,
     listingRepository,
     unit.listingId,
   );
-  assertSellableVehicleState(listing, unit);
+  assertReservableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents)
     throw new VehicleWorkflowValidationError("salePriceCents");
 
-  const paidAmountCents = input.paidAmountCents ?? salePriceCents;
   const sale = await getSalesRepository(ports).create({
     buyerSnapshot: input.buyer,
     listing,
     payment: {
-      amountCents: paidAmountCents,
+      amountCents: input.signalAmountCents,
       method: input.paymentMethod,
-      paidAt: new Date(),
-      status: "paid",
+      paidAt: null,
+      status: "pending",
     },
     salePriceCents,
     sellerUserId: actorUserId(context),
-    status: "closed",
+    status: "pending",
     unit,
   });
-  const workflow = await completeSaleWorkflow(context, {
+  const workflow = await completeReservationWorkflow(context, {
     buyer: input.buyer,
     listing,
     paymentMethod: input.paymentMethod,
     ports,
     reason: input.reason,
     sale,
+    signalAmountCents: input.signalAmountCents,
     unit,
   });
+  const [createdDocument] = workflow.documents;
 
   await auditVehicleServiceEvent(context, {
-    action: "vehicle_unit.sell",
+    action: "vehicle_unit.reserve",
     category: "data_change",
-    changes: [{ after: "sold", before: unit.status, path: "unit.status" }],
+    changes: [{ after: "reserved", before: unit.status, path: "unit.status" }],
     entityId: unit.id,
     entityType: "vehicle_unit",
     metadata: {
-      documentCount: workflow.documents.length,
-      documentIds: workflow.documents.map((document) => document.id),
-      financeEntryId: workflow.financeEntry.entry.id,
       listingId: listing.id,
       saleId: sale.sale.id,
       salePaymentId: sale.payment?.id ?? null,
-      salePriceCents,
+      documentId: createdDocument?.id ?? null,
+      documentStorageKey: createdDocument?.storageKey ?? null,
+      financeEntryId: workflow.financeEntry.entry.id,
+      signalAmountCents: input.signalAmountCents,
     },
     permission,
     relatedEntities: [
@@ -105,7 +101,7 @@ export async function sellVehicleListing(
       { id: sale.sale.id, type: "vehicle_sale" },
       { id: workflow.financeEntry.entry.id, type: "finance_entry" },
     ],
-    summary: "Sold vehicle unit and emitted sale document bundle",
+    summary: "Reserved vehicle unit and emitted signal receipt",
   });
 
   return workflow.updatedListing;

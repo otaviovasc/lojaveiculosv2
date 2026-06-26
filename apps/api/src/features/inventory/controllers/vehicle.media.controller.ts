@@ -92,31 +92,26 @@ export function registerInventoryMediaRoutes(
     }),
   );
 
-  inventoryFeature.post(
-    "/listings/:listingId/documents/uploads",
-    async (context) =>
-      handle(context, async () => {
-        const input = await parseJson(context, documentUploadSchema);
-        const serviceContext = await createContext(context);
-        const result = await services.requestDocumentUpload(
-          serviceContext,
-          cleanRequestDocumentUploadRequest(
-            context.req.param("listingId"),
-            input,
-          ),
-        );
+  inventoryFeature.post("/units/:unitId/documents/uploads", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, documentUploadSchema);
+      const serviceContext = await createContext(context);
+      const result = await services.requestDocumentUpload(
+        serviceContext,
+        cleanRequestDocumentUploadRequest(context.req.param("unitId"), input),
+      );
 
-        return context.json(result, 201);
-      }),
+      return context.json(result, 201);
+    }),
   );
 
-  inventoryFeature.post("/listings/:listingId/documents", async (context) =>
+  inventoryFeature.post("/units/:unitId/documents", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, attachDocumentSchema);
       const serviceContext = await createContext(context);
       const result = await services.attachVehicleDocument(
         serviceContext,
-        cleanAttachDocumentRequest(context.req.param("listingId"), input),
+        cleanAttachDocumentRequest(context.req.param("unitId"), input),
       );
 
       return context.json(result, 201);

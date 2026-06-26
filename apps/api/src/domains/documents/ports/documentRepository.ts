@@ -29,7 +29,6 @@ export type DocumentLinkTarget =
   | "sale"
   | "sale_payment"
   | "store"
-  | "vehicle_listing"
   | "vehicle_unit";
 
 export type LinkedDocument = {

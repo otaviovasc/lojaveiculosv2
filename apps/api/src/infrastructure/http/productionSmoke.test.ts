@@ -124,9 +124,9 @@ describe("production smoke contracts", () => {
     expect(reserveResponse.status).toBe(201);
     expect(sellResponse.status).toBe(201);
     expect(releaseResponse.status).toBe(200);
-    expect(services.reserveListing).toHaveBeenCalledOnce();
-    expect(services.sellListing).toHaveBeenCalledOnce();
-    expect(services.releaseReservation).toHaveBeenCalledOnce();
+    expect(services.reserveUnit).toHaveBeenCalledOnce();
+    expect(services.sellUnit).toHaveBeenCalledOnce();
+    expect(services.releaseUnitReservation).toHaveBeenCalledOnce();
   });
 
   it("keeps public storefront lead capture connected to CRM and audit", async () => {

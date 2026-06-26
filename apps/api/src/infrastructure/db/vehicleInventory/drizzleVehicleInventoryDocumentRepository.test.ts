@@ -18,7 +18,7 @@ describe("Drizzle vehicle document repository", () => {
       mimeType: "application/pdf",
       status: "draft",
       storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/documents/registration.pdf",
+        "tenants/tenant_1/stores/store_1/units/unit_1/documents/registration.pdf",
       storeId: "store_1",
       targetId: "unit_1",
       targetType: "vehicle_unit",
@@ -48,7 +48,7 @@ describe("Drizzle vehicle document repository", () => {
           documentId: "document_1",
           fileName: "registration.pdf",
           storageKey:
-            "tenants/tenant_1/stores/store_1/listings/listing_1/documents/registration.pdf",
+            "tenants/tenant_1/stores/store_1/units/unit_1/documents/registration.pdf",
           versionNumber: 1,
         }),
       ]),

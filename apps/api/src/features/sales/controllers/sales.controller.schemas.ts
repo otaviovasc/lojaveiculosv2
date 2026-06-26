@@ -21,7 +21,6 @@ export const saleDraftSchema = z.object({
   buyerSnapshot: metadata,
   documentPolicySnapshot: metadata,
   leadId: optionalString,
-  listingId: optionalString,
   listingSnapshot: metadata,
   payments: z.array(salePaymentSchema).optional(),
   salePriceCents: cents.nullable().optional(),

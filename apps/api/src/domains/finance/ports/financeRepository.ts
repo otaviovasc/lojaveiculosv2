@@ -9,7 +9,6 @@ export type FinanceLinkTarget =
   | "sale"
   | "sale_payment"
   | "vehicle_cost"
-  | "vehicle_listing"
   | "vehicle_unit";
 
 export type FinanceEntry = {

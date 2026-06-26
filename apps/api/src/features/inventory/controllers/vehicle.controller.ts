@@ -142,13 +142,13 @@ export function createInventoryFeature(
     }),
   );
 
-  inventoryFeature.post("/listings/:listingId/costs", async (context) =>
+  inventoryFeature.post("/units/:unitId/costs", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, costSchema);
       const serviceContext = await createContext(context);
       const result = await services.addVehicleCost(serviceContext, {
         ...input,
-        listingId: context.req.param("listingId"),
+        unitId: context.req.param("unitId"),
       });
 
       return context.json(result, 201);
@@ -168,23 +168,17 @@ export function createInventoryFeature(
     }),
   );
 
-  inventoryFeature.patch(
-    "/listings/:listingId/units/:unitId",
-    async (context) =>
-      handle(context, async () => {
-        const input = await parseJson(context, updateUnitSchema);
-        const serviceContext = await createContext(context);
-        const result = await services.updateListingUnit(
-          serviceContext,
-          cleanUpdateUnitRequest(
-            context.req.param("listingId"),
-            context.req.param("unitId"),
-            input,
-          ),
-        );
+  inventoryFeature.patch("/units/:unitId", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, updateUnitSchema);
+      const serviceContext = await createContext(context);
+      const result = await services.updateListingUnit(
+        serviceContext,
+        cleanUpdateUnitRequest(context.req.param("unitId"), input),
+      );
 
-        return context.json(result);
-      }),
+      return context.json(result);
+    }),
   );
 
   registerInventoryMediaRoutes(inventoryFeature, services, createContext);

@@ -57,10 +57,15 @@ export function InventoryUploadActions({
     const file = takeFile(event);
     if (!file) return;
     void run("Anexando documento", async () => {
-      const listingId = detail.listing.id;
-      const upload = await api.requestDocumentUpload(listingId, { file });
+      if (!unitId) {
+        throw new Error("Selecione uma unidade para anexar documento.");
+      }
+      const upload = await api.requestUnitDocumentUpload(unitId, {
+        file,
+        kind: documentKind,
+      });
       await uploadInventoryFile(file, upload);
-      return api.attachDocument(listingId, {
+      return api.attachUnitDocument(unitId, {
         fileName: file.name,
         fileSizeBytes: file.size,
         kind: documentKind,

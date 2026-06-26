@@ -10,7 +10,7 @@ import {
   auditVehicleServiceEvent,
   actorUserId,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getListingRepository,
   getOperationsRepository,
   getUnitRepository,
@@ -23,7 +23,6 @@ const permission = "inventory.update_unit";
 
 export type UpdateVehicleUnitInput = {
   colorName?: VehicleColor | null;
-  listingId: string;
   plate?: string | null;
   status?: VehicleUnitStatus;
   stockNumber?: string | null;
@@ -38,18 +37,18 @@ export async function updateVehicleUnit(
 ): Promise<VehicleUnit> {
   assertPermission(context, permission);
   assertGenericUnitStatusAllowed(input.status);
-  await findScopedListing(
+  const repository = getUnitRepository(ports);
+  const unit = await findScopedUnitById(context, repository, input.unitId);
+  const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-  const repository = getUnitRepository(ports);
-  const unit = await findScopedUnit(context, repository, input);
   const changes = createUnitChanges(unit, input);
 
   logVehicleServiceEvent(context, "vehicle_unit.update.started", {
     changedFields: changes.map((change) => change.path),
-    listingId: input.listingId,
+    listingId: listing.id,
     unitId: input.unitId,
   });
 
@@ -72,7 +71,7 @@ export async function updateVehicleUnit(
     await getOperationsRepository(ports).createStatusHistory({
       actorUserId: actorUserId(context),
       fromStatus: unit.status,
-      listingId: input.listingId,
+      listingId: listing.id,
       reason: null,
       storeId: context.storeId,
       target: "unit",
@@ -90,10 +89,10 @@ export async function updateVehicleUnit(
     entityType: "vehicle_unit",
     metadata: {
       changedFields: changes.map((change) => change.path),
-      listingId: input.listingId,
+      listingId: listing.id,
     },
     permission,
-    relatedEntities: [{ id: input.listingId, type: "vehicle_listing" }],
+    relatedEntities: [{ id: listing.id, type: "vehicle_listing" }],
     summary: "Updated vehicle unit",
   });
 

@@ -23,7 +23,6 @@ export type VehicleSale = {
   closedAt: Date | null;
   createdAt: Date;
   id: string;
-  listingId: string;
   salePriceCents: number;
   sellerUserId: string | null;
   status: VehicleSaleStatus;

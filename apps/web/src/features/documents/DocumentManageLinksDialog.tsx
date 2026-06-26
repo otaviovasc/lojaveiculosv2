@@ -232,12 +232,6 @@ function linkInput(
   if (option.targetType === "store") {
     return { linkRole: currentLinkRole || "primary", targetType: "store" };
   }
-  if (
-    option.targetType !== "vehicle_listing" &&
-    option.targetType !== "vehicle_unit"
-  ) {
-    throw new Error("Document link target type is not editable.");
-  }
   if (!option.targetId) {
     throw new Error("Document link target id is required.");
   }

@@ -21,8 +21,8 @@ export type DocumentsApi = {
   createUploadedDocument: (
     input: CreateUploadedDocumentInput,
   ) => Promise<WorkspaceDocument>;
-  createVehicleUploadedDocument: (
-    listingId: string,
+  createUnitUploadedDocument: (
+    unitId: string,
     input: CreateVehicleUploadedDocumentInput,
   ) => Promise<WorkspaceDocument>;
   deleteDocument: (documentId: string) => Promise<WorkspaceDocument>;
@@ -40,8 +40,8 @@ export type DocumentsApi = {
   requestDocumentUpload: (
     input: RequestDocumentUploadInput,
   ) => Promise<DocumentUpload>;
-  requestVehicleDocumentUpload: (
-    listingId: string,
+  requestUnitDocumentUpload: (
+    unitId: string,
     input: RequestVehicleDocumentUploadInput,
   ) => Promise<DocumentUpload>;
   updateDocument: (
@@ -76,8 +76,8 @@ export function createDocumentsApi({
         headers: createDocumentsHeaders(auth),
         method: "POST",
       }).then(readJson<WorkspaceDocument>),
-    createVehicleUploadedDocument: (listingId, input) =>
-      fetch(documentsRoutes.vehicleDocuments(listingId, baseUrl), {
+    createUnitUploadedDocument: (unitId, input) =>
+      fetch(documentsRoutes.unitDocuments(unitId, baseUrl), {
         body: JSON.stringify(input),
         headers: createDocumentsHeaders(auth),
         method: "POST",
@@ -126,8 +126,8 @@ export function createDocumentsApi({
         headers: createDocumentsHeaders(auth),
         method: "POST",
       }).then(readJson<DocumentUpload>),
-    requestVehicleDocumentUpload: (listingId, input) =>
-      fetch(documentsRoutes.vehicleUploads(listingId, baseUrl), {
+    requestUnitDocumentUpload: (unitId, input) =>
+      fetch(documentsRoutes.unitUploads(unitId, baseUrl), {
         body: JSON.stringify(input),
         headers: createDocumentsHeaders(auth),
         method: "POST",
@@ -180,14 +180,14 @@ export const documentsRoutes = {
   templates: (baseUrl?: string) =>
     createEndpoint("/documents/templates", baseUrl),
   uploads: (baseUrl?: string) => createEndpoint("/documents/uploads", baseUrl),
-  vehicleDocuments: (listingId: string, baseUrl?: string) =>
+  unitDocuments: (unitId: string, baseUrl?: string) =>
     createEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/documents`,
+      `/inventory/units/${encodeURIComponent(unitId)}/documents`,
       baseUrl,
     ),
-  vehicleUploads: (listingId: string, baseUrl?: string) =>
+  unitUploads: (unitId: string, baseUrl?: string) =>
     createEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/documents/uploads`,
+      `/inventory/units/${encodeURIComponent(unitId)}/documents/uploads`,
       baseUrl,
     ),
   void: (documentId: string, baseUrl?: string) =>

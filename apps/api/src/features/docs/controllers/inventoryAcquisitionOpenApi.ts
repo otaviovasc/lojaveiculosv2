@@ -1,7 +1,6 @@
 import { jsonRequest } from "./inventoryOpenApiSchemas.js";
 import {
   authResponses,
-  listingIdParameter,
   queryParameter,
   unitIdParameter,
   validationResponse,
@@ -88,13 +87,13 @@ export const inventoryAcquisitionPaths = {
       responses: { "200": supplierResponse, ...authResponses },
     },
   },
-  "/api/v1/inventory/listings/{listingId}/units/{unitId}/acquisition": {
+  "/api/v1/inventory/units/{unitId}/acquisition": {
     get: {
       tags: ["Inventory"],
       summary: "Get vehicle unit acquisition source",
       operationId: "getVehicleUnitAcquisition",
       security: [{ bearerAuth: ["inventory.read"] }],
-      parameters: [listingIdParameter, unitIdParameter],
+      parameters: [unitIdParameter],
       responses: { "200": acquisitionResponse, ...authResponses },
     },
     put: {
@@ -102,7 +101,7 @@ export const inventoryAcquisitionPaths = {
       summary: "Save vehicle unit acquisition source",
       operationId: "upsertVehicleUnitAcquisition",
       security: [{ bearerAuth: ["inventory.update_unit"] }],
-      parameters: [listingIdParameter, unitIdParameter],
+      parameters: [unitIdParameter],
       requestBody: jsonRequest("UpsertVehicleUnitAcquisitionRequest"),
       responses: {
         "200": {

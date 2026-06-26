@@ -16,7 +16,7 @@ export const inventoryWorkflowPaths = {
       operationId: "reserveInventoryUnit",
       security: [{ bearerAuth: ["inventory.reserve"] }],
       parameters: [unitIdParameter],
-      requestBody: jsonRequest("ReserveVehicleListingRequest"),
+      requestBody: jsonRequest("ReserveVehicleUnitRequest"),
       responses: {
         "201": detailResponse,
         ...validationResponse,
@@ -33,7 +33,7 @@ export const inventoryWorkflowPaths = {
       operationId: "sellInventoryUnit",
       security: [{ bearerAuth: ["inventory.sell"] }],
       parameters: [unitIdParameter],
-      requestBody: jsonRequest("SellVehicleListingRequest"),
+      requestBody: jsonRequest("SellVehicleUnitRequest"),
       responses: {
         "201": detailResponse,
         ...validationResponse,
@@ -50,7 +50,7 @@ export const inventoryWorkflowPaths = {
       operationId: "releaseInventoryUnitReservation",
       security: [{ bearerAuth: ["inventory.reserve"] }],
       parameters: [unitIdParameter],
-      requestBody: jsonRequest("ReleaseVehicleReservationRequest"),
+      requestBody: jsonRequest("ReleaseVehicleUnitReservationRequest"),
       responses: {
         "200": detailResponse,
         ...validationResponse,

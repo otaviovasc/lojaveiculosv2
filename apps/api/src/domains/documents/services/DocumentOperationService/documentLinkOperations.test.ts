@@ -56,6 +56,31 @@ describe("document link operations", () => {
       "Document link target was not found in the current store.",
     );
   });
+
+  it("updates links to shared sale targets through the same validator", async () => {
+    const repository = createTestDocumentRepository();
+    const document = await seedDocument(repository);
+    const linkTargetValidator = { existsInScope: vi.fn(async () => true) };
+
+    const updated = await updateDocumentMetadata(
+      createContext(),
+      {
+        documentId: document.id,
+        targetId: "sale_2",
+        targetType: "sale",
+      },
+      { documentRepository: repository, linkTargetValidator },
+    );
+
+    expect(updated.targetId).toBe("sale_2");
+    expect(updated.targetType).toBe("sale");
+    expect(linkTargetValidator.existsInScope).toHaveBeenCalledWith({
+      storeId: "store_1",
+      targetId: "sale_2",
+      targetType: "sale",
+      tenantId: "tenant_1",
+    });
+  });
 });
 
 function createContext(

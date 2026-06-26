@@ -24,7 +24,6 @@ export type SaleRecord = {
   id: string;
   isCurrentRevision: boolean;
   leadId: string | null;
-  listingId: string | null;
   listingSnapshot: Record<string, unknown>;
   overrideReason: string | null;
   overrideRequiredFields: boolean;
@@ -37,7 +36,7 @@ export type SaleRecord = {
   status: SaleStatus;
   storeId: string;
   tenantId: string;
-  unitId: string | null;
+  unitId: string;
   updatedAt: Date;
 };
 
@@ -50,14 +49,17 @@ export type SaveSaleDraftInput = {
   buyerSnapshot?: Record<string, unknown>;
   documentPolicySnapshot?: Record<string, unknown>;
   leadId?: string | null;
-  listingId?: string | null;
   listingSnapshot?: Record<string, unknown>;
   payments?: readonly SaveSalePaymentInput[];
   salePriceCents?: number | null;
   saleSourceSnapshot?: Record<string, unknown>;
   selectedDocumentKinds?: readonly string[];
   sellerUserId?: string | null;
-  unitId?: string | null;
+  unitId: string;
+};
+
+export type UpdateSaleDraftInput = Omit<SaveSaleDraftInput, "unitId"> & {
+  unitId?: string;
 };
 
 export type SaveSalePaymentInput = {
@@ -101,6 +103,6 @@ export type SalesRepository = {
   updateDraft: (
     scope: SaleScope,
     saleId: string,
-    input: SaveSaleDraftInput,
+    input: UpdateSaleDraftInput,
   ) => Promise<SaleRecord>;
 };

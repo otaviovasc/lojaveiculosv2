@@ -7,6 +7,7 @@ import type {
   SaveSaleDraftInput,
   SaveSalePaymentInput,
   TransitionSaleInput,
+  UpdateSaleDraftInput,
 } from "../../../../domains/sales/ports/salesRepository.js";
 
 export function createMemorySalesRepository(): SalesRepository {
@@ -24,7 +25,6 @@ export function createMemorySalesRepository(): SalesRepository {
         id: randomId(),
         isCurrentRevision: true,
         leadId: input.leadId ?? null,
-        listingId: input.listingId ?? null,
         listingSnapshot: input.listingSnapshot ?? {},
         overrideReason: null,
         overrideRequiredFields: false,
@@ -37,7 +37,7 @@ export function createMemorySalesRepository(): SalesRepository {
         status: "draft",
         storeId: scope.storeId,
         tenantId: scope.tenantId,
-        unitId: input.unitId ?? null,
+        unitId: input.unitId,
         updatedAt: now,
       };
       sales.set(sale.id, sale);
@@ -100,7 +100,7 @@ function cancelPendingPayments(
 
 function mergeSaleInput(
   current: SaleRecord,
-  input: SaveSaleDraftInput,
+  input: UpdateSaleDraftInput,
 ): SaleRecord {
   return {
     ...current,
@@ -108,8 +108,6 @@ function mergeSaleInput(
     documentPolicySnapshot:
       input.documentPolicySnapshot ?? current.documentPolicySnapshot,
     leadId: input.leadId !== undefined ? input.leadId : current.leadId,
-    listingId:
-      input.listingId !== undefined ? input.listingId : current.listingId,
     listingSnapshot: input.listingSnapshot ?? current.listingSnapshot,
     payments: input.payments ? mapPayments(input.payments) : current.payments,
     salePriceCents:

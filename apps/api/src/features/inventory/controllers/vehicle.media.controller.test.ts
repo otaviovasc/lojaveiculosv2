@@ -144,15 +144,13 @@ describe("inventory media routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/documents/uploads",
+      "/api/v1/inventory/units/unit_1/documents/uploads",
       {
         body: JSON.stringify({
           contentType: "application/pdf",
           fileName: "registration.pdf",
           kind: "vehicle_registration",
           sizeBytes: 4096,
-          targetId: "unit_1",
-          targetType: "vehicle_unit",
         }),
         method: "POST",
       },
@@ -165,10 +163,8 @@ describe("inventory media routes", () => {
         contentType: "application/pdf",
         fileName: "registration.pdf",
         kind: "vehicle_registration",
-        listingId: "listing_1",
         sizeBytes: 4096,
-        targetId: "unit_1",
-        targetType: "vehicle_unit",
+        unitId: "unit_1",
       },
     );
   });
@@ -178,7 +174,7 @@ describe("inventory media routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/documents",
+      "/api/v1/inventory/units/unit_1/documents",
       {
         body: JSON.stringify({
           fileName: "registration.pdf",
@@ -186,9 +182,7 @@ describe("inventory media routes", () => {
           kind: "vehicle_registration",
           mimeType: "application/pdf",
           storageKey:
-            "tenants/tenant_1/stores/store_1/listings/listing_1/registration.pdf",
-          targetId: "unit_1",
-          targetType: "vehicle_unit",
+            "tenants/tenant_1/stores/store_1/units/unit_1/registration.pdf",
           title: "Registration",
         }),
         method: "POST",
@@ -202,13 +196,11 @@ describe("inventory media routes", () => {
         fileName: "registration.pdf",
         fileSizeBytes: 4096,
         kind: "vehicle_registration",
-        listingId: "listing_1",
         mimeType: "application/pdf",
         storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/registration.pdf",
-        targetId: "unit_1",
-        targetType: "vehicle_unit",
+          "tenants/tenant_1/stores/store_1/units/unit_1/registration.pdf",
         title: "Registration",
+        unitId: "unit_1",
       },
     );
   });

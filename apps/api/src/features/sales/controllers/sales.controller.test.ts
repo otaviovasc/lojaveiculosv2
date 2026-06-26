@@ -19,6 +19,7 @@ describe("sales controller", () => {
     const createResponse = await requestJson(app, "/sales/drafts", {
       buyerSnapshot: { name: "Maria" },
       leadId: "lead-1",
+      unitId: "unit_1",
     });
 
     expect(createResponse.status).toBe(201);
@@ -39,7 +40,7 @@ describe("sales controller", () => {
     const app = createTestApp();
     const createResponse = await requestJson(app, "/sales/drafts", {
       salePriceCents: 5000000,
-      unitId: "unit-1",
+      unitId: "unit_1",
     });
     const created = await readJson<TestSale>(createResponse);
 
@@ -50,7 +51,6 @@ describe("sales controller", () => {
     );
     expect(reserveResponse.status).toBe(409);
     const payload = await readJson<TestReadinessError>(reserveResponse);
-    expect(payload.missingFields).toContain("listing");
     expect(payload.missingFields).toContain("buyer");
     expect(payload.missingFields).toContain("lead");
     expect(payload.missingFields).toContain("seller");
@@ -65,7 +65,6 @@ describe("sales controller", () => {
         requiredDocumentKinds: ["sale_contract"],
       },
       leadId: "lead-1",
-      listingId: "listing_1",
       payments: [
         {
           amountCents: 5000000,

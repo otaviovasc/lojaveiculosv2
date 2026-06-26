@@ -16,6 +16,7 @@ import {
 import {
   createDocumentObjectScope,
   resolveDocumentTarget,
+  validateDocumentTarget,
 } from "./requestDocumentUpload.js";
 
 const permission = "documents.upload";
@@ -40,6 +41,7 @@ export async function createUploadedDocument(
   const scope = requireDocumentWorkspaceScope(context);
   const repository = getDocumentRepository(ports);
   const target = resolveDocumentTarget(scope.storeId, input);
+  await validateDocumentTarget(context, scope, target, ports);
   assertStorageKeyInScope(input.storageKey, scope, target);
 
   const document = await repository.create({

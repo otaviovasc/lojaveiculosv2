@@ -6,6 +6,7 @@ import type {
   SaleScope,
   SaveSaleDraftInput,
   SaveSalePaymentInput,
+  UpdateSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
 
 type SaleRow = InferSelectModel<typeof sales>;
@@ -16,7 +17,6 @@ export function toInsertSale(scope: SaleScope, input: SaveSaleDraftInput) {
     buyerSnapshot: input.buyerSnapshot ?? {},
     documentPolicySnapshot: input.documentPolicySnapshot ?? {},
     leadId: input.leadId ?? null,
-    listingId: input.listingId ?? null,
     listingSnapshot: input.listingSnapshot ?? {},
     salePriceCents: input.salePriceCents ?? null,
     saleSourceSnapshot: input.saleSourceSnapshot ?? {},
@@ -25,18 +25,17 @@ export function toInsertSale(scope: SaleScope, input: SaveSaleDraftInput) {
     status: "draft" as const,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
-    unitId: input.unitId ?? null,
+    unitId: input.unitId,
   };
 }
 
-export function toUpdateSale(input: SaveSaleDraftInput) {
+export function toUpdateSale(input: UpdateSaleDraftInput) {
   return {
     ...(input.buyerSnapshot ? { buyerSnapshot: input.buyerSnapshot } : {}),
     ...(input.documentPolicySnapshot
       ? { documentPolicySnapshot: input.documentPolicySnapshot }
       : {}),
     ...(input.leadId !== undefined ? { leadId: input.leadId } : {}),
-    ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.listingSnapshot
       ? { listingSnapshot: input.listingSnapshot }
       : {}),
@@ -91,7 +90,6 @@ export function toSaleRecord(
     id: row.id,
     isCurrentRevision: row.isCurrentRevision,
     leadId: row.leadId,
-    listingId: row.listingId,
     listingSnapshot: toRecord(row.listingSnapshot),
     overrideReason: row.overrideReason,
     overrideRequiredFields: row.overrideRequiredFields,

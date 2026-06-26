@@ -251,8 +251,6 @@ export type AttachInventoryDocumentInput = {
   kind: InventoryDocumentKind;
   mimeType?: string | null;
   storageKey: string;
-  targetId?: string;
-  targetType?: InventoryDocumentTargetType;
   title: string;
 };
 

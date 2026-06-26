@@ -46,11 +46,13 @@ export const llmsText = `# Loja Veiculos API
 - Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
 - Update listing price: PATCH /api/v1/inventory/listings/{listingId}/price
 - Attach listing unit: PUT /api/v1/inventory/listings/{listingId}/unit
-- Update listing unit: PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}
-- Create vehicle cost: POST /api/v1/inventory/listings/{listingId}/costs
-- List unit checklists: GET /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists
-- Create unit checklist: POST /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists
-- Update unit checklist: PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}
+- Update listing unit: PATCH /api/v1/inventory/units/{unitId}
+- Create vehicle cost: POST /api/v1/inventory/units/{unitId}/costs
+- List unit checklists: GET /api/v1/inventory/units/{unitId}/checklists
+- Create unit checklist: POST /api/v1/inventory/units/{unitId}/checklists
+- Update unit checklist: PATCH /api/v1/inventory/units/{unitId}/checklists/{checklistId}
+- Request unit document upload: POST /api/v1/inventory/units/{unitId}/documents/uploads
+- Attach uploaded unit document: POST /api/v1/inventory/units/{unitId}/documents
 - Request unit media upload: POST /api/v1/inventory/units/{unitId}/media/uploads
 - Attach uploaded unit media: POST /api/v1/inventory/units/{unitId}/media
 - Reserve unit: POST /api/v1/inventory/units/{unitId}/reserve
@@ -118,11 +120,11 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
 - PATCH /api/v1/inventory/listings/{listingId}/price: updates price; requires inventory.update_price.
 - PUT /api/v1/inventory/listings/{listingId}/unit: attaches an operational unit; requires inventory.create.
-- PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}: updates physical/unit fields; workflow statuses are blocked.
-- POST /api/v1/inventory/listings/{listingId}/costs: records a vehicle cost and creates linked finance entry rows.
-- GET /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists: lists persisted readiness checklists for a scoped unit.
-- POST /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists: creates a readiness checklist and returns the updated listing detail.
-- PATCH /api/v1/inventory/listings/{listingId}/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
+- PATCH /api/v1/inventory/units/{unitId}: updates physical/unit fields; workflow statuses are blocked.
+- POST /api/v1/inventory/units/{unitId}/costs: records a vehicle cost and creates linked finance entry rows.
+- GET /api/v1/inventory/units/{unitId}/checklists: lists persisted readiness checklists for a scoped unit.
+- POST /api/v1/inventory/units/{unitId}/checklists: creates a readiness checklist and returns the updated listing detail.
+- PATCH /api/v1/inventory/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
 - POST /api/v1/inventory/units/{unitId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions scoped to the unit folder.
 - POST /api/v1/inventory/units/{unitId}/media: records uploaded R2 object as unit media after scoped storage validation.
 - PATCH /api/v1/inventory/units/{unitId}/media/reorder: reorders unit media and returns the updated listing detail.
@@ -198,7 +200,7 @@ export const llmsText = `# Loja Veiculos API
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.
-- Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_listing, vehicle_unit, sale, and sale_payment.
+- Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_unit, sale, and sale_payment.
 
 ## Vehicle document kinds
 - Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.

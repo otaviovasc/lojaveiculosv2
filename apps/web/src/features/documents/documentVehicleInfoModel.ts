@@ -14,7 +14,7 @@ export type DocumentVehicleInfo = {
   plate: string | null;
   primaryMediaUrl: string | null;
   stockNumber: string | null;
-  targetType: "vehicle_listing" | "vehicle_unit";
+  targetType: "vehicle_unit";
   unitId: string | null;
   vin: string | null;
 };
@@ -34,7 +34,7 @@ const VEHICLE_RECORD_MEDIA_KEYS = [
   "mediaUrl",
   "imageUrl",
 ] as const;
-const VEHICLE_TARGET_TYPES = ["vehicle_listing", "vehicle_unit"] as const;
+const VEHICLE_TARGET_TYPES = ["vehicle_unit"] as const;
 
 export function documentVehicleInfo(
   document: WorkspaceDocument,
@@ -44,7 +44,6 @@ export function documentVehicleInfo(
 
   const vehicle = readMetadataRecord(document, "vehicle");
   const catalog = readRecord(vehicle?.catalog);
-  const isUnitTarget = targetType === "vehicle_unit";
   const catalogLabel = [
     readRecordString(catalog, ["brandName"]),
     readRecordString(catalog, ["modelName"]),
@@ -65,16 +64,12 @@ export function documentVehicleInfo(
     readRecordString(vehicle, ["unitId"]);
   const listingId =
     readMetadataString(document, ["listingId", "vehicleListingId"]) ??
-    readRecordString(vehicle, ["listingId"]) ??
-    (targetType === "vehicle_listing" ? document.context.targetId : null);
+    readRecordString(vehicle, ["listingId"]);
 
   return {
     id:
       unitId ??
-      readRecordString(
-        vehicle,
-        isUnitTarget ? ["id", "listingId"] : ["listingId", "id"],
-      ) ??
+      readRecordString(vehicle, ["id", "listingId"]) ??
       document.context.targetId,
     label,
     listingId,
@@ -88,9 +83,7 @@ export function documentVehicleInfo(
       readMetadataString(document, ["stockNumber"]) ??
       readRecordString(vehicle, ["stockNumber"]),
     targetType,
-    unitId:
-      unitId ??
-      (targetType === "vehicle_unit" ? document.context.targetId : null),
+    unitId: unitId ?? document.context.targetId,
     vin:
       readMetadataString(document, ["vin", "chassis", "chassi"]) ??
       readRecordString(vehicle, ["vin", "chassis", "chassi"]),

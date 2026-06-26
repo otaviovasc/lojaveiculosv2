@@ -88,26 +88,48 @@ describe("document upload operations", () => {
     ).rejects.toThrow("Document storage key is outside the requested scope.");
   });
 
-  it("rejects non-store manual upload targets", async () => {
+  it("requests and registers uploads for shared sale targets", async () => {
     const repository = createTestDocumentRepository();
     const objectStorage = createTestObjectStorage();
+    const linkTargetValidator = { existsInScope: vi.fn(async () => true) };
 
-    await expect(
-      requestDocumentUpload(
-        createContext(),
-        {
-          contentType: "application/pdf",
-          fileName: "sale.pdf",
-          sizeBytes: 2048,
-          targetId: "sale_1",
-          targetType: "sale",
-        },
-        { documentRepository: repository, objectStorage },
-      ),
-    ).rejects.toThrow(
-      "Manual document uploads currently support only the store document scope.",
+    const upload = await requestDocumentUpload(
+      createContext(),
+      {
+        contentType: "application/pdf",
+        fileName: "sale.pdf",
+        sizeBytes: 2048,
+        targetId: "sale_1",
+        targetType: "sale",
+      },
+      { documentRepository: repository, linkTargetValidator, objectStorage },
     );
-    expect(objectStorage.createUpload).not.toHaveBeenCalled();
+    const document = await createUploadedDocument(
+      createContext(),
+      {
+        fileName: "sale.pdf",
+        fileSizeBytes: 2048,
+        kind: "sale_contract",
+        mimeType: "application/pdf",
+        storageKey: upload.storageKey,
+        targetId: "sale_1",
+        targetType: "sale",
+        title: "Contrato",
+      },
+      { documentRepository: repository, linkTargetValidator, objectStorage },
+    );
+
+    expect(upload.storageKey).toContain(
+      "tenants/tenant_1/stores/store_1/documents/sale/sale_1",
+    );
+    expect(document.targetId).toBe("sale_1");
+    expect(document.targetType).toBe("sale");
+    expect(linkTargetValidator.existsInScope).toHaveBeenCalledWith({
+      storeId: "store_1",
+      targetId: "sale_1",
+      targetType: "sale",
+      tenantId: "tenant_1",
+    });
   });
 });
 

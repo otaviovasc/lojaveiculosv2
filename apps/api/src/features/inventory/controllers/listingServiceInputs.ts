@@ -112,7 +112,6 @@ export function cleanUpdateUnitInput(
   input: UpdateVehicleUnitInput,
 ): UpdateVehicleUnitInput {
   const result: UpdateVehicleUnitInput = {
-    listingId: input.listingId,
     unitId: input.unitId,
   };
 

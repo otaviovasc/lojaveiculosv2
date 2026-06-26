@@ -10,12 +10,11 @@ describe("inventory checklist routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists",
+      "/api/v1/inventory/units/unit_1/checklists",
     );
 
     expect(response.status).toBe(200);
     expect(services.listChecklists).toHaveBeenCalledWith(expect.any(Object), {
-      listingId: "listing_1",
       unitId: "unit_1",
     });
     expect(await response.json()).toEqual({
@@ -44,7 +43,7 @@ describe("inventory checklist routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists",
+      "/api/v1/inventory/units/unit_1/checklists",
       {
         body: JSON.stringify({
           items: [{ label: "Manual", status: "pending" }],
@@ -57,7 +56,6 @@ describe("inventory checklist routes", () => {
     expect(response.status).toBe(201);
     expect(services.createChecklist).toHaveBeenCalledWith(expect.any(Object), {
       items: [{ label: "Manual", status: "pending" }],
-      listingId: "listing_1",
       name: "Entrega",
       unitId: "unit_1",
     });
@@ -68,7 +66,7 @@ describe("inventory checklist routes", () => {
     const app = createInventoryTestApp(services);
 
     const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists/checklist_1",
+      "/api/v1/inventory/units/unit_1/checklists/checklist_1",
       {
         body: JSON.stringify({
           items: [{ id: "item_1", label: "Manual", status: "passed" }],
@@ -82,7 +80,6 @@ describe("inventory checklist routes", () => {
     expect(services.updateChecklist).toHaveBeenCalledWith(expect.any(Object), {
       checklistId: "checklist_1",
       items: [{ id: "item_1", label: "Manual", status: "passed" }],
-      listingId: "listing_1",
       status: "passed",
       unitId: "unit_1",
     });

@@ -41,7 +41,6 @@ export const documentStatus = pgEnum("document_status", [
 
 export const documentLinkTarget = pgEnum("document_link_target", [
   "store",
-  "vehicle_listing",
   "vehicle_unit",
   "lead",
   "sale",

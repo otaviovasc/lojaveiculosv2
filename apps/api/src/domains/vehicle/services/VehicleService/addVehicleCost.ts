@@ -8,7 +8,7 @@ import type {
 import {
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getFinanceRepository,
   getListingRepository,
   getOperationsRepository,
@@ -24,8 +24,7 @@ export type AddVehicleCostInput = {
   costDate?: Date | undefined;
   description?: string | null | undefined;
   kind: VehicleCostKind;
-  listingId: string;
-  unitId?: string | undefined;
+  unitId: string;
 };
 
 export async function addVehicleCost(
@@ -34,17 +33,16 @@ export async function addVehicleCost(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleCost> {
   assertPermission(context, permission);
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-  const unitId = input.unitId ?? listing.unitIds[0];
-  if (!unitId) throw new VehicleCostMissingUnitError(input.listingId);
-  const unit = await findScopedUnit(context, getUnitRepository(ports), {
-    listingId: listing.id,
-    unitId,
-  });
 
   logVehicleServiceEvent(context, "vehicle_cost.create.started", {
     amountCents: input.amountCents,
@@ -83,11 +81,4 @@ export async function addVehicleCost(
     summary: "Created vehicle cost",
   });
   return cost;
-}
-
-export class VehicleCostMissingUnitError extends Error {
-  constructor(listingId: string) {
-    super(`Vehicle listing has no unit for cost allocation: ${listingId}`);
-    this.name = "VehicleCostMissingUnitError";
-  }
 }

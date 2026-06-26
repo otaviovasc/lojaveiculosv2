@@ -143,7 +143,6 @@ function completeDraft() {
     },
     documentPolicySnapshot: {},
     leadId: "lead_1",
-    listingId: "listing_1",
     salePriceCents: 5000000,
     sellerUserId: "seller_1",
     unitId: "unit_1",

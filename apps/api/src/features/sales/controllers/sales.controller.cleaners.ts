@@ -3,6 +3,7 @@ import type {
   ListSalesInput,
   SaveSaleDraftInput,
   SaveSalePaymentInput,
+  UpdateSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
 import type {
   listSalesQuerySchema,
@@ -11,22 +12,41 @@ import type {
   transitionSaleSchema,
 } from "./sales.controller.schemas.js";
 
-export function cleanSaleDraftInput(
+export function cleanCreateSaleDraftInput(
   input: z.infer<typeof saleDraftSchema>,
 ): SaveSaleDraftInput {
-  const draft: SaveSaleDraftInput = {};
+  const draft: UpdateSaleDraftInput = {};
+  cleanSaleDraftFields(draft, input);
+  if (!draft.unitId) {
+    throw new Error("Sales draft requires unitId.");
+  }
+  return { ...draft, unitId: draft.unitId };
+}
+
+export function cleanUpdateSaleDraftInput(
+  input: z.infer<typeof saleDraftSchema>,
+): UpdateSaleDraftInput {
+  const draft: UpdateSaleDraftInput = {};
+  cleanSaleDraftFields(draft, input);
+  return draft;
+}
+
+function cleanSaleDraftFields(
+  draft: UpdateSaleDraftInput,
+  input: z.infer<typeof saleDraftSchema>,
+): void {
   assignDefined(draft, "buyerSnapshot", input.buyerSnapshot);
   assignDefined(draft, "documentPolicySnapshot", input.documentPolicySnapshot);
   assignDefined(draft, "leadId", input.leadId);
-  assignDefined(draft, "listingId", input.listingId);
   assignDefined(draft, "listingSnapshot", input.listingSnapshot);
   assignDefined(draft, "payments", input.payments?.map(cleanSalePaymentInput));
   assignDefined(draft, "salePriceCents", input.salePriceCents);
   assignDefined(draft, "saleSourceSnapshot", input.saleSourceSnapshot);
   assignDefined(draft, "selectedDocumentKinds", input.selectedDocumentKinds);
   assignDefined(draft, "sellerUserId", input.sellerUserId);
-  assignDefined(draft, "unitId", input.unitId);
-  return draft;
+  if (input.unitId !== undefined && input.unitId !== null) {
+    draft.unitId = input.unitId;
+  }
 }
 
 export function cleanListSalesQuery(

@@ -37,24 +37,20 @@ describe("inventory canonical edit routes", () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);
 
-    const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1",
-      {
-        body: JSON.stringify({
-          plate: "DEF4G56",
-          status: "inactive",
-          stockNumber: "stock_2",
-          vin: "vin_2",
-        }),
-        method: "PATCH",
-      },
-    );
+    const response = await app.request("/api/v1/inventory/units/unit_1", {
+      body: JSON.stringify({
+        plate: "DEF4G56",
+        status: "inactive",
+        stockNumber: "stock_2",
+        vin: "vin_2",
+      }),
+      method: "PATCH",
+    });
 
     expect(response.status).toBe(200);
     expect(services.updateListingUnit).toHaveBeenCalledWith(
       expect.any(Object),
       {
-        listingId: "listing_1",
         plate: "DEF4G56",
         status: "inactive",
         stockNumber: "stock_2",
@@ -68,19 +64,15 @@ describe("inventory canonical edit routes", () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);
 
-    const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1",
-      {
-        body: JSON.stringify({ status: "in_preparation" }),
-        method: "PATCH",
-      },
-    );
+    const response = await app.request("/api/v1/inventory/units/unit_1", {
+      body: JSON.stringify({ status: "in_preparation" }),
+      method: "PATCH",
+    });
 
     expect(response.status).toBe(200);
     expect(services.updateListingUnit).toHaveBeenCalledWith(
       expect.any(Object),
       {
-        listingId: "listing_1",
         status: "in_preparation",
         unitId: "unit_1",
       },
@@ -94,13 +86,10 @@ describe("inventory canonical edit routes", () => {
     );
     const app = createInventoryTestApp(services);
 
-    const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_missing",
-      {
-        body: JSON.stringify({ plate: "DEF4G56" }),
-        method: "PATCH",
-      },
-    );
+    const response = await app.request("/api/v1/inventory/units/unit_missing", {
+      body: JSON.stringify({ plate: "DEF4G56" }),
+      method: "PATCH",
+    });
 
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({

@@ -86,7 +86,7 @@ export function createRows() {
         mimeType: "application/pdf",
         status: "draft",
         storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/documents/registration.pdf",
+          "tenants/tenant_1/stores/store_1/units/unit_1/documents/registration.pdf",
         storeId: "store_1",
         tenantId: "tenant_1",
         title: "Registro",
@@ -124,7 +124,7 @@ export function createRows() {
         metadata: {},
         mimeType: "application/pdf",
         storageKey:
-          "tenants/tenant_1/stores/store_1/listings/listing_1/documents/registration.pdf",
+          "tenants/tenant_1/stores/store_1/units/unit_1/documents/registration.pdf",
         storeId: "store_1",
         tenantId: "tenant_1",
         updatedAt: now,

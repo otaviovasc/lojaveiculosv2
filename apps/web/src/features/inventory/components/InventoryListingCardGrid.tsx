@@ -23,14 +23,17 @@ import {
   getInventoryStockLabel,
   getInventoryYearLine,
   inventoryStatusLabels,
+  inventoryUnitStatusLabels,
+  getInventoryDisplayStatus,
   getInventoryKm,
   getInventoryStockDays,
   getInventoryFipeComparison,
   getInventoryLeadsCount,
+  type InventoryDisplayStatus,
 } from "../model/listCatalogModel";
 import type {
-  InventoryListingStatus,
   InventoryListingSummary,
+  InventoryUnitStatus,
 } from "../model/types";
 
 export function InventoryListingCardGrid({
@@ -142,7 +145,7 @@ function InventoryListingCard({
         </div>
 
         <div className="absolute left-2 top-2">
-          <StatusPill status={listing.status} />
+          <StatusPill status={getInventoryDisplayStatus(item)} />
         </div>
         <div className="absolute right-2 top-2 flex gap-1 z-10">
           <div className="rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-black text-violet-500 border border-line/30 shadow-sm flex items-center gap-1">
@@ -248,24 +251,31 @@ export function EmptyCatalog({ body, title }: { body: string; title: string }) {
   );
 }
 
-export function StatusPill({ status }: { status: InventoryListingStatus }) {
+export function StatusPill({ status }: { status: InventoryDisplayStatus }) {
   const tone =
-    status === "published"
+    status === "published" || status === "available"
       ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-      : status === "in_preparation"
+      : status === "in_preparation" || status === "reserved"
         ? "bg-warning/10 text-warning border border-warning/20"
-        : status === "sold_out"
+        : status === "sold_out" || status === "sold" || status === "delivered"
           ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-          : "bg-panel text-muted border border-line";
+          : status === "acquired"
+            ? "bg-violet-500/10 text-violet-500 border border-violet-500/20"
+            : "bg-panel text-muted border border-line";
 
   const dotColor =
-    status === "published"
+    status === "published" || status === "available"
       ? "bg-emerald-500"
-      : status === "in_preparation"
+      : status === "in_preparation" || status === "reserved"
         ? "bg-warning"
-        : status === "sold_out"
+        : status === "sold_out" || status === "sold" || status === "delivered"
           ? "bg-blue-500"
-          : "bg-muted";
+          : status === "acquired"
+            ? "bg-violet-500"
+            : "bg-muted";
+  const label = isInventoryUnitStatus(status)
+    ? inventoryUnitStatusLabels[status]
+    : inventoryStatusLabels[status];
 
   return (
     <span
@@ -275,9 +285,15 @@ export function StatusPill({ status }: { status: InventoryListingStatus }) {
       }
     >
       <span className={"size-1.5 rounded-full " + dotColor} />
-      {inventoryStatusLabels[status]}
+      {label}
     </span>
   );
+}
+
+function isInventoryUnitStatus(
+  status: InventoryDisplayStatus,
+): status is InventoryUnitStatus {
+  return status in inventoryUnitStatusLabels;
 }
 
 export function MercosulPlateBadge({ plate }: { plate: string }) {

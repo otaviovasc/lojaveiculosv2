@@ -5,7 +5,6 @@ import {
   salePayments,
   sales,
   vehicleCosts,
-  vehicleListings,
   vehicleUnits,
 } from "@lojaveiculosv2/db";
 import type { FinanceLinkTarget } from "../../../domains/finance/ports/financeRepository.js";
@@ -65,8 +64,6 @@ function tableForTarget(targetType: FinanceLinkTarget) {
       return salePayments;
     case "vehicle_cost":
       return vehicleCosts;
-    case "vehicle_listing":
-      return vehicleListings;
     case "vehicle_unit":
       return vehicleUnits;
   }

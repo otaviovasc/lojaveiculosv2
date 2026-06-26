@@ -58,5 +58,6 @@ function draft() {
   return {
     buyerSnapshot: { name: "Maria" },
     leadId: "lead_1",
+    unitId: "unit_1",
   };
 }

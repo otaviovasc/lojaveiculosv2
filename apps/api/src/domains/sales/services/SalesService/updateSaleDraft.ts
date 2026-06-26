@@ -1,6 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { SaveSaleDraftInput } from "../../ports/salesRepository.js";
+import type { UpdateSaleDraftInput } from "../../ports/salesRepository.js";
 import {
   auditSalesServiceEvent,
   findScopedSale,
@@ -13,7 +13,7 @@ import {
 export async function updateSaleDraft(
   context: ServiceContext,
   saleId: string,
-  input: SaveSaleDraftInput,
+  input: UpdateSaleDraftInput,
   ports?: SalesServicePorts,
 ) {
   const repository = getSalesRepository(ports);

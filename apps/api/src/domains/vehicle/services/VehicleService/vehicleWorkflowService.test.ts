@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { attachVehicleUnit } from "./attachVehicleUnit.js";
-import { reserveVehicleListing } from "./reserveVehicleListing.js";
-import { sellVehicleListing } from "./sellVehicleListing.js";
+import { reserveVehicleUnit } from "./reserveVehicleUnit.js";
+import { sellVehicleUnit } from "./sellVehicleUnit.js";
 import {
   createContext,
   createInMemoryVehiclePorts,
@@ -16,11 +16,10 @@ describe("VehicleService workflow documents", () => {
     ]);
     await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
 
-    const listing = await reserveVehicleListing(
+    const listing = await reserveVehicleUnit(
       context,
       {
         buyer: buyer(),
-        listingId: "listing_1",
         paymentMethod: "pix",
         signalAmountCents: 100000,
         unitId: "unit_1",
@@ -48,7 +47,7 @@ describe("VehicleService workflow documents", () => {
     ]);
     const [document] = [...ports.documents.values()];
     expect(document).toMatchObject({
-      fileName: "reservation_receipt-listing_1.pdf",
+      fileName: "reservation_receipt-unit_1.pdf",
       kind: "reservation_receipt",
       linkRole: "reservation_receipt",
       mimeType: "application/pdf",
@@ -65,7 +64,7 @@ describe("VehicleService workflow documents", () => {
     ]);
     expect(
       ports.financeRepository.links.map((link) => link.targetType),
-    ).toEqual(["sale", "sale_payment", "vehicle_listing", "vehicle_unit"]);
+    ).toEqual(["sale", "sale_payment", "vehicle_unit"]);
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "vehicle_unit.reserve" }),
     );
@@ -78,11 +77,10 @@ describe("VehicleService workflow documents", () => {
     ]);
     await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
 
-    const listing = await sellVehicleListing(
+    const listing = await sellVehicleUnit(
       context,
       {
         buyer: buyer(),
-        listingId: "listing_1",
         paymentMethod: "pix",
         unitId: "unit_1",
       },
@@ -148,11 +146,10 @@ describe("VehicleService workflow documents", () => {
     );
 
     await expect(
-      reserveVehicleListing(
+      reserveVehicleUnit(
         context,
         {
           buyer: buyer(),
-          listingId: "listing_1",
           paymentMethod: "pix",
           signalAmountCents: 100000,
           unitId: "unit_1",
@@ -164,11 +161,10 @@ describe("VehicleService workflow documents", () => {
     );
 
     await expect(
-      sellVehicleListing(
+      sellVehicleUnit(
         context,
         {
           buyer: buyer(),
-          listingId: "listing_1",
           paymentMethod: "pix",
           unitId: "unit_1",
         },
@@ -187,11 +183,10 @@ describe("VehicleService workflow documents", () => {
     await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
 
     await expect(
-      reserveVehicleListing(
+      reserveVehicleUnit(
         context,
         {
           buyer: buyer(),
-          listingId: "listing_1",
           paymentMethod: "pix",
           signalAmountCents: 100000,
           unitId: "unit_1",

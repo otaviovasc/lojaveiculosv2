@@ -159,14 +159,14 @@ export const inventoryPaths = {
       },
     },
   },
-  "/api/v1/inventory/listings/{listingId}/units/{unitId}": {
+  "/api/v1/inventory/units/{unitId}": {
     patch: {
       tags: ["Inventory"],
-      summary: "Update listing unit",
-      operationId: "updateInventoryListingUnit",
+      summary: "Update inventory unit",
+      operationId: "updateInventoryUnit",
       security: [{ bearerAuth: ["inventory.update_unit"] }],
-      parameters: [listingIdParameter, unitIdParameter],
-      requestBody: jsonRequest("UpdateListingUnitRequest"),
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("UpdateVehicleUnitRequest"),
       responses: {
         "200": detailResponse,
         ...validationResponse,

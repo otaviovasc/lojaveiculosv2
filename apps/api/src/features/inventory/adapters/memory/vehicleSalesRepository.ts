@@ -39,7 +39,6 @@ export function createMemoryVehicleSalesRepository(): VehicleSalesRepository {
         closedAt: input.status === "closed" ? now : null,
         createdAt: now,
         id: `sale_${saleSequence}`,
-        listingId: input.listing.id,
         salePriceCents: input.salePriceCents,
         sellerUserId: input.sellerUserId,
         status: input.status,

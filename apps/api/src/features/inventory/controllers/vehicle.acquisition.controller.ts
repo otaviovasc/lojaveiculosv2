@@ -78,7 +78,7 @@ export function registerInventoryAcquisitionRoutes(
     }),
   );
 
-  app.get("/listings/:listingId/units/:unitId/acquisition", async (context) =>
+  app.get("/units/:unitId/acquisition", async (context) =>
     handle(context, async () => {
       const serviceContext = await createContext(context);
       const acquisition = await services.getVehicleUnitAcquisition(
@@ -91,7 +91,7 @@ export function registerInventoryAcquisitionRoutes(
     }),
   );
 
-  app.put("/listings/:listingId/units/:unitId/acquisition", async (context) =>
+  app.put("/units/:unitId/acquisition", async (context) =>
     handle(context, async () => {
       const input = await parseJson(
         context,
@@ -109,7 +109,6 @@ export function registerInventoryAcquisitionRoutes(
 
 function routeVehicleUnit(context: Context) {
   return {
-    listingId: routeParam(context, "listingId"),
     unitId: routeParam(context, "unitId"),
   };
 }

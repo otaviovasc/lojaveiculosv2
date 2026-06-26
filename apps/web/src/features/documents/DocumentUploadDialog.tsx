@@ -12,10 +12,8 @@ export type DocumentUploadTarget =
   | { label: string; mode: "general" }
   | {
       label: string;
-      listingId: string;
       mode: "vehicle_unit";
-      targetId: string;
-      targetType: "vehicle_unit";
+      unitId: string;
     };
 
 export function DocumentUploadDialog({
@@ -112,13 +110,11 @@ export function DocumentUploadDialog({
         );
         const upload =
           target.mode === "vehicle_unit"
-            ? await api.requestVehicleDocumentUpload(target.listingId, {
+            ? await api.requestUnitDocumentUpload(target.unitId, {
                 contentType: item.file.type || "application/octet-stream",
                 fileName: item.file.name,
                 kind: item.kind,
                 sizeBytes: item.file.size,
-                targetId: target.targetId,
-                targetType: target.targetType,
               })
             : await api.requestDocumentUpload({
                 contentType: item.file.type || "application/octet-stream",
@@ -139,14 +135,12 @@ export function DocumentUploadDialog({
         );
         if (target.mode === "vehicle_unit") {
           uploaded.push(
-            await api.createVehicleUploadedDocument(target.listingId, {
+            await api.createUnitUploadedDocument(target.unitId, {
               fileName: item.file.name,
               fileSizeBytes: item.file.size,
               kind: item.kind,
               mimeType: item.file.type || null,
               storageKey: upload.storageKey,
-              targetId: target.targetId,
-              targetType: target.targetType,
               title: item.title.trim(),
             }),
           );

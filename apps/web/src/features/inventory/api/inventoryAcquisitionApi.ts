@@ -18,7 +18,6 @@ export type InventoryAcquisitionApi = {
     input: CreateVehicleSupplierInput,
   ) => Promise<VehicleSupplier>;
   getVehicleUnitAcquisition: (
-    listingId: string,
     unitId: string,
   ) => Promise<VehicleUnitAcquisition | null>;
   listVehicleSuppliers: (
@@ -29,7 +28,6 @@ export type InventoryAcquisitionApi = {
     input: UpdateVehicleSupplierInput,
   ) => Promise<VehicleSupplier>;
   upsertVehicleUnitAcquisition: (
-    listingId: string,
     unitId: string,
     input: UpsertVehicleUnitAcquisitionInput,
   ) => Promise<VehicleUnitAcquisition>;
@@ -64,8 +62,8 @@ export function createInventoryAcquisitionApi({
       }).then(readJson<VehicleSupplier>),
     createVehicleSupplier: (input) =>
       sendJson<VehicleSupplier>(inventoryRoutes.suppliers({}, baseUrl), input),
-    getVehicleUnitAcquisition: (listingId, unitId) =>
-      fetch(inventoryRoutes.unitAcquisition(listingId, unitId, baseUrl), {
+    getVehicleUnitAcquisition: (unitId) =>
+      fetch(inventoryRoutes.unitAcquisition(unitId, baseUrl), {
         headers: createInventoryHeaders(auth),
       })
         .then(readJson<AcquisitionPayload>)
@@ -82,9 +80,9 @@ export function createInventoryAcquisitionApi({
         input,
         "PATCH",
       ),
-    upsertVehicleUnitAcquisition: (listingId, unitId, input) =>
+    upsertVehicleUnitAcquisition: (unitId, input) =>
       sendJson<VehicleUnitAcquisition>(
-        inventoryRoutes.unitAcquisition(listingId, unitId, baseUrl),
+        inventoryRoutes.unitAcquisition(unitId, baseUrl),
         input,
         "PUT",
       ),

@@ -90,7 +90,7 @@ export async function submitInventoryCreateFlow({
     if (acquisitionPriceCents !== null && acquisitionPriceCents > 0) {
       onProgress({ label: "Registrando valor de entrada" });
       try {
-        detail = await api.addCost(listingId, {
+        detail = await api.addCost(unitIdForDraft({}, unitDraftIds, detail), {
           amountCents: acquisitionPriceCents,
           kind: "acquisition",
           description: "Valor de Entrada",

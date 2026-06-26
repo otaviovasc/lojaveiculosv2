@@ -4,7 +4,7 @@ import type { VehicleChecklist } from "../../ports/vehicleChecklistRepository.js
 import {
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getChecklistRepository,
   getListingRepository,
   getUnitRepository,
@@ -15,7 +15,6 @@ import {
 const permission = "inventory.checklist_read";
 
 export type ListVehicleChecklistsInput = {
-  listingId: string;
   unitId: string;
 };
 
@@ -25,12 +24,16 @@ export async function listVehicleChecklists(
   ports?: VehicleInventoryServicePorts,
 ): Promise<readonly VehicleChecklist[]> {
   assertPermission(context, permission);
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-  const unit = await findScopedUnit(context, getUnitRepository(ports), input);
   const checklists = await getChecklistRepository(ports).listByUnitIds({
     storeId: context.storeId,
     tenantId: context.tenantId,

@@ -8,24 +8,22 @@ export const inventoryWorkflowSchemas = {
     name: { type: "string", minLength: 1 },
     phone: { type: ["string", "null"], minLength: 1 },
   }),
-  ReserveVehicleListingRequest: objectSchema(["buyer", "signalAmountCents"], {
+  ReserveVehicleUnitRequest: objectSchema(["buyer", "signalAmountCents"], {
     buyer: { $ref: "#/components/schemas/InventoryBuyer" },
     paymentMethod: { type: "string", minLength: 1, default: "pix" },
     reason: { type: ["string", "null"], minLength: 1 },
     salePriceCents: { type: ["integer", "null"], minimum: 1 },
     signalAmountCents: { type: "integer", minimum: 1 },
-    unitId: { type: "string", minLength: 1 },
   }),
-  ReleaseVehicleReservationRequest: objectSchema([], {
+  ReleaseVehicleUnitReservationRequest: objectSchema([], {
     reason: { type: ["string", "null"], minLength: 1 },
     saleId: { type: ["string", "null"], minLength: 1 },
   }),
-  SellVehicleListingRequest: objectSchema(["buyer"], {
+  SellVehicleUnitRequest: objectSchema(["buyer"], {
     buyer: { $ref: "#/components/schemas/InventoryBuyer" },
     paidAmountCents: { type: ["integer", "null"], minimum: 1 },
     paymentMethod: { type: "string", minLength: 1, default: "pix" },
     reason: { type: ["string", "null"], minLength: 1 },
     salePriceCents: { type: ["integer", "null"], minimum: 1 },
-    unitId: { type: "string", minLength: 1 },
   }),
 } as const;

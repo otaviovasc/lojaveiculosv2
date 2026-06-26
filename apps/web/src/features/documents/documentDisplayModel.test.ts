@@ -35,11 +35,12 @@ describe("document display model", () => {
           listingId: "listing_1",
           plate: "ABC1D23",
           title: "Fiat Toro Volcano",
+          unitId: "unit_1",
           vin: "9BWZZZ",
         },
       },
-      targetId: "listing_1",
-      targetType: "vehicle_listing",
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
     });
     const generalDocument = createDocument({ id: "general" });
 
@@ -61,11 +62,12 @@ describe("document display model", () => {
           listingId: "listing_1",
           plate: "ABC1D23",
           title: "Fiat Toro Volcano",
+          unitId: "unit_1",
           vin: "9BWZZZ",
         },
       },
-      targetId: "listing_1",
-      targetType: "vehicle_listing",
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
     });
     const automaticGeneral = createDocument({ id: "general" });
 
@@ -78,7 +80,7 @@ describe("document display model", () => {
         scope: "vehicle",
         search: "abc1d23",
         status: "",
-        vehicleId: "listing_1",
+        vehicleId: "unit_1",
       }),
     ).toEqual([vehicleDocument]);
   });
@@ -128,7 +130,7 @@ describe("document display model", () => {
     ).toEqual([document]);
   });
 
-  it("groups listing-target documents by vehicle unit metadata", () => {
+  it("groups unit-target documents by vehicle unit metadata", () => {
     const vehicleDocument = createDocument({
       id: "vehicle",
       metadata: {
@@ -138,8 +140,8 @@ describe("document display model", () => {
           unitId: "unit_1",
         },
       },
-      targetId: "listing_1",
-      targetType: "vehicle_listing",
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
     });
     const generalDocument = createDocument({ id: "general" });
 

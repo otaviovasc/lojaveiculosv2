@@ -8,10 +8,8 @@ import type {
 } from "../../ports/vehicleAcquisitionRepository.js";
 import {
   auditVehicleServiceEvent,
-  findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getAcquisitionRepository,
-  getListingRepository,
   getUnitRepository,
   logVehicleServiceEvent,
   VehicleSupplierNotFoundError,
@@ -29,7 +27,6 @@ export type VehicleUnitAcquisitionInput = {
   commissionTiming?: VehicleAcquisitionCommissionTiming | undefined;
   customChannelLabel?: string | null | undefined;
   leadId?: string | null | undefined;
-  listingId: string;
   notes?: string | null | undefined;
   supplierId?: string | null | undefined;
   unitId: string;
@@ -37,12 +34,14 @@ export type VehicleUnitAcquisitionInput = {
 
 export async function getVehicleUnitAcquisition(
   context: ServiceContext,
-  input: { listingId: string; unitId: string },
+  input: { unitId: string },
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleUnitAcquisition | null> {
   assertPermission(context, readPermission);
-  await ensureScopedUnit(context, input, ports);
-  logVehicleServiceEvent(context, "vehicle_acquisition.get.started", input);
+  const unit = await ensureScopedUnit(context, input, ports);
+  logVehicleServiceEvent(context, "vehicle_acquisition.get.started", {
+    unitId: input.unitId,
+  });
   const acquisition = await getAcquisitionRepository(ports).findUnitAcquisition(
     {
       storeId: context.storeId,
@@ -55,7 +54,7 @@ export async function getVehicleUnitAcquisition(
     category: "data_access",
     entityId: acquisition?.id ?? input.unitId,
     entityType: "vehicle_acquisition",
-    metadata: { listingId: input.listingId, unitId: input.unitId },
+    metadata: { listingId: unit.listingId, unitId: input.unitId },
     permission: readPermission,
     summary: "Loaded vehicle acquisition source",
   });
@@ -68,7 +67,7 @@ export async function upsertVehicleUnitAcquisition(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleUnitAcquisition> {
   assertPermission(context, writePermission);
-  await ensureScopedUnit(context, input, ports);
+  const unit = await ensureScopedUnit(context, input, ports);
   const repository = getAcquisitionRepository(ports);
   if (input.supplierId) {
     const supplier = await repository.findSupplierById({
@@ -80,7 +79,7 @@ export async function upsertVehicleUnitAcquisition(
   }
   logVehicleServiceEvent(context, "vehicle_acquisition.upsert.started", {
     channel: input.channel,
-    listingId: input.listingId,
+    listingId: unit.listingId,
     unitId: input.unitId,
   });
   const acquisition = await repository.upsertUnitAcquisition(
@@ -94,7 +93,7 @@ export async function upsertVehicleUnitAcquisition(
     entityType: "vehicle_acquisition",
     metadata: {
       channel: acquisition.channel,
-      listingId: input.listingId,
+      listingId: unit.listingId,
       supplierId: acquisition.supplierId,
       unitId: acquisition.unitId,
     },
@@ -106,18 +105,10 @@ export async function upsertVehicleUnitAcquisition(
 
 async function ensureScopedUnit(
   context: ServiceContext,
-  input: { listingId: string; unitId: string },
+  input: { unitId: string },
   ports?: VehicleInventoryServicePorts,
 ) {
-  const listing = await findScopedListing(
-    context,
-    getListingRepository(ports),
-    input.listingId,
-  );
-  return findScopedUnit(context, getUnitRepository(ports), {
-    listingId: listing.id,
-    unitId: input.unitId,
-  });
+  return findScopedUnitById(context, getUnitRepository(ports), input.unitId);
 }
 
 function acquisitionRecord(

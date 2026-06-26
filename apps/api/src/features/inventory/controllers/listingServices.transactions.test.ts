@@ -21,7 +21,6 @@ describe("inventory listing transaction composition", () => {
         services.addVehicleCost(context(), {
           amountCents: 1000,
           kind: "preparation",
-          listingId: "listing_1",
           unitId: "unit_1",
         }),
     ],
@@ -36,9 +35,9 @@ describe("inventory listing transaction composition", () => {
         services.attachVehicleDocument(context(), {
           fileName: "doc.pdf",
           kind: "sale_contract",
-          listingId: "listing_1",
           storageKey: "storage/key.pdf",
           title: "Doc",
+          unitId: "unit_1",
         }),
     ],
     [
@@ -54,28 +53,25 @@ describe("inventory listing transaction composition", () => {
       (services) =>
         services.createChecklist(context(), {
           items: [{ label: "Manual", status: "pending" }],
-          listingId: "listing_1",
           name: "Entrega",
           unitId: "unit_1",
         }),
     ],
     [
-      "reserveListing",
+      "reserveUnit",
       (services) =>
-        services.reserveListing(context(), {
+        services.reserveUnit(context(), {
           buyer: buyer(),
-          listingId: "listing_1",
           paymentMethod: "pix",
           signalAmountCents: 1000,
           unitId: "unit_1",
         }),
     ],
     [
-      "sellListing",
+      "sellUnit",
       (services) =>
-        services.sellListing(context(), {
+        services.sellUnit(context(), {
           buyer: buyer(),
-          listingId: "listing_1",
           paymentMethod: "pix",
           unitId: "unit_1",
         }),
@@ -94,7 +90,6 @@ describe("inventory listing transaction composition", () => {
         services.updateChecklist(context(), {
           checklistId: "vehicle_checklist_1",
           items: [{ id: "item_1", label: "Manual", status: "passed" }],
-          listingId: "listing_1",
           unitId: "unit_1",
         }),
     ],
@@ -110,7 +105,6 @@ describe("inventory listing transaction composition", () => {
       "updateListingUnit",
       (services) =>
         services.updateListingUnit(context(), {
-          listingId: "listing_1",
           plate: "ABC1D23",
           unitId: "unit_1",
         }),

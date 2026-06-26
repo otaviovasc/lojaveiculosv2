@@ -83,28 +83,19 @@ export const inventoryRoutes = {
     createInventoryEndpoint("/inventory/enrichment/plate", baseUrl),
   resaleAnalysis: (baseUrl?: string) =>
     createInventoryEndpoint("/inventory/enrichment/resale-analysis", baseUrl),
-  costs: (listingId: string, baseUrl?: string) =>
+  costs: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/costs`,
+      `/inventory/units/${encodeURIComponent(unitId)}/costs`,
       baseUrl,
     ),
-  checklists: (listingId: string, unitId: string, baseUrl?: string) =>
+  checklists: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(
-        listingId,
-      )}/units/${encodeURIComponent(unitId)}/checklists`,
+      `/inventory/units/${encodeURIComponent(unitId)}/checklists`,
       baseUrl,
     ),
-  checklistDetail: (
-    listingId: string,
-    unitId: string,
-    checklistId: string,
-    baseUrl?: string,
-  ) =>
+  checklistDetail: (unitId: string, checklistId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(
-        listingId,
-      )}/units/${encodeURIComponent(unitId)}/checklists/${encodeURIComponent(
+      `/inventory/units/${encodeURIComponent(unitId)}/checklists/${encodeURIComponent(
         checklistId,
       )}`,
       baseUrl,
@@ -167,14 +158,14 @@ export const inventoryRoutes = {
       `/inventory/units/${encodeURIComponent(unitId)}/sell`,
       baseUrl,
     ),
-  documentUploads: (listingId: string, baseUrl?: string) =>
+  unitDocumentUploads: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/documents/uploads`,
+      `/inventory/units/${encodeURIComponent(unitId)}/documents/uploads`,
       baseUrl,
     ),
-  documents: (listingId: string, baseUrl?: string) =>
+  unitDocuments: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(listingId)}/documents`,
+      `/inventory/units/${encodeURIComponent(unitId)}/documents`,
       baseUrl,
     ),
   unit: (listingId: string, baseUrl?: string) =>
@@ -182,18 +173,14 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}/unit`,
       baseUrl,
     ),
-  unitDetail: (listingId: string, unitId: string, baseUrl?: string) =>
+  unitDetail: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(
-        listingId,
-      )}/units/${encodeURIComponent(unitId)}`,
+      `/inventory/units/${encodeURIComponent(unitId)}`,
       baseUrl,
     ),
-  unitAcquisition: (listingId: string, unitId: string, baseUrl?: string) =>
+  unitAcquisition: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
-      `/inventory/listings/${encodeURIComponent(
-        listingId,
-      )}/units/${encodeURIComponent(unitId)}/acquisition`,
+      `/inventory/units/${encodeURIComponent(unitId)}/acquisition`,
       baseUrl,
     ),
 } as const;

@@ -26,7 +26,7 @@ describe("inventory workflow routes", () => {
     );
 
     expect(response.status).toBe(201);
-    expect(services.reserveListing).toHaveBeenCalledWith(expect.any(Object), {
+    expect(services.reserveUnit).toHaveBeenCalledWith(expect.any(Object), {
       buyer: {
         address: null,
         document: null,
@@ -53,7 +53,7 @@ describe("inventory workflow routes", () => {
     });
 
     expect(response.status).toBe(201);
-    expect(services.sellListing).toHaveBeenCalledWith(expect.any(Object), {
+    expect(services.sellUnit).toHaveBeenCalledWith(expect.any(Object), {
       buyer: {
         address: null,
         document: "000",
@@ -82,7 +82,7 @@ describe("inventory workflow routes", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(services.releaseReservation).toHaveBeenCalledWith(
+    expect(services.releaseUnitReservation).toHaveBeenCalledWith(
       expect.any(Object),
       {
         reason: "Cliente desistiu",
@@ -94,7 +94,7 @@ describe("inventory workflow routes", () => {
 
   it("maps workflow validation errors to 400 responses", async () => {
     const services = createInventoryTestServices();
-    vi.mocked(services.sellListing).mockRejectedValueOnce(
+    vi.mocked(services.sellUnit).mockRejectedValueOnce(
       new VehicleWorkflowValidationError("salePriceCents"),
     );
     const app = createInventoryTestApp(services);
@@ -115,7 +115,7 @@ describe("inventory workflow routes", () => {
 
   it("maps workflow state conflicts to 409 responses", async () => {
     const services = createInventoryTestServices();
-    vi.mocked(services.reserveListing).mockRejectedValueOnce(
+    vi.mocked(services.reserveUnit).mockRejectedValueOnce(
       new VehicleWorkflowStateError(
         "Vehicle unit must be available to reserve; current status is sold.",
       ),

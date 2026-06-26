@@ -10,7 +10,7 @@ import type {
 import {
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getDocumentRepository,
   getListingRepository,
   getUnitRepository,
@@ -25,12 +25,10 @@ export type AttachVehicleDocumentInput = {
   fileSizeBytes?: number | null;
   kind: VehicleDocumentKind;
   linkRole?: string;
-  listingId: string;
   mimeType?: string | null;
   storageKey: string;
-  targetId?: string;
-  targetType?: VehicleDocumentTargetType;
   title: string;
+  unitId: string;
 };
 
 export async function attachVehicleDocument(
@@ -40,11 +38,11 @@ export async function attachVehicleDocument(
 ): Promise<VehicleDocument> {
   assertPermission(context, permission);
   const target = await resolveDocumentTarget(context, input, ports);
-  assertStorageScope(context, input.listingId, input.storageKey);
+  assertStorageScope(context, target.unit.id, input.storageKey);
 
   logVehicleServiceEvent(context, "vehicle_document.attach.started", {
     documentKind: input.kind,
-    listingId: input.listingId,
+    listingId: target.listing.id,
     targetId: target.targetId,
     targetType: target.targetType,
   });
@@ -73,13 +71,13 @@ export async function attachVehicleDocument(
     entityType: "vehicle_document",
     metadata: {
       documentKind: document.kind,
-      listingId: input.listingId,
+      listingId: target.listing.id,
       targetId: document.targetId,
       targetType: document.targetType,
     },
     permission,
     relatedEntities: [
-      { id: input.listingId, type: "vehicle_listing" },
+      { id: target.listing.id, type: "vehicle_listing" },
       { id: document.targetId, type: document.targetType },
     ],
     summary: "Attached vehicle document",
@@ -93,29 +91,22 @@ async function resolveDocumentTarget(
   input: AttachVehicleDocumentInput,
   ports?: VehicleInventoryServicePorts,
 ) {
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-
-  if (input.targetType === "vehicle_unit") {
-    const unit = await findScopedUnit(context, getUnitRepository(ports), {
-      listingId: listing.id,
-      unitId: input.targetId ?? "",
-    });
-    return {
-      listing,
-      targetId: unit.id,
-      targetType: "vehicle_unit" as const,
-      unit,
-    };
-  }
 
   return {
     listing,
-    targetId: listing.id,
-    targetType: "vehicle_listing" as const,
+    targetId: unit.id,
+    targetType: "vehicle_unit" as const,
+    unit,
   };
 }
 
@@ -125,7 +116,7 @@ function createManualDocumentMetadata(
     listing: VehicleListing;
     targetId: string;
     targetType: VehicleDocumentTargetType;
-    unit?: VehicleUnit;
+    unit: VehicleUnit;
   },
 ) {
   return {
@@ -140,18 +131,18 @@ function createManualDocumentMetadata(
     vehicle: {
       catalog: target.listing.catalog,
       listingId: target.listing.id,
-      plate: target.unit?.plate ?? target.listing.plate,
-      stockNumber: target.unit?.stockNumber ?? null,
+      plate: target.unit.plate ?? target.listing.plate,
+      stockNumber: target.unit.stockNumber ?? null,
       title: target.listing.title,
-      unitId: target.unit?.id ?? null,
-      vin: target.unit?.vin ?? null,
+      unitId: target.unit.id,
+      vin: target.unit.vin ?? null,
     },
   };
 }
 
 function assertStorageScope(
   context: ServiceContext,
-  listingId: string,
+  unitId: string,
   storageKey: string,
 ) {
   if (!context.tenantId || !context.storeId) {
@@ -160,7 +151,7 @@ function assertStorageScope(
     );
   }
 
-  const prefix = `tenants/${context.tenantId}/stores/${context.storeId}/listings/${listingId}/`;
+  const prefix = `tenants/${context.tenantId}/stores/${context.storeId}/units/${unitId}/`;
   if (!storageKey.startsWith(prefix)) {
     throw new VehicleDocumentStorageScopeError();
   }
@@ -168,7 +159,7 @@ function assertStorageScope(
 
 export class VehicleDocumentStorageScopeError extends Error {
   constructor() {
-    super("Vehicle document storage key is outside the scoped listing folder.");
+    super("Vehicle document storage key is outside the scoped unit folder.");
     this.name = "VehicleDocumentStorageScopeError";
   }
 }

@@ -3,6 +3,7 @@ import {
   leads,
   sales,
   vehicleListings,
+  vehicleUnits,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import { and, eq, sql } from "drizzle-orm";
@@ -45,25 +46,36 @@ async function getInventory(
   db: RuntimeAnalyticsClient,
   input: { storeId: string; tenantId: string },
 ) {
-  const [row] = await db
-    .select({
-      averagePriceCents: sql<number>`coalesce(avg(${vehicleListings.askingPriceCents}), 0)::int`,
-      availableListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'published')::int`,
-      reservedListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'reserved')::int`,
-      soldListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'sold_out')::int`,
-      totalListings: sql<number>`count(*)::int`,
-    })
-    .from(vehicleListings)
-    .where(scoped(vehicleListings, input));
-  return (
-    row ?? {
+  const [listingRow, unitRow] = await Promise.all([
+    db
+      .select({
+        averagePriceCents: sql<number>`coalesce(avg(${vehicleListings.askingPriceCents}), 0)::int`,
+        availableListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'published')::int`,
+        soldListings: sql<number>`count(*) filter (where ${vehicleListings.status} = 'sold_out')::int`,
+        totalListings: sql<number>`count(*)::int`,
+      })
+      .from(vehicleListings)
+      .where(scoped(vehicleListings, input)),
+    db
+      .select({
+        reservedListings: sql<number>`count(distinct ${vehicleUnits.listingId}) filter (where ${vehicleUnits.status} = 'reserved')::int`,
+      })
+      .from(vehicleUnits)
+      .where(scoped(vehicleUnits, input)),
+  ]);
+  const listing = listingRow[0];
+  const unit = unitRow[0];
+
+  return {
+    ...{
       averagePriceCents: 0,
       availableListings: 0,
-      reservedListings: 0,
       soldListings: 0,
       totalListings: 0,
-    }
-  );
+    },
+    ...listing,
+    reservedListings: unit?.reservedListings ?? 0,
+  };
 }
 
 async function getRevenue(
@@ -155,6 +167,7 @@ function createKpis(
 function scoped(
   table:
     | typeof vehicleListings
+    | typeof vehicleUnits
     | typeof sales
     | typeof financeEntries
     | typeof leads,

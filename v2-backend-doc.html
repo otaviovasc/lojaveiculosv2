@@ -1328,8 +1328,8 @@
                 table in V2. Vehicle and sale documents are stored in
                 <code>documents</code> and connected by
                 <code>document_links.target_type</code> values such as
-                <code>vehicle_listing</code>, <code>vehicle_unit</code>,
-                <code>sale</code>, and <code>sale_payment</code>.
+                <code>vehicle_unit</code>, <code>sale</code>, and
+                <code>sale_payment</code>.
               </p>
             </div>
             <div class="tile">
@@ -1357,11 +1357,8 @@
             <div class="tile">
               <strong>Known listing/unit logic debt</strong>
               <p>
-                Routes and docs now make unit reserve/sell/release primary, but
-                follow-up cleanup should remove compatibility naming such as
-                <code>reserveVehicleListing</code>,
-                <code>sellVehicleListing</code>, and
-                <code>ReserveVehicleListingRequest</code>. UI/status filters
+                Unit reserve/sell/release, costs, checklists, acquisition,
+                documents, and media are now unit-primary. UI/status filters
                 must continue treating listing status as publication state and
                 unit status as stock lifecycle state.
               </p>
@@ -2176,13 +2173,9 @@
                   loading, listing edit form, and unit edit form. Backend routes
                   include
                   <code>PATCH /api/v1/inventory/listings/{listingId}</code> and
-                  <code
-                    >PATCH
-                    /api/v1/inventory/listings/{listingId}/units/{unitId}</code
-                  >. Write services record scoped logs and audit rows with actor
-                  context plus field-level <code>before</code>/<code
-                    >after</code
-                  >
+                  <code>PATCH /api/v1/inventory/units/{unitId}</code>. Write
+                  services record scoped logs and audit rows with actor context
+                  plus field-level <code>before</code>/<code>after</code>
                   changes, explicitly capturing who changed what and which
                   fields changed.
                 </td>
@@ -2507,10 +2500,10 @@
             page actions. Every emitted vehicle document is persisted in the
             shared
             <code>documents</code> table, linked through
-            <code>document_links</code> to <code>vehicle_listing</code>,
-            <code>vehicle_unit</code>, <code>sale</code>, or
-            <code>sale_payment</code> targets, and recorded in audit with actor,
-            tenant, store, and correlation context.
+            <code>document_links</code> to <code>vehicle_unit</code>,
+            <code>sale</code>, or <code>sale_payment</code> targets, and
+            recorded in audit with actor, tenant, store, and correlation
+            context.
           </p>
           <div class="doc-matrix">
             <div class="doc-card requires-audit">
@@ -4314,10 +4307,6 @@
           relations: [
             ["vehicle_listings.id", "vehicle_units.listing_id"],
             ["vehicle_units.id", "vehicle_media.unit_id"],
-            [
-              "vehicle_listings.id",
-              "document_links.target_id when target_type=vehicle_listing",
-            ],
             [
               "vehicle_units.id",
               "document_links.target_id when target_type=vehicle_unit",

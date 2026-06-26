@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { leads } from "./leads.js";
 import { stores, tenants, users } from "./identity.js";
-import { vehicleListings, vehicleUnits } from "./inventory.js";
+import { vehicleUnits } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
 export const saleStatus = pgEnum("sale_status", [
@@ -42,7 +42,6 @@ export const sales = pgTable(
       .default({}),
     isCurrentRevision: boolean("is_current_revision").notNull().default(true),
     leadId: uuid("lead_id").references(() => leads.id),
-    listingId: uuid("listing_id").references(() => vehicleListings.id),
     listingSnapshot: jsonb("listing_snapshot").notNull().default({}),
     overrideReason: text("override_reason"),
     overrideRequiredFields: boolean("override_required_fields")
@@ -62,12 +61,13 @@ export const sales = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    unitId: uuid("unit_id").references(() => vehicleUnits.id),
+    unitId: uuid("unit_id")
+      .notNull()
+      .references(() => vehicleUnits.id),
   },
   (table) => [
     index("sales_closed_at_idx").on(table.closedAt),
     index("sales_lead_id_idx").on(table.leadId),
-    index("sales_listing_id_idx").on(table.listingId),
     index("sales_seller_user_id_idx").on(table.sellerUserId),
     index("sales_store_status_idx").on(table.storeId, table.status),
     index("sales_unit_id_idx").on(table.unitId),

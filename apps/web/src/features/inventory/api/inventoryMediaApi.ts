@@ -79,42 +79,39 @@ export function createInventoryMediaApi({
       "PATCH",
     );
 
-  const requestDocumentUpload = (
-    listingId: string,
-    input: { file: File; targetId?: string; targetType?: string },
+  const requestUnitDocumentUpload = (
+    unitId: string,
+    input: { file: File; kind: AttachInventoryDocumentInput["kind"] },
   ) =>
     postJson<InventoryMediaUpload>(
-      inventoryRoutes.documentUploads(listingId, baseUrl),
+      inventoryRoutes.unitDocumentUploads(unitId, baseUrl),
       mediaUploadBody(input.file, {
-        targetId: input.targetId,
-        targetType: input.targetType,
+        kind: input.kind,
       }),
     );
 
-  const attachDocument = (
-    listingId: string,
+  const attachUnitDocument = (
+    unitId: string,
     input: AttachInventoryDocumentInput,
   ) =>
     postJson<InventoryListingDetail>(
-      inventoryRoutes.documents(listingId, baseUrl),
+      inventoryRoutes.unitDocuments(unitId, baseUrl),
       {
         fileName: input.fileName,
         fileSizeBytes: input.fileSizeBytes,
         kind: input.kind,
         mimeType: input.mimeType,
         storageKey: input.storageKey,
-        targetId: input.targetId,
-        targetType: input.targetType,
         title: input.title,
       },
     );
 
   return {
-    attachDocument,
+    attachUnitDocument,
     createMedia,
     deleteMedia,
     reorderMedia,
-    requestDocumentUpload,
+    requestUnitDocumentUpload,
     requestMediaUpload,
     updateMedia,
   };

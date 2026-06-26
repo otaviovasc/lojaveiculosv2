@@ -1,14 +1,11 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type {
-  VehicleDocumentKind,
-  VehicleDocumentTargetType,
-} from "../../ports/vehicleInventoryRepository.js";
+import type { VehicleDocumentKind } from "../../ports/vehicleInventoryRepository.js";
 import type { VehicleMediaUpload } from "../../ports/vehicleMediaStorage.js";
 import {
   auditVehicleServiceEvent,
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getListingRepository,
   getMediaStorage,
   getUnitRepository,
@@ -22,10 +19,8 @@ export type RequestVehicleDocumentUploadInput = {
   contentType: string;
   fileName: string;
   kind: VehicleDocumentKind;
-  listingId: string;
   sizeBytes: number;
-  targetId?: string;
-  targetType?: VehicleDocumentTargetType;
+  unitId: string;
 };
 
 export async function requestVehicleDocumentUpload(
@@ -34,40 +29,36 @@ export async function requestVehicleDocumentUpload(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleMediaUpload> {
   assertPermission(context, permission);
-  await assertDocumentTarget(context, input, ports);
+  const target = await assertDocumentTarget(context, input, ports);
   const scope = requireStoreScope(context);
 
   logVehicleServiceEvent(context, "vehicle_document.upload.requested", {
     contentType: input.contentType,
     kind: input.kind,
-    listingId: input.listingId,
+    listingId: target.listing.id,
     sizeBytes: input.sizeBytes,
-    targetType: input.targetType ?? "vehicle_listing",
+    targetType: "vehicle_unit",
   });
 
   const upload = await getMediaStorage(ports).createUpload({
     contentType: input.contentType,
     fileName: input.fileName,
-    scopeSegments: createVehicleObjectScope(
-      scope,
-      input.listingId,
-      "documents",
-    ),
+    scopeSegments: createVehicleObjectScope(scope, target.unit.id, "documents"),
     sizeBytes: input.sizeBytes,
   });
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_document.upload.request",
     category: "data_change",
-    entityId: input.targetId ?? input.listingId,
-    entityType: input.targetType ?? "vehicle_listing",
+    entityId: target.unit.id,
+    entityType: "vehicle_unit",
     metadata: {
       documentKind: input.kind,
-      listingId: input.listingId,
+      listingId: target.listing.id,
       sizeBytes: input.sizeBytes,
       storageKey: upload.storageKey,
-      targetId: input.targetId ?? input.listingId,
-      targetType: input.targetType ?? "vehicle_listing",
+      targetId: target.unit.id,
+      targetType: "vehicle_unit",
       uploadCorrelationId: context.requestId,
     },
     permission,
@@ -82,18 +73,17 @@ async function assertDocumentTarget(
   input: RequestVehicleDocumentUploadInput,
   ports?: VehicleInventoryServicePorts,
 ) {
-  await findScopedListing(
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports),
+    input.unitId,
+  );
+  const listing = await findScopedListing(
     context,
     getListingRepository(ports),
-    input.listingId,
+    unit.listingId,
   );
-
-  if (input.targetType === "vehicle_unit") {
-    await findScopedUnit(context, getUnitRepository(ports), {
-      listingId: input.listingId,
-      unitId: input.targetId ?? "",
-    });
-  }
+  return { listing, unit };
 }
 
 function requireStoreScope(context: ServiceContext) {
@@ -106,7 +96,7 @@ function requireStoreScope(context: ServiceContext) {
 
 function createVehicleObjectScope(
   scope: { storeId: string; tenantId: string },
-  listingId: string,
+  unitId: string,
   category: string,
 ) {
   return [
@@ -114,8 +104,8 @@ function createVehicleObjectScope(
     scope.tenantId,
     "stores",
     scope.storeId,
-    "listings",
-    listingId,
+    "units",
+    unitId,
     category,
   ];
 }

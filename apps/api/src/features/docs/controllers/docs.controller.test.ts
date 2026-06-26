@@ -44,16 +44,15 @@ describe("API docs routes", () => {
         .post.security,
     ).toEqual([{ bearerAuth: ["inventory.create"] }]);
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/costs"].post
         .security,
     ).toEqual([{ bearerAuth: ["inventory.cost_create"] }]);
     expect(
       openApiDocument.paths["/api/v1/inventory/suppliers"].post.security,
     ).toEqual([{ bearerAuth: ["inventory.update_unit"] }]);
     expect(
-      openApiDocument.paths[
-        "/api/v1/inventory/listings/{listingId}/units/{unitId}/acquisition"
-      ].put.requestBody.content["application/json"].schema,
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/acquisition"].put
+        .requestBody.content["application/json"].schema,
     ).toEqual({
       $ref: "#/components/schemas/UpsertVehicleUnitAcquisitionRequest",
     });
@@ -84,11 +83,11 @@ describe("API docs routes", () => {
     expect(
       openApiDocument.paths["/api/v1/inventory/units/{unitId}/reserve"].post
         .requestBody.content["application/json"].schema,
-    ).toEqual({ $ref: "#/components/schemas/ReserveVehicleListingRequest" });
+    ).toEqual({ $ref: "#/components/schemas/ReserveVehicleUnitRequest" });
     expect(
       openApiDocument.paths["/api/v1/inventory/units/{unitId}/sell"].post
         .requestBody.content["application/json"].schema,
-    ).toEqual({ $ref: "#/components/schemas/SellVehicleListingRequest" });
+    ).toEqual({ $ref: "#/components/schemas/SellVehicleUnitRequest" });
     const paths = openApiDocument.paths as Record<string, unknown>;
     expect(
       paths["/api/v1/inventory/listings/{listingId}/reserve"],
@@ -97,13 +96,12 @@ describe("API docs routes", () => {
       paths["/api/v1/inventory/listings/{listingId}/sell"],
     ).toBeUndefined();
     expect(
-      openApiDocument.paths["/api/v1/inventory/listings/{listingId}/costs"].post
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/costs"].post
         .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/CreateVehicleCostRequest" });
     expect(
-      openApiDocument.paths[
-        "/api/v1/inventory/listings/{listingId}/units/{unitId}/checklists"
-      ].post.requestBody.content["application/json"].schema,
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/checklists"].post
+        .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/CreateVehicleChecklistRequest" });
     expect(openApiDocument.components.schemas.VehicleMediaUpload).toEqual(
       expect.objectContaining({

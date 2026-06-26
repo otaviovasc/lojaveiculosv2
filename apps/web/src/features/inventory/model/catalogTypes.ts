@@ -51,7 +51,7 @@ export type InventoryDocumentKind =
   | "test_drive"
   | "vehicle_registration";
 
-export type InventoryDocumentTargetType = "vehicle_listing" | "vehicle_unit";
+export type InventoryDocumentTargetType = "vehicle_unit";
 export type InventoryCatalogVehicleType = "cars" | "motorcycles" | "trucks";
 
 export type InventoryCatalogOption = {

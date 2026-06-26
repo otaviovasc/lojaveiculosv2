@@ -19,7 +19,6 @@ export const financeLinkTargets = [
   "sale",
   "sale_payment",
   "vehicle_cost",
-  "vehicle_listing",
   "vehicle_unit",
 ] as const;
 export const financeDocumentKinds = [

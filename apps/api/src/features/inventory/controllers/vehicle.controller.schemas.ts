@@ -132,8 +132,6 @@ export const documentUploadSchema = z.object({
     .int()
     .positive()
     .max(25 * 1024 * 1024),
-  targetId: z.string().trim().min(1),
-  targetType: z.literal("vehicle_unit"),
 });
 
 export const attachDocumentSchema = z.object({
@@ -143,8 +141,6 @@ export const attachDocumentSchema = z.object({
   linkRole: z.string().trim().min(1).max(80).optional(),
   mimeType: z.string().trim().min(1).max(120).nullable().optional(),
   storageKey: z.string().trim().min(1),
-  targetId: z.string().trim().min(1),
-  targetType: z.literal("vehicle_unit"),
   title: z.string().trim().min(1).max(191),
 });
 
@@ -166,7 +162,6 @@ export const costSchema = z.object({
     "tax",
     "transport",
   ]),
-  unitId: z.string().trim().min(1).optional(),
 });
 
 const checklistItemSchema = z.object({
@@ -200,22 +195,20 @@ const buyerSchema = z.object({
   phone: z.string().trim().min(1).nullable().optional(),
 });
 
-export const reserveListingSchema = z.object({
+export const reserveUnitSchema = z.object({
   buyer: buyerSchema,
   paymentMethod: z.string().trim().min(1).default("pix"),
   reason: z.string().trim().min(1).nullable().optional(),
   salePriceCents: z.number().int().positive().nullable().optional(),
   signalAmountCents: z.number().int().positive(),
-  unitId: z.string().trim().min(1).optional(),
 });
 
-export const sellListingSchema = z.object({
+export const sellUnitSchema = z.object({
   buyer: buyerSchema,
   paidAmountCents: z.number().int().positive().nullable().optional(),
   paymentMethod: z.string().trim().min(1).default("pix"),
   reason: z.string().trim().min(1).nullable().optional(),
   salePriceCents: z.number().int().positive().nullable().optional(),
-  unitId: z.string().trim().min(1).optional(),
 });
 
 export const releaseReservationSchema = z.object({

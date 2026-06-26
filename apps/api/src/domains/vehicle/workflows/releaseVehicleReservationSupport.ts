@@ -7,17 +7,6 @@ import type { VehicleUnit } from "../ports/vehicleInventoryRepository.js";
 import type { VehicleSaleBundle } from "../ports/vehicleSalesRepository.js";
 import { VehicleWorkflowStateError } from "./vehicleSaleWorkflowRules.js";
 
-export function assertExpectedListing(
-  input: { listingId?: string | undefined },
-  unit: VehicleUnit,
-) {
-  if (input.listingId && input.listingId !== unit.listingId) {
-    throw new VehicleWorkflowStateError(
-      "Vehicle unit does not belong to listing.",
-    );
-  }
-}
-
 export function assertPendingReservationSale(
   context: ServiceContext,
   sale: VehicleSaleBundle,

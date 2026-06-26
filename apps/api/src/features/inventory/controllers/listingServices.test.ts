@@ -125,7 +125,6 @@ describe("inventory listing services factory", () => {
     const result = await services.updateListingUnit(
       createContext(["inventory.update_unit"]),
       {
-        listingId: "listing_1",
         plate: "DEF4G56",
         unitId: "unit_1",
       },

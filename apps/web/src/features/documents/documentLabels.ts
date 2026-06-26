@@ -51,11 +51,12 @@ export const targetOptions: Array<{
   value: DocumentLinkTarget | "";
 }> = [
   { label: "Todos os contextos", value: "" },
-  { label: "Anúncio do veículo", value: "vehicle_listing" },
+  { label: "Loja", value: "store" },
   { label: "Unidade", value: "vehicle_unit" },
   { label: "Lead", value: "lead" },
   { label: "Venda", value: "sale" },
   { label: "Pagamento", value: "sale_payment" },
   { label: "Financeiro", value: "finance_entry" },
+  { label: "Financiamento", value: "financing_inquiry" },
   { label: "Fiscal", value: "fiscal_document" },
 ];

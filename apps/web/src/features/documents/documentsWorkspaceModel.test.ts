@@ -14,14 +14,14 @@ describe("documents workspace model", () => {
         id: "doc_1",
         kind: "sale_contract",
         metadata: { plate: "ABC1D23" },
-        targetId: "listing_1",
-        targetType: "vehicle_listing",
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
         uploadedAt: "2026-06-01T10:00:00.000Z",
       }),
       createDocument({
         id: "doc_2",
         kind: "sale_receipt",
-        targetId: "listing_1",
+        targetId: "unit_2",
         targetType: "vehicle_unit",
         uploadedAt: "2026-06-02T10:00:00.000Z",
       }),
@@ -67,14 +67,14 @@ describe("documents workspace model", () => {
       createDocument({
         id: "doc_issued",
         status: "issued",
-        targetId: "listing_1",
-        targetType: "vehicle_listing",
+        targetId: "unit_1",
+        targetType: "vehicle_unit",
       }),
       createDocument({
         id: "doc_signed",
         status: "pending_signature",
-        targetId: "listing_1",
-        targetType: "vehicle_listing",
+        targetId: "unit_2",
+        targetType: "vehicle_unit",
       }),
     ];
 
@@ -87,8 +87,8 @@ describe("documents workspace model", () => {
   it("filters documents by selected group key (geral excludes unit-linked)", () => {
     const vehicleDocument = createDocument({
       id: "doc_vehicle",
-      targetId: "listing_1",
-      targetType: "vehicle_listing",
+      targetId: "unit_1",
+      targetType: "vehicle_unit",
     });
     const storeDocument = createDocument({
       id: "doc_store",
@@ -101,7 +101,7 @@ describe("documents workspace model", () => {
       targetType: "lead",
     });
 
-    expect(createFolderKey(vehicleDocument)).toBe("vehicle_listing:listing_1");
+    expect(createFolderKey(vehicleDocument)).toBe("vehicle_unit:unit_1");
     expect(
       filterDocumentsByGroup(
         [vehicleDocument, storeDocument, leadDocument],

@@ -32,11 +32,10 @@ export type InventoryApi = {
     input: CreateInventoryUnitInput,
   ) => Promise<InventoryListingDetail>;
   addCost: (
-    listingId: string,
+    unitId: string,
     input: CreateInventoryCostInput,
   ) => Promise<InventoryListingDetail>;
   createChecklist: (
-    listingId: string,
     unitId: string,
     input: CreateInventoryChecklistInput,
   ) => Promise<InventoryListingDetail>;
@@ -54,10 +53,7 @@ export type InventoryApi = {
     input: InventoryResaleAnalysisRequest,
   ) => Promise<InventoryResaleAnalysisResponse>;
   listListings: (input?: ListInventoryInput) => Promise<InventoryListingList>;
-  listChecklists: (
-    listingId: string,
-    unitId: string,
-  ) => Promise<readonly InventoryChecklist[]>;
+  listChecklists: (unitId: string) => Promise<readonly InventoryChecklist[]>;
   releaseReservation: (
     unitId: string,
     input: ReleaseInventoryReservationInput,
@@ -75,13 +71,11 @@ export type InventoryApi = {
     input: UpdateInventoryListingInput,
   ) => Promise<InventoryListingDetail>;
   updateChecklist: (
-    listingId: string,
     unitId: string,
     checklistId: string,
     input: UpdateInventoryChecklistInput,
   ) => Promise<InventoryListingDetail>;
   updateUnit: (
-    listingId: string,
     unitId: string,
     input: UpdateInventoryUnitInput,
   ) => Promise<InventoryListingDetail>;

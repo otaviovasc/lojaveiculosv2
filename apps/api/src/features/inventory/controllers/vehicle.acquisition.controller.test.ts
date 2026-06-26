@@ -63,16 +63,16 @@ describe("inventory acquisition controller", () => {
     const app = createInventoryTestApp(services);
 
     const loaded = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/acquisition",
+      "/api/v1/inventory/units/unit_1/acquisition",
     );
     expect(loaded.status).toBe(200);
     expect(services.getVehicleUnitAcquisition).toHaveBeenCalledWith(
       expect.any(Object),
-      { listingId: "listing_1", unitId: "unit_1" },
+      { unitId: "unit_1" },
     );
 
     const saved = await app.request(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/acquisition",
+      "/api/v1/inventory/units/unit_1/acquisition",
       {
         body: JSON.stringify({
           acquisitionPriceCents: 9000000,
@@ -90,7 +90,6 @@ describe("inventory acquisition controller", () => {
         acquisitionPriceCents: 9000000,
         channel: "auto_avaliar",
         commissionTiming: "closed",
-        listingId: "listing_1",
         supplierId: null,
         unitId: "unit_1",
       },

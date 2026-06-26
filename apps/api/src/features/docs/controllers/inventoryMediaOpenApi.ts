@@ -83,4 +83,34 @@ export const inventoryMediaPaths = {
       },
     },
   },
+  "/api/v1/inventory/units/{unitId}/documents/uploads": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Request unit document upload URL",
+      operationId: "requestInventoryUnitDocumentUpload",
+      security: [{ bearerAuth: ["inventory.document_attach"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("RequestVehicleDocumentUploadRequest"),
+      responses: {
+        "201": mediaUploadResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/units/{unitId}/documents": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Attach uploaded document to unit",
+      operationId: "attachInventoryUnitDocument",
+      security: [{ bearerAuth: ["inventory.document_attach"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("AttachVehicleDocumentRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
 } as const;

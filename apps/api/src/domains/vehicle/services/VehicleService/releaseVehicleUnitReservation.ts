@@ -11,7 +11,6 @@ import {
   VehicleWorkflowValidationError,
 } from "../../workflows/vehicleSaleWorkflowRules.js";
 import {
-  assertExpectedListing,
   assertPendingReservationSale,
   assertPendingSignal,
   assertReservedUnit,
@@ -33,17 +32,16 @@ import {
 
 const permission = "inventory.reserve";
 
-export type ReleaseVehicleReservationInput = {
-  listingId?: string | undefined;
+export type ReleaseVehicleUnitReservationInput = {
   pendingSale?: VehicleSaleBundle | undefined;
   reason?: string | null | undefined;
   saleId?: string | null | undefined;
   unitId: string;
 };
 
-export async function releaseVehicleReservation(
+export async function releaseVehicleUnitReservation(
   context: ServiceContext,
-  input: ReleaseVehicleReservationInput,
+  input: ReleaseVehicleUnitReservationInput,
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
   assertPermission(context, permission);
@@ -54,7 +52,6 @@ export async function releaseVehicleReservation(
     getUnitRepository(ports),
     input.unitId,
   );
-  assertExpectedListing(input, unit);
   assertReservedUnit(unit);
   const listing = await findScopedListing(
     context,

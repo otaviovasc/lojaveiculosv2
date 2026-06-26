@@ -29,7 +29,6 @@ export type DocumentLinkTarget =
   | "sale"
   | "sale_payment"
   | "store"
-  | "vehicle_listing"
   | "vehicle_unit";
 
 export type WorkspaceDocument = {
@@ -113,18 +112,11 @@ export type RequestDocumentUploadInput = {
   targetType?: DocumentLinkTarget;
 };
 
-export type VehicleDocumentTargetType = Extract<
-  DocumentLinkTarget,
-  "vehicle_unit"
->;
-
 export type RequestVehicleDocumentUploadInput = {
   contentType: string;
   fileName: string;
   kind: DocumentKind;
   sizeBytes: number;
-  targetId: string;
-  targetType: VehicleDocumentTargetType;
 };
 
 export type CreateUploadedDocumentInput = {
@@ -138,10 +130,10 @@ export type CreateUploadedDocumentInput = {
   title: string;
 };
 
-export type CreateVehicleUploadedDocumentInput = CreateUploadedDocumentInput & {
-  targetId: string;
-  targetType: VehicleDocumentTargetType;
-};
+export type CreateVehicleUploadedDocumentInput = Omit<
+  CreateUploadedDocumentInput,
+  "targetId" | "targetType"
+>;
 
 export type UpdateDocumentInput = {
   kind?: DocumentKind;

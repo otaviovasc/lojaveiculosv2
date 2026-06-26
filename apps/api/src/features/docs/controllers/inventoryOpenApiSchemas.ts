@@ -191,7 +191,7 @@ export const inventorySchemas = {
   UpdateListingPriceRequest: objectSchema(["priceCents"], {
     priceCents: { type: ["integer", "null"], minimum: 0 },
   }),
-  UpdateListingUnitRequest: objectSchema([], {
+  UpdateVehicleUnitRequest: objectSchema([], {
     colorName: unitIdentitySchemas.colorName,
     plate: unitIdentitySchemas.plate,
     status: {

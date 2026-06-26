@@ -2,10 +2,10 @@ import { kindLabel, statusLabel, targetLabel } from "./documentLabels";
 import { isVehicleDocumentTargetType } from "./documentDisplayModel";
 import type { WorkspaceDocument } from "./types";
 
-// Two structural top-level groups covering all 9 DocumentLinkTarget types:
+// Two structural top-level groups covering all DocumentLinkTarget types:
 // - "geral": store-linked documents (NOT tied to any vehicle)
-// - "veiculos": vehicle-linked documents (vehicle_listing + vehicle_unit)
-// All 7 non-vehicle target types (lead, sale, sale_payment, finance_entry,
+// - "veiculos": vehicle unit-linked documents
+// All non-vehicle target types (lead, sale, sale_payment, finance_entry,
 // financing_inquiry, fiscal_document, store) map to "geral".
 export type DocumentTopGroup = {
   count: number;

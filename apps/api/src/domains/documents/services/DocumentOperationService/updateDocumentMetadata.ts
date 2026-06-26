@@ -14,6 +14,7 @@ import {
   findScopedDocument,
   withOperationHistory,
 } from "./serviceSupport.js";
+import { validateDocumentTarget } from "./requestDocumentUpload.js";
 
 const metadataPermission = "documents.update_metadata";
 const linksPermission = "documents.update_links";
@@ -151,32 +152,7 @@ async function resolveLinkUpdate(
       "Store document links must target the current store.",
     );
   }
-  if (!["store", "vehicle_listing", "vehicle_unit"].includes(targetType)) {
-    throw new DocumentOperationPolicyError(
-      "Document link editing supports only store and vehicle targets.",
-    );
-  }
-  if (targetType !== "store") {
-    const exists = await ports?.linkTargetValidator?.existsInScope({
-      storeId: scope.storeId,
-      targetId,
-      targetType,
-      tenantId: scope.tenantId,
-    });
-    if (!exists) {
-      context.logger.warn(
-        "documents.link.invalid_target",
-        createServiceLogMetadata(context, {
-          documentId: document.id,
-          targetId,
-          targetType,
-        }),
-      );
-      throw new DocumentOperationPolicyError(
-        "Document link target was not found in the current store.",
-      );
-    }
-  }
+  await validateDocumentTarget(context, scope, { targetId, targetType }, ports);
 
   return {
     ...(input.linkRole?.trim() ? { linkRole: input.linkRole.trim() } : {}),

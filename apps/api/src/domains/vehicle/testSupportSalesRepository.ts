@@ -88,7 +88,6 @@ function createSale(
     closedAt: input.status === "closed" ? now : null,
     createdAt: now,
     id: `sale_${sequence}`,
-    listingId: input.listing.id,
     salePriceCents: input.salePriceCents,
     sellerUserId: input.sellerUserId,
     status: input.status,

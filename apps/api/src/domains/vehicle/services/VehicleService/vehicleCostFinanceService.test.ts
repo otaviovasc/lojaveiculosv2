@@ -24,7 +24,6 @@ describe("VehicleService cost finance entries", () => {
         amountCents: 120000,
         description: "Preparacao",
         kind: "preparation",
-        listingId: "listing_1",
         unitId: "unit_1",
       },
       ports,
@@ -40,7 +39,7 @@ describe("VehicleService cost finance entries", () => {
     });
     expect(
       ports.financeRepository.links.map((link) => link.targetType),
-    ).toEqual(["vehicle_cost", "vehicle_unit", "vehicle_listing"]);
+    ).toEqual(["vehicle_cost", "vehicle_unit"]);
     expect(context.audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "vehicle_cost.create" }),
     );

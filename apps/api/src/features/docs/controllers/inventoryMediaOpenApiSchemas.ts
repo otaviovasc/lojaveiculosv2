@@ -24,6 +24,27 @@ export const inventoryMediaSchemas = {
       sizeBytes: { type: "integer", minimum: 1, maximum: 26214400 },
     },
   ),
+  RequestVehicleDocumentUploadRequest: objectSchema(
+    ["contentType", "fileName", "kind", "sizeBytes"],
+    {
+      contentType: { type: "string", minLength: 1, maxLength: 120 },
+      fileName: { type: "string", minLength: 1, maxLength: 191 },
+      kind: { $ref: "#/components/schemas/VehicleDocumentKind" },
+      sizeBytes: { type: "integer", minimum: 1, maximum: 26214400 },
+    },
+  ),
+  AttachVehicleDocumentRequest: objectSchema(
+    ["fileName", "kind", "storageKey", "title"],
+    {
+      fileName: { type: "string", minLength: 1, maxLength: 191 },
+      fileSizeBytes: { type: ["integer", "null"], minimum: 1 },
+      kind: { $ref: "#/components/schemas/VehicleDocumentKind" },
+      linkRole: { type: "string", minLength: 1, maxLength: 80 },
+      mimeType: { type: ["string", "null"], minLength: 1, maxLength: 120 },
+      storageKey: { type: "string", minLength: 1 },
+      title: { type: "string", minLength: 1, maxLength: 191 },
+    },
+  ),
   ReorderVehicleMediaRequest: objectSchema(["items"], {
     items: {
       type: "array",

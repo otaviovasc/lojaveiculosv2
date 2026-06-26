@@ -153,8 +153,7 @@ export function createInventoryTestServices(): InventoryListingServices {
     requestDocumentUpload: vi.fn(async () => ({
       expiresAt: new Date("2026-01-01T00:15:00.000Z"),
       publicUrl: "https://cdn.local/document.pdf",
-      storageKey:
-        "tenants/tenant_1/stores/store_1/listings/listing_1/document.pdf",
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/document.pdf",
       uploadHeaders: { "content-type": "application/pdf" },
       uploadMethod: "PUT" as const,
       uploadUrl: "https://upload.local/document.pdf",
@@ -167,9 +166,9 @@ export function createInventoryTestServices(): InventoryListingServices {
       uploadMethod: "PUT" as const,
       uploadUrl: "https://upload.local/front.jpg",
     })),
-    reserveListing: vi.fn(async () => listingDetailResult()),
-    releaseReservation: vi.fn(async () => listingDetailResult()),
-    sellListing: vi.fn(async () => listingDetailResult()),
+    reserveUnit: vi.fn(async () => listingDetailResult()),
+    releaseUnitReservation: vi.fn(async () => listingDetailResult()),
+    sellUnit: vi.fn(async () => listingDetailResult()),
     updateListingDescription: vi.fn(async () => listingDetailResult()),
     updateListingDetails: vi.fn(async () => listingDetailResult()),
     updateChecklist: vi.fn(async () => listingDetailResult()),

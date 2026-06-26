@@ -65,7 +65,16 @@ export const documentUploadSchemas = {
       targetId: { type: "string" },
       targetType: {
         type: "string",
-        enum: ["store", "vehicle_listing", "vehicle_unit"],
+        enum: [
+          "finance_entry",
+          "financing_inquiry",
+          "fiscal_document",
+          "lead",
+          "sale",
+          "sale_payment",
+          "store",
+          "vehicle_unit",
+        ],
       },
       title: { type: "string" },
     },

@@ -49,7 +49,6 @@ export const financeLinkTarget = pgEnum("finance_link_target", [
   "sale",
   "sale_payment",
   "vehicle_cost",
-  "vehicle_listing",
   "vehicle_unit",
 ]);
 

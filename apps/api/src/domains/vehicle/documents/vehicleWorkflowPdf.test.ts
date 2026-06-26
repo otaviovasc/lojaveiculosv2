@@ -62,10 +62,10 @@ const record: CreateVehicleDocumentRecord = {
   },
   mimeType: "application/pdf",
   status: "issued",
-  storageKey: "generated/vehicle-workflows/listing_1/sale-contract.pdf",
+  storageKey: "generated/vehicle-workflows/unit_1/sale-contract.pdf",
   storeId: "store_1",
-  targetId: "listing_1",
-  targetType: "vehicle_listing",
+  targetId: "unit_1",
+  targetType: "vehicle_unit",
   tenantId: "tenant_1",
   title: "Contrato customizado - Ana Cliente",
 };

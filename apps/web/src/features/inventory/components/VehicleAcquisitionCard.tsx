@@ -27,7 +27,7 @@ type Props = {
   unit: InventoryUnit | null;
 };
 
-export function VehicleAcquisitionCard({ api, listingId, unit }: Props) {
+export function VehicleAcquisitionCard({ api, unit }: Props) {
   const [acquisitionDraft, setAcquisitionDraft] = useState<AcquisitionDraft>(
     emptyAcquisitionDraft,
   );
@@ -53,7 +53,7 @@ export function VehicleAcquisitionCard({ api, listingId, unit }: Props) {
     setIsLoading(true);
     setMessage(null);
     const acquisitionPromise = unitId
-      ? api.getVehicleUnitAcquisition(listingId, unitId)
+      ? api.getVehicleUnitAcquisition(unitId)
       : Promise.resolve(null);
     Promise.all([api.listVehicleSuppliers({ limit: 80 }), acquisitionPromise])
       .then(([supplierList, acquisition]) => {
@@ -77,7 +77,7 @@ export function VehicleAcquisitionCard({ api, listingId, unit }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [api, listingId, unit?.id]);
+  }, [api, unit?.id]);
 
   const updateSupplierDraft = (
     field: keyof SupplierDraft,
@@ -153,7 +153,6 @@ export function VehicleAcquisitionCard({ api, listingId, unit }: Props) {
     setIsSaving(true);
     try {
       const acquisition = await api.upsertVehicleUnitAcquisition(
-        listingId,
         unit.id,
         cleanAcquisitionDraft(acquisitionDraft),
       );

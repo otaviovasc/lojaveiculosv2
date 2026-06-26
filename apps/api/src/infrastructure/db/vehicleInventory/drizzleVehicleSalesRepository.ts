@@ -110,7 +110,6 @@ function toInsertSale(input: CreateVehicleSaleInput): InsertSaleRow {
   return {
     buyerSnapshot: input.buyerSnapshot,
     closedAt: input.status === "closed" ? new Date() : null,
-    listingId: input.listing.id,
     listingSnapshot: {
       catalog: input.listing.catalog,
       priceCents: input.listing.priceCents,
@@ -144,7 +143,7 @@ function toInsertPayment(
 }
 
 function toSale(row: SaleRow): VehicleSale {
-  if (row.salePriceCents === null || row.unitId === null) {
+  if (row.salePriceCents === null) {
     throw new Error(
       "Vehicle workflow sale row is missing completed sale data.",
     );
@@ -155,7 +154,6 @@ function toSale(row: SaleRow): VehicleSale {
     closedAt: row.closedAt,
     createdAt: row.createdAt,
     id: row.id,
-    listingId: row.listingId ?? "",
     salePriceCents: row.salePriceCents,
     sellerUserId: row.sellerUserId,
     status: row.status,

@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createInventoryApi,
-  createInventoryHeaders,
-  inventoryRoutes,
-} from "./apiClient";
+import { createInventoryApi } from "./apiClient";
 import {
   bodyOf,
   callAt,
@@ -157,41 +153,6 @@ describe("createInventoryApi", () => {
     expect(fake.calls).toHaveLength(3);
   });
 
-  it("keeps route helpers and headers explicit", () => {
-    expect(inventoryRoutes.listings()).toBe("/api/v1/inventory/listings");
-    expect(inventoryRoutes.detail("listing 1")).toBe(
-      "/api/v1/inventory/listings/listing%201",
-    );
-    expect(
-      inventoryRoutes.list({
-        limit: 100,
-        offset: 200,
-        search: "toro",
-        status: "available",
-      }),
-    ).toBe(
-      "/api/v1/inventory/units?limit=100&offset=200&search=toro&status=available",
-    );
-    expect(inventoryRoutes.unit("listing 1")).toBe(
-      "/api/v1/inventory/listings/listing%201/unit",
-    );
-    expect(inventoryRoutes.unitDetail("listing 1", "unit 1")).toBe(
-      "/api/v1/inventory/listings/listing%201/units/unit%201",
-    );
-    expect(inventoryRoutes.checklists("listing 1", "unit 1")).toBe(
-      "/api/v1/inventory/listings/listing%201/units/unit%201/checklists",
-    );
-    expect(
-      inventoryRoutes.checklistDetail("listing 1", "unit 1", "checklist 1"),
-    ).toBe(
-      "/api/v1/inventory/listings/listing%201/units/unit%201/checklists/checklist%201",
-    );
-    expect(createInventoryHeaders({ storeSlug: "test-store" })).toEqual({
-      "Content-Type": "application/json",
-      "x-store-slug": "test-store",
-    });
-  });
-
   it("updates listing details and units through canonical edit routes", async () => {
     const fake = createFakeFetch([
       listingDetailPayload(),
@@ -205,7 +166,7 @@ describe("createInventoryApi", () => {
       status: "published",
       title: "Updated title",
     });
-    await api.updateUnit("listing_1", "unit_1", {
+    await api.updateUnit("unit_1", {
       plate: "DEF4G56",
       status: "inactive",
       stockNumber: "stock_2",
@@ -222,9 +183,7 @@ describe("createInventoryApi", () => {
       status: "published",
       title: "Updated title",
     });
-    expect(callAt(fake.calls, 1).input).toBe(
-      "/api/v1/inventory/listings/listing_1/units/unit_1",
-    );
+    expect(callAt(fake.calls, 1).input).toBe("/api/v1/inventory/units/unit_1");
     expect(callAt(fake.calls, 1).init?.method).toBe("PATCH");
     expect(bodyOf(callAt(fake.calls, 1))).toEqual({
       plate: "DEF4G56",
@@ -258,18 +217,18 @@ describe("createInventoryApi", () => {
     ]);
     const api = createInventoryApi({ fetch: fake.fetch });
 
-    await api.listChecklists("listing_1", "unit_1");
-    await api.createChecklist("listing_1", "unit_1", {
+    await api.listChecklists("unit_1");
+    await api.createChecklist("unit_1", {
       items: [{ label: "Manual" }],
       name: "Entrega",
     });
-    await api.updateChecklist("listing_1", "unit_1", "checklist_1", {
+    await api.updateChecklist("unit_1", "checklist_1", {
       items: [{ id: "item_1", label: "Manual", status: "passed" }],
       status: "passed",
     });
 
     expect(callAt(fake.calls, 0).input).toBe(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists",
+      "/api/v1/inventory/units/unit_1/checklists",
     );
     expect(callAt(fake.calls, 1).init?.method).toBe("POST");
     expect(bodyOf(callAt(fake.calls, 1))).toEqual({
@@ -277,7 +236,7 @@ describe("createInventoryApi", () => {
       name: "Entrega",
     });
     expect(callAt(fake.calls, 2).input).toBe(
-      "/api/v1/inventory/listings/listing_1/units/unit_1/checklists/checklist_1",
+      "/api/v1/inventory/units/unit_1/checklists/checklist_1",
     );
     expect(callAt(fake.calls, 2).init?.method).toBe("PATCH");
     expect(bodyOf(callAt(fake.calls, 2))).toEqual({

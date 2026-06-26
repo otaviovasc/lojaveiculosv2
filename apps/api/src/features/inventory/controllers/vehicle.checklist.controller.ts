@@ -15,11 +15,10 @@ export function registerInventoryChecklistRoutes(
   services: InventoryListingServices,
   createContext: CreateContext,
 ) {
-  app.get("/listings/:listingId/units/:unitId/checklists", async (context) =>
+  app.get("/units/:unitId/checklists", async (context) =>
     handle(context, async () => {
       const serviceContext = await createContext(context);
       const checklists = await services.listChecklists(serviceContext, {
-        listingId: context.req.param("listingId"),
         unitId: context.req.param("unitId"),
       });
 
@@ -27,7 +26,7 @@ export function registerInventoryChecklistRoutes(
     }),
   );
 
-  app.post("/listings/:listingId/units/:unitId/checklists", async (context) =>
+  app.post("/units/:unitId/checklists", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, createChecklistSchema);
       const serviceContext = await createContext(context);
@@ -35,7 +34,6 @@ export function registerInventoryChecklistRoutes(
       return context.json(
         await services.createChecklist(serviceContext, {
           ...input,
-          listingId: context.req.param("listingId"),
           unitId: context.req.param("unitId"),
         }),
         201,
@@ -43,22 +41,19 @@ export function registerInventoryChecklistRoutes(
     }),
   );
 
-  app.patch(
-    "/listings/:listingId/units/:unitId/checklists/:checklistId",
-    async (context) =>
-      handle(context, async () => {
-        const input = await parseJson(context, updateChecklistSchema);
-        const serviceContext = await createContext(context);
+  app.patch("/units/:unitId/checklists/:checklistId", async (context) =>
+    handle(context, async () => {
+      const input = await parseJson(context, updateChecklistSchema);
+      const serviceContext = await createContext(context);
 
-        return context.json(
-          await services.updateChecklist(serviceContext, {
-            ...input,
-            checklistId: context.req.param("checklistId"),
-            listingId: context.req.param("listingId"),
-            unitId: context.req.param("unitId"),
-          }),
-        );
-      }),
+      return context.json(
+        await services.updateChecklist(serviceContext, {
+          ...input,
+          checklistId: context.req.param("checklistId"),
+          unitId: context.req.param("unitId"),
+        }),
+      );
+    }),
   );
 }
 

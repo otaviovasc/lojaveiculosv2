@@ -20,9 +20,8 @@ describe("inventory reserve/sell rollback", () => {
     });
 
     await expect(
-      services.reserveListing(workflowContext("inventory.reserve"), {
+      services.reserveUnit(workflowContext("inventory.reserve"), {
         buyer: buyer(),
-        listingId: "listing_1",
         paymentMethod: "pix",
         signalAmountCents: 100000,
         unitId: "unit_1",
@@ -41,9 +40,8 @@ describe("inventory reserve/sell rollback", () => {
     });
 
     await expect(
-      services.sellListing(workflowContext("inventory.sell"), {
+      services.sellUnit(workflowContext("inventory.sell"), {
         buyer: buyer(),
-        listingId: "listing_1",
         paymentMethod: "pix",
         unitId: "unit_1",
       }),

@@ -164,7 +164,6 @@ describe("VehicleService edits", () => {
     const updated = await updateVehicleUnit(
       context,
       {
-        listingId: "listing_1",
         plate: "DEF4G56",
         status: "inactive",
         stockNumber: "stock_2",

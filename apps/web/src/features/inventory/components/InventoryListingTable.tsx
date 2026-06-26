@@ -11,6 +11,7 @@ import {
   getInventoryCatalogLine,
   getInventoryPlate,
   getInventoryYearLine,
+  getInventoryDisplayStatus,
   getInventoryKm,
   getInventoryStockDays,
   getInventoryFipeComparison,
@@ -179,7 +180,7 @@ export function InventoryListingTable({
                 {visibleColumns.fase && (
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     <div className="flex items-center h-10">
-                      <StatusPill status={listing.status} />
+                      <StatusPill status={getInventoryDisplayStatus(item)} />
                     </div>
                   </td>
                 )}

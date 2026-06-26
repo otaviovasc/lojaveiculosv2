@@ -42,7 +42,6 @@ describe("manage vehicle acquisition", () => {
       {
         acquisitionPriceCents: 8800000,
         channel: "auto_avaliar",
-        listingId: listing.id,
         supplierId: supplier.id,
         unitId: "unit_1",
       },
@@ -79,7 +78,6 @@ describe("manage vehicle acquisition", () => {
         context(),
         {
           channel: "supplier_company",
-          listingId: listing.id,
           supplierId: "supplier_missing",
           unitId: "unit_1",
         },

@@ -33,7 +33,6 @@ export const documentLinkTargets = [
   "sale",
   "sale_payment",
   "store",
-  "vehicle_listing",
   "vehicle_unit",
 ] as const;
 
@@ -104,7 +103,7 @@ export const updateDocumentMetadataSchema = z
       value.targetType === "store" ||
       Boolean(value.targetId),
     {
-      message: "Vehicle document links require a target id.",
+      message: "Document links require a target id.",
     },
   );
 

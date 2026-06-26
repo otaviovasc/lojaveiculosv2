@@ -34,6 +34,7 @@ export async function requestDocumentUpload(
   if (!ports?.objectStorage) throw new DocumentOperationStorageError();
 
   const target = resolveDocumentTarget(scope.storeId, input);
+  await validateDocumentTarget(context, scope, target, ports);
   const upload = await ports.objectStorage.createUpload({
     contentType: input.contentType,
     fileName: input.fileName,
@@ -82,13 +83,45 @@ export function resolveDocumentTarget(
   },
 ): { targetId: string; targetType: DocumentLinkTarget } {
   const targetType = input.targetType ?? "store";
-  const targetId = input.targetId?.trim() || storeId;
-  if (targetType !== "store" || targetId !== storeId) {
+  const requestedTargetId = input.targetId?.trim();
+  const targetId =
+    targetType === "store" ? requestedTargetId || storeId : requestedTargetId;
+  if (!targetId) {
+    throw new DocumentOperationPolicyError("Document link target is required.");
+  }
+  if (targetType === "store" && targetId !== storeId) {
     throw new DocumentOperationPolicyError(
-      "Manual document uploads currently support only the store document scope.",
+      "Store document links must target the current store.",
     );
   }
   return { targetId, targetType };
+}
+
+export async function validateDocumentTarget(
+  context: ServiceContext,
+  scope: { storeId: string; tenantId: string },
+  target: { targetId: string; targetType: DocumentLinkTarget },
+  ports?: DocumentWorkspaceServicePorts,
+): Promise<void> {
+  if (target.targetType === "store") return;
+  const exists = await ports?.linkTargetValidator?.existsInScope({
+    storeId: scope.storeId,
+    targetId: target.targetId,
+    targetType: target.targetType,
+    tenantId: scope.tenantId,
+  });
+  if (!exists) {
+    context.logger.warn(
+      "documents.link.invalid_target",
+      createServiceLogMetadata(context, {
+        targetId: target.targetId,
+        targetType: target.targetType,
+      }),
+    );
+    throw new DocumentOperationPolicyError(
+      "Document link target was not found in the current store.",
+    );
+  }
 }
 
 export function createDocumentObjectScope(

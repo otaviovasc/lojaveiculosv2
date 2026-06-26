@@ -15,9 +15,10 @@ import {
   SalesRequestValidationError,
 } from "./sales.controller.http.js";
 import {
+  cleanCreateSaleDraftInput,
   cleanListSalesQuery,
-  cleanSaleDraftInput,
   cleanTransitionInput,
+  cleanUpdateSaleDraftInput,
 } from "./sales.controller.cleaners.js";
 import { salesServices, type SalesServices } from "./salesServices.js";
 
@@ -56,7 +57,10 @@ export function createSalesFeature(options: CreateSalesFeatureOptions = {}) {
       const input = await parseSalesJson(context, saleDraftSchema);
       const serviceContext = await createContext(context);
       return context.json(
-        await services.createDraft(serviceContext, cleanSaleDraftInput(input)),
+        await services.createDraft(
+          serviceContext,
+          cleanCreateSaleDraftInput(input),
+        ),
         201,
       );
     }),
@@ -70,7 +74,7 @@ export function createSalesFeature(options: CreateSalesFeatureOptions = {}) {
         await services.updateDraft(
           serviceContext,
           context.req.param("saleId"),
-          cleanSaleDraftInput(input),
+          cleanUpdateSaleDraftInput(input),
         ),
       );
     }),

@@ -70,7 +70,6 @@ export function validateSaleReadiness(sale: SaleRecord): void {
 
 export function collectMissingSaleFields(sale: SaleRecord): readonly string[] {
   const missing: string[] = [];
-  if (!sale.listingId) missing.push("listing");
   if (!hasBuyerName(sale.buyerSnapshot)) missing.push("buyer");
   if (!sale.leadId) missing.push("lead");
   if (!sale.unitId) missing.push("vehicle_unit");

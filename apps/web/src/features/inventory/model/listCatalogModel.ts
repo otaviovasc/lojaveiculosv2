@@ -49,6 +49,20 @@ export const inventoryStatusLabels: Record<InventoryListingStatus, string> = {
   unpublished: "Fora do ar",
 };
 
+export const inventoryUnitStatusLabels: Record<InventoryUnitStatus, string> = {
+  acquired: "Adquirido",
+  available: "Disponível",
+  delivered: "Entregue",
+  inactive: "Inativo",
+  in_preparation: "Em preparação",
+  reserved: "Reservado",
+  sold: "Vendido",
+};
+
+export type InventoryDisplayStatus =
+  | InventoryListingStatus
+  | InventoryUnitStatus;
+
 export function createInventoryErrorState(error: unknown): InventoryListState {
   return {
     kind: "error",
@@ -114,6 +128,16 @@ export function getInventoryYearLine(listing: InventoryListing): string {
 
 export function getInventoryPlate(summary: InventoryListingSummary): string {
   return summary.primaryUnit?.plate ?? summary.listing.plate ?? "-";
+}
+
+export function getInventoryDisplayStatus(
+  summary: InventoryListingSummary,
+): InventoryDisplayStatus {
+  return (
+    summary.primaryUnit?.status ??
+    summary.units[0]?.status ??
+    summary.listing.status
+  );
 }
 
 export function getInventoryStockLabel(

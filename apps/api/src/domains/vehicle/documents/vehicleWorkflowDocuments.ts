@@ -56,6 +56,7 @@ export function buildReservationReceiptDocument(input: {
     },
     role: "reservation_receipt",
     title: `${input.template?.title ?? "Recibo de sinal"} - ${input.buyer.name}`,
+    unit: input.unit,
   });
 }
 
@@ -89,6 +90,7 @@ export function buildSoldDocuments(input: {
       },
       role: spec.role,
       title: `${template?.title ?? spec.title} - ${input.buyer.name}`,
+      unit: input.unit,
     });
   });
 }
@@ -99,20 +101,21 @@ function buildDocumentRecord(input: {
   metadata: Record<string, unknown>;
   role: string;
   title: string;
+  unit: VehicleUnit;
 }): CreateVehicleDocumentRecord {
   return {
     createdByUserId: null,
-    fileName: `${input.role}-${input.listing.id}.pdf`,
+    fileName: `${input.role}-${input.unit.id}.pdf`,
     fileSizeBytes: null,
     kind: input.kind,
     linkRole: input.role,
     metadata: input.metadata,
     mimeType: "application/pdf",
     status: "issued",
-    storageKey: `generated/vehicle-workflows/${input.listing.id}/${input.role}.pdf`,
+    storageKey: `generated/vehicle-workflows/${input.unit.id}/${input.role}.pdf`,
     storeId: input.listing.storeId,
-    targetId: input.listing.id,
-    targetType: "vehicle_listing",
+    targetId: input.unit.id,
+    targetType: "vehicle_unit",
     tenantId: input.listing.tenantId,
     title: input.title,
   };

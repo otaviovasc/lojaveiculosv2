@@ -475,7 +475,7 @@ INSERT INTO vehicle_units (
 )
 VALUES
   ('11000000-0000-4000-8000-000000000001', now() - interval '45 days', 17100000, 'Preto', '10000000-0000-4000-8000-000000000001', 'ABC1D23', 'available', 'LV-A4-PRETO', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WAU00000000000001'),
-  ('11000000-0000-4000-8000-000000000002', now() - interval '10 days', 68900000, 'Preto', '10000000-0000-4000-8000-000000000002', null, 'available', 'LV-M3-PRETO', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WBS00000000000002'),
+  ('11000000-0000-4000-8000-000000000002', now() - interval '10 days', 68900000, 'Preto', '10000000-0000-4000-8000-000000000002', null, 'reserved', 'LV-M3-PRETO', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WBS00000000000002'),
   ('11000000-0000-4000-8000-000000000003', now() - interval '22 days', 6100000, 'Branco', '10000000-0000-4000-8000-000000000003', 'GHI7J89', 'reserved', 'LV-0003', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000003'),
   ('11000000-0000-4000-8000-000000000004', now() - interval '70 days', 13200000, 'Preto', '10000000-0000-4000-8000-000000000004', 'JKL0M12', 'sold', 'LV-0004', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '9BD00000000000004'),
   ('11000000-0000-4000-8000-000000000005', now() - interval '8 days', 69200000, 'Verde', '10000000-0000-4000-8000-000000000002', null, 'available', 'LV-M3-VERDE', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'WBS00000000000005')
@@ -573,9 +573,21 @@ INSERT INTO vehicle_status_history (
   unit_id
 )
 VALUES
-  ('15000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', now() - interval '3 days', 'published', '10000000-0000-4000-8000-000000000003', 'Sinal recebido de lead qualificado', '66666666-6666-4666-8666-666666666666', 'listing', '77777777-7777-4777-8777-777777777777', 'reserved', '11000000-0000-4000-8000-000000000003'),
-  ('15000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', now() - interval '11 days', 'reserved', '10000000-0000-4000-8000-000000000004', 'Venda concluida no atendimento presencial', '66666666-6666-4666-8666-666666666666', 'unit', '77777777-7777-4777-8777-777777777777', 'sold', '11000000-0000-4000-8000-000000000004')
-ON CONFLICT (id) DO NOTHING;
+  ('15000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', now() - interval '3 days', 'available', '10000000-0000-4000-8000-000000000003', 'Sinal recebido de lead qualificado', '66666666-6666-4666-8666-666666666666', 'unit', '77777777-7777-4777-8777-777777777777', 'reserved', '11000000-0000-4000-8000-000000000003'),
+  ('15000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', now() - interval '11 days', 'reserved', '10000000-0000-4000-8000-000000000004', 'Venda concluida no atendimento presencial', '66666666-6666-4666-8666-666666666666', 'unit', '77777777-7777-4777-8777-777777777777', 'sold', '11000000-0000-4000-8000-000000000004'),
+  ('15000000-0000-4000-8000-000000000003', '99999999-9999-4999-8999-999999999999', now() - interval '1 day', 'available', '10000000-0000-4000-8000-000000000002', 'Sinal recebido para unidade BMW M3 preta', '66666666-6666-4666-8666-666666666666', 'unit', '77777777-7777-4777-8777-777777777777', 'reserved', '11000000-0000-4000-8000-000000000002')
+ON CONFLICT (id) DO UPDATE SET
+  actor_user_id = EXCLUDED.actor_user_id,
+  changed_at = EXCLUDED.changed_at,
+  from_status = EXCLUDED.from_status,
+  listing_id = EXCLUDED.listing_id,
+  reason = EXCLUDED.reason,
+  store_id = EXCLUDED.store_id,
+  target = EXCLUDED.target,
+  tenant_id = EXCLUDED.tenant_id,
+  to_status = EXCLUDED.to_status,
+  unit_id = EXCLUDED.unit_id,
+  updated_at = now();
 
 INSERT INTO vehicle_checklists (
   id,
@@ -635,7 +647,13 @@ VALUES
   ('22000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '11000000-0000-4000-8000-000000000001'),
   ('22000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000002', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '11000000-0000-4000-8000-000000000002'),
   ('22000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000004', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '11000000-0000-4000-8000-000000000004')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  lead_id = EXCLUDED.lead_id,
+  listing_id = EXCLUDED.listing_id,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  unit_id = EXCLUDED.unit_id,
+  updated_at = now();
 
 INSERT INTO lead_visits (
   id,
@@ -758,9 +776,10 @@ INSERT INTO sales (
   buyer_snapshot,
   closed_at,
   lead_id,
-  listing_id,
   listing_snapshot,
   sale_price_cents,
+  sale_source_snapshot,
+  selected_document_kinds,
   seller_user_id,
   status,
   store_id,
@@ -772,16 +791,30 @@ VALUES (
   '{"name": "Carla Rocha", "phone": "+5511966663333", "document": "123.456.789-09"}'::jsonb,
   now() - interval '11 days',
   '20000000-0000-4000-8000-000000000003',
-  '10000000-0000-4000-8000-000000000004',
-  '{"title": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "stockNumber": "LV-0004"}'::jsonb,
+  '{"listingId": "10000000-0000-4000-8000-000000000004", "title": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "stockNumber": "LV-0004"}'::jsonb,
   14650000,
+  '{"listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "workflow": "vehicle_sale"}'::jsonb,
+  '["sale_contract", "sale_receipt", "delivery_term", "power_of_attorney"]'::jsonb,
   '99999999-9999-4999-8999-999999999999',
   'closed',
   '66666666-6666-4666-8666-666666666666',
   '77777777-7777-4777-8777-777777777777',
   '11000000-0000-4000-8000-000000000004'
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  buyer_snapshot = EXCLUDED.buyer_snapshot,
+  closed_at = EXCLUDED.closed_at,
+  lead_id = EXCLUDED.lead_id,
+  listing_snapshot = EXCLUDED.listing_snapshot,
+  sale_price_cents = EXCLUDED.sale_price_cents,
+  sale_source_snapshot = EXCLUDED.sale_source_snapshot,
+  selected_document_kinds = EXCLUDED.selected_document_kinds,
+  seller_user_id = EXCLUDED.seller_user_id,
+  status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  unit_id = EXCLUDED.unit_id,
+  updated_at = now();
 
 INSERT INTO sale_items (id, amount_cents, item_type, metadata, sale_id, store_id, tenant_id)
 VALUES
@@ -843,8 +876,18 @@ VALUES
   ('41000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', 'sale', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('41000000-0000-4000-8000-000000000002', '40000000-0000-4000-8000-000000000002', '13000000-0000-4000-8000-000000000001', 'vehicle_cost', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('41000000-0000-4000-8000-000000000003', '40000000-0000-4000-8000-000000000003', '30000000-0000-4000-8000-000000000001', 'sale', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('41000000-0000-4000-8000-000000000004', '40000000-0000-4000-8000-000000000004', '20000000-0000-4000-8000-000000000002', 'lead', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (id) DO NOTHING;
+  ('41000000-0000-4000-8000-000000000004', '40000000-0000-4000-8000-000000000004', '20000000-0000-4000-8000-000000000002', 'lead', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('41000000-0000-4000-8000-000000000005', '40000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000004', 'vehicle_unit', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('41000000-0000-4000-8000-000000000006', '40000000-0000-4000-8000-000000000002', '11000000-0000-4000-8000-000000000001', 'vehicle_unit', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('41000000-0000-4000-8000-000000000007', '40000000-0000-4000-8000-000000000003', '11000000-0000-4000-8000-000000000004', 'vehicle_unit', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('41000000-0000-4000-8000-000000000008', '40000000-0000-4000-8000-000000000004', '11000000-0000-4000-8000-000000000002', 'vehicle_unit', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (id) DO UPDATE SET
+  entry_id = EXCLUDED.entry_id,
+  target_id = EXCLUDED.target_id,
+  target_type = EXCLUDED.target_type,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO finance_recurring_entries (
   id,
@@ -974,7 +1017,10 @@ INSERT INTO document_templates (
 )
 VALUES
   ('50000000-0000-4000-8000-000000000001', '[{"title": "Entrega", "body": "Comprador declara vistoria e recebimento do veiculo."}]'::jsonb, true, 'delivery_term', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Termo de entrega padrao', '88888888-8888-4888-8888-888888888888'),
-  ('50000000-0000-4000-8000-000000000002', '[{"title": "Pagamento", "body": "Valores e condicoes constam no recibo assinado."}]'::jsonb, true, 'sale_contract', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Contrato de venda padrao', '88888888-8888-4888-8888-888888888888')
+  ('50000000-0000-4000-8000-000000000002', '[{"title": "Pagamento", "body": "Valores e condicoes constam no recibo assinado."}]'::jsonb, true, 'sale_contract', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Contrato de venda padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000003', '[{"title": "Quitacao", "body": "Vendedor declara recebimento conforme condicoes registradas."}]'::jsonb, true, 'sale_receipt', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de venda padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000004', '[{"title": "Poderes", "body": "Comprador outorga poderes para atos de transferencia veicular."}]'::jsonb, true, 'power_of_attorney', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Procuracao padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000005', '[{"title": "Sinal", "body": "Reserva condicionada ao recebimento do sinal e dados do comprador."}]'::jsonb, true, 'reservation_receipt', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de sinal padrao', '88888888-8888-4888-8888-888888888888')
 ON CONFLICT (store_id, kind) DO UPDATE SET
   clauses = EXCLUDED.clauses,
   is_enabled = EXCLUDED.is_enabled,
@@ -998,11 +1044,15 @@ INSERT INTO documents (
   uploaded_at
 )
 VALUES
-  ('51000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', 'contrato-hilux.pdf', 248000, 'sale_contract', '{"saleId": "30000000-0000-4000-8000-000000000001", "saleTitle": "Venda Toyota Hilux SRX", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/contrato-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Contrato de venda Hilux', now() - interval '11 days'),
-  ('51000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', 'recibo-sinal-hb20.pdf', 142000, 'reservation_receipt', '{"listingId": "10000000-0000-4000-8000-000000000003", "listingTitle": "Hyundai HB20 Comfort 2021", "vehicleTitle": "Hyundai HB20 Comfort 2021", "plate": "GHI7J89", "leadId": "20000000-0000-4000-8000-000000000002", "leadName": "Marcos Lima"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-sinal-hb20.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de reserva HB20', now() - interval '3 days'),
+  ('51000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', 'contrato-hilux.pdf', 248000, 'sale_contract', '{"saleId": "30000000-0000-4000-8000-000000000001", "saleTitle": "Venda Toyota Hilux SRX", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "sale_contract"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/sale_contract.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Contrato de venda Hilux', now() - interval '11 days'),
+  ('51000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', 'recibo-sinal-hb20.pdf', 142000, 'reservation_receipt', '{"listingId": "10000000-0000-4000-8000-000000000003", "listingTitle": "Hyundai HB20 Comfort 2021", "unitId": "11000000-0000-4000-8000-000000000003", "vehicleTitle": "Hyundai HB20 Comfort 2021", "plate": "GHI7J89", "leadId": "20000000-0000-4000-8000-000000000002", "leadName": "Marcos Lima", "documentType": "reservation_receipt"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000003/reservation_receipt.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de reserva HB20', now() - interval '3 days'),
   ('51000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'laudo-audi-a4.pdf', 184000, 'inspection', '{"unitId": "11000000-0000-4000-8000-000000000001", "unitTitle": "Audi A4 Prestige Plus 2.0 TFSI 2022", "plate": "ABC1D23", "buyerName": "Ana Silva", "documentType": "Laudo cautelar"}'::jsonb, 'application/pdf', 'signed', 'seed/documents/laudo-audi-a4.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Laudo cautelar Audi A4', now() - interval '19 days'),
   ('51000000-0000-4000-8000-000000000004', '88888888-8888-4888-8888-888888888888', 'documento-loja.pdf', 124000, 'internal', '{"documentCategory": "Documento geral", "reference": "Documento interno de oficina", "notes": "Importado em grupo geral."}'::jsonb, 'application/pdf', 'issued', 'seed/documents/documento-loja.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Protocolo interno', now() - interval '4 days'),
-  ('51000000-0000-4000-8000-000000000005', '99999999-9999-4999-8999-999999999999', 'recibo-pagamento-hilux.pdf', 132000, 'finance_receipt', '{"paymentId": "32000000-0000-4000-8000-000000000001", "financeTitle": "Pagamento de entrada", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "method": "Pix"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-pagamento-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Comprovante de pagamento', now() - interval '2 days')
+  ('51000000-0000-4000-8000-000000000005', '99999999-9999-4999-8999-999999999999', 'recibo-pagamento-hilux.pdf', 132000, 'finance_receipt', '{"paymentId": "32000000-0000-4000-8000-000000000001", "financeTitle": "Pagamento de entrada", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "method": "Pix"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-pagamento-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Comprovante de pagamento', now() - interval '2 days'),
+  ('51000000-0000-4000-8000-000000000006', '99999999-9999-4999-8999-999999999999', 'recibo-venda-hilux.pdf', 132000, 'sale_receipt', '{"saleId": "30000000-0000-4000-8000-000000000001", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "sale_receipt"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/sale_receipt.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de venda Hilux', now() - interval '11 days'),
+  ('51000000-0000-4000-8000-000000000007', '99999999-9999-4999-8999-999999999999', 'termo-entrega-hilux.pdf', 150000, 'delivery_term', '{"saleId": "30000000-0000-4000-8000-000000000001", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "delivery_term"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/delivery_term.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Termo de entrega Hilux', now() - interval '11 days'),
+  ('51000000-0000-4000-8000-000000000008', '99999999-9999-4999-8999-999999999999', 'procuracao-hilux.pdf', 156000, 'power_of_attorney', '{"saleId": "30000000-0000-4000-8000-000000000001", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "power_of_attorney"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/power_of_attorney.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Procuracao Hilux', now() - interval '11 days'),
+  ('51000000-0000-4000-8000-000000000009', '99999999-9999-4999-8999-999999999999', 'recibo-sinal-bmw-m3-preto.pdf', 145000, 'reservation_receipt', '{"listingId": "10000000-0000-4000-8000-000000000002", "listingTitle": "BMW M3 Competition M 2025", "unitId": "11000000-0000-4000-8000-000000000002", "vehicleTitle": "BMW M3 Competition M 2025", "stockNumber": "LV-M3-PRETO", "leadId": "20000000-0000-4000-8000-000000000002", "leadName": "Marcos Lima", "documentType": "reservation_receipt"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000002/reservation_receipt.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de reserva BMW M3 Preto', now() - interval '1 day')
 ON CONFLICT (id) DO UPDATE SET
   created_by_user_id = EXCLUDED.created_by_user_id,
   file_name = EXCLUDED.file_name,
@@ -1020,11 +1070,15 @@ ON CONFLICT (id) DO UPDATE SET
 
 INSERT INTO document_links (id, document_id, link_role, store_id, target_id, target_type, tenant_id)
 VALUES
-  ('52000000-0000-4000-8000-000000000001', '51000000-0000-4000-8000-000000000001', 'primary', '66666666-6666-4666-8666-666666666666', '30000000-0000-4000-8000-000000000001', 'sale', '77777777-7777-4777-8777-777777777777'),
-  ('52000000-0000-4000-8000-000000000002', '51000000-0000-4000-8000-000000000002', 'primary', '66666666-6666-4666-8666-666666666666', '10000000-0000-4000-8000-000000000003', 'vehicle_listing', '77777777-7777-4777-8777-777777777777'),
+  ('52000000-0000-4000-8000-000000000001', '51000000-0000-4000-8000-000000000001', 'sale_contract', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000004', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
+  ('52000000-0000-4000-8000-000000000002', '51000000-0000-4000-8000-000000000002', 'reservation_receipt', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000003', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
   ('52000000-0000-4000-8000-000000000003', '51000000-0000-4000-8000-000000000003', 'inspection', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000001', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
   ('52000000-0000-4000-8000-000000000004', '51000000-0000-4000-8000-000000000004', 'primary', '66666666-6666-4666-8666-666666666666', '66666666-6666-4666-8666-666666666666', 'store', '77777777-7777-4777-8777-777777777777'),
-  ('52000000-0000-4000-8000-000000000005', '51000000-0000-4000-8000-000000000005', 'primary', '66666666-6666-4666-8666-666666666666', '32000000-0000-4000-8000-000000000001', 'sale_payment', '77777777-7777-4777-8777-777777777777')
+  ('52000000-0000-4000-8000-000000000005', '51000000-0000-4000-8000-000000000005', 'primary', '66666666-6666-4666-8666-666666666666', '32000000-0000-4000-8000-000000000001', 'sale_payment', '77777777-7777-4777-8777-777777777777'),
+  ('52000000-0000-4000-8000-000000000006', '51000000-0000-4000-8000-000000000006', 'sale_receipt', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000004', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
+  ('52000000-0000-4000-8000-000000000007', '51000000-0000-4000-8000-000000000007', 'delivery_term', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000004', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
+  ('52000000-0000-4000-8000-000000000008', '51000000-0000-4000-8000-000000000008', 'power_of_attorney', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000004', 'vehicle_unit', '77777777-7777-4777-8777-777777777777'),
+  ('52000000-0000-4000-8000-000000000009', '51000000-0000-4000-8000-000000000009', 'reservation_receipt', '66666666-6666-4666-8666-666666666666', '11000000-0000-4000-8000-000000000002', 'vehicle_unit', '77777777-7777-4777-8777-777777777777')
 ON CONFLICT (id) DO UPDATE SET
   document_id = EXCLUDED.document_id,
   link_role = EXCLUDED.link_role,
@@ -1047,9 +1101,21 @@ INSERT INTO document_versions (
   version_number
 )
 VALUES
-  ('53000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000001', 'contrato-hilux-v1.pdf', 248000, 'application/pdf', 'seed/documents/versions/contrato-hilux-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1),
-  ('53000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000002', 'recibo-sinal-hb20-v1.pdf', 142000, 'application/pdf', 'seed/documents/versions/recibo-sinal-hb20-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1)
-ON CONFLICT (document_id, version_number) DO NOTHING;
+  ('53000000-0000-4000-8000-000000000001', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000001', 'contrato-hilux-v1.pdf', 248000, 'application/pdf', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/versions/sale_contract-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1),
+  ('53000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000002', 'recibo-sinal-hb20-v1.pdf', 142000, 'application/pdf', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000003/versions/reservation_receipt-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1),
+  ('53000000-0000-4000-8000-000000000003', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000006', 'recibo-venda-hilux-v1.pdf', 132000, 'application/pdf', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/versions/sale_receipt-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1),
+  ('53000000-0000-4000-8000-000000000004', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000007', 'termo-entrega-hilux-v1.pdf', 150000, 'application/pdf', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/versions/delivery_term-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1),
+  ('53000000-0000-4000-8000-000000000005', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000008', 'procuracao-hilux-v1.pdf', 156000, 'application/pdf', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/versions/power_of_attorney-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1),
+  ('53000000-0000-4000-8000-000000000006', '99999999-9999-4999-8999-999999999999', '51000000-0000-4000-8000-000000000009', 'recibo-sinal-bmw-m3-preto-v1.pdf', 145000, 'application/pdf', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000002/versions/reservation_receipt-v1.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 1)
+ON CONFLICT (document_id, version_number) DO UPDATE SET
+  created_by_user_id = EXCLUDED.created_by_user_id,
+  file_name = EXCLUDED.file_name,
+  file_size_bytes = EXCLUDED.file_size_bytes,
+  mime_type = EXCLUDED.mime_type,
+  storage_key = EXCLUDED.storage_key,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO payments (
   id,

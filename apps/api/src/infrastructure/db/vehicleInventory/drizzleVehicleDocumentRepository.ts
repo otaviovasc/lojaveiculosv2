@@ -112,7 +112,7 @@ export function createDrizzleVehicleDocumentRepository(
     },
     async listByListing(input) {
       const scope = requireWriteScope(input);
-      const targetIds = [input.listingId, ...input.unitIds];
+      const targetIds = [...input.unitIds];
       if (targetIds.length === 0) return [];
       const linkRows = await linkDb
         .select()
@@ -152,10 +152,7 @@ function toVehicleDocument(
   document: VehicleDocumentRow,
   link: VehicleDocumentLinkRow,
 ): VehicleDocument {
-  if (
-    link.targetType !== "vehicle_listing" &&
-    link.targetType !== "vehicle_unit"
-  ) {
+  if (link.targetType !== "vehicle_unit") {
     throw new Error(
       `Unsupported vehicle document target type: ${link.targetType}`,
     );

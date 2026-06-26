@@ -141,25 +141,20 @@ describe("inventory listing routes", () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);
 
-    const response = await app.request(
-      "/api/v1/inventory/listings/listing_1/costs",
-      {
-        body: JSON.stringify({
-          amountCents: 120000,
-          description: "Preparacao",
-          kind: "preparation",
-          unitId: "unit_1",
-        }),
-        method: "POST",
-      },
-    );
+    const response = await app.request("/api/v1/inventory/units/unit_1/costs", {
+      body: JSON.stringify({
+        amountCents: 120000,
+        description: "Preparacao",
+        kind: "preparation",
+      }),
+      method: "POST",
+    });
 
     expect(response.status).toBe(201);
     expect(services.addVehicleCost).toHaveBeenCalledWith(expect.any(Object), {
       amountCents: 120000,
       description: "Preparacao",
       kind: "preparation",
-      listingId: "listing_1",
       unitId: "unit_1",
     });
   });

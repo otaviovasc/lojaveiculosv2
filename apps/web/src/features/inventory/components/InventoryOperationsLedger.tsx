@@ -49,11 +49,10 @@ export function InventoryOperationsLedger({
     }
     setState("saving");
     try {
-      const updated = await api.addCost(detail.listing.id, {
+      const updated = await api.addCost(primaryUnit.id, {
         amountCents,
         description: description.trim() || null,
         kind,
-        unitId: primaryUnit.id,
       });
       setAmount("");
       setDescription("");

@@ -12,6 +12,7 @@ import type {
   ListSalesInput,
   SaleRecord,
   SaveSaleDraftInput,
+  UpdateSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
 import type { SalesServicePorts } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
@@ -48,7 +49,7 @@ export type SalesServices = {
   updateDraft: (
     context: ServiceContext,
     saleId: string,
-    input: SaveSaleDraftInput,
+    input: UpdateSaleDraftInput,
   ) => Promise<SaleRecord>;
 };
 

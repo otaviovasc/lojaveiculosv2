@@ -58,7 +58,7 @@ export type VehicleDocumentKind =
   | "test_drive"
   | "vehicle_registration";
 
-export type VehicleDocumentTargetType = "vehicle_listing" | "vehicle_unit";
+export type VehicleDocumentTargetType = "vehicle_unit";
 
 export type VehicleListingCatalog = {
   brandCode: string | null;

@@ -84,10 +84,10 @@ The vehicle lifecycle is canonical:
 1. Create or edit listing/unit/media/document data.
 2. Record vehicle costs through `addVehicleCost`, creating linked finance
    entries for cost accounting.
-3. Reserve a listing through `reserveVehicleListing`.
+3. Reserve a listing through `reserveVehicleUnit`.
 4. Emit one `reservation_receipt` PDF document for the signal payment and
    create linked finance entries for reservation accounting.
-5. Sell a listing through `sellVehicleListing`.
+5. Sell a listing through `sellVehicleUnit`.
 6. Emit four sale PDFs: `sale_contract`, `sale_receipt`, `delivery_term`, and
    `power_of_attorney`.
 7. Create linked finance entries for sale and payment accounting.

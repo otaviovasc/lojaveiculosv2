@@ -4,8 +4,8 @@ import type { InventoryListingServices } from "./listingServices.js";
 import { handle, parseJson } from "./vehicle.controller.http.js";
 import {
   releaseReservationSchema,
-  reserveListingSchema,
-  sellListingSchema,
+  reserveUnitSchema,
+  sellUnitSchema,
 } from "./vehicle.controller.schemas.js";
 
 type CreateContext = (context: Context) => Promise<ServiceContext>;
@@ -17,11 +17,11 @@ export function registerInventoryWorkflowRoutes(
 ) {
   app.post("/units/:unitId/reserve", async (context) =>
     handle(context, async () => {
-      const input = await parseJson(context, reserveListingSchema);
+      const input = await parseJson(context, reserveUnitSchema);
       const serviceContext = await createContext(context);
 
       return context.json(
-        await services.reserveListing(serviceContext, {
+        await services.reserveUnit(serviceContext, {
           ...input,
           buyer: normalizeBuyer(input.buyer),
           unitId: context.req.param("unitId"),
@@ -33,11 +33,11 @@ export function registerInventoryWorkflowRoutes(
 
   app.post("/units/:unitId/sell", async (context) =>
     handle(context, async () => {
-      const input = await parseJson(context, sellListingSchema);
+      const input = await parseJson(context, sellUnitSchema);
       const serviceContext = await createContext(context);
 
       return context.json(
-        await services.sellListing(serviceContext, {
+        await services.sellUnit(serviceContext, {
           ...input,
           buyer: normalizeBuyer(input.buyer),
           unitId: context.req.param("unitId"),
@@ -53,7 +53,7 @@ export function registerInventoryWorkflowRoutes(
       const serviceContext = await createContext(context);
 
       return context.json(
-        await services.releaseReservation(serviceContext, {
+        await services.releaseUnitReservation(serviceContext, {
           ...input,
           unitId: context.req.param("unitId"),
         }),

@@ -19,7 +19,6 @@ export const inventoryFinanceSchemas = {
           "transport",
         ],
       },
-      unitId: { type: "string", minLength: 1 },
     },
   },
 } as const;

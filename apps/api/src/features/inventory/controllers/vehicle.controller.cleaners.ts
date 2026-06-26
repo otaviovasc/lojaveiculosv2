@@ -23,7 +23,7 @@ export function cleanCreateMediaRequest(
 }
 
 export function cleanAttachDocumentRequest(
-  listingId: string,
+  unitId: string,
   input: {
     fileName: string;
     fileSizeBytes?: number | null | undefined;
@@ -33,8 +33,6 @@ export function cleanAttachDocumentRequest(
     linkRole?: string | undefined;
     mimeType?: string | null | undefined;
     storageKey: string;
-    targetId?: string | undefined;
-    targetType?: "vehicle_listing" | "vehicle_unit" | undefined;
     title: string;
   },
 ): Parameters<InventoryListingServices["attachVehicleDocument"]>[1] {
@@ -43,8 +41,8 @@ export function cleanAttachDocumentRequest(
   >[1] = {
     fileName: input.fileName,
     kind: input.kind,
-    listingId,
     storageKey: input.storageKey,
+    unitId,
     title: input.title,
   };
 
@@ -53,9 +51,6 @@ export function cleanAttachDocumentRequest(
   }
   if (input.linkRole !== undefined) result.linkRole = input.linkRole;
   if (input.mimeType !== undefined) result.mimeType = input.mimeType;
-  if (input.targetId !== undefined) result.targetId = input.targetId;
-  if (input.targetType !== undefined) result.targetType = input.targetType;
-
   return result;
 }
 
@@ -83,7 +78,7 @@ export function cleanListListingsQuery(input: {
 }
 
 export function cleanRequestDocumentUploadRequest(
-  listingId: string,
+  unitId: string,
   input: {
     contentType: string;
     fileName: string;
@@ -91,8 +86,6 @@ export function cleanRequestDocumentUploadRequest(
       InventoryListingServices["requestDocumentUpload"]
     >[1]["kind"];
     sizeBytes: number;
-    targetId?: string | undefined;
-    targetType?: "vehicle_listing" | "vehicle_unit" | undefined;
   },
 ): Parameters<InventoryListingServices["requestDocumentUpload"]>[1] {
   const result: Parameters<
@@ -101,12 +94,9 @@ export function cleanRequestDocumentUploadRequest(
     contentType: input.contentType,
     fileName: input.fileName,
     kind: input.kind,
-    listingId,
     sizeBytes: input.sizeBytes,
+    unitId,
   };
-
-  if (input.targetId !== undefined) result.targetId = input.targetId;
-  if (input.targetType !== undefined) result.targetType = input.targetType;
 
   return result;
 }
@@ -204,7 +194,6 @@ export function cleanUpdateListingRequest(
 }
 
 export function cleanUpdateUnitRequest(
-  listingId: string,
   unitId: string,
   input: {
     colorName?: Parameters<
@@ -225,7 +214,6 @@ export function cleanUpdateUnitRequest(
   },
 ): Parameters<InventoryListingServices["updateListingUnit"]>[1] {
   const result: Parameters<InventoryListingServices["updateListingUnit"]>[1] = {
-    listingId,
     unitId,
   };
 

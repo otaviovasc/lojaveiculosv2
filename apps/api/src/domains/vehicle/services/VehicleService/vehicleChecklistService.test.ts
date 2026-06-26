@@ -30,7 +30,6 @@ describe("VehicleService checklists", () => {
       context,
       {
         items: [{ label: "Manual", status: "pending" }],
-        listingId: "listing_1",
         name: "Entrega",
         unitId: unit.id,
       },
@@ -44,11 +43,7 @@ describe("VehicleService checklists", () => {
       unitId: "unit_1",
     });
     await expect(
-      listVehicleChecklists(
-        context,
-        { listingId: "listing_1", unitId: unit.id },
-        ports,
-      ),
+      listVehicleChecklists(context, { unitId: unit.id }, ports),
     ).resolves.toHaveLength(1);
     await expect(
       getVehicleListingDetail(context, { listingId: "listing_1" }, ports),
@@ -70,7 +65,6 @@ describe("VehicleService checklists", () => {
       context,
       {
         items: [{ id: "item_1", label: "Manual", status: "pending" }],
-        listingId: "listing_1",
         name: "Entrega",
         unitId: unit.id,
       },
@@ -82,7 +76,6 @@ describe("VehicleService checklists", () => {
       {
         checklistId: checklist.id,
         items: [{ id: "item_1", label: "Manual", status: "passed" }],
-        listingId: "listing_1",
         unitId: unit.id,
       },
       ports,
@@ -112,11 +105,7 @@ describe("VehicleService checklists", () => {
     );
 
     await expect(
-      listVehicleChecklists(
-        context,
-        { listingId: "listing_1", unitId: unit.id },
-        ports,
-      ),
+      listVehicleChecklists(context, { unitId: unit.id }, ports),
     ).rejects.toThrow("Missing permission: inventory.checklist_read");
   });
 });

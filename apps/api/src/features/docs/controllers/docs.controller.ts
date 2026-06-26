@@ -170,19 +170,13 @@ export const openApiDocument = {
   },
   "x-finance-side-effects": {
     "vehicle-cost":
-      "POST /api/v1/inventory/listings/{listingId}/costs creates an expense finance_entries row linked to vehicle_cost plus listing/unit context.",
+      "POST /api/v1/inventory/units/{unitId}/costs creates an expense finance_entries row linked to vehicle_cost plus unit context.",
     reserve:
       "POST /api/v1/inventory/units/{unitId}/reserve creates finance_entries linked to reservation sale/payment context.",
     release:
       "POST /api/v1/inventory/units/{unitId}/reservation/release cancels pending reservation finance_entries linked to sale_payment context.",
     sell: "POST /api/v1/inventory/units/{unitId}/sell creates finance_entries linked to sale and sale_payment context.",
-    linkTargets: [
-      "sale",
-      "sale_payment",
-      "vehicle_cost",
-      "vehicle_listing",
-      "vehicle_unit",
-    ],
+    linkTargets: ["sale", "sale_payment", "vehicle_cost", "vehicle_unit"],
   },
   "x-planned-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",

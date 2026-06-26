@@ -85,25 +85,20 @@ export function createInventoryApi({
       "PUT",
     );
 
-  const addCost = (listingId: string, input: CreateInventoryCostInput) =>
-    postJson<InventoryListingDetail>(
-      inventoryRoutes.costs(listingId, baseUrl),
-      {
-        amountCents: input.amountCents,
-        costDate: input.costDate,
-        description: input.description,
-        kind: input.kind,
-        unitId: input.unitId,
-      },
-    );
+  const addCost = (unitId: string, input: CreateInventoryCostInput) =>
+    postJson<InventoryListingDetail>(inventoryRoutes.costs(unitId, baseUrl), {
+      amountCents: input.amountCents,
+      costDate: input.costDate,
+      description: input.description,
+      kind: input.kind,
+    });
 
   const createChecklist = (
-    listingId: string,
     unitId: string,
     input: CreateInventoryChecklistInput,
   ) =>
     postJson<InventoryListingDetail>(
-      inventoryRoutes.checklists(listingId, unitId, baseUrl),
+      inventoryRoutes.checklists(unitId, baseUrl),
       {
         items: input.items,
         name: input.name,
@@ -172,8 +167,8 @@ export function createInventoryApi({
       headers: createInventoryHeaders(auth),
     }).then(readJson<InventoryListingList>);
 
-  const listChecklists = (listingId: string, unitId: string) =>
-    fetch(inventoryRoutes.checklists(listingId, unitId, baseUrl), {
+  const listChecklists = (unitId: string) =>
+    fetch(inventoryRoutes.checklists(unitId, baseUrl), {
       headers: createInventoryHeaders(auth),
     })
       .then(readJson<{ checklists: InventoryChecklist[] }>)
@@ -205,13 +200,9 @@ export function createInventoryApi({
       "PATCH",
     );
 
-  const updateUnit = (
-    listingId: string,
-    unitId: string,
-    input: UpdateInventoryUnitInput,
-  ) =>
+  const updateUnit = (unitId: string, input: UpdateInventoryUnitInput) =>
     sendJson<InventoryListingDetail>(
-      inventoryRoutes.unitDetail(listingId, unitId, baseUrl),
+      inventoryRoutes.unitDetail(unitId, baseUrl),
       {
         colorName: input.colorName,
         plate: input.plate,
@@ -223,13 +214,12 @@ export function createInventoryApi({
     );
 
   const updateChecklist = (
-    listingId: string,
     unitId: string,
     checklistId: string,
     input: UpdateInventoryChecklistInput,
   ) =>
     sendJson<InventoryListingDetail>(
-      inventoryRoutes.checklistDetail(listingId, unitId, checklistId, baseUrl),
+      inventoryRoutes.checklistDetail(unitId, checklistId, baseUrl),
       {
         items: input.items,
         name: input.name,

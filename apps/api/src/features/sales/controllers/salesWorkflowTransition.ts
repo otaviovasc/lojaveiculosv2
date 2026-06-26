@@ -12,12 +12,12 @@ import {
   requireSaleScope,
   type SalesServicePorts,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
-import { releaseVehicleReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleReservation.js";
+import { releaseVehicleUnitReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleUnitReservation.js";
 import { assertStoreUserActor } from "../../../domains/vehicle/authorization/storeWorkflowActor.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   findScopedListing,
-  findScopedUnit,
+  findScopedUnitById,
   getListingRepository,
   getUnitRepository,
 } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
@@ -61,7 +61,7 @@ export async function transitionSaleWithWorkflow(
     if (current.status === "pending" && current.unitId) {
       assertPermission(context, "sale.cancel");
       const payment = requireWorkflowPayment(current);
-      await releaseVehicleReservation(
+      await releaseVehicleUnitReservation(
         context,
         {
           pendingSale: toVehicleSaleBundle(current, "pending", payment),
@@ -91,17 +91,16 @@ async function completeWorkflowForTransition(
 ): Promise<void> {
   if (input.status === "cancelled") return;
 
-  const listingId = requireWorkflowString(sale.listingId, "listing");
   const unitId = requireWorkflowString(sale.unitId, "vehicle_unit");
+  const unit = await findScopedUnitById(
+    context,
+    getUnitRepository(ports.vehiclePorts),
+    unitId,
+  );
   const listing = await findScopedListing(
     context,
     getListingRepository(ports.vehiclePorts),
-    listingId,
-  );
-  const unit = await findScopedUnit(
-    context,
-    getUnitRepository(ports.vehiclePorts),
-    { listingId, unitId },
+    unit.listingId,
   );
   const buyer = readBuyerSnapshot(sale.buyerSnapshot);
   const payment = requireWorkflowPayment(sale);
@@ -155,7 +154,6 @@ function toVehicleSaleBundle(
       closedAt: sale.closedAt,
       createdAt: sale.createdAt,
       id: sale.id,
-      listingId: requireWorkflowString(sale.listingId, "listing"),
       salePriceCents,
       sellerUserId: sale.sellerUserId,
       status,

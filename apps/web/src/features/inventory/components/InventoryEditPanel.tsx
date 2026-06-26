@@ -69,7 +69,7 @@ export function InventoryEditPanel({
       });
 
       if (primaryUnit) {
-        updated = await api.updateUnit(detail.listing.id, primaryUnit.id, {
+        updated = await api.updateUnit(primaryUnit.id, {
           colorName: form.colorName || null,
           plate: nullablePlate(form.plate),
           status: form.unitStatus,

@@ -6,11 +6,11 @@ describe("documents api client", () => {
     expect(documentsRoutes.documents()).toBe("/api/v1/documents");
     expect(documentsRoutes.templates()).toBe("/api/v1/documents/templates");
     expect(documentsRoutes.uploads()).toBe("/api/v1/documents/uploads");
-    expect(documentsRoutes.vehicleUploads("listing 1")).toBe(
-      "/api/v1/inventory/listings/listing%201/documents/uploads",
+    expect(documentsRoutes.unitUploads("unit 1")).toBe(
+      "/api/v1/inventory/units/unit%201/documents/uploads",
     );
-    expect(documentsRoutes.vehicleDocuments("listing 1")).toBe(
-      "/api/v1/inventory/listings/listing%201/documents",
+    expect(documentsRoutes.unitDocuments("unit 1")).toBe(
+      "/api/v1/inventory/units/unit%201/documents",
     );
     expect(documentsRoutes.document("document 1")).toBe(
       "/api/v1/documents/document%201",
@@ -176,22 +176,18 @@ describe("documents api client", () => {
       fetch: fetchMock,
     });
 
-    const upload = await api.requestVehicleDocumentUpload("listing_1", {
+    const upload = await api.requestUnitDocumentUpload("unit_1", {
       contentType: "application/pdf",
       fileName: "manual.pdf",
       kind: "other",
       sizeBytes: 1024,
-      targetId: "unit_1",
-      targetType: "vehicle_unit",
     });
-    const created = await api.createVehicleUploadedDocument("listing_1", {
+    const created = await api.createUnitUploadedDocument("unit_1", {
       fileName: "manual.pdf",
       fileSizeBytes: 1024,
       kind: "other",
       mimeType: "application/pdf",
       storageKey: upload.storageKey,
-      targetId: "unit_1",
-      targetType: "vehicle_unit",
       title: "Documento manual",
     });
 
@@ -209,7 +205,7 @@ describe("documents api client", () => {
       title: "Documento manual",
     });
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      "/api/v1/inventory/listings/listing_1/documents/uploads",
+      "/api/v1/inventory/units/unit_1/documents/uploads",
     );
     expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
       body: JSON.stringify({
@@ -217,13 +213,11 @@ describe("documents api client", () => {
         fileName: "manual.pdf",
         kind: "other",
         sizeBytes: 1024,
-        targetId: "unit_1",
-        targetType: "vehicle_unit",
       }),
       method: "POST",
     });
     expect(fetchMock.mock.calls[1]?.[0]).toBe(
-      "/api/v1/inventory/listings/listing_1/documents",
+      "/api/v1/inventory/units/unit_1/documents",
     );
     expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
       body: JSON.stringify({
@@ -232,8 +226,6 @@ describe("documents api client", () => {
         kind: "other",
         mimeType: "application/pdf",
         storageKey: upload.storageKey,
-        targetId: "unit_1",
-        targetType: "vehicle_unit",
         title: "Documento manual",
       }),
       method: "POST",
