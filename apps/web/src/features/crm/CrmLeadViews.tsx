@@ -1,4 +1,5 @@
 import { CalendarClock, Eye } from "lucide-react";
+import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { EmptyLeads } from "./CrmEmptyLeads";
 import {
   pipelineStatuses,
@@ -87,9 +88,9 @@ export function LeadListView({
             <strong>{formatLeadName(lead)}</strong>
             <small>{formatLeadContact(lead)}</small>
           </span>
-          <span className="crm-status crm-status-open">
+          <FeatureStatusBadge tone="success">
             {statusLabels[lead.status]}
-          </span>
+          </FeatureStatusBadge>
           <span className="crm-muted-cell">
             {lead.vehicleTitle ?? sourceLabels[lead.source]}
           </span>

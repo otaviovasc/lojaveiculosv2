@@ -1,4 +1,6 @@
-import { Plus, Search } from "lucide-react";
+import { Car, Layers, Plus, Search, User } from "lucide-react";
+import { useState } from "react";
+import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { formatCents } from "./salesModel";
 import type { SaleRecord, SaleStatus } from "./types";
 
@@ -24,16 +26,44 @@ export function SalesPipeline({
   onSelect: (sale: SaleRecord) => void;
   sales: readonly SaleRecord[];
 }) {
+  const [search, setSearch] = useState("");
+
+  const filteredSales = sales.filter((sale) => {
+    if (!search.trim()) return true;
+    const query = search.toLowerCase();
+    const title = saleSnapshotTitle(sale).toLowerCase();
+    const buyer = String(sale.buyerSnapshot.name ?? "").toLowerCase();
+    const id = sale.id.toLowerCase();
+    const lead = String(sale.leadId ?? "").toLowerCase();
+    const unit = String(sale.unitId ?? "").toLowerCase();
+    return (
+      title.includes(query) ||
+      buyer.includes(query) ||
+      id.includes(query) ||
+      lead.includes(query) ||
+      unit.includes(query)
+    );
+  });
+
   return (
-    <aside className="flex flex-col gap-4 rounded-lg border border-line bg-panel p-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)]">
+    <aside className="sales-glass-panel sales-pipeline-card">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-black text-app-text">Pipeline</h2>
-          <p className="text-xs font-bold text-muted">{sales.length} vendas</p>
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-accent-soft text-accent-strong">
+            <Layers className="size-4.5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-black text-app-text tracking-wide uppercase">
+              Pipeline
+            </h2>
+            <p className="text-[11px] font-bold text-muted">
+              {filteredSales.length} de {sales.length} listadas
+            </p>
+          </div>
         </div>
         <button
           aria-label="Criar venda"
-          className="inline-flex size-10 items-center justify-center rounded-lg bg-accent text-inverse hover:bg-accent-strong"
+          className="sales-primary-button !min-h-9 !h-9 !w-9 !p-0 !rounded-lg"
           onClick={onCreate}
           type="button"
         >
@@ -41,14 +71,12 @@ export function SalesPipeline({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-1.5">
         {(["all", "draft", "pending", "closed"] as const).map((status) => (
           <button
             className={
-              "rounded-lg border px-3 py-2 text-xs font-black " +
-              (filter === status
-                ? "border-accent bg-accent-soft text-accent-strong"
-                : "border-line bg-app-elevated text-muted hover:text-app-text")
+              "sales-filter-btn " +
+              (filter === status ? "sales-filter-btn-active" : "")
             }
             key={status}
             onClick={() => onFilterChange(status)}
@@ -59,51 +87,82 @@ export function SalesPipeline({
         ))}
       </div>
 
-      <div className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-app-elevated px-3 text-muted">
-        <Search className="size-4" />
-        <span className="text-xs font-bold">
-          Filtro por lead/veiculo no topo
-        </span>
+      <div className="sales-search-container">
+        <Search className="size-4 text-muted" />
+        <input
+          className="sales-search-input"
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar por lead, comprador ou modelo..."
+          type="text"
+          value={search}
+        />
       </div>
 
-      <div className="flex flex-col gap-2 overflow-auto pr-1">
-        {sales.map((sale) => (
-          <button
-            className={
-              "rounded-lg border p-3 text-left transition " +
-              (activeId === sale.id
-                ? "border-accent bg-accent-soft"
-                : "border-line bg-app-elevated hover:border-accent/50")
-            }
-            key={sale.id}
-            onClick={() => onSelect(sale)}
-            type="button"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <strong className="truncate text-sm text-app-text">
-                {saleSnapshotTitle(sale)}
-              </strong>
-              <StatusBadge status={sale.status} />
-            </div>
-            <p className="mt-2 text-xs font-bold text-muted">
-              {sale.leadId ? `Lead ${sale.leadId.slice(0, 8)}` : "Sem lead"}
-            </p>
-            <p className="mt-1 text-xs font-black text-app-text">
-              {formatCents(sale.salePriceCents)}
-            </p>
-          </button>
-        ))}
+      <div className="sales-list-container">
+        {filteredSales.length === 0 ? (
+          <div className="text-center py-8 text-xs font-bold text-muted border border-dashed border-line rounded-xl">
+            Nenhuma venda encontrada
+          </div>
+        ) : (
+          filteredSales.map((sale) => (
+            <button
+              className={
+                "sales-card-item " +
+                (activeId === sale.id ? "sales-card-item-active" : "")
+              }
+              key={sale.id}
+              onClick={() => onSelect(sale)}
+              type="button"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 text-app-text font-black text-xs min-w-0">
+                    <Car className="size-3.5 text-muted shrink-0" />
+                    <span className="truncate">{saleSnapshotTitle(sale)}</span>
+                  </div>
+                  {typeof sale.buyerSnapshot.name === "string" &&
+                    sale.buyerSnapshot.name && (
+                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted mt-1 min-w-0">
+                        <User className="size-3 text-muted shrink-0" />
+                        <span className="truncate">
+                          {String(sale.buyerSnapshot.name)}
+                        </span>
+                      </div>
+                    )}
+                </div>
+                <FeatureStatusBadge
+                  className="shrink-0"
+                  tone={saleStatusTone(sale.status)}
+                >
+                  {statusLabels[sale.status]}
+                </FeatureStatusBadge>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-line/40 pt-2 mt-1">
+                <span className="text-[10px] font-bold text-muted">
+                  {sale.leadId
+                    ? `Lead: ${sale.leadId.slice(0, 8)}`
+                    : "Sem lead vinculado"}
+                </span>
+                <span className="text-xs font-black text-accent-strong">
+                  {sale.salePriceCents
+                    ? formatCents(sale.salePriceCents)
+                    : "Preço pendente"}
+                </span>
+              </div>
+            </button>
+          ))
+        )}
       </div>
     </aside>
   );
 }
 
-export function StatusBadge({ status }: { status: SaleStatus }) {
-  return (
-    <span className="shrink-0 rounded-full border border-line bg-panel px-2 py-1 text-[11px] font-black text-muted">
-      {statusLabels[status]}
-    </span>
-  );
+function saleStatusTone(status: SaleStatus) {
+  if (status === "closed") return "success";
+  if (status === "pending") return "warning";
+  if (status === "draft") return "blue";
+  return "neutral";
 }
 
 function saleSnapshotTitle(sale: SaleRecord): string {

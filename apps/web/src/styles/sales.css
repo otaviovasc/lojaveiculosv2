@@ -1,57 +1,315 @@
+/* Sales Module Custom Premium Styles */
+
+.sales-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+/* Sales KPIs Grid */
+.sales-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .sales-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .sales-kpi-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Glass Panels and Cards */
+.sales-glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(220, 228, 234, 0.7);
+  box-shadow: 0 8px 30px rgba(21, 34, 45, 0.02);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+:root[data-theme="dark"] .sales-glass-panel {
+  background: rgba(17, 24, 39, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+}
+.sales-glass-panel:hover {
+  border-color: rgba(237, 29, 36, 0.25);
+  box-shadow: 0 12px 30px rgba(237, 29, 36, 0.04);
+}
+:root[data-theme="dark"] .sales-glass-panel:hover {
+  border-color: rgba(255, 74, 81, 0.25);
+  box-shadow: 0 16px 40px rgba(255, 74, 81, 0.06);
+}
+
+/* Pipeline Sidebar */
+.sales-pipeline-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  height: fit-content;
+}
+@media (min-width: 1024px) {
+  .sales-pipeline-card {
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 3rem);
+  }
+}
+
+.sales-filter-btn {
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-line);
+  background: var(--color-app-elevated);
+  color: var(--color-muted);
+  cursor: pointer;
+}
+.sales-filter-btn:hover {
+  color: var(--color-primary);
+  border-color: var(--color-line-strong);
+}
+.sales-filter-btn-active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong) !important;
+}
+
+.sales-search-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-app-elevated);
+  padding: 0 0.75rem;
+  min-height: 2.5rem;
+  transition: all 0.2s ease;
+}
+.sales-search-container:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+.sales-search-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-text);
+  width: 100%;
+}
+.sales-search-input::placeholder {
+  color: var(--color-muted);
+  font-weight: 600;
+}
+
+.sales-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+.sales-card-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 1rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-panel);
+  padding: 1rem;
+  text-align: left;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.sales-card-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(237, 29, 36, 0.3);
+  box-shadow: 0 4px 12px rgba(21, 34, 45, 0.04);
+}
+.sales-card-item-active {
+  border-color: var(--color-accent) !important;
+  background: var(--color-accent-soft) !important;
+  box-shadow: 0 4px 16px rgba(237, 29, 36, 0.06);
+}
+
+/* Form Fields and Inputs */
 .sales-input {
   background: var(--color-app-elevated);
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   color: var(--color-text);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.875rem;
   width: 100%;
+  transition: all 0.2s ease;
 }
-
-.sales-input:focus-visible,
-.sales-primary-button:focus-visible,
-.sales-secondary-button:focus-visible,
-.sales-check-row:focus-within {
+.sales-input:focus {
+  border-color: var(--color-accent);
   box-shadow: var(--shadow-focus);
   outline: none;
+  background: var(--color-panel);
 }
 
-.sales-primary-button,
-.sales-secondary-button {
+/* Custom Check Row and Tile */
+.sales-check-row {
+  display: flex;
   align-items: center;
-  border-radius: var(--radius-md);
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-app-elevated);
+  color: var(--color-text);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+.sales-check-row:hover {
+  border-color: var(--color-line-strong);
+  background: var(--color-panel);
+}
+.sales-check-row-checked {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+.sales-check-row input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Primary / Secondary Buttons */
+.sales-primary-button {
+  align-items: center;
+  border-radius: var(--radius-lg);
   display: inline-flex;
   font-size: 0.8125rem;
   font-weight: 900;
   gap: 0.5rem;
   justify-content: center;
-  min-height: 2.5rem;
-  padding: 0 1rem;
-}
-
-.sales-primary-button {
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   background: var(--color-accent);
   color: var(--color-inverse);
+  border: none;
+  box-shadow: 0 4px 14px rgba(237, 29, 36, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.sales-primary-button:hover {
+  background: var(--color-accent-strong);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(237, 29, 36, 0.28);
+}
+.sales-primary-button:active {
+  transform: translateY(0);
 }
 
 .sales-secondary-button {
+  align-items: center;
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  font-size: 0.8125rem;
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   color: var(--color-text);
+  box-shadow: 0 2px 6px rgba(21, 34, 45, 0.02);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+.sales-secondary-button:hover {
+  background: var(--color-app-elevated);
+  border-color: var(--color-line-strong);
 }
 
-.sales-check-row {
-  align-items: center;
-  background: var(--color-app-elevated);
+/* Payment dynamic list row styling */
+.sales-payment-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  border-radius: 1.25rem;
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
+  background: var(--color-panel);
+  padding: 1.25rem;
+  position: relative;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.01);
+}
+@media (min-width: 768px) {
+  .sales-payment-row {
+    grid-template-columns: 1.5fr 1fr 1fr auto;
+    align-items: end;
+  }
+}
+.sales-payment-row:hover {
+  border-color: var(--color-line-strong);
+  box-shadow: 0 4px 16px rgba(21, 34, 45, 0.03);
+}
+
+/* Wizard Header / Step tabs */
+.sales-wizard-header {
+  border-bottom: 1px solid var(--color-line);
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+.sales-wizard-steps {
   display: flex;
-  font-size: 0.8125rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.sales-wizard-step {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: 2rem;
+  border: 1px solid var(--color-line);
+  background: var(--color-app-elevated);
+  padding: 0.375rem 0.875rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  gap: 0.625rem;
-  min-height: 2.5rem;
-  padding: 0 0.75rem;
+  color: var(--color-muted);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.sales-wizard-step-active {
+  background: var(--color-primary);
+  color: var(--color-inverse) !important;
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(21, 34, 45, 0.12);
+}
+.sales-wizard-step-completed {
+  background: rgba(32, 199, 122, 0.08);
+  border-color: rgba(32, 199, 122, 0.25);
+  color: var(--color-green-end);
 }

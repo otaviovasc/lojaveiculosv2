@@ -8,6 +8,12 @@ import { CrmPipelineToolbar } from "./CrmPipelineToolbar";
 import { exportLeadsToCsv } from "./crmClientExport";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -40,19 +46,25 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
 
   if (isCreateOpen) {
     return (
-      <main className="crm-page relative min-h-screen">
+      <FeaturePageShell
+        className="crm-page relative min-h-screen"
+        variant="plain"
+      >
         <CrmLeadCreateFullPage
           onCancel={() => setIsCreateOpen(false)}
           onCreateLead={handleCreateLead}
           vehicleOptions={props.vehicleOptions}
         />
-      </main>
+      </FeaturePageShell>
     );
   }
 
   if (activeLead) {
     return (
-      <main className="crm-page relative min-h-screen">
+      <FeaturePageShell
+        className="crm-page relative min-h-screen"
+        variant="plain"
+      >
         <CrmLeadDetailFullPage
           activities={props.activities}
           lead={activeLead}
@@ -61,34 +73,35 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           onUpdateLead={props.onUpdateLead}
           onUpdateStatus={props.onUpdateStatus}
         />
-      </main>
+      </FeaturePageShell>
     );
   }
 
   return (
-    <main className="crm-page relative min-h-screen">
-      <header className="crm-client-list-header">
-        <h1 className="text-2xl font-black text-app-text tracking-tight">
-          Clientes
-        </h1>
-        <button
-          className="crm-action crm-action-secondary"
-          onClick={() => void props.onRefresh()}
-          type="button"
-        >
-          <RefreshCcw
-            aria-hidden="true"
-            className={"size-3.5 " + (props.isLoading ? "animate-spin" : "")}
+    <FeaturePageShell
+      className="crm-page relative min-h-screen"
+      variant="plain"
+    >
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            isBusy={props.isLoading}
+            label={props.isLoading ? "Sincronizando" : "Atualizar"}
+            onClick={() => void props.onRefresh()}
           />
-          <span>{props.isLoading ? "Sincronizando" : "Atualizar"}</span>
-        </button>
-      </header>
+        }
+        eyebrow="Atendimento"
+        title="Clientes"
+      />
 
       {props.error ? (
-        <section className="crm-note">
-          <CircleAlert aria-hidden="true" className="size-5 shrink-0" />
+        <FeatureAlert
+          className="crm-note"
+          icon={<CircleAlert aria-hidden="true" className="size-5 shrink-0" />}
+        >
           <span>{props.error.message}</span>
-        </section>
+        </FeatureAlert>
       ) : null}
 
       <CrmPipelineSummary
@@ -108,6 +121,6 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         vehicleOptions={props.vehicleOptions}
         viewLeads={props.viewLeads}
       />
-    </main>
+    </FeaturePageShell>
   );
 }

@@ -1,5 +1,6 @@
 import { MessageCircle, Save, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { sourceLabels, statusLabels } from "./crmPipelineConfig";
 import type { LeadContactPatch } from "./crmPipelineModels";
 import { formatLeadContact, formatLeadName } from "./crmPipelineModels";
@@ -50,14 +51,13 @@ export function LeadDetailPanel({
   };
 
   return (
-    <section className="crm-panel">
-      <div className="crm-panel-title crm-panel-title-between">
-        <span>
-          <UserRound aria-hidden="true" className="size-5" />
-          <h3>{formatLeadName(lead)}</h3>
-        </span>
-        <strong>{statusLabels[lead.status]}</strong>
-      </div>
+    <FeatureSection
+      actions={<strong>{statusLabels[lead.status]}</strong>}
+      className="crm-panel"
+      headerClassName="crm-panel-title crm-panel-title-between"
+      icon={<UserRound aria-hidden="true" className="size-5" />}
+      title={formatLeadName(lead)}
+    >
       <div className="crm-form-grid">
         <input
           className="crm-input"
@@ -125,7 +125,7 @@ export function LeadDetailPanel({
           </button>
         ))}
       </div>
-    </section>
+    </FeatureSection>
   );
 }
 

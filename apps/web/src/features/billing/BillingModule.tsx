@@ -1,5 +1,14 @@
-import { CreditCard, RefreshCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { CreditCard, RefreshCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../components/ui/FeatureLayout";
+import {
+  FeatureAlert,
+  FeatureEmptyState,
+} from "../../components/ui/FeatureStates";
 import { createBillingApi, type BillingApi } from "./apiClient";
 import {
   BillingAllocationTable,
@@ -66,31 +75,27 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   };
 
   return (
-    <main className="billing-shell">
-      <section className="billing-hero">
-        <div>
-          <span className="billing-badge">
+    <FeaturePageShell className="billing-shell" variant="content">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            label="Atualizar"
+            onClick={() => void refresh()}
+          />
+        }
+        description="Controle planos, alocacao por loja, add-ons e acesso efetivo por feature com historico auditavel."
+        eyebrow={
+          <>
             <CreditCard aria-hidden="true" className="size-4" />
             Agency billing
-          </span>
-          <h2>Console de billing e entitlements</h2>
-          <p>
-            Controle planos, alocacao por loja, add-ons e acesso efetivo por
-            feature com historico auditavel.
-          </p>
-        </div>
-        <button
-          aria-label="Atualizar billing"
-          className="billing-icon-action"
-          onClick={() => void refresh()}
-          type="button"
-        >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
-      </section>
+          </>
+        }
+        title="Console de billing e entitlements"
+      />
 
       {status.kind === "error" ? (
-        <p className="billing-alert">{status.message}</p>
+        <FeatureAlert className="billing-alert">{status.message}</FeatureAlert>
       ) : null}
 
       {overview ? (
@@ -114,12 +119,13 @@ export function BillingModule({ api }: { api?: BillingApi }) {
           <BillingEventList events={overview.entitlementEvents} />
         </>
       ) : (
-        <section className="billing-empty">
-          <Sparkles aria-hidden="true" className="size-5" />
-          <strong>Carregando billing</strong>
-        </section>
+        <FeatureEmptyState
+          body="Sincronizando planos, add-ons e acesso efetivo por feature."
+          icon={Sparkles}
+          title="Carregando billing"
+        />
       )}
-    </main>
+    </FeaturePageShell>
   );
 }
 

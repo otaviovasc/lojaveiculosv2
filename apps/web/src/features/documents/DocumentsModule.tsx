@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { createDocumentsApi, type DocumentsApi } from "./apiClient";
 import { createDocumentsApiOptions } from "./runtimeApi";
@@ -165,92 +167,90 @@ export function DocumentsModule({
   );
 
   return (
-    <div className="documents-page relative min-h-screen store-dashboard overflow-hidden">
-      <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
-      <main className="documents-main dashboard-main relative z-10">
-        <DocumentsWorkspaceTopBar
-          folderSubtitle={folderSubtitle}
-          folderTitle={folderTitle}
-          isRefreshing={isLoading}
-          isUploading={!runtimeApi || !uploadTarget}
-          onOpenFolders={openMobileFolders}
-          onOpenTemplates={() => setIsTemplatesDialogOpen(true)}
-          onRefresh={() => void state.resetAndReload()}
-          onUpload={() => state.setIsUploadDialogOpen(true)}
-          selectedKey={selectedFolderKey}
-          showUpload={showUpload}
-          unitLabel={selectedUnit ? selectedUnit.label : null}
-          uploadTitle={uploadTitle}
-        />
+    <FeaturePageShell className="documents-page" mainClassName="documents-main">
+      <DocumentsWorkspaceTopBar
+        folderSubtitle={folderSubtitle}
+        folderTitle={folderTitle}
+        isRefreshing={isLoading}
+        isUploading={!runtimeApi || !uploadTarget}
+        onOpenFolders={openMobileFolders}
+        onOpenTemplates={() => setIsTemplatesDialogOpen(true)}
+        onRefresh={() => void state.resetAndReload()}
+        onUpload={() => state.setIsUploadDialogOpen(true)}
+        selectedKey={selectedFolderKey}
+        showUpload={showUpload}
+        unitLabel={selectedUnit ? selectedUnit.label : null}
+        uploadTitle={uploadTitle}
+      />
 
-        <DocumentsKpiSummary
-          activeOrigin={originFilter}
-          isLoading={isLoading}
-          onOriginSelect={setOriginFilter}
-          summary={summary}
-        />
+      <DocumentsKpiSummary
+        activeOrigin={originFilter}
+        isLoading={isLoading}
+        onOriginSelect={setOriginFilter}
+        summary={summary}
+      />
 
-        {errorMessage ? (
-          <section
-            className="documents-state documents-error-state"
-            role="alert"
-          >
-            <strong>Nao foi possivel carregar os documentos</strong>
-            <p>{errorMessage}</p>
+      {errorMessage ? (
+        <FeatureAlert
+          action={
             <button onClick={() => void state.resetAndReload()} type="button">
               Tentar novamente
             </button>
-          </section>
-        ) : null}
+          }
+          className="documents-state documents-error-state"
+          title="Nao foi possivel carregar os documentos"
+        >
+          <p>{errorMessage}</p>
+        </FeatureAlert>
+      ) : null}
 
-        <section className="documents-command-layout">
-          <div className="documents-desktop-folders">
-            <DocumentsFolderSidebar
-              documents={state.documents}
-              isLoading={unitFolders.status === "loading"}
-              onSelect={selectFolder}
-              selectedKey={selectedFolderKey}
-              vehicleOptions={vehicleOptions}
-            />
-          </div>
-
-          <DocumentsWorkspaceBody
-            api={runtimeApi}
-            clearAllFilters={clearAllFilters}
-            errorMessage={errorMessage}
-            filters={filters}
-            folderDocuments={folderDocuments}
-            hasActiveFilters={hasFilters}
-            isLoading={isLoading}
-            onCloseDetail={closeDetail}
-            onDownloadDocument={state.downloadDocument}
-            onDownloadSelected={() => {
-              void onDownloadSelected();
-            }}
-            onKindChange={(value) => setFilter("kind", value)}
-            onOriginSelect={setOriginFilter}
-            onPreviewDocument={state.previewDocument}
-            onSearchChange={(value) => setFilter("search", value)}
-            onSelectDocument={selectDocument}
-            onSetDocumentToDelete={state.setDocumentToDelete}
-            onSetFilter={setFilter}
-            onSetLinkDocument={setLinkDocument}
-            onSortChange={setSortBy}
-            onStatusChange={(value) => setFilter("status", value)}
-            onUploadClick={() => state.setIsUploadDialogOpen(true)}
-            originFilter={originFilter}
-            search={filters.search}
-            selectedFolderKey={selectedFolderKey}
-            showUpload={showUpload}
-            sortBy={sortBy}
-            sortedVisible={sortedVisible}
-            state={state}
-            selection={selection}
-            updateDocument={state.updateDocument}
-            visibleSelectedCount={visibleSelectedCount}
+      <section className="documents-command-layout">
+        <div className="documents-desktop-folders">
+          <DocumentsFolderSidebar
+            documents={state.documents}
+            isLoading={unitFolders.status === "loading"}
+            onSelect={selectFolder}
+            selectedKey={selectedFolderKey}
+            vehicleOptions={vehicleOptions}
           />
-        </section>
-      </main>
+        </div>
+
+        <DocumentsWorkspaceBody
+          api={runtimeApi}
+          clearAllFilters={clearAllFilters}
+          errorMessage={errorMessage}
+          filters={filters}
+          folderDocuments={folderDocuments}
+          hasActiveFilters={hasFilters}
+          isLoading={isLoading}
+          onCloseDetail={closeDetail}
+          onDownloadDocument={state.downloadDocument}
+          onDownloadSelected={() => {
+            void onDownloadSelected();
+          }}
+          onKindChange={(value) => setFilter("kind", value)}
+          onOriginSelect={setOriginFilter}
+          onPreviewDocument={state.previewDocument}
+          onSearchChange={(value) => setFilter("search", value)}
+          onSelectDocument={selectDocument}
+          onSetDocumentToDelete={state.setDocumentToDelete}
+          onSetFilter={setFilter}
+          onSetLinkDocument={setLinkDocument}
+          onSortChange={setSortBy}
+          onStatusChange={(value) => setFilter("status", value)}
+          onUploadClick={() => state.setIsUploadDialogOpen(true)}
+          originFilter={originFilter}
+          search={filters.search}
+          selectedFolderKey={selectedFolderKey}
+          showUpload={showUpload}
+          sortBy={sortBy}
+          sortedVisible={sortedVisible}
+          state={state}
+          selection={selection}
+          updateDocument={state.updateDocument}
+          visibleSelectedCount={visibleSelectedCount}
+        />
+      </section>
 
       <DocumentsWorkspaceDialogs
         canUpload={Boolean(runtimeApi && uploadTarget)}
@@ -284,7 +284,7 @@ export function DocumentsModule({
         uploadTitle={uploadTitle}
         vehicleOptions={vehicleOptions as readonly DocumentVehicleOption[]}
       />
-    </div>
+    </FeaturePageShell>
   );
 }
 

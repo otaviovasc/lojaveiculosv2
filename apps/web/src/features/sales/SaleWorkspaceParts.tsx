@@ -1,20 +1,35 @@
-import { Plus } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  Activity,
+  Banknote,
+  Car,
+  Check,
+  Coins,
+  FileText,
+  HelpCircle,
+  Plus,
+  User,
+} from "lucide-react";
 import {
   defaultRequiredDocumentKinds,
   formatCents,
   parseCurrencyInput,
+  paymentPrincipalTotal,
   requiredDocumentKinds,
+  saleMissingFields,
 } from "./salesModel";
 import { PaymentRow, newPayment } from "./SalePaymentRow";
+import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import type { SaleRecord } from "./types";
 
 type UpdateSale = (updater: (sale: SaleRecord) => SaleRecord) => void;
 
 export function ContextSection({ sale, update }: SectionProps) {
   return (
-    <Section title="Contexto">
-      <Field label="Lead vinculado">
+    <SaleFormSection
+      title="Contexto da Venda"
+      icon={<Activity className="size-4.5 text-accent" />}
+    >
+      <SaleField label="Lead Vinculado">
         <input
           className="sales-input"
           onChange={(event) =>
@@ -23,29 +38,11 @@ export function ContextSection({ sale, update }: SectionProps) {
               leadId: event.target.value || null,
             }))
           }
-          placeholder="ID do lead"
+          placeholder="Ex: lead_87ad62bf"
           value={sale.leadId ?? ""}
         />
-      </Field>
-      <Field label="Comprador">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            updateBuyer(sale, update, "name", event.target.value)
-          }
-          value={String(sale.buyerSnapshot.name ?? "")}
-        />
-      </Field>
-      <Field label="Telefone">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            updateBuyer(sale, update, "phone", event.target.value)
-          }
-          value={String(sale.buyerSnapshot.phone ?? "")}
-        />
-      </Field>
-      <Field label="Veiculo">
+      </SaleField>
+      <SaleField label="Unidade do Veículo">
         <input
           className="sales-input"
           onChange={(event) =>
@@ -54,11 +51,41 @@ export function ContextSection({ sale, update }: SectionProps) {
               unitId: event.target.value || null,
             }))
           }
-          placeholder="ID da unidade"
+          placeholder="Ex: unit_5f190e22"
           value={sale.unitId ?? ""}
         />
-      </Field>
-      <Field label="Vendedor">
+      </SaleField>
+      <SaleField label="Nome do Comprador">
+        <input
+          className="sales-input"
+          onChange={(event) =>
+            updateBuyer(sale, update, "name", event.target.value)
+          }
+          placeholder="Nome completo do cliente"
+          value={String(sale.buyerSnapshot.name ?? "")}
+        />
+      </SaleField>
+      <SaleField label="Telefone do Comprador">
+        <input
+          className="sales-input"
+          onChange={(event) =>
+            updateBuyer(sale, update, "phone", event.target.value)
+          }
+          placeholder="(00) 00000-0000"
+          value={String(sale.buyerSnapshot.phone ?? "")}
+        />
+      </SaleField>
+      <SaleField label="E-mail do Comprador">
+        <input
+          className="sales-input"
+          onChange={(event) =>
+            updateBuyer(sale, update, "email", event.target.value)
+          }
+          placeholder="email@cliente.com.br"
+          value={String(sale.buyerSnapshot.email ?? "")}
+        />
+      </SaleField>
+      <SaleField label="Vendedor Responsável">
         <input
           className="sales-input"
           onChange={(event) =>
@@ -67,20 +94,42 @@ export function ContextSection({ sale, update }: SectionProps) {
               sellerUserId: event.target.value || null,
             }))
           }
-          placeholder="ID do usuario"
+          placeholder="ID do vendedor"
           value={sale.sellerUserId ?? ""}
         />
-      </Field>
-    </Section>
+      </SaleField>
+
+      {typeof sale.listingSnapshot?.title === "string" &&
+        sale.listingSnapshot.title && (
+          <div className="md:col-span-2 sales-vehicle-preview">
+            <div className="sales-vehicle-preview-icon">
+              <Car className="size-5" />
+            </div>
+            <div className="sales-vehicle-preview-details">
+              <span className="sales-vehicle-preview-title">
+                {String(sale.listingSnapshot.title)}
+              </span>
+              <span className="sales-vehicle-preview-subtitle">
+                {sale.listingSnapshot.unitLabel
+                  ? `Unidade: ${String(sale.listingSnapshot.unitLabel)}`
+                  : `ID da unidade: ${sale.unitId ?? "Não informado"}`}
+              </span>
+            </div>
+          </div>
+        )}
+    </SaleFormSection>
   );
 }
 
 export function TermsSection({ sale, update }: SectionProps) {
   return (
-    <Section title="Valores">
-      <Field label="Preco da venda">
+    <SaleFormSection
+      title="Preço e Condições"
+      icon={<Banknote className="size-4.5 text-accent" />}
+    >
+      <SaleField label="Preço da Venda">
         <input
-          className="sales-input"
+          className="sales-input text-lg font-black text-accent-strong"
           inputMode="numeric"
           onChange={(event) =>
             update((draft) => ({
@@ -88,10 +137,11 @@ export function TermsSection({ sale, update }: SectionProps) {
               salePriceCents: parseCurrencyInput(event.target.value),
             }))
           }
+          placeholder="R$ 0,00"
           value={sale.salePriceCents ? formatCents(sale.salePriceCents) : ""}
         />
-      </Field>
-      <Field label="Origem da venda">
+      </SaleField>
+      <SaleField label="Origem Comercial">
         <select
           className="sales-input"
           onChange={(event) =>
@@ -105,14 +155,14 @@ export function TermsSection({ sale, update }: SectionProps) {
           }
           value={String(sale.saleSourceSnapshot.source ?? "lead")}
         >
-          <option value="lead">Lead</option>
-          <option value="walk_in">Loja fisica</option>
-          <option value="whatsapp">WhatsApp</option>
-          <option value="marketplace">Marketplace</option>
-          <option value="custom">Outro</option>
+          <option value="lead">Lead Digital</option>
+          <option value="walk_in">Loja Física (Walk-in)</option>
+          <option value="whatsapp">WhatsApp Comercial</option>
+          <option value="marketplace">Marketplace Externo</option>
+          <option value="custom">Outro Canal</option>
         </select>
-      </Field>
-    </Section>
+      </SaleField>
+    </SaleFormSection>
   );
 }
 
@@ -125,42 +175,90 @@ export function PaymentsSection({ sale, update }: SectionProps) {
         newPayment(draft.salePriceCents ?? 0, draft.payments.length),
       ],
     }));
+
+  const totalPaid = paymentPrincipalTotal(sale);
+  const salePrice = sale.salePriceCents ?? 0;
+  const balance = salePrice - totalPaid;
+  const progressPercent =
+    salePrice > 0 ? Math.min(100, (totalPaid / salePrice) * 100) : 0;
+
   return (
-    <Section title="Pagamentos">
-      <div className="flex flex-col gap-3 md:col-span-2">
-        {sale.payments.map((payment, index) => (
-          <PaymentRow
-            index={index}
-            key={payment.id}
-            onChange={(next) =>
-              update((draft) => ({
-                ...draft,
-                payments: draft.payments.map((item, itemIndex) =>
-                  itemIndex === index ? next : item,
-                ),
-              }))
-            }
-            onRemove={() =>
-              update((draft) => ({
-                ...draft,
-                payments: draft.payments.filter(
-                  (_, itemIndex) => itemIndex !== index,
-                ),
-              }))
-            }
-            payment={payment}
-          />
-        ))}
-        <button
-          className="sales-secondary-button"
-          onClick={addPayment}
-          type="button"
-        >
-          <Plus className="size-4" />
-          Adicionar pagamento
-        </button>
+    <SaleFormSection
+      title="Condições de Pagamento"
+      icon={<Coins className="size-4.5 text-accent" />}
+    >
+      <div className="md:col-span-2 flex flex-col gap-4">
+        {/* Payment Balance Progress Indicator */}
+        <div className="sales-glass-panel p-4 bg-app-elevated/40 border border-line flex flex-col gap-3">
+          <div className="flex justify-between items-center text-xs font-bold">
+            <span className="text-muted uppercase tracking-wider">
+              Progressão de Quitação
+            </span>
+            <span className="text-app-text font-black">
+              {formatCents(totalPaid)} de {formatCents(salePrice)} (
+              {progressPercent.toFixed(0)}%)
+            </span>
+          </div>
+          <div className="sales-progress-bar-container">
+            <div
+              className={
+                "sales-progress-bar-fill " +
+                (balance <= 0 ? "bg-emerald-500" : "bg-accent")
+              }
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="flex justify-between items-center text-[10px] font-bold">
+            <span className="text-muted">
+              Total Lançado: {sale.payments.length} parcelas
+            </span>
+            {balance <= 0 ? (
+              <span className="text-emerald-500 font-black flex items-center gap-1 uppercase tracking-wider">
+                <Check className="size-3" /> Valor Total Coberto
+              </span>
+            ) : (
+              <span className="text-rose-500 font-black uppercase tracking-wider">
+                Faltam: {formatCents(balance)}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {sale.payments.map((payment, index) => (
+            <PaymentRow
+              index={index}
+              key={payment.id}
+              onChange={(next) =>
+                update((draft) => ({
+                  ...draft,
+                  payments: draft.payments.map((item, itemIndex) =>
+                    itemIndex === index ? next : item,
+                  ),
+                }))
+              }
+              onRemove={() =>
+                update((draft) => ({
+                  ...draft,
+                  payments: draft.payments.filter(
+                    (_, itemIndex) => itemIndex !== index,
+                  ),
+                }))
+              }
+              payment={payment}
+            />
+          ))}
+          <button
+            className="sales-secondary-button w-full border-dashed"
+            onClick={addPayment}
+            type="button"
+          >
+            <Plus className="size-4 text-accent" />
+            Adicionar Linha de Pagamento
+          </button>
+        </div>
       </div>
-    </Section>
+    </SaleFormSection>
   );
 }
 
@@ -169,54 +267,51 @@ export function DocumentsSection({ sale, update }: SectionProps) {
     ? requiredDocumentKinds(sale)
     : defaultRequiredDocumentKinds;
   return (
-    <Section title="Documentos">
-      <div className="grid gap-2 md:col-span-2">
-        {required.map((kind) => {
-          const checked = sale.selectedDocumentKinds.includes(kind);
-          return (
-            <label className="sales-check-row" key={kind}>
-              <input
-                checked={checked}
-                onChange={(event) =>
-                  update((draft) => ({
-                    ...draft,
-                    selectedDocumentKinds: event.target.checked
-                      ? [...draft.selectedDocumentKinds, kind]
-                      : draft.selectedDocumentKinds.filter(
-                          (item) => item !== kind,
-                        ),
-                  }))
+    <SaleFormSection
+      title="Documentos Obrigatórios"
+      icon={<FileText className="size-4.5 text-accent" />}
+    >
+      <div className="grid gap-3 md:col-span-2">
+        <p className="text-xs font-bold text-muted leading-relaxed mb-1">
+          Selecione os documentos necessários para a formalização do contrato de
+          compra e venda.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {required.map((kind) => {
+            const checked = sale.selectedDocumentKinds.includes(kind);
+            return (
+              <label
+                className={
+                  "sales-check-row " +
+                  (checked ? "sales-check-row-checked" : "")
                 }
-                type="checkbox"
-              />
-              <span>{kind}</span>
-            </label>
-          );
-        })}
+                key={kind}
+              >
+                <input
+                  checked={checked}
+                  onChange={(event) =>
+                    update((draft) => ({
+                      ...draft,
+                      selectedDocumentKinds: event.target.checked
+                        ? [...draft.selectedDocumentKinds, kind]
+                        : draft.selectedDocumentKinds.filter(
+                            (item) => item !== kind,
+                          ),
+                    }))
+                  }
+                  type="checkbox"
+                />
+                <span>{formatDocumentKindLabel(kind)}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
-    </Section>
+    </SaleFormSection>
   );
 }
 
 type SectionProps = { sale: SaleRecord; update: UpdateSale };
-
-function Section({ children, title }: { children: ReactNode; title: string }) {
-  return (
-    <section className="rounded-lg border border-line bg-panel p-4">
-      <h3 className="text-sm font-black text-app-text">{title}</h3>
-      <div className="mt-4 grid gap-3 md:grid-cols-2">{children}</div>
-    </section>
-  );
-}
-
-function Field({ children, label }: { children: ReactNode; label: string }) {
-  return (
-    <label className="grid gap-1 text-xs font-black text-muted">
-      {label}
-      {children}
-    </label>
-  );
-}
 
 function updateBuyer(
   sale: SaleRecord,
@@ -228,4 +323,19 @@ function updateBuyer(
     ...sale,
     buyerSnapshot: { ...sale.buyerSnapshot, [key]: value },
   }));
+}
+
+function formatDocumentKindLabel(kind: string): string {
+  switch (kind) {
+    case "sale_contract":
+      return "Contrato de Compra e Venda";
+    case "sale_receipt":
+      return "Recibo de Venda";
+    case "delivery_term":
+      return "Termo de Entrega";
+    case "power_of_attorney":
+      return "Procuração";
+    default:
+      return kind.replace(/_/g, " ").toUpperCase();
+  }
 }

@@ -23,6 +23,11 @@ import {
   StatusPill,
   MercosulPlateBadge,
 } from "./InventoryListingCardGrid";
+import {
+  FeatureRowAction,
+  FeatureRowActions,
+  FeatureTableFrame,
+} from "../../../components/ui/FeatureTable";
 
 export function InventoryListingTable({
   items,
@@ -58,7 +63,7 @@ export function InventoryListingTable({
   }
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-line bg-panel/40 backdrop-blur-md shadow-sm">
+    <FeatureTableFrame>
       <table className="min-w-full border-collapse text-left text-sm">
         <thead className="bg-app/80 text-[10px] font-black uppercase tracking-wider text-muted border-b border-line">
           <tr>
@@ -211,55 +216,34 @@ export function InventoryListingTable({
                     className="px-4 py-3 whitespace-nowrap text-right align-middle"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <div className="flex items-center justify-end gap-2.5 h-10">
+                    <FeatureRowActions className="gap-2.5">
                       {/* Action 1: Template */}
-                      <div className="relative flex items-center">
-                        <button
-                          onClick={() => onAction?.("template", item)}
-                          className="peer p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer shadow-sm flex items-center justify-center"
-                          type="button"
-                          aria-label="Criar Template de Anúncio"
-                        >
-                          <ImageIcon className="size-3.5 text-violet-500" />
-                        </button>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-full mr-2 hidden peer-hover:block z-30 bg-gray-900 text-white text-[9px] font-bold py-1 px-2 rounded shadow-lg whitespace-nowrap leading-none pointer-events-none border border-white/10">
-                          Criar Template
-                          <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
-                        </div>
-                      </div>
+                      <FeatureRowAction
+                        ariaLabel="Criar Template de Anúncio"
+                        icon={ImageIcon}
+                        iconClassName="text-violet-500"
+                        onClick={() => onAction?.("template", item)}
+                        tooltip="Criar Template"
+                      />
 
                       {/* Action 2: Test Drive */}
-                      <div className="relative flex items-center">
-                        <button
-                          onClick={() => onAction?.("test-drive", item)}
-                          className="peer p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer shadow-sm flex items-center justify-center"
-                          type="button"
-                          aria-label="Agendar Test Drive"
-                        >
-                          <Printer className="size-3.5 text-emerald-500" />
-                        </button>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-full mr-2 hidden peer-hover:block z-30 bg-gray-900 text-white text-[9px] font-bold py-1 px-2 rounded shadow-lg whitespace-nowrap leading-none pointer-events-none border border-white/10">
-                          Test Drive
-                          <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
-                        </div>
-                      </div>
+                      <FeatureRowAction
+                        ariaLabel="Agendar Test Drive"
+                        icon={Printer}
+                        iconClassName="text-emerald-500"
+                        onClick={() => onAction?.("test-drive", item)}
+                        tooltip="Test Drive"
+                      />
 
                       {/* Action 3: Baixar Fotos */}
-                      <div className="relative flex items-center">
-                        <button
-                          onClick={() => onAction?.("zip-photos", item)}
-                          className="peer p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer shadow-sm flex items-center justify-center"
-                          type="button"
-                          aria-label="Baixar Fotos (ZIP)"
-                        >
-                          <FileArchive className="size-3.5 text-pink-500" />
-                        </button>
-                        <div className="absolute top-1/2 -translate-y-1/2 right-full mr-2 hidden peer-hover:block z-30 bg-gray-900 text-white text-[9px] font-bold py-1 px-2 rounded shadow-lg whitespace-nowrap leading-none pointer-events-none border border-white/10">
-                          Baixar Fotos (ZIP)
-                          <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
-                        </div>
-                      </div>
-                    </div>
+                      <FeatureRowAction
+                        ariaLabel="Baixar Fotos (ZIP)"
+                        icon={FileArchive}
+                        iconClassName="text-pink-500"
+                        onClick={() => onAction?.("zip-photos", item)}
+                        tooltip="Baixar Fotos (ZIP)"
+                      />
+                    </FeatureRowActions>
                   </td>
                 )}
               </tr>
@@ -267,6 +251,6 @@ export function InventoryListingTable({
           })}
         </tbody>
       </table>
-    </div>
+    </FeatureTableFrame>
   );
 }

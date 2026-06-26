@@ -17,16 +17,16 @@ export type CustomSelectOption<Value extends string = string> = {
 };
 
 type CustomSelectProps<Value extends string = string> = {
-  ariaLabel?: string;
-  className?: string;
-  defaultValue?: Value;
-  disabled?: boolean;
-  leftIcon?: ReactNode;
-  name?: string;
-  onChange?: (value: Value) => void;
+  ariaLabel?: string | undefined;
+  className?: string | undefined;
+  defaultValue?: Value | undefined;
+  disabled?: boolean | undefined;
+  leftIcon?: ReactNode | undefined;
+  name?: string | undefined;
+  onChange?: ((value: Value) => void) | undefined;
   options: readonly CustomSelectOption<Value>[];
-  placeholder?: string;
-  value?: Value;
+  placeholder?: string | undefined;
+  value?: Value | undefined;
 };
 
 export function CustomSelect<Value extends string = string>({

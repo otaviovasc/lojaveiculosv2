@@ -1,5 +1,19 @@
 import { BarChart3, RefreshCcw, TrendingUp } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+  FeatureSection,
+} from "../../components/ui/FeatureLayout";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
+import {
+  FeatureAlert,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import { createReportsApi, type ReportsApi } from "./apiClient";
 import { createReportsApiOptions } from "./runtimeApi";
 import type { ReportsDashboard } from "./types";
@@ -24,54 +38,49 @@ export function ReportsModule({ api }: { api?: ReportsApi }) {
   }, []);
 
   return (
-    <main className="feature-shell">
-      <section className="feature-hero">
-        <div>
-          <span className="feature-badge">
-            <BarChart3 aria-hidden="true" className="size-4" />
-            Analytics
-          </span>
-          <h2>Relatorios gerenciais</h2>
-          <p>Estoque, receita, margem, funil e origem de oportunidades.</p>
-        </div>
-        <button
-          aria-label="Atualizar relatorios"
-          className="feature-icon-action"
-          onClick={() => void refresh()}
-          title="Atualizar relatorios"
-          type="button"
-        >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
-      </section>
+    <FeaturePageShell className="feature-shell" variant="content">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            label="Atualizar"
+            onClick={() => void refresh()}
+            title="Atualizar relatorios"
+          />
+        }
+        description="Estoque, receita, margem, funil e origem de oportunidades."
+        eyebrow="Analytics"
+        title="Relatorios gerenciais"
+      />
 
       {status.kind === "error" ? (
-        <p className="feature-alert">{status.message}</p>
+        <FeatureAlert>{status.message}</FeatureAlert>
       ) : null}
       {dashboard ? (
         <Dashboard dashboard={dashboard} />
       ) : (
-        <p className="feature-empty">Carregando relatorios</p>
+        <FeatureLoadingState>Carregando relatorios</FeatureLoadingState>
       )}
-    </main>
+    </FeaturePageShell>
   );
 }
 
 function Dashboard({ dashboard }: { dashboard: ReportsDashboard }) {
   return (
     <>
-      <section className="feature-grid four">
+      <FeatureKpiStrip ariaLabel="Indicadores dos relatórios">
         {dashboard.kpis.map((kpi) => (
-          <article className="feature-card" key={kpi.label}>
-            <span>{kpi.label}</span>
-            <strong>{kpi.value}</strong>
-            <small>{kpi.deltaLabel}</small>
-          </article>
+          <FeatureKpiCard
+            icon={BarChart3}
+            key={kpi.label}
+            label={kpi.label}
+            tone="violet"
+            value={`${kpi.value} ${kpi.deltaLabel}`}
+          />
         ))}
-      </section>
+      </FeatureKpiStrip>
       <section className="feature-grid two">
-        <section className="feature-panel">
-          <h3>Funil comercial</h3>
+        <FeatureSection className="feature-panel" title="Funil comercial">
           <div className="feature-bars">
             {dashboard.leadFunnel.map((step) => (
               <span key={step.key}>
@@ -79,9 +88,8 @@ function Dashboard({ dashboard }: { dashboard: ReportsDashboard }) {
               </span>
             ))}
           </div>
-        </section>
-        <section className="feature-panel">
-          <h3>Origem dos leads</h3>
+        </FeatureSection>
+        <FeatureSection className="feature-panel" title="Origem dos leads">
           <div className="feature-list compact">
             {dashboard.leadSources.map((source) => (
               <article key={source.key}>
@@ -90,46 +98,44 @@ function Dashboard({ dashboard }: { dashboard: ReportsDashboard }) {
               </article>
             ))}
           </div>
-        </section>
+        </FeatureSection>
       </section>
-      <section className="feature-panel">
-        <h3>Resumo financeiro</h3>
-        <div className="feature-grid four">
-          <Metric
+      <FeatureSection className="feature-panel" title="Resumo financeiro">
+        <FeatureKpiStrip ariaLabel="Resumo financeiro">
+          <FeatureKpiCard
+            icon={TrendingUp}
             label="Vendas fechadas"
+            tone="green"
             value={money(dashboard.revenue.closedSalesCents)}
           />
-          <Metric
+          <FeatureKpiCard
+            icon={TrendingUp}
             label="Margem bruta"
+            tone="blue"
             value={money(dashboard.revenue.grossMarginCents)}
           />
-          <Metric
+          <FeatureKpiCard
+            icon={TrendingUp}
             label="Recebiveis"
+            tone="pink"
             value={money(dashboard.revenue.openReceivablesCents)}
           />
-          <Metric
+          <FeatureKpiCard
+            icon={TrendingUp}
             label="Recebido"
+            tone="violet"
             value={money(dashboard.revenue.paidReceiptsCents)}
           />
-        </div>
-      </section>
-      <section className="feature-provider">
+        </FeatureKpiStrip>
+      </FeatureSection>
+      <FeatureSection className="feature-provider">
         <TrendingUp aria-hidden="true" className="size-5" />
         <span>
           {dashboard.inventory.availableListings}/
           {dashboard.inventory.totalListings} veiculos disponiveis
         </span>
-      </section>
+      </FeatureSection>
     </>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="feature-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
   );
 }
 

@@ -1,5 +1,14 @@
 import { RefreshCcw, Store } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../components/ui/FeatureLayout";
+import {
+  FeatureAlert,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import { createMarketplaceApi, type MarketplaceApi } from "./apiClient";
 import {
   MarketplaceJobList,
@@ -121,31 +130,29 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   };
 
   return (
-    <main className="marketplace-shell">
-      <section className="marketplace-hero">
-        <div>
-          <span className="marketplace-badge">
+    <FeaturePageShell className="marketplace-shell" variant="content">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            label="Atualizar"
+            onClick={() => void refresh()}
+          />
+        }
+        description="Conexoes por loja, syncs auditaveis e filas prontas para publicar estoque e importar leads."
+        eyebrow={
+          <>
             <Store aria-hidden="true" className="size-4" />
             Portal marketplaces
-          </span>
-          <h2>OLX e Mercado Livre</h2>
-          <p>
-            Conexoes por loja, syncs auditaveis e filas prontas para publicar
-            estoque e importar leads.
-          </p>
-        </div>
-        <button
-          aria-label="Atualizar marketplaces"
-          className="marketplace-icon-action"
-          onClick={() => void refresh()}
-          type="button"
-        >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
-      </section>
+          </>
+        }
+        title="OLX e Mercado Livre"
+      />
 
       {status.kind === "error" ? (
-        <p className="marketplace-alert">{status.message}</p>
+        <FeatureAlert className="marketplace-alert">
+          {status.message}
+        </FeatureAlert>
       ) : null}
 
       {overview ? (
@@ -178,9 +185,11 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           <MarketplaceJobList overview={overview} onRun={runJob} />
         </>
       ) : (
-        <section className="marketplace-empty">Carregando marketplaces</section>
+        <FeatureLoadingState className="marketplace-empty">
+          Carregando marketplaces
+        </FeatureLoadingState>
       )}
-    </main>
+    </FeaturePageShell>
   );
 }
 

@@ -1,6 +1,7 @@
 import { ShieldCheck, UserCog } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { CustomSelect } from "../../../components/ui/CustomSelect";
+import { FeatureLoadingState } from "../../../components/ui/FeatureStates";
 import type { RoleKey, RoleManagementView } from "../types";
 import { PermissionGroupPanel } from "./PermissionGroupPanel";
 import type { OverrideMode } from "./roleDraft";
@@ -40,7 +41,9 @@ export function RoleManagementPanel({
 
   if (!selected)
     return (
-      <section className="settings-empty">Nenhum usuario encontrado</section>
+      <FeatureLoadingState className="settings-empty">
+        Nenhum usuario encontrado
+      </FeatureLoadingState>
     );
 
   const save = () =>

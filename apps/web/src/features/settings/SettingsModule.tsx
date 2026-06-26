@@ -1,5 +1,15 @@
 import { Globe2, RefreshCcw, Save, Store, Users, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { FeatureTabs } from "../../components/ui/FeatureControls";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../components/ui/FeatureLayout";
+import {
+  FeatureAlert,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import { createSettingsApi, type SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
 import { SettingsForm } from "./SettingsPanels";
@@ -18,8 +28,9 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
   const [settings, setSettings] = useState<StoreSettingsSnapshot | null>(null);
   const [roles, setRoles] = useState<RoleManagementView | null>(null);
   const [rolesError, setRolesError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] =
-    useState<SettingsTab>(readInitialSettingsTab);
+  const [activeTab, setActiveTab] = useState<SettingsTab>(
+    readInitialSettingsTab,
+  );
   const [status, setStatus] = useState<SettingsStatus>({ kind: "loading" });
 
   const refresh = async () => {
@@ -91,60 +102,42 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
   };
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
-      <section className="settings-hero">
-        <div className="min-w-0 space-y-3">
-          <div className="flex flex-wrap gap-2">
-            <span className="settings-badge">
-              <Store aria-hidden="true" className="size-4" />
-              Loja
-            </span>
-            <span className="settings-badge">
-              <Globe2 aria-hidden="true" className="size-4" />
-              Site publico
-            </span>
-            <span className="settings-badge">
-              <Users aria-hidden="true" className="size-4" />
-              Papeis
-            </span>
-          </div>
-          <h2 className="max-w-3xl text-2xl font-black lg:text-4xl">
-            Configuracoes operacionais da loja
-          </h2>
-          <p className="max-w-3xl text-sm font-bold text-muted">
-            Identidade, contato, WhatsApp, SEO, publicacao e dominio ficam em um
-            cadastro auditavel para alimentar vitrine, documentos e acessos.
-          </p>
-        </div>
-        <button
-          className="settings-icon-action"
-          onClick={() => void refresh()}
-          type="button"
-        >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
-      </section>
+    <FeaturePageShell variant="plain">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            label="Atualizar"
+            onClick={() => void refresh()}
+          />
+        }
+        description="Identidade, contato, WhatsApp, SEO, publicacao e dominio ficam em um cadastro auditavel para alimentar vitrine, documentos e acessos."
+        eyebrow={
+          <>
+            <Store aria-hidden="true" className="size-4" />
+            Loja
+            <Globe2 aria-hidden="true" className="size-4" />
+            Site publico
+            <Users aria-hidden="true" className="size-4" />
+            Papeis
+          </>
+        }
+        title="Configuracoes operacionais da loja"
+      />
 
       {status.kind === "error" ? (
-        <p className="settings-alert">{status.message}</p>
+        <FeatureAlert className="settings-alert">{status.message}</FeatureAlert>
       ) : null}
 
-      <div className="settings-tabs">
-        <button
-          className={activeTab === "store" ? "is-active" : ""}
-          onClick={() => selectTab("store", setActiveTab)}
-          type="button"
-        >
-          Loja
-        </button>
-        <button
-          className={activeTab === "roles" ? "is-active" : ""}
-          onClick={() => selectTab("roles", setActiveTab)}
-          type="button"
-        >
-          Papeis
-        </button>
-      </div>
+      <FeatureTabs
+        ariaLabel="Areas de configuracao"
+        onChange={(tab) => selectTab(tab, setActiveTab)}
+        options={[
+          { label: "Loja", value: "store" },
+          { label: "Papeis", value: "roles" },
+        ]}
+        value={activeTab}
+      />
 
       {activeTab === "store" && settings ? (
         <SettingsForm
@@ -159,12 +152,13 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
           roles={roles}
         />
       ) : activeTab === "roles" && rolesError ? (
-        <section className="settings-alert">{rolesError}</section>
+        <FeatureAlert className="settings-alert">{rolesError}</FeatureAlert>
       ) : (
-        <section className="settings-empty">
-          <Wand2 aria-hidden="true" className="size-5" />
-          <strong>Carregando configuracoes</strong>
-        </section>
+        <FeatureLoadingState
+          className="settings-empty"
+          icon={Wand2}
+          title="Carregando configuracoes"
+        />
       )}
 
       {status.kind === "saved" ? (
@@ -173,7 +167,7 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
           Configuracoes salvas
         </p>
       ) : null}
-    </main>
+    </FeaturePageShell>
   );
 }
 
@@ -183,10 +177,7 @@ function readInitialSettingsTab(): SettingsTab {
   return new URLSearchParams(query).get("tab") === "roles" ? "roles" : "store";
 }
 
-function selectTab(
-  tab: SettingsTab,
-  setActiveTab: (tab: SettingsTab) => void,
-) {
+function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {
   setActiveTab(tab);
   if (typeof window === "undefined") return;
   window.location.hash = tab === "roles" ? "/settings?tab=roles" : "/settings";

@@ -9,39 +9,48 @@ export function PaymentRow({
   payment,
 }: PaymentRowProps) {
   return (
-    <div className="grid gap-2 rounded-lg border border-line bg-app-elevated p-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-      <select
-        className="sales-input"
-        onChange={(event) =>
-          onChange({ ...payment, method: event.target.value })
-        }
-        value={payment.method}
-      >
-        {paymentMethods.map((method) => (
-          <option key={method} value={method}>
-            {method}
-          </option>
-        ))}
-      </select>
+    <div className="sales-payment-row">
+      <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
+        Método de Pagamento
+        <select
+          className="sales-input"
+          onChange={(event) =>
+            onChange({ ...payment, method: event.target.value })
+          }
+          value={payment.method}
+        >
+          {paymentMethods.map((method) => (
+            <option key={method} value={method}>
+              {formatPaymentMethod(method)}
+            </option>
+          ))}
+        </select>
+      </label>
       <MoneyInput
-        label="Principal"
+        label="Valor Principal"
         onChange={(value) =>
           onChange({
             ...payment,
-            amountCents: value ?? 0,
+            amountCents: (value ?? 0) + payment.extraCents,
             principalCents: value ?? 0,
           })
         }
         value={payment.principalCents}
       />
       <MoneyInput
-        label="Extra"
-        onChange={(value) => onChange({ ...payment, extraCents: value ?? 0 })}
+        label="Taxas / Extras"
+        onChange={(value) =>
+          onChange({
+            ...payment,
+            amountCents: payment.principalCents + (value ?? 0),
+            extraCents: value ?? 0,
+          })
+        }
         value={payment.extraCents}
       />
       <button
         aria-label={`Remover pagamento ${index + 1}`}
-        className="icon-button"
+        className="sales-secondary-button !min-h-[2.75rem] hover:!border-rose-500 hover:!text-rose-500 shrink-0"
         onClick={onRemove}
         type="button"
       >
@@ -72,16 +81,40 @@ export function newPayment(
 
 function MoneyInput({ label, onChange, value }: MoneyInputProps) {
   return (
-    <label className="grid gap-1 text-xs font-black text-muted">
+    <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
       {label}
       <input
         className="sales-input"
         inputMode="numeric"
         onChange={(event) => onChange(parseCurrencyInput(event.target.value))}
+        placeholder="R$ 0,00"
         value={value ? formatCents(value) : ""}
       />
     </label>
   );
+}
+
+function formatPaymentMethod(method: string): string {
+  switch (method) {
+    case "pix":
+      return "PIX";
+    case "transfer":
+      return "Transferência (TED/DOC)";
+    case "cash":
+      return "Dinheiro em Espécie";
+    case "financing":
+      return "Financiamento Bancário";
+    case "credit_card":
+      return "Cartão de Crédito";
+    case "boleto":
+      return "Boleto Bancário";
+    case "letter_of_credit":
+      return "Carta de Crédito (Consórcio)";
+    case "trade_in":
+      return "Veículo na Troca (Trade-in)";
+    default:
+      return method.toUpperCase();
+  }
 }
 
 type PaymentRowProps = {

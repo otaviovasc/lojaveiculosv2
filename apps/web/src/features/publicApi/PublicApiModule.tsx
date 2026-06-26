@@ -1,5 +1,12 @@
 import { KeyRound, Plus, RefreshCcw, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+  FeatureSection,
+} from "../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { createPublicApi, type PublicApi } from "./apiClient";
 import { createPublicApiOptions } from "./runtimeApi";
 import type { PublicApiClient, PublicApiScope } from "./types";
@@ -67,38 +74,36 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
   };
 
   return (
-    <main className="internal-shell">
-      <section className="internal-hero">
-        <div>
-          <span className="internal-badge">
+    <FeaturePageShell className="internal-shell" variant="content">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            label="Atualizar"
+            onClick={() => void refresh()}
+          />
+        }
+        description="Cada chave herda a loja atual e recebe apenas os escopos escolhidos. Billing, usuarios, auditoria e configuracoes continuam user-only."
+        eyebrow={
+          <>
             <KeyRound aria-hidden="true" className="size-4" />
             API externa
-          </span>
-          <h2>Chaves escopadas para integracoes</h2>
-          <p>
-            Cada chave herda a loja atual e recebe apenas os escopos escolhidos.
-            Billing, usuarios, auditoria e configuracoes continuam user-only.
-          </p>
-        </div>
-        <button
-          className="internal-icon-action"
-          onClick={() => void refresh()}
-          type="button"
-        >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
-      </section>
+          </>
+        }
+        title="Chaves escopadas para integracoes"
+      />
 
       {status.kind === "error" ? (
-        <p className="internal-alert">{status.message}</p>
+        <FeatureAlert className="internal-alert">{status.message}</FeatureAlert>
       ) : null}
 
       <section className="internal-grid two">
-        <article className="internal-panel">
-          <div className="internal-panel-title">
-            <ShieldCheck aria-hidden="true" className="size-5" />
-            <strong>Nova chave</strong>
-          </div>
+        <FeatureSection
+          className="internal-panel"
+          headerClassName="internal-panel-title"
+          icon={<ShieldCheck aria-hidden="true" className="size-5" />}
+          title="Nova chave"
+        >
           <label className="internal-field">
             <span>Nome</span>
             <input
@@ -135,13 +140,14 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
               <code>{createdKey}</code>
             </div>
           ) : null}
-        </article>
+        </FeatureSection>
 
-        <article className="internal-panel">
-          <div className="internal-panel-title">
-            <KeyRound aria-hidden="true" className="size-5" />
-            <strong>Clientes ativos</strong>
-          </div>
+        <FeatureSection
+          className="internal-panel"
+          headerClassName="internal-panel-title"
+          icon={<KeyRound aria-hidden="true" className="size-5" />}
+          title="Clientes ativos"
+        >
           <div className="internal-list">
             {clients.map((client) => (
               <div className="internal-row" key={client.id}>
@@ -167,9 +173,9 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
               <p className="internal-muted">Nenhum cliente externo criado.</p>
             ) : null}
           </div>
-        </article>
+        </FeatureSection>
       </section>
-    </main>
+    </FeaturePageShell>
   );
 }
 

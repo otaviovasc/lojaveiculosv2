@@ -73,6 +73,15 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Avoid overlapping animations, loading states, popovers, and fixed toolbars.
   Components with animated state need explicit empty/loading/error/success
   layouts.
+- Feature pages must use shared primitives for recurring layouts and UI
+  patterns. When multiple existing implementations exist, promote the best
+  existing one as the source of truth and migrate weaker duplicates to it. If no
+  primitive satisfies the page's need, create a new primitive or add a small
+  variant to an existing primitive instead of implementing a one-off local
+  version.
+- Do not invent new styling during primitive extraction. Visual normalization is
+  only allowed when replacing weaker existing implementations with the chosen
+  existing source-of-truth component.
 - Prefer small modules. Keep source files under 250 lines unless the file is a
   generated artifact or a documented exception.
 

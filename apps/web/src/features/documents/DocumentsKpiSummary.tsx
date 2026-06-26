@@ -1,6 +1,9 @@
 import { Bot, CarFront, FileText, UploadCloud } from "lucide-react";
 import type { ComponentType } from "react";
-import { AnimatedCounter } from "../../components/ui/CountUp";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
 
 export type DocumentOriginFilter = "all" | "automatic" | "manual";
 
@@ -62,54 +65,19 @@ export function DocumentsKpiSummary({
   ];
 
   return (
-    <div
-      className="documents-kpi-strip"
-      role="group"
-      aria-label="Resumo de documentos"
-    >
-      {cards.map((card) => {
-        const Icon = card.icon;
-        const isActive = activeOrigin === card.filter;
-        const toneClass =
-          card.tone === "green"
-            ? "kpi-gradient-green"
-            : card.tone === "blue"
-              ? "kpi-gradient-blue"
-              : card.tone === "violet"
-                ? "kpi-gradient-violet"
-                : "kpi-gradient-pink";
-
-        return (
-          <button
-            aria-label={`Filtrar por ${card.label}`}
-            aria-pressed={isActive}
-            className={
-              "documents-kpi-card flex items-center gap-3 !p-3 !px-4 !rounded-xl " +
-              toneClass +
-              " w-full border border-white/10 text-left text-white cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.015] " +
-              (isActive
-                ? "ring-2 ring-white/70 ring-offset-2 ring-offset-app "
-                : "")
-            }
-            disabled={isLoading}
-            key={card.label}
-            onClick={() => onOriginSelect(card.filter)}
-            type="button"
-          >
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/10">
-              <Icon aria-hidden="true" className="size-4 text-white" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[9px] font-black uppercase tracking-wider text-white/70 leading-none">
-                {card.label}
-              </span>
-              <strong className="block text-lg font-black text-white mt-1.5 leading-none">
-                <AnimatedCounter value={card.value} />
-              </strong>
-            </div>
-          </button>
-        );
-      })}
-    </div>
+    <FeatureKpiStrip ariaLabel="Resumo de documentos">
+      {cards.map((card) => (
+        <FeatureKpiCard
+          active={activeOrigin === card.filter}
+          disabled={isLoading}
+          icon={card.icon}
+          key={card.label}
+          label={card.label}
+          onClick={() => onOriginSelect(card.filter)}
+          tone={card.tone}
+          value={card.value}
+        />
+      ))}
+    </FeatureKpiStrip>
   );
 }

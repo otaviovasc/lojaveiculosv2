@@ -6,6 +6,12 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import type { ModuleDefinition } from "../app/modules";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+  FeatureSection,
+} from "./ui/FeatureLayout";
 
 const readinessItems = [
   "Permissoes e modulos definidos antes da liberacao",
@@ -15,26 +21,22 @@ const readinessItems = [
 
 export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
   return (
-    <main className="content-frame">
-      <section className="module-hero">
-        <div className="min-w-0">
-          <p className="eyebrow">{module.eyebrow}</p>
-          <h2 className="mt-2 text-2xl font-black md:text-4xl">
-            {module.title}
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm font-semibold text-muted md:text-base">
-            {module.description}
-          </p>
-        </div>
-
-        <button className="primary-button" type="button">
-          <span>{module.action}</span>
-          <ArrowRight aria-hidden="true" className="size-4" />
-        </button>
-      </section>
+    <FeaturePageShell variant="content">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={ArrowRight}
+            label={module.action}
+            variant="primary"
+          />
+        }
+        description={module.description}
+        eyebrow={module.eyebrow}
+        title={module.title}
+      />
 
       <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
-        <div className="panel p-5 lg:p-6">
+        <FeatureSection className="p-5 lg:p-6">
           <div className="mb-5 flex items-center gap-3">
             <div className="addon-icon addon-icon-green">
               <DatabaseZap aria-hidden="true" className="size-5" />
@@ -56,9 +58,9 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
               </article>
             ))}
           </div>
-        </div>
+        </FeatureSection>
 
-        <aside className="panel p-5">
+        <FeatureSection className="p-5">
           <p className="eyebrow">Proximo passo</p>
           <div className="mt-4 space-y-4">
             <div className="flex gap-3">
@@ -81,8 +83,8 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
               </p>
             </div>
           </div>
-        </aside>
+        </FeatureSection>
       </section>
-    </main>
+    </FeaturePageShell>
   );
 }

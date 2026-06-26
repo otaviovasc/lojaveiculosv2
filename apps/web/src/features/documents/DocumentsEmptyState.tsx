@@ -6,7 +6,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
-import { EmptyCatalog } from "../inventory/components/InventoryListingCardGrid";
+import { FeatureEmptyState } from "../../components/ui/FeatureStates";
 
 export type DocumentsEmptyStateKind = "error" | "folder-empty" | "no-results";
 
@@ -35,27 +35,36 @@ export function DocumentsEmptyState({
   title: string;
 }) {
   const Icon = ICONS[kind];
+  const cta =
+    onAction && ctaLabel ? (
+      <button
+        className="documents-empty-state-cta"
+        onClick={onAction}
+        type="button"
+      >
+        {kind === "folder-empty" ? (
+          <UploadCloud aria-hidden="true" className="size-4" />
+        ) : kind === "error" ? (
+          <RefreshCcw aria-hidden="true" className="size-4" />
+        ) : null}
+        <span>{ctaLabel}</span>
+      </button>
+    ) : null;
+  const actionNode =
+    action || cta ? (
+      <>
+        {action ?? null}
+        {cta}
+      </>
+    ) : undefined;
   return (
     <div className="documents-empty-state" data-kind={kind}>
-      <EmptyCatalog body={message} title={title} />
-      <div className="documents-empty-state-icon" aria-hidden>
-        <Icon className="size-6" />
-      </div>
-      {action ?? null}
-      {onAction && ctaLabel ? (
-        <button
-          className="documents-empty-state-cta"
-          onClick={onAction}
-          type="button"
-        >
-          {kind === "folder-empty" ? (
-            <UploadCloud aria-hidden="true" className="size-4" />
-          ) : kind === "error" ? (
-            <RefreshCcw aria-hidden="true" className="size-4" />
-          ) : null}
-          <span>{ctaLabel}</span>
-        </button>
-      ) : null}
+      <FeatureEmptyState
+        action={actionNode}
+        body={message}
+        icon={Icon}
+        title={title}
+      />
     </div>
   );
 }

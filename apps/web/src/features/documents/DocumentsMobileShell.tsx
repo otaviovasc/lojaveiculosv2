@@ -1,4 +1,5 @@
 import { FileText, FolderOpen, RefreshCcw, UploadCloud } from "lucide-react";
+import { FeatureTabs } from "../../components/ui/FeatureControls";
 import type { DocumentsFolderKey } from "./documentDisplayModel";
 
 export type DocumentsMobileTab = "documentos" | "pastas";
@@ -30,38 +31,18 @@ export function DocumentsMobileShell({
 }) {
   return (
     <>
-      <div
+      <FeatureTabs
+        activeClassName="documents-mobile-tab--active"
+        ariaLabel="Navegacao do workspace"
         className="documents-mobile-tabs"
-        role="tablist"
-        aria-label="Navegacao do workspace"
-      >
-        <button
-          aria-selected={activeTab === "documentos"}
-          className={
-            "documents-mobile-tab" +
-            (activeTab === "documentos" ? " documents-mobile-tab--active" : "")
-          }
-          onClick={() => onTabChange("documentos")}
-          role="tab"
-          type="button"
-        >
-          <FileText aria-hidden="true" className="size-4" />
-          <span>Documentos</span>
-        </button>
-        <button
-          aria-selected={activeTab === "pastas"}
-          className={
-            "documents-mobile-tab" +
-            (activeTab === "pastas" ? " documents-mobile-tab--active" : "")
-          }
-          onClick={() => onTabChange("pastas")}
-          role="tab"
-          type="button"
-        >
-          <FolderOpen aria-hidden="true" className="size-4" />
-          <span>Pastas</span>
-        </button>
-      </div>
+        onChange={onTabChange}
+        optionClassName="documents-mobile-tab"
+        options={[
+          { icon: FileText, label: "Documentos", value: "documentos" },
+          { icon: FolderOpen, label: "Pastas", value: "pastas" },
+        ]}
+        value={activeTab}
+      />
       {activeTab === "documentos" ? (
         <div className="documents-mobile-breadcrumb">{selectedFolderTitle}</div>
       ) : null}

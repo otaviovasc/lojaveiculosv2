@@ -2,14 +2,21 @@ import {
   Filter,
   Plus,
   RefreshCw,
-  Search,
   Columns,
   List,
   LayoutGrid,
 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { motion } from "motion/react";
-import { InventoryInput, InventorySelect } from "./InventoryFormParts";
+import { InventorySelect } from "./InventoryFormParts";
+import {
+  FeatureSearchField,
+  FeatureSegmentedControl,
+} from "../../../components/ui/FeatureControls";
+import {
+  FeatureActionButton,
+  FeatureToolbar,
+} from "../../../components/ui/FeatureLayout";
 import {
   inventoryListStatusOptions,
   type InventoryListStatusFilter,
@@ -65,24 +72,17 @@ export function InventoryListToolbar({
   ];
 
   return (
-    <section className="glass-panel-branded p-5 !overflow-visible">
+    <FeatureToolbar>
       <form
         className="grid gap-4 md:grid-cols-[1fr_240px_auto] items-center"
         onSubmit={submit}
       >
-        <label className="relative block">
-          <span className="sr-only">Buscar veículos</span>
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-          />
-          <InventoryInput
-            className="w-full pl-10"
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Buscar por título, marca, modelo ou placa"
-            value={search}
-          />
-        </label>
+        <FeatureSearchField
+          label="Buscar veículos"
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Buscar por título, marca, modelo ou placa"
+          value={search}
+        />
 
         <label className="relative block">
           <span className="sr-only">Filtrar por status</span>
@@ -99,16 +99,15 @@ export function InventoryListToolbar({
         </label>
 
         <div className="flex">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="inline-flex min-h-11 w-full md:w-auto items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm"
+          <FeatureActionButton
+            className="min-h-11 w-full px-5 text-sm md:w-auto"
+            icon={Plus}
+            label="Novo Veículo"
             onClick={onCreate}
-            type="button"
+            variant="primary"
           >
-            <Plus aria-hidden="true" className="size-4" />
-            <span>Novo Veículo</span>
-          </motion.button>
+            Novo Veículo
+          </FeatureActionButton>
         </div>
       </form>
 
@@ -173,37 +172,17 @@ export function InventoryListToolbar({
           )}
         </div>
 
-        {/* View Toggle */}
-        <div className="flex items-center gap-1 rounded-lg bg-app-elevated border border-line/60 p-0.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => onViewModeChange("list")}
-            className={
-              "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-[10px] font-black transition-all cursor-pointer " +
-              (viewMode === "list"
-                ? "bg-accent text-inverse shadow-sm"
-                : "text-muted hover:text-app-text")
-            }
-          >
-            <List className="size-3.5" />
-            <span>Lista</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewModeChange("cards")}
-            className={
-              "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-[10px] font-black transition-all cursor-pointer " +
-              (viewMode === "cards"
-                ? "bg-accent text-inverse shadow-sm"
-                : "text-muted hover:text-app-text")
-            }
-          >
-            <LayoutGrid className="size-3.5" />
-            <span>Cards</span>
-          </button>
-        </div>
+        <FeatureSegmentedControl
+          ariaLabel="Modo de visualização do estoque"
+          onChange={onViewModeChange}
+          options={[
+            { icon: List, label: "Lista", value: "list" },
+            { icon: LayoutGrid, label: "Cards", value: "cards" },
+          ]}
+          value={viewMode}
+        />
       </div>
-    </section>
+    </FeatureToolbar>
   );
 }
 

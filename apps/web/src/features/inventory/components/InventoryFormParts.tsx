@@ -5,10 +5,11 @@ import {
   type ReactNode,
 } from "react";
 import { vehicleColorOptions, type VehicleColor } from "@lojaveiculosv2/shared";
+import type { CustomSelectOption } from "../../../components/ui/CustomSelect";
 import {
-  CustomSelect,
-  type CustomSelectOption,
-} from "../../../components/ui/CustomSelect";
+  FeatureInput,
+  FeatureSelect,
+} from "../../../components/ui/FeatureControls";
 
 type FieldProps = {
   children: ReactNode;
@@ -68,19 +69,7 @@ export const InventoryField = forwardRef<HTMLLabelElement, FieldProps>(
 );
 
 export function InventoryInput(props: ComponentProps<"input">) {
-  return (
-    <input
-      {...props}
-      className={[
-        "w-full min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
-        "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
-        "disabled:opacity-50 disabled:bg-app-elevated/50 disabled:cursor-not-allowed disabled:border-line/60",
-        props.className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    />
-  );
+  return <FeatureInput {...props} />;
 }
 
 type InventorySelectProps<Value extends string = string> = {
@@ -98,18 +87,7 @@ export function InventorySelect<Value extends string = string>({
   className,
   ...props
 }: InventorySelectProps<Value>) {
-  return (
-    <CustomSelect
-      {...props}
-      className={[
-        "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
-        "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    />
-  );
+  return <FeatureSelect {...props} className={className} />;
 }
 
 type InventoryColorSelectProps = {

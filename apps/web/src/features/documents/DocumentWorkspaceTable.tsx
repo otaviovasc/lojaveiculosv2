@@ -1,4 +1,13 @@
 import { Download, FileSearch, Trash2 } from "lucide-react";
+import {
+  FeatureStatusBadge,
+  type FeatureStatusTone,
+} from "../../components/ui/FeatureStates";
+import {
+  FeatureRowAction,
+  FeatureRowActions,
+  FeatureTableFrame,
+} from "../../components/ui/FeatureTable";
 import { MercosulPlateBadge } from "../inventory/components/InventoryListingCardGrid";
 import { documentOrigin, documentVehicleInfo } from "./documentDisplayModel";
 import {
@@ -32,7 +41,7 @@ export function DocumentsTable({
   const showSelect = Boolean(onToggleSelect);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-line bg-panel/40 backdrop-blur-md shadow-sm">
+    <FeatureTableFrame>
       <table className="min-w-full border-collapse text-left text-sm">
         <thead className="bg-app/80 text-[10px] font-black uppercase tracking-wider text-muted border-b border-line">
           <tr>
@@ -137,7 +146,11 @@ export function DocumentsTable({
                 {/* Status */}
                 <td className="px-4 py-3 whitespace-nowrap align-middle">
                   <div className="flex items-center h-10">
-                    <StatusBadge status={document.status} />
+                    <FeatureStatusBadge
+                      tone={documentStatusTone(document.status)}
+                    >
+                      {statusLabel(document.status)}
+                    </FeatureStatusBadge>
                   </div>
                 </td>
 
@@ -165,95 +178,45 @@ export function DocumentsTable({
                   className="px-4 py-3 whitespace-nowrap text-right align-middle"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-end gap-2 h-10">
-                    <RowAction
+                  <FeatureRowActions>
+                    <FeatureRowAction
                       ariaLabel="Visualizar documento"
-                      iconClass="text-blue-500"
-                      Icon={FileSearch}
+                      icon={FileSearch}
+                      iconClassName="text-blue-500"
                       onClick={() => onSelect(document)}
                       tooltip="Visualizar"
                     />
-                    <RowAction
+                    <FeatureRowAction
                       ariaLabel="Baixar documento"
                       disabled={isBusy}
-                      iconClass="text-emerald-500"
-                      Icon={Download}
+                      icon={Download}
+                      iconClassName="text-emerald-500"
                       onClick={() => void onDownload(document.id)}
                       tooltip="Baixar"
                     />
-                    <RowAction
+                    <FeatureRowAction
                       ariaLabel="Excluir documento"
                       disabled={isBusy || document.status === "voided"}
-                      iconClass="text-pink-500"
-                      Icon={Trash2}
+                      icon={Trash2}
+                      iconClassName="text-pink-500"
                       onClick={() => onDelete(document)}
                       tooltip="Excluir"
                     />
-                  </div>
+                  </FeatureRowActions>
                 </td>
               </tr>
             );
           })}
         </tbody>
       </table>
-    </div>
+    </FeatureTableFrame>
   );
 }
 
-function StatusBadge({ status }: { status: DocumentStatus }) {
-  const tone =
-    status === "issued" || status === "signed"
-      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-      : status === "pending_signature"
-        ? "bg-warning/10 text-warning border border-warning/20"
-        : status === "voided"
-          ? "bg-pink-500/10 text-pink-500 border border-pink-500/20"
-          : status === "draft"
-            ? "bg-violet-500/10 text-violet-500 border border-violet-500/20"
-            : "bg-panel text-muted border border-line";
-  return (
-    <span
-      className={
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider " +
-        tone
-      }
-    >
-      <span className="size-1.5 rounded-full bg-current" />
-      {statusLabel(status)}
-    </span>
-  );
-}
-
-function RowAction({
-  ariaLabel,
-  disabled,
-  iconClass,
-  Icon,
-  onClick,
-  tooltip,
-}: {
-  ariaLabel: string;
-  disabled?: boolean;
-  iconClass: string;
-  Icon: typeof FileSearch;
-  onClick: () => void;
-  tooltip: string;
-}) {
-  return (
-    <div className="relative flex items-center">
-      <button
-        aria-label={ariaLabel}
-        className="peer p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer shadow-sm flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={disabled}
-        onClick={onClick}
-        type="button"
-      >
-        <Icon aria-hidden="true" className={"size-3.5 " + iconClass} />
-      </button>
-      <div className="absolute top-1/2 -translate-y-1/2 right-full mr-2 hidden peer-hover:block z-30 bg-gray-900 text-white text-[9px] font-bold py-1 px-2 rounded shadow-lg whitespace-nowrap leading-none pointer-events-none border border-white/10">
-        {tooltip}
-        <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
-      </div>
-    </div>
-  );
+function documentStatusTone(status: DocumentStatus): FeatureStatusTone {
+  if (status === "issued" || status === "signed") return "success";
+  if (status === "pending_signature") return "warning";
+  if (status === "voided") return "pink";
+  if (status === "draft") return "blue";
+  return "neutral";
 }

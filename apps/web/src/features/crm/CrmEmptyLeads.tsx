@@ -1,11 +1,12 @@
 import { Inbox } from "lucide-react";
+import { FeatureEmptyState } from "../../components/ui/FeatureStates";
 
 export function EmptyLeads() {
   return (
-    <section className="crm-panel crm-empty-panel">
-      <Inbox aria-hidden="true" className="size-5" />
-      <strong>Nenhum lead encontrado</strong>
-      <span>Ajuste os filtros ou crie um lead manual.</span>
-    </section>
+    <FeatureEmptyState
+      body="Ajuste os filtros ou crie um lead manual."
+      icon={Inbox}
+      title="Nenhum lead encontrado"
+    />
   );
 }

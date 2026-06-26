@@ -10,6 +10,7 @@ import {
 import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 import { CustomSelect } from "../../components/ui/CustomSelect";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { sourceLabels, sourceOptions } from "./crmPipelineConfig";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
@@ -60,11 +61,12 @@ export function LeadCreatePanel({
   };
 
   return (
-    <section className="crm-panel">
-      <div className="crm-panel-title">
-        <UserRound aria-hidden="true" className="size-5" />
-        <h3>Novo lead manual</h3>
-      </div>
+    <FeatureSection
+      className="crm-panel"
+      headerClassName="crm-panel-title"
+      icon={<UserRound aria-hidden="true" className="size-5" />}
+      title="Novo lead manual"
+    >
       <div className="crm-form-grid">
         <CrmField icon={<UserRound />} label="Nome">
           <input
@@ -142,7 +144,7 @@ export function LeadCreatePanel({
           {isSaving ? "Criando" : "Criar lead"}
         </button>
       </div>
-    </section>
+    </FeatureSection>
   );
 }
 

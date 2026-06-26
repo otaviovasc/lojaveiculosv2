@@ -1,8 +1,10 @@
-import { ArrowDownNarrowWide, Search } from "lucide-react";
+import { ArrowDownNarrowWide } from "lucide-react";
 import {
-  InventoryInput,
-  InventorySelect,
-} from "../inventory/components/InventoryFormParts";
+  FeatureSearchField,
+  FeatureSegmentedControl,
+  FeatureSelect,
+} from "../../components/ui/FeatureControls";
+import { FeatureToolbar } from "../../components/ui/FeatureLayout";
 import { kindOptions, statusOptions } from "./documentLabels";
 import type { DocumentOriginFilter } from "./DocumentsKpiSummary";
 import type { DocumentsSortKey } from "./documentWorkspaceFilters";
@@ -57,31 +59,22 @@ export function DocumentsListToolbar({
   status: DocumentStatus | "";
 }) {
   return (
-    <section className="glass-panel-branded p-5 !overflow-visible">
-      <p className="eyebrow">Documentos</p>
-
+    <FeatureToolbar eyebrow="Documentos">
       <form
         className="grid gap-3 md:grid-cols-[1fr_220px_200px] items-center mt-4"
         onSubmit={(event) => event.preventDefault()}
       >
-        <label className="relative block">
-          <span className="sr-only">Buscar documentos</span>
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-          />
-          <InventoryInput
-            className="w-full pl-10"
-            disabled={isLoading}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Buscar por titulo, placa, chassi ou responsavel"
-            value={search}
-          />
-        </label>
+        <FeatureSearchField
+          disabled={isLoading}
+          label="Buscar documentos"
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Buscar por titulo, placa, chassi ou responsavel"
+          value={search}
+        />
 
         <label className="relative block">
           <span className="sr-only">Filtrar por status</span>
-          <InventorySelect
+          <FeatureSelect
             ariaLabel="Filtrar por status"
             className="w-full"
             disabled={isLoading}
@@ -93,7 +86,7 @@ export function DocumentsListToolbar({
 
         <label className="relative block">
           <span className="sr-only">Filtrar por tipo</span>
-          <InventorySelect
+          <FeatureSelect
             ariaLabel="Filtrar por tipo"
             className="w-full"
             disabled={isLoading}
@@ -145,7 +138,7 @@ export function DocumentsListToolbar({
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
             />
             <span className="sr-only">Ordenar por</span>
-            <InventorySelect
+            <FeatureSelect
               ariaLabel="Ordenar por"
               className="!min-h-9 !text-[11px] !py-1 !pl-8 min-w-[10rem]"
               disabled={isLoading}
@@ -156,7 +149,7 @@ export function DocumentsListToolbar({
           </label>
         </div>
       </div>
-    </section>
+    </FeatureToolbar>
   );
 }
 
@@ -175,28 +168,16 @@ function OriginChip({
     { filter: "manual", label: "Manuais" },
   ];
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg bg-app-elevated border border-line/60 p-0.5">
-      {chips.map((chip) => {
-        const isActive = activeOrigin === chip.filter;
-        return (
-          <button
-            aria-pressed={isActive}
-            className={
-              "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-[11px] font-black transition-all cursor-pointer " +
-              (isActive
-                ? "bg-accent text-inverse shadow-sm"
-                : "text-muted hover:text-app-text")
-            }
-            disabled={isLoading}
-            key={chip.filter}
-            onClick={() => onOriginSelect(chip.filter)}
-            type="button"
-          >
-            {chip.label}
-          </button>
-        );
-      })}
-    </div>
+    <FeatureSegmentedControl
+      ariaLabel="Origem dos documentos"
+      disabled={isLoading}
+      onChange={onOriginSelect}
+      options={chips.map((chip) => ({
+        label: chip.label,
+        value: chip.filter,
+      }))}
+      value={activeOrigin}
+    />
   );
 }
 

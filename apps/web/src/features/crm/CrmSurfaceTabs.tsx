@@ -1,3 +1,4 @@
+import { FeatureTabs } from "../../components/ui/FeatureControls";
 import type { CrmSurface } from "./crmRouteState";
 
 type CrmSurfaceTabsProps = {
@@ -10,21 +11,16 @@ export function CrmSurfaceTabs({
   onChange,
 }: CrmSurfaceTabsProps) {
   return (
-    <nav className="crm-surface-tabs" aria-label="Areas do CRM">
-      <button
-        className={activeSurface === "whatsapp" ? "active" : ""}
-        onClick={() => onChange("whatsapp")}
-        type="button"
-      >
-        WhatsApp
-      </button>
-      <button
-        className={activeSurface === "leads" ? "active" : ""}
-        onClick={() => onChange("leads")}
-        type="button"
-      >
-        Clientes
-      </button>
-    </nav>
+    <FeatureTabs
+      activeClassName="active"
+      ariaLabel="Areas do CRM"
+      className="crm-surface-tabs"
+      onChange={onChange}
+      options={[
+        { label: "WhatsApp", value: "whatsapp" },
+        { label: "Clientes", value: "leads" },
+      ]}
+      value={activeSurface}
+    />
   );
 }

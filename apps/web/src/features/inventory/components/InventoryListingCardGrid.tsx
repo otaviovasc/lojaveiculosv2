@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { motion } from "motion/react";
+import { FeatureEmptyState } from "../../../components/ui/FeatureStates";
 import {
   formatInventoryPrice,
   getInventoryCatalogLine,
@@ -242,13 +243,7 @@ function InventoryListingCard({
 }
 
 export function EmptyCatalog({ body, title }: { body: string; title: string }) {
-  return (
-    <div className="glass-panel-branded p-12 text-center flex flex-col items-center justify-center">
-      <CarFront aria-hidden="true" className="mb-4 size-14 text-muted" />
-      <h3 className="text-xl font-black text-app-text">{title}</h3>
-      <p className="mt-2 text-sm font-bold text-muted max-w-md">{body}</p>
-    </div>
-  );
+  return <FeatureEmptyState body={body} icon={CarFront} title={title} />;
 }
 
 export function StatusPill({ status }: { status: InventoryDisplayStatus }) {

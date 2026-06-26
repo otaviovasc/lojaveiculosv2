@@ -1,5 +1,19 @@
 import { FileText, RefreshCcw, Send, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+  FeatureSection,
+} from "../../components/ui/FeatureLayout";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
+import {
+  FeatureAlert,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import { createFiscalApi, type FiscalApi } from "./apiClient";
 import { createFiscalApiOptions } from "./runtimeApi";
 import type { FiscalOverview } from "./types";
@@ -39,35 +53,28 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
   };
 
   return (
-    <main className="feature-shell">
-      <section className="feature-hero">
-        <div>
-          <span className="feature-badge">
-            <FileText aria-hidden="true" className="size-4" />
-            SPEDY / NF-e
-          </span>
-          <h2>Operacao fiscal</h2>
-          <p>Emissao, cancelamento e reconciliacao fiscal com auditoria.</p>
-        </div>
-        <button
-          aria-label="Atualizar fiscal"
-          className="feature-icon-action"
-          onClick={() => void refresh()}
-          title="Atualizar fiscal"
-          type="button"
-        >
-          <RefreshCcw aria-hidden="true" className="size-5" />
-        </button>
-      </section>
+    <FeaturePageShell className="feature-shell" variant="content">
+      <FeaturePageHeader
+        actions={
+          <FeatureActionButton
+            icon={RefreshCcw}
+            label="Atualizar"
+            onClick={() => void refresh()}
+            title="Atualizar fiscal"
+          />
+        }
+        description="Emissao, cancelamento e reconciliacao fiscal com auditoria."
+        eyebrow="SPEDY / NF-e"
+        title="Operacao fiscal"
+      />
 
       {status.kind === "error" ? (
-        <p className="feature-alert">{status.message}</p>
+        <FeatureAlert>{status.message}</FeatureAlert>
       ) : null}
       {overview ? (
         <>
           <ProviderPanel overview={overview} />
-          <section className="feature-panel">
-            <h3>Emitir documento</h3>
+          <FeatureSection className="feature-panel" title="Emitir documento">
             <div className="feature-form-row">
               <input
                 aria-label="Referencia externa"
@@ -84,15 +91,34 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
                 Emitir
               </button>
             </div>
-          </section>
-          <section className="feature-grid four">
-            <Metric label="Emitidas" value={overview.summary.issued} />
-            <Metric label="Pendentes" value={overview.summary.pending} />
-            <Metric label="Canceladas" value={overview.summary.cancelled} />
-            <Metric label="Falhas" value={overview.summary.failed} />
-          </section>
-          <section className="feature-panel">
-            <h3>Documentos recentes</h3>
+          </FeatureSection>
+          <FeatureKpiStrip ariaLabel="Resumo fiscal">
+            <FeatureKpiCard
+              icon={FileText}
+              label="Emitidas"
+              tone="green"
+              value={overview.summary.issued}
+            />
+            <FeatureKpiCard
+              icon={FileText}
+              label="Pendentes"
+              tone="blue"
+              value={overview.summary.pending}
+            />
+            <FeatureKpiCard
+              icon={FileText}
+              label="Canceladas"
+              tone="pink"
+              value={overview.summary.cancelled}
+            />
+            <FeatureKpiCard
+              icon={ShieldAlert}
+              label="Falhas"
+              tone="violet"
+              value={overview.summary.failed}
+            />
+          </FeatureKpiStrip>
+          <FeatureSection className="feature-panel" title="Documentos recentes">
             <div className="feature-list">
               {overview.documents.length ? (
                 overview.documents.map((document) => (
@@ -108,18 +134,18 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
                 <p>Nenhum documento fiscal emitido ainda.</p>
               )}
             </div>
-          </section>
+          </FeatureSection>
         </>
       ) : (
-        <p className="feature-empty">Carregando fiscal</p>
+        <FeatureLoadingState>Carregando fiscal</FeatureLoadingState>
       )}
-    </main>
+    </FeaturePageShell>
   );
 }
 
 function ProviderPanel({ overview }: { overview: FiscalOverview }) {
   return (
-    <section className="feature-panel feature-provider">
+    <FeatureSection className="feature-panel feature-provider">
       <ShieldAlert aria-hidden="true" className="size-5" />
       <div>
         <h3>
@@ -133,16 +159,7 @@ function ProviderPanel({ overview }: { overview: FiscalOverview }) {
             : `Faltam: ${overview.provider.missingConfiguration.join(", ")}`}
         </p>
       </div>
-    </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: number }) {
-  return (
-    <article className="feature-card">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
+    </FeatureSection>
   );
 }
 

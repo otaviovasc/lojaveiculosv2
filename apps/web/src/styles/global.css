@@ -50,6 +50,8 @@
 @import "./marketplaces.css";
 @import "./featureModules.css";
 @import "./sales.css";
+@import "./sales-summary.css";
+@import "./sales-workspace.css";
 
 @source "../**/*.{ts,tsx}";
 

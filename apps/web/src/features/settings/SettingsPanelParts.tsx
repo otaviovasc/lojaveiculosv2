@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 
 export function SettingsSection({
   children,
@@ -10,13 +11,14 @@ export function SettingsSection({
   title: string;
 }) {
   return (
-    <section className="settings-panel">
-      <div className="settings-panel-title">
-        {icon}
-        <h3>{title}</h3>
-      </div>
+    <FeatureSection
+      className="settings-panel"
+      headerClassName="settings-panel-title"
+      icon={icon}
+      title={title}
+    >
       {children}
-    </section>
+    </FeatureSection>
   );
 }
 

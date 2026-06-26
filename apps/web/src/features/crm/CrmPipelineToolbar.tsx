@@ -1,5 +1,12 @@
-import { Download, Plus, Search } from "lucide-react";
-import { CustomSelect } from "../../components/ui/CustomSelect";
+import { Download, Plus } from "lucide-react";
+import {
+  FeatureSearchField,
+  FeatureSelect,
+} from "../../components/ui/FeatureControls";
+import {
+  FeatureActionButton,
+  FeatureToolbar,
+} from "../../components/ui/FeatureLayout";
 import {
   listFilterStatuses,
   sourceLabels,
@@ -22,49 +29,48 @@ export function CrmPipelineToolbar({
   onExport,
 }: CrmPipelineToolbarProps) {
   return (
-    <section className="crm-toolbar crm-client-toolbar">
-      <label className="crm-search">
-        <Search aria-hidden="true" className="size-4" />
-        <input
+    <FeatureToolbar className="crm-client-toolbar">
+      <div className="grid gap-3 md:grid-cols-[1fr_220px_220px_auto] items-center">
+        <FeatureSearchField
+          label="Buscar clientes"
           onChange={(event) =>
             onChangeFilters({ ...filters, search: event.target.value })
           }
           placeholder="Buscar por nome, email, CPF ou CNPJ"
           value={filters.search}
         />
-      </label>
-      <CustomSelect
-        className="crm-input"
-        onChange={(status) => onChangeFilters({ ...filters, status })}
-        options={listFilterStatuses.map((status) => ({
-          label: status === "all" ? "Todos" : statusLabels[status],
-          value: status,
-        }))}
-        value={filters.status}
-      />
-      <CustomSelect
-        className="crm-input"
-        onChange={(source) => onChangeFilters({ ...filters, source })}
-        options={sourceOptions.map((source) => ({
-          label: source === "all" ? "Todos os canais" : sourceLabels[source],
-          value: source,
-        }))}
-        value={filters.source}
-      />
-      <div className="crm-client-toolbar-actions">
-        <button
-          className="crm-action crm-action-secondary"
-          onClick={onExport}
-          type="button"
-        >
-          <Download aria-hidden="true" className="size-4" />
-          Exportar
-        </button>
-        <button className="crm-action" onClick={onCreateClick} type="button">
-          <Plus aria-hidden="true" className="size-4" />
-          Novo cliente
-        </button>
+        <FeatureSelect
+          className="crm-input"
+          onChange={(status) => onChangeFilters({ ...filters, status })}
+          options={listFilterStatuses.map((status) => ({
+            label: status === "all" ? "Todos" : statusLabels[status],
+            value: status,
+          }))}
+          value={filters.status}
+        />
+        <FeatureSelect
+          className="crm-input"
+          onChange={(source) => onChangeFilters({ ...filters, source })}
+          options={sourceOptions.map((source) => ({
+            label: source === "all" ? "Todos os canais" : sourceLabels[source],
+            value: source,
+          }))}
+          value={filters.source}
+        />
+        <div className="crm-client-toolbar-actions">
+          <FeatureActionButton
+            icon={Download}
+            label="Exportar"
+            onClick={onExport}
+          />
+          <FeatureActionButton
+            icon={Plus}
+            label="Novo cliente"
+            onClick={onCreateClick}
+            variant="primary"
+          />
+        </div>
       </div>
-    </section>
+    </FeatureToolbar>
   );
 }
