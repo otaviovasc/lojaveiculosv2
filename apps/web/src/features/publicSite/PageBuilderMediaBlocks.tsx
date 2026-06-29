@@ -18,30 +18,32 @@ export function GalleryBlock({ component }: BuilderBlockProps) {
   const columns = numberProp(props.columns, 3);
   if (!images.length) return null;
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7">
-      <BlockHeading props={props} />
-      <div className={cx("mt-4 grid gap-3", galleryColumnsClass(columns))}>
-        {images.map((image, index) => (
-          <button
-            className="group overflow-hidden rounded-lg border border-line bg-app text-left transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
-            key={textProp(image.id) ?? `${index}`}
-            onClick={() =>
-              boolProp(props.lightboxEnabled, true) && setSelectedIndex(index)
-            }
-            type="button"
-          >
-            <img
-              alt={textProp(image.alt) ?? ""}
-              className="aspect-square w-full object-cover transition-transform group-hover:scale-105"
-              src={textProp(image.url) ?? ""}
-            />
-            {boolProp(props.showCaptions, true) && textProp(image.caption) ? (
-              <span className="block p-3 text-sm font-bold text-muted">
-                {textProp(image.caption)}
-              </span>
-            ) : null}
-          </button>
-        ))}
+    <section className="bg-panel">
+      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
+        <BlockHeading props={props} />
+        <div className={cx("mt-8 grid gap-4", galleryColumnsClass(columns))}>
+          {images.map((image, index) => (
+            <button
+              className="group overflow-hidden rounded-[1.35rem] bg-app text-left shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.12)]"
+              key={textProp(image.id) ?? `${index}`}
+              onClick={() =>
+                boolProp(props.lightboxEnabled, true) && setSelectedIndex(index)
+              }
+              type="button"
+            >
+              <img
+                alt={textProp(image.alt) ?? ""}
+                className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                src={textProp(image.url) ?? ""}
+              />
+              {boolProp(props.showCaptions, true) && textProp(image.caption) ? (
+                <span className="block p-4 text-sm font-medium text-muted">
+                  {textProp(image.caption)}
+                </span>
+              ) : null}
+            </button>
+          ))}
+        </div>
       </div>
       {selectedIndex !== null ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-app-text/80 p-4">
@@ -68,27 +70,29 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
   const testimonials = recordArrayProp(component.props.testimonials);
   if (!testimonials.length) return null;
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7">
-      <BlockHeading props={component.props} />
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        {testimonials.map((item, index) => (
-          <article
-            className="rounded-lg border border-line bg-app p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
-            key={textProp(item.id) ?? `${index}`}
-          >
-            <p className="text-sm font-bold leading-6 text-muted">
-              "{textProp(item.quote) ?? ""}"
-            </p>
-            <strong className="mt-3 block font-black">
-              {textProp(item.name) ?? "Cliente"}
-            </strong>
-            {textProp(item.role) ? (
-              <span className="text-sm font-bold text-muted">
-                {textProp(item.role)}
-              </span>
-            ) : null}
-          </article>
-        ))}
+    <section className="bg-app">
+      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
+        <BlockHeading props={component.props} />
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {testimonials.map((item, index) => (
+            <article
+              className="rounded-[1.5rem] border border-line bg-panel p-6 shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.1)]"
+              key={textProp(item.id) ?? `${index}`}
+            >
+              <p className="text-base font-medium leading-8 text-muted">
+                "{textProp(item.quote) ?? ""}"
+              </p>
+              <strong className="mt-4 block font-semibold text-app-text">
+                {textProp(item.name) ?? "Cliente"}
+              </strong>
+              {textProp(item.role) ? (
+                <span className="text-sm font-medium text-muted">
+                  {textProp(item.role)}
+                </span>
+              ) : null}
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );
@@ -100,15 +104,15 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
   if (!address) return null;
   return (
     <a
-      className="rounded-lg border border-line bg-panel p-5 shadow-sm transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
+      className="public-storefront-shell block rounded-[1.5rem] border border-line bg-panel p-6 shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.1)]"
       href={mapLink(address)}
       rel="noreferrer"
       target="_blank"
     >
-      <p className="text-xs font-black uppercase tracking-widest text-muted">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
         Endereco
       </p>
-      <p className="mt-2 text-lg font-black">{address}</p>
+      <p className="mt-2 text-xl font-semibold tracking-tight">{address}</p>
     </a>
   );
 }
@@ -119,7 +123,7 @@ export function MarqueeBlock({ component }: BuilderBlockProps) {
   ];
   const reverse = textProp(component.props.direction) === "right";
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-panel py-3 shadow-sm">
+    <div className="overflow-hidden border-y border-line bg-panel py-4">
       <div
         className={cx(
           "page-builder-marquee-track",
@@ -127,10 +131,10 @@ export function MarqueeBlock({ component }: BuilderBlockProps) {
         )}
         style={{ animationDuration: duration }}
       >
-        <span className="mx-6 text-sm font-black uppercase tracking-widest">
+        <span className="mx-8 text-sm font-semibold uppercase tracking-[0.24em] text-muted">
           {textProp(component.props.text) ?? ""}
         </span>
-        <span className="mx-6 text-sm font-black uppercase tracking-widest">
+        <span className="mx-8 text-sm font-semibold uppercase tracking-[0.24em] text-muted">
           {textProp(component.props.text) ?? ""}
         </span>
       </div>
@@ -164,14 +168,14 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
     return () => window.clearTimeout(timeout);
   }, [current, length, props.speed, props.waitTime, texts.length]);
   return (
-    <section className="rounded-lg border border-line bg-panel p-8 text-center shadow-sm">
+    <section className="bg-panel px-4 py-14 text-center md:px-6 md:py-20">
       {textProp(props.preText) ? (
-        <p className="text-xl font-black text-muted">
+        <p className="text-xl font-medium text-muted">
           {textProp(props.preText)}
         </p>
       ) : null}
       <p
-        className="mt-2 text-3xl font-black md:text-5xl"
+        className="mt-2 text-4xl font-semibold tracking-tight md:text-6xl"
         style={{ color: context.accent }}
       >
         {current.slice(0, length)}
@@ -182,7 +186,7 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
         ) : null}
       </p>
       {textProp(props.postText) ? (
-        <p className="mt-2 text-xl font-black text-muted">
+        <p className="mt-3 text-xl font-medium text-muted">
           {textProp(props.postText)}
         </p>
       ) : null}
@@ -193,9 +197,11 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
 function BlockHeading({ props }: { props: Record<string, unknown> }) {
   return (
     <>
-      <h2 className="text-xl font-black">{textProp(props.title) ?? "Secao"}</h2>
+      <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">
+        {textProp(props.title) ?? "Secao"}
+      </h2>
       {textProp(props.subtitle) ? (
-        <p className="mt-1 text-sm font-bold text-muted">
+        <p className="mt-3 max-w-2xl text-base font-medium leading-8 text-muted">
           {textProp(props.subtitle)}
         </p>
       ) : null}

@@ -33,15 +33,15 @@ export function PublicListingDetailPanel({
   const listing = detail.data?.listing;
 
   return (
-    <section className="fixed inset-0 z-20 flex items-end bg-app/80 p-3 backdrop-blur-sm md:items-center md:justify-center md:p-6">
-      <article className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-lg border border-line bg-panel">
-        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-line px-4">
-          <h3 className="text-lg font-black">
+    <section className="public-light-surface fixed inset-0 z-20 flex items-end bg-white/82 p-3 backdrop-blur-md md:items-center md:justify-center md:p-6">
+      <article className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[1.5rem] border border-line bg-panel shadow-[0_30px_100px_rgb(15_23_42_/_0.18)]">
+        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-line px-5">
+          <h3 className="text-lg font-semibold tracking-tight">
             {listing?.title ?? "Detalhes do veiculo"}
           </h3>
           <button
             aria-label="Fechar detalhes"
-            className="flex size-10 items-center justify-center rounded-lg bg-app text-app-text"
+            className="flex size-10 items-center justify-center rounded-full bg-app text-app-text transition-colors hover:bg-accent-soft hover:text-accent"
             onClick={onClose}
             type="button"
           >
@@ -60,7 +60,7 @@ export function PublicListingDetailPanel({
           <DetailState
             action={
               <button
-                className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
+                className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-inverse"
                 onClick={onRetry}
                 type="button"
               >
@@ -127,7 +127,7 @@ function ListingDetailContent({
 
   return (
     <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="grid gap-3 bg-app p-4">
+      <div className="grid gap-3 bg-app p-4 md:p-5">
         <HeroMedia
           altText={selectedMedia?.altText ?? detail.listing.title}
           heroUrl={heroUrl}
@@ -145,18 +145,20 @@ function ListingDetailContent({
         />
       </div>
 
-      <div className="p-5">
-        <p className="text-xs font-black uppercase tracking-widest text-muted">
+      <div className="p-5 md:p-7">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
           {detail.store.slug}.lojaveiculos.com.br
         </p>
-        <h2 className="mt-2 text-2xl font-black">{detail.listing.title}</h2>
-        <p className="mt-3 text-3xl font-black text-accent">
+        <h2 className="mt-2 text-3xl font-semibold tracking-tight">
+          {detail.listing.title}
+        </h2>
+        <p className="mt-3 text-3xl font-semibold tracking-tight text-accent">
           {formatPrice(detail.listing.priceCents)}
         </p>
-        <p className="mt-4 text-sm font-semibold text-muted">
+        <p className="mt-4 text-sm font-medium leading-6 text-muted">
           {detail.listing.description}
         </p>
-        <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black text-muted">
+        <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-semibold text-muted">
           <ListingDetailMetric
             label="Ano"
             value={detail.listing.modelYear ?? "-"}
@@ -195,7 +197,7 @@ function UnitMediaTabs({
     <div className="flex flex-wrap gap-2" aria-label="Variantes">
       {groups.map((group) => (
         <button
-          className="rounded-md border border-line bg-panel px-3 py-2 text-xs font-black text-app-text"
+          className="rounded-full border border-line bg-panel px-3 py-2 text-xs font-semibold text-app-text transition-colors hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent"
           data-selected={group.unitId === selectedUnitId ? "true" : undefined}
           key={group.unitId}
           onClick={() => onSelect(group.unitId)}
@@ -217,7 +219,7 @@ function DetailState({
 }) {
   return (
     <div className="flex min-h-72 flex-col items-center justify-center p-6 text-center text-muted">
-      <div className="flex size-12 items-center justify-center rounded-lg bg-accent-soft text-accent">
+      <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
         {icon}
       </div>
       {action}
@@ -233,7 +235,7 @@ function ListingDetailMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-md bg-app p-2">
+    <div className="rounded-2xl bg-app p-3">
       <span className="block">{label}</span>
       <strong className="block text-app-text">{value}</strong>
     </div>

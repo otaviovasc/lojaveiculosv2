@@ -18,7 +18,7 @@ export function ContainerBlock({ component, context }: BuilderBlockProps) {
   return (
     <section
       className={cx(
-        "flex rounded-lg border border-line bg-panel p-5 shadow-sm",
+        "public-storefront-shell flex px-4 py-8 md:px-6",
         directionClass,
         classForGap(props.gap),
       )}
@@ -34,12 +34,7 @@ export function SectionWrapperBlock({ component, context }: BuilderBlockProps) {
     ? "w-full"
     : `${classForMaxWidth(props.maxWidth)} mx-auto w-full`;
   return (
-    <section
-      className={cx(
-        widthClass,
-        "rounded-lg border border-line bg-panel p-5 shadow-sm",
-      )}
-    >
+    <section className={cx(widthClass, "px-4 py-8 md:px-6")}>
       {context.renderBlocks(componentArrayProp(props.children))}
     </section>
   );

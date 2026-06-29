@@ -9,31 +9,36 @@ export function PublicVehicleCard({
   onOpen: () => void;
 }) {
   return (
-    <article className="group overflow-hidden rounded-lg border border-line bg-panel shadow-sm transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_18px_50px_color-mix(in_oklab,var(--color-text)_12%,transparent)]">
+    <article className="group overflow-hidden rounded-[1.35rem] border border-line bg-panel shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.12)]">
       <VehicleImage listing={listing} />
-      <div className="p-4">
-        <div className="mb-3 flex items-start justify-between gap-3">
-          <h3 className="text-lg font-black">{listing.title}</h3>
-          <span className="rounded-md bg-accent-soft px-2 py-1 text-xs font-black text-accent">
+      <div className="p-5">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <h3 className="text-lg font-semibold leading-tight tracking-tight">
+            {listing.title}
+          </h3>
+          <span className="rounded-full bg-accent-soft px-3 py-1 text-[11px] font-semibold text-accent-strong">
             Disponivel
           </span>
         </div>
-        <p className="text-2xl font-black text-accent">
+        <p className="text-2xl font-semibold tracking-tight text-accent">
           {formatPrice(listing.priceCents)}
         </p>
-        <p className="mt-3 min-h-10 text-sm font-semibold text-muted">
+        <p className="mt-3 min-h-10 text-sm font-medium leading-6 text-muted">
           {listing.description}
         </p>
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-black text-muted">
-          <PublicVehicleMetric label="Ano" value={listing.modelYear ?? "-"} />
-          <PublicVehicleMetric
-            label="Km"
-            value={formatMileage(listing.mileageKm)}
-          />
-          <PublicVehicleMetric label="Cod." value={listing.slug.slice(0, 8)} />
+        <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-medium text-muted">
+          <span>{listing.modelYear ?? "-"}</span>
+          <span aria-hidden="true" className="text-line-strong">
+            •
+          </span>
+          <span>{formatMileage(listing.mileageKm)}</span>
+          <span aria-hidden="true" className="text-line-strong">
+            •
+          </span>
+          <span>{listing.slug.slice(0, 8)}</span>
         </div>
         <button
-          className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse transition-[filter,transform] duration-200 hover:brightness-110 active:scale-[0.98]"
+          className="mt-5 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-inverse shadow-[0_14px_34px_color-mix(in_oklab,var(--color-accent)_22%,transparent)] transition-[box-shadow,filter,transform] duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]"
           onClick={onOpen}
           type="button"
         >
@@ -50,29 +55,14 @@ function VehicleImage({ listing }: { listing: PublicVehicleListing }) {
     return (
       <img
         alt={listing.title}
-        className="aspect-[16/9] w-full bg-app object-cover transition-transform duration-500 group-hover:scale-[1.035]"
+        className="aspect-[16/10] w-full bg-app object-cover transition-transform duration-700 group-hover:scale-105"
         src={listing.thumbnailUrl}
       />
     );
   }
   return (
-    <div className="flex aspect-[16/9] items-center justify-center bg-accent-soft text-accent">
+    <div className="flex aspect-[16/10] items-center justify-center bg-accent-soft text-accent">
       <Car aria-hidden="true" className="size-12" />
-    </div>
-  );
-}
-
-function PublicVehicleMetric({
-  label,
-  value,
-}: {
-  label: string;
-  value: string | number;
-}) {
-  return (
-    <div className="rounded-md bg-app p-2">
-      <span className="block">{label}</span>
-      <strong className="block text-app-text">{value}</strong>
     </div>
   );
 }

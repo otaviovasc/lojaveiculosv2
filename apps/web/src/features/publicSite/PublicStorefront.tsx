@@ -64,7 +64,7 @@ export function PublicStorefront({
     <>
       <StorefrontFontLinks fonts={[fonts.body, fonts.heading]} />
       <main
-        className="public-storefront mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8"
+        className="public-light-surface public-storefront min-h-screen w-full"
         data-layout={layoutKey}
         style={style}
       >

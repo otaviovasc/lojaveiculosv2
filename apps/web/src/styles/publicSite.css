@@ -22,6 +22,53 @@
   background: var(--color-background);
 }
 
+.public-light-surface,
+.public-storefront,
+.page-builder-renderer {
+  --color-app: #f8fafc;
+  --color-app-elevated: #eef2f7;
+  --color-text: #111827;
+  --color-muted: #526071;
+  --color-panel: #ffffff;
+  --color-line: #e5e7eb;
+  --color-line-strong: #cbd5e1;
+  --color-accent: #ed1d24;
+  --color-accent-strong: #c01820;
+  --color-accent-soft: color-mix(
+    in oklab,
+    var(--color-accent) 10%,
+    transparent
+  );
+  --color-inverse: #ffffff;
+  --public-accent-foreground-dark: #111827;
+  --public-accent-foreground-light: #ffffff;
+  --color-app-text: var(--color-text);
+  --color-background: var(--color-app);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-panel);
+  --color-card-foreground: var(--color-text);
+  --color-muted-foreground: var(--color-muted);
+  --color-primary: var(--color-text);
+  --color-primary-foreground: var(--color-inverse);
+  --color-secondary: var(--color-app-elevated);
+  --color-secondary-foreground: var(--color-text);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-accent);
+  --public-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  background: var(--color-app);
+  color: var(--color-text);
+  color-scheme: light;
+  overflow-x: hidden;
+}
+
+.public-light-surface :where(a, button, input, textarea, select),
+.public-storefront :where(a, button, input, textarea, select),
+.page-builder-renderer :where(a, button, input, textarea, select) {
+  transition-duration: 260ms;
+  transition-timing-function: var(--public-ease);
+}
+
 .public-media-thumb {
   border-color: var(--color-line);
 }
@@ -33,7 +80,7 @@
 .public-storefront-hero,
 .public-storefront-stock {
   display: grid;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .public-storefront :where(h1, h2, h3),
@@ -42,6 +89,20 @@
     --public-storefront-heading-font,
     var(--page-builder-heading-font, inherit)
   );
+  letter-spacing: -0.015em;
+}
+
+.public-storefront-shell {
+  box-sizing: border-box;
+  margin-inline: auto;
+  max-width: min(88rem, 100%);
+  width: 100%;
+}
+
+.public-editorial-card {
+  background: var(--color-panel);
+  border: 1px solid color-mix(in oklab, var(--color-line) 82%, white);
+  box-shadow: 0 18px 55px rgb(15 23 42 / 0.07);
 }
 
 .page-builder-renderer [data-builder-block-id] {

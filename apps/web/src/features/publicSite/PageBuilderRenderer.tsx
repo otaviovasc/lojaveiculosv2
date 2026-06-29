@@ -48,6 +48,7 @@ import type { BuilderRenderContext } from "./pageBuilderRenderTypes";
 import { componentArrayProp } from "./pageBuilderRenderUtils";
 import { fontStack, StorefrontFontLinks } from "./storefrontFonts";
 import { blockLabel } from "./builderBlockCatalog";
+import { readableTextColorForBackground } from "./publicStorefrontTheme";
 
 type PageBuilderRendererProps = {
   config: StorefrontBuilderConfig;
@@ -79,6 +80,7 @@ export function PageBuilderRenderer({
   const blockFonts = collectPageBuilderFonts(page.components);
   const pageStyle: CSSProperties & Record<`--${string}`, string> = {
     ...createPageBackgroundStyle(pageBackground, background),
+    "--color-inverse": readableTextColorForBackground(accent),
     "--page-builder-heading-font": fontStack(headingFont),
     fontFamily: fontStack(pageFont),
   };
@@ -121,7 +123,7 @@ export function PageBuilderRenderer({
     <>
       <StorefrontFontLinks fonts={[pageFont, headingFont, ...blockFonts]} />
       <main
-        className="page-builder-renderer min-h-screen text-app-text"
+        className="public-light-surface page-builder-renderer min-h-screen text-app-text"
         style={pageStyle}
       >
         <PageBackgroundLayer background={pageBackground} />
