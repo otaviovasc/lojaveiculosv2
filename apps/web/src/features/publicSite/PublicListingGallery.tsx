@@ -1,4 +1,4 @@
-import { ImageIcon } from "lucide-react";
+import { FileText, ImageIcon, Play } from "lucide-react";
 import type { PublicVehicleMedia } from "./types";
 
 export function HeroMedia({
@@ -12,16 +12,33 @@ export function HeroMedia({
 }) {
   if (heroUrl && kind === "photo") {
     return (
-      <img
-        alt={altText}
-        className="aspect-[16/10] w-full rounded-lg object-cover"
-        src={heroUrl}
-      />
+      <div className="relative overflow-hidden rounded-xl border border-line bg-panel shadow-sm">
+        <img
+          alt={altText}
+          className="aspect-[16/10] w-full object-cover"
+          src={heroUrl}
+        />
+      </div>
     );
   }
+  const Icon =
+    kind === "video"
+      ? Play
+      : kind === "document_preview"
+        ? FileText
+        : ImageIcon;
+  const label =
+    kind === "video"
+      ? "Video do veiculo"
+      : kind === "document_preview"
+        ? "Documento"
+        : "Midia";
   return (
-    <div className="flex aspect-[16/10] items-center justify-center rounded-lg bg-accent-soft text-accent">
-      <ImageIcon aria-hidden="true" className="size-14" />
+    <div className="flex aspect-[16/10] flex-col items-center justify-center gap-3 rounded-xl border border-line bg-accent-soft text-accent">
+      <Icon aria-hidden="true" className="size-12" />
+      <span className="text-xs font-black uppercase tracking-[0.16em]">
+        {label}
+      </span>
     </div>
   );
 }
@@ -41,17 +58,26 @@ export function MediaStrip({
       {media.map((item) => (
         <button
           aria-label={item.altText ?? item.kind}
-          className="public-media-thumb aspect-square overflow-hidden rounded-md border bg-panel"
+          aria-pressed={item.url === selectedUrl}
+          className="public-media-thumb group aspect-square overflow-hidden rounded-lg border border-line bg-panel shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:ring-2 data-[selected=true]:ring-accent/20"
           data-selected={item.url === selectedUrl ? "true" : undefined}
           key={`${item.displayOrder}-${item.url}`}
           onClick={() => onSelect(item.url)}
           type="button"
         >
           {item.kind === "photo" ? (
-            <img alt="" className="size-full object-cover" src={item.url} />
+            <img
+              alt=""
+              className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              src={item.url}
+            />
           ) : (
-            <span className="grid size-full place-items-center text-xs font-black text-muted">
-              {item.kind === "video" ? "VIDEO" : "DOC"}
+            <span className="grid size-full place-items-center bg-app text-muted">
+              {item.kind === "video" ? (
+                <Play aria-hidden="true" className="size-5" />
+              ) : (
+                <FileText aria-hidden="true" className="size-5" />
+              )}
             </span>
           )}
         </button>

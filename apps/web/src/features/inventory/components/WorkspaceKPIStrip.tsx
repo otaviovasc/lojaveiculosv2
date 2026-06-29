@@ -34,7 +34,7 @@ export function WorkspaceKPIStrip({
         </div>
         <div className="min-w-0">
           <span className="block text-[10px] font-black uppercase tracking-wider text-muted">
-            Valor de Aquisição
+            Custos Registrados
           </span>
           <span className="block text-base font-black mt-0.5 text-app-text">
             {acquisitionPrice}
@@ -42,7 +42,7 @@ export function WorkspaceKPIStrip({
         </div>
         <div className="min-w-0">
           <span className="block text-[10px] font-black uppercase tracking-wider text-muted">
-            Margem Estimada
+            Margem Base
           </span>
           <span className="block text-base font-black text-emerald-500 mt-0.5">
             {margin}
@@ -58,7 +58,7 @@ export function WorkspaceKPIStrip({
         </div>
         <div className="min-w-0">
           <span className="block text-[10px] font-black uppercase tracking-wider text-muted">
-            Status RENAVE
+            Status do Anúncio
           </span>
           <span className="block text-base font-black text-blue-500 mt-0.5">
             {renaveStatus}

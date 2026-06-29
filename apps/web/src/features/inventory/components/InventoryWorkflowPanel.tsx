@@ -37,15 +37,22 @@ import {
 export function InventoryWorkflowPanel({
   api,
   detail,
+  initialUnitId,
   onUpdated,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
+  initialUnitId?: string | null;
   onUpdated: (detail: InventoryListingDetail) => void;
 }) {
-  const primaryUnit = detail.units[0] ?? null;
+  const primaryUnit =
+    detail.units.find((unit) => unit.id === initialUnitId) ??
+    detail.units[0] ??
+    null;
   const [mode, setMode] = useState<WorkflowMode>("reserve");
-  const [form, setForm] = useState(() => createWorkflowForm(detail));
+  const [form, setForm] = useState(() =>
+    createWorkflowForm(detail, initialUnitId),
+  );
   const [state, setState] = useState<WorkflowState>({ kind: "idle" });
   const isSaving = state.kind === "saving";
   const [activePrint, setActivePrint] = useState<WorkflowPrintKind | null>(
@@ -71,9 +78,9 @@ export function InventoryWorkflowPanel({
   }, []);
 
   useEffect(() => {
-    setForm(createWorkflowForm(detail));
+    setForm(createWorkflowForm(detail, initialUnitId));
     setState({ kind: "idle" });
-  }, [detail]);
+  }, [detail, initialUnitId]);
 
   const setField =
     (field: keyof WorkflowForm) =>

@@ -3,7 +3,7 @@ import { Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import type { InventoryApi } from "../api/apiClient";
-import type { InventoryListingDetail, InventoryMedia } from "../model/types";
+import type { InventoryListingDetail } from "../model/types";
 import type { TabId } from "./InventoryDetailWorkspaceParts";
 import { WorkspaceTopBar } from "./WorkspaceTopBar";
 import { WorkspaceKPIStrip } from "./WorkspaceKPIStrip";
@@ -11,9 +11,9 @@ import { EditSpecsDrawer } from "./EditSpecsDrawer";
 import { InventoryDetailFinanceiroTab } from "./InventoryDetailFinanceiroTab";
 import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
-import { InventoryDetailVendasTab } from "./InventoryDetailVendasTab";
 import { InventoryDetailHistoricoTab } from "./InventoryDetailHistoricoTab";
 import { InventoryDetailVitrineTab } from "./InventoryDetailVitrineTab";
+import { InventoryWorkflowPanel } from "./InventoryWorkflowPanel";
 import {
   initialOpcionais,
   initialObservacoes,
@@ -28,6 +28,7 @@ import {
   formatTransmission,
 } from "./InventoryDetailFormatters";
 import { InventoryDetailGeneralTab } from "./InventoryDetailGeneralTab";
+import { InventoryDetailOverview } from "./InventoryDetailOverview";
 
 export function InventoryDetailWorkspace({
   api,
@@ -59,19 +60,22 @@ export function InventoryDetailWorkspace({
   const [specs, setSpecs] = useState({
     plate: primaryUnit?.plate || listing.plate || "SEM PLACA",
     color: getVehicleColorLabel(primaryUnit?.colorName) || "Não informado",
-    km: listing.mileageKm
-      ? `${listing.mileageKm.toLocaleString("pt-BR")} km`
-      : "Não informado",
+    km:
+      listing.mileageKm !== null
+        ? `${listing.mileageKm.toLocaleString("pt-BR")} km`
+        : "Não informado",
     fuel:
       formatFuelType(listing.fuelType) ||
       listing.catalog?.fuel ||
       "Não informado",
     transmission: formatTransmission(listing.transmission),
-    bodyType: "Sedan",
+    bodyType: vehicleTypeLabel(listing.catalog?.vehicleType),
     engine: listing.engineDisplacement || "Não informado",
     doors: listing.doors ? `${listing.doors} portas` : "Não informado",
-    modality: "Estoque Próprio",
-    vin: primaryUnit?.vin || "9BRX4285829471180",
+    modality: primaryUnit?.stockNumber
+      ? `Estoque ${primaryUnit.stockNumber}`
+      : "Estoque",
+    vin: primaryUnit?.vin || "Não informado",
   });
 
   const [opcionais, setOpcionais] = useState(initialOpcionais);
@@ -85,12 +89,6 @@ export function InventoryDetailWorkspace({
   const [isSpecsOpen, setIsSpecsOpen] = useState(false);
 
   const primaryUnitId = primaryUnit?.id ?? null;
-  const [photosList, setPhotosList] = useState(() =>
-    detail.media.filter(
-      (m) =>
-        m.kind === "photo" && (!primaryUnitId || m.unitId === primaryUnitId),
-    ),
-  );
   const internalPhotos = detail.media.filter(
     (m) =>
       m.kind === "document_preview" &&
@@ -107,33 +105,26 @@ export function InventoryDetailWorkspace({
       openSaleWorkspace();
       return;
     }
+    if (action === "Anunciar") {
+      setActiveTab("anuncio");
+      showNotification("Abrindo configuração do anúncio.");
+      return;
+    }
+    if (action === "Imprimir Ficha") {
+      window.print();
+      return;
+    }
+    if (action === "Transferir Loja") {
+      setActiveTab("historico");
+      showNotification("Revise o histórico antes de transferir a unidade.");
+      return;
+    }
     showNotification("Ação executada: " + action);
   };
 
   const openSaleWorkspace = () => {
-    const params = new URLSearchParams();
-    params.set("listingId", listing.id);
-    params.set("listingTitle", listing.title);
-    if (listing.priceCents)
-      params.set("priceCents", String(listing.priceCents));
-    if (primaryUnit?.id) params.set("unitId", primaryUnit.id);
-    if (primaryUnit?.plate) params.set("unitLabel", primaryUnit.plate);
-    window.location.hash = `/sales?${params.toString()}`;
-  };
-
-  const handleMovePhoto = (from: number, to: number) => {
-    const newPhotos = [...photosList];
-    const item = newPhotos[from];
-    if (!item) return;
-    newPhotos.splice(from, 1);
-    newPhotos.splice(to, 0, item);
-    setPhotosList(newPhotos);
-    showNotification("Ordem das fotos atualizada!");
-  };
-
-  const handleDeletePhoto = (id: string) => {
-    setPhotosList((prev) => prev.filter((p) => p.id !== id));
-    showNotification("Foto removida!");
+    setActiveTab("vendas");
+    showNotification("Fluxo de reserva e venda aberto.");
   };
 
   const handleToggleOpcional = (id: string) => {
@@ -150,25 +141,22 @@ export function InventoryDetailWorkspace({
     showNotification("Observação especial atualizada!");
   };
 
-  const handleAddPhotoMock = () => {
-    const newId = "mock-" + Date.now();
-    const newPhoto: InventoryMedia = {
-      id: newId,
-      kind: "photo",
-      url: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&q=80&w=640",
-      altText: "Nova foto",
-      createdAt: new Date().toISOString(),
-      displayOrder: photosList.length + 1,
-      isPublic: true,
-      storageKey: "mock-" + newId,
-      storeId: listing.storeId,
-      tenantId: listing.tenantId,
-      unitId: primaryUnit?.id ?? "",
-      updatedAt: new Date().toISOString(),
-    };
-    setPhotosList((prev) => [...prev, newPhoto]);
-    showNotification("Foto adicionada à galeria!");
+  const handleUpdatedDetail = (updated: InventoryListingDetail) => {
+    setDetail(updated);
+    onUpdated(updated);
   };
+
+  const totalCosts = detail.costs.reduce(
+    (sum, cost) => sum + cost.amountCents,
+    0,
+  );
+  const acquisitionCost = detail.costs
+    .filter((cost) => cost.kind === "acquisition")
+    .reduce((sum, cost) => sum + cost.amountCents, 0);
+  const margin =
+    listing.priceCents && acquisitionCost
+      ? `${Math.round(((listing.priceCents - acquisitionCost) / listing.priceCents) * 100)}%`
+      : "-";
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 py-6 text-app-text">
@@ -201,14 +189,10 @@ export function InventoryDetailWorkspace({
         salePrice={
           listing.priceCents ? formatPrice(listing.priceCents) : "Sob Consulta"
         }
-        acquisitionPrice={
-          listing.priceCents
-            ? formatPrice(listing.priceCents * 0.82)
-            : "Sob Consulta"
-        }
-        margin="18%"
-        stockTime="12 dias"
-        renaveStatus="Entrada Concluída"
+        acquisitionPrice={totalCosts ? formatPrice(totalCosts) : "Sem custos"}
+        margin={margin}
+        stockTime={formatStockAge(listing.createdAt)}
+        renaveStatus={statusLabel(listing.status)}
         isFinancingActive={isFinancingActive}
         isInsuranceActive={isInsuranceActive}
         onFinancingToggle={() => {
@@ -229,6 +213,12 @@ export function InventoryDetailWorkspace({
         }}
       />
 
+      <InventoryDetailOverview
+        detail={detail}
+        primaryUnit={primaryUnit}
+        specs={specs}
+      />
+
       <InventoryDetailWorkspaceTabs
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -238,19 +228,19 @@ export function InventoryDetailWorkspace({
       <div className="min-h-[400px]">
         {activeTab === "geral" && (
           <InventoryDetailGeneralTab
+            api={api}
+            detail={detail}
+            initialUnitId={primaryUnitId}
             internalPhotos={internalPhotos}
             notasInternas={notasInternas}
             observacoes={observacoes}
-            onAddPhoto={handleAddPhotoMock}
-            onDeletePhoto={handleDeletePhoto}
-            onMovePhoto={handleMovePhoto}
+            onUpdated={handleUpdatedDetail}
             onSaveNotasInternas={(notes) => {
               void handleSaveInternalNotes(notes);
             }}
             onToggleObservacao={handleToggleObservacao}
             onToggleOpcional={handleToggleOpcional}
             opcionais={opcionais}
-            photosList={photosList}
             setIsSpecsOpen={setIsSpecsOpen}
             specs={specs}
           />
@@ -268,7 +258,14 @@ export function InventoryDetailWorkspace({
 
         {activeTab === "documentos" && <InventoryDetailDocumentosTab />}
 
-        {activeTab === "vendas" && <InventoryDetailVendasTab />}
+        {activeTab === "vendas" && (
+          <InventoryWorkflowPanel
+            api={api}
+            detail={detail}
+            initialUnitId={primaryUnitId}
+            onUpdated={handleUpdatedDetail}
+          />
+        )}
 
         {activeTab === "historico" && <InventoryDetailHistoricoTab />}
 
@@ -296,12 +293,40 @@ export function InventoryDetailWorkspace({
       const updated = await api.updateListingDetails(listing.id, {
         internalNotes: notes.trim() ? notes.trim() : null,
       });
-      setDetail(updated);
+      handleUpdatedDetail(updated);
       setNotasInternas(updated.listing.internalNotes ?? "");
-      onUpdated(updated);
       showNotification("Notas internas atualizadas!");
     } catch {
       showNotification("Não foi possível salvar as notas internas.");
     }
   }
+}
+
+function vehicleTypeLabel(
+  vehicleType: "cars" | "motorcycles" | "trucks" | null | undefined,
+) {
+  if (vehicleType === "motorcycles") return "Moto";
+  if (vehicleType === "trucks") return "Caminhao";
+  return "Carro";
+}
+
+function formatStockAge(createdAt: string) {
+  const createdAtMs = new Date(createdAt).getTime();
+  if (!Number.isFinite(createdAtMs)) return "-";
+  const days = Math.max(0, Math.floor((Date.now() - createdAtMs) / 86_400_000));
+  if (days === 0) return "Hoje";
+  if (days === 1) return "1 dia";
+  return `${days} dias`;
+}
+
+function statusLabel(status: InventoryListingDetail["listing"]["status"]) {
+  const labels: Record<InventoryListingDetail["listing"]["status"], string> = {
+    archived: "Arquivado",
+    draft: "Rascunho",
+    in_preparation: "Preparacao",
+    published: "Publicado",
+    sold_out: "Vendido",
+    unpublished: "Fora da vitrine",
+  };
+  return labels[status] ?? status;
 }

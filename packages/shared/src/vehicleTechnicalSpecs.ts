@@ -104,6 +104,7 @@ export function normalizeVehicleEngineAspiration(
   if (hasSupercharger) return "supercharged";
   if (
     normalized.includes("aspirad") ||
+    normalized.includes("aspirat") ||
     normalized.includes("natural") ||
     normalized.includes("n/a")
   ) {

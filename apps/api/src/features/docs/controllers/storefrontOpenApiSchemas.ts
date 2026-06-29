@@ -1,3 +1,8 @@
+import {
+  vehicleEngineAspirationValues,
+  vehicleEngineDisplacementValues,
+} from "@lojaveiculosv2/shared";
+
 export const storefrontSchemas = {
   PublicStorefrontContact: {
     type: "object",
@@ -142,7 +147,12 @@ export const storefrontSchemas = {
     type: "object",
     additionalProperties: false,
     required: [
+      "condition",
       "description",
+      "doors",
+      "engineAspiration",
+      "engineDisplacement",
+      "fuelType",
       "manufactureYear",
       "mileageKm",
       "modelYear",
@@ -151,9 +161,36 @@ export const storefrontSchemas = {
       "status",
       "thumbnailUrl",
       "title",
+      "transmission",
+      "trimName",
     ],
     properties: {
+      condition: {
+        type: "string",
+        enum: ["new", "used", "certified_pre_owned"],
+      },
       description: { type: ["string", "null"] },
+      doors: { type: ["integer", "null"] },
+      engineAspiration: {
+        type: ["string", "null"],
+        enum: vehicleEngineAspirationValues,
+      },
+      engineDisplacement: {
+        type: ["string", "null"],
+        enum: vehicleEngineDisplacementValues,
+      },
+      fuelType: {
+        type: ["string", "null"],
+        enum: [
+          "gasoline",
+          "ethanol",
+          "flex",
+          "diesel",
+          "hybrid",
+          "electric",
+          "other",
+        ],
+      },
       manufactureYear: { type: ["integer", "null"] },
       mileageKm: { type: ["integer", "null"] },
       modelYear: { type: ["integer", "null"] },
@@ -165,6 +202,11 @@ export const storefrontSchemas = {
         description: "First public photo URL from the default unit gallery.",
       },
       title: { type: "string" },
+      transmission: {
+        type: ["string", "null"],
+        enum: ["manual", "automatic", "automated", "cvt", "other"],
+      },
+      trimName: { type: ["string", "null"] },
     },
   },
 } as const;

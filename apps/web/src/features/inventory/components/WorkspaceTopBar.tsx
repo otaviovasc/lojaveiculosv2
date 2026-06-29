@@ -32,7 +32,9 @@ export function WorkspaceTopBar({
           <ArrowLeft className="size-5" />
         </button>
         <div className="min-w-0">
-          <h1 className="text-xl md:text-2xl font-black truncate">{title}</h1>
+          <h1 className="text-xl md:text-2xl font-black leading-tight break-words">
+            {title}
+          </h1>
           <p className="text-xs font-bold text-muted flex items-center gap-2 mt-0.5">
             <span className="bg-app-elevated border border-line px-2 py-0.5 rounded uppercase tracking-wider">
               {plate}

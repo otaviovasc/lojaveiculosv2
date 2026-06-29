@@ -6,7 +6,12 @@ export function toPublicVehicleListing(
   thumbnailUrl: string | null,
 ): PublicVehicleListing {
   return {
+    condition: row.condition,
     description: row.description,
+    doors: row.doors,
+    engineAspiration: row.engineAspiration,
+    engineDisplacement: row.engineDisplacement,
+    fuelType: row.fuelType,
     id: row.listingId,
     manufactureYear: row.manufactureYear,
     mileageKm: row.mileageKm,
@@ -16,6 +21,8 @@ export function toPublicVehicleListing(
     status: "available",
     thumbnailUrl,
     title: row.title,
+    transmission: row.transmission,
+    trimName: row.trimName,
   };
 }
 

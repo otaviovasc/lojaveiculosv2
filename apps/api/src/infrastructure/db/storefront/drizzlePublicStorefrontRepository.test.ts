@@ -29,10 +29,16 @@ describe("Drizzle public storefront repository", () => {
     });
     expect(listings).toEqual([
       expect.objectContaining({
+        condition: "used",
+        engineAspiration: "turbo",
+        engineDisplacement: "2.0",
+        fuelType: "flex",
         slug: "fiat-toro-2023",
         status: "available",
         thumbnailUrl: "https://cdn.local/front.jpg",
         title: "Fiat Toro Volcano 2023",
+        transmission: "automatic",
+        trimName: "Volcano",
       }),
     ]);
     expect(db.queriedTables).toEqual([
@@ -42,6 +48,45 @@ describe("Drizzle public storefront repository", () => {
       vehicleUnits,
       vehicleMedia,
     ]);
+  });
+
+  it("keeps certified pre-owned condition in the public listing contract", async () => {
+    const db = createFakePublicStorefrontDb({
+      listings: [
+        {
+          condition: "certified_pre_owned",
+          description: "Certified stock.",
+          doors: 4,
+          engineAspiration: "aspirated",
+          engineDisplacement: "1.8",
+          fuelType: "flex",
+          listingId: "listing_certified",
+          manufactureYear: 2022,
+          mileageKm: 18000,
+          modelYear: 2023,
+          priceCents: 14490000,
+          slug: "certified-suv-2023",
+          title: "Certified SUV 2023",
+          transmission: "automatic",
+          trimName: "Exclusive",
+        },
+      ],
+    });
+    const repository = createDrizzlePublicStorefrontRepository(db);
+
+    const listings = await repository.listPublicListings({
+      limit: 12,
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+    });
+
+    expect(listings[0]).toEqual(
+      expect.objectContaining({
+        condition: "certified_pre_owned",
+        engineAspiration: "aspirated",
+        slug: "certified-suv-2023",
+      }),
+    );
   });
 
   it("maps published public site settings without domain verification data", async () => {

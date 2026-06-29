@@ -2,10 +2,17 @@ import type {
   StorefrontBuilderConfig,
   StorefrontBuilderVehicle,
   StorefrontCustomPage,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
 } from "@lojaveiculosv2/shared";
 
 export type PublicVehicleListing = {
+  condition: "certified_pre_owned" | "new" | "used";
   description: string | null;
+  doors: number | null;
+  engineAspiration: VehicleEngineAspiration | null;
+  engineDisplacement: VehicleEngineDisplacement | null;
+  fuelType: string | null;
   manufactureYear: number | null;
   mileageKm: number | null;
   modelYear: number | null;
@@ -14,6 +21,8 @@ export type PublicVehicleListing = {
   status: "available";
   thumbnailUrl: string | null;
   title: string;
+  transmission: string | null;
+  trimName: string | null;
 };
 
 export type PublicVehicleMedia = {

@@ -2,6 +2,10 @@ import type {
   PublicStorefrontStore,
   PublicVehicleMedia,
 } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import type {
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
+} from "@lojaveiculosv2/shared";
 
 export type StoreRow = {
   id: PublicStorefrontStore["id"];
@@ -11,7 +15,12 @@ export type StoreRow = {
 };
 
 export type ListingRow = {
+  condition: "certified_pre_owned" | "new" | "used";
   description: string | null;
+  doors: number | null;
+  engineAspiration: VehicleEngineAspiration | null;
+  engineDisplacement: VehicleEngineDisplacement | null;
+  fuelType: string | null;
   listingId: string;
   manufactureYear: number | null;
   mileageKm: number | null;
@@ -19,6 +28,8 @@ export type ListingRow = {
   priceCents: number | null;
   slug: string | null;
   title: string;
+  transmission: string | null;
+  trimName: string | null;
 };
 
 export type MediaRow = {
@@ -108,7 +119,12 @@ export type DrizzlePublicStorefrontClient = {
       tenantId: unknown;
     }): SelectFromBuilder<StoreRow>;
     (selection: {
+      condition: unknown;
       description: unknown;
+      doors: unknown;
+      engineAspiration: unknown;
+      engineDisplacement: unknown;
+      fuelType: unknown;
       listingId: unknown;
       manufactureYear: unknown;
       mileageKm: unknown;
@@ -116,6 +132,8 @@ export type DrizzlePublicStorefrontClient = {
       priceCents: unknown;
       slug: unknown;
       title: unknown;
+      transmission: unknown;
+      trimName: unknown;
     }): SelectFromBuilder<ListingRow>;
     (selection: {
       altText: unknown;

@@ -62,7 +62,12 @@ export function createDrizzlePublicStorefrontRepository(
     async findPublicListingDetail(input) {
       const [listing] = await db
         .select({
+          condition: vehicleListings.condition,
           description: vehicleListings.description,
+          doors: vehicleListings.doors,
+          engineAspiration: vehicleListings.engineAspiration,
+          engineDisplacement: vehicleListings.engineDisplacement,
+          fuelType: vehicleListings.fuelType,
           listingId: vehicleListings.id,
           manufactureYear: vehicleListings.manufactureYear,
           mileageKm: vehicleListings.mileageKm,
@@ -70,6 +75,8 @@ export function createDrizzlePublicStorefrontRepository(
           priceCents: vehicleListings.askingPriceCents,
           slug: vehicleListings.publicSlug,
           title: vehicleListings.title,
+          transmission: vehicleListings.transmission,
+          trimName: vehicleListings.trimName,
         })
         .from(vehicleListings)
         .where(
@@ -104,7 +111,12 @@ export function createDrizzlePublicStorefrontRepository(
     async listPublicListings(input) {
       const rows = await db
         .select({
+          condition: vehicleListings.condition,
           description: vehicleListings.description,
+          doors: vehicleListings.doors,
+          engineAspiration: vehicleListings.engineAspiration,
+          engineDisplacement: vehicleListings.engineDisplacement,
+          fuelType: vehicleListings.fuelType,
           listingId: vehicleListings.id,
           manufactureYear: vehicleListings.manufactureYear,
           mileageKm: vehicleListings.mileageKm,
@@ -112,6 +124,8 @@ export function createDrizzlePublicStorefrontRepository(
           priceCents: vehicleListings.askingPriceCents,
           slug: vehicleListings.publicSlug,
           title: vehicleListings.title,
+          transmission: vehicleListings.transmission,
+          trimName: vehicleListings.trimName,
         })
         .from(vehicleListings)
         .where(

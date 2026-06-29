@@ -90,7 +90,12 @@ function defaultRows(): FakePublicStorefrontRows {
   return {
     listings: [
       {
+        condition: "used",
         description: "Ready to sell.",
+        doors: 4,
+        engineAspiration: "turbo",
+        engineDisplacement: "2.0",
+        fuelType: "flex",
         listingId: "listing_1",
         manufactureYear: 2022,
         mileageKm: 32000,
@@ -98,6 +103,8 @@ function defaultRows(): FakePublicStorefrontRows {
         priceCents: 12690000,
         slug: "fiat-toro-2023",
         title: "Fiat Toro Volcano 2023",
+        transmission: "automatic",
+        trimName: "Volcano",
       },
     ],
     media: [

@@ -84,7 +84,12 @@ function createRepository(
     ),
     listPublicListings: vi.fn(async () => [
       {
+        condition: "used" as const,
         description: "Ready to sell.",
+        doors: 4,
+        engineAspiration: "turbo" as const,
+        engineDisplacement: "2.0" as const,
+        fuelType: "flex",
         id: "listing_1",
         manufactureYear: 2022,
         mileageKm: 32000,
@@ -94,6 +99,8 @@ function createRepository(
         status: "available" as const,
         thumbnailUrl: "https://cdn.local/front.jpg",
         title: "Fiat Toro Volcano 2023",
+        transmission: "automatic",
+        trimName: "Volcano",
       },
     ]),
   };

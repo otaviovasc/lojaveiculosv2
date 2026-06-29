@@ -32,7 +32,12 @@ export const paymentMethods = [
 
 export function createWorkflowForm(
   detail: InventoryListingDetail,
+  initialUnitId?: string | null,
 ): WorkflowForm {
+  const unitId = detail.units.some((unit) => unit.id === initialUnitId)
+    ? (initialUnitId ?? "")
+    : (detail.units[0]?.id ?? "");
+
   return {
     buyerAddress: "",
     buyerDocument: "",
@@ -44,7 +49,7 @@ export function createWorkflowForm(
     reason: "",
     salePrice: formatMoneyInput(detail.listing.priceCents),
     signalAmount: "",
-    unitId: detail.units[0]?.id ?? "",
+    unitId,
   };
 }
 

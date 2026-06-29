@@ -1,4 +1,9 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type {
+  StoreId,
+  TenantId,
+  VehicleEngineAspiration,
+  VehicleEngineDisplacement,
+} from "@lojaveiculosv2/shared";
 
 export type PublicStorefrontStore = {
   id: StoreId;
@@ -47,7 +52,12 @@ export type PublicStorefrontSiteResult = {
 };
 
 export type PublicVehicleListing = {
+  condition: "certified_pre_owned" | "new" | "used";
   description: string | null;
+  doors: number | null;
+  engineAspiration: VehicleEngineAspiration | null;
+  engineDisplacement: VehicleEngineDisplacement | null;
+  fuelType: string | null;
   id: string;
   manufactureYear: number | null;
   mileageKm: number | null;
@@ -57,6 +67,8 @@ export type PublicVehicleListing = {
   status: "available";
   thumbnailUrl: string | null;
   title: string;
+  transmission: string | null;
+  trimName: string | null;
 };
 
 export type PublicVehicleMedia = {

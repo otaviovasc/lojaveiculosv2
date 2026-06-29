@@ -1,8 +1,9 @@
 import { Info } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
-import type { InventoryMedia } from "../model/types";
+import type { InventoryApi } from "../api/apiClient";
+import type { InventoryListingDetail, InventoryMedia } from "../model/types";
 import { InternalPhotosZone } from "./InternalPhotosZone";
-import { InventoryPhotosWorkspace } from "./InventoryPhotosWorkspace";
+import { InventoryMediaWorkspace } from "./InventoryMediaWorkspace";
 import { TechnicalSpecsPanel } from "./InventoryDetailWorkspaceParts";
 import type {
   initialObservacoes,
@@ -26,56 +27,47 @@ type ToggleOption = (typeof initialOpcionais)[number];
 type ToggleObservation = (typeof initialObservacoes)[number];
 
 export function InventoryDetailGeneralTab({
+  api,
+  detail,
+  initialUnitId,
   internalPhotos,
   notasInternas,
   observacoes,
-  onAddPhoto,
-  onDeletePhoto,
-  onMovePhoto,
+  onUpdated,
   onSaveNotasInternas,
   onToggleObservacao,
   onToggleOpcional,
   opcionais,
-  photosList,
   setIsSpecsOpen,
   specs,
 }: {
+  api: InventoryApi;
+  detail: InventoryListingDetail;
+  initialUnitId?: string | null;
   internalPhotos: InventoryMedia[];
   notasInternas: string;
   observacoes: ToggleObservation[];
-  onAddPhoto: () => void;
-  onDeletePhoto: (id: string) => void;
-  onMovePhoto: (from: number, to: number) => void;
+  onUpdated: (detail: InventoryListingDetail) => void;
   onSaveNotasInternas: (notes: string) => void;
   onToggleObservacao: (id: string) => void;
   onToggleOpcional: (id: string) => void;
   opcionais: ToggleOption[];
-  photosList: InventoryMedia[];
   setIsSpecsOpen: Dispatch<SetStateAction<boolean>>;
   specs: Specs;
 }) {
   return (
     <div className="flex flex-col gap-8 w-full max-w-none">
-      <div className="grid gap-6 md:grid-cols-12 w-full">
-        <div className="md:col-span-8 flex flex-col gap-5">
-          <div>
-            <h2 className="text-lg font-black text-app-text">
-              Foto de Destaque e Imagens Públicas
-            </h2>
-            <p className="text-xs text-muted font-bold mt-0.5">
-              Essas imagens serão exibidas no portal público de vendas.
-            </p>
-          </div>
-
-          <InventoryPhotosWorkspace
-            photos={photosList}
-            onMove={onMovePhoto}
-            onDelete={onDeletePhoto}
-            onUpload={onAddPhoto}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] w-full">
+        <div className="min-w-0">
+          <InventoryMediaWorkspace
+            api={api}
+            detail={detail}
+            initialUnitId={initialUnitId ?? null}
+            onUpdated={onUpdated}
           />
         </div>
 
-        <div className="md:col-span-4 flex flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <TechnicalSpecsPanel
             specs={specs}
             onEditSpecs={() => setIsSpecsOpen(true)}

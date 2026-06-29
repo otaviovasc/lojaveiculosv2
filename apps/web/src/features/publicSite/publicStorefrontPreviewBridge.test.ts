@@ -47,7 +47,12 @@ function createStorefrontData(): PublicStorefrontPageData {
   return {
     listings: [
       {
+        condition: "new",
         description: null,
+        doors: 4,
+        engineAspiration: "turbo",
+        engineDisplacement: "1.0",
+        fuelType: "flex",
         manufactureYear: 2024,
         mileageKm: 0,
         modelYear: 2025,
@@ -56,6 +61,8 @@ function createStorefrontData(): PublicStorefrontPageData {
         status: "available",
         thumbnailUrl: null,
         title: "Carro",
+        transmission: "automatic",
+        trimName: "Turbo",
       },
     ],
     settings: {

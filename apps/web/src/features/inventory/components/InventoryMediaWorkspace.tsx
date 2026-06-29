@@ -15,15 +15,19 @@ import type {
 export function InventoryMediaWorkspace({
   api,
   detail,
+  initialUnitId,
   onUpdated,
 }: {
   api: InventoryApi;
   detail: InventoryListingDetail;
+  initialUnitId?: string | null;
   onUpdated: (detail: InventoryListingDetail) => void;
 }) {
   const [state, setState] = useState<InventoryMediaState>({ kind: "idle" });
-  const [selectedUnitId, setSelectedUnitId] = useState(
-    () => detail.units[0]?.id ?? "",
+  const [selectedUnitId, setSelectedUnitId] = useState(() =>
+    detail.units.some((unit) => unit.id === initialUnitId)
+      ? (initialUnitId ?? "")
+      : (detail.units[0]?.id ?? ""),
   );
   const currentUnitId = detail.units.some((unit) => unit.id === selectedUnitId)
     ? selectedUnitId
