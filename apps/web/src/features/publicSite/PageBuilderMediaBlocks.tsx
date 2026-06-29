@@ -24,7 +24,7 @@ export function GalleryBlock({ component }: BuilderBlockProps) {
         <div className={cx("mt-10 grid gap-6", galleryColumnsClass(columns))}>
           {images.map((image, index) => (
             <button
-              className="group overflow-hidden rounded-[2rem] border border-line bg-app text-left shadow-[0_12px_30px_-10px_rgba(15,23,42,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_20px_40px_-5px_rgba(15,23,42,0.06)]"
+              className="group overflow-hidden rounded-xl border border-line bg-app text-left shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_24px_rgba(15,23,42,0.05)] cursor-pointer"
               key={textProp(image.id) ?? `${index}`}
               onClick={() =>
                 boolProp(props.lightboxEnabled, true) && setSelectedIndex(index)
@@ -78,7 +78,7 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           {testimonials.map((item, index) => (
             <article
-              className="public-editorial-card rounded-[2rem] p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_20px_40px_rgba(15,23,42,0.05)]"
+              className="public-editorial-card rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_28px_rgba(15,23,42,0.04)]"
               key={textProp(item.id) ?? `${index}`}
             >
               <div className="flex gap-1 text-accent">
@@ -118,7 +118,7 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
   return (
     <section className="bg-panel px-4 py-8 md:px-6">
       <a
-        className="public-storefront-shell block rounded-[2rem] border border-line bg-panel p-8 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_20px_40px_-5px_rgba(15,23,42,0.08)]"
+        className="public-storefront-shell block rounded-xl border border-line bg-panel p-8 shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_12px_28px_rgba(15,23,42,0.05)] cursor-pointer"
         href={mapLink(address)}
         rel="noreferrer"
         target="_blank"

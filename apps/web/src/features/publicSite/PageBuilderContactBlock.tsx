@@ -59,7 +59,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
         </div>
 
         <form
-          className="grid gap-4 rounded-[2rem] border border-line bg-app p-6 shadow-[0_16px_40px_rgba(15,23,42,0.02)] md:p-8"
+          className="grid gap-4 rounded-xl border border-line bg-app p-6 shadow-sm md:p-8"
           onSubmit={(event) => void submit(event)}
         >
           {show("name") ? (
@@ -75,13 +75,13 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           </div>
           {show("message") ? (
             <textarea
-              className="min-h-28 rounded-2xl border border-line bg-panel p-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+              className="min-h-28 rounded border border-line bg-panel p-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
               name="message"
               placeholder="Digite sua mensagem aqui..."
             />
           ) : null}
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded px-6 text-xs font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75 cursor-pointer"
             disabled={status === "sending"}
             style={{ background: context.accent }}
             type="submit"
@@ -140,7 +140,7 @@ function ContactLine({
 }) {
   if (!label) return null;
   return (
-    <span className="flex items-center gap-3.5 rounded-2xl border border-line bg-panel p-4 shadow-[0_8px_20px_rgba(15,23,42,0.01)]">
+    <span className="flex items-center gap-3.5 rounded border border-line bg-panel p-4 shadow-sm">
       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent border border-accent/10">
         <Icon aria-hidden="true" className="size-[1.125rem]" />
       </span>
@@ -153,7 +153,7 @@ function PublicInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+      className="min-h-12 rounded border border-line bg-panel px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
     />
   );
 }

@@ -53,33 +53,33 @@ export function LeadCaptureForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <input
           aria-label="Nome"
-          className="min-h-12 rounded-2xl border border-line bg-app px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+          className="min-h-12 rounded border border-line bg-app px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
           name="buyerName"
           placeholder="Seu nome completo"
           required
         />
         <input
           aria-label="Telefone"
-          className="min-h-12 rounded-2xl border border-line bg-app px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+          className="min-h-12 rounded border border-line bg-app px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
           name="buyerPhone"
           placeholder="Seu telefone"
         />
       </div>
       <input
         aria-label="E-mail"
-        className="min-h-12 rounded-2xl border border-line bg-app px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+        className="min-h-12 rounded border border-line bg-app px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
         name="buyerEmail"
         placeholder="Seu e-mail"
         type="email"
       />
       <textarea
         aria-label="Mensagem"
-        className="min-h-24 rounded-2xl border border-line bg-app p-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+        className="min-h-24 rounded border border-line bg-app p-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
         name="message"
         placeholder="Olá, tenho interesse neste veículo. Aguardo o contato."
       />
       <button
-        className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-12 items-center justify-center gap-2 rounded bg-accent px-6 text-xs font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
         disabled={state.kind === "submitting"}
         type="submit"
       >

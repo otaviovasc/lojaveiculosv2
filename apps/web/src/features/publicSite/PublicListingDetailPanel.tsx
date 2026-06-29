@@ -33,15 +33,15 @@ export function PublicListingDetailPanel({
   const listing = detail.data?.listing;
 
   return (
-    <section className="public-light-surface fixed inset-0 z-20 flex items-end bg-white/80 p-3 backdrop-blur-md md:items-center md:justify-center md:p-6">
-      <article className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[2.5rem] border border-line bg-panel shadow-[0_30px_90px_rgba(15,23,42,0.12)]">
+    <section className="public-light-surface fixed inset-0 z-20 flex items-end bg-white/85 p-4 backdrop-blur-md md:items-center md:justify-center md:p-6">
+      <article className="max-h-[90vh] w-full max-w-5xl overflow-auto rounded-xl border border-line bg-panel shadow-[0_24px_64px_rgba(15,23,42,0.12)]">
         <header className="flex min-h-16 items-center justify-between gap-3 border-b border-line/60 px-6 py-4">
-          <h3 className="text-lg font-extrabold tracking-tight text-app-text">
+          <h3 className="text-base font-extrabold tracking-tight text-app-text uppercase">
             {listing?.title ?? "Detalhes do veículo"}
           </h3>
           <button
             aria-label="Fechar detalhes"
-            className="flex size-9 items-center justify-center rounded-full border border-line bg-panel text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent hover:border-accent/40 active:scale-95"
+            className="flex size-8 items-center justify-center rounded border border-line bg-panel text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent hover:border-accent/40 active:scale-95 cursor-pointer"
             onClick={onClose}
             type="button"
           >
@@ -60,7 +60,7 @@ export function PublicListingDetailPanel({
           <DetailState
             action={
               <button
-                className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-inverse shadow-sm"
+                className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded bg-accent px-6 text-sm font-bold text-inverse shadow-sm cursor-pointer"
                 onClick={onRetry}
                 type="button"
               >
@@ -145,17 +145,17 @@ function ListingDetailContent({
         />
       </div>
 
-      <div className="p-6 md:p-8 flex flex-col justify-between">
+      <div className="p-6 md:p-8 flex flex-col justify-between border-l border-line/60">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted/80">
             {detail.store.slug}.lojaveiculos.com.br
           </p>
-          <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-app-text">
+          <h2 className="mt-2 text-2xl font-black tracking-tight text-app-text uppercase">
             {detail.listing.title}
           </h2>
 
           <div className="mt-4 flex items-baseline justify-between border-b border-line/60 pb-4">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+            <span className="text-[9px] font-black uppercase tracking-wider text-muted/80">
               Preço sugerido
             </span>
             <p className="text-3xl font-black tracking-tight text-accent">
@@ -164,7 +164,7 @@ function ListingDetailContent({
           </div>
 
           {detail.listing.description ? (
-            <p className="mt-5 text-sm font-medium leading-relaxed text-muted">
+            <p className="mt-5 text-xs font-semibold leading-relaxed text-muted whitespace-pre-wrap">
               {detail.listing.description}
             </p>
           ) : null}
@@ -186,8 +186,8 @@ function ListingDetailContent({
         </div>
 
         <div className="mt-8 border-t border-line/60 pt-6">
-          <p className="text-[10px] font-black uppercase tracking-wider text-app-text">
-            Falar com um consultor
+          <p className="text-[9px] font-black uppercase tracking-wider text-app-text">
+            Falar com um consultor comercial
           </p>
           <LeadCaptureForm
             listingSlug={detail.listing.slug}
@@ -218,7 +218,7 @@ function UnitMediaTabs({
     <div className="flex flex-wrap gap-2" aria-label="Variantes">
       {groups.map((group) => (
         <button
-          className="rounded-full border border-line bg-panel px-4 py-2 text-xs font-bold text-muted transition-colors hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent"
+          className="rounded border border-line bg-panel px-3 py-1.5 text-xs font-bold text-muted transition-colors hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent cursor-pointer"
           data-selected={group.unitId === selectedUnitId ? "true" : undefined}
           key={group.unitId}
           onClick={() => onSelect(group.unitId)}
@@ -256,8 +256,8 @@ function ListingDetailMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl border border-line bg-app p-4 shadow-sm text-center sm:text-left">
-      <span className="block text-[9px] font-black uppercase tracking-wider text-muted">
+    <div className="rounded-lg border border-line bg-app p-4 shadow-sm text-center sm:text-left">
+      <span className="block text-[9px] font-black uppercase tracking-wider text-muted/80">
         {label}
       </span>
       <strong className="block text-sm font-extrabold text-app-text mt-1">

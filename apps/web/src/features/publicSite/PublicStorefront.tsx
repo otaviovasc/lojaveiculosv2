@@ -76,6 +76,7 @@ export function PublicStorefront({
                 key={section.id}
                 sections={visibleSections}
                 theme={theme}
+                onOpenListing={onOpenListing}
               />
             );
           }

@@ -12,13 +12,21 @@ import {
 
 export function HeroBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
-  const imageUrl = textProp(props.imageUrl) ?? context.config.heroImageUrl;
+  const firstListing =
+    context.vehicles && context.vehicles.length > 0
+      ? context.vehicles[0]
+      : null;
+  const fallbackHeroImage = firstListing?.thumbnailUrl ?? "";
+  const imageUrl =
+    textProp(props.imageUrl) ??
+    fallbackHeroImage ??
+    context.config.heroImageUrl;
   const ctaUrl = textProp(props.ctaUrl) ?? "#estoque";
   return (
     <section className="bg-panel" id="home">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:px-6 md:py-20 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
         <div className="flex min-w-0 flex-col justify-center">
-          <p className="inline-flex w-fit items-center gap-2 rounded-full bg-accent-soft px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-accent">
+          <p className="inline-flex w-fit items-center gap-2 rounded bg-accent-soft px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-accent">
             <Sparkles aria-hidden="true" className="size-3.5" />
             {textProp(props.badge) ??
               textProp(props.eyebrow) ??
@@ -32,7 +40,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
               "Atendimento direto e estoque publicado pela loja."}
           </p>
           <a
-            className="group mt-8 inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded-full px-8 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] active:translate-y-0 active:scale-95"
+            className="group mt-8 inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded px-8 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer"
             href={ctaUrl}
             style={{ background: context.accent }}
           >
@@ -46,7 +54,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
           </a>
         </div>
         {imageUrl ? (
-          <div className="overflow-hidden rounded-[2rem] border border-line bg-app shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
+          <div className="overflow-hidden rounded-xl border border-line bg-app shadow-md">
             <img
               alt={textProp(props.imageAlt) ?? ""}
               className="aspect-[16/11] w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
@@ -77,7 +85,7 @@ export function AboutBlock({ component }: BuilderBlockProps) {
     </div>
   );
   const imageContent = imageUrl ? (
-    <div className="overflow-hidden rounded-[2rem] border border-line bg-panel shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
+    <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-md">
       <img
         alt=""
         className="aspect-[4/3] w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
@@ -124,7 +132,7 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
   return (
     <section className="bg-panel">
       <div className="public-storefront-shell px-4 py-16 text-center md:px-6 md:py-20">
-        <div className="rounded-[2.5rem] border border-line bg-app p-8 shadow-[0_12px_40px_rgba(15,23,42,0.02)] md:p-14">
+        <div className="rounded-xl border border-line bg-app p-8 shadow-sm md:p-14">
           <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
             {textProp(props.title) ?? "Quer ajuda para escolher?"}
           </h2>
@@ -134,7 +142,7 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
               "Converse com a equipe comercial da loja."}
           </p>
           <a
-            className="mt-8 inline-flex min-h-12 items-center justify-center rounded-full px-8 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] active:translate-y-0 active:scale-95"
+            className="mt-8 inline-flex min-h-12 items-center justify-center rounded px-8 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer"
             href={href}
             style={{ background: context.accent }}
           >
@@ -153,7 +161,7 @@ export function ImageBlock({ component }: BuilderBlockProps) {
   const imageUrl = textProp(props.imageUrl) ?? textProp(props.url);
   if (!imageUrl) return null;
   return (
-    <figure className="group public-storefront-shell overflow-hidden rounded-[2rem] border border-line bg-panel shadow-[0_20px_50px_rgba(15,23,42,0.05)]">
+    <figure className="group public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-md">
       <img
         alt={textProp(props.alt) ?? textProp(props.caption) ?? ""}
         className="max-h-[36rem] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
@@ -174,7 +182,7 @@ export function VideoBlock({ component }: BuilderBlockProps) {
   if (!videoUrl) return null;
   const embedUrl = youtubeEmbedUrl(videoUrl);
   return (
-    <section className="public-storefront-shell overflow-hidden rounded-[2rem] border border-line bg-panel shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
+    <section className="public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-md">
       {embedUrl ? (
         <iframe
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -226,7 +234,7 @@ export function ScrollZoomBlock({ component }: BuilderBlockProps) {
     <section className="bg-app">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20">
         {imageUrl ? (
-          <div className="overflow-hidden rounded-[2rem] border border-line bg-panel shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
+          <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-md">
             <img
               alt=""
               className="aspect-[4/3] w-full object-cover transition-transform duration-700 ease-out hover:scale-[1.025]"
