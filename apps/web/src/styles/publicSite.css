@@ -1,3 +1,4 @@
+/* Brand system and light-theme overrides for the public storefront */
 .website-builder-surface {
   --color-background: var(--color-app);
   --color-foreground: var(--color-text);
@@ -22,43 +23,61 @@
   background: var(--color-background);
 }
 
+/* Force light theme on all public-facing tenant interfaces and page builders */
 .public-light-surface,
 .public-storefront,
 .page-builder-renderer {
-  --color-app: #f8fafc;
-  --color-app-elevated: #eef2f7;
-  --color-text: #111827;
-  --color-muted: #526071;
-  --color-panel: #ffffff;
-  --color-line: #e5e7eb;
-  --color-line-strong: #cbd5e1;
-  --color-accent: #ed1d24;
-  --color-accent-strong: #c01820;
+  color-scheme: light !important;
+
+  /* Basic light theme variables - override dark theme root */
+  --color-app: #f8fafc !important; /* Premium background Slate 50 */
+  --color-app-elevated: #f1f5f9 !important; /* Slate 100 */
+  --color-text: #0f172a !important; /* Slate 900 */
+  --color-app-text: #0f172a !important;
+  --color-muted: #475569 !important; /* Slate 600 */
+  --color-muted-foreground: #475569 !important;
+  --color-panel: #ffffff !important;
+  --color-line: #e2e8f0 !important; /* Slate 200 */
+  --color-line-strong: #cbd5e1 !important; /* Slate 300 */
+  --color-inverse: #ffffff;
+  --public-accent-foreground-light: #ffffff !important;
+  --public-accent-foreground-dark: #0f172a !important;
+
+  /* Theme variables used by Tailwind */
+  --color-background: var(--color-app) !important;
+  --color-foreground: var(--color-text) !important;
+  --color-card: var(--color-panel) !important;
+  --color-card-foreground: var(--color-text) !important;
+  --color-popover: var(--color-panel) !important;
+  --color-popover-foreground: var(--color-text) !important;
+  --color-border: var(--color-line) !important;
+  --color-input: var(--color-line) !important;
+  --color-ring: var(--color-accent) !important;
+  --color-primary: var(--color-text) !important;
+  --color-primary-foreground: var(--color-inverse) !important;
+  --color-secondary: var(--color-app-elevated) !important;
+  --color-secondary-foreground: var(--color-text) !important;
+
+  /* Status Colors */
+  --color-danger: #ef5b5b !important;
+  --color-destructive: #ef5b5b !important;
+  --color-destructive-foreground: #ffffff !important;
+  --color-warning: #f5c542 !important;
+  --color-success: #16a765 !important;
+  --color-success-foreground: #ffffff !important;
+
+  /* Soft utility overrides */
   --color-accent-soft: color-mix(
     in oklab,
-    var(--color-accent) 10%,
+    var(--color-accent, #ed1d24) 10%,
     transparent
-  );
-  --color-inverse: #ffffff;
-  --public-accent-foreground-dark: #111827;
-  --public-accent-foreground-light: #ffffff;
-  --color-app-text: var(--color-text);
-  --color-background: var(--color-app);
-  --color-foreground: var(--color-text);
-  --color-card: var(--color-panel);
-  --color-card-foreground: var(--color-text);
-  --color-muted-foreground: var(--color-muted);
-  --color-primary: var(--color-text);
-  --color-primary-foreground: var(--color-inverse);
-  --color-secondary: var(--color-app-elevated);
-  --color-secondary-foreground: var(--color-text);
-  --color-border: var(--color-line);
-  --color-input: var(--color-line);
-  --color-ring: var(--color-accent);
+  ) !important;
+
+  /* Other utilities */
   --public-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  background: var(--color-app);
-  color: var(--color-text);
-  color-scheme: light;
+
+  background: var(--color-app) !important;
+  color: var(--color-text) !important;
   overflow-x: hidden;
 }
 
@@ -80,7 +99,7 @@
 .public-storefront-hero,
 .public-storefront-stock {
   display: grid;
-  gap: 1.25rem;
+  gap: 1.5rem;
 }
 
 .public-storefront :where(h1, h2, h3),
@@ -89,24 +108,29 @@
     --public-storefront-heading-font,
     var(--page-builder-heading-font, inherit)
   );
-  letter-spacing: -0.015em;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .public-storefront-shell {
   box-sizing: border-box;
   margin-inline: auto;
-  max-width: min(88rem, 100%);
+  max-width: min(84rem, 100%);
   width: 100%;
 }
 
 .public-editorial-card {
   background: var(--color-panel);
-  border: 1px solid color-mix(in oklab, var(--color-line) 82%, white);
-  box-shadow: 0 18px 55px rgb(15 23 42 / 0.07);
+  border: 1px solid var(--color-line);
+  box-shadow:
+    0 10px 30px -10px rgba(15, 23, 42, 0.04),
+    0 1px 3px rgba(15, 23, 42, 0.02);
 }
 
 .page-builder-renderer [data-builder-block-id] {
   will-change: transform, box-shadow;
+  transition: all 0.25s var(--public-ease);
 }
 
 .page-builder-renderer [data-builder-block-id]:active {
@@ -208,12 +232,12 @@
 
 main[data-layout="classic"] .public-storefront-hero,
 main[data-layout="quadra"] .public-storefront-hero {
-  gap: 0.75rem;
+  gap: 1.5rem;
 }
 
 main[data-layout="classic"] .public-storefront-stock,
 main[data-layout="quadra"] .public-storefront-stock {
-  gap: 0.75rem;
+  gap: 1.5rem;
 }
 
 @media (min-width: 768px) {
@@ -233,7 +257,7 @@ main[data-layout="quadra"] .public-storefront-stock {
 
 @media (min-width: 1024px) {
   .public-storefront-hero {
-    grid-template-columns: 1.1fr 0.9fr;
+    grid-template-columns: 1.15fr 0.85fr;
   }
 
   .public-storefront-stock {

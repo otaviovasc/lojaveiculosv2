@@ -33,19 +33,19 @@ export function PublicListingDetailPanel({
   const listing = detail.data?.listing;
 
   return (
-    <section className="public-light-surface fixed inset-0 z-20 flex items-end bg-white/82 p-3 backdrop-blur-md md:items-center md:justify-center md:p-6">
-      <article className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[1.5rem] border border-line bg-panel shadow-[0_30px_100px_rgb(15_23_42_/_0.18)]">
-        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-line px-5">
-          <h3 className="text-lg font-semibold tracking-tight">
-            {listing?.title ?? "Detalhes do veiculo"}
+    <section className="public-light-surface fixed inset-0 z-20 flex items-end bg-white/80 p-3 backdrop-blur-md md:items-center md:justify-center md:p-6">
+      <article className="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-[2.5rem] border border-line bg-panel shadow-[0_30px_90px_rgba(15,23,42,0.12)]">
+        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-line/60 px-6 py-4">
+          <h3 className="text-lg font-extrabold tracking-tight text-app-text">
+            {listing?.title ?? "Detalhes do veículo"}
           </h3>
           <button
             aria-label="Fechar detalhes"
-            className="flex size-10 items-center justify-center rounded-full bg-app text-app-text transition-colors hover:bg-accent-soft hover:text-accent"
+            className="flex size-9 items-center justify-center rounded-full border border-line bg-panel text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent hover:border-accent/40 active:scale-95"
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden="true" className="size-5" />
+            <X aria-hidden="true" className="size-4" />
           </button>
         </header>
 
@@ -60,7 +60,7 @@ export function PublicListingDetailPanel({
           <DetailState
             action={
               <button
-                className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 rounded-full bg-accent px-4 text-sm font-semibold text-inverse"
+                className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-inverse shadow-sm"
                 onClick={onRetry}
                 type="button"
               >
@@ -126,8 +126,8 @@ function ListingDetailContent({
   };
 
   return (
-    <div className="grid gap-0 lg:grid-cols-[1.1fr_0.9fr]">
-      <div className="grid gap-3 bg-app p-4 md:p-5">
+    <div className="grid gap-0 lg:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid gap-4 bg-app p-4 md:p-6">
         <HeroMedia
           altText={selectedMedia?.altText ?? detail.listing.title}
           heroUrl={heroUrl}
@@ -145,34 +145,55 @@ function ListingDetailContent({
         />
       </div>
 
-      <div className="p-5 md:p-7">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
-          {detail.store.slug}.lojaveiculos.com.br
-        </p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight">
-          {detail.listing.title}
-        </h2>
-        <p className="mt-3 text-3xl font-semibold tracking-tight text-accent">
-          {formatPrice(detail.listing.priceCents)}
-        </p>
-        <p className="mt-4 text-sm font-medium leading-6 text-muted">
-          {detail.listing.description}
-        </p>
-        <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-semibold text-muted">
-          <ListingDetailMetric
-            label="Ano"
-            value={detail.listing.modelYear ?? "-"}
-          />
-          <ListingDetailMetric
-            label="Km"
-            value={formatMileage(detail.listing.mileageKm)}
-          />
-          <ListingDetailMetric label="Fotos" value={activeMedia.length} />
+      <div className="p-6 md:p-8 flex flex-col justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-muted">
+            {detail.store.slug}.lojaveiculos.com.br
+          </p>
+          <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-app-text">
+            {detail.listing.title}
+          </h2>
+
+          <div className="mt-4 flex items-baseline justify-between border-b border-line/60 pb-4">
+            <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+              Preço sugerido
+            </span>
+            <p className="text-3xl font-black tracking-tight text-accent">
+              {formatPrice(detail.listing.priceCents)}
+            </p>
+          </div>
+
+          {detail.listing.description ? (
+            <p className="mt-5 text-sm font-medium leading-relaxed text-muted">
+              {detail.listing.description}
+            </p>
+          ) : null}
+
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <ListingDetailMetric
+              label="Ano Modelo"
+              value={detail.listing.modelYear ?? "-"}
+            />
+            <ListingDetailMetric
+              label="Quilometragem"
+              value={formatMileage(detail.listing.mileageKm)}
+            />
+            <ListingDetailMetric
+              label="Fotos"
+              value={`${activeMedia.length} imagens`}
+            />
+          </div>
         </div>
-        <LeadCaptureForm
-          listingSlug={detail.listing.slug}
-          onSubmitInterest={onSubmitInterest}
-        />
+
+        <div className="mt-8 border-t border-line/60 pt-6">
+          <p className="text-[10px] font-black uppercase tracking-wider text-app-text">
+            Falar com um consultor
+          </p>
+          <LeadCaptureForm
+            listingSlug={detail.listing.slug}
+            onSubmitInterest={onSubmitInterest}
+          />
+        </div>
       </div>
     </div>
   );
@@ -197,7 +218,7 @@ function UnitMediaTabs({
     <div className="flex flex-wrap gap-2" aria-label="Variantes">
       {groups.map((group) => (
         <button
-          className="rounded-full border border-line bg-panel px-3 py-2 text-xs font-semibold text-app-text transition-colors hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent"
+          className="rounded-full border border-line bg-panel px-4 py-2 text-xs font-bold text-muted transition-colors hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent"
           data-selected={group.unitId === selectedUnitId ? "true" : undefined}
           key={group.unitId}
           onClick={() => onSelect(group.unitId)}
@@ -219,7 +240,7 @@ function DetailState({
 }) {
   return (
     <div className="flex min-h-72 flex-col items-center justify-center p-6 text-center text-muted">
-      <div className="flex size-12 items-center justify-center rounded-2xl bg-accent-soft text-accent">
+      <div className="flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent border border-accent/10">
         {icon}
       </div>
       {action}
@@ -235,9 +256,13 @@ function ListingDetailMetric({
   value: string | number;
 }) {
   return (
-    <div className="rounded-2xl bg-app p-3">
-      <span className="block">{label}</span>
-      <strong className="block text-app-text">{value}</strong>
+    <div className="rounded-2xl border border-line bg-app p-4 shadow-sm text-center sm:text-left">
+      <span className="block text-[9px] font-black uppercase tracking-wider text-muted">
+        {label}
+      </span>
+      <strong className="block text-sm font-extrabold text-app-text mt-1">
+        {value}
+      </strong>
     </div>
   );
 }

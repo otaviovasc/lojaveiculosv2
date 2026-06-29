@@ -43,10 +43,11 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
   }
   return (
     <section className="bg-panel" id="contato">
-      <div className="public-storefront-shell grid gap-8 px-4 py-14 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20">
-        <div>
+      <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20 lg:py-24">
+        <div className="flex flex-col justify-center">
           <BlockHeading props={props} />
-          <div className="mt-6 grid gap-3 text-sm font-medium text-muted">
+
+          <div className="mt-8 grid gap-4">
             <ContactLine icon={Phone} label={context.config.contact.phone} />
             <ContactLine
               icon={MessageCircle}
@@ -56,30 +57,31 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
             <ContactLine icon={MapPin} label={context.config.contact.address} />
           </div>
         </div>
+
         <form
-          className="grid gap-3 rounded-[2rem] bg-app p-5 shadow-[0_24px_70px_rgb(15_23_42_/_0.08)] md:p-6"
+          className="grid gap-4 rounded-[2rem] border border-line bg-app p-6 shadow-[0_16px_40px_rgba(15,23,42,0.02)] md:p-8"
           onSubmit={(event) => void submit(event)}
         >
           {show("name") ? (
-            <PublicInput name="name" placeholder="Nome" required />
+            <PublicInput name="name" placeholder="Nome completo" required />
           ) : null}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {show("phone") ? (
-              <PublicInput name="phone" placeholder="Telefone" />
+              <PublicInput name="phone" placeholder="Telefone de contato" />
             ) : null}
             {show("email") ? (
-              <PublicInput name="email" placeholder="Email" type="email" />
+              <PublicInput name="email" placeholder="E-mail" type="email" />
             ) : null}
           </div>
           {show("message") ? (
             <textarea
-              className="min-h-24 rounded-2xl border border-line bg-panel p-4 text-sm font-medium text-app-text outline-none transition-[border-color,box-shadow] focus:border-accent/50 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-accent)_14%,transparent)]"
+              className="min-h-28 rounded-2xl border border-line bg-panel p-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
               name="message"
-              placeholder="Mensagem"
+              placeholder="Digite sua mensagem aqui..."
             />
           ) : null}
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-inverse shadow-[0_18px_44px_color-mix(in_oklab,var(--color-accent)_22%,transparent)] transition-[box-shadow,filter,transform] duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98] disabled:opacity-70"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75"
             disabled={status === "sending"}
             style={{ background: context.accent }}
             type="submit"
@@ -90,17 +92,19 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
               <Send aria-hidden="true" className="size-4" />
             )}
             {status === "sending"
-              ? "Enviando"
-              : (textProp(props.submitButtonText) ?? "Enviar mensagem")}
+              ? "Enviando..."
+              : (textProp(props.submitButtonText) ?? "Enviar Mensagem")}
           </button>
+
           {status === "sent" ? (
-            <p className="text-sm font-semibold text-accent">
-              {textProp(props.successMessage) ?? "Mensagem enviada."}
+            <p className="text-center text-sm font-bold text-accent">
+              {textProp(props.successMessage) ??
+                "Mensagem enviada com sucesso!"}
             </p>
           ) : null}
           {status === "error" ? (
-            <p className="text-sm font-semibold text-danger">
-              Nao foi possivel enviar agora.
+            <p className="text-center text-sm font-bold text-danger">
+              Não foi possível enviar a mensagem no momento.
             </p>
           ) : null}
         </form>
@@ -111,16 +115,19 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
 
 function BlockHeading({ props }: { props: Record<string, unknown> }) {
   return (
-    <>
-      <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">
-        {textProp(props.title) ?? "Secao"}
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+        CONTATO
+      </p>
+      <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
+        {textProp(props.title) ?? "Fale conosco"}
       </h2>
       {textProp(props.subtitle) ? (
-        <p className="mt-3 max-w-2xl text-base font-medium leading-8 text-muted">
+        <p className="mt-3 max-w-md text-base font-medium leading-relaxed text-muted">
           {textProp(props.subtitle)}
         </p>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -133,9 +140,11 @@ function ContactLine({
 }) {
   if (!label) return null;
   return (
-    <span className="flex items-center gap-2 rounded-2xl bg-app p-3">
-      <Icon aria-hidden="true" className="size-4 text-accent" />
-      {label}
+    <span className="flex items-center gap-3.5 rounded-2xl border border-line bg-panel p-4 shadow-[0_8px_20px_rgba(15,23,42,0.01)]">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent border border-accent/10">
+        <Icon aria-hidden="true" className="size-[1.125rem]" />
+      </span>
+      <span className="text-sm font-bold text-app-text">{label}</span>
     </span>
   );
 }
@@ -144,7 +153,7 @@ function PublicInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-medium text-app-text outline-none transition-[border-color,box-shadow] focus:border-accent/50 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-accent)_14%,transparent)]"
+      className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
     />
   );
 }

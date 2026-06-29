@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Star, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../components/ui/featureShared";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
@@ -19,25 +19,27 @@ export function GalleryBlock({ component }: BuilderBlockProps) {
   if (!images.length) return null;
   return (
     <section className="bg-panel">
-      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
+      <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
         <BlockHeading props={props} />
-        <div className={cx("mt-8 grid gap-4", galleryColumnsClass(columns))}>
+        <div className={cx("mt-10 grid gap-6", galleryColumnsClass(columns))}>
           {images.map((image, index) => (
             <button
-              className="group overflow-hidden rounded-[1.35rem] bg-app text-left shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.12)]"
+              className="group overflow-hidden rounded-[2rem] border border-line bg-app text-left shadow-[0_12px_30px_-10px_rgba(15,23,42,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_20px_40px_-5px_rgba(15,23,42,0.06)]"
               key={textProp(image.id) ?? `${index}`}
               onClick={() =>
                 boolProp(props.lightboxEnabled, true) && setSelectedIndex(index)
               }
               type="button"
             >
-              <img
-                alt={textProp(image.alt) ?? ""}
-                className="aspect-square w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                src={textProp(image.url) ?? ""}
-              />
+              <div className="overflow-hidden aspect-square">
+                <img
+                  alt={textProp(image.alt) ?? ""}
+                  className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+                  src={textProp(image.url) ?? ""}
+                />
+              </div>
               {boolProp(props.showCaptions, true) && textProp(image.caption) ? (
-                <span className="block p-4 text-sm font-medium text-muted">
+                <span className="block p-5 text-xs font-bold uppercase tracking-wider text-muted border-t border-line/60">
                   {textProp(image.caption)}
                 </span>
               ) : null}
@@ -46,10 +48,10 @@ export function GalleryBlock({ component }: BuilderBlockProps) {
         </div>
       </div>
       {selectedIndex !== null ? (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-app-text/80 p-4">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-app-text/90 p-4 backdrop-blur-sm">
           <button
             aria-label="Fechar imagem"
-            className="absolute right-4 top-4 rounded-lg bg-panel p-2"
+            className="absolute right-6 top-6 rounded-full bg-panel p-3 text-app-text border border-line shadow-lg transition-transform hover:scale-105 active:scale-95"
             onClick={() => setSelectedIndex(null)}
             type="button"
           >
@@ -57,7 +59,7 @@ export function GalleryBlock({ component }: BuilderBlockProps) {
           </button>
           <img
             alt=""
-            className="max-h-full max-w-full rounded-lg object-contain"
+            className="max-h-[85vh] max-w-[90vw] rounded-2xl object-contain border border-line/10 shadow-2xl"
             src={textProp(images[selectedIndex]?.url) ?? ""}
           />
         </div>
@@ -71,25 +73,36 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
   if (!testimonials.length) return null;
   return (
     <section className="bg-app">
-      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
+      <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
         <BlockHeading props={component.props} />
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
           {testimonials.map((item, index) => (
             <article
-              className="rounded-[1.5rem] border border-line bg-panel p-6 shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[box-shadow,transform] duration-300 hover:-translate-y-1 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.1)]"
+              className="public-editorial-card rounded-[2rem] p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_20px_40px_rgba(15,23,42,0.05)]"
               key={textProp(item.id) ?? `${index}`}
             >
-              <p className="text-base font-medium leading-8 text-muted">
+              <div className="flex gap-1 text-accent">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <Star
+                    key={i}
+                    aria-hidden="true"
+                    className="size-4 fill-current"
+                  />
+                ))}
+              </div>
+              <p className="mt-5 text-base font-semibold leading-relaxed text-app-text italic">
                 "{textProp(item.quote) ?? ""}"
               </p>
-              <strong className="mt-4 block font-semibold text-app-text">
-                {textProp(item.name) ?? "Cliente"}
-              </strong>
-              {textProp(item.role) ? (
-                <span className="text-sm font-medium text-muted">
-                  {textProp(item.role)}
-                </span>
-              ) : null}
+              <div className="mt-6 flex flex-col">
+                <strong className="text-sm font-bold text-app-text">
+                  {textProp(item.name) ?? "Cliente"}
+                </strong>
+                {textProp(item.role) ? (
+                  <span className="text-xs font-semibold text-muted mt-0.5">
+                    {textProp(item.role)}
+                  </span>
+                ) : null}
+              </div>
             </article>
           ))}
         </div>
@@ -103,17 +116,24 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
     textProp(component.props.address) ?? context.config.contact.address;
   if (!address) return null;
   return (
-    <a
-      className="public-storefront-shell block rounded-[1.5rem] border border-line bg-panel p-6 shadow-[0_10px_34px_rgb(15_23_42_/_0.06)] transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.1)]"
-      href={mapLink(address)}
-      rel="noreferrer"
-      target="_blank"
-    >
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">
-        Endereco
-      </p>
-      <p className="mt-2 text-xl font-semibold tracking-tight">{address}</p>
-    </a>
+    <section className="bg-panel px-4 py-8 md:px-6">
+      <a
+        className="public-storefront-shell block rounded-[2rem] border border-line bg-panel p-8 shadow-[0_12px_30px_-10px_rgba(15,23,42,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_20px_40px_-5px_rgba(15,23,42,0.08)]"
+        href={mapLink(address)}
+        rel="noreferrer"
+        target="_blank"
+      >
+        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+          LOCALIZAÇÃO
+        </p>
+        <p className="mt-2 text-xl font-extrabold tracking-tight text-app-text">
+          {address}
+        </p>
+        <p className="mt-3 text-xs font-bold text-muted underline">
+          Ver rotas no Google Maps →
+        </p>
+      </a>
+    </section>
   );
 }
 
@@ -123,7 +143,7 @@ export function MarqueeBlock({ component }: BuilderBlockProps) {
   ];
   const reverse = textProp(component.props.direction) === "right";
   return (
-    <div className="overflow-hidden border-y border-line bg-panel py-4">
+    <div className="overflow-hidden border-y border-line bg-panel py-5">
       <div
         className={cx(
           "page-builder-marquee-track",
@@ -131,10 +151,16 @@ export function MarqueeBlock({ component }: BuilderBlockProps) {
         )}
         style={{ animationDuration: duration }}
       >
-        <span className="mx-8 text-sm font-semibold uppercase tracking-[0.24em] text-muted">
+        <span className="mx-12 text-xs font-black uppercase tracking-[0.3em] text-app-text">
           {textProp(component.props.text) ?? ""}
         </span>
-        <span className="mx-8 text-sm font-semibold uppercase tracking-[0.24em] text-muted">
+        <span className="mx-12 text-xs font-black uppercase tracking-[0.3em] text-app-text">
+          {textProp(component.props.text) ?? ""}
+        </span>
+        <span className="mx-12 text-xs font-black uppercase tracking-[0.3em] text-app-text">
+          {textProp(component.props.text) ?? ""}
+        </span>
+        <span className="mx-12 text-xs font-black uppercase tracking-[0.3em] text-app-text">
           {textProp(component.props.text) ?? ""}
         </span>
       </div>
@@ -168,25 +194,25 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
     return () => window.clearTimeout(timeout);
   }, [current, length, props.speed, props.waitTime, texts.length]);
   return (
-    <section className="bg-panel px-4 py-14 text-center md:px-6 md:py-20">
+    <section className="bg-panel px-4 py-16 text-center md:px-6 md:py-20">
       {textProp(props.preText) ? (
-        <p className="text-xl font-medium text-muted">
+        <p className="text-sm font-bold uppercase tracking-wider text-muted">
           {textProp(props.preText)}
         </p>
       ) : null}
       <p
-        className="mt-2 text-4xl font-semibold tracking-tight md:text-6xl"
+        className="mt-3 text-3xl font-extrabold tracking-tight md:text-5xl lg:text-6xl"
         style={{ color: context.accent }}
       >
         {current.slice(0, length)}
         {boolProp(props.showCursor, true) ? (
-          <span className="page-builder-typewriter-cursor">
+          <span className="page-builder-typewriter-cursor select-none">
             {textProp(props.cursorChar) ?? "|"}
           </span>
         ) : null}
       </p>
       {textProp(props.postText) ? (
-        <p className="mt-3 text-xl font-medium text-muted">
+        <p className="mt-4 text-sm font-bold uppercase tracking-wider text-muted">
           {textProp(props.postText)}
         </p>
       ) : null}
@@ -196,22 +222,25 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
 
 function BlockHeading({ props }: { props: Record<string, unknown> }) {
   return (
-    <>
-      <h2 className="text-3xl font-semibold tracking-tight md:text-5xl">
-        {textProp(props.title) ?? "Secao"}
+    <div>
+      <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+        DESTAQUE
+      </p>
+      <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
+        {textProp(props.title) ?? "Seção"}
       </h2>
       {textProp(props.subtitle) ? (
-        <p className="mt-3 max-w-2xl text-base font-medium leading-8 text-muted">
+        <p className="mt-3 max-w-2xl text-base font-medium leading-relaxed text-muted">
           {textProp(props.subtitle)}
         </p>
       ) : null}
-    </>
+    </div>
   );
 }
 
 function galleryColumnsClass(columns: number) {
-  if (columns <= 1) return "md:grid-cols-1";
-  if (columns === 2) return "md:grid-cols-2";
-  if (columns >= 4) return "md:grid-cols-4";
-  return "md:grid-cols-3";
+  if (columns <= 1) return "grid-cols-1";
+  if (columns === 2) return "grid-cols-2";
+  if (columns >= 4) return "grid-cols-2 sm:grid-cols-4";
+  return "grid-cols-1 sm:grid-cols-3";
 }

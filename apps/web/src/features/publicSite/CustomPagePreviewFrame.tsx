@@ -35,14 +35,9 @@ function collectPreviewStyles(source: Document) {
 function syncRootAttributes(source: Document, target: Document) {
   const sourceRoot = source.documentElement;
   const targetRoot = target.documentElement;
-  targetRoot.className = sourceRoot.className;
+  targetRoot.className = sourceRoot.className.replace(/\bdark\b/g, "");
   targetRoot.style.cssText = sourceRoot.style.cssText;
-  const theme = sourceRoot.getAttribute("data-theme");
-  if (theme) {
-    targetRoot.setAttribute("data-theme", theme);
-  } else {
-    targetRoot.removeAttribute("data-theme");
-  }
+  targetRoot.setAttribute("data-theme", "light");
 }
 
 function syncPreviewStyles(source: Document, target: Document) {

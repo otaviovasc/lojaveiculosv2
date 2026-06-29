@@ -80,6 +80,8 @@ export function PageBuilderRenderer({
   const blockFonts = collectPageBuilderFonts(page.components);
   const pageStyle: CSSProperties & Record<`--${string}`, string> = {
     ...createPageBackgroundStyle(pageBackground, background),
+    "--color-accent": accent,
+    "--color-accent-soft": `color-mix(in oklab, ${accent} 12%, transparent)`,
     "--color-inverse": readableTextColorForBackground(accent),
     "--page-builder-heading-font": fontStack(headingFont),
     fontFamily: fontStack(pageFont),

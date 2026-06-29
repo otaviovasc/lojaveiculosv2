@@ -13,63 +13,66 @@ export function LeadPanel({
   const instagram = readString(socialLinks.instagram);
   return (
     <section className="bg-panel" id="contato">
-      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
-        <div className="grid gap-8 rounded-[2rem] border border-line bg-app p-6 shadow-[0_24px_70px_rgb(15_23_42_/_0.08)] md:grid-cols-[0.9fr_1.1fr] md:p-8">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-accent-strong">
-              Interesse rapido
+      <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
+        <div className="grid gap-8 rounded-[2.5rem] border border-line bg-app p-6 shadow-[0_16px_40px_rgba(15,23,42,0.02)] md:grid-cols-[0.95fr_1.05fr] md:p-10">
+          <div className="flex flex-col justify-center">
+            <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+              INTERESSE RÁPIDO
             </p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-5xl">
-              Separar veiculo
+            <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
+              Separar veículo
             </h2>
-            <div className="mt-5 grid gap-3 text-sm font-medium text-muted">
+            <div className="mt-6 grid gap-3 text-sm font-semibold text-muted">
               {settings.contact.city ? (
-                <span>{settings.contact.city}</span>
+                <span className="flex items-center gap-2 rounded-2xl bg-panel p-3 border border-line/60">
+                  Cidade: {settings.contact.city}
+                </span>
               ) : null}
               {settings.contact.contactPhone ? (
                 <a
-                  className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+                  className="flex items-center gap-2 rounded-2xl bg-panel p-3 border border-line/60 transition-colors hover:text-accent"
                   href={`tel:${settings.contact.contactPhone}`}
                 >
-                  <Phone aria-hidden="true" className="size-4" />
+                  <Phone aria-hidden="true" className="size-4 text-accent" />
                   {settings.contact.contactPhone}
                 </a>
               ) : null}
               {settings.contact.contactEmail ? (
                 <a
-                  className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+                  className="flex items-center gap-2 rounded-2xl bg-panel p-3 border border-line/60 transition-colors hover:text-accent"
                   href={`mailto:${settings.contact.contactEmail}`}
                 >
-                  <Mail aria-hidden="true" className="size-4" />
+                  <Mail aria-hidden="true" className="size-4 text-accent" />
                   {settings.contact.contactEmail}
                 </a>
               ) : null}
               {instagram ? (
                 <a
-                  className="inline-flex items-center gap-2 transition-colors hover:text-accent"
+                  className="flex items-center gap-2 rounded-2xl bg-panel p-3 border border-line/60 transition-colors hover:text-accent"
                   href={instagram}
                   rel="noreferrer"
                   target="_blank"
                 >
-                  <AtSign aria-hidden="true" className="size-4" />
+                  <AtSign aria-hidden="true" className="size-4 text-accent" />
                   Instagram
                 </a>
               ) : null}
             </div>
           </div>
-          <div className="grid gap-3">
+
+          <div className="flex flex-col justify-center gap-4">
             <input
               aria-label="Nome"
-              className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-medium text-app-text outline-none transition-[border-color,box-shadow] focus:border-accent/50 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-accent)_14%,transparent)]"
-              placeholder="Nome"
+              className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+              placeholder="Seu nome"
             />
             <input
               aria-label="Telefone"
-              className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-medium text-app-text outline-none transition-[border-color,box-shadow] focus:border-accent/50 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-accent)_14%,transparent)]"
-              placeholder="Telefone"
+              className="min-h-12 rounded-2xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+              placeholder="Seu telefone"
             />
             <a
-              className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-5 text-sm font-semibold text-inverse shadow-[0_18px_44px_color-mix(in_oklab,var(--color-accent)_22%,transparent)] transition-[box-shadow,filter,transform] hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-5 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95"
               href={settings.contact.whatsappUrl ?? undefined}
             >
               <MessageCircle aria-hidden="true" className="size-4" />

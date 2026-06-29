@@ -24,9 +24,9 @@ import type {
 } from "./types";
 
 const proofItems = [
-  { icon: CheckCircle2, key: "featured", label: "Estoque conferido" },
+  { icon: CheckCircle2, key: "featured", label: "Estoque verificado" },
   { icon: ShieldCheck, key: "trust", label: "Dados do lojista" },
-  { icon: MessageCircle, key: "financing", label: "Atendimento WhatsApp" },
+  { icon: MessageCircle, key: "financing", label: "Atendimento no WhatsApp" },
 ];
 
 export function HeroSection({
@@ -49,43 +49,49 @@ export function HeroSection({
   const visibleProofItems = createVisibleProofItems(sections);
 
   return (
-    <section className="relative overflow-hidden border-b border-line bg-[radial-gradient(circle_at_85%_10%,color-mix(in_oklab,var(--color-accent)_10%,transparent),transparent_34%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
-      <div className="public-storefront-shell grid min-h-[36rem] gap-10 px-4 py-10 md:px-6 md:py-12 lg:min-h-[42rem] lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-14">
+    <section className="relative overflow-hidden border-b border-line bg-[radial-gradient(circle_at_90%_15%,color-mix(in_oklab,var(--color-accent)_8%,transparent),transparent_40%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)]">
+      <div className="public-storefront-shell grid gap-8 px-4 py-8 md:px-6 md:py-10 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
         <div className="flex min-w-0 flex-col justify-center">
           <div className="max-w-2xl">
-            <div className="mb-7 flex items-center gap-3">
+            <div className="mb-6 flex items-center gap-3">
               <BrandMark logoUrl={logoUrl} photoUrl={photoUrl} />
               <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-accent-strong">
-                  {theme.badgeLabel}
+                <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+                  {theme.badgeLabel || "DEALER EXCLUSIVO"}
                 </p>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted">
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold text-muted">
                   <span>{brandName}</span>
-                  {brandLine ? <span>{brandLine}</span> : null}
-                  <span>{data.settings.store.publicUrl}</span>
+                  {brandLine ? (
+                    <>
+                      <span aria-hidden="true" className="opacity-50">
+                        •
+                      </span>
+                      <span>{brandLine}</span>
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>
 
-            <h1 className="max-w-3xl break-words text-4xl font-semibold leading-[0.95] tracking-tight text-app-text md:text-6xl lg:text-7xl">
+            <h1 className="max-w-3xl break-words text-4xl font-extrabold leading-[1.05] tracking-tight text-app-text sm:text-5xl lg:text-6xl">
               {theme.headline}
             </h1>
 
-            {heroSubtitle ? (
-              <p className="mt-6 max-w-2xl text-base font-medium leading-8 text-muted md:text-xl">
+            {heroSubtitle && (
+              <p className="mt-5 max-w-xl text-base font-medium leading-relaxed text-muted sm:text-lg">
                 {heroSubtitle}
               </p>
-            ) : null}
+            )}
 
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-6 text-sm font-semibold text-inverse shadow-[0_18px_44px_color-mix(in_oklab,var(--color-accent)_24%,transparent)] transition-[box-shadow,transform,filter] hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-[0.98]"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-accent px-8 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] active:translate-y-0 active:scale-95"
                 href="#estoque"
               >
                 Ver estoque
               </a>
               <a
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-line bg-panel px-6 text-sm font-semibold text-app-text shadow-[0_12px_34px_rgb(15_23_42_/_0.06)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_18px_44px_rgb(15_23_42_/_0.09)] active:translate-y-0 active:scale-[0.98]"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-line bg-panel px-8 text-sm font-bold text-app-text shadow-[0_8px_20px_rgba(15,23,42,0.03)] transition-all duration-300 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)] active:translate-y-0 active:scale-95"
                 href="#contato"
               >
                 {theme.ctaLabel}
@@ -93,46 +99,47 @@ export function HeroSection({
             </div>
           </div>
 
-          {visibleProofItems.length ? (
-            <div className="mt-10 grid gap-0 overflow-hidden rounded-2xl border border-line bg-panel/80 shadow-[0_18px_55px_rgb(15_23_42_/_0.06)] backdrop-blur sm:grid-cols-3">
+          {visibleProofItems.length > 0 && (
+            <div className="mt-8 grid gap-0 overflow-hidden rounded-2xl border border-line bg-panel/75 shadow-[0_8px_30px_rgba(15,23,42,0.02)] backdrop-blur sm:grid-cols-3">
               {visibleProofItems.map((item) => {
                 const Icon = item.icon;
                 return (
                   <div
-                    className="flex min-h-20 items-center gap-3 border-b border-line/70 p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
+                    className="flex min-h-16 items-center gap-3 border-b border-line/60 p-4 last:border-b-0 sm:border-b-0 sm:border-r sm:last:border-r-0"
                     key={item.label}
                   >
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
                       <Icon aria-hidden="true" className="size-4" />
                     </span>
-                    <span className="text-sm font-semibold text-app-text">
+                    <span className="text-xs font-bold text-app-text">
                       {item.label}
                     </span>
                   </div>
                 );
               })}
             </div>
-          ) : null}
+          )}
         </div>
-        <div className="group relative min-h-[22rem] overflow-hidden rounded-[2rem] border border-white bg-accent-soft shadow-[0_30px_90px_rgb(15_23_42_/_0.16)] lg:min-h-[32rem]">
+
+        <div className="group relative aspect-[16/11] w-full overflow-hidden rounded-[2rem] border border-line bg-accent-soft shadow-[0_20px_50px_rgba(15,23,42,0.08)] lg:aspect-auto lg:h-[28rem]">
           {data.settings.site.heroImageUrl ? (
             <img
               alt=""
-              className="size-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
+              className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
               src={data.settings.site.heroImageUrl}
             />
           ) : (
-            <div className="grid size-full place-items-center text-accent">
-              <Sparkles aria-hidden="true" className="size-16" />
+            <div className="grid size-full place-items-center text-accent/60">
+              <Sparkles aria-hidden="true" className="size-12" />
             </div>
           )}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-white/10" />
-          <div className="absolute bottom-5 left-5 rounded-2xl border border-white/70 bg-white/85 p-4 shadow-[0_18px_50px_rgb(15_23_42_/_0.12)] backdrop-blur">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">
-              Estoque selecionado
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+          <div className="absolute bottom-5 left-5 rounded-2xl border border-line bg-panel/90 px-4 py-3 shadow-[0_12px_30px_rgba(15,23,42,0.08)] backdrop-blur-md">
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted">
+              ESTOQUE ATIVO
             </p>
-            <p className="mt-1 text-lg font-semibold text-app-text">
-              {data.listings.length} veiculos publicados
+            <p className="mt-0.5 text-base font-bold text-app-text">
+              {data.listings.length} veículos publicados
             </p>
           </div>
         </div>
@@ -164,31 +171,31 @@ export function StockSection({
       : filteredListings;
   return (
     <section className="border-b border-line bg-app" id="estoque">
-      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
-        <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
+        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-accent-strong">
+            <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
               {stockEyebrow(sectionType)}
             </p>
-            <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-5xl">
+            <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-app-text">
               {stockTitle(sectionType)}
             </h2>
           </div>
-          {isSearch ? (
+          {isSearch && (
             <label className="relative block sm:w-80">
-              <span className="sr-only">Buscar veiculo</span>
+              <span className="sr-only">Buscar veículo</span>
               <Search
                 aria-hidden="true"
                 className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted"
               />
               <input
-                className="min-h-12 w-full rounded-full border border-line bg-panel pl-11 pr-4 text-sm font-medium text-app-text outline-none shadow-[0_12px_34px_rgb(15_23_42_/_0.05)] transition-[border-color,box-shadow] focus:border-accent/50 focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--color-accent)_14%,transparent)]"
+                className="min-h-12 w-full rounded-full border border-line bg-panel pl-11 pr-4 text-sm font-semibold text-app-text outline-none shadow-[0_8px_20px_rgba(15,23,42,0.02)] transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Buscar por modelo"
                 value={query}
               />
             </label>
-          ) : null}
+          )}
         </div>
 
         {visibleListings.length ? (
@@ -202,8 +209,8 @@ export function StockSection({
             ))}
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-line bg-panel p-10 text-center text-sm font-semibold text-muted">
-            Nenhum veiculo encontrado.
+          <div className="rounded-2xl border border-dashed border-line bg-panel p-12 text-center text-sm font-semibold text-muted shadow-sm">
+            Nenhum veículo encontrado.
           </div>
         )}
       </div>
@@ -220,27 +227,29 @@ export function AboutSection({
   const imageUrl = readString(theme.aboutImageUrl);
   return (
     <section className="border-b border-line bg-panel">
-      <div className="public-storefront-shell grid gap-10 px-4 py-14 md:grid-cols-[0.95fr_1.05fr] md:px-6 md:py-20">
+      <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-2 md:px-6 md:py-20 lg:py-24">
         <div className="flex min-w-0 flex-col justify-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-accent-strong">
-            Sobre
+          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+            SOBRE NÓS
           </p>
-          <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-5xl">
+          <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-app-text">
             {readString(theme.aboutTitle) ?? data.settings.store.name}
           </h2>
-          <p className="mt-5 max-w-2xl whitespace-pre-wrap text-base font-medium leading-8 text-muted">
+          <p className="mt-6 max-w-2xl whitespace-pre-wrap text-base font-medium leading-relaxed text-muted">
             {readString(theme.aboutText) ??
               "Atendimento direto, estoque selecionado e canais oficiais para uma compra mais tranquila."}
           </p>
         </div>
         {imageUrl ? (
-          <img
-            alt=""
-            className="aspect-[4/3] w-full rounded-[1.5rem] object-cover shadow-[0_24px_70px_rgb(15_23_42_/_0.12)]"
-            src={imageUrl}
-          />
+          <div className="overflow-hidden rounded-[2rem] border border-line bg-app shadow-[0_20px_50px_rgba(15,23,42,0.06)]">
+            <img
+              alt=""
+              className="aspect-[4/3] w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
+              src={imageUrl}
+            />
+          </div>
         ) : (
-          <div className="grid aspect-[4/3] place-items-center rounded-[1.5rem] bg-app text-muted">
+          <div className="grid aspect-[4/3] place-items-center rounded-[2rem] bg-app text-muted border border-line">
             <UserRound aria-hidden="true" className="size-10" />
           </div>
         )}
@@ -258,29 +267,39 @@ export function TestimonialsSection({
   if (!testimonials.length) return null;
   return (
     <section className="border-b border-line bg-app">
-      <div className="public-storefront-shell px-4 py-14 md:px-6 md:py-20">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-accent-strong">
-          Depoimentos
+      <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20 lg:py-24">
+        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+          DEPOIMENTOS
         </p>
-        <h2 className="mt-2 text-3xl font-semibold tracking-tight md:text-5xl">
-          Clientes atendidos
+        <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl lg:text-5xl text-app-text">
+          A opinião de quem já comprou
         </h2>
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
           {testimonials.map((testimonial) => (
             <article
-              className="public-editorial-card rounded-[1.5rem] p-6 transition-[border-color,box-shadow,transform] duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_24px_70px_rgb(15_23_42_/_0.1)]"
+              className="public-editorial-card rounded-[2rem] p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_20px_40px_rgba(15,23,42,0.05)]"
               key={testimonial.id}
             >
-              <Star aria-hidden="true" className="size-5 text-accent" />
-              <p className="mt-4 text-base font-medium leading-8 text-muted">
+              <div className="flex gap-1 text-accent">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <Star
+                    key={i}
+                    aria-hidden="true"
+                    className="size-4 fill-current"
+                  />
+                ))}
+              </div>
+              <p className="mt-5 text-base font-semibold leading-relaxed text-app-text italic">
                 "{testimonial.quote}"
               </p>
-              <strong className="mt-4 block font-semibold text-app-text">
-                {testimonial.name}
-              </strong>
-              <span className="text-sm font-medium text-muted">
-                {testimonial.role}
-              </span>
+              <div className="mt-6 flex flex-col">
+                <strong className="text-sm font-bold text-app-text">
+                  {testimonial.name}
+                </strong>
+                <span className="text-xs font-semibold text-muted mt-0.5">
+                  {testimonial.role}
+                </span>
+              </div>
             </article>
           ))}
         </div>
@@ -296,18 +315,15 @@ function BrandMark({
   logoUrl: string | null;
   photoUrl: string | null;
 }) {
-  const imageUrl = logoUrl ?? photoUrl;
-  if (imageUrl) {
-    return (
-      <img
-        alt=""
-        className="size-12 shrink-0 rounded-2xl border border-line bg-panel object-cover shadow-sm"
-        src={imageUrl}
-      />
-    );
-  }
-  return (
-    <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent shadow-sm">
+  const img = logoUrl ?? photoUrl;
+  return img ? (
+    <img
+      alt=""
+      className="size-12 shrink-0 rounded-2xl border border-line bg-panel object-cover shadow-sm"
+      src={img}
+    />
+  ) : (
+    <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-accent-soft text-accent border border-line/20 shadow-sm">
       <Sparkles aria-hidden="true" className="size-5" />
     </div>
   );
@@ -316,16 +332,15 @@ function BrandMark({
 function createVisibleProofItems(
   sections: readonly VisibleStorefrontSection[],
 ) {
-  const sectionTypes = new Set(sections.map((section) => section.type));
+  const types = new Set(sections.map((s) => s.type));
   return proofItems.filter((item) => {
-    if (item.key === "featured") {
+    if (item.key === "featured")
       return (
-        sectionTypes.has("featured") ||
-        sectionTypes.has("all_properties") ||
-        sectionTypes.has("search")
+        types.has("featured") ||
+        types.has("all_properties") ||
+        types.has("search")
       );
-    }
-    if (item.key === "financing") return sectionTypes.has("contact");
+    if (item.key === "financing") return types.has("contact");
     return true;
   });
 }

@@ -45,55 +45,56 @@ export function LeadCaptureForm({
 
   return (
     <form
-      className="mt-6 grid gap-3"
+      className="mt-6 grid gap-4"
       onSubmit={(event) => {
         void handleSubmit(event);
       }}
     >
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <input
           aria-label="Nome"
-          className="min-h-11 rounded-lg border border-line bg-app px-3 font-bold"
+          className="min-h-12 rounded-2xl border border-line bg-app px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
           name="buyerName"
-          placeholder="Seu nome"
+          placeholder="Seu nome completo"
           required
         />
         <input
           aria-label="Telefone"
-          className="min-h-11 rounded-lg border border-line bg-app px-3 font-bold"
+          className="min-h-12 rounded-2xl border border-line bg-app px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
           name="buyerPhone"
-          placeholder="Telefone"
+          placeholder="Seu telefone"
         />
       </div>
       <input
         aria-label="E-mail"
-        className="min-h-11 rounded-lg border border-line bg-app px-3 font-bold"
+        className="min-h-12 rounded-2xl border border-line bg-app px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
         name="buyerEmail"
-        placeholder="E-mail"
+        placeholder="Seu e-mail"
         type="email"
       />
       <textarea
         aria-label="Mensagem"
-        className="min-h-24 rounded-lg border border-line bg-app p-3 font-bold"
+        className="min-h-24 rounded-2xl border border-line bg-app p-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
         name="message"
-        placeholder="Mensagem"
+        placeholder="Olá, tenho interesse neste veículo. Aguardo o contato."
       />
       <button
-        className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex min-h-12 items-center justify-center gap-2 rounded-full bg-accent px-6 text-sm font-bold text-inverse shadow-[0_8px_30px_color-mix(in_oklab,var(--color-accent)_20%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_36px_color-mix(in_oklab,var(--color-accent)_32%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
         disabled={state.kind === "submitting"}
         type="submit"
       >
         <Send aria-hidden="true" className="size-4" />
-        {state.kind === "submitting" ? "Enviando" : "Tenho interesse"}
+        {state.kind === "submitting" ? "Enviando..." : "Tenho interesse"}
       </button>
       {state.kind === "submitted" ? (
-        <p className="text-sm font-black text-accent">
-          Interesse enviado. A loja recebeu seus dados.
+        <p className="text-sm font-bold text-accent text-center mt-1">
+          Interesse enviado! A loja recebeu seus dados e entrará em contato em
+          breve.
         </p>
       ) : null}
       {state.kind === "error" ? (
-        <p className="text-sm font-black text-danger">
-          Nao foi possivel enviar agora.
+        <p className="text-sm font-bold text-danger text-center mt-1">
+          Não foi possível enviar o seu interesse no momento.
         </p>
       ) : null}
     </form>
