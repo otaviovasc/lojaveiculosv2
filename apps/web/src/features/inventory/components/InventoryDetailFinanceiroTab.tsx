@@ -37,7 +37,6 @@ export function InventoryDetailFinanceiroTab({
   ]);
 
   const [nfe, setNfe] = useState<{
-    id: string;
     status: string;
     date: string;
   } | null>(null);
@@ -69,7 +68,6 @@ export function InventoryDetailFinanceiroTab({
 
   const handleEmitNfe = () => {
     setNfe({
-      id: "NF-e #" + Math.floor(1000 + Math.random() * 9000),
       status: "Emitida",
       date: new Date().toLocaleDateString("pt-BR"),
     });
@@ -227,7 +225,9 @@ export function InventoryDetailFinanceiroTab({
                 <CheckCircle2 className="size-4.5" />
               </div>
               <div className="flex flex-col leading-tight">
-                <span className="text-app-text font-black">{nfe.id}</span>
+                <span className="text-app-text font-black">
+                  Nota de entrada emitida
+                </span>
                 <span className="text-muted mt-0.5">
                   Nota Fiscal Eletrônica de Entrada emitida com sucesso.
                 </span>

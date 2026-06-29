@@ -56,11 +56,16 @@ export function WorkflowModePicker({
       </ModeButton>
       {primaryUnit ? (
         <InventoryBadge tone="blue">
-          Unidade principal {primaryUnit.id}
+          {primaryUnitLabel(primaryUnit)}
         </InventoryBadge>
       ) : null}
     </div>
   );
+}
+
+function primaryUnitLabel(unit: InventoryUnit) {
+  const label = [unit.stockNumber, unit.plate].filter(Boolean).join(" / ");
+  return label ? `Unidade principal ${label}` : "Unidade principal selecionada";
 }
 
 export function WorkflowSubmitButton({
