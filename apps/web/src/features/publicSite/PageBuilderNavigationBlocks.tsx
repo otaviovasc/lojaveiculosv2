@@ -1,3 +1,4 @@
+import { CarFront } from "lucide-react";
 import { cx } from "../../components/ui/featureShared";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import {
@@ -126,83 +127,99 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
           </p>
         ) : null}
 
-        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {context.vehicles.slice(0, limit).map((vehicle) => {
-            const { brand, restTitle } = splitVehicleTitle(vehicle.title);
-            return (
-              <article
-                className="group flex flex-col justify-between overflow-hidden rounded-xl border border-line bg-panel shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1.5 hover:border-accent/40 hover:shadow-[0_12px_30px_rgba(15,23,42,0.08)]"
-                key={vehicle.slug}
-              >
-                <div>
-                  <div className="relative aspect-[16/10] w-full overflow-hidden bg-app border-b border-line/60">
-                    {vehicle.thumbnailUrl ? (
-                      <img
-                        alt=""
-                        className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
-                        src={vehicle.thumbnailUrl}
-                      />
-                    ) : null}
-                    <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-accent shadow-sm">
-                      Disponível
-                    </span>
-                  </div>
-
-                  <div className="p-5">
-                    <h3 className="text-base font-extrabold leading-snug tracking-tight text-app-text transition-colors group-hover:text-accent">
-                      <span className="text-app-text">{brand}</span>
-                      {restTitle && (
-                        <span className="font-medium text-muted ml-1.5">
-                          {restTitle}
-                        </span>
-                      )}
-                    </h3>
-                    <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-muted">
-                      <span>
-                        {vehicle.modelYear ?? vehicle.manufactureYear ?? "-"}
-                      </span>
-                      {vehicle.mileageKm !== null &&
-                      vehicle.mileageKm !== undefined ? (
-                        <>
-                          <span
-                            className="size-1 rounded-full bg-line-strong"
-                            aria-hidden="true"
-                          />
-                          <span>
-                            {vehicle.mileageKm.toLocaleString("pt-BR")} km
-                          </span>
-                        </>
+        {context.vehicles.length === 0 ? (
+          <div className="mt-10 grid min-h-48 place-items-center rounded-xl border border-dashed border-line bg-panel p-8 text-center">
+            <div>
+              <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-accent-soft text-accent">
+                <CarFront aria-hidden="true" className="size-5" />
+              </span>
+              <h3 className="mt-4 text-base font-black text-app-text">
+                Estoque em atualizacao
+              </h3>
+              <p className="mt-2 max-w-sm text-sm font-semibold text-muted">
+                Publique veiculos para preencher este bloco automaticamente.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {context.vehicles.slice(0, limit).map((vehicle) => {
+              const { brand, restTitle } = splitVehicleTitle(vehicle.title);
+              return (
+                <article
+                  className="group flex flex-col justify-between overflow-hidden rounded-xl border border-line bg-panel shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1.5 hover:border-accent/40 hover:shadow-[0_12px_30px_rgba(15,23,42,0.08)]"
+                  key={vehicle.slug}
+                >
+                  <div>
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-app border-b border-line/60">
+                      {vehicle.thumbnailUrl ? (
+                        <img
+                          alt=""
+                          className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                          src={vehicle.thumbnailUrl}
+                        />
                       ) : null}
-                      <span
-                        className="size-1 rounded-full bg-line-strong"
-                        aria-hidden="true"
-                      />
-                      <span className="uppercase opacity-80">
-                        {vehicle.slug.slice(0, 8)}
+                      <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-accent shadow-sm">
+                        Disponível
                       </span>
                     </div>
-                  </div>
-                </div>
 
-                <div className="px-5 pb-5 pt-0">
-                  <div className="mb-2 border-t border-line/60 pt-4 flex items-center justify-between">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] font-black uppercase tracking-wider text-muted/80">
-                        Preço sugerido
-                      </span>
-                      <p
-                        className="text-lg font-black tracking-tight"
-                        style={{ color: context.accent }}
-                      >
-                        {formatPrice(vehicle.priceCents)}
-                      </p>
+                    <div className="p-5">
+                      <h3 className="text-base font-extrabold leading-snug tracking-tight text-app-text transition-colors group-hover:text-accent">
+                        <span className="text-app-text">{brand}</span>
+                        {restTitle && (
+                          <span className="font-medium text-muted ml-1.5">
+                            {restTitle}
+                          </span>
+                        )}
+                      </h3>
+                      <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-muted">
+                        <span>
+                          {vehicle.modelYear ?? vehicle.manufactureYear ?? "-"}
+                        </span>
+                        {vehicle.mileageKm !== null &&
+                        vehicle.mileageKm !== undefined ? (
+                          <>
+                            <span
+                              className="size-1 rounded-full bg-line-strong"
+                              aria-hidden="true"
+                            />
+                            <span>
+                              {vehicle.mileageKm.toLocaleString("pt-BR")} km
+                            </span>
+                          </>
+                        ) : null}
+                        <span
+                          className="size-1 rounded-full bg-line-strong"
+                          aria-hidden="true"
+                        />
+                        <span className="uppercase opacity-80">
+                          {vehicle.slug.slice(0, 8)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+
+                  <div className="px-5 pb-5 pt-0">
+                    <div className="mb-2 border-t border-line/60 pt-4 flex items-center justify-between">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-muted/80">
+                          Preço sugerido
+                        </span>
+                        <p
+                          className="text-lg font-black tracking-tight"
+                          style={{ color: context.accent }}
+                        >
+                          {formatPrice(vehicle.priceCents)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

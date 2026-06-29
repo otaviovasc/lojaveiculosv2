@@ -1,6 +1,7 @@
-import { Star, X } from "lucide-react";
+import { ImageIcon, MapPin, Star, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../components/ui/featureShared";
+import { PageBuilderPreviewEmptyState } from "./PageBuilderEmptyState";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import {
   boolProp,
@@ -11,12 +12,20 @@ import {
   textProp,
 } from "./pageBuilderRenderUtils";
 
-export function GalleryBlock({ component }: BuilderBlockProps) {
+export function GalleryBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const images = recordArrayProp(props.images);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const columns = numberProp(props.columns, 3);
-  if (!images.length) return null;
+  if (!images.length) {
+    return context.preview ? (
+      <PageBuilderPreviewEmptyState
+        icon={ImageIcon}
+        title="Galeria sem imagens"
+        text="Adicione fotos do estoque, showroom ou entrega para ativar o mosaico."
+      />
+    ) : null;
+  }
   return (
     <section className="bg-panel">
       <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
@@ -114,7 +123,15 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
 export function MapBlock({ component, context }: BuilderBlockProps) {
   const address =
     textProp(component.props.address) ?? context.config.contact.address;
-  if (!address) return null;
+  if (!address) {
+    return context.preview ? (
+      <PageBuilderPreviewEmptyState
+        icon={MapPin}
+        title="Mapa sem endereco"
+        text="Informe o endereco da loja para exibir a rota publica."
+      />
+    ) : null;
+  }
   return (
     <section className="bg-panel px-4 py-8 md:px-6">
       <a

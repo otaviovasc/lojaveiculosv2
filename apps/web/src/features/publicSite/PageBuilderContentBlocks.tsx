@@ -1,5 +1,7 @@
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, ImageIcon, Play, Sparkles } from "lucide-react";
 import { cx } from "../../components/ui/featureShared";
+import { pageBuilderDefaultMedia } from "./pageBuilderDefaultMedia";
+import { PageBuilderPreviewEmptyState } from "./PageBuilderEmptyState";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import {
   boolProp,
@@ -20,11 +22,12 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
   const imageUrl =
     textProp(props.imageUrl) ??
     fallbackHeroImage ??
-    context.config.heroImageUrl;
+    context.config.heroImageUrl ??
+    pageBuilderDefaultMedia.audiFront;
   const ctaUrl = textProp(props.ctaUrl) ?? "#estoque";
   return (
     <section className="bg-panel" id="home">
-      <div className="public-storefront-shell grid gap-10 px-4 py-16 md:px-6 md:py-20 lg:grid-cols-[1.12fr_0.88fr] lg:items-center">
+      <div className="public-storefront-shell grid gap-10 px-4 py-16 md:px-6 md:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div className="flex min-w-0 flex-col justify-center">
           <p className="inline-flex w-fit items-center gap-2 rounded bg-accent-soft px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-accent">
             <Sparkles aria-hidden="true" className="size-3.5" />
@@ -39,27 +42,48 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
             {textProp(props.subtitle) ??
               "Atendimento direto e estoque publicado pela loja."}
           </p>
-          <a
-            className="group mt-8 inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded px-8 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer"
-            href={ctaUrl}
-            style={{ background: context.accent }}
-          >
-            {textProp(props.ctaLabel) ??
-              textProp(props.primaryLabel) ??
-              "Ver estoque"}
-            <ArrowRight
-              aria-hidden="true"
-              className="size-4 transition-transform group-hover:translate-x-0.5"
-            />
-          </a>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            <a
+              className="group inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded px-8 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer"
+              href={ctaUrl}
+              style={{ background: context.accent }}
+            >
+              {textProp(props.ctaLabel) ??
+                textProp(props.primaryLabel) ??
+                "Ver estoque"}
+              <ArrowRight
+                aria-hidden="true"
+                className="size-4 transition-transform group-hover:translate-x-0.5"
+              />
+            </a>
+            <span className="text-xs font-black uppercase tracking-[0.22em] text-muted">
+              Estoque revisado
+            </span>
+          </div>
         </div>
         {imageUrl ? (
-          <div className="overflow-hidden rounded-xl border border-line bg-app shadow-md">
+          <div className="group relative overflow-hidden rounded-xl border border-line bg-app shadow-md">
             <img
               alt={textProp(props.imageAlt) ?? ""}
               className="aspect-[16/11] w-full object-cover transition-transform duration-700 hover:scale-[1.025]"
               src={imageUrl}
             />
+            <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-app-text/82 p-3 text-white shadow-lg backdrop-blur-sm">
+              <span className="min-w-0">
+                <span className="block text-[9px] font-black uppercase tracking-[0.22em] text-white/70">
+                  Destaque
+                </span>
+                <span className="block text-sm font-black leading-tight">
+                  Publicacao pronta para conversao
+                </span>
+              </span>
+              <span
+                className="flex size-9 shrink-0 items-center justify-center rounded-full"
+                style={{ background: context.accent }}
+              >
+                <ArrowRight aria-hidden="true" className="size-4" />
+              </span>
+            </div>
           </div>
         ) : null}
       </div>
@@ -156,10 +180,18 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
   );
 }
 
-export function ImageBlock({ component }: BuilderBlockProps) {
+export function ImageBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const imageUrl = textProp(props.imageUrl) ?? textProp(props.url);
-  if (!imageUrl) return null;
+  if (!imageUrl) {
+    return context.preview ? (
+      <PageBuilderPreviewEmptyState
+        icon={ImageIcon}
+        title="Imagem sem arquivo"
+        text="Adicione uma foto do estoque, showroom ou entrega."
+      />
+    ) : null;
+  }
   return (
     <figure className="group public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-md">
       <img
@@ -176,10 +208,18 @@ export function ImageBlock({ component }: BuilderBlockProps) {
   );
 }
 
-export function VideoBlock({ component }: BuilderBlockProps) {
+export function VideoBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const videoUrl = textProp(props.videoUrl) ?? textProp(props.url);
-  if (!videoUrl) return null;
+  if (!videoUrl) {
+    return context.preview ? (
+      <PageBuilderPreviewEmptyState
+        icon={Play}
+        title="Video sem link"
+        text="Cole um YouTube ou arquivo de video para ativar o bloco."
+      />
+    ) : null;
+  }
   const embedUrl = youtubeEmbedUrl(videoUrl);
   return (
     <section className="public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-md">
@@ -227,9 +267,11 @@ export function DividerBlock({ component }: BuilderBlockProps) {
   );
 }
 
-export function ScrollZoomBlock({ component }: BuilderBlockProps) {
+export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
-  const imageUrl = textProp(props.imageUrl);
+  const imageUrl =
+    textProp(props.imageUrl) ??
+    (context.preview ? pageBuilderDefaultMedia.audiRear : null);
   return (
     <section className="bg-app">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20">

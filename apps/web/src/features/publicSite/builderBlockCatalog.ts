@@ -26,6 +26,10 @@ import {
   Video,
   type LucideIcon,
 } from "lucide-react";
+import {
+  pageBuilderDefaultGalleryImages,
+  pageBuilderDefaultMedia,
+} from "./pageBuilderDefaultMedia";
 
 export const builderBlockLabels: Record<
   StorefrontBuilderComponentType,
@@ -133,9 +137,9 @@ const defaultBlockProps: Record<
 > = {
   about: {
     imagePosition: "right",
-    imageUrl: "",
-    text: "Apresente a historia da loja, o atendimento e os diferenciais do estoque.",
-    title: "Sobre a loja",
+    imageUrl: pageBuilderDefaultMedia.bmwGreen,
+    text: "Apresente a curadoria da loja, a preparacao dos veiculos e o atendimento que acompanha o cliente ate a entrega.",
+    title: "Compra assistida, estoque revisado",
   },
   contact_section: {
     fields: { email: true, message: true, name: true, phone: true },
@@ -155,8 +159,8 @@ const defaultBlockProps: Record<
     buttonStyle: "primary",
     buttonUrl: "#contato",
     subtitle:
-      "Converse com a equipe comercial para simular, reservar ou visitar.",
-    title: "Quer ajuda para escolher?",
+      "Converse com a equipe para simular financiamento, avaliar troca ou reservar uma visita.",
+    title: "Pronto para encontrar o proximo veiculo?",
   },
   divider: { lineVariant: "solid", text: "" },
   featured: {
@@ -181,12 +185,12 @@ const defaultBlockProps: Record<
   gallery: {
     columns: 3,
     gap: "md",
-    images: [],
+    images: pageBuilderDefaultGalleryImages,
     layout: "grid",
     lightboxEnabled: true,
     showCaptions: true,
-    subtitle: "Adicione fotos de loja, entrega ou veiculos em destaque.",
-    title: "Galeria",
+    subtitle: "Fotos do estoque, detalhes e preparacao dos veiculos.",
+    title: "Galeria da loja",
   },
   header: {
     contactButtonLink: "#contato",
@@ -206,14 +210,15 @@ const defaultBlockProps: Record<
     ctaLabel: "Ver estoque",
     ctaUrl: "#estoque",
     fullHeight: false,
-    imageUrl: "",
-    subtitle: "Estoque selecionado, atendimento direto e publicacao pela loja.",
-    title: "Encontre seu proximo veiculo",
+    imageUrl: pageBuilderDefaultMedia.audiFront,
+    subtitle:
+      "Estoque selecionado, atendimento consultivo e publicacao direta pela loja.",
+    title: "Encontre seu proximo veiculo com confianca",
   },
   image: {
     alignment: "center",
-    caption: "",
-    imageUrl: "",
+    caption: "Imagem editorial para destacar estoque, entrega ou showroom.",
+    imageUrl: pageBuilderDefaultMedia.audiSide,
     lightboxEnabled: true,
   },
   map: {
@@ -232,9 +237,9 @@ const defaultBlockProps: Record<
     title: "Veiculos disponiveis",
   },
   scroll_zoom: {
-    imageUrl: "",
-    subtitle: "Destaque uma entrega, showroom ou veiculo especial.",
-    title: "Experiencia de compra",
+    imageUrl: pageBuilderDefaultMedia.audiRear,
+    subtitle: "Mostre uma entrega, preparação ou veículo especial da loja.",
+    title: "Experiencia de compra premium",
   },
   section_wrapper: {
     children: [],

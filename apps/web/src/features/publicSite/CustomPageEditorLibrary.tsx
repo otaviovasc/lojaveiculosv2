@@ -21,6 +21,10 @@ import {
   blockLabel,
   builderBlockGroups,
 } from "./builderBlockCatalog";
+import {
+  blockDescription,
+  BuilderBlockPreviewArt,
+} from "./BuilderBlockPreviewArt";
 
 export function BuilderBlockLibrary({
   onAdd,
@@ -44,7 +48,7 @@ export function BuilderBlockLibrary({
           />
         </div>
       </div>
-      <div className="grid gap-4 p-3">
+      <div className="grid gap-5 p-3">
         {builderBlockGroups.map((group) => {
           const items = group.types.filter((type) =>
             blockLabel(type).toLowerCase().includes(query.toLowerCase()),
@@ -55,7 +59,7 @@ export function BuilderBlockLibrary({
               <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}
               </h3>
-              <div className="grid gap-1">
+              <div className="grid gap-2">
                 {items.map((type) => (
                   <LibraryBlockButton key={type} onAdd={onAdd} type={type} />
                 ))}
@@ -78,20 +82,28 @@ function LibraryBlockButton({
   const Icon = blockIcon(type);
   return (
     <button
-      className="group flex w-full items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-left text-sm transition-colors hover:border-border hover:bg-muted"
+      className="group grid w-full gap-2 rounded-xl border border-border/60 bg-card p-2 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-md active:translate-y-0 active:scale-[0.99]"
       onClick={() => onAdd(type)}
       type="button"
     >
-      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <Icon aria-hidden="true" className="size-4" />
+      <BuilderBlockPreviewArt type={type} />
+      <span className="flex min-w-0 items-start gap-2 px-1">
+        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
+          <Icon aria-hidden="true" className="size-4" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-black text-foreground">
+            {blockLabel(type)}
+          </span>
+          <span className="mt-0.5 line-clamp-2 block text-[11px] font-medium leading-snug text-muted-foreground">
+            {blockDescription(type)}
+          </span>
+        </span>
+        <PlusCircle
+          aria-hidden="true"
+          className="mt-1 size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+        />
       </span>
-      <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
-        {blockLabel(type)}
-      </span>
-      <PlusCircle
-        aria-hidden="true"
-        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
-      />
     </button>
   );
 }
@@ -168,7 +180,7 @@ function BlockListRow({
   return (
     <div
       className={cn(
-        "group flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all",
+        "group grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 overflow-hidden rounded-lg border px-3 py-2 text-left transition-all",
         selected
           ? "border-primary bg-primary text-primary-foreground shadow-[0_10px_26px_color-mix(in_oklab,var(--primary)_24%,transparent)]"
           : "border-border/50 bg-card text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground",
@@ -176,7 +188,7 @@ function BlockListRow({
       data-selected={selected ? "true" : undefined}
     >
       <button
-        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+        className="flex min-w-0 items-center gap-2 text-left"
         onClick={() => onSelect(component.id)}
         type="button"
       >
@@ -186,7 +198,7 @@ function BlockListRow({
           {blockLabel(component.type)}
         </span>
       </button>
-      <span className="flex shrink-0 items-center gap-1">
+      <span className="grid shrink-0 grid-cols-5 gap-1">
         <MiniAction
           disabled={index === 0}
           label="Mover para cima"
