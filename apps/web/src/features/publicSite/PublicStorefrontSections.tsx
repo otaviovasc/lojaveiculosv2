@@ -1,16 +1,16 @@
 import { Calendar, Gauge, Search, ArrowDown, Sparkles } from "lucide-react";
 import {
   AboutSection,
-  TestimonialsSection,
-  formatMileage,
-  formatPrice,
-  splitVehicleTitle,
   BrandMark,
+  TestimonialsSection,
   createVisibleProofItems,
 } from "./PublicStorefrontSubsections";
-
-export { AboutSection, TestimonialsSection };
 import { PublicVehicleCard } from "./PublicVehicleCard";
+import {
+  formatPublicVehicleMileage,
+  formatPublicVehiclePrice,
+  splitVehicleTitle,
+} from "./publicVehicleFormatters";
 import type { createStorefrontTheme } from "./storefrontTemplates";
 import {
   readString,
@@ -24,6 +24,8 @@ import type {
   PublicStorefrontSettingsData,
   PublicVehicleListing,
 } from "./types";
+
+export { AboutSection, TestimonialsSection };
 
 export function HeroSection({
   data,
@@ -181,13 +183,13 @@ export function HeroSection({
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-400 font-medium">Quilometragem</span>
                 <span className="text-white font-bold">
-                  {formatMileage(firstListing.mileageKm)}
+                  {formatPublicVehicleMileage(firstListing.mileageKm)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-zinc-400 font-medium">Preço</span>
                 <span className="text-accent font-black text-lg">
-                  {formatPrice(firstListing.priceCents)}
+                  {formatPublicVehiclePrice(firstListing.priceCents)}
                 </span>
               </div>
             </div>

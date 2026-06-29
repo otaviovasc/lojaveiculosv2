@@ -1,4 +1,9 @@
 import { Car, Eye, Calendar, Gauge } from "lucide-react";
+import {
+  formatPublicVehicleMileage,
+  formatPublicVehiclePrice,
+  splitVehicleTitle,
+} from "./publicVehicleFormatters";
 import type { PublicVehicleListing } from "./types";
 
 export function PublicVehicleCard({
@@ -54,7 +59,7 @@ export function PublicVehicleCard({
             />
             <span className="flex items-center gap-1.5">
               <Gauge className="size-3.5 text-muted/65" />
-              <span>{formatMileage(listing.mileageKm)}</span>
+              <span>{formatPublicVehicleMileage(listing.mileageKm)}</span>
             </span>
           </div>
         </div>
@@ -68,7 +73,7 @@ export function PublicVehicleCard({
               Preço sugerido
             </span>
             <p className="text-xl font-black tracking-tight text-accent mt-0.5">
-              {formatPrice(listing.priceCents)}
+              {formatPublicVehiclePrice(listing.priceCents)}
             </p>
           </div>
 
@@ -101,32 +106,4 @@ function VehicleImage({ listing }: { listing: PublicVehicleListing }) {
       <Car aria-hidden="true" className="size-8" />
     </div>
   );
-}
-
-function formatPrice(priceCents: number | null) {
-  if (priceCents === null) return "Sob consulta";
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(priceCents / 100);
-}
-
-function formatMileage(mileageKm: number | null) {
-  if (mileageKm === null) return "-";
-  return `${new Intl.NumberFormat("pt-BR").format(mileageKm)} km`;
-}
-
-function splitVehicleTitle(title: string) {
-  const parts = title.trim().split(/\s+/);
-  if (parts.length > 1) {
-    return {
-      brand: parts[0],
-      restTitle: parts.slice(1).join(" "),
-    };
-  }
-  return {
-    brand: title,
-    restTitle: "",
-  };
 }

@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { LeadCaptureForm } from "./LeadCaptureForm";
 import { HeroMedia, MediaStrip } from "./PublicListingGallery";
+import {
+  formatPublicVehicleMileage,
+  formatPublicVehiclePrice,
+} from "./publicVehicleFormatters";
 import type {
   PublicStorefrontLeadInput,
   PublicStorefrontLeadResult,
@@ -159,7 +163,7 @@ function ListingDetailContent({
               Preço sugerido
             </span>
             <p className="text-3xl font-black tracking-tight text-accent">
-              {formatPrice(detail.listing.priceCents)}
+              {formatPublicVehiclePrice(detail.listing.priceCents)}
             </p>
           </div>
 
@@ -176,7 +180,7 @@ function ListingDetailContent({
             />
             <ListingDetailMetric
               label="Quilometragem"
-              value={formatMileage(detail.listing.mileageKm)}
+              value={formatPublicVehicleMileage(detail.listing.mileageKm)}
             />
             <ListingDetailMetric
               label="Fotos"
@@ -265,18 +269,4 @@ function ListingDetailMetric({
       </strong>
     </div>
   );
-}
-
-function formatPrice(priceCents: number | null) {
-  if (priceCents === null) return "Sob consulta";
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    maximumFractionDigits: 0,
-    style: "currency",
-  }).format(priceCents / 100);
-}
-
-function formatMileage(mileageKm: number | null) {
-  if (mileageKm === null) return "-";
-  return `${new Intl.NumberFormat("pt-BR").format(mileageKm)} km`;
 }

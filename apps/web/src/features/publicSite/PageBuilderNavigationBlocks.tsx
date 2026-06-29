@@ -7,6 +7,7 @@ import {
   recordArrayProp,
   textProp,
 } from "./pageBuilderRenderUtils";
+import { splitVehicleTitle } from "./publicVehicleFormatters";
 
 export function HeaderBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
@@ -205,18 +206,4 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
       </div>
     </section>
   );
-}
-
-function splitVehicleTitle(title: string) {
-  const parts = title.trim().split(/\s+/);
-  if (parts.length > 1) {
-    return {
-      brand: parts[0],
-      restTitle: parts.slice(1).join(" "),
-    };
-  }
-  return {
-    brand: title,
-    restTitle: "",
-  };
 }
