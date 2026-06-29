@@ -1,64 +1,50 @@
-import type { PermissionKey } from "@lojaveiculosv2/shared";
-import type {
-  PermissionDescriptor,
-  PermissionGroup,
-  PermissionRisk,
-} from "./permissionCatalog.js";
+import { permission, type PermissionGroup } from "./permissionCatalogTypes.js";
 
 export const marketplacePermissionGroup: PermissionGroup = {
   key: "marketplace",
-  label: "Marketplaces",
+  label: "Portais e Anúncios",
   permissions: [
     permission(
       "marketplace.read",
-      "Ler canais",
-      "Visualizar conexoes OLX e Mercado Livre.",
+      "Visualizar integrações",
+      "Visualizar status das conexões com OLX e Mercado Livre.",
       "low",
     ),
     permission(
       "marketplace.manage",
-      "Gerenciar canais",
-      "Conectar, pausar e configurar contas de marketplaces.",
+      "Gerenciar integrações",
+      "Conectar, pausar e configurar contas nos portais parceiros.",
       "high",
     ),
     permission(
       "marketplace.listing_publish",
-      "Publicar anuncios",
-      "Enviar veiculos para marketplaces.",
+      "Publicar anúncios",
+      "Enviar veículos cadastrados para os portais integrados.",
       "high",
     ),
     permission(
       "marketplace.listing_update",
-      "Atualizar anuncios",
-      "Sincronizar preco, fotos e descricao.",
+      "Atualizar anúncios",
+      "Sincronizar preços, fotos e descrições dos anúncios nos portais.",
       "medium",
     ),
     permission(
       "marketplace.listing_unpublish",
-      "Remover anuncios",
-      "Tirar veiculos dos canais conectados.",
+      "Remover anúncios",
+      "Retirar os veículos dos canais e portais conectados.",
       "high",
     ),
     permission(
       "marketplace.inventory_sync",
       "Sincronizar estoque",
-      "Executar sincronizacao de inventario.",
+      "Executar a sincronização manual do estoque com os portais.",
       "medium",
     ),
     permission(
       "marketplace.lead_sync",
-      "Sincronizar leads",
-      "Importar leads recebidos nos marketplaces.",
+      "Sincronizar contatos",
+      "Importar contatos e propostas recebidos por meio dos portais.",
       "medium",
     ),
   ],
 };
-
-function permission(
-  key: PermissionKey,
-  label: string,
-  description: string,
-  risk: PermissionRisk,
-): PermissionDescriptor {
-  return { description, key, label, risk };
-}

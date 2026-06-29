@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
-import { cancelEntry, exportFinanceCsv, updateEntryFromDraft } from "./financeBillsActions";
+import {
+  cancelEntry,
+  exportFinanceCsv,
+  updateEntryFromDraft,
+} from "./financeBillsActions";
 import { FinanceBillsFilters } from "./FinanceBillsFilters";
 import { FinanceBillsHeader } from "./FinanceBillsHeader";
 import { FinanceBillsSummary } from "./FinanceBillsSummary";
@@ -44,11 +50,15 @@ export function FinanceModule({
     useState<FinanceEntryType>(defaultActiveType);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
-  const [recurringEntries, setRecurringEntries] = useState<FinanceRecurringEntry[]>([]);
+  const [recurringEntries, setRecurringEntries] = useState<
+    FinanceRecurringEntry[]
+  >([]);
   const [runtimeApi, setRuntimeApi] = useState<FinanceApi | null>(api ?? null);
   const [filters, setFilters] = useState<FinanceFilters>(initialFinanceFilters);
   const [toast, setToast] = useState<FinanceToast | null>(null);
-  const [listState, setListState] = useState<FinanceListState>({ kind: "loading" });
+  const [listState, setListState] = useState<FinanceListState>({
+    kind: "loading",
+  });
   const [refreshToken, setRefreshToken] = useState(0);
   const [modalEntry, setModalEntry] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -94,13 +104,25 @@ export function FinanceModule({
     try {
       if (modalEntry) {
         await updateEntryFromDraft(runtimeApi, modalEntry, draft);
-        setToast({ kind: "success", title: "Lancamento salvo", message: draft.name });
+        setToast({
+          kind: "success",
+          title: "Lancamento salvo",
+          message: draft.name,
+        });
       } else if (draft.recurrence === "recurring") {
         await runtimeApi.createRecurringEntry(toRecurringInput(draft));
-        setToast({ kind: "success", title: "Recorrencia criada", message: draft.name });
+        setToast({
+          kind: "success",
+          title: "Recorrencia criada",
+          message: draft.name,
+        });
       } else {
         await runtimeApi.createEntryFlow(toEntryInput(draft));
-        setToast({ kind: "success", title: "Lancamento criado", message: draft.name });
+        setToast({
+          kind: "success",
+          title: "Lancamento criado",
+          message: draft.name,
+        });
       }
       refresh();
     } catch (error) {
@@ -114,7 +136,7 @@ export function FinanceModule({
   };
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
+    <FeaturePageShell variant="plain">
       <FinanceBillsHeader
         onCreate={() => {
           setModalEntry(null);
@@ -132,7 +154,9 @@ export function FinanceModule({
       />
       <FinanceBillsSummary
         entries={filteredEntries}
-        onViewAll={() => tableRef.current?.scrollIntoView({ behavior: "smooth" })}
+        onViewAll={() =>
+          tableRef.current?.scrollIntoView({ behavior: "smooth" })
+        }
       />
       <FinanceBillsFilters filters={filters} onChange={setFilters} />
       {toast ? <FinanceToastMessage toast={toast} /> : null}
@@ -140,14 +164,18 @@ export function FinanceModule({
         <FinanceEntryTable
           entries={filteredEntries}
           isLoading={listState.kind === "loading"}
-          onCancel={(entry) => void cancelEntry(runtimeApi, entry, refresh, setToast)}
+          onCancel={(entry) =>
+            void cancelEntry(runtimeApi, entry, refresh, setToast)
+          }
           onCreate={() => setIsModalOpen(true)}
           onEdit={(entry) => {
             setModalEntry(entry);
             setIsModalOpen(true);
           }}
           onMarkPending={(entry) =>
-            void runtimeApi?.updateEntry(entry.id, { paidAt: null, status: "pending" }).then(refresh)
+            void runtimeApi
+              ?.updateEntry(entry.id, { paidAt: null, status: "pending" })
+              .then(refresh)
           }
           onPay={(entry) => void runtimeApi?.payEntry(entry.id).then(refresh)}
         />
@@ -156,13 +184,15 @@ export function FinanceModule({
       {activeType === "commission" ? (
         <CommissionRulesPanel
           items={commissionRules}
-          onCreate={(input) => void runtimeApi?.createCommissionRule(input).then(refresh)}
+          onCreate={(input) =>
+            void runtimeApi?.createCommissionRule(input).then(refresh)
+          }
         />
       ) : null}
       {listState.kind === "error" ? (
-        <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-danger">
+        <FeatureAlert className="feature-alert text-danger">
           {listState.message}
-        </p>
+        </FeatureAlert>
       ) : null}
       <FinanceEntryModal
         activeType={activeType}
@@ -174,7 +204,7 @@ export function FinanceModule({
         }}
         onSubmit={submitDraft}
       />
-    </main>
+    </FeaturePageShell>
   );
 }
 

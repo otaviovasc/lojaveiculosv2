@@ -1,4 +1,4 @@
-import { CircleAlert, RefreshCcw } from "lucide-react";
+import { CircleAlert } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CrmLeadCreateFullPage } from "./CrmLeadCreateFullPage";
 import { CrmKanbanBoard } from "./CrmKanbanBoard";
@@ -8,11 +8,7 @@ import { CrmPipelineToolbar } from "./CrmPipelineToolbar";
 import { exportLeadsToCsv } from "./crmClientExport";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
-import {
-  FeatureActionButton,
-  FeaturePageHeader,
-  FeaturePageShell,
-} from "../../components/ui/FeatureLayout";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
@@ -82,19 +78,6 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       className="crm-page relative min-h-screen"
       variant="plain"
     >
-      <FeaturePageHeader
-        actions={
-          <FeatureActionButton
-            icon={RefreshCcw}
-            isBusy={props.isLoading}
-            label={props.isLoading ? "Sincronizando" : "Atualizar"}
-            onClick={() => void props.onRefresh()}
-          />
-        }
-        eyebrow="Atendimento"
-        title="Clientes"
-      />
-
       {props.error ? (
         <FeatureAlert
           className="crm-note"
@@ -114,6 +97,8 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         onChangeFilters={props.onChangeFilters}
         onCreateClick={() => setIsCreateOpen(true)}
         onExport={() => exportLeadsToCsv(props.viewLeads)}
+        onRefresh={() => void props.onRefresh()}
+        isLoading={props.isLoading}
       />
       <CrmKanbanBoard
         onSelectLead={props.onSelectLead}

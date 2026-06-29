@@ -16,4 +16,5 @@ test-results/
 *.dump
 *.sql
 !docker/postgres/seed/*.sql
+!packages/db/drizzle/*.sql
 *.gz

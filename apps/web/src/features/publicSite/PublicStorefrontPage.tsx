@@ -1,5 +1,6 @@
 import { RefreshCcw, SearchX } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import {
   createPublicStorefrontApi,
   type PublicStorefrontApi,
@@ -14,11 +15,21 @@ import {
   applyPublicStorefrontMetadata,
   StorefrontStateFrame,
 } from "./PublicStorefrontPageSupport";
+import {
+  applyWebsiteBuilderPreviewToStorefrontData,
+  mergeWebsiteBuilderPreviewPayload,
+  type WebsiteBuilderPreviewConfig,
+} from "./publicStorefrontPreviewBridge";
 
 export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
+  const { storeSlug } = useParams<{ storeSlug?: string }>();
+  const [searchParams] = useSearchParams();
+  const isEditorMode = searchParams.get("editor") === "1";
   const storefrontApi = useMemo(
-    () => api ?? createPublicStorefrontApi(createPublicStorefrontApiOptions()),
-    [api],
+    () =>
+      api ??
+      createPublicStorefrontApi(createPublicStorefrontApiOptions(storeSlug)),
+    [api, storeSlug],
   );
   const [retryKey, setRetryKey] = useState(0);
   const [detailRetryKey, setDetailRetryKey] = useState(0);
@@ -30,6 +41,8 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
       isLoading: false,
       listingSlug: null,
     });
+  const [previewConfig, setPreviewConfig] =
+    useState<WebsiteBuilderPreviewConfig | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -85,17 +98,54 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     };
   }, [detailRetryKey, detailSnapshot.listingSlug, storefrontApi]);
 
-  const state = derivePublicStorefrontState(snapshot);
+  const state = useMemo(
+    () => derivePublicStorefrontState(snapshot),
+    [snapshot],
+  );
+  const renderedState = useMemo(() => {
+    if (!isEditorMode || (state.kind !== "ready" && state.kind !== "empty")) {
+      return state;
+    }
+
+    return {
+      ...state,
+      data: applyWebsiteBuilderPreviewToStorefrontData(
+        state.data,
+        previewConfig,
+      ),
+    };
+  }, [isEditorMode, previewConfig, state]);
 
   useEffect(() => {
-    if (state.kind !== "ready" && state.kind !== "empty") return;
-    return applyPublicStorefrontMetadata(state.data);
-  }, [state]);
+    if (!isEditorMode) setPreviewConfig(null);
+  }, [isEditorMode]);
 
-  if (state.kind === "ready") {
+  useEffect(() => {
+    if (!isEditorMode) return undefined;
+
+    const handlePreviewMessage = (event: MessageEvent) => {
+      const data: unknown = event.data;
+      if (event.origin !== window.location.origin) return;
+      if (!isEditorUpdateMessage(data)) return;
+      setPreviewConfig((current) =>
+        mergeWebsiteBuilderPreviewPayload(current, data.payload),
+      );
+    };
+
+    window.addEventListener("message", handlePreviewMessage);
+    return () => window.removeEventListener("message", handlePreviewMessage);
+  }, [isEditorMode]);
+
+  useEffect(() => {
+    if (renderedState.kind !== "ready" && renderedState.kind !== "empty")
+      return;
+    return applyPublicStorefrontMetadata(renderedState.data);
+  }, [renderedState]);
+
+  if (renderedState.kind === "ready") {
     return (
       <PublicStorefront
-        data={state.data}
+        data={renderedState.data}
         detail={detailSnapshot}
         onCloseListing={() =>
           setDetailSnapshot({ isLoading: false, listingSlug: null })
@@ -111,7 +161,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     );
   }
 
-  if (state.kind === "empty") {
+  if (renderedState.kind === "empty") {
     return (
       <StorefrontStateFrame
         icon={<SearchX aria-hidden="true" className="size-6" />}
@@ -120,7 +170,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     );
   }
 
-  if (state.kind === "error") {
+  if (renderedState.kind === "error") {
     return (
       <StorefrontStateFrame
         action={
@@ -147,12 +197,26 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   );
 }
 
-function createPublicStorefrontApiOptions() {
+function isEditorUpdateMessage(
+  value: unknown,
+): value is { payload: Record<string, unknown>; type: "editor:update" } {
+  if (!value || typeof value !== "object") return false;
+  const message = value as Record<string, unknown>;
+  return (
+    message.type === "editor:update" &&
+    Boolean(message.payload) &&
+    typeof message.payload === "object" &&
+    !Array.isArray(message.payload)
+  );
+}
+
+function createPublicStorefrontApiOptions(storeSlug?: string) {
   const baseUrl = getPublicStorefrontApiBaseUrl();
 
   return {
     ...(baseUrl ? { baseUrl } : {}),
     fetch: window.fetch.bind(window),
+    ...(storeSlug ? { storeSlug } : {}),
   };
 }
 

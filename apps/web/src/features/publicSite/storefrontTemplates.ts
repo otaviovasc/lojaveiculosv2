@@ -1,4 +1,9 @@
-export const storefrontTemplateKeys = ["showroom", "classic"] as const;
+export const storefrontTemplateKeys = [
+  "aurora",
+  "quadra",
+  "showroom",
+  "classic",
+] as const;
 
 export type StorefrontTemplateKey = (typeof storefrontTemplateKeys)[number];
 
@@ -18,6 +23,30 @@ export type StorefrontTemplate = {
 };
 
 export const storefrontTemplates: readonly StorefrontTemplate[] = [
+  {
+    description: "Visual refinado para vitrines de alto padrao.",
+    key: "aurora",
+    label: "Aurora",
+    theme: {
+      badgeLabel: "Curadoria da loja",
+      ctaLabel: "Chamar no WhatsApp",
+      headline: "Veiculos selecionados para compra segura",
+      sections: ["featured", "trust", "contact"],
+      tone: "premium",
+    },
+  },
+  {
+    description: "Marca direta com foco em estoque e contato rapido.",
+    key: "quadra",
+    label: "Quadra",
+    theme: {
+      badgeLabel: "Estoque atualizado",
+      ctaLabel: "Tenho interesse",
+      headline: "Estoque completo com atendimento direto",
+      sections: ["featured", "trust", "contact"],
+      tone: "brand",
+    },
+  },
   {
     description: "Hero visual, prova de confianca e cards maiores.",
     key: "showroom",
@@ -49,7 +78,10 @@ const fallbackStorefrontTemplate = storefrontTemplates[1] as StorefrontTemplate;
 export function normalizeStorefrontTemplateKey(
   layoutKey: string | null | undefined,
 ): StorefrontTemplateKey {
-  return layoutKey === "showroom" ? "showroom" : "classic";
+  if (layoutKey === "aurora") return "aurora";
+  if (layoutKey === "quadra") return "quadra";
+  if (layoutKey === "showroom") return "showroom";
+  return "classic";
 }
 
 export function getStorefrontTemplate(key: string | null | undefined) {

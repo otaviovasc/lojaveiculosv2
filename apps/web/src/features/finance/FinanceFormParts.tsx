@@ -1,8 +1,11 @@
 import type { ComponentProps, ReactNode } from "react";
 import {
-  CustomSelect,
-  type CustomSelectOption,
-} from "../../components/ui/CustomSelect";
+  FeatureInput,
+  FeatureSelect,
+} from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
+import type { CustomSelectOption } from "../../components/ui/CustomSelect";
 import type { FinanceEntryStatus, FinanceEntryType } from "./types";
 
 export const financeTypeLabels: Record<FinanceEntryType, string> = {
@@ -27,13 +30,9 @@ export function FinancePanel({
   title: string;
 }) {
   return (
-    <section className="rounded-lg border border-line bg-panel p-4 shadow-[var(--shadow-panel)]">
-      <div className="mb-4 flex items-center gap-2 text-accent-strong">
-        {icon}
-        <h3 className="text-sm font-black text-app-text">{title}</h3>
-      </div>
+    <FeatureSection icon={icon} title={title}>
       {children}
-    </section>
+    </FeatureSection>
   );
 }
 
@@ -47,29 +46,14 @@ export function FinanceField({
   label: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-black text-app-text">
-      <span>{label}</span>
+    <FeatureField hint={hint} label={label}>
       {children}
-      {hint ? (
-        <span className="text-xs font-bold text-muted">{hint}</span>
-      ) : null}
-    </label>
+    </FeatureField>
   );
 }
 
 export function FinanceInput(props: ComponentProps<"input">) {
-  return (
-    <input
-      {...props}
-      className={[
-        "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
-        "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
-        props.className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    />
-  );
+  return <FeatureInput {...props} />;
 }
 
 type FinanceSelectProps<Value extends string = string> = {
@@ -87,18 +71,7 @@ export function FinanceSelect<Value extends string = string>({
   className,
   ...props
 }: FinanceSelectProps<Value>) {
-  return (
-    <CustomSelect
-      {...props}
-      className={[
-        "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
-        "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    />
-  );
+  return <FeatureSelect {...props} className={className} />;
 }
 
 export function FinanceBadge({ children }: { children: ReactNode }) {

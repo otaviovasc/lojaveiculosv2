@@ -1,4 +1,5 @@
 import { CheckCircle2, Clock3, Sigma, Users } from "lucide-react";
+import { FeatureStatCard } from "../../components/ui/FeatureCards";
 import type { CommissionSummary } from "./commissionWorkspaceModel";
 import { formatCurrency } from "./financeBillsFormat";
 
@@ -8,33 +9,42 @@ export function CommissionSummaryCards({
   summary: CommissionSummary;
 }) {
   const items = [
-    { icon: Clock3, label: "A pagar", value: formatCurrency(summary.pendingCents) },
-    { icon: CheckCircle2, label: "Pago", value: formatCurrency(summary.paidCents) },
-    { icon: Sigma, label: "Total", value: formatCurrency(summary.totalCents) },
+    {
+      icon: Clock3,
+      label: "A pagar",
+      tone: "accent",
+      value: formatCurrency(summary.pendingCents),
+    },
+    {
+      icon: CheckCircle2,
+      label: "Pago",
+      tone: "green",
+      value: formatCurrency(summary.paidCents),
+    },
+    {
+      icon: Sigma,
+      label: "Total",
+      tone: "blue",
+      value: formatCurrency(summary.totalCents),
+    },
     {
       icon: Users,
       label: "Vendedores com pendencia",
+      tone: "violet",
       value: String(summary.sellersWithPending),
     },
-  ];
+  ] as const;
 
   return (
     <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-      {items.map(({ icon: Icon, label, value }) => (
-        <article
-          className="rounded-lg border border-line bg-panel p-4 shadow-[var(--shadow-panel)]"
+      {items.map(({ icon, label, tone, value }) => (
+        <FeatureStatCard
+          icon={icon}
           key={label}
-        >
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-black uppercase text-muted">
-              {label}
-            </span>
-            <Icon aria-hidden="true" className="size-4 text-accent-strong" />
-          </div>
-          <strong className="mt-2 block text-xl font-black text-app-text">
-            {value}
-          </strong>
-        </article>
+          label={label}
+          tone={tone}
+          value={value}
+        />
       ))}
     </section>
   );

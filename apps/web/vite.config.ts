@@ -1,6 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { fileURLToPath } from "url";
 
 const apiProxy = {
   "/api": {
@@ -18,6 +19,11 @@ export default defineConfig({
   build: {
     modulePreload: {
       polyfill: false,
+    },
+  },
+  resolve: {
+    alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
   plugins: [react(), tailwindcss()],

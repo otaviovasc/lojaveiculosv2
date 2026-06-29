@@ -48,6 +48,7 @@ export function FeaturePageHeader({
   actions,
   actionsLabel = "Ações da página",
   chip,
+  className,
   description,
   eyebrow,
   hiddenStateValue,
@@ -57,6 +58,7 @@ export function FeaturePageHeader({
   actions?: ReactNode;
   actionsLabel?: string;
   chip?: ReactNode;
+  className?: string;
   description?: ReactNode;
   eyebrow: ReactNode;
   hiddenStateValue?: string;
@@ -64,7 +66,7 @@ export function FeaturePageHeader({
   title: ReactNode;
 }) {
   return (
-    <div className="documents-top-bar">
+    <div className={cx("documents-top-bar", className)}>
       <div className="documents-top-bar-titles">
         <div className="documents-top-bar-eyebrow">
           {eyebrow}

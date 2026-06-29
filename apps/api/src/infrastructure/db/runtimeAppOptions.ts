@@ -33,6 +33,10 @@ import {
 import { createDrizzlePublicStorefrontRepository } from "./storefront/drizzlePublicStorefrontRepository.js";
 import type { DrizzlePublicStorefrontClient } from "./storefront/drizzlePublicStorefrontQueryTypes.js";
 import {
+  createDrizzleStorefrontPageRepository,
+  type DrizzleStorefrontPageClient,
+} from "./storefront/drizzleStorefrontPageRepository.js";
+import {
   createDrizzleAuditSink,
   type DrizzleAuditSinkClient,
 } from "./audit/drizzleAuditSink.js";
@@ -136,6 +140,9 @@ export function createRuntimeHttpAppOptions({
     }),
     publicStorefrontRepository: createDrizzlePublicStorefrontRepository(
       db as unknown as DrizzlePublicStorefrontClient,
+    ),
+    storefrontPageRepository: createDrizzleStorefrontPageRepository(
+      db as DrizzleStorefrontPageClient,
     ),
     publicStorefrontCrmRepository: createDrizzleCrmRepository(
       db as unknown as DrizzleCrmClient,

@@ -1,0 +1,102 @@
+import type { RoleKey, RoleManagementView, RoleMemberView } from "../types";
+import type { CustomRolePreset } from "./RoleHelpers";
+import { UserCog, User2, UserPlus } from "lucide-react";
+import {
+  FeatureCard,
+  FeatureCardHeader,
+  FeatureCardTitle,
+  FeatureCardDescription,
+  FeatureList,
+  FeatureListItemButton,
+} from "../../../components/ui/FeatureCards";
+import { cx } from "../../../components/ui/featureShared";
+
+export function MembrosSidebar({
+  roles,
+  selected,
+  onSelectId,
+  memberPresetMapping,
+  customRoles,
+  roleLabel,
+  onInviteClick,
+}: {
+  roles: RoleManagementView;
+  selected: RoleMemberView;
+  onSelectId: (id: string) => void;
+  memberPresetMapping: Record<string, string>;
+  customRoles: CustomRolePreset[];
+  roleLabel: (role: RoleKey, roles: RoleManagementView) => string;
+  onInviteClick: () => void;
+}) {
+  return (
+    <FeatureCard className="glass-panel-branded p-4 border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100vh-10rem)] overflow-hidden">
+      <FeatureCardHeader
+        icon={<UserCog className="size-5 text-accent-strong" />}
+        className="mb-4"
+      >
+        <FeatureCardTitle>Membros</FeatureCardTitle>
+        <FeatureCardDescription>
+          Selecione um usuário para gerenciar permissões.
+        </FeatureCardDescription>
+      </FeatureCardHeader>
+
+      <FeatureList className="flex-1 overflow-y-auto pr-1 -mr-1 mt-2">
+        {roles.memberships.map((member) => {
+          const active = member.membershipId === selected.membershipId;
+          const presetId = memberPresetMapping[member.membershipId];
+          const preset = customRoles.find((cr) => cr.id === presetId);
+          const label = preset ? preset.name : roleLabel(member.role, roles);
+
+          return (
+            <FeatureListItemButton
+              key={member.membershipId}
+              active={active}
+              onClick={() => onSelectId(member.membershipId)}
+              className={cx(
+                "relative overflow-hidden group p-3.5 border transition-all duration-300 hover:bg-app-elevated/40 hover:border-line-strong cursor-pointer flex items-center gap-3",
+                active
+                  ? "border-accent bg-accent-soft/30 border-l-[4px] border-l-accent shadow-sm"
+                  : "border-line bg-panel/20",
+              )}
+            >
+              <div className="flex size-9 items-center justify-center rounded-full bg-accent-soft text-accent-strong shrink-0">
+                <User2 className="size-4.5" />
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                <strong className="block text-sm font-black text-app-text group-hover:text-accent transition-colors truncate">
+                  {member.user.name ?? member.user.email}
+                </strong>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-[9px] font-black uppercase text-accent-strong tracking-wider">
+                    {label}
+                  </span>
+                  <span
+                    className={cx(
+                      "inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                      member.manageable
+                        ? "bg-green-soft text-emerald-500"
+                        : "bg-line/50 text-muted",
+                    )}
+                  >
+                    {member.manageable ? "Editável" : "Protegido"}
+                  </span>
+                </div>
+              </div>
+            </FeatureListItemButton>
+          );
+        })}
+      </FeatureList>
+
+      <div className="shrink-0 pt-4 border-t border-line/45 mt-2">
+        <button
+          type="button"
+          onClick={onInviteClick}
+          className="w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-inverse transition-all hover:bg-accent-strong active:scale-98 shadow-sm cursor-pointer"
+        >
+          <UserPlus className="size-4" />
+          <span>Convidar Novo Membro</span>
+        </button>
+      </div>
+    </FeatureCard>
+  );
+}

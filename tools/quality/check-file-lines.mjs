@@ -12,6 +12,7 @@ const ignored = new Set([
   ".terraform",
   ".agents",
   ".worktrees",
+  "copied-centroimovel",
 ]);
 const extensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css", ".md"]);
 

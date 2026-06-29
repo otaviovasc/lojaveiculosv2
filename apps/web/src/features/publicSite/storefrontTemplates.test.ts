@@ -15,8 +15,13 @@ describe("storefront templates", () => {
     expect(normalizeStorefrontTemplateKey("showroom")).toBe("showroom");
   });
 
+  it("keeps copied website builder template keys", () => {
+    expect(normalizeStorefrontTemplateKey("aurora")).toBe("aurora");
+    expect(normalizeStorefrontTemplateKey("quadra")).toBe("quadra");
+  });
+
   it("creates a complete theme from partial persisted settings", () => {
-    const theme = createStorefrontTheme({ headline: "Minha loja" }, "showroom");
+    const theme = createStorefrontTheme({ headline: "Minha loja" }, "aurora");
 
     expect(theme).toMatchObject({
       ctaLabel: "Chamar no WhatsApp",

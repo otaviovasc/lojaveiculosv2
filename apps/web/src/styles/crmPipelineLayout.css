@@ -8,7 +8,6 @@
 }
 
 .crm-toolbar,
-.crm-stats-grid,
 .crm-workspace-grid,
 .crm-form-grid,
 .crm-kanban {
@@ -77,47 +76,6 @@
   color: var(--color-accent-strong);
 }
 
-.crm-stats-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.crm-stat-tile {
-  align-items: center;
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-panel);
-  display: flex;
-  gap: 0.75rem;
-  min-width: 0;
-  padding: 0.875rem;
-}
-
-.crm-stat-tile > span {
-  align-items: center;
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-md);
-  color: var(--color-accent-strong);
-  display: flex;
-  height: 2.5rem;
-  justify-content: center;
-  width: 2.5rem;
-}
-
-.crm-stat-tile small {
-  color: var(--color-muted);
-  display: block;
-  font-size: 0.6875rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.crm-stat-tile strong {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 900;
-}
-
 .crm-workspace-grid {
   align-items: start;
 }
@@ -139,10 +97,6 @@
 @media (min-width: 768px) {
   .crm-toolbar {
     grid-template-columns: minmax(14rem, 1fr) 11rem 11rem auto;
-  }
-
-  .crm-stats-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 

@@ -1,23 +1,20 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
 import { defaultRolePermissions } from "./accessPolicy.js";
-import { crmWhatsappPermissionDescriptors } from "./crmWhatsappPermissionCatalog.js";
 import { documentPermissionDescriptors } from "./documentPermissionCatalog.js";
 import { marketplacePermissionGroup } from "./marketplacePermissionCatalog.js";
+import { operationalPermissionGroups } from "./operationalPermissionCatalog.js";
+import {
+  crmPermissionGroup,
+  platformPermissionGroup,
+  storefrontPermissionGroup,
+} from "./storefrontPermissionCatalog.js";
+import type { PermissionGroup } from "./permissionCatalogTypes.js";
 
-export type PermissionRisk = "high" | "medium" | "low";
-
-export type PermissionDescriptor = {
-  description: string;
-  key: PermissionKey;
-  label: string;
-  risk: PermissionRisk;
-};
-
-export type PermissionGroup = {
-  key: string;
-  label: string;
-  permissions: readonly PermissionDescriptor[];
-};
+export type {
+  PermissionDescriptor,
+  PermissionGroup,
+  PermissionRisk,
+} from "./permissionCatalogTypes.js";
 
 export const assignableRoleKeys = [
   "investor",
@@ -25,7 +22,6 @@ export const assignableRoleKeys = [
   "supervisor",
   "salesman",
 ] satisfies RoleKey[];
-
 export const visibleRoleKeys = [
   "agency",
   "investor",
@@ -35,199 +31,18 @@ export const visibleRoleKeys = [
 ] satisfies RoleKey[];
 
 export const permissionGroups: readonly PermissionGroup[] = [
-  {
-    key: "inventory",
-    label: "Inventario",
-    permissions: [
-      permission(
-        "inventory.read",
-        "Ler estoque",
-        "Visualizar veiculos.",
-        "low",
-      ),
-      permission(
-        "inventory.create",
-        "Criar veiculo",
-        "Cadastrar veiculos.",
-        "medium",
-      ),
-      permission(
-        "inventory.update_price",
-        "Editar preco",
-        "Alterar preco de anuncio.",
-        "high",
-      ),
-      permission(
-        "inventory.update_description",
-        "Editar descricao",
-        "Alterar textos do anuncio.",
-        "medium",
-      ),
-      permission(
-        "inventory.update_internal_notes",
-        "Editar notas internas",
-        "Alterar notas internas do veiculo.",
-        "medium",
-      ),
-      permission("inventory.reserve", "Reservar", "Reservar veiculos.", "high"),
-      permission("inventory.sell", "Vender", "Marcar venda.", "high"),
-      permission("inventory.cost_create", "Custos", "Criar custos.", "medium"),
-      permission(
-        "inventory.checklist_read",
-        "Ler checklists",
-        "Ver checklists de veiculos.",
-        "low",
-      ),
-      permission(
-        "inventory.checklist_update",
-        "Editar checklists",
-        "Atualizar preparacao e entrega.",
-        "medium",
-      ),
-      permission(
-        "inventory.media_update",
-        "Midia",
-        "Gerenciar fotos.",
-        "medium",
-      ),
-      permission("inventory.delete", "Excluir", "Excluir veiculos.", "high"),
-    ],
-  },
-  {
-    key: "finance",
-    label: "Financeiro",
-    permissions: [
-      permission(
-        "finance.read",
-        "Ler financeiro",
-        "Ver lancamentos.",
-        "medium",
-      ),
-      permission(
-        "finance.create",
-        "Criar lancamento",
-        "Criar receitas/gastos.",
-        "high",
-      ),
-      permission(
-        "finance.update",
-        "Editar lancamento",
-        "Alterar financeiro.",
-        "high",
-      ),
-      permission(
-        "finance.attach_document",
-        "Anexos",
-        "Anexar comprovantes.",
-        "medium",
-      ),
-    ],
-  },
-  {
-    key: "sales",
-    label: "Vendas",
-    permissions: [
-      permission("sale.read", "Ler vendas", "Visualizar vendas.", "low"),
-      permission(
-        "sale.draft",
-        "Rascunhos",
-        "Criar e editar rascunhos.",
-        "medium",
-      ),
-      permission("sale.reserve", "Reservar", "Reservar venda.", "high"),
-      permission("sale.close", "Fechar", "Concluir venda.", "high"),
-      permission("sale.correct", "Corrigir", "Corrigir venda fechada.", "high"),
-      permission("sale.cancel", "Cancelar", "Cancelar venda.", "high"),
-      permission(
-        "sale.override_required_fields",
-        "Ignorar obrigatorios",
-        "Prosseguir com pendencias documentadas.",
-        "high",
-      ),
-    ],
-  },
-  {
-    key: "crm",
-    label: "CRM",
-    permissions: [
-      permission("crm.access", "Acessar CRM", "Abrir CRM.", "low"),
-      permission("crm.manage", "Gerenciar CRM", "Configurar CRM.", "medium"),
-      ...crmWhatsappPermissionDescriptors,
-      permission("lead.read", "Ler leads", "Ver oportunidades.", "low"),
-      permission(
-        "lead.create",
-        "Criar leads",
-        "Cadastrar oportunidades.",
-        "medium",
-      ),
-      permission(
-        "lead.update",
-        "Editar leads",
-        "Alterar oportunidades.",
-        "medium",
-      ),
-    ],
-  },
-  {
-    key: "storefront",
-    label: "Loja e site",
-    permissions: [
-      permission(
-        "store_profile.manage",
-        "Perfil",
-        "Editar dados da loja.",
-        "high",
-      ),
-      permission(
-        "store_public_site.manage",
-        "Site publico",
-        "Publicar vitrine.",
-        "high",
-      ),
-      permission("store.manage", "Loja", "Gerenciar loja.", "high"),
-      permission("users.manage", "Usuarios", "Gerenciar papeis.", "high"),
-    ],
-  },
+  ...operationalPermissionGroups,
+  crmPermissionGroup,
+  storefrontPermissionGroup,
   marketplacePermissionGroup,
   {
     key: "documents",
-    label: "Documentos",
+    label: "Contratos e Documentos",
     permissions: documentPermissionDescriptors,
   },
-  {
-    key: "platform",
-    label: "Plataforma",
-    permissions: [
-      permission(
-        "analytics.read",
-        "Relatorios",
-        "Ler dashboards e metricas comerciais.",
-        "medium",
-      ),
-      permission("billing.manage", "Billing", "Gerenciar cobranca.", "high"),
-      permission(
-        "compliance.manage",
-        "Compliance",
-        "Gerenciar LGPD, retencao, revisoes de acesso e postura de seguranca.",
-        "high",
-      ),
-      permission("external_api.manage", "Public API", "Gerenciar API.", "high"),
-      permission("audit.read", "Auditoria", "Ler auditoria.", "high"),
-      permission("fiscal.manage", "Fiscal", "Gerenciar fiscal.", "high"),
-      permission("tenant.manage", "Tenant", "Gerenciar tenant.", "high"),
-    ],
-  },
+  platformPermissionGroup,
 ] as const;
 
 export function getDefaultPermissions(role: RoleKey): readonly PermissionKey[] {
   return defaultRolePermissions[role] ?? [];
-}
-
-function permission(
-  key: PermissionKey,
-  label: string,
-  description: string,
-  risk: PermissionRisk,
-): PermissionDescriptor {
-  return { description, key, label, risk };
 }

@@ -35,6 +35,11 @@ export function resolveStoreSlugFromHostHeader(
 }
 
 export function resolveStoreSlugFromRequest(context: Context): string | null {
+  const explicitStoreSlug = context.req.header("x-store-slug")?.trim();
+  if (explicitStoreSlug) {
+    return explicitStoreSlug.toLowerCase();
+  }
+
   return resolveStoreSlugFromHostHeader(
     context.req.header("x-forwarded-host") ?? context.req.header("host"),
   );

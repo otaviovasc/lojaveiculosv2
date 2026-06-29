@@ -1,19 +1,33 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join, relative } from "node:path";
+import { join, relative } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
 const featuresRoot = join(root, "apps/web/src/features");
 const localPrimitiveNames = [
+  "ActionMenu",
+  "Card",
+  "Drawer",
   "EmptyState",
+  "ErrorState",
+  "FilterBar",
+  "FormSection",
+  "Dialog",
   "List",
+  "ListItem",
+  "LoadingState",
+  "Modal",
   "Metric",
   "PageHeader",
   "PageShell",
   "PageToolbar",
+  "PreviewPanel",
+  "Section",
   "SectionHeader",
+  "SettingsPanel",
   "StatCard",
   "StatusBadge",
   "SummaryTile",
+  "Tabs",
   "Toolbar",
 ];
 const declarationPattern = new RegExp(
@@ -21,13 +35,47 @@ const declarationPattern = new RegExp(
   "gm",
 );
 const allowMarker = "feature-primitives-allow-local";
+const allowMarkerPattern = /feature-primitives-allow-local:\s+\S(?:.*\S)?/;
+const primitiveSuggestions = {
+  ActionMenu: "FeatureRowAction/FeatureActionButton or a new FeatureActionMenu",
+  Card: "FeatureCard or FeatureStatCard",
+  Dialog: "FeatureDialog",
+  Drawer: "FeatureDrawer",
+  EmptyState: "FeatureEmptyState",
+  ErrorState: "FeatureAlert or FeatureLoadingState",
+  FilterBar: "FeatureToolbar with FeatureSearchField/FeatureSelect",
+  FormSection: "FeatureFormSection",
+  List: "FeatureList",
+  ListItem:
+    "FeatureListItemButton or a feature-specific item using FeatureCard",
+  LoadingState: "FeatureLoadingState",
+  Modal: "FeatureDialog",
+  PageHeader: "FeaturePageHeader",
+  PageShell: "FeaturePageShell",
+  PageToolbar: "FeatureToolbar",
+  PreviewPanel: "FeaturePreviewPanel",
+  Section: "FeatureSection",
+  SectionHeader: "FeatureCardHeader",
+  SettingsPanel: "FeatureSettingsPanel",
+  StatCard: "FeatureStatCard or FeatureKpiCard",
+  StatusBadge: "FeatureStatusBadge",
+  SummaryTile: "FeatureStatCard or FeatureKpiCard",
+  Tabs: "FeatureTabs or FeatureSegmentedControl",
+  Toolbar: "FeatureToolbar",
+};
 const failures = [];
 
 runParserRegressionChecks();
 
 for (const file of walk(featuresRoot).filter(isFeatureScreenFile)) {
   const source = readFileSync(file, "utf8");
-  if (source.includes(allowMarker)) continue;
+  if (source.includes(allowMarker)) {
+    if (allowMarkerPattern.test(source)) continue;
+    failures.push(
+      `${relative(root, file)} uses ${allowMarker} without a short reason. Use ${allowMarker}: <reason>.`,
+    );
+    continue;
+  }
 
   const matches = [...source.matchAll(declarationPattern)].map(
     (match) => match[1],
@@ -35,7 +83,12 @@ for (const file of walk(featuresRoot).filter(isFeatureScreenFile)) {
   if (matches.length === 0) continue;
 
   failures.push(
-    `${relative(root, file)} declares local generic UI: ${matches.join(", ")}`,
+    `${relative(root, file)} declares local generic UI: ${matches
+      .map(
+        (name) =>
+          `${name} (use ${primitiveSuggestions[name] ?? "a shared Feature primitive"})`,
+      )
+      .join(", ")}`,
   );
 }
 
@@ -43,7 +96,7 @@ if (failures.length > 0) {
   console.error("Feature primitive guardrail violations:");
   for (const failure of failures) console.error(`- ${failure}`);
   console.error(
-    "Use apps/web/src/components/ui feature primitives, add a primitive variant, or add the feature-primitives-allow-local marker with a narrow reason.",
+    "Use apps/web/src/components/ui feature primitives, add a primitive variant, or add feature-primitives-allow-local: <reason> for a narrow exception.",
   );
   process.exit(1);
 }
@@ -51,8 +104,7 @@ if (failures.length > 0) {
 console.log("Feature primitive guardrails passed.");
 
 function isFeatureScreenFile(file) {
-  if (!file.endsWith(".tsx")) return false;
-  return /(?:Page|Module|View|Workspace|Pipeline)\.tsx$/.test(basename(file));
+  return file.endsWith(".tsx");
 }
 
 function walk(dir, files = []) {
@@ -76,9 +128,38 @@ function runParserRegressionChecks() {
     "PageHeader",
     "const declarations should be blocked",
   );
+  assertMatch(
+    "function Dialog() { return null; }",
+    "Dialog",
+    "dialog duplicates should be blocked",
+  );
+  assertMatch(
+    "function FilterBar() { return null; }",
+    "FilterBar",
+    "filter bar duplicates should be blocked",
+  );
+  assertMatch(
+    "const Drawer = () => null;",
+    "Drawer",
+    "drawer duplicates should be blocked",
+  );
+  assertMatch(
+    "const ListItem = () => null;",
+    "ListItem",
+    "list item duplicates should be blocked",
+  );
+  assertMatch(
+    "function PreviewPanel() { return null; }",
+    "PreviewPanel",
+    "preview panel duplicates should be blocked",
+  );
   assertNoMatch(
     "function FiscalProviderPanel() { return null; }",
     "specific helper names should be allowed",
+  );
+  assertNoMatch(
+    "function SectionWrapperBlock() { return null; }",
+    "domain-specific section block names should be allowed",
   );
 }
 

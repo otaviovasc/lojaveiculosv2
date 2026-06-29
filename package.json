@@ -56,13 +56,13 @@
     "*": "prettier --ignore-unknown --write"
   },
   "devDependencies": {
-    "@types/node": "24.10.2",
-    "eslint": "10.5.0",
-    "globals": "17.6.0",
+    "@types/node": "24.13.2",
+    "eslint": "10.6.0",
+    "globals": "17.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
-    "prettier": "^3.8.4",
+    "prettier": "^3.9.3",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.61.1"
+    "typescript-eslint": "8.62.0"
   }
 }

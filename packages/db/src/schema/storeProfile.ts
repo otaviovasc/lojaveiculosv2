@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   index,
   jsonb,
   pgEnum,
@@ -10,8 +11,9 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
-import { lifecycleColumns } from "./_shared.js";
+import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
 export const customDomainStatus = pgEnum("custom_domain_status", [
   "not_configured",
@@ -81,5 +83,45 @@ export const storePublicSiteSettings = pgTable(
       table.customDomain,
     ),
     uniqueIndex("store_public_site_settings_store_id_unique").on(table.storeId),
+  ],
+);
+
+export const storeCustomPages = pgTable(
+  "store_custom_pages",
+  {
+    ...lifecycleColumns,
+    ...softDeleteColumns,
+    accentColor: varchar("accent_color", { length: 16 }),
+    backgroundColor: varchar("background_color", { length: 16 }),
+    components: jsonb("components").notNull().default([]),
+    description: text("description"),
+    displayOrder: integer("display_order").notNull().default(0),
+    fontFamily: varchar("font_family", { length: 120 }),
+    isPublished: boolean("is_published").notNull().default(false),
+    metadata: jsonb("metadata").notNull().default({}),
+    mode: varchar("mode", { length: 32 }).notNull().default("modular"),
+    pageBackground: jsonb("page_background").notNull().default({}),
+    pageChrome: jsonb("page_chrome").notNull().default({}),
+    secretToken: varchar("secret_token", { length: 120 }).notNull(),
+    seo: jsonb("seo").notNull().default({}),
+    slug: varchar("slug", { length: 80 }).notNull(),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    title: varchar("title", { length: 120 }).notNull(),
+  },
+  (table) => [
+    index("store_custom_pages_store_id_idx").on(table.storeId),
+    index("store_custom_pages_tenant_id_idx").on(table.tenantId),
+    index("store_custom_pages_store_published_idx").on(
+      table.storeId,
+      table.isPublished,
+    ),
+    uniqueIndex("store_custom_pages_store_slug_deleted_unique")
+      .on(table.storeId, table.slug)
+      .where(sql`${table.isDeleted} = false`),
   ],
 );

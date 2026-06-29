@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { adminRoutePaths } from "./adminRoutePaths";
 import { dashboardStats } from "./dashboardData";
 import { publicStorefrontPreview } from "../features/publicSite/fixtures";
 import {
   crmSurfaceHash,
   readCrmSurfaceFromHash,
 } from "../features/crm/crmRouteState";
+import { moduleDefinitions } from "./moduleDefinitions";
+import { isPlaceholderModule, moduleSurfaceById } from "./moduleRoutes";
 import { parseModuleHash, parseModuleLocation } from "./moduleState";
 import { navigationGroups } from "./modules";
 
@@ -33,14 +36,33 @@ describe("App module navigation", () => {
     expect(ids).toContain("billing");
     expect(ids).toContain("settings");
     expect(ids).toContain("public-api");
+    expect(ids).toContain("custom-pages");
     expect(ids).not.toContain("compliance");
     expect(ids).not.toContain("internal-health");
+  });
+
+  it("keeps every sidebar module classified for rendering", () => {
+    const sidebarIds = navigationGroups.flatMap((group) =>
+      group.items.map((item) => item.id),
+    );
+
+    expect(sidebarIds.every((id) => moduleDefinitions[id])).toBe(true);
+    expect(sidebarIds.every((id) => moduleSurfaceById[id])).toBe(true);
+    expect(isPlaceholderModule("public-site")).toBe(false);
+    expect(isPlaceholderModule("custom-pages")).toBe(false);
+    expect(isPlaceholderModule("domain")).toBe(true);
   });
 
   it("parses hash module state without a router dependency", () => {
     expect(parseModuleHash("#inventory")).toBe("inventory");
     expect(parseModuleHash("#/inventory/create")).toBe("inventory");
     expect(parseModuleHash("#/public-api")).toBe("public-api");
+    expect(parseModuleHash("#/personalizar")).toBe("public-site");
+    expect(parseModuleHash("#/public-site")).toBe("public-site");
+    expect(parseModuleHash("#/custom-pages")).toBe("custom-pages");
+    expect(parseModuleHash("#/page-builder")).toBe("custom-pages");
+    expect(parseModuleHash("#/dominio")).toBe("domain");
+    expect(parseModuleHash("#/domain")).toBe("domain");
     expect(parseModuleHash("#/settings?tab=roles")).toBe("settings");
     expect(parseModuleHash("#/crm?surface=leads")).toBe("customers");
     expect(parseModuleHash("#/crm?surface=whatsapp")).toBe("crm");
@@ -51,6 +73,18 @@ describe("App module navigation", () => {
     expect(
       parseModuleLocation({ hash: "#unknown", pathname: "/documents" }),
     ).toBe("documents");
+    expect(
+      parseModuleLocation({ hash: "#unknown", pathname: "/personalizar" }),
+    ).toBe("public-site");
+    expect(
+      parseModuleLocation({ hash: "#unknown", pathname: "/custom-pages" }),
+    ).toBe("custom-pages");
+  });
+
+  it("reserves dedicated admin paths before public slug routing", () => {
+    expect(adminRoutePaths).toContain("/personalizar");
+    expect(adminRoutePaths).toContain("/custom-pages");
+    expect(adminRoutePaths).toContain("/page-builder");
   });
 
   it("keeps CRM surfaces deterministic for visual QA routes", () => {

@@ -44,6 +44,19 @@ describe("resolveStoreSlugFromHostHeader", () => {
 
     expect(resolveStoreSlugFromRequest(context as Context)).toBe("storefront");
   });
+
+  it("prefers explicit store slug header on request", async () => {
+    const context = await captureContext(
+      new Request("https://fallback.lojaveiculos.com.br", {
+        headers: {
+          host: "fallback.lojaveiculos.com.br",
+          "x-store-slug": "Demo-Loja",
+        },
+      }),
+    );
+
+    expect(resolveStoreSlugFromRequest(context as Context)).toBe("demo-loja");
+  });
 });
 
 async function captureContext(request: Request): Promise<Context> {

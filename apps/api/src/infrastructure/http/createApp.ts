@@ -1,4 +1,4 @@
-import { Hono } from "hono";
+import { Hono, type Context } from "hono";
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { BillingServices } from "../../features/billing/controllers/billingServices.js";
 import { createAnalyticsFeature } from "../../features/analytics/controllers/analytics.controller.js";
@@ -25,6 +25,8 @@ import type { FiscalServices } from "../../features/fiscal/controllers/fiscalSer
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
+import { createStorefrontPageServices } from "../../features/storefront/controllers/storefrontPageServices.js";
+import { createStorefrontPagesFeature } from "../../features/storefront/controllers/storefrontPages.controller.js";
 import { createSettingsFeature } from "../../features/settings/controllers/settings.controller.js";
 import type { SettingsServices } from "../../features/settings/controllers/settingsServices.js";
 import { createSalesFeature } from "../../features/sales/controllers/sales.controller.js";
@@ -34,6 +36,7 @@ import type { RoleServices } from "../../features/identity/controllers/roleServi
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import type { PublicStorefrontRepository } from "../../domains/storefront/ports/publicStorefrontRepository.js";
+import type { StorefrontPageRepository } from "../../domains/storefront/ports/storefrontPageRepository.js";
 import type { CrmRepository } from "../../domains/crm/ports/crmRepository.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
@@ -58,6 +61,7 @@ export type CreateAppOptions = {
   inventoryEnrichmentServices?: InventoryEnrichmentServices;
   inventoryListingServices?: InventoryListingServices;
   publicStorefrontRepository?: PublicStorefrontRepository;
+  storefrontPageRepository?: StorefrontPageRepository;
   publicStorefrontCrmRepository?: CrmRepository;
   roleServices?: RoleServices;
   salesServices?: SalesServices;
@@ -91,9 +95,14 @@ export function createApp(options: CreateAppOptions = {}) {
         ...(options.publicStorefrontCrmRepository
           ? { crmRepository: options.publicStorefrontCrmRepository }
           : {}),
+        ...(options.storefrontPageRepository
+          ? { pageRepository: options.storefrontPageRepository }
+          : {}),
         repository: options.publicStorefrontRepository,
       }
     : {};
+  const contextFactory = (context: Context) =>
+    createHttpServiceContext(context, contextOptions);
 
   app.route("/", docsFeature);
   app.get("/health", (context) => context.json({ ok: true }));
@@ -102,10 +111,22 @@ export function createApp(options: CreateAppOptions = {}) {
     createStorefrontFeature(storefrontOptions),
   );
   app.route(
+    "/api/v1/storefront",
+    createStorefrontPagesFeature({
+      contextFactory,
+      ...(options.storefrontPageRepository
+        ? {
+            services: createStorefrontPageServices({
+              repository: options.storefrontPageRepository,
+            }),
+          }
+        : {}),
+    }),
+  );
+  app.route(
     "/api/v1/inventory",
     createInventoryFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.inventoryListingServices
         ? { services: options.inventoryListingServices }
         : {}),
@@ -117,16 +138,14 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/finance",
     createFinanceFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.financeServices ? { services: options.financeServices } : {}),
     }),
   );
   app.route(
     "/api/v1/documents",
     createDocumentsFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.documentServices
         ? { services: options.documentServices }
         : {}),
@@ -135,24 +154,21 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/billing",
     createBillingFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.billingServices ? { services: options.billingServices } : {}),
     }),
   );
   app.route(
     "/api/v1/fiscal",
     createFiscalFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.fiscalServices ? { services: options.fiscalServices } : {}),
     }),
   );
   app.route(
     "/api/v1/analytics",
     createAnalyticsFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.analyticsServices
         ? { services: options.analyticsServices }
         : {}),
@@ -161,8 +177,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/compliance",
     createComplianceFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.complianceServices
         ? { services: options.complianceServices }
         : {}),
@@ -171,8 +186,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/external-api",
     createExternalApiFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.externalApiServices
         ? { services: options.externalApiServices }
         : {}),
@@ -181,8 +195,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/internal",
     createInternalMonitoringFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.internalMonitoringServices
         ? { services: options.internalMonitoringServices }
         : {}),
@@ -191,8 +204,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/marketplaces",
     createMarketplaceFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.marketplaceServices
         ? { services: options.marketplaceServices }
         : {}),
@@ -201,24 +213,21 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/crm",
     createCrmFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.crmServices ? { services: options.crmServices } : {}),
     }),
   );
   app.route(
     "/api/v1/sales",
     createSalesFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.salesServices ? { services: options.salesServices } : {}),
     }),
   );
   app.route(
     "/api/v1/settings",
     createSettingsFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.settingsServices
         ? { services: options.settingsServices }
         : {}),
@@ -227,8 +236,7 @@ export function createApp(options: CreateAppOptions = {}) {
   app.route(
     "/api/v1/identity",
     createRolesFeature({
-      contextFactory: (context) =>
-        createHttpServiceContext(context, contextOptions),
+      contextFactory,
       ...(options.roleServices ? { services: options.roleServices } : {}),
     }),
   );

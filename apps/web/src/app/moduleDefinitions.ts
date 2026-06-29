@@ -31,6 +31,14 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     id: "checklists",
     title: "Checklists",
   },
+  "custom-pages": {
+    action: "Criar pagina",
+    description:
+      "Landing pages e paginas institucionais com Page Builder da loja.",
+    eyebrow: "Canais",
+    id: "custom-pages",
+    title: "Paginas",
+  },
   commissions: {
     action: "Modelar comissoes",
     description: "Regras por vendedor, loja e status da venda.",
@@ -118,10 +126,11 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
   },
   "public-site": {
     action: "Personalizar vitrine",
-    description: "Site publico com vitrine, SEO local e identidade da loja.",
+    description:
+      "Personalizacao da vitrine publica, SEO local e identidade da loja.",
     eyebrow: "Canais",
     id: "public-site",
-    title: "Site publico",
+    title: "Personalizar",
   },
   reports: {
     action: "Montar relatorios",

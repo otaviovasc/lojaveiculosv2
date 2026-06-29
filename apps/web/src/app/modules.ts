@@ -10,7 +10,6 @@ import {
   HandCoins,
   Home,
   KeyRound,
-  Megaphone,
   MessageCircle,
   Palette,
   BadgeDollarSign,
@@ -43,6 +42,7 @@ export type ModuleId =
   | "reports"
   | "checklists"
   | "public-site"
+  | "custom-pages"
   | "domain"
   | "marketplaces"
   | "public-api"
@@ -109,14 +109,13 @@ export const navigationGroups: NavigationGroup[] = [
         id: "fiscal",
         label: "NF-e",
       },
-      { icon: Megaphone, id: "paid-traffic", label: "Trafego" },
-      { icon: Bot, id: "autobot", label: "Autobot" },
     ],
   },
   {
     label: "Canais",
     items: [
       { icon: Palette, id: "public-site", label: "Personalizar" },
+      { icon: FileText, id: "custom-pages", label: "Paginas" },
       { icon: Globe, id: "domain", label: "Dominio" },
       {
         entitlementKey: "marketplace",

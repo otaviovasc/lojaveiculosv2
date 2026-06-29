@@ -1,0 +1,271 @@
+import type {
+  StorefrontBuilderComponent,
+  StorefrontBuilderComponentType,
+} from "@lojaveiculosv2/shared";
+
+export const builderBlockLabels: Record<
+  StorefrontBuilderComponentType,
+  string
+> = {
+  about: "Sobre",
+  contact_section: "Formulario de contato",
+  container: "Container",
+  cta: "Chamada",
+  divider: "Divisor",
+  featured: "Estoque em destaque",
+  footer: "Rodape",
+  gallery: "Galeria",
+  header: "Cabecalho",
+  hero: "Hero",
+  image: "Imagem",
+  map: "Mapa",
+  marquee: "Faixa animada",
+  properties_grid: "Grade de veiculos",
+  scroll_zoom: "Imagem com destaque",
+  section_wrapper: "Secao",
+  spacer: "Espacador",
+  testimonials: "Depoimentos",
+  text_block: "Texto",
+  two_column: "Duas colunas",
+  typewriter: "Texto digitado",
+  video: "Video",
+};
+
+export const builderBlockGroups: ReadonlyArray<{
+  label: string;
+  types: readonly StorefrontBuilderComponentType[];
+}> = [
+  {
+    label: "Estrutura",
+    types: ["header", "hero", "about", "text_block", "cta", "footer"],
+  },
+  {
+    label: "Midia",
+    types: [
+      "image",
+      "gallery",
+      "video",
+      "typewriter",
+      "marquee",
+      "scroll_zoom",
+    ],
+  },
+  {
+    label: "Estoque",
+    types: ["featured", "properties_grid", "testimonials"],
+  },
+  {
+    label: "Layout",
+    types: [
+      "contact_section",
+      "map",
+      "container",
+      "two_column",
+      "section_wrapper",
+      "spacer",
+      "divider",
+    ],
+  },
+];
+
+export const builderBlockTypeOptions = builderBlockGroups.flatMap((group) =>
+  group.types.map((type) => ({
+    label: `${group.label} - ${builderBlockLabels[type]}`,
+    value: type,
+  })),
+);
+
+const defaultBlockProps: Record<
+  StorefrontBuilderComponentType,
+  Record<string, unknown>
+> = {
+  about: {
+    imagePosition: "right",
+    imageUrl: "",
+    text: "Apresente a historia da loja, o atendimento e os diferenciais do estoque.",
+    title: "Sobre a loja",
+  },
+  contact_section: {
+    fields: { email: true, message: true, name: true, phone: true },
+    submitButtonText: "Enviar mensagem",
+    subtitle: "Informe seus dados para a equipe retornar.",
+    successMessage: "Mensagem registrada. A loja retornara em breve.",
+    title: "Fale com a loja",
+  },
+  container: {
+    children: [],
+    direction: "column",
+    gap: "lg",
+    layout: "stack",
+  },
+  cta: {
+    buttonLabel: "Chamar no WhatsApp",
+    buttonStyle: "primary",
+    buttonUrl: "#contato",
+    subtitle:
+      "Converse com a equipe comercial para simular, reservar ou visitar.",
+    title: "Quer ajuda para escolher?",
+  },
+  divider: { lineVariant: "solid", text: "" },
+  featured: {
+    maxProperties: 6,
+    showAllLink: true,
+    subtitle: "Selecao publicada pela loja.",
+    title: "Estoque em destaque",
+  },
+  footer: {
+    columns: [
+      {
+        label: "Loja",
+        links: [
+          { href: "#estoque", title: "Estoque" },
+          { href: "#contato", title: "Contato" },
+        ],
+      },
+    ],
+    showSocial: true,
+    socialLinks: {},
+  },
+  gallery: {
+    columns: 3,
+    gap: "md",
+    images: [],
+    layout: "grid",
+    lightboxEnabled: true,
+    showCaptions: true,
+    subtitle: "Adicione fotos de loja, entrega ou veiculos em destaque.",
+    title: "Galeria",
+  },
+  header: {
+    contactButtonLink: "#contato",
+    contactButtonText: "Fale conosco",
+    links: [
+      { href: "#home", title: "Inicio" },
+      { href: "#estoque", title: "Estoque" },
+      { href: "#contato", title: "Contato" },
+    ],
+    logoText: "",
+    showContactButton: true,
+    showSocial: true,
+    sticky: true,
+  },
+  hero: {
+    badge: "Loja de veiculos",
+    ctaLabel: "Ver estoque",
+    ctaUrl: "#estoque",
+    fullHeight: false,
+    imageUrl: "",
+    subtitle: "Estoque selecionado, atendimento direto e publicacao pela loja.",
+    title: "Encontre seu proximo veiculo",
+  },
+  image: {
+    alignment: "center",
+    caption: "",
+    imageUrl: "",
+    lightboxEnabled: true,
+  },
+  map: {
+    address: "",
+    zoom: 15,
+  },
+  marquee: {
+    direction: "left",
+    speed: "normal",
+    text: "Estoque atualizado diariamente - financiamento, troca e atendimento pelo WhatsApp.",
+  },
+  properties_grid: {
+    maxProperties: 9,
+    showAllLink: true,
+    subtitle: "Confira os veiculos disponiveis.",
+    title: "Veiculos disponiveis",
+  },
+  scroll_zoom: {
+    imageUrl: "",
+    subtitle: "Destaque uma entrega, showroom ou veiculo especial.",
+    title: "Experiencia de compra",
+  },
+  section_wrapper: {
+    children: [],
+    fullWidth: false,
+    maxWidth: "lg",
+  },
+  spacer: { height: "lg" },
+  testimonials: {
+    testimonials: [
+      {
+        id: "t1",
+        name: "Cliente",
+        quote: "Atendimento claro e rapido do primeiro contato ate a entrega.",
+        role: "Comprador",
+      },
+    ],
+    title: "O que dizem os clientes",
+  },
+  text_block: {
+    alignment: "left",
+    content:
+      "Use este espaco para apresentar condicoes, garantias, processo de compra ou diferenciais da loja.",
+    maxWidth: "lg",
+  },
+  two_column: {
+    gap: "lg",
+    leftChildren: [],
+    leftColumnWidth: 50,
+    reverseOnMobile: false,
+    rightChildren: [],
+    rightColumnWidth: 50,
+  },
+  typewriter: {
+    cursorChar: "|",
+    postText: "",
+    preText: "Aqui voce encontra",
+    showCursor: true,
+    speed: 70,
+    textPosition: "center",
+    texts: [
+      "seminovos revisados",
+      "atendimento direto",
+      "opcoes de financiamento",
+    ],
+    waitTime: 1800,
+  },
+  video: {
+    autoplay: false,
+    loop: false,
+    muted: true,
+    provider: "youtube",
+    videoUrl: "",
+  },
+};
+
+export function blockLabel(type: string) {
+  return builderBlockLabels[type as StorefrontBuilderComponentType] ?? type;
+}
+
+export function createDefaultPageComponent(
+  type: StorefrontBuilderComponentType,
+  order: number,
+): StorefrontBuilderComponent {
+  return {
+    id: createBlockId(),
+    order,
+    props: cloneDefaultProps(type),
+    type,
+    visible: true,
+  };
+}
+
+export function cloneDefaultProps(type: StorefrontBuilderComponentType) {
+  const defaults = defaultBlockProps[type] ?? {};
+  if (typeof structuredClone === "function") {
+    return structuredClone(defaults) as Record<string, unknown>;
+  }
+  return JSON.parse(JSON.stringify(defaults)) as Record<string, unknown>;
+}
+
+function createBlockId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `block_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+}

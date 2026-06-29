@@ -4,7 +4,9 @@ import { z } from "zod";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { PublicStorefrontLeadSink } from "../../../domains/storefront/ports/publicStorefrontLeadSink.js";
 import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import type { StorefrontPageRepository } from "../../../domains/storefront/ports/storefrontPageRepository.js";
 import { createPublicStorefrontLead } from "../../../domains/storefront/services/StorefrontService/createPublicStorefrontLead.js";
+import { createPublicStorefrontPageLead } from "../../../domains/storefront/services/StorefrontService/createPublicStorefrontPageLead.js";
 import { createPlaceholderServiceContext } from "../../../infrastructure/http/createPlaceholderServiceContext.js";
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import {
@@ -65,6 +67,57 @@ export async function handleCreatePublicStorefrontLead(
     {
       leadSink: options.leadSink ?? createCrmLeadSink(options.crmRepository),
       storefrontRepository: options.repository,
+    },
+  );
+
+  return context.json(result, result.deduplicated ? 200 : 201);
+}
+
+export async function handleCreatePublicStorefrontPageLead(
+  context: Context,
+  options: {
+    audit?: AuditSink;
+    crmRepository: CrmRepository;
+    leadRateLimiter: PublicLeadRateLimiter;
+    pageRepository: StorefrontPageRepository;
+    leadSink?: PublicStorefrontLeadSink;
+  },
+): Promise<Response> {
+  const storeSlug = resolveStoreSlugFromRequest(context);
+  const pageSlug = context.req.param("pageSlug");
+
+  if (!storeSlug) {
+    return context.json({ message: "Store subdomain is required." }, 400);
+  }
+  if (!pageSlug) {
+    return context.json({ message: "Page slug is required." }, 400);
+  }
+
+  const rateLimitResponse = rateLimitPublicLeadRequest(
+    context,
+    options.leadRateLimiter,
+    { listingSlug: `page:${pageSlug}`, storeSlug },
+  );
+  if (rateLimitResponse) return rateLimitResponse;
+
+  const body = await parseJson(context, createLeadSchema);
+  const serviceContext = createPlaceholderServiceContext(
+    context,
+    options.audit ? { audit: options.audit } : {},
+  );
+  const result = await createPublicStorefrontPageLead(
+    serviceContext,
+    {
+      buyerEmail: normalizeOptionalText(body.buyerEmail),
+      buyerName: body.buyerName,
+      buyerPhone: normalizeOptionalText(body.buyerPhone),
+      message: normalizeOptionalText(body.message),
+      pageSlug,
+      storeSlug,
+    },
+    {
+      leadSink: options.leadSink ?? createCrmLeadSink(options.crmRepository),
+      pageRepository: options.pageRepository,
     },
   );
 

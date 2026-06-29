@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import { createInventoryApi } from "../api/apiClient";
+import { FeatureAlert } from "../../../components/ui/FeatureStates";
 import { inventoryListStatusOptions } from "../model/listCatalogModel";
 import {
   InventoryBadge,
@@ -92,12 +93,16 @@ export function InventoryStockTable({
 
       <div className="mt-4">
         {state.kind === "idle" ? (
-          <EmptyState text="Busque para carregar o estoque." />
+          <InventoryTableEmptyState text="Busque para carregar o estoque." />
         ) : null}
         {state.kind === "loading" ? (
-          <EmptyState text="Carregando estoque." />
+          <InventoryTableEmptyState text="Carregando estoque." />
         ) : null}
-        {state.kind === "error" ? <ErrorState message={state.message} /> : null}
+        {state.kind === "error" ? (
+          <FeatureAlert className="feature-alert text-danger">
+            {state.message}
+          </FeatureAlert>
+        ) : null}
         {state.kind === "ready" ? (
           <StockRows
             items={state.result.items}
@@ -123,7 +128,7 @@ function StockRows({
   onSelect?: (listingId: string) => void;
 }) {
   if (items.length === 0)
-    return <EmptyState text="Nenhum veiculo encontrado." />;
+    return <InventoryTableEmptyState text="Nenhum veiculo encontrado." />;
 
   return (
     <div className="overflow-x-auto rounded-lg border border-line">
@@ -180,18 +185,10 @@ function StockRows({
   );
 }
 
-function EmptyState({ text }: { text: string }) {
+function InventoryTableEmptyState({ text }: { text: string }) {
   return (
     <p className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
       {text}
-    </p>
-  );
-}
-
-function ErrorState({ message }: { message: string }) {
-  return (
-    <p className="rounded-lg border border-line bg-app p-3 text-sm font-black text-danger">
-      {message}
     </p>
   );
 }

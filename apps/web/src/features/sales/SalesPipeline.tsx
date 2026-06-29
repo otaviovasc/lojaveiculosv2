@@ -1,6 +1,14 @@
 import { Car, Layers, Plus, Search, User } from "lucide-react";
 import { useState } from "react";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import {
+  FeatureCard,
+  FeatureList,
+  FeatureListItemButton,
+} from "../../components/ui/FeatureCards";
+import {
+  FeatureEmptyState,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
 import { formatCents } from "./salesModel";
 import type { SaleRecord, SaleStatus } from "./types";
 
@@ -46,7 +54,7 @@ export function SalesPipeline({
   });
 
   return (
-    <aside className="sales-glass-panel sales-pipeline-card">
+    <FeatureCard className="sales-glass-panel sales-pipeline-card">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-accent-soft text-accent-strong">
@@ -98,21 +106,24 @@ export function SalesPipeline({
         />
       </div>
 
-      <div className="sales-list-container">
+      <FeatureList className="sales-list-container">
         {filteredSales.length === 0 ? (
-          <div className="text-center py-8 text-xs font-bold text-muted border border-dashed border-line rounded-xl">
-            Nenhuma venda encontrada
-          </div>
+          <FeatureEmptyState
+            body="Ajuste a busca ou o filtro de status."
+            className="!p-6"
+            icon={Layers}
+            title="Nenhuma venda encontrada"
+          />
         ) : (
           filteredSales.map((sale) => (
-            <button
+            <FeatureListItemButton
+              active={activeId === sale.id}
               className={
                 "sales-card-item " +
                 (activeId === sale.id ? "sales-card-item-active" : "")
               }
               key={sale.id}
               onClick={() => onSelect(sale)}
-              type="button"
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -150,11 +161,11 @@ export function SalesPipeline({
                     : "Preço pendente"}
                 </span>
               </div>
-            </button>
+            </FeatureListItemButton>
           ))
         )}
-      </div>
-    </aside>
+      </FeatureList>
+    </FeatureCard>
   );
 }
 

@@ -1,3 +1,9 @@
+import type {
+  StorefrontBuilderConfig,
+  StorefrontBuilderVehicle,
+  StorefrontCustomPage,
+} from "@lojaveiculosv2/shared";
+
 export type PublicVehicleListing = {
   description: string | null;
   manufactureYear: number | null;
@@ -83,4 +89,13 @@ export type PublicStorefrontLeadResult = {
     source: "public_site";
     status: string;
   };
+};
+
+export type PublicStorefrontCustomPageData = {
+  config: StorefrontBuilderConfig;
+  contact: PublicStorefrontSettingsData["contact"];
+  page: Omit<StorefrontCustomPage, "secretToken">;
+  sitePublished: boolean;
+  store: PublicStorefrontSettingsData["store"];
+  vehicles: readonly StorefrontBuilderVehicle[];
 };

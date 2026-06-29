@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
-import { cancelCommission, CommissionToast, toBonusEntryDraft } from "./CommissionActions";
+import {
+  cancelCommission,
+  CommissionToast,
+  toBonusEntryDraft,
+} from "./CommissionActions";
 import {
   BonusCommissionDialog,
   ConfirmCommissionPayDialog,
@@ -35,9 +40,13 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   const [toast, setToast] = useState<FinanceToast | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [payingSellerId, setPayingSellerId] = useState<string | null>(null);
-  const [paySeller, setPaySeller] = useState<CommissionSellerGroup | null>(null);
+  const [paySeller, setPaySeller] = useState<CommissionSellerGroup | null>(
+    null,
+  );
   const [showBonus, setShowBonus] = useState(false);
-  const [bonusSeller, setBonusSeller] = useState<CommissionSellerGroup | null>(null);
+  const [bonusSeller, setBonusSeller] = useState<CommissionSellerGroup | null>(
+    null,
+  );
   const [savingBonus, setSavingBonus] = useState(false);
   const [modalEntry, setModalEntry] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -124,7 +133,9 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     const entriesToPay = pendingSellerEntries(paySeller, filters);
     setPayingSellerId(paySeller.sellerId);
     try {
-      await Promise.all(entriesToPay.map((entry) => runtimeApi.payEntry(entry.id)));
+      await Promise.all(
+        entriesToPay.map((entry) => runtimeApi.payEntry(entry.id)),
+      );
       setToast({
         kind: "success",
         message: `${entriesToPay.length} lancamento(s) pagos`,
@@ -153,13 +164,15 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   };
 
   return (
-    <main className="mx-auto flex max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6">
+    <FeaturePageShell variant="plain">
       <CommissionHeader
         onCreateBonus={() => {
           setBonusSeller(null);
           setShowBonus(true);
         }}
-        onExport={() => exportFinanceCsv(workspace.filteredEntries, "commission")}
+        onExport={() =>
+          exportFinanceCsv(workspace.filteredEntries, "commission")
+        }
         summary={workspace.summary}
       />
       <CommissionSummaryCards summary={workspace.summary} />
@@ -176,7 +189,9 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         <CommissionSellerList
           filters={filters}
           isPayingSellerId={payingSellerId}
-          onCancel={(entry) => void cancelCommission(entry, runtimeApi, setToast, refresh)}
+          onCancel={(entry) =>
+            void cancelCommission(entry, runtimeApi, setToast, refresh)
+          }
           onEdit={(entry) => {
             setModalEntry(entry);
             setIsModalOpen(true);
@@ -193,7 +208,9 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
       )}
       <CommissionRulesPanel
         items={rules}
-        onCreate={(input) => void runtimeApi?.createCommissionRule(input).then(refresh)}
+        onCreate={(input) =>
+          void runtimeApi?.createCommissionRule(input).then(refresh)
+        }
       />
       {paySeller ? (
         <ConfirmCommissionPayDialog
@@ -229,6 +246,6 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         }}
         onSubmit={submitDraft}
       />
-    </main>
+    </FeaturePageShell>
   );
 }

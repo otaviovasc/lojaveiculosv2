@@ -70,7 +70,10 @@ export function InventoryOperationsLedger({
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="grid gap-3">
-          <Metric label="Custos" value={formatMoney(costTotal)} />
+          <InventoryLedgerMetric
+            label="Custos"
+            value={formatMoney(costTotal)}
+          />
           <HistoryList
             items={[
               ...detail.priceHistory.map((item) => ({
@@ -128,7 +131,13 @@ export function InventoryOperationsLedger({
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function InventoryLedgerMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-lg border border-line bg-app p-3">
       <p className="text-xs font-black uppercase text-muted">{label}</p>

@@ -2,26 +2,28 @@ import type { ReactNode } from "react";
 import { cx, type FeatureIcon } from "./featureShared";
 
 export type FeatureStatusTone =
-  | "blue"
-  | "danger"
-  | "neutral"
-  | "pink"
-  | "success"
-  | "warning";
+  "blue" | "danger" | "neutral" | "pink" | "success" | "warning";
 
 export function FeatureEmptyState({
   action,
   body,
+  className,
   icon: IconComponent,
   title,
 }: {
   action?: ReactNode;
   body: ReactNode;
+  className?: string;
   icon: FeatureIcon;
   title: ReactNode;
 }) {
   return (
-    <div className="glass-panel-branded p-12 text-center flex flex-col items-center justify-center">
+    <div
+      className={cx(
+        "glass-panel-branded p-12 text-center flex flex-col items-center justify-center",
+        className,
+      )}
+    >
       <IconComponent aria-hidden="true" className="mb-4 size-14 text-muted" />
       <h3 className="text-xl font-black text-app-text">{title}</h3>
       <p className="mt-2 text-sm font-bold text-muted max-w-md">{body}</p>

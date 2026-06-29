@@ -15,7 +15,7 @@ export type PublicStorefrontLeadSink = {
     buyerEmail: string | null;
     buyerName: string;
     buyerPhone: string | null;
-    listingId: string;
+    listingId: string | null;
     metadata: Record<string, unknown>;
     source: "public_site";
     storeId: StoreId;

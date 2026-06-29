@@ -38,6 +38,13 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Cross-domain calls must use ports or anti-corruption-layer clients.
 - Shared code belongs in `packages/shared` only when two apps/packages already
   need it.
+- Features copied from another project should first be ported as directly as
+  possible, then adapted to the target project's conventions. Do not rewrite
+  working behavior unless V2 architecture, correctness, tenant isolation,
+  validation, or maintainability clearly requires it.
+- Backend improvements during migration must be justified by an existing
+  mismatch, correctness issue, or stronger local convention. Avoid
+  opportunistic rewrites.
 
 ## Security And Audit
 
@@ -82,6 +89,18 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Do not invent new styling during primitive extraction. Visual normalization is
   only allowed when replacing weaker existing implementations with the chosen
   existing source-of-truth component.
+- Centro Imovel may be used as a UI reference library for V2. Copy or adapt
+  strong UI patterns from Centro Imovel into V2 primitives when they are better
+  than current V2 patterns or missing from V2.
+- Do not migrate business logic from reference projects during UI primitive
+  work unless explicitly requested. Keep primitive extraction presentational and
+  compositional.
+- Skeleton feature pages should still use shared page shell, page header,
+  empty/loading/error states, and common action patterns.
+- Before creating a new local UI implementation inside `/features`, check
+  whether a primitive already exists. If it does, use it. If it almost works,
+  add a small variant. If no primitive fits and the pattern is recurring, create
+  one.
 - Prefer small modules. Keep source files under 250 lines unless the file is a
   generated artifact or a documented exception.
 

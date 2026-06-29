@@ -1,40 +1,40 @@
-import type { PermissionDescriptor } from "./permissionCatalog.js";
+import type { PermissionDescriptor } from "./permissionCatalogTypes.js";
 
 export const crmWhatsappPermissionDescriptors = [
   {
-    description: "Ver fila, conexoes e contexto inicial do WhatsApp.",
+    description: "Visualizar a fila de atendimentos e conexões do WhatsApp.",
     key: "crm.whatsapp.list",
-    label: "Listar WhatsApp",
+    label: "Visualizar conexões",
     risk: "low",
   },
   {
-    description: "Abrir conversas e mensagens do WhatsApp.",
+    description: "Abrir e ler mensagens recebidas no WhatsApp.",
     key: "crm.whatsapp.read",
-    label: "Ler WhatsApp",
+    label: "Visualizar conversas",
     risk: "low",
   },
   {
-    description: "Criar conversas e enviar mensagens de WhatsApp.",
+    description: "Iniciar novas conversas e enviar mensagens aos clientes.",
     key: "crm.whatsapp.send",
-    label: "Enviar WhatsApp",
+    label: "Enviar mensagens",
     risk: "medium",
   },
   {
-    description: "Atribuir conversas de WhatsApp.",
+    description: "Transferir e direcionar conversas para outros atendentes.",
     key: "crm.whatsapp.assign",
-    label: "Atribuir WhatsApp",
+    label: "Transferir atendimentos",
     risk: "medium",
   },
   {
-    description: "Encerrar conversas de WhatsApp.",
+    description: "Encerrar e finalizar conversas no painel de atendimento.",
     key: "crm.whatsapp.close",
-    label: "Fechar WhatsApp",
+    label: "Finalizar conversas",
     risk: "medium",
   },
   {
-    description: "Alternar atendimento manual em conversas de WhatsApp.",
+    description: "Assumir atendimento manual pausando fluxos automáticos.",
     key: "crm.whatsapp.toggle_intervention",
-    label: "Intervencao WhatsApp",
+    label: "Intervir em conversas",
     risk: "high",
   },
 ] satisfies readonly PermissionDescriptor[];

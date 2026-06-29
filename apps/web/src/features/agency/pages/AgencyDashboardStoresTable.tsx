@@ -8,6 +8,10 @@ import {
   Trash2,
   Users,
 } from "lucide-react";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../../components/ui/FeatureOverlay";
 import { type AgencyStore, getPlanStatus } from "./AgencyDashboardPage.model";
 import {
   AgencyEmptyStores,
@@ -82,49 +86,36 @@ export function AgencyDeleteModal({
   if (!store) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => !isDeleting && onCancel()}
-      />
-      <div className="relative bg-panel rounded-3xl p-8 max-w-md w-full shadow-2xl border border-line animate-fade-in">
+    <FeatureDialog
+      className="max-w-md"
+      isOpen
+      onClose={() => {
+        if (!isDeleting) onCancel();
+      }}
+      title="Confirmar remocao?"
+    >
+      <div className="grid gap-6 text-center">
         <div className="size-16 bg-danger/10 text-danger rounded-2xl flex items-center justify-center mb-6 mx-auto">
           <AlertTriangle className="size-8" />
         </div>
-        <h3 className="text-xl font-black italic uppercase tracking-tighter text-primary text-center mb-2">
-          Confirmar Remoção?
-        </h3>
         <p className="text-muted text-center text-xs font-semibold leading-relaxed mb-8">
           Você está prestes a revogar seu acesso de agência à loja{" "}
           <span className="font-black text-primary">{store.nome_da_loja}</span>.
           <br />A loja <span className="text-danger font-black">NÃO</span> será
           deletada, mas você não poderá mais gerenciá-la por este painel.
         </p>
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={onConfirm}
-            disabled={isDeleting}
-            className="w-full py-3.5 bg-danger hover:bg-danger-hover text-white font-black uppercase text-xs tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            {isDeleting ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-            ) : (
-              <>
-                <Trash2 className="size-4" />
-                <span>Revogar Acesso Agora</span>
-              </>
-            )}
-          </button>
-          <button
-            onClick={onCancel}
-            disabled={isDeleting}
-            className="w-full py-3.5 bg-app-elevated hover:bg-line text-primary font-black uppercase text-xs tracking-wider rounded-xl transition-all"
-          >
-            Cancelar
-          </button>
-        </div>
       </div>
-    </div>
+      <FeatureDialogActions
+        cancelDisabled={isDeleting}
+        confirmIcon={<Trash2 aria-hidden="true" className="size-4" />}
+        confirmLabel="Revogar acesso agora"
+        isLoading={isDeleting}
+        loadingLabel="Revogando"
+        onCancel={onCancel}
+        onConfirm={onConfirm}
+        variant="danger"
+      />
+    </FeatureDialog>
   );
 }
 

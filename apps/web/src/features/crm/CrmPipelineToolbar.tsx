@@ -1,4 +1,4 @@
-import { Download, Plus } from "lucide-react";
+import { Download, Plus, RefreshCcw } from "lucide-react";
 import {
   FeatureSearchField,
   FeatureSelect,
@@ -20,6 +20,8 @@ type CrmPipelineToolbarProps = {
   onChangeFilters: (filters: LeadFilters) => void;
   onCreateClick: () => void;
   onExport: () => void;
+  onRefresh: () => void;
+  isLoading: boolean;
 };
 
 export function CrmPipelineToolbar({
@@ -27,6 +29,8 @@ export function CrmPipelineToolbar({
   onChangeFilters,
   onCreateClick,
   onExport,
+  onRefresh,
+  isLoading,
 }: CrmPipelineToolbarProps) {
   return (
     <FeatureToolbar className="crm-client-toolbar">
@@ -58,6 +62,12 @@ export function CrmPipelineToolbar({
           value={filters.source}
         />
         <div className="crm-client-toolbar-actions">
+          <FeatureActionButton
+            icon={RefreshCcw}
+            isBusy={isLoading}
+            label={isLoading ? "Sincronizando" : "Atualizar"}
+            onClick={onRefresh}
+          />
           <FeatureActionButton
             icon={Download}
             label="Exportar"

@@ -68,13 +68,22 @@
   --color-app: var(--color-app);
   --color-app-elevated: var(--color-app-elevated);
   --color-app-text: var(--color-text);
+  --color-background: var(--color-app);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-panel);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-panel);
+  --color-popover-foreground: var(--color-text);
   --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted);
   --color-panel: var(--color-panel);
   --color-line: var(--color-line);
   --color-line-strong: var(--color-line-strong);
   --color-accent: var(--color-accent);
   --color-accent-strong: var(--color-accent-strong);
   --color-accent-soft: var(--color-accent-soft);
+  --color-brand: var(--color-accent);
+  --color-brand-dark: var(--color-accent-strong);
   --color-blue-soft: var(--color-blue-soft);
   --color-green-start: var(--color-green-start);
   --color-green-end: var(--color-green-end);
@@ -82,5 +91,20 @@
   --color-inverse: var(--color-inverse);
   --color-warning: var(--color-warning);
   --color-danger: var(--color-danger);
+  --color-destructive: var(--color-danger);
+  --color-destructive-foreground: var(--color-inverse);
   --color-primary: var(--color-primary);
+  --color-primary-foreground: var(--color-inverse);
+  --color-secondary: var(--color-app-elevated);
+  --color-secondary-foreground: var(--color-text);
+  --color-success: var(--color-green-end);
+  --color-success-foreground: var(--color-inverse);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-primary);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-accent),
+    var(--color-accent-strong)
+  );
 }

@@ -25,9 +25,12 @@ export function PublicVehicleCard({
           {listing.description}
         </p>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-black text-muted">
-          <Metric label="Ano" value={listing.modelYear ?? "-"} />
-          <Metric label="Km" value={formatMileage(listing.mileageKm)} />
-          <Metric label="Cod." value={listing.slug.slice(0, 8)} />
+          <PublicVehicleMetric label="Ano" value={listing.modelYear ?? "-"} />
+          <PublicVehicleMetric
+            label="Km"
+            value={formatMileage(listing.mileageKm)}
+          />
+          <PublicVehicleMetric label="Cod." value={listing.slug.slice(0, 8)} />
         </div>
         <button
           className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
@@ -59,7 +62,13 @@ function VehicleImage({ listing }: { listing: PublicVehicleListing }) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string | number }) {
+function PublicVehicleMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
     <div className="rounded-md bg-app p-2">
       <span className="block">{label}</span>

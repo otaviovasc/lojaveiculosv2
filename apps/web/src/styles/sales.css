@@ -7,24 +7,6 @@
   width: 100%;
 }
 
-/* Sales KPIs Grid */
-.sales-kpi-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1.25rem;
-  width: 100%;
-}
-@media (min-width: 640px) {
-  .sales-kpi-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (min-width: 1024px) {
-  .sales-kpi-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 /* Glass Panels and Cards */
 .sales-glass-panel {
   background: rgba(255, 255, 255, 0.85);

@@ -157,9 +157,15 @@ function ListingDetailContent({
           {detail.listing.description}
         </p>
         <div className="mt-5 grid grid-cols-3 gap-2 text-center text-xs font-black text-muted">
-          <Metric label="Ano" value={detail.listing.modelYear ?? "-"} />
-          <Metric label="Km" value={formatMileage(detail.listing.mileageKm)} />
-          <Metric label="Fotos" value={activeMedia.length} />
+          <ListingDetailMetric
+            label="Ano"
+            value={detail.listing.modelYear ?? "-"}
+          />
+          <ListingDetailMetric
+            label="Km"
+            value={formatMileage(detail.listing.mileageKm)}
+          />
+          <ListingDetailMetric label="Fotos" value={activeMedia.length} />
         </div>
         <LeadCaptureForm
           listingSlug={detail.listing.slug}
@@ -219,7 +225,7 @@ function DetailState({
   );
 }
 
-function Metric({
+function ListingDetailMetric({
   label,
   value,
 }: {

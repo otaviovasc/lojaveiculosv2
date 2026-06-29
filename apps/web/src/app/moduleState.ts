@@ -7,6 +7,14 @@ import { defaultModuleId, moduleDefinitions } from "./moduleDefinitions";
 import type { ModuleId } from "./modules";
 
 const moduleIds = new Set(Object.keys(moduleDefinitions));
+const modulePathAliases: Record<string, ModuleId> = {
+  dominio: "domain",
+  "custom-pages": "custom-pages",
+  "page-builder": "custom-pages",
+  paginas: "custom-pages",
+  personalizar: "public-site",
+  "site-publico": "public-site",
+};
 
 function parseModuleHashCandidate(hash: string): ModuleId | undefined {
   const path = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
@@ -16,11 +24,7 @@ function parseModuleHashCandidate(hash: string): ModuleId | undefined {
     return "customers";
   }
 
-  if (moduleIds.has(id)) {
-    return id as ModuleId;
-  }
-
-  return undefined;
+  return resolveModuleId(id);
 }
 
 export function parseModuleHash(hash: string): ModuleId {
@@ -30,11 +34,7 @@ export function parseModuleHash(hash: string): ModuleId {
 export function parseModulePath(pathname: string): ModuleId {
   const id = pathname.replace(/^\/+/, "").split("/")[0] ?? "";
 
-  if (moduleIds.has(id)) {
-    return id as ModuleId;
-  }
-
-  return defaultModuleId;
+  return resolveModuleId(id) ?? defaultModuleId;
 }
 
 export function parseModuleLocation(location: {
@@ -81,5 +81,13 @@ export function useModuleState() {
 function moduleHash(moduleId: ModuleId) {
   if (moduleId === "customers") return crmSurfaceHash("leads");
   if (moduleId === "crm") return crmSurfaceHash("whatsapp");
+  if (moduleId === "domain") return "/dominio";
+  if (moduleId === "public-site") return "/personalizar";
   return `/${moduleId}`;
+}
+
+function resolveModuleId(id: string): ModuleId | undefined {
+  if (id in modulePathAliases) return modulePathAliases[id];
+  if (moduleIds.has(id)) return id as ModuleId;
+  return undefined;
 }

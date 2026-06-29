@@ -1,18 +1,14 @@
-import { Globe2, RefreshCcw, Save, Store, Users, Wand2 } from "lucide-react";
+import { RefreshCcw, Save, Store, Users, Wand2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FeatureTabs } from "../../components/ui/FeatureControls";
-import {
-  FeatureActionButton,
-  FeaturePageHeader,
-  FeaturePageShell,
-} from "../../components/ui/FeatureLayout";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { createSettingsApi, type SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
-import { SettingsForm } from "./SettingsPanels";
+import { SettingsStoreProfilePanel } from "./SettingsStoreProfilePanel";
 import { createSettingsApiOptions } from "./runtimeApi";
 import { createStoreSettingsPatch } from "./settingsPatch";
 import type {
@@ -23,13 +19,19 @@ import type {
   UpdateMembershipAccessInput,
 } from "./types";
 
-export function SettingsModule({ api }: { api?: SettingsApi }) {
+export function SettingsModule({
+  api,
+  initialTab,
+}: {
+  api?: SettingsApi;
+  initialTab?: SettingsTab;
+}) {
   const settingsApi = useMemo(() => api ?? createRuntimeSettingsApi(), [api]);
   const [settings, setSettings] = useState<StoreSettingsSnapshot | null>(null);
   const [roles, setRoles] = useState<RoleManagementView | null>(null);
   const [rolesError, setRolesError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>(
-    readInitialSettingsTab,
+    () => initialTab ?? readInitialSettingsTab(),
   );
   const [status, setStatus] = useState<SettingsStatus>({ kind: "loading" });
 
@@ -62,6 +64,10 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
   useEffect(() => {
     void refresh();
   }, []);
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
 
   const save = async (next: StoreSettingsSnapshot) => {
     setStatus({ kind: "saving" });
@@ -102,45 +108,37 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
   };
 
   return (
-    <FeaturePageShell variant="plain">
-      <FeaturePageHeader
-        actions={
-          <FeatureActionButton
-            icon={RefreshCcw}
-            label="Atualizar"
-            onClick={() => void refresh()}
-          />
-        }
-        description="Identidade, contato, WhatsApp, SEO, publicacao e dominio ficam em um cadastro auditavel para alimentar vitrine, documentos e acessos."
-        eyebrow={
-          <>
-            <Store aria-hidden="true" className="size-4" />
-            Loja
-            <Globe2 aria-hidden="true" className="size-4" />
-            Site publico
-            <Users aria-hidden="true" className="size-4" />
-            Papeis
-          </>
-        }
-        title="Configuracoes operacionais da loja"
-      />
-
+    <FeaturePageShell variant="dashboard" mainClassName="!p-4 md:!p-6 !gap-4">
       {status.kind === "error" ? (
         <FeatureAlert className="settings-alert">{status.message}</FeatureAlert>
       ) : null}
 
-      <FeatureTabs
-        ariaLabel="Areas de configuracao"
-        onChange={(tab) => selectTab(tab, setActiveTab)}
-        options={[
-          { label: "Loja", value: "store" },
-          { label: "Papeis", value: "roles" },
-        ]}
-        value={activeTab}
-      />
+      <div className="flex items-center justify-between my-2">
+        <FeatureTabs
+          ariaLabel="Áreas de configuração"
+          onChange={(tab) => selectTab(tab, setActiveTab)}
+          options={[
+            { label: "Perfil da Loja", value: "store", icon: Store },
+            { label: "Papéis e Permissões", value: "roles", icon: Users },
+          ]}
+          value={activeTab}
+          className="inline-flex items-center gap-1 p-1 rounded-xl bg-panel/75 backdrop-blur-md border border-line/60 shadow-sm"
+          optionClassName="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-xs font-black transition-all cursor-pointer text-muted hover:text-app-text"
+          activeClassName="!bg-accent !text-inverse shadow-sm scale-[1.02]"
+        />
+
+        <button
+          onClick={() => void refresh()}
+          type="button"
+          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel/75 px-4 text-xs font-black text-app-text hover:bg-app-elevated/45 cursor-pointer shadow-sm"
+        >
+          <RefreshCcw className="size-3.5" />
+          <span>Atualizar</span>
+        </button>
+      </div>
 
       {activeTab === "store" && settings ? (
-        <SettingsForm
+        <SettingsStoreProfilePanel
           isSaving={status.kind === "saving"}
           onSave={save}
           settings={settings}
@@ -157,14 +155,14 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
         <FeatureLoadingState
           className="settings-empty"
           icon={Wand2}
-          title="Carregando configuracoes"
+          title="Carregando configurações"
         />
       )}
 
       {status.kind === "saved" ? (
         <p className="settings-saved">
           <Save aria-hidden="true" className="size-4" />
-          Configuracoes salvas
+          Configurações salvas
         </p>
       ) : null}
     </FeaturePageShell>
@@ -174,13 +172,14 @@ export function SettingsModule({ api }: { api?: SettingsApi }) {
 function readInitialSettingsTab(): SettingsTab {
   if (typeof window === "undefined") return "store";
   const query = window.location.hash.split("?")[1] ?? "";
-  return new URLSearchParams(query).get("tab") === "roles" ? "roles" : "store";
+  const tab = new URLSearchParams(query).get("tab");
+  return tab === "roles" ? tab : "store";
 }
 
 function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {
   setActiveTab(tab);
   if (typeof window === "undefined") return;
-  window.location.hash = tab === "roles" ? "/settings?tab=roles" : "/settings";
+  window.location.hash = tab === "store" ? "/settings" : `/settings?tab=${tab}`;
 }
 
 function errorMessage(error: unknown) {

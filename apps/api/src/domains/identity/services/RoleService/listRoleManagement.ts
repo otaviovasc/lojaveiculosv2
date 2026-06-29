@@ -150,24 +150,29 @@ function canAssignRole(actorRole: RoleKey | undefined, targetRole: RoleKey) {
 
 function roleLabel(role: RoleKey): string {
   return {
-    admin: "Admin",
-    agency: "Agency",
-    investor: "Investor",
-    owner: "Owner",
-    salesman: "Salesman",
+    admin: "Administrador da Plataforma",
+    agency: "Agência Parceira",
+    investor: "Investidor",
+    owner: "Proprietário da Loja",
+    salesman: "Vendedor",
     supervisor: "Supervisor",
   }[role];
 }
 
 function roleDescription(role: RoleKey): string {
   return {
-    admin: "Platform administrator; not managed from store settings.",
-    agency: "Agency-level operator that can manage multiple store owners.",
-    investor: "Read-only financial and operational visibility.",
-    owner: "Store owner with full operational control for one store.",
-    salesman: "Sales workflow user with limited inventory and lead access.",
+    admin:
+      "Administrador geral do sistema; não gerenciável nas configurações locais da loja.",
+    agency:
+      "Operador de nível de agência parceira, com permissão para gerenciar múltiplos proprietários.",
+    investor:
+      "Acesso de apenas leitura para acompanhamento de resultados financeiros e operacionais.",
+    owner:
+      "Dono do estabelecimento com controle total sobre as operações, acessos e financeiro da loja.",
+    salesman:
+      "Usuário focado em atendimento e fluxo de propostas, com acesso limitado a estoque e contatos.",
     supervisor:
-      "Operational manager with broader inventory and finance access.",
+      "Gerente operacional com acesso amplo ao controle de estoque e lançamentos financeiros.",
   }[role];
 }
 

@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Banknote, Clock, FileText, TrendingUp } from "lucide-react";
+import {
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../components/ui/FeatureLayout";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
 import { createSalesApi, type SalesApi } from "./apiClient";
 import { createSalesApiOptions } from "./runtimeApi";
 import { SalesPipeline } from "./SalesPipeline";
@@ -123,131 +131,61 @@ export function SalesModule({ api }: { api?: SalesApi }) {
   }, [sales]);
 
   return (
-    <div className="relative min-h-screen store-dashboard overflow-hidden">
-      <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
-      <main className="dashboard-main relative z-10 flex flex-col gap-6">
-        <header className="flex flex-col gap-1.5">
-          <p className="text-xs font-black uppercase text-muted tracking-widest">
-            Comercial
-          </p>
-          <h1 className="text-3xl font-black text-app-text tracking-tight">
-            Workspace de Vendas
-          </h1>
-        </header>
+    <FeaturePageShell mainClassName="flex flex-col gap-6">
+      <FeaturePageHeader eyebrow="Comercial" title="Workspace de Vendas" />
 
-        {/* Sales KPI Cards */}
-        <div className="sales-kpi-grid">
-          <div className="kpi-card-premium kpi-gradient-blue group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]">
-            <div className="kpi-card-glow-container">
-              <div className="kpi-card-blob-1 animate-blob-1" />
-              <div className="kpi-card-blob-2 animate-blob-2" />
-            </div>
-            <div className="gloss-overlay" />
-            <div className="kpi-card-content">
-              <div className="kpi-card-header">
-                <div className="kpi-icon-container">
-                  <TrendingUp className="size-5.5 text-white" />
-                </div>
-                <span className="kpi-card-badge">Pipeline</span>
-              </div>
-              <div className="kpi-card-body">
-                <p className="kpi-card-label">Total de Vendas</p>
-                <h3 className="kpi-card-value">{sales.length}</h3>
-              </div>
-            </div>
-          </div>
+      <FeatureKpiStrip ariaLabel="Resumo de vendas">
+        <FeatureKpiCard
+          icon={TrendingUp}
+          label="Total de vendas"
+          tone="blue"
+          value={sales.length}
+        />
+        <FeatureKpiCard
+          icon={FileText}
+          label="Em edicao"
+          tone="violet"
+          value={sales.filter((sale) => sale.status === "draft").length}
+        />
+        <FeatureKpiCard
+          icon={Clock}
+          label="Veiculos reservados"
+          tone="pink"
+          value={sales.filter((sale) => sale.status === "pending").length}
+        />
+        <FeatureKpiCard
+          icon={Banknote}
+          label="Faturamento recebido"
+          tone="green"
+          value={formatCents(closedTotal)}
+        />
+      </FeatureKpiStrip>
 
-          <div className="kpi-card-premium kpi-gradient-violet group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]">
-            <div className="kpi-card-glow-container">
-              <div className="kpi-card-blob-1 animate-blob-1" />
-              <div className="kpi-card-blob-2 animate-blob-2" />
-            </div>
-            <div className="gloss-overlay" />
-            <div className="kpi-card-content">
-              <div className="kpi-card-header">
-                <div className="kpi-icon-container">
-                  <FileText className="size-5.5 text-white" />
-                </div>
-                <span className="kpi-card-badge">Rascunhos</span>
-              </div>
-              <div className="kpi-card-body">
-                <p className="kpi-card-label">Em Edição</p>
-                <h3 className="kpi-card-value">
-                  {sales.filter((s) => s.status === "draft").length}
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          <div className="kpi-card-premium kpi-gradient-pink group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]">
-            <div className="kpi-card-glow-container">
-              <div className="kpi-card-blob-1 animate-blob-1" />
-              <div className="kpi-card-blob-2 animate-blob-2" />
-            </div>
-            <div className="gloss-overlay" />
-            <div className="kpi-card-content">
-              <div className="kpi-card-header">
-                <div className="kpi-icon-container">
-                  <Clock className="size-5.5 text-white" />
-                </div>
-                <span className="kpi-card-badge">Reserva</span>
-              </div>
-              <div className="kpi-card-body">
-                <p className="kpi-card-label">Veículos Reservados</p>
-                <h3 className="kpi-card-value">
-                  {sales.filter((s) => s.status === "pending").length}
-                </h3>
-              </div>
-            </div>
-          </div>
-
-          <div className="kpi-card-premium kpi-gradient-green group cursor-pointer transition-all duration-300 hover:-translate-y-1 hover:scale-[1.01]">
-            <div className="kpi-card-glow-container">
-              <div className="kpi-card-blob-1 animate-blob-1" />
-              <div className="kpi-card-blob-2 animate-blob-2" />
-            </div>
-            <div className="gloss-overlay" />
-            <div className="kpi-card-content">
-              <div className="kpi-card-header">
-                <div className="kpi-icon-container">
-                  <Banknote className="size-5.5 text-white" />
-                </div>
-                <span className="kpi-card-badge">Fechado</span>
-              </div>
-              <div className="kpi-card-body">
-                <p className="kpi-card-label">Faturamento Recebido</p>
-                <h3 className="kpi-card-value">{formatCents(closedTotal)}</h3>
-              </div>
-            </div>
-          </div>
+      {message ? (
+        <div className="rounded-2xl border border-line bg-panel p-4 text-sm font-black text-muted shadow-sm flex items-center gap-3">
+          <span className="size-2 rounded-full bg-accent animate-ping" />
+          <span>{message}</span>
         </div>
+      ) : null}
 
-        {message ? (
-          <div className="rounded-2xl border border-line bg-panel p-4 text-sm font-black text-muted shadow-sm flex items-center gap-3">
-            <span className="size-2 rounded-full bg-accent animate-ping" />
-            <span>{message}</span>
-          </div>
-        ) : null}
-
-        <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-          <SalesPipeline
-            activeId={activeId}
-            filter={filter}
-            onCreate={() => void createDraft({})}
-            onFilterChange={setFilter}
-            onSelect={(sale) => setActiveId(sale.id)}
-            sales={visibleSales}
-          />
-          <SaleWorkspace
-            onCancel={(sale) => transition(sale, "cancel")}
-            onClose={(sale) => transition(sale, "close")}
-            onReserve={(sale) => transition(sale, "reserve")}
-            onSave={saveSale}
-            sale={selectedSale}
-          />
-        </div>
-      </main>
-    </div>
+      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
+        <SalesPipeline
+          activeId={activeId}
+          filter={filter}
+          onCreate={() => void createDraft({})}
+          onFilterChange={setFilter}
+          onSelect={(sale) => setActiveId(sale.id)}
+          sales={visibleSales}
+        />
+        <SaleWorkspace
+          onCancel={(sale) => transition(sale, "cancel")}
+          onClose={(sale) => transition(sale, "close")}
+          onReserve={(sale) => transition(sale, "reserve")}
+          onSave={saveSale}
+          sale={selectedSale}
+        />
+      </div>
+    </FeaturePageShell>
   );
 }
 

@@ -1,4 +1,5 @@
 import { Banknote, HandCoins, Receipt, TrendingUp } from "lucide-react";
+import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
 import { FinanceBadge, financeTypeLabels } from "./FinanceFormParts";
 import type { FinanceEntryType } from "./types";
 
@@ -18,31 +19,16 @@ export function FinanceTypeTabs({
   onTypeChange: (type: FinanceEntryType) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2" role="tablist" aria-label="Tipos">
-      {financeTypes.map((type) => {
-        const Icon = typeIcons[type];
-        const isActive = type === activeType;
-        return (
-          <button
-            aria-selected={isActive}
-            className={[
-              "flex min-h-11 items-center gap-2 rounded-lg border px-4",
-              "text-sm font-black focus:shadow-[var(--shadow-focus)] focus:outline-none",
-              isActive
-                ? "border-accent bg-accent-soft text-accent-strong"
-                : "border-line bg-panel text-muted",
-            ].join(" ")}
-            key={type}
-            onClick={() => onTypeChange(type)}
-            role="tab"
-            type="button"
-          >
-            <Icon aria-hidden="true" className="size-4" />
-            {financeTypeLabels[type]}
-          </button>
-        );
-      })}
-    </div>
+    <FeatureSegmentedControl
+      ariaLabel="Tipos"
+      onChange={onTypeChange}
+      options={financeTypes.map((type) => ({
+        icon: typeIcons[type],
+        label: financeTypeLabels[type],
+        value: type,
+      }))}
+      value={activeType}
+    />
   );
 }
 

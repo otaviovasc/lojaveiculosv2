@@ -1,0 +1,34 @@
+{
+  "name": "@centroimovel/types",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./property": "./src/property.ts",
+    "./workspace": "./src/workspace.ts",
+    "./storefront": "./src/storefront.ts",
+    "./lead": "./src/lead.ts",
+    "./analytics": "./src/analytics.ts",
+    "./billing": "./src/billing.ts",
+    "./auth": "./src/auth.ts",
+    "./errors": "./src/errors/index.ts",
+    "./captacao": "./src/captacao.ts",
+    "./portal": "./src/portal.ts",
+    "./community": "./src/community.ts",
+    "./property-slug": "./src/property-slug.ts"
+  },
+  "scripts": {
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0"
+  }
+}

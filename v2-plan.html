@@ -233,9 +233,10 @@
     <header>
       <h1>Loja Veiculos V2 Frontend Migration Plan</h1>
       <div class="meta">
-        Generated from docs/frontend-migration/board.json · 2026-06-23 · current
-        phase: phase-1-operator-parity · source-of-truth board, PR dependency
-        graph, QA metadata, and phase gates.
+        Updated from the current working tree · 2026-06-29 · current phase:
+        phase-1-operator-parity · docs/frontend-migration/board.json is not
+        present in this checkout, so this static HTML plan carries the current
+        storefront-builder snapshot.
       </div>
     </header>
     <main>
@@ -287,6 +288,7 @@
           </p>
           <div class="phase-meta">
             <span class="pill">12/21 merged</span>
+            <span class="pill">1 active working-tree slice</span>
             <span class="pill">audit: blocked</span>
             <span class="pill">9 finding(s)</span>
           </div>
@@ -328,6 +330,25 @@
             <span class="pill">0 finding(s)</span>
           </div>
         </article>
+      </section>
+      <section class="panel">
+        <h2>Working Tree Update · 2026-06-29</h2>
+        <div class="finding-list">
+          <div class="finding">
+            <strong>lvv2-f013-public-site-builder-storefront · active</strong
+            ><br />The current uncommitted tree now contains the storefront
+            builder and custom-page runtime path: store website design settings,
+            custom page list/editor/renderer modules, shared storefront builder
+            DTOs, protected custom-page CRUD routes, public custom-page
+            rendering, page-level lead capture, memory and Drizzle page
+            repositories, and public routes for
+            <code>/:storeSlug/p/:pageSlug</code> and
+            <code>/p/:pageSlug</code>.<br /><span class="muted"
+              >Do not treat this slice as merged until the focused storefront
+              tests, visual QA, and full validation gate pass.</span
+            >
+          </div>
+        </div>
       </section>
       <section class="panel">
         <h2>Blocked Findings</h2>
@@ -950,20 +971,29 @@
                 Capture<br /><span class="P0">P0</span> · public-site
               </td>
               <td>
-                <span class="planned">planned</span
-                ><br />already-covered-in-v2<br />review:
-                <span class="not-opened">not-opened</span>
+                <span class="active">active</span
+                ><br />working-tree<br />review:
+                <span class="needs-review">needs-review</span>
               </td>
               <td>
                 Operator Parity Gate<br /><span class="blocked">blocked</span>
               </td>
               <td>
-                <span class="pill">lojaveiculos:src/app/[slug]/layout.tsx</span
-                ><span class="pill">lojaveiculos:src/app/[slug]/page.tsx</span
-                ><span class="pill"
-                  >lojaveiculos:src/app/[slug]/ofertas/page.tsx</span
+                <span class="pill">lojaveiculos:src/app/[slug]/page.tsx</span
                 ><span class="pill"
                   >lojaveiculos:src/app/[slug]/veiculo/[idOrSlug]/page.tsx</span
+                ><span class="pill"
+                  >lojaveiculosv2:apps/web/src/features/publicSite/StorefrontCustomizationModule.tsx</span
+                ><span class="pill"
+                  >lojaveiculosv2:apps/web/src/features/publicSite/CustomPageEditor.tsx</span
+                ><span class="pill"
+                  >lojaveiculosv2:apps/web/src/features/publicSite/PageBuilderRenderer.tsx</span
+                ><span class="pill"
+                  >lojaveiculosv2:apps/web/src/features/publicSite/PublicCustomPageRoute.tsx</span
+                ><span class="pill"
+                  >lojaveiculosv2:apps/api/src/features/storefront/controllers/storefrontPages.controller.ts</span
+                ><span class="pill"
+                  >lojaveiculosv2:packages/shared/src/storefrontBuilder.ts</span
                 >
               </td>
               <td>
@@ -971,9 +1001,11 @@
                 ><span class="pill">lvv2-f012-settings-identity-roles</span>
               </td>
               <td>
-                visual required<br /><code
-                  >npm run qa:visual -- --slice
-                  lvv2-f013-public-site-builder-storefront</code
+                focused tests + visual required<br /><code
+                  >pnpm --filter @lojaveiculosv2/api test --
+                  storefrontCustomPages storefrontCustomPageLeads &amp;&amp;
+                  pnpm --filter @lojaveiculosv2/web test --
+                  publicStorefrontPreviewBridge</code
                 >
               </td>
             </tr>

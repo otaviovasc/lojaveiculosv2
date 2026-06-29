@@ -4,6 +4,7 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
+import type { CSSProperties } from "react";
 import {
   PublicListingDetailPanel,
   type PublicListingDetailSnapshot,
@@ -53,10 +54,12 @@ export function PublicStorefront({
   const visibleProofItems = proofItems.filter((item) =>
     theme.sections.includes(item.key),
   );
+  const style = createStorefrontStyle(data.settings.site.theme);
   return (
     <main
       className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 lg:px-6 lg:py-8"
       data-layout={layoutKey}
+      style={style}
     >
       <section className="public-storefront-hero">
         <div className="overflow-hidden rounded-lg border border-line bg-panel">
@@ -134,6 +137,27 @@ export function PublicStorefront({
       ) : null}
     </main>
   );
+}
+
+function createStorefrontStyle(theme: Record<string, unknown>) {
+  const accentColor = readString(theme.accentColor);
+  const brandColor = readString(theme.brandColor) ?? accentColor;
+  const backgroundColor = readString(theme.backgroundColor);
+  const style: CSSProperties & Record<`--${string}`, string> = {};
+
+  if (accentColor) {
+    style["--color-accent"] = accentColor;
+    style["--color-accent-soft"] =
+      `color-mix(in oklab, ${accentColor} 12%, transparent)`;
+  }
+  if (brandColor) style["--color-accent-strong"] = brandColor;
+  if (backgroundColor) style.backgroundColor = backgroundColor;
+
+  return Object.keys(style).length ? style : undefined;
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 function LeadPanel({

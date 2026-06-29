@@ -1,11 +1,14 @@
-import { Building2, Clock3, Mail, MapPin, Phone } from "lucide-react";
-import type { Dispatch, SetStateAction } from "react";
-import { useState } from "react";
+import { Building2, Save } from "lucide-react";
+import { useEffect, useState } from "react";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 import {
-  SettingsInput,
-  SettingsSection,
-  SettingsTextarea,
-} from "./SettingsPanelParts";
+  FeatureField,
+  FeatureFormSection,
+} from "../../components/ui/FeatureForms";
+import {
+  FeatureInput,
+  FeatureTextarea,
+} from "../../components/ui/FeatureControls";
 import {
   businessHoursToText,
   textToBusinessHours,
@@ -19,15 +22,20 @@ import {
 import type { StoreSettingsSnapshot } from "./types";
 
 export function SettingsStoreProfilePanel({
-  draft,
-  setDraft,
+  isSaving,
+  onSave,
+  settings,
 }: {
-  draft: StoreSettingsSnapshot;
-  setDraft: Dispatch<SetStateAction<StoreSettingsSnapshot>>;
+  isSaving: boolean;
+  onSave: (settings: StoreSettingsSnapshot) => Promise<void>;
+  settings: StoreSettingsSnapshot;
 }) {
+  const [draft, setDraft] = useState(settings);
   const [zipLookup, setZipLookup] = useState<ZipLookupState>({
     kind: "idle",
   });
+
+  useEffect(() => setDraft(settings), [settings]);
 
   const lookupZipCode = async () => {
     const zipCode = draft.profile.addressZipCode ?? "";
@@ -58,157 +66,247 @@ export function SettingsStoreProfilePanel({
   };
 
   return (
-    <SettingsSection icon={<Building2 className="size-5" />} title="Loja">
-      <SettingsInput
-        label="Nome fantasia"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            identity: { ...draft.identity, tradingName: value },
-          })
-        }
-        value={draft.identity.tradingName}
-      />
-      <SettingsInput
-        label="Razao social"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            identity: { ...draft.identity, legalName: value },
-          })
-        }
-        value={draft.identity.legalName ?? ""}
-      />
-      <SettingsInput
-        help="CPF ou CNPJ usado em documentos comerciais."
-        inputMode="numeric"
-        label="Documento fiscal"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: {
-              ...draft.profile,
-              documentNumber: formatBrazilianDocument(value),
-            },
-          })
-        }
-        value={draft.profile.documentNumber ?? ""}
-      />
-      <SettingsInput
-        icon={<Mail className="size-4" />}
-        inputMode="email"
-        label="Email"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: { ...draft.profile, contactEmail: value },
-          })
-        }
-        type="email"
-        value={draft.profile.contactEmail ?? ""}
-      />
-      <SettingsInput
-        icon={<Phone className="size-4" />}
-        inputMode="tel"
-        label="Telefone"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: {
-              ...draft.profile,
-              contactPhone: formatBrazilianPhone(value),
-            },
-          })
-        }
-        value={draft.profile.contactPhone ?? ""}
-      />
-      <SettingsInput
-        icon={<Phone className="size-4" />}
-        inputMode="tel"
-        label="WhatsApp"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: {
-              ...draft.profile,
-              whatsappPhone: formatBrazilianPhone(value),
-            },
-          })
-        }
-        value={draft.profile.whatsappPhone ?? ""}
-      />
-      <SettingsInput
-        icon={<MapPin className="size-4" />}
-        label="Endereco"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: { ...draft.profile, addressLine1: value || null },
-          })
-        }
-        value={draft.profile.addressLine1 ?? ""}
-      />
-      <SettingsInput
-        icon={<MapPin className="size-4" />}
-        label="Cidade"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: { ...draft.profile, addressCity: value },
-          })
-        }
-        value={draft.profile.addressCity ?? ""}
-      />
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SettingsInput
-          label="UF"
-          maxLength={2}
-          onChange={(value) =>
-            setDraft({
-              ...draft,
-              profile: {
-                ...draft.profile,
-                addressState: value.toUpperCase().slice(0, 2),
-              },
-            })
-          }
-          value={draft.profile.addressState ?? ""}
-        />
-        <SettingsInput
-          help={zipLookupHelp(zipLookup)}
-          inputMode="numeric"
-          label="CEP"
-          onBlur={() => void lookupZipCode()}
-          onChange={(value) =>
-            setDraft({
-              ...draft,
-              profile: {
-                ...draft.profile,
-                addressZipCode: formatBrazilianZipCode(value),
-              },
-            })
-          }
-          value={draft.profile.addressZipCode ?? ""}
-        />
-      </div>
-      <SettingsTextarea
-        icon={<Clock3 className="size-4" />}
-        label="Horario de funcionamento"
-        onChange={(value) =>
-          setDraft({
-            ...draft,
-            profile: {
-              ...draft.profile,
-              businessHours: textToBusinessHours(value),
-            },
-          })
-        }
-        placeholder={
-          "Segunda a Sexta, 9h as 18h\nSabado, 9h as 14h\nDomingo, Fechado"
-        }
-        value={businessHoursToText(draft.profile.businessHours)}
-      />
-    </SettingsSection>
+    <FeatureSection
+      icon={<Building2 className="size-5 text-accent-strong" />}
+      title="Perfil da Loja"
+      className="glass-panel-branded p-6 md:p-8 border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none"
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void onSave(draft);
+        }}
+        className="grid gap-6 mt-4"
+      >
+        <FeatureFormSection
+          title="Identificação da Empresa"
+          description="Nome e documentos fiscais oficiais da loja."
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <FeatureField label="Nome fantasia">
+                <FeatureInput
+                  required
+                  value={draft.identity.tradingName}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      identity: {
+                        ...draft.identity,
+                        tradingName: e.target.value,
+                      },
+                    })
+                  }
+                  className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+                />
+              </FeatureField>
+            </div>
+            <div className="md:col-span-1">
+              <FeatureField label="Razão social">
+                <FeatureInput
+                  value={draft.identity.legalName ?? ""}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      identity: {
+                        ...draft.identity,
+                        legalName: e.target.value,
+                      },
+                    })
+                  }
+                  className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+                />
+              </FeatureField>
+            </div>
+          </div>
+          <FeatureField
+            label="Documento fiscal (CNPJ/CPF)"
+            hint="CPF ou CNPJ usado em documentos comerciais."
+          >
+            <FeatureInput
+              inputMode="numeric"
+              value={draft.profile.documentNumber ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  profile: {
+                    ...draft.profile,
+                    documentNumber: formatBrazilianDocument(e.target.value),
+                  },
+                })
+              }
+              className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+            />
+          </FeatureField>
+        </FeatureFormSection>
+
+        <FeatureFormSection
+          title="Informações de Contato"
+          description="Canais oficiais para atendimento ao cliente e notificações."
+        >
+          <div className="grid gap-4 md:grid-cols-3">
+            <FeatureField label="E-mail de Contato">
+              <FeatureInput
+                type="email"
+                inputMode="email"
+                value={draft.profile.contactEmail ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    profile: { ...draft.profile, contactEmail: e.target.value },
+                  })
+                }
+                className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+              />
+            </FeatureField>
+            <FeatureField label="Telefone Comercial">
+              <FeatureInput
+                type="tel"
+                inputMode="tel"
+                value={draft.profile.contactPhone ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    profile: {
+                      ...draft.profile,
+                      contactPhone: formatBrazilianPhone(e.target.value),
+                    },
+                  })
+                }
+                className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+              />
+            </FeatureField>
+            <FeatureField label="WhatsApp da Loja">
+              <FeatureInput
+                type="tel"
+                inputMode="tel"
+                value={draft.profile.whatsappPhone ?? ""}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    profile: {
+                      ...draft.profile,
+                      whatsappPhone: formatBrazilianPhone(e.target.value),
+                    },
+                  })
+                }
+                className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+              />
+            </FeatureField>
+          </div>
+        </FeatureFormSection>
+
+        <FeatureFormSection
+          title="Localização e Endereço"
+          description="Endereço da loja física para exibição na vitrine."
+        >
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="md:col-span-1">
+              <FeatureField label="CEP" hint={zipLookupHelp(zipLookup)}>
+                <FeatureInput
+                  inputMode="numeric"
+                  onBlur={() => void lookupZipCode()}
+                  value={draft.profile.addressZipCode ?? ""}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      profile: {
+                        ...draft.profile,
+                        addressZipCode: formatBrazilianZipCode(e.target.value),
+                      },
+                    })
+                  }
+                  className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+                />
+              </FeatureField>
+            </div>
+            <div className="md:col-span-1">
+              <FeatureField label="UF">
+                <FeatureInput
+                  maxLength={2}
+                  value={draft.profile.addressState ?? ""}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      profile: {
+                        ...draft.profile,
+                        addressState: e.target.value.toUpperCase().slice(0, 2),
+                      },
+                    })
+                  }
+                  className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+                />
+              </FeatureField>
+            </div>
+            <div className="md:col-span-2">
+              <FeatureField label="Cidade">
+                <FeatureInput
+                  value={draft.profile.addressCity ?? ""}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      profile: {
+                        ...draft.profile,
+                        addressCity: e.target.value,
+                      },
+                    })
+                  }
+                  className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+                />
+              </FeatureField>
+            </div>
+          </div>
+          <FeatureField label="Logradouro / Endereço">
+            <FeatureInput
+              value={draft.profile.addressLine1 ?? ""}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  profile: {
+                    ...draft.profile,
+                    addressLine1: e.target.value || null,
+                  },
+                })
+              }
+              className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300"
+            />
+          </FeatureField>
+        </FeatureFormSection>
+
+        <FeatureFormSection
+          title="Atendimento"
+          description="Dias e horários de funcionamento exibidos aos clientes."
+        >
+          <FeatureField label="Horário de funcionamento">
+            <FeatureTextarea
+              placeholder="Segunda a Sexta, 9h as 18h&#10;Sabado, 9h as 14h&#10;Domingo, Fechado"
+              value={businessHoursToText(draft.profile.businessHours)}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  profile: {
+                    ...draft.profile,
+                    businessHours: textToBusinessHours(e.target.value),
+                  },
+                })
+              }
+              className="bg-app/40 border-line/60 focus:border-accent/40 hover:border-line-strong transition-all duration-300 min-h-24"
+            />
+          </FeatureField>
+        </FeatureFormSection>
+
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-line/45">
+          <button
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-black text-inverse disabled:opacity-70 transition-all hover:bg-accent-strong active:scale-98 shadow-md cursor-pointer"
+            disabled={isSaving}
+            type="submit"
+          >
+            <Save aria-hidden="true" className="size-4" />
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
+          </button>
+        </div>
+      </form>
+    </FeatureSection>
   );
 }
 
@@ -222,5 +320,5 @@ function zipLookupHelp(state: ZipLookupState) {
   if (state.kind === "loading") return "Buscando cidade e UF pelo CEP...";
   if (state.kind === "error") return state.message;
   if (state.kind === "success") return "Cidade e UF preenchidas pelo CEP.";
-  return "Ao sair do campo, cidade e UF serao preenchidas automaticamente.";
+  return "Ao sair do campo, cidade e UF serão preenchidas automaticamente.";
 }

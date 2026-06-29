@@ -9,11 +9,15 @@ import {
   Store,
 } from "lucide-react";
 import {
-  AgencyDateFilter,
-  AgencySearchFilter,
-  AgencySelect,
-  AgencyStatCard,
-} from "./AgencyDashboardControlParts";
+  FeatureSearchField,
+  FeatureSelect,
+} from "../../../components/ui/FeatureControls";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+} from "../../../components/ui/FeatureLayout";
+import { FeatureStatCard } from "../../../components/ui/FeatureCards";
+import { AgencyDateFilter } from "./AgencyDashboardControlParts";
 import type {
   AgencySort,
   AgencyStatusFilter,
@@ -53,24 +57,19 @@ export function AgencyToast({
 
 export function AgencyDashboardHeader({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-      <div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-accent">
-          Visão Geral
-        </span>
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter text-primary mt-1">
-          Rede de Lojas
-        </h1>
-        <p className="text-muted text-sm font-semibold mt-1">
-          Central de monitoramento, planos, acessos e faturamento das suas
-          concessionárias.
-        </p>
-      </div>
-      <button onClick={onCreate} className="btn-gradient">
-        <Plus className="size-5" />
-        <span>Criar Nova Loja</span>
-      </button>
-    </div>
+    <FeaturePageHeader
+      actions={
+        <FeatureActionButton
+          icon={Plus}
+          label="Criar Nova Loja"
+          onClick={onCreate}
+          variant="primary"
+        />
+      }
+      description="Central de monitoramento, planos, acessos e faturamento das suas concessionarias."
+      eyebrow="Visao Geral"
+      title="Rede de Lojas"
+    />
   );
 }
 
@@ -88,33 +87,29 @@ export function AgencyStatsGrid({ stores }: { stores: AgencyStore[] }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <AgencyStatCard
-        icon={<Store className="size-6" />}
-        iconClass="bg-blue-soft text-blue-start"
+      <FeatureStatCard
+        icon={Store}
         label="Total de Lojas"
+        tone="blue"
         value={stores.length}
-        valueClassName="text-primary"
       />
-      <AgencyStatCard
-        icon={<Briefcase className="size-6" />}
-        iconClass="bg-accent-soft text-accent"
+      <FeatureStatCard
+        icon={Briefcase}
         label="Total de Veículos"
+        tone="accent"
         value={vehicleCount}
-        valueClassName="text-primary"
       />
-      <AgencyStatCard
-        icon={<CheckCircle2 className="size-6" />}
-        iconClass="bg-green-500/10 text-green-500"
+      <FeatureStatCard
+        icon={CheckCircle2}
         label="Ativas"
+        tone="green"
         value={activeCount}
-        valueClassName="text-green-end"
       />
-      <AgencyStatCard
-        icon={<Gem className="size-6" />}
-        iconClass="bg-violet-500/10 text-violet-start"
+      <FeatureStatCard
+        icon={Gem}
         label="Planos Premium"
+        tone="violet"
         value={premiumCount}
-        valueClassName="text-violet-start"
       />
     </div>
   );
@@ -159,12 +154,15 @@ export function AgencyStoresCard({
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:flex xl:items-center gap-3 flex-1 xl:max-w-4xl justify-end">
-          <AgencySearchFilter
+          <FeatureSearchField
+            label="Buscar loja ou subdominio"
+            placeholder="Buscar loja ou subdominio..."
+            inputClassName="rounded-xl"
             value={searchTerm}
-            onChange={onSearchTermChange}
+            onChange={(event) => onSearchTermChange(event.target.value)}
           />
-          <AgencySelect
-            icon={<SlidersHorizontal className="size-3.5" />}
+          <FeatureSelect
+            leftIcon={<SlidersHorizontal className="size-3.5" />}
             onChange={(value) => onSortByChange(value as AgencySort)}
             options={[
               { label: "Mais Recentes", value: "recent" },
@@ -175,8 +173,8 @@ export function AgencyStoresCard({
             ]}
             value={sortBy}
           />
-          <AgencySelect
-            icon={<SlidersHorizontal className="size-3.5" />}
+          <FeatureSelect
+            leftIcon={<SlidersHorizontal className="size-3.5" />}
             onChange={(value) =>
               onStatusFilterChange(value as AgencyStatusFilter)
             }

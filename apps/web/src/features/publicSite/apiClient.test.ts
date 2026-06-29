@@ -92,6 +92,25 @@ describe("createPublicStorefrontApi", () => {
     });
   });
 
+  it("sends explicit store slug headers for slug-based public routes", async () => {
+    const calls: FetchCall[] = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input });
+      return new Response(JSON.stringify(publicStorefrontPreview.settings), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createPublicStorefrontApi({
+      fetch: fakeFetch,
+      storeSlug: "demo",
+    });
+
+    await api.getSettings();
+
+    expect(calls[0]?.init?.headers).toEqual({ "x-store-slug": "demo" });
+  });
+
   it("submits listing interest to public lead endpoint", async () => {
     const calls: FetchCall[] = [];
     const fakeFetch: typeof fetch = async (input, init) => {

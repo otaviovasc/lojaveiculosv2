@@ -64,6 +64,34 @@ for (const file of walk(domainsRoot).filter(isServiceFile)) {
   ) {
     failures.push(`${file}: service must write scoped structured logs`);
   }
+
+  if (isStorefrontCustomPageService(file)) {
+    if (
+      !source.includes('"store_public_site.manage"') &&
+      !source.includes('"public_storefront.read"')
+    ) {
+      failures.push(
+        `${file}: custom page services must declare a page permission`,
+      );
+    }
+
+    if (basename(file) === "getPublicStorefrontCustomPage.ts") {
+      if (!source.includes("findPublicCustomPageBySlug")) {
+        failures.push(
+          `${file}: public custom pages must use the public page lookup`,
+        );
+      }
+      if (!source.includes("sitePublished")) {
+        failures.push(
+          `${file}: public custom pages must require published site state`,
+        );
+      }
+    } else if (!source.includes("requireStorefrontPageScope")) {
+      failures.push(
+        `${file}: admin custom pages must require store/tenant scope`,
+      );
+    }
+  }
 }
 
 if (failures.length > 0) {
@@ -72,4 +100,11 @@ if (failures.length > 0) {
     console.error(failure);
   }
   process.exit(1);
+}
+
+function isStorefrontCustomPageService(file) {
+  return (
+    file.includes("/domains/storefront/services/StorefrontService/") &&
+    basename(file).includes("StorefrontCustomPage")
+  );
 }

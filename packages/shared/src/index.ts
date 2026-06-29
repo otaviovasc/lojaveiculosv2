@@ -7,8 +7,7 @@ export type VehicleId = Brand<string, "VehicleId">;
 export type StoreMembershipId = Brand<string, "StoreMembershipId">;
 
 export type Result<T, E = string> =
-  | { ok: true; value: T }
-  | { error: E; ok: false };
+  { ok: true; value: T } | { error: E; ok: false };
 
 export type PermissionKey =
   | "audit.read"
@@ -92,12 +91,8 @@ export type EntitlementKey =
   | "subdomain";
 
 export type RoleKey =
-  | "agency"
-  | "admin"
-  | "investor"
-  | "owner"
-  | "salesman"
-  | "supervisor";
+  "agency" | "admin" | "investor" | "owner" | "salesman" | "supervisor";
 
 export * from "./vehicleColors.js";
 export * from "./vehicleTechnicalSpecs.js";
+export * from "./storefrontBuilder.js";

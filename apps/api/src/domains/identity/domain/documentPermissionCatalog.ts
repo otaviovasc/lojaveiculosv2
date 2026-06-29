@@ -1,58 +1,58 @@
-import type { PermissionDescriptor } from "./permissionCatalog.js";
+import type { PermissionDescriptor } from "./permissionCatalogTypes.js";
 
 export const documentPermissionDescriptors = [
   {
-    description: "Visualizar documentos compartilhados da loja.",
+    description: "Visualizar e consultar termos e contratos da loja.",
     key: "documents.read",
-    label: "Ler documentos",
+    label: "Visualizar documentos",
     risk: "medium",
   },
   {
-    description: "Gerar link de download de documentos.",
+    description: "Fazer o download dos documentos em formato PDF.",
     key: "documents.download",
-    label: "Baixar",
+    label: "Baixar documentos",
     risk: "high",
   },
   {
-    description: "Renderizar previa de documentos.",
+    description: "Visualizar prévia de arquivos antes de emitir ou salvar.",
     key: "documents.preview",
-    label: "Pre-visualizar",
+    label: "Pré-visualizar",
     risk: "medium",
   },
   {
-    description: "Regenerar documento operacional.",
+    description: "Recriar o arquivo em PDF de um contrato gerado.",
     key: "documents.regenerate",
-    label: "Regenerar",
+    label: "Regenerar arquivos",
     risk: "high",
   },
   {
-    description: "Alterar clausulas dos documentos da loja.",
+    description: "Editar cláusulas e condições dos modelos de documentos.",
     key: "documents.template_update",
-    label: "Editar modelos",
+    label: "Editar modelos de contratos",
     risk: "high",
   },
   {
-    description: "Alterar titulo e tipo de documentos anexados.",
+    description: "Alterar título, descrição e categorias de documentos.",
     key: "documents.update_metadata",
-    label: "Editar metadados",
+    label: "Editar informações",
     risk: "high",
   },
   {
-    description: "Alterar vinculos de documentos com loja e unidades.",
+    description: "Alterar associações de documentos com veículos e vendas.",
     key: "documents.update_links",
-    label: "Gerenciar vinculos",
+    label: "Gerenciar associações",
     risk: "high",
   },
   {
-    description: "Enviar e registrar documentos externos.",
+    description: "Registrar e anexar documentos externos ao sistema.",
     key: "documents.upload",
-    label: "Anexar documentos",
+    label: "Anexar arquivos",
     risk: "high",
   },
   {
-    description: "Cancelar documentos emitidos.",
+    description: "Cancelar e invalidar documentos oficiais emitidos.",
     key: "documents.void",
-    label: "Cancelar",
+    label: "Invalidar documentos",
     risk: "high",
   },
 ] satisfies readonly PermissionDescriptor[];

@@ -17,6 +17,20 @@ export function FeatureInput(props: ComponentProps<"input">) {
   );
 }
 
+export function FeatureTextarea(props: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      {...props}
+      className={cx(
+        "w-full min-h-28 rounded-lg border border-line bg-app px-3 py-3 text-sm",
+        "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
+        "disabled:opacity-50 disabled:bg-app-elevated/50 disabled:cursor-not-allowed disabled:border-line/60",
+        props.className,
+      )}
+    />
+  );
+}
+
 export function FeatureSearchField({
   className,
   inputClassName,
