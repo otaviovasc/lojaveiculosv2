@@ -36,7 +36,7 @@ export function BuilderInspector({
     return (
       <aside
         className={cn(
-          "w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card/50 p-4 lg:w-80",
+          "w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card p-4 lg:w-80",
           className,
         )}
       >
@@ -66,7 +66,7 @@ export function BuilderInspector({
   return (
     <aside
       className={cn(
-        "w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card/50 p-4 lg:w-80",
+        "w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card p-4 lg:w-80",
         className,
       )}
     >

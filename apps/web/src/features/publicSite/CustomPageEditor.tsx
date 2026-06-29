@@ -245,7 +245,7 @@ export function CustomPageEditor({
           {statusMessage.text}
         </div>
       ) : null}
-      <div className="flex min-h-0 flex-1 overflow-hidden">
+      <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <aside
           className={cn(
             "w-full shrink-0 flex-col overflow-hidden border-r border-border/50 bg-card/50 lg:flex lg:w-64",
@@ -290,7 +290,10 @@ export function CustomPageEditor({
         />
         {showPageSettings || (showBlockInspector && selectedComponent) ? (
           <BuilderInspector
-            className={activeTab === "editor" ? "block" : "hidden lg:block"}
+            className={cn(
+              activeTab === "editor" ? "block" : "hidden lg:block",
+              "z-30 h-full shadow-[-18px_0_45px_rgba(15,23,42,0.08)] lg:absolute lg:inset-y-0 lg:right-0 lg:w-[min(24rem,calc(100%-2rem))]",
+            )}
             component={showBlockInspector ? selectedComponent : null}
             config={config}
             draft={draft}
