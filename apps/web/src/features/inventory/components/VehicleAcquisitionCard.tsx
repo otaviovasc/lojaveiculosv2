@@ -185,7 +185,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
           {message}
         </div>
       ) : null}
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="flex flex-col gap-6">
         <VehicleAcquisitionSupplierPanel
           isSaving={isSaving}
           onArchive={() => void archiveSupplier()}
@@ -196,6 +196,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
           supplierDraft={supplierDraft}
           supplierOptions={supplierOptions}
         />
+        <div className="border-t border-line/60" />
         <VehicleAcquisitionSourcePanel
           acquisitionDraft={acquisitionDraft}
           isSaving={isSaving}

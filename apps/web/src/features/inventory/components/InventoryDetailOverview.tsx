@@ -57,8 +57,8 @@ export function InventoryDetailOverview({
 
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
-      <div className="self-start overflow-hidden rounded-2xl border border-line bg-panel shadow-sm">
-        <div className="grid gap-0 md:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="overflow-hidden rounded-2xl border border-line bg-panel shadow-sm">
+        <div className="grid gap-0 md:grid-cols-[4fr_3fr] h-full">
           <div className="relative min-h-[280px] bg-app">
             {cover?.url ? (
               <img
@@ -115,7 +115,7 @@ export function InventoryDetailOverview({
               <OverviewMetric
                 icon={<Camera className="size-4" />}
                 label="Fotos"
-                value={`${publicPhotos.length} publicas`}
+                value={`${publicPhotos.length}`}
               />
               <OverviewMetric
                 icon={<FileText className="size-4" />}
