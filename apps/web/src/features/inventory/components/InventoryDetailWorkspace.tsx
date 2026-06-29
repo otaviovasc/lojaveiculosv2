@@ -179,7 +179,6 @@ export function InventoryDetailWorkspace({
       <WorkspaceTopBar
         title={listing.title}
         plate={specs.plate}
-        id={listing.id}
         onBack={onBack}
         onAction={handleAction}
       />

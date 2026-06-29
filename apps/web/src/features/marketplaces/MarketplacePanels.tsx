@@ -107,10 +107,10 @@ export function MarketplaceProviderCard({
         </button>
       </div>
       <input
-        aria-label={`Listing id ${providerLabels[provider]}`}
+        aria-label={`Veiculo ${providerLabels[provider]}`}
         className="marketplace-listing-input"
         onChange={(event) => onListingIdChange(provider, event.target.value)}
-        placeholder="ID do veiculo/listing para publicar"
+        placeholder="Veiculo para publicar"
         value={listingId}
       />
       <div className="marketplace-job-actions">

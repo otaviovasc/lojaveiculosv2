@@ -64,7 +64,7 @@ export function DashboardHome({
   }, []);
 
   const handleCopyLink = async () => {
-    const linkText = `${dashboard?.storeId || "test-store"}.lojaveiculos.com.br`;
+    const linkText = `${getDashboardPublicSlug()}.lojaveiculos.com.br`;
     try {
       await navigator.clipboard.writeText(linkText);
       setCopyState("copied");
@@ -75,7 +75,7 @@ export function DashboardHome({
   };
 
   const handleVisitStore = () => {
-    const url = `https://${dashboard?.storeId || "test-store"}.lojaveiculos.com.br`;
+    const url = `https://${getDashboardPublicSlug()}.lojaveiculos.com.br`;
     window.open(url, "_blank", "noopener");
   };
 
@@ -124,7 +124,6 @@ export function DashboardHome({
       <main ref={containerRef} className="dashboard-main">
         <DashboardHomeToolbar
           copyState={copyState}
-          dashboard={dashboard}
           onCopyLink={() => void handleCopyLink()}
           onVisitStore={handleVisitStore}
         />
@@ -145,6 +144,14 @@ export function DashboardHome({
       </main>
     </div>
   );
+}
+
+function getDashboardPublicSlug() {
+  const env = import.meta.env as {
+    DEV?: boolean;
+    VITE_DEV_STORE_SLUG?: string;
+  };
+  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "loja");
 }
 
 function DashboardHomeLoadingSkeleton() {

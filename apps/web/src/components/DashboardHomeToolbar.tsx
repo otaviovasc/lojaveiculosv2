@@ -1,19 +1,16 @@
 import { CalendarDays, Check, CheckCircle2, Copy, Eye } from "lucide-react";
-import type { AnalyticsDashboard } from "../features/analytics/types";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
 
 export function DashboardHomeToolbar({
   copyState,
-  dashboard,
   onCopyLink,
   onVisitStore,
 }: {
   copyState: "idle" | "copied";
-  dashboard: AnalyticsDashboard | null;
   onCopyLink: () => void;
   onVisitStore: () => void;
 }) {
-  const publicUrl = `${dashboard?.storeId || "test-store"}.lojaveiculos.com.br`;
+  const publicUrl = `${getDashboardPublicSlug()}.lojaveiculos.com.br`;
 
   return (
     <div className="dashboard-toolbar">
@@ -91,4 +88,12 @@ export function DashboardHomeToolbar({
       </DashboardHomeEntry>
     </div>
   );
+}
+
+function getDashboardPublicSlug() {
+  const env = import.meta.env as {
+    DEV?: boolean;
+    VITE_DEV_STORE_SLUG?: string;
+  };
+  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "loja");
 }

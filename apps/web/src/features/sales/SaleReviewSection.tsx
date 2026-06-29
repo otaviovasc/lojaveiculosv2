@@ -79,18 +79,18 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
               </div>
               <div>
                 <span className="text-muted block text-[10px] uppercase">
-                  Unidade ID
+                  Unidade
                 </span>
                 <span className="text-app-text block mt-0.5">
-                  {String(sale.unitId || "Não informado")}
+                  {String(sale.listingSnapshot.unitLabel || "Não informado")}
                 </span>
               </div>
               <div>
                 <span className="text-muted block text-[10px] uppercase">
-                  Vendedor ID
+                  Vendedor
                 </span>
                 <span className="text-app-text block mt-0.5">
-                  {String(sale.sellerUserId || "Não informado")}
+                  {String(sale.sellerUserId ? "Definido" : "Não informado")}
                 </span>
               </div>
             </div>

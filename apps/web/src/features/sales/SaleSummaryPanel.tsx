@@ -59,7 +59,7 @@ export function StickySaleSummary({
     {
       label: "Operador/Vendedor",
       ok: !!sale.sellerUserId,
-      desc: "ID do vendedor pendente",
+      desc: "Vendedor pendente",
     },
   ];
 

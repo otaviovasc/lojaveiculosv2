@@ -122,7 +122,7 @@ function SuccessState({ result }: { result: CreateInventoryFlowResult }) {
     <div className="mt-4 space-y-3 rounded-lg border border-line bg-accent-soft p-3 text-sm font-bold text-accent-strong">
       <div>
         <strong className="block text-app-text">Estoque criado</strong>
-        Listing ID: {result.listing.listing.id}
+        Veículo pronto para revisão e publicação.
       </div>
       {mediaUrl ? (
         <a

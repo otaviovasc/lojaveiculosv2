@@ -280,10 +280,7 @@ function SubmitStatusPanel({
     return (
       <div className="flex items-start gap-2.5 rounded-xl border border-accent/30 bg-accent-soft p-3.5 text-xs text-accent-strong font-bold animate-fade-in">
         <Check className="size-4 shrink-0" />
-        <p>
-          Veículo cadastrado com sucesso! ID:{" "}
-          {submitState.listingId.substring(0, 8)}
-        </p>
+        <p>Veículo cadastrado com sucesso.</p>
       </div>
     );
   }

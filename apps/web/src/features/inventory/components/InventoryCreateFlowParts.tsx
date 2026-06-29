@@ -197,7 +197,7 @@ function SubmitStatus({
   if (state.kind === "success") {
     return (
       <p className="mt-3 text-sm font-black text-accent-strong">
-        Estoque criado: {state.listingId} · {state.mediaCount} midias.
+        Estoque criado com sucesso · {state.mediaCount} midias.
       </p>
     );
   }
@@ -206,7 +206,7 @@ function SubmitStatus({
       <div className="mt-3 grid gap-3 rounded-lg border border-line bg-app p-3">
         <p className="text-sm font-black text-danger">{state.message}</p>
         <p className="text-xs font-bold text-muted">
-          Registro salvo: {state.listingId}. {partialRecoveryCopy(state)}
+          Registro salvo para retomada. {partialRecoveryCopy(state)}
         </p>
         <button
           className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent-soft px-4 text-sm font-black text-accent-strong"

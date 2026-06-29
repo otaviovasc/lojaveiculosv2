@@ -62,7 +62,7 @@ export function DashboardStatusToolbar({
         <Link2 aria-hidden="true" className="size-5 text-accent" />
         <div>
           <span>Loja</span>
-          <strong>{dashboard?.storeId ?? "Loja atual"}</strong>
+          <strong>{dashboard ? "Loja atual" : "Carregando"}</strong>
         </div>
       </article>
       <button
@@ -88,7 +88,9 @@ export function DashboardKpiGrid({ stats }: DashboardKpiGridProps) {
   );
 }
 
-export function DashboardActionPanel({ onNavigate }: DashboardActionPanelProps) {
+export function DashboardActionPanel({
+  onNavigate,
+}: DashboardActionPanelProps) {
   const actions = [
     { icon: Car, id: "inventory", label: "Novo estoque" },
     { icon: Users, id: "customers", label: "Clientes" },
@@ -144,7 +146,9 @@ export function DashboardLeadPanel({ dashboard }: DashboardDataPanelProps) {
               <div className="dashboard-progress-track">
                 <div
                   className="dashboard-progress-fill"
-                  style={{ width: `${leadCount ? (source.value / leadCount) * 100 : 0}%` }}
+                  style={{
+                    width: `${leadCount ? (source.value / leadCount) * 100 : 0}%`,
+                  }}
                 />
               </div>
             </div>
@@ -157,7 +161,9 @@ export function DashboardLeadPanel({ dashboard }: DashboardDataPanelProps) {
   );
 }
 
-export function DashboardOperationsPanel({ dashboard }: DashboardDataPanelProps) {
+export function DashboardOperationsPanel({
+  dashboard,
+}: DashboardDataPanelProps) {
   const panels = [
     {
       icon: Car,

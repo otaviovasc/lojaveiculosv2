@@ -30,10 +30,7 @@ export function InventoryListSelectionStatus({
       {state.kind === "loading" && (
         <div className="flex items-center gap-3 text-muted">
           <Loader2 className="size-5 shrink-0 animate-spin text-accent" />
-          <p className="text-sm font-black">
-            Carregando:{" "}
-            <span className="font-bold text-app-text">{state.listingId}</span>
-          </p>
+          <p className="text-sm font-black">Carregando detalhes do veículo.</p>
         </div>
       )}
 

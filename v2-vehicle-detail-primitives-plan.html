@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loja Veiculos V2 - Vehicle Detail and Primitives Roadmap</title>
+    <style>
+      :root {
+        --bg: #f4f6f8;
+        --panel: #ffffff;
+        --panel-soft: #f9fafb;
+        --text: #111827;
+        --muted: #5f6878;
+        --line: #d9e0ea;
+        --accent: #e65f00;
+        --accent-soft: #fff3e4;
+        --blue: #155eef;
+        --green: #087443;
+        --red: #b42318;
+        --shadow: 0 16px 44px rgba(15, 23, 42, 0.08);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(
+            circle at 18% 8%,
+            rgba(230, 95, 0, 0.12),
+            transparent 24rem
+          ),
+          linear-gradient(180deg, #ffffff 0, var(--bg) 18rem);
+        color: var(--text);
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.86);
+        padding: 28px clamp(18px, 4vw, 56px);
+        backdrop-filter: blur(16px);
+      }
+
+      main {
+        display: grid;
+        gap: 18px;
+        max-width: 1320px;
+        margin: 0 auto;
+        padding: 24px clamp(14px, 3vw, 32px) 42px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 980px;
+        margin-bottom: 8px;
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        line-height: 1.02;
+        letter-spacing: 0;
+      }
+
+      h2 {
+        margin-bottom: 12px;
+        font-size: 1.1rem;
+      }
+
+      h3 {
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.58;
+      }
+
+      .meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel);
+        padding: 0 10px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 800;
+      }
+
+      .pill.high {
+        border-color: rgba(230, 95, 0, 0.28);
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      .grid {
+        display: grid;
+        gap: 14px;
+      }
+
+      .summary {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .two {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      }
+
+      .card,
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .card {
+        padding: 16px;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 4px;
+        color: var(--text);
+        font-size: 1.45rem;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .panel.accent {
+        border-color: rgba(230, 95, 0, 0.24);
+        background: linear-gradient(180deg, #fffaf4, #ffffff);
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 10px;
+        font-size: 0.9rem;
+      }
+
+      th,
+      td {
+        border-bottom: 1px solid var(--line);
+        padding: 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--panel-soft);
+        color: var(--muted);
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .rank {
+        color: var(--accent);
+        font-weight: 900;
+      }
+
+      .status-ok {
+        color: var(--green);
+        font-weight: 900;
+      }
+
+      .status-risk {
+        color: var(--red);
+        font-weight: 900;
+      }
+
+      .code {
+        border-radius: 6px;
+        background: #eef2f6;
+        padding: 2px 6px;
+        color: #273244;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.82em;
+      }
+
+      ol,
+      ul {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      .roadmap {
+        counter-reset: step;
+      }
+
+      .step {
+        position: relative;
+        padding-left: 44px;
+      }
+
+      .step::before {
+        position: absolute;
+        left: 0;
+        top: 2px;
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        content: counter(step);
+        counter-increment: step;
+        font-weight: 900;
+      }
+
+      @media (max-width: 900px) {
+        .summary,
+        .two {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="meta">
+        <span class="pill high">Next build plan</span>
+        <span class="pill">Vehicle detail</span>
+        <span class="pill">Admin backend</span>
+        <span class="pill">V2 primitives</span>
+        <span class="pill">No internal IDs in UI</span>
+      </div>
+      <h1>Vehicle detail, backend wiring, and primitives roadmap</h1>
+      <p>
+        This plan starts from the current v2 vehicle detail upgrade and defines
+        what to build next without replacing the existing v2 design direction.
+        The target is a polished automotive admin and storefront experience
+        backed by real inventory, workflow, media, document, and publish data.
+      </p>
+    </header>
+
+    <main>
+      <section class="grid summary">
+        <article class="card">
+          <strong>1</strong>
+          <span>HTML plan artifact for the next implementation slice.</span>
+        </article>
+        <article class="card">
+          <strong>15</strong>
+          <span>Primitive/UI findings ranked for visual and UX impact.</span>
+        </article>
+        <article class="card">
+          <strong>5</strong>
+          <span>Backend/admin milestones for vehicle detail parity.</span>
+        </article>
+        <article class="card">
+          <strong>0</strong>
+          <span>Known reachable UI labels should expose raw internal IDs.</span>
+        </article>
+      </section>
+
+      <section class="grid two">
+        <article class="panel accent">
+          <h2>Agy status</h2>
+          <p>
+            Agy was invoked with
+            <span class="code">Gemini 3.5 Flash (High)</span>
+            for a read-only primitives audit, but the CLI required Google OAuth
+            and timed out before authentication completed. The audit below was
+            completed in Codex and should be re-run through Agy after auth is
+            available.
+          </p>
+        </article>
+        <article class="panel">
+          <h2>ID hygiene rule</h2>
+          <p>
+            UI must prefer plate, stock number, public slug, vehicle title,
+            customer name, store name, or a human status. Raw database IDs,
+            UUIDs, unit IDs, tenant IDs, and listing IDs stay inside state,
+            routes, API payloads, tests, and logs only.
+          </p>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Primitive and UI/UX audit</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Finding</th>
+              <th>Primary files</th>
+              <th>Next action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="rank">1</td>
+              <td>
+                Unify panel/card/action primitives across admin detail, builder,
+                and feature modules.
+              </td>
+              <td>
+                <span class="code">components/ui/Feature*</span>,
+                <span class="code">InventoryDetail*</span>
+              </td>
+              <td>
+                Create shared panel, action bar, metric, and section primitives
+                with v2 styling tokens.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">2</td>
+              <td>
+                Replace low-level ID-oriented controls with business selectors
+                and labels.
+              </td>
+              <td>
+                <span class="code">sales</span>,
+                <span class="code">marketplaces</span>,
+                <span class="code">inventory</span>
+              </td>
+              <td>
+                Use vehicle/customer/store selectors and display labels; keep
+                IDs internal.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">3</td>
+              <td>
+                Make focus, hover, active, disabled, and pressed states
+                consistent.
+              </td>
+              <td>
+                <span class="code">button.tsx</span>,
+                <span class="code">FeatureControls.tsx</span>, builder controls
+              </td>
+              <td>
+                Define one interaction recipe: subtle lift, clear focus ring,
+                active scale, disabled opacity.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">4</td>
+              <td>
+                Standardize empty/loading/error states for feature pages and
+                builder surfaces.
+              </td>
+              <td>
+                <span class="code">FeatureStates.tsx</span>,
+                <span class="code">PageBuilderEmptyState.tsx</span>
+              </td>
+              <td>
+                Build feature empty state variants: action, retry, onboarding,
+                unavailable.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">5</td>
+              <td>
+                Consolidate builder inspector rows, block cards, and media/image
+                fields.
+              </td>
+              <td>
+                <span class="code">BuilderBlock*</span>,
+                <span class="code">WebsiteBuilder*</span>
+              </td>
+              <td>
+                Extract editor field row, block library item, section list item,
+                and media picker primitives.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">6</td>
+              <td>
+                Improve contrast discipline for muted text on dark admin panels.
+              </td>
+              <td>
+                <span class="code">components.css</span>, inventory admin
+                surfaces
+              </td>
+              <td>
+                Audit muted text tokens against dark surfaces; reserve
+                ultra-muted text for metadata only.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">7</td>
+              <td>Make mobile action bars predictable and non-overlapping.</td>
+              <td>
+                <span class="code">WorkspaceTopBar.tsx</span>,
+                <span class="code">FeatureLayout.tsx</span>
+              </td>
+              <td>
+                Use compact icon+label wrapping, stable button heights, and
+                grouped overflow when needed.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">8</td>
+              <td>
+                Bring marketplace, finance, and sales modules onto the same
+                feature form primitives.
+              </td>
+              <td>
+                <span class="code">FinanceEntry*</span>,
+                <span class="code">SaleWorkspace*</span>,
+                <span class="code">MarketplacePanels.tsx</span>
+              </td>
+              <td>
+                Replace bespoke inputs with FeatureForm fields and
+                domain-specific selectors.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">9</td>
+              <td>
+                Unify admin vehicle media/document states with the live media
+                workspace.
+              </td>
+              <td>
+                <span class="code">InventoryMediaWorkspace.tsx</span>,
+                <span class="code">InventoryDetailDocumentosTab.tsx</span>
+              </td>
+              <td>
+                Promote media/doc list, upload action, and attachment status
+                primitives.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">10</td>
+              <td>
+                Use icons consistently for page-builder block categories and
+                controls.
+              </td>
+              <td>
+                <span class="code">builderBlockCatalog.ts</span>,
+                <span class="code">CustomPageEditorLibrary.tsx</span>
+              </td>
+              <td>
+                Keep icons from lucide, add missing category icons, and avoid
+                text-only utility buttons.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">11</td>
+              <td>Reduce duplicated card/list/table visual language.</td>
+              <td>
+                <span class="code">InventoryListing*</span>,
+                <span class="code">FeatureTable.tsx</span>
+              </td>
+              <td>
+                Define list density variants and use the same row action
+                primitive everywhere.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">12</td>
+              <td>Normalize form labels and helper copy to domain language.</td>
+              <td>
+                <span class="code">CRM</span>,
+                <span class="code">finance</span>,
+                <span class="code">marketplaces</span>
+              </td>
+              <td>
+                Replace technical placeholders with task language: vehicle,
+                seller, customer, portal.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">13</td>
+              <td>Improve destructive action confirmation consistency.</td>
+              <td>
+                <span class="code">confirm-dialog.tsx</span>, vehicle actions
+              </td>
+              <td>
+                Route delete/refund/return/unpublish actions through one
+                confirmation primitive.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">14</td>
+              <td>
+                Make public storefront and builder previews share vehicle card
+                primitives where possible.
+              </td>
+              <td>
+                <span class="code">PublicVehicleCard.tsx</span>,
+                <span class="code">PageBuilderNavigationBlocks.tsx</span>
+              </td>
+              <td>
+                Keep public rendering light theme, but share formatting and
+                metadata presentation.
+              </td>
+            </tr>
+            <tr>
+              <td class="rank">15</td>
+              <td>Document what should not change.</td>
+              <td><span class="code">v2-plan.html</span>, this plan</td>
+              <td>
+                Preserve v2 branding, existing architecture, backend contracts,
+                and domain terminology.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel">
+        <h2>Backend and admin vehicle detail roadmap</h2>
+        <div class="grid roadmap">
+          <article class="step">
+            <h3>Publish readiness model</h3>
+            <p>
+              Build a shared readiness helper and backend-backed publish result
+              that explains exactly why a vehicle is public or blocked. Public
+              exposure should require published listing status, public slug,
+              storefront visibility, non-deleted listing, visible unit/media,
+              and published store settings.
+            </p>
+          </article>
+          <article class="step">
+            <h3>
+              Turn anuncio and vitrine tabs into real public listing controls
+            </h3>
+            <p>
+              Replace local mock state with existing listing status, visibility,
+              public slug, theme/preview, and storefront API data. The admin
+              should show the same availability that the storefront repository
+              will enforce.
+            </p>
+          </article>
+          <article class="step">
+            <h3>Finish documents and RENAVE surfaces</h3>
+            <p>
+              Reuse the existing document upload/list APIs and media workspace
+              patterns instead of adding another local document shell. Keep fake
+              RENAVE/checklist cards clearly unavailable until backed.
+            </p>
+          </article>
+          <article class="step">
+            <h3>Polish reserve, sell, and release workflow UX</h3>
+            <p>
+              The backend workflow endpoints already perform the canonical
+              status changes and return refreshed detail DTOs. Next UI work
+              should add better success states, generated document links,
+              finance feedback, and backend error messages.
+            </p>
+          </article>
+          <article class="step">
+            <h3>Public exposure QA loop</h3>
+            <p>
+              For every publish/unpublish flow, verify admin readiness, public
+              listings, public detail, media grouping, lead submission, mobile
+              layout, and the negative case where the listing must disappear.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="grid two">
+        <article class="panel">
+          <h2>Quick wins</h2>
+          <ul>
+            <li>
+              Promote vehicle detail metric/readiness rows into shared
+              primitives.
+            </li>
+            <li>
+              Replace remaining technical placeholders with business copy.
+            </li>
+            <li>
+              Add a reusable selected-state recipe for gallery, block list, and
+              tab controls.
+            </li>
+            <li>
+              Apply one empty/error/loading state family across builder and
+              admin modules.
+            </li>
+            <li>
+              Run browser screenshots for admin detail, storefront detail, and
+              builder blocks after every UI slice.
+            </li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h2>Do not change casually</h2>
+          <ul>
+            <li>Do not replace v2 UI with Centro Imovel UI wholesale.</li>
+            <li>
+              Do not rewrite backend architecture for publish/workflow; extend
+              existing services.
+            </li>
+            <li>
+              Do not expose tenant, store, listing, unit, lead, or user IDs in
+              normal UI.
+            </li>
+            <li>
+              Do not add duplicate panel/card/form primitives when existing ones
+              can be extended.
+            </li>
+            <li>Do not make public tenant pages dark theme.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Validation checklist for next slices</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Area</th>
+              <th>Required checks</th>
+              <th>Status target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Code</td>
+              <td>
+                Typecheck, lint, unit tests, line/primitive guardrails, diff
+                check.
+              </td>
+              <td class="status-ok">Required before push</td>
+            </tr>
+            <tr>
+              <td>Browser</td>
+              <td>
+                Desktop and mobile screenshots for admin detail, storefront
+                detail, builder preview.
+              </td>
+              <td class="status-ok">Required for UI slices</td>
+            </tr>
+            <tr>
+              <td>Backend</td>
+              <td>
+                Repository filters, service errors, workflow status invariants,
+                OpenAPI DTO parity.
+              </td>
+              <td class="status-ok">Required for publish/workflow</td>
+            </tr>
+            <tr>
+              <td>ID hygiene</td>
+              <td>
+                Search for visible ID/UUID/listing/unit/store/tenant labels in
+                UI text.
+              </td>
+              <td class="status-ok">No visible raw IDs</td>
+            </tr>
+            <tr>
+              <td>Risk</td>
+              <td>
+                Mock tabs must be wired, marked unavailable, or removed from the
+                reachable path.
+              </td>
+              <td class="status-risk">Current gap</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </body>
+</html>

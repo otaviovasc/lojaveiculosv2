@@ -10,13 +10,11 @@ import {
 export function WorkspaceTopBar({
   title,
   plate,
-  id,
   onBack,
   onAction,
 }: {
   title: string;
   plate: string;
-  id: string | number;
   onBack: () => void;
   onAction: (action: string) => void;
 }) {
@@ -39,8 +37,6 @@ export function WorkspaceTopBar({
             <span className="bg-app-elevated border border-line px-2 py-0.5 rounded uppercase tracking-wider">
               {plate}
             </span>
-            <span>•</span>
-            <span>ID: {id}</span>
           </p>
         </div>
       </div>

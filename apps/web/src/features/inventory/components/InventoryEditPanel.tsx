@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import { parsePriceCents } from "../model/formModel";
+import { inventoryStatusLabels } from "../model/listCatalogModel";
 import {
   EditListingFields,
   EditUnitFields,
@@ -93,10 +94,14 @@ export function InventoryEditPanel({
       <InventoryPanel icon={<Settings2 className="size-5" />} title="Editar">
         <form className="grid gap-4" onSubmit={(event) => void save(event)}>
           <div className="flex flex-wrap items-center gap-2">
-            <InventoryBadge>{detail.listing.id}</InventoryBadge>
+            <InventoryBadge>
+              {inventoryStatusLabels[detail.listing.status]}
+            </InventoryBadge>
             <InventoryBadge tone="blue">{mediaCount} midias</InventoryBadge>
             {primaryUnit ? (
-              <InventoryBadge tone="blue">{primaryUnit.id}</InventoryBadge>
+              <InventoryBadge tone="blue">
+                {primaryUnit.stockNumber ?? primaryUnit.plate ?? "Unidade"}
+              </InventoryBadge>
             ) : null}
           </div>
 

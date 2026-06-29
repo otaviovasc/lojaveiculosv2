@@ -7,9 +7,7 @@ import type { AnalyticsDashboard } from "../features/analytics/types";
 import { DashboardHome } from "./DashboardHome";
 
 vi.mock("./DashboardHomeToolbar", () => ({
-  DashboardHomeToolbar: ({ dashboard }: { dashboard: AnalyticsDashboard }) => (
-    <div data-testid="dashboard-toolbar">{dashboard.storeId}</div>
-  ),
+  DashboardHomeToolbar: () => <div data-testid="dashboard-toolbar" />,
 }));
 
 vi.mock("./DashboardHomeKpis", () => ({
@@ -29,11 +27,7 @@ vi.mock("./DashboardHomeKpis", () => ({
 }));
 
 vi.mock("./DashboardHomeMainPanels", () => ({
-  DashboardHomeMainPanels: ({
-    dashboard,
-  }: {
-    dashboard: AnalyticsDashboard | null;
-  }) => <div data-testid="dashboard-main-panels">{dashboard?.storeId}</div>,
+  DashboardHomeMainPanels: () => <div data-testid="dashboard-main-panels" />,
 }));
 
 vi.mock("./DashboardHomeSidebarPanel", () => ({
@@ -68,9 +62,7 @@ describe("DashboardHome", () => {
       "Faturamento",
     );
     expect(screen.getByTestId("dashboard-kpis")).not.toHaveTextContent("R$ 0");
-    expect(screen.getByTestId("dashboard-main-panels")).toHaveTextContent(
-      "store_1",
-    );
+    expect(screen.getByTestId("dashboard-main-panels")).toBeInTheDocument();
   });
 });
 

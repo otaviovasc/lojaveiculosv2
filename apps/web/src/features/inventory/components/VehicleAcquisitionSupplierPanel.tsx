@@ -86,7 +86,7 @@ export function VehicleAcquisitionSupplierPanel({
           value={supplierDraft.provider}
         />
         <TextField
-          label="ID externo"
+          label="Codigo externo"
           onChange={(value) =>
             onUpdateSupplierDraft("externalProviderId", value)
           }

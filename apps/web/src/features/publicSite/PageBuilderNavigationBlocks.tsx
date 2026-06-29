@@ -193,9 +193,7 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
                           className="size-1 rounded-full bg-line-strong"
                           aria-hidden="true"
                         />
-                        <span className="uppercase opacity-80">
-                          {vehicle.slug.slice(0, 8)}
-                        </span>
+                        <span className="uppercase opacity-80">Disponivel</span>
                       </div>
                     </div>
                   </div>

@@ -38,7 +38,7 @@ export function ContextSection({ sale, update }: SectionProps) {
               leadId: event.target.value || null,
             }))
           }
-          placeholder="Ex: lead_87ad62bf"
+          placeholder="Selecione ou informe o lead vinculado"
           value={sale.leadId ?? ""}
         />
       </SaleField>
@@ -51,7 +51,7 @@ export function ContextSection({ sale, update }: SectionProps) {
               unitId: event.target.value || null,
             }))
           }
-          placeholder="Ex: unit_5f190e22"
+          placeholder="Selecione a unidade do veículo"
           value={sale.unitId ?? ""}
         />
       </SaleField>
@@ -94,7 +94,7 @@ export function ContextSection({ sale, update }: SectionProps) {
               sellerUserId: event.target.value || null,
             }))
           }
-          placeholder="ID do vendedor"
+          placeholder="Nome ou usuário do vendedor"
           value={sale.sellerUserId ?? ""}
         />
       </SaleField>
@@ -112,7 +112,7 @@ export function ContextSection({ sale, update }: SectionProps) {
               <span className="sales-vehicle-preview-subtitle">
                 {sale.listingSnapshot.unitLabel
                   ? `Unidade: ${String(sale.listingSnapshot.unitLabel)}`
-                  : `ID da unidade: ${sale.unitId ?? "Não informado"}`}
+                  : "Unidade não vinculada"}
               </span>
             </div>
           </div>

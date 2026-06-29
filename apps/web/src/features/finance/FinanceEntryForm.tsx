@@ -138,7 +138,7 @@ export function FinanceEntryForm({
           <FinanceField label="Vendedor" hint="Opcional para comissoes.">
             <FinanceInput
               onChange={setField("sellerUserId")}
-              placeholder="UUID do usuario"
+              placeholder="Nome ou usuario responsavel"
               value={form.sellerUserId}
             />
           </FinanceField>
