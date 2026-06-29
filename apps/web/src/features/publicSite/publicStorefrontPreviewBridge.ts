@@ -73,9 +73,7 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
   if (config.seo) nextTheme.seo = config.seo;
   if (config.socialLinks) nextTheme.socialLinks = config.socialLinks;
   if (config.testimonials) nextTheme.testimonials = config.testimonials;
-
-  const sectionKeys = createStorefrontSectionKeys(config);
-  if (sectionKeys.length) nextTheme.sections = sectionKeys;
+  if (config.sections) nextTheme.sections = config.sections;
 
   const whatsappPhone =
     config.socialLinks?.whatsapp ?? data.settings.contact.whatsappPhone;
@@ -107,26 +105,6 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
       },
     },
   };
-}
-
-function createStorefrontSectionKeys(config: WebsiteBuilderPreviewConfig) {
-  if (!Array.isArray(config.sections)) return [];
-
-  const keys = new Set<string>();
-  for (const section of config.sections) {
-    if (!section.visible) continue;
-    if (
-      section.type === "featured" ||
-      section.type === "all_properties" ||
-      section.type === "search"
-    ) {
-      keys.add("featured");
-    }
-    if (section.type === "contact") keys.add("contact");
-  }
-
-  if (keys.has("featured")) keys.add("trust");
-  return Array.from(keys);
 }
 
 function assignString(

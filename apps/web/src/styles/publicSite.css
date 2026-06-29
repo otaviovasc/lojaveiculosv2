@@ -42,6 +42,14 @@
   width: 100%;
 }
 
+.public-storefront :where(h1, h2, h3),
+.page-builder-renderer :where(h1, h2, h3, h4) {
+  font-family: var(
+    --public-storefront-heading-font,
+    var(--page-builder-heading-font, inherit)
+  );
+}
+
 .page-builder-marquee-track {
   align-items: center;
   animation: page-builder-marquee linear infinite;
@@ -84,6 +92,40 @@
 @keyframes page-builder-cursor {
   50% {
     opacity: 0;
+  }
+}
+
+@keyframes page-builder-style-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes page-builder-style-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes page-builder-style-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

@@ -11,6 +11,7 @@ import {
   WebsiteBuilderHeroImageField,
   WebsiteBuilderImageUrlField,
 } from "./WebsiteBuilderImageFields";
+import { storefrontFontOptions } from "./storefrontFonts";
 import type {
   WebsiteBuilderConfig,
   WebsiteBuilderTemplateId,
@@ -156,6 +157,59 @@ export function WebsiteBuilderBrandPanel({
           placeholder="https://..."
           value={config.logoUrl ?? ""}
         />
+      </div>
+    </div>
+  );
+}
+
+export function WebsiteBuilderTypographyPanel({
+  config,
+  updateConfig,
+}: {
+  config: WebsiteBuilderConfig;
+  updateConfig: UpdateConfig;
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <Label htmlFor="headingFont">Fonte dos titulos</Label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          id="headingFont"
+          onChange={(event) =>
+            updateConfig("fonts", {
+              ...config.fonts,
+              heading: event.target.value,
+            })
+          }
+          value={config.fonts.heading}
+        >
+          {storefrontFontOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="bodyFont">Fonte dos textos</Label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          id="bodyFont"
+          onChange={(event) =>
+            updateConfig("fonts", {
+              ...config.fonts,
+              body: event.target.value,
+            })
+          }
+          value={config.fonts.body}
+        >
+          {storefrontFontOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );

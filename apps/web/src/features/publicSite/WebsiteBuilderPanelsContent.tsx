@@ -1,8 +1,13 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Plus, Trash2 } from "lucide-react";
 import { WebsiteBuilderImageUrlField } from "./WebsiteBuilderImageFields";
-import type { WebsiteBuilderConfig } from "./WebsiteBuilderTypes";
+import type {
+  WebsiteBuilderConfig,
+  WebsiteBuilderTestimonial,
+} from "./WebsiteBuilderTypes";
 
 type UpdateConfig = <K extends keyof WebsiteBuilderConfig>(
   key: K,
@@ -127,16 +132,122 @@ export function WebsiteBuilderContactPanel({
   );
 }
 
-export function WebsiteBuilderTestimonialsPanel() {
+export function WebsiteBuilderTestimonialsPanel({
+  config,
+  updateConfig,
+}: {
+  config: WebsiteBuilderConfig;
+  updateConfig: UpdateConfig;
+}) {
+  const testimonials = config.testimonials ?? [];
+  const updateTestimonial = (
+    id: string,
+    patch: Partial<WebsiteBuilderTestimonial>,
+  ) => {
+    updateConfig(
+      "testimonials",
+      testimonials.map((testimonial) =>
+        testimonial.id === id ? { ...testimonial, ...patch } : testimonial,
+      ),
+    );
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Depoimentos
       </h4>
-      <p className="text-xs text-muted-foreground">
-        Os depoimentos seguem salvos no tema do site e aparecem nas secoes
-        publicadas.
-      </p>
+      {testimonials.length ? (
+        <div className="space-y-3">
+          {testimonials.map((testimonial, index) => (
+            <div
+              className="space-y-3 rounded-xl border border-border bg-card p-3"
+              key={testimonial.id}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  Depoimento {index + 1}
+                </span>
+                <button
+                  aria-label="Remover depoimento"
+                  className="rounded-lg p-1.5 text-destructive transition-colors hover:bg-destructive/10"
+                  onClick={() =>
+                    updateConfig(
+                      "testimonials",
+                      testimonials.filter((item) => item.id !== testimonial.id),
+                    )
+                  }
+                  type="button"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input
+                  onChange={(event) =>
+                    updateTestimonial(testimonial.id, {
+                      name: event.target.value,
+                    })
+                  }
+                  value={testimonial.name}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Descricao</Label>
+                <Input
+                  onChange={(event) =>
+                    updateTestimonial(testimonial.id, {
+                      role: event.target.value,
+                    })
+                  }
+                  value={testimonial.role}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Texto</Label>
+                <Textarea
+                  onChange={(event) =>
+                    updateTestimonial(testimonial.id, {
+                      quote: event.target.value,
+                    })
+                  }
+                  rows={3}
+                  value={testimonial.quote}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border p-4 text-sm text-muted-foreground">
+          Nenhum depoimento cadastrado.
+        </div>
+      )}
+      <Button
+        onClick={() =>
+          updateConfig("testimonials", [...testimonials, createTestimonial()])
+        }
+        size="sm"
+        type="button"
+        variant="outline"
+      >
+        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        Adicionar depoimento
+      </Button>
     </div>
   );
+}
+
+function createTestimonial(): WebsiteBuilderTestimonial {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `testimonial_${Date.now()}`;
+  return {
+    id,
+    name: "Cliente",
+    quote: "Atendimento transparente e entrega muito bem acompanhada.",
+    role: "Comprador",
+  };
 }

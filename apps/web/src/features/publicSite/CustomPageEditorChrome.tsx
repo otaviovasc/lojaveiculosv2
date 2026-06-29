@@ -68,8 +68,8 @@ export function CustomPageEditorTopBar({
           className={cn(
             "hidden rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors sm:inline-flex",
             page.visible
-              ? "border-success/20 bg-success/10 text-success hover:bg-success/15"
-              : "border-warning/20 bg-warning/10 text-warning hover:bg-warning/15",
+              ? "border-success/40 bg-success text-success-foreground hover:bg-success/90"
+              : "border-warning/40 bg-warning text-warning-foreground hover:bg-warning/90",
           )}
           disabled={isSaving}
           onClick={onTogglePublished}

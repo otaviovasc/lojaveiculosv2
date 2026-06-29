@@ -1,4 +1,5 @@
 import type { StorefrontBuilderComponent } from "@lojaveiculosv2/shared";
+import type { ReactNode } from "react";
 import {
   AboutBlockEditor,
   GalleryBlockEditor,
@@ -19,6 +20,7 @@ import {
   NestedLayoutEditor,
   SimpleBlockEditor,
 } from "./BuilderStructureBlockEditors";
+import { BuilderBlockStyleEditor } from "./BuilderBlockStyleEditor";
 
 export function BuilderBlockPropsEditor({
   component,
@@ -36,41 +38,66 @@ export function BuilderBlockPropsEditor({
       value.map((child, order) => ({ ...child, order })),
     );
 
+  const withStyleEditor = (editor: ReactNode) => (
+    <>
+      {editor}
+      <BuilderBlockStyleEditor component={component} onChange={onChange} />
+    </>
+  );
+
   if (component.type === "hero") {
-    return <HeroBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(<HeroBlockEditor props={props} setProp={setProp} />);
   }
   if (component.type === "about") {
-    return <AboutBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <AboutBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "text_block") {
-    return <TextBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(<TextBlockEditor props={props} setProp={setProp} />);
   }
   if (component.type === "image") {
-    return <ImageBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <ImageBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "gallery") {
-    return <GalleryBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <GalleryBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "video") {
-    return <VideoBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <VideoBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "testimonials") {
-    return <TestimonialsBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <TestimonialsBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "featured" || component.type === "properties_grid") {
-    return <FeaturedVehiclesBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <FeaturedVehiclesBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "cta") {
-    return <CtaBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(<CtaBlockEditor props={props} setProp={setProp} />);
   }
   if (component.type === "contact_section") {
-    return <ContactSectionBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <ContactSectionBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "typewriter") {
-    return <TypewriterBlockEditor props={props} setProp={setProp} />;
+    return withStyleEditor(
+      <TypewriterBlockEditor props={props} setProp={setProp} />,
+    );
   }
   if (component.type === "header" || component.type === "footer") {
-    return <HeaderFooterEditor component={component} setProp={setProp} />;
+    return withStyleEditor(
+      <HeaderFooterEditor component={component} setProp={setProp} />,
+    );
   }
   if (
     component.type === "container" ||
@@ -78,15 +105,20 @@ export function BuilderBlockPropsEditor({
     component.type === "two_column"
   ) {
     return (
-      <NestedLayoutEditor
-        component={component}
-        renderNestedEditor={(child, updateChild) => (
-          <BuilderBlockPropsEditor component={child} onChange={updateChild} />
-        )}
-        setChildren={setChildren}
-        setProp={setProp}
-      />
+      <>
+        <NestedLayoutEditor
+          component={component}
+          renderNestedEditor={(child, updateChild) => (
+            <BuilderBlockPropsEditor component={child} onChange={updateChild} />
+          )}
+          setChildren={setChildren}
+          setProp={setProp}
+        />
+        <BuilderBlockStyleEditor component={component} onChange={onChange} />
+      </>
     );
   }
-  return <SimpleBlockEditor component={component} setProp={setProp} />;
+  return withStyleEditor(
+    <SimpleBlockEditor component={component} setProp={setProp} />,
+  );
 }

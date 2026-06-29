@@ -21,7 +21,7 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
     >
       <div className="flex min-h-16 items-center justify-between gap-3 px-4">
         <strong className="truncate text-base font-black">{logoText}</strong>
-        <nav className="hidden min-w-0 items-center gap-3 text-sm font-black text-muted md:flex">
+        <nav className="hidden min-w-0 items-center gap-3 text-sm font-black text-app-text md:flex">
           {links.map((link, index) => (
             <a
               href={textProp(link.href) ?? "#"}

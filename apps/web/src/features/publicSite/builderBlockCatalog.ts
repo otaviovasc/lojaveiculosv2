@@ -2,6 +2,30 @@ import type {
   StorefrontBuilderComponent,
   StorefrontBuilderComponentType,
 } from "@lojaveiculosv2/shared";
+import {
+  ArrowUpDown,
+  Box,
+  Building2,
+  Columns2,
+  FileText,
+  Footprints,
+  Grid3X3,
+  Image,
+  Mail,
+  MapPin,
+  Megaphone,
+  Minus,
+  PanelTop,
+  Quote,
+  ScrollText,
+  Sparkles,
+  Square,
+  Star,
+  Type,
+  User,
+  Video,
+  type LucideIcon,
+} from "lucide-react";
 
 export const builderBlockLabels: Record<
   StorefrontBuilderComponentType,
@@ -29,6 +53,34 @@ export const builderBlockLabels: Record<
   two_column: "Duas colunas",
   typewriter: "Texto digitado",
   video: "Video",
+};
+
+export const builderBlockIcons: Record<
+  StorefrontBuilderComponentType,
+  LucideIcon
+> = {
+  about: User,
+  contact_section: Mail,
+  container: Box,
+  cta: Megaphone,
+  divider: Minus,
+  featured: Star,
+  footer: Footprints,
+  gallery: Grid3X3,
+  header: PanelTop,
+  hero: Sparkles,
+  image: Image,
+  map: MapPin,
+  marquee: ScrollText,
+  properties_grid: Building2,
+  scroll_zoom: Image,
+  section_wrapper: Square,
+  spacer: ArrowUpDown,
+  testimonials: Quote,
+  text_block: FileText,
+  two_column: Columns2,
+  typewriter: Type,
+  video: Video,
 };
 
 export const builderBlockGroups: ReadonlyArray<{
@@ -240,6 +292,10 @@ const defaultBlockProps: Record<
 
 export function blockLabel(type: string) {
   return builderBlockLabels[type as StorefrontBuilderComponentType] ?? type;
+}
+
+export function blockIcon(type: string) {
+  return builderBlockIcons[type as StorefrontBuilderComponentType] ?? FileText;
 }
 
 export function createDefaultPageComponent(

@@ -6,6 +6,7 @@ import {
   Palette,
   Phone,
   Sparkles,
+  Type,
   User,
 } from "lucide-react";
 import type { WebsiteBuilderAccordionItem } from "./WebsiteBuilderEditorPanel";
@@ -18,6 +19,7 @@ import {
   WebsiteBuilderBrandPanel,
   WebsiteBuilderHeroPanel,
   WebsiteBuilderTemplatePanel,
+  WebsiteBuilderTypographyPanel,
 } from "./WebsiteBuilderPanelsPrimary";
 import { WebsiteBuilderColorsSection } from "./WebsiteBuilderColorsSection";
 import { WebsiteBuilderSectionsManager } from "./WebsiteBuilderSectionsManager";
@@ -73,6 +75,17 @@ export function createWebsiteBuilderAccordionItems({
     },
     {
       children: (
+        <WebsiteBuilderTypographyPanel
+          config={config}
+          updateConfig={updateConfig}
+        />
+      ),
+      icon: Type,
+      id: "typography",
+      title: "Tipografia",
+    },
+    {
+      children: (
         <WebsiteBuilderHeroPanel config={config} updateConfig={updateConfig} />
       ),
       icon: Home,
@@ -99,7 +112,12 @@ export function createWebsiteBuilderAccordionItems({
       title: "Contato e Redes Sociais",
     },
     {
-      children: <WebsiteBuilderTestimonialsPanel />,
+      children: (
+        <WebsiteBuilderTestimonialsPanel
+          config={config}
+          updateConfig={updateConfig}
+        />
+      ),
       icon: MessageSquareQuote,
       id: "testimonials",
       title: "Depoimentos",

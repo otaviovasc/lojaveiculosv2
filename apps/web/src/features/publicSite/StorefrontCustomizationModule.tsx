@@ -175,6 +175,11 @@ export function StorefrontCustomizationModule({
   const builderConfig = draftSettings
     ? createBuilderConfigFromSettings(draftSettings)
     : null;
+  const clearSavedStatus = () => {
+    setStatus((current) =>
+      current.kind === "saved" ? { kind: "ready" } : current,
+    );
+  };
 
   if (!draftSettings || !builderConfig) {
     return <StorefrontLoadingState status={status} />;
@@ -184,6 +189,7 @@ export function StorefrontCustomizationModule({
     return (
       <WebsiteBuilderDesign
         isSaving={status.kind === "saving"}
+        onDirty={clearSavedStatus}
         onSave={(input) => saveSettings(input.settings)}
         settings={draftSettings}
         statusMessage={toStatusMessage(status)}
@@ -198,6 +204,7 @@ export function StorefrontCustomizationModule({
           config={builderConfig}
           isSaving={status.kind === "saving"}
           onBack={() => setSelectedPage(null)}
+          onDirty={clearSavedStatus}
           onSave={savePage}
           page={selectedPage}
           statusMessage={toStatusMessage(status)}

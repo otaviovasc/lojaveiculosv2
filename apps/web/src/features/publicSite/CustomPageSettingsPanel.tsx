@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PageChromeFields } from "./CustomPageChromeSettings";
 import { slugifyCustomPage } from "./customPageUtils";
+import { storefrontFontOptions } from "./storefrontFonts";
 
 export function PageSettingsFields({
   config,
@@ -38,6 +39,11 @@ export function PageSettingsFields({
         </h3>
       </div>
       <PageIdentityFields draft={draft} onDraftChange={onDraftChange} />
+      <PageTypographyFields
+        config={config}
+        draft={draft}
+        onDraftChange={onDraftChange}
+      />
       <PageColorFields
         config={config}
         draft={draft}
@@ -109,6 +115,48 @@ function PageIdentityFields({
         />
       </div>
     </>
+  );
+}
+
+function PageTypographyFields({
+  config,
+  draft,
+  onDraftChange,
+}: {
+  config: StorefrontBuilderConfig;
+  draft: StorefrontCustomPage;
+  onDraftChange: (page: StorefrontCustomPage) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-lg border border-border bg-card p-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        Tipografia
+      </p>
+      <div className="space-y-2">
+        <Label>Fonte da pagina</Label>
+        <select
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          onChange={(event) =>
+            onDraftChange({
+              ...draft,
+              fontFamily:
+                event.target.value === "inherit" ? null : event.target.value,
+            })
+          }
+          value={draft.fontFamily ?? "inherit"}
+        >
+          <option value="inherit">Usar fonte do storefront</option>
+          {storefrontFontOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-[11px] text-muted-foreground">
+          Padrao atual: {config.fonts.body}
+        </p>
+      </div>
+    </div>
   );
 }
 

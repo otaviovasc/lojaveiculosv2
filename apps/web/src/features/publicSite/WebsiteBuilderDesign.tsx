@@ -31,11 +31,13 @@ import type {
 
 export function WebsiteBuilderDesign({
   isSaving,
+  onDirty,
   onSave,
   settings,
   statusMessage,
 }: {
   isSaving: boolean;
+  onDirty?: () => void;
   onSave: (input: WebsiteBuilderSaveInput) => Promise<void>;
   settings: StoreSettingsSnapshot;
   statusMessage?: { text: string; type: "error" | "success" } | null;
@@ -66,6 +68,7 @@ export function WebsiteBuilderDesign({
     key: K,
     value: WebsiteBuilderConfig[K],
   ) => {
+    onDirty?.();
     setConfig((current) => ({ ...current, [key]: value }));
     setHasUnsavedChanges(true);
     previewRef.current?.postUpdate({ [key]: value });

@@ -31,8 +31,12 @@ describe("public storefront preview bridge", () => {
     expect(data.settings.site.theme).toMatchObject({
       accentColor,
       headline: "Garagem premium",
-      sections: ["featured", "contact", "trust"],
     });
+    expect(data.settings.site.theme.sections).toEqual([
+      { id: "hero", order: 0, type: "hero", visible: true },
+      { id: "featured", order: 1, type: "featured", visible: true },
+      { id: "contact", order: 2, type: "contact", visible: true },
+    ]);
     expect(data.settings.contact.whatsappUrl).toBe(
       "https://wa.me/5511900000000",
     );

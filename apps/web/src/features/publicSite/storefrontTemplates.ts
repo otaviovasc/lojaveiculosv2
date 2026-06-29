@@ -101,7 +101,10 @@ export function createStorefrontTheme(
     ...template.theme,
     badgeLabel: readString(rawTheme.badgeLabel, template.theme.badgeLabel),
     ctaLabel: readString(rawTheme.ctaLabel, template.theme.ctaLabel),
-    headline: readString(rawTheme.headline, template.theme.headline),
+    headline: readString(
+      rawTheme.heroTitle,
+      readString(rawTheme.headline, template.theme.headline),
+    ),
     sections: readSections(rawTheme.sections, template.theme.sections),
     tone: readString(rawTheme.tone, template.theme.tone),
   };
@@ -124,7 +127,9 @@ function readString(value: unknown, fallback: string) {
 }
 
 function readSections(value: unknown, fallback: readonly string[]) {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [...fallback];
+  if (!Array.isArray(value)) return [...fallback];
+  const sections = value.filter(
+    (item): item is string => typeof item === "string",
+  );
+  return sections.length ? sections : [...fallback];
 }

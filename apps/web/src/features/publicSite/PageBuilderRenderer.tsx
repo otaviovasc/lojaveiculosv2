@@ -4,6 +4,7 @@ import type {
   StorefrontBuilderVehicle,
   StorefrontCustomPage,
 } from "@lojaveiculosv2/shared";
+import type { CSSProperties, ReactNode } from "react";
 import {
   AboutBlock,
   CtaBlock,
@@ -32,6 +33,10 @@ import {
   TwoColumnBlock,
 } from "./PageBuilderLayoutBlocks";
 import {
+  collectPageBuilderFonts,
+  createPageBuilderBlockStyle,
+} from "./pageBuilderBlockStyle";
+import {
   createPageBackgroundStyle,
   PageBackgroundLayer,
   PageChromeFooter,
@@ -39,6 +44,7 @@ import {
 } from "./PageBuilderChrome";
 import type { BuilderRenderContext } from "./pageBuilderRenderTypes";
 import { componentArrayProp } from "./pageBuilderRenderUtils";
+import { fontStack, StorefrontFontLinks } from "./storefrontFonts";
 
 type PageBuilderRendererProps = {
   config: StorefrontBuilderConfig;
@@ -61,6 +67,14 @@ export function PageBuilderRenderer({
     solidColor: background,
     type: "solid",
   };
+  const pageFont = page.fontFamily ?? config.fonts.body;
+  const headingFont = config.fonts.heading;
+  const blockFonts = collectPageBuilderFonts(page.components);
+  const pageStyle: CSSProperties & Record<`--${string}`, string> = {
+    ...createPageBackgroundStyle(pageBackground, background),
+    "--page-builder-heading-font": fontStack(headingFont),
+    fontFamily: fontStack(pageFont),
+  };
 
   const renderBlocks = (
     components: readonly StorefrontBuilderComponent[] | unknown,
@@ -71,11 +85,9 @@ export function PageBuilderRenderer({
         .filter((component) => component.visible)
         .sort((a, b) => a.order - b.order)
         .map((component) => (
-          <BuilderBlock
-            component={component}
-            context={context}
-            key={component.id}
-          />
+          <BuilderBlockFrame component={component} key={component.id}>
+            <BuilderBlock component={component} context={context} />
+          </BuilderBlockFrame>
         ))}
     </div>
   );
@@ -91,41 +103,53 @@ export function PageBuilderRenderer({
   };
 
   return (
-    <main
-      className="min-h-screen text-app-text"
-      style={{
-        ...createPageBackgroundStyle(pageBackground, background),
-        fontFamily: page.fontFamily ?? config.fonts.body,
-      }}
-    >
-      <PageBackgroundLayer background={pageBackground} />
-      {page.pageChrome?.showHeader !== false ? (
-        <PageChromeHeader
-          accent={accent}
-          config={config}
-          page={page}
-          preview={preview}
-          {...(storeSlug ? { storeSlug } : {})}
-        />
-      ) : null}
-      <div
-        className={
-          page.pageChrome?.showHeader !== false && !preview
-            ? "relative z-10 grid w-full gap-5 pt-16"
-            : "relative z-10 grid w-full gap-5"
-        }
+    <>
+      <StorefrontFontLinks fonts={[pageFont, headingFont, ...blockFonts]} />
+      <main
+        className="page-builder-renderer min-h-screen text-app-text"
+        style={pageStyle}
       >
-        {renderBlocks(page.components, "contents")}
-      </div>
-      {page.pageChrome?.showFooter !== false ? (
-        <PageChromeFooter
-          config={config}
-          page={page}
-          {...(storeSlug ? { storeSlug } : {})}
-        />
-      ) : null}
-    </main>
+        <PageBackgroundLayer background={pageBackground} />
+        {page.pageChrome?.showHeader !== false ? (
+          <PageChromeHeader
+            accent={accent}
+            config={config}
+            page={page}
+            preview={preview}
+            {...(storeSlug ? { storeSlug } : {})}
+          />
+        ) : null}
+        <div
+          className={
+            page.pageChrome?.showHeader !== false && !preview
+              ? "relative z-10 grid w-full gap-5 pt-16"
+              : "relative z-10 grid w-full gap-5"
+          }
+        >
+          {renderBlocks(page.components, "contents")}
+        </div>
+        {page.pageChrome?.showFooter !== false ? (
+          <PageChromeFooter
+            config={config}
+            page={page}
+            {...(storeSlug ? { storeSlug } : {})}
+          />
+        ) : null}
+      </main>
+    </>
   );
+}
+
+function BuilderBlockFrame({
+  children,
+  component,
+}: {
+  children: ReactNode;
+  component: StorefrontBuilderComponent;
+}) {
+  const style = createPageBuilderBlockStyle(component);
+  if (!style) return children;
+  return <div style={style}>{children}</div>;
 }
 
 function BuilderBlock({

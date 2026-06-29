@@ -74,6 +74,16 @@ export function PageChromeHeader({
 }) {
   const href = storeSlug ? `/${storeSlug}` : "/";
   const variant = page.pageChrome?.headerVariant ?? "minimal";
+  const headerTextColor = textColorForBackground(
+    variant === "solid" ? page.pageChrome?.headerBgColor : null,
+  );
+  const headerStyle =
+    variant === "solid" && page.pageChrome?.headerBgColor
+      ? {
+          backgroundColor: page.pageChrome.headerBgColor,
+          ...(headerTextColor ? { color: headerTextColor } : {}),
+        }
+      : undefined;
   return (
     <header
       className={[
@@ -86,11 +96,7 @@ export function PageChromeHeader({
             ? "border-border/50 bg-background"
             : "border-border/40 bg-background/80 backdrop-blur-md",
       ].join(" ")}
-      style={
-        variant === "solid" && page.pageChrome?.headerBgColor
-          ? { backgroundColor: page.pageChrome.headerBgColor }
-          : undefined
-      }
+      style={headerStyle}
     >
       <a
         className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-70"
@@ -115,7 +121,9 @@ export function PageChromeHeader({
           style={
             page.pageChrome?.headerLinkColor
               ? { color: page.pageChrome.headerLinkColor }
-              : { color: accent }
+              : headerTextColor
+                ? { color: headerTextColor }
+                : { color: accent }
           }
         >
           Voltar ao site
@@ -135,11 +143,18 @@ export function PageChromeFooter({
   storeSlug?: string;
 }) {
   const href = storeSlug ? `/${storeSlug}` : "/";
-  const textColor = page.pageChrome?.footerChromeTextColor ?? undefined;
+  const textColor =
+    page.pageChrome?.footerChromeTextColor ??
+    textColorForBackground(
+      page.pageBackground?.type === "solid"
+        ? page.pageBackground.solidColor
+        : (page.backgroundColor ?? config.backgroundColor),
+    ) ??
+    undefined;
   return (
     <footer
-      className="relative z-10 border-t border-border/40 py-8 text-center text-sm text-muted"
-      style={textColor ? { color: textColor } : undefined}
+      className="relative z-10 border-t border-border/40 py-8 text-center text-sm text-app-text"
+      style={{ color: textColor }}
     >
       <a className="transition-opacity hover:opacity-80" href={href}>
         {new Date().getFullYear()} {config.storeName || page.slug}
@@ -160,4 +175,22 @@ function createGradient(background: StorefrontBuilderBackground) {
     return `radial-gradient(${stops})`;
   }
   return `linear-gradient(${background.gradient.angle ?? 180}deg, ${stops})`;
+}
+
+function textColorForBackground(color: string | null | undefined) {
+  if (!color?.startsWith("#")) return null;
+  const hex = color.slice(1);
+  const normalized =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((part) => part + part)
+          .join("")
+      : hex;
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+  return luminance > 0.55 ? "black" : "white";
 }

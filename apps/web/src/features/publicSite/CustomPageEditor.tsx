@@ -18,11 +18,13 @@ import {
   BuilderBlockLibrary,
   BuilderBlockList,
 } from "./CustomPageEditorLibrary";
+import { MobileEditorTab } from "./CustomPageEditorMobileTabs";
 
 export type CustomPageEditorProps = {
   config: StorefrontBuilderConfig;
   isSaving: boolean;
   onBack: () => void;
+  onDirty?: () => void;
   onSave: (page: StorefrontCustomPage) => Promise<boolean>;
   page: StorefrontCustomPage;
   statusMessage?: { text: string; type: "error" | "success" } | null;
@@ -33,6 +35,7 @@ export function CustomPageEditor({
   config,
   isSaving,
   onBack,
+  onDirty,
   onSave,
   page,
   statusMessage,
@@ -83,6 +86,8 @@ export function CustomPageEditor({
     [draft, page],
   );
 
+  const markDirty = () => onDirty?.();
+
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       if (!dirty) return;
@@ -95,6 +100,7 @@ export function CustomPageEditor({
 
   const addBlock = (type: StorefrontBuilderComponentType) => {
     const block = createEditorBlock(type, draft.components.length);
+    markDirty();
     setDraft((current) => ({
       ...current,
       components: [...current.components, block],
@@ -108,6 +114,7 @@ export function CustomPageEditor({
     componentId: string,
     update: Partial<StorefrontBuilderComponent>,
   ) => {
+    markDirty();
     setDraft((current) => ({
       ...current,
       components: current.components.map((component) =>
@@ -126,6 +133,7 @@ export function CustomPageEditor({
         unknown
       >,
     };
+    markDirty();
     setDraft((current) => ({
       ...current,
       components: [...current.components, block],
@@ -138,6 +146,7 @@ export function CustomPageEditor({
     const nextSelected =
       orderedComponents.find((component) => component.id !== componentId)?.id ??
       null;
+    markDirty();
     setDraft((current) => ({
       ...current,
       components: current.components
@@ -149,6 +158,7 @@ export function CustomPageEditor({
 
   const moveComponent = (fromIndex: number, toIndex: number) => {
     if (toIndex < 0 || toIndex >= orderedComponents.length) return;
+    markDirty();
     setDraft((current) => {
       const nextComponents = [...current.components].sort(
         (a, b) => a.order - b.order,
@@ -269,7 +279,10 @@ export function CustomPageEditor({
           component={selectedComponent}
           config={config}
           draft={draft}
-          onDraftChange={setDraft}
+          onDraftChange={(nextDraft) => {
+            markDirty();
+            setDraft(nextDraft);
+          }}
           onRemove={removeComponent}
           onSelectedComponentChange={(component) =>
             updateComponent(component.id, component)
@@ -304,38 +317,5 @@ export function CustomPageEditor({
         />
       </div>
     </div>
-  );
-}
-
-function MobileEditorTab({
-  active,
-  hasIndicator,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  hasIndicator?: boolean;
-  icon: typeof Plus;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className={cn(
-        "relative flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-[10px] font-bold transition-all sm:text-xs",
-        active
-          ? "bg-primary/5 text-primary"
-          : "text-muted-foreground hover:text-foreground",
-      )}
-      onClick={onClick}
-      type="button"
-    >
-      <Icon aria-hidden="true" className="size-4" />
-      <span>{label}</span>
-      {hasIndicator ? (
-        <span className="absolute right-[calc(50%-14px)] top-1.5 size-2 rounded-full border border-card bg-primary" />
-      ) : null}
-    </button>
   );
 }

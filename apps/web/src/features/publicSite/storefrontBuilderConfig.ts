@@ -1,12 +1,17 @@
 import type { StorefrontBuilderConfig } from "@lojaveiculosv2/shared";
 import { defaultStorefrontBuilderConfig } from "@lojaveiculosv2/shared";
 import type { StoreSettingsSnapshot } from "../settings/types";
+import {
+  DEFAULT_STOREFRONT_BODY_FONT,
+  DEFAULT_STOREFRONT_HEADING_FONT,
+} from "./storefrontFonts";
 
 export function createBuilderConfigFromSettings(
   settings: StoreSettingsSnapshot,
 ): StorefrontBuilderConfig {
   const theme = settings.publicSite.theme;
   const socialLinks = toRecord(theme.socialLinks);
+  const fonts = toRecord(theme.fonts);
   return {
     accentColor:
       stringValue(theme.accentColor) ??
@@ -21,8 +26,14 @@ export function createBuilderConfigFromSettings(
       whatsapp: settings.profile.whatsappPhone,
     },
     fonts: {
-      body: stringValue(theme.bodyFont) ?? "Plus Jakarta Sans",
-      heading: stringValue(theme.headingFont) ?? "Plus Jakarta Sans",
+      body:
+        stringValue(fonts.body) ??
+        stringValue(theme.bodyFont) ??
+        DEFAULT_STOREFRONT_BODY_FONT,
+      heading:
+        stringValue(fonts.heading) ??
+        stringValue(theme.headingFont) ??
+        DEFAULT_STOREFRONT_HEADING_FONT,
     },
     heroImageUrl: settings.publicSite.heroImageUrl,
     logoUrl: settings.profile.logoImageUrl ?? stringValue(theme.logoUrl),
@@ -34,7 +45,7 @@ export function createBuilderConfigFromSettings(
         settings.profile.whatsappPhone ?? stringValue(socialLinks.whatsapp),
       youtube: stringValue(socialLinks.youtube),
     },
-    storeName: settings.identity.tradingName,
+    storeName: stringValue(theme.corretorName) ?? settings.identity.tradingName,
     templateId: settings.publicSite.layoutKey,
   };
 }

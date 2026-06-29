@@ -8,13 +8,17 @@ import {
   Eye,
   EyeOff,
   GripVertical,
-  Plus,
+  PlusCircle,
   Search,
   Trash2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { blockLabel, builderBlockGroups } from "./builderBlockCatalog";
+import {
+  blockIcon,
+  blockLabel,
+  builderBlockGroups,
+} from "./builderBlockCatalog";
 
 export function BuilderBlockLibrary({
   onAdd,
@@ -51,15 +55,7 @@ export function BuilderBlockLibrary({
               </h3>
               <div className="grid gap-1">
                 {items.map((type) => (
-                  <button
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-muted"
-                    key={type}
-                    onClick={() => onAdd(type)}
-                    type="button"
-                  >
-                    <Plus aria-hidden="true" className="size-4" />
-                    <span>{blockLabel(type)}</span>
-                  </button>
+                  <LibraryBlockButton key={type} onAdd={onAdd} type={type} />
                 ))}
               </div>
             </div>
@@ -67,6 +63,34 @@ export function BuilderBlockLibrary({
         })}
       </div>
     </div>
+  );
+}
+
+function LibraryBlockButton({
+  onAdd,
+  type,
+}: {
+  onAdd: (type: StorefrontBuilderComponentType) => void;
+  type: StorefrontBuilderComponentType;
+}) {
+  const Icon = blockIcon(type);
+  return (
+    <button
+      className="group flex w-full items-center gap-2 rounded-lg border border-transparent px-3 py-2 text-left text-sm transition-colors hover:border-border hover:bg-muted"
+      onClick={() => onAdd(type)}
+      type="button"
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <Icon aria-hidden="true" className="size-4" />
+      </span>
+      <span className="min-w-0 flex-1 truncate font-semibold text-foreground">
+        {blockLabel(type)}
+      </span>
+      <PlusCircle
+        aria-hidden="true"
+        className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary"
+      />
+    </button>
   );
 }
 
@@ -147,6 +171,7 @@ function BlockListRow({
           ? "border-primary bg-primary/10 text-primary"
           : "border-border/50 bg-card text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground",
       )}
+      data-selected={selected ? "true" : undefined}
     >
       <button
         className="flex min-w-0 flex-1 items-center gap-2 text-left"
@@ -154,11 +179,12 @@ function BlockListRow({
         type="button"
       >
         <GripVertical className="size-4 shrink-0 opacity-50" />
+        <BlockRowIcon type={component.type} />
         <span className="min-w-0 flex-1 truncate text-sm font-black">
           {blockLabel(component.type)}
         </span>
       </button>
-      <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      <span className="flex shrink-0 items-center gap-1">
         <MiniAction
           disabled={index === 0}
           label="Mover para cima"
@@ -191,6 +217,15 @@ function BlockListRow({
         </MiniAction>
       </span>
     </div>
+  );
+}
+
+function BlockRowIcon({ type }: { type: string }) {
+  const Icon = blockIcon(type);
+  return (
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+      <Icon aria-hidden="true" className="size-3.5" />
+    </span>
   );
 }
 

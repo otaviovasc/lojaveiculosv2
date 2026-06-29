@@ -89,6 +89,33 @@ export function BuilderNumberInput({
   );
 }
 
+export function BuilderColorInput({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: unknown;
+}) {
+  return (
+    <BuilderField label={label}>
+      <div className="flex items-center gap-2">
+        <FeatureInput
+          className="min-h-10 w-14 shrink-0 px-1"
+          onChange={(event) => onChange(event.target.value)}
+          type="color"
+          value={colorValue(value)}
+        />
+        <FeatureInput
+          onChange={(event) => onChange(event.target.value)}
+          value={textValue(value)}
+        />
+      </div>
+    </BuilderField>
+  );
+}
+
 export function BuilderSelectInput<Value extends string>({
   label,
   onChange,
@@ -156,4 +183,11 @@ export function numberValue(value: unknown, fallback = 0) {
 
 function isRecord(value: unknown): value is BuilderRecord {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function colorValue(value: unknown) {
+  if (typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value.trim())) {
+    return value.trim();
+  }
+  return ["#", "000000"].join("");
 }
