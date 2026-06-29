@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import type { BuilderViewportMode } from "./CustomPageEditorChrome";
+import { buildGoogleFontsHref, storefrontFontOptions } from "./storefrontFonts";
 
 const PREVIEW_WIDTH: Record<BuilderViewportMode, string> = {
   desktop: "min(100%, 1400px)",
@@ -14,6 +15,20 @@ const PREVIEW_SIZE_LABEL: Record<BuilderViewportMode, string> = {
   mobile: "390px mobile",
   tablet: "768px tablet",
 };
+
+const PREVIEW_FONT_HREF = buildGoogleFontsHref(
+  storefrontFontOptions.map((option) => option.value),
+);
+
+function previewFontHeadMarkup() {
+  if (!PREVIEW_FONT_HREF) return "";
+  return [
+    '<link rel="preconnect" href="https://fonts.googleapis.com"/>',
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>',
+    `<link rel="preload" as="style" href="${PREVIEW_FONT_HREF}"/>`,
+    `<link rel="stylesheet" href="${PREVIEW_FONT_HREF}"/>`,
+  ].join("");
+}
 
 function collectPreviewStyles(source: Document) {
   const nodes = [
@@ -91,7 +106,9 @@ export function CustomPagePreviewFrame({
 
     doc.open();
     doc.write(
-      '<!DOCTYPE html><html style="height:100%"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/></head><body class="min-h-full bg-background text-foreground antialiased" style="margin:0;height:100%;overflow:auto"><div id="preview-root" class="min-h-full w-full"></div></body></html>',
+      '<!DOCTYPE html><html style="height:100%"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>' +
+        previewFontHeadMarkup() +
+        '</head><body class="min-h-full bg-background text-foreground antialiased" style="margin:0;height:100%;overflow:auto"><div id="preview-root" class="min-h-full w-full"></div></body></html>',
     );
     doc.close();
 

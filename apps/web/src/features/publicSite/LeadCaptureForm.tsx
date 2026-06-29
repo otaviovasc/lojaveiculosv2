@@ -45,36 +45,36 @@ export function LeadCaptureForm({
 
   return (
     <form
-      className="mt-6 grid gap-4"
+      className="mt-5 grid gap-5"
       onSubmit={(event) => {
         void handleSubmit(event);
       }}
     >
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <input
           aria-label="Nome"
-          className="min-h-12 rounded border border-line bg-app px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+          className="min-h-12 rounded border border-line bg-panel px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
           name="buyerName"
           placeholder="Seu nome completo"
           required
         />
         <input
           aria-label="Telefone"
-          className="min-h-12 rounded border border-line bg-app px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+          className="min-h-12 rounded border border-line bg-panel px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
           name="buyerPhone"
           placeholder="Seu telefone"
         />
       </div>
       <input
         aria-label="E-mail"
-        className="min-h-12 rounded border border-line bg-app px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+        className="min-h-12 rounded border border-line bg-panel px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
         name="buyerEmail"
         placeholder="Seu e-mail"
         type="email"
       />
       <textarea
         aria-label="Mensagem"
-        className="min-h-24 rounded border border-line bg-app p-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+        className="min-h-28 rounded border border-line bg-panel p-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
         name="message"
         placeholder="Olá, tenho interesse neste veículo. Aguardo o contato."
       />

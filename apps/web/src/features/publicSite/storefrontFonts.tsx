@@ -63,7 +63,9 @@ export function StorefrontFontLinks({
   return null;
 }
 
-function buildGoogleFontsHref(fonts: ReadonlyArray<string | null | undefined>) {
+export function buildGoogleFontsHref(
+  fonts: ReadonlyArray<string | null | undefined>,
+) {
   const families = Array.from(
     new Set(
       fonts

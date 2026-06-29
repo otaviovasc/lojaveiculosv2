@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { cn } from "@/lib/utils";
+import { buildGoogleFontsHref } from "./storefrontFonts";
 import type {
   WebsiteBuilderConfig,
   WebsiteBuilderViewportMode,
@@ -22,6 +23,44 @@ const viewportWidths: Record<WebsiteBuilderViewportMode, string> = {
 export type WebsiteBuilderPreviewFrameHandle = {
   postUpdate: (payload: Record<string, unknown>) => void;
 };
+
+function syncPreviewFontLinks(
+  target: Document,
+  fonts: ReadonlyArray<string | null | undefined>,
+) {
+  target.head
+    .querySelectorAll("[data-storefront-preview-font]")
+    .forEach((node) => node.remove());
+
+  const href = buildGoogleFontsHref(fonts);
+  if (!href) return;
+
+  const preconnectGoogle = target.createElement("link");
+  preconnectGoogle.rel = "preconnect";
+  preconnectGoogle.href = "https://fonts.googleapis.com";
+  preconnectGoogle.setAttribute("data-storefront-preview-font", "");
+  target.head.appendChild(preconnectGoogle);
+
+  const preconnectStatic = target.createElement("link");
+  preconnectStatic.rel = "preconnect";
+  preconnectStatic.href = "https://fonts.gstatic.com";
+  preconnectStatic.crossOrigin = "anonymous";
+  preconnectStatic.setAttribute("data-storefront-preview-font", "");
+  target.head.appendChild(preconnectStatic);
+
+  const preload = target.createElement("link");
+  preload.rel = "preload";
+  preload.as = "style";
+  preload.href = href;
+  preload.setAttribute("data-storefront-preview-font", "");
+  target.head.appendChild(preload);
+
+  const stylesheet = target.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = href;
+  stylesheet.setAttribute("data-storefront-preview-font", "");
+  target.head.appendChild(stylesheet);
+}
 
 export const WebsiteBuilderPreviewFrame = forwardRef<
   WebsiteBuilderPreviewFrameHandle,
@@ -54,25 +93,37 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
     );
   }, []);
 
+  const syncIframeFonts = useCallback(() => {
+    const doc = iframeRef.current?.contentDocument;
+    if (!doc) return;
+    syncPreviewFontLinks(doc, [config.fonts.heading, config.fonts.body]);
+  }, [config.fonts.body, config.fonts.heading]);
+
+  useEffect(() => {
+    syncIframeFonts();
+  }, [syncIframeFonts]);
+
   useEffect(() => {
     if (!iframeSrc) return undefined;
 
     const fallbackId = window.setTimeout(() => {
+      syncIframeFonts();
       setIframeReady(true);
       postUpdate(config as unknown as Record<string, unknown>);
     }, 1800);
 
     return () => window.clearTimeout(fallbackId);
-  }, [config, iframeSrc, postUpdate]);
+  }, [config, iframeSrc, postUpdate, syncIframeFonts]);
 
   useImperativeHandle(ref, () => ({ postUpdate }), [postUpdate]);
 
   const handleIframeLoad = useCallback(() => {
     window.setTimeout(() => {
+      syncIframeFonts();
       setIframeReady(true);
       postUpdate(config as unknown as Record<string, unknown>);
     }, 200);
-  }, [config, postUpdate]);
+  }, [config, postUpdate, syncIframeFonts]);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-muted/30">

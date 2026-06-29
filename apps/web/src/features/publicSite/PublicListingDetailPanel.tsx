@@ -189,8 +189,8 @@ function ListingDetailContent({
           </div>
         </div>
 
-        <div className="mt-8 border-t border-line/60 pt-6">
-          <p className="text-[9px] font-black uppercase tracking-wider text-app-text">
+        <div className="mt-8 rounded-xl border border-line bg-app p-5 shadow-sm md:p-6">
+          <p className="text-[10px] font-black uppercase tracking-[0.18em] text-app-text">
             Falar com um consultor comercial
           </p>
           <LeadCaptureForm
