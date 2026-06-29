@@ -60,13 +60,11 @@ export function PageBackgroundLayer({
 }
 
 export function PageChromeHeader({
-  accent,
   config,
   page,
   preview,
   storeSlug,
 }: {
-  accent: string;
   config: StorefrontBuilderConfig;
   page: StorefrontCustomPage;
   preview: boolean;
@@ -84,6 +82,11 @@ export function PageChromeHeader({
           ...(headerTextColor ? { color: headerTextColor } : {}),
         }
       : undefined;
+  const headerLinkColor = chooseReadableHeaderLinkColor({
+    background: variant === "solid" ? page.pageChrome?.headerBgColor : null,
+    fallback: headerTextColor,
+    preferred: page.pageChrome?.headerLinkColor,
+  });
   return (
     <header
       className={[
@@ -116,15 +119,9 @@ export function PageChromeHeader({
       </a>
       {page.pageChrome?.showSiteLink !== false ? (
         <a
-          className="text-xs font-bold text-muted transition-opacity hover:opacity-75"
+          className="text-xs font-bold transition-opacity hover:opacity-75"
           href={href}
-          style={
-            page.pageChrome?.headerLinkColor
-              ? { color: page.pageChrome.headerLinkColor }
-              : headerTextColor
-                ? { color: headerTextColor }
-                : { color: accent }
-          }
+          style={headerLinkColor ? { color: headerLinkColor } : undefined}
         >
           Voltar ao site
         </a>
@@ -179,6 +176,62 @@ function createGradient(background: StorefrontBuilderBackground) {
 
 function textColorForBackground(color: string | null | undefined) {
   if (!color?.startsWith("#")) return null;
+  const rgb = parseHexColor(color);
+  if (!rgb) return null;
+  const luminance =
+    (0.299 * rgb.red + 0.587 * rgb.green + 0.114 * rgb.blue) / 255;
+  return luminance > 0.55 ? "black" : "white";
+}
+
+function chooseReadableHeaderLinkColor({
+  background,
+  fallback,
+  preferred,
+}: {
+  background: string | null | undefined;
+  fallback: string | null;
+  preferred: string | null | undefined;
+}) {
+  if (!preferred) return fallback;
+  if (!background) return preferred;
+  const ratio = contrastRatio(preferred, background);
+  return ratio && ratio >= 4.5 ? preferred : fallback;
+}
+
+function contrastRatio(foreground: string, background: string) {
+  const foregroundRgb = parseHexColor(foreground);
+  const backgroundRgb = parseHexColor(background);
+  if (!foregroundRgb || !backgroundRgb) return null;
+  const foregroundLuminance = relativeLuminance(foregroundRgb);
+  const backgroundLuminance = relativeLuminance(backgroundRgb);
+  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
+  const darker = Math.min(foregroundLuminance, backgroundLuminance);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function relativeLuminance({
+  blue,
+  green,
+  red,
+}: {
+  blue: number;
+  green: number;
+  red: number;
+}) {
+  const channel = (value: number) => {
+    const channel = value / 255;
+    return channel <= 0.03928
+      ? channel / 12.92
+      : ((channel + 0.055) / 1.055) ** 2.4;
+  };
+  const r = channel(red);
+  const g = channel(green);
+  const b = channel(blue);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+function parseHexColor(color: string | null | undefined) {
+  if (!color?.startsWith("#")) return null;
   const hex = color.slice(1);
   const normalized =
     hex.length === 3
@@ -188,9 +241,9 @@ function textColorForBackground(color: string | null | undefined) {
           .join("")
       : hex;
   if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
-  const red = Number.parseInt(normalized.slice(0, 2), 16);
-  const green = Number.parseInt(normalized.slice(2, 4), 16);
-  const blue = Number.parseInt(normalized.slice(4, 6), 16);
-  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
-  return luminance > 0.55 ? "black" : "white";
+  return {
+    blue: Number.parseInt(normalized.slice(4, 6), 16),
+    green: Number.parseInt(normalized.slice(2, 4), 16),
+    red: Number.parseInt(normalized.slice(0, 2), 16),
+  };
 }

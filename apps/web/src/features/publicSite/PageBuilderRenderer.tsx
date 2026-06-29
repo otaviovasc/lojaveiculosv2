@@ -112,7 +112,6 @@ export function PageBuilderRenderer({
         <PageBackgroundLayer background={pageBackground} />
         {page.pageChrome?.showHeader !== false ? (
           <PageChromeHeader
-            accent={accent}
             config={config}
             page={page}
             preview={preview}
