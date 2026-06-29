@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { CustomPagePreviewFrame } from "./CustomPagePreviewFrame";
 import { PageBuilderRenderer } from "./PageBuilderRenderer";
 import { createDefaultPageComponent } from "./builderBlockCatalog";
 
@@ -27,7 +28,9 @@ export function CustomPageEditorTopBar({
   onCopyPreview,
   onSave,
   onShowSettings,
+  onTogglePublished,
   page,
+  previewUrl,
 }: {
   dirty: boolean;
   isSaving: boolean;
@@ -35,7 +38,9 @@ export function CustomPageEditorTopBar({
   onCopyPreview: () => void;
   onSave: () => void;
   onShowSettings: () => void;
+  onTogglePublished: () => void;
   page: StorefrontCustomPage;
+  previewUrl: string;
 }) {
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-card/80 px-4 py-2.5 backdrop-blur-sm">
@@ -59,7 +64,20 @@ export function CustomPageEditorTopBar({
             /p/{page.slug}
           </p>
         </div>
-        <StatusPill visible={page.visible} />
+        <button
+          className={cn(
+            "hidden rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors sm:inline-flex",
+            page.visible
+              ? "border-success/20 bg-success/10 text-success hover:bg-success/15"
+              : "border-warning/20 bg-warning/10 text-warning hover:bg-warning/15",
+          )}
+          disabled={isSaving}
+          onClick={onTogglePublished}
+          title={page.visible ? "Voltar para rascunho" : "Publicar pagina"}
+          type="button"
+        >
+          {page.visible ? "Publicado" : "Rascunho"}
+        </button>
         {dirty ? (
           <span className="mr-2 hidden items-center gap-1.5 text-xs font-medium text-warning lg:flex">
             <span className="size-2 rounded-full bg-warning" />
@@ -92,7 +110,7 @@ export function CustomPageEditorTopBar({
         </Button>
         <Button className="px-2.5 sm:px-3" size="sm" variant="outline" asChild>
           <a
-            href={page.previewUrl ?? page.publicUrl ?? `/p/${page.slug}`}
+            href={previewUrl}
             rel="noreferrer"
             target="_blank"
             title="Visualizar"
@@ -120,35 +138,30 @@ export function CustomPageEditorTopBar({
 }
 
 export function BuilderCanvas({
+  className,
   config,
   draft,
   onViewportChange,
   viewportMode,
 }: {
+  className?: string;
   config: StorefrontBuilderConfig;
   draft: StorefrontCustomPage;
   onViewportChange: (mode: BuilderViewportMode) => void;
   viewportMode: BuilderViewportMode;
 }) {
-  const frameWidth =
-    viewportMode === "mobile"
-      ? "max-w-[375px]"
-      : viewportMode === "tablet"
-        ? "max-w-[768px]"
-        : "max-w-full";
-
   return (
-    <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-muted/30">
+    <section
+      className={cn(
+        "min-w-0 flex-1 flex-col overflow-hidden bg-muted/30",
+        className,
+      )}
+    >
       <ViewportSwitcher value={viewportMode} onChange={onViewportChange} />
       <div className="flex min-h-0 flex-1 justify-center overflow-auto p-3 lg:p-5">
-        <div
-          className={cn(
-            "min-h-full w-full overflow-hidden rounded-xl border border-border bg-card shadow-lg transition-all",
-            frameWidth,
-          )}
-        >
+        <CustomPagePreviewFrame mode={viewportMode}>
           <PageBuilderRenderer config={config} page={draft} preview />
-        </div>
+        </CustomPagePreviewFrame>
       </div>
     </section>
   );
@@ -159,21 +172,6 @@ export function createEditorBlock(
   order: number,
 ) {
   return createDefaultPageComponent(type, order);
-}
-
-function StatusPill({ visible }: { visible: boolean }) {
-  return (
-    <span
-      className={cn(
-        "hidden rounded-full border px-2.5 py-1 text-[10px] font-semibold sm:inline-flex",
-        visible
-          ? "border-success/20 bg-success/10 text-success"
-          : "border-warning/20 bg-warning/10 text-warning",
-      )}
-    >
-      {visible ? "Publicado" : "Rascunho"}
-    </span>
-  );
 }
 
 function ViewportSwitcher({

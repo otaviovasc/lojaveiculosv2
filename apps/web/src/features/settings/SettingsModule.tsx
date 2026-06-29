@@ -6,6 +6,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { StorefrontCustomizationModule } from "../publicSite/StorefrontCustomizationModule";
 import { createSettingsApi, type SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
 import { SettingsStoreProfilePanel } from "./SettingsStoreProfilePanel";
@@ -119,6 +120,7 @@ export function SettingsModule({
           onChange={(tab) => selectTab(tab, setActiveTab)}
           options={[
             { label: "Perfil da Loja", value: "store", icon: Store },
+            { label: "Vitrine Digital", value: "storefront", icon: Wand2 },
             { label: "Papéis e Permissões", value: "roles", icon: Users },
           ]}
           value={activeTab}
@@ -143,6 +145,10 @@ export function SettingsModule({
           onSave={save}
           settings={settings}
         />
+      ) : activeTab === "storefront" ? (
+        <div className="-mx-4 -mb-6 md:-mx-6">
+          <StorefrontCustomizationModule initialTab="design" />
+        </div>
       ) : activeTab === "roles" && roles ? (
         <RoleManagementPanel
           isSaving={status.kind === "saving"}
@@ -173,7 +179,7 @@ function readInitialSettingsTab(): SettingsTab {
   if (typeof window === "undefined") return "store";
   const query = window.location.hash.split("?")[1] ?? "";
   const tab = new URLSearchParams(query).get("tab");
-  return tab === "roles" ? tab : "store";
+  return tab === "roles" || tab === "storefront" ? tab : "store";
 }
 
 function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {

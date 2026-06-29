@@ -4,11 +4,10 @@ import type {
   StorefrontCustomPage,
 } from "@lojaveiculosv2/shared";
 import { Trash2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { BuilderBlockPropsEditor } from "./BuilderBlockEditors";
 import { blockLabel } from "./builderBlockCatalog";
+import { PageSettingsFields } from "./CustomPageSettingsPanel";
 
 export function BuilderInspector({
   component,
@@ -18,29 +17,44 @@ export function BuilderInspector({
   onRemove,
   onSelectedComponentChange,
   showPageSettings,
+  className,
+  previewUrl,
 }: {
+  className?: string;
   component: StorefrontBuilderComponent | null;
   config: StorefrontBuilderConfig;
   draft: StorefrontCustomPage;
   onDraftChange: (page: StorefrontCustomPage) => void;
   onRemove: (componentId: string) => void;
   onSelectedComponentChange: (component: StorefrontBuilderComponent) => void;
+  previewUrl: string;
   showPageSettings: boolean;
 }) {
   if (showPageSettings || !component) {
     return (
-      <aside className="w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card/50 p-4 lg:w-80">
+      <aside
+        className={cn(
+          "w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card/50 p-4 lg:w-80",
+          className,
+        )}
+      >
         <PageSettingsFields
           config={config}
           draft={draft}
           onDraftChange={onDraftChange}
+          previewUrl={previewUrl}
         />
       </aside>
     );
   }
 
   return (
-    <aside className="w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card/50 p-4 lg:w-80">
+    <aside
+      className={cn(
+        "w-full shrink-0 overflow-y-auto border-l border-border/50 bg-card/50 p-4 lg:w-80",
+        className,
+      )}
+    >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -64,90 +78,5 @@ export function BuilderInspector({
         onChange={onSelectedComponentChange}
       />
     </aside>
-  );
-}
-
-function PageSettingsFields({
-  config,
-  draft,
-  onDraftChange,
-}: {
-  config: StorefrontBuilderConfig;
-  draft: StorefrontCustomPage;
-  onDraftChange: (page: StorefrontCustomPage) => void;
-}) {
-  return (
-    <div className="grid gap-4">
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Configuracoes da pagina
-        </p>
-        <h3 className="text-base font-semibold text-foreground">
-          {draft.title}
-        </h3>
-      </div>
-      <div className="space-y-2">
-        <Label>Titulo</Label>
-        <Input
-          maxLength={120}
-          onChange={(event) =>
-            onDraftChange({ ...draft, title: event.target.value })
-          }
-          value={draft.title}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Slug</Label>
-        <Input
-          maxLength={80}
-          onChange={(event) =>
-            onDraftChange({ ...draft, slug: event.target.value })
-          }
-          value={draft.slug}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Descricao</Label>
-        <Textarea
-          maxLength={320}
-          onChange={(event) =>
-            onDraftChange({ ...draft, description: event.target.value })
-          }
-          value={draft.description ?? ""}
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Destaque</Label>
-          <Input
-            onChange={(event) =>
-              onDraftChange({ ...draft, accentColor: event.target.value })
-            }
-            type="color"
-            value={draft.accentColor ?? config.accentColor}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Fundo</Label>
-          <Input
-            onChange={(event) =>
-              onDraftChange({ ...draft, backgroundColor: event.target.value })
-            }
-            type="color"
-            value={draft.backgroundColor ?? config.backgroundColor}
-          />
-        </div>
-      </div>
-      <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 text-sm font-semibold">
-        <span>Publicar pagina</span>
-        <input
-          checked={draft.visible}
-          onChange={(event) =>
-            onDraftChange({ ...draft, visible: event.target.checked })
-          }
-          type="checkbox"
-        />
-      </label>
-    </div>
   );
 }

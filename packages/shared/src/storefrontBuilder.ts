@@ -75,7 +75,12 @@ export type StorefrontBuilderComponent = {
 };
 
 export type StorefrontPageChrome = {
-  headerLinkColor?: string;
+  footerChromeTextColor?: string | null;
+  footerExtraLine?: string | null;
+  headerBgColor?: string | null;
+  headerLinkColor?: string | null;
+  headerVariant?: "glass" | "minimal" | "solid";
+  showFooter?: boolean;
   showHeader?: boolean;
   showSiteLink?: boolean;
 };

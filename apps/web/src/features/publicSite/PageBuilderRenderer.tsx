@@ -31,6 +31,12 @@ import {
   SectionWrapperBlock,
   TwoColumnBlock,
 } from "./PageBuilderLayoutBlocks";
+import {
+  createPageBackgroundStyle,
+  PageBackgroundLayer,
+  PageChromeFooter,
+  PageChromeHeader,
+} from "./PageBuilderChrome";
 import type { BuilderRenderContext } from "./pageBuilderRenderTypes";
 import { componentArrayProp } from "./pageBuilderRenderUtils";
 
@@ -51,6 +57,10 @@ export function PageBuilderRenderer({
 }: PageBuilderRendererProps) {
   const accent = page.accentColor ?? config.accentColor;
   const background = page.backgroundColor ?? config.backgroundColor;
+  const pageBackground = page.pageBackground ?? {
+    solidColor: background,
+    type: "solid",
+  };
 
   const renderBlocks = (
     components: readonly StorefrontBuilderComponent[] | unknown,
@@ -84,10 +94,11 @@ export function PageBuilderRenderer({
     <main
       className="min-h-screen text-app-text"
       style={{
-        background,
+        ...createPageBackgroundStyle(pageBackground, background),
         fontFamily: page.fontFamily ?? config.fonts.body,
       }}
     >
+      <PageBackgroundLayer background={pageBackground} />
       {page.pageChrome?.showHeader !== false ? (
         <PageChromeHeader
           accent={accent}
@@ -106,11 +117,13 @@ export function PageBuilderRenderer({
       >
         {renderBlocks(page.components, "contents")}
       </div>
-      <PageChromeFooter
-        config={config}
-        page={page}
-        {...(storeSlug ? { storeSlug } : {})}
-      />
+      {page.pageChrome?.showFooter !== false ? (
+        <PageChromeFooter
+          config={config}
+          page={page}
+          {...(storeSlug ? { storeSlug } : {})}
+        />
+      ) : null}
     </main>
   );
 }
@@ -186,78 +199,4 @@ function BuilderBlock({
     return <FooterBlock component={component} context={context} />;
   }
   return <TextBlock component={component} context={context} />;
-}
-
-function PageChromeHeader({
-  accent,
-  config,
-  page,
-  preview,
-  storeSlug,
-}: {
-  accent: string;
-  config: StorefrontBuilderConfig;
-  page: StorefrontCustomPage;
-  preview: boolean;
-  storeSlug?: string;
-}) {
-  const href = storeSlug ? `/${storeSlug}` : "/";
-  return (
-    <header
-      className={
-        preview
-          ? "sticky top-0 z-40 flex w-full items-center justify-between border-b border-border/50 bg-background/80 px-4 py-3 backdrop-blur-md"
-          : "fixed left-0 right-0 top-0 z-40 flex w-full items-center justify-between border-b border-border/50 bg-background/80 px-4 py-3 backdrop-blur-md"
-      }
-    >
-      <a
-        className="flex min-w-0 items-center gap-2 transition-opacity hover:opacity-70"
-        href={href}
-      >
-        {config.logoUrl ? (
-          <img
-            alt={config.storeName}
-            className="h-7 w-auto object-contain"
-            src={config.logoUrl}
-          />
-        ) : (
-          <strong className="truncate text-sm font-black">
-            {config.storeName}
-          </strong>
-        )}
-      </a>
-      {page.pageChrome?.showSiteLink !== false ? (
-        <a
-          className="text-xs font-bold text-muted transition-opacity hover:opacity-75"
-          href={href}
-          style={
-            page.pageChrome?.headerLinkColor
-              ? { color: page.pageChrome.headerLinkColor }
-              : { color: accent }
-          }
-        >
-          Voltar ao site
-        </a>
-      ) : null}
-    </header>
-  );
-}
-
-function PageChromeFooter({
-  config,
-  page,
-  storeSlug,
-}: {
-  config: StorefrontBuilderConfig;
-  page: StorefrontCustomPage;
-  storeSlug?: string;
-}) {
-  const href = storeSlug ? `/${storeSlug}` : "/";
-  return (
-    <footer className="relative z-10 border-t border-border/40 py-8 text-center text-sm text-muted">
-      <a className="transition-opacity hover:opacity-80" href={href}>
-        {new Date().getFullYear()} {config.storeName || page.slug}
-      </a>
-    </footer>
-  );
 }

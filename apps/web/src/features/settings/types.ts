@@ -46,12 +46,7 @@ export type UpdateStoreSettingsInput = {
 };
 
 export type RoleKey =
-  | "agency"
-  | "admin"
-  | "investor"
-  | "owner"
-  | "salesman"
-  | "supervisor";
+  "agency" | "admin" | "investor" | "owner" | "salesman" | "supervisor";
 
 export type PermissionDescriptor = {
   description: string;
@@ -121,4 +116,4 @@ export type SettingsStatus =
   | { kind: "saved" }
   | { kind: "saving" };
 
-export type SettingsTab = "roles" | "store";
+export type SettingsTab = "roles" | "store" | "storefront";

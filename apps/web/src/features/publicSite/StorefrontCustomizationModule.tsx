@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import type { SettingsApi } from "../settings/apiClient";
 import { createStoreSettingsPatch } from "../settings/settingsPatch";
 import type { StoreSettingsSnapshot } from "../settings/types";
 import { CustomPageEditor } from "./CustomPageEditor";
 import { CustomPagesList } from "./CustomPagesList";
+import { createDuplicatePageSlug, slugifyCustomPage } from "./customPageUtils";
 import { createBuilderConfigFromSettings } from "./storefrontBuilderConfig";
 import type { StorefrontPagesApi } from "./storefrontPagesApi";
 import {
@@ -95,8 +96,7 @@ export function StorefrontCustomizationModule({
     }
   };
 
-  const createPage = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const createPage = async () => {
     setStatus({ kind: "saving" });
     try {
       const page = await runtimePagesApi.createPage({
@@ -110,8 +110,10 @@ export function StorefrontCustomizationModule({
       setCreateSlug("");
       setCreateDescription("");
       setStatus({ kind: "saved" });
+      return true;
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
+      return false;
     }
   };
 
@@ -127,8 +129,10 @@ export function StorefrontCustomizationModule({
       );
       setSelectedPage(saved);
       setStatus({ kind: "saved" });
+      return true;
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
+      return false;
     }
   };
 
@@ -139,7 +143,7 @@ export function StorefrontCustomizationModule({
         ...(page.description !== undefined
           ? { description: page.description }
           : {}),
-        slug: `${page.slug}-copia`,
+        slug: createDuplicatePageSlug(page.slug, pages),
         title: `${page.title} copia`,
       });
       const saved = await runtimePagesApi.updatePage(copy.id, {
@@ -196,6 +200,8 @@ export function StorefrontCustomizationModule({
           onBack={() => setSelectedPage(null)}
           onSave={savePage}
           page={selectedPage}
+          statusMessage={toStatusMessage(status)}
+          storeSlug={draftSettings.identity.publicSlug}
         />
       </div>
     );
@@ -208,17 +214,19 @@ export function StorefrontCustomizationModule({
         createSlug={createSlug}
         createTitle={createTitle}
         isBusy={status.kind === "saving"}
-        onCreate={(event) => void createPage(event)}
+        onCreate={createPage}
         onCreateDescriptionChange={setCreateDescription}
-        onCreateSlugChange={setCreateSlug}
+        onCreateSlugChange={(value) => setCreateSlug(slugifyCustomPage(value))}
         onCreateTitleChange={(value) => {
           setCreateTitle(value);
-          if (!createSlug) setCreateSlug(slugify(value));
+          if (!createSlug) setCreateSlug(slugifyCustomPage(value));
         }}
         onDelete={(page) => void deletePage(page)}
         onDuplicate={(page) => void duplicatePage(page)}
         onSelect={setSelectedPage}
         pages={pages}
+        statusMessage={toStatusMessage(status)}
+        storeSlug={draftSettings.identity.publicSlug}
       />
     </div>
   );
@@ -254,16 +262,6 @@ function toStatusMessage(status: StorefrontCustomizationStatus) {
   if (status.kind === "saved")
     return { text: "Salvo com sucesso!", type: "success" as const };
   return null;
-}
-
-function slugify(value: string) {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
 }
 
 function errorMessage(error: unknown) {
