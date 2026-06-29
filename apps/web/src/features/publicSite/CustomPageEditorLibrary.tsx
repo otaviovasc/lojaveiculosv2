@@ -4,6 +4,8 @@ import type {
 } from "@lojaveiculosv2/shared";
 import type { ReactNode } from "react";
 import {
+  ArrowDown,
+  ArrowUp,
   Copy,
   Eye,
   EyeOff,
@@ -168,7 +170,7 @@ function BlockListRow({
       className={cn(
         "group flex w-full items-center gap-2 rounded-lg border px-3 py-2 text-left transition-all",
         selected
-          ? "border-primary bg-primary/10 text-primary"
+          ? "border-primary bg-primary text-primary-foreground shadow-[0_10px_26px_color-mix(in_oklab,var(--primary)_24%,transparent)]"
           : "border-border/50 bg-card text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground",
       )}
       data-selected={selected ? "true" : undefined}
@@ -190,14 +192,14 @@ function BlockListRow({
           label="Mover para cima"
           onClick={() => onMove(index, index - 1)}
         >
-          ↑
+          <ArrowUp aria-hidden="true" className="size-3.5" />
         </MiniAction>
         <MiniAction
           disabled={index === total - 1}
           label="Mover para baixo"
           onClick={() => onMove(index, index + 1)}
         >
-          ↓
+          <ArrowDown aria-hidden="true" className="size-3.5" />
         </MiniAction>
         <MiniAction label="Duplicar" onClick={() => onDuplicate(component)}>
           <Copy aria-hidden="true" className="size-3.5" />
@@ -223,7 +225,7 @@ function BlockListRow({
 function BlockRowIcon({ type }: { type: string }) {
   const Icon = blockIcon(type);
   return (
-    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[selected=true]:bg-primary-foreground/15 group-data-[selected=true]:text-primary-foreground">
       <Icon aria-hidden="true" className="size-3.5" />
     </span>
   );

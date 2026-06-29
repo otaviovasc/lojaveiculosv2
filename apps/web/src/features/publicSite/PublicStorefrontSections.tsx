@@ -49,40 +49,36 @@ export function HeroSection({
   const visibleProofItems = createVisibleProofItems(sections);
 
   return (
-    <section className="public-storefront-hero">
-      <div className="overflow-hidden rounded-lg border border-line bg-panel">
-        {data.settings.site.heroImageUrl ? (
-          <img
-            alt=""
-            className="public-storefront-hero-image"
-            src={data.settings.site.heroImageUrl}
-          />
-        ) : null}
-        <div className="p-5 lg:p-6">
-          <div className="mb-6 flex items-start gap-3 lg:mb-8">
-            <BrandMark logoUrl={logoUrl} photoUrl={photoUrl} />
-            <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-widest text-muted">
-                {theme.badgeLabel}
-              </p>
-              <h1 className="text-2xl font-black md:text-4xl">
-                {theme.headline}
-              </h1>
-              {heroSubtitle ? (
-                <p className="mt-2 max-w-2xl text-sm font-bold text-muted">
-                  {heroSubtitle}
+    <section className="public-storefront-hero overflow-hidden rounded-lg border border-line bg-panel shadow-[0_24px_80px_color-mix(in_oklab,var(--color-text)_12%,transparent)]">
+      <div className="grid min-h-[34rem] lg:grid-cols-[0.92fr_1.08fr]">
+        <div className="flex flex-col justify-between p-5 lg:p-8">
+          <div>
+            <div className="mb-8 flex items-start gap-3">
+              <BrandMark logoUrl={logoUrl} photoUrl={photoUrl} />
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-widest text-muted">
+                  {theme.badgeLabel}
                 </p>
-              ) : null}
-              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-widest text-muted">
-                <span>{brandName}</span>
-                {brandLine ? <span>{brandLine}</span> : null}
-                <span>{data.settings.store.publicUrl}</span>
+                <h1 className="text-3xl font-black leading-tight md:text-5xl">
+                  {theme.headline}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-black uppercase tracking-widest text-muted">
+                  <span>{brandName}</span>
+                  {brandLine ? <span>{brandLine}</span> : null}
+                  <span>{data.settings.store.publicUrl}</span>
+                </div>
               </div>
             </div>
+
+            {heroSubtitle ? (
+              <p className="max-w-xl text-base font-bold leading-7 text-muted md:text-lg">
+                {heroSubtitle}
+              </p>
+            ) : null}
           </div>
 
           {visibleProofItems.length ? (
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
               {visibleProofItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -97,6 +93,20 @@ export function HeroSection({
               })}
             </div>
           ) : null}
+        </div>
+        <div className="relative min-h-[22rem] overflow-hidden bg-accent-soft">
+          {data.settings.site.heroImageUrl ? (
+            <img
+              alt=""
+              className="size-full object-cover transition-transform duration-700 hover:scale-[1.03]"
+              src={data.settings.site.heroImageUrl}
+            />
+          ) : (
+            <div className="grid size-full place-items-center text-accent">
+              <Sparkles aria-hidden="true" className="size-16" />
+            </div>
+          )}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-panel/70 via-transparent to-transparent" />
         </div>
       </div>
     </section>
@@ -126,7 +136,7 @@ export function StockSection({
       : filteredListings;
   return (
     <section className="grid gap-4" id="estoque">
-      <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border border-line bg-panel p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-muted">
             {stockEyebrow(sectionType)}
@@ -141,7 +151,7 @@ export function StockSection({
               className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
             />
             <input
-              className="min-h-11 w-full rounded-lg border border-line bg-app pl-10 pr-3 text-sm font-bold outline-none focus:shadow-[var(--shadow-focus)]"
+              className="min-h-11 w-full rounded-lg border border-line bg-app pl-10 pr-3 text-sm font-bold outline-none transition-shadow focus:shadow-[var(--shadow-focus)]"
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Buscar por modelo"
               value={query}
@@ -160,7 +170,7 @@ export function StockSection({
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border border-dashed border-line bg-panel p-6 text-center text-sm font-bold text-muted">
+        <div className="rounded-lg border border-dashed border-line bg-panel p-8 text-center text-sm font-bold text-muted">
           Nenhum veiculo encontrado.
         </div>
       )}
@@ -176,7 +186,7 @@ export function AboutSection({
   const theme = data.settings.site.theme;
   const imageUrl = readString(theme.aboutImageUrl);
   return (
-    <section className="grid gap-5 rounded-lg border border-line bg-panel p-5 md:grid-cols-2">
+    <section className="grid gap-5 rounded-lg border border-line bg-panel p-5 shadow-sm md:grid-cols-2 lg:p-7">
       <div className="flex min-w-0 flex-col justify-center">
         <p className="text-xs font-black uppercase tracking-widest text-muted">
           Sobre
@@ -192,7 +202,7 @@ export function AboutSection({
       {imageUrl ? (
         <img
           alt=""
-          className="aspect-[4/3] w-full rounded-lg object-cover"
+          className="aspect-[4/3] w-full rounded-lg object-cover shadow-sm"
           src={imageUrl}
         />
       ) : (
@@ -212,7 +222,7 @@ export function TestimonialsSection({
   const testimonials = readTestimonials(theme.testimonials);
   if (!testimonials.length) return null;
   return (
-    <section className="rounded-lg border border-line bg-panel p-5">
+    <section className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7">
       <p className="text-xs font-black uppercase tracking-widest text-muted">
         Depoimentos
       </p>
@@ -220,7 +230,7 @@ export function TestimonialsSection({
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {testimonials.map((testimonial) => (
           <article
-            className="rounded-lg border border-line bg-app p-4"
+            className="rounded-lg border border-line bg-app p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
             key={testimonial.id}
           >
             <Star aria-hidden="true" className="size-4 text-accent" />

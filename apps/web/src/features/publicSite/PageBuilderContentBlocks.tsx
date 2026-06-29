@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import { cx } from "../../components/ui/featureShared";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import {
@@ -16,7 +16,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
   const ctaUrl = textProp(props.ctaUrl) ?? "#estoque";
   return (
     <section
-      className="grid gap-5 overflow-hidden rounded-lg border border-line bg-panel p-5 lg:grid-cols-[1.1fr_0.9fr] lg:p-6"
+      className="grid gap-6 overflow-hidden rounded-lg border border-line bg-panel p-5 shadow-[0_18px_54px_color-mix(in_oklab,var(--color-text)_10%,transparent)] lg:grid-cols-[1fr_1fr] lg:p-7"
       id="home"
     >
       <div className="flex min-w-0 flex-col justify-center">
@@ -32,19 +32,23 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
             "Atendimento direto e estoque publicado pela loja."}
         </p>
         <a
-          className="mt-5 inline-flex min-h-11 w-fit items-center rounded-lg px-4 text-sm font-black text-inverse"
+          className="group mt-6 inline-flex min-h-11 w-fit items-center gap-2 rounded-lg px-4 text-sm font-black text-inverse transition-[filter,transform] duration-200 hover:brightness-110 active:scale-[0.98]"
           href={ctaUrl}
           style={{ background: context.accent }}
         >
           {textProp(props.ctaLabel) ??
             textProp(props.primaryLabel) ??
             "Ver estoque"}
+          <ArrowRight
+            aria-hidden="true"
+            className="size-4 transition-transform group-hover:translate-x-0.5"
+          />
         </a>
       </div>
       {imageUrl ? (
         <img
           alt={textProp(props.imageAlt) ?? ""}
-          className="aspect-[16/10] w-full rounded-lg object-cover"
+          className="aspect-[16/10] w-full rounded-lg object-cover shadow-sm"
           src={imageUrl}
         />
       ) : null}
@@ -69,12 +73,12 @@ export function AboutBlock({ component }: BuilderBlockProps) {
   const imageContent = imageUrl ? (
     <img
       alt=""
-      className="aspect-[4/3] w-full rounded-lg object-cover"
+      className="aspect-[4/3] w-full rounded-lg object-cover shadow-sm"
       src={imageUrl}
     />
   ) : null;
   return (
-    <section className="grid gap-5 rounded-lg border border-line bg-panel p-5 md:grid-cols-2">
+    <section className="grid gap-5 rounded-lg border border-line bg-panel p-5 shadow-sm md:grid-cols-2 lg:p-7">
       {imageLeft ? imageContent : textContent}
       {imageLeft ? textContent : imageContent}
     </section>
@@ -87,7 +91,7 @@ export function TextBlock({ component }: BuilderBlockProps) {
     <section
       className={cx(
         classForMaxWidth(props.maxWidth),
-        "mx-auto w-full rounded-lg border border-line bg-panel p-5",
+        "mx-auto w-full rounded-lg border border-line bg-panel p-5 shadow-sm",
         classForTextAlign(props.alignment),
       )}
     >
@@ -108,7 +112,7 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
     textProp(props.ctaUrl) ??
     createWhatsappHref(context.config.contact.whatsapp ?? "");
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 text-center">
+    <section className="rounded-lg border border-line bg-panel p-6 text-center shadow-sm lg:p-8">
       <h2 className="text-2xl font-black">
         {textProp(props.title) ?? "Quer ajuda para escolher?"}
       </h2>
@@ -118,7 +122,7 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
           "Converse com a equipe comercial da loja."}
       </p>
       <a
-        className="mt-5 inline-flex min-h-11 items-center rounded-lg px-4 font-black text-inverse"
+        className="mt-5 inline-flex min-h-11 items-center rounded-lg px-4 font-black text-inverse transition-[filter,transform] duration-200 hover:brightness-110 active:scale-[0.98]"
         href={href}
         style={{ background: context.accent }}
       >
@@ -135,10 +139,10 @@ export function ImageBlock({ component }: BuilderBlockProps) {
   const imageUrl = textProp(props.imageUrl) ?? textProp(props.url);
   if (!imageUrl) return null;
   return (
-    <figure className="overflow-hidden rounded-lg border border-line bg-panel">
+    <figure className="group overflow-hidden rounded-lg border border-line bg-panel shadow-sm">
       <img
         alt={textProp(props.alt) ?? textProp(props.caption) ?? ""}
-        className="max-h-[32rem] w-full object-cover"
+        className="max-h-[32rem] w-full object-cover transition-transform duration-500 group-hover:scale-[1.025]"
         src={imageUrl}
       />
       {textProp(props.caption) ? (
@@ -156,7 +160,7 @@ export function VideoBlock({ component }: BuilderBlockProps) {
   if (!videoUrl) return null;
   const embedUrl = youtubeEmbedUrl(videoUrl);
   return (
-    <section className="overflow-hidden rounded-lg border border-line bg-panel">
+    <section className="overflow-hidden rounded-lg border border-line bg-panel shadow-sm">
       {embedUrl ? (
         <iframe
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -205,11 +209,11 @@ export function ScrollZoomBlock({ component }: BuilderBlockProps) {
   const props = component.props;
   const imageUrl = textProp(props.imageUrl);
   return (
-    <section className="grid gap-5 rounded-lg border border-line bg-panel p-5 md:grid-cols-[0.9fr_1.1fr]">
+    <section className="grid gap-5 rounded-lg border border-line bg-panel p-5 shadow-sm md:grid-cols-[0.9fr_1.1fr] lg:p-7">
       {imageUrl ? (
         <img
           alt=""
-          className="aspect-[4/3] w-full rounded-lg object-cover"
+          className="aspect-[4/3] w-full rounded-lg object-cover shadow-sm"
           src={imageUrl}
         />
       ) : null}

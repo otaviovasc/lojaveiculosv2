@@ -18,12 +18,12 @@ export function GalleryBlock({ component }: BuilderBlockProps) {
   const columns = numberProp(props.columns, 3);
   if (!images.length) return null;
   return (
-    <section className="rounded-lg border border-line bg-panel p-5">
+    <section className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7">
       <BlockHeading props={props} />
       <div className={cx("mt-4 grid gap-3", galleryColumnsClass(columns))}>
         {images.map((image, index) => (
           <button
-            className="group overflow-hidden rounded-lg border border-line bg-app text-left"
+            className="group overflow-hidden rounded-lg border border-line bg-app text-left transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
             key={textProp(image.id) ?? `${index}`}
             onClick={() =>
               boolProp(props.lightboxEnabled, true) && setSelectedIndex(index)
@@ -68,12 +68,12 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
   const testimonials = recordArrayProp(component.props.testimonials);
   if (!testimonials.length) return null;
   return (
-    <section className="rounded-lg border border-line bg-panel p-5">
+    <section className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7">
       <BlockHeading props={component.props} />
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         {testimonials.map((item, index) => (
           <article
-            className="rounded-lg border border-line bg-app p-4"
+            className="rounded-lg border border-line bg-app p-4 transition-[box-shadow,transform] duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
             key={textProp(item.id) ?? `${index}`}
           >
             <p className="text-sm font-bold leading-6 text-muted">
@@ -100,7 +100,7 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
   if (!address) return null;
   return (
     <a
-      className="rounded-lg border border-line bg-panel p-5"
+      className="rounded-lg border border-line bg-panel p-5 shadow-sm transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
       href={mapLink(address)}
       rel="noreferrer"
       target="_blank"
@@ -119,7 +119,7 @@ export function MarqueeBlock({ component }: BuilderBlockProps) {
   ];
   const reverse = textProp(component.props.direction) === "right";
   return (
-    <div className="overflow-hidden rounded-lg border border-line bg-panel py-3">
+    <div className="overflow-hidden rounded-lg border border-line bg-panel py-3 shadow-sm">
       <div
         className={cx(
           "page-builder-marquee-track",
@@ -164,7 +164,7 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
     return () => window.clearTimeout(timeout);
   }, [current, length, props.speed, props.waitTime, texts.length]);
   return (
-    <section className="rounded-lg border border-line bg-panel p-8 text-center">
+    <section className="rounded-lg border border-line bg-panel p-8 text-center shadow-sm">
       {textProp(props.preText) ? (
         <p className="text-xl font-black text-muted">
           {textProp(props.preText)}

@@ -141,13 +141,17 @@ export function BuilderCanvas({
   className,
   config,
   draft,
+  onBlockSelect,
   onViewportChange,
+  selectedComponentId,
   viewportMode,
 }: {
   className?: string;
   config: StorefrontBuilderConfig;
   draft: StorefrontCustomPage;
+  onBlockSelect: (componentId: string) => void;
   onViewportChange: (mode: BuilderViewportMode) => void;
+  selectedComponentId: string | null;
   viewportMode: BuilderViewportMode;
 }) {
   return (
@@ -159,8 +163,17 @@ export function BuilderCanvas({
     >
       <ViewportSwitcher value={viewportMode} onChange={onViewportChange} />
       <div className="flex min-h-0 flex-1 justify-center overflow-auto p-3 lg:p-5">
-        <CustomPagePreviewFrame mode={viewportMode}>
-          <PageBuilderRenderer config={config} page={draft} preview />
+        <CustomPagePreviewFrame
+          mode={viewportMode}
+          onSelectBlock={onBlockSelect}
+        >
+          <PageBuilderRenderer
+            config={config}
+            onSelectComponent={onBlockSelect}
+            page={draft}
+            preview
+            selectedComponentId={selectedComponentId}
+          />
         </CustomPagePreviewFrame>
       </div>
     </section>

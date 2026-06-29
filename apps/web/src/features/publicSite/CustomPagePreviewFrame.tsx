@@ -9,6 +9,12 @@ const PREVIEW_WIDTH: Record<BuilderViewportMode, string> = {
   tablet: "min(100%, 768px)",
 };
 
+const PREVIEW_SIZE_LABEL: Record<BuilderViewportMode, string> = {
+  desktop: "1400px canvas",
+  mobile: "390px mobile",
+  tablet: "768px tablet",
+};
+
 function collectPreviewStyles(source: Document) {
   const nodes = [
     ...source.head.querySelectorAll('link[rel="stylesheet"], style'),
@@ -65,16 +71,23 @@ export function CustomPagePreviewFrame({
   children,
   className,
   mode,
+  onSelectBlock,
 }: {
   children: ReactNode;
   className?: string;
   mode: BuilderViewportMode;
+  onSelectBlock?: (componentId: string) => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
   const syncTimer = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined,
   );
+  const onSelectBlockRef = useRef(onSelectBlock);
+
+  useLayoutEffect(() => {
+    onSelectBlockRef.current = onSelectBlock;
+  }, [onSelectBlock]);
 
   useLayoutEffect(() => {
     const iframe = iframeRef.current;
@@ -89,6 +102,29 @@ export function CustomPagePreviewFrame({
 
     const root = doc.getElementById("preview-root");
     if (!root) return undefined;
+
+    const selectBlock = (event: Event) => {
+      const target = event.target;
+      if (!target || typeof (target as Element).closest !== "function") {
+        return;
+      }
+
+      if (event.type === "keydown") {
+        const key = (event as KeyboardEvent).key;
+        if (key !== "Enter" && key !== " ") return;
+      }
+
+      const block = (target as Element).closest<HTMLElement>(
+        "[data-builder-block-id]",
+      );
+      const componentId = block?.getAttribute("data-builder-block-id");
+      const onSelect = onSelectBlockRef.current;
+      if (!componentId || !onSelect) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      onSelect(componentId);
+    };
 
     const sync = () => {
       syncRootAttributes(document, doc);
@@ -108,10 +144,14 @@ export function CustomPagePreviewFrame({
       attributeFilter: ["class", "data-theme", "style"],
       attributes: true,
     });
+    doc.addEventListener("click", selectBlock, true);
+    doc.addEventListener("keydown", selectBlock, true);
 
     return () => {
       clearTimeout(syncTimer.current);
       observer.disconnect();
+      doc.removeEventListener("click", selectBlock, true);
+      doc.removeEventListener("keydown", selectBlock, true);
       setMountNode(null);
     };
   }, []);
@@ -124,9 +164,12 @@ export function CustomPagePreviewFrame({
       )}
     >
       <div
-        className="relative flex h-full min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg transition-[width]"
+        className="relative flex h-full min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg transition-[width,box-shadow] duration-300 ease-out"
         style={{ width: PREVIEW_WIDTH[mode] }}
       >
+        <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-card/90 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground shadow-sm backdrop-blur">
+          {PREVIEW_SIZE_LABEL[mode]}
+        </div>
         <iframe
           className="block h-full min-h-0 w-full flex-1 border-0 bg-background"
           ref={iframeRef}

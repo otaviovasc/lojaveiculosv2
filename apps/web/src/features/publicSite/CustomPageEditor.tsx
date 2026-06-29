@@ -44,9 +44,10 @@ export function CustomPageEditor({
   const [draft, setDraft] = useState(page);
   const [query, setQuery] = useState("");
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(
-    page.components[0]?.id ?? null,
+    null,
   );
   const [showPageSettings, setShowPageSettings] = useState(false);
+  const [showBlockInspector, setShowBlockInspector] = useState(false);
   const [viewportMode, setViewportMode] =
     useState<BuilderViewportMode>("desktop");
   const [activeTab, setActiveTab] = useState<"blocks" | "canvas" | "editor">(
@@ -59,14 +60,15 @@ export function CustomPageEditor({
     pageIdRef.current = page.id;
     setDraft(page);
     setSelectedComponentId((current) => {
-      if (changedPage) return page.components[0]?.id ?? null;
+      if (changedPage) return null;
       return current &&
         page.components.some((component) => component.id === current)
         ? current
-        : (page.components[0]?.id ?? null);
+        : null;
     });
     if (changedPage) {
       setShowPageSettings(false);
+      setShowBlockInspector(false);
       setActiveTab("canvas");
     }
   }, [page]);
@@ -107,6 +109,7 @@ export function CustomPageEditor({
     }));
     setSelectedComponentId(block.id);
     setShowPageSettings(false);
+    setShowBlockInspector(false);
     if (window.innerWidth < 1024) setActiveTab("canvas");
   };
 
@@ -140,6 +143,7 @@ export function CustomPageEditor({
     }));
     setSelectedComponentId(block.id);
     setShowPageSettings(false);
+    setShowBlockInspector(false);
   };
 
   const removeComponent = (componentId: string) => {
@@ -154,6 +158,7 @@ export function CustomPageEditor({
         .map((component, order) => ({ ...component, order })),
     }));
     setSelectedComponentId(nextSelected);
+    setShowBlockInspector(false);
   };
 
   const moveComponent = (fromIndex: number, toIndex: number) => {
@@ -217,6 +222,7 @@ export function CustomPageEditor({
         onSave={() => void save()}
         onShowSettings={() => {
           setShowPageSettings(true);
+          setShowBlockInspector(false);
           setActiveTab("editor");
         }}
         onTogglePublished={() => void togglePublished()}
@@ -259,7 +265,8 @@ export function CustomPageEditor({
             onSelect={(componentId) => {
               setSelectedComponentId(componentId);
               setShowPageSettings(false);
-              setActiveTab("editor");
+              setShowBlockInspector(false);
+              setActiveTab("canvas");
             }}
             onToggle={(component) =>
               updateComponent(component.id, { visible: !component.visible })
@@ -271,29 +278,43 @@ export function CustomPageEditor({
           className={activeTab === "canvas" ? "flex" : "hidden lg:flex"}
           config={config}
           draft={draft}
+          onBlockSelect={(componentId) => {
+            setSelectedComponentId(componentId);
+            setShowPageSettings(false);
+            setShowBlockInspector(true);
+            if (window.innerWidth < 1024) setActiveTab("editor");
+          }}
           onViewportChange={setViewportMode}
+          selectedComponentId={showBlockInspector ? selectedComponentId : null}
           viewportMode={viewportMode}
         />
-        <BuilderInspector
-          className={activeTab === "editor" ? "block" : "hidden lg:block"}
-          component={selectedComponent}
-          config={config}
-          draft={draft}
-          onDraftChange={(nextDraft) => {
-            markDirty();
-            setDraft(nextDraft);
-          }}
-          onRemove={removeComponent}
-          onSelectedComponentChange={(component) =>
-            updateComponent(component.id, component)
-          }
-          previewUrl={`/${storeSlug}/p/${draft.slug}${
-            draft.secretToken
-              ? `?token=${encodeURIComponent(draft.secretToken)}`
-              : ""
-          }`}
-          showPageSettings={showPageSettings}
-        />
+        {showPageSettings || (showBlockInspector && selectedComponent) ? (
+          <BuilderInspector
+            className={activeTab === "editor" ? "block" : "hidden lg:block"}
+            component={showBlockInspector ? selectedComponent : null}
+            config={config}
+            draft={draft}
+            onClose={() => {
+              setShowPageSettings(false);
+              setShowBlockInspector(false);
+              if (window.innerWidth < 1024) setActiveTab("canvas");
+            }}
+            onDraftChange={(nextDraft) => {
+              markDirty();
+              setDraft(nextDraft);
+            }}
+            onRemove={removeComponent}
+            onSelectedComponentChange={(component) =>
+              updateComponent(component.id, component)
+            }
+            previewUrl={`/${storeSlug}/p/${draft.slug}${
+              draft.secretToken
+                ? `?token=${encodeURIComponent(draft.secretToken)}`
+                : ""
+            }`}
+            showPageSettings={showPageSettings}
+          />
+        ) : null}
       </div>
       <div className="z-40 flex shrink-0 items-center justify-around border-t border-border/50 bg-card px-4 py-2 shadow-lg lg:hidden">
         <MobileEditorTab
@@ -310,10 +331,14 @@ export function CustomPageEditor({
         />
         <MobileEditorTab
           active={activeTab === "editor"}
-          hasIndicator={Boolean(selectedComponent) || showPageSettings}
+          hasIndicator={showBlockInspector || showPageSettings}
           icon={Settings}
           label="Ajustes"
-          onClick={() => setActiveTab("editor")}
+          onClick={() => {
+            if (showBlockInspector || showPageSettings) {
+              setActiveTab("editor");
+            }
+          }}
         />
       </div>
     </div>

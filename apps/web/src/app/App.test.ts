@@ -57,6 +57,7 @@ describe("App module navigation", () => {
     expect(parseModuleHash("#inventory")).toBe("inventory");
     expect(parseModuleHash("#/inventory/create")).toBe("inventory");
     expect(parseModuleHash("#/public-api")).toBe("public-api");
+    expect(parseModuleHash("#/customize")).toBe("public-site");
     expect(parseModuleHash("#/personalizar")).toBe("public-site");
     expect(parseModuleHash("#/public-site")).toBe("public-site");
     expect(parseModuleHash("#/custom-pages")).toBe("custom-pages");
@@ -74,7 +75,7 @@ describe("App module navigation", () => {
       parseModuleLocation({ hash: "#unknown", pathname: "/documents" }),
     ).toBe("documents");
     expect(
-      parseModuleLocation({ hash: "#unknown", pathname: "/personalizar" }),
+      parseModuleLocation({ hash: "#unknown", pathname: "/customize" }),
     ).toBe("public-site");
     expect(
       parseModuleLocation({ hash: "#unknown", pathname: "/custom-pages" }),
@@ -82,7 +83,8 @@ describe("App module navigation", () => {
   });
 
   it("reserves dedicated admin paths before public slug routing", () => {
-    expect(adminRoutePaths).toContain("/personalizar");
+    expect(adminRoutePaths).toContain("/customize");
+    expect(adminRoutePaths).not.toContain("/personalizar");
     expect(adminRoutePaths).toContain("/custom-pages");
     expect(adminRoutePaths).toContain("/page-builder");
   });

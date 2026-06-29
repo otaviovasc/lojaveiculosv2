@@ -45,7 +45,7 @@ export function AdminApp() {
       ) : activeSurface === "finance-commissions" ? (
         <FinanceModule defaultActiveType="commission" />
       ) : activeSurface === "storefront-design" ? (
-        <StorefrontCustomizationModule key="personalizar" initialTab="design" />
+        <StorefrontCustomizationModule key="customize" initialTab="design" />
       ) : activeSurface === "storefront-pages" ? (
         <StorefrontCustomizationModule key="custom-pages" initialTab="pages" />
       ) : activeSurface === "public-api" ? (

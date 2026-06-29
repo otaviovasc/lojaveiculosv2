@@ -16,7 +16,7 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
     <header
       className={cx(
         boolProp(props.sticky, true) && "sticky top-0 z-20",
-        "rounded-lg border border-line bg-panel/95 backdrop-blur",
+        "rounded-lg border border-line bg-panel/95 shadow-sm backdrop-blur",
       )}
     >
       <div className="flex min-h-16 items-center justify-between gap-3 px-4">
@@ -24,6 +24,7 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
         <nav className="hidden min-w-0 items-center gap-3 text-sm font-black text-app-text md:flex">
           {links.map((link, index) => (
             <a
+              className="transition-colors hover:text-accent"
               href={textProp(link.href) ?? "#"}
               key={`${textProp(link.title)}_${index}`}
             >
@@ -33,7 +34,7 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
         </nav>
         {boolProp(props.showContactButton, true) ? (
           <a
-            className="inline-flex min-h-10 shrink-0 items-center rounded-lg px-3 text-sm font-black text-inverse"
+            className="inline-flex min-h-10 shrink-0 items-center rounded-lg px-3 text-sm font-black text-inverse transition-[filter,transform] duration-200 hover:brightness-110 active:scale-[0.98]"
             href={textProp(props.contactButtonLink) ?? "#contato"}
             style={{ background: context.accent }}
           >
@@ -51,7 +52,7 @@ export function FooterBlock({ component, context }: BuilderBlockProps) {
     ([, url]) => Boolean(url),
   );
   return (
-    <footer className="rounded-lg border border-line bg-panel p-5">
+    <footer className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7">
       <div className="grid gap-5 md:grid-cols-[1.2fr_1fr]">
         <div>
           <strong className="text-xl font-black">
@@ -70,6 +71,7 @@ export function FooterBlock({ component, context }: BuilderBlockProps) {
               <div className="mt-2 grid gap-2 text-sm font-bold">
                 {recordArrayProp(column.links).map((link, linkIndex) => (
                   <a
+                    className="transition-colors hover:text-accent"
                     href={textProp(link.href) ?? "#"}
                     key={`${textProp(link.title)}_${linkIndex}`}
                   >
@@ -86,7 +88,11 @@ export function FooterBlock({ component, context }: BuilderBlockProps) {
               </p>
               <div className="mt-2 grid gap-2 text-sm font-bold">
                 {socialLinks.map(([name, url]) => (
-                  <a href={url ?? "#"} key={name}>
+                  <a
+                    className="transition-colors hover:text-accent"
+                    href={url ?? "#"}
+                    key={name}
+                  >
                     {name}
                   </a>
                 ))}
@@ -104,7 +110,7 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
   const limit = numberProp(props.maxProperties ?? props.limit, 6);
   return (
     <section
-      className="rounded-lg border border-line bg-panel p-5"
+      className="rounded-lg border border-line bg-panel p-5 shadow-sm lg:p-7"
       id="estoque"
     >
       <h2 className="text-xl font-black">
@@ -118,14 +124,14 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {context.vehicles.slice(0, limit).map((vehicle) => (
           <article
-            className="overflow-hidden rounded-lg border border-line bg-app"
+            className="group overflow-hidden rounded-lg border border-line bg-app transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_14px_36px_color-mix(in_oklab,var(--color-text)_10%,transparent)]"
             key={vehicle.slug}
           >
             <div className="aspect-[16/10] bg-accent-soft">
               {vehicle.thumbnailUrl ? (
                 <img
                   alt=""
-                  className="size-full object-cover"
+                  className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.035]"
                   src={vehicle.thumbnailUrl}
                 />
               ) : null}

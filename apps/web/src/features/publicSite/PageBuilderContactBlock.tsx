@@ -43,7 +43,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
   }
   return (
     <section
-      className="grid gap-5 rounded-lg border border-line bg-panel p-5 md:grid-cols-[0.9fr_1.1fr]"
+      className="grid gap-5 rounded-lg border border-line bg-panel p-5 shadow-sm md:grid-cols-[0.9fr_1.1fr] lg:p-7"
       id="contato"
     >
       <div>
@@ -59,7 +59,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
         </div>
       </div>
       <form
-        className="grid gap-3 rounded-lg border border-line bg-app p-4"
+        className="grid gap-3 rounded-lg border border-line bg-app p-4 shadow-sm"
         onSubmit={(event) => void submit(event)}
       >
         {show("name") ? (
@@ -75,13 +75,13 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
         </div>
         {show("message") ? (
           <textarea
-            className="min-h-24 rounded-lg border border-line bg-panel p-3 text-sm font-bold"
+            className="min-h-24 rounded-lg border border-line bg-panel p-3 text-sm font-bold outline-none transition-shadow focus:shadow-[var(--shadow-focus)]"
             name="message"
             placeholder="Mensagem"
           />
         ) : null}
         <button
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 font-black text-inverse disabled:opacity-70"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 font-black text-inverse transition-[filter,transform] duration-200 hover:brightness-110 active:scale-[0.98] disabled:opacity-70"
           disabled={status === "sending"}
           style={{ background: context.accent }}
           type="submit"
@@ -143,7 +143,7 @@ function PublicInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
       {...props}
-      className="min-h-11 rounded-lg border border-line bg-panel px-3 text-sm font-bold"
+      className="min-h-11 rounded-lg border border-line bg-panel px-3 text-sm font-bold outline-none transition-shadow focus:shadow-[var(--shadow-focus)]"
     />
   );
 }

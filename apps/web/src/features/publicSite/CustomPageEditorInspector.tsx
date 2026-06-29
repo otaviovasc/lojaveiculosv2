@@ -3,7 +3,7 @@ import type {
   StorefrontBuilderConfig,
   StorefrontCustomPage,
 } from "@lojaveiculosv2/shared";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BuilderBlockPropsEditor } from "./BuilderBlockEditors";
 import { blockLabel } from "./builderBlockCatalog";
@@ -14,6 +14,7 @@ export function BuilderInspector({
   config,
   draft,
   onDraftChange,
+  onClose,
   onRemove,
   onSelectedComponentChange,
   showPageSettings,
@@ -24,6 +25,7 @@ export function BuilderInspector({
   component: StorefrontBuilderComponent | null;
   config: StorefrontBuilderConfig;
   draft: StorefrontCustomPage;
+  onClose: () => void;
   onDraftChange: (page: StorefrontCustomPage) => void;
   onRemove: (componentId: string) => void;
   onSelectedComponentChange: (component: StorefrontBuilderComponent) => void;
@@ -38,6 +40,19 @@ export function BuilderInspector({
           className,
         )}
       >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Configurações da página
+          </p>
+          <button
+            aria-label="Fechar ajustes"
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={onClose}
+            type="button"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </button>
+        </div>
         <PageSettingsFields
           config={config}
           draft={draft}
@@ -64,14 +79,24 @@ export function BuilderInspector({
             {blockLabel(component.type)}
           </h3>
         </div>
-        <button
-          aria-label="Remover bloco"
-          className="flex size-9 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10"
-          onClick={() => onRemove(component.id)}
-          type="button"
-        >
-          <Trash2 aria-hidden="true" className="size-4" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <button
+            aria-label="Remover bloco"
+            className="flex size-9 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10"
+            onClick={() => onRemove(component.id)}
+            type="button"
+          >
+            <Trash2 aria-hidden="true" className="size-4" />
+          </button>
+          <button
+            aria-label="Fechar ajustes"
+            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            onClick={onClose}
+            type="button"
+          >
+            <X aria-hidden="true" className="size-4" />
+          </button>
+        </div>
       </div>
       <BuilderBlockPropsEditor
         component={component}

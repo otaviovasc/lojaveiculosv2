@@ -9,7 +9,7 @@ export function PublicVehicleCard({
   onOpen: () => void;
 }) {
   return (
-    <article className="overflow-hidden rounded-lg border border-line bg-panel">
+    <article className="group overflow-hidden rounded-lg border border-line bg-panel shadow-sm transition-[box-shadow,transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-accent/40 hover:shadow-[0_18px_50px_color-mix(in_oklab,var(--color-text)_12%,transparent)]">
       <VehicleImage listing={listing} />
       <div className="p-4">
         <div className="mb-3 flex items-start justify-between gap-3">
@@ -33,7 +33,7 @@ export function PublicVehicleCard({
           <PublicVehicleMetric label="Cod." value={listing.slug.slice(0, 8)} />
         </div>
         <button
-          className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
+          className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse transition-[filter,transform] duration-200 hover:brightness-110 active:scale-[0.98]"
           onClick={onOpen}
           type="button"
         >
@@ -50,7 +50,7 @@ function VehicleImage({ listing }: { listing: PublicVehicleListing }) {
     return (
       <img
         alt={listing.title}
-        className="aspect-[16/9] w-full bg-app object-cover"
+        className="aspect-[16/9] w-full bg-app object-cover transition-transform duration-500 group-hover:scale-[1.035]"
         src={listing.thumbnailUrl}
       />
     );
