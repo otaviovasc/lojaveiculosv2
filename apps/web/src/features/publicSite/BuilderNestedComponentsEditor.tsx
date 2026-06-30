@@ -56,10 +56,10 @@ export function BuilderNestedComponentsEditor({
         <span className="text-xs font-black uppercase tracking-widest text-muted">
           {label}
         </span>
-        <div className="flex min-w-0 flex-1 justify-end gap-2">
+        <div className="grid min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] justify-end gap-2">
           <FeatureSelect
             ariaLabel={`${label}: tipo do bloco`}
-            className="min-w-44"
+            className="min-w-0"
             onChange={setSelectedType}
             options={builderBlockTypeOptions}
             value={selectedType}

@@ -63,10 +63,11 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
   assignString(nextTheme, "heroSubtitle", config.heroSubtitle);
   assignString(nextTheme, "corretorName", config.corretorName);
   assignString(nextTheme, "corretorCreci", config.corretorCreci);
-  assignString(nextTheme, "corretorPhotoUrl", config.corretorPhotoUrl);
+  assignNullableString(nextTheme, "corretorPhotoUrl", config.corretorPhotoUrl);
+  assignNullableString(nextTheme, "logoUrl", config.logoUrl);
   assignString(nextTheme, "aboutTitle", config.aboutTitle);
   assignString(nextTheme, "aboutText", config.aboutText);
-  assignString(nextTheme, "aboutImageUrl", config.aboutImageUrl);
+  assignNullableString(nextTheme, "aboutImageUrl", config.aboutImageUrl);
 
   if (config.contact) nextTheme.contact = config.contact;
   if (config.fonts) nextTheme.fonts = config.fonts;
@@ -75,8 +76,16 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
   if (config.testimonials) nextTheme.testimonials = config.testimonials;
   if (config.sections) nextTheme.sections = config.sections;
 
-  const whatsappPhone =
-    config.socialLinks?.whatsapp ?? data.settings.contact.whatsappPhone;
+  const hasContactEmail = hasOwn(config.contact, "email");
+  const hasContactPhone = hasOwn(config.contact, "phone");
+  const hasHeroImage = hasOwn(config, "heroImageUrl");
+  const hasWhatsapp = hasOwn(config.socialLinks, "whatsapp");
+  const whatsappPhone = hasWhatsapp
+    ? (config.socialLinks?.whatsapp ?? null)
+    : data.settings.contact.whatsappPhone;
+  const whatsappUrl = hasWhatsapp
+    ? createWhatsappUrl(whatsappPhone)
+    : data.settings.contact.whatsappUrl;
 
   return {
     ...data,
@@ -84,17 +93,20 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
       ...data.settings,
       contact: {
         ...data.settings.contact,
-        contactEmail:
-          config.contact?.email ?? data.settings.contact.contactEmail,
-        contactPhone:
-          config.contact?.phone ?? data.settings.contact.contactPhone,
+        contactEmail: hasContactEmail
+          ? (config.contact?.email ?? null)
+          : data.settings.contact.contactEmail,
+        contactPhone: hasContactPhone
+          ? (config.contact?.phone ?? null)
+          : data.settings.contact.contactPhone,
         whatsappPhone,
-        whatsappUrl:
-          createWhatsappUrl(whatsappPhone) ?? data.settings.contact.whatsappUrl,
+        whatsappUrl,
       },
       site: {
         ...data.settings.site,
-        heroImageUrl: config.heroImageUrl ?? data.settings.site.heroImageUrl,
+        heroImageUrl: hasHeroImage
+          ? (config.heroImageUrl ?? null)
+          : data.settings.site.heroImageUrl,
         layoutKey: config.templateId ?? data.settings.site.layoutKey,
         seoDescription:
           config.seo?.metaDescription ??
@@ -115,11 +127,27 @@ function assignString(
   if (typeof value === "string" && value.trim()) target[key] = value;
 }
 
+function assignNullableString(
+  target: Record<string, unknown>,
+  key: string,
+  value: unknown,
+) {
+  if (typeof value === "string" && value.trim()) {
+    target[key] = value;
+    return;
+  }
+  if (value === null || value === "") target[key] = null;
+}
+
 function createWhatsappUrl(phone: string | null | undefined) {
   if (!phone) return null;
   const digits = phone.replace(/\D/g, "");
   if (!digits) return null;
   return `https://wa.me/${digits}`;
+}
+
+function hasOwn(value: object | null | undefined, key: string) {
+  return Boolean(value && Object.prototype.hasOwnProperty.call(value, key));
 }
 
 function isWebsiteBuilderSection(

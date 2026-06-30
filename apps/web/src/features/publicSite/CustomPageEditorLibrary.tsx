@@ -126,7 +126,7 @@ export function BuilderBlockList({
   selectedId: string | null;
 }) {
   return (
-    <div className="border-t border-border/50 p-3">
+    <div className="max-h-[46%] min-h-48 shrink-0 overflow-y-auto border-t border-border/50 p-3">
       <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
         Blocos da pagina
       </h3>
@@ -180,7 +180,7 @@ function BlockListRow({
   return (
     <div
       className={cn(
-        "group grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 overflow-hidden rounded-lg border px-3 py-2 text-left transition-all",
+        "group grid w-full min-w-0 gap-2 overflow-hidden rounded-lg border px-3 py-2 text-left transition-all",
         selected
           ? "border-primary bg-primary text-primary-foreground shadow-[0_10px_26px_color-mix(in_oklab,var(--primary)_24%,transparent)]"
           : "border-border/50 bg-card text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground",
@@ -198,7 +198,7 @@ function BlockListRow({
           {blockLabel(component.type)}
         </span>
       </button>
-      <span className="grid shrink-0 grid-cols-5 gap-1">
+      <span className="grid grid-cols-5 gap-1 border-t border-current/10 pt-2">
         <MiniAction
           disabled={index === 0}
           label="Mover para cima"

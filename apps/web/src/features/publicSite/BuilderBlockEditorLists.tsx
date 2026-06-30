@@ -25,7 +25,10 @@ export function BuilderTextItems({
       onAdd={() => onChange([...values, "Novo texto"])}
     >
       {values.map((value, index) => (
-        <div className="flex gap-2" key={`${value}_${index}`}>
+        <div
+          className="grid grid-cols-[minmax(0,1fr)_auto] gap-2"
+          key={`${value}_${index}`}
+        >
           <FeatureInput
             onChange={(event) =>
               onChange(replaceAt(values, index, event.target.value))
@@ -72,7 +75,7 @@ export function BuilderLinksList({
             placeholder="Titulo"
             value={textValue(item.title)}
           />
-          <div className="flex gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <FeatureInput
               onChange={(event) =>
                 onChange(
@@ -121,7 +124,7 @@ export function BuilderImageItems({
             placeholder="URL da imagem"
             value={textValue(item.url)}
           />
-          <div className="flex gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
             <FeatureInput
               onChange={(event) =>
                 onChange(
@@ -227,7 +230,7 @@ export function BuilderFooterColumns({
             className="grid gap-2 rounded-lg border border-line bg-panel p-2"
             key={itemKey(item, index)}
           >
-            <div className="flex gap-2">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
               <FeatureInput
                 onChange={(event) =>
                   onChange(
@@ -270,7 +273,7 @@ export function BuilderRepeatBox({
 }) {
   return (
     <div className="grid gap-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-black uppercase tracking-widest text-muted">
           {label}
         </span>

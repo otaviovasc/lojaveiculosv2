@@ -14,6 +14,7 @@ import { BuilderNestedComponentsEditor } from "./BuilderNestedComponentsEditor";
 import {
   EditorStack,
   gapOptions,
+  lineVariantOptions,
   maxWidthOptions,
   speedOptions,
   TitleSubtitleFields,
@@ -54,6 +55,11 @@ export function HeaderFooterEditor({ component, setProp }: EditorHelpers) {
         label="Mostrar botao de contato"
         onChange={(value) => setProp("showContactButton", value)}
         value={props.showContactButton}
+      />
+      <BuilderToggleInput
+        label="Mostrar redes sociais"
+        onChange={(value) => setProp("showSocial", value)}
+        value={props.showSocial}
       />
       <BuilderTextInput
         label="Texto do botao"
@@ -183,11 +189,19 @@ export function SimpleBlockEditor({ component, setProp }: EditorHelpers) {
   }
   if (component.type === "divider") {
     return (
-      <BuilderTextInput
-        label="Texto"
-        onChange={(value) => setProp("text", value)}
-        value={props.text}
-      />
+      <EditorStack>
+        <BuilderTextInput
+          label="Texto"
+          onChange={(value) => setProp("text", value)}
+          value={props.text}
+        />
+        <BuilderSelectInput
+          label="Linha"
+          onChange={(value) => setProp("lineVariant", value)}
+          options={lineVariantOptions}
+          value={props.lineVariant ?? "solid"}
+        />
+      </EditorStack>
     );
   }
   if (component.type === "map") {

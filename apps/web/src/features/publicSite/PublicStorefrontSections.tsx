@@ -9,7 +9,6 @@ import { PublicVehicleCard } from "./PublicVehicleCard";
 import {
   formatPublicVehicleMileage,
   formatPublicVehiclePrice,
-  splitVehicleTitle,
 } from "./publicVehicleFormatters";
 import type { createStorefrontTheme } from "./storefrontTemplates";
 import {
@@ -48,15 +47,10 @@ export function HeroSection({
   const photoUrl = readString(rawTheme.corretorPhotoUrl);
   const visibleProofItems = createVisibleProofItems(sections);
 
-  // Commerce-first: use first listing thumbnail as hero image if available
   const firstListing =
     data.listings && data.listings.length > 0 ? data.listings[0] : null;
   const heroImage =
-    firstListing?.thumbnailUrl ?? data.settings.site.heroImageUrl;
-
-  const { brand, restTitle } = firstListing
-    ? splitVehicleTitle(firstListing.title)
-    : { brand: brandName, restTitle: "" };
+    data.settings.site.heroImageUrl ?? firstListing?.thumbnailUrl;
 
   return (
     <section className="relative min-h-[85vh] lg:h-[90vh] flex items-center justify-center overflow-hidden bg-zinc-950 text-white">
@@ -101,16 +95,7 @@ export function HeroSection({
 
           {/* Headline context */}
           <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl text-white uppercase">
-            {firstListing ? (
-              <>
-                <span>{brand}</span>
-                <span className="text-accent block text-2xl sm:text-3xl lg:text-4xl mt-2 font-medium normal-case tracking-normal text-zinc-300">
-                  {restTitle}
-                </span>
-              </>
-            ) : (
-              theme.headline
-            )}
+            {theme.headline}
           </h1>
 
           {/* Subtitle */}
@@ -119,6 +104,19 @@ export function HeroSection({
               {heroSubtitle}
             </p>
           )}
+
+          {firstListing && onOpenListing ? (
+            <button
+              className="mt-5 inline-flex max-w-xl items-center gap-2 rounded border border-white/15 bg-white/5 px-3 py-2 text-left text-xs font-bold text-zinc-200 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.99]"
+              onClick={() => onOpenListing(firstListing.slug)}
+              type="button"
+            >
+              <span className="rounded bg-accent/20 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-accent">
+                Destaque
+              </span>
+              <span className="min-w-0 truncate">{firstListing.title}</span>
+            </button>
+          ) : null}
 
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">

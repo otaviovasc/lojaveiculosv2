@@ -12,6 +12,12 @@ export const alignOptions = [
   { label: "Direita", value: "right" },
 ] as const;
 
+export const buttonStyleOptions = [
+  { label: "Primario", value: "primary" },
+  { label: "Contorno", value: "outline" },
+  { label: "Suave", value: "soft" },
+] as const;
+
 export const gapOptions = [
   { label: "Pequeno", value: "sm" },
   { label: "Medio", value: "md" },
@@ -22,6 +28,13 @@ export const gapOptions = [
 export const imagePositionOptions = [
   { label: "Esquerda", value: "left" },
   { label: "Direita", value: "right" },
+] as const;
+
+export const lineVariantOptions = [
+  { label: "Solida", value: "solid" },
+  { label: "Tracejada", value: "dashed" },
+  { label: "Pontilhada", value: "dotted" },
+  { label: "Destaque", value: "accent" },
 ] as const;
 
 export const layoutOptions = [
@@ -40,6 +53,11 @@ export const speedOptions = [
   { label: "Lento", value: "slow" },
   { label: "Normal", value: "normal" },
   { label: "Rapido", value: "fast" },
+] as const;
+
+export const videoProviderOptions = [
+  { label: "YouTube", value: "youtube" },
+  { label: "Arquivo de video", value: "file" },
 ] as const;
 
 export type SetProp = (key: string, value: unknown) => void;

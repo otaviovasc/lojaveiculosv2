@@ -1,10 +1,11 @@
-import { RefreshCcw, X } from "lucide-react";
+import { ArrowLeft, RefreshCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { PublicListingDetailContent } from "./PublicListingDetailContent";
 import type {
   PublicStorefrontLeadInput,
   PublicStorefrontLeadResult,
   PublicStorefrontListingDetailData,
+  PublicStorefrontSettingsData,
 } from "./types";
 
 export type PublicListingDetailSnapshot = {
@@ -19,6 +20,7 @@ export function PublicListingDetailPanel({
   onClose,
   onRetry,
   onSubmitInterest,
+  settings,
 }: {
   detail: PublicListingDetailSnapshot;
   onClose: () => void;
@@ -27,54 +29,68 @@ export function PublicListingDetailPanel({
     listingSlug: string,
     input: PublicStorefrontLeadInput,
   ) => Promise<PublicStorefrontLeadResult>;
+  settings: PublicStorefrontSettingsData;
 }) {
   const listing = detail.data?.listing;
 
   return (
-    <section className="public-light-surface fixed inset-0 z-20 flex items-end bg-white/88 p-2 backdrop-blur-md sm:p-4 md:items-center md:justify-center md:p-6">
-      <article className="max-h-[calc(100dvh-1rem)] w-full max-w-6xl overflow-auto rounded-xl border border-line bg-panel shadow-[0_24px_64px_rgba(15,23,42,0.12)] md:max-h-[92vh]">
-        <header className="flex min-h-16 items-center justify-between gap-3 border-b border-line/60 px-6 py-4">
-          <h3 className="text-base font-extrabold tracking-tight text-app-text">
-            {listing?.title ?? "Detalhes do veículo"}
-          </h3>
-          <button
-            aria-label="Fechar detalhes"
-            className="flex size-8 items-center justify-center rounded border border-line bg-panel text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent hover:border-accent/40 active:scale-95 cursor-pointer"
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
+    <section className="public-light-surface fixed inset-0 z-20 overflow-y-auto bg-app">
+      <article className="min-h-dvh">
+        <header className="sticky top-0 z-10 border-b border-line bg-panel/95 shadow-sm backdrop-blur">
+          <div className="public-storefront-shell flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-6">
+            <div className="min-w-0">
+              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-accent">
+                {settings.store.name}
+              </p>
+              <h3 className="truncate text-sm font-extrabold tracking-tight text-app-text sm:text-base">
+                {listing?.title ?? "Detalhes do veículo"}
+              </h3>
+            </div>
+            <button
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded border border-line bg-panel px-3 text-xs font-black uppercase tracking-[0.12em] text-muted shadow-sm transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent active:scale-95 cursor-pointer"
+              onClick={onClose}
+              type="button"
+            >
+              <ArrowLeft aria-hidden="true" className="size-4" />
+              Voltar
+            </button>
+          </div>
         </header>
 
-        {detail.isLoading ? (
-          <DetailState
-            icon={
-              <RefreshCcw aria-hidden="true" className="size-5 animate-spin" />
-            }
-          />
-        ) : null}
-        {detail.error ? (
-          <DetailState
-            action={
-              <button
-                className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded bg-accent px-6 text-sm font-bold text-inverse shadow-sm cursor-pointer"
-                onClick={onRetry}
-                type="button"
-              >
-                <RefreshCcw aria-hidden="true" className="size-4" />
-                Tentar novamente
-              </button>
-            }
-            icon={<RefreshCcw aria-hidden="true" className="size-5" />}
-          />
-        ) : null}
-        {detail.data ? (
-          <PublicListingDetailContent
-            detail={detail.data}
-            onSubmitInterest={onSubmitInterest}
-          />
-        ) : null}
+        <div className="public-storefront-shell px-4 sm:px-6">
+          {detail.isLoading ? (
+            <DetailState
+              icon={
+                <RefreshCcw
+                  aria-hidden="true"
+                  className="size-5 animate-spin"
+                />
+              }
+            />
+          ) : null}
+          {detail.error ? (
+            <DetailState
+              action={
+                <button
+                  className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded bg-accent px-6 text-sm font-bold text-inverse shadow-sm cursor-pointer"
+                  onClick={onRetry}
+                  type="button"
+                >
+                  <RefreshCcw aria-hidden="true" className="size-4" />
+                  Tentar novamente
+                </button>
+              }
+              icon={<RefreshCcw aria-hidden="true" className="size-5" />}
+            />
+          ) : null}
+          {detail.data ? (
+            <PublicListingDetailContent
+              detail={detail.data}
+              onSubmitInterest={onSubmitInterest}
+              settings={settings}
+            />
+          ) : null}
+        </div>
       </article>
     </section>
   );

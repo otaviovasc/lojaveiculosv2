@@ -5,6 +5,9 @@ import { PageBuilderPreviewEmptyState } from "./PageBuilderEmptyState";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import {
   boolProp,
+  classForGap,
+  classForTextAlign,
+  mapEmbedUrl,
   mapLink,
   numberProp,
   recordArrayProp,
@@ -14,7 +17,9 @@ import {
 
 export function GalleryBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
-  const images = recordArrayProp(props.images);
+  const images = recordArrayProp(props.images).filter((image) =>
+    textProp(image.url),
+  );
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const columns = numberProp(props.columns, 3);
   if (!images.length) {
@@ -26,14 +31,34 @@ export function GalleryBlock({ component, context }: BuilderBlockProps) {
       />
     ) : null;
   }
+  const layout = textProp(props.layout) ?? "grid";
+  const gapClass = classForGap(props.gap);
   return (
     <section className="bg-panel">
       <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
         <BlockHeading props={props} />
-        <div className={cx("mt-10 grid gap-6", galleryColumnsClass(columns))}>
+        <div
+          className={cx(
+            "mt-10",
+            layout === "carousel"
+              ? "flex snap-x snap-mandatory overflow-x-auto pb-3"
+              : "grid",
+            layout === "carousel" ? carouselGapClass(props.gap) : gapClass,
+            layout === "mosaic"
+              ? "grid-cols-1 sm:grid-cols-4"
+              : layout === "grid" && galleryColumnsClass(columns),
+          )}
+        >
           {images.map((image, index) => (
             <button
-              className="group overflow-hidden rounded-xl border border-line bg-app text-left shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_24px_rgba(15,23,42,0.05)] cursor-pointer"
+              className={cx(
+                "group overflow-hidden rounded-xl border border-line bg-app text-left shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_24px_rgba(15,23,42,0.05)] cursor-pointer",
+                layout === "carousel" &&
+                  "min-w-[78%] snap-start sm:min-w-[42%] lg:min-w-[31%]",
+                layout === "mosaic" &&
+                  index % 5 === 0 &&
+                  "sm:col-span-2 sm:row-span-2",
+              )}
               key={textProp(image.id) ?? `${index}`}
               onClick={() =>
                 boolProp(props.lightboxEnabled, true) && setSelectedIndex(index)
@@ -123,6 +148,7 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
 export function MapBlock({ component, context }: BuilderBlockProps) {
   const address =
     textProp(component.props.address) ?? context.config.contact.address;
+  const zoom = numberProp(component.props.zoom, 15);
   if (!address) {
     return context.preview ? (
       <PageBuilderPreviewEmptyState
@@ -134,22 +160,31 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
   }
   return (
     <section className="bg-panel px-4 py-8 md:px-6">
-      <a
-        className="public-storefront-shell block rounded-xl border border-line bg-panel p-8 shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_12px_28px_rgba(15,23,42,0.05)] cursor-pointer"
-        href={mapLink(address)}
-        rel="noreferrer"
-        target="_blank"
-      >
-        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
-          LOCALIZAÇÃO
-        </p>
-        <p className="mt-2 text-xl font-extrabold tracking-tight text-app-text">
-          {address}
-        </p>
-        <p className="mt-3 text-xs font-bold text-muted underline">
-          Ver rotas no Google Maps →
-        </p>
-      </a>
+      <div className="public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-[0_4px_20px_rgba(15,23,42,0.02)]">
+        <iframe
+          className="aspect-[16/7] min-h-72 w-full border-0 bg-app"
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          src={mapEmbedUrl(address, zoom)}
+          title={`Mapa: ${address}`}
+        />
+        <a
+          className="block p-6 transition-colors hover:bg-app"
+          href={mapLink(address)}
+          rel="noreferrer"
+          target="_blank"
+        >
+          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+            LOCALIZAÇÃO
+          </p>
+          <p className="mt-2 text-xl font-extrabold tracking-tight text-app-text">
+            {address}
+          </p>
+          <p className="mt-3 text-xs font-bold text-muted underline">
+            Ver rotas no Google Maps →
+          </p>
+        </a>
+      </div>
     </section>
   );
 }
@@ -211,7 +246,12 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
     return () => window.clearTimeout(timeout);
   }, [current, length, props.speed, props.waitTime, texts.length]);
   return (
-    <section className="bg-panel px-4 py-16 text-center md:px-6 md:py-20">
+    <section
+      className={cx(
+        "bg-panel px-4 py-16 md:px-6 md:py-20",
+        classForTextAlign(props.textPosition),
+      )}
+    >
       {textProp(props.preText) ? (
         <p className="text-sm font-bold uppercase tracking-wider text-muted">
           {textProp(props.preText)}
@@ -260,4 +300,12 @@ function galleryColumnsClass(columns: number) {
   if (columns === 2) return "grid-cols-2";
   if (columns >= 4) return "grid-cols-2 sm:grid-cols-4";
   return "grid-cols-1 sm:grid-cols-3";
+}
+
+function carouselGapClass(value: unknown) {
+  const gap = textProp(value) ?? "md";
+  if (gap === "sm") return "gap-2";
+  if (gap === "lg") return "gap-5";
+  if (gap === "xl") return "gap-7";
+  return "gap-3";
 }

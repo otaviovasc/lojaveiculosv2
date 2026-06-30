@@ -116,6 +116,7 @@ export function PublicStorefront({
             onClose={onCloseListing}
             onRetry={onRetryListing}
             onSubmitInterest={onSubmitListingInterest}
+            settings={data.settings}
           />
         ) : null}
       </main>

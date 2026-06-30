@@ -13,6 +13,9 @@ import { splitVehicleTitle } from "./publicVehicleFormatters";
 export function HeaderBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const links = recordArrayProp(props.links);
+  const socialLinks = Object.entries(context.config.socialLinks).filter(
+    ([, url]) => Boolean(url),
+  );
   const logoText = textProp(props.logoText) ?? context.config.storeName;
   return (
     <header
@@ -36,6 +39,21 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
             </a>
           ))}
         </nav>
+        {boolProp(props.showSocial, true) && socialLinks.length ? (
+          <nav className="hidden items-center gap-3 text-[10px] font-black uppercase tracking-wider text-muted lg:flex">
+            {socialLinks.slice(0, 3).map(([name, url]) => (
+              <a
+                className="transition-colors hover:text-accent"
+                href={url ?? "#"}
+                key={name}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {name}
+              </a>
+            ))}
+          </nav>
+        ) : null}
         {boolProp(props.showContactButton, true) ? (
           <a
             className="inline-flex min-h-10 shrink-0 items-center rounded px-5 text-xs font-bold uppercase tracking-wider text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_16%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"

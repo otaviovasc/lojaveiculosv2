@@ -14,6 +14,7 @@ import {
 } from "./BuilderBlockEditorLists";
 import {
   alignOptions,
+  buttonStyleOptions,
   EditorStack,
   fieldLabel,
   TitleSubtitleFields,
@@ -75,9 +76,10 @@ export function CtaBlockEditor({ props, setProp }: PropsEditor) {
         onChange={(value) => setProp("buttonUrl", value)}
         value={props.buttonUrl}
       />
-      <BuilderTextInput
+      <BuilderSelectInput
         label="Estilo"
         onChange={(value) => setProp("buttonStyle", value)}
+        options={buttonStyleOptions}
         value={props.buttonStyle ?? "primary"}
       />
     </EditorStack>

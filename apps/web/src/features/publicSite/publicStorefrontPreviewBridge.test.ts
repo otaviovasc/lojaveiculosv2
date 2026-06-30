@@ -10,8 +10,10 @@ describe("public storefront preview bridge", () => {
     const accentColor = ["#", "C9A84C"].join("");
     const preview = mergeWebsiteBuilderPreviewPayload(null, {
       accentColor,
+      heroImageUrl: "https://cdn.local/preview-hero.jpg",
       heroSubtitle: "Atendimento direto",
       heroTitle: "Garagem premium",
+      logoUrl: "https://cdn.local/logo.png",
       sections: [
         { id: "hero", order: 0, type: "hero", visible: true },
         { id: "featured", order: 1, type: "featured", visible: true },
@@ -27,10 +29,14 @@ describe("public storefront preview bridge", () => {
     );
 
     expect(data.settings.site.layoutKey).toBe("aurora");
+    expect(data.settings.site.heroImageUrl).toBe(
+      "https://cdn.local/preview-hero.jpg",
+    );
     expect(data.settings.site.seoDescription).toBe("Atendimento direto");
     expect(data.settings.site.theme).toMatchObject({
       accentColor,
       headline: "Garagem premium",
+      logoUrl: "https://cdn.local/logo.png",
     });
     expect(data.settings.site.theme.sections).toEqual([
       { id: "hero", order: 0, type: "hero", visible: true },
@@ -40,6 +46,37 @@ describe("public storefront preview bridge", () => {
     expect(data.settings.contact.whatsappUrl).toBe(
       "https://wa.me/5511900000000",
     );
+  });
+
+  it("preserves explicit clears instead of falling back to saved data", () => {
+    const saved = createStorefrontData();
+    saved.settings.contact.contactEmail = "saved@example.com";
+    saved.settings.contact.whatsappPhone = "5511999999999";
+    saved.settings.contact.whatsappUrl = "https://wa.me/5511999999999";
+    saved.settings.site.heroImageUrl = "https://cdn.local/saved-hero.jpg";
+    saved.settings.site.theme = {
+      aboutImageUrl: "https://cdn.local/about.jpg",
+      logoUrl: "https://cdn.local/logo.png",
+    };
+
+    const preview = mergeWebsiteBuilderPreviewPayload(null, {
+      aboutImageUrl: null,
+      contact: { email: null },
+      heroImageUrl: null,
+      logoUrl: null,
+      socialLinks: { whatsapp: "" },
+    });
+
+    const data = applyWebsiteBuilderPreviewToStorefrontData(saved, preview);
+
+    expect(data.settings.site.heroImageUrl).toBeNull();
+    expect(data.settings.site.theme).toMatchObject({
+      aboutImageUrl: null,
+      logoUrl: null,
+    });
+    expect(data.settings.contact.contactEmail).toBeNull();
+    expect(data.settings.contact.whatsappPhone).toBe("");
+    expect(data.settings.contact.whatsappUrl).toBeNull();
   });
 });
 

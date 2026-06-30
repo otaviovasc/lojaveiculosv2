@@ -100,7 +100,7 @@ export function BuilderColorInput({
 }) {
   return (
     <BuilderField label={label}>
-      <div className="flex items-center gap-2">
+      <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-2">
         <FeatureInput
           className="min-h-10 w-14 shrink-0 px-1"
           onChange={(event) => onChange(event.target.value)}
@@ -148,13 +148,14 @@ export function BuilderToggleInput({
   value: unknown;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-lg border border-line bg-app p-3 text-sm font-black">
+    <label className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-lg border border-line bg-app p-3 text-sm font-black leading-snug">
       <input
+        className="size-4 accent-[var(--color-accent)]"
         checked={value !== false}
         onChange={(event) => onChange(event.target.checked)}
         type="checkbox"
       />
-      {label}
+      <span className="min-w-0">{label}</span>
     </label>
   );
 }

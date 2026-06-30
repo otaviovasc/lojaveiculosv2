@@ -16,6 +16,7 @@ import {
   layoutOptions,
   maxWidthOptions,
   TitleSubtitleFields,
+  videoProviderOptions,
   type SetProp,
 } from "./BuilderBlockEditorShared";
 
@@ -195,9 +196,10 @@ export function VideoBlockEditor({ props, setProp }: PropsEditor) {
         onChange={(value) => setProp("videoUrl", value)}
         value={props.videoUrl ?? props.url}
       />
-      <BuilderTextInput
+      <BuilderSelectInput
         label="Provider"
         onChange={(value) => setProp("provider", value)}
+        options={videoProviderOptions}
         value={props.provider ?? "youtube"}
       />
       <BuilderToggleInput

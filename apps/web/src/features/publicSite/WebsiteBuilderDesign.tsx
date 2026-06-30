@@ -186,18 +186,20 @@ export function WebsiteBuilderDesign({
             ref={previewRef}
             slug={slug}
             templateId={templateId}
-            viewportMode={viewportMode}
+            viewportMode={mobileTab === "preview" ? "mobile" : viewportMode}
           />
         </div>
       </div>
 
-      <button
-        className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 active:scale-95 md:hidden"
-        onClick={() => setShowMobilePreview(true)}
-        type="button"
-      >
-        <Smartphone className="h-5 w-5" />
-      </button>
+      {mobileTab === "edit" && !showMobilePreview ? (
+        <button
+          className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 active:scale-95 md:hidden"
+          onClick={() => setShowMobilePreview(true)}
+          type="button"
+        >
+          <Smartphone className="h-5 w-5" />
+        </button>
+      ) : null}
     </div>
   );
 }

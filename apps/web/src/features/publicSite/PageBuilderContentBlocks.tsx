@@ -1,7 +1,8 @@
-import { ArrowRight, ImageIcon, Play, Sparkles } from "lucide-react";
+import { ArrowRight, Play, Sparkles } from "lucide-react";
 import { cx } from "../../components/ui/featureShared";
 import { pageBuilderDefaultMedia } from "./pageBuilderDefaultMedia";
 import { PageBuilderPreviewEmptyState } from "./PageBuilderEmptyState";
+export { ImageBlock } from "./PageBuilderImageBlock";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import {
   boolProp,
@@ -153,6 +154,8 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
     textProp(props.buttonUrl) ??
     textProp(props.ctaUrl) ??
     createWhatsappHref(context.config.contact.whatsapp ?? "");
+  const buttonStyle = textProp(props.buttonStyle) ?? "primary";
+  const isPrimary = buttonStyle === "primary";
   return (
     <section className="bg-panel">
       <div className="public-storefront-shell px-4 py-16 text-center md:px-6 md:py-20">
@@ -166,9 +169,16 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
               "Converse com a equipe comercial da loja."}
           </p>
           <a
-            className="mt-8 inline-flex min-h-12 items-center justify-center rounded px-8 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer"
+            className={cx(
+              "mt-8 inline-flex min-h-12 items-center justify-center rounded border px-8 text-sm font-bold shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer",
+              isPrimary
+                ? "border-transparent text-inverse"
+                : buttonStyle === "outline"
+                  ? "border-accent bg-transparent text-accent"
+                  : "border-transparent bg-accent-soft text-accent",
+            )}
             href={href}
-            style={{ background: context.accent }}
+            style={isPrimary ? { background: context.accent } : undefined}
           >
             {textProp(props.buttonLabel) ??
               textProp(props.label) ??
@@ -177,34 +187,6 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
         </div>
       </div>
     </section>
-  );
-}
-
-export function ImageBlock({ component, context }: BuilderBlockProps) {
-  const props = component.props;
-  const imageUrl = textProp(props.imageUrl) ?? textProp(props.url);
-  if (!imageUrl) {
-    return context.preview ? (
-      <PageBuilderPreviewEmptyState
-        icon={ImageIcon}
-        title="Imagem sem arquivo"
-        text="Adicione uma foto do estoque, showroom ou entrega."
-      />
-    ) : null;
-  }
-  return (
-    <figure className="group public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-md">
-      <img
-        alt={textProp(props.alt) ?? textProp(props.caption) ?? ""}
-        className="max-h-[36rem] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
-        src={imageUrl}
-      />
-      {textProp(props.caption) ? (
-        <figcaption className="border-t border-line/60 p-4 text-xs font-bold uppercase tracking-wider text-muted">
-          {textProp(props.caption)}
-        </figcaption>
-      ) : null}
-    </figure>
   );
 }
 
@@ -220,7 +202,11 @@ export function VideoBlock({ component, context }: BuilderBlockProps) {
       />
     ) : null;
   }
-  const embedUrl = youtubeEmbedUrl(videoUrl);
+  const embedUrl = youtubeEmbedUrl(videoUrl, {
+    autoplay: boolProp(props.autoplay),
+    loop: boolProp(props.loop),
+    muted: boolProp(props.muted, true),
+  });
   return (
     <section className="public-storefront-shell overflow-hidden rounded-xl border border-line bg-panel shadow-md">
       {embedUrl ? (
@@ -254,15 +240,30 @@ export function SpacerBlock({ component }: BuilderBlockProps) {
 
 export function DividerBlock({ component }: BuilderBlockProps) {
   const text = textProp(component.props.text);
+  const variant = textProp(component.props.lineVariant) ?? "solid";
+  const lineClass =
+    variant === "dashed"
+      ? "border-dashed"
+      : variant === "dotted"
+        ? "border-dotted"
+        : "border-solid";
+  const lineStyle =
+    variant === "accent" ? { borderColor: "var(--color-accent)" } : undefined;
   return (
     <div className="flex items-center gap-4 py-4">
-      <hr className="min-w-0 flex-1 border-line" />
+      <hr
+        className={cx("min-w-0 flex-1 border-line", lineClass)}
+        style={lineStyle}
+      />
       {text ? (
         <span className="text-[10px] font-black uppercase tracking-[0.24em] text-muted">
           {text}
         </span>
       ) : null}
-      <hr className="min-w-0 flex-1 border-line" />
+      <hr
+        className={cx("min-w-0 flex-1 border-line", lineClass)}
+        style={lineStyle}
+      />
     </div>
   );
 }

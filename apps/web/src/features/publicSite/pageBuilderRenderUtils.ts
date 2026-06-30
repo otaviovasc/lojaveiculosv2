@@ -73,9 +73,30 @@ export function mapLink(address: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
-export function youtubeEmbedUrl(url: string) {
+export function mapEmbedUrl(address: string, zoom: number) {
+  const params = new URLSearchParams({
+    output: "embed",
+    q: address,
+    z: String(Math.min(20, Math.max(1, zoom))),
+  });
+  return `https://www.google.com/maps?${params.toString()}`;
+}
+
+export function youtubeEmbedUrl(
+  url: string,
+  options: { autoplay?: boolean; loop?: boolean; muted?: boolean } = {},
+) {
   const id = url.match(/(?:youtu\.be\/|v=|embed\/)([a-zA-Z0-9_-]{6,})/)?.[1];
-  return id ? `https://www.youtube.com/embed/${id}` : null;
+  if (!id) return null;
+  const params = new URLSearchParams();
+  if (options.autoplay) params.set("autoplay", "1");
+  if (options.loop) {
+    params.set("loop", "1");
+    params.set("playlist", id);
+  }
+  if (options.muted) params.set("mute", "1");
+  const query = params.toString();
+  return `https://www.youtube.com/embed/${id}${query ? `?${query}` : ""}`;
 }
 
 function isRecord(value: unknown): value is PropsRecord {
