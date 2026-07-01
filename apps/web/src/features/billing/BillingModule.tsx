@@ -9,6 +9,7 @@ import {
   FeatureAlert,
   FeatureEmptyState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createBillingApi, type BillingApi } from "./apiClient";
 import {
   BillingAllocationTable,
@@ -157,5 +158,8 @@ function defaultReason(status: BillingEntitlementStatus) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar o faturamento.",
+  );
 }

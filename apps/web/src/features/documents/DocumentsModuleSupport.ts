@@ -1,11 +1,10 @@
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { WorkspaceDocument } from "./types";
 
 export const DOCUMENTS_PAGE_SIZE = 200;
 
 export type WorkspaceStatus =
-  | { kind: "error"; message: string }
-  | { kind: "loading" }
-  | { kind: "ready" };
+  { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
 
 export type DocumentsView = "templates" | "workspace";
 
@@ -28,7 +27,10 @@ export function summarizeDocuments(documents: WorkspaceDocument[]) {
 }
 
 export function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar os documentos.",
+  );
 }
 
 export function openDocumentDownload(url: string) {

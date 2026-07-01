@@ -1,5 +1,6 @@
 import type { Context } from "hono";
 import type { z } from "zod";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import {
   HttpContextAuthenticationError,
@@ -40,7 +41,13 @@ export async function parseJson<Schema extends z.ZodType>(
   const parsed = schema.safeParse(body);
 
   if (!parsed.success) {
-    throw new RequestValidationError("Request body is invalid.");
+    throw new RequestValidationError("Request body is invalid.", {
+      fields: parsed.error.issues.map((issue) => ({
+        code: issue.code,
+        message: issue.message,
+        path: issue.path.join("."),
+      })),
+    });
   }
 
   return parsed.data;
@@ -54,11 +61,22 @@ export async function handle(
     return await action();
   } catch (error) {
     if (error instanceof RequestValidationError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "REQUEST_VALIDATION_ERROR",
+        ...(error.details ? { details: error.details } : {}),
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (error instanceof VehicleWorkflowStatusError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "VEHICLE_WORKFLOW_STATUS_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (
@@ -66,51 +84,96 @@ export async function handle(
       error instanceof VehicleChecklistValidationError ||
       error instanceof VehiclePublicationValidationError
     ) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "VEHICLE_VALIDATION_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (error instanceof VehicleWorkflowStateError) {
-      return context.json({ message: error.message }, 409);
+      return jsonApiError(context, {
+        code: "VEHICLE_WORKFLOW_CONFLICT",
+        error,
+        message: error.message,
+        status: 409,
+      });
     }
 
     if (error instanceof AuthorizationError) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
 
     if (isVehicleInventoryNotFoundError(error)) {
-      return context.json({ message: error.message }, 404);
+      return jsonApiError(context, {
+        code: "INVENTORY_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
     }
 
     if (
       error instanceof VehicleDocumentStorageScopeError ||
       error instanceof VehicleMediaStorageScopeError
     ) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "INVENTORY_STORAGE_SCOPE_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHENTICATION_REQUIRED",
+        error,
+        message: error.message,
+        status: 401,
+      });
     }
 
     if (error instanceof HttpContextAuthorizationError) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
 
     if (error instanceof HttpContextRequestPolicyError) {
-      return context.json({ message: error.message }, error.statusCode);
+      return jsonApiError(context, {
+        code: "HTTP_REQUEST_POLICY_ERROR",
+        error,
+        message: error.message,
+        status: error.statusCode,
+      });
     }
 
     const providerStatusCode = readProviderStatusCode(error);
     if (providerStatusCode) {
-      return context.json(
-        { message: error instanceof Error ? error.message : "Provider error." },
-        providerStatusCode,
-      );
+      return jsonApiError(context, {
+        code: "INVENTORY_ENRICHMENT_PROVIDER_ERROR",
+        error,
+        message: error instanceof Error ? error.message : "Provider error.",
+        status: providerStatusCode,
+      });
     }
 
-    context.error = error instanceof Error ? error : new Error(String(error));
-
-    return context.json({ message: "Internal server error." }, 500);
+    return jsonApiError(context, {
+      code: "INTERNAL_SERVER_ERROR",
+      error,
+      message: "Internal server error.",
+      status: 500,
+    });
   }
 }
 
@@ -127,7 +190,10 @@ function readProviderStatusCode(error: unknown): 502 | 503 | null {
 }
 
 export class RequestValidationError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly details?: Record<string, unknown>,
+  ) {
     super(message);
     this.name = "RequestValidationError";
   }

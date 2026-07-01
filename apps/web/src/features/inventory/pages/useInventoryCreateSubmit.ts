@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import {
   retryInventoryCreateMedia,
@@ -73,7 +74,10 @@ export function useInventoryCreateSubmit({
     } catch (error) {
       setSubmitState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel criar o estoque.",
+        ),
       });
     }
   };
@@ -107,7 +111,10 @@ export function useInventoryCreateSubmit({
     } catch (error) {
       setSubmitState({
         ...partialState,
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel reenviar as midias.",
+        ),
       });
     }
   };

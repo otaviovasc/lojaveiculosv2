@@ -4,6 +4,7 @@ import {
   createRepassesCrmStub,
   createTestApp,
   defaultWhatsappPermissions,
+  expectApiError,
 } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp connection scope", () => {
@@ -24,7 +25,8 @@ describe("CRM WhatsApp connection scope", () => {
     );
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
       message: "CRM WhatsApp connection does not belong to this store.",
     });
     expect(repassesCrm.listSessions).not.toHaveBeenCalled();
@@ -47,7 +49,8 @@ describe("CRM WhatsApp connection scope", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
       message: "CRM WhatsApp connection is not scoped to this store.",
     });
     expect(repassesCrm.listSessions).not.toHaveBeenCalled();
@@ -65,7 +68,8 @@ describe("CRM WhatsApp connection scope", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
       message: "Missing entitlement: crm",
     });
     expect(repassesCrm.getConnections).not.toHaveBeenCalled();
@@ -154,7 +158,8 @@ describe("CRM WhatsApp connection scope", () => {
       });
 
       expect(response.status).toBe(403);
-      await expect(response.json()).resolves.toEqual({
+      await expectApiError(response, {
+        code: "AUTHORIZATION_DENIED",
         message: `Missing permission: ${permission}`,
       });
       expect(repassesCrm[proxy]).not.toHaveBeenCalled();

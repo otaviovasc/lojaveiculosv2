@@ -3,6 +3,7 @@ import { VehicleUnitNotFoundError } from "../../../domains/vehicle/services/Vehi
 import {
   createInventoryTestApp,
   createInventoryTestServices,
+  expectApiError,
 } from "./vehicle.controller.testSupport.js";
 
 describe("inventory cost routes", () => {
@@ -25,7 +26,8 @@ describe("inventory cost routes", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "INVENTORY_NOT_FOUND",
       message: "Vehicle unit not found: unit_missing",
     });
   });

@@ -19,6 +19,7 @@ import {
   formatBrazilianCnpj,
   formatBrazilianPhone,
 } from "../settings/settingsMasks";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { persistCurrentStoreSlug } from "./currentStore";
 import {
   validateOwnerStoreForm,
@@ -81,9 +82,9 @@ export function OwnerOnboardingPage() {
       const api = await createRuntimeAccountApi();
       const store = await api.createOwnerStore(validation.input);
       persistCurrentStoreSlug(store.storeSlug, auth.userId);
-      void navigate("/dashboard", { replace: true });
+      void navigate("/auth/session", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatApiErrorDisplay(err, "Nao foi possivel criar a loja."));
     } finally {
       setStatus("idle");
     }

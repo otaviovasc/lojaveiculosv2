@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
 import {
   cancelEntry,
@@ -92,7 +93,10 @@ export function FinanceModule({
         setEntries([]);
         setListState({
           kind: "error",
-          message: error instanceof Error ? error.message : String(error),
+          message: formatApiErrorDisplay(
+            error,
+            "Nao foi possivel carregar o financeiro.",
+          ),
         });
       });
   }, [activeType, refreshToken, runtimeApi]);
@@ -128,7 +132,10 @@ export function FinanceModule({
     } catch (error) {
       setToast({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel salvar o lancamento.",
+        ),
         title: "Erro ao salvar",
       });
       throw error;

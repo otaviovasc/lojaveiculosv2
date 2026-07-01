@@ -1,4 +1,5 @@
 import { useEffect, type MutableRefObject } from "react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryDetailSelectionState } from "./listCatalogModel";
 import type { InventoryListingDetail } from "./types";
@@ -37,7 +38,10 @@ export function useInventoryRouteSelection({
       .catch((error) =>
         setSelection({
           kind: "error",
-          message: error instanceof Error ? error.message : String(error),
+          message: formatApiErrorDisplay(
+            error,
+            "Nao foi possivel abrir o estoque selecionado.",
+          ),
         }),
       );
   }, [api, routeState, setDetail, setSelection, setSelectedUnitId]);

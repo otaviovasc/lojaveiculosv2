@@ -6,6 +6,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { StorefrontCustomizationModule } from "../publicSite/StorefrontCustomizationModule";
 import { createSettingsApi, type SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
@@ -89,7 +90,7 @@ export function SettingsModule({
     } catch (error) {
       setStatus({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
       });
     }
   };
@@ -105,7 +106,7 @@ export function SettingsModule({
     } catch (error) {
       setStatus({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: errorMessage(error),
       });
     }
   };
@@ -209,7 +210,10 @@ function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar as configuracoes.",
+  );
 }
 
 function createRuntimeSettingsApi(): SettingsApi {

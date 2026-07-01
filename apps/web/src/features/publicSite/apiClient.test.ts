@@ -38,7 +38,7 @@ describe("createPublicStorefrontApi", () => {
     });
 
     await expect(api.listListings()).rejects.toThrow(
-      "Public storefront request failed with status 404",
+      "Nao encontramos esse registro. Atualize a tela e tente novamente.",
     );
   });
 

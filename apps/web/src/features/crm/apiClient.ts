@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import type {
   CrmAgentLoginResponse,
   CrmAuthState,
@@ -176,11 +177,7 @@ function createJsonHeaders(auth: CrmAuthState): HeadersInit {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`CRM request failed with status ${response.status}`);
-  }
-
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "CRM" });
 }
 
 function withQuery(route: string, params: URLSearchParams[]) {

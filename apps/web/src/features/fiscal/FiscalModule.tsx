@@ -14,6 +14,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFiscalApi, type FiscalApi } from "./apiClient";
 import { createFiscalApiOptions } from "./runtimeApi";
 import type { FiscalOverview } from "./types";
@@ -179,5 +180,8 @@ function createRuntimeFiscalApi(): FiscalApi {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar o modulo fiscal.",
+  );
 }

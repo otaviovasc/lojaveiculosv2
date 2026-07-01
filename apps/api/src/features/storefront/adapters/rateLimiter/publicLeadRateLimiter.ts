@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { jsonApiError } from "../../../../infrastructure/http/apiErrorResponse.js";
 
 export type PublicLeadRateLimiter = {
   check: (input: PublicLeadRateLimitInput) => PublicLeadRateLimitResult;
@@ -11,8 +12,7 @@ export type PublicLeadRateLimitInput = {
 };
 
 export type PublicLeadRateLimitResult =
-  | { allowed: true }
-  | { allowed: false; retryAfterSeconds: number };
+  { allowed: true } | { allowed: false; retryAfterSeconds: number };
 
 export function createMemoryPublicLeadRateLimiter(
   options = {
@@ -70,5 +70,10 @@ export function rateLimitPublicLeadRequest(
 
   if (result.allowed) return null;
   context.header("Retry-After", String(result.retryAfterSeconds));
-  return context.json({ message: "Too many lead requests." }, 429);
+  return jsonApiError(context, {
+    code: "PUBLIC_LEAD_RATE_LIMITED",
+    details: { retryAfterSeconds: result.retryAfterSeconds },
+    message: "Too many lead requests.",
+    status: 429,
+  });
 }

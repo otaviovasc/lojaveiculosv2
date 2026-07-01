@@ -1,3 +1,4 @@
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import { createInventoryFlowInput } from "./formModel";
 import type { InventoryCreateSubmitProgress } from "./createInventorySubmitTypes";
@@ -75,7 +76,10 @@ export async function ensureInventoryUnitAttached({
 }
 
 export function createUnitFailureMessage(error: unknown) {
-  const detail = error instanceof Error ? error.message : String(error);
+  const detail = formatApiErrorDisplay(
+    error,
+    "Nao foi possivel vincular a unidade.",
+  );
 
   return `Estoque salvo, mas a unidade operacional nao foi vinculada. ${detail}`;
 }

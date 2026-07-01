@@ -7,6 +7,7 @@ import {
   FeatureSection,
 } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createPublicApi, type PublicApi } from "./apiClient";
 import { createPublicApiOptions } from "./runtimeApi";
 import type { PublicApiClient, PublicApiScope } from "./types";
@@ -204,5 +205,8 @@ function toggleScope(scopes: PublicApiScope[], scope: PublicApiScope) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar a API publica.",
+  );
 }

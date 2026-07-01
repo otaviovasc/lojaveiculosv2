@@ -37,6 +37,7 @@ import {
   hasEnoughDataForAnalysis,
 } from "../model/inventoryEnrichment";
 import type { Loadable } from "../components/InventoryCreateEnrichmentParts";
+import { getApiErrorDisplay } from "../../../lib/apiErrors";
 
 export function InventoryCreatePage({
   api,
@@ -119,7 +120,10 @@ export function InventoryCreatePage({
       .catch((error: unknown) => {
         setAnalysisState({
           kind: "error",
-          message: error instanceof Error ? error.message : String(error),
+          ...getApiErrorDisplay(
+            error,
+            "Nao foi possivel gerar a analise agora.",
+          ),
         });
       });
   }, [autoRunAnalysis, form, lookup, runtimeApi, setForm]);
@@ -193,7 +197,7 @@ export function InventoryCreatePage({
     } catch (error) {
       setAnalysisState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        ...getApiErrorDisplay(error, "Nao foi possivel gerar a analise agora."),
       });
     }
   }, [form, lookup, runtimeApi, setForm]);

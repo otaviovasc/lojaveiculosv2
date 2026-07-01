@@ -14,6 +14,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createReportsApi, type ReportsApi } from "./apiClient";
 import { createReportsApiOptions } from "./runtimeApi";
 import type { ReportsDashboard } from "./types";
@@ -140,9 +141,7 @@ function Dashboard({ dashboard }: { dashboard: ReportsDashboard }) {
 }
 
 type LoadStatus =
-  | { kind: "error"; message: string }
-  | { kind: "loading" }
-  | { kind: "ready" };
+  { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
 
 function createRuntimeReportsApi(): ReportsApi {
   return {
@@ -159,5 +158,8 @@ function money(cents: number) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar os relatorios.",
+  );
 }

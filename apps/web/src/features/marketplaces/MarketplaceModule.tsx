@@ -9,6 +9,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createMarketplaceApi, type MarketplaceApi } from "./apiClient";
 import {
   MarketplaceJobList,
@@ -230,5 +231,8 @@ function createRuntimeApi(): MarketplaceApi {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(
+    error,
+    "Nao foi possivel carregar os marketplaces.",
+  );
 }

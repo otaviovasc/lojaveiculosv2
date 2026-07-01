@@ -1,6 +1,7 @@
 import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import {
   createEntryDraft,
   entryToDraft,
@@ -62,7 +63,9 @@ export function FinanceEntryModal({
       await onSubmit(draft);
       onClose();
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : String(error));
+      setSaveError(
+        formatApiErrorDisplay(error, "Nao foi possivel salvar o lancamento."),
+      );
     } finally {
       setIsSaving(false);
     }

@@ -1,3 +1,4 @@
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type {
   InventoryCatalogSnapshot,
   InventoryListing,
@@ -60,13 +61,15 @@ export const inventoryUnitStatusLabels: Record<InventoryUnitStatus, string> = {
 };
 
 export type InventoryDisplayStatus =
-  | InventoryListingStatus
-  | InventoryUnitStatus;
+  InventoryListingStatus | InventoryUnitStatus;
 
 export function createInventoryErrorState(error: unknown): InventoryListState {
   return {
     kind: "error",
-    message: error instanceof Error ? error.message : String(error),
+    message: formatApiErrorDisplay(
+      error,
+      "Nao foi possivel carregar o estoque.",
+    ),
   };
 }
 

@@ -15,11 +15,11 @@ import {
   assertWhatsappClose,
   assertWhatsappRead,
   assertWhatsappToggleIntervention,
-  handleWhatsapp,
   parseWhatsappJson,
   recordWhatsappMutation,
   readNumericParam,
 } from "./crm.whatsapp.controller.support.js";
+import { handleWhatsapp } from "./crm.whatsapp.errors.js";
 import type { CrmServices } from "./crmServices.js";
 
 type RegisterSessionActionsOptions = {

@@ -6,6 +6,7 @@ import {
   HttpContextAuthorizationError,
   HttpContextRequestPolicyError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { FinanceEntryNotFoundError } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
 import { FinanceDocumentStorageScopeError } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import { FinanceLinkTargetNotFoundError } from "../../../infrastructure/db/finance/drizzleFinanceLinkTargets.js";
@@ -38,39 +39,83 @@ export async function handleFinance(
     return await action();
   } catch (error) {
     if (error instanceof FinanceRequestValidationError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "FINANCE_REQUEST_VALIDATION_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (error instanceof AuthorizationError) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
 
     if (error instanceof FinanceDocumentStorageScopeError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "FINANCE_STORAGE_SCOPE_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (error instanceof FinanceLinkTargetNotFoundError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "FINANCE_LINK_TARGET_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
 
     if (error instanceof FinanceEntryNotFoundError) {
-      return context.json({ message: error.message }, 404);
+      return jsonApiError(context, {
+        code: "FINANCE_ENTRY_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
     }
 
     if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHENTICATION_REQUIRED",
+        error,
+        message: error.message,
+        status: 401,
+      });
     }
 
     if (error instanceof HttpContextAuthorizationError) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
 
     if (error instanceof HttpContextRequestPolicyError) {
-      return context.json({ message: error.message }, error.statusCode);
+      return jsonApiError(context, {
+        code: "HTTP_REQUEST_POLICY_ERROR",
+        error,
+        message: error.message,
+        status: error.statusCode,
+      });
     }
 
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
+    return jsonApiError(context, {
+      code: "INTERNAL_SERVER_ERROR",
+      error,
+      message: "Internal server error.",
+      status: 500,
+    });
   }
 }
 

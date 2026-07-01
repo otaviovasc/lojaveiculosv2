@@ -1,21 +1,14 @@
 import type { CreateInventoryMediaInput } from "../model/types";
+import { readApiJson, readApiVoid } from "../../../lib/apiErrors";
 
 export type JsonBody = Record<string, unknown>;
 
 export async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Inventory request failed with status ${response.status}`);
-  }
-
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Inventory" });
 }
 
 export async function readUpload(response: Response): Promise<void> {
-  if (!response.ok) {
-    throw new Error(
-      `Inventory media upload failed with status ${response.status}`,
-    );
-  }
+  return readApiVoid(response, { feature: "Inventory media upload" });
 }
 
 export function cleanJson(body: JsonBody) {

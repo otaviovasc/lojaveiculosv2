@@ -10,6 +10,7 @@ import {
   FeatureDialogActions,
 } from "../../../components/ui/FeatureOverlay";
 import { FeatureAlert } from "../../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { IdentityInvitationView, InviteStoreMemberInput } from "../types";
 
 export function InviteMemberModal({
@@ -79,7 +80,7 @@ export function InviteMemberModal({
       }
       setStatus("success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatApiErrorDisplay(err, "Nao foi possivel criar o convite."));
       setStatus("idle");
     }
   };
@@ -98,7 +99,9 @@ export function InviteMemberModal({
       }
       setStatus("success");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(
+        formatApiErrorDisplay(err, "Nao foi possivel reenviar o convite."),
+      );
       setStatus("idle");
     }
   };

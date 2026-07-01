@@ -1,4 +1,5 @@
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
+import { readApiJson } from "../../lib/apiErrors";
 import type { SettingsAuth } from "../settings/types";
 export { createDefaultPageComponent } from "./builderBlockCatalog";
 
@@ -113,10 +114,7 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Storefront pages request failed with ${response.status}`);
-  }
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Paginas da vitrine" });
 }
 
 function cleanJson(input: Record<string, unknown>) {

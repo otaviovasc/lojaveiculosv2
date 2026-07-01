@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import type { ReportsAuth, ReportsDashboard } from "./types";
 
 export type ReportsApi = {
@@ -38,8 +39,5 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Reports request failed with status ${response.status}`);
-  }
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Relatorios" });
 }

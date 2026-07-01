@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SettingsApi } from "../settings/apiClient";
 import { createStoreSettingsPatch } from "../settings/settingsPatch";
 import type { StoreSettingsSnapshot } from "../settings/types";
@@ -272,7 +273,7 @@ function toStatusMessage(status: StorefrontCustomizationStatus) {
 }
 
 function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(error, "Nao foi possivel salvar a vitrine.");
 }
 
 function cleanUndefined<T extends Record<string, unknown>>(input: T): T {

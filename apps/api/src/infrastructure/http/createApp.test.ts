@@ -56,6 +56,15 @@ describe("API middleware", () => {
     );
 
     expect(response.status).toBe(413);
-    expect(await response.json()).toEqual({ message: "Payload too large" });
+    const body = (await response.json()) as {
+      code?: string;
+      message?: string;
+      requestId?: unknown;
+    };
+    expect(body).toMatchObject({
+      code: "PAYLOAD_TOO_LARGE",
+      message: "Payload too large.",
+    });
+    expect(typeof body.requestId).toBe("string");
   });
 });

@@ -10,6 +10,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
 import {
@@ -73,7 +74,12 @@ export function LocalDevSessionBootstrapPage() {
         if (!cancelled) void navigate(destination, { replace: true });
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
+          setError(
+            formatApiErrorDisplay(
+              err,
+              "Nao foi possivel carregar sua sessao local.",
+            ),
+          );
         }
       }
     }

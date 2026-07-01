@@ -1,5 +1,5 @@
 import { Loader2, RefreshCcw } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FeatureActionButton,
@@ -9,6 +9,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SessionBootstrap } from "./apiClient";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
 import { createRuntimeAccountApi } from "./runtimeApi";
@@ -35,6 +36,11 @@ export function AccountAccessGate({
   const [bootstrap, setBootstrap] = useState<SessionBootstrap | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const getTokenRef = useRef(getToken);
+
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -42,7 +48,7 @@ export function AccountAccessGate({
 
     async function loadBootstrap() {
       try {
-        const accessToken = await getToken();
+        const accessToken = await getTokenRef.current();
         const api = await createRuntimeAccountApi({ accessToken });
         const session = await api.bootstrap();
         if (session.defaultStore) {
@@ -53,7 +59,9 @@ export function AccountAccessGate({
         if (!cancelled) setBootstrap(session);
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
+          setError(
+            formatApiErrorDisplay(err, "Nao foi possivel carregar sua sessao."),
+          );
         }
       }
     }
@@ -63,7 +71,7 @@ export function AccountAccessGate({
     return () => {
       cancelled = true;
     };
-  }, [attempt, getToken, userId]);
+  }, [attempt, userId]);
 
   useEffect(() => {
     if (!bootstrap || isAllowed(access, bootstrap)) return;

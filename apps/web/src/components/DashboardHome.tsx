@@ -2,10 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModuleId } from "../app/modules";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { readRuntimeStoreSlug } from "../features/account/currentStore";
-import {
-  AnalyticsRequestError,
-  type AnalyticsApi,
-} from "../features/analytics/apiClient";
+import type { AnalyticsApi } from "../features/analytics/apiClient";
 import {
   DASHBOARD_RESOURCE_CYCLE_MS,
   dashboardResources,
@@ -22,6 +19,7 @@ import { DashboardHomeMainPanels } from "./DashboardHomeMainPanels";
 import { createRuntimeAnalyticsApi } from "./DashboardHomeRuntime";
 import { DashboardHomeSidebarPanel } from "./DashboardHomeSidebarPanel";
 import { DashboardHomeToolbar } from "./DashboardHomeToolbar";
+import { AppApiError, formatApiErrorDisplay } from "../lib/apiErrors";
 import { Button } from "./ui/button";
 
 export function DashboardHome({
@@ -50,10 +48,13 @@ export function DashboardHome({
       setStatus({ kind: "ready" });
     } catch (error) {
       const statusCode =
-        error instanceof AnalyticsRequestError ? error.status : undefined;
+        error instanceof AppApiError ? error.status : undefined;
       setStatus({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel carregar o painel gerencial.",
+        ),
         ...(statusCode === undefined ? {} : { statusCode }),
       });
     }

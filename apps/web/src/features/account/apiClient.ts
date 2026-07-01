@@ -1,3 +1,5 @@
+import { readApiJson } from "../../lib/apiErrors";
+
 export type AccountAuth = {
   accessToken?: string;
   clerkUserId?: string;
@@ -160,30 +162,5 @@ function endpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as {
-      issues?: Array<{ message?: string; path?: string }>;
-      message?: string;
-    } | null;
-    throw new Error(formatErrorBody(body, response.status));
-  }
-  return (await response.json()) as T;
-}
-
-function formatErrorBody(
-  body: {
-    issues?: Array<{ message?: string; path?: string }>;
-    message?: string;
-  } | null,
-  status: number,
-) {
-  const message = body?.message ?? `Request failed with ${status}`;
-  const firstIssue = body?.issues?.find((issue) => issue.path || issue.message);
-  if (!firstIssue) return message;
-
-  const field =
-    firstIssue.path && firstIssue.path !== "body"
-      ? ` (${firstIssue.path})`
-      : "";
-  return `${message}${field}: ${firstIssue.message ?? "valor inválido"}`;
+  return readApiJson<T>(response, { feature: "Conta" });
 }

@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingAuth,
   BillingOverview,
@@ -73,8 +74,5 @@ function createBillingEndpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Billing request failed with status ${response.status}`);
-  }
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Billing" });
 }

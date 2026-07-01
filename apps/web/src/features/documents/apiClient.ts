@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import type {
   DocumentsAuth,
   CreateUploadedDocumentInput,
@@ -236,12 +237,7 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(
-      `Falha na requisição de documentos. Status ${response.status}.`,
-    );
-  }
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Documentos" });
 }
 
 type VehicleUploadedDocumentResponse = {

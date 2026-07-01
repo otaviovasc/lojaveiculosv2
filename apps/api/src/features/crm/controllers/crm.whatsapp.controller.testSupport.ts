@@ -1,7 +1,7 @@
 import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
-import { vi } from "vitest";
+import { expect, vi } from "vitest";
 import type { RepassesCrmClient } from "../../../domains/crm/acl/repassesCrmClient.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
@@ -84,4 +84,21 @@ export function createAuditSpy() {
     },
   };
   return { audit, record };
+}
+
+export async function expectApiError(
+  response: Response,
+  input: { code: string; message: string },
+) {
+  const body = (await response.json()) as {
+    code?: string;
+    message?: string;
+    requestId?: unknown;
+  };
+
+  expect(body).toMatchObject({
+    code: input.code,
+    message: input.message,
+  });
+  expect(typeof body.requestId).toBe("string");
 }

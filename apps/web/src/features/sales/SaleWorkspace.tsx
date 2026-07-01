@@ -6,6 +6,7 @@ import {
   PaymentsSection,
   TermsSection,
 } from "./SaleWorkspaceParts";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { ReviewSection } from "./SaleReviewSection";
 import { StickySaleSummary } from "./SaleSummaryPanel";
 import { toDraftInput } from "./salesModel";
@@ -225,5 +226,5 @@ function serializeSale(sale: SaleRecord): string {
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(error, "Nao foi possivel salvar a venda.");
 }

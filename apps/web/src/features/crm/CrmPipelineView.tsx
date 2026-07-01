@@ -10,6 +10,7 @@ import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -83,7 +84,12 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           className="crm-note"
           icon={<CircleAlert aria-hidden="true" className="size-5 shrink-0" />}
         >
-          <span>{props.error.message}</span>
+          <span>
+            {formatApiErrorDisplay(
+              props.error,
+              "Nao foi possivel carregar o CRM.",
+            )}
+          </span>
         </FeatureAlert>
       ) : null}
 

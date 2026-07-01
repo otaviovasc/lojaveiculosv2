@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
 import {
   cancelCommission,
@@ -92,7 +93,10 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         setEntries([]);
         setToast({
           kind: "error",
-          message: error instanceof Error ? error.message : String(error),
+          message: formatApiErrorDisplay(
+            error,
+            "Nao foi possivel carregar as comissoes.",
+          ),
           title: "Erro ao carregar",
         });
       })
@@ -120,7 +124,10 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     } catch (error) {
       setToast({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel salvar o bonus.",
+        ),
         title: "Erro ao salvar bonus",
       });
     } finally {
@@ -146,7 +153,10 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     } catch (error) {
       setToast({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel pagar as comissoes.",
+        ),
         title: "Erro ao pagar",
       });
     } finally {

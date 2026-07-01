@@ -1,6 +1,7 @@
 import { Pencil, RefreshCw, Search } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import { createInventoryApi } from "../api/apiClient";
 import { FeatureAlert } from "../../../components/ui/FeatureStates";
@@ -48,7 +49,10 @@ export function InventoryStockTable({
     } catch (error) {
       setState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel carregar o estoque.",
+        ),
       });
     }
   };

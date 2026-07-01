@@ -1,3 +1,4 @@
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import type { CreateMediaDraft } from "./createMediaDrafts";
 import { uploadInventoryFile } from "./mediaWorkspaceTypes";
@@ -38,7 +39,10 @@ export function isMediaAlreadyAttached(
 }
 
 export function createMediaFailureMessage(error: unknown) {
-  const detail = error instanceof Error ? error.message : String(error);
+  const detail = formatApiErrorDisplay(
+    error,
+    "Nao foi possivel anexar as midias.",
+  );
 
   return `Estoque salvo, mas uma ou mais midias nao foram anexadas. ${detail}`;
 }

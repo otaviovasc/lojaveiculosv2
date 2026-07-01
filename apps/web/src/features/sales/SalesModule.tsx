@@ -8,6 +8,7 @@ import {
   FeatureKpiCard,
   FeatureKpiStrip,
 } from "../../components/ui/FeatureKpis";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createSalesApi, type SalesApi } from "./apiClient";
 import { createSalesApiOptions } from "./runtimeApi";
 import { SalesPipeline } from "./SalesPipeline";
@@ -199,5 +200,5 @@ function replaceSale(
 }
 
 function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  return formatApiErrorDisplay(error, "Nao foi possivel carregar as vendas.");
 }

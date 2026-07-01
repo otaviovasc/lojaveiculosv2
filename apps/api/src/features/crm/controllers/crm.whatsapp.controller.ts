@@ -18,13 +18,15 @@ import {
   assertWhatsappSend,
   canWhatsappAssign,
   createRepassesAuth,
-  CrmWhatsappValidationError,
-  handleWhatsapp,
   parseWhatsappJson,
   recordWhatsappAudit,
   recordWhatsappMutation,
   readNumericParam,
 } from "./crm.whatsapp.controller.support.js";
+import {
+  CrmWhatsappValidationError,
+  handleWhatsapp,
+} from "./crm.whatsapp.errors.js";
 import { registerSessionActions } from "./crm.whatsapp.sessionActions.js";
 import type { CrmServices } from "./crmServices.js";
 

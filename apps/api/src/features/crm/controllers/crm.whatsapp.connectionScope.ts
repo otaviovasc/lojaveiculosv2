@@ -6,10 +6,8 @@ import type {
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import {
-  createRepassesAuth,
-  CrmWhatsappValidationError,
-} from "./crm.whatsapp.controller.support.js";
+import { createRepassesAuth } from "./crm.whatsapp.controller.support.js";
+import { CrmWhatsappValidationError } from "./crm.whatsapp.errors.js";
 
 export type WhatsappScopedConnection = {
   id: number;

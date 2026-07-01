@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import type {
   SettingsAuth,
   IdentityInvitationView,
@@ -106,15 +107,7 @@ function createSettingsEndpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as {
-      message?: string;
-    } | null;
-    throw new Error(
-      body?.message ?? `Settings request failed with status ${response.status}`,
-    );
-  }
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Configuracoes" });
 }
 
 function cleanJson(input: UpdateStoreSettingsInput) {

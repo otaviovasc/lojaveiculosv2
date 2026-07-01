@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { describe, expect, it, vi } from "vitest";
+import { HttpContextAuthenticationError } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { createInventoryFeature } from "./vehicle.controller.js";
 import {
   createInventoryTestServices,
@@ -83,6 +84,37 @@ describe("inventory enrichment controller", () => {
     });
 
     expect(response.status).toBe(400);
+    expect(enrichmentServices.lookupPlate).not.toHaveBeenCalled();
+  });
+
+  it("returns structured auth errors with request ids", async () => {
+    const enrichmentServices = createEnrichmentServices();
+    const app = new Hono();
+    app.route(
+      "/api/v1/inventory",
+      createInventoryFeature({
+        contextFactory: async () => {
+          throw new HttpContextAuthenticationError(
+            "Authenticated HTTP context requires Clerk user and store slug",
+          );
+        },
+        enrichmentServices,
+        services: createInventoryTestServices(),
+      }),
+    );
+
+    const response = await app.request("/api/v1/inventory/enrichment/plate", {
+      body: JSON.stringify({ plate: "ABC1D23" }),
+      headers: { "x-request-id": "req_inventory_401" },
+      method: "POST",
+    });
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({
+      code: "HTTP_AUTHENTICATION_REQUIRED",
+      message: "Authenticated HTTP context requires Clerk user and store slug",
+      requestId: "req_inventory_401",
+    });
     expect(enrichmentServices.lookupPlate).not.toHaveBeenCalled();
   });
 });

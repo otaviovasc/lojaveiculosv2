@@ -12,6 +12,7 @@ import {
   FeatureSection,
 } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { normalizePublicSlug } from "../../lib/utils";
 import { createRuntimeAccountApi } from "./runtimeApi";
 
@@ -68,7 +69,9 @@ export function PlatformAdminPage() {
       setFirstUserName("");
     } catch (err) {
       setStatus("idle");
-      setMessage(err instanceof Error ? err.message : String(err));
+      setMessage(
+        formatApiErrorDisplay(err, "Nao foi possivel criar a agencia."),
+      );
     }
   };
 
@@ -83,7 +86,9 @@ export function PlatformAdminPage() {
       setFailedInvitation(null);
     } catch (err) {
       setStatus("idle");
-      setMessage(err instanceof Error ? err.message : String(err));
+      setMessage(
+        formatApiErrorDisplay(err, "Nao foi possivel reenviar o convite."),
+      );
     }
   };
 

@@ -1,6 +1,7 @@
 import { FolderOpen, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import AnimatedContent from "../../components/ui/AnimatedContent";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { DocumentsApi } from "./apiClient";
 import {
   DocumentUploadQueue,
@@ -174,7 +175,9 @@ export function DocumentUploadDialog({
           item.status === "uploading" ? { ...item, status: "error" } : item,
         ),
       );
-      setStatus(error instanceof Error ? error.message : String(error));
+      setStatus(
+        formatApiErrorDisplay(error, "Nao foi possivel enviar os documentos."),
+      );
     } finally {
       setIsUploading(false);
     }
@@ -312,7 +315,9 @@ export async function readDocumentUploadResponse(
   response: Response,
 ): Promise<void> {
   if (!response.ok) {
-    throw new Error(`Falha no envio do documento. Status ${response.status}.`);
+    throw new Error(
+      `Falha no envio do documento para o armazenamento. Codigo HTTP ${response.status}.`,
+    );
   }
 }
 

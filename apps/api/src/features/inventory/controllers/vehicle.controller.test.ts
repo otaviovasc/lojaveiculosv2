@@ -5,13 +5,9 @@ import { VehicleListingNotFoundError } from "../../../domains/vehicle/services/V
 import {
   createInventoryTestApp,
   createInventoryTestServices,
+  expectApiError,
+  type ListingDetailBody,
 } from "./vehicle.controller.testSupport.js";
-
-type ListingDetailBody = {
-  listing?: { id?: string };
-  status?: string;
-};
-
 describe("inventory listing routes", () => {
   it("wires create listing requests to the service boundary", async () => {
     const services = createInventoryTestServices();
@@ -169,7 +165,16 @@ describe("inventory listing routes", () => {
     });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "REQUEST_VALIDATION_ERROR",
+      details: {
+        fields: [
+          {
+            code: "too_small",
+            path: "title",
+          },
+        ],
+      },
       message: "Request body is invalid.",
     });
     expect(services.createListing).not.toHaveBeenCalled();
@@ -185,7 +190,8 @@ describe("inventory listing routes", () => {
     const response = await app.request("/api/v1/inventory/listings/listing_1");
 
     expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
       message: "Missing permission: inventory.read",
     });
   });
@@ -202,7 +208,8 @@ describe("inventory listing routes", () => {
     );
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "INVENTORY_NOT_FOUND",
       message: "Vehicle listing not found: listing_missing",
     });
   });
@@ -232,7 +239,8 @@ describe("inventory listing routes", () => {
     const response = await app.request("/api/v1/inventory/listings/listing_1");
 
     expect(response.status).toBe(401);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "HTTP_AUTHENTICATION_REQUIRED",
       message:
         "Inventory routes require authenticated user or integration context.",
     });

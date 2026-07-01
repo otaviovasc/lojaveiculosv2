@@ -1,6 +1,7 @@
 import { Save, Settings2 } from "lucide-react";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import { parsePriceCents } from "../model/formModel";
 import { inventoryStatusLabels } from "../model/listCatalogModel";
@@ -84,7 +85,10 @@ export function InventoryEditPanel({
     } catch (error) {
       setSaveState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel salvar o estoque.",
+        ),
       });
     }
   };

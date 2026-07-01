@@ -43,6 +43,40 @@ rule is directional dependency: domains own business modules and ports; features
 own delivery modules and feature-local adapters; infrastructure owns real
 provider adapters.
 
+## HTTP Error Contract
+
+API controllers must return errors through
+`apps/api/src/infrastructure/http/apiErrorResponse.ts`. The public JSON shape is:
+
+```json
+{
+  "message": "Human readable technical summary.",
+  "code": "STABLE_ERROR_CODE",
+  "requestId": "request correlation id",
+  "details": {}
+}
+```
+
+`details` is optional and is the place for validation issues, missing workflow
+fields, retry-after seconds, or other structured non-sensitive debugging data.
+Do not put request bodies, secrets, tokens, customer message bodies, raw provider
+payloads, or database rows in `details`.
+
+Controllers map known domain, authorization, provider, and validation errors to
+stable `code` values and HTTP statuses. They must not return ad hoc
+`context.json({ message }, status)` errors or assign `context.error` directly.
+`jsonApiError` also records error metadata for the local HTTP logger so 4xx/5xx
+responses are emitted as `request.failed` with `code`, `status`, `requestId`,
+and error name where available.
+
+Frontend API clients must parse responses through `apps/web/src/lib/apiErrors.ts`
+or a feature wrapper around it. UI surfaces should render the friendly
+`userMessage` plus the request id when present. The request id is the bridge
+between what the user can report and what operators can find in logs.
+
+This contract is enforced by API tests and `pnpm run check:api-errors`, which is
+part of `validate:core-guardrails`.
+
 ## Transaction Direction
 
 Cross-repository product mutations use the transaction runner seam from

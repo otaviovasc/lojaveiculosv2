@@ -1,4 +1,4 @@
-import { vi } from "vitest";
+import { expect, vi } from "vitest";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { PublicStorefrontRepository } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 
@@ -79,6 +79,25 @@ export const site = {
   },
   store: { ...store, publicUrl: "demo.lojaveiculos.com.br" },
 };
+
+export async function expectApiError(
+  response: Response,
+  input: { code: string; details?: Record<string, unknown>; message: string },
+) {
+  const body = (await response.json()) as {
+    code?: string;
+    details?: Record<string, unknown>;
+    message?: string;
+    requestId?: unknown;
+  };
+
+  expect(body).toMatchObject({
+    code: input.code,
+    ...(input.details ? { details: input.details } : {}),
+    message: input.message,
+  });
+  expect(typeof body.requestId).toBe("string");
+}
 
 export function createRepository(
   options: { includeListing?: boolean; includeStore?: boolean } = {},

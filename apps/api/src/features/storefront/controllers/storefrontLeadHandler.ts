@@ -8,6 +8,7 @@ import type { StorefrontPageRepository } from "../../../domains/storefront/ports
 import { createPublicStorefrontLead } from "../../../domains/storefront/services/StorefrontService/createPublicStorefrontLead.js";
 import { createPublicStorefrontPageLead } from "../../../domains/storefront/services/StorefrontService/createPublicStorefrontPageLead.js";
 import { createPlaceholderServiceContext } from "../../../infrastructure/http/createPlaceholderServiceContext.js";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import {
   rateLimitPublicLeadRequest,
@@ -36,10 +37,18 @@ export async function handleCreatePublicStorefrontLead(
   const listingSlug = context.req.param("listingSlug");
 
   if (!storeSlug) {
-    return context.json({ message: "Store subdomain is required." }, 400);
+    return jsonApiError(context, {
+      code: "STOREFRONT_STORE_SLUG_REQUIRED",
+      message: "Store subdomain is required.",
+      status: 400,
+    });
   }
   if (!listingSlug) {
-    return context.json({ message: "Listing slug is required." }, 400);
+    return jsonApiError(context, {
+      code: "STOREFRONT_LISTING_SLUG_REQUIRED",
+      message: "Listing slug is required.",
+      status: 400,
+    });
   }
 
   const rateLimitResponse = rateLimitPublicLeadRequest(
@@ -87,10 +96,18 @@ export async function handleCreatePublicStorefrontPageLead(
   const pageSlug = context.req.param("pageSlug");
 
   if (!storeSlug) {
-    return context.json({ message: "Store subdomain is required." }, 400);
+    return jsonApiError(context, {
+      code: "STOREFRONT_STORE_SLUG_REQUIRED",
+      message: "Store subdomain is required.",
+      status: 400,
+    });
   }
   if (!pageSlug) {
-    return context.json({ message: "Page slug is required." }, 400);
+    return jsonApiError(context, {
+      code: "STOREFRONT_PAGE_SLUG_REQUIRED",
+      message: "Page slug is required.",
+      status: 400,
+    });
   }
 
   const rateLimitResponse = rateLimitPublicLeadRequest(

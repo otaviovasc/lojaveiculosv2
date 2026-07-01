@@ -1,5 +1,6 @@
 import { Handshake } from "lucide-react";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
 import {
@@ -127,7 +128,10 @@ export function InventoryWorkflowPanel({
     } catch (error) {
       setState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel concluir a operacao.",
+        ),
       });
     }
   };
@@ -146,7 +150,10 @@ export function InventoryWorkflowPanel({
     } catch (error) {
       setState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel liberar a reserva.",
+        ),
       });
     }
   };

@@ -27,6 +27,9 @@ export async function uploadInventoryFile(
     method: upload.uploadMethod,
   });
 
-  if (!response.ok)
-    throw new Error(`Upload failed with status ${response.status}`);
+  if (!response.ok) {
+    throw new Error(
+      `Falha no upload da imagem para o armazenamento. Codigo HTTP ${response.status}.`,
+    );
+  }
 }

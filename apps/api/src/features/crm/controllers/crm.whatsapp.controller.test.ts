@@ -4,6 +4,7 @@ import {
   createAuditSpy,
   createRepassesCrmStub,
   createTestApp,
+  expectApiError,
 } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp controller", () => {
@@ -97,7 +98,10 @@ describe("CRM WhatsApp controller", () => {
     });
 
     const response = await app.request("/api/v1/crm/whatsapp/bootstrap", {
-      headers: { Authorization: "Bearer clerk-token", "x-store-slug": "test-store" },
+      headers: {
+        Authorization: "Bearer clerk-token",
+        "x-store-slug": "test-store",
+      },
     });
 
     expect(response.status).toBe(200);
@@ -112,7 +116,8 @@ describe("CRM WhatsApp controller", () => {
     const response = await app.request("/api/v1/crm/whatsapp/sessions");
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual({
+    await expectApiError(response, {
+      code: "REPASSES_CRM_AUTH_ERROR",
       message: "CRM WhatsApp requires a Clerk bearer token.",
     });
   });
@@ -126,7 +131,8 @@ describe("CRM WhatsApp controller", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
       message: "Missing permission: crm.whatsapp.list",
     });
     expect(repassesCrm.listSessions).not.toHaveBeenCalled();
@@ -203,12 +209,17 @@ describe("CRM WhatsApp controller", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({ message: "Forbidden upstream" });
+    await expectApiError(response, {
+      code: "REPASSES_CRM_REQUEST_ERROR",
+      message: "Forbidden upstream",
+    });
     expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
       "attempted",
       "failed",
     ]);
-    expect(record.mock.calls[1]?.[0]?.metadata?.errorName).toBe("RepassesCrmRequestError");
+    expect(record.mock.calls[1]?.[0]?.metadata?.errorName).toBe(
+      "RepassesCrmRequestError",
+    );
   });
 
   it("requires WhatsApp send permission before proxying outbound messages", async () => {
@@ -227,7 +238,8 @@ describe("CRM WhatsApp controller", () => {
     });
 
     expect(response.status).toBe(403);
-    await expect(response.json()).resolves.toEqual({
+    await expectApiError(response, {
+      code: "AUTHORIZATION_DENIED",
       message: "Missing permission: crm.whatsapp.send",
     });
     expect(repassesCrm.sendText).not.toHaveBeenCalled();

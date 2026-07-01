@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import { createSalesHeaders, salesRoutes } from "./apiRoutes";
 import type {
   SaleDraftInput,
@@ -67,13 +68,7 @@ export function createSalesApi({
 }
 
 async function readSalesJson<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => ({}))) as {
-    message?: string;
-  };
-  if (!response.ok) {
-    throw new Error(body.message ?? "Request failed.");
-  }
-  return body as T;
+  return readApiJson<T>(response, { feature: "Vendas" });
 }
 
 function cleanJson(value: unknown): unknown {

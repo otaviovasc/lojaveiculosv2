@@ -6,6 +6,7 @@ import { applyPlateLookupToForm } from "../model/inventoryEnrichment";
 import type { InventoryPlateLookupResponse } from "../model/enrichmentTypes";
 import { InventoryInput } from "./InventoryFormParts";
 import { LookupStatus, type Loadable } from "./InventoryCreateEnrichmentParts";
+import { getApiErrorDisplay } from "../../../lib/apiErrors";
 
 export function InventoryCreateEnrichmentPanel({
   api,
@@ -41,7 +42,13 @@ export function InventoryCreateEnrichmentPanel({
       setPlateState({ kind: "success", value: result });
       onLookupComplete(result);
     } catch (error) {
-      setPlateState({ kind: "error", message: errorMessage(error) });
+      setPlateState({
+        kind: "error",
+        ...getApiErrorDisplay(
+          error,
+          "Nao foi possivel consultar a placa agora.",
+        ),
+      });
     }
   };
 
@@ -95,8 +102,4 @@ function normalizePlate(value: string) {
 
 function isBrazilianPlate(value: string) {
   return /^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$/.test(value);
-}
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : String(error);
 }

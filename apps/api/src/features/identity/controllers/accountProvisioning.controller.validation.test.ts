@@ -43,13 +43,13 @@ describe("account provisioning validation responses", () => {
 
     expect(response.status).toBe(400);
     const body = (await response.json()) as {
-      issues?: Array<{ message?: string; path?: string }>;
+      details?: { issues?: Array<{ message?: string; path?: string }> };
       message?: string;
       requestId?: string;
     };
     expect(body.message).toBe("Request body is invalid.");
     expect(body.requestId).toEqual(expect.any(String));
-    expect(body.issues).toContainEqual(
+    expect(body.details?.issues).toContainEqual(
       expect.objectContaining({
         message: "Informe um CNPJ válido.",
         path: "profile.documentNumber",

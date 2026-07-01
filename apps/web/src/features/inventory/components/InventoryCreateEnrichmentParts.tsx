@@ -17,7 +17,7 @@ export type Loadable<T> =
   | { kind: "idle" }
   | { kind: "loading" }
   | { kind: "success"; value: T }
-  | { kind: "error"; message: string };
+  | { kind: "error"; message: string; requestId?: string };
 
 export function LookupStatus({
   state,
@@ -34,9 +34,16 @@ export function LookupStatus({
     );
   if (state.kind === "error")
     return (
-      <div className="mt-3 flex items-center gap-2 rounded-xl border border-danger/20 bg-danger/5 p-3 text-xs font-black text-danger">
+      <div className="mt-3 flex items-start gap-2 rounded-xl border border-danger/20 bg-danger/5 p-3 text-xs font-black text-danger">
         <AlertTriangle className="size-4 shrink-0" />
-        <span>{state.message}</span>
+        <div className="grid gap-1">
+          <span>{state.message}</span>
+          {state.requestId ? (
+            <span className="font-mono text-[10px] text-danger/80">
+              ID do erro: {state.requestId}
+            </span>
+          ) : null}
+        </div>
       </div>
     );
   const facts = [
@@ -182,9 +189,16 @@ function AnalysisStatus({
 
   if (state.kind === "error")
     return (
-      <div className="flex items-center gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-4 text-xs font-bold text-danger">
+      <div className="flex items-start gap-2.5 rounded-xl border border-danger/30 bg-danger/10 p-4 text-xs font-bold text-danger">
         <AlertTriangle className="size-4 shrink-0" />
-        <p>{state.message}</p>
+        <div className="grid gap-1">
+          <p>{state.message}</p>
+          {state.requestId ? (
+            <span className="font-mono text-[10px] text-danger/80">
+              ID do erro: {state.requestId}
+            </span>
+          ) : null}
+        </div>
       </div>
     );
 

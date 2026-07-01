@@ -1,6 +1,6 @@
 import { RedirectToSignIn, SignIn, SignUp, useAuth } from "@clerk/react";
 import { AlertTriangle, Loader2, RefreshCcw } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FeatureActionButton,
@@ -12,6 +12,7 @@ import {
   FeatureEmptyState,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
 import { createRuntimeAccountApi } from "./runtimeApi";
 import { resolveSessionDestination } from "./sessionRedirect";
@@ -128,6 +129,11 @@ function ConfiguredSessionBootstrapPage() {
   const [error, setError] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const { getToken, isLoaded, isSignedIn, userId } = auth;
+  const getTokenRef = useRef(getToken);
+
+  useEffect(() => {
+    getTokenRef.current = getToken;
+  }, [getToken]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -137,7 +143,7 @@ function ConfiguredSessionBootstrapPage() {
 
     async function bootstrapSession() {
       try {
-        const accessToken = await getToken();
+        const accessToken = await getTokenRef.current();
         const api = await createRuntimeAccountApi({ accessToken });
         const bootstrap = await api.bootstrap();
         if (bootstrap.defaultStore) {
@@ -149,7 +155,9 @@ function ConfiguredSessionBootstrapPage() {
         if (!cancelled) void navigate(destination, { replace: true });
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
+          setError(
+            formatApiErrorDisplay(err, "Nao foi possivel carregar sua sessao."),
+          );
         }
       }
     }
@@ -159,7 +167,7 @@ function ConfiguredSessionBootstrapPage() {
     return () => {
       cancelled = true;
     };
-  }, [attempt, getToken, isLoaded, isSignedIn, navigate, userId]);
+  }, [attempt, isLoaded, isSignedIn, navigate, userId]);
 
   if (!isLoaded) return <AuthLoadingPage title="Preparando autenticação" />;
   if (!isSignedIn) return <SessionSignInRedirect />;

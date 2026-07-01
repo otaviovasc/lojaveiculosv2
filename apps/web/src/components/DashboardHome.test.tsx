@@ -5,6 +5,7 @@ import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { AnalyticsApi } from "../features/analytics/apiClient";
 import type { AnalyticsDashboard } from "../features/analytics/types";
+import { AppApiError } from "../lib/apiErrors";
 import { DashboardHome } from "./DashboardHome";
 
 vi.mock("./DashboardHomeToolbar", () => ({
@@ -71,7 +72,14 @@ describe("DashboardHome", () => {
     const onNavigate = vi.fn();
     const api: AnalyticsApi = {
       getDashboard: vi.fn(() =>
-        Promise.reject(new Error("Analytics request failed with status 403")),
+        Promise.reject(
+          new AppApiError({
+            code: "AUTHORIZATION_DENIED",
+            message: "Missing permission analytics.read.",
+            requestId: "req_dashboard",
+            status: 403,
+          }),
+        ),
       ),
     };
 

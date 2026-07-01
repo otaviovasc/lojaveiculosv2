@@ -1,19 +1,11 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
-import { Hono, type Context } from "hono";
+import { Hono } from "hono";
 import { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
 import { getPublicStorefrontCustomPage } from "../../../domains/storefront/services/StorefrontService/getPublicStorefrontCustomPage.js";
 import { getPublicStorefrontSite } from "../../../domains/storefront/services/StorefrontService/getPublicStorefrontSite.js";
 import { getPublicVehicleListing } from "../../../domains/storefront/services/StorefrontService/getPublicVehicleListing.js";
 import { listPublicVehicleListings } from "../../../domains/storefront/services/StorefrontService/listPublicVehicleListings.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
-import {
-  PublicStorefrontListingNotFoundError,
-  PublicStorefrontNotFoundError,
-  StorefrontPageNotFoundError,
-  StorefrontPageRepositoryError,
-  PublicStorefrontRepositoryError,
-} from "../../../domains/storefront/services/StorefrontService/serviceSupport.js";
 import type {
   PublicStorefrontRepository,
   PublicVehicleListing,
@@ -29,7 +21,11 @@ import {
   createMemoryPublicLeadRateLimiter,
   type PublicLeadRateLimiter,
 } from "../adapters/rateLimiter/publicLeadRateLimiter.js";
-import { StorefrontRequestValidationError } from "./storefrontErrors.js";
+import {
+  handleStorefront,
+  rejectInvalidStorefrontQuery,
+  rejectMissingStoreSlug,
+} from "./storefront.controller.errors.js";
 import {
   handleCreatePublicStorefrontLead,
   handleCreatePublicStorefrontPageLead,
@@ -60,12 +56,10 @@ export function createStorefrontFeature(
     options.leadRateLimiter ?? createMemoryPublicLeadRateLimiter();
 
   storefrontFeature.get("/settings", async (context) =>
-    handle(context, async () => {
+    handleStorefront(context, async () => {
       const storeSlug = resolveStoreSlugFromRequest(context);
 
-      if (!storeSlug) {
-        return context.json({ message: "Store subdomain is required." }, 400);
-      }
+      if (!storeSlug) return rejectMissingStoreSlug(context);
 
       const serviceContext = createPlaceholderServiceContext(
         context,
@@ -82,16 +76,14 @@ export function createStorefrontFeature(
   );
 
   storefrontFeature.get("/listings", async (context) =>
-    handle(context, async () => {
+    handleStorefront(context, async () => {
       const storeSlug = resolveStoreSlugFromRequest(context);
       const query = querySchema.safeParse(context.req.query());
 
-      if (!storeSlug) {
-        return context.json({ message: "Store subdomain is required." }, 400);
-      }
+      if (!storeSlug) return rejectMissingStoreSlug(context);
 
       if (!query.success) {
-        return context.json({ message: "Query parameters are invalid." }, 400);
+        return rejectInvalidStorefrontQuery(context, query.error);
       }
 
       const serviceContext = createPlaceholderServiceContext(
@@ -112,14 +104,12 @@ export function createStorefrontFeature(
   );
 
   storefrontFeature.get("/pages/:pageSlug", async (context) =>
-    handle(context, async () => {
+    handleStorefront(context, async () => {
       const storeSlug = resolveStoreSlugFromRequest(context);
       const pageSlug = context.req.param("pageSlug");
       const token = context.req.query("token") ?? null;
 
-      if (!storeSlug) {
-        return context.json({ message: "Store subdomain is required." }, 400);
-      }
+      if (!storeSlug) return rejectMissingStoreSlug(context);
 
       const serviceContext = createPlaceholderServiceContext(
         context,
@@ -136,7 +126,7 @@ export function createStorefrontFeature(
   );
 
   storefrontFeature.post("/pages/:pageSlug/leads", async (context) =>
-    handle(context, () =>
+    handleStorefront(context, () =>
       handleCreatePublicStorefrontPageLead(context, {
         crmRepository,
         leadRateLimiter,
@@ -147,7 +137,7 @@ export function createStorefrontFeature(
   );
 
   storefrontFeature.post("/listings/:listingSlug/leads", async (context) =>
-    handle(context, () =>
+    handleStorefront(context, () =>
       handleCreatePublicStorefrontLead(context, {
         crmRepository,
         leadRateLimiter,
@@ -158,13 +148,11 @@ export function createStorefrontFeature(
   );
 
   storefrontFeature.get("/listings/:listingSlug", async (context) =>
-    handle(context, async () => {
+    handleStorefront(context, async () => {
       const storeSlug = resolveStoreSlugFromRequest(context);
       const listingSlug = context.req.param("listingSlug");
 
-      if (!storeSlug) {
-        return context.json({ message: "Store subdomain is required." }, 400);
-      }
+      if (!storeSlug) return rejectMissingStoreSlug(context);
 
       const serviceContext = createPlaceholderServiceContext(
         context,
@@ -187,46 +175,6 @@ export function createStorefrontFeature(
 }
 
 export const storefrontFeature = createStorefrontFeature();
-
-async function handle(
-  context: Context,
-  operation: () => Promise<Response>,
-): Promise<Response> {
-  try {
-    return await operation();
-  } catch (error) {
-    if (error instanceof AuthorizationError) {
-      return context.json({ message: error.message }, 403);
-    }
-
-    if (error instanceof StorefrontRequestValidationError) {
-      return context.json({ message: error.message }, 400);
-    }
-
-    if (error instanceof PublicStorefrontNotFoundError) {
-      return context.json({ message: error.message }, 404);
-    }
-
-    if (error instanceof PublicStorefrontListingNotFoundError) {
-      return context.json({ message: error.message }, 404);
-    }
-
-    if (error instanceof StorefrontPageNotFoundError) {
-      return context.json({ message: error.message }, 404);
-    }
-
-    if (error instanceof PublicStorefrontRepositoryError) {
-      return context.json({ message: error.message }, 500);
-    }
-
-    if (error instanceof StorefrontPageRepositoryError) {
-      return context.json({ message: error.message }, 500);
-    }
-
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
-  }
-}
 
 function toPublicVehicleListingDto(listing: PublicVehicleListing) {
   const { id: _id, ...dto } = listing;

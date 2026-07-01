@@ -3,6 +3,7 @@ import { createStorefrontFeature } from "./storefront.controller.js";
 import {
   createCrmRepository,
   createRepository,
+  expectApiError,
   listingResponse,
   publicStore,
   site,
@@ -72,7 +73,8 @@ describe("public storefront routes", () => {
     });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "STOREFRONT_STORE_SLUG_REQUIRED",
       message: "Store subdomain is required.",
     });
   });
@@ -173,7 +175,9 @@ describe("public storefront routes", () => {
 
     expect(response.status).toBe(429);
     expect(response.headers.get("Retry-After")).toBe("60");
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "PUBLIC_LEAD_RATE_LIMITED",
+      details: { retryAfterSeconds: 60 },
       message: "Too many lead requests.",
     });
   });
@@ -191,7 +195,8 @@ describe("public storefront routes", () => {
     });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "STOREFRONT_REQUEST_VALIDATION_ERROR",
       message: "Request body is invalid.",
     });
   });
@@ -205,7 +210,8 @@ describe("public storefront routes", () => {
     });
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "PUBLIC_STOREFRONT_LISTING_NOT_FOUND",
       message: "Public storefront listing not found: missing",
     });
   });
@@ -219,7 +225,8 @@ describe("public storefront routes", () => {
     });
 
     expect(response.status).toBe(404);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "PUBLIC_STOREFRONT_NOT_FOUND",
       message: "Public storefront not found: missing",
     });
   });

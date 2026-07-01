@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
 import { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
@@ -38,8 +39,8 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             Caixa de entrada, detalhe da sessao e continuidade de mensagens.
           </h2>
           <p className="max-w-2xl text-sm font-semibold text-inverse-muted">
-            Conversas, responsaveis e acoes ficam auditados para continuidade
-            do atendimento.
+            Conversas, responsaveis e acoes ficam auditados para continuidade do
+            atendimento.
           </p>
         </div>
         <span className="crm-hero-status">
@@ -49,7 +50,14 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
         </span>
       </section>
 
-      {inbox.error ? <WhatsappNotice message={inbox.error.message} /> : null}
+      {inbox.error ? (
+        <WhatsappNotice
+          message={formatApiErrorDisplay(
+            inbox.error,
+            "Nao foi possivel carregar o WhatsApp.",
+          )}
+        />
+      ) : null}
       {inbox.hasConnection === false ? (
         <WhatsappNotice message="Nenhuma conexao WhatsApp ativa foi encontrada para a loja." />
       ) : null}

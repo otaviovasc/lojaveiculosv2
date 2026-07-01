@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { vi } from "vitest";
+import { expect, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import {
   createInventoryFeature,
@@ -17,6 +17,28 @@ import {
 } from "./vehicle.acquisition.controller.fixtures.js";
 
 export { listingDetailResult } from "./vehicle.controller.testFixtures.js";
+
+type ApiErrorBody = {
+  code: string;
+  details?: Record<string, unknown>;
+  message: string;
+  requestId: string;
+};
+
+export type ListingDetailBody = {
+  listing?: { id?: string };
+  status?: string;
+};
+
+export async function expectApiError(
+  response: Response,
+  expected: Omit<ApiErrorBody, "requestId">,
+) {
+  const body = (await response.json()) as ApiErrorBody;
+  expect(body).toMatchObject(expected);
+  expect(body.requestId).toEqual(expect.any(String));
+  return body;
+}
 
 export function createInventoryTestApp(
   services: InventoryListingServices,

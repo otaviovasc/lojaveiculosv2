@@ -1,12 +1,11 @@
 import { Check, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
 import { useState, type FormEvent, type InputHTMLAttributes } from "react";
+import { formatApiErrorDisplay, readApiVoid } from "../../lib/apiErrors";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import { textProp } from "./pageBuilderRenderUtils";
 
 export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
-  const [status, setStatus] = useState<"error" | "idle" | "sent" | "sending">(
-    "idle",
-  );
+  const [status, setStatus] = useState<ContactStatus>({ kind: "idle" });
   const props = component.props;
   const fields =
     props.fields && typeof props.fields === "object"
@@ -16,7 +15,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    setStatus("sending");
+    setStatus({ kind: "sending" });
     try {
       const response = await fetch(
         `/api/v1/public/storefront/pages/${encodeURIComponent(context.pageSlug)}/leads`,
@@ -34,11 +33,17 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           method: "POST",
         },
       );
-      if (!response.ok) throw new Error("Lead request failed");
+      await readApiVoid(response, { feature: "Vitrine publica" });
       event.currentTarget.reset();
-      setStatus("sent");
-    } catch {
-      setStatus("error");
+      setStatus({ kind: "sent" });
+    } catch (error) {
+      setStatus({
+        kind: "error",
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel enviar a mensagem no momento.",
+        ),
+      });
     }
   }
   return (
@@ -82,29 +87,29 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           ) : null}
           <button
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded px-6 text-xs font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75 cursor-pointer"
-            disabled={status === "sending"}
+            disabled={status.kind === "sending"}
             style={{ background: context.accent }}
             type="submit"
           >
-            {status === "sent" ? (
+            {status.kind === "sent" ? (
               <Check aria-hidden="true" className="size-4" />
             ) : (
               <Send aria-hidden="true" className="size-4" />
             )}
-            {status === "sending"
+            {status.kind === "sending"
               ? "Enviando..."
               : (textProp(props.submitButtonText) ?? "Enviar Mensagem")}
           </button>
 
-          {status === "sent" ? (
+          {status.kind === "sent" ? (
             <p className="text-center text-sm font-bold text-accent">
               {textProp(props.successMessage) ??
                 "Mensagem enviada com sucesso!"}
             </p>
           ) : null}
-          {status === "error" ? (
+          {status.kind === "error" ? (
             <p className="text-center text-sm font-bold text-danger">
-              Não foi possível enviar a mensagem no momento.
+              {status.message}
             </p>
           ) : null}
         </form>
@@ -112,6 +117,12 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
     </section>
   );
 }
+
+type ContactStatus =
+  | { kind: "error"; message: string }
+  | { kind: "idle" }
+  | { kind: "sending" }
+  | { kind: "sent" };
 
 function BlockHeading({ props }: { props: Record<string, unknown> }) {
   return (

@@ -82,10 +82,17 @@ describe("production smoke contracts", () => {
     });
 
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({
+    const body = (await response.json()) as {
+      code?: string;
+      message?: string;
+      requestId?: unknown;
+    };
+    expect(body).toMatchObject({
+      code: "FISCAL_PROVIDER_UNAVAILABLE",
       message:
         "SPEDY fiscal gateway is not configured: SPEDY_API_URL, SPEDY_API_TOKEN, SPEDY_WEBHOOK_SECRET, SPEDY_ISSUE_PATH, SPEDY_CANCEL_PATH, SPEDY_STATUS_PATH",
     });
+    expect(typeof body.requestId).toBe("string");
   });
 
   it("keeps inventory unit reserve, sell, and release routes wired before production rollout", async () => {

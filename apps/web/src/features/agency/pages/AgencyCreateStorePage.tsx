@@ -18,6 +18,7 @@ import {
   FeaturePageHeader,
 } from "../../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../../components/ui/FeatureStates";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { normalizePublicSlug } from "../../../lib/utils";
 import { persistCurrentStoreSlug } from "../../account/currentStore";
 import {
@@ -66,7 +67,14 @@ export function AgencyCreateStorePage() {
           setError("Sua sessão não tem uma conta de agência ativa.");
         }
       } catch (err) {
-        if (mounted) setError(err instanceof Error ? err.message : String(err));
+        if (mounted) {
+          setError(
+            formatApiErrorDisplay(
+              err,
+              "Nao foi possivel carregar as agencias.",
+            ),
+          );
+        }
       }
     };
     void loadTenants();
@@ -109,7 +117,7 @@ export function AgencyCreateStorePage() {
       persistCurrentStoreSlug(store.storeSlug, auth.userId);
       void navigate("/agency/admin", { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(formatApiErrorDisplay(err, "Nao foi possivel criar a loja."));
     } finally {
       setIsSubmitting(false);
     }

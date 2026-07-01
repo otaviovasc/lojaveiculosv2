@@ -7,6 +7,7 @@ import {
   HttpContextAuthenticationError,
   HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { BillingScopeError } from "../../../domains/billing/services/BillingService/serviceSupport.js";
 import { updateEntitlementSchema } from "./billing.controller.schemas.js";
 import { billingServices, type BillingServices } from "./billingServices.js";
@@ -113,19 +114,38 @@ async function handleBilling(
       error instanceof BillingRequestValidationError ||
       error instanceof BillingScopeError
     ) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "BILLING_REQUEST_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
     if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHENTICATION_REQUIRED",
+        error,
+        message: error.message,
+        status: 401,
+      });
     }
     if (
       error instanceof AuthorizationError ||
       error instanceof HttpContextAuthorizationError
     ) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
+    return jsonApiError(context, {
+      code: "INTERNAL_SERVER_ERROR",
+      error,
+      message: "Internal server error.",
+      status: 500,
+    });
   }
 }
 

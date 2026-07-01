@@ -1,4 +1,5 @@
 import { createInventoryHeaders, inventoryRoutes } from "./apiRoutes";
+import { readApiJson } from "../../../lib/apiErrors";
 import type {
   InventoryAuth,
   InventoryCatalogOption,
@@ -20,7 +21,9 @@ export function createInventoryCatalogApi({
   fetch: typeof window.fetch;
 }) {
   const read = <T>(route: string) =>
-    fetch(route, { headers: createInventoryHeaders(auth) }).then(readJson<T>);
+    fetch(route, { headers: createInventoryHeaders(auth) }).then((response) =>
+      readApiJson<T>(response, { endpoint: route, feature: "Inventory" }),
+    );
 
   const listCatalogBrands = (
     vehicleType: InventoryCatalogVehicleType = "cars",
@@ -82,11 +85,4 @@ export function createInventoryCatalogApi({
     listCatalogVersions,
     listCatalogYears,
   };
-}
-
-async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Inventory request failed with status ${response.status}`);
-  }
-  return (await response.json()) as T;
 }

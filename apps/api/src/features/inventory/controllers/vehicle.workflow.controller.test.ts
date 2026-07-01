@@ -6,6 +6,7 @@ import {
 import {
   createInventoryTestApp,
   createInventoryTestServices,
+  expectApiError,
 } from "./vehicle.controller.testSupport.js";
 
 describe("inventory workflow routes", () => {
@@ -139,7 +140,8 @@ describe("inventory workflow routes", () => {
     });
 
     expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "VEHICLE_VALIDATION_ERROR",
       message: "Vehicle workflow requires salePriceCents",
     });
   });
@@ -166,7 +168,8 @@ describe("inventory workflow routes", () => {
     );
 
     expect(response.status).toBe(409);
-    expect(await response.json()).toEqual({
+    await expectApiError(response, {
+      code: "VEHICLE_WORKFLOW_CONFLICT",
       message:
         "Vehicle unit must be available to reserve; current status is sold.",
     });

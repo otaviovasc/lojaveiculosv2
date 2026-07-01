@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
 import {
   createInventoryApiOptions,
@@ -251,7 +252,10 @@ export function useInventoryList(api?: InventoryApi) {
     } catch (err) {
       setSelection({
         kind: "error",
-        message: err instanceof Error ? err.message : String(err),
+        message: formatApiErrorDisplay(
+          err,
+          "Nao foi possivel abrir o estoque selecionado.",
+        ),
       });
     }
   };

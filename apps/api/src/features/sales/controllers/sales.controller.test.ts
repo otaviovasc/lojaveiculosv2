@@ -51,10 +51,12 @@ describe("sales controller", () => {
     );
     expect(reserveResponse.status).toBe(409);
     const payload = await readJson<TestReadinessError>(reserveResponse);
-    expect(payload.missingFields).toContain("buyer");
-    expect(payload.missingFields).toContain("lead");
-    expect(payload.missingFields).toContain("seller");
-    expect(payload.missingFields).toContain("payment_principal_coverage");
+    expect(payload.details.missingFields).toContain("buyer");
+    expect(payload.details.missingFields).toContain("lead");
+    expect(payload.details.missingFields).toContain("seller");
+    expect(payload.details.missingFields).toContain(
+      "payment_principal_coverage",
+    );
   });
 
   it("reserves complete sale drafts", async () => {
@@ -155,7 +157,7 @@ type TestSaleList = {
 };
 
 type TestReadinessError = {
-  missingFields: string[];
+  details: { missingFields: string[] };
 };
 
 function createUnit(input: Partial<VehicleUnit> = {}): VehicleUnit {

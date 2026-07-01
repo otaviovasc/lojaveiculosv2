@@ -124,9 +124,15 @@ export const openApiDocument = {
       ApiError: {
         type: "object",
         additionalProperties: true,
+        required: ["message", "code", "requestId"],
         properties: {
           message: { type: "string" },
+          code: { type: "string" },
           requestId: { type: "string" },
+          details: {
+            type: "object",
+            additionalProperties: true,
+          },
         },
       },
     },

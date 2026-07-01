@@ -2,6 +2,7 @@ import type { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { jsonApiError } from "./apiErrorResponse.js";
 import { ensureHttpRequestId } from "./requestMetadata.js";
 
 export function installHttpMiddleware(app: Hono): void {
@@ -33,7 +34,12 @@ export function installHttpMiddleware(app: Hono): void {
     }),
     bodyLimit({
       maxSize: 1024 * 1024,
-      onError: (context) => context.json({ message: "Payload too large" }, 413),
+      onError: (context) =>
+        jsonApiError(context, {
+          code: "PAYLOAD_TOO_LARGE",
+          message: "Payload too large.",
+          status: 413,
+        }),
     }),
   );
 }

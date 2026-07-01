@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import {
   InventoryField,
   InventoryInput,
@@ -11,9 +12,7 @@ import type {
 } from "../model/types";
 
 export type CatalogState =
-  | { kind: "idle" }
-  | { kind: "loading" }
-  | { kind: "error"; message: string };
+  { kind: "idle" } | { kind: "loading" } | { kind: "error"; message: string };
 
 export function CatalogSelect({
   combobox = false,
@@ -334,6 +333,9 @@ export function resetCatalog(
 export function toErrorState(error: unknown): CatalogState {
   return {
     kind: "error",
-    message: error instanceof Error ? error.message : String(error),
+    message: formatApiErrorDisplay(
+      error,
+      "Nao foi possivel carregar o catalogo.",
+    ),
   };
 }

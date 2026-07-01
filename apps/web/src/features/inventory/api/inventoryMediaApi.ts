@@ -1,4 +1,5 @@
 import { createInventoryHeaders, inventoryRoutes } from "./apiRoutes";
+import { readApiJson } from "../../../lib/apiErrors";
 import type {
   AttachInventoryDocumentInput,
   CreateInventoryMediaInput,
@@ -67,7 +68,11 @@ export function createInventoryMediaApi({
     fetch(inventoryRoutes.mediaDetail(unitId, mediaId, baseUrl), {
       headers: createInventoryHeaders(auth),
       method: "DELETE",
-    }).then(readInventoryJson<InventoryListingDetail>);
+    }).then((response) =>
+      readApiJson<InventoryListingDetail>(response, {
+        feature: "Inventory",
+      }),
+    );
 
   const reorderMedia = (
     unitId: string,
@@ -124,12 +129,4 @@ function mediaUploadBody(file: File, extra: JsonBody) {
     sizeBytes: file.size,
     ...extra,
   };
-}
-
-async function readInventoryJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(`Inventory request failed with status ${response.status}`);
-  }
-
-  return (await response.json()) as T;
 }

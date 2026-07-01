@@ -2,18 +2,14 @@ import type { AuditOutcome, SafeAuditMetadata } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import type { Context } from "hono";
 import type { z } from "zod";
-import {
-  RepassesCrmAuthError,
-  RepassesCrmRequestError,
-  RepassesCrmUnavailableError,
-} from "../../../domains/crm/acl/repassesCrmClient.js";
+import { RepassesCrmAuthError } from "../../../domains/crm/acl/repassesCrmClient.js";
 import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import {
-  AuthorizationError,
   assertEntitlement,
   assertPermission,
 } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { CrmWhatsappValidationError } from "./crm.whatsapp.errors.js";
 
 export type WhatsappAuditInput = {
   action: string;
@@ -144,36 +140,6 @@ export async function recordWhatsappMutation<T>(
   }
 }
 
-export async function handleWhatsapp(
-  context: Context,
-  action: () => Promise<Response>,
-): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    if (error instanceof CrmWhatsappValidationError) {
-      return context.json({ message: error.message }, 400);
-    }
-    if (error instanceof RepassesCrmAuthError) {
-      return context.json({ message: error.message }, 401);
-    }
-    if (error instanceof AuthorizationError) {
-      return context.json({ message: error.message }, 403);
-    }
-    if (error instanceof RepassesCrmUnavailableError) {
-      return context.json({ message: error.message }, 503);
-    }
-    if (error instanceof RepassesCrmRequestError) {
-      return context.json(
-        { message: error.message },
-        mapUpstreamStatus(error.statusCode),
-      );
-    }
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
-  }
-}
-
 function assertWhatsappPermission(
   context: ServiceContext,
   permission: PermissionKey,
@@ -201,28 +167,4 @@ function readEntitlements(context: ServiceContext): readonly EntitlementKey[] {
   if (!("entitlements" in context)) return [];
   const entitlements = context.entitlements;
   return Array.isArray(entitlements) ? (entitlements as EntitlementKey[]) : [];
-}
-
-type WhatsappErrorStatus = 400 | 401 | 403 | 404 | 409 | 422 | 429 | 502;
-
-function mapUpstreamStatus(statusCode: number): WhatsappErrorStatus {
-  switch (statusCode) {
-    case 400:
-    case 401:
-    case 403:
-    case 404:
-    case 409:
-    case 422:
-    case 429:
-      return statusCode;
-    default:
-      return statusCode >= 400 && statusCode < 500 ? 400 : 502;
-  }
-}
-
-export class CrmWhatsappValidationError extends Error {
-  constructor(message = "Request is invalid.") {
-    super(message);
-    this.name = "CrmWhatsappValidationError";
-  }
 }

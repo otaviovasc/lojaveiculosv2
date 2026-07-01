@@ -2,23 +2,20 @@ import type { StorefrontBuilderComponent } from "@lojaveiculosv2/shared";
 import { storefrontBuilderComponentTypes } from "@lojaveiculosv2/shared";
 import { Hono, type Context } from "hono";
 import { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   createHttpServiceContext,
   HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
-import {
-  StorefrontPageNotFoundError,
-  StorefrontPageRepositoryError,
-  StorefrontPageScopeError,
-} from "../../../domains/storefront/services/StorefrontService/serviceSupport.js";
 import type { StorefrontPageUpdateInput } from "../../../domains/storefront/ports/storefrontPageRepository.js";
 import {
   storefrontPageServices,
   type StorefrontPageServices,
 } from "./storefrontPageServices.js";
+import {
+  handleStorefrontPages,
+  StorefrontPagesRequestValidationError,
+} from "./storefrontPages.controller.errors.js";
 
 const slugSchema = z
   .string()
@@ -160,39 +157,6 @@ async function parseJson<Schema extends z.ZodType>(
   return parsed.data;
 }
 
-async function handleStorefrontPages(
-  context: Context,
-  action: () => Promise<Response>,
-): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    if (
-      error instanceof StorefrontPagesRequestValidationError ||
-      error instanceof StorefrontPageScopeError
-    ) {
-      return context.json({ message: error.message }, 400);
-    }
-    if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
-    }
-    if (
-      error instanceof AuthorizationError ||
-      error instanceof HttpContextAuthorizationError
-    ) {
-      return context.json({ message: error.message }, 403);
-    }
-    if (error instanceof StorefrontPageNotFoundError) {
-      return context.json({ message: error.message }, 404);
-    }
-    if (error instanceof StorefrontPageRepositoryError) {
-      return context.json({ message: error.message }, 500);
-    }
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
-  }
-}
-
 function pageId(context: Context): string {
   const id = context.req.param("pageId");
   if (!id) {
@@ -221,11 +185,4 @@ function cleanCreateInput(input: z.infer<typeof createPageSchema>) {
     slug: input.slug,
     title: input.title,
   };
-}
-
-export class StorefrontPagesRequestValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "StorefrontPagesRequestValidationError";
-  }
 }

@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import { createProductCrmHeaders } from "./productCrmApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
 import { createCrmEndpoint } from "./apiClient";
@@ -15,8 +16,7 @@ import type {
 export type CrmWhatsappBootstrap = {
   agents: { agents: CrmWhatsappAgent[] } | CrmWhatsappAgent[];
   connections:
-    | { connections: CrmWhatsappConnection[] }
-    | CrmWhatsappConnection[];
+    { connections: CrmWhatsappConnection[] } | CrmWhatsappConnection[];
   scope?: CrmWhatsappScope;
 };
 
@@ -184,13 +184,7 @@ function createCrmWhatsappConnectionQuery(connectionId?: number | null) {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  const payload = (await response.json()) as { message?: string };
-  if (!response.ok) {
-    throw new Error(
-      payload.message ?? `CRM request failed: ${response.status}`,
-    );
-  }
-  return payload as T;
+  return readApiJson<T>(response, { feature: "CRM WhatsApp" });
 }
 
 function withQuery(route: string, params: URLSearchParams[]) {

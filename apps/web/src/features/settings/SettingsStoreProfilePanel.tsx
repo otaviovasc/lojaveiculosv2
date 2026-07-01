@@ -9,6 +9,7 @@ import {
   FeatureInput,
   FeatureTextarea,
 } from "../../components/ui/FeatureControls";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import {
   businessHoursToText,
   textToBusinessHours,
@@ -60,7 +61,10 @@ export function SettingsStoreProfilePanel({
     } catch (error) {
       setZipLookup({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel consultar o CEP.",
+        ),
       });
     }
   };

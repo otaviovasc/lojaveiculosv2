@@ -1,3 +1,4 @@
+import { readApiJson } from "../../lib/apiErrors";
 import type {
   PublicStorefrontData,
   PublicStorefrontCustomPageData,
@@ -130,13 +131,7 @@ function createPublicStorefrontHeaders(
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    throw new Error(
-      `Public storefront request failed with status ${response.status}`,
-    );
-  }
-
-  return (await response.json()) as T;
+  return readApiJson<T>(response, { feature: "Vitrine publica" });
 }
 
 function withQuery(route: string, params: URLSearchParams[]) {

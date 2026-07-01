@@ -1,6 +1,7 @@
 import { ImageUp } from "lucide-react";
 import { useState } from "react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import { InventoryDocumentList } from "./InventoryDocumentList";
 import { InventoryMediaGrid } from "./InventoryMediaGrid";
@@ -44,7 +45,10 @@ export function InventoryMediaWorkspace({
     } catch (error) {
       setState({
         kind: "error",
-        message: error instanceof Error ? error.message : String(error),
+        message: formatApiErrorDisplay(
+          error,
+          "Nao foi possivel atualizar as midias.",
+        ),
       });
     }
   };

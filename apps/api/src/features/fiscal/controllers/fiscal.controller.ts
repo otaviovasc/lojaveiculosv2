@@ -7,6 +7,7 @@ import {
   HttpContextAuthenticationError,
   HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { FiscalScopeError } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
 import {
   cancelFiscalDocumentSchema,
@@ -117,23 +118,47 @@ async function handleFiscal(
       error instanceof FiscalRequestValidationError ||
       error instanceof FiscalScopeError
     ) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "FISCAL_REQUEST_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
     if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHENTICATION_REQUIRED",
+        error,
+        message: error.message,
+        status: 401,
+      });
     }
     if (
       error instanceof AuthorizationError ||
       error instanceof HttpContextAuthorizationError
     ) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
     if (isFiscalProviderRuntimeError(error)) {
-      return context.json({ message: error.message }, 503);
+      return jsonApiError(context, {
+        code: "FISCAL_PROVIDER_UNAVAILABLE",
+        error,
+        message: error.message,
+        status: 503,
+      });
     }
 
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
+    return jsonApiError(context, {
+      code: "INTERNAL_SERVER_ERROR",
+      error,
+      message: "Internal server error.",
+      status: 500,
+    });
   }
 }
 

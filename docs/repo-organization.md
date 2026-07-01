@@ -36,6 +36,9 @@ Rules:
 - Cross-repository mutations should run through the shared transaction runner
   seam in feature/runtime composition. Domain modules receive transaction-bound
   ports; they do not import Drizzle or transaction clients.
+- Controllers must map errors through the shared `jsonApiError` helper instead
+  of returning ad hoc `{ message }` JSON bodies. Error response bodies include
+  `message`, `code`, `requestId`, and optional structured `details`.
 
 ## Frontend Folder Contract
 
@@ -58,6 +61,11 @@ Feature folders may contain:
 Do not place domain business rules in frontend modules. The frontend may collect
 workflow input and display state, but status changes, document emission, billing,
 permissions, and audit live behind backend services.
+
+Frontend API clients must use `apps/web/src/lib/apiErrors.ts` or a small
+feature wrapper around it so backend error codes and request ids reach visible
+UI states. User-facing errors should prefer friendly text plus `ID do erro`
+when the backend provides a request id.
 
 ## Vehicle Domain Map
 
@@ -130,6 +138,9 @@ Before adding or moving a module:
 - `pnpm run validate:push`: full local gate used by pre-push and by
   `pnpm run validate`.
 - `pnpm run validate:ci`: CI gate. Keep deployment smoke checks separate.
+- `pnpm run check:api-errors`: blocks direct controller `{ message }` JSON
+  error responses and manual `context.error` assignment outside the shared HTTP
+  error helper.
 - `pnpm run check:validation`: verifies hooks, CI, and every `check:*` script
   stay wired into `validate:core-guardrails`.
 
