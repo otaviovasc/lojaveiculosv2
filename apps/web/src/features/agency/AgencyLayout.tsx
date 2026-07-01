@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
-import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Outlet, NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   BarChart3,
   Users,
   CreditCard,
   Plus,
-  LogOut,
   Sun,
   Moon,
   Menu,
   X,
-  Store,
-  User,
 } from "lucide-react";
 import {
   applyThemeToDocument,
@@ -21,14 +18,13 @@ import {
   readBrowserPreferredTheme,
   type AppTheme,
 } from "../../app/theme";
+import { UserAccountButton } from "../account/UserAccountButton";
 
 export function AgencyLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
   );
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const toggleTheme = () => {
     setTheme((currentTheme) => {
@@ -70,11 +66,6 @@ export function AgencyLayout() {
       icon: Plus,
     },
   ];
-
-  const handleLogout = () => {
-    // Return to main site or store admin
-    void navigate("/");
-  };
 
   return (
     <div className="min-h-screen bg-app text-app-text lg:grid lg:grid-cols-[76px_1fr] agency-layout">
@@ -125,19 +116,7 @@ export function AgencyLayout() {
 
         {/* User profile & theme toggles */}
         <div className="border-t border-line p-4 space-y-3 bg-panel/50 overflow-hidden">
-          <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-app-elevated transition-all">
-            <div className="size-9 bg-accent-soft text-accent rounded-full flex items-center justify-center font-bold shrink-0">
-              <User className="size-4" />
-            </div>
-            <div className="brand-text flex flex-col whitespace-nowrap min-w-0">
-              <p className="text-xs font-black truncate text-primary">
-                Agência Premium
-              </p>
-              <p className="text-[10px] font-medium text-muted truncate">
-                admin@agency.com
-              </p>
-            </div>
-          </div>
+          <UserAccountButton />
 
           <div className="flex items-center gap-2">
             <button
@@ -156,14 +135,6 @@ export function AgencyLayout() {
                   <span className="toggle-text">Tema Escuro</span>
                 </>
               )}
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="toggle-text flex items-center justify-center p-2 hover:bg-danger/10 text-muted hover:text-danger rounded-lg border border-transparent hover:border-danger/20 transition-all shrink-0 ml-auto"
-              title="Sair"
-            >
-              <LogOut className="size-4" />
             </button>
           </div>
         </div>
@@ -253,25 +224,7 @@ export function AgencyLayout() {
             </div>
 
             <div className="border-t border-line pt-4 space-y-3">
-              <div className="flex items-center gap-3 p-2 rounded-xl">
-                <div className="size-9 bg-accent-soft text-accent rounded-full flex items-center justify-center font-bold">
-                  <User className="size-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-black">Agência Premium</p>
-                  <p className="text-[10px] font-semibold text-muted">
-                    admin@agency.com
-                  </p>
-                </div>
-              </div>
-
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-danger/10 text-danger hover:bg-danger/20 rounded-lg text-xs font-black uppercase tracking-wider transition-all"
-              >
-                <LogOut className="size-4" />
-                <span>Sair do Painel</span>
-              </button>
+              <UserAccountButton />
             </div>
           </aside>
         </div>

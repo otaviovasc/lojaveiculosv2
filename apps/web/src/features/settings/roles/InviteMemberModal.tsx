@@ -1,20 +1,39 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import { CheckCircle2 } from "lucide-react";
-import type { RoleKey } from "../types";
+import {
+  FeatureInput,
+  FeatureSelect,
+} from "../../../components/ui/FeatureControls";
+import { FeatureField } from "../../../components/ui/FeatureForms";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../../components/ui/FeatureOverlay";
+import { FeatureAlert } from "../../../components/ui/FeatureStates";
+import type { IdentityInvitationView, InviteStoreMemberInput } from "../types";
 
 export function InviteMemberModal({
   isOpen,
   onClose,
+  onInvite,
+  onResendInvitation,
   availableRoles,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  availableRoles: { role: RoleKey; label: string }[];
+  onInvite: (input: InviteStoreMemberInput) => Promise<IdentityInvitationView>;
+  onResendInvitation: (invitationId: string) => Promise<IdentityInvitationView>;
+  availableRoles: { label: string; role: InviteStoreMemberInput["role"] }[];
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<RoleKey>("salesman");
-  const [status, setStatus] = useState<"idle" | "success">("idle");
+  const [role, setRole] = useState<InviteStoreMemberInput["role"]>("salesman");
+  const [status, setStatus] = useState<"idle" | "saving" | "success">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [failedInvitationId, setFailedInvitationId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -22,102 +41,153 @@ export function InviteMemberModal({
       setName("");
       setRole("salesman");
       setStatus("idle");
+      setError(null);
+      setFailedInvitationId(null);
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (status !== "success") return;
+    const timeout = window.setTimeout(onClose, 1400);
+    return () => window.clearTimeout(timeout);
+  }, [onClose, status]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isSaving = status === "saving";
+  const handleClose = () => {
+    if (!isSaving) onClose();
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!email) return;
-    setStatus("success");
-    setTimeout(() => {
-      onClose();
-    }, 2000);
+    setStatus("saving");
+    setError(null);
+    setFailedInvitationId(null);
+    try {
+      const invitation = await onInvite({
+        email,
+        ...(name.trim() ? { name: name.trim() } : {}),
+        role,
+      });
+      if (invitation.status === "send_failed") {
+        setFailedInvitationId(invitation.id);
+        setError("Convite criado, mas o envio pelo Clerk falhou.");
+        setStatus("idle");
+        return;
+      }
+      setStatus("success");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setStatus("idle");
+    }
+  };
+
+  const handleResend = async () => {
+    if (!failedInvitationId) return;
+    setStatus("saving");
+    setError(null);
+    try {
+      const invitation = await onResendInvitation(failedInvitationId);
+      if (invitation.status !== "sent") {
+        setFailedInvitationId(invitation.id);
+        setError("Convite reenviado, mas ainda não foi marcado como enviado.");
+        setStatus("idle");
+        return;
+      }
+      setStatus("success");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setStatus("idle");
+    }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay/40 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-line/45 bg-panel p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-        {status === "success" ? (
-          <div className="flex flex-col items-center justify-center py-6 text-center">
-            <CheckCircle2 className="size-12 text-emerald-500 animate-bounce" />
-            <h4 className="text-base font-black text-app-text mt-4">
-              Convite Enviado!
-            </h4>
-            <p className="text-xs font-bold text-muted mt-1 max-w-xs leading-relaxed">
-              O convite de acesso foi enviado com sucesso para{" "}
-              <strong className="text-app-text">{email}</strong>.
-            </p>
-          </div>
-        ) : (
-          <>
-            <h4 className="text-base font-black text-app-text">
-              Convidar Novo Membro
-            </h4>
-            <p className="text-xs font-bold text-muted mt-1 leading-relaxed">
-              Envie um convite por e-mail para cadastrar um novo integrante na
-              equipe de colaboradores da loja.
-            </p>
-
-            <form onSubmit={handleSubmit} className="grid gap-4 mt-4">
-              <label className="grid gap-1.5 text-xs font-bold text-app-text">
-                <span>E-mail do Membro</span>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="exemplo@email.com"
-                  className="w-full min-h-10 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none focus:border-accent"
-                />
-              </label>
-
-              <label className="grid gap-1.5 text-xs font-bold text-app-text">
-                <span>Nome Completo (Opcional)</span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: João da Silva"
-                  className="w-full min-h-10 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none focus:border-accent"
-                />
-              </label>
-
-              <label className="grid gap-1.5 text-xs font-bold text-app-text">
-                <span>Cargo Padrão</span>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as RoleKey)}
-                  className="w-full min-h-10 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none focus:border-accent"
-                >
-                  {availableRoles.map((item) => (
-                    <option key={item.role} value={item.role}>
-                      {item.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="flex items-center justify-end gap-2 mt-2">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="h-9 rounded-lg border border-line bg-panel px-4 text-xs font-black text-muted hover:text-app-text cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="h-9 rounded-lg bg-accent px-4 text-xs font-black text-inverse hover:bg-accent-strong cursor-pointer"
-                >
-                  Enviar Convite
-                </button>
-              </div>
-            </form>
-          </>
-        )}
-      </div>
-    </div>
+    <FeatureDialog
+      footer={
+        status === "success" ? null : (
+          <FeatureDialogActions
+            cancelDisabled={isSaving}
+            confirmDisabled={!failedInvitationId && availableRoles.length === 0}
+            confirmLabel={
+              failedInvitationId ? "Reenviar convite" : "Enviar convite"
+            }
+            isLoading={isSaving}
+            loadingLabel={failedInvitationId ? "Reenviando" : "Enviando"}
+            onCancel={handleClose}
+            onConfirm={() =>
+              failedInvitationId
+                ? void handleResend()
+                : formRef.current?.requestSubmit()
+            }
+          />
+        )
+      }
+      isOpen={isOpen}
+      onClose={handleClose}
+      title={status === "success" ? "Convite enviado" : "Convidar novo membro"}
+    >
+      {status === "success" ? (
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <CheckCircle2 className="size-12 text-emerald-500" />
+          <p className="mt-3 max-w-xs text-sm font-bold text-muted">
+            O convite de acesso foi enviado com sucesso para{" "}
+            <strong className="text-app-text">{email}</strong>.
+          </p>
+        </div>
+      ) : (
+        <form
+          className="grid gap-4"
+          onSubmit={(event) => void handleSubmit(event)}
+          ref={formRef}
+        >
+          <p className="text-sm font-bold text-muted">
+            Envie um convite por e-mail para cadastrar um integrante na equipe
+            da loja. A permissão só é concedida depois do aceite pelo Clerk.
+          </p>
+          <FeatureField label="E-mail do membro">
+            <FeatureInput
+              disabled={isSaving}
+              onChange={(event) => {
+                setFailedInvitationId(null);
+                setEmail(event.target.value);
+              }}
+              placeholder="exemplo@email.com"
+              required
+              type="email"
+              value={email}
+            />
+          </FeatureField>
+          <FeatureField label="Nome completo">
+            <FeatureInput
+              disabled={isSaving}
+              onChange={(event) => {
+                setFailedInvitationId(null);
+                setName(event.target.value);
+              }}
+              placeholder="Ex: João da Silva"
+              type="text"
+              value={name}
+            />
+          </FeatureField>
+          <FeatureField label="Cargo padrão">
+            <FeatureSelect<InviteStoreMemberInput["role"]>
+              disabled={isSaving || availableRoles.length === 0}
+              onChange={(value) => {
+                setFailedInvitationId(null);
+                setRole(value);
+              }}
+              options={availableRoles.map((item) => ({
+                label: item.label,
+                value: item.role,
+              }))}
+              value={role}
+            />
+          </FeatureField>
+          {error ? <FeatureAlert>{error}</FeatureAlert> : null}
+        </form>
+      )}
+    </FeatureDialog>
   );
 }

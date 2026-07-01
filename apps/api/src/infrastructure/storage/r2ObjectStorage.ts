@@ -1,15 +1,17 @@
 import {
+  DeleteObjectCommand,
   GetObjectCommand,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
-import type {
-  CreateObjectUploadInput,
-  ObjectStorage,
-  ObjectUpload,
-} from "../../shared/storage/objectStorage.js";
+import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
+import {
+  createR2PublicUrl,
+  createR2StorageKey,
+  sanitizeR2FileName,
+} from "./r2ObjectStorageKeys.js";
 
 export type R2ObjectStorageOptions = {
   accessKeyId: string;
@@ -21,6 +23,7 @@ export type R2ObjectStorageOptions = {
   secretAccessKey: string;
   signer?: R2UrlSigner;
   downloadUrlExpiresSeconds?: number;
+  objectDeleter?: R2ObjectDeleter;
   uniqueId?: () => string;
   uploadUrlExpiresSeconds?: number;
 };
@@ -36,6 +39,11 @@ export type R2UploadSigner = R2UrlSigner;
 export type R2ObjectWriter = (
   client: S3Client,
   command: PutObjectCommand,
+) => Promise<void>;
+
+export type R2ObjectDeleter = (
+  client: S3Client,
+  command: DeleteObjectCommand,
 ) => Promise<void>;
 
 export class R2ObjectStorageConfigError extends Error {
@@ -55,6 +63,7 @@ export function createR2ObjectStorage(
   assertRequired(options, "secretAccessKey");
 
   const downloadExpiresIn = options.downloadUrlExpiresSeconds ?? 300;
+  const objectDeleter = options.objectDeleter ?? defaultObjectDeleter;
   const uploadExpiresIn = options.uploadUrlExpiresSeconds ?? 900;
   const objectWriter = options.objectWriter ?? defaultObjectWriter;
   const publicBaseUrl = options.publicBaseUrl.replace(/\/+$/, "");
@@ -73,7 +82,7 @@ export function createR2ObjectStorage(
   return {
     close: () => client.destroy(),
     async createUpload(input) {
-      const storageKey = createStorageKey(input, uniqueId());
+      const storageKey = createR2StorageKey(input, uniqueId());
       const command = new PutObjectCommand({
         Bucket: options.bucketName,
         ContentType: input.contentType,
@@ -83,7 +92,7 @@ export function createR2ObjectStorage(
 
       return {
         expiresAt: new Date(Date.now() + uploadExpiresIn * 1000),
-        publicUrl: createPublicUrl(publicBaseUrl, storageKey),
+        publicUrl: createR2PublicUrl(publicBaseUrl, storageKey),
         storageKey,
         uploadHeaders: { "content-type": input.contentType },
         uploadMethod: "PUT",
@@ -94,7 +103,7 @@ export function createR2ObjectStorage(
       const command = new GetObjectCommand({
         Bucket: options.bucketName,
         Key: input.storageKey,
-        ResponseContentDisposition: `attachment; filename="${sanitizeFileName(input.fileName)}"`,
+        ResponseContentDisposition: `attachment; filename="${sanitizeR2FileName(input.fileName)}"`,
         ...(input.mimeType ? { ResponseContentType: input.mimeType } : {}),
       });
       return {
@@ -103,11 +112,20 @@ export function createR2ObjectStorage(
         expiresAt: new Date(Date.now() + downloadExpiresIn * 1000),
       };
     },
+    async deleteObject(input) {
+      await objectDeleter(
+        client,
+        new DeleteObjectCommand({
+          Bucket: options.bucketName,
+          Key: input.storageKey,
+        }),
+      );
+    },
     getPublicUrl(storageKey) {
-      return createPublicUrl(publicBaseUrl, storageKey);
+      return createR2PublicUrl(publicBaseUrl, storageKey);
     },
     async putObject(input) {
-      const storageKey = createStorageKey(input, uniqueId());
+      const storageKey = createR2StorageKey(input, uniqueId());
       const command = new PutObjectCommand({
         Body: input.body,
         Bucket: options.bucketName,
@@ -116,7 +134,7 @@ export function createR2ObjectStorage(
       });
       await objectWriter(client, command);
       return {
-        publicUrl: createPublicUrl(publicBaseUrl, storageKey),
+        publicUrl: createR2PublicUrl(publicBaseUrl, storageKey),
         storageKey,
       };
     },
@@ -194,44 +212,6 @@ function parseExpiresSeconds(
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function createStorageKey(
-  input:
-    | CreateObjectUploadInput
-    | {
-        fileName: string;
-        scopeSegments: readonly string[];
-      },
-  uniqueId: string,
-): string {
-  const fileName = sanitizeFileName(input.fileName);
-  const uniqueName = `${Date.now()}-${uniqueId}-${fileName}`;
-
-  return [...input.scopeSegments.map(sanitizeScopeSegment), uniqueName].join(
-    "/",
-  );
-}
-
-function sanitizeScopeSegment(segment: string): string {
-  return segment
-    .normalize("NFKD")
-    .replace(/[^\w.-]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "")
-    .toLowerCase();
-}
-
-function sanitizeFileName(fileName: string): string {
-  const cleaned = sanitizeScopeSegment(fileName);
-  return cleaned || "upload";
-}
-
-function createPublicUrl(publicBaseUrl: string, storageKey: string): string {
-  return `${publicBaseUrl}/${storageKey
-    .split("/")
-    .map((part) => encodeURIComponent(part))
-    .join("/")}`;
-}
-
 async function defaultSigner(
   client: S3Client,
   command: GetObjectCommand | PutObjectCommand,
@@ -243,6 +223,13 @@ async function defaultSigner(
 async function defaultObjectWriter(
   client: S3Client,
   command: PutObjectCommand,
+): Promise<void> {
+  await client.send(command);
+}
+
+async function defaultObjectDeleter(
+  client: S3Client,
+  command: DeleteObjectCommand,
 ): Promise<void> {
   await client.send(command);
 }

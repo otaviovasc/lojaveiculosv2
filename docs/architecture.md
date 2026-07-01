@@ -71,6 +71,19 @@ workflow backend during migration. V2 must call it through
 translates repasses API details, and stores repasses ids only as external
 references.
 
+## Frontend Form Direction
+
+Feature forms in `apps/web` must use the shared feature primitives
+(`FeatureField`, `FeatureInput`, `FeatureSelect`, `FeatureActionButton`) before
+adding local markup. Masks for Brazilian documents, phones, and CEP values must
+come from the existing mask utilities, not from screen-local string handling.
+
+Client-side validation should mirror the backend controller schema for the same
+payload and block obviously invalid submissions before the API call. Backend
+validation remains authoritative and must return field-level issues for 400
+responses so logs and UI messages identify the failing field without logging
+request bodies.
+
 ## Database Direction
 
 The new DB must use English-only `lower_snake_case` table and column names.

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import {
   createR2ObjectStorage,
   createR2ObjectStorageFromEnv,
@@ -101,5 +101,23 @@ describe("R2 object storage", () => {
       expiresAt: new Date("2026-01-01T00:05:00.000Z"),
     });
     vi.useRealTimers();
+  });
+
+  it("deletes objects by storage key", async () => {
+    const objectDeleter = vi.fn(async (_client, command) => {
+      expect(command).toBeInstanceOf(DeleteObjectCommand);
+    });
+    const storage = createR2ObjectStorage({
+      accessKeyId: "key",
+      bucketName: "app-media",
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      objectDeleter,
+      publicBaseUrl: "https://media.lojaveiculos.com.br",
+      secretAccessKey: "secret",
+    });
+
+    await storage.deleteObject?.({ storageKey: "media/front.jpg" });
+
+    expect(objectDeleter).toHaveBeenCalledOnce();
   });
 });

@@ -1609,13 +1609,11 @@
                 · identity
               </td>
               <td>
-                <span class="deferred">deferred</span
-                ><br />defer-placeholder<br />review:
-                <span class="deferred">deferred</span>
+                <span class="active">active</span
+                ><br />account-provisioning<br />review:
+                <span class="needs-review">needs-review</span>
               </td>
-              <td>
-                Operational Depth<br /><span class="planned">planned</span>
-              </td>
+              <td>Operational Depth<br /><span class="active">active</span></td>
               <td>
                 <span class="pill"
                   >lojaveiculos:src/app/login/[[...rest]]/page.tsx</span
@@ -1630,7 +1628,11 @@
               <td>
                 <span class="pill">lvv2-f012-settings-identity-roles</span>
               </td>
-              <td>visual optional<br /><code>n/a</code></td>
+              <td>
+                visual required<br /><code
+                  >pnpm --filter @lojaveiculosv2/web typecheck</code
+                >
+              </td>
             </tr>
             <tr data-priority="P1">
               <td>
@@ -1642,13 +1644,11 @@
                 · agency
               </td>
               <td>
-                <span class="deferred">deferred</span
-                ><br />defer-placeholder<br />review:
-                <span class="deferred">deferred</span>
+                <span class="active">active</span
+                ><br />account-provisioning<br />review:
+                <span class="needs-review">needs-review</span>
               </td>
-              <td>
-                Operational Depth<br /><span class="planned">planned</span>
-              </td>
+              <td>Operational Depth<br /><span class="active">active</span></td>
               <td>
                 <span class="pill">lojaveiculos:src/app/agency/layout.tsx</span
                 ><span class="pill"
@@ -1663,7 +1663,11 @@
                 <span class="pill">lvv2-f012-settings-identity-roles</span
                 ><span class="pill">lvv2-f016-billing-plans-entitlements</span>
               </td>
-              <td>visual optional<br /><code>n/a</code></td>
+              <td>
+                visual required<br /><code
+                  >pnpm --filter @lojaveiculosv2/web typecheck</code
+                >
+              </td>
             </tr>
             <tr data-priority="defer">
               <td>
@@ -2081,6 +2085,60 @@
             </tr>
           </tbody>
         </table>
+      </section>
+      <section class="panel">
+        <h2>Auth And Account Provisioning Slice</h2>
+        <p class="muted">
+          Current working-tree status: the frontend now calls real V2 account
+          provisioning endpoints for owner onboarding, platform agency creation,
+          agency store creation, and store member invitations. Invite success is
+          provider-backed; failed sends now persist <code>send_failed</code>
+          invitations and expose resend instead of simulating member creation.
+        </p>
+        <div class="remediation-grid">
+          <article class="remediation">
+            <strong>Implemented</strong>
+            <span class="pill">/onboarding owner store form</span>
+            <span class="pill">/platform/admin agency form</span>
+            <span class="pill">agency store creation API call</span>
+            <span class="pill">settings member invitations</span>
+            <span class="pill">failed invite resend</span>
+            <span class="pill">Clerk React provider shell</span>
+            <span class="pill">hosted sign-in/sign-up routes</span>
+            <span class="pill">session bootstrap route gate</span>
+            <span class="pill">account-aware route guards</span>
+            <span class="pill">bootstrapped store slug runtime context</span>
+            <span class="pill">persistent pending invitation sidebar</span>
+            <span class="pill">Clerk invite redirect fallback</span>
+          </article>
+          <article class="remediation">
+            <strong>UX still required</strong>
+            <span class="pill">store switcher across all modules</span>
+            <span class="pill">Portuguese Clerk invitation email</span>
+            <span class="pill">Portuguese Clerk invitation sign-up</span>
+            <span class="pill">verified-email edge copy</span>
+          </article>
+          <article class="remediation">
+            <strong>Admin depth still required</strong>
+            <span class="pill">account inspection</span>
+            <span class="pill">membership suspension</span>
+            <span class="pill">entitlement review</span>
+            <span class="pill">audit search</span>
+            <span class="pill">invitation list/revoke workflow</span>
+            <span class="pill">critical audit/outbox design</span>
+          </article>
+        </div>
+        <p class="muted">
+          Clerk production checklist: customize the invitation email template
+          and hosted invitation sign-up/sign-in copy in Portuguese. Invitation
+          links must return to the app session bootstrap page
+          <code>/auth/session</code>; the backend uses
+          <code>CLERK_INVITATION_REDIRECT_URL</code>, then
+          <code>CLERK_AFTER_SIGN_UP_URL</code>, then
+          <code>PUBLIC_APP_URL/auth/session</code>. If this is missing in a
+          Clerk-hosted dev flow, accepted invites can land on
+          <code>/default-redirect</code> instead of the V2 app.
+        </p>
       </section>
     </main>
     <script>

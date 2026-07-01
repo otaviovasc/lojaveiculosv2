@@ -5,6 +5,7 @@ import type {
   MarketplaceListingProjection,
   MarketplaceOverview,
   MarketplaceProvider,
+  MarketplaceProviderListing,
   MarketplaceRepository,
 } from "./ports/marketplaceRepository.js";
 import { MarketplaceAccountMissingError } from "./ports/marketplaceRepository.js";
@@ -14,6 +15,7 @@ const providers = ["olx", "mercado_livre"] satisfies MarketplaceProvider[];
 export function createTestMarketplaceRepository(): MarketplaceRepository {
   let accounts: MarketplaceAccount[] = [];
   let jobs: MarketplaceJob[] = [];
+  let providerListings: MarketplaceProviderListing[] = [];
 
   return {
     async createSyncJob(input) {
@@ -40,6 +42,17 @@ export function createTestMarketplaceRepository(): MarketplaceRepository {
     },
     async findListingProjection(input) {
       return toMemoryListing(input.listingId);
+    },
+    async findProviderListing(input) {
+      return (
+        providerListings.find(
+          (item) =>
+            item.accountId === input.accountId &&
+            item.listingId === input.listingId &&
+            item.storeId === input.storeId &&
+            item.tenantId === input.tenantId,
+        ) ?? null
+      );
     },
     async findSyncJob(input) {
       return findScopedJob(jobs, accounts, input) ?? null;
@@ -70,7 +83,18 @@ export function createTestMarketplaceRepository(): MarketplaceRepository {
             }
           : job,
       );
-      return findJob(jobs, input.jobId);
+      const job = findJob(jobs, input.jobId);
+      if (input.externalId && input.listingId) {
+        providerListings = upsertProviderListing(providerListings, {
+          accountId: job.accountId,
+          externalId: input.externalId,
+          listingId: input.listingId,
+          metadata: input.metadata ?? {},
+          storeId: input.storeId,
+          tenantId: input.tenantId,
+        });
+      }
+      return job;
     },
     async markJobFailed(input) {
       assertScopedJob(jobs, accounts, input);
@@ -119,6 +143,20 @@ export function createTestMarketplaceRepository(): MarketplaceRepository {
   };
 }
 
+function upsertProviderListing(
+  providerListings: readonly MarketplaceProviderListing[],
+  providerListing: MarketplaceProviderListing,
+): MarketplaceProviderListing[] {
+  return [
+    ...providerListings.filter(
+      (item) =>
+        item.accountId !== providerListing.accountId ||
+        item.listingId !== providerListing.listingId,
+    ),
+    providerListing,
+  ];
+}
+
 function assertScopedJob(
   jobs: MarketplaceJob[],
   accounts: MarketplaceAccount[],
@@ -152,10 +190,12 @@ function findJob(jobs: readonly MarketplaceJob[], jobId: string) {
 function toMemoryListing(listingId: string): MarketplaceListingProjection {
   return {
     description: "Anuncio de teste para integracao.",
+    isVisibleOnPublicSite: true,
     listingId,
-    mediaUrls: [],
+    mediaUrls: ["https://cdn.local/vehicle-front.jpg"],
     modelYear: 2024,
     priceCents: 10000000,
+    status: "published",
     title: "Veiculo de teste",
     vehicleType: "cars",
   };

@@ -30,15 +30,19 @@ Core runtime:
 Authentication:
 
 - `CLERK_SECRET_KEY`
-- `CLERK_JWT_KEY`
-- `CLERK_AUDIENCE`
 - `CLERK_AUTHORIZED_PARTIES`
 - `VITE_CLERK_PUBLISHABLE_KEY`
-- `CLERK_WEBHOOK_SECRET`
 - `CLERK_SIGN_IN_URL`
 - `CLERK_SIGN_UP_URL`
 - `CLERK_AFTER_SIGN_IN_URL`
 - `CLERK_AFTER_SIGN_UP_URL`
+- `CLERK_INVITATION_REDIRECT_URL`
+
+Optional auth hardening and future webhook support:
+
+- `CLERK_JWT_KEY` for networkless JWT verification.
+- `CLERK_AUDIENCE` only after Clerk tokens include the matching `aud` claim.
+- `CLERK_WEBHOOK_SECRET` when a Clerk webhook endpoint is mounted.
 
 Object storage:
 
@@ -144,7 +148,8 @@ pnpm run validate
 3. Configure product API service variables from `.env.example`.
 4. Configure web service variables from `.env.example`.
 5. Configure R2 values after bucket creation.
-6. Configure Clerk production keys and authorized parties.
+6. Configure Clerk production keys, authorized parties, invitation redirect URL,
+   and Portuguese invitation/auth templates.
 7. Configure Asaas and SPEDY values manually.
 8. Configure public domains and storefront DNS.
 9. Deploy API and web.

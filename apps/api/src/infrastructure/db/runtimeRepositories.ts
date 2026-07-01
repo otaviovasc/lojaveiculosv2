@@ -8,6 +8,7 @@ import {
   assertRuntimeIdentityVerifierConfig,
   allowsMemoryRuntimeFallback,
   createAuditDb,
+  createRuntimeClerkAccountProviders,
   createRuntimeIdentityVerifier,
   resolveRuntimeDatabaseUrl,
   RuntimeDatabaseConfigError,
@@ -69,6 +70,7 @@ export function createRuntimeAppDependencies(
   const productDb = createProductDb(databaseUrl, env);
   const auditDatabase = createAuditDb(env);
   const objectStorage = createR2ObjectStorageFromEnv(env);
+  const clerkAccountProviders = createRuntimeClerkAccountProviders(env);
   const resources: RuntimeResource[] = [
     productDb.resource,
     ...(auditDatabase
@@ -93,6 +95,7 @@ export function createRuntimeAppDependencies(
     return {
       appOptions: createRuntimeHttpAppOptions({
         auditDb: auditDatabase?.db ?? null,
+        clerkAccountProviders,
         db: productDb.db,
         env,
         identityVerifier: createRuntimeIdentityVerifier(env),

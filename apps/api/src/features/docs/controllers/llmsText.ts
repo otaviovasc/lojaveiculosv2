@@ -45,6 +45,8 @@ export const llmsText = `# Loja Veiculos API
 - Update listing details: PATCH /api/v1/inventory/listings/{listingId}
 - Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
 - Update listing price: PATCH /api/v1/inventory/listings/{listingId}/price
+- Publish listing: POST /api/v1/inventory/listings/{listingId}/publish
+- Unpublish listing: POST /api/v1/inventory/listings/{listingId}/unpublish
 - Attach listing unit: PUT /api/v1/inventory/listings/{listingId}/unit
 - Update listing unit: PATCH /api/v1/inventory/units/{unitId}
 - Create vehicle cost: POST /api/v1/inventory/units/{unitId}/costs
@@ -58,6 +60,8 @@ export const llmsText = `# Loja Veiculos API
 - Reserve unit: POST /api/v1/inventory/units/{unitId}/reserve
 - Sell unit: POST /api/v1/inventory/units/{unitId}/sell
 - Release unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/release
+- Cancel unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/cancel
+- Expire unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/expire
 - Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
 
 ## Authentication
@@ -76,10 +80,12 @@ export const llmsText = `# Loja Veiculos API
 - inventory.update_price: reserved for price edits.
 - inventory.update_status: reserved for listing lifecycle edits.
 - inventory.update_unit: reserved for physical/unit inventory edits.
+- inventory.media_update: required to reorder media or update media metadata/visibility.
+- inventory.media_delete: required to delete media records and request object cleanup.
 - inventory.cost_create: required to create vehicle costs and linked finance entries.
 - inventory.checklist_read: required to read vehicle readiness checklists.
 - inventory.checklist_update: required to create and update vehicle readiness checklists.
-- inventory.reserve: required to reserve or release vehicle unit reservations and emit reservation receipts.
+- inventory.reserve: required to reserve, release, cancel, or expire vehicle unit reservations and emit reservation receipts.
 - inventory.sell: required to sell vehicle units and emit sale documents.
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
@@ -119,6 +125,8 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/listings/{listingId}: updates listing details; workflow statuses are blocked.
 - PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
 - PATCH /api/v1/inventory/listings/{listingId}/price: updates price; requires inventory.update_price.
+- POST /api/v1/inventory/listings/{listingId}/publish: publishes a listing with explicit/generated public slug, visible flag, status history, and audit evidence; requires inventory.update_status.
+- POST /api/v1/inventory/listings/{listingId}/unpublish: removes a listing from public storefront visibility while preserving its slug; requires inventory.update_status.
 - PUT /api/v1/inventory/listings/{listingId}/unit: attaches an operational unit; requires inventory.create.
 - PATCH /api/v1/inventory/units/{unitId}: updates physical/unit fields; workflow statuses are blocked.
 - POST /api/v1/inventory/units/{unitId}/costs: records a vehicle cost and creates linked finance entry rows.
@@ -127,16 +135,24 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
 - POST /api/v1/inventory/units/{unitId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions scoped to the unit folder.
 - POST /api/v1/inventory/units/{unitId}/media: records uploaded R2 object as unit media after scoped storage validation.
-- PATCH /api/v1/inventory/units/{unitId}/media/reorder: reorders unit media and returns the updated listing detail.
-- PATCH /api/v1/inventory/units/{unitId}/media/{mediaId}: updates unit media metadata and visibility.
-- DELETE /api/v1/inventory/units/{unitId}/media/{mediaId}: deletes one unit media record and returns the updated listing detail.
+- PATCH /api/v1/inventory/units/{unitId}/media/reorder: reorders unit media and returns the updated listing detail; requires inventory.media_update.
+- PATCH /api/v1/inventory/units/{unitId}/media/{mediaId}: updates unit media metadata and visibility; requires inventory.media_update.
+- DELETE /api/v1/inventory/units/{unitId}/media/{mediaId}: soft-deletes one unit media record, requests backing object cleanup when storage supports it, and returns the updated listing detail; requires inventory.media_delete.
 - POST /api/v1/inventory/units/{unitId}/reserve: reserves a unit, emits reservation_receipt, and creates linked finance entries.
 - POST /api/v1/inventory/units/{unitId}/sell: sells a unit, emits sale documents, and creates linked finance entries.
 - POST /api/v1/inventory/units/{unitId}/reservation/release: releases a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
+- POST /api/v1/inventory/units/{unitId}/reservation/cancel: operator-cancels a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
+- POST /api/v1/inventory/units/{unitId}/reservation/expire: expires a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
 
 ## Current identity endpoints
+- GET /api/v1/session/bootstrap: resolves the authenticated Clerk user, store access, tenant memberships, platform admin flag, and onboarding status.
+- POST /api/v1/onboarding/owner-store: creates the first owner store with trial entitlements; validates CNPJ and returns field-level validation issues with requestId on 400.
+- POST /api/v1/admin/agencies: creates an agency tenant and optional first-user invitation; requires platform/tenant management access.
+- POST /api/v1/agency/stores: creates one store under an active agency tenant; requires agency tenant role and store.manage.
 - GET /api/v1/identity/roles: returns agency, owner, supervisor, salesman, and investor role templates, grouped permission catalog, memberships, assignability, base permissions, effective permissions, and overrides.
+- POST /api/v1/identity/invitations: creates and sends a store member invitation for owner, supervisor, salesman, or investor roles.
+- POST /api/v1/identity/invitations/{invitationId}/resend: resends a pending, failed, sent, or expired identity invitation.
 - PATCH /api/v1/identity/memberships/{membershipId}/access: updates one member role and exact allow/deny permission overrides. Agency actors can manage owners; owners can manage supervisors, salespeople, and investors.
 
 ## Current billing endpoints
@@ -176,7 +192,7 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/marketplaces/oauth/complete: exchanges an OAuth code for provider credentials and stores encrypted tokens server-side; requires marketplace.manage.
 - PUT /api/v1/marketplaces/integrations/{provider}: creates, activates, pauses, or marks one marketplace account; provider is olx or mercado_livre; requires marketplace.manage.
 - POST /api/v1/marketplaces/integrations/{provider}/sync-jobs: queues inventory, lead, publish, update, or unpublish sync jobs after provider setup; requires the matching marketplace permission.
-- POST /api/v1/marketplaces/sync-jobs/{jobId}/run: runs one queued provider job, maps the scoped listing payload, calls the provider gateway, stores provider external ids, and marks the job succeeded or failed.
+- POST /api/v1/marketplaces/sync-jobs/{jobId}/run: runs one queued provider job, maps the scoped listing payload for publish/update jobs, fails closed before provider IO unless the listing is not deleted, published, public-visible, backed by an eligible unit, and has at least one public photo, allows unpublish from the stored provider external id after the local listing projection is gone, then stores provider external ids and marks the job succeeded or failed.
 - Mercado Livre runtime uses OAuth token exchange and item endpoints when MERCADO_LIVRE_CLIENT_ID is configured.
 - OLX runtime is partner-configurable through OLX_AUTHORIZATION_URL, OLX_API_BASE_URL, OLX_TOKEN_URL, and OLX_LISTINGS_PATH because public official OLX Brasil API docs were not available in this environment.
 - Provider tokens are encrypted at rest with MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY in production and redacted from API responses, docs, audit metadata, and UI state.

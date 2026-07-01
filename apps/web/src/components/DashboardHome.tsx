@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModuleId } from "../app/modules";
+import { readRuntimeStoreSlug } from "../features/account/currentStore";
 import type { AnalyticsApi } from "../features/analytics/apiClient";
 import {
   DASHBOARD_RESOURCE_CYCLE_MS,
@@ -36,6 +37,7 @@ export function DashboardHome({
   const containerRef = useRef<HTMLDivElement>(null);
   const bodyState = getDashboardBodyState(status, dashboard);
   const stats = createDashboardStats(dashboard);
+  const publicStoreSlug = readRuntimeStoreSlug();
 
   const refresh = useCallback(async () => {
     setStatus({ kind: "loading" });
@@ -64,7 +66,8 @@ export function DashboardHome({
   }, []);
 
   const handleCopyLink = async () => {
-    const linkText = `${getDashboardPublicSlug()}.lojaveiculos.com.br`;
+    if (!publicStoreSlug) return;
+    const linkText = `${publicStoreSlug}.lojaveiculos.com.br`;
     try {
       await navigator.clipboard.writeText(linkText);
       setCopyState("copied");
@@ -75,7 +78,8 @@ export function DashboardHome({
   };
 
   const handleVisitStore = () => {
-    const url = `https://${getDashboardPublicSlug()}.lojaveiculos.com.br`;
+    if (!publicStoreSlug) return;
+    const url = `https://${publicStoreSlug}.lojaveiculos.com.br`;
     window.open(url, "_blank", "noopener");
   };
 
@@ -126,6 +130,7 @@ export function DashboardHome({
           copyState={copyState}
           onCopyLink={() => void handleCopyLink()}
           onVisitStore={handleVisitStore}
+          publicSlug={publicStoreSlug}
         />
         <DashboardHomeKpis stats={stats} />
         <div className="dashboard-panels-grid">
@@ -136,6 +141,7 @@ export function DashboardHome({
             setResourceIndex={setResourceIndex}
           />
           <DashboardHomeSidebarPanel
+            dashboard={dashboard}
             onNavigate={onNavigate}
             pushEnabled={pushEnabled}
             setPushEnabled={setPushEnabled}
@@ -144,14 +150,6 @@ export function DashboardHome({
       </main>
     </div>
   );
-}
-
-function getDashboardPublicSlug() {
-  const env = import.meta.env as {
-    DEV?: boolean;
-    VITE_DEV_STORE_SLUG?: string;
-  };
-  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "loja");
 }
 
 function DashboardHomeLoadingSkeleton() {

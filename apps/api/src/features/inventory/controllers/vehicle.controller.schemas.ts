@@ -149,6 +149,15 @@ export const statusSchema = z.object({
   status: z.enum(listingStatuses),
 });
 
+export const publishListingSchema = z.object({
+  publicSlug: z.string().trim().min(1).max(191).nullable().optional(),
+  reason: z.string().trim().min(1).nullable().optional(),
+});
+
+export const unpublishListingSchema = z.object({
+  reason: z.string().trim().min(1).nullable().optional(),
+});
+
 export const costSchema = z.object({
   amountCents: z.number().int().positive(),
   costDate: z.coerce.date().optional(),

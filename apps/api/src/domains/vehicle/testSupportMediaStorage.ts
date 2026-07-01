@@ -26,6 +26,7 @@ export function createTestVehicleMediaStorage(): VehicleMediaStorage {
         uploadUrl: `https://upload.local/${storageKey}`,
       };
     }),
+    deleteObject: vi.fn(async () => undefined),
     getPublicUrl: (storageKey) => `https://cdn.local/${storageKey}`,
     putObject: vi.fn(async (input: PutVehicleStorageObjectInput) => {
       const storageKey = createStorageKey({

@@ -27,8 +27,19 @@ export type RoleMembership = {
   user: RoleMembershipUser;
 };
 
+export type RolePendingInvitation = {
+  email: string;
+  id: string;
+  name: string | null;
+  role: RoleKey;
+  status: "pending" | "sent";
+  storeId: StoreId;
+  tenantId: TenantId;
+};
+
 export type RoleManagementState = {
   memberships: readonly RoleMembership[];
+  pendingInvitations: readonly RolePendingInvitation[];
   storeId: StoreId;
   tenantId: TenantId;
 };

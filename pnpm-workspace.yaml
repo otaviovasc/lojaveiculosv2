@@ -25,5 +25,6 @@ minimumReleaseAgeExclude:
   - "@tanstack/react-query-devtools@5.101.1"
   - prettier@3.9.3
 allowBuilds:
+  "@clerk/shared": false
   esbuild: true
   msw: true

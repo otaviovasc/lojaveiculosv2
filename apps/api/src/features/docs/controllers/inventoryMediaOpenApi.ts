@@ -47,7 +47,7 @@ export const inventoryMediaPaths = {
       tags: ["Inventory"],
       summary: "Reorder unit media",
       operationId: "reorderInventoryUnitMedia",
-      security: [{ bearerAuth: ["inventory.create"] }],
+      security: [{ bearerAuth: ["inventory.media_update"] }],
       parameters: [unitIdParameter],
       requestBody: jsonRequest("ReorderVehicleMediaRequest"),
       responses: {
@@ -62,7 +62,7 @@ export const inventoryMediaPaths = {
       tags: ["Inventory"],
       summary: "Update unit media",
       operationId: "updateInventoryUnitMedia",
-      security: [{ bearerAuth: ["inventory.create"] }],
+      security: [{ bearerAuth: ["inventory.media_update"] }],
       parameters: [unitIdParameter, mediaIdParameter],
       requestBody: jsonRequest("UpdateVehicleMediaRequest"),
       responses: {
@@ -74,8 +74,10 @@ export const inventoryMediaPaths = {
     delete: {
       tags: ["Inventory"],
       summary: "Delete unit media",
+      description:
+        "Soft-deletes one unit media record, requests backing object cleanup when storage supports it, and returns the updated listing detail.",
       operationId: "deleteInventoryUnitMedia",
-      security: [{ bearerAuth: ["inventory.create"] }],
+      security: [{ bearerAuth: ["inventory.media_delete"] }],
       parameters: [unitIdParameter, mediaIdParameter],
       responses: {
         "200": detailResponse,

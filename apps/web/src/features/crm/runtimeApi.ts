@@ -5,6 +5,12 @@ import {
 } from "./productCrmApi";
 import { createCrmWhatsappApi, type CrmWhatsappApi } from "./crmWhatsappApi";
 import type { ProductCrmAuth } from "./productCrmTypes";
+import { readRuntimeStoreSlug } from "../account/currentStore";
+import {
+  createRuntimeActorAuth,
+  readClerkToken,
+  readRuntimeApiBaseUrl,
+} from "../account/runtimeAuth";
 
 export function createRuntimeProductCrmApi(): ProductCrmApi {
   return {
@@ -86,7 +92,6 @@ export async function createProductCrmApiOptions(): Promise<CreateProductCrmApiO
 }
 
 type CrmRuntimeEnv = {
-  DEV?: boolean;
   VITE_DEV_CLERK_SESSION_TOKEN?: string;
   VITE_DEV_CLERK_USER_ID?: string;
   VITE_DEV_STORE_SLUG?: string;
@@ -94,42 +99,20 @@ type CrmRuntimeEnv = {
 
 export function createProductCrmAuthFromEnv(
   accessToken?: string | null,
-  env: CrmRuntimeEnv = import.meta.env,
+  env: CrmRuntimeEnv = import.meta.env as CrmRuntimeEnv,
 ): ProductCrmAuth {
-  const clerkUserId =
-    env.VITE_DEV_CLERK_USER_ID ?? (env.DEV ? "clerk_test_user" : undefined);
-  const storeSlug =
-    env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : undefined);
   const explicitDevToken = env.VITE_DEV_CLERK_SESSION_TOKEN?.trim();
-  const localDevToken =
-    env.DEV && clerkUserId
-      ? (env.VITE_DEV_CLERK_SESSION_TOKEN ??
-        `local-dev-clerk-token:${clerkUserId}`)
-      : undefined;
-  const resolvedAccessToken = accessToken ?? explicitDevToken ?? localDevToken;
+  const auth = createRuntimeActorAuth(accessToken ?? explicitDevToken, env);
+  const storeSlug = auth.storeSlug ?? readRuntimeStoreSlug(env);
+  const clerkUserId = auth.clerkUserId ?? env.VITE_DEV_CLERK_USER_ID;
 
   return {
-    ...(resolvedAccessToken ? { accessToken: resolvedAccessToken } : {}),
+    ...(auth.accessToken ? { accessToken: auth.accessToken } : {}),
     ...(clerkUserId ? { clerkUserId } : {}),
     ...(storeSlug ? { storeSlug } : {}),
   };
 }
 
 function readCrmBaseUrl(): Pick<CreateProductCrmApiOptions, "baseUrl"> {
-  const env = import.meta.env as { VITE_API_BASE_URL?: string };
-  return env.VITE_API_BASE_URL ? { baseUrl: env.VITE_API_BASE_URL } : {};
+  return readRuntimeApiBaseUrl();
 }
-
-async function readClerkToken() {
-  const clerk = (window as Window & ClerkRuntime).Clerk;
-
-  return (await clerk?.session?.getToken?.()) ?? null;
-}
-
-type ClerkRuntime = {
-  Clerk?: {
-    session?: {
-      getToken?: () => Promise<string | null>;
-    };
-  };
-};

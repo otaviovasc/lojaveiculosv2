@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatBrazilianCnpj,
   formatBrazilianDocument,
   formatBrazilianPhone,
   formatBrazilianZipCode,
@@ -9,9 +10,10 @@ import {
 describe("settings masks", () => {
   it("formats CPF and CNPJ documents", () => {
     expect(formatBrazilianDocument("12345678901")).toBe("123.456.789-01");
-    expect(formatBrazilianDocument("12345678000190")).toBe(
-      "12.345.678/0001-90",
+    expect(formatBrazilianDocument("11222333000181")).toBe(
+      "11.222.333/0001-81",
     );
+    expect(formatBrazilianCnpj("11222333000181")).toBe("11.222.333/0001-81");
   });
 
   it("formats Brazilian phone numbers", () => {

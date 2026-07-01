@@ -52,6 +52,13 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
       }
       return listing;
     },
+    findByPublicSlug: async ({ publicSlug, storeId, tenantId }) =>
+      [...listings.values()].find(
+        (listing) =>
+          listing.publicSlug === publicSlug &&
+          listing.storeId === storeId &&
+          listing.tenantId === tenantId,
+      ) ?? null,
     list: async ({ limit, offset, search, status, storeId, tenantId }) =>
       [...listings.values()]
         .filter((listing) => listing.storeId === storeId)

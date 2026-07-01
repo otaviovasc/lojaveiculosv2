@@ -85,12 +85,43 @@ describe("inventory workflow routes", () => {
     expect(services.releaseUnitReservation).toHaveBeenCalledWith(
       expect.any(Object),
       {
+        outcome: "release",
         reason: "Cliente desistiu",
         saleId: "sale_1",
         unitId: "unit_1",
       },
     );
   });
+
+  it.each([
+    ["cancel", "/api/v1/inventory/units/unit_1/reservation/cancel"],
+    ["expire", "/api/v1/inventory/units/unit_1/reservation/expire"],
+  ] as const)(
+    "wires reservation %s requests to the service boundary",
+    async (outcome, path) => {
+      const services = createInventoryTestServices();
+      const app = createInventoryTestApp(services);
+
+      const response = await app.request(path, {
+        body: JSON.stringify({
+          reason: "Prazo encerrado",
+          saleId: "sale_1",
+        }),
+        method: "POST",
+      });
+
+      expect(response.status).toBe(200);
+      expect(services.releaseUnitReservation).toHaveBeenCalledWith(
+        expect.any(Object),
+        {
+          outcome,
+          reason: "Prazo encerrado",
+          saleId: "sale_1",
+          unitId: "unit_1",
+        },
+      );
+    },
+  );
 
   it("maps workflow validation errors to 400 responses", async () => {
     const services = createInventoryTestServices();

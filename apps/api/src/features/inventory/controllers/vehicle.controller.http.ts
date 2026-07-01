@@ -8,6 +8,7 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { VehicleMediaStorageScopeError } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import { VehicleDocumentStorageScopeError } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
+import { VehiclePublicationValidationError } from "../../../domains/vehicle/services/VehicleService/publishVehicleListing.js";
 import {
   VehicleWorkflowStateError,
   VehicleWorkflowValidationError,
@@ -62,7 +63,8 @@ export async function handle(
 
     if (
       error instanceof VehicleWorkflowValidationError ||
-      error instanceof VehicleChecklistValidationError
+      error instanceof VehicleChecklistValidationError ||
+      error instanceof VehiclePublicationValidationError
     ) {
       return context.json({ message: error.message }, 400);
     }

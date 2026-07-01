@@ -89,6 +89,16 @@ export type RoleMemberView = {
   };
 };
 
+export type PendingInvitationView = {
+  email: string;
+  id: string;
+  name: string | null;
+  role: RoleKey;
+  status: "pending" | "sent";
+  storeId: string;
+  tenantId: string;
+};
+
 export type RoleManagementView = {
   actor: {
     canManageRoles: boolean;
@@ -96,6 +106,7 @@ export type RoleManagementView = {
     role: RoleKey | null;
   };
   memberships: readonly RoleMemberView[];
+  pendingInvitations: readonly PendingInvitationView[];
   permissionGroups: readonly PermissionGroup[];
   roles: readonly RoleTemplateView[];
 };
@@ -107,6 +118,22 @@ export type UpdateMembershipAccessInput = {
     reason?: string | null;
   }[];
   role: RoleKey;
+};
+
+export type InviteStoreMemberInput = {
+  email: string;
+  name?: string | null;
+  role: Exclude<RoleKey, "admin" | "agency">;
+};
+
+export type IdentityInvitationView = {
+  email: string;
+  id: string;
+  role: RoleKey;
+  status:
+    "accepted" | "expired" | "pending" | "revoked" | "send_failed" | "sent";
+  storeId: string | null;
+  tenantId: string;
 };
 
 export type SettingsStatus =

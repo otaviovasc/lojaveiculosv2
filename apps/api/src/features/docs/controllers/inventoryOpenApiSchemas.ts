@@ -10,21 +10,24 @@ import {
   vehicleDocumentKinds,
 } from "./inventoryOpenApiSchemaParts.js";
 
+const listingStatusEnum = [
+  "archived",
+  "draft",
+  "in_preparation",
+  "published",
+  "sold_out",
+  "unpublished",
+] as const;
+
 export const inventorySchemas = {
   AttachListingUnitRequest: objectSchema([], {
     ...unitIdentitySchemas,
   }),
   ChangeListingStatusRequest: objectSchema(["status"], {
+    reason: { type: ["string", "null"], minLength: 1 },
     status: {
       type: "string",
-      enum: [
-        "archived",
-        "draft",
-        "in_preparation",
-        "published",
-        "sold_out",
-        "unpublished",
-      ],
+      enum: listingStatusEnum,
     },
   }),
   CreateListingRequest: objectSchema(["title"], {
@@ -48,18 +51,13 @@ export const inventorySchemas = {
     description: { type: ["string", "null"] },
     ...listingTechnicalSchemas,
     id: { type: "string" },
+    isVisibleOnPublicSite: { type: "boolean" },
     plate: { type: ["string", "null"] },
     priceCents: { type: ["integer", "null"], minimum: 0 },
+    publicSlug: { type: ["string", "null"] },
     status: {
       type: "string",
-      enum: [
-        "archived",
-        "draft",
-        "in_preparation",
-        "published",
-        "sold_out",
-        "unpublished",
-      ],
+      enum: listingStatusEnum,
     },
     title: { type: "string" },
     updatedAt: { type: "string", format: "date-time" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type HTMLMotionProps } from "framer-motion";
+import { motion, type HTMLMotionProps } from "motion/react";
 
 interface AnimatedDivProps extends HTMLMotionProps<"div"> {
   children?: React.ReactNode;

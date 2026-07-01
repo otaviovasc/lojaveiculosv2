@@ -1,6 +1,11 @@
 import { and, eq, inArray, isNull } from "drizzle-orm";
-import { vehicleMedia, vehicleUnits } from "@lojaveiculosv2/db";
+import {
+  vehicleListings,
+  vehicleMedia,
+  vehicleUnits,
+} from "@lojaveiculosv2/db";
 import type {
+  FindVehicleListingByPublicSlugInput,
   ListVehicleListingsInput,
   VehicleListing,
   VehicleMedia,
@@ -8,14 +13,23 @@ import type {
 } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { DrizzleRepositoryClient } from "../drizzleClient.js";
 import {
+  toVehicleListing,
   toVehicleMedia,
   toVehicleUnit,
+  type InsertVehicleListingRow,
   type InsertVehicleMediaRow,
   type InsertVehicleUnitRow,
+  type VehicleListingRow,
   type VehicleMediaRow,
   type VehicleUnitRow,
 } from "./drizzleVehicleInventoryMappers.js";
+import { requireDbScope } from "./drizzleVehicleInventoryScope.js";
 
+type DrizzleVehicleListingReadClient = DrizzleRepositoryClient<
+  VehicleListingRow,
+  InsertVehicleListingRow,
+  Partial<InsertVehicleListingRow>
+>;
 type DrizzleVehicleUnitReadClient = DrizzleRepositoryClient<
   VehicleUnitRow,
   InsertVehicleUnitRow,
@@ -27,8 +41,10 @@ type DrizzleVehicleMediaReadClient = DrizzleRepositoryClient<
   never
 >;
 
-export type DrizzleVehicleInventoryReadClient = DrizzleVehicleUnitReadClient &
-  DrizzleVehicleMediaReadClient;
+export type DrizzleVehicleInventoryReadClient =
+  DrizzleVehicleListingReadClient &
+    DrizzleVehicleUnitReadClient &
+    DrizzleVehicleMediaReadClient;
 
 export function matchesListingFilters(
   listing: VehicleListing,
@@ -48,6 +64,28 @@ export async function findListingUnits(
   listingId: string,
 ): Promise<readonly VehicleUnit[]> {
   return findListingsUnits(db, [listingId]);
+}
+
+export async function findListingByPublicSlug(
+  db: DrizzleVehicleInventoryReadClient,
+  input: FindVehicleListingByPublicSlugInput,
+): Promise<VehicleListing | null> {
+  const scope = requireDbScope(input);
+  const listingDb = db as DrizzleVehicleListingReadClient;
+  const [row] = await listingDb
+    .select()
+    .from(vehicleListings)
+    .where(
+      and(
+        eq(vehicleListings.publicSlug, input.publicSlug),
+        eq(vehicleListings.storeId, scope.storeId),
+        eq(vehicleListings.tenantId, scope.tenantId),
+        eq(vehicleListings.isDeleted, false),
+        isNull(vehicleListings.deletedAt),
+      ),
+    );
+
+  return row ? toVehicleListing(row, await findListingUnits(db, row.id)) : null;
 }
 
 export async function findListingsUnits(

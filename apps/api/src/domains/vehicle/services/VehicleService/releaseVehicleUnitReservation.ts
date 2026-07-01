@@ -32,7 +32,10 @@ import {
 
 const permission = "inventory.reserve";
 
+export type ReleaseVehicleReservationOutcome = "cancel" | "expire" | "release";
+
 export type ReleaseVehicleUnitReservationInput = {
+  outcome?: ReleaseVehicleReservationOutcome | undefined;
   pendingSale?: VehicleSaleBundle | undefined;
   reason?: string | null | undefined;
   saleId?: string | null | undefined;
@@ -82,10 +85,13 @@ export async function releaseVehicleUnitReservation(
   );
   assertPendingSignal(sale.payment.status, financeEntry);
 
-  const reason = input.reason ?? "Reservation released";
-  logVehicleServiceEvent(context, "vehicle_unit.reservation.release.started", {
+  const outcome = input.outcome ?? "release";
+  const outcomeConfig = reservationOutcomeConfig[outcome];
+  const reason = input.reason ?? outcomeConfig.defaultReason;
+  logVehicleServiceEvent(context, outcomeConfig.startedEvent, {
     financeEntryId: financeEntry.entry.id,
     listingId: listing.id,
+    outcome,
     saleId: sale.sale.id,
     unitId: unit.id,
   });
@@ -95,6 +101,7 @@ export async function releaseVehicleUnitReservation(
     metadata: {
       ...financeEntry.entry.metadata,
       cancelledReason: reason,
+      reservationOutcome: outcome,
       source: financeEntry.entry.metadata.source ?? "vehicle_reservation",
     },
     status: "cancelled",
@@ -134,7 +141,7 @@ export async function releaseVehicleUnitReservation(
   );
 
   await auditVehicleServiceEvent(context, {
-    action: "vehicle_unit.reservation.release",
+    action: outcomeConfig.auditAction,
     category: "data_change",
     changes: [
       { after: "available", before: unit.status, path: "unit.status" },
@@ -150,6 +157,7 @@ export async function releaseVehicleUnitReservation(
     metadata: {
       financeEntryId: financeEntry.entry.id,
       listingId: listing.id,
+      outcome,
       reason,
       saleId: sale.sale.id,
       salePaymentId: sale.payment.id,
@@ -160,11 +168,40 @@ export async function releaseVehicleUnitReservation(
       { id: sale.sale.id, type: "vehicle_sale" },
       { id: financeEntry.entry.id, type: "finance_entry" },
     ],
-    summary: "Released vehicle unit reservation",
+    summary: outcomeConfig.auditSummary,
   });
 
   return updatedListing;
 }
+
+const reservationOutcomeConfig: Record<
+  ReleaseVehicleReservationOutcome,
+  {
+    auditAction: string;
+    auditSummary: string;
+    defaultReason: string;
+    startedEvent: string;
+  }
+> = {
+  cancel: {
+    auditAction: "vehicle_unit.reservation.cancel",
+    auditSummary: "Cancelled vehicle unit reservation",
+    defaultReason: "Reservation cancelled",
+    startedEvent: "vehicle_unit.reservation.cancel.started",
+  },
+  expire: {
+    auditAction: "vehicle_unit.reservation.expire",
+    auditSummary: "Expired vehicle unit reservation",
+    defaultReason: "Reservation expired",
+    startedEvent: "vehicle_unit.reservation.expire.started",
+  },
+  release: {
+    auditAction: "vehicle_unit.reservation.release",
+    auditSummary: "Released vehicle unit reservation",
+    defaultReason: "Reservation released",
+    startedEvent: "vehicle_unit.reservation.release.started",
+  },
+};
 
 async function restoreListingIfUnitAvailable(
   context: ServiceContext,

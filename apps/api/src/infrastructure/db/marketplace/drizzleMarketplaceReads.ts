@@ -19,6 +19,8 @@ export async function findListingProjection(
         eq(vehicleListings.id, input.listingId),
         eq(vehicleListings.storeId, input.storeId),
         eq(vehicleListings.tenantId, input.tenantId),
+        eq(vehicleListings.isDeleted, false),
+        isNull(vehicleListings.deletedAt),
       ),
     )
     .limit(1);
@@ -33,6 +35,7 @@ export async function findListingProjection(
         eq(vehicleUnits.storeId, input.storeId),
         eq(vehicleUnits.tenantId, input.tenantId),
         eq(vehicleUnits.isDeleted, false),
+        inArray(vehicleUnits.status, marketplaceEligibleUnitStatuses),
         isNull(vehicleUnits.deletedAt),
       ),
     )
@@ -83,14 +86,22 @@ export async function findListingProjection(
 
   return {
     description: listing.description,
+    isVisibleOnPublicSite: listing.isVisibleOnPublicSite,
     listingId: listing.id,
     mediaUrls,
     modelYear: listing.modelYear,
     priceCents: listing.askingPriceCents,
+    status: listing.status,
     title: listing.title,
     vehicleType: null,
   };
 }
+
+const marketplaceEligibleUnitStatuses = [
+  "acquired",
+  "available",
+  "in_preparation",
+] as const;
 
 type VehicleUnitStatus =
   | "acquired"

@@ -26,6 +26,7 @@ import {
   detailPermissionForListingEdit,
   runVehicleInventoryMutation,
 } from "./listingServicesFactorySupport.js";
+import { createInventoryPublicationTransactionalServices } from "./listingPublicationServices.js";
 
 type InventoryTransactionalServices = Pick<
   InventoryListingServices,
@@ -34,9 +35,11 @@ type InventoryTransactionalServices = Pick<
   | "attachVehicleDocument"
   | "changeListingStatus"
   | "createChecklist"
+  | "publishListing"
   | "releaseUnitReservation"
   | "reserveUnit"
   | "sellUnit"
+  | "unpublishListing"
   | "updateListingDetails"
   | "updateChecklist"
   | "updateListingPrice"
@@ -50,6 +53,10 @@ export function createInventoryTransactionalServices(input: {
   const { ports, transactionRunner } = input;
 
   return {
+    ...createInventoryPublicationTransactionalServices({
+      ports,
+      transactionRunner,
+    }),
     async addVehicleCost(context, costInput) {
       await runVehicleInventoryMutation(transactionRunner, (transactionPorts) =>
         addVehicleCost(context, costInput, transactionPorts),

@@ -3,6 +3,7 @@ import type {
   CreateVehicleListingRecord,
   CreateVehicleMediaRecord,
   CreateVehicleUnitRecord,
+  FindVehicleListingByPublicSlugInput,
   FindVehicleListingInput,
   FindVehicleMediaInput,
   FindVehicleUnitInput,
@@ -25,6 +26,9 @@ export type * from "./vehicleInventoryTypes.js";
 export type VehicleListingRepository = {
   create: (record: CreateVehicleListingRecord) => Promise<VehicleListing>;
   findById: (input: FindVehicleListingInput) => Promise<VehicleListing | null>;
+  findByPublicSlug: (
+    input: FindVehicleListingByPublicSlugInput,
+  ) => Promise<VehicleListing | null>;
   list: (input: ListVehicleListingsInput) => Promise<readonly VehicleListing[]>;
   save: (listing: VehicleListing) => Promise<VehicleListing>;
 };

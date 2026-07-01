@@ -35,6 +35,15 @@ describe("resolveStoreSlugFromHostHeader", () => {
     ).toBe("lojaexemplo");
   });
 
+  it("does not resolve local development hosts as store slugs", () => {
+    expect(resolveStoreSlugFromHostHeader("localhost:8787")).toBeNull();
+    expect(resolveStoreSlugFromHostHeader("127.0.0.1:8787")).toBeNull();
+    expect(resolveStoreSlugFromHostHeader("192.168.1.96:8787")).toBeNull();
+    expect(resolveStoreSlugFromHostHeader("0.0.0.0:8787")).toBeNull();
+    expect(resolveStoreSlugFromHostHeader("[::1]:8787")).toBeNull();
+    expect(resolveStoreSlugFromHostHeader("::1")).toBeNull();
+  });
+
   it("extracts from x-forwarded-host on request", async () => {
     const context = await captureContext(
       new Request("https://fallback.lojaveiculos.com.br", {

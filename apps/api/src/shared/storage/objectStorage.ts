@@ -18,6 +18,10 @@ export type CreateObjectDownloadInput = {
   storageKey: string;
 };
 
+export type DeleteStorageObjectInput = {
+  storageKey: string;
+};
+
 export type ObjectUpload = {
   expiresAt: Date;
   publicUrl: string;
@@ -42,6 +46,7 @@ export type ObjectStorage = {
   close?: () => Promise<void> | void;
   createDownload: (input: CreateObjectDownloadInput) => Promise<ObjectDownload>;
   createUpload: (input: CreateObjectUploadInput) => Promise<ObjectUpload>;
+  deleteObject?: (input: DeleteStorageObjectInput) => Promise<void>;
   getPublicUrl: (storageKey: string) => string;
   putObject: (input: PutStorageObjectInput) => Promise<StoredObject>;
 };

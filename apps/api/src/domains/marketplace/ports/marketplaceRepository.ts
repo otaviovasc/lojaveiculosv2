@@ -3,11 +3,7 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 export type MarketplaceProvider = "mercado_livre" | "olx";
 export type MarketplaceAccountStatus = "active" | "error" | "inactive";
 export type MarketplaceJobStatus =
-  | "cancelled"
-  | "failed"
-  | "queued"
-  | "running"
-  | "succeeded";
+  "cancelled" | "failed" | "queued" | "running" | "succeeded";
 export type MarketplaceSyncJobType =
   | "inventory_sync"
   | "lead_sync"
@@ -38,12 +34,29 @@ export type MarketplaceJob = {
   status: MarketplaceJobStatus;
 };
 
+export type MarketplaceProviderListing = {
+  accountId: string;
+  externalId: string | null;
+  listingId: string;
+  metadata: Record<string, unknown>;
+  storeId: StoreId;
+  tenantId: TenantId;
+};
+
 export type MarketplaceListingProjection = {
   description: string | null;
+  isVisibleOnPublicSite: boolean;
   listingId: string;
   mediaUrls: readonly string[];
   modelYear: number | null;
   priceCents: number | null;
+  status:
+    | "archived"
+    | "draft"
+    | "in_preparation"
+    | "published"
+    | "sold_out"
+    | "unpublished";
   title: string;
   vehicleType: "cars" | "motorcycles" | "trucks" | null;
 };
@@ -89,6 +102,12 @@ export type MarketplaceRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<MarketplaceListingProjection | null>;
+  findProviderListing: (input: {
+    accountId: string;
+    listingId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<MarketplaceProviderListing | null>;
   markJobCompleted: (input: {
     completedAt: Date;
     externalId?: string | null;

@@ -149,6 +149,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       total: 1,
     })),
     listVehicleSuppliers: vi.fn(async () => [supplierResult()]),
+    publishListing: vi.fn(async () => listingDetailResult()),
     reorderMedia: vi.fn(async () => listingDetailResult()),
     requestDocumentUpload: vi.fn(async () => ({
       expiresAt: new Date("2026-01-01T00:15:00.000Z"),
@@ -177,6 +178,7 @@ export function createInventoryTestServices(): InventoryListingServices {
     updateVehicleSupplier: vi.fn(async () => supplierResult()),
     upsertVehicleUnitAcquisition: vi.fn(async () => acquisitionResult()),
     updateMedia: vi.fn(async () => listingDetailResult()),
+    unpublishListing: vi.fn(async () => listingDetailResult()),
   };
 }
 

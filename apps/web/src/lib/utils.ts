@@ -25,6 +25,10 @@ export function slugify(text: string): string {
     .replace(/(^-|-$)/g, "");
 }
 
+export function normalizePublicSlug(text: string): string {
+  return slugify(text).slice(0, 80);
+}
+
 export function absoluteUrl(path: string): string {
   return `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${path}`;
 }

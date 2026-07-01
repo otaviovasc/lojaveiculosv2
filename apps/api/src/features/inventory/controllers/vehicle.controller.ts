@@ -37,6 +37,7 @@ import { registerInventoryWorkflowRoutes } from "./vehicle.workflow.controller.j
 import { registerInventoryEnrichmentRoutes } from "./vehicle.enrichment.controller.js";
 import { registerInventoryAcquisitionRoutes } from "./vehicle.acquisition.controller.js";
 import { registerInventoryUnitRoutes } from "./vehicle.unit.controller.js";
+import { registerInventoryPublicationRoutes } from "./vehicle.publication.controller.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
 
@@ -186,6 +187,7 @@ export function createInventoryFeature(
   registerInventoryCatalogRoutes(inventoryFeature, services, createContext);
   registerInventoryChecklistRoutes(inventoryFeature, services, createContext);
   registerInventoryAcquisitionRoutes(inventoryFeature, services, createContext);
+  registerInventoryPublicationRoutes(inventoryFeature, services, createContext);
   registerInventoryWorkflowRoutes(inventoryFeature, services, createContext);
   registerInventoryEnrichmentRoutes(
     inventoryFeature,

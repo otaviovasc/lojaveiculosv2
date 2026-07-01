@@ -4,7 +4,11 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { MarketplaceJob } from "../../ports/marketplaceRepository.js";
+import type {
+  MarketplaceJob,
+  MarketplaceListingProjection,
+  MarketplaceSyncJobType,
+} from "../../ports/marketplaceRepository.js";
 import {
   MarketplaceProviderRuntimeError,
   requireMarketplaceScope,
@@ -41,27 +45,51 @@ export async function runMarketplaceSyncJob(
     const listingId = readString(runningJob.metadata.listingId);
     if (!listingId)
       throw new MarketplaceProviderRuntimeError("listingId missing.");
-    const [account, listing] = await Promise.all([
-      ports.marketplaceRepository.findAccount({
-        provider: runningJob.provider,
-        storeId: scope.storeId as never,
-        tenantId: scope.tenantId as never,
-      }),
-      ports.marketplaceRepository.findListingProjection({
+    const account = await ports.marketplaceRepository.findAccount({
+      provider: runningJob.provider,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (!account) throw new MarketplaceProviderRuntimeError("Account missing.");
+
+    const [listing, providerListing] = await Promise.all([
+      runningJob.jobType === "listing_unpublish"
+        ? Promise.resolve(null)
+        : ports.marketplaceRepository.findListingProjection({
+            listingId,
+            storeId: scope.storeId as never,
+            tenantId: scope.tenantId as never,
+          }),
+      ports.marketplaceRepository.findProviderListing({
+        accountId: account.id,
         listingId,
         storeId: scope.storeId as never,
         tenantId: scope.tenantId as never,
       }),
     ]);
-    if (!account) throw new MarketplaceProviderRuntimeError("Account missing.");
-    if (!listing) throw new MarketplaceProviderRuntimeError("Listing missing.");
+    const metadataExternalId = readString(runningJob.metadata.externalId);
+    const externalId =
+      runningJob.jobType === "listing_publish"
+        ? metadataExternalId
+        : (metadataExternalId ?? readString(providerListing?.externalId));
+    if (runningJob.jobType === "listing_unpublish" && !externalId) {
+      throw new MarketplaceProviderRuntimeError(
+        "externalId missing for listing unpublish.",
+      );
+    }
+    if (runningJob.jobType !== "listing_unpublish") {
+      if (!listing) {
+        throw new MarketplaceProviderRuntimeError("Listing missing.");
+      }
+      assertMarketplaceProjectionReady(runningJob.jobType, listing);
+    }
 
     const credentials = readCredentials(account.config);
     const connection = readObject(account.config.connection);
     const result = await gateway.runListingSync({
-      externalId: readString(runningJob.metadata.externalId),
+      ...(externalId ? { externalId } : {}),
       jobType: runningJob.jobType,
-      listing,
+      ...(listing ? { listing } : {}),
       metadata: runningJob.metadata,
       token: {
         accessToken: credentials.accessToken,
@@ -96,6 +124,23 @@ export async function runMarketplaceSyncJob(
     });
     await recordRunAudit(context, failed, "failed", errorMessage(error));
     return failed;
+  }
+}
+
+function assertMarketplaceProjectionReady(
+  jobType: MarketplaceSyncJobType,
+  listing: MarketplaceListingProjection,
+) {
+  if (jobType === "listing_unpublish") return;
+  if (listing.status !== "published" || !listing.isVisibleOnPublicSite) {
+    throw new MarketplaceProviderRuntimeError(
+      "Listing must be published and public-visible before marketplace sync.",
+    );
+  }
+  if (listing.mediaUrls.length === 0) {
+    throw new MarketplaceProviderRuntimeError(
+      "Listing must have at least one public photo before marketplace sync.",
+    );
   }
 }
 

@@ -1,6 +1,7 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
+  identityInvitations,
   membershipPermissionOverrides,
   roleTemplates,
   storeMemberships,
@@ -11,6 +12,7 @@ import type {
   RoleManagementRepository,
   RoleManagementState,
   RoleMembership,
+  RolePendingInvitation,
   RolePermissionOverride,
   UpdateMembershipAccessInput,
 } from "../../../domains/identity/ports/roleManagementRepository.js";
@@ -24,6 +26,16 @@ type MembershipRow = {
   role: RoleMembership["role"];
   status: RoleMembership["status"];
   userId: string;
+};
+
+type PendingInvitationRow = {
+  email: string;
+  id: string;
+  metadata: unknown;
+  role: RolePendingInvitation["role"];
+  status: string;
+  storeId: string | null;
+  tenantId: string;
 };
 
 export function createDrizzleRoleManagementRepository(
@@ -75,6 +87,7 @@ async function listByStore(
   db: DrizzleRoleManagementClient,
   input: { storeId: string; tenantId: string },
 ): Promise<RoleManagementState> {
+  const now = new Date();
   const memberships = await db
     .select({
       email: users.email,
@@ -97,10 +110,38 @@ async function listByStore(
       ),
     )
     .limit(200);
+  const pendingInvitations = await db
+    .select({
+      email: identityInvitations.email,
+      id: identityInvitations.id,
+      metadata: identityInvitations.metadata,
+      role: roleTemplates.roleKey,
+      status: identityInvitations.status,
+      storeId: identityInvitations.storeId,
+      tenantId: identityInvitations.tenantId,
+    })
+    .from(identityInvitations)
+    .innerJoin(
+      roleTemplates,
+      eq(roleTemplates.id, identityInvitations.roleTemplateId),
+    )
+    .where(
+      and(
+        eq(identityInvitations.storeId, input.storeId),
+        eq(identityInvitations.tenantId, input.tenantId),
+        inArray(identityInvitations.status, ["pending", "sent"]),
+        or(
+          isNull(identityInvitations.expiresAt),
+          gt(identityInvitations.expiresAt, now),
+        ),
+      ),
+    )
+    .limit(100);
   const overrides = await db.select().from(membershipPermissionOverrides);
 
   return {
     memberships: memberships.map((row) => toMembership(row, overrides)),
+    pendingInvitations: pendingInvitations.map(toPendingInvitation),
     storeId: input.storeId as never,
     tenantId: input.tenantId as never,
   };
@@ -153,4 +194,27 @@ function toOverride(row: {
     permission: row.permissionKey as never,
     reason: row.reason,
   };
+}
+
+function toPendingInvitation(row: PendingInvitationRow): RolePendingInvitation {
+  if (!row.storeId) {
+    throw new Error("Pending store invitation is missing storeId.");
+  }
+  return {
+    email: row.email,
+    id: row.id,
+    name: readInvitationName(row.metadata),
+    role: row.role,
+    status: row.status === "pending" ? "pending" : "sent",
+    storeId: row.storeId as never,
+    tenantId: row.tenantId as never,
+  };
+}
+
+function readInvitationName(metadata: unknown): string | null {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return null;
+  }
+  const name = (metadata as { name?: unknown }).name;
+  return typeof name === "string" && name.trim() ? name.trim() : null;
 }

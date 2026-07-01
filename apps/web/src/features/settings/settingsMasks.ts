@@ -1,3 +1,5 @@
+export { formatBrazilianCnpj } from "@lojaveiculosv2/shared";
+
 export function formatBrazilianDocument(value: string) {
   const digits = onlyDigits(value).slice(0, 14);
   if (digits.length <= 11) {

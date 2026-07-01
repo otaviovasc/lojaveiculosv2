@@ -1,5 +1,6 @@
 import type {
   CreateVehicleListingRecord,
+  FindVehicleListingByPublicSlugInput,
   FindVehicleListingInput,
   ListVehicleChildrenInput,
   ListVehicleListingsInput,
@@ -22,6 +23,7 @@ export function isVehicleInventoryUuid(value: string): boolean {
 export function requireDbScope(
   record:
     | CreateVehicleListingRecord
+    | FindVehicleListingByPublicSlugInput
     | FindVehicleListingInput
     | ListVehicleChildrenInput
     | ListVehicleListingsInput

@@ -11,6 +11,14 @@ export function createRuntimeSettingsApi(): SettingsApi {
       createSettingsApi(await createSettingsApiOptions()).getStoreSettings(),
     getRoleManagement: async () =>
       createSettingsApi(await createSettingsApiOptions()).getRoleManagement(),
+    inviteStoreMember: async (input) =>
+      createSettingsApi(await createSettingsApiOptions()).inviteStoreMember(
+        input,
+      ),
+    resendInvitation: async (invitationId) =>
+      createSettingsApi(await createSettingsApiOptions()).resendInvitation(
+        invitationId,
+      ),
     updateMembershipAccess: async (membershipId, input) =>
       createSettingsApi(
         await createSettingsApiOptions(),

@@ -1348,10 +1348,10 @@
             <div class="tile">
               <strong>Remaining vehicle backend gaps</strong>
               <p>
-                Public listing publish needs explicit slug/visibility workflow;
-                reservation expiry/cancel needs a first-class workflow;
-                marketplace projections need stricter deleted/status/media
-                scoping before production sync.
+                Reservation auto-expiry scheduling still needs a policy;
+                document replace/remove plus CDN invalidation still need final
+                backend governance; assistant-safe inventory tools still need an
+                audited backend contract.
               </p>
             </div>
             <div class="tile">
@@ -1864,7 +1864,10 @@
                   use trusted identity headers for seeded development, but
                   production no longer trusts <code>x-clerk-user-id</code>.
                   Resolved service actors now use internal V2 user ids with
-                  Clerk id retained as <code>externalId</code>.
+                  Clerk id retained as <code>externalId</code>. Invitation
+                  delivery returns to <code>/auth/session</code> through
+                  <code>CLERK_INVITATION_REDIRECT_URL</code>, falling back to
+                  <code>PUBLIC_APP_URL/auth/session</code>.
                 </td>
               </tr>
               <tr>
@@ -2409,6 +2412,30 @@
                   vehicle workflow finalizer.
                 </li>
                 <li>
+                  Completed: explicit listing publish/unpublish backend routes
+                  now own public slug generation, storefront visibility, listing
+                  status history, OpenAPI/LLMS docs, and audit deltas.
+                </li>
+                <li>
+                  Completed: reservation release/cancel/expire backend routes
+                  now share the audited reservation unwind workflow, cancel
+                  pending sale/payment rows, cancel signal finance entries, and
+                  unlock the unit/listing state through status history.
+                </li>
+                <li>
+                  Completed: marketplace listing publish/update sync now fails
+                  closed before provider IO unless the listing is not deleted,
+                  published, public-visible, backed by an eligible unit, and has
+                  at least one public photo; unpublish sync can run after local
+                  soft-delete by using the stored provider external id.
+                </li>
+                <li>
+                  Completed: vehicle media delete now soft-deletes metadata,
+                  best-effort requests backing R2/object cleanup through the
+                  shared storage port, audits cleanup status/errors, and exposes
+                  the correct media-specific OpenAPI scopes.
+                </li>
+                <li>
                   Pending: AI WhatsApp assistant must call audited domain tools
                   through permissions, never direct DB access.
                 </li>
@@ -2419,23 +2446,12 @@
                   cleanup/invalidation governance.
                 </li>
                 <li>
-                  Pending: reservation expiry/release/cancel workflow should
-                  release listing/unit state, attach reason/audit evidence, and
-                  reconcile or cancel signal finance entries.
+                  Pending: automatic reservation expiry needs job scheduling,
+                  retry policy, and operator-facing cutover rules.
                 </li>
                 <li>
-                  Pending: publish workflow for public listings must issue slug
-                  + visibility state intentionally, not as an implicit listing
-                  edit side effect.
-                </li>
-                <li>
-                  Pending: marketplace projection hardening for
-                  deleted/status/media scoping before production portal sync.
-                </li>
-                <li>
-                  Pending: R2 object policy must be complete for public and
-                  internal media/document URLs (TTL, cleanup, invalidation,
-                  audit for mutations).
+                  Pending: document replace/remove and CDN invalidation policy
+                  still need backend ownership for internal document URLs.
                 </li>
                 <li>
                   Keep this living plan updated with decisions, slices, and
@@ -2447,9 +2463,8 @@
               <h3>Next Candidate Slices</h3>
               <ul>
                 <li>
-                  Add reservation expiry/release/cancel workflow with scoped
-                  audit, finance signal reversal/cancel behavior, and
-                  listing/unit unlock rules.
+                  Add automatic reservation expiry scheduling with scoped audit,
+                  retry policy, and clear operator override behavior.
                 </li>
                 <li>
                   Harden sale transition state-machine rules so draft, pending,
@@ -2459,11 +2474,6 @@
                 <li>
                   Connect delivery/test-drive readiness views to persisted
                   <code>vehicle_checklists</code> rows.
-                </li>
-                <li>
-                  Add explicit publish/unpublish route that owns public slug
-                  generation, <code>is_visible_on_public_site</code>, and public
-                  listing status rules.
                 </li>
                 <li>
                   Complete finance follow-through: frontend integration,
@@ -3596,6 +3606,136 @@
               </tr>
             </tbody>
           </table>
+        </section>
+
+        <section id="identity-provisioning">
+          <h2>Clerk Account Provisioning Implementation</h2>
+          <p>
+            Current working-tree slice: V2 now has provider-backed Clerk account
+            bootstrap, owner-first store creation, platform agency creation,
+            agency-managed store creation, and store member invitations without
+            placeholder users or fake invite success.
+          </p>
+          <div class="worklane">
+            <div class="lane">
+              <h3>Implemented backend contract</h3>
+              <ul>
+                <li>
+                  <code>GET /api/v1/session/bootstrap</code> verifies the Clerk
+                  bearer token, requires a verified primary Clerk email, upserts
+                  the internal user, conditionally accepts matching sent
+                  invitations, and returns active store and tenant access.
+                </li>
+                <li>
+                  <code>POST /api/v1/onboarding/owner-store</code> creates a new
+                  tenant, store, owner membership, trial entitlements, and audit
+                  evidence from the authenticated Clerk actor.
+                </li>
+                <li>
+                  <code>POST /api/v1/admin/agencies</code> is platform-admin
+                  only and creates the agency tenant plus optional first agency
+                  invitation through Clerk.
+                </li>
+                <li>
+                  <code>POST /api/v1/agency/stores</code> requires an active
+                  agency tenant role or platform admin role, then creates the
+                  managed store and agency membership.
+                </li>
+                <li>
+                  <code>POST /api/v1/identity/invitations</code> requires
+                  <code>users.manage</code>, enforces the same actor/target role
+                  hierarchy as role management, stores a first-class invitation
+                  row, sends through Clerk, returns <code>send_failed</code>
+                  instead of pretending success when Clerk fails, and grants
+                  membership only after the real Clerk user signs in with a
+                  verified primary email.
+                </li>
+                <li>
+                  <code>GET /api/v1/identity/roles</code> now includes
+                  <code>pendingInvitations</code> for active store invitations,
+                  allowing Settings to render invited users in the members
+                  sidebar before they accept.
+                </li>
+                <li>
+                  <code
+                    >POST
+                    /api/v1/identity/invitations/:invitationId/resend</code
+                  >
+                  resends persisted failed or active invitations through Clerk,
+                  refreshes invitation expiry, verifies platform/store
+                  permissions, and records audited provider outcomes.
+                  Accepted/revoked invitations are terminal states and cannot be
+                  reopened by resend races.
+                </li>
+                <li>
+                  The frontend companion slice now uses
+                  <code>@clerk/react</code> with <code>/sign-in</code>,
+                  <code>/sign-up</code>, and <code>/auth/session</code>.
+                  Privileged shells bootstrap account access before rendering,
+                  persist the selected store slug, and reserve auth/admin path
+                  segments from public storefront slug routing.
+                </li>
+                <li>
+                  Local seeded permission QA now has deterministic personas:
+                  <code>clerk_seed_agency</code>, <code>clerk_seed_owner</code>,
+                  <code>clerk_seed_supervisor</code>, and
+                  <code>clerk_seed_salesman</code>. Run
+                  <code>pnpm run dev:all:local</code> and then
+                  <code>pnpm run qa:permissions:local</code> to verify bootstrap
+                  destinations, store-scoped access, role-management boundaries,
+                  and agency store authorization without relying on a real Clerk
+                  browser session.
+                </li>
+              </ul>
+            </div>
+            <div class="lane">
+              <h3>Remaining hardening, not mocked</h3>
+              <ul>
+                <li>
+                  Add revoke, expiry review, and audit review screens on top of
+                  the persisted <code>identity_invitations</code> table. Backend
+                  resend and the role-management pending list are implemented;
+                  revoke is still a product surface.
+                </li>
+                <li>
+                  Add a tenant-level permission override model. Platform-admin
+                  and agency provisioning now assert explicit permission keys,
+                  but tenant memberships do not yet have the same override table
+                  that store memberships have.
+                </li>
+                <li>
+                  Add a durable provider outbox if Clerk delivery must be
+                  retried automatically. Current behavior is explicit operator
+                  resend from the persisted failed invitation state.
+                </li>
+                <li>
+                  Add a product-DB audit/outbox intent for critical identity
+                  provisioning if the product must fail closed across product
+                  DB, audit DB, and Clerk side effects. Current services emit
+                  critical audit events and fail when the audit sink rejects,
+                  but cross-database atomicity still needs an approved durable
+                  outbox pattern.
+                </li>
+                <li>
+                  Build the first-class store switcher UI. Store-scoped runtime
+                  API clients now read the bootstrapped current store slug, but
+                  users still need an explicit switcher for multi-store
+                  accounts.
+                </li>
+                <li>
+                  Expand the platform admin surface beyond agency creation to
+                  account inspection, membership suspension, entitlement review,
+                  and audit search.
+                </li>
+                <li>
+                  Keep V2 schema changes schema-first through Drizzle
+                  <code>db:push</code>; do not add hand-authored migration files
+                  until the repo intentionally switches to migration-based DB
+                  rollout.
+                </li>
+              </ul>
+            </div>
+          </div>
         </section>
 
         <section id="decisions">

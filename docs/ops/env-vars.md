@@ -23,18 +23,77 @@ secrets for CI-only values.
 
 ## Authentication
 
-| Name                         | Required | Environments        | Secret | Notes                              |
-| ---------------------------- | -------- | ------------------- | ------ | ---------------------------------- |
-| `CLERK_SECRET_KEY`           | Yes      | staging, production | Yes    | Clerk backend secret.              |
-| `CLERK_JWT_KEY`              | Yes      | staging, production | Yes    | JWT verification key.              |
-| `CLERK_AUDIENCE`             | Yes      | staging, production | No     | Expected token audience.           |
-| `CLERK_AUTHORIZED_PARTIES`   | Yes      | staging, production | No     | Allowed frontend origins.          |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Yes      | staging, production | No     | Frontend publishable key.          |
-| `CLERK_WEBHOOK_SECRET`       | Yes      | staging, production | Yes    | Clerk webhook verification secret. |
-| `CLERK_SIGN_IN_URL`          | Yes      | staging, production | No     | Frontend sign-in URL.              |
-| `CLERK_SIGN_UP_URL`          | Yes      | staging, production | No     | Frontend sign-up URL.              |
-| `CLERK_AFTER_SIGN_IN_URL`    | Yes      | staging, production | No     | Post sign-in redirect.             |
-| `CLERK_AFTER_SIGN_UP_URL`    | Yes      | staging, production | No     | Post sign-up redirect.             |
+Use a dedicated Clerk project for V2. Do not reuse V1 Clerk secrets or
+publishable keys across V1 and V2 environments; this keeps redirect URLs,
+JWT/audience settings, webhooks, invitations, and rollout testing isolated.
+
+| Name                            | Required | Environments               | Secret | Notes                                                                                                       |
+| ------------------------------- | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `CLERK_SECRET_KEY`              | Yes      | staging, production        | Yes    | Clerk backend secret for the V2 Clerk project. Rotate immediately if exposed.                               |
+| `CLERK_JWT_KEY`                 | No       | staging, production        | Yes    | Optional Clerk JWT public key for networkless verification; `CLERK_SECRET_KEY` is enough for baseline auth. |
+| `CLERK_AUDIENCE`                | No       | staging, production        | No     | Optional advanced check; set only after frontend tokens intentionally include the same `aud` claim.         |
+| `CLERK_AUTHORIZED_PARTIES`      | Yes      | staging, production        | No     | Comma-separated allowed frontend origins, for example `https://app.example.com`.                            |
+| `VITE_CLERK_PUBLISHABLE_KEY`    | Yes      | staging, production        | No     | Frontend publishable key for the V2 Clerk project.                                                          |
+| `CLERK_WEBHOOK_SECRET`          | No       | staging, production        | Yes    | Reserved until a Clerk webhook route is mounted; use the endpoint signing secret from Clerk.                |
+| `CLERK_SIGN_IN_URL`             | Yes      | staging, production        | No     | Frontend sign-in URL.                                                                                       |
+| `CLERK_SIGN_UP_URL`             | Yes      | staging, production        | No     | Frontend sign-up URL.                                                                                       |
+| `CLERK_AFTER_SIGN_IN_URL`       | Yes      | staging, production        | No     | Post sign-in redirect. Use `/auth/session`.                                                                 |
+| `CLERK_AFTER_SIGN_UP_URL`       | Yes      | staging, production        | No     | Post sign-up redirect. Use `/auth/session`.                                                                 |
+| `CLERK_INVITATION_REDIRECT_URL` | No       | local, staging, production | No     | Absolute URL Clerk should send accepted invitations back to. Defaults to `PUBLIC_APP_URL/auth/session`.     |
+| `VITE_API_BASE_URL`             | Yes      | staging, production        | No     | Public API base URL used by the web app runtime.                                                            |
+
+Professional Clerk baseline for this codebase:
+
+- Keep `CLERK_AUDIENCE` empty until the frontend explicitly calls Clerk
+  `getToken()` with a JWT template or token configuration that emits a matching
+  `aud` claim.
+- Set `CLERK_AUTHORIZED_PARTIES` in staging and production to the exact deployed
+  frontend origin list.
+- Do not use `*` for `CLERK_AUTHORIZED_PARTIES`. Clerk verifies this as an
+  exact authorized-party value, not as a wildcard. For local development, leave
+  it empty or use `http://localhost:5173,http://127.0.0.1:5173`.
+- Add `CLERK_JWT_KEY` only when you want offline JWT verification; otherwise the
+  backend verifier can use `CLERK_SECRET_KEY`.
+- Set `CLERK_INVITATION_REDIRECT_URL` to the public app session URL when it
+  differs from `PUBLIC_APP_URL/auth/session`. Local development can rely on
+  `PUBLIC_APP_URL=http://localhost:5173`; production should use the deployed app
+  URL, for example `https://app.example.com/auth/session`.
+- Customize the Clerk invitation email template, invitation sign-up screen, and
+  hosted auth copy in Portuguese before production. The invitation email must
+  clearly say that access is granted only after accepting the invite and landing
+  back on `/auth/session`.
+- Treat `CLERK_WEBHOOK_SECRET` as future-required only when Clerk webhook sync is
+  implemented.
+
+## Local Frontend Development
+
+The web package is configured with Vite `envDir` pointing at the workspace
+root, so local `pnpm dev` reads the root `.env`. In deployed environments, keep
+variables service-scoped: only `VITE_*` public build-time values belong on the
+web service, while Clerk secrets and database credentials belong on the API
+service.
+
+| Name                     | Required | Environments | Secret | Notes                                                                                 |
+| ------------------------ | -------- | ------------ | ------ | ------------------------------------------------------------------------------------- |
+| `LOCAL_AUTH_BYPASS`      | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                    |
+| `DEV_CLERK_USER_ID`      | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.            |
+| `DEV_STORE_SLUG`         | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.          |
+| `VITE_LOCAL_AUTH_BYPASS` | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production. |
+| `VITE_DEV_CLERK_USER_ID` | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                |
+| `VITE_DEV_STORE_SLUG`    | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.              |
+
+Use one auth mode at a time:
+
+- Real Clerk QA: configure `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,
+  `CLERK_AUTHORIZED_PARTIES`, `PUBLIC_APP_URL`, and Clerk redirect URLs; leave
+  all dev bypass variables empty.
+- Authless seeded preview: prefer `pnpm run dev:all:local`, which sets
+  `LOCAL_AUTH_BYPASS=true`, clears Clerk verifier secrets for the API child
+  process, and sets `VITE_LOCAL_AUTH_BYPASS=true` for the web child process.
+  This exposes the local `/sign-in` account switcher for seeded agency, owner,
+  supervisor, and salesman personas.
+- Permission QA: after `pnpm run db:clean:local` and `pnpm run dev:all:local`,
+  run `pnpm run qa:permissions:local`.
 
 ## Object Storage
 

@@ -5,7 +5,6 @@ describe("CRM runtime API auth", () => {
   it("uses Clerk session tokens when available", () => {
     expect(
       createProductCrmAuthFromEnv("real-clerk-token", {
-        DEV: true,
         VITE_DEV_CLERK_USER_ID: "clerk_1",
         VITE_DEV_STORE_SLUG: "loja",
       }),
@@ -16,24 +15,21 @@ describe("CRM runtime API auth", () => {
     });
   });
 
-  it("adds a deterministic local token for autonomous dev visual QA", () => {
+  it("does not invent a deterministic local token for dev", () => {
     expect(
       createProductCrmAuthFromEnv(null, {
-        DEV: true,
         VITE_DEV_CLERK_USER_ID: "clerk_local",
         VITE_DEV_STORE_SLUG: "test-store",
       }),
-    ).toMatchObject({
-      accessToken: "local-dev-clerk-token:clerk_local",
+    ).toEqual({
       clerkUserId: "clerk_local",
       storeSlug: "test-store",
     });
   });
 
-  it("does not invent a token outside Vite dev mode", () => {
+  it("does not invent a token without an explicit session token", () => {
     expect(
       createProductCrmAuthFromEnv(null, {
-        DEV: false,
         VITE_DEV_CLERK_USER_ID: "clerk_local",
         VITE_DEV_STORE_SLUG: "test-store",
       }),
@@ -46,7 +42,6 @@ describe("CRM runtime API auth", () => {
   it("accepts an explicit dev session token for production preview QA", () => {
     expect(
       createProductCrmAuthFromEnv(null, {
-        DEV: false,
         VITE_DEV_CLERK_SESSION_TOKEN: "local-preview-token",
         VITE_DEV_CLERK_USER_ID: "clerk_local",
         VITE_DEV_STORE_SLUG: "test-store",

@@ -86,6 +86,33 @@ async function runListingSync(
   options: HttpMarketplaceGatewayOptions,
   input: MarketplacePublishInput,
 ): Promise<MarketplacePublishResult> {
+  if (input.jobType === "listing_unpublish") {
+    const { method, path } = requestShape(options, input);
+    const response = await fetchImpl(
+      `${options.baseUrl.replace(/\/$/, "")}${path}`,
+      {
+        headers: {
+          Authorization: `Bearer ${input.token.accessToken}`,
+          "Content-Type": "application/json",
+        },
+        method,
+      },
+    );
+    const responsePayload = (await response.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    >;
+    if (!response.ok) {
+      throw new MarketplaceProviderHttpError(response.status, responsePayload);
+    }
+    return {
+      externalId: readString(responsePayload.id) ?? input.externalId ?? null,
+      metadata: { providerResponse: responsePayload },
+      providerStatus: readString(responsePayload.status) ?? "accepted",
+    };
+  }
+
+  if (!input.listing) throw new MarketplaceProviderPayloadError(input.jobType);
   const payload = createProviderListingPayload({
     listing: input.listing,
     provider: options.provider,
@@ -99,9 +126,7 @@ async function runListingSync(
     },
     method,
   };
-  if (input.jobType !== "listing_unpublish") {
-    requestInit.body = JSON.stringify(payload.body);
-  }
+  requestInit.body = JSON.stringify(payload.body);
   const response = await fetchImpl(
     `${options.baseUrl.replace(/\/$/, "")}${path}`,
     requestInit,
@@ -172,5 +197,12 @@ export class MarketplaceProviderHttpError extends Error {
   ) {
     super(`Marketplace provider request failed with status ${status}.`);
     this.name = "MarketplaceProviderHttpError";
+  }
+}
+
+export class MarketplaceProviderPayloadError extends Error {
+  constructor(jobType: string) {
+    super(`Marketplace listing payload is required for ${jobType}.`);
+    this.name = "MarketplaceProviderPayloadError";
   }
 }

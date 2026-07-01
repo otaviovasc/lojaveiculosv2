@@ -37,6 +37,8 @@ export type PermissionKey =
   | "finance.read"
   | "finance.update"
   | "fiscal.manage"
+  | "identity.owner_store.create"
+  | "identity.session.bootstrap"
   | "inventory.create"
   | "inventory.catalog_sync"
   | "inventory.checklist_read"
@@ -93,6 +95,7 @@ export type EntitlementKey =
 export type RoleKey =
   "agency" | "admin" | "investor" | "owner" | "salesman" | "supervisor";
 
+export * from "./brazilianDocuments.js";
 export * from "./vehicleColors.js";
 export * from "./vehicleTechnicalSpecs.js";
 export * from "./storefrontBuilder.js";

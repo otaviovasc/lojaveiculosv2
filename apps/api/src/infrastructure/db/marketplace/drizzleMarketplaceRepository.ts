@@ -1,6 +1,10 @@
 import { and, desc, eq } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { integrationAccounts, integrationJobs } from "@lojaveiculosv2/db";
+import {
+  integrationAccounts,
+  integrationJobs,
+  vehicleProviderListings,
+} from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
   CreateMarketplaceJobInput,
@@ -8,6 +12,7 @@ import type {
   MarketplaceJob,
   MarketplaceOverview,
   MarketplaceProvider,
+  MarketplaceProviderListing,
   MarketplaceRepository,
   UpsertMarketplaceAccountInput,
 } from "../../../domains/marketplace/ports/marketplaceRepository.js";
@@ -23,7 +28,7 @@ import {
   markJobFailed,
   markJobRunning,
 } from "./drizzleMarketplaceJobs.js";
-import { toAccount, toJob } from "./drizzleMarketplaceMappers.js";
+import { toAccount, toJob, toRecord } from "./drizzleMarketplaceMappers.js";
 
 export type DrizzleMarketplaceClient = PostgresJsDatabase<typeof schema>;
 
@@ -39,6 +44,7 @@ export function createDrizzleMarketplaceRepository(
     createSyncJob: (input) => createSyncJob(db, input),
     findAccount: (input) => findAccount(db, input, codec),
     findListingProjection: (input) => findListingProjection(db, input),
+    findProviderListing: (input) => findProviderListing(db, input),
     findSyncJob: (input) => findSyncJob(db, input),
     listOverview: (input) => listOverview(db, input),
     markJobCompleted: (input) => markJobCompleted(db, input),
@@ -65,6 +71,39 @@ async function findAccount(
     )
     .limit(1);
   return row ? toAccount(row, codec.decodeAccountConfig) : null;
+}
+
+async function findProviderListing(
+  db: DrizzleMarketplaceClient,
+  input: {
+    accountId: string;
+    listingId: string;
+    storeId: string;
+    tenantId: string;
+  },
+): Promise<MarketplaceProviderListing | null> {
+  const [row] = await db
+    .select()
+    .from(vehicleProviderListings)
+    .where(
+      and(
+        eq(vehicleProviderListings.accountId, input.accountId),
+        eq(vehicleProviderListings.listingId, input.listingId),
+        eq(vehicleProviderListings.storeId, input.storeId),
+        eq(vehicleProviderListings.tenantId, input.tenantId),
+      ),
+    )
+    .limit(1);
+  return row
+    ? {
+        accountId: row.accountId,
+        externalId: row.externalId,
+        listingId: row.listingId,
+        metadata: toRecord(row.metadata),
+        storeId: row.storeId as never,
+        tenantId: row.tenantId as never,
+      }
+    : null;
 }
 
 async function listOverview(

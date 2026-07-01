@@ -83,6 +83,7 @@ describe("createRuntimeAppDependencies", () => {
       createRuntimeAppDependencies({
         APP_ENV: "production",
         AUDIT_DATABASE_URL: "postgresql://audit:audit@localhost:54322/audit",
+        CLERK_AUTHORIZED_PARTIES: "https://app.example.com",
         CLERK_SECRET_KEY: "sk_test_fake",
         DATABASE_URL: "postgresql://product:product@localhost:54321/product",
         NODE_ENV: "production",

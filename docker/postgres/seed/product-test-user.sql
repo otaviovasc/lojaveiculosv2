@@ -42,11 +42,46 @@ VALUES
     '77777777-7777-4777-8777-777777777777'
   ),
   (
+    '01010101-0101-4101-8101-010101010101',
+    'clerk_seed_agency',
+    'agency.seed@lojaveiculos.com.br',
+    'Seed Agency',
+    '77777777-7777-4777-8777-777777777777'
+  ),
+  (
+    '02020202-0202-4202-8202-020202020202',
+    'clerk_seed_owner',
+    'owner.seed@lojaveiculos.com.br',
+    'Seed Owner',
+    '77777777-7777-4777-8777-777777777777'
+  ),
+  (
+    '03030303-0303-4303-8303-030303030303',
+    'clerk_seed_supervisor',
+    'supervisor.seed@lojaveiculos.com.br',
+    'Seed Supervisor',
+    '77777777-7777-4777-8777-777777777777'
+  ),
+  (
+    '04040404-0404-4404-8404-040404040404',
+    'clerk_seed_salesman',
+    'salesman.seed@lojaveiculos.com.br',
+    'Seed Salesman',
+    '77777777-7777-4777-8777-777777777777'
+  ),
+  (
     'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
     'clerk_test_investor',
     'investor@lojaveiculos.com.br',
     'Test Investor',
     '77777777-7777-4777-8777-777777777777'
+  ),
+  (
+    'aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa',
+    'clerk_platform_admin',
+    'platform@lojaveiculos.com.br',
+    'Platform Admin',
+    null
   )
 ON CONFLICT (clerk_user_id) DO NOTHING;
 
@@ -88,6 +123,58 @@ VALUES
     'investor'
   )
 ON CONFLICT (role_key) DO NOTHING;
+
+INSERT INTO platform_admin_memberships (
+  id,
+  status,
+  user_id
+)
+VALUES (
+  'abababab-abab-4aba-8aba-abababababab',
+  'active',
+  'aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa'
+)
+ON CONFLICT (user_id) DO NOTHING;
+
+INSERT INTO tenant_memberships (
+  id,
+  role_template_id,
+  status,
+  tenant_id,
+  user_id
+)
+VALUES (
+  '1212abab-1212-4aba-8aba-1212abab1212',
+  '55555555-5555-4555-8555-555555555555',
+  'active',
+  '77777777-7777-4777-8777-777777777777',
+  '88888888-8888-4888-8888-888888888888'
+)
+ON CONFLICT (tenant_id, user_id) DO NOTHING;
+
+INSERT INTO tenant_memberships (
+  id,
+  role_template_id,
+  status,
+  tenant_id,
+  user_id
+)
+VALUES
+  (
+    '01010101-2222-4101-8101-010101010101',
+    '22222222-2222-4222-8222-222222222222',
+    'active',
+    '77777777-7777-4777-8777-777777777777',
+    '01010101-0101-4101-8101-010101010101'
+  ),
+  (
+    '02020202-2222-4202-8202-020202020202',
+    '55555555-5555-4555-8555-555555555555',
+    'active',
+    '77777777-7777-4777-8777-777777777777',
+    '02020202-0202-4202-8202-020202020202'
+  )
+ON CONFLICT (tenant_id, user_id) DO NOTHING;
 
 INSERT INTO store_memberships (
   id,
@@ -139,6 +226,30 @@ VALUES
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777',
     'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+  ),
+  (
+    '02020202-3333-4202-8202-020202020202',
+    '55555555-5555-4555-8555-555555555555',
+    'active',
+    '66666666-6666-4666-8666-666666666666',
+    '77777777-7777-4777-8777-777777777777',
+    '02020202-0202-4202-8202-020202020202'
+  ),
+  (
+    '03030303-3333-4303-8303-030303030303',
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    'active',
+    '66666666-6666-4666-8666-666666666666',
+    '77777777-7777-4777-8777-777777777777',
+    '03030303-0303-4303-8303-030303030303'
+  ),
+  (
+    '04040404-3333-4404-8404-040404040404',
+    'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    'active',
+    '66666666-6666-4666-8666-666666666666',
+    '77777777-7777-4777-8777-777777777777',
+    '04040404-0404-4404-8404-040404040404'
   )
 ON CONFLICT (store_id, user_id) DO NOTHING;
 

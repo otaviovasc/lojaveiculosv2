@@ -53,19 +53,47 @@ pnpm run dev:all:local
 Then open the web app at `http://localhost:5173`. The API listens on
 `http://localhost:8787`, and Vite proxies `/api` to that API.
 
-`pnpm run dev:all:local` starts the API with:
+For real Clerk QA, keep the local bypass variables empty and sign in through
+`/sign-in` or `/sign-up`. The root `.env` should contain Clerk's V2
+publishable key, backend secret, authorized local origins, and redirects back to
+`http://localhost:5173/auth/session`.
+
+Authless seeded preview is still available for narrow local demos by setting:
 
 ```text
 LOCAL_AUTH_BYPASS=true
-DEV_CLERK_USER_ID=clerk_test_user
+DEV_CLERK_USER_ID=clerk_seed_owner
 DEV_STORE_SLUG=test-store
+VITE_LOCAL_AUTH_BYPASS=true
+VITE_DEV_STORE_SLUG=test-store
 ```
 
-In Vite dev mode, the web runtime clients also default to
-`clerk_test_user` and `test-store`, so the app behaves as the seeded owner user.
+`pnpm run dev:all:local` sets these local-only values for the child API/web
+processes and clears Clerk secrets so the trusted-header flow cannot be mixed
+with a real Clerk token verifier by accident. In the browser, `/sign-in` becomes
+a local QA account switcher for seeded agency, owner, supervisor, and salesman
+personas. After the stack is running, execute:
+
+```bash
+pnpm run qa:permissions:local
+```
+
 The product seed creates realistic local data for inventory, CRM/leads,
 finance, commissions, documents, public storefront, billing, marketplace,
 external API, fiscal, provider events, users, roles, and entitlements.
+
+For local database cleanup:
+
+```bash
+pnpm run db:clean:local
+pnpm run db:reset:local
+```
+
+`db:clean:local` keeps the Docker volumes, truncates local product and audit
+tables with `CASCADE`, and re-runs the local seed. `db:reset:local` recreates
+the local Docker volumes, pushes the schema, and re-runs the same seed. Both
+commands refuse to run when database URLs do not match the known local database
+names, users, and ports, or when production/Railway runtime markers are present.
 
 Useful checks:
 

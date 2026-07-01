@@ -12,12 +12,7 @@ import {
 import type { AnalyticsDashboard } from "../features/analytics/types";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
 import { DashboardLeadSourcesPanel } from "./DashboardLeadSourcesPanel";
-import { MOCK_AGING_VEHICLES, MOCK_TASKS } from "./DashboardHomeData";
-import {
-  AgingStat,
-  getPromoBlobClass,
-  PanelHeader,
-} from "./DashboardHomePanelParts";
+import { getPromoBlobClass, PanelHeader } from "./DashboardHomePanelParts";
 import BorderGlow from "./ui/BorderGlow";
 
 export function DashboardHomeMainPanels({
@@ -34,19 +29,26 @@ export function DashboardHomeMainPanels({
   return (
     <div className="dashboard-main-col">
       <div className="dashboard-sub-grid">
-        <DashboardAgendaPanel />
+        <DashboardAgendaPanel dashboard={dashboard} />
         <DashboardLeadSourcesPanel dashboard={dashboard} />
       </div>
       <DashboardPromoBanner
         resourceIndex={resourceIndex}
         setResourceIndex={setResourceIndex}
       />
-      <DashboardAgingInventory onNavigate={onNavigate} />
+      <DashboardAgingInventory dashboard={dashboard} onNavigate={onNavigate} />
     </div>
   );
 }
 
-function DashboardAgendaPanel() {
+function DashboardAgendaPanel({
+  dashboard,
+}: {
+  dashboard: AnalyticsDashboard | null;
+}) {
+  const activeLeads =
+    dashboard?.leadFunnel.reduce((total, step) => total + step.count, 0) ?? 0;
+
   return (
     <DashboardHomeEntry className="h-full" delay={0.14}>
       <div className="glass-panel-branded dashboard-card">
@@ -56,45 +58,18 @@ function DashboardAgendaPanel() {
           title="Agenda Próxima"
         />
         <div className="card-body">
-          {MOCK_TASKS.map((task) => {
-            const date = new Date(task.dueDate);
-            return (
-              <div key={task.id} className="agenda-item-premium">
-                <div
-                  className={
-                    "agenda-date-box-premium " +
-                    (task.isOverdue
-                      ? "agenda-date-box-danger"
-                      : "agenda-date-box-accent")
-                  }
-                >
-                  <span className="agenda-date-month">
-                    {date
-                      .toLocaleDateString("pt-BR", { month: "short" })
-                      .replace(".", "")}
-                  </span>
-                  <span className="agenda-date-day">{date.getDate()}</span>
-                </div>
-                <div className="agenda-item-info">
-                  <h4 className="agenda-item-title">{task.title}</h4>
-                  <div className="agenda-item-meta">
-                    <span className="agenda-item-meta-lead">
-                      {task.leadName}
-                    </span>
-                    {task.columnName && (
-                      <span className="agenda-badge-muted">
-                        {task.columnName}
-                      </span>
-                    )}
-                    {task.isOverdue && (
-                      <span className="agenda-badge-danger">Atrasada</span>
-                    )}
-                  </div>
-                </div>
-                <ArrowRight className="agenda-item-arrow" />
-              </div>
-            );
-          })}
+          <DashboardPanelEmpty
+            title={
+              activeLeads > 0
+                ? "Nenhuma agenda pendente"
+                : "Nenhuma atividade pendente"
+            }
+            body={
+              activeLeads > 0
+                ? `${activeLeads} leads ativos sem compromisso aberto.`
+                : "A rotina comercial desta loja ainda não gerou compromissos."
+            }
+          />
         </div>
       </div>
     </DashboardHomeEntry>
@@ -202,10 +177,17 @@ function DashboardPromoBanner({
 }
 
 function DashboardAgingInventory({
+  dashboard,
   onNavigate,
 }: {
+  dashboard: AnalyticsDashboard | null;
   onNavigate: (moduleId: ModuleId) => void;
 }) {
+  const inventory = dashboard?.inventory;
+  const totalListings = inventory?.totalListings ?? 0;
+  const availableListings = inventory?.availableListings ?? 0;
+  const hasInventory = totalListings > 0;
+
   return (
     <DashboardHomeEntry className="h-full" delay={0.2}>
       <div className="glass-panel-branded dashboard-card">
@@ -222,51 +204,45 @@ function DashboardAgingInventory({
             </div>
           </div>
           <div className="aging-avg-badge">
-            <span className="aging-avg-label">Médio:</span>
-            <span className="aging-avg-value">35 dias</span>
+            <span className="aging-avg-label">Estoque:</span>
+            <span className="aging-avg-value">
+              {availableListings}/{totalListings}
+            </span>
           </div>
         </div>
         <div className="aging-inventory-grid">
-          {MOCK_AGING_VEHICLES.map((vehicle) => (
-            <div key={vehicle.id} className="aging-item-premium group">
-              <div className="aging-img-wrapper">
-                {vehicle.foto ? (
-                  <img
-                    src={vehicle.foto}
-                    alt={vehicle.title}
-                    className="aging-img"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-app-elevated" />
-                )}
-                <div className="aging-days-badge">{vehicle.daysInStock}d</div>
-              </div>
-              <div className="aging-details">
-                <h4 className="aging-title">{vehicle.title}</h4>
-                <div className="aging-stats">
-                  <AgingStat label="Leads" value={vehicle.leadsCount} />
-                  <div className="aging-stat-divider" />
-                  <AgingStat
-                    label="Preço"
-                    value={new Intl.NumberFormat("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                      maximumFractionDigits: 0,
-                    }).format(vehicle.price)}
-                    valueClassName="aging-stat-value-green"
-                  />
-                </div>
-                <button
-                  onClick={() => onNavigate("inventory")}
-                  className="aging-action-btn"
-                >
-                  Ver Detalhes
-                </button>
-              </div>
+          <div className="col-span-full rounded-xl border border-dashed border-line/70 bg-app/40 p-5">
+            <div className="flex flex-col gap-3">
+              <h4 className="aging-title">
+                {hasInventory
+                  ? "Prioridades de giro em preparação"
+                  : "Nenhum veículo nesta loja"}
+              </h4>
+              <p className="text-sm font-bold text-muted">
+                {hasInventory
+                  ? `${totalListings} veículos cadastrados. Revise o estoque para acompanhar giro, leads e precificação.`
+                  : "Cadastre o primeiro veículo para iniciar indicadores comerciais desta loja."}
+              </p>
+              <button
+                onClick={() => onNavigate("inventory")}
+                className="aging-action-btn max-w-max"
+                type="button"
+              >
+                {hasInventory ? "Abrir estoque" : "Cadastrar veículo"}
+              </button>
             </div>
-          ))}
+          </div>
         </div>
       </div>
     </DashboardHomeEntry>
+  );
+}
+
+function DashboardPanelEmpty({ body, title }: { body: string; title: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-line/70 bg-app/40 p-5">
+      <h4 className="agenda-item-title">{title}</h4>
+      <p className="mt-2 text-sm font-bold text-muted">{body}</p>
+    </div>
   );
 }

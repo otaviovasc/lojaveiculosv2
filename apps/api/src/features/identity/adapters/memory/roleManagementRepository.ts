@@ -40,6 +40,7 @@ const state: RoleManagementState = {
       },
     },
   ],
+  pendingInvitations: [],
   storeId: "66666666-6666-4666-8666-666666666666" as never,
   tenantId: "77777777-7777-4777-8777-777777777777" as never,
 };

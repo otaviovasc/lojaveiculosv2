@@ -23,6 +23,7 @@ export function createMemoryObjectStorage(): ObjectStorage {
         uploadUrl: `https://upload.local/${storageKey}`,
       };
     },
+    deleteObject: async () => undefined,
     getPublicUrl: (storageKey) => `https://cdn.local/${storageKey}`,
     async putObject(input) {
       const storageKey = createStorageKey(input);

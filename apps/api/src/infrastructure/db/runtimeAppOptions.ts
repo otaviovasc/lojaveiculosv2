@@ -25,11 +25,18 @@ import {
   createRoleServices,
   type RoleServices,
 } from "../../features/identity/controllers/roleServices.js";
+import { createAccountProvisioningServices } from "../../features/identity/controllers/accountProvisioningServices.js";
+import type { InvitationSender } from "../../domains/identity/ports/accountProvisioningRepository.js";
 import type { CreateAppOptions } from "../http/createApp.js";
 import {
   createDrizzleStoreAccessRepository,
   type DrizzleStoreAccessClient,
 } from "./identity/drizzleStoreAccessRepository.js";
+import {
+  createDrizzleAccountProvisioningRepository,
+  type DrizzleAccountProvisioningClient,
+} from "./identity/drizzleAccountProvisioningRepository.js";
+import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import { createDrizzlePublicStorefrontRepository } from "./storefront/drizzlePublicStorefrontRepository.js";
 import type { DrizzlePublicStorefrontClient } from "./storefront/drizzlePublicStorefrontQueryTypes.js";
 import {
@@ -82,6 +89,10 @@ import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnri
 
 type RuntimeHttpAppOptionsInput = {
   auditDb: unknown | null;
+  clerkAccountProviders?: {
+    clerkUserProfileProvider?: ClerkUserProfileProvider;
+    invitationSender?: InvitationSender;
+  };
   db: unknown;
   env: Record<string, string | undefined>;
   identityVerifier: CreateAppOptions["identityVerifier"] | null;
@@ -90,6 +101,7 @@ type RuntimeHttpAppOptionsInput = {
 
 export function createRuntimeHttpAppOptions({
   auditDb,
+  clerkAccountProviders = {},
   db,
   env,
   identityVerifier,
@@ -104,6 +116,14 @@ export function createRuntimeHttpAppOptions({
       db as RuntimeAnalyticsClient,
     ),
     ...(audit ? { audit } : {}),
+    accountProvisioningServices: createAccountProvisioningServices({
+      ...(clerkAccountProviders.invitationSender
+        ? { invitationSender: clerkAccountProviders.invitationSender }
+        : {}),
+      repository: createDrizzleAccountProvisioningRepository(
+        db as DrizzleAccountProvisioningClient,
+      ),
+    }),
     billingServices: createBillingServices({
       ports: {
         billingRepository: createDrizzleBillingRepository(
@@ -122,6 +142,12 @@ export function createRuntimeHttpAppOptions({
     financeServices: createRuntimeFinanceServices(db, objectStorage),
     fiscalServices: createRuntimeFiscalServices(db, env),
     ...(identityVerifier ? { identityVerifier } : {}),
+    ...(clerkAccountProviders.clerkUserProfileProvider
+      ? {
+          clerkUserProfileProvider:
+            clerkAccountProviders.clerkUserProfileProvider,
+        }
+      : {}),
     inventoryEnrichmentServices: createRuntimeInventoryEnrichmentServices(
       db,
       env,

@@ -2,6 +2,10 @@ import * as auditSchema from "@lojaveiculosv2/audit-db";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { createClerkHttpIdentityVerifier } from "../auth/clerkHttpIdentityVerifier.js";
+import {
+  createClerkInvitationSender,
+  createClerkUserProfileProvider,
+} from "../auth/clerkAccountProvisioning.js";
 
 export class RuntimeDatabaseConfigError extends Error {
   constructor(message: string) {
@@ -41,9 +45,16 @@ export function resolveRuntimeDatabaseUrl(
 export function assertRuntimeIdentityVerifierConfig(
   env: Record<string, string | undefined>,
 ): void {
-  if (!env.CLERK_SECRET_KEY && !allowsMemoryRuntimeFallback(env)) {
+  if (allowsMemoryRuntimeFallback(env)) return;
+
+  if (!env.CLERK_SECRET_KEY) {
     throw new RuntimeDatabaseConfigError(
       "CLERK_SECRET_KEY must be configured before starting DB-backed API runtime outside local/test.",
+    );
+  }
+  if (parseCsvEnv(env.CLERK_AUTHORIZED_PARTIES ?? "").length === 0) {
+    throw new RuntimeDatabaseConfigError(
+      "CLERK_AUTHORIZED_PARTIES must list exact frontend origins outside local/test.",
     );
   }
 }
@@ -79,22 +90,47 @@ export function createRuntimeIdentityVerifier(
   env: Record<string, string | undefined>,
 ) {
   const secretKey = env.CLERK_SECRET_KEY;
+  assertRuntimeIdentityVerifierConfig(env);
 
   if (!secretKey) {
-    assertRuntimeIdentityVerifierConfig(env);
     return null;
   }
 
+  const authorizedParties = readClerkAuthorizedParties(env);
   return createClerkHttpIdentityVerifier({
     ...(env.CLERK_AUDIENCE
       ? { audience: parseCsvEnv(env.CLERK_AUDIENCE) }
       : {}),
-    ...(env.CLERK_AUTHORIZED_PARTIES
-      ? { authorizedParties: parseCsvEnv(env.CLERK_AUTHORIZED_PARTIES) }
-      : {}),
+    ...(authorizedParties.length ? { authorizedParties } : {}),
     ...(env.CLERK_JWT_KEY ? { jwtKey: env.CLERK_JWT_KEY } : {}),
     secretKey,
   });
+}
+
+export function createRuntimeClerkAccountProviders(
+  env: Record<string, string | undefined>,
+) {
+  const secretKey = env.CLERK_SECRET_KEY;
+  if (!secretKey) return {};
+  const redirectUrl = resolveClerkInvitationRedirectUrl(env);
+  return {
+    clerkUserProfileProvider: createClerkUserProfileProvider({ secretKey }),
+    invitationSender: createClerkInvitationSender({
+      ...(redirectUrl ? { redirectUrl } : {}),
+      secretKey,
+    }),
+  };
+}
+
+export function resolveClerkInvitationRedirectUrl(
+  env: Record<string, string | undefined>,
+): string | undefined {
+  const publicAppUrl = trimTrailingSlash(env.PUBLIC_APP_URL);
+  const configured =
+    env.CLERK_INVITATION_REDIRECT_URL ?? env.CLERK_AFTER_SIGN_UP_URL;
+  const resolved = resolveRedirectUrl(configured, publicAppUrl);
+  if (resolved) return resolved;
+  return publicAppUrl ? `${publicAppUrl}/auth/session` : undefined;
 }
 
 function parseCsvEnv(value: string): string[] {
@@ -102,4 +138,40 @@ function parseCsvEnv(value: string): string[] {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function resolveRedirectUrl(
+  value: string | undefined,
+  publicAppUrl: string | undefined,
+): string | undefined {
+  const trimmed = value?.trim();
+  if (!trimmed) return undefined;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed.replace(/\/$/, "");
+  if (trimmed.startsWith("/") && publicAppUrl) {
+    return `${publicAppUrl}${trimmed}`;
+  }
+  return trimmed;
+}
+
+function trimTrailingSlash(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed.replace(/\/$/, "") : undefined;
+}
+
+function readClerkAuthorizedParties(
+  env: Record<string, string | undefined>,
+): string[] {
+  const configured = env.CLERK_AUTHORIZED_PARTIES;
+  if (!configured) return [];
+
+  const parties = parseCsvEnv(configured);
+  if (!parties.includes("*")) return parties;
+
+  if (!allowsMemoryRuntimeFallback(env)) {
+    throw new RuntimeDatabaseConfigError(
+      "CLERK_AUTHORIZED_PARTIES must list exact frontend origins; '*' is not supported by Clerk token verification.",
+    );
+  }
+
+  return parties.filter((party) => party !== "*");
 }

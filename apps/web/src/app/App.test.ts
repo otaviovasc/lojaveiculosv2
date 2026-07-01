@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { adminRoutePaths } from "./adminRoutePaths";
+import { isReservedPublicStoreSlug } from "./PublicStorefrontSlugGuard";
 import { dashboardStats } from "./dashboardData";
 import { publicStorefrontPreview } from "../features/publicSite/fixtures";
 import {
@@ -87,6 +88,11 @@ describe("App module navigation", () => {
     expect(adminRoutePaths).not.toContain("/personalizar");
     expect(adminRoutePaths).toContain("/custom-pages");
     expect(adminRoutePaths).toContain("/page-builder");
+    expect(isReservedPublicStoreSlug("sign-in")).toBe(true);
+    expect(isReservedPublicStoreSlug("auth")).toBe(true);
+    expect(isReservedPublicStoreSlug("agency")).toBe(true);
+    expect(isReservedPublicStoreSlug("platform")).toBe(true);
+    expect(isReservedPublicStoreSlug("demo")).toBe(false);
   });
 
   it("keeps CRM surfaces deterministic for visual QA routes", () => {

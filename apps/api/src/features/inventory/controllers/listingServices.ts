@@ -16,6 +16,10 @@ import type {
 } from "../../../domains/vehicle/services/VehicleService/manageVehicleSuppliers.js";
 import type { VehicleUnitAcquisitionInput } from "../../../domains/vehicle/services/VehicleService/manageVehicleUnitAcquisition.js";
 import type { ReorderVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/reorderVehicleMedia.js";
+import type {
+  PublishVehicleListingInput,
+  UnpublishVehicleListingInput,
+} from "../../../domains/vehicle/services/VehicleService/publishVehicleListing.js";
 import type { ReserveVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/reserveVehicleUnit.js";
 import type { ReleaseVehicleUnitReservationInput } from "../../../domains/vehicle/services/VehicleService/releaseVehicleUnitReservation.js";
 import type { RequestVehicleDocumentUploadInput } from "../../../domains/vehicle/services/VehicleService/requestVehicleDocumentUpload.js";
@@ -130,6 +134,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: ListVehicleUnitsInput,
   ) => Promise<InventoryUnitListResponse>;
+  publishListing: (
+    context: ServiceContext,
+    input: PublishVehicleListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
   listChecklists: (
     context: ServiceContext,
     input: ListVehicleChecklistsInput,
@@ -166,6 +174,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: RequestVehicleDocumentUploadInput,
   ) => Promise<VehicleMediaUpload>;
+  unpublishListing: (
+    context: ServiceContext,
+    input: UnpublishVehicleListingInput,
+  ) => Promise<InventoryListingDetailResponse>;
   reserveUnit: (
     context: ServiceContext,
     input: ReserveVehicleUnitInput,
@@ -212,32 +224,13 @@ export type InventoryListingServices = {
   ) => Promise<InventoryListingDetailResponse>;
 };
 
-type AttachListingInput = {
-  colorName?: AttachVehicleUnitInput["colorName"] | undefined;
-  listingId: string;
-  plate?: string | null | undefined;
-  stockNumber?: string | null | undefined;
-  vin?: string | null | undefined;
+type ExplicitOptionalUndefined<T> = {
+  [Key in keyof T]: Record<string, never> extends Pick<T, Key>
+    ? T[Key] | undefined
+    : T[Key];
 };
-
-type CreateListingInput = {
-  catalog?: CreateVehicleListingInput["catalog"] | undefined;
-  description?: string | null | undefined;
-  doors?: CreateVehicleListingInput["doors"] | undefined;
-  engineAspiration?: CreateVehicleListingInput["engineAspiration"];
-  engineDisplacement?: CreateVehicleListingInput["engineDisplacement"];
-  fuelType?: CreateVehicleListingInput["fuelType"];
-  internalNotes?: CreateVehicleListingInput["internalNotes"];
-  manufactureYear?: number | null | undefined;
-  mileageKm?: CreateVehicleListingInput["mileageKm"] | undefined;
-  modelYear?: number | null | undefined;
-  plate: string | null;
-  priceCents?: number | null | undefined;
-  status?: VehicleListingStatus | undefined;
-  title: string;
-  transmission?: CreateVehicleListingInput["transmission"];
-  trimName?: string | null | undefined;
-};
+type AttachListingInput = ExplicitOptionalUndefined<AttachVehicleUnitInput>;
+type CreateListingInput = ExplicitOptionalUndefined<CreateVehicleListingInput>;
 
 export const inventoryListingServices = createInventoryListingServices();
 export { createInventoryListingServices };

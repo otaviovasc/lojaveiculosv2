@@ -26,7 +26,7 @@ export type MarketplaceGatewayAuthConfig = {
 export type MarketplacePublishInput = {
   externalId?: string | null;
   jobType: MarketplaceSyncJobType;
-  listing: MarketplaceListingProjection;
+  listing?: MarketplaceListingProjection;
   metadata: Record<string, unknown>;
   token: MarketplaceTokenSet;
 };

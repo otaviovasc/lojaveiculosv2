@@ -11,14 +11,16 @@ import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import type { ModuleId } from "../app/modules";
 import { dashboardQuickActions } from "../features/analytics/dashboardHomeAnimation";
-import { MOCK_SELLERS } from "./DashboardHomeData";
+import type { AnalyticsDashboard } from "../features/analytics/types";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
 
 export function DashboardHomeSidebarPanel({
+  dashboard,
   onNavigate,
   pushEnabled,
   setPushEnabled,
 }: {
+  dashboard: AnalyticsDashboard | null;
   onNavigate: (moduleId: ModuleId) => void;
   pushEnabled: boolean;
   setPushEnabled: (enabled: boolean) => void;
@@ -67,7 +69,7 @@ export function DashboardHomeSidebarPanel({
             </div>
           </div>
           <SidebarDivider />
-          <DashboardSellerPerformance />
+          <DashboardSellerPerformance dashboard={dashboard} />
           <SidebarDivider />
           <DashboardAddonsPanel
             onNavigate={onNavigate}
@@ -80,33 +82,36 @@ export function DashboardHomeSidebarPanel({
   );
 }
 
-function DashboardSellerPerformance() {
+function DashboardSellerPerformance({
+  dashboard,
+}: {
+  dashboard: AnalyticsDashboard | null;
+}) {
+  const soldListings = dashboard?.inventory.soldListings ?? 0;
+  const closedSalesCents = dashboard?.revenue.closedSalesCents ?? 0;
+
   return (
     <div className="sidebar-block">
       <h4 className="sidebar-block-subtitle">Performance do Mês</h4>
       <div className="seller-list">
-        {MOCK_SELLERS.map((seller, idx) => (
-          <div key={seller.name} className="seller-row group">
-            <div className={`seller-badge-container ${sellerBadgeClass(idx)}`}>
-              {idx + 1}º
+        {soldListings > 0 ? (
+          <div className="seller-row group">
+            <div className={`seller-badge-container ${sellerBadgeClass(0)}`}>
+              Loja
             </div>
             <div className="seller-info">
-              <h5 className="seller-name">{seller.name}</h5>
+              <h5 className="seller-name">Equipe comercial</h5>
               <div className="seller-stats">
-                <span className="seller-leads">
-                  {seller.leadsConverted} Vendas
-                </span>
-                <span className="seller-value">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                    maximumFractionDigits: 0,
-                  }).format(seller.totalSalesValue)}
-                </span>
+                <span className="seller-leads">{soldListings} Vendas</span>
+                <span className="seller-value">{money(closedSalesCents)}</span>
               </div>
             </div>
           </div>
-        ))}
+        ) : (
+          <div className="rounded-xl border border-dashed border-line/70 bg-app/40 p-4 text-sm font-bold text-muted">
+            Nenhuma venda fechada neste período.
+          </div>
+        )}
       </div>
     </div>
   );
@@ -215,4 +220,12 @@ function sellerBadgeClass(index: number) {
   if (index === 1) return "seller-badge-2";
   if (index === 2) return "seller-badge-3";
   return "seller-badge-default";
+}
+
+function money(cents: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    maximumFractionDigits: 0,
+    style: "currency",
+  }).format(cents / 100);
 }

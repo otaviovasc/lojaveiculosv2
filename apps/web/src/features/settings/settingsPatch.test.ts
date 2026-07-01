@@ -55,7 +55,7 @@ function createSettings(
       businessHours: { text: "Segunda a Sexta, 9h as 18h" },
       contactEmail: "contato@example.com",
       contactPhone: "(11) 3000-0000",
-      documentNumber: "12.345.678/0001-90",
+      documentNumber: "11.222.333/0001-81",
       logoImageUrl: null,
       whatsappPhone: "(11) 90000-0000",
     },

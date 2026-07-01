@@ -5,7 +5,6 @@ import {
   type AgencyStore,
   type AgencyStatusFilter,
   mapBillingOverviewToStores,
-  MOCK_STORES,
 } from "./AgencyDashboardPage.model";
 import {
   AgencyDashboardHeader,
@@ -18,6 +17,7 @@ import {
   AgencyDeleteModal,
   AgencyStoresTable,
 } from "./AgencyDashboardStoresTable";
+import { createRuntimeAuthHeaders } from "../../account/runtimeAuth";
 
 export function AgencyDashboardPage() {
   const [stores, setStores] = useState<AgencyStore[]>([]);
@@ -43,20 +43,17 @@ export function AgencyDashboardPage() {
     setLoading(true);
     try {
       // Fetch billing allocations / overview to load store lists
-      const res = await fetch("/api/v1/billing/overview");
+      const headers = await createRuntimeAuthHeaders();
+      const res = await fetch("/api/v1/billing/overview", { headers });
       if (res.ok) {
         const mapped = mapBillingOverviewToStores(await res.json());
-        if (mapped) {
-          setStores(mapped.length > 0 ? mapped : MOCK_STORES);
-        } else {
-          setStores(MOCK_STORES);
-        }
+        setStores(mapped ?? []);
       } else {
-        setStores(MOCK_STORES);
+        setStores([]);
       }
     } catch (error) {
-      console.error("Error fetching stores, falling back to mock data:", error);
-      setStores(MOCK_STORES);
+      console.error("Error fetching agency stores:", error);
+      setStores([]);
     } finally {
       setLoading(false);
     }

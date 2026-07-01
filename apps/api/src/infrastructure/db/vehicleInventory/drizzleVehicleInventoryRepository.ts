@@ -30,6 +30,7 @@ import {
   requireDbScope,
 } from "./drizzleVehicleInventoryScope.js";
 import {
+  findListingByPublicSlug,
   findListingUnits,
   findListingsUnits,
   matchesListingFilters,
@@ -98,7 +99,6 @@ export function createDrizzleVehicleInventoryRepositories(
   const operationsRepository = createDrizzleVehicleOperationsRepository(db);
   const salesRepository = createDrizzleVehicleSalesRepository(db);
   const unitRepository = createDrizzleVehicleUnitRepository(db);
-
   return {
     acquisitionRepository,
     checklistRepository,
@@ -116,7 +116,6 @@ export function createDrizzleVehicleListingRepository(
   db: DrizzleVehicleInventoryClient,
 ): VehicleListingRepository {
   const listingDb = db as DrizzleVehicleListingClient;
-
   return {
     async create(record) {
       const scope = requireDbScope(record);
@@ -130,10 +129,12 @@ export function createDrizzleVehicleListingRepository(
           engineDisplacement: record.engineDisplacement ?? null,
           fuelType: record.fuelType ?? null,
           internalNotes: record.internalNotes ?? null,
+          isVisibleOnPublicSite: record.isVisibleOnPublicSite ?? false,
           manufactureYear: record.manufactureYear,
           metadata: createListingMetadata(record.catalog),
           mileageKm: record.mileageKm ?? null,
           modelYear: record.modelYear,
+          publicSlug: record.publicSlug ?? null,
           status: toDbListingStatus(record.status),
           storeId: scope.storeId,
           tenantId: scope.tenantId,
@@ -170,7 +171,7 @@ export function createDrizzleVehicleListingRepository(
       const units = await findListingUnits(db, row.id);
       return toVehicleListing(row, units);
     },
-
+    findByPublicSlug: (input) => findListingByPublicSlug(db, input),
     async list(input) {
       const scope = requireDbScope(input);
       const rows = await listingDb
@@ -215,10 +216,12 @@ export function createDrizzleVehicleListingRepository(
           engineDisplacement: listing.engineDisplacement,
           fuelType: listing.fuelType,
           internalNotes: listing.internalNotes,
+          isVisibleOnPublicSite: listing.isVisibleOnPublicSite,
           manufactureYear: listing.manufactureYear,
           metadata: createListingMetadata(listing.catalog),
           mileageKm: listing.mileageKm,
           modelYear: listing.modelYear,
+          publicSlug: listing.publicSlug,
           status: toDbListingStatus(listing.status),
           title: listing.title,
           transmission: listing.transmission,

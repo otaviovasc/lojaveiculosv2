@@ -1,5 +1,7 @@
 import type {
   SettingsAuth,
+  IdentityInvitationView,
+  InviteStoreMemberInput,
   RoleManagementView,
   StoreSettingsSnapshot,
   UpdateMembershipAccessInput,
@@ -16,6 +18,10 @@ export type SettingsApi = {
     membershipId: string,
     input: UpdateMembershipAccessInput,
   ) => Promise<RoleManagementView>;
+  inviteStoreMember: (
+    input: InviteStoreMemberInput,
+  ) => Promise<IdentityInvitationView>;
+  resendInvitation: (invitationId: string) => Promise<IdentityInvitationView>;
 };
 
 export type CreateSettingsApiOptions = {
@@ -50,6 +56,17 @@ export function createSettingsApi({
         headers: createSettingsHeaders(auth),
         method: "PATCH",
       }).then(readJson<RoleManagementView>),
+    inviteStoreMember: (input) =>
+      fetch(settingsRoutes.invitations(baseUrl), {
+        body: JSON.stringify(input),
+        headers: createSettingsHeaders(auth),
+        method: "POST",
+      }).then(readJson<IdentityInvitationView>),
+    resendInvitation: (invitationId) =>
+      fetch(settingsRoutes.resendInvitation(invitationId, baseUrl), {
+        headers: createSettingsHeaders(auth),
+        method: "POST",
+      }).then(readJson<IdentityInvitationView>),
   };
 }
 
@@ -61,6 +78,13 @@ export const settingsRoutes = {
     ),
   roles: (baseUrl?: string) =>
     createSettingsEndpoint("/identity/roles", baseUrl),
+  invitations: (baseUrl?: string) =>
+    createSettingsEndpoint("/identity/invitations", baseUrl),
+  resendInvitation: (invitationId: string, baseUrl?: string) =>
+    createSettingsEndpoint(
+      `/identity/invitations/${encodeURIComponent(invitationId)}/resend`,
+      baseUrl,
+    ),
   store: (baseUrl?: string) =>
     createSettingsEndpoint("/settings/store", baseUrl),
 } as const;
@@ -83,7 +107,12 @@ function createSettingsEndpoint(path: string, baseUrl = "/api/v1") {
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`Settings request failed with status ${response.status}`);
+    const body = (await response.json().catch(() => null)) as {
+      message?: string;
+    } | null;
+    throw new Error(
+      body?.message ?? `Settings request failed with status ${response.status}`,
+    );
   }
   return (await response.json()) as T;
 }

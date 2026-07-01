@@ -26,6 +26,7 @@ import {
   HttpContextAuthorizationError,
 } from "./httpContextErrors.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
+import { readHttpRequestId } from "./requestMetadata.js";
 import { resolveStoreSlugFromRequest } from "./storeScope.js";
 
 export type CreateHttpServiceContextOptions = {
@@ -211,7 +212,7 @@ async function resolveContextOrThrow(
 }
 
 function readRequestHeaders(context: Context) {
-  const requestId = context.req.header("x-request-id") ?? crypto.randomUUID();
+  const requestId = readHttpRequestId(context) ?? crypto.randomUUID();
   const correlationId = context.req.header("x-correlation-id") ?? requestId;
   const idempotencyKey = context.req.header("idempotency-key");
   const ipAddress =

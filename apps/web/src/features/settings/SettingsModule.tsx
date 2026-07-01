@@ -14,6 +14,8 @@ import { createSettingsApiOptions } from "./runtimeApi";
 import { createStoreSettingsPatch } from "./settingsPatch";
 import type {
   RoleManagementView,
+  InviteStoreMemberInput,
+  IdentityInvitationView,
   SettingsStatus,
   SettingsTab,
   StoreSettingsSnapshot,
@@ -108,6 +110,22 @@ export function SettingsModule({
     }
   };
 
+  const inviteStoreMember = async (
+    input: InviteStoreMemberInput,
+  ): Promise<IdentityInvitationView> => {
+    const invitation = await settingsApi.inviteStoreMember(input);
+    await refresh();
+    return invitation;
+  };
+
+  const resendInvitation = async (
+    invitationId: string,
+  ): Promise<IdentityInvitationView> => {
+    const invitation = await settingsApi.resendInvitation(invitationId);
+    await refresh();
+    return invitation;
+  };
+
   return (
     <FeaturePageShell variant="dashboard" mainClassName="!p-4 md:!p-6 !gap-4">
       {status.kind === "error" ? (
@@ -152,6 +170,8 @@ export function SettingsModule({
       ) : activeTab === "roles" && roles ? (
         <RoleManagementPanel
           isSaving={status.kind === "saving"}
+          onInvite={inviteStoreMember}
+          onResendInvitation={resendInvitation}
           onSave={saveMemberAccess}
           roles={roles}
         />
@@ -198,6 +218,14 @@ function createRuntimeSettingsApi(): SettingsApi {
       createSettingsApi(await createSettingsApiOptions()).getStoreSettings(),
     getRoleManagement: async () =>
       createSettingsApi(await createSettingsApiOptions()).getRoleManagement(),
+    inviteStoreMember: async (input) =>
+      createSettingsApi(await createSettingsApiOptions()).inviteStoreMember(
+        input,
+      ),
+    resendInvitation: async (invitationId) =>
+      createSettingsApi(await createSettingsApiOptions()).resendInvitation(
+        invitationId,
+      ),
     updateMembershipAccess: async (membershipId, input) =>
       createSettingsApi(
         await createSettingsApiOptions(),

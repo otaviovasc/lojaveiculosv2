@@ -33,20 +33,23 @@ import { createSalesFeature } from "../../features/sales/controllers/sales.contr
 import type { SalesServices } from "../../features/sales/controllers/salesServices.js";
 import { createRolesFeature } from "../../features/identity/controllers/roles.controller.js";
 import type { RoleServices } from "../../features/identity/controllers/roleServices.js";
+import type { AccountProvisioningServices } from "../../features/identity/controllers/accountProvisioningServices.js";
 import type { StoreAccessRepository } from "../../domains/identity/ports/storeAccessRepository.js";
 import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
 import type { PublicStorefrontRepository } from "../../domains/storefront/ports/publicStorefrontRepository.js";
 import type { StorefrontPageRepository } from "../../domains/storefront/ports/storefrontPageRepository.js";
 import type { CrmRepository } from "../../domains/crm/ports/crmRepository.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
+import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
+import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
 import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
-
 export type CreateAppOptions = {
   analyticsServices?: AnalyticsServices;
   audit?: AuditSink;
+  accountProvisioningServices?: AccountProvisioningServices;
   billingServices?: BillingServices;
   complianceServices?: ComplianceServices;
   crmServices?: CrmServices;
@@ -56,6 +59,7 @@ export type CreateAppOptions = {
   financeServices?: FinanceServices;
   fiscalServices?: FiscalServices;
   identityVerifier?: HttpIdentityVerifier;
+  clerkUserProfileProvider?: ClerkUserProfileProvider;
   internalMonitoringServices?: InternalMonitoringServices;
   marketplaceServices?: MarketplaceServices;
   inventoryEnrichmentServices?: InventoryEnrichmentServices;
@@ -68,7 +72,6 @@ export type CreateAppOptions = {
   settingsServices?: SettingsServices;
   storeAccessRepository?: StoreAccessRepository;
 };
-
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
   installHttpMiddleware(app);
@@ -103,9 +106,9 @@ export function createApp(options: CreateAppOptions = {}) {
     : {};
   const contextFactory = (context: Context) =>
     createHttpServiceContext(context, contextOptions);
-
   app.route("/", docsFeature);
   app.get("/health", (context) => context.json({ ok: true }));
+  installAccountProvisioningRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/public/storefront",
     createStorefrontFeature(storefrontOptions),

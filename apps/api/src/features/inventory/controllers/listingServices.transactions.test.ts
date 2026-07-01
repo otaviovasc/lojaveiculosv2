@@ -68,6 +68,14 @@ describe("inventory listing transaction composition", () => {
         }),
     ],
     [
+      "releaseUnitReservation",
+      (services) =>
+        services.releaseUnitReservation(context(), {
+          outcome: "cancel",
+          unitId: "unit_1",
+        }),
+    ],
+    [
       "sellUnit",
       (services) =>
         services.sellUnit(context(), {

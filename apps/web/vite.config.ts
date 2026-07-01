@@ -6,14 +6,18 @@ import { fileURLToPath } from "url";
 const apiProxy = {
   "/api": {
     changeOrigin: true,
-    headers: {
-      "x-forwarded-host":
-        process.env.VITE_DEV_PUBLIC_STORE_HOST ??
-        "test-store.lojaveiculos.com.br",
-    },
+    ...(process.env.VITE_DEV_PUBLIC_STORE_HOST
+      ? {
+          headers: {
+            "x-forwarded-host": process.env.VITE_DEV_PUBLIC_STORE_HOST,
+          },
+        }
+      : {}),
     target: process.env.VITE_DEV_API_PROXY_TARGET ?? "http://localhost:8787",
   },
 };
+
+const workspaceRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig({
   build: {
@@ -21,6 +25,7 @@ export default defineConfig({
       polyfill: false,
     },
   },
+  envDir: workspaceRoot,
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),

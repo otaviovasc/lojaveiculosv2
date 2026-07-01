@@ -1,5 +1,10 @@
 import type { CreateBillingApiOptions } from "./apiClient";
 import type { BillingAuth } from "./types";
+import {
+  createRuntimeActorAuth,
+  readClerkToken,
+  readRuntimeApiBaseUrl,
+} from "../account/runtimeAuth";
 
 export async function createBillingApiOptions(): Promise<CreateBillingApiOptions> {
   const accessToken = await readClerkToken();
@@ -11,36 +16,9 @@ export async function createBillingApiOptions(): Promise<CreateBillingApiOptions
 }
 
 function createBillingAuthFromEnv(accessToken?: string | null): BillingAuth {
-  const env = import.meta.env as {
-    DEV?: boolean;
-    VITE_DEV_CLERK_USER_ID?: string;
-    VITE_DEV_STORE_SLUG?: string;
-  };
-  const clerkUserId =
-    env.VITE_DEV_CLERK_USER_ID ?? (env.DEV ? "clerk_test_user" : undefined);
-  const storeSlug =
-    env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : undefined);
-  return {
-    ...(accessToken ? { accessToken } : {}),
-    ...(clerkUserId ? { clerkUserId } : {}),
-    ...(storeSlug ? { storeSlug } : {}),
-  };
+  return createRuntimeActorAuth(accessToken);
 }
 
 function readBaseUrl(): Pick<CreateBillingApiOptions, "baseUrl"> {
-  const env = import.meta.env as { VITE_API_BASE_URL?: string };
-  return env.VITE_API_BASE_URL ? { baseUrl: env.VITE_API_BASE_URL } : {};
+  return readRuntimeApiBaseUrl();
 }
-
-async function readClerkToken() {
-  const clerk = (window as Window & ClerkRuntime).Clerk;
-  return (await clerk?.session?.getToken?.()) ?? null;
-}
-
-type ClerkRuntime = {
-  Clerk?: {
-    session?: {
-      getToken?: () => Promise<string | null>;
-    };
-  };
-};

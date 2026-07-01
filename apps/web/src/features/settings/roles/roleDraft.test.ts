@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createDraft,
-  createOverrides,
-  summarizeDraft,
-} from "./roleDraft";
+import { createDraft, createOverrides, summarizeDraft } from "./roleDraft";
 import type { RoleManagementView, RoleMemberView } from "../types";
 
 describe("role draft helpers", () => {
@@ -62,6 +58,7 @@ function createRoleManagement(): RoleManagementView {
       role: "owner",
     },
     memberships: [],
+    pendingInvitations: [],
     permissionGroups: [
       {
         key: "operations",

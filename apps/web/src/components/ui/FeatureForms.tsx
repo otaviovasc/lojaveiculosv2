@@ -4,11 +4,13 @@ import { cx } from "./featureShared";
 export function FeatureField({
   children,
   className,
+  error,
   hint,
   label,
 }: {
   children: ReactNode;
   className?: string;
+  error?: ReactNode;
   hint?: ReactNode;
   label: ReactNode;
 }) {
@@ -18,6 +20,11 @@ export function FeatureField({
     >
       <span>{label}</span>
       {children}
+      {error ? (
+        <span className="text-xs font-black text-danger" role="alert">
+          {error}
+        </span>
+      ) : null}
       {hint ? (
         <span className="text-xs font-bold text-muted">{hint}</span>
       ) : null}

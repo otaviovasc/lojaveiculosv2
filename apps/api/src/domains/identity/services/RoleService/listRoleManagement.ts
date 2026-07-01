@@ -10,7 +10,10 @@ import {
   visibleRoleKeys,
 } from "../../domain/permissionCatalog.js";
 import { resolvePermissions } from "../../domain/accessPolicy.js";
-import type { RoleMembership } from "../../ports/roleManagementRepository.js";
+import type {
+  RoleMembership,
+  RolePendingInvitation,
+} from "../../ports/roleManagementRepository.js";
 import {
   requireRoleManagementScope,
   type RoleServicePorts,
@@ -40,6 +43,7 @@ export type RoleManagementView = {
     role: RoleKey | null;
   };
   memberships: readonly RoleMemberView[];
+  pendingInvitations: readonly RolePendingInvitation[];
   permissionGroups: typeof permissionGroups;
   roles: readonly RoleTemplateView[];
 };
@@ -88,6 +92,7 @@ export async function listRoleManagement(
         actorRole: actor?.role ?? null,
       }),
     ),
+    pendingInvitations: state.pendingInvitations,
     permissionGroups,
     roles: visibleRoleKeys.map((role) => ({
       assignable: canAssignRole(actor?.role, role),

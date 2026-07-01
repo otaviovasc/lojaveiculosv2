@@ -27,19 +27,9 @@ export type VehicleUnitStatus =
   | "reserved"
   | "sold";
 export type VehicleFuelType =
-  | "diesel"
-  | "electric"
-  | "ethanol"
-  | "flex"
-  | "gasoline"
-  | "hybrid"
-  | "other";
+  "diesel" | "electric" | "ethanol" | "flex" | "gasoline" | "hybrid" | "other";
 export type VehicleTransmission =
-  | "automated"
-  | "automatic"
-  | "cvt"
-  | "manual"
-  | "other";
+  "automated" | "automatic" | "cvt" | "manual" | "other";
 
 export type VehicleMediaKind = "document_preview" | "photo" | "video";
 
@@ -87,11 +77,13 @@ export type VehicleListing = {
   fuelType: VehicleFuelType | null;
   id: string;
   internalNotes: string | null;
+  isVisibleOnPublicSite: boolean;
   manufactureYear: number | null;
   mileageKm: number | null;
   modelYear: number | null;
   plate: string | null;
   priceCents: number | null;
+  publicSlug: string | null;
   status: VehicleListingStatus;
   storeId: string | null;
   tenantId: string | null;
@@ -141,12 +133,7 @@ export type VehicleDocument = {
   metadata: Record<string, unknown>;
   mimeType: string | null;
   status:
-    | "archived"
-    | "draft"
-    | "issued"
-    | "pending_signature"
-    | "signed"
-    | "voided";
+    "archived" | "draft" | "issued" | "pending_signature" | "signed" | "voided";
   storageKey: string;
   storeId: string | null;
   targetId: string;

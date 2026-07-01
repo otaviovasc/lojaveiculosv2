@@ -14,6 +14,8 @@ import {
   readBrowserPreferredTheme,
   type AppTheme,
 } from "../app/theme";
+import { UserAccountButton } from "../features/account/UserAccountButton";
+import { readRuntimeStoreSlug } from "../features/account/currentStore";
 import {
   DashboardSidebar,
   type DashboardSidebarItem,
@@ -91,6 +93,9 @@ export function AppShell({
           onCollapsedChange={setIsSidebarCollapsed}
           onSelect={navigate}
           onThemeToggle={toggleTheme}
+          renderAccountControl={({ isCompact }) => (
+            <UserAccountButton compact={isCompact} />
+          )}
           theme={theme}
           workspaceMeta={storeLabel}
           workspaceName="Loja Veiculos"
@@ -164,6 +169,9 @@ export function AppShell({
               onClose={() => setIsMobileNavOpen(false)}
               onSelect={navigate}
               onThemeToggle={toggleTheme}
+              renderAccountControl={({ isCompact }) => (
+                <UserAccountButton compact={isCompact} />
+              )}
               theme={theme}
               variant="mobile"
               workspaceMeta={storeLabel}
@@ -179,9 +187,6 @@ export function AppShell({
 }
 
 function readStoreLabel() {
-  const env = import.meta.env as {
-    DEV?: boolean;
-    VITE_DEV_STORE_SLUG?: string;
-  };
-  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "Loja local" : "Loja atual");
+  const env = import.meta.env as { VITE_DEV_STORE_SLUG?: string };
+  return readRuntimeStoreSlug(env) ?? "Loja atual";
 }

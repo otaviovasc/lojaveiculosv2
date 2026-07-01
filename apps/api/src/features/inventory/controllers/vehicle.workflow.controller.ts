@@ -48,18 +48,43 @@ export function registerInventoryWorkflowRoutes(
   );
 
   app.post("/units/:unitId/reservation/release", async (context) =>
-    handle(context, async () => {
-      const input = await parseJson(context, releaseReservationSchema);
-      const serviceContext = await createContext(context);
-
-      return context.json(
-        await services.releaseUnitReservation(serviceContext, {
-          ...input,
-          unitId: context.req.param("unitId"),
-        }),
-      );
-    }),
+    handleReservationRelease(context, services, createContext, "release"),
   );
+
+  app.post("/units/:unitId/reservation/cancel", async (context) =>
+    handleReservationRelease(context, services, createContext, "cancel"),
+  );
+
+  app.post("/units/:unitId/reservation/expire", async (context) =>
+    handleReservationRelease(context, services, createContext, "expire"),
+  );
+}
+
+function handleReservationRelease(
+  context: Context,
+  services: InventoryListingServices,
+  createContext: CreateContext,
+  outcome: "cancel" | "expire" | "release",
+) {
+  return handle(context, async () => {
+    const input = await parseJson(context, releaseReservationSchema);
+    const serviceContext = await createContext(context);
+    const unitId = routeParam(context, "unitId");
+
+    return context.json(
+      await services.releaseUnitReservation(serviceContext, {
+        ...input,
+        outcome,
+        unitId,
+      }),
+    );
+  });
+}
+
+function routeParam(context: Context, name: string): string {
+  const value = context.req.param(name);
+  if (!value) throw new Error(`Missing route parameter: ${name}`);
+  return value;
 }
 
 function normalizeBuyer(input: {

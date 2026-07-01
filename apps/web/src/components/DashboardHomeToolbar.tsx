@@ -5,12 +5,16 @@ export function DashboardHomeToolbar({
   copyState,
   onCopyLink,
   onVisitStore,
+  publicSlug,
 }: {
   copyState: "idle" | "copied";
   onCopyLink: () => void;
   onVisitStore: () => void;
+  publicSlug?: string | undefined;
 }) {
-  const publicUrl = `${getDashboardPublicSlug()}.lojaveiculos.com.br`;
+  const publicUrl = publicSlug
+    ? `${publicSlug}.lojaveiculos.com.br`
+    : "Loja sem link público";
 
   return (
     <div className="dashboard-toolbar">
@@ -68,6 +72,7 @@ export function DashboardHomeToolbar({
                   ? "dashboard-tile-btn-copied"
                   : "dashboard-tile-btn-default")
               }
+              disabled={!publicSlug}
               title="Copiar Link"
             >
               {copyState === "copied" ? (
@@ -79,6 +84,7 @@ export function DashboardHomeToolbar({
             <button
               onClick={onVisitStore}
               className="dashboard-tile-btn dashboard-tile-btn-default"
+              disabled={!publicSlug}
               title="Visitar Loja"
             >
               <Eye className="size-4" />
@@ -88,12 +94,4 @@ export function DashboardHomeToolbar({
       </DashboardHomeEntry>
     </div>
   );
-}
-
-function getDashboardPublicSlug() {
-  const env = import.meta.env as {
-    DEV?: boolean;
-    VITE_DEV_STORE_SLUG?: string;
-  };
-  return env.VITE_DEV_STORE_SLUG ?? (env.DEV ? "test-store" : "loja");
 }

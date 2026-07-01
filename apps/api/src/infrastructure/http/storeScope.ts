@@ -15,7 +15,11 @@ export function resolveStoreSlugFromHostHeader(
     return null;
   }
 
-  const host = firstHost.trim().toLowerCase().replace(/:\d+$/, "");
+  const host = normalizeHost(firstHost.trim().toLowerCase());
+
+  if (isLocalOrIpHost(host)) {
+    return null;
+  }
 
   if (host === baseDomain || host === "www." + baseDomain) {
     return null;
@@ -32,6 +36,22 @@ export function resolveStoreSlugFromHostHeader(
   }
 
   return storeSlug.split(".")[0] ?? null;
+}
+
+function isLocalOrIpHost(host: string) {
+  return (
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    host === "::1" ||
+    /^\d{1,3}(\.\d{1,3}){3}$/.test(host) ||
+    /^\[[0-9a-f:]+]$/i.test(host)
+  );
+}
+
+function normalizeHost(host: string) {
+  if (host.startsWith("[")) return host.replace(/\]:\d+$/, "]");
+  const hasSingleColon = host.indexOf(":") === host.lastIndexOf(":");
+  return hasSingleColon ? host.replace(/:\d+$/, "") : host;
 }
 
 export function resolveStoreSlugFromRequest(context: Context): string | null {

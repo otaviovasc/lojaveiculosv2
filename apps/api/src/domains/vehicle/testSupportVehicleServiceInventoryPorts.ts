@@ -114,6 +114,16 @@ function createListingRepository(
       }
       return listing;
     }),
+    findByPublicSlug: vi.fn(async ({ publicSlug, storeId, tenantId }) => {
+      return (
+        [...listings.values()].find(
+          (listing) =>
+            listing.publicSlug === publicSlug &&
+            listing.storeId === storeId &&
+            listing.tenantId === tenantId,
+        ) ?? null
+      );
+    }),
     list: vi.fn(async ({ limit, offset, search, status, storeId, tenantId }) =>
       [...listings.values()]
         .filter((listing) => listing.storeId === storeId)

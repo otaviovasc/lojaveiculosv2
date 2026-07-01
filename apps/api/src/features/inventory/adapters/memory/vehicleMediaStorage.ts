@@ -19,6 +19,7 @@ export function createMemoryVehicleMediaStorage(): VehicleMediaStorage {
         uploadUrl: `https://upload.local/${storageKey}`,
       };
     },
+    deleteObject: async () => undefined,
     getPublicUrl: (storageKey) => `https://cdn.local/${storageKey}`,
     putObject: async (input) => {
       const storageKey = createStorageKey({

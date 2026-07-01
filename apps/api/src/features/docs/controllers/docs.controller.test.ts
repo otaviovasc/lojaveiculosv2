@@ -76,8 +76,26 @@ describe("API docs routes", () => {
         .security,
     ).toEqual([{ bearerAuth: ["inventory.sell"] }]);
     expect(
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/media/{mediaId}"]
+        .patch.security,
+    ).toEqual([{ bearerAuth: ["inventory.media_update"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/inventory/units/{unitId}/media/{mediaId}"]
+        .delete.security,
+    ).toEqual([{ bearerAuth: ["inventory.media_delete"] }]);
+    expect(
       openApiDocument.paths[
         "/api/v1/inventory/units/{unitId}/reservation/release"
+      ].post.security,
+    ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
+    expect(
+      openApiDocument.paths[
+        "/api/v1/inventory/units/{unitId}/reservation/cancel"
+      ].post.security,
+    ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
+    expect(
+      openApiDocument.paths[
+        "/api/v1/inventory/units/{unitId}/reservation/expire"
       ].post.security,
     ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);
     expect(
@@ -88,6 +106,13 @@ describe("API docs routes", () => {
       openApiDocument.paths["/api/v1/inventory/units/{unitId}/sell"].post
         .requestBody.content["application/json"].schema,
     ).toEqual({ $ref: "#/components/schemas/SellVehicleUnitRequest" });
+    expect(
+      openApiDocument.paths[
+        "/api/v1/inventory/units/{unitId}/reservation/cancel"
+      ].post.requestBody.content["application/json"].schema,
+    ).toEqual({
+      $ref: "#/components/schemas/ReleaseVehicleUnitReservationRequest",
+    });
     const paths = openApiDocument.paths as Record<string, unknown>;
     expect(
       paths["/api/v1/inventory/listings/{listingId}/reserve"],

@@ -106,7 +106,7 @@ export const marketplacePaths = {
       responses: {
         "200": {
           description:
-            "Ran the provider call and marked the job succeeded or failed.",
+            "Ran the provider call and marked the job succeeded or failed. Listing publish/update sync fails closed before provider IO unless the projection is not deleted, published, public-visible, backed by an eligible unit, and has at least one public photo. Listing unpublish can run from the stored provider external id after the local listing projection is gone.",
         },
       },
     },

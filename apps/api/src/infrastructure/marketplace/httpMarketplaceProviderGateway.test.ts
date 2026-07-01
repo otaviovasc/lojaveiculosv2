@@ -26,10 +26,12 @@ describe("createHttpMarketplaceProviderGateway", () => {
       jobType: "listing_publish",
       listing: {
         description: "Descricao",
+        isVisibleOnPublicSite: true,
         listingId: "listing_1",
         mediaUrls: ["https://cdn.example.test/photo.jpg"],
         modelYear: 2024,
         priceCents: 12000000,
+        status: "published",
         title: "Honda Civic",
         vehicleType: "cars",
       },
@@ -46,6 +48,40 @@ describe("createHttpMarketplaceProviderGateway", () => {
 
     expect(url).toContain("client_id=client_1");
     expect(fetch.mock.calls[0]?.[0]).toBe("https://api.example.test/items");
+    expect(result.externalId).toBe("MLB123");
+  });
+
+  it("unpublishes listings by provider external id without a payload", async () => {
+    const fetch = vi
+      .fn<typeof globalThis.fetch>()
+      .mockImplementation(async () => new Response(null, { status: 204 }));
+    const gateway = createHttpMarketplaceProviderGateway({
+      auth: { clientId: "client_1" },
+      baseUrl: "https://api.example.test",
+      fetch,
+      provider: "mercado_livre",
+      tokenUrl: "https://api.example.test/oauth/token",
+    });
+
+    const result = await gateway.runListingSync({
+      externalId: "MLB123",
+      jobType: "listing_unpublish",
+      metadata: {},
+      token: {
+        accessToken: "token_1",
+        expiresAt: null,
+        providerAccountId: null,
+        refreshToken: null,
+        scope: null,
+        tokenType: "Bearer",
+      },
+    });
+
+    expect(fetch.mock.calls[0]?.[0]).toBe(
+      "https://api.example.test/items/MLB123",
+    );
+    expect(fetch.mock.calls[0]?.[1]?.method).toBe("DELETE");
+    expect(fetch.mock.calls[0]?.[1]).not.toHaveProperty("body");
     expect(result.externalId).toBe("MLB123");
   });
 });

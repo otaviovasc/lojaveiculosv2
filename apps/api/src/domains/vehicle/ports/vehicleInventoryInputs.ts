@@ -21,11 +21,13 @@ export type CreateVehicleListingRecord = {
   engineDisplacement?: VehicleEngineDisplacement | null;
   fuelType?: VehicleFuelType | null;
   internalNotes?: string | null;
+  isVisibleOnPublicSite?: boolean;
   manufactureYear: number | null;
   mileageKm?: number | null;
   modelYear: number | null;
   plate: string | null;
   priceCents: number | null;
+  publicSlug?: string | null;
   status: VehicleListingStatus;
   storeId: string | null;
   tenantId: string | null;
@@ -76,6 +78,12 @@ export type CreateVehicleDocumentRecord = {
 
 export type FindVehicleListingInput = {
   listingId: string;
+  storeId: string | null;
+  tenantId: string | null;
+};
+
+export type FindVehicleListingByPublicSlugInput = {
+  publicSlug: string;
   storeId: string | null;
   tenantId: string | null;
 };

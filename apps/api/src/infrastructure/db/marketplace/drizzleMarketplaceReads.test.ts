@@ -61,7 +61,9 @@ function rowsFor(table: unknown) {
         askingPriceCents: 75990000,
         description: "BMW M3 Competition M.",
         id: "listing_m3",
+        isVisibleOnPublicSite: true,
         modelYear: 2025,
+        status: "published",
         title: "BMW M3 Competition M 2025",
       },
     ];

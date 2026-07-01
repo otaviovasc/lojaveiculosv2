@@ -18,6 +18,7 @@ export function MembrosSidebar({
   memberPresetMapping,
   customRoles,
   roleLabel,
+  canInvite,
   onInviteClick,
 }: {
   roles: RoleManagementView;
@@ -26,6 +27,7 @@ export function MembrosSidebar({
   memberPresetMapping: Record<string, string>;
   customRoles: CustomRolePreset[];
   roleLabel: (role: RoleKey, roles: RoleManagementView) => string;
+  canInvite: boolean;
   onInviteClick: () => void;
 }) {
   return (
@@ -85,13 +87,57 @@ export function MembrosSidebar({
             </FeatureListItemButton>
           );
         })}
+        {roles.pendingInvitations.length ? (
+          <span className="px-1 pt-1 text-[10px] font-black uppercase tracking-wider text-muted">
+            Convites pendentes
+          </span>
+        ) : null}
+        {roles.pendingInvitations.map((invitation) => (
+          <div
+            key={invitation.id}
+            className="relative flex items-center gap-3 overflow-hidden rounded-lg border border-dashed border-line bg-app-elevated/35 p-3.5 opacity-90"
+          >
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-line/50 text-muted">
+              <UserPlus className="size-4.5" />
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <strong className="block truncate text-sm font-black text-app-text">
+                {invitation.name ?? invitation.email}
+              </strong>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-accent-strong">
+                  {roleLabel(invitation.role, roles)}
+                </span>
+                <span className="inline-flex items-center rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600">
+                  Pendente
+                </span>
+              </div>
+              {invitation.name ? (
+                <span className="block truncate text-[10px] font-bold text-muted">
+                  {invitation.email}
+                </span>
+              ) : null}
+            </div>
+          </div>
+        ))}
       </FeatureList>
 
       <div className="shrink-0 pt-4 border-t border-line/45 mt-2">
         <button
           type="button"
+          disabled={!canInvite}
           onClick={onInviteClick}
-          className="w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-inverse transition-all hover:bg-accent-strong active:scale-98 shadow-sm cursor-pointer"
+          title={
+            canInvite
+              ? "Convidar novo membro"
+              : "Sem permissão para convidar membros"
+          }
+          className={cx(
+            "w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-inverse transition-all hover:bg-accent-strong active:scale-98 shadow-sm",
+            canInvite
+              ? "cursor-pointer"
+              : "cursor-not-allowed opacity-50 hover:bg-accent",
+          )}
         >
           <UserPlus className="size-4" />
           <span>Convidar Novo Membro</span>

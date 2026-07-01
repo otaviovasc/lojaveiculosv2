@@ -225,6 +225,7 @@ function createRepository(): RoleManagementRepository {
         },
       },
     ],
+    pendingInvitations: [],
     storeId,
     tenantId,
   };

@@ -112,7 +112,11 @@ function resolveChildExitCode(code, signal) {
 function createProcessSpecs(useLocalEnv) {
   return [
     {
-      args: [binPath("tsx/dist/cli.mjs"), "watch", "src/main.ts"],
+      args: [
+        workspaceNodeModulePath("apps/api", "tsx/dist/cli.mjs"),
+        "watch",
+        "src/main.ts",
+      ],
       command: process.execPath,
       cwd: pathFromRoot("apps/api"),
       env: useLocalEnv
@@ -120,9 +124,14 @@ function createProcessSpecs(useLocalEnv) {
             APP_ENV: "local",
             AUDIT_DATABASE_URL:
               "postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit",
+            CLERK_AUDIENCE: "",
+            CLERK_AUTHORIZED_PARTIES: "",
+            CLERK_JWT_KEY: "",
+            CLERK_SECRET_KEY: "",
+            CLERK_WEBHOOK_SECRET: "",
             DATABASE_URL:
               "postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2",
-            DEV_CLERK_USER_ID: "clerk_test_user",
+            DEV_CLERK_USER_ID: "clerk_seed_owner",
             DEV_STORE_SLUG: "test-store",
             LOCAL_AUTH_BYPASS: "true",
             REPASSES_CRM_LOCAL_DEMO: "true",
@@ -132,10 +141,19 @@ function createProcessSpecs(useLocalEnv) {
       port: readPositiveNumber(process.env.PORT, 8787),
     },
     {
-      args: [binPath("vite/bin/vite.js"), "--host", "0.0.0.0"],
+      args: [
+        workspaceNodeModulePath("apps/web", "vite/bin/vite.js"),
+        "--host",
+        "0.0.0.0",
+      ],
       command: process.execPath,
       cwd: pathFromRoot("apps/web"),
-      env: {},
+      env: useLocalEnv
+        ? {
+            VITE_CLERK_PUBLISHABLE_KEY: "",
+            VITE_LOCAL_AUTH_BYPASS: "true",
+          }
+        : {},
       name: "web",
       port: 5173,
     },
@@ -146,8 +164,8 @@ function pathFromRoot(path) {
   return join(workspaceRoot, path);
 }
 
-function binPath(path) {
-  return pathFromRoot(`node_modules/${path}`);
+function workspaceNodeModulePath(workspacePath, path) {
+  return pathFromRoot(`${workspacePath}/node_modules/${path}`);
 }
 
 function readPositiveNumber(value, fallback) {

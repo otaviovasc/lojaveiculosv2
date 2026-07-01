@@ -2,7 +2,12 @@ import { ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FeatureSection } from "../../../components/ui/FeatureLayout";
 import { FeatureLoadingState } from "../../../components/ui/FeatureStates";
-import type { RoleKey, RoleManagementView } from "../types";
+import type {
+  InviteStoreMemberInput,
+  IdentityInvitationView,
+  RoleKey,
+  RoleManagementView,
+} from "../types";
 import { CustomRoleModal } from "./CustomRoleModal";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { MembrosSidebar } from "./MembrosSidebar";
@@ -24,10 +29,14 @@ import {
 
 export function RoleManagementPanel({
   isSaving,
+  onInvite,
+  onResendInvitation,
   onSave,
   roles,
 }: {
   isSaving: boolean;
+  onInvite: (input: InviteStoreMemberInput) => Promise<IdentityInvitationView>;
+  onResendInvitation: (invitationId: string) => Promise<IdentityInvitationView>;
   onSave: (
     membershipId: string,
     input: {
@@ -170,6 +179,12 @@ export function RoleManagementPanel({
   };
   const activePresetId = memberPresetMapping[selected.membershipId];
   const activePreset = customRoles.find((role) => role.id === activePresetId);
+  const invitationRoles = roles.roles.flatMap((role) => {
+    if (!role.assignable || !isInvitableRole(role.role)) return [];
+    return [{ label: role.label, role: role.role }];
+  });
+  const canInviteMembers =
+    roles.actor.canManageRoles && invitationRoles.length > 0;
 
   return (
     <section className="grid gap-6 md:grid-cols-[16rem_1fr] lg:grid-cols-[20rem_1fr] items-start !overflow-visible">
@@ -180,6 +195,7 @@ export function RoleManagementPanel({
         memberPresetMapping={memberPresetMapping}
         customRoles={customRoles}
         roleLabel={roleLabel}
+        canInvite={canInviteMembers}
         onInviteClick={() => setIsInviteOpen(true)}
       />
       <FeatureSection
@@ -235,13 +251,24 @@ export function RoleManagementPanel({
         onCreate={handleCreateCustomRole}
       />
       <InviteMemberModal
-        isOpen={isInviteOpen}
+        isOpen={isInviteOpen && canInviteMembers}
         onClose={() => setIsInviteOpen(false)}
-        availableRoles={roles.roles
-          .filter((role) => role.assignable)
-          .map((role) => ({ role: role.role, label: role.label }))}
+        onInvite={onInvite}
+        onResendInvitation={onResendInvitation}
+        availableRoles={invitationRoles}
       />
     </section>
+  );
+}
+
+function isInvitableRole(
+  role: RoleKey,
+): role is InviteStoreMemberInput["role"] {
+  return (
+    role === "owner" ||
+    role === "supervisor" ||
+    role === "salesman" ||
+    role === "investor"
   );
 }
 

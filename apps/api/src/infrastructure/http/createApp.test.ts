@@ -14,6 +14,7 @@ describe("API middleware", () => {
     expect(response.headers.get("access-control-expose-headers")).toBe(
       "X-Request-Id",
     );
+    expect(response.headers.get("x-request-id")).toEqual(expect.any(String));
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
     expect(response.headers.get("x-frame-options")).toBe("SAMEORIGIN");
     expect(response.headers.get("referrer-policy")).toBe("no-referrer");
@@ -36,7 +37,7 @@ describe("API middleware", () => {
       "GET,HEAD,POST,PUT,PATCH,DELETE",
     );
     expect(response.headers.get("access-control-allow-headers")).toBe(
-      "Authorization,Content-Type,X-API-Key,X-Idempotency-Key,X-Request-Id,X-Store-Id",
+      "Authorization,Content-Type,Idempotency-Key,X-API-Key,X-Clerk-User-Id,X-Idempotency-Key,X-Request-Id,X-Store-Slug,X-Store-Id,X-User-Email,X-User-Name",
     );
     expect(response.headers.get("x-content-type-options")).toBe("nosniff");
   });

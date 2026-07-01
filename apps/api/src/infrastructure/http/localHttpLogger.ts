@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from "hono";
+import { readHttpRequestId } from "./requestMetadata.js";
 
 export function createLocalHttpLogger(): MiddlewareHandler {
   return async (context, next) => {
@@ -8,7 +9,7 @@ export function createLocalHttpLogger(): MiddlewareHandler {
     }
 
     const startedAt = performance.now();
-    const requestId = context.req.header("x-request-id") ?? crypto.randomUUID();
+    const requestId = readHttpRequestId(context) ?? crypto.randomUUID();
 
     await next();
 

@@ -1,5 +1,4 @@
-import { Check, Pencil, User } from "lucide-react";
-import { useRef, useState } from "react";
+import type { ReactNode } from "react";
 import type { AppTheme } from "../../app/theme";
 import {
   DashboardSidebarNavItem,
@@ -19,6 +18,7 @@ export type DashboardSidebarProps<Id extends string = string> = {
   onCollapsedChange?: (collapsed: boolean) => void;
   onSelect: (id: Id) => void;
   onThemeToggle: () => void;
+  renderAccountControl?: (options: { isCompact: boolean }) => ReactNode;
   theme: AppTheme;
   variant?: "desktop" | "mobile";
   workspaceMeta?: string;
@@ -34,53 +34,16 @@ export function DashboardSidebar<Id extends string = string>({
   onCollapsedChange,
   onSelect,
   onThemeToggle,
+  renderAccountControl,
   theme,
   variant = "desktop",
   workspaceMeta = "Loja atual",
   workspaceName,
 }: DashboardSidebarProps<Id>) {
-  const [userName, setUserName] = useState(() =>
-    typeof window !== "undefined"
-      ? (localStorage.getItem("dashboard_user_name") ?? "João Silva")
-      : "João Silva",
-  );
-  const [isEditing, setIsEditing] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleEdit = () => {
-    setIsEditing(true);
-    setTimeout(() => {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }, 50);
-  };
-
-  const handleSave = () => {
-    setIsEditing(false);
-    const finalName = userName.trim() || "João Silva";
-    setUserName(finalName);
-    if (typeof window !== "undefined")
-      localStorage.setItem("dashboard_user_name", finalName);
-  };
-
-  const handleCancel = () => {
-    setIsEditing(false);
-    setUserName(
-      typeof window !== "undefined"
-        ? (localStorage.getItem("dashboard_user_name") ?? "João Silva")
-        : "João Silva",
-    );
-  };
-
-  const handleBlur = (e: React.FocusEvent) => {
-    if (e.relatedTarget && (e.relatedTarget as HTMLElement).closest("button"))
-      return;
-    handleSave();
-  };
-
   const isCompact = variant === "desktop" && collapsed;
   const settingsItem = items.find((item) => item.id === "settings");
   const mainItems = items.filter((item) => item.id !== "settings");
+  const accountControl = renderAccountControl?.({ isCompact });
   let lastGroup: string | undefined;
 
   return (
@@ -134,15 +97,7 @@ export function DashboardSidebar<Id extends string = string>({
       <div className="mt-auto flex flex-col gap-2 border-t border-line/60 px-2.5 py-3 bg-panel/10">
         {isCompact ? (
           <>
-            {/* Mocked Profile Icon in compact mode */}
-            <div className="flex justify-center py-1">
-              <div
-                className="size-9 bg-accent-soft text-accent rounded-full flex items-center justify-center font-bold border border-accent/15"
-                title={`${userName} (Administrador)`}
-              >
-                <User className="size-4.5" />
-              </div>
-            </div>
+            {accountControl}
 
             {settingsItem && (
               <DashboardSidebarNavItem
@@ -156,74 +111,7 @@ export function DashboardSidebar<Id extends string = string>({
         ) : (
           <>
             <div className="flex items-center gap-1">
-              {/* User Profile (to the left of settings) */}
-              <div className="flex flex-1 items-center gap-2 min-w-0 pl-1 pr-0 py-1.5">
-                <div className="size-9 bg-accent-soft text-accent rounded-full flex items-center justify-center font-bold shrink-0 border border-accent/15">
-                  <User className="size-4.5" />
-                </div>
-                <div className="flex flex-col min-w-0 flex-1 leading-tight gap-0.5">
-                  <div className="relative flex items-center min-w-0 w-full">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={userName}
-                      onChange={(e) => setUserName(e.target.value)}
-                      disabled={!isEditing}
-                      onBlur={handleBlur}
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="words"
-                      spellCheck={false}
-                      className={
-                        "w-full text-[11px] font-black text-primary bg-transparent pl-2.5 pr-8.5 py-1.5 rounded-md border transition-all duration-300 focus:outline-none focus:ring-1 " +
-                        (isEditing
-                          ? "border-accent/40 bg-app-elevated/45 focus:border-accent focus:ring-accent/20"
-                          : "border-line/45 hover:border-line-strong/60 bg-transparent disabled:cursor-default")
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          handleSave();
-                        } else if (e.key === "Escape") {
-                          handleCancel();
-                        }
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={isEditing ? handleSave : handleEdit}
-                      className={
-                        "absolute right-1 size-6 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer " +
-                        (isEditing
-                          ? "bg-accent text-white hover:bg-accent-strong scale-100"
-                          : "bg-transparent text-muted hover:text-accent hover:bg-accent-soft hover:scale-105")
-                      }
-                      title={isEditing ? "Salvar nome" : "Editar nome"}
-                    >
-                      <div className="relative size-3.5 flex items-center justify-center">
-                        <Pencil
-                          className={
-                            "absolute size-3.5 transition-all duration-300 transform " +
-                            (isEditing
-                              ? "opacity-0 rotate-90 scale-50 pointer-events-none"
-                              : "opacity-100 rotate-0 scale-100")
-                          }
-                        />
-                        <Check
-                          className={
-                            "absolute size-3.5 transition-all duration-300 transform " +
-                            (!isEditing
-                              ? "opacity-0 -rotate-90 scale-50 pointer-events-none"
-                              : "opacity-100 rotate-0 scale-100")
-                          }
-                        />
-                      </div>
-                    </button>
-                  </div>
-                  <span className="truncate text-[8px] font-black uppercase tracking-widest text-muted pl-2.5">
-                    Administrador
-                  </span>
-                </div>
-              </div>
+              {accountControl}
 
               {settingsItem && (
                 <button

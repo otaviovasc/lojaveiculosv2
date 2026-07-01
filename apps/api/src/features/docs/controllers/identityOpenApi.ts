@@ -57,10 +57,17 @@ export const identitySchemas = {
   RoleManagementView: {
     type: "object",
     additionalProperties: true,
-    required: ["actor", "memberships", "permissionGroups", "roles"],
+    required: [
+      "actor",
+      "memberships",
+      "pendingInvitations",
+      "permissionGroups",
+      "roles",
+    ],
     properties: {
       actor: { type: "object", additionalProperties: true },
       memberships: { type: "array", items: { type: "object" } },
+      pendingInvitations: { type: "array", items: { type: "object" } },
       permissionGroups: { type: "array", items: { type: "object" } },
       roles: { type: "array", items: { type: "object" } },
     },

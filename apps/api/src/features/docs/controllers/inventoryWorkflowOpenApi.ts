@@ -58,4 +58,38 @@ export const inventoryWorkflowPaths = {
       },
     },
   },
+  "/api/v1/inventory/units/{unitId}/reservation/cancel": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Cancel unit reservation",
+      description:
+        "Cancels a reserved vehicle unit, cancels the pending reservation sale/payment, cancels the pending signal finance entry, and writes cancellation audit evidence.",
+      operationId: "cancelInventoryUnitReservation",
+      security: [{ bearerAuth: ["inventory.reserve"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("ReleaseVehicleUnitReservationRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/units/{unitId}/reservation/expire": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Expire unit reservation",
+      description:
+        "Expires a reserved vehicle unit, cancels the pending reservation sale/payment, cancels the pending signal finance entry, and writes expiry audit evidence.",
+      operationId: "expireInventoryUnitReservation",
+      security: [{ bearerAuth: ["inventory.reserve"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("ReleaseVehicleUnitReservationRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
 } as const;

@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { motion, type Variants } from "motion/react";
 import { Quote } from "lucide-react";
 
 // TypeScript interface for a single testimonial object

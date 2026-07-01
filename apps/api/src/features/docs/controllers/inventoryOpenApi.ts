@@ -144,6 +144,40 @@ export const inventoryPaths = {
       },
     },
   },
+  "/api/v1/inventory/listings/{listingId}/publish": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Publish listing",
+      description:
+        "Publishes a listing to the public storefront with an explicit or generated public slug, visible flag, status history, and audit evidence.",
+      operationId: "publishInventoryListing",
+      security: [{ bearerAuth: ["inventory.update_status"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("PublishListingRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/listings/{listingId}/unpublish": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Unpublish listing",
+      description:
+        "Removes a listing from the public storefront while preserving its slug for later republish.",
+      operationId: "unpublishInventoryListing",
+      security: [{ bearerAuth: ["inventory.update_status"] }],
+      parameters: [listingIdParameter],
+      requestBody: jsonRequest("UnpublishListingRequest"),
+      responses: {
+        "200": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
   "/api/v1/inventory/listings/{listingId}/unit": {
     put: {
       tags: ["Inventory"],

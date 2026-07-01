@@ -12,6 +12,10 @@ import { financePaths, financeSchemas } from "./financeOpenApi.js";
 import { fiscalPaths, fiscalSchemas } from "./fiscalOpenApi.js";
 import { identityPaths, identitySchemas } from "./identityOpenApi.js";
 import {
+  identityProvisioningPaths,
+  identityProvisioningSchemas,
+} from "./identityProvisioningOpenApi.js";
+import {
   internalMonitoringPaths,
   internalMonitoringSchemas,
 } from "./internalMonitoringOpenApi.js";
@@ -70,6 +74,7 @@ export const openApiDocument = {
     },
     ...storefrontPaths,
     ...identityPaths,
+    ...identityProvisioningPaths,
     ...billingPaths,
     ...financePaths,
     ...fiscalPaths,
@@ -111,6 +116,7 @@ export const openApiDocument = {
       ...documentOperationSchemas,
       ...externalApiSchemas,
       ...identitySchemas,
+      ...identityProvisioningSchemas,
       ...internalMonitoringSchemas,
       ...marketplaceSchemas,
       ...storefrontSchemas,
@@ -146,12 +152,14 @@ export const openApiDocument = {
     "inventory.update_price": "Edit vehicle pricing.",
     "inventory.update_status": "Edit vehicle listing lifecycle status.",
     "inventory.update_unit": "Edit physical/unit inventory fields.",
+    "inventory.media_update": "Reorder media and edit media visibility.",
+    "inventory.media_delete": "Delete vehicle media and cleanup objects.",
     "inventory.cost_create": "Create vehicle costs and linked finance entries.",
     "inventory.checklist_read": "Read vehicle readiness checklists.",
     "inventory.checklist_update":
       "Create and update vehicle readiness checklists.",
     "inventory.reserve":
-      "Reserve or release vehicle units and emit reservation receipts.",
+      "Reserve, release, cancel, or expire vehicle unit reservations.",
     "inventory.sell": "Sell vehicle units and emit sale document bundles.",
     "inventory.delete": "Delete vehicle inventory records.",
     "documents.read": "Read shared store-scoped documents.",
@@ -175,6 +183,10 @@ export const openApiDocument = {
       "POST /api/v1/inventory/units/{unitId}/reserve creates finance_entries linked to reservation sale/payment context.",
     release:
       "POST /api/v1/inventory/units/{unitId}/reservation/release cancels pending reservation finance_entries linked to sale_payment context.",
+    cancel:
+      "POST /api/v1/inventory/units/{unitId}/reservation/cancel cancels pending reservation finance_entries linked to sale_payment context.",
+    expire:
+      "POST /api/v1/inventory/units/{unitId}/reservation/expire cancels pending reservation finance_entries linked to sale_payment context.",
     sell: "POST /api/v1/inventory/units/{unitId}/sell creates finance_entries linked to sale and sale_payment context.",
     linkTargets: ["sale", "sale_payment", "vehicle_cost", "vehicle_unit"],
   },
