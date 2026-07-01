@@ -1,0 +1,127 @@
+// @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { SaleWorkspace } from "./SaleWorkspace";
+import type { SaleRecord } from "./types";
+
+describe("SaleWorkspace", () => {
+  afterEach(() => cleanup());
+
+  it("runs lifecycle transitions with the saved sale returned by the API", async () => {
+    const user = userEvent.setup();
+    const draft = saleRecord({
+      payments: [payment("client-payment")],
+      status: "draft",
+    });
+    const saved = saleRecord({
+      payments: [payment("server-payment")],
+      revision: 2,
+      status: "draft",
+    });
+    const onSave = vi.fn(async () => saved);
+    const onReserve = vi.fn(async (sale: SaleRecord) => ({
+      ...sale,
+      status: "pending" as const,
+    }));
+
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={onReserve}
+        onSave={onSave}
+        sale={draft}
+      />,
+    );
+
+    await user.type(
+      screen.getByLabelText("Telefone do Comprador"),
+      "(11) 90000-0000",
+    );
+    await user.click(screen.getByRole("button", { name: "Reservar Veículo" }));
+
+    await waitFor(() => expect(onReserve).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onReserve.mock.calls[0]?.[0].payments[0]?.id).toBe("server-payment");
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    expect(onSave).toHaveBeenCalledOnce();
+  });
+
+  it("does not expose lifecycle action buttons for terminal sales", () => {
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onSave={vi.fn()}
+        sale={saleRecord({ status: "closed" })}
+      />,
+    );
+
+    expect(screen.getByText("Venda fechada")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Fechar Venda" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Reservar Veículo" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Cancelar/ }),
+    ).not.toBeInTheDocument();
+  });
+});
+
+function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
+  return {
+    buyerSnapshot: { name: "Cliente QA" },
+    closedAt: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    documentPolicySnapshot: {
+      requiredDocumentKinds: [
+        "sale_contract",
+        "sale_receipt",
+        "delivery_term",
+        "power_of_attorney",
+      ],
+    },
+    id: "sale_1",
+    leadId: "lead_1",
+    listingId: null,
+    listingSnapshot: { title: "Audi A4" },
+    overrideReason: null,
+    overrideRequiredFields: false,
+    payments: [payment("payment_1")],
+    revision: 1,
+    salePriceCents: 18990000,
+    saleSourceSnapshot: { source: "lead" },
+    selectedDocumentKinds: [
+      "sale_contract",
+      "sale_receipt",
+      "delivery_term",
+      "power_of_attorney",
+    ],
+    sellerUserId: "seller_1",
+    status: "draft",
+    unitId: "unit_1",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function payment(id: string): SaleRecord["payments"][number] {
+  return {
+    amountCents: 18990000,
+    dueAt: null,
+    extraCents: 0,
+    id,
+    installments: null,
+    metadata: {},
+    method: "pix",
+    paidAt: null,
+    principalCents: 18990000,
+    providerPaymentId: null,
+    status: "pending",
+  };
+}

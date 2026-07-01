@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "../../../infrastructure/http/createApp.js";
 import { llmsText, openApiDocument } from "./docs.controller.js";
+import {
+  externalApiDocsMarkdown,
+  externalApiLlmsText,
+  externalApiOpenApiDocument,
+} from "./externalApiDocs.js";
 
 describe("API docs routes", () => {
   it("serves deterministic llms.txt metadata", async () => {
@@ -21,6 +26,37 @@ describe("API docs routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("application/json");
     expect(await response.json()).toEqual(openApiDocument);
+  });
+
+  it("serves unique AI-native Public API docs routes", async () => {
+    const app = createApp();
+
+    const [docsResponse, markdownResponse, llmsResponse, openApiResponse] =
+      await Promise.all([
+        app.request("/api/v1/external-api/docs"),
+        app.request("/api/v1/external-api/docs.md"),
+        app.request("/api/v1/external-api/llms.txt"),
+        app.request("/api/v1/external-api/openapi.json"),
+      ]);
+
+    expect(docsResponse.status).toBe(200);
+    expect(docsResponse.headers.get("content-type")).toContain("text/markdown");
+    expect(await docsResponse.text()).toBe(externalApiDocsMarkdown);
+    expect(markdownResponse.status).toBe(200);
+    expect(await markdownResponse.text()).toBe(externalApiDocsMarkdown);
+    expect(llmsResponse.status).toBe(200);
+    expect(llmsResponse.headers.get("content-type")).toContain("text/plain");
+    expect(await llmsResponse.text()).toBe(externalApiLlmsText);
+    expect(await openApiResponse.json()).toEqual(externalApiOpenApiDocument);
+  });
+
+  it("keeps the Public API llms.txt index concise and spec-shaped", () => {
+    expect(externalApiLlmsText).toMatch(/^# Loja Veiculos Public API\n\n>/);
+    expect(externalApiLlmsText).toContain("## Canonical Documentation");
+    expect(externalApiLlmsText).toContain("## Optional");
+    expect(externalApiLlmsText).toContain(
+      "- [Public API OpenAPI](/api/v1/external-api/openapi.json):",
+    );
   });
 
   it("documents current inventory auth and external API limits", () => {

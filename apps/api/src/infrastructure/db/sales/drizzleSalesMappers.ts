@@ -25,7 +25,7 @@ export function toInsertSale(scope: SaleScope, input: SaveSaleDraftInput) {
     status: "draft" as const,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
-    unitId: input.unitId,
+    unitId: input.unitId ?? null,
   };
 }
 

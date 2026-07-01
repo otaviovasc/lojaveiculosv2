@@ -79,7 +79,7 @@ export function WorkflowSubmitButton({
 }) {
   return (
     <button
-      className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse disabled:opacity-70"
+      className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-accent px-4 text-sm font-black text-inverse disabled:cursor-not-allowed disabled:border-line disabled:bg-app-elevated disabled:text-muted disabled:opacity-100"
       disabled={isDisabled}
       type="submit"
     >

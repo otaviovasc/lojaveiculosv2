@@ -36,7 +36,7 @@ export type SaleRecord = {
   status: SaleStatus;
   storeId: string;
   tenantId: string;
-  unitId: string;
+  unitId: string | null;
   updatedAt: Date;
 };
 
@@ -55,12 +55,10 @@ export type SaveSaleDraftInput = {
   saleSourceSnapshot?: Record<string, unknown>;
   selectedDocumentKinds?: readonly string[];
   sellerUserId?: string | null;
-  unitId: string;
+  unitId?: string | null;
 };
 
-export type UpdateSaleDraftInput = Omit<SaveSaleDraftInput, "unitId"> & {
-  unitId?: string;
-};
+export type UpdateSaleDraftInput = SaveSaleDraftInput;
 
 export type SaveSalePaymentInput = {
   amountCents: number;

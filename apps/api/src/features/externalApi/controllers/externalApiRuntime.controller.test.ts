@@ -31,6 +31,11 @@ describe("external API runtime routes", () => {
         expect.objectContaining({ path: "/api/v1/external-api/leads" }),
       ]),
     );
+    expect(manifest.aiNative).toMatchObject({
+      docs: "https://api.local/api/v1/external-api/docs",
+      llmsTxt: "https://api.local/api/v1/external-api/llms.txt",
+      openApi: "https://api.local/api/v1/external-api/openapi.json",
+    });
     expect(tools.tools.at(0)?.function.name).toBe("search_vehicles");
     expect(JSON.stringify(manifest)).not.toContain("tenant_");
   });
@@ -213,6 +218,7 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 type ManifestJson = {
+  aiNative: Record<string, string>;
   operations: Array<{ path: string }>;
 };
 

@@ -1,16 +1,10 @@
 import { describe, expect, it } from "vitest";
-import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import {
-  createInMemoryVehiclePorts,
-  createListing,
-  type TestVehicleInventoryPorts,
-} from "../../../domains/vehicle/services/VehicleService/testSupport.js";
-import { createServiceContext } from "../../../shared/serviceContext.js";
-import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
-import { createSalesServices, type SalesServices } from "./salesServices.js";
-
-const storeId = "store_1";
-const tenantId = "tenant_1";
+  completeDraft,
+  context,
+  createHarness,
+  expectFinanceLinkedToSale,
+} from "./salesWorkflowTransition.testSupport.js";
 
 describe("sales workflow transition", () => {
   it("reserves a sales draft through the canonical vehicle workflow", async () => {
@@ -109,80 +103,100 @@ describe("sales workflow transition", () => {
     expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("cancelled");
     expect(vehiclePorts.operationsRepository.statuses).toHaveLength(2);
   });
+
+  it("preserves reserved payment rows when a stale draft update arrives", async () => {
+    const { services } = createHarness("available");
+    const draft = await services.createDraft(context(["sale.draft"]), {
+      ...completeDraft(),
+      payments: [
+        {
+          amountCents: 100000,
+          method: "pix",
+          principalCents: 5000000,
+        },
+      ],
+    });
+    const reserved = await services.transition(context(["sale.reserve"]), {
+      saleId: draft.id,
+      status: "pending",
+    });
+    const paymentId = reserved.payments[0]?.id;
+
+    const updated = await services.updateDraft(
+      context(["sale.draft"]),
+      draft.id,
+      {
+        ...completeDraft(),
+        payments: [
+          {
+            amountCents: 100000,
+            method: "pix",
+            principalCents: 5000000,
+          },
+        ],
+      },
+    );
+
+    expect(updated.payments[0]?.id).toBe(paymentId);
+  });
+
+  it("rejects lifecycle transitions after terminal sale states", async () => {
+    const closedHarness = createHarness("available");
+    const closedDraft = await closedHarness.services.createDraft(
+      context(["sale.draft"]),
+      {
+        ...completeDraft(),
+        payments: [
+          {
+            amountCents: 5000000,
+            method: "pix",
+            principalCents: 5000000,
+          },
+        ],
+      },
+    );
+    const closed = await closedHarness.services.transition(
+      context(["sale.close"]),
+      {
+        saleId: closedDraft.id,
+        status: "closed",
+      },
+    );
+
+    await expect(
+      closedHarness.services.transition(
+        context(["inventory.reserve", "sale.cancel"]),
+        {
+          saleId: closed.id,
+          status: "cancelled",
+        },
+      ),
+    ).rejects.toThrow("Sale cannot transition from closed to cancelled.");
+    await expect(
+      closedHarness.services.transition(context(["sale.reserve"]), {
+        saleId: closed.id,
+        status: "pending",
+      }),
+    ).rejects.toThrow("Sale cannot transition from closed to pending.");
+
+    const cancelledHarness = createHarness("available");
+    const cancelledDraft = await cancelledHarness.services.createDraft(
+      context(["sale.draft"]),
+      completeDraft(),
+    );
+    const cancelled = await cancelledHarness.services.transition(
+      context(["sale.cancel"]),
+      {
+        saleId: cancelledDraft.id,
+        status: "cancelled",
+      },
+    );
+
+    await expect(
+      cancelledHarness.services.transition(context(["sale.close"]), {
+        saleId: cancelled.id,
+        status: "closed",
+      }),
+    ).rejects.toThrow("Sale cannot transition from cancelled to closed.");
+  });
 });
-
-function createHarness(status: "available" | "reserved"): {
-  services: SalesServices;
-  vehiclePorts: TestVehicleInventoryPorts;
-} {
-  const vehiclePorts = createInMemoryVehiclePorts([
-    createListing({
-      priceCents: 5000000,
-      status: "published",
-      storeId,
-      tenantId,
-      unitIds: ["unit_1"],
-    }),
-  ]);
-  vehiclePorts.units.set("unit_1", createUnit(status));
-  const services = createSalesServices({
-    ports: { salesRepository: createMemorySalesRepository() },
-    workflowPorts: vehiclePorts,
-  });
-  return { services, vehiclePorts };
-}
-
-function completeDraft() {
-  return {
-    buyerSnapshot: {
-      address: "Rua Um, 100",
-      document: "000.000.000-00",
-      email: "buyer@example.com",
-      name: "Maria",
-      phone: "(11) 99999-0000",
-    },
-    documentPolicySnapshot: {},
-    leadId: "lead_1",
-    salePriceCents: 5000000,
-    sellerUserId: "seller_1",
-    unitId: "unit_1",
-  };
-}
-
-function context(permissions: string[]) {
-  return createServiceContext({
-    actor: { id: "user_1", kind: "user" },
-    permissions,
-    request: { requestId: "req_1" },
-    storeId,
-    tenantId,
-  });
-}
-
-function createUnit(status: "available" | "reserved"): VehicleUnit {
-  const now = new Date("2026-01-01T00:00:00.000Z");
-  return {
-    colorName: null,
-    createdAt: now,
-    id: "unit_1",
-    listingId: "listing_1",
-    plate: "ABC1D23",
-    status,
-    stockNumber: null,
-    storeId,
-    tenantId,
-    updatedAt: now,
-    vin: null,
-  };
-}
-
-function expectFinanceLinkedToSale(
-  vehiclePorts: TestVehicleInventoryPorts,
-  saleId: string,
-) {
-  expect(
-    vehiclePorts.financeRepository.links.some(
-      (link) => link.targetId === saleId && link.targetType === "sale",
-    ),
-  ).toBe(true);
-}

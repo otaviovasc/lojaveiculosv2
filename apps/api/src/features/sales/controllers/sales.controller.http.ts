@@ -10,6 +10,8 @@ import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
   SaleNotFoundError,
   SaleReadinessError,
+  SaleReferenceError,
+  SaleTransitionStateError,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import {
   VehicleListingNotFoundError,
@@ -60,6 +62,22 @@ export async function handleSales(
         message: error.message,
         status: 409,
       });
+    }
+    if (error instanceof SaleTransitionStateError) {
+      return context.json(
+        {
+          currentStatus: error.currentStatus,
+          message: error.message,
+          nextStatus: error.nextStatus,
+        },
+        409,
+      );
+    }
+    if (error instanceof SaleReferenceError) {
+      return context.json(
+        { message: error.message, reference: error.reference },
+        409,
+      );
     }
     if (error instanceof SaleNotFoundError) {
       return jsonApiError(context, {

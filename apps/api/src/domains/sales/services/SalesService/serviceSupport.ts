@@ -39,6 +39,31 @@ export class SaleReadinessError extends Error {
   }
 }
 
+export class SaleTransitionStateError extends Error {
+  constructor(
+    readonly currentStatus: SaleRecord["status"],
+    readonly nextStatus: SaleRecord["status"],
+  ) {
+    super(`Sale cannot transition from ${currentStatus} to ${nextStatus}.`);
+    this.name = "SaleTransitionStateError";
+  }
+}
+
+export class SaleReferenceError extends Error {
+  constructor(readonly reference: "lead" | "vehicle_unit" | "unknown") {
+    super(referenceMessage(reference));
+    this.name = "SaleReferenceError";
+  }
+}
+
+function referenceMessage(reference: "lead" | "vehicle_unit" | "unknown") {
+  if (reference === "lead") return "Referenced lead was not found.";
+  if (reference === "vehicle_unit") {
+    return "Referenced vehicle unit was not found.";
+  }
+  return "Referenced sales record dependency was not found.";
+}
+
 export function getSalesRepository(
   ports: SalesServicePorts | undefined,
 ): SalesRepository {

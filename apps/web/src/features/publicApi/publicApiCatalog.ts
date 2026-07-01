@@ -1,5 +1,6 @@
 import {
   Bot,
+  BookOpen,
   CarFront,
   FileJson,
   Handshake,
@@ -198,16 +199,22 @@ export const scopePresets: PublicApiScopePreset[] = [
 
 export const publicApiResources = [
   {
-    description: "OpenAPI completo para gerar SDKs e clientes tipados.",
-    icon: FileJson,
-    label: "OpenAPI",
-    path: "/api/v1/openapi.json",
+    description: "Rota unica de documentacao Markdown para humanos e agentes.",
+    icon: BookOpen,
+    label: "Docs",
+    path: `${publicApiBasePath}/docs`,
   },
   {
-    description: "Resumo compacto para LLMs e agentes de coding.",
+    description: "OpenAPI escopado para gerar SDKs e clientes tipados.",
+    icon: FileJson,
+    label: "OpenAPI",
+    path: `${publicApiBasePath}/openapi.json`,
+  },
+  {
+    description: "Indice compacto para LLMs e agentes de coding.",
     icon: Bot,
     label: "llms.txt",
-    path: "/llms.txt",
+    path: `${publicApiBasePath}/llms.txt`,
   },
   {
     description: "Manifesto de capacidades, auth, scopes e fluxos.",

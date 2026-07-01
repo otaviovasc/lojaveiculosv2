@@ -115,6 +115,7 @@ export function SalesModule({ api }: { api?: SalesApi }) {
             : await runtimeApi.cancel(sale.id, null);
       setSales((current) => replaceSale(current, next));
       setActiveId(next.id);
+      return next;
     },
     [runtimeApi],
   );

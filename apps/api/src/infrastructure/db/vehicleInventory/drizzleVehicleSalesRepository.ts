@@ -143,7 +143,7 @@ function toInsertPayment(
 }
 
 function toSale(row: SaleRow): VehicleSale {
-  if (row.salePriceCents === null) {
+  if (row.salePriceCents === null || row.unitId === null) {
     throw new Error(
       "Vehicle workflow sale row is missing completed sale data.",
     );

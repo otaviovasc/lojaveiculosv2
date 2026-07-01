@@ -37,7 +37,7 @@ export function createMemorySalesRepository(): SalesRepository {
         status: "draft",
         storeId: scope.storeId,
         tenantId: scope.tenantId,
-        unitId: input.unitId,
+        unitId: input.unitId ?? null,
         updatedAt: now,
       };
       sales.set(sale.id, sale);

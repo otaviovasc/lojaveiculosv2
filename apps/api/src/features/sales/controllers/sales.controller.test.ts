@@ -6,9 +6,10 @@ import {
   createListing,
 } from "../../../domains/vehicle/services/VehicleService/testSupport.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
+import { SaleReferenceError } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import { createSalesFeature } from "./sales.controller.js";
-import { createSalesServices } from "./salesServices.js";
+import { createSalesServices, type SalesServices } from "./salesServices.js";
 
 const storeId = "store-1";
 const tenantId = "tenant-1";
@@ -34,6 +35,20 @@ describe("sales controller", () => {
     const listed = payload.sales[0];
     if (!listed) throw new Error("Expected sale in list response.");
     expect(listed.id).toBe(created.id);
+  });
+
+  it("creates lead-first drafts before a vehicle unit is selected", async () => {
+    const app = createTestApp();
+    const createResponse = await requestJson(app, "/sales/drafts", {
+      buyerSnapshot: { name: "Maria" },
+      leadId: "lead-1",
+    });
+
+    expect(createResponse.status).toBe(201);
+    const created = await readJson<TestSale>(createResponse);
+    expect(created.status).toBe("draft");
+    expect(created.leadId).toBe("lead-1");
+    expect(created.unitId).toBeNull();
   });
 
   it("blocks reserve when required fields are missing", async () => {
@@ -90,6 +105,39 @@ describe("sales controller", () => {
     const reserved = await readJson<TestSale>(reserveResponse);
     expect(reserved.status).toBe("pending");
   });
+
+  it("maps missing sales references to conflict responses", async () => {
+    const app = new Hono();
+    const services: SalesServices = {
+      createDraft: async () => {
+        throw new SaleReferenceError("lead");
+      },
+      list: async () => [],
+      transition: async () => {
+        throw new Error("Unexpected transition call.");
+      },
+      updateDraft: async () => {
+        throw new Error("Unexpected update call.");
+      },
+    };
+    app.route(
+      "/sales",
+      createSalesFeature({
+        contextFactory: async () => createTestContext(),
+        services,
+      }),
+    );
+
+    const response = await requestJson(app, "/sales/drafts", {
+      buyerSnapshot: { name: "Maria" },
+      leadId: "missing-lead",
+    });
+
+    expect(response.status).toBe(409);
+    expect(await readJson<{ reference: string }>(response)).toMatchObject({
+      reference: "lead",
+    });
+  });
 });
 
 function createTestApp() {
@@ -114,24 +162,27 @@ function createTestApp() {
   app.route(
     "/sales",
     createSalesFeature({
-      contextFactory: async () =>
-        createServiceContext({
-          actor: { id: "user-1", kind: "user" },
-          permissions: [
-            "sale.cancel",
-            "sale.close",
-            "sale.draft",
-            "sale.read",
-            "sale.reserve",
-          ],
-          request: { requestId: "test-request" },
-          storeId,
-          tenantId,
-        }),
+      contextFactory: async () => createTestContext(),
       services,
     }),
   );
   return app;
+}
+
+function createTestContext() {
+  return createServiceContext({
+    actor: { id: "user-1", kind: "user" },
+    permissions: [
+      "sale.cancel",
+      "sale.close",
+      "sale.draft",
+      "sale.read",
+      "sale.reserve",
+    ],
+    request: { requestId: "test-request" },
+    storeId,
+    tenantId,
+  });
 }
 
 function requestJson(app: Hono, path: string, body: unknown) {
@@ -150,6 +201,7 @@ type TestSale = {
   id: string;
   leadId: string | null;
   status: string;
+  unitId: string | null;
 };
 
 type TestSaleList = {

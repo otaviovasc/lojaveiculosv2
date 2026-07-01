@@ -8,6 +8,12 @@ import {
 } from "./documentOperationsOpenApi.js";
 import { documentsPaths, documentsSchemas } from "./documentsOpenApi.js";
 import { externalApiPaths, externalApiSchemas } from "./externalApiOpenApi.js";
+import {
+  externalApiDocsMarkdown,
+  externalApiDocsPaths,
+  externalApiLlmsText,
+  externalApiOpenApiDocument,
+} from "./externalApiDocs.js";
 import { financePaths, financeSchemas } from "./financeOpenApi.js";
 import { fiscalPaths, fiscalSchemas } from "./fiscalOpenApi.js";
 import { identityPaths, identitySchemas } from "./identityOpenApi.js";
@@ -82,6 +88,7 @@ export const openApiDocument = {
     ...compliancePaths,
     ...documentsPaths,
     ...documentOperationPaths,
+    ...externalApiDocsPaths,
     ...externalApiPaths,
     ...internalMonitoringPaths,
     ...marketplacePaths,
@@ -216,4 +223,26 @@ docsFeature.get("/llms.txt", (context) =>
 
 docsFeature.get("/api/v1/openapi.json", (context) =>
   context.json(openApiDocument),
+);
+
+docsFeature.get("/api/v1/external-api/docs", (context) =>
+  context.text(externalApiDocsMarkdown, 200, {
+    "Content-Type": "text/markdown; charset=utf-8",
+  }),
+);
+
+docsFeature.get("/api/v1/external-api/docs.md", (context) =>
+  context.text(externalApiDocsMarkdown, 200, {
+    "Content-Type": "text/markdown; charset=utf-8",
+  }),
+);
+
+docsFeature.get("/api/v1/external-api/llms.txt", (context) =>
+  context.text(externalApiLlmsText, 200, {
+    "Content-Type": "text/plain; charset=utf-8",
+  }),
+);
+
+docsFeature.get("/api/v1/external-api/openapi.json", (context) =>
+  context.json(externalApiOpenApiDocument),
 );

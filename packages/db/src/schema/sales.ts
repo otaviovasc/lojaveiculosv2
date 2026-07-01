@@ -61,9 +61,7 @@ export const sales = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    unitId: uuid("unit_id")
-      .notNull()
-      .references(() => vehicleUnits.id),
+    unitId: uuid("unit_id").references(() => vehicleUnits.id),
   },
   (table) => [
     index("sales_closed_at_idx").on(table.closedAt),

@@ -17,10 +17,7 @@ export function cleanCreateSaleDraftInput(
 ): SaveSaleDraftInput {
   const draft: UpdateSaleDraftInput = {};
   cleanSaleDraftFields(draft, input);
-  if (!draft.unitId) {
-    throw new Error("Sales draft requires unitId.");
-  }
-  return { ...draft, unitId: draft.unitId };
+  return draft;
 }
 
 export function cleanUpdateSaleDraftInput(
@@ -44,9 +41,7 @@ function cleanSaleDraftFields(
   assignDefined(draft, "saleSourceSnapshot", input.saleSourceSnapshot);
   assignDefined(draft, "selectedDocumentKinds", input.selectedDocumentKinds);
   assignDefined(draft, "sellerUserId", input.sellerUserId);
-  if (input.unitId !== undefined && input.unitId !== null) {
-    draft.unitId = input.unitId;
-  }
+  assignDefined(draft, "unitId", input.unitId);
 }
 
 export function cleanListSalesQuery(

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Check, HelpCircle, Save } from "lucide-react";
 import {
   ContextSection,
@@ -19,9 +19,9 @@ export function SaleWorkspace({
   onSave,
   sale,
 }: {
-  onCancel: (sale: SaleRecord) => Promise<void>;
-  onClose: (sale: SaleRecord) => Promise<void>;
-  onReserve: (sale: SaleRecord) => Promise<void>;
+  onCancel: (sale: SaleRecord) => Promise<SaleRecord | void>;
+  onClose: (sale: SaleRecord) => Promise<SaleRecord | void>;
+  onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onSave: (sale: SaleRecord) => Promise<SaleRecord>;
   sale: SaleRecord | null;
 }) {
@@ -29,6 +29,7 @@ export function SaleWorkspace({
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const autosaveTimerRef = useRef<number | undefined>(undefined);
   const lastSavedRef = useRef("");
 
   useEffect(() => {
@@ -42,19 +43,24 @@ export function SaleWorkspace({
 
   useEffect(() => {
     if (!draft) return;
+    if (draft.status !== "draft") return;
     const serialized = serializeSale(draft);
     if (serialized === lastSavedRef.current) return;
     setIsSaving(true);
-    const timer = window.setTimeout(() => {
+    clearAutosaveTimer(autosaveTimerRef);
+    autosaveTimerRef.current = window.setTimeout(() => {
       void onSave(draft)
         .then(() => {
           lastSavedRef.current = serialized;
           setMessage("Rascunho salvo automaticamente");
         })
         .catch((error) => setMessage(errorMessage(error)))
-        .finally(() => setIsSaving(false));
+        .finally(() => {
+          autosaveTimerRef.current = undefined;
+          setIsSaving(false);
+        });
     }, 650);
-    return () => window.clearTimeout(timer);
+    return () => clearAutosaveTimer(autosaveTimerRef);
   }, [draft, onSave]);
 
   useEffect(() => {
@@ -93,12 +99,15 @@ export function SaleWorkspace({
     );
   }
 
-  const runTransition = async (action: (sale: SaleRecord) => Promise<void>) => {
+  const runTransition = async (
+    action: (sale: SaleRecord) => Promise<SaleRecord | void>,
+  ) => {
+    clearAutosaveTimer(autosaveTimerRef);
     setIsSaving(true);
     try {
-      await onSave(draft);
-      await action(draft);
-      lastSavedRef.current = serializeSale(draft);
+      const saved = await onSave(draft);
+      const transitioned = await action(saved);
+      lastSavedRef.current = serializeSale(transitioned ?? saved);
       setMessage("Status da venda atualizado");
     } catch (error) {
       setMessage(errorMessage(error));
@@ -227,4 +236,11 @@ function serializeSale(sale: SaleRecord): string {
 
 function errorMessage(error: unknown): string {
   return formatApiErrorDisplay(error, "Nao foi possivel salvar a venda.");
+}
+
+function clearAutosaveTimer(ref: RefObject<number | undefined>) {
+  if (ref.current !== undefined) {
+    window.clearTimeout(ref.current);
+    ref.current = undefined;
+  }
 }

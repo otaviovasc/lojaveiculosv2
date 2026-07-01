@@ -8,6 +8,7 @@ import type {
   SaleScope,
   SaveSalePaymentInput,
 } from "../../../domains/sales/ports/salesRepository.js";
+import { SaleReferenceError } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import {
   toInsertPayment,
   toInsertSale,
@@ -23,13 +24,22 @@ export function createDrizzleSalesRepository(
 ): SalesRepository {
   return {
     async createDraft(scope, input) {
-      const [row] = await db
-        .insert(sales)
-        .values(toInsertSale(scope, input))
-        .returning();
-      if (!row) throw new Error("Drizzle adapter did not return sale.");
-      const payments = await replacePayments(db, scope, row.id, input.payments);
-      return toSaleRecord(row, payments);
+      try {
+        const [row] = await db
+          .insert(sales)
+          .values(toInsertSale(scope, input))
+          .returning();
+        if (!row) throw new Error("Drizzle adapter did not return sale.");
+        const payments = await replacePayments(
+          db,
+          scope,
+          row.id,
+          input.payments,
+        );
+        return toSaleRecord(row, payments);
+      } catch (error) {
+        throw mapSalesRepositoryError(error);
+      }
     },
     async findById(scope, saleId) {
       const [row] = await db
@@ -67,43 +77,51 @@ export function createDrizzleSalesRepository(
       return rows.map((row) => toSaleRecord(row, payments.get(row.id) ?? []));
     },
     async transition(input) {
-      const [row] = await db
-        .update(sales)
-        .set({
-          closedAt: input.closedAt ?? null,
-          overrideReason: input.overrideReason ?? null,
-          overrideRequiredFields: input.overrideRequiredFields ?? false,
-          status: input.status,
-        })
-        .where(scopedSaleWhere(input, input.saleId))
-        .returning();
-      if (!row) throw new Error(`Sale not found: ${input.saleId}`);
-      if (input.status === "cancelled") {
-        await db
-          .update(salePayments)
-          .set({ status: "cancelled" })
-          .where(
-            and(
-              eq(salePayments.saleId, input.saleId),
-              eq(salePayments.storeId, input.storeId),
-              eq(salePayments.tenantId, input.tenantId),
-              eq(salePayments.status, "pending"),
-            ),
-          );
+      try {
+        const [row] = await db
+          .update(sales)
+          .set({
+            closedAt: input.closedAt ?? null,
+            overrideReason: input.overrideReason ?? null,
+            overrideRequiredFields: input.overrideRequiredFields ?? false,
+            status: input.status,
+          })
+          .where(scopedSaleWhere(input, input.saleId))
+          .returning();
+        if (!row) throw new Error(`Sale not found: ${input.saleId}`);
+        if (input.status === "cancelled") {
+          await db
+            .update(salePayments)
+            .set({ status: "cancelled" })
+            .where(
+              and(
+                eq(salePayments.saleId, input.saleId),
+                eq(salePayments.storeId, input.storeId),
+                eq(salePayments.tenantId, input.tenantId),
+                eq(salePayments.status, "pending"),
+              ),
+            );
+        }
+        return toSaleRecord(row, await findPayments(db, input, input.saleId));
+      } catch (error) {
+        throw mapSalesRepositoryError(error);
       }
-      return toSaleRecord(row, await findPayments(db, input, input.saleId));
     },
     async updateDraft(scope, saleId, input) {
-      const [row] = await db
-        .update(sales)
-        .set(toUpdateSale(input))
-        .where(scopedSaleWhere(scope, saleId))
-        .returning();
-      if (!row) throw new Error(`Sale not found: ${saleId}`);
-      const payments = input.payments
-        ? await replacePayments(db, scope, saleId, input.payments)
-        : await findPayments(db, scope, saleId);
-      return toSaleRecord(row, payments);
+      try {
+        const [row] = await db
+          .update(sales)
+          .set(toUpdateSale(input))
+          .where(scopedSaleWhere(scope, saleId))
+          .returning();
+        if (!row) throw new Error(`Sale not found: ${saleId}`);
+        const payments = input.payments
+          ? await replacePayments(db, scope, saleId, input.payments)
+          : await findPayments(db, scope, saleId);
+        return toSaleRecord(row, payments);
+      } catch (error) {
+        throw mapSalesRepositoryError(error);
+      }
     },
   };
 }
@@ -173,4 +191,38 @@ function scopedSaleWhere(scope: SaleScope, saleId: string) {
     eq(sales.storeId, scope.storeId),
     eq(sales.tenantId, scope.tenantId),
   );
+}
+
+function mapSalesRepositoryError(error: unknown): Error {
+  if (isForeignKeyViolation(error)) {
+    return new SaleReferenceError(referenceFromConstraint(error));
+  }
+  return error instanceof Error ? error : new Error(String(error));
+}
+
+function isForeignKeyViolation(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === "23503"
+  );
+}
+
+function referenceFromConstraint(
+  error: unknown,
+): "lead" | "vehicle_unit" | "unknown" {
+  const value =
+    readErrorText(error, "constraint_name") ??
+    readErrorText(error, "constraint") ??
+    readErrorText(error, "message");
+  if (value?.includes("lead")) return "lead";
+  if (value?.includes("unit")) return "vehicle_unit";
+  return "unknown";
+}
+
+function readErrorText(error: unknown, key: string): string | undefined {
+  if (!error || typeof error !== "object" || !(key in error)) return undefined;
+  const value = (error as Record<string, unknown>)[key];
+  return typeof value === "string" ? value.toLowerCase() : undefined;
 }

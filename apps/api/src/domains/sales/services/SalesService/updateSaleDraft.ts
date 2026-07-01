@@ -28,7 +28,11 @@ export async function updateSaleDraft(
     status: current.status,
   });
 
-  const sale = await repository.updateDraft(scope, saleId, input);
+  const sale = await repository.updateDraft(
+    scope,
+    saleId,
+    current.status === "draft" ? input : omitPaymentUpdates(input),
+  );
 
   await auditSalesServiceEvent(context, {
     action: current.status === "closed" ? "sale.correct" : "sale.draft.update",
@@ -40,4 +44,9 @@ export async function updateSaleDraft(
   });
 
   return sale;
+}
+
+function omitPaymentUpdates(input: UpdateSaleDraftInput): UpdateSaleDraftInput {
+  const { payments: _payments, ...safeInput } = input;
+  return safeInput;
 }

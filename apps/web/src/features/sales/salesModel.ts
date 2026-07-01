@@ -84,6 +84,7 @@ export function parseSaleStartContext(): SaleStartContext {
 
 export function saleMissingFields(sale: SaleRecord): string[] {
   const missing: string[] = [];
+  if (!hasBuyerName(sale.buyerSnapshot)) missing.push("Comprador");
   if (!sale.leadId) missing.push("Lead");
   if (!sale.unitId) missing.push("Veiculo");
   if (!sale.sellerUserId) missing.push("Vendedor");
@@ -95,6 +96,10 @@ export function saleMissingFields(sale: SaleRecord): string[] {
     if (!sale.selectedDocumentKinds.includes(kind)) missing.push(kind);
   }
   return missing;
+}
+
+export function hasBuyerName(snapshot: Record<string, unknown>): boolean {
+  return typeof snapshot.name === "string" && snapshot.name.trim().length > 0;
 }
 
 export function requiredDocumentKinds(sale: SaleRecord): readonly string[] {

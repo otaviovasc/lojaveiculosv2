@@ -1,8 +1,10 @@
 export function createExternalApiManifest(baseUrl: string) {
   return {
     aiNative: {
-      llmsTxt: `${baseUrl}/llms.txt`,
-      openApi: `${baseUrl}/api/v1/openapi.json`,
+      docs: `${baseUrl}/api/v1/external-api/docs`,
+      llmsTxt: `${baseUrl}/api/v1/external-api/llms.txt`,
+      markdownDocs: `${baseUrl}/api/v1/external-api/docs.md`,
+      openApi: `${baseUrl}/api/v1/external-api/openapi.json`,
       toolDefinitions: `${baseUrl}/api/v1/external-api/ai-tools`,
     },
     auth: {

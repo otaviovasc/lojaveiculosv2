@@ -15,6 +15,8 @@ describe("PublicApiModule", () => {
     render(<PublicApiModule api={api} />);
 
     await waitFor(() => expect(api.listClients).toHaveBeenCalledOnce());
+    expect(screen.getByText("/api/v1/external-api/docs")).toBeVisible();
+    expect(screen.getByText("/api/v1/external-api/llms.txt")).toBeVisible();
     expect(screen.getByText("/api/v1/external-api/manifest")).toBeVisible();
     expect(screen.getByText("/api/v1/external-api/ai-tools")).toBeVisible();
     expect(screen.getByText("Integra Zapier")).toBeVisible();

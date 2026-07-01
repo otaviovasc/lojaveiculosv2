@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import {
   formatCents,
+  hasBuyerName,
   paymentPrincipalTotal,
   saleMissingFields,
 } from "./salesModel";
@@ -32,9 +33,21 @@ export function StickySaleSummary({
   const totalPaid = paymentPrincipalTotal(sale);
   const salePrice = sale.salePriceCents ?? 0;
   const balance = salePrice - totalPaid;
+  const canClose =
+    isReady && (sale.status === "draft" || sale.status === "pending");
+  const canReserve = isReady && sale.status === "draft";
+  const canCancel = sale.status === "draft" || sale.status === "pending";
+  const isTerminal = sale.status === "closed" || sale.status === "cancelled";
+  const cancelLabel =
+    sale.status === "pending" ? "Cancelar reserva" : "Cancelar rascunho";
 
   // Requirements checklist
   const checks = [
+    {
+      label: "Comprador Identificado",
+      ok: hasBuyerName(sale.buyerSnapshot),
+      desc: "Nome do comprador pendente",
+    },
     {
       label: "Lead Vinculado",
       ok: !!sale.leadId,
@@ -139,7 +152,22 @@ export function StickySaleSummary({
       <div className="sales-summary-divider" />
 
       <div className="grid gap-2 mt-1">
-        {isReady ? (
+        {sale.status === "closed" ? (
+          <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-2 rounded-xl border border-emerald-500/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+            <CheckCircle2 className="size-4" />
+            <span>Venda fechada</span>
+          </div>
+        ) : sale.status === "cancelled" ? (
+          <div className="flex items-center gap-2 bg-danger/10 text-danger px-3 py-2 rounded-xl border border-danger/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+            <X className="size-4" />
+            <span>Venda cancelada</span>
+          </div>
+        ) : sale.status === "pending" ? (
+          <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl border border-warning/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+            <ShieldAlert className="size-4" />
+            <span>Reserva ativa</span>
+          </div>
+        ) : isReady ? (
           <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-2 rounded-xl border border-emerald-500/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
             <CheckCircle2 className="size-4" />
             <span>Pronta para Emitir</span>
@@ -153,35 +181,45 @@ export function StickySaleSummary({
           </div>
         )}
 
-        <button
-          className="sales-primary-button w-full"
-          disabled={!isReady}
-          onClick={onClose}
-          style={{
-            opacity: isReady ? 1 : 0.5,
-            cursor: isReady ? "pointer" : "not-allowed",
-            boxShadow: isReady ? undefined : "none",
-          }}
-          type="button"
-        >
-          Fechar Venda
-        </button>
+        {isTerminal ? null : (
+          <>
+            <button
+              className="sales-primary-button w-full"
+              disabled={!canClose}
+              onClick={onClose}
+              style={{
+                opacity: canClose ? 1 : 0.5,
+                cursor: canClose ? "pointer" : "not-allowed",
+                boxShadow: canClose ? undefined : "none",
+              }}
+              type="button"
+            >
+              Fechar Venda
+            </button>
 
-        <button
-          className="sales-secondary-button w-full"
-          onClick={onReserve}
-          type="button"
-        >
-          Reservar Veículo
-        </button>
+            <button
+              className="sales-secondary-button w-full"
+              disabled={!canReserve}
+              onClick={onReserve}
+              style={{
+                opacity: canReserve ? 1 : 0.5,
+                cursor: canReserve ? "pointer" : "not-allowed",
+              }}
+              type="button"
+            >
+              Reservar Veículo
+            </button>
 
-        <button
-          className="sales-secondary-button w-full !text-muted hover:!text-rose-500 hover:!border-rose-500/40"
-          onClick={onCancel}
-          type="button"
-        >
-          Cancelar Draft
-        </button>
+            <button
+              className="sales-secondary-button w-full !text-muted hover:!text-rose-500 hover:!border-rose-500/40"
+              disabled={!canCancel}
+              onClick={onCancel}
+              type="button"
+            >
+              {cancelLabel}
+            </button>
+          </>
+        )}
       </div>
     </aside>
   );

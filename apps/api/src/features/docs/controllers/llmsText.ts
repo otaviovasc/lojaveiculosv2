@@ -2,6 +2,9 @@ export const llmsText = `# Loja Veiculos API
 
 ## API entry points
 - OpenAPI document: /api/v1/openapi.json
+- Public API docs: GET /api/v1/external-api/docs
+- Public API OpenAPI document: GET /api/v1/external-api/openapi.json
+- Public API llms.txt: GET /api/v1/external-api/llms.txt
 - Health check: /health
 - Public storefront settings: GET /api/v1/public/storefront/settings
 - Public storefront listings: GET /api/v1/public/storefront/listings
@@ -216,6 +219,9 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/documents/{documentId}/void: voids a scoped document with optional reason; requires documents.void.
 
 ## Current external API endpoints
+- GET /api/v1/external-api/docs: returns the canonical Public API Markdown docs route for humans, SDK builders, and AI agents.
+- GET /api/v1/external-api/openapi.json: returns the scoped Public API OpenAPI document without the internal backend surface.
+- GET /api/v1/external-api/llms.txt: returns the scoped Public API llms.txt index with concise canonical links and safety notes.
 - GET /api/v1/external-api/manifest: returns the public API capability manifest with live routes, auth rules, docs URLs, and AI-native discovery URLs.
 - GET /api/v1/external-api/ai-tools: returns OpenAI-style tool definitions for vehicle search and lead creation.
 - GET /api/v1/external-api/clients: returns scoped API clients and key prefixes; requires external_api.manage.

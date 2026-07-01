@@ -8,6 +8,7 @@ import {
   getSalesRepository,
   logSalesServiceEvent,
   requireSaleScope,
+  SaleTransitionStateError,
   validateSaleReadiness,
   type SalesServicePorts,
 } from "./serviceSupport.js";
@@ -39,6 +40,8 @@ export async function transitionSale(
     saleId: input.saleId,
     status: input.status,
   });
+
+  assertTransitionAllowed(current.status, input.status);
 
   if (input.status !== "cancelled") {
     const missingFields = collectMissingSaleFields(current);
@@ -76,6 +79,21 @@ export async function transitionSale(
   });
 
   return sale;
+}
+
+function assertTransitionAllowed(
+  currentStatus: SaleStatus,
+  nextStatus: Exclude<SaleStatus, "draft">,
+): void {
+  const allowedTransitions: Record<SaleStatus, readonly SaleStatus[]> = {
+    cancelled: [],
+    closed: [],
+    draft: ["cancelled", "closed", "pending"],
+    pending: ["cancelled", "closed"],
+  };
+  if (!allowedTransitions[currentStatus].includes(nextStatus)) {
+    throw new SaleTransitionStateError(currentStatus, nextStatus);
+  }
 }
 
 function permissionForStatus(

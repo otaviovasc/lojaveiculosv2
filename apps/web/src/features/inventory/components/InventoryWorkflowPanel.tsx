@@ -279,7 +279,7 @@ export function InventoryWorkflowPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <WorkflowStatus state={state} />
           <WorkflowSubmitButton
-            isDisabled={isSaving || !selectedUnit}
+            isDisabled={isSaving || !canSubmitWorkflow(selectedUnit, mode)}
             isSaving={isSaving}
             mode={mode}
           />
@@ -311,4 +311,13 @@ export function InventoryWorkflowPanel({
       )}
     </InventoryPanel>
   );
+}
+
+function canSubmitWorkflow(
+  unit: InventoryListingDetail["units"][number] | null | undefined,
+  mode: WorkflowMode,
+) {
+  if (!unit) return false;
+  if (mode === "reserve") return unit.status === "available";
+  return unit.status === "available" || unit.status === "reserved";
 }
