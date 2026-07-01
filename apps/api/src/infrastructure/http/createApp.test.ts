@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import type { ExternalApiRepository } from "../../domains/externalApi/ports/externalApiRepository.js";
+import { hashExternalApiKey } from "../../domains/externalApi/crypto/apiKeyCrypto.js";
+import { createInventoryTestServices } from "../../features/inventory/controllers/vehicle.controller.testSupport.js";
 import { createApp } from "./createApp.js";
 
 describe("API middleware", () => {
@@ -67,4 +70,52 @@ describe("API middleware", () => {
     });
     expect(typeof body.requestId).toBe("string");
   });
+
+  it("passes external API repositories into mounted runtime routes", async () => {
+    const apiKey = "lv2_testprefix_secret";
+    const inventoryListingServices = createInventoryTestServices();
+    const externalApiRepository = createExternalApiRepository(apiKey);
+    const app = createApp({
+      externalApiRepository,
+      inventoryListingServices,
+    });
+
+    const response = await app.request("/api/v1/external-api/vehicles", {
+      headers: { "x-api-key": apiKey },
+    });
+
+    expect(response.status).toBe(200);
+    expect(inventoryListingServices.listListings).toHaveBeenCalled();
+    expect(externalApiRepository.recordRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientId: "api_client_1",
+        path: "/api/v1/external-api/vehicles",
+        statusCode: 200,
+      }),
+    );
+  });
 });
+
+function createExternalApiRepository(apiKey: string): ExternalApiRepository {
+  return {
+    authenticateByKeyHash: async (input) =>
+      input.keyHash === hashExternalApiKey(apiKey)
+        ? {
+            clientId: "api_client_1",
+            clientName: "Website builder",
+            entitlements: ["external_api" as const],
+            keyId: "api_key_1",
+            keyPrefix: "lv2_testprefix",
+            scopes: ["inventory.read" as const],
+            storeId: "store_1" as never,
+            tenantId: "tenant_1" as never,
+          }
+        : null,
+    countRecentRequests: vi.fn(async () => 0),
+    createClient: vi.fn(),
+    listClients: vi.fn(),
+    recordRequest: vi.fn(),
+    reserveIdempotencyKey: vi.fn(async () => ({ kind: "created" as const })),
+    revokeClient: vi.fn(),
+  };
+}

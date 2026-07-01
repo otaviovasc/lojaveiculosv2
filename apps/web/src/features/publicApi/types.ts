@@ -18,6 +18,7 @@ export type PublicApiScope =
   | "inventory.reserve"
   | "inventory.sell"
   | "inventory.update_description"
+  | "inventory.update_internal_notes"
   | "inventory.update_price"
   | "inventory.update_status"
   | "inventory.update_unit"
@@ -48,3 +49,10 @@ export type CreatePublicApiClientInput = {
   name: string;
   scopes: PublicApiScope[];
 };
+
+export type PublicApiStatus =
+  | { kind: "error"; message: string }
+  | { kind: "loading" }
+  | { kind: "ready" }
+  | { kind: "saved" }
+  | { kind: "saving" };

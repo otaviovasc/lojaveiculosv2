@@ -1,0 +1,238 @@
+.public-api-shell {
+  gap: 18px;
+}
+
+.public-api-overview {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.public-api-overview article,
+.public-api-client-list article,
+.public-api-endpoints article,
+.public-api-resource-grid button,
+.public-api-presets button {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+}
+
+.public-api-overview article {
+  display: grid;
+  gap: 8px;
+  min-height: 122px;
+  padding: 14px;
+}
+
+.public-api-overview span,
+.public-api-presets svg,
+.public-api-resource-grid svg {
+  color: var(--color-accent);
+}
+
+.public-api-overview span {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+}
+
+.public-api-overview strong,
+.public-api-client-main strong,
+.public-api-endpoints strong,
+.public-api-resource-grid strong {
+  color: var(--color-text);
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.public-api-overview small,
+.public-api-presets small,
+.public-api-client-main small,
+.public-api-endpoints p,
+.public-api-resource-grid small {
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.public-api-main-grid {
+  align-items: start;
+}
+
+.public-api-panel {
+  gap: 16px;
+}
+
+.public-api-presets,
+.public-api-resource-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.public-api-presets button,
+.public-api-resource-grid button {
+  cursor: pointer;
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 12px;
+  text-align: left;
+}
+
+.public-api-presets button.is-active {
+  border-color: var(--color-accent);
+  box-shadow: inset 0 0 0 1px var(--color-accent);
+}
+
+.public-api-scopes {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: 380px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.public-api-scopes .internal-check {
+  align-items: flex-start;
+  background: var(--color-app-elevated);
+  color: var(--color-text);
+}
+
+.public-api-scopes .internal-check span {
+  display: grid;
+  gap: 3px;
+}
+
+.public-api-scopes .internal-check strong {
+  color: var(--color-text);
+}
+
+.public-api-scopes .internal-check small {
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.public-api-secret {
+  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.public-api-client-list,
+.public-api-endpoints {
+  display: grid;
+  gap: 10px;
+}
+
+.public-api-client-list article {
+  align-items: start;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.8fr) auto;
+  padding: 12px;
+}
+
+.public-api-client-main {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.public-api-client-main > span,
+.public-api-endpoints header > span {
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 3px 8px;
+  width: fit-content;
+}
+
+.public-api-client-main > span[data-status="active"],
+.public-api-endpoints header > span[data-method="GET"] {
+  background: var(--color-green-soft);
+  color: var(--color-green-end);
+}
+
+.public-api-endpoints header > span[data-method="POST"],
+.public-api-endpoints header > span[data-method="PATCH"] {
+  background: var(--color-blue-soft);
+  color: var(--color-blue-end);
+}
+
+.public-api-scope-chips {
+  align-content: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.public-api-scope-chips code,
+.public-api-resource-grid code {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.72rem;
+  font-weight: 850;
+  overflow-wrap: anywhere;
+  padding: 3px 6px;
+}
+
+.public-api-resource-grid button {
+  align-items: start;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.public-api-resource-grid span {
+  display: grid;
+  gap: 5px;
+}
+
+.public-api-endpoints article {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.public-api-endpoints header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.public-api-endpoints header div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.public-api-endpoints pre {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 0.76rem;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+@media (max-width: 960px) {
+  .public-api-overview,
+  .public-api-presets,
+  .public-api-resource-grid,
+  .public-api-scopes,
+  .public-api-client-list article {
+    grid-template-columns: 1fr;
+  }
+}

@@ -38,7 +38,7 @@ export const openApiDocument = {
     version: "0.1.0",
     summary: "AI-friendly metadata for the Loja Veiculos backend API.",
     description:
-      "Current API surface exposes canonical V2 inventory DTOs and public storefront reads. External API safety limits are documented as planned constraints.",
+      "Current API surface exposes canonical V2 inventory DTOs, public storefront reads, and scoped external API routes for AI agents and partner integrations.",
   },
   servers: [
     {
@@ -196,7 +196,7 @@ export const openApiDocument = {
     sell: "POST /api/v1/inventory/units/{unitId}/sell creates finance_entries linked to sale and sale_payment context.",
     linkTargets: ["sale", "sale_payment", "vehicle_cost", "vehicle_unit"],
   },
-  "x-planned-external-api-safety-limits": [
+  "x-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",
     "Least-privilege external client scopes required; operator roles are not exposed to integrations.",
     "Idempotency keys required for import and mutation endpoints where possible.",

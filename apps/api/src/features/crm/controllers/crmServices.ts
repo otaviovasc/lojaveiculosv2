@@ -3,6 +3,8 @@ import { createLeadActivity } from "../../../domains/crm/services/CrmService/cre
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import { createCrmLead } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import type { CreateCrmLeadInput } from "../../../domains/crm/services/CrmService/createCrmLead.js";
+import { getCrmLead } from "../../../domains/crm/services/CrmService/getCrmLead.js";
+import type { GetCrmLeadInput } from "../../../domains/crm/services/CrmService/getCrmLead.js";
 import { listCrmLeads } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
 import type { ListCrmLeadsInput } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
 import { listLeadActivities } from "../../../domains/crm/services/CrmService/listLeadActivities.js";
@@ -32,6 +34,10 @@ export type CrmServices = {
   createLead: (
     context: ServiceContext,
     input: CreateCrmLeadInput,
+  ) => Promise<CrmLead>;
+  getLead: (
+    context: ServiceContext,
+    input: GetCrmLeadInput,
   ) => Promise<CrmLead>;
   listActivities: (
     context: ServiceContext,
@@ -69,11 +75,11 @@ export function createCrmServices(
     createActivity: (context, input) =>
       createLeadActivity(context, input, ports),
     createLead: (context, input) => createCrmLead(context, input, ports),
+    getLead: (context, input) => getCrmLead(context, input, ports),
     listActivities: (context, input) =>
       listLeadActivities(context, input, ports),
     listLeads: (context, input) => listCrmLeads(context, input, ports),
-    repassesCrm:
-      options.repassesCrmClient ?? createDisabledRepassesCrmClient(),
+    repassesCrm: options.repassesCrmClient ?? createDisabledRepassesCrmClient(),
     updateLead: (context, input) => updateCrmLead(context, input, ports),
   };
 }

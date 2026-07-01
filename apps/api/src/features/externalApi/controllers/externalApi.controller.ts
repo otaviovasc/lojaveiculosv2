@@ -18,6 +18,10 @@ import {
   externalApiServices,
   type ExternalApiServices,
 } from "./externalApiServices.js";
+import {
+  registerExternalApiRuntimeRoutes,
+  type ExternalApiRuntimeServices,
+} from "./externalApiRuntime.controller.js";
 
 export type ExternalApiContextFactory = (
   context: Context,
@@ -25,6 +29,7 @@ export type ExternalApiContextFactory = (
 
 export type CreateExternalApiFeatureOptions = {
   contextFactory?: ExternalApiContextFactory;
+  runtimeServices?: ExternalApiRuntimeServices;
   services?: ExternalApiServices;
 };
 
@@ -63,6 +68,11 @@ export function createExternalApiFeature(
       return context.json(client);
     }),
   );
+
+  registerExternalApiRuntimeRoutes(feature, {
+    contextFactory,
+    ...(options.runtimeServices ? { services: options.runtimeServices } : {}),
+  });
 
   return feature;
 }

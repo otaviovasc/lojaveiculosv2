@@ -268,7 +268,13 @@ export function InventoryDetailWorkspace({
 
         {activeTab === "historico" && <InventoryDetailHistoricoTab />}
 
-        {activeTab === "vitrine" && <InventoryDetailVitrineTab />}
+        {activeTab === "vitrine" && (
+          <InventoryDetailVitrineTab
+            detail={detail}
+            primaryUnit={primaryUnit}
+            specs={specs}
+          />
+        )}
 
         <InventoryDetailEmptyTab activeTab={activeTab} />
       </div>

@@ -20,6 +20,7 @@ export const storefrontBuilderComponentTypes = [
   "text_block",
   "two_column",
   "typewriter",
+  "vehicle_specs",
   "video",
 ] as const;
 

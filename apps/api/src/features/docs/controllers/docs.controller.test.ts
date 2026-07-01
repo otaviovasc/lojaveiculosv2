@@ -23,7 +23,7 @@ describe("API docs routes", () => {
     expect(await response.json()).toEqual(openApiDocument);
   });
 
-  it("documents current inventory auth and planned external API limits", () => {
+  it("documents current inventory auth and external API limits", () => {
     expect(
       openApiDocument.paths["/api/v1/inventory/listings/{listingId}"].get
         .security,
@@ -182,8 +182,14 @@ describe("API docs routes", () => {
     expect(openApiDocument["x-finance-side-effects"].linkTargets).toEqual(
       expect.arrayContaining(["sale", "sale_payment", "vehicle_cost"]),
     );
-    expect(openApiDocument["x-planned-external-api-safety-limits"]).toContain(
+    expect(openApiDocument["x-external-api-safety-limits"]).toContain(
       "Tenant and store scoping required for every external request.",
     );
+    expect(
+      openApiDocument.paths["/api/v1/external-api/vehicles"].get.security,
+    ).toEqual([{ externalApiKey: ["inventory.read"] }]);
+    expect(
+      openApiDocument.paths["/api/v1/external-api/leads"].post.security,
+    ).toEqual([{ externalApiKey: ["lead.create"] }]);
   });
 });

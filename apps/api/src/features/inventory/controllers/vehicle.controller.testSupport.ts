@@ -147,7 +147,9 @@ export function createInventoryTestServices(): InventoryListingServices {
         {
           listing: listingDto(),
           mediaCount: 1,
+          primaryPublicMediaUrl: "https://cdn.local/front.jpg",
           primaryMediaUrl: "https://cdn.local/front.jpg",
+          publicMediaCount: 1,
           primaryUnit: unitDto(),
           units: [unitDto()],
         },

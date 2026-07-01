@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Globe,
   Copy,
@@ -7,14 +7,101 @@ import {
   Trash2,
   Sparkles,
   Check,
+  RefreshCcw,
 } from "lucide-react";
+import type { InventoryListingDetail, InventoryUnit } from "../model/types";
+import {
+  createRuntimeSettingsApi,
+  createRuntimeStorefrontPagesApi,
+} from "../../publicSite/storefrontRuntimeApis";
+import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
+import { buildCustomPagePublicPath } from "../../publicSite/customPageUtils";
+import {
+  createVitrineComponents,
+  createVitrinePageSlug,
+} from "./VitrineTabComponentsHelper";
 
-export function InventoryDetailVitrineTab() {
-  const [hasVitrine, setHasVitrine] = useState(false);
-  const [isPublished, setIsPublished] = useState(true);
+type Specs = {
+  bodyType: string;
+  color: string;
+  doors: string;
+  engine: string;
+  fuel: string;
+  km: string;
+  modality: string;
+  plate: string;
+  transmission: string;
+  vin: string;
+};
+
+export function InventoryDetailVitrineTab({
+  detail,
+  primaryUnit,
+  specs,
+}: {
+  detail: InventoryListingDetail;
+  primaryUnit: InventoryUnit | null;
+  specs: Specs;
+}) {
+  const listing = detail.listing;
+  const targetSlug = useMemo(
+    () => createVitrinePageSlug(listing),
+    [listing.id, listing.title],
+  );
+
+  const pagesApi = useMemo(() => createRuntimeStorefrontPagesApi(), []);
+  const settingsApi = useMemo(() => createRuntimeSettingsApi(), []);
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [storeSlug, setStoreSlug] = useState("demo");
+  const [storeName, setStoreName] = useState("Loja Demo");
+  const [whatsappPhone, setWhatsappPhone] = useState("");
+  const [activePage, setActivePage] = useState<StorefrontCustomPage | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
 
-  const publicUrl = "https://loja.lojaveiculosv2.com.br/vitrine/civic-2020";
+  const loadData = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const [settings, pages] = await Promise.all([
+        settingsApi.getStoreSettings(),
+        pagesApi.listPages(),
+      ]);
+      setStoreSlug(settings.identity.publicSlug);
+      setStoreName(
+        settings.identity.tradingName ||
+          settings.identity.legalName ||
+          "Loja Demo",
+      );
+      setWhatsappPhone(settings.profile.whatsappPhone || "");
+
+      const foundPage = pages.find((p) => p.slug === targetSlug);
+      setActivePage(foundPage ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadData();
+  }, [targetSlug]);
+
+  // Derived public Url
+  const publicUrl = useMemo(() => {
+    if (!activePage) return "";
+    const path = buildCustomPagePublicPath(activePage, storeSlug);
+    const origin =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "https://loja.lojaveiculosv2.com.br";
+    return `${origin}${path}`;
+  }, [activePage, storeSlug]);
 
   const handleCopyLink = () => {
     void navigator.clipboard.writeText(publicUrl);
@@ -22,27 +109,105 @@ export function InventoryDetailVitrineTab() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleCreate = () => {
-    setHasVitrine(true);
-    setIsPublished(true);
+  const handleCreate = async () => {
+    setIsBusy(true);
+    setError(null);
+    try {
+      // 1. Create custom page
+      const createdPage = await pagesApi.createPage({
+        title: `${listing.title} - Oferta Exclusiva`,
+        slug: targetSlug,
+        description: `Página comercial para o veículo ${listing.title}. Confira fotos, ficha técnica e fale diretamente com a equipe.`,
+      });
+
+      // 2. Generate page components using helper
+      const components = createVitrineComponents({
+        detail,
+        primaryUnit,
+        specs,
+        storeName,
+        storeSlug,
+        whatsappPhone,
+      });
+
+      // 3. Save components & make public
+      const updatedPage = await pagesApi.updatePage(createdPage.id, {
+        components,
+        visible: true,
+      });
+
+      setActivePage(updatedPage);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsBusy(false);
+    }
   };
 
-  const handleRemove = () => {
-    setHasVitrine(false);
+  const handleTogglePublish = async (checked: boolean) => {
+    if (!activePage) return;
+    setIsBusy(true);
+    setError(null);
+    try {
+      const updated = await pagesApi.updatePage(activePage.id, {
+        visible: checked,
+      });
+      setActivePage(updated);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsBusy(false);
+    }
   };
+
+  const handleRemove = async () => {
+    if (!activePage) return;
+    setIsBusy(true);
+    setError(null);
+    try {
+      await pagesApi.deletePage(activePage.id);
+      setActivePage(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const handleEdit = () => {
+    window.location.hash = "/custom-pages";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center text-muted gap-3 min-h-[300px]">
+        <RefreshCcw className="size-6 animate-spin text-accent" />
+        <span className="text-xs font-black uppercase tracking-wider">
+          Carregando Vitrine...
+        </span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-2xl mx-auto text-app-text">
-      {hasVitrine ? (
-        <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6">
+      {error && (
+        <div className="bg-danger/10 border border-danger/25 text-danger rounded-xl p-4 text-xs font-bold leading-relaxed">
+          {error}
+        </div>
+      )}
+
+      {activePage ? (
+        <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6 shadow-sm">
           {/* Top Row Controls */}
           <div className="flex items-center justify-between border-b border-line pb-3">
             <div className="flex items-center gap-3">
               <label className="relative inline-flex items-center cursor-pointer select-none">
                 <input
                   type="checkbox"
-                  checked={isPublished}
-                  onChange={(e) => setIsPublished(e.target.checked)}
+                  disabled={isBusy}
+                  checked={activePage.visible}
+                  onChange={(e) => void handleTogglePublish(e.target.checked)}
                   className="sr-only peer"
                 />
                 <div className="w-8 h-4.5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-accent" />
@@ -50,17 +215,18 @@ export function InventoryDetailVitrineTab() {
               <span
                 className={
                   "text-[10px] font-black px-2.5 py-0.5 rounded-full border " +
-                  (isPublished
+                  (activePage.visible
                     ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/25"
                     : "bg-muted/10 text-muted border-line")
                 }
               >
-                {isPublished ? "Publicada" : "Rascunho"}
+                {activePage.visible ? "Publicada" : "Rascunho"}
               </span>
             </div>
             <button
-              onClick={handleRemove}
-              className="text-xs font-black text-danger hover:text-danger-strong flex items-center gap-1 cursor-pointer"
+              onClick={() => void handleRemove()}
+              disabled={isBusy}
+              className="text-xs font-black text-danger hover:text-danger-strong flex items-center gap-1 cursor-pointer disabled:opacity-50"
               type="button"
             >
               <Trash2 className="size-3.5" />
@@ -86,6 +252,7 @@ export function InventoryDetailVitrineTab() {
             <div className="flex gap-2">
               <button
                 onClick={handleCopyLink}
+                disabled={isBusy}
                 className="min-h-9 rounded-lg border border-line px-3.5 text-xs font-black hover:bg-line/25 transition-all text-app-text cursor-pointer flex items-center gap-1.5"
                 type="button"
               >
@@ -107,36 +274,39 @@ export function InventoryDetailVitrineTab() {
               </a>
             </div>
             <button
+              onClick={handleEdit}
+              disabled={isBusy}
               className="min-h-9 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-4 flex items-center gap-1.5"
               type="button"
             >
               <Pencil className="size-3.5" />
-              <span>Editar Vitrine</span>
+              <span>Editar no Editor</span>
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-panel border border-line rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-4 py-16">
+        <div className="bg-panel border border-line rounded-2xl p-8 text-center flex flex-col items-center justify-center gap-4 py-16 shadow-sm">
           <div className="size-12 rounded-full bg-accent-soft text-accent flex items-center justify-center border border-accent-soft/20 animate-pulse">
             <Sparkles className="size-6" />
           </div>
           <div>
             <h3 className="text-base font-black text-app-text">
-              Vitrine Premium
+              Página de Vitrine Premium
             </h3>
             <p className="text-xs text-muted font-bold max-w-sm mt-1 mx-auto leading-relaxed">
-              Crie uma página comercial com design premium e editorial para este
-              veículo. Perfeito para compartilhar por WhatsApp e enviar para
-              clientes especiais.
+              Gere uma página de alta conversão dedicada a este veículo. Ideal
+              para tráfego pago ou para compartilhar uma ficha técnica
+              interativa com clientes.
             </p>
           </div>
           <button
-            onClick={handleCreate}
-            className="mt-2 min-h-10 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-6 flex items-center justify-center gap-1.5"
+            onClick={() => void handleCreate()}
+            disabled={isBusy}
+            className="mt-2 min-h-10 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-6 flex items-center justify-center gap-1.5 disabled:opacity-50"
             type="button"
           >
-            <Sparkles className="size-4 animate-none" />
-            <span>Criar Vitrine</span>
+            <Sparkles className="size-4" />
+            <span>{isBusy ? "Criando..." : "Criar Vitrine Customizada"}</span>
           </button>
         </div>
       )}

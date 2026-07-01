@@ -34,9 +34,18 @@ export const llmsText = `# Loja Veiculos API
 - Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
 - Documents workspace: GET /api/v1/documents
 - Document versions: GET /api/v1/documents/{documentId}/versions
+- External API manifest: GET /api/v1/external-api/manifest
+- External API AI tools: GET /api/v1/external-api/ai-tools
 - List external API clients: GET /api/v1/external-api/clients
 - Create external API client: POST /api/v1/external-api/clients
 - Revoke external API client: POST /api/v1/external-api/clients/{clientId}/revoke
+- External vehicle list: GET /api/v1/external-api/vehicles
+- External vehicle search: GET /api/v1/external-api/vehicles/search
+- External vehicle detail: GET /api/v1/external-api/vehicles/{listingId}
+- External lead list: GET /api/v1/external-api/leads
+- External lead create: POST /api/v1/external-api/leads
+- External lead detail: GET /api/v1/external-api/leads/{leadId}
+- External lead update: PATCH /api/v1/external-api/leads/{leadId}
 - Admin observability snapshot: GET /api/v1/internal/health
 - List inventory units: GET /api/v1/inventory/units
 - List inventory listing groups: GET /api/v1/inventory/listings
@@ -207,9 +216,18 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/documents/{documentId}/void: voids a scoped document with optional reason; requires documents.void.
 
 ## Current external API endpoints
+- GET /api/v1/external-api/manifest: returns the public API capability manifest with live routes, auth rules, docs URLs, and AI-native discovery URLs.
+- GET /api/v1/external-api/ai-tools: returns OpenAI-style tool definitions for vehicle search and lead creation.
 - GET /api/v1/external-api/clients: returns scoped API clients and key prefixes; requires external_api.manage.
 - POST /api/v1/external-api/clients: creates a scoped API client and returns the plaintext key once; requires external_api.manage.
 - POST /api/v1/external-api/clients/{clientId}/revoke: revokes the client and active keys; requires external_api.manage.
+- GET /api/v1/external-api/vehicles: lists clean external vehicle DTOs without tenant/store ids, VIN, or full plate fields; requires inventory.read.
+- GET /api/v1/external-api/vehicles/search: supports q/search, available, status, price, year, mileage, color, fuel, transmission, and sort aliases for V1-compatible integrations; requires inventory.read.
+- GET /api/v1/external-api/vehicles/{listingId}: returns vehicle detail with public media, safe unit refs, price history, and status history; requires inventory.read.
+- GET /api/v1/external-api/leads: lists CRM leads by q/search, phone, status, source, listingId, page, and limit; requires lead.read and CRM entitlement.
+- POST /api/v1/external-api/leads: creates a CRM lead with V2 buyer fields or V1 aliases name/email/phone/message/vehicleId; requires lead.create, CRM entitlement, and Idempotency-Key.
+- GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
+- PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and Idempotency-Key.
 
 ## Current internal monitoring endpoints
 - GET /api/v1/internal/health: returns scoped admin observability with audit events, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; requires audit.read.
@@ -222,9 +240,9 @@ export const llmsText = `# Loja Veiculos API
 - Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.
 
 ## External API safety limits
-- External write/import APIs are tenant and store scoped.
+- External API key requests are tenant and store scoped before services run.
 - External clients use least-privilege scopes instead of operator roles.
-- Mutations must be idempotent where possible and include request identifiers for audit correlation.
-- Rate limits, payload size limits, and pagination caps must be enforced before public external API launch.
-- Destructive operations must require explicit delete scopes and audit records.
+- Mutations require Idempotency-Key and request identifiers for audit correlation.
+- Rate limits, payload size limits, and pagination caps are enforced on external API-key requests.
+- Destructive operations require explicit delete scopes and audit records.
 `;

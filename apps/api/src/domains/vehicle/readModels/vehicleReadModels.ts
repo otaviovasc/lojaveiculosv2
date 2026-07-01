@@ -25,7 +25,9 @@ export type VehicleListingDetail = {
 export type VehicleListingSummary = {
   listing: VehicleListing;
   mediaCount: number;
+  primaryPublicMediaUrl: string | null;
   primaryMediaUrl: string | null;
+  publicMediaCount: number;
   primaryUnit: VehicleUnit | null;
   units: readonly VehicleUnit[];
 };
@@ -81,11 +83,14 @@ export function createListingSummary(input: {
   const orderedMedia = [...input.media].sort(
     (left, right) => left.displayOrder - right.displayOrder,
   );
+  const publicMedia = orderedMedia.filter((item) => item.isPublic);
 
   return {
     listing: input.listing,
     mediaCount: input.media.length,
+    primaryPublicMediaUrl: publicMedia[0]?.url ?? null,
     primaryMediaUrl: orderedMedia[0]?.url ?? null,
+    publicMediaCount: publicMedia.length,
     primaryUnit: input.units[0] ?? null,
     units: input.units,
   };

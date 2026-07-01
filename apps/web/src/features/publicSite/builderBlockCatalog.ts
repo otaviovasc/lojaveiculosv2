@@ -6,6 +6,7 @@ import {
   ArrowUpDown,
   Box,
   Building2,
+  CarFront,
   Columns2,
   FileText,
   Footprints,
@@ -56,6 +57,7 @@ export const builderBlockLabels: Record<
   text_block: "Texto",
   two_column: "Duas colunas",
   typewriter: "Texto digitado",
+  vehicle_specs: "Ficha Técnica",
   video: "Video",
 };
 
@@ -84,6 +86,7 @@ export const builderBlockIcons: Record<
   text_block: FileText,
   two_column: Columns2,
   typewriter: Type,
+  vehicle_specs: CarFront,
   video: Video,
 };
 
@@ -108,7 +111,7 @@ export const builderBlockGroups: ReadonlyArray<{
   },
   {
     label: "Estoque",
-    types: ["featured", "properties_grid", "testimonials"],
+    types: ["featured", "properties_grid", "testimonials", "vehicle_specs"],
   },
   {
     label: "Layout",
@@ -285,6 +288,18 @@ const defaultBlockProps: Record<
       "opcoes de financiamento",
     ],
     waitTime: 1800,
+  },
+  vehicle_specs: {
+    title: "Ficha Técnica",
+    subtitle: "Especificações detalhadas do veículo",
+    specs: {
+      Ano: "2020/2020",
+      Quilometragem: "45.000 km",
+      Câmbio: "Automático",
+      Combustível: "Flex",
+      Cor: "Preto",
+      Portas: "4 portas",
+    },
   },
   video: {
     autoplay: false,

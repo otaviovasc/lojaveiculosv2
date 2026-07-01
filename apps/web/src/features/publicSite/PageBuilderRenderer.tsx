@@ -1,3 +1,4 @@
+import { VehicleSpecsBlock } from "./PageBuilderSpecsBlock";
 import type {
   StorefrontBuilderComponent,
   StorefrontBuilderConfig,
@@ -318,6 +319,9 @@ function BuilderBlock({
   }
   if (component.type === "divider") {
     return <DividerBlock component={component} context={context} />;
+  }
+  if (component.type === "vehicle_specs") {
+    return <VehicleSpecsBlock component={component} context={context} />;
   }
   if (component.type === "footer") {
     return <FooterBlock component={component} context={context} />;

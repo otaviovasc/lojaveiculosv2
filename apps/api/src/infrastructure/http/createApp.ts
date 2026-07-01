@@ -80,18 +80,18 @@ export function createApp(options: CreateAppOptions = {}) {
     "/api/v1/*",
     createExternalApiRequestLogger(options.externalApiRepository),
   );
-  const contextOptions = options.storeAccessRepository
-    ? {
-        ...(options.audit ? { audit: options.audit } : {}),
-        ...(options.identityVerifier
-          ? { identityVerifier: options.identityVerifier }
-          : {}),
-        ...(options.externalApiRepository
-          ? { externalApiRepository: options.externalApiRepository }
-          : {}),
-        repository: options.storeAccessRepository,
-      }
-    : {};
+  const contextOptions = {
+    ...(options.audit ? { audit: options.audit } : {}),
+    ...(options.identityVerifier
+      ? { identityVerifier: options.identityVerifier }
+      : {}),
+    ...(options.externalApiRepository
+      ? { externalApiRepository: options.externalApiRepository }
+      : {}),
+    ...(options.storeAccessRepository
+      ? { repository: options.storeAccessRepository }
+      : {}),
+  };
   const storefrontOptions = options.publicStorefrontRepository
     ? {
         ...(options.audit ? { audit: options.audit } : {}),
@@ -190,6 +190,10 @@ export function createApp(options: CreateAppOptions = {}) {
     "/api/v1/external-api",
     createExternalApiFeature({
       contextFactory,
+      runtimeServices: {
+        crm: options.crmServices,
+        inventory: options.inventoryListingServices,
+      },
       ...(options.externalApiServices
         ? { services: options.externalApiServices }
         : {}),

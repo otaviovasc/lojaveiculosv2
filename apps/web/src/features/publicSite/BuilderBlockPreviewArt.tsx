@@ -24,6 +24,7 @@ const blockDescriptions: Record<StorefrontBuilderComponentType, string> = {
   text_block: "Texto corrido para condicoes e garantias.",
   two_column: "Layout lado a lado responsivo.",
   typewriter: "Headline animado por frases.",
+  vehicle_specs: "Especificações técnicas do veículo.",
   video: "Video institucional ou de estoque.",
 };
 
@@ -37,8 +38,16 @@ export function BuilderBlockPreviewArt({
   type: StorefrontBuilderComponentType;
 }) {
   if (type === "hero") return <HeroPreview />;
-  if (type === "featured" || type === "properties_grid") {
-    return <InventoryPreview dense={type === "properties_grid"} />;
+  if (
+    type === "featured" ||
+    type === "properties_grid" ||
+    type === "vehicle_specs"
+  ) {
+    return (
+      <InventoryPreview
+        dense={type === "properties_grid" || type === "vehicle_specs"}
+      />
+    );
   }
   if (type === "gallery") return <GalleryPreview />;
   if (type === "contact_section") return <ContactPreview />;

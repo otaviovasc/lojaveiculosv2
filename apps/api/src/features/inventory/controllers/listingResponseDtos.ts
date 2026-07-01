@@ -87,7 +87,9 @@ function toSummaryDto(summary: VehicleListingSummary) {
       updatedAt: summary.listing.updatedAt.toISOString(),
     },
     mediaCount: summary.mediaCount,
+    primaryPublicMediaUrl: summary.primaryPublicMediaUrl,
     primaryMediaUrl: summary.primaryMediaUrl,
+    publicMediaCount: summary.publicMediaCount,
     primaryUnit: summary.primaryUnit
       ? {
           ...summary.primaryUnit,
