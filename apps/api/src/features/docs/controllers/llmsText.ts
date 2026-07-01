@@ -75,7 +75,6 @@ export const llmsText = `# Loja Veiculos API
 - Cancel unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/cancel
 - Expire unit reservation: POST /api/v1/inventory/units/{unitId}/reservation/expire
 - Change listing status: PATCH /api/v1/inventory/listings/{listingId}/status
-
 ## Authentication
 - API clients should send a bearer token in the Authorization header.
 - Scoped API keys may send x-api-key: lv2_... or Authorization: Bearer lv2_...
@@ -83,7 +82,6 @@ export const llmsText = `# Loja Veiculos API
 - Protected requests require Clerk user identity and store membership context.
 - Operational external API requests may use scoped integration identity; billing, settings, user-management, tenant-management, and audit-management stay user-only.
 - Tenant-scoped requests resolve tenantId, storeId, actor, permissions, requestId, logger, and audit sink before services run.
-
 ## Scopes
 - inventory.read: required to read vehicle inventory.
 - inventory.create: reserved for vehicle creation workflows.
@@ -124,7 +122,6 @@ export const llmsText = `# Loja Veiculos API
 - documents.update_links: required to change document store/unit links.
 - documents.void: required to cancel issued/shared documents.
 - audit.read: required to read the internal health and audit snapshot.
-
 ## Current inventory endpoints
 - GET /api/v1/public/storefront/listings: lists published, visible vehicles for storename.lojaveiculos.com.br; thumbnailUrl is the first public photo from the deterministic default unit gallery.
 - GET /api/v1/public/storefront/settings: returns public-safe hero, SEO, contact, and branding settings for a published store.
@@ -156,7 +153,6 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/inventory/units/{unitId}/reservation/cancel: operator-cancels a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
 - POST /api/v1/inventory/units/{unitId}/reservation/expire: expires a reserved unit, cancels the pending reservation sale/payment, and cancels the pending signal finance entry.
 - PATCH /api/v1/inventory/listings/{listingId}/status: changes non-workflow lifecycle status; requires inventory.update_status.
-
 ## Current identity endpoints
 - GET /api/v1/session/bootstrap: resolves the authenticated Clerk user, store access, tenant memberships, platform admin flag, and onboarding status.
 - POST /api/v1/onboarding/owner-store: creates the first owner store with trial entitlements; validates CNPJ and returns field-level validation issues with requestId on 400.
@@ -166,12 +162,10 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/identity/invitations: creates and sends a store member invitation for owner, supervisor, salesman, or investor roles.
 - POST /api/v1/identity/invitations/{invitationId}/resend: resends a pending, failed, sent, or expired identity invitation.
 - PATCH /api/v1/identity/memberships/{membershipId}/access: updates one member role and exact allow/deny permission overrides. Agency actors can manage owners; owners can manage supervisors, salespeople, and investors.
-
 ## Current billing endpoints
 - GET /api/v1/billing/overview: returns plans, subscription status, agency allocations, financial summary, entitlement matrix, store entitlements, and entitlement change events; requires billing.manage.
 - GET /api/v1/billing/provider/status: returns Asaas provider readiness without exposing secrets; requires billing.manage.
 - PATCH /api/v1/billing/entitlements/{featureKey}: updates one entitlement status with optional reason, writes product entitlement history, and writes critical audit; requires billing.manage.
-
 ## Current fiscal endpoints
 - GET /api/v1/fiscal/overview: returns SPEDY readiness, NF-e document summary, recent documents, and fiscal events; requires fiscal.manage and nfe entitlement.
 - POST /api/v1/fiscal/documents: records one fiscal issue attempt and persists provider status; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.

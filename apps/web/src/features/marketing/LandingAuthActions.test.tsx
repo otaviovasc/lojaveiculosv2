@@ -25,11 +25,11 @@ describe("LandingAuthActions", () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole("link", { name: /Começar/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Abrir painel" })).toHaveAttribute(
       "href",
-      "/sign-up",
+      "/auth/session",
     );
-    expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Trocar perfil" })).toHaveAttribute(
       "href",
       "/sign-in",
     );
