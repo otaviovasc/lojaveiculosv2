@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
+import userEvent from "@testing-library/user-event";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { AnalyticsApi } from "../features/analytics/apiClient";
@@ -63,6 +64,30 @@ describe("DashboardHome", () => {
     );
     expect(screen.getByTestId("dashboard-kpis")).not.toHaveTextContent("R$ 0");
     expect(screen.getByTestId("dashboard-main-panels")).toBeInTheDocument();
+  });
+
+  it("turns a forbidden analytics response into a quiet permission state", async () => {
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+    const api: AnalyticsApi = {
+      getDashboard: vi.fn(() =>
+        Promise.reject(new Error("Analytics request failed with status 403")),
+      ),
+    };
+
+    render(<DashboardHome api={api} onNavigate={onNavigate} />);
+
+    expect(
+      await screen.findByRole("heading", { name: "Painel gerencial restrito" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("status", { name: "Carregando dashboard" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Missing permission")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Ir para veículos" }));
+
+    expect(onNavigate).toHaveBeenCalledWith("inventory");
   });
 });
 

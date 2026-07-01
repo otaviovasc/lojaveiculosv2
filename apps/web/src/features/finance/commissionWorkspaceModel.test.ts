@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildCommissionWorkspace,
   initialCommissionFilters,
@@ -7,6 +7,15 @@ import {
 import type { FinanceEntry } from "./types";
 
 describe("commission workspace model", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-22T12:00:00.000Z"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("groups commission entries by seller and keeps paid versus pending visible", () => {
     const filters = initialCommissionFilters();
     const workspace = buildCommissionWorkspace(
@@ -28,10 +37,9 @@ describe("commission workspace model", () => {
       "seller-a",
       "seller-b",
     ]);
-    expect(workspace.sellers[0]?.origins.map((origin) => origin.origin)).toEqual([
-      "sales_commission",
-      "manual_bonus",
-    ]);
+    expect(
+      workspace.sellers[0]?.origins.map((origin) => origin.origin),
+    ).toEqual(["sales_commission", "manual_bonus"]);
   });
 
   it("filters seller payable entries by active origin", () => {
@@ -49,7 +57,9 @@ describe("commission workspace model", () => {
 
     expect(workspace.summary.pendingCents).toBe(2500);
     expect(
-      pendingSellerEntries(workspace.sellers[0]!, filters).map((item) => item.id),
+      pendingSellerEntries(workspace.sellers[0]!, filters).map(
+        (item) => item.id,
+      ),
     ).toEqual(["bonus"]);
   });
 
@@ -64,12 +74,24 @@ describe("commission workspace model", () => {
     const workspace = buildCommissionWorkspace(
       [
         {
-          ...entry("created-in-june", "seller-a", "sales_commission", "pending", 10000),
+          ...entry(
+            "created-in-june",
+            "seller-a",
+            "sales_commission",
+            "pending",
+            10000,
+          ),
           createdAt: "2026-06-20T15:00:00.000Z",
           dueAt: "2026-07-05T15:00:00.000Z",
         },
         {
-          ...entry("created-in-may", "seller-a", "sales_commission", "pending", 2500),
+          ...entry(
+            "created-in-may",
+            "seller-a",
+            "sales_commission",
+            "pending",
+            2500,
+          ),
           createdAt: "2026-05-31T15:00:00.000Z",
           dueAt: "2026-06-05T15:00:00.000Z",
         },

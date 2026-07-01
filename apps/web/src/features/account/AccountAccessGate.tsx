@@ -16,6 +16,7 @@ import {
   hasActiveAgencyMembership,
   resolveSessionDestination,
 } from "./sessionRedirect";
+import { AccountSessionProvider } from "./accountSession";
 
 export type AccountAccess = "agency" | "onboarding" | "platform" | "store";
 
@@ -101,7 +102,11 @@ export function AccountAccessGate({
     );
   }
 
-  return children;
+  return (
+    <AccountSessionProvider session={bootstrap}>
+      {children}
+    </AccountSessionProvider>
+  );
 }
 
 function isAllowed(access: AccountAccess, bootstrap: SessionBootstrap) {

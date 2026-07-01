@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ModuleId } from "../app/modules";
+import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { readRuntimeStoreSlug } from "../features/account/currentStore";
-import type { AnalyticsApi } from "../features/analytics/apiClient";
+import {
+  AnalyticsRequestError,
+  type AnalyticsApi,
+} from "../features/analytics/apiClient";
 import {
   DASHBOARD_RESOURCE_CYCLE_MS,
   dashboardResources,
@@ -18,6 +22,7 @@ import { DashboardHomeMainPanels } from "./DashboardHomeMainPanels";
 import { createRuntimeAnalyticsApi } from "./DashboardHomeRuntime";
 import { DashboardHomeSidebarPanel } from "./DashboardHomeSidebarPanel";
 import { DashboardHomeToolbar } from "./DashboardHomeToolbar";
+import { Button } from "./ui/button";
 
 export function DashboardHome({
   api,
@@ -36,7 +41,6 @@ export function DashboardHome({
   const [pushEnabled, setPushEnabled] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const bodyState = getDashboardBodyState(status, dashboard);
-  const stats = createDashboardStats(dashboard);
   const publicStoreSlug = readRuntimeStoreSlug();
 
   const refresh = useCallback(async () => {
@@ -45,9 +49,12 @@ export function DashboardHome({
       setDashboard(await analyticsApi.getDashboard());
       setStatus({ kind: "ready" });
     } catch (error) {
+      const statusCode =
+        error instanceof AnalyticsRequestError ? error.status : undefined;
       setStatus({
         kind: "error",
         message: error instanceof Error ? error.message : String(error),
+        ...(statusCode === undefined ? {} : { statusCode }),
       });
     }
   }, [analyticsApi]);
@@ -83,44 +90,30 @@ export function DashboardHome({
     window.open(url, "_blank", "noopener");
   };
 
-  if (!dashboard) {
+  if (bodyState === "loading") {
     return (
       <div className="relative min-h-screen store-dashboard overflow-hidden">
         <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
-        <main
-          className="dashboard-main animate-pulse"
-          role="status"
-          aria-label="Carregando dashboard"
-        >
-          {/* Skeleton Toolbar */}
-          <div className="dashboard-toolbar">
-            <div className="h-16 flex-1 bg-panel/50 border border-line rounded-2xl" />
-            <div className="h-16 flex-1 bg-panel/50 border border-line rounded-2xl" />
-            <div className="h-16 flex-1 bg-panel/50 border border-line rounded-2xl" />
-          </div>
-          {/* Skeleton KPIs */}
-          <div className="kpi-counters-grid mt-6">
-            <div className="h-32 bg-panel/50 border border-line rounded-2xl" />
-            <div className="h-32 bg-panel/50 border border-line rounded-2xl" />
-            <div className="h-32 bg-panel/50 border border-line rounded-2xl" />
-            <div className="h-32 bg-panel/50 border border-line rounded-2xl" />
-          </div>
-          {/* Skeleton Main Grid */}
-          <div className="dashboard-panels-grid mt-6">
-            <div className="dashboard-main-col flex flex-col gap-6">
-              <div className="dashboard-sub-grid">
-                <div className="h-80 bg-panel/50 border border-line rounded-2xl" />
-                <div className="h-80 bg-panel/50 border border-line rounded-2xl" />
-              </div>
-              <div className="h-48 bg-panel/50 border border-line rounded-2xl" />
-              <div className="h-64 bg-panel/50 border border-line rounded-2xl" />
-            </div>
-            <div className="h-[600px] bg-panel/50 border border-line rounded-2xl" />
-          </div>
+        <main className="dashboard-main">
+          <DashboardHomeLoadingSkeleton />
         </main>
       </div>
     );
   }
+
+  if (bodyState === "none") {
+    return (
+      <DashboardHomeErrorState
+        onNavigate={onNavigate}
+        onRetry={() => void refresh()}
+        status={status}
+      />
+    );
+  }
+
+  if (!dashboard) return null;
+
+  const stats = createDashboardStats(dashboard);
 
   return (
     <div className="relative min-h-screen store-dashboard overflow-hidden">
@@ -149,6 +142,47 @@ export function DashboardHome({
         </div>
       </main>
     </div>
+  );
+}
+
+function DashboardHomeErrorState({
+  onNavigate,
+  onRetry,
+  status,
+}: {
+  onNavigate: (moduleId: ModuleId) => void;
+  onRetry: () => void;
+  status: DashboardLoadStatus;
+}) {
+  if (isForbiddenDashboardError(status)) {
+    return (
+      <PermissionRestrictedPanel
+        description="Seu perfil não tem acesso aos indicadores gerenciais. Use os módulos operacionais liberados no menu."
+        title="Painel gerencial restrito"
+      >
+        <Button onClick={() => onNavigate("inventory")}>
+          Ir para veículos
+        </Button>
+      </PermissionRestrictedPanel>
+    );
+  }
+
+  return (
+    <PermissionRestrictedPanel
+      description="Tente novamente em instantes. Se continuar, acione o suporte com o horário da falha."
+      title="Não foi possível carregar o painel"
+    >
+      <Button onClick={onRetry}>Tentar novamente</Button>
+    </PermissionRestrictedPanel>
+  );
+}
+
+function isForbiddenDashboardError(status: DashboardLoadStatus) {
+  if (status.kind !== "error") return false;
+  return (
+    status.statusCode === 403 ||
+    status.message.includes("status 403") ||
+    status.message.includes("Missing permission")
   );
 }
 

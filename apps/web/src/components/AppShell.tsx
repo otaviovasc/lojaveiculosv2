@@ -1,6 +1,7 @@
 import { Menu, Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { filterNavigationGroups } from "../app/modulePermissions";
 import { navigationGroups } from "../app/modules";
 import type {
   ModuleDefinition,
@@ -15,6 +16,7 @@ import {
   type AppTheme,
 } from "../app/theme";
 import { UserAccountButton } from "../features/account/UserAccountButton";
+import { useOptionalAccountSession } from "../features/account/accountSession";
 import { readRuntimeStoreSlug } from "../features/account/currentStore";
 import {
   DashboardSidebar,
@@ -26,13 +28,6 @@ type AppShellProps = {
   children: ReactNode;
   onNavigate: (moduleId: ModuleId) => void;
 };
-
-const sidebarItems = navigationGroups.flatMap((group) =>
-  group.items.map((item) => ({
-    ...toSidebarItem(item),
-    group: group.label,
-  })),
-);
 
 function toSidebarItem(item: NavigationItem): DashboardSidebarItem<ModuleId> {
   return {
@@ -51,6 +46,18 @@ export function AppShell({
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
+  );
+  const accountSession = useOptionalAccountSession();
+  const sidebarItems = useMemo(
+    () =>
+      filterNavigationGroups(navigationGroups, accountSession).flatMap(
+        (group) =>
+          group.items.map((item) => ({
+            ...toSidebarItem(item),
+            group: group.label,
+          })),
+      ),
+    [accountSession],
   );
   const storeLabel = readStoreLabel();
 

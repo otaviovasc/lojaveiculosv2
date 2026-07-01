@@ -57,6 +57,6 @@ export type DashboardStatViewModel = {
 };
 
 export type DashboardLoadStatus =
-  | { kind: "error"; message: string }
+  | { kind: "error"; message: string; statusCode?: number }
   | { kind: "loading" }
   | { kind: "ready" };

@@ -1,0 +1,37 @@
+// @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
+import { ClerkAuthProvider } from "../account/ClerkAuthProvider";
+import { LandingAuthActions } from "./LandingAuthActions";
+
+describe("LandingAuthActions", () => {
+  afterEach(() => {
+    cleanup();
+    localStorage.clear();
+    vi.unstubAllEnvs();
+  });
+
+  it("uses local auth links without Clerk hooks when bypass is enabled", () => {
+    vi.stubEnv("VITE_LOCAL_AUTH_BYPASS", "true");
+    vi.stubEnv("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_local");
+
+    render(
+      <MemoryRouter>
+        <ClerkAuthProvider>
+          <LandingAuthActions primaryLabel="Começar" />
+        </ClerkAuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: /Começar/ })).toHaveAttribute(
+      "href",
+      "/sign-up",
+    );
+    expect(screen.getByRole("link", { name: "Entrar" })).toHaveAttribute(
+      "href",
+      "/sign-in",
+    );
+  });
+});

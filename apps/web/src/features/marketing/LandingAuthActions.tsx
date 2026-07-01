@@ -2,6 +2,7 @@ import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/react";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useClerkAuthConfiguration } from "../account/ClerkAuthProvider";
+import { readLocalDevAccount } from "../account/localDevAuth";
 
 export function LandingAuthActions({
   compact = false,
@@ -32,6 +33,20 @@ export function LandingAuthActions({
     );
   }
 
+  if (config.localAuthBypass) {
+    return (
+      <LocalLandingAuthActions
+        compact={compact}
+        primaryClass={primaryClass}
+        primaryLabel={primaryLabel}
+        secondaryClass={secondaryClass}
+        sessionPath={config.sessionPath}
+        signInPath={config.signInPath}
+        signUpPath={config.signUpPath}
+      />
+    );
+  }
+
   return (
     <ConfiguredLandingAuthActions
       compact={compact}
@@ -40,6 +55,55 @@ export function LandingAuthActions({
       secondaryClass={secondaryClass}
       sessionPath={config.sessionPath}
     />
+  );
+}
+
+function LocalLandingAuthActions({
+  compact,
+  primaryClass,
+  primaryLabel,
+  secondaryClass,
+  sessionPath,
+  signInPath,
+  signUpPath,
+}: {
+  compact: boolean;
+  primaryClass: string;
+  primaryLabel: string;
+  secondaryClass: string;
+  sessionPath: string;
+  signInPath: string;
+  signUpPath: string;
+}) {
+  const account = readLocalDevAccount();
+  if (account) {
+    return (
+      <>
+        <Link className={primaryClass} to={sessionPath}>
+          Abrir painel
+          <ArrowRight className="size-4" />
+        </Link>
+        {!compact ? (
+          <Link className={secondaryClass} to={signInPath}>
+            Trocar perfil
+          </Link>
+        ) : null}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Link className={primaryClass} to={signUpPath}>
+        {primaryLabel}
+        <ArrowRight className="size-4" />
+      </Link>
+      {!compact ? (
+        <Link className={secondaryClass} to={signInPath}>
+          Entrar
+        </Link>
+      ) : null}
+    </>
   );
 }
 

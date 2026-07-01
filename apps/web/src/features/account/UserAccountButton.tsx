@@ -1,11 +1,50 @@
 import { UserButton, useUser } from "@clerk/react";
 import { User } from "lucide-react";
 import { useClerkAuthConfiguration } from "./ClerkAuthProvider";
+import { readLocalDevAccount } from "./localDevAuth";
 
 export function UserAccountButton({ compact = false }: { compact?: boolean }) {
   const config = useClerkAuthConfiguration();
   if (!config.configured) return null;
+  if (config.localAuthBypass) {
+    return <LocalDevUserAccountButton compact={compact} />;
+  }
   return <ConfiguredUserAccountButton compact={compact} />;
+}
+
+function LocalDevUserAccountButton({ compact }: { compact: boolean }) {
+  const account = readLocalDevAccount();
+  const name = account?.name ?? "Selecionar perfil";
+  const email = account?.email ?? "Local QA";
+
+  return (
+    <button
+      className={
+        compact
+          ? "flex w-full justify-center rounded-lg py-1 text-primary hover:bg-app-elevated"
+          : "flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1.5 pl-1 pr-2 text-left hover:bg-app-elevated"
+      }
+      onClick={() => {
+        window.location.href = "/sign-in";
+      }}
+      title={name}
+      type="button"
+    >
+      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-line bg-app text-primary">
+        <User aria-hidden className="size-4" />
+      </span>
+      {!compact ? (
+        <span className="flex min-w-0 flex-1 flex-col leading-tight gap-0.5">
+          <span className="truncate rounded-md px-2.5 py-1.5 text-[11px] font-black text-primary">
+            {name}
+          </span>
+          <span className="truncate pl-2.5 text-[8px] font-black uppercase tracking-widest text-muted">
+            {email}
+          </span>
+        </span>
+      ) : null}
+    </button>
+  );
 }
 
 function ConfiguredUserAccountButton({ compact }: { compact: boolean }) {

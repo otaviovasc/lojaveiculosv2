@@ -53,6 +53,7 @@ export async function listStores(
 ) {
   const rows = await db
     .select({
+      membershipId: storeMemberships.id,
       role: roleTemplates.roleKey,
       status: storeMemberships.status,
       storeId: stores.id,
@@ -76,11 +77,24 @@ export async function listStores(
       ),
     )
     .limit(100);
-  return rows.map((row) => ({
-    ...row,
-    storeId: row.storeId as never,
-    tenantId: row.tenantId as never,
-  }));
+  return Promise.all(
+    rows.map(async (row) => {
+      const effectivePermissions = await resolveMembershipPermissions(db, {
+        membershipId: row.membershipId,
+        role: row.role,
+      });
+      return {
+        effectivePermissions,
+        role: row.role,
+        status: row.status,
+        storeId: row.storeId as never,
+        storeName: row.storeName,
+        storeSlug: row.storeSlug,
+        tenantId: row.tenantId as never,
+        tenantName: row.tenantName,
+      };
+    }),
+  );
 }
 
 export async function listTenantMemberships(
@@ -135,6 +149,18 @@ export async function hasStorePermission(
     )
     .limit(1);
   if (!membership) return false;
+  return (
+    await resolveMembershipPermissions(db, {
+      membershipId: membership.membershipId,
+      role: membership.role,
+    })
+  ).includes(input.permission);
+}
+
+async function resolveMembershipPermissions(
+  db: DrizzleAccountProvisioningClient,
+  membership: { membershipId: string; role: RoleKey },
+) {
   const overrides = await db
     .select({
       allowed: membershipPermissionOverrides.allowed,
@@ -151,7 +177,7 @@ export async function hasStorePermission(
       permission: override.permission as PermissionKey,
     })),
     role: membership.role,
-  }).includes(input.permission);
+  });
 }
 
 export async function hasActivePlatformAdmin(

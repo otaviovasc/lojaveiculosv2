@@ -15,6 +15,7 @@ export type SessionBootstrap = {
 };
 
 export type StoreAccessSummary = {
+  effectivePermissions?: readonly string[];
   role: string;
   status: "active" | "invited" | "suspended";
   storeId: string;

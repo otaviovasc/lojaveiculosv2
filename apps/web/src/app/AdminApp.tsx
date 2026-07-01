@@ -13,7 +13,10 @@ import { StorefrontCustomizationModule } from "../features/publicSite/Storefront
 import { ReportsModule } from "../features/reports/ReportsModule";
 import { SalesModule } from "../features/sales/SalesModule";
 import { SettingsModule } from "../features/settings/SettingsModule";
+import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
+import { useOptionalAccountSession } from "../features/account/accountSession";
 import { moduleDefinitions } from "./moduleDefinitions";
+import { getModulePermission } from "./modulePermissions";
 import { moduleSurfaceById } from "./moduleRoutes";
 import { useModuleState } from "./moduleState";
 
@@ -21,10 +24,21 @@ export function AdminApp() {
   const { activeModuleId, navigate } = useModuleState();
   const activeModule = moduleDefinitions[activeModuleId];
   const activeSurface = moduleSurfaceById[activeModuleId];
+  const accountSession = useOptionalAccountSession();
+  const modulePermission = accountSession
+    ? getModulePermission(activeModuleId, accountSession)
+    : { canView: true, title: "Acesso liberado" };
 
   return (
     <AppShell activeModule={activeModule} onNavigate={navigate}>
-      {activeSurface === "dashboard" ? (
+      {!modulePermission.canView ? (
+        <PermissionRestrictedPanel
+          title={modulePermission.title}
+          {...(modulePermission.description
+            ? { description: modulePermission.description }
+            : {})}
+        />
+      ) : activeSurface === "dashboard" ? (
         <DashboardHome onNavigate={navigate} />
       ) : activeSurface === "inventory" ? (
         <InventoryListPage />

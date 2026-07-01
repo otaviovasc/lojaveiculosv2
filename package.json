@@ -36,6 +36,8 @@
     "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r --if-present test",
     "test:dashboard-animation": "pnpm --filter @lojaveiculosv2/web test -- dashboardHomeAnimation",
+    "test:e2e": "playwright test",
+    "test:e2e:local": "pnpm run db:clean:local && pnpm run test:e2e",
     "test:frontend-design": "pnpm --filter @lojaveiculosv2/web exec vitest run tools/quality/frontend-design-rules.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api test -- productionSmoke",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",
@@ -58,6 +60,7 @@
     "*": "prettier --ignore-unknown --write"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "24.13.2",
     "eslint": "10.6.0",
     "globals": "17.7.0",

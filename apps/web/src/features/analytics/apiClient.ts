@@ -10,6 +10,16 @@ export type CreateAnalyticsApiOptions = {
   fetch: typeof fetch;
 };
 
+export class AnalyticsRequestError extends Error {
+  status: number;
+
+  constructor(status: number) {
+    super(`Analytics request failed with status ${status}`);
+    this.name = "AnalyticsRequestError";
+    this.status = status;
+  }
+}
+
 export function createAnalyticsApi({
   auth = {},
   baseUrl,
@@ -24,7 +34,8 @@ export function createAnalyticsApi({
 }
 
 export const analyticsRoutes = {
-  dashboard: (baseUrl?: string) => createEndpoint("/analytics/dashboard", baseUrl),
+  dashboard: (baseUrl?: string) =>
+    createEndpoint("/analytics/dashboard", baseUrl),
 } as const;
 
 function createHeaders(auth: AnalyticsAuth): HeadersInit {
@@ -45,7 +56,7 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 
 async function readJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    throw new Error(`Analytics request failed with status ${response.status}`);
+    throw new AnalyticsRequestError(response.status);
   }
   return (await response.json()) as T;
 }

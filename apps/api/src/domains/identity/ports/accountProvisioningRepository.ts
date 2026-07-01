@@ -1,5 +1,6 @@
 import type {
   EntitlementKey,
+  PermissionKey,
   RoleKey,
   StoreId,
   TenantId,
@@ -21,6 +22,7 @@ export type IdentityUserSummary = {
 };
 
 export type StoreAccessSummary = {
+  effectivePermissions: readonly PermissionKey[];
   role: RoleKey;
   status: "active" | "invited" | "suspended";
   storeId: StoreId;
