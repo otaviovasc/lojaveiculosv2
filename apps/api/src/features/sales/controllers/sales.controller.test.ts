@@ -134,9 +134,9 @@ describe("sales controller", () => {
     });
 
     expect(response.status).toBe(409);
-    expect(await readJson<{ reference: string }>(response)).toMatchObject({
-      reference: "lead",
-    });
+    expect(
+      await readJson<{ details: { reference: string } }>(response),
+    ).toMatchObject({ details: { reference: "lead" } });
   });
 });
 

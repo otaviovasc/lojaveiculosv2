@@ -7,6 +7,7 @@ import {
   HttpContextAuthorizationError,
   HttpContextRequestPolicyError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
   CrmLeadNotFoundError,
   CrmScopeError,
@@ -61,30 +62,64 @@ export async function handleRuntime(
     return await action();
   } catch (error) {
     if (error instanceof ExternalRuntimeValidationError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "EXTERNAL_API_RUNTIME_REQUEST_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
     if (error instanceof HttpContextAuthenticationError) {
-      return context.json({ message: error.message }, 401);
+      return jsonApiError(context, {
+        code: "HTTP_AUTHENTICATION_REQUIRED",
+        error,
+        message: error.message,
+        status: 401,
+      });
     }
     if (
       error instanceof AuthorizationError ||
       error instanceof HttpContextAuthorizationError
     ) {
-      return context.json({ message: error.message }, 403);
+      return jsonApiError(context, {
+        code: "AUTHORIZATION_DENIED",
+        error,
+        message: error.message,
+        status: 403,
+      });
     }
     if (error instanceof HttpContextRequestPolicyError) {
-      return context.json({ message: error.message }, error.statusCode);
+      return jsonApiError(context, {
+        code: "HTTP_REQUEST_POLICY_ERROR",
+        error,
+        message: error.message,
+        status: error.statusCode,
+      });
     }
     if (
       error instanceof CrmLeadNotFoundError ||
       error instanceof VehicleListingNotFoundError
     ) {
-      return context.json({ message: error.message }, 404);
+      return jsonApiError(context, {
+        code: "EXTERNAL_API_RUNTIME_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
     }
     if (error instanceof CrmScopeError) {
-      return context.json({ message: error.message }, 400);
+      return jsonApiError(context, {
+        code: "EXTERNAL_API_RUNTIME_SCOPE_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
     }
-    context.error = error instanceof Error ? error : new Error(String(error));
-    return context.json({ message: "Internal server error." }, 500);
+    return jsonApiError(context, {
+      code: "INTERNAL_SERVER_ERROR",
+      error,
+      message: "Internal server error.",
+      status: 500,
+    });
   }
 }

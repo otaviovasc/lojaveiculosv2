@@ -64,20 +64,25 @@ export async function handleSales(
       });
     }
     if (error instanceof SaleTransitionStateError) {
-      return context.json(
-        {
+      return jsonApiError(context, {
+        code: "SALE_TRANSITION_STATE_ERROR",
+        details: {
           currentStatus: error.currentStatus,
-          message: error.message,
           nextStatus: error.nextStatus,
         },
-        409,
-      );
+        error,
+        message: error.message,
+        status: 409,
+      });
     }
     if (error instanceof SaleReferenceError) {
-      return context.json(
-        { message: error.message, reference: error.reference },
-        409,
-      );
+      return jsonApiError(context, {
+        code: "SALE_REFERENCE_ERROR",
+        details: { reference: error.reference },
+        error,
+        message: error.message,
+        status: 409,
+      });
     }
     if (error instanceof SaleNotFoundError) {
       return jsonApiError(context, {

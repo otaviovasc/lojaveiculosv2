@@ -184,9 +184,12 @@ describe("external API runtime routes", () => {
     });
 
     expect(response.status).toBe(401);
-    expect(await readJson<Record<string, unknown>>(response)).toEqual({
+    const body = await readJson<Record<string, unknown>>(response);
+    expect(body).toMatchObject({
+      code: "HTTP_AUTHENTICATION_REQUIRED",
       message: "External API runtime routes require a scoped API key.",
     });
+    expect(typeof body.requestId).toBe("string");
   });
 });
 
