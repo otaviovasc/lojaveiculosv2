@@ -47,3 +47,46 @@ export function createLeadVehicleOption(
     modelYear: item.listing.modelYear,
   };
 }
+
+export const MOCK_FALLBACK_VEHICLES: LeadVehicleOption[] = [
+  {
+    id: "mock-v1",
+    label: "Ford Ranger",
+    detail: "Preta - Diesel",
+    imageUrl:
+      "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=200",
+    priceCents: 41000000,
+    manufactureYear: 2023,
+    modelYear: 2024,
+  },
+  {
+    id: "mock-v2",
+    label: "Honda Civic 2024",
+    detail: "Híbrido - Touring",
+    imageUrl:
+      "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=200",
+    priceCents: 26500000,
+    manufactureYear: 2024,
+    modelYear: 2024,
+  },
+  {
+    id: "mock-v3",
+    label: "Toyota Corolla 2023",
+    detail: "Branco - Altis Hybrid",
+    imageUrl:
+      "https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&q=80&w=200",
+    priceCents: 18200000,
+    manufactureYear: 2023,
+    modelYear: 2023,
+  },
+  {
+    id: "mock-v4",
+    label: "Chevrolet Onix 2024",
+    detail: "Cinza - LTZ Turbo",
+    imageUrl:
+      "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=200",
+    priceCents: 9800000,
+    manufactureYear: 2024,
+    modelYear: 2024,
+  },
+];

@@ -67,3 +67,39 @@ export type TabOption =
   | "financeiro"
   | "anexos"
   | "portal";
+
+import type { PipelineStage } from "./crmPipelineStorage";
+
+export type DetailTab =
+  | "visao"
+  | "chat"
+  | "tarefas"
+  | "reunioes"
+  | "notas"
+  | "arquivos"
+  | "financeiro"
+  | "seguro"
+  | "portal";
+
+export type CrmLeadDetailsPageProps = {
+  lead: ProductCrmLead;
+  activities: ProductCrmLeadActivity[];
+  stages: PipelineStage[];
+  onBack: () => void;
+  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
+  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  onCreateActivity: (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => Promise<void>;
+  vehicleOptions: LeadVehicleOption[];
+};
+
+export type CrmListViewProps = {
+  leads: ProductCrmLead[];
+  stages: PipelineStage[];
+  vehicleOptions: LeadVehicleOption[];
+  onSelectLead: (leadId: string) => void;
+  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
+  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+};

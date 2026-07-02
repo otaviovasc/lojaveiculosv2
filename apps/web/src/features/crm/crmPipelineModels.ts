@@ -26,7 +26,7 @@ export type LeadCreateDraft = CreateProductCrmLeadInput & {
 
 export type LeadContactPatch = Pick<
   UpdateProductCrmLeadInput,
-  "buyerEmail" | "buyerName" | "buyerPhone"
+  "buyerEmail" | "buyerName" | "buyerPhone" | "metadata"
 >;
 
 export type LeadTaskMetadata = {

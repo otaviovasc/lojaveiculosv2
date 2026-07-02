@@ -122,7 +122,7 @@ function InventoryListingCard({
     <motion.article
       whileHover={{ y: -4, scale: 1.01 }}
       transition={{ duration: 0.2 }}
-      className="glass-panel-branded flex flex-col h-full group cursor-pointer relative overflow-hidden border border-line hover:border-accent/40 shadow-sm"
+      className="glass-panel-branded hover-shift flex flex-col h-full group cursor-pointer relative overflow-hidden border border-line hover:border-accent/40 shadow-sm"
       onClick={() => onSelect(listing.id, item.primaryUnit?.id ?? null)}
     >
       {/* Photo with Overlay on Hover */}

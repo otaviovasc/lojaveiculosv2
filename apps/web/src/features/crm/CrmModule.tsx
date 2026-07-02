@@ -26,6 +26,7 @@ import {
   createLeadVehicleOption,
   listAllMatchingLeads,
   loadActivitiesByLeadId,
+  MOCK_FALLBACK_VEHICLES,
 } from "./crmModuleData";
 import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
 import { CrmSurfaceTabs } from "./CrmSurfaceTabs";
@@ -107,11 +108,15 @@ export function CrmModule({
       )
       .then((result) => {
         if (isActive) {
-          setVehicleOptions(result.items.map(createLeadVehicleOption));
+          if (result.items && result.items.length > 0) {
+            setVehicleOptions(result.items.map(createLeadVehicleOption));
+          } else {
+            setVehicleOptions(MOCK_FALLBACK_VEHICLES);
+          }
         }
       })
       .catch(() => {
-        if (isActive) setVehicleOptions([]);
+        if (isActive) setVehicleOptions(MOCK_FALLBACK_VEHICLES);
       });
 
     return () => {
@@ -183,6 +188,10 @@ export function CrmModule({
       window.location.hash = crmSurfaceHash(surface);
     }
   };
+
+  if (activeSurface === "whatsapp") {
+    return <CrmWhatsappInbox />;
+  }
 
   return (
     <CrmPipelineView

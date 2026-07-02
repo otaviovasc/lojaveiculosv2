@@ -192,8 +192,11 @@
   box-shadow: 0 12px 42px rgba(0, 0, 0, 0.35);
 }
 
-.glass-panel-branded:hover {
+.glass-panel-branded.hover-shift:hover {
   transform: translateY(-4px);
+}
+
+.glass-panel-branded:hover {
   border-color: rgba(237, 29, 36, 0.25);
   box-shadow: 0 12px 30px rgba(237, 29, 36, 0.04);
 }

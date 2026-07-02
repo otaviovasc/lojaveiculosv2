@@ -79,6 +79,7 @@ export type UpdateProductCrmLeadInput = {
   buyerEmail?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
+  metadata?: Record<string, unknown>;
   status?: CrmLeadStatus;
 };
 

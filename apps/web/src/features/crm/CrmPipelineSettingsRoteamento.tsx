@@ -1,0 +1,216 @@
+import { useState } from "react";
+import { Plus, Trash2, Waypoints, X } from "lucide-react";
+import { sourceLabels } from "./crmPipelineConfig";
+import type { Pipeline, RoutingRule } from "./crmPipelineStorage";
+
+type Props = {
+  pipeline: Pipeline;
+  onUpdate: (updated: Pipeline) => void;
+};
+
+export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
+  const [rules, setRules] = useState<RoutingRule[]>(pipeline.routingRules);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrigin, setSelectedOrigin] = useState("public_site");
+  const [selectedStore, setSelectedStore] = useState("all");
+
+  const saveRules = (next: RoutingRule[]) => {
+    setRules(next);
+    onUpdate({ ...pipeline, routingRules: next });
+  };
+
+  const handleAddRule = () => {
+    if (rules.some((r) => r.origin === selectedOrigin)) {
+      alert(
+        "Já existe uma regra de roteamento para esta origem neste pipeline!",
+      );
+      return;
+    }
+    const newRule: RoutingRule = {
+      id: `rule_${Date.now()}`,
+      origin: selectedOrigin,
+      storeId: selectedStore,
+    };
+    saveRules([...rules, newRule]);
+    setIsModalOpen(false);
+  };
+
+  const handleDeleteRule = (id: string) => {
+    saveRules(rules.filter((r) => r.id !== id));
+  };
+
+  return (
+    <div className="flex flex-col gap-6 select-none text-app-text">
+      {/* Title Header with inline "+ Nova regra" button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-black text-app-text">Roteamento</h2>
+          <p className="text-xs font-bold text-muted mt-0.5 max-w-xl leading-relaxed">
+            Defina quais leads entram automaticamente em{" "}
+            <strong className="text-app-text">{pipeline.name}</strong>. Leads
+            sem regra correspondente vão para o pipeline padrão.
+          </p>
+        </div>
+        <button
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors"
+          onClick={() => setIsModalOpen(true)}
+          type="button"
+        >
+          <Plus className="size-3.5" />
+          <span>Nova regra</span>
+        </button>
+      </div>
+
+      {/* Rules list or empty state */}
+      {rules.length === 0 ? (
+        <div className="border border-dashed border-line rounded-xl p-12 flex flex-col items-center justify-center text-center gap-4 bg-panel/10">
+          <div className="size-14 rounded-full bg-line/20 border border-line flex items-center justify-center text-muted">
+            <Waypoints className="size-7" />
+          </div>
+          <div className="flex flex-col gap-1">
+            <h3 className="text-sm font-bold text-app-text">
+              Nenhuma regra de roteamento
+            </h3>
+            <p className="text-xs font-bold text-muted max-w-sm leading-relaxed">
+              Sem regras, este pipeline só recebe leads movidos manualmente.
+              Adicione regras para que leads de origens específicas entrem aqui
+              automaticamente.
+            </p>
+          </div>
+          <button
+            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors mt-2"
+            onClick={() => setIsModalOpen(true)}
+            type="button"
+          >
+            <Plus className="size-3.5" />
+            <span>Adicionar primeira regra</span>
+          </button>
+        </div>
+      ) : (
+        <div className="border border-line/20 bg-panel/30 rounded-xl overflow-hidden mt-2">
+          {/* Table Header */}
+          <div className="grid grid-cols-[140px_1fr_50px] items-center px-5 py-3 border-b border-line/15 text-[10px] font-black uppercase tracking-wider text-muted">
+            <span>Origem</span>
+            <span>Loja</span>
+            <span className="text-right"></span>
+          </div>
+
+          {/* Table Body */}
+          <div className="divide-y divide-line/10">
+            {rules.map((rule) => {
+              const originLabel =
+                sourceLabels[rule.origin as keyof typeof sourceLabels] ||
+                rule.origin;
+              const storeLabel =
+                rule.storeId === "all" ? "Todas as lojas" : rule.storeId;
+
+              return (
+                <div
+                  className="grid grid-cols-[140px_1fr_50px] items-center px-5 py-3 text-xs font-bold"
+                  key={rule.id}
+                >
+                  {/* Origin Badges */}
+                  <div className="flex">
+                    <span className="px-2.5 py-1 rounded bg-line/20 border border-line/35 text-[10px] tracking-wide font-black text-app-text">
+                      {originLabel}
+                    </span>
+                  </div>
+
+                  {/* Store Name */}
+                  <span className="text-muted/90 font-medium">
+                    {storeLabel}
+                  </span>
+
+                  {/* Actions */}
+                  <div className="flex justify-end">
+                    <button
+                      className="p-1.5 text-muted hover:text-red-500 rounded hover:bg-red-500/10 cursor-pointer transition-colors"
+                      onClick={() => handleDeleteRule(rule.id)}
+                      type="button"
+                    >
+                      <Trash2 className="size-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Nova regra de roteamento */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-panel border border-line rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4 text-left relative">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute right-4 top-4 p-1 rounded hover:bg-line/20 text-muted hover:text-app-text transition-colors"
+              type="button"
+            >
+              <X className="size-4" />
+            </button>
+
+            <h3 className="text-base font-black text-app-text">
+              Nova regra de roteamento
+            </h3>
+
+            <div className="flex flex-col gap-4 mt-2">
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                  Origem do Lead
+                </span>
+                <select
+                  className="min-h-9 rounded-lg border border-line bg-app px-3 text-xs font-bold text-app-text outline-none focus:border-accent"
+                  onChange={(e) => setSelectedOrigin(e.target.value)}
+                  value={selectedOrigin}
+                >
+                  {Object.entries(sourceLabels).map(([key, value]) => (
+                    <option key={key} value={key}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="flex flex-col gap-1.5">
+                <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                  Loja (opcional)
+                </span>
+                <select
+                  className="min-h-9 rounded-lg border border-line bg-app px-3 text-xs font-bold text-app-text outline-none focus:border-accent"
+                  onChange={(e) => setSelectedStore(e.target.value)}
+                  value={selectedStore}
+                >
+                  <option value="all">Todas as lojas</option>
+                  <option value="DMS multimarcas">DMS multimarcas</option>
+                  <option value="matriz">Matriz</option>
+                  <option value="filial">Filial Norte</option>
+                </select>
+                <span className="text-[10px] font-bold text-muted mt-0.5">
+                  Restringe a regra a uma loja específica do time.
+                </span>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 mt-4">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 border border-line rounded-lg text-xs font-bold text-app-text hover:bg-line/15 transition-colors"
+                type="button"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddRule}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-bold text-white transition-colors"
+                type="button"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
