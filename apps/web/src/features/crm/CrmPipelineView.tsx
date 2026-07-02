@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { CircleAlert } from "lucide-react";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmLeadCreateFullPage } from "./CrmLeadCreateFullPage";
 import { CrmKanbanBoard } from "./CrmKanbanBoard";
 import { CrmLeadDetailsPage } from "./CrmLeadDetailsPage";
