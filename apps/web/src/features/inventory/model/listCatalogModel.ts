@@ -218,31 +218,14 @@ export function getInventoryLeadsCount(listingId: string): number {
   return hash % 9;
 }
 
-export function sortInventoryListItems(
-  items: readonly InventoryListingSummary[],
-  sortBy: string,
-) {
-  const itemsCopy = [...items];
+export type InventoryLeadInterestLevel =
+  "none" | "healthy" | "hot" | "very_hot";
 
-  return itemsCopy.sort((a, b) => {
-    if (sortBy === "price_asc") {
-      return (a.listing.priceCents ?? 0) - (b.listing.priceCents ?? 0);
-    }
-    if (sortBy === "price_desc") {
-      return (b.listing.priceCents ?? 0) - (a.listing.priceCents ?? 0);
-    }
-    if (sortBy === "oldest") {
-      return dateTime(a.listing.createdAt) - dateTime(b.listing.createdAt);
-    }
-    if (sortBy === "newest") {
-      return dateTime(b.listing.createdAt) - dateTime(a.listing.createdAt);
-    }
-    if (sortBy === "name_asc")
-      return a.listing.title.localeCompare(b.listing.title);
-    return 0;
-  });
-}
-
-function dateTime(value: string) {
-  return new Date(value).getTime();
+export function getInventoryLeadInterestLevel(
+  leads: number,
+): InventoryLeadInterestLevel {
+  if (leads >= 6) return "very_hot";
+  if (leads >= 3) return "hot";
+  if (leads >= 1) return "healthy";
+  return "none";
 }

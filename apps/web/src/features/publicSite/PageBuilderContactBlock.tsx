@@ -127,7 +127,7 @@ type ContactStatus =
 function BlockHeading({ props }: { props: Record<string, unknown> }) {
   return (
     <div>
-      <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+      <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
         CONTATO
       </p>
       <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">

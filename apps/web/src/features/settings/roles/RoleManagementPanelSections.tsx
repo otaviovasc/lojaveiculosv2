@@ -40,7 +40,7 @@ export function RoleManagementTitle({
         ({selected.user.email})
       </span>
       {activePreset && (
-        <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-[9px] font-black uppercase text-accent-strong tracking-wider">
+        <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-xs font-black uppercase text-accent-strong tracking-wider">
           {activePreset.name}
         </span>
       )}
@@ -50,11 +50,11 @@ export function RoleManagementTitle({
 
 export function RoleEditabilityBadge({ editable }: { editable: boolean }) {
   return editable ? (
-    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500 bg-green-soft px-2.5 py-1 rounded-full shrink-0">
+    <span className="text-xs font-black uppercase tracking-wider text-emerald-500 bg-green-soft px-2.5 py-1 rounded-full shrink-0">
       Você pode editar este membro
     </span>
   ) : (
-    <span className="text-[10px] font-black uppercase tracking-wider text-muted bg-line/40 px-2.5 py-1 rounded-full shrink-0">
+    <span className="text-xs font-black uppercase tracking-wider text-muted bg-line/40 px-2.5 py-1 rounded-full shrink-0">
       Apenas visualização
     </span>
   );
@@ -114,7 +114,7 @@ export function RoleAssignmentSection({
     if (list.length === 0) return null;
     return (
       <div className="flex flex-col gap-2">
-        <h5 className="text-[10px] font-black uppercase tracking-wider text-accent mb-1">
+        <h5 className="text-xs font-black uppercase tracking-wider text-accent mb-1">
           {title}
         </h5>
         <div className="flex flex-col gap-2 w-full">
@@ -146,7 +146,7 @@ export function RoleAssignmentSection({
           <button
             type="button"
             onClick={onCreateCustomRoleClick}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-accent-soft px-3 text-[11px] font-black text-accent-strong transition-all hover:bg-accent hover:text-inverse cursor-pointer shadow-sm"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong transition-all hover:bg-accent hover:text-inverse cursor-pointer shadow-sm"
           >
             <Plus className="size-3.5" />
             <span>Salvar como Cargo Customizado</span>
@@ -156,7 +156,7 @@ export function RoleAssignmentSection({
     >
       <div className="grid gap-6">
         <div>
-          <h5 className="text-[10px] font-black uppercase tracking-wider text-accent mb-2">
+          <h5 className="text-xs font-black uppercase tracking-wider text-accent mb-2">
             Cargos Customizados da Loja
           </h5>
           {customRoles.length > 0 ? (
@@ -178,7 +178,7 @@ export function RoleAssignmentSection({
               <span className="text-xs font-bold text-muted">
                 Nenhum cargo customizado cadastrado.
               </span>
-              <p className="text-[10px] text-muted mt-1 leading-relaxed max-w-md">
+              <p className="text-xs text-muted mt-1 leading-relaxed max-w-md">
                 Ajuste as exceções de permissões abaixo e clique em{" "}
                 <strong className="text-accent">
                   "Salvar como Cargo Customizado"
@@ -241,7 +241,7 @@ export function PermissionExceptionsSection({
                     <strong className="block text-sm font-black text-app-text">
                       {block.title}
                     </strong>
-                    <span className="block text-[11px] font-bold text-muted mt-0.5">
+                    <span className="block text-xs font-bold text-muted mt-0.5">
                       {block.description}
                     </span>
                   </div>

@@ -254,6 +254,7 @@ const defaultBlockProps: Record<
     testimonials: [
       {
         id: "t1",
+        imageSrc: "",
         name: "Cliente",
         quote: "Atendimento claro e rapido do primeiro contato ate a entrega.",
         role: "Comprador",

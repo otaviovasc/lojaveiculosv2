@@ -2,7 +2,7 @@
 .internal-row,
 .internal-table-row {
   align-items: center;
-  background: #f9fbff;
+  background: var(--color-app);
   border: 1px solid var(--color-line);
   border-radius: 8px;
   display: flex;
@@ -11,7 +11,7 @@
 }
 
 .internal-check {
-  font-size: 0.82rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
 }
 
@@ -34,22 +34,22 @@
 .internal-row code,
 .internal-secret code,
 .internal-table-row code {
-  color: #315c92;
-  font-size: 0.76rem;
+  color: var(--color-blue-start);
+  font-size: var(--font-size-sm);
   overflow-wrap: anywhere;
 }
 
 .internal-table-row {
   display: grid;
-  font-size: 0.8rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   grid-template-columns: 1.35fr 1fr 0.6fr 1fr;
 }
 
 .internal-secret,
 .internal-empty {
-  background: #eef8f2;
-  border: 1px solid #bfe5cc;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
   border-radius: 8px;
   display: grid;
   gap: 8px;

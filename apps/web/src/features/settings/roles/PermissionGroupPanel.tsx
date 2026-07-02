@@ -66,7 +66,7 @@ export function PermissionGroupPanel({
                       onClick={() => onModeChange(permission.key, option.value)}
                       type="button"
                       className={cx(
-                        "px-2 py-1 text-[9px] font-black uppercase rounded-md transition-all cursor-pointer",
+                        "px-2 py-1 text-xs font-black uppercase rounded-md transition-all cursor-pointer",
                         active
                           ? option.value === "allow"
                             ? "bg-emerald-500 text-white shadow-sm"

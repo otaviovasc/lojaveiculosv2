@@ -4,6 +4,10 @@ import {
   createStorefrontPagesApi,
   type StorefrontPagesApi,
 } from "./storefrontPagesApi";
+import {
+  createStorefrontMediaApi,
+  type StorefrontMediaApi,
+} from "./storefrontMediaApi";
 
 export function createRuntimeSettingsApi(): SettingsApi {
   return {
@@ -49,6 +53,17 @@ export function createRuntimeStorefrontPagesApi(): StorefrontPagesApi {
     updatePage: async (pageId, input) =>
       createStorefrontPagesApi(await createSettingsApiOptions()).updatePage(
         pageId,
+        input,
+      ),
+  };
+}
+
+export function createRuntimeStorefrontMediaApi(): StorefrontMediaApi {
+  return {
+    listAssets: async () =>
+      createStorefrontMediaApi(await createSettingsApiOptions()).listAssets(),
+    uploadImage: async (input) =>
+      createStorefrontMediaApi(await createSettingsApiOptions()).uploadImage(
         input,
       ),
   };

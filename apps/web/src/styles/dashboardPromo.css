@@ -50,7 +50,7 @@
   background-color: rgba(255, 255, 255, 0.15); /* bg-white/15 */
   border: 1px solid rgba(255, 255, 255, 0.2); /* border-white/20 */
   border-radius: 0.5rem; /* rounded-lg */
-  font-size: 0.5625rem; /* text-[9px] */
+  font-size: var(--font-size-xs); /* text-[9px] */
   font-weight: 900; /* font-black */
   text-transform: uppercase;
   letter-spacing: 0.05em; /* tracking-wider */
@@ -58,7 +58,7 @@
 }
 
 .promo-banner-title {
-  font-size: 1rem; /* text-base */
+  font-size: var(--font-size-sm); /* text-base */
   font-weight: 900; /* font-black */
   text-transform: uppercase;
   letter-spacing: 0.05em; /* tracking-wider */
@@ -81,7 +81,7 @@
 }
 
 .promo-banner-desc {
-  font-size: 0.75rem; /* text-xs */
+  font-size: var(--font-size-sm); /* text-sm */
   font-weight: 600; /* font-semibold */
   color: rgba(255, 255, 255, 0.8); /* text-white/80 */
   line-height: 1.625; /* leading-relaxed */
@@ -101,7 +101,7 @@
 }
 
 .promo-banner-btn {
-  font-size: 0.625rem; /* text-[10px] */
+  font-size: var(--font-size-xs); /* text-[10px] */
   font-weight: 900; /* font-black */
   text-transform: uppercase;
   letter-spacing: 0.1em; /* tracking-widest */
@@ -122,4 +122,88 @@
 .promo-banner-btn:hover {
   background-color: rgba(255, 255, 255, 0.2); /* hover:bg-white/20 */
   gap: 0.625rem; /* hover:gap-2.5 */
+}
+
+/* Slide Specific Styles */
+
+/* Slide 0: API */
+.dashboard-resource-api {
+  background: linear-gradient(
+    135deg,
+    #09090b 30%,
+    rgba(37, 99, 235, 0.15) 75%,
+    rgba(37, 99, 235, 0.3) 100%
+  ) !important;
+}
+.dashboard-resource-api .promo-banner-tag {
+  color: #3b82f6 !important;
+  background-color: rgba(37, 99, 235, 0.15) !important;
+  border-color: rgba(37, 99, 235, 0.3) !important;
+}
+.dashboard-resource-api .promo-banner-btn {
+  background-color: #2563eb !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+}
+.dashboard-resource-api .promo-banner-btn:hover {
+  background-color: #1d4ed8 !important;
+}
+
+/* Slide 1: Marketing */
+.dashboard-resource-marketing {
+  background: linear-gradient(
+    135deg,
+    #09090b 30%,
+    rgba(225, 31, 38, 0.15) 75%,
+    rgba(225, 31, 38, 0.3) 100%
+  ) !important;
+}
+.dashboard-resource-marketing .promo-banner-tag {
+  color: #f87171 !important;
+  background-color: rgba(225, 31, 38, 0.15) !important;
+  border-color: rgba(225, 31, 38, 0.3) !important;
+}
+.dashboard-resource-marketing .promo-banner-btn {
+  background-color: #e11f26 !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+}
+.dashboard-resource-marketing .promo-banner-btn:hover {
+  background-color: #b91c1c !important;
+}
+
+/* Slide 2: Design */
+.dashboard-resource-design {
+  background: linear-gradient(
+    135deg,
+    #09090b 30%,
+    rgba(124, 58, 237, 0.15) 75%,
+    rgba(124, 58, 237, 0.3) 100%
+  ) !important;
+}
+.dashboard-resource-design .promo-banner-tag {
+  color: #c084fc !important;
+  background-color: rgba(124, 58, 237, 0.15) !important;
+  border-color: rgba(124, 58, 237, 0.3) !important;
+}
+.dashboard-resource-design .promo-banner-btn {
+  background-color: #7c3aed !important;
+  border-color: #8b5cf6 !important;
+  color: #ffffff !important;
+}
+.dashboard-resource-design .promo-banner-btn:hover {
+  background-color: #6d28d9 !important;
+}
+
+.promo-banner-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgba(9, 9, 11, 0.95) 0%,
+    rgba(9, 9, 11, 0.6) 55%,
+    rgba(9, 9, 11, 0) 100%
+  );
 }

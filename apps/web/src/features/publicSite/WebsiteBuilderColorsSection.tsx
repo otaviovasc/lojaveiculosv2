@@ -49,7 +49,7 @@ export function WebsiteBuilderColorsSection({
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Paletas Prontas
         </h4>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Clique para aplicar uma paleta de cores.
         </p>
         <div className="grid grid-cols-2 gap-3">

@@ -1,50 +1,77 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 
-export type LogoVariant = "icon" | "full" | "full-white";
+export type LogoVariant =
+  | "black"
+  | "black-red"
+  | "full"
+  | "full-black"
+  | "full-red"
+  | "full-white"
+  | "icon"
+  | "icon-red"
+  | "icon-white"
+  | "red"
+  | "white"
+  | "white-red";
 
 interface LogoProps {
   variant?: "auto" | LogoVariant;
-  className?: string;
-  fallbackText?: string;
-  fallbackStyle?: React.CSSProperties;
+  alt?: string | undefined;
+  className?: string | undefined;
+  fallbackText?: string | undefined;
+  fallbackStyle?: CSSProperties | undefined;
 }
 
 const LOGO_PATHS = {
-  icon: "/logo_centro.svg",
-  full: "/logo_centro_full.svg",
-  "full-white": "/logo_centro_full_white.svg",
+  black: "/icons/lv-logo-black.svg",
+  "black-red": "/icons/lv-logo-black-red.svg",
+  full: "/icons/lv-logo-black-red.svg",
+  "full-black": "/icons/lv-logo-black.svg",
+  "full-red": "/icons/lv-logo-red.svg",
+  "full-white": "/icons/lv-logo-white-red.svg",
+  icon: "/icons/lv-logo-black-red.svg",
+  "icon-red": "/icons/lv-logo-red.svg",
+  "icon-white": "/icons/lv-logo-white-red.svg",
+  red: "/icons/lv-logo-red.svg",
+  white: "/icons/lv-logo-white.svg",
+  "white-red": "/icons/lv-logo-white-red.svg",
 };
 
-export function Logo({ variant = "auto", className }: LogoProps) {
+function resolveLogoVariant(variant: "auto" | LogoVariant): LogoVariant {
+  return variant === "auto" ? "full" : variant;
+}
+
+export function Logo({
+  alt = "Loja Veículos",
+  variant = "auto",
+  className,
+}: LogoProps) {
+  const resolvedVariant = resolveLogoVariant(variant);
+
   return (
     <img
-      src={LOGO_PATHS[variant === "auto" ? "full" : variant]}
-      alt="Centro Imóvel"
+      src={LOGO_PATHS[resolvedVariant]}
+      alt={alt}
       className={cn("h-8 w-auto object-contain", className)}
     />
   );
 }
 
 interface LogoWithVariantProps extends Omit<LogoProps, "variant"> {
-  useLight?: boolean;
+  useLight?: boolean | undefined;
 }
 
 export function LogoWithVariant({ useLight, className }: LogoWithVariantProps) {
   const variant = useLight ? "full-white" : "full";
-  return (
-    <img
-      src={LOGO_PATHS[variant]}
-      alt="Centro Imóvel"
-      className={cn("h-8 w-auto object-contain", className)}
-    />
-  );
+  return <Logo className={className} variant={variant} />;
 }
 
 interface LogoWithTextProps extends LogoWithVariantProps {
-  text?: string;
-  textClassName?: string;
+  text?: string | undefined;
+  textClassName?: string | undefined;
 }
 
 export function LogoWithText({
@@ -58,10 +85,10 @@ export function LogoWithText({
 
   return (
     <div className="flex items-center gap-3">
-      <img
-        src={LOGO_PATHS[variant]}
-        alt={text ?? "Centro Imóvel"}
-        className={cn("h-8 w-auto object-contain", className)}
+      <Logo
+        alt={text ?? "Loja Veículos"}
+        className={className}
+        variant={variant}
       />
       {text && (
         <span className={textClassName} style={fallbackStyle}>

@@ -32,13 +32,13 @@ export function createDrizzleFiscalRepository(
         db
           .select()
           .from(fiscalDocuments)
-          .where(scoped(input))
+          .where(scopedFiscalDocuments(input))
           .orderBy(desc(fiscalDocuments.createdAt))
           .limit(50),
         db
           .select()
           .from(fiscalEvents)
-          .where(scoped(input))
+          .where(scopedFiscalEvents(input))
           .orderBy(desc(fiscalEvents.occurredAt))
           .limit(50),
       ]);
@@ -60,8 +60,7 @@ export function createDrizzleFiscalRepository(
         .where(
           and(
             eq(fiscalDocuments.id, input.documentId),
-            eq(fiscalDocuments.storeId, input.storeId),
-            eq(fiscalDocuments.tenantId, input.tenantId),
+            scopedFiscalDocuments(input),
           ),
         )
         .returning();
@@ -95,10 +94,17 @@ function toInsert(input: CreateFiscalDocumentInput) {
   };
 }
 
-function scoped(input: { storeId: string; tenantId: string }) {
+function scopedFiscalDocuments(input: { storeId: string; tenantId: string }) {
   return and(
     eq(fiscalDocuments.storeId, input.storeId),
     eq(fiscalDocuments.tenantId, input.tenantId),
+  );
+}
+
+function scopedFiscalEvents(input: { storeId: string; tenantId: string }) {
+  return and(
+    eq(fiscalEvents.storeId, input.storeId),
+    eq(fiscalEvents.tenantId, input.tenantId),
   );
 }
 

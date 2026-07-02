@@ -105,6 +105,7 @@ export function readTestimonials(value: unknown) {
     )
     .map((testimonial) => ({
       id: readString(testimonial.id) as string,
+      imageSrc: readString(testimonial.imageSrc),
       name: readString(testimonial.name) as string,
       quote: readString(testimonial.quote) as string,
       role: readString(testimonial.role) as string,

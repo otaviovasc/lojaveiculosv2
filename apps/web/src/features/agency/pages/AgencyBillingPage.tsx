@@ -4,7 +4,7 @@ export function AgencyBillingPage() {
   return (
     <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
       <div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-accent">
+        <span className="text-xs font-black uppercase tracking-widest text-accent">
           Financeiro
         </span>
         <h1 className="text-3xl font-black italic uppercase tracking-tighter text-primary mt-1">
@@ -19,7 +19,7 @@ export function AgencyBillingPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Recorrência Mensal
             </span>
             <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
@@ -33,7 +33,7 @@ export function AgencyBillingPage() {
 
         <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Status Assinatura
             </span>
             <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-green-end">
@@ -47,7 +47,7 @@ export function AgencyBillingPage() {
 
         <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Próximo Vencimento
             </span>
             <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">

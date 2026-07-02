@@ -61,7 +61,7 @@ export function InventoryCreateSidebar({
   const previewPhoto = media[0]?.previewUrl || null;
 
   return (
-    <aside className="xl:sticky xl:top-6 flex flex-col self-start w-full max-h-[calc(100vh-3rem)] overflow-y-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden pr-1">
+    <aside className="custom-scrollbar xl:sticky xl:top-6 flex flex-col self-start w-full max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
       <div className="glass-panel-branded overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)] flex flex-col divide-y divide-line/60">
         {/* Preview Content */}
         <PreviewCardContent
@@ -131,7 +131,7 @@ function PreviewCardContent({
             <span className="text-xs font-bold">Sem fotos cadastradas</span>
           </div>
         )}
-        <span className="absolute top-3 left-3 bg-accent-soft text-accent-strong text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-accent-soft/20 backdrop-blur-sm">
+        <span className="absolute top-3 left-3 bg-accent-soft text-accent-strong text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded-full border border-accent-soft/20 backdrop-blur-sm">
           {statusLabel}
         </span>
       </div>
@@ -146,7 +146,7 @@ function PreviewCardContent({
             {plate ? (
               <>
                 <span className="text-line-strong">•</span>
-                <span className="font-mono bg-app-elevated text-[10px] px-1.5 py-0.5 rounded border border-line">
+                <span className="font-mono bg-app-elevated text-xs px-1.5 py-0.5 rounded border border-line">
                   {plate.toUpperCase()}
                 </span>
               </>
@@ -156,13 +156,13 @@ function PreviewCardContent({
 
         <div className="grid grid-cols-2 gap-3 border-t border-line/60 pt-4 text-xs">
           <div>
-            <span className="block text-[10px] font-black text-muted uppercase tracking-wider">
+            <span className="block text-xs font-black text-muted uppercase tracking-wider">
               Valor de aquisição
             </span>
             <span className="font-bold text-app-text">{acquisitionPrice}</span>
           </div>
           <div>
-            <span className="block text-[10px] font-black text-muted uppercase tracking-wider">
+            <span className="block text-xs font-black text-muted uppercase tracking-wider">
               Valor de Venda
             </span>
             <span className="font-bold text-accent-strong text-sm">

@@ -19,7 +19,7 @@ export function InventoryDetailWorkspaceTabs({
   onTabChange: (tab: TabId) => void;
 }) {
   return (
-    <div className="border-b border-line overflow-x-auto select-none no-scrollbar">
+    <div className="custom-scrollbar border-b border-line overflow-x-auto select-none">
       <nav className="flex gap-6 min-w-max">
         {inventoryDetailTabs.map((tab) => (
           <button

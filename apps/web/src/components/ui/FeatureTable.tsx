@@ -53,7 +53,7 @@ export function FeatureRowAction({
     <div className="relative flex items-center">
       <button
         aria-label={ariaLabel}
-        className="peer flex cursor-pointer items-center justify-center rounded-lg border border-line bg-app-elevated p-1.5 text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent-strong disabled:cursor-not-allowed disabled:opacity-50"
+        className="peer flex cursor-pointer items-center justify-center rounded-lg border border-line bg-panel p-1.5 text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={disabled}
         onClick={onClick}
         type="button"
@@ -63,7 +63,7 @@ export function FeatureRowAction({
           className={cx("size-3.5", iconClassName)}
         />
       </button>
-      <div className="absolute right-full top-1/2 z-30 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-gray-900 px-2 py-1 text-[9px] font-bold leading-none text-white shadow-lg pointer-events-none peer-hover:block">
+      <div className="absolute right-full top-1/2 z-30 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-gray-900 px-2 py-1 text-xs font-bold leading-none text-white shadow-lg pointer-events-none peer-hover:block">
         {tooltip}
         <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
       </div>

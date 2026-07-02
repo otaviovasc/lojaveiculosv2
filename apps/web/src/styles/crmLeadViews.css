@@ -37,7 +37,7 @@
 .crm-lead-row small,
 .crm-muted-cell {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }
 
@@ -58,14 +58,14 @@
 .crm-table th,
 .crm-table td {
   border-bottom: 1px solid var(--color-line);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   padding: 0.875rem;
   text-align: left;
 }
 
 .crm-table th {
   color: var(--color-muted);
-  font-size: 0.6875rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -115,14 +115,14 @@
 }
 
 .crm-timeline-row strong {
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
 }
 
 .crm-timeline-row p,
 .crm-timeline-row small {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }
 
@@ -130,7 +130,7 @@
   border: 1px dashed var(--color-line);
   border-radius: var(--radius-md);
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   padding: 1rem;
   text-align: center;

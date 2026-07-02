@@ -24,7 +24,7 @@ export function DocumentOriginBadge({
   return (
     <span
       className={
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider " +
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider " +
         (origin === "manual"
           ? "bg-pink-500/10 text-pink-500 border border-pink-500/20"
           : "bg-violet-500/10 text-violet-500 border border-violet-500/20")
@@ -51,7 +51,7 @@ export function DocumentScopeBadge({
   return (
     <span
       className={
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider " +
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider " +
         (scope === "vehicle" || scope === "multiple_vehicles"
           ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
           : "bg-panel text-muted border border-line")

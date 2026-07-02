@@ -1,4 +1,5 @@
 import { BadgeCheck, FileText } from "lucide-react";
+import { Logo } from "../../components/ui/logo";
 import { kindLabel } from "./documentLabels";
 import type { DocumentTemplatePreviewModel } from "./documentTemplatePreviewModel";
 import type { DocumentKind } from "./types";
@@ -25,7 +26,9 @@ export function DocumentTemplatePreview({
       <article className="documents-template-paper">
         <div className="documents-template-paper-heading">
           <div className="documents-template-paper-brand">
-            <span>LV</span>
+            <span>
+              <Logo className="max-h-5 w-8" variant="white" />
+            </span>
             <div>
               <strong>{preview.store.name}</strong>
               <small>CNPJ {preview.store.cnpj}</small>

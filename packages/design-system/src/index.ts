@@ -45,11 +45,19 @@ export const layoutTokens = {
   sidebarWidth: "var(--layout-sidebar-width)",
 } as const;
 
+export const fontTokens = {
+  sans: "var(--font-sans)",
+  bebas: "var(--font-race)",
+  race: "var(--font-race)",
+} as const;
+
 export const designTokens = {
   colors: colorTokens,
+  fonts: fontTokens,
   layout: layoutTokens,
   radii: radiusTokens,
   shadows: shadowTokens,
 } as const;
 
 export const colors = colorTokens;
+export const fonts = fontTokens;

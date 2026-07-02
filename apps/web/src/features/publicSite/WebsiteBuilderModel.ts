@@ -135,7 +135,7 @@ export function createWebsiteConfigFromSettings(
       stringOrNull(theme.corretorName) ?? settings.identity.tradingName,
     corretorPhotoUrl: stringOrNull(theme.corretorPhotoUrl),
     fonts: {
-      body: stringOrNull(fonts.body) ?? "Plus Jakarta Sans",
+      body: stringOrNull(fonts.body) ?? "Inter",
       heading: stringOrNull(fonts.heading) ?? "Bricolage Grotesque",
     },
     heroImageUrl: settings.publicSite.heroImageUrl,

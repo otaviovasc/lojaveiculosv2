@@ -63,7 +63,7 @@ export function DashboardSidebar<Id extends string = string>({
 
       <nav
         aria-label="Modulos"
-        className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="custom-scrollbar flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-4"
       >
         {mainItems.map((item) => {
           const showHeader = item.group && item.group !== lastGroup;
@@ -76,7 +76,7 @@ export function DashboardSidebar<Id extends string = string>({
                 ) : (
                   <div
                     className={
-                      "px-2.5 pb-1 text-[9px] font-black uppercase tracking-widest text-muted/50 dark:text-muted/40 " +
+                      "px-2.5 pb-1 text-sm font-black uppercase tracking-widest text-muted/50 dark:text-muted/40 " +
                       (lastGroup === undefined ? "pt-1" : "pt-4")
                     }
                   >

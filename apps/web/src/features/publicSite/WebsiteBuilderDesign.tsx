@@ -99,7 +99,7 @@ export function WebsiteBuilderDesign({
           </div>
           <div className="hidden sm:block">
             <h1 className="text-sm font-bold text-foreground">Personalizar</h1>
-            <p className="text-[10px] text-muted-foreground">Editor Visual</p>
+            <p className="text-xs text-muted-foreground">Editor Visual</p>
           </div>
         </div>
 

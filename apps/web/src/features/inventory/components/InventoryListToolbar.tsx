@@ -21,6 +21,10 @@ import {
   inventoryListStatusOptions,
   type InventoryListStatusFilter,
 } from "../model/listCatalogModel";
+import {
+  inventoryListSortOptions,
+  type InventoryListSortKey,
+} from "../model/inventoryListSortModel";
 
 export const INVENTORY_PAGE_SIZE = 100;
 
@@ -48,8 +52,8 @@ export function InventoryListToolbar({
   status: InventoryListStatusFilter;
   viewMode: "list" | "cards";
   onViewModeChange: (mode: "list" | "cards") => void;
-  sortBy: string;
-  onSortChange: (value: string) => void;
+  sortBy: InventoryListSortKey;
+  onSortChange: (value: InventoryListSortKey) => void;
   visibleColumns: Record<string, boolean>;
   onColumnToggle: (key: string, visible: boolean) => void;
 }) {
@@ -72,7 +76,7 @@ export function InventoryListToolbar({
   ];
 
   return (
-    <FeatureToolbar>
+    <FeatureToolbar className="relative z-30">
       <form
         className="grid gap-4 md:grid-cols-[1fr_240px_auto] items-center"
         onSubmit={submit}
@@ -117,25 +121,19 @@ export function InventoryListToolbar({
           <label className="flex items-center gap-2 whitespace-nowrap">
             <span className="text-muted">Ordenar por:</span>
             <InventorySelect
-              className="min-h-9 text-[11px] py-1"
+              className="min-h-9 text-xs py-1"
               onChange={onSortChange}
-              options={[
-                { label: "Mais Recentes", value: "newest" },
-                { label: "Mais Antigos", value: "oldest" },
-                { label: "Preço: Menor para Maior", value: "price_asc" },
-                { label: "Preço: Maior para Menor", value: "price_desc" },
-                { label: "Marca/Modelo (A-Z)", value: "name_asc" },
-              ]}
+              options={inventoryListSortOptions}
               value={sortBy}
             />
           </label>
 
           {viewMode === "list" && (
-            <div className="relative inline-block text-left">
+            <div className="relative z-50 inline-block text-left">
               <button
                 type="button"
                 onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
-                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-app-elevated border border-line px-3 text-[11px] font-black text-app-text hover:bg-line/25 cursor-pointer"
+                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-app-elevated border border-line px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer"
               >
                 <Columns className="size-3.5 text-muted" />
                 <span>Colunas</span>
@@ -143,11 +141,11 @@ export function InventoryListToolbar({
               {columnsDropdownOpen && (
                 <>
                   <div
-                    className="fixed inset-0 z-30"
+                    className="fixed inset-0 z-40"
                     onClick={() => setColumnsDropdownOpen(false)}
                   />
-                  <div className="absolute left-0 mt-2 z-40 w-44 rounded-xl border border-line bg-panel p-2 shadow-2xl">
-                    <div className="flex flex-col gap-1 text-[11px] font-bold">
+                  <div className="absolute left-0 mt-2 z-50 w-44 rounded-xl border border-line bg-panel p-2 shadow-2xl">
+                    <div className="flex flex-col gap-1 text-xs font-bold">
                       {columnOptions.map((opt) => (
                         <label
                           key={opt.key}

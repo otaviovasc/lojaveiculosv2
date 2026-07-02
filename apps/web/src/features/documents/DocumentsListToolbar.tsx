@@ -122,7 +122,7 @@ export function DocumentsListToolbar({
 
           {hasActiveFilters ? (
             <button
-              className="inline-flex items-center gap-1 rounded-lg bg-transparent text-accent-strong text-[11px] font-black uppercase tracking-wider cursor-pointer px-2 py-1"
+              className="inline-flex items-center gap-1 rounded-lg bg-transparent text-accent-strong text-xs font-black uppercase tracking-wider cursor-pointer px-2 py-1"
               onClick={onClearFilters}
               type="button"
             >
@@ -140,7 +140,7 @@ export function DocumentsListToolbar({
             <span className="sr-only">Ordenar por</span>
             <FeatureSelect
               ariaLabel="Ordenar por"
-              className="!min-h-9 !text-[11px] !py-1 !pl-8 min-w-[10rem]"
+              className="!min-h-9 !text-xs !py-1 !pl-8 min-w-[10rem]"
               disabled={isLoading}
               onChange={(value) => onSortChange(value as DocumentsSortKey)}
               options={DOCUMENTS_SORT_OPTIONS}
@@ -197,7 +197,7 @@ function DateInput({
   value: string;
 }) {
   return (
-    <label className="inline-flex items-center gap-1.5 rounded-lg bg-app-elevated border border-line px-2.5 h-9 text-[10px] font-black uppercase tracking-wider text-muted">
+    <label className="inline-flex items-center gap-1.5 rounded-lg bg-app-elevated border border-line px-2.5 h-9 text-xs font-black uppercase tracking-wider text-muted">
       <span>{label}</span>
       <input
         className="bg-transparent border-0 text-app-text text-xs font-bold outline-none w-[7rem]"

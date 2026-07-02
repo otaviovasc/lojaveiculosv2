@@ -75,18 +75,18 @@ export function CrmLeadDetailsTabsTarefas({
                   {task.content}
                 </span>
                 {typeof task.metadata?.priority === "string" && (
-                  <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-line/25 text-muted">
+                  <span className="px-2 py-0.5 rounded text-xs font-black uppercase bg-line/25 text-muted">
                     {task.metadata.priority}
                   </span>
                 )}
               </div>
               {typeof task.metadata?.description === "string" && (
-                <p className="text-[11px] font-bold text-muted leading-relaxed">
+                <p className="text-xs font-bold text-muted leading-relaxed">
                   {task.metadata.description}
                 </p>
               )}
               {typeof task.metadata?.dueAt === "string" && (
-                <span className="text-[10px] font-bold text-muted flex items-center gap-1 mt-1">
+                <span className="text-xs font-bold text-muted flex items-center gap-1 mt-1">
                   <Calendar className="size-3" />
                   <span>
                     Vence em:{" "}
@@ -128,7 +128,7 @@ export function CrmLeadDetailsTabsTarefas({
 
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Título
                 </span>
                 <input
@@ -140,7 +140,7 @@ export function CrmLeadDetailsTabsTarefas({
               </label>
 
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Descrição
                 </span>
                 <textarea
@@ -153,7 +153,7 @@ export function CrmLeadDetailsTabsTarefas({
 
               <div className="grid grid-cols-2 gap-4">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-black uppercase text-muted">
+                  <span className="text-xs font-black uppercase text-muted">
                     Prioridade
                   </span>
                   <select
@@ -168,7 +168,7 @@ export function CrmLeadDetailsTabsTarefas({
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-black uppercase text-muted">
+                  <span className="text-xs font-black uppercase text-muted">
                     Vencimento
                   </span>
                   <input
@@ -181,7 +181,7 @@ export function CrmLeadDetailsTabsTarefas({
               </div>
 
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Horário (opcional)
                 </span>
                 <input

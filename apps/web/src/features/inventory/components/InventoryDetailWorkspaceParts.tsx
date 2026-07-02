@@ -70,7 +70,7 @@ export function TechnicalSpecsPanel({
         <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
           Especificações Técnicas
         </h3>
-        <span className="text-[10px] font-bold text-accent opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs font-bold text-accent opacity-0 group-hover:opacity-100 transition-opacity">
           Clique para Editar
         </span>
       </div>
@@ -112,7 +112,7 @@ export function TechnicalSpecsPanel({
           >
             <div className="flex items-center gap-2">
               <span>Opcionais do Veículo</span>
-              <span className="bg-accent-soft text-accent-strong text-[10px] font-black px-2 py-0.5 rounded-full">
+              <span className="bg-accent-soft text-accent-strong text-xs font-black px-2 py-0.5 rounded-full">
                 {activeOpcionaisCount}
               </span>
             </div>
@@ -159,7 +159,7 @@ export function TechnicalSpecsPanel({
           >
             <div className="flex items-center gap-2">
               <span>Observações Especiais</span>
-              <span className="bg-accent-soft text-accent-strong text-[10px] font-black px-2 py-0.5 rounded-full">
+              <span className="bg-accent-soft text-accent-strong text-xs font-black px-2 py-0.5 rounded-full">
                 {activeObservacoesCount}
               </span>
             </div>
@@ -237,7 +237,7 @@ export function TechnicalSpecsPanel({
         {["Destaque", "Laudo Aprovado", "Único Dono"].map((tag) => (
           <span
             key={tag}
-            className="bg-accent-soft text-accent-strong text-[10px] font-black uppercase px-2 py-0.5 rounded-full border border-accent-soft/20"
+            className="bg-accent-soft text-accent-strong text-xs font-black uppercase px-2 py-0.5 rounded-full border border-accent-soft/20"
           >
             {tag}
           </span>

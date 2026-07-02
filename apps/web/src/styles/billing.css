@@ -29,7 +29,7 @@
 
 .billing-hero h2 {
   color: var(--color-text);
-  font-size: 1.75rem;
+  font-size: var(--font-size-2xl);
   font-weight: 900;
   line-height: 1.05;
   margin-top: 0.75rem;
@@ -38,7 +38,7 @@
 .billing-hero p,
 .billing-entitlement p {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   margin-top: 0.5rem;
 }
@@ -56,7 +56,7 @@
   background: var(--color-accent-soft);
   border-radius: var(--radius-sm);
   color: var(--color-accent-strong);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   padding: 0.5rem 0.625rem;
 }
@@ -91,7 +91,7 @@
 
 .billing-provider-panel p {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   margin-top: 0.25rem;
 }
@@ -111,7 +111,7 @@
 .billing-summary-card small,
 .billing-entitlement span {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
 }
 
@@ -143,7 +143,7 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-text);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   min-height: 2.25rem;
   padding: 0 0.75rem;
@@ -162,7 +162,7 @@
 .billing-alert,
 .billing-empty {
   color: var(--color-danger);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   padding: 1rem;
 }

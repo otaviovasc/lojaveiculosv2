@@ -88,7 +88,7 @@ export function CrmSimulationModal({
               <h3 className="text-sm font-black text-app-text">
                 Simular Financiamento
               </h3>
-              <p className="text-[10px] font-bold text-muted mt-0.5">
+              <p className="text-xs font-bold text-muted mt-0.5">
                 Cliente: {lead.buyerName || "Sem Nome"}
               </p>
             </div>
@@ -179,7 +179,7 @@ export function CrmSimulationModal({
                 <span className="text-xs font-black text-app-text">
                   Parcela Mensal Estimada:
                 </span>
-                <span className="text-[10px] font-bold text-muted">
+                <span className="text-xs font-bold text-muted">
                   Tabela Price
                 </span>
               </div>

@@ -281,7 +281,7 @@ function BrandOptionLabel({ option }: { option: InventoryCatalogOption }) {
 
   return (
     <span className="flex min-w-0 items-center gap-2">
-      <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-app-elevated text-[10px] font-black text-muted">
+      <span className="grid size-7 shrink-0 place-items-center overflow-hidden rounded-md border border-line bg-app-elevated text-xs font-black text-muted">
         {option.imageUrl ? (
           <img
             alt=""

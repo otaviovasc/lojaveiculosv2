@@ -22,6 +22,7 @@ import {
   DashboardSidebar,
   type DashboardSidebarItem,
 } from "./ui/dashboard-sidebar";
+import { Logo } from "./ui/logo";
 
 type AppShellProps = {
   activeModule: ModuleDefinition;
@@ -121,20 +122,15 @@ export function AppShell({
           >
             <Menu className="size-5" />
           </button>
-          <img
-            src={
-              theme === "dark"
-                ? "/icons/logo_lv_white.svg"
-                : "/icons/logo_lv.svg"
-            }
-            alt="Loja Veículos"
+          <Logo
+            variant={theme === "dark" ? "full-white" : "full"}
             className="h-7.5 w-auto object-contain select-none mr-1"
           />
           <div className="min-w-0 border-l border-line/60 pl-2.5">
-            <p className="truncate text-[11px] font-black uppercase tracking-widest text-primary leading-tight">
+            <p className="truncate text-xs font-black uppercase tracking-widest text-primary leading-tight">
               Loja Veículos
             </p>
-            <p className="truncate text-[9px] font-black uppercase tracking-widest text-accent mt-0.5">
+            <p className="truncate text-xs font-black uppercase tracking-widest text-accent mt-0.5">
               {activeModule.title}
             </p>
           </div>

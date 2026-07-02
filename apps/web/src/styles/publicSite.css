@@ -30,18 +30,18 @@
   color-scheme: light !important;
 
   /* Basic light theme variables - override dark theme root */
-  --color-app: #f8fafc !important; /* Premium background Slate 50 */
-  --color-app-elevated: #f1f5f9 !important; /* Slate 100 */
-  --color-text: #0f172a !important; /* Slate 900 */
-  --color-app-text: #0f172a !important;
-  --color-muted: #475569 !important; /* Slate 600 */
-  --color-muted-foreground: #475569 !important;
+  --color-app: #f4efee !important; /* Brand Off-white */
+  --color-app-elevated: #e8e3e2 !important; /* Brand Cinza Quente */
+  --color-text: #151515 !important; /* Brand Carvão */
+  --color-app-text: #151515 !important;
+  --color-muted: #4a4444 !important; /* Brand Chumbo */
+  --color-muted-foreground: #4a4444 !important;
   --color-panel: #ffffff !important;
-  --color-line: #e2e8f0 !important; /* Slate 200 */
-  --color-line-strong: #cbd5e1 !important; /* Slate 300 */
+  --color-line: #e8e3e2 !important; /* Brand Cinza Quente */
+  --color-line-strong: #4a4444 !important; /* Brand Chumbo */
   --color-inverse: #ffffff;
   --public-accent-foreground-light: #ffffff !important;
-  --public-accent-foreground-dark: #0f172a !important;
+  --public-accent-foreground-dark: #151515 !important;
 
   /* Theme variables used by Tailwind */
   --color-background: var(--color-app) !important;
@@ -59,17 +59,17 @@
   --color-secondary-foreground: var(--color-text) !important;
 
   /* Status Colors */
-  --color-danger: #ef5b5b !important;
-  --color-destructive: #ef5b5b !important;
+  --color-danger: #b81820 !important;
+  --color-destructive: #b81820 !important;
   --color-destructive-foreground: #ffffff !important;
-  --color-warning: #f5c542 !important;
-  --color-success: #16a765 !important;
+  --color-warning: #b89418 !important;
+  --color-success: #18b841 !important;
   --color-success-foreground: #ffffff !important;
 
   /* Soft utility overrides */
   --color-accent-soft: color-mix(
     in oklab,
-    var(--color-accent, #ed1d24) 10%,
+    var(--color-accent, #e11f26) 10%,
     transparent
   ) !important;
 
@@ -108,9 +108,42 @@
     --public-storefront-heading-font,
     var(--page-builder-heading-font, inherit)
   );
-  letter-spacing: -0.025em;
+  letter-spacing: 0;
   font-weight: 700;
-  line-height: 1.1;
+  line-height: 1.16;
+}
+
+.public-storefront,
+.page-builder-renderer {
+  --public-readable-small-text: 0.875rem;
+  --public-readable-control-text: 0.9375rem;
+}
+
+.public-storefront :where(.text-xs),
+.page-builder-renderer :where(.text-xs) {
+  font-size: var(--public-readable-small-text);
+  line-height: 1.45;
+}
+
+.public-storefront :where(input.text-xs, textarea.text-xs, select.text-xs),
+.page-builder-renderer :where(input.text-xs, textarea.text-xs, select.text-xs) {
+  font-size: var(--public-readable-control-text);
+  line-height: 1.4;
+}
+
+.public-storefront :where(.leading-none),
+.page-builder-renderer :where(.leading-none) {
+  line-height: 1.2;
+}
+
+.public-storefront [class*="tracking-"],
+.page-builder-renderer [class*="tracking-"] {
+  letter-spacing: 0.06em;
+}
+
+.public-storefront :where(h1, h2, h3, h4)[class*="tracking-"],
+.page-builder-renderer :where(h1, h2, h3, h4)[class*="tracking-"] {
+  letter-spacing: 0;
 }
 
 .public-storefront-shell {
@@ -124,8 +157,8 @@
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   box-shadow:
-    0 10px 30px -10px rgba(15, 23, 42, 0.04),
-    0 1px 3px rgba(15, 23, 42, 0.02);
+    0 10px 30px -10px rgba(21, 21, 21, 0.04),
+    0 1px 3px rgba(21, 21, 21, 0.02);
 }
 
 .page-builder-renderer [data-builder-block-id] {

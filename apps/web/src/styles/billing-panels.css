@@ -13,14 +13,14 @@
 
 .billing-panel-header h3 {
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
 }
 
 .billing-panel-header p,
 .billing-muted {
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   margin-top: 0.25rem;
 }
@@ -39,7 +39,7 @@
 .billing-table td {
   border-bottom: 1px solid var(--color-line);
   color: var(--color-text);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   padding: 0.75rem;
   text-align: left;
@@ -48,7 +48,7 @@
 
 .billing-table th {
   color: var(--color-muted);
-  font-size: 0.6875rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -64,7 +64,7 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
   color: var(--color-text);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   min-height: 2.5rem;
   padding: 0 0.75rem;
@@ -87,12 +87,12 @@
 .billing-event strong,
 .billing-event span {
   color: var(--color-text);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
 }
 
 .billing-event p {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }

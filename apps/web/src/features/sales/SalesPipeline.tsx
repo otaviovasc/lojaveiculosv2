@@ -64,7 +64,7 @@ export function SalesPipeline({
             <h2 className="text-sm font-black text-app-text tracking-wide uppercase">
               Pipeline
             </h2>
-            <p className="text-[11px] font-bold text-muted">
+            <p className="text-xs font-bold text-muted">
               {filteredSales.length} de {sales.length} listadas
             </p>
           </div>
@@ -133,7 +133,7 @@ export function SalesPipeline({
                   </div>
                   {typeof sale.buyerSnapshot.name === "string" &&
                     sale.buyerSnapshot.name && (
-                      <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted mt-1 min-w-0">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-muted mt-1 min-w-0">
                         <User className="size-3 text-muted shrink-0" />
                         <span className="truncate">
                           {String(sale.buyerSnapshot.name)}
@@ -150,7 +150,7 @@ export function SalesPipeline({
               </div>
 
               <div className="flex items-center justify-between border-t border-line/40 pt-2 mt-1">
-                <span className="text-[10px] font-bold text-muted">
+                <span className="text-xs font-bold text-muted">
                   {sale.leadId
                     ? `Lead: ${sale.leadId.slice(0, 8)}`
                     : "Sem lead vinculado"}

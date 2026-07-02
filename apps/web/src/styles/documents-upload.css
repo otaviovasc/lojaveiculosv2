@@ -61,7 +61,7 @@
 .documents-delete-dialog p,
 .documents-delete-dialog small {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
 }
 
@@ -168,7 +168,7 @@
 }
 
 .documents-upload-progress-block strong {
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
 }
 
@@ -237,7 +237,7 @@
   display: inline-flex;
   flex: 1;
   align-items: center;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   gap: 0.5rem;
   justify-content: center;

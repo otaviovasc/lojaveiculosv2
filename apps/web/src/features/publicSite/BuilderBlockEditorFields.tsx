@@ -4,6 +4,7 @@ import {
   FeatureSelect,
   FeatureTextarea,
 } from "../../components/ui/FeatureControls";
+import { StorefrontImagePicker } from "./StorefrontImagePicker";
 
 export type BuilderRecord = Record<string, unknown>;
 
@@ -60,6 +61,25 @@ export function BuilderTextareaInput({
         value={textValue(value)}
       />
     </BuilderField>
+  );
+}
+
+export function BuilderImageInput({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: unknown;
+}) {
+  return (
+    <StorefrontImagePicker
+      imageClassName="h-28 w-full rounded-lg"
+      label={label}
+      onChange={(nextValue) => onChange(nextValue ?? "")}
+      value={textValue(value)}
+    />
   );
 }
 

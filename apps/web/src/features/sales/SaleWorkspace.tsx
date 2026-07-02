@@ -91,7 +91,7 @@ export function SaleWorkspace({
         <h3 className="text-lg font-black text-app-text">
           Nenhuma venda selecionada
         </h3>
-        <p className="mt-2 text-xs font-bold text-muted max-w-sm leading-relaxed">
+        <p className="mt-2 text-xs font-bold text-muted max-w-sm w-full leading-relaxed">
           Selecione um rascunho de venda no pipeline ao lado ou inicie um novo
           preenchimento clicando no botão de adição.
         </p>
@@ -157,7 +157,7 @@ export function SaleWorkspace({
                   {isCompleted ? (
                     <Check className="size-3.5" />
                   ) : (
-                    <span className="text-[10px] shrink-0 size-4.5 rounded-full bg-line/65 flex items-center justify-center font-black">
+                    <span className="text-xs shrink-0 size-4.5 rounded-full bg-line/65 flex items-center justify-center font-black">
                       {index + 1}
                     </span>
                   )}

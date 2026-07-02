@@ -89,7 +89,7 @@ export function CrmLeadDetailsSidebar({
                   <span className="text-xs font-black text-app-text truncate">
                     {v.label}
                   </span>
-                  <span className="text-[10px] font-bold text-muted">
+                  <span className="text-xs font-bold text-muted">
                     {v.priceCents
                       ? new Intl.NumberFormat("pt-BR", {
                           currency: "BRL",
@@ -113,8 +113,8 @@ export function CrmLeadDetailsSidebar({
         <span className="text-xs font-black text-app-text">Datas</span>
         <div className="flex flex-col gap-2.5 text-xs mt-1">
           <div className="flex justify-between items-center">
-            <span className="text-muted/70 font-bold">Entrada</span>
-            <span className="font-extrabold text-[11px]">
+            <span className="text-muted font-bold">Entrada</span>
+            <span className="font-extrabold text-xs">
               {lead.createdAt
                 ? new Date(lead.createdAt).toLocaleString("pt-BR", {
                     dateStyle: "short",
@@ -124,8 +124,8 @@ export function CrmLeadDetailsSidebar({
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted/70 font-bold">Última atividade</span>
-            <span className="font-extrabold text-[11px]">
+            <span className="text-muted font-bold">Última atividade</span>
+            <span className="font-extrabold text-xs">
               {lead.lastInteractionAt
                 ? new Date(lead.lastInteractionAt).toLocaleString("pt-BR", {
                     dateStyle: "short",
@@ -135,8 +135,8 @@ export function CrmLeadDetailsSidebar({
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted/70 font-bold">Última mensagem</span>
-            <span className="font-extrabold text-[11px]">
+            <span className="text-muted font-bold">Última mensagem</span>
+            <span className="font-extrabold text-xs">
               {typeof lead.metadata?.lastMessageAt === "string"
                 ? new Date(lead.metadata.lastMessageAt).toLocaleString(
                     "pt-BR",
@@ -149,8 +149,8 @@ export function CrmLeadDetailsSidebar({
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted/70 font-bold">Último recebido</span>
-            <span className="font-extrabold text-[11px]">
+            <span className="text-muted font-bold">Último recebido</span>
+            <span className="font-extrabold text-xs">
               {typeof lead.metadata?.lastReceivedAt === "string"
                 ? new Date(lead.metadata.lastReceivedAt).toLocaleString(
                     "pt-BR",
@@ -163,8 +163,8 @@ export function CrmLeadDetailsSidebar({
             </span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-muted/70 font-bold">Último enviado</span>
-            <span className="font-extrabold text-[11px]">
+            <span className="text-muted font-bold">Último enviado</span>
+            <span className="font-extrabold text-xs">
               {typeof lead.metadata?.lastSentAt === "string"
                 ? new Date(lead.metadata.lastSentAt).toLocaleString("pt-BR", {
                     dateStyle: "short",
@@ -192,7 +192,7 @@ export function CrmLeadDetailsSidebar({
                   <span className="text-xs font-bold text-app-text">
                     {act.content}
                   </span>
-                  <span className="text-[9px] font-bold text-muted self-end">
+                  <span className="text-xs font-bold text-muted self-end">
                     {new Date(act.occurredAt).toLocaleString("pt-BR", {
                       hour: "2-digit",
                       minute: "2-digit",

@@ -25,16 +25,16 @@
 
 /* Colorful Gradients for Metric KPI Cards */
 .kpi-gradient-green {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: var(--color-green-start);
 }
 .kpi-gradient-blue {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: var(--color-blue-start);
 }
 .kpi-gradient-violet {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+  background: var(--color-warning);
 }
 .kpi-gradient-pink {
-  background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+  background: var(--color-accent);
 }
 
 .kpi-card {
@@ -175,13 +175,21 @@
 }
 
 .addon-btn-whatsapp {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-green-start) 0%,
+    var(--color-green-end) 100%
+  );
   border-color: #047857;
   color: #ffffff;
 }
 
 .addon-btn-nfe {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-blue-start) 0%,
+    var(--color-blue-end) 100%
+  );
   border-color: #1e40af;
   color: #ffffff;
 }
@@ -192,7 +200,7 @@
 }
 
 .dashboard-resource-marketing {
-  background: linear-gradient(90deg, #059669 0%, #065f46 100%);
+  background: linear-gradient(90deg, var(--color-green-end) 0%, #065f46 100%);
 }
 
 .dashboard-resource-design {

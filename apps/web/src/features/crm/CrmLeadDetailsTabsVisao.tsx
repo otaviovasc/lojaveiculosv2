@@ -46,15 +46,13 @@ export function CrmLeadDetailsTabsVisao({
     <div className="flex flex-col gap-6 text-app-text select-none">
       {/* HIGHLIGHTS Section */}
       <div>
-        <span className="text-[10px] font-black uppercase text-muted tracking-wider block mb-3">
+        <span className="text-xs font-black uppercase text-muted tracking-wider block mb-3">
           Highlights
         </span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Card: Fase */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-4 flex flex-col justify-between min-h-[90px]">
-            <span className="text-[10px] font-bold text-muted uppercase">
-              Fase
-            </span>
+            <span className="text-xs font-bold text-muted uppercase">Fase</span>
             <span className="text-sm font-black text-app-text">
               {currentStage?.name || "Novo Lead"}
             </span>
@@ -78,7 +76,7 @@ export function CrmLeadDetailsTabsVisao({
 
           {/* Card: Valor */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-4 flex flex-col justify-between min-h-[90px]">
-            <span className="text-[10px] font-bold text-muted uppercase">
+            <span className="text-xs font-bold text-muted uppercase">
               Valor
             </span>
             <span className="text-sm font-black text-app-text">
@@ -89,7 +87,7 @@ export function CrmLeadDetailsTabsVisao({
 
           {/* Card: Responsável */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-4 flex flex-col justify-between min-h-[90px]">
-            <span className="text-[10px] font-bold text-muted uppercase">
+            <span className="text-xs font-bold text-muted uppercase">
               Responsável
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-sm font-black text-app-text">
@@ -104,7 +102,7 @@ export function CrmLeadDetailsTabsVisao({
       {/* Task & Interaction row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border border-line/20 bg-panel/10 rounded-xl p-4">
-          <span className="text-[10px] font-bold text-muted uppercase">
+          <span className="text-xs font-bold text-muted uppercase">
             Próxima tarefa
           </span>
           {nextTask ? (
@@ -113,7 +111,7 @@ export function CrmLeadDetailsTabsVisao({
                 {nextTask.content}
               </p>
               {typeof nextTask.metadata?.dueAt === "string" && (
-                <span className="text-[10px] font-bold text-muted">
+                <span className="text-xs font-bold text-muted">
                   Prazo:{" "}
                   {new Date(nextTask.metadata.dueAt).toLocaleString("pt-BR")}
                 </span>
@@ -126,7 +124,7 @@ export function CrmLeadDetailsTabsVisao({
           )}
         </div>
         <div className="border border-line/20 bg-panel/10 rounded-xl p-4">
-          <span className="text-[10px] font-bold text-muted uppercase">
+          <span className="text-xs font-bold text-muted uppercase">
             Última Interação
           </span>
           {lastActivity ? (
@@ -134,7 +132,7 @@ export function CrmLeadDetailsTabsVisao({
               <p className="text-xs font-extrabold text-app-text truncate">
                 {lastActivity.content}
               </p>
-              <span className="text-[10px] font-bold text-muted">
+              <span className="text-xs font-bold text-muted">
                 {new Date(lastActivity.occurredAt).toLocaleString("pt-BR")}
               </span>
             </div>
@@ -154,14 +152,14 @@ export function CrmLeadDetailsTabsVisao({
             <span className="text-xs font-black text-app-text">
               Insights IA
             </span>
-            <span className="text-[11px] font-bold text-muted">
+            <span className="text-xs font-bold text-muted">
               Analise esta oportunidade com IA
             </span>
           </div>
         </div>
         <button
           onClick={() => setLoadingAi(true)}
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-[11px] font-bold text-white hover:bg-blue-700 transition-colors shrink-0"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 transition-colors shrink-0"
           type="button"
         >
           <Sparkles className="size-3" />
@@ -188,7 +186,7 @@ export function CrmLeadDetailsTabsVisao({
                     {act.content}
                   </span>
                 </div>
-                <span className="text-[10px] font-bold text-muted shrink-0">
+                <span className="text-xs font-bold text-muted shrink-0">
                   {new Date(act.occurredAt).toLocaleString("pt-BR", {
                     dateStyle: "short",
                     timeStyle: "short",
@@ -204,7 +202,7 @@ export function CrmLeadDetailsTabsVisao({
                   Lead criado
                 </span>
               </div>
-              <span className="text-[10px] font-bold text-muted shrink-0">
+              <span className="text-xs font-bold text-muted shrink-0">
                 {new Date(lead.createdAt).toLocaleString("pt-BR", {
                   dateStyle: "short",
                   timeStyle: "short",

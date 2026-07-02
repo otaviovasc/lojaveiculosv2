@@ -133,7 +133,7 @@ export function InventoryDetailFinanceiroTab({
           </div>
 
           <div className="mt-6 p-4 rounded-xl bg-accent-soft/30 border border-accent-soft/20 flex flex-col gap-1.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+            <span className="text-xs font-black uppercase tracking-wider text-muted">
               Resultado Esperado
             </span>
             <div className="flex justify-between items-baseline">
@@ -154,25 +154,25 @@ export function InventoryDetailFinanceiroTab({
           </h3>
           <div className="grid grid-cols-2 gap-4 text-xs font-bold">
             <div>
-              <span className="block text-[9px] uppercase tracking-wider text-muted">
+              <span className="block text-xs uppercase tracking-wider text-muted">
                 Data de Entrada
               </span>
               <span className="text-app-text">11/06/2026</span>
             </div>
             <div>
-              <span className="block text-[9px] uppercase tracking-wider text-muted">
+              <span className="block text-xs uppercase tracking-wider text-muted">
                 Quilometragem
               </span>
               <span className="text-app-text">32.500 km</span>
             </div>
             <div>
-              <span className="block text-[9px] uppercase tracking-wider text-muted">
+              <span className="block text-xs uppercase tracking-wider text-muted">
                 Modalidade
               </span>
               <span className="text-app-text">Estoque Próprio</span>
             </div>
             <div>
-              <span className="block text-[9px] uppercase tracking-wider text-muted">
+              <span className="block text-xs uppercase tracking-wider text-muted">
                 Loja
               </span>
               <span className="text-app-text">Matriz</span>
@@ -180,7 +180,7 @@ export function InventoryDetailFinanceiroTab({
           </div>
 
           <div className="border-t border-line/60 pt-4 flex flex-col gap-3">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted mb-1 block">
+            <span className="text-xs font-black uppercase tracking-wider text-muted mb-1 block">
               Observações
             </span>
             <NotesBlockField
@@ -235,20 +235,20 @@ export function InventoryDetailFinanceiroTab({
             </div>
             <div className="flex items-center gap-4 text-xs">
               <div>
-                <span className="block text-[9px] uppercase tracking-wider text-muted">
+                <span className="block text-xs uppercase tracking-wider text-muted">
                   Data de Emissão
                 </span>
                 <span className="text-app-text">{nfe.date}</span>
               </div>
               <div>
-                <span className="block text-[9px] uppercase tracking-wider text-muted">
+                <span className="block text-xs uppercase tracking-wider text-muted">
                   Status SEFAZ
                 </span>
                 <span className="text-emerald-500 font-black">Autorizada</span>
               </div>
               <button
                 onClick={() => setNfe(null)}
-                className="min-h-9 rounded-lg border border-line px-3 text-[10px] font-black hover:bg-line/25 transition-all text-danger cursor-pointer ml-2"
+                className="min-h-9 rounded-lg border border-line px-3 text-xs font-black hover:bg-line/25 transition-all text-danger cursor-pointer ml-2"
                 type="button"
               >
                 Remover / Cancelar
@@ -262,7 +262,7 @@ export function InventoryDetailFinanceiroTab({
               <p className="text-xs font-black text-app-text">
                 Nenhuma Nota Fiscal emitida para este veículo.
               </p>
-              <p className="text-[10px] text-muted font-bold mt-1">
+              <p className="text-xs text-muted font-bold mt-1">
                 Emita a NF-e de entrada ou saída para autorização na SEFAZ.
               </p>
             </div>

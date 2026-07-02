@@ -246,13 +246,13 @@ export function ContratoCompraVendaPrint({
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{buyer.name || "Comprador"}</p>
-            <span className="text-[10px] font-bold">(Reconhecer Firma)</span>
-            <p className="text-[10px]">COMPRADOR(A)</p>
+            <span className="text-xs font-bold">(Reconhecer Firma)</span>
+            <p className="text-xs">COMPRADOR(A)</p>
           </div>
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{storeName}</p>
-            <p className="text-[10px]">VENDEDORA (REPRESENTANTE)</p>
+            <p className="text-xs">VENDEDORA (REPRESENTANTE)</p>
           </div>
         </div>
       </div>

@@ -66,7 +66,7 @@ export function InventoryDetailAnuncioTab() {
           <div className="lg:col-span-8 flex flex-col gap-5">
             {/* Descrição */}
             <div className="flex flex-col gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+              <span className="text-xs font-black uppercase tracking-wider text-muted">
                 Descrição
               </span>
               {isEditingDesc ? (
@@ -108,7 +108,7 @@ export function InventoryDetailAnuncioTab() {
                       setTempDesc(description);
                       setIsEditingDesc(true);
                     }}
-                    className="self-start text-[10px] font-black text-accent hover:underline cursor-pointer"
+                    className="self-start text-xs font-black text-accent hover:underline cursor-pointer"
                     type="button"
                   >
                     Editar Descrição
@@ -133,7 +133,7 @@ export function InventoryDetailAnuncioTab() {
 
             {/* Tags */}
             <div className="flex flex-col gap-2.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+              <span className="text-xs font-black uppercase tracking-wider text-muted">
                 Tags Recomendadas
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -142,7 +142,7 @@ export function InventoryDetailAnuncioTab() {
                     key={tag.id}
                     onClick={() => handleToggleTag(tag.id)}
                     className={
-                      "text-[10px] font-black px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none " +
+                      "text-xs font-black px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none " +
                       (tag.checked
                         ? "bg-accent text-inverse border-accent"
                         : "bg-app-elevated text-muted border-line hover:border-line-strong hover:text-app-text")
@@ -155,7 +155,7 @@ export function InventoryDetailAnuncioTab() {
                 {customTags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center gap-1 bg-accent-soft text-accent-strong text-[10px] font-black px-2.5 py-1 rounded-full border border-accent-soft/20"
+                    className="inline-flex items-center gap-1 bg-accent-soft text-accent-strong text-xs font-black px-2.5 py-1 rounded-full border border-accent-soft/20"
                   >
                     <span>{tag}</span>
                     <button
@@ -199,7 +199,7 @@ export function InventoryDetailAnuncioTab() {
           <div className="lg:col-span-3 flex flex-col gap-4 justify-between">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted flex items-center gap-1">
+                <span className="text-xs font-black uppercase tracking-wider text-muted flex items-center gap-1">
                   <span>Valor do anúncio</span>
                   <HelpCircle className="size-3 text-muted" />
                 </span>
@@ -210,13 +210,13 @@ export function InventoryDetailAnuncioTab() {
                   onChange={(e) => setAnuncioPrice(e.target.value)}
                   className="min-h-9 w-full rounded-lg border border-line bg-app px-2.5 text-xs font-bold outline-none"
                 />
-                <span className="text-[9px] font-bold text-muted mt-0.5">
+                <span className="text-xs font-bold text-muted mt-0.5">
                   Referência venda: R$ 150.000
                 </span>
               </div>
 
               <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                <span className="text-xs font-black uppercase tracking-wider text-muted">
                   Link do Vídeo
                 </span>
                 <div className="relative">
@@ -234,7 +234,7 @@ export function InventoryDetailAnuncioTab() {
 
             <div className="p-3 bg-accent-soft/30 border border-accent-soft/20 rounded-xl flex gap-2 items-start">
               <Info className="size-3.5 text-accent shrink-0 mt-0.5 animate-none" />
-              <p className="text-[9px] text-muted font-bold leading-normal">
+              <p className="text-xs text-muted font-bold leading-normal">
                 Anúncios completos com fotos, descrição e tags têm melhor
                 posicionamento nas buscas dos portais parceiros.
               </p>
@@ -249,7 +249,7 @@ export function InventoryDetailAnuncioTab() {
           <h3 className="text-sm font-black uppercase tracking-wider">
             Portais
           </h3>
-          <span className="text-[9px] font-black text-muted uppercase tracking-wider">
+          <span className="text-xs font-black text-muted uppercase tracking-wider">
             Veículo: Civic 2.0 EXL 2020 • R$ 150.000
           </span>
         </div>
@@ -259,7 +259,7 @@ export function InventoryDetailAnuncioTab() {
             <span className="text-xs font-black text-app-text">
               Portal próprio
             </span>
-            <div className="flex items-center gap-1 text-[10px] font-bold text-accent hover:underline cursor-pointer">
+            <div className="flex items-center gap-1 text-xs font-bold text-accent hover:underline cursor-pointer">
               <span>https://loja.lojaveiculosv2.com.br/veiculo/civic-2020</span>
               <ExternalLink className="size-3" />
             </div>
@@ -279,7 +279,7 @@ export function InventoryDetailAnuncioTab() {
           <p className="text-xs font-black text-app-text">
             Nenhum portal parceiro configurado para este veículo.
           </p>
-          <p className="text-[10px] text-muted font-bold">
+          <p className="text-xs text-muted font-bold">
             Ative integrações com Webmotors, iCarros, OLX nas configurações.
           </p>
           <button

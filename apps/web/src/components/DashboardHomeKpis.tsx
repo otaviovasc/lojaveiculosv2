@@ -19,10 +19,6 @@ export function DashboardHomeKpis({ stats }: { stats: DashboardStat[] }) {
             <div
               className={`kpi-card-premium ${getKpiToneClass(stat.tone)} group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:scale-[1.02]`}
             >
-              <div className="kpi-card-glow-container">
-                <div className="kpi-card-blob-1 animate-blob-1" />
-                <div className="kpi-card-blob-2 animate-blob-2" />
-              </div>
               <div className="gloss-overlay" />
               <div className="kpi-card-content">
                 <div className="kpi-card-header">

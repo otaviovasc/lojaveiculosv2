@@ -24,7 +24,7 @@ export function InternalPhotosZone({
                 <FileText className="size-8 text-muted" />
               )}
             </div>
-            <span className="text-[11px] font-bold text-app-text truncate">
+            <span className="text-xs font-bold text-app-text truncate">
               {photo.filename || `Arquivo #${photo.id.substring(0, 6)}`}
             </span>
           </div>

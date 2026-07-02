@@ -76,7 +76,7 @@ export function HeroSection({
           <div className="mb-6 flex items-center gap-3">
             <BrandMark logoUrl={logoUrl} photoUrl={photoUrl} />
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+              <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
                 {theme.badgeLabel || "Premium Dealership"}
               </p>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-semibold text-zinc-300">
@@ -107,14 +107,16 @@ export function HeroSection({
 
           {firstListing && onOpenListing ? (
             <button
-              className="mt-5 inline-flex max-w-xl items-center gap-2 rounded border border-white/15 bg-white/5 px-3 py-2 text-left text-xs font-bold text-zinc-200 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.99]"
+              className="mt-5 inline-flex max-w-xl flex-wrap items-center gap-2 rounded border border-white/15 bg-white/5 px-3 py-2 text-left text-sm font-bold text-zinc-200 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.99]"
               onClick={() => onOpenListing(firstListing.slug)}
               type="button"
             >
-              <span className="rounded bg-accent/20 px-2 py-1 text-[9px] font-black uppercase tracking-widest text-accent">
+              <span className="rounded bg-accent/20 px-2 py-1 text-xs font-black uppercase tracking-widest text-accent">
                 Destaque
               </span>
-              <span className="min-w-0 truncate">{firstListing.title}</span>
+              <span className="min-w-0 flex-1 basis-56 leading-snug">
+                {firstListing.title}
+              </span>
             </button>
           ) : null}
 
@@ -147,7 +149,7 @@ export function HeroSection({
                     <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent">
                       <Icon aria-hidden="true" className="size-3.5" />
                     </span>
-                    <span className="text-[11px] font-bold tracking-wide text-zinc-200">
+                    <span className="text-xs font-bold tracking-wide text-zinc-200">
                       {item.label}
                     </span>
                   </div>
@@ -161,7 +163,7 @@ export function HeroSection({
         {firstListing && onOpenListing ? (
           <div className="hidden lg:flex flex-col w-full max-w-sm ml-auto bg-black/40 backdrop-blur-md border border-white/15 rounded-lg p-6 shadow-2xl">
             <div className="mb-4">
-              <span className="bg-accent text-white text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded">
+              <span className="bg-accent text-white text-xs font-black tracking-widest uppercase px-2 py-0.5 rounded">
                 Destaque da semana
               </span>
               <h3 className="text-xl font-extrabold text-white mt-2 leading-tight">
@@ -170,7 +172,7 @@ export function HeroSection({
             </div>
 
             <div className="mt-4 space-y-3.5 border-t border-white/10 pt-4">
-              <div className="flex justify-between items-center text-xs">
+              <div className="flex justify-between gap-4 text-sm">
                 <span className="text-zinc-400 font-medium">Ano Modelo</span>
                 <span className="text-white font-bold">
                   {firstListing.modelYear ??
@@ -178,13 +180,13 @@ export function HeroSection({
                     "-"}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
+              <div className="flex justify-between gap-4 text-sm">
                 <span className="text-zinc-400 font-medium">Quilometragem</span>
                 <span className="text-white font-bold">
                   {formatPublicVehicleMileage(firstListing.mileageKm)}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-xs">
+              <div className="flex justify-between gap-4 text-sm">
                 <span className="text-zinc-400 font-medium">Preço</span>
                 <span className="text-accent font-black text-lg">
                   {formatPublicVehiclePrice(firstListing.priceCents)}
@@ -194,7 +196,7 @@ export function HeroSection({
 
             <button
               onClick={() => onOpenListing(firstListing.slug)}
-              className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded bg-accent text-xs font-bold text-inverse transition-all duration-300 hover:brightness-110 cursor-pointer"
+              className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded bg-accent text-sm font-bold text-inverse transition-all duration-300 hover:brightness-110 cursor-pointer"
             >
               Conhecer veículo →
             </button>
@@ -219,7 +221,7 @@ export function HeroSection({
       {/* Down Hint */}
       <a
         href="#estoque"
-        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 hidden md:flex flex-col items-center gap-1 text-[9px] font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors cursor-pointer"
+        className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 hidden md:flex flex-col items-center gap-1 text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-white transition-colors cursor-pointer"
       >
         <span>Ver Estoque</span>
         <ArrowDown className="size-3 text-accent animate-bounce" />
@@ -255,13 +257,13 @@ export function StockSection({
       <div className="public-storefront-shell px-6 py-16 md:py-20">
         <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between border-b border-line/60 pb-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
               {stockEyebrow(sectionType)}
             </p>
             <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
               {stockTitle(sectionType)}
             </h2>
-            <p className="mt-2 text-xs font-semibold text-muted">
+            <p className="mt-2 text-sm font-semibold text-muted">
               Mostrando {visibleListings.length}{" "}
               {visibleListings.length === 1 ? "veículo" : "veículos"}
             </p>
@@ -276,7 +278,7 @@ export function StockSection({
                 className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted"
               />
               <input
-                className="min-h-11 w-full rounded border border-line bg-panel pl-11 pr-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/50 focus:ring-2 focus:ring-accent/10"
+                className="min-h-11 w-full rounded border border-line bg-panel pl-11 pr-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/50 focus:ring-2 focus:ring-accent/10"
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Buscar por modelo"
                 value={query}

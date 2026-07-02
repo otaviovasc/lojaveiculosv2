@@ -131,7 +131,7 @@ export function CrmLeadDetailsTabs({
               selecione do computador
             </span>
           </span>
-          <span className="text-[10px] font-bold text-muted">Máximo 30MB</span>
+          <span className="text-xs font-bold text-muted">Máximo 30MB</span>
         </div>
         <div className="text-center py-2">
           <span className="text-xs font-bold text-muted">

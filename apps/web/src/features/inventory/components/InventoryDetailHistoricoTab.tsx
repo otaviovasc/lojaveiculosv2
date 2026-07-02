@@ -95,7 +95,7 @@ export function InventoryDetailHistoricoTab() {
             <h3 className="text-sm font-black uppercase tracking-wider">
               Insights IA
             </h3>
-            <span className="bg-amber-500/10 text-amber-500 border border-amber-500/25 text-[9px] font-black px-2 py-0.5 rounded-full select-none">
+            <span className="bg-amber-500/10 text-amber-500 border border-amber-500/25 text-xs font-black px-2 py-0.5 rounded-full select-none">
               Médio 58%
             </span>
           </div>
@@ -116,7 +116,7 @@ export function InventoryDetailHistoricoTab() {
           {isIaExpanded && (
             <div className="flex flex-col gap-4 mt-4 pt-4 border-t border-line/45">
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-app-text mb-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-app-text mb-1">
                   Próximos Passos
                 </h4>
                 <ul className="list-disc pl-4 flex flex-col gap-1">
@@ -128,7 +128,7 @@ export function InventoryDetailHistoricoTab() {
               </div>
 
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-app-text mb-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-app-text mb-1">
                   Análise de Mercado
                 </h4>
                 <p>
@@ -138,7 +138,7 @@ export function InventoryDetailHistoricoTab() {
               </div>
 
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-app-text mb-1 flex items-center gap-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-app-text mb-1 flex items-center gap-1">
                   <AlertTriangle className="size-3.5 text-amber-500 shrink-0" />
                   <span>Riscos Identificados</span>
                 </h4>
@@ -149,7 +149,7 @@ export function InventoryDetailHistoricoTab() {
               </div>
 
               <div>
-                <h4 className="text-[10px] font-black uppercase tracking-wider text-app-text mb-1">
+                <h4 className="text-xs font-black uppercase tracking-wider text-app-text mb-1">
                   Sugestões de Mitigação
                 </h4>
                 <p>
@@ -163,7 +163,7 @@ export function InventoryDetailHistoricoTab() {
 
         <button
           onClick={() => setIsIaExpanded(!isIaExpanded)}
-          className="self-center mt-2 flex items-center gap-1 text-[10px] font-black text-accent hover:underline uppercase tracking-wider cursor-pointer"
+          className="self-center mt-2 flex items-center gap-1 text-xs font-black text-accent hover:underline uppercase tracking-wider cursor-pointer"
           type="button"
         >
           {isIaExpanded ? (
@@ -197,7 +197,7 @@ export function InventoryDetailHistoricoTab() {
             >
               <span className="absolute -left-[21px] top-1 size-2.5 rounded-full bg-accent border border-panel shrink-0" />
               <span className="text-app-text font-black">{event.title}</span>
-              <span className="text-[10px] text-muted font-bold mt-0.5">
+              <span className="text-xs text-muted font-bold mt-0.5">
                 {event.timestamp}
               </span>
             </div>
@@ -217,7 +217,7 @@ export function InventoryDetailHistoricoTab() {
         {/* Filter Controls Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs font-bold">
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-muted">
+            <span className="text-xs uppercase tracking-wider text-muted">
               Operador
             </span>
             <select
@@ -232,7 +232,7 @@ export function InventoryDetailHistoricoTab() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-muted">
+            <span className="text-xs uppercase tracking-wider text-muted">
               Ação
             </span>
             <select
@@ -248,7 +248,7 @@ export function InventoryDetailHistoricoTab() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-muted">
+            <span className="text-xs uppercase tracking-wider text-muted">
               Data Inicial
             </span>
             <input
@@ -260,7 +260,7 @@ export function InventoryDetailHistoricoTab() {
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-[9px] uppercase tracking-wider text-muted">
+            <span className="text-xs uppercase tracking-wider text-muted">
               Data Final
             </span>
             <input
@@ -277,7 +277,7 @@ export function InventoryDetailHistoricoTab() {
           <div className="overflow-x-auto mt-2">
             <table className="w-full text-left text-xs font-bold">
               <thead>
-                <tr className="border-b border-line text-muted uppercase text-[9px] tracking-wider">
+                <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
                   <th className="py-2">Data / Hora</th>
                   <th className="py-2">Operador</th>
                   <th className="py-2">Ação</th>
@@ -292,13 +292,13 @@ export function InventoryDetailHistoricoTab() {
                   >
                     <td className="py-3 text-muted">{item.date}</td>
                     <td className="py-3 text-app-text font-black flex items-center gap-1.5">
-                      <div className="size-5 rounded-full bg-accent-soft text-accent text-[9px] font-black flex items-center justify-center">
+                      <div className="size-5 rounded-full bg-accent-soft text-accent text-xs font-black flex items-center justify-center">
                         <User className="size-2.5" />
                       </div>
                       <span>{item.user}</span>
                     </td>
                     <td className="py-3">
-                      <span className="bg-app-elevated border border-line text-muted text-[10px] font-black px-2 py-0.5 rounded">
+                      <span className="bg-app-elevated border border-line text-muted text-xs font-black px-2 py-0.5 rounded">
                         {item.action}
                       </span>
                     </td>

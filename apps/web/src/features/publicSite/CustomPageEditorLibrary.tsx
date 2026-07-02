@@ -56,7 +56,7 @@ export function BuilderBlockLibrary({
           if (!items.length) return null;
           return (
             <div key={group.label}>
-              <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.label}
               </h3>
               <div className="grid gap-2">
@@ -95,7 +95,7 @@ function LibraryBlockButton({
           <span className="block truncate text-sm font-black text-foreground">
             {blockLabel(type)}
           </span>
-          <span className="mt-0.5 line-clamp-2 block text-[11px] font-medium leading-snug text-muted-foreground">
+          <span className="mt-0.5 line-clamp-2 block text-xs font-medium leading-snug text-muted-foreground">
             {blockDescription(type)}
           </span>
         </span>
@@ -127,7 +127,7 @@ export function BuilderBlockList({
 }) {
   return (
     <div className="max-h-[46%] min-h-48 shrink-0 overflow-y-auto border-t border-border/50 p-3">
-      <h3 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         Blocos da pagina
       </h3>
       {components.length ? (

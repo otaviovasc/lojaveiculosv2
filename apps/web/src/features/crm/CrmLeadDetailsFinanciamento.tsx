@@ -171,7 +171,7 @@ export function CrmLeadDetailsFinanciamento({
                 <span className="text-xs font-black text-app-text">
                   Parcela Estimada:
                 </span>
-                <span className="text-[10px] font-bold text-muted">Price</span>
+                <span className="text-xs font-bold text-muted">Price</span>
               </div>
               <span className="text-2xl font-black text-accent-strong leading-none">
                 {months}x de {formatBrl(payment)}

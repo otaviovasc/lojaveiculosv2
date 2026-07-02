@@ -23,7 +23,7 @@ export function PublicVehicleCard({
           <VehicleImage listing={listing} />
 
           {/* Status Badge */}
-          <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-accent shadow-sm">
+          <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-xs font-black uppercase tracking-wider text-accent shadow-sm">
             Disponível
           </span>
 
@@ -34,21 +34,24 @@ export function PublicVehicleCard({
         {/* Content details */}
         <div className="p-5">
           {/* Title with brand emphasized */}
-          <h3 className="text-base font-extrabold leading-snug tracking-tight text-app-text transition-colors group-hover:text-accent">
+          <h3 className="text-lg font-extrabold leading-snug text-app-text transition-colors group-hover:text-accent">
             <span className="text-app-text">{brand}</span>
             {restTitle && (
-              <span className="font-medium text-muted ml-1.5">{restTitle}</span>
+              <>
+                {" "}
+                <span className="font-medium text-muted">{restTitle}</span>
+              </>
             )}
           </h3>
 
           {listing.description && (
-            <p className="mt-2 text-xs font-medium leading-relaxed text-muted line-clamp-2">
+            <p className="mt-2 text-sm font-medium leading-relaxed text-muted line-clamp-2">
               {listing.description}
             </p>
           )}
 
           {/* Quick specs: Year and Mileage with compact layout */}
-          <div className="mt-4 flex items-center gap-4 border-t border-line/40 pt-3 text-xs font-semibold text-muted">
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-line/40 pt-3 text-sm font-semibold text-muted">
             <span className="flex items-center gap-1.5">
               <Calendar className="size-3.5 text-muted/65" />
               <span>{listing.modelYear ?? listing.manufactureYear ?? "-"}</span>
@@ -69,7 +72,7 @@ export function PublicVehicleCard({
       <div className="px-5 pb-5 pt-0">
         <div className="mb-4 border-t border-line/60 pt-4 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[9px] font-black uppercase tracking-wider text-muted/80">
+            <span className="text-sm font-black uppercase tracking-wider text-muted/80">
               Preço sugerido
             </span>
             <p className="text-xl font-black tracking-tight text-accent mt-0.5">
@@ -78,7 +81,7 @@ export function PublicVehicleCard({
           </div>
 
           <button
-            className="flex h-10 items-center justify-center gap-1.5 rounded bg-accent px-4 text-xs font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded bg-accent px-4 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
             onClick={onOpen}
             type="button"
           >

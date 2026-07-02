@@ -1,8 +1,8 @@
 /* Agenda Panel */
 .agenda-item-premium {
   padding: 0.75rem;
-  background-color: rgba(237, 243, 247, 0.4);
-  border: 1px solid rgba(220, 228, 234, 0.4);
+  background-color: rgba(232, 227, 226, 0.4);
+  border: 1px solid rgba(160, 152, 152, 0.4);
   border-radius: 0.75rem;
   display: flex;
   align-items: center;
@@ -15,7 +15,7 @@
   border-color: rgba(255, 255, 255, 0.05);
 }
 .agenda-item-premium:hover {
-  border-color: rgba(220, 228, 234, 0.7);
+  border-color: rgba(160, 152, 152, 0.7);
   background-color: var(--color-panel);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
@@ -43,7 +43,7 @@
 .agenda-date-box-accent {
   background-color: var(--color-accent-soft);
   color: var(--color-accent);
-  border-color: rgba(237, 29, 36, 0.2);
+  border-color: rgba(225, 31, 38, 0.2);
 }
 
 .agenda-date-box-danger {
@@ -53,7 +53,7 @@
 }
 
 .agenda-date-month {
-  font-size: 0.5rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
   line-height: 1;
@@ -61,7 +61,7 @@
 }
 
 .agenda-date-day {
-  font-size: 1rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   line-height: 1;
   margin-top: 0.125rem;
@@ -73,8 +73,10 @@
 }
 
 .agenda-item-title {
-  font-size: 0.75rem;
-  font-weight: 900;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-transform: uppercase !important;
   color: var(--color-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -91,7 +93,7 @@
   align-items: center;
   gap: 0.375rem;
   margin-top: 0.25rem;
-  font-size: 0.625rem;
+  font-size: var(--font-size-xs);
   color: var(--color-muted);
   font-weight: 700;
   white-space: nowrap;
@@ -106,7 +108,7 @@
 .agenda-badge-muted {
   padding: 0.125rem 0.375rem;
   background-color: var(--color-line);
-  font-size: 0.5rem;
+  font-size: var(--font-size-xs);
   border-radius: var(--radius-sm);
   font-weight: 900;
   text-transform: uppercase;
@@ -121,7 +123,7 @@
   padding: 0.125rem 0.375rem;
   background-color: rgba(239, 91, 91, 0.1);
   color: var(--color-danger);
-  font-size: 0.5rem;
+  font-size: var(--font-size-xs);
   border-radius: var(--radius-sm);
   font-weight: 900;
   text-transform: uppercase;

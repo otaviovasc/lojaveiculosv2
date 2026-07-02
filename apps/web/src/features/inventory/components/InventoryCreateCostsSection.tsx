@@ -123,7 +123,7 @@ function SuggestionCard({
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-line bg-panel p-3">
       <div className="flex flex-col gap-0.5">
-        <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+        <span className="text-xs font-black uppercase tracking-wider text-muted">
           {title}
         </span>
         <strong className="text-sm font-black text-app-text">

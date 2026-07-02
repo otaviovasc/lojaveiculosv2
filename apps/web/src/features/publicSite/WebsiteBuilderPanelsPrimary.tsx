@@ -61,7 +61,7 @@ export function WebsiteBuilderTemplatePanel({
                 <div className="mb-2 flex items-center justify-between">
                   <div
                     className={cn(
-                      "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold transition-colors",
+                      "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-colors",
                       selected
                         ? "bg-primary/15 text-primary"
                         : "bg-muted/60 text-muted-foreground",
@@ -89,7 +89,7 @@ export function WebsiteBuilderTemplatePanel({
                 <p className="text-sm font-bold">
                   {websiteBuilderTemplateInfo[id].name}
                 </p>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">
+                <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
                   {websiteBuilderTemplateInfo[id].description}
                 </p>
               </div>
@@ -147,14 +147,12 @@ export function WebsiteBuilderBrandPanel({
           imageClassName="h-24 w-24 rounded-full"
           label="Sua Foto"
           onChange={(value) => updateConfig("corretorPhotoUrl", value)}
-          placeholder="https://..."
           value={config.corretorPhotoUrl ?? ""}
         />
         <WebsiteBuilderImageUrlField
           imageClassName="h-16 min-w-[120px] max-w-[140px] rounded-xl bg-card p-2"
           label="Sua Logo"
           onChange={(value) => updateConfig("logoUrl", value)}
-          placeholder="https://..."
           value={config.logoUrl ?? ""}
         />
       </div>
@@ -241,7 +239,7 @@ export function WebsiteBuilderHeroPanel({
               placeholder="Ex: O veiculo dos seus sonhos esta aqui"
               value={config.heroTitle}
             />
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Max. 80 caracteres
             </span>
           </div>
@@ -257,7 +255,7 @@ export function WebsiteBuilderHeroPanel({
               placeholder="Ex: Atendimento exclusivo e personalizado"
               value={config.heroSubtitle ?? ""}
             />
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Max. 160 caracteres
             </span>
           </div>

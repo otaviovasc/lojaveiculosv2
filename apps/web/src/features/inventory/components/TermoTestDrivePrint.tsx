@@ -190,12 +190,12 @@ export function TermoTestDrivePrint({
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{driver.name || "Condutor"}</p>
-            <p className="text-[10px]">CONDUTOR</p>
+            <p className="text-xs">CONDUTOR</p>
           </div>
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{storeName}</p>
-            <p className="text-[10px]">REPRESENTANTE</p>
+            <p className="text-xs">REPRESENTANTE</p>
           </div>
         </div>
       </div>

@@ -8,9 +8,12 @@ import { CustomPageEditor } from "./CustomPageEditor";
 import { CustomPagesList } from "./CustomPagesList";
 import { createDuplicatePageSlug, slugifyCustomPage } from "./customPageUtils";
 import { createBuilderConfigFromSettings } from "./storefrontBuilderConfig";
+import { StorefrontMediaLibraryProvider } from "./StorefrontMediaLibraryContext";
+import type { StorefrontMediaApi } from "./storefrontMediaApi";
 import type { StorefrontPagesApi } from "./storefrontPagesApi";
 import {
   createRuntimeSettingsApi,
+  createRuntimeStorefrontMediaApi,
   createRuntimeStorefrontPagesApi,
 } from "./storefrontRuntimeApis";
 import type {
@@ -23,9 +26,11 @@ import { WebsiteBuilderDesign } from "./WebsiteBuilderDesign";
 export function StorefrontCustomizationModule({
   initialTab = "design",
   pagesApi,
+  mediaApi,
   settingsApi,
 }: {
   initialTab?: StorefrontCustomizationTab;
+  mediaApi?: StorefrontMediaApi;
   pagesApi?: StorefrontPagesApi;
   settingsApi?: SettingsApi;
 }) {
@@ -36,6 +41,10 @@ export function StorefrontCustomizationModule({
   const runtimePagesApi = useMemo(
     () => pagesApi ?? createRuntimeStorefrontPagesApi(),
     [pagesApi],
+  );
+  const runtimeMediaApi = useMemo(
+    () => mediaApi ?? createRuntimeStorefrontMediaApi(),
+    [mediaApi],
   );
   const [savedSettings, setSavedSettings] =
     useState<StoreSettingsSnapshot | null>(null);
@@ -188,29 +197,33 @@ export function StorefrontCustomizationModule({
 
   if (initialTab === "design") {
     return (
-      <WebsiteBuilderDesign
-        isSaving={status.kind === "saving"}
-        onDirty={clearSavedStatus}
-        onSave={(input) => saveSettings(input.settings)}
-        settings={draftSettings}
-        statusMessage={toStatusMessage(status)}
-      />
+      <StorefrontMediaLibraryProvider api={runtimeMediaApi}>
+        <WebsiteBuilderDesign
+          isSaving={status.kind === "saving"}
+          onDirty={clearSavedStatus}
+          onSave={(input) => saveSettings(input.settings)}
+          settings={draftSettings}
+          statusMessage={toStatusMessage(status)}
+        />
+      </StorefrontMediaLibraryProvider>
     );
   }
 
   if (selectedPage) {
     return (
       <div className="website-builder-surface text-foreground">
-        <CustomPageEditor
-          config={builderConfig}
-          isSaving={status.kind === "saving"}
-          onBack={() => setSelectedPage(null)}
-          onDirty={clearSavedStatus}
-          onSave={savePage}
-          page={selectedPage}
-          statusMessage={toStatusMessage(status)}
-          storeSlug={draftSettings.identity.publicSlug}
-        />
+        <StorefrontMediaLibraryProvider api={runtimeMediaApi}>
+          <CustomPageEditor
+            config={builderConfig}
+            isSaving={status.kind === "saving"}
+            onBack={() => setSelectedPage(null)}
+            onDirty={clearSavedStatus}
+            onSave={savePage}
+            page={selectedPage}
+            statusMessage={toStatusMessage(status)}
+            storeSlug={draftSettings.identity.publicSlug}
+          />
+        </StorefrontMediaLibraryProvider>
       </div>
     );
   }

@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import type { ComponentType } from "react";
 import type { AppTheme } from "../../app/theme";
+import { Logo } from "./logo";
 
 export type DashboardSidebarItem<Id extends string = string> = {
   badge?: number | string;
@@ -37,11 +38,8 @@ export function SidebarWorkspace({
   if (collapsed) {
     return (
       <div className="flex h-20 items-center justify-center border-b border-line/60 px-2 py-4">
-        <img
-          src={
-            theme === "dark" ? "/icons/logo_lv_white.svg" : "/icons/logo_lv.svg"
-          }
-          alt="Loja Veículos"
+        <Logo
+          variant={theme === "dark" ? "icon-white" : "icon"}
           className="h-6 w-auto max-w-[64px] object-contain select-none transition-transform duration-300 hover:scale-105"
         />
       </div>
@@ -52,12 +50,9 @@ export function SidebarWorkspace({
     <div className="relative border-b border-line/60 p-4">
       {/* Brand logo container */}
       <div className="mb-4.5 px-1.5 flex items-center justify-center">
-        <img
-          src={
-            theme === "dark" ? "/icons/logo_lv_white.svg" : "/icons/logo_lv.svg"
-          }
-          alt="Loja Veículos"
+        <Logo
           className="h-7 w-auto object-contain select-none"
+          variant={theme === "dark" ? "full-white" : "full"}
         />
       </div>
 
@@ -70,13 +65,9 @@ export function SidebarWorkspace({
           >
             <span className="flex min-w-0 items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-panel dark:bg-white/5 shadow-inner border border-line-strong/10 group-hover:scale-105 transition-transform duration-300 p-1.5">
-                <img
-                  src={
-                    theme === "dark"
-                      ? "/icons/logo_lv_white.svg"
-                      : "/icons/logo_lv.svg"
-                  }
+                <Logo
                   alt="Loja"
+                  variant={theme === "dark" ? "icon-white" : "icon"}
                   className="size-full object-contain select-none"
                 />
               </span>
@@ -84,7 +75,7 @@ export function SidebarWorkspace({
                 <span className="truncate text-xs.5 font-black text-primary leading-tight group-hover:text-accent transition-colors">
                   {name}
                 </span>
-                <span className="truncate text-[9px] font-black uppercase tracking-widest text-muted mt-0.5 flex items-center gap-1.5">
+                <span className="truncate text-xs font-black uppercase tracking-widest text-muted mt-0.5 flex items-center gap-1.5">
                   <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   {meta}
                 </span>
@@ -166,7 +157,7 @@ export function DashboardSidebarNavItem<Id extends string>({
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.title : undefined}
       className={
-        "group relative flex min-h-9 items-center rounded-lg text-[13px] transition-all duration-200 cursor-pointer " +
+        "group relative flex min-h-9 items-center rounded-lg text-sm transition-all duration-200 cursor-pointer " +
         (active
           ? "bg-accent border border-accent/25 text-inverse font-black shadow-sm"
           : "text-muted hover:bg-app-elevated/60 hover:text-app-text border border-transparent") +
@@ -194,12 +185,12 @@ export function DashboardSidebarNavItem<Id extends string>({
       {collapsed ? null : (
         <span className="flex shrink-0 items-center gap-2 relative z-10">
           {item.shortcut ? (
-            <kbd className="hidden h-5 items-center rounded border border-line bg-app px-1.5 font-mono text-[9px] font-bold text-muted group-hover:inline-flex">
+            <kbd className="hidden h-5 items-center rounded border border-line bg-app px-1.5 font-mono text-xs font-bold text-muted group-hover:inline-flex">
               {item.shortcut}
             </kbd>
           ) : null}
           {item.badge ? (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent border border-accent/15 px-1.5 text-[9px] font-black text-white shadow-sm">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent border border-accent/15 px-1.5 text-xs font-black text-white shadow-sm">
               {item.badge}
             </span>
           ) : null}

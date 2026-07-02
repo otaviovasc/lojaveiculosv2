@@ -43,7 +43,7 @@ export function DocumentsTable({
   return (
     <FeatureTableFrame>
       <table className="min-w-full border-collapse text-left text-sm">
-        <thead className="bg-app/80 text-[10px] font-black uppercase tracking-wider text-muted border-b border-line">
+        <thead className="bg-app/80 text-xs font-black uppercase tracking-wider text-muted border-b border-line">
           <tr>
             {showSelect ? <th className="px-3 py-3.5 w-10" /> : null}
             <th className="px-4 py-3.5">Documento</th>
@@ -99,7 +99,7 @@ export function DocumentsTable({
                   >
                     {document.title}
                   </div>
-                  <div className="truncate text-[10px] font-bold text-muted mt-0.5">
+                  <div className="truncate text-xs font-bold text-muted mt-0.5">
                     {document.file.fileName}
                   </div>
                 </td>
@@ -109,7 +109,7 @@ export function DocumentsTable({
                   <div className="flex items-center h-10">
                     <span
                       className={
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider " +
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider " +
                         (origin === "manual"
                           ? "bg-pink-500/10 text-pink-500 border border-pink-500/20"
                           : "bg-violet-500/10 text-violet-500 border border-violet-500/20")
@@ -127,7 +127,7 @@ export function DocumentsTable({
                     {vehicle?.plate ? (
                       <MercosulPlateBadge plate={vehicle.plate} />
                     ) : (
-                      <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                      <span className="text-xs font-black uppercase tracking-wider text-muted">
                         Geral
                       </span>
                     )}

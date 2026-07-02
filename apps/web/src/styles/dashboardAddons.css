@@ -4,8 +4,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0.875rem;
-  background-color: rgba(237, 243, 247, 0.4);
-  border: 1px solid rgba(220, 228, 234, 0.4);
+  background-color: rgba(232, 227, 226, 0.4);
+  border: 1px solid rgba(160, 152, 152, 0.4);
   border-radius: 1rem;
 }
 :root[data-theme="dark"] .addon-row {
@@ -14,13 +14,15 @@
 }
 
 .addon-row-title {
-  font-size: 0.75rem;
-  font-weight: 900;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-transform: uppercase !important;
   color: var(--color-primary);
 }
 
 .addon-row-subtitle {
-  font-size: 0.5625rem;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-muted);
   text-transform: uppercase;
@@ -84,12 +86,16 @@
 }
 
 .addon-card-premium-whatsapp {
-  background: linear-gradient(135deg, #10b981 0%, #15803d 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-green-start) 0%,
+    #15803d 100%
+  );
   border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
 .addon-card-premium-nfe {
-  background: linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, var(--color-blue-start) 0%, #4f46e5 100%);
   border: 1px solid rgba(59, 130, 246, 0.25);
 }
 
@@ -118,13 +124,15 @@
 }
 
 .addon-card-title {
-  font-size: 0.75rem;
-  font-weight: 900;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  text-transform: uppercase !important;
   letter-spacing: 0.025em;
 }
 
 .addon-card-subtitle {
-  font-size: 0.5rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.8);
@@ -136,7 +144,7 @@
   padding: 0.125rem 0.5rem;
   background-color: rgba(255, 255, 255, 0.2);
   border-radius: 0.25rem;
-  font-size: 0.5rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.05em;

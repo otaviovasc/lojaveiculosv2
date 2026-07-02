@@ -16,7 +16,7 @@
 }
 
 .documents-upload-queue-header strong {
-  font-size: 0.9375rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
 }
 
@@ -57,7 +57,7 @@
 
 .documents-upload-item small {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -66,7 +66,7 @@
 
 .documents-upload-item-main label span,
 .documents-upload-kind-field span {
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
 }
 
 .documents-upload-item input,

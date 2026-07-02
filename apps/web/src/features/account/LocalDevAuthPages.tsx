@@ -10,6 +10,7 @@ import {
   FeatureAlert,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { AccountAccessGate, type AccountAccess } from "./AccountAccessGate";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
@@ -139,6 +140,7 @@ export function LocalDevAuthPage() {
       className="min-h-screen max-w-3xl justify-center"
       variant="plain"
     >
+      <Logo className="h-11 self-start" variant="full" />
       <FeaturePageHeader
         chip="Local QA"
         description="Contas seeded para validar permissões sem depender da sessão real do Clerk."

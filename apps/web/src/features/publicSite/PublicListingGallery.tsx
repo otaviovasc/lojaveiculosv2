@@ -172,7 +172,7 @@ function GalleryActionLabel({ count }: { count: number }) {
   if (count <= 1) return null;
 
   return (
-    <span className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded bg-black/70 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-white shadow-lg backdrop-blur">
+    <span className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded bg-black/70 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-white shadow-lg backdrop-blur">
       <Maximize2 aria-hidden="true" className="size-3.5" />
       {count} midias
     </span>

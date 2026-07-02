@@ -17,12 +17,12 @@
 }
 .documents-folder-sidebar-header strong {
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   font-weight: 950;
 }
 .documents-folder-sidebar-header span {
   color: var(--color-muted);
-  font-size: 0.72rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }
 
@@ -41,7 +41,7 @@
   border: 0;
   color: var(--color-text);
   flex: 1 1 auto;
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   min-width: 0;
   outline: none;
@@ -64,7 +64,7 @@
   align-items: center;
   color: var(--color-muted);
   display: flex;
-  font-size: 0.68rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   justify-content: space-between;
   letter-spacing: 0.05em;
@@ -76,7 +76,7 @@
   border: 1px solid var(--color-line);
   border-radius: 999px;
   color: var(--color-muted);
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
   padding: 0.1rem 0.45rem;
 }
 .documents-folder-sidebar-group ul {
@@ -144,7 +144,7 @@
 }
 .documents-folder-sidebar-row-text strong {
   color: var(--color-text);
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -152,7 +152,7 @@
 }
 .documents-folder-sidebar-row-text small {
   color: var(--color-muted);
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
   font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -163,7 +163,7 @@
   border: 1px solid var(--color-line);
   border-radius: 999px;
   color: var(--color-muted);
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
   font-style: normal;
   font-weight: 900;
   padding: 0.1rem 0.5rem;
@@ -181,7 +181,7 @@
 
 .documents-folder-sidebar-empty {
   color: var(--color-muted);
-  font-size: 0.78rem;
+  font-size: var(--font-size-sm);
   font-weight: 700;
   padding: 0.4rem 0.55rem;
 }
@@ -216,7 +216,7 @@
   color: var(--color-inverse);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.78rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   gap: 0.4rem;
   min-height: 2.4rem;

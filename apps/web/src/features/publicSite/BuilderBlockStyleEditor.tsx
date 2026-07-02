@@ -88,7 +88,7 @@ export function BuilderBlockStyleEditor({
 
   return (
     <section className="mt-5 rounded-lg border border-line bg-app p-3">
-      <p className="text-[10px] font-black uppercase tracking-widest text-muted">
+      <p className="text-xs font-black uppercase tracking-widest text-muted">
         Estilo do bloco
       </p>
       <EditorStack>

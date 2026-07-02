@@ -132,21 +132,33 @@ function DashboardPromoBanner({
               transition={DASHBOARD_RESOURCE_SLIDE_TRANSITION}
               className={`${DASHBOARD_RESOURCE_SLIDE_CLASS} ${currentResource.panelClass}`}
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <span className="promo-banner-tag">
-                    {currentResource.tag}
-                  </span>
-                  <h4 className="promo-banner-title">
-                    {currentResource.title}
-                  </h4>
-                </div>
-                <div className="promo-banner-icon-container">
-                  <Sparkles className="size-5 text-white/90 animate-pulse" />
-                </div>
+              {/* Background Image */}
+              <img
+                src={currentResource.imagePath}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none select-none"
+              />
+
+              {/* Dark gradient overlay for visual separation and readability */}
+              <div className="promo-banner-overlay" />
+
+              {/* Content Column: Tag, Title, Description, Button */}
+              <div className="flex flex-col items-start text-left relative z-10 w-full">
+                <span className="promo-banner-tag">{currentResource.tag}</span>
+                <h4 className="promo-banner-title mt-3.5">
+                  {currentResource.title}
+                </h4>
+                <p className="promo-banner-desc max-w-[65%] mt-2">
+                  {currentResource.desc}
+                </p>
+                <button className="promo-banner-btn mt-4">
+                  <span>{currentResource.buttonLabel}</span>
+                  <ArrowRight className="size-3" />
+                </button>
               </div>
-              <p className="promo-banner-desc">{currentResource.desc}</p>
-              <div className="promo-banner-footer">
+
+              {/* Footer: Carousel Dots */}
+              <div className="promo-banner-footer relative z-10 flex items-center justify-between w-full mt-auto">
                 <div className="promo-banner-dots">
                   {dashboardResources.map((_, i) => (
                     <button
@@ -163,10 +175,6 @@ function DashboardPromoBanner({
                     />
                   ))}
                 </div>
-                <button className="promo-banner-btn">
-                  <span>Saiba Mais</span>
-                  <ArrowRight className="size-3" />
-                </button>
               </div>
             </motion.div>
           </AnimatePresence>

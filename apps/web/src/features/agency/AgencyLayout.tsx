@@ -81,7 +81,7 @@ export function AgencyLayout() {
               <p className="text-sm font-black uppercase tracking-wider">
                 Agency Console
               </p>
-              <p className="text-[10px] font-bold text-accent tracking-widest uppercase">
+              <p className="text-xs font-bold text-accent tracking-widest uppercase">
                 Portal de Gestão
               </p>
             </div>

@@ -36,32 +36,46 @@
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  position: relative;
+  background: rgba(255, 255, 255, 0.45);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(220, 228, 234, 0.7);
-  box-shadow: 0 8px 30px rgba(21, 34, 45, 0.02);
+  border: 1px solid rgba(160, 152, 152, 0.25);
+  box-shadow: 0 8px 30px rgba(21, 21, 21, 0.02);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 1.5rem;
   overflow: hidden;
 }
 
+.glass-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
 :root[data-theme="dark"] .glass-panel {
-  background: rgba(17, 24, 39, 0.65);
+  background: rgba(21, 21, 21, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel:hover {
-  border-color: color-mix(in srgb, var(--color-line-strong) 70%, transparent);
-  box-shadow: 0 10px 28px rgba(21, 34, 45, 0.04);
+  border-color: rgba(225, 31, 38, 0.25);
+  box-shadow: 0 10px 28px rgba(225, 31, 38, 0.03);
 }
 
 :root[data-theme="dark"] .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.36);
+  border-color: rgba(225, 31, 38, 0.25);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.35);
 }
 
 .kpi-card-premium {
@@ -126,16 +140,32 @@
 }
 
 .neon-progress-green {
-  background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-green-start) 0%,
+    var(--color-green-start) 100%
+  );
 }
 .neon-progress-blue {
-  background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-blue-start) 0%,
+    var(--color-blue-start) 100%
+  );
 }
 .neon-progress-violet {
-  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-warning) 0%,
+    var(--color-warning) 100%
+  );
 }
 .neon-progress-pink {
-  background: linear-gradient(90deg, #ec4899 0%, #f472b6 100%);
+  background: linear-gradient(
+    90deg,
+    var(--color-accent) 0%,
+    var(--color-accent) 100%
+  );
 }
 
 .hover-scale-subtle {
@@ -153,43 +183,56 @@
 }
 
 .bg-logo-pattern {
-  background-image: url("/icons/logo_outline_dark.svg");
+  background-image: url("/icons/lv-logo-outline-dark.svg");
   background-repeat: repeat;
   background-size: 280px 116px;
   opacity: 0.035;
 }
 
 :root[data-theme="dark"] .bg-logo-pattern {
-  background-image: url("/icons/logo_outline_light.svg");
+  background-image: url("/icons/lv-logo-outline-light.svg");
   opacity: 0.02;
 }
 
 .bg-logo-pattern-subtle {
-  background-image: url("/icons/logo_outline_dark.svg");
+  background-image: url("/icons/lv-logo-outline-dark.svg");
   background-repeat: repeat;
   background-size: 180px 75px;
 }
 
 :root[data-theme="dark"] .bg-logo-pattern-subtle {
-  background-image: url("/icons/logo_outline_light.svg");
+  background-image: url("/icons/lv-logo-outline-light.svg");
 }
 
 .glass-panel-branded {
   position: relative;
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(220, 228, 234, 0.65);
-  box-shadow: 0 8px 32px rgba(21, 34, 45, 0.02);
+  border: 1px solid rgba(160, 152, 152, 0.65);
+  box-shadow: 0 8px 32px rgba(21, 21, 21, 0.02);
   transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   border-radius: 1.5rem;
   overflow: hidden;
 }
 
+.glass-panel-branded::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  z-index: 1;
+}
+
 :root[data-theme="dark"] .glass-panel-branded {
-  background: rgba(17, 24, 39, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.045);
-  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.35);
+  background: rgba(21, 21, 21, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 12px 42px rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel-branded.hover-shift:hover {
@@ -197,13 +240,13 @@
 }
 
 .glass-panel-branded:hover {
-  border-color: rgba(237, 29, 36, 0.25);
-  box-shadow: 0 12px 30px rgba(237, 29, 36, 0.04);
+  border-color: rgba(225, 31, 38, 0.25);
+  box-shadow: 0 12px 30px rgba(225, 31, 38, 0.04);
 }
 
 :root[data-theme="dark"] .glass-panel-branded:hover {
-  border-color: rgba(255, 74, 81, 0.25);
-  box-shadow: 0 16px 40px rgba(255, 74, 81, 0.06);
+  border-color: rgba(225, 31, 38, 0.25);
+  box-shadow: 0 16px 40px rgba(225, 31, 38, 0.06);
 }
 
 .card-header-gradient {

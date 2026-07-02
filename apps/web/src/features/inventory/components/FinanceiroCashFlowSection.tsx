@@ -29,7 +29,7 @@ export function FinanceiroCashFlowSection({
         <h3 className="text-sm font-black uppercase tracking-wider">
           Fluxo de Caixa
         </h3>
-        <span className="text-[10px] font-black text-muted uppercase tracking-widest bg-app-elevated border border-line px-2.5 py-1 rounded">
+        <span className="text-xs font-black text-muted uppercase tracking-widest bg-app-elevated border border-line px-2.5 py-1 rounded">
           Regime de Caixa
         </span>
       </div>
@@ -40,7 +40,7 @@ export function FinanceiroCashFlowSection({
             <ArrowUpRight className="size-4.5" />
           </div>
           <div>
-            <span className="block text-[9px] uppercase tracking-wider text-muted">
+            <span className="block text-xs uppercase tracking-wider text-muted">
               Entradas
             </span>
             <span className="text-sm font-black text-emerald-500">
@@ -54,7 +54,7 @@ export function FinanceiroCashFlowSection({
             <ArrowDownLeft className="size-4.5" />
           </div>
           <div>
-            <span className="block text-[9px] uppercase tracking-wider text-muted">
+            <span className="block text-xs uppercase tracking-wider text-muted">
               Saídas
             </span>
             <span className="text-sm font-black text-rose-500">
@@ -68,7 +68,7 @@ export function FinanceiroCashFlowSection({
             <DollarSign className="size-4.5" />
           </div>
           <div>
-            <span className="block text-[9px] uppercase tracking-wider text-muted">
+            <span className="block text-xs uppercase tracking-wider text-muted">
               Saldo Líquido
             </span>
             <span className="text-sm font-black text-blue-500">
@@ -81,7 +81,7 @@ export function FinanceiroCashFlowSection({
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-left text-xs font-bold">
           <thead>
-            <tr className="border-b border-line text-muted uppercase text-[9px] tracking-wider">
+            <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
               <th className="py-2">Data</th>
               <th className="py-2">Descrição</th>
               <th className="py-2">Origem</th>

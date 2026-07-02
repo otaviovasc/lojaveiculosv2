@@ -72,7 +72,7 @@ export function InventoryDetailOverview({
               </div>
             )}
             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/72 to-transparent p-5 text-white">
-              <span className="rounded bg-white/15 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] backdrop-blur-sm">
+              <span className="rounded bg-white/15 px-2 py-1 text-xs font-black uppercase tracking-[0.16em] backdrop-blur-sm">
                 {statusLabel(listing.status)}
               </span>
               <h2 className="mt-3 text-2xl font-black leading-tight">
@@ -88,7 +88,7 @@ export function InventoryDetailOverview({
 
           <div className="grid content-start gap-4 border-t border-line bg-app p-5 md:border-l md:border-t-0">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted">
+              <span className="text-xs font-black uppercase tracking-widest text-muted">
                 Preco anunciado
               </span>
               <p className="mt-1 text-3xl font-black tracking-tight text-accent">
@@ -124,7 +124,7 @@ export function InventoryDetailOverview({
               />
             </div>
             <div className="rounded-xl border border-line bg-panel p-3">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted">
+              <span className="text-xs font-black uppercase tracking-widest text-muted">
                 Custos registrados
               </span>
               <p className="mt-1 text-lg font-black text-app-text">
@@ -138,7 +138,7 @@ export function InventoryDetailOverview({
       <div className="rounded-2xl border border-line bg-panel p-5 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-muted">
+            <p className="text-xs font-black uppercase tracking-widest text-muted">
               Prontidao do anuncio
             </p>
             <h3 className="mt-1 text-xl font-black text-app-text">
@@ -180,7 +180,7 @@ function OverviewMetric({
     <div className="rounded-xl border border-line bg-panel p-3">
       <div className="flex items-center gap-2 text-muted">
         {icon}
-        <span className="text-[10px] font-black uppercase tracking-wider">
+        <span className="text-xs font-black uppercase tracking-wider">
           {label}
         </span>
       </div>

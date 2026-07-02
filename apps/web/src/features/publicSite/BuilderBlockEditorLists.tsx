@@ -7,6 +7,7 @@ import {
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import type { BuilderRecord } from "./BuilderBlockEditorFields";
 import { textValue } from "./BuilderBlockEditorFields";
+import { StorefrontImagePicker } from "./StorefrontImagePicker";
 
 export function BuilderTextItems({
   items,
@@ -117,11 +118,12 @@ export function BuilderImageItems({
           className="grid gap-2 rounded-lg border border-line bg-panel p-2"
           key={itemKey(item, index)}
         >
-          <FeatureInput
-            onChange={(event) =>
-              onChange(updateRecordAt(items, index, "url", event.target.value))
+          <StorefrontImagePicker
+            imageClassName="h-28 w-full rounded-lg"
+            label="Imagem"
+            onChange={(value) =>
+              onChange(updateRecordAt(items, index, "url", value ?? ""))
             }
-            placeholder="URL da imagem"
             value={textValue(item.url)}
           />
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
@@ -160,7 +162,12 @@ export function BuilderTestimonialsItems({
       onAdd={() =>
         onChange([
           ...items,
-          { id: createItemId("dep"), name: "Cliente", quote: "" },
+          {
+            id: createItemId("dep"),
+            imageSrc: "",
+            name: "Cliente",
+            quote: "",
+          },
         ])
       }
     >
@@ -175,6 +182,14 @@ export function BuilderTestimonialsItems({
             }
             placeholder="Nome"
             value={textValue(item.name)}
+          />
+          <StorefrontImagePicker
+            imageClassName="size-20 rounded-full"
+            label="Imagem do cliente"
+            onChange={(value) =>
+              onChange(updateRecordAt(items, index, "imageSrc", value ?? ""))
+            }
+            value={textValue(item.imageSrc)}
           />
           <FeatureInput
             onChange={(event) =>

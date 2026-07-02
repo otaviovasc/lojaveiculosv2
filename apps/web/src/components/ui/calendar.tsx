@@ -32,7 +32,7 @@ function Calendar({
         month_caption:
           "flex justify-center pt-0.5 relative items-center mb-0.5",
         caption_label:
-          "text-[9px] font-black uppercase tracking-widest text-primary",
+          "text-xs font-black uppercase tracking-widest text-primary",
         nav: "space-x-1 flex items-center",
         button_previous: cn(
           buttonVariants({ variant: "outline" }),
@@ -45,27 +45,28 @@ function Calendar({
         month_grid: "w-full border-collapse space-y-0",
         weekdays: "flex",
         weekday:
-          "text-muted-foreground rounded-md w-6 font-black text-[8px] uppercase tracking-tighter",
+          "text-muted-foreground rounded-md w-6 font-black text-xs uppercase tracking-tighter",
         week: "flex w-full mt-0.5",
         day: cn(
-          "relative p-0 text-center text-[10px] focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/5 first:[&:has([aria-selected])]:rounded-l-sm last:[&:has([aria-selected])]:rounded-r-sm",
+          "relative p-0 text-center text-xs focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/5 first:[&:has([aria-selected])]:rounded-l-sm last:[&:has([aria-selected])]:rounded-r-sm",
           props.mode === "range"
             ? "[&:has(>.day-range-end)]:rounded-r-sm [&:has(>.day-range-start)]:rounded-l-sm first:[&:has([aria-selected])]:rounded-l-sm last:[&:has([aria-selected])]:rounded-r-sm"
             : "[&:has([aria-selected])]:rounded-sm",
         ),
         day_button: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-6 w-6 p-0 font-normal rounded-sm transition-all hover:bg-primary hover:text-white text-[10px]",
+          "h-6 w-6 p-0 font-normal rounded-sm transition-all hover:bg-primary hover:text-white text-xs",
         ),
         range_start:
           "day-range-start [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:font-bold [&>button]:rounded-l-sm",
         range_end:
           "day-range-end [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:font-bold [&>button]:rounded-r-sm",
         selected:
-          "[&>button]:bg-primary [&>button]:text-primary-foreground [&>button:hover]:bg-primary [&>button:hover]:text-primary-foreground [&>button:focus]:bg-primary [&>button:focus]:text-primary-foreground",
+          "[&:not(.day-outside)>button]:bg-primary [&:not(.day-outside)>button]:text-primary-foreground [&:not(.day-outside)>button:hover]:bg-accent-strong [&:not(.day-outside)>button:hover]:text-inverse [&:not(.day-outside)>button:focus]:bg-primary [&:not(.day-outside)>button:focus]:text-primary-foreground",
         today:
-          "[&>button]:bg-accent [&>button]:text-accent-foreground [&>button]:font-bold",
-        outside: "[&>button]:text-muted-foreground/20 opacity-30",
+          "[&:not(.day-outside)>button]:bg-accent [&:not(.day-outside)>button]:text-accent-foreground [&:not(.day-outside)>button]:font-bold",
+        outside:
+          "day-outside [&>button]:text-muted-foreground/20 opacity-30 pointer-events-none",
         disabled: "[&>button]:text-muted-foreground opacity-30",
         range_middle: "[&>button]:bg-primary/10 [&>button]:text-primary",
         hidden: "invisible",

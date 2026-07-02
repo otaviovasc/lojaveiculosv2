@@ -59,7 +59,7 @@ export function PresetsSection({
         </div>
         <div className="space-y-2">
           {presets.length === 0 ? (
-            <p className="text-[10px] text-muted font-bold italic text-center py-2">
+            <p className="text-xs text-muted font-bold italic text-center py-2">
               Nenhum modelo personalizado salvo.
             </p>
           ) : (

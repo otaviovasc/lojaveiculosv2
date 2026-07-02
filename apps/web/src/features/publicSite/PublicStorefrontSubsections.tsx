@@ -27,7 +27,7 @@ export function AboutSection({
     <section className="border-b border-line bg-panel">
       <div className="public-storefront-shell grid gap-12 px-6 py-16 md:grid-cols-2 md:py-20 lg:py-24">
         <div className="flex min-w-0 flex-col justify-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
             Nossa História
           </p>
           <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text uppercase">
@@ -44,7 +44,7 @@ export function AboutSection({
               <span className="block text-lg font-extrabold text-accent">
                 100%
               </span>
-              <span className="block text-[10px] font-black uppercase text-muted tracking-wider mt-1">
+              <span className="block text-xs font-black uppercase text-muted tracking-wider mt-1">
                 Laudo Aprovado
               </span>
             </div>
@@ -52,7 +52,7 @@ export function AboutSection({
               <span className="block text-lg font-extrabold text-accent">
                 Garantia
               </span>
-              <span className="block text-[10px] font-black uppercase text-muted tracking-wider mt-1">
+              <span className="block text-xs font-black uppercase text-muted tracking-wider mt-1">
                 Procedência
               </span>
             </div>
@@ -87,45 +87,61 @@ export function TestimonialsSection({
   return (
     <section className="border-b border-line bg-app">
       <div className="public-storefront-shell px-6 py-16 md:py-20 lg:py-24">
-        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+        <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
           DEPOIMENTOS
         </p>
         <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
           O que dizem nossos clientes
         </h2>
         <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {testimonials.map((testimonial) => (
-            <article
-              className="public-editorial-card rounded-lg p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
-              key={testimonial.id}
-            >
-              <div className="flex gap-1 text-accent">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <Star
-                    key={i}
-                    aria-hidden="true"
-                    className="size-3.5 fill-current"
-                  />
-                ))}
-              </div>
-              <p className="mt-4 text-xs font-semibold leading-relaxed text-app-text italic">
-                "{testimonial.quote}"
-              </p>
-              <div className="mt-4 pt-4 border-t border-line/60 flex items-center justify-between">
-                <div>
-                  <strong className="text-xs font-bold text-app-text block">
-                    {testimonial.name}
-                  </strong>
-                  <span className="text-[10px] font-semibold text-muted mt-0.5 block">
-                    {testimonial.role}
+          {testimonials.map((testimonial) => {
+            const imageSrc = readString(testimonial.imageSrc);
+            return (
+              <article
+                className="public-editorial-card rounded-lg p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/30 hover:shadow-lg"
+                key={testimonial.id}
+              >
+                <div className="flex gap-1 text-accent">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Star
+                      key={i}
+                      aria-hidden="true"
+                      className="size-3.5 fill-current"
+                    />
+                  ))}
+                </div>
+                <p className="mt-4 text-xs font-semibold leading-relaxed text-app-text italic">
+                  "{testimonial.quote}"
+                </p>
+                <div className="mt-4 flex items-center justify-between gap-4 border-t border-line/60 pt-4">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {imageSrc ? (
+                      <img
+                        alt=""
+                        className="size-12 shrink-0 rounded-full border border-line bg-app object-cover"
+                        src={imageSrc}
+                      />
+                    ) : (
+                      <span className="grid size-12 shrink-0 place-items-center rounded-full border border-line bg-app text-muted">
+                        <UserRound aria-hidden="true" className="size-5" />
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <strong className="block truncate text-xs font-bold text-app-text">
+                        {testimonial.name}
+                      </strong>
+                      <span className="mt-0.5 block truncate text-xs font-semibold text-muted">
+                        {testimonial.role}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded bg-accent-soft px-2 py-0.5 text-xs font-black uppercase tracking-widest text-accent/70">
+                    Cliente Verificado
                   </span>
                 </div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-accent/70 bg-accent-soft px-2 py-0.5 rounded">
-                  Cliente Verificado
-                </span>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>

@@ -56,7 +56,7 @@ export function InventoryCreateMediaCard({
             {isCover ? "capa" : item.kind}
           </InventoryBadge>
           {index > 0 ? (
-            <span className="inline-flex items-center gap-1 rounded-md border border-line bg-panel/90 px-2 py-1 text-[10px] font-black text-muted shadow-sm">
+            <span className="inline-flex items-center gap-1 rounded-md border border-line bg-panel/90 px-2 py-1 text-xs font-black text-muted shadow-sm">
               <Move className="size-3" />#{index + 1}
             </span>
           ) : null}

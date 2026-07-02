@@ -61,45 +61,26 @@
 }
 
 .card-header-icon {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid transparent;
   flex-shrink: 0;
 }
 
 .card-header-icon-blue {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
-  border-color: rgba(59, 130, 246, 0.1);
-}
-:root[data-theme="dark"] .card-header-icon-blue {
-  background-color: rgba(59, 130, 246, 0.2);
+  color: var(--color-blue-start);
 }
 
 .card-header-icon-violet {
-  background-color: rgba(139, 92, 246, 0.1);
-  color: #8b5cf6;
-  border-color: rgba(139, 92, 246, 0.1);
-}
-:root[data-theme="dark"] .card-header-icon-violet {
-  background-color: rgba(139, 92, 246, 0.2);
+  color: var(--color-warning);
 }
 
 .card-header-icon-amber {
-  background-color: rgba(245, 197, 66, 0.1);
   color: #f5c542;
-  border-color: rgba(245, 197, 66, 0.1);
-}
-:root[data-theme="dark"] .card-header-icon-amber {
-  background-color: rgba(245, 197, 66, 0.2);
 }
 
 .card-header-title {
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   color: var(--color-primary);
   text-transform: uppercase;

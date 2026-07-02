@@ -71,12 +71,12 @@ export function CrmLeadDetailsTabsReunioes({
                 {m.content}
               </span>
               {typeof m.metadata?.description === "string" && (
-                <p className="text-[11px] font-bold text-muted leading-relaxed">
+                <p className="text-xs font-bold text-muted leading-relaxed">
                   {m.metadata.description}
                 </p>
               )}
               {typeof m.metadata?.scheduledAt === "string" && (
-                <span className="text-[10px] font-bold text-muted flex items-center gap-1 mt-1">
+                <span className="text-xs font-bold text-muted flex items-center gap-1 mt-1">
                   <Calendar className="size-3" />
                   <span>
                     Agendada para:{" "}
@@ -118,7 +118,7 @@ export function CrmLeadDetailsTabsReunioes({
 
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Assunto
                 </span>
                 <input
@@ -130,7 +130,7 @@ export function CrmLeadDetailsTabsReunioes({
               </label>
 
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Descrição
                 </span>
                 <textarea
@@ -143,7 +143,7 @@ export function CrmLeadDetailsTabsReunioes({
 
               <div className="grid grid-cols-2 gap-4">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-black uppercase text-muted">
+                  <span className="text-xs font-black uppercase text-muted">
                     Data
                   </span>
                   <input
@@ -155,7 +155,7 @@ export function CrmLeadDetailsTabsReunioes({
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-[10px] font-black uppercase text-muted">
+                  <span className="text-xs font-black uppercase text-muted">
                     Horário
                   </span>
                   <input

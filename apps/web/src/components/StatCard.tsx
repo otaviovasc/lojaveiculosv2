@@ -13,7 +13,7 @@ export function StatCard({ stat }: { stat: DashboardStat }) {
         <p className="text-3xl font-black leading-none">
           <AnimatedCounter value={stat.value} />
         </p>
-        <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-white-muted">
+        <p className="mt-2 text-xs font-black uppercase tracking-widest text-white-muted">
           {stat.label}
         </p>
         <p className="mt-2 text-xs font-bold text-white-muted">

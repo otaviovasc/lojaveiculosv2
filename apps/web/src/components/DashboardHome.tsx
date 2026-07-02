@@ -41,6 +41,13 @@ export function DashboardHome({
   const bodyState = getDashboardBodyState(status, dashboard);
   const publicStoreSlug = readRuntimeStoreSlug();
 
+  const [startDate, setStartDate] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d;
+  });
+  const [endDate, setEndDate] = useState<Date>(() => new Date());
+
   const refresh = useCallback(async () => {
     setStatus({ kind: "loading" });
     try {
@@ -62,7 +69,7 @@ export function DashboardHome({
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, startDate, endDate]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -125,6 +132,10 @@ export function DashboardHome({
           onCopyLink={() => void handleCopyLink()}
           onVisitStore={handleVisitStore}
           publicSlug={publicStoreSlug}
+          startDate={startDate}
+          endDate={endDate}
+          onStartDateChange={setStartDate}
+          onEndDateChange={setEndDate}
         />
         <DashboardHomeKpis stats={stats} />
         <div className="dashboard-panels-grid">

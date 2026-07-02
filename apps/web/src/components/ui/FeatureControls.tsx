@@ -109,7 +109,7 @@ export function FeatureSegmentedControl<Value extends string>({
           <button
             aria-pressed={active}
             className={cx(
-              "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-[10px] font-black transition-all cursor-pointer",
+              "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-xs font-black transition-all cursor-pointer",
               active
                 ? "bg-accent text-inverse shadow-sm"
                 : "text-muted hover:text-app-text",

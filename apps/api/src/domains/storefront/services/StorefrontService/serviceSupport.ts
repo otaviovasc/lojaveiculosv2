@@ -1,6 +1,8 @@
 import type { PublicStorefrontRepository } from "../../ports/publicStorefrontRepository.js";
+import type { StorefrontMediaRepository } from "../../ports/storefrontMediaRepository.js";
 import type { StorefrontPageRepository } from "../../ports/storefrontPageRepository.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 
 export class PublicStorefrontRepositoryError extends Error {
   constructor() {
@@ -44,6 +46,27 @@ export class StorefrontPageScopeError extends Error {
   }
 }
 
+export class StorefrontMediaRepositoryError extends Error {
+  constructor() {
+    super("Storefront media repository port is not configured");
+    this.name = "StorefrontMediaRepositoryError";
+  }
+}
+
+export class StorefrontMediaStorageError extends Error {
+  constructor() {
+    super("Storefront media object storage port is not configured");
+    this.name = "StorefrontMediaStorageError";
+  }
+}
+
+export class StorefrontMediaValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StorefrontMediaValidationError";
+  }
+}
+
 export function getPublicStorefrontRepository(
   repository?: PublicStorefrontRepository,
 ): PublicStorefrontRepository {
@@ -58,6 +81,20 @@ export function getStorefrontPageRepository(
   throw new StorefrontPageRepositoryError();
 }
 
+export function getStorefrontMediaRepository(
+  repository?: StorefrontMediaRepository,
+): StorefrontMediaRepository {
+  if (repository) return repository;
+  throw new StorefrontMediaRepositoryError();
+}
+
+export function getStorefrontMediaStorage(
+  storage?: ObjectStorage,
+): ObjectStorage {
+  if (storage) return storage;
+  throw new StorefrontMediaStorageError();
+}
+
 export function requireStorefrontPageScope(context: ServiceContext): {
   storeId: string;
   tenantId: string;
@@ -66,3 +103,5 @@ export function requireStorefrontPageScope(context: ServiceContext): {
   if (!context.tenantId) throw new StorefrontPageScopeError("tenantId");
   return { storeId: context.storeId, tenantId: context.tenantId };
 }
+
+export const requireStorefrontMediaScope = requireStorefrontPageScope;

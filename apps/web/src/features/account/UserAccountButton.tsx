@@ -35,10 +35,10 @@ function LocalDevUserAccountButton({ compact }: { compact: boolean }) {
       </span>
       {!compact ? (
         <span className="flex min-w-0 flex-1 flex-col leading-tight gap-0.5">
-          <span className="truncate rounded-md px-2.5 py-1.5 text-[11px] font-black text-primary">
+          <span className="truncate rounded-md px-2.5 py-1.5 text-xs font-black text-primary">
             {name}
           </span>
-          <span className="truncate pl-2.5 text-[8px] font-black uppercase tracking-widest text-muted">
+          <span className="truncate pl-2.5 text-xs font-black uppercase tracking-widest text-muted">
             {email}
           </span>
         </span>
@@ -69,10 +69,10 @@ function ConfiguredUserAccountButton({ compact }: { compact: boolean }) {
         <UserButton />
       </div>
       <div className="flex min-w-0 flex-1 flex-col leading-tight gap-0.5">
-        <p className="truncate rounded-md px-2.5 py-1.5 text-[11px] font-black text-primary">
+        <p className="truncate rounded-md px-2.5 py-1.5 text-xs font-black text-primary">
           {name}
         </p>
-        <span className="truncate pl-2.5 text-[8px] font-black uppercase tracking-widest text-muted">
+        <span className="truncate pl-2.5 text-xs font-black uppercase tracking-widest text-muted">
           {email}
         </span>
       </div>

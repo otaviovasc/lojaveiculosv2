@@ -5,6 +5,8 @@ export type DashboardResource = {
   panelClass: string;
   tag: string;
   title: string;
+  imagePath: string;
+  buttonLabel: string;
 };
 
 export type DashboardQuickAction = {
@@ -49,18 +51,24 @@ export const dashboardResources: readonly DashboardResource[] = [
     panelClass: "dashboard-resource-api",
     tag: "Agilidade",
     title: "Estoque via API (Portais)",
+    imagePath: "/carousel/estoque.png",
+    buttonLabel: "Integrar estoque",
   },
   {
-    desc: "Coloque sua loja no topo! Atraia centenas de novos leads qualificados através de campanhas estratégicas de Facebook, Instagram e Google Ads.",
+    desc: "Atraia centenas de novos leads qualificados todos os dias com campanhas estratégicas no Facebook, Instagram e Google Ads.",
     panelClass: "dashboard-resource-marketing",
     tag: "Conversão",
     title: "Marketing e Tráfego Pago",
+    imagePath: "/carousel/marketing.png",
+    buttonLabel: "Impulsionar resultados",
   },
   {
-    desc: "Cause uma primeira impressão impactante. Personalize cores, banners e vitrines para criar uma experiência de compra única que reflita o valor da sua marca.",
+    desc: "Personalize cores, banners e vitrines para criar uma experiência de compra única que reflita o valor da sua marca.",
     panelClass: "dashboard-resource-design",
     tag: "Exclusividade",
     title: "Design & Personalização",
+    imagePath: "/carousel/design.png",
+    buttonLabel: "Personalizar vitrine",
   },
 ];
 
@@ -69,6 +77,8 @@ const fallbackDashboardResource: DashboardResource = {
   panelClass: "dashboard-resource-api",
   tag: "Agilidade",
   title: "Estoque via API (Portais)",
+  imagePath: "/carousel/estoque.png",
+  buttonLabel: "Integrar estoque",
 };
 
 export const dashboardQuickActions: readonly DashboardQuickAction[] = [

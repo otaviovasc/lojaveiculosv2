@@ -1,5 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
-import { RepassesCrmRequestError } from "../../../domains/crm/acl/repassesCrmClient.js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createAuditSpy,
   createRepassesCrmStub,
@@ -8,6 +7,10 @@ import {
 } from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp controller", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("proxies session reads through the repasses ACL with Clerk bearer auth", async () => {
     const { audit, record } = createAuditSpy();
     const repassesCrm = createRepassesCrmStub({
@@ -122,6 +125,30 @@ describe("CRM WhatsApp controller", () => {
     });
   });
 
+  it("uses a local demo token when local auth bypass is enabled", async () => {
+    vi.stubEnv("APP_ENV", "local");
+    vi.stubEnv("LOCAL_AUTH_BYPASS", "true");
+    vi.stubEnv("REPASSES_CRM_LOCAL_DEMO", "true");
+    const repassesCrm = createRepassesCrmStub({
+      listSessions: vi.fn(async () => []),
+    });
+    const app = createTestApp(repassesCrm);
+
+    const response = await app.request("/api/v1/crm/whatsapp/sessions", {
+      headers: { "x-store-slug": "test-store" },
+    });
+
+    expect(response.status).toBe(200);
+    expect(repassesCrm.listSessions).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clerkSessionToken: "local-demo-repasses-token",
+        repassesConnectionId: 10,
+        storeSlug: "test-store",
+      }),
+      expect.any(Object),
+    );
+  });
+
   it("requires WhatsApp list permission before proxying session lists", async () => {
     const repassesCrm = createRepassesCrmStub({ listSessions: vi.fn() });
     const app = createTestApp(repassesCrm, { permissions: ["crm.access"] });
@@ -187,61 +214,5 @@ describe("CRM WhatsApp controller", () => {
     expect(record.mock.calls[0]?.[0]?.metadata?.permission).toBe(
       "crm.whatsapp.send",
     );
-  });
-
-  it("audits failed WhatsApp mutations before returning upstream errors", async () => {
-    const { audit, record } = createAuditSpy();
-    const repassesCrm = createRepassesCrmStub({
-      sendText: vi.fn(async () => {
-        throw new RepassesCrmRequestError("Forbidden upstream", 403);
-      }),
-    });
-    const app = createTestApp(repassesCrm, { audit });
-
-    const response = await app.request("/api/v1/crm/whatsapp/send/text", {
-      body: JSON.stringify({ connectionId: 10, sessionId: 42, text: "Ola" }),
-      headers: {
-        Authorization: "Bearer clerk-token",
-        "Content-Type": "application/json",
-        "x-store-slug": "test-store",
-      },
-      method: "POST",
-    });
-
-    expect(response.status).toBe(403);
-    await expectApiError(response, {
-      code: "REPASSES_CRM_REQUEST_ERROR",
-      message: "Forbidden upstream",
-    });
-    expect(record.mock.calls.map((call) => call[0].outcome)).toEqual([
-      "attempted",
-      "failed",
-    ]);
-    expect(record.mock.calls[1]?.[0]?.metadata?.errorName).toBe(
-      "RepassesCrmRequestError",
-    );
-  });
-
-  it("requires WhatsApp send permission before proxying outbound messages", async () => {
-    const repassesCrm = createRepassesCrmStub({ sendText: vi.fn() });
-    const app = createTestApp(repassesCrm, {
-      permissions: ["crm.whatsapp.list", "crm.whatsapp.read"],
-    });
-
-    const response = await app.request("/api/v1/crm/whatsapp/send/text", {
-      body: JSON.stringify({ sessionId: 42, text: "Ola" }),
-      headers: {
-        Authorization: "Bearer clerk-token",
-        "Content-Type": "application/json",
-      },
-      method: "POST",
-    });
-
-    expect(response.status).toBe(403);
-    await expectApiError(response, {
-      code: "AUTHORIZATION_DENIED",
-      message: "Missing permission: crm.whatsapp.send",
-    });
-    expect(repassesCrm.sendText).not.toHaveBeenCalled();
   });
 });

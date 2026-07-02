@@ -4,6 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
 import { WebsiteBuilderImageUrlField } from "./WebsiteBuilderImageFields";
+import { StorefrontImagePicker } from "./StorefrontImagePicker";
 import type {
   WebsiteBuilderConfig,
   WebsiteBuilderTestimonial,
@@ -52,7 +53,7 @@ export function WebsiteBuilderAboutPanel({
               rows={5}
               value={config.aboutText ?? ""}
             />
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-xs text-muted-foreground">
               Max. 3000 caracteres
             </span>
           </div>
@@ -62,7 +63,6 @@ export function WebsiteBuilderAboutPanel({
         imageClassName="h-32 w-full rounded-xl"
         label="Imagem da Secao"
         onChange={(value) => updateConfig("aboutImageUrl", value)}
-        placeholder="https://..."
         value={config.aboutImageUrl ?? ""}
       />
     </div>
@@ -193,6 +193,14 @@ export function WebsiteBuilderTestimonialsPanel({
                   value={testimonial.name}
                 />
               </div>
+              <StorefrontImagePicker
+                imageClassName="size-20 rounded-full"
+                label="Imagem do cliente"
+                onChange={(value) =>
+                  updateTestimonial(testimonial.id, { imageSrc: value })
+                }
+                value={testimonial.imageSrc ?? ""}
+              />
               <div className="space-y-2">
                 <Label>Descricao</Label>
                 <Input
@@ -246,6 +254,7 @@ function createTestimonial(): WebsiteBuilderTestimonial {
       : `testimonial_${Date.now()}`;
   return {
     id,
+    imageSrc: null,
     name: "Cliente",
     quote: "Atendimento transparente e entrega muito bem acompanhada.",
     role: "Comprador",

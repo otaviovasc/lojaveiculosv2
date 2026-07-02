@@ -10,7 +10,7 @@
 .documents-list-heading span,
 .documents-list-heading p {
   color: var(--color-muted);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   margin: 0.25rem 0 0;
 }
@@ -29,7 +29,7 @@
   align-items: center;
   border-radius: var(--radius-md);
   display: inline-flex;
-  font-size: 0.85rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   gap: 0.5rem;
   justify-content: center;
@@ -71,25 +71,25 @@
 .documents-summary-card
   span:not(.documents-summary-icon):not(.documents-summary-context) {
   color: var(--color-muted);
-  font-size: 0.74rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .documents-summary-card strong {
   color: var(--color-text);
-  font-size: 1.35rem;
+  font-size: var(--font-size-lg);
   font-weight: 950;
   line-height: 1;
 }
 
 .documents-summary-card:first-child strong {
-  font-size: 1.55rem;
+  font-size: var(--font-size-xl);
 }
 
 .documents-summary-context {
   color: var(--color-muted);
-  font-size: 0.72rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }
 
@@ -132,7 +132,7 @@
 
 .documents-list-heading strong {
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: var(--font-size-sm);
   font-weight: 950;
 }
 

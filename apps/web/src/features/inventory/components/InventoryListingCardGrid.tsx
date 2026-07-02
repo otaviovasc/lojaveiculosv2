@@ -12,7 +12,6 @@ import {
   FileArchive,
   ChevronRight,
   Clock,
-  Flame,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { motion } from "motion/react";
@@ -36,6 +35,7 @@ import type {
   InventoryListingSummary,
   InventoryUnitStatus,
 } from "../model/types";
+import { InventoryLeadBadge } from "./InventoryLeadBadge";
 
 export function InventoryListingCardGrid({
   items,
@@ -149,11 +149,16 @@ function InventoryListingCard({
           <StatusPill status={getInventoryDisplayStatus(item)} />
         </div>
         <div className="absolute right-2 top-2 flex gap-1 z-10">
-          <div className="rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-black text-violet-500 border border-line/30 shadow-sm flex items-center gap-1">
+          <div
+            className={
+              "rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-xs font-black border border-line/30 shadow-sm flex items-center gap-1 " +
+              (days > 30 ? "text-amber-500" : "text-muted")
+            }
+          >
             <Clock className="size-2.5" />
             <span>{days}d</span>
           </div>
-          <div className="rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-[9px] font-black text-app-text border border-line/30 shadow-sm">
+          <div className="rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-xs font-black text-app-text border border-line/30 shadow-sm">
             {item.mediaCount} mídias
           </div>
         </div>
@@ -165,13 +170,13 @@ function InventoryListingCard({
           <h3 className="truncate text-sm font-black text-app-text group-hover:text-accent transition-colors">
             {listing.title}
           </h3>
-          <p className="truncate text-[10px] font-bold text-muted mt-0.5">
+          <p className="truncate text-xs font-bold text-muted mt-0.5">
             {getInventoryCatalogLine(listing.catalog, listing)}
           </p>
         </div>
 
         {/* Dense Specs Row */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 my-1 text-[11px] font-bold text-muted border-t border-line/20 pt-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 my-1 text-xs font-bold text-muted border-t border-line/20 pt-2">
           {plate && plate !== "-" && <MercosulPlateBadge plate={plate} />}
           <span>{getInventoryYearLine(listing)}</span>
           <span className="text-line">•</span>
@@ -179,12 +184,7 @@ function InventoryListingCard({
           {leads > 0 && (
             <>
               <span className="text-line">•</span>
-              <span className="inline-flex items-center gap-1 text-[10px] font-black bg-accent-soft/30 text-accent-strong px-1.5 py-0.5 rounded">
-                <Flame className="size-3 text-accent" />
-                <span>
-                  {leads} {leads === 1 ? "lead" : "leads"}
-                </span>
-              </span>
+              <InventoryLeadBadge leads={leads} variant="compact" />
             </>
           )}
         </div>
@@ -192,14 +192,29 @@ function InventoryListingCard({
         {/* Footer Row */}
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-line/20">
           <div className="flex flex-col">
-            <span className="text-sm font-black text-accent-strong leading-none">
+            <span
+              className={
+                "text-sm font-black leading-none " +
+                (fipe.percentage > 10
+                  ? "text-accent-strong"
+                  : fipe.percentage > 3
+                    ? "text-amber-500"
+                    : fipe.percentage > 0 || fipe.isBelow
+                      ? "text-emerald-500"
+                      : "text-app-text")
+              }
+            >
               {formatInventoryPrice(listing.priceCents)}
             </span>
             {fipe.percentage !== 0 && (
               <span
                 className={
-                  "text-[10px] font-black mt-1 leading-none " +
-                  (fipe.isBelow ? "text-emerald-500" : "text-amber-500")
+                  "text-xs font-black mt-1 leading-none " +
+                  (fipe.isBelow || fipe.percentage <= 3
+                    ? "text-emerald-500"
+                    : fipe.percentage > 10
+                      ? "text-accent-strong"
+                      : "text-amber-500")
                 }
               >
                 {fipe.label}
@@ -213,7 +228,7 @@ function InventoryListingCard({
           >
             <button
               onClick={() => onAction?.("template", item)}
-              className="p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer"
+              className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 transition-all cursor-pointer"
               title="Criar Template"
               type="button"
             >
@@ -221,7 +236,7 @@ function InventoryListingCard({
             </button>
             <button
               onClick={() => onAction?.("test-drive", item)}
-              className="p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer"
+              className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 transition-all cursor-pointer"
               title="Test Drive"
               type="button"
             >
@@ -229,7 +244,7 @@ function InventoryListingCard({
             </button>
             <button
               onClick={() => onAction?.("zip-photos", item)}
-              className="p-1.5 rounded-lg bg-app-elevated border border-line text-muted hover:bg-accent-soft hover:text-accent-strong transition-all cursor-pointer"
+              className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 transition-all cursor-pointer"
               title="Baixar Fotos (ZIP)"
               type="button"
             >
@@ -300,10 +315,10 @@ export function MercosulPlateBadge({ plate }: { plate: string }) {
 
   return (
     <span className="inline-flex align-middle flex-col overflow-hidden rounded-[3px] border border-gray-300 dark:border-line bg-white dark:bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] min-w-[70px] max-w-[80px] text-center select-none shrink-0">
-      <span className="bg-blue-600 dark:bg-blue-600 px-1 py-0.5 text-[6.5px] font-black tracking-widest text-white uppercase leading-none text-center">
+      <span className="bg-blue-600 dark:bg-blue-600 px-1 py-0.5 text-xs font-black tracking-widest text-white uppercase leading-none text-center">
         Brasil
       </span>
-      <span className="px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-gray-900 leading-none">
+      <span className="px-1.5 py-0.5 font-mono text-xs font-bold tracking-wider text-gray-900 leading-none">
         {formatted}
       </span>
     </span>

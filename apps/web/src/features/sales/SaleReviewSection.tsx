@@ -25,9 +25,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
             </h4>
             <div className="grid gap-3 sm:grid-cols-3 text-xs font-bold">
               <div>
-                <span className="text-muted block text-[10px] uppercase">
-                  Nome
-                </span>
+                <span className="text-muted block text-xs uppercase">Nome</span>
                 <span className="text-app-text block mt-0.5">
                   {String(
                     (sale.buyerSnapshot.name as string | undefined) ||
@@ -36,7 +34,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 </span>
               </div>
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Telefone
                 </span>
                 <span className="text-app-text block mt-0.5">
@@ -47,7 +45,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 </span>
               </div>
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   E-mail
                 </span>
                 <span className="text-app-text block mt-0.5">
@@ -67,7 +65,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
             </h4>
             <div className="grid gap-3 sm:grid-cols-3 text-xs font-bold">
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Veículo
                 </span>
                 <span className="text-app-text block mt-0.5">
@@ -78,7 +76,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 </span>
               </div>
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Unidade
                 </span>
                 <span className="text-app-text block mt-0.5">
@@ -86,7 +84,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 </span>
               </div>
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Vendedor
                 </span>
                 <span className="text-app-text block mt-0.5">
@@ -103,7 +101,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
             </h4>
             <div className="grid gap-3 sm:grid-cols-3 text-xs font-bold">
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Preço Combinado
                 </span>
                 <span className="text-app-text block mt-0.5 text-sm font-black">
@@ -113,7 +111,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 </span>
               </div>
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Total em Pagamentos
                 </span>
                 <span className="text-emerald-500 block mt-0.5 text-sm font-black">
@@ -121,11 +119,11 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 </span>
               </div>
               <div>
-                <span className="text-muted block text-[10px] uppercase">
+                <span className="text-muted block text-xs uppercase">
                   Diferença
                 </span>
                 {totalPaid >= salePrice ? (
-                  <span className="text-emerald-500 block mt-0.5 font-black uppercase tracking-wider text-[11px] flex items-center gap-1">
+                  <span className="text-emerald-500 block mt-0.5 font-black uppercase tracking-wider text-xs flex items-center gap-1">
                     <Check className="size-3" /> Quitada
                   </span>
                 ) : (
@@ -138,7 +136,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
 
             {sale.payments.length > 0 && (
               <div className="mt-2 pt-3 border-t border-line/30 flex flex-col gap-2">
-                <span className="text-[10px] font-bold text-muted uppercase tracking-wider">
+                <span className="text-xs font-bold text-muted uppercase tracking-wider">
                   Parcelas Lançadas
                 </span>
                 {sale.payments.map((p, idx) => (

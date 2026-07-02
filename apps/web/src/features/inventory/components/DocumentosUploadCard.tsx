@@ -16,7 +16,7 @@ export function DocumentosUploadCard() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[10px] text-muted font-bold">Máximo 50MB</span>
+          <span className="text-xs text-muted font-bold">Máximo 50MB</span>
           <button
             className="min-h-8 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-3.5 flex items-center gap-1.5"
             type="button"
@@ -35,7 +35,7 @@ export function DocumentosUploadCard() {
           <p className="text-xs font-black text-app-text">
             Nenhum documento anexado
           </p>
-          <p className="text-[10px] text-muted font-bold mt-1">
+          <p className="text-xs text-muted font-bold mt-1">
             Insira PDFs, comprovantes ou contratos assinados para este veículo.
           </p>
         </div>
@@ -46,7 +46,7 @@ export function DocumentosUploadCard() {
           <Upload className="size-3.5" />
           <span>Enviar Documento</span>
         </button>
-        <span className="text-[9px] text-muted/60 font-bold">
+        <span className="text-xs text-muted/60 font-bold">
           Máximo 50MB por arquivo
         </span>
       </div>

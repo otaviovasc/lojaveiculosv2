@@ -17,7 +17,7 @@ export function MobileEditorTab({
   return (
     <button
       className={cn(
-        "relative flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-[10px] font-bold transition-all sm:text-xs",
+        "relative flex flex-1 flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-xs font-bold transition-all sm:text-xs",
         active
           ? "bg-primary/5 text-primary"
           : "text-muted-foreground hover:text-foreground",

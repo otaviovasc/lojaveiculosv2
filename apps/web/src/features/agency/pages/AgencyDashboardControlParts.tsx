@@ -18,15 +18,15 @@ export function AgencyDateFilter({
         type="date"
         value={from}
         onChange={(e) => onFromChange(e.target.value)}
-        className="bg-transparent border-none text-[11px] font-bold outline-none text-primary w-[110px]"
+        className="bg-transparent border-none text-xs font-bold outline-none text-primary w-[110px]"
         title="Término do plano - De"
       />
-      <span className="text-muted text-[10px] font-black uppercase">até</span>
+      <span className="text-muted text-xs font-black uppercase">até</span>
       <input
         type="date"
         value={to}
         onChange={(e) => onToChange(e.target.value)}
-        className="bg-transparent border-none text-[11px] font-bold outline-none text-primary w-[110px]"
+        className="bg-transparent border-none text-xs font-bold outline-none text-primary w-[110px]"
         title="Término do plano - Até"
       />
       {(from || to) && (

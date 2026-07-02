@@ -29,7 +29,7 @@ export function DetailBadge({
   icon?: ReactNode;
 }) {
   return (
-    <span className="inline-flex min-h-7 items-center gap-1.5 rounded bg-accent-soft px-3 text-[10px] font-black uppercase tracking-[0.16em] text-accent">
+    <span className="inline-flex min-h-7 items-center gap-1.5 rounded bg-accent-soft px-3 text-xs font-black uppercase tracking-[0.16em] text-accent">
       {icon}
       {children}
     </span>
@@ -57,7 +57,7 @@ export function VehicleMetric({
     <div className="rounded-lg border border-line bg-panel p-3">
       <div className="flex items-center gap-1.5 text-muted">
         {icon}
-        <span className="text-[9px] font-black uppercase tracking-wider">
+        <span className="text-xs font-black uppercase tracking-wider">
           {label}
         </span>
       </div>
@@ -75,13 +75,13 @@ export function ColorSummary({
 }) {
   return (
     <div className="rounded-xl border border-line bg-app p-4">
-      <span className="text-[9px] font-black uppercase tracking-wider text-muted/80">
+      <span className="text-xs font-black uppercase tracking-wider text-muted/80">
         Cores disponíveis
       </span>
       <div className="mt-3 flex flex-wrap gap-2">
         {colorNames.map((colorName) => (
           <span
-            className="rounded border border-line bg-panel px-2.5 py-1 text-[10px] font-black text-app-text"
+            className="rounded border border-line bg-panel px-2.5 py-1 text-xs font-black text-app-text"
             key={colorName}
           >
             {colorName}

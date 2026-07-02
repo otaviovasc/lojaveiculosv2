@@ -148,7 +148,7 @@ export function CrmPipelineToolbar({
             return (
               <div className="relative" key={cfg.key}>
                 <button
-                  className="inline-flex min-h-9 items-center gap-1 rounded-full border border-line/50 bg-app-elevated/45 px-3 text-[11px] font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors"
+                  className="inline-flex min-h-9 items-center gap-1 rounded-full border border-line/50 bg-app-elevated/45 px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors"
                   onClick={() => {
                     setOpenDropdown(isOpen ? null : cfg.key);
                     setSearchQuery("");
@@ -200,7 +200,7 @@ export function CrmPipelineToolbar({
                         );
                       })}
                       {filteredOptions.length === 0 && (
-                        <span className="text-[10px] text-muted text-center py-2">
+                        <span className="text-xs text-muted text-center py-2">
                           Nenhum resultado
                         </span>
                       )}
@@ -222,14 +222,14 @@ export function CrmPipelineToolbar({
             >
               <Eye className="size-3.5 text-muted" />
               <span>Fases</span>
-              <span className="bg-line/20 rounded px-1 text-[10px] font-black">
+              <span className="bg-line/20 rounded px-1 text-xs font-black">
                 {visibleStagesCount}/{stages.length}
               </span>
             </button>
 
             {showFasesDropdown && (
               <div className="absolute top-full mt-1.5 right-0 z-50 w-56 bg-panel border border-line rounded-xl shadow-xl p-3 flex flex-col gap-2.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                <span className="text-xs font-black uppercase tracking-wider text-muted">
                   Fases do Quadro
                 </span>
                 <div className="flex flex-col gap-2">

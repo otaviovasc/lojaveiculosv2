@@ -13,6 +13,7 @@ import { createBillingFeature } from "../../features/billing/controllers/billing
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
 import { createStorefrontPageServices } from "../../features/storefront/controllers/storefrontPageServices.js";
+import { createStorefrontMediaFeature } from "../../features/storefront/controllers/storefrontMedia.controller.js";
 import { createStorefrontPagesFeature } from "../../features/storefront/controllers/storefrontPages.controller.js";
 import { createSettingsFeature } from "../../features/settings/controllers/settings.controller.js";
 import { createSalesFeature } from "../../features/sales/controllers/sales.controller.js";
@@ -75,6 +76,15 @@ export function createApp(options: CreateAppOptions = {}) {
               repository: options.storefrontPageRepository,
             }),
           }
+        : {}),
+    }),
+  );
+  app.route(
+    "/api/v1/storefront",
+    createStorefrontMediaFeature({
+      contextFactory,
+      ...(options.storefrontMediaServices
+        ? { services: options.storefrontMediaServices }
         : {}),
     }),
   );

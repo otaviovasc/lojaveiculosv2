@@ -60,13 +60,13 @@ export function CustomPageEditorTopBar({
           <h1 className="max-w-[120px] truncate text-sm font-bold sm:max-w-none">
             {page.title}
           </h1>
-          <p className="hidden truncate text-[10px] text-muted-foreground sm:block">
+          <p className="hidden truncate text-xs text-muted-foreground sm:block">
             /p/{page.slug}
           </p>
         </div>
         <button
           className={cn(
-            "hidden rounded-full border px-2.5 py-1 text-[10px] font-semibold transition-colors sm:inline-flex",
+            "hidden rounded-full border px-2.5 py-1 text-xs font-semibold transition-colors sm:inline-flex",
             page.visible
               ? "border-success/40 bg-success text-success-foreground hover:bg-success/90"
               : "border-warning/40 bg-warning text-warning-foreground hover:bg-warning/90",

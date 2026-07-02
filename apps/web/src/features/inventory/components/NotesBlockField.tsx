@@ -30,7 +30,7 @@ export function NotesBlockField({
       >
         <div className="flex items-center gap-2 min-w-0">
           <FileText className="size-3.5 text-accent shrink-0 animate-none" />
-          <span className="text-[10px] font-black text-primary leading-none uppercase tracking-wider truncate">
+          <span className="text-xs font-black text-primary leading-none uppercase tracking-wider truncate">
             {label}
           </span>
         </div>
@@ -85,7 +85,7 @@ export function NotesBlockField({
           }}
         />
         {isEditing && (
-          <span className="absolute bottom-1 right-2 text-[8px] text-muted/60 font-medium animate-none">
+          <span className="absolute bottom-1 right-2 text-xs text-muted/60 font-medium animate-none">
             Ctrl+Enter
           </span>
         )}

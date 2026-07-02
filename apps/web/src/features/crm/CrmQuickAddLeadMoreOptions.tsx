@@ -46,9 +46,7 @@ export function CrmQuickAddLeadMoreOptions({
       {/* Row 1: Fase, Prioridade, Previsão fechamento */}
       <div className="grid grid-cols-3 gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase text-muted">
-            Fase
-          </span>
+          <span className="text-xs font-black uppercase text-muted">Fase</span>
           <select
             className="min-h-10 rounded-lg border border-line bg-app px-2.5 text-xs font-bold text-app-text cursor-pointer outline-none"
             onChange={(e) => setSelectedStageId(e.target.value)}
@@ -62,7 +60,7 @@ export function CrmQuickAddLeadMoreOptions({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase text-muted">
+          <span className="text-xs font-black uppercase text-muted">
             Prioridade
           </span>
           <select
@@ -76,7 +74,7 @@ export function CrmQuickAddLeadMoreOptions({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase text-muted">
+          <span className="text-xs font-black uppercase text-muted">
             Previsão fechamento
           </span>
           <div className="relative">
@@ -96,7 +94,7 @@ export function CrmQuickAddLeadMoreOptions({
       {/* Row 2: Urgência, Categoria, Contato preferido */}
       <div className="grid grid-cols-3 gap-4">
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase text-muted">
+          <span className="text-xs font-black uppercase text-muted">
             Urgência
           </span>
           <select
@@ -110,7 +108,7 @@ export function CrmQuickAddLeadMoreOptions({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase text-muted">
+          <span className="text-xs font-black uppercase text-muted">
             Categoria
           </span>
           <select
@@ -126,7 +124,7 @@ export function CrmQuickAddLeadMoreOptions({
           </select>
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] font-black uppercase text-muted">
+          <span className="text-xs font-black uppercase text-muted">
             Contato preferido
           </span>
           <select

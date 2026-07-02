@@ -32,7 +32,7 @@ export function CrmQuickAddStageModal({ onClose, onAddStage }: Props) {
               <h3 className="text-sm font-black text-app-text">
                 Criar Nova Fase
               </h3>
-              <p className="text-[10px] font-bold text-muted mt-0.5">
+              <p className="text-xs font-bold text-muted mt-0.5">
                 Adicionar etapa ao funil de vendas
               </p>
             </div>
@@ -91,7 +91,7 @@ export function CrmQuickAddStageModal({ onClose, onAddStage }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5 border-t border-line/20 pt-3">
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Cores sugeridas
             </span>
             <div className="flex items-center gap-2">

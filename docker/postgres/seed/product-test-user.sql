@@ -516,7 +516,7 @@ ON CONFLICT (store_id) DO UPDATE SET
 INSERT INTO store_entitlements (feature_key, metadata, source, status, store_id, tenant_id)
 VALUES
   ('analytics', '{"dashboards": ["sales", "finance", "crm"]}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('marketplaces', '{"providers": ["olx", "mercado_livre"]}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('marketplace', '{"providers": ["olx", "mercado_livre"]}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('external_api', '{"rate_limit_per_minute": 120}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('custom_domain', '{"domain": "seminovos.local.test"}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('nfe', '{"provider": "spedy", "environment": "homologation"}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')

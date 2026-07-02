@@ -40,7 +40,7 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
           ))}
         </nav>
         {boolProp(props.showSocial, true) && socialLinks.length ? (
-          <nav className="hidden items-center gap-3 text-[10px] font-black uppercase tracking-wider text-muted lg:flex">
+          <nav className="hidden items-center gap-3 text-xs font-black uppercase tracking-wider text-muted lg:flex">
             {socialLinks.slice(0, 3).map(([name, url]) => (
               <a
                 className="transition-colors hover:text-accent"
@@ -87,7 +87,7 @@ export function FooterBlock({ component, context }: BuilderBlockProps) {
         <div className="grid gap-6 sm:grid-cols-2">
           {columns.map((column, index) => (
             <div key={`${textProp(column.label)}_${index}`}>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-app-text">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-app-text">
                 {textProp(column.label) ?? "Links"}
               </p>
               <div className="mt-4 grid gap-2.5 text-xs font-bold text-muted">
@@ -105,7 +105,7 @@ export function FooterBlock({ component, context }: BuilderBlockProps) {
           ))}
           {boolProp(component.props.showSocial, true) && socialLinks.length ? (
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-app-text">
+              <p className="text-xs font-black uppercase tracking-[0.24em] text-app-text">
                 Redes Sociais
               </p>
               <div className="mt-4 grid gap-2.5 text-xs font-bold text-muted">
@@ -133,7 +133,7 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
   return (
     <section className="bg-app" id="estoque">
       <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
-        <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+        <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
           CATÁLOGO
         </p>
         <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
@@ -177,7 +177,7 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
                           src={vehicle.thumbnailUrl}
                         />
                       ) : null}
-                      <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-accent shadow-sm">
+                      <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-xs font-black uppercase tracking-wider text-accent shadow-sm">
                         Disponível
                       </span>
                     </div>
@@ -219,7 +219,7 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
                   <div className="px-5 pb-5 pt-0">
                     <div className="mb-2 border-t border-line/60 pt-4 flex items-center justify-between">
                       <div className="flex flex-col">
-                        <span className="text-[9px] font-black uppercase tracking-wider text-muted/80">
+                        <span className="text-xs font-black uppercase tracking-wider text-muted/80">
                           Preço sugerido
                         </span>
                         <p

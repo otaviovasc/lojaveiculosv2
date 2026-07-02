@@ -68,7 +68,7 @@ export type ModuleDefinition = {
 
 export const navigationGroups: NavigationGroup[] = [
   {
-    label: "Operacao diaria",
+    label: "Operação diária",
     items: [
       { icon: Home, id: "dashboard", label: "Inicio" },
       { icon: Car, id: "inventory", label: "Veiculos" },

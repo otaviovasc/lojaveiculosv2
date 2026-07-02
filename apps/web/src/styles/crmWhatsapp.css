@@ -11,7 +11,7 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   min-height: 2.5rem;
   padding: 0.625rem 1rem;
@@ -99,7 +99,7 @@
   color: var(--color-inverse);
   display: inline-flex;
   flex: 0 0 auto;
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   height: 2.5rem;
   justify-content: center;
@@ -129,7 +129,7 @@
 .crm-whatsapp-session-top strong,
 .crm-whatsapp-chat-title h3 {
   color: var(--color-text);
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -141,7 +141,7 @@
 .crm-whatsapp-session-meta,
 .crm-whatsapp-chat-title p {
   color: var(--color-muted);
-  font-size: 0.75rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }
 
@@ -154,7 +154,7 @@
 
 .crm-whatsapp-channel {
   color: var(--color-accent-strong);
-  font-size: 0.6875rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   text-transform: uppercase;
 }

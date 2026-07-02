@@ -25,14 +25,14 @@ export function DocumentosRenaveCard() {
           <ShieldCheck className="size-4 text-accent shrink-0" />
           <span>Fluxo RENAVE</span>
         </h3>
-        <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/25 text-[10px] font-black px-2 py-0.5 rounded-full select-none">
+        <span className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/25 text-xs font-black px-2 py-0.5 rounded-full select-none">
           Entrada Concluída
         </span>
       </div>
 
       {/* Code Area */}
       <div className="flex flex-col gap-1.5 text-xs font-bold">
-        <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+        <span className="text-xs font-black uppercase tracking-wider text-muted">
           Código de Registro (CRV/ATPV-e)
         </span>
         <div className="flex gap-2">
@@ -75,7 +75,7 @@ export function DocumentosRenaveCard() {
 
       {/* Progress Flow */}
       <div className="flex flex-col gap-3 pt-2">
-        <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+        <span className="text-xs font-black uppercase tracking-wider text-muted">
           Etapas do Processo
         </span>
         <div className="flex items-center gap-1.5 justify-between">
@@ -91,7 +91,7 @@ export function DocumentosRenaveCard() {
                       : "bg-line")
                 }
               />
-              <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest min-w-0">
+              <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest min-w-0">
                 <span
                   className={
                     "truncate " +

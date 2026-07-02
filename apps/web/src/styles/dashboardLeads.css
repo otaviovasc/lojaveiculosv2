@@ -9,7 +9,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.75rem; /* text-xs */
+  font-size: var(--font-size-xs); /* text-xs */
 }
 
 .lead-source-info {
@@ -35,19 +35,19 @@
 }
 
 .lead-source-value-green {
-  color: #10b981; /* text-emerald-500 */
+  color: var(--color-green-start); /* text-emerald-500 */
 }
 
 .lead-source-value-blue {
-  color: #3b82f6; /* text-blue-500 */
+  color: var(--color-blue-start); /* text-blue-500 */
 }
 
 .lead-source-value-violet {
-  color: #8b5cf6; /* text-violet-500 */
+  color: var(--color-warning); /* text-violet-500 */
 }
 
 .lead-source-percentage {
-  font-size: 0.625rem; /* text-[10px] */
+  font-size: var(--font-size-xs); /* text-[10px] */
   margin-left: 0.25rem; /* ml-1 */
   color: var(--color-muted);
   opacity: 0.8;

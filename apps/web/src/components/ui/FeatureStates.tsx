@@ -26,7 +26,9 @@ export function FeatureEmptyState({
     >
       <IconComponent aria-hidden="true" className="mb-4 size-14 text-muted" />
       <h3 className="text-xl font-black text-app-text">{title}</h3>
-      <p className="mt-2 text-sm font-bold text-muted max-w-md">{body}</p>
+      <p className="mt-2 text-sm font-bold text-muted max-w-md w-full">
+        {body}
+      </p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
@@ -89,7 +91,7 @@ export function FeatureStatusBadge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider",
+        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider",
         statusToneClass(tone),
         className,
       )}

@@ -66,7 +66,7 @@ export function DocumentosChecklistCard() {
           </h3>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-muted font-black">
+          <span className="text-xs text-muted font-black">
             {completedCount}/{totalCount} Concluídos
           </span>
           <button

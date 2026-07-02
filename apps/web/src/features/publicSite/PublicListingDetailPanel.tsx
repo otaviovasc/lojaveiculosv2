@@ -39,7 +39,7 @@ export function PublicListingDetailPanel({
         <header className="sticky top-0 z-10 border-b border-line bg-panel/95 shadow-sm backdrop-blur">
           <div className="public-storefront-shell flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-6">
             <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-accent">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-accent">
                 {settings.store.name}
               </p>
               <h3 className="truncate text-sm font-extrabold tracking-tight text-app-text sm:text-base">

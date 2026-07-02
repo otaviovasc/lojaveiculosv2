@@ -101,7 +101,7 @@ export function ReciboVendaPrint({
         </div>
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2 text-xs">
-          <h3 className="font-bold border-b border-gray-300 pb-1 uppercase text-[10px] text-gray-700">
+          <h3 className="font-bold border-b border-gray-300 pb-1 uppercase text-xs text-gray-700">
             Forma de Pagamento e Quitação
           </h3>
           <p>
@@ -145,12 +145,12 @@ export function ReciboVendaPrint({
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{buyer.name || "Comprador"}</p>
-            <p className="text-[10px]">COMPRADOR (CLIENTE)</p>
+            <p className="text-xs">COMPRADOR (CLIENTE)</p>
           </div>
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{storeName}</p>
-            <p className="text-[10px]">VENDEDOR (LOJA)</p>
+            <p className="text-xs">VENDEDOR (LOJA)</p>
           </div>
         </div>
       </div>

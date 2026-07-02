@@ -49,7 +49,7 @@ export function CrmPipelineSettingsLayout({
               {pipeline.name}
             </h2>
             {pipeline.isDefault && (
-              <span className="text-[9px] font-black uppercase bg-line/35 text-muted px-1.5 py-0.5 rounded border border-line/45">
+              <span className="text-xs font-black uppercase bg-line/35 text-muted px-1.5 py-0.5 rounded border border-line/45">
                 Padrão
               </span>
             )}

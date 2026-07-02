@@ -146,7 +146,7 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
             return (
               <button
                 className={cn(
-                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-all",
+                  "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all",
                   viewportMode === id
                     ? "bg-card text-foreground shadow-sm ring-1 ring-border/50"
                     : "text-muted-foreground hover:text-foreground",
@@ -162,7 +162,7 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
           })}
         </div>
 
-        <div className="text-[10px] text-muted-foreground">
+        <div className="text-xs text-muted-foreground">
           {viewportMode === "desktop" ? "Desktop" : null}
           {viewportMode === "tablet" ? "768px" : null}
           {viewportMode === "mobile" ? "375px" : null}

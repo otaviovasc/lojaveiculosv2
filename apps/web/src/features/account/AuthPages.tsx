@@ -12,6 +12,7 @@ import {
   FeatureEmptyState,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
+import { Logo } from "../../components/ui/logo";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
 import { createRuntimeAccountApi } from "./runtimeApi";
@@ -222,6 +223,7 @@ function AuthEntryShell({
       className="min-h-screen max-w-3xl items-center justify-center"
       variant="plain"
     >
+      <Logo className="h-11" variant="full" />
       <FeaturePageHeader
         chip="Clerk Auth"
         description="A sessão é validada pelo provedor de identidade antes de liberar lojas, agências e permissões."

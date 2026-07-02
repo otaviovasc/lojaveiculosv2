@@ -7,8 +7,8 @@ const checkedRoots = [
   join(root, "apps/web/src"),
   join(root, "packages/design-system/src"),
 ];
-const ignoredPathParts = ["/apps/web/src/styles/", "/node_modules/", "/dist/"];
-const checkedExtensions = new Set([".ts", ".tsx", ".js", ".jsx"]);
+const ignoredPathParts = ["/node_modules/", "/dist/"];
+const checkedExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css"]);
 
 function extensionOf(path) {
   const index = path.lastIndexOf(".");

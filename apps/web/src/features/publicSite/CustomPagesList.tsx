@@ -177,7 +177,7 @@ export function CustomPagesList({
                 value={createSlug}
               />
             </div>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Letras, numeros e hifens apenas.
             </p>
           </div>

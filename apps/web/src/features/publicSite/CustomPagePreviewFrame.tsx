@@ -179,7 +179,7 @@ export function CustomPagePreviewFrame({
         className="relative flex h-full min-h-0 w-full max-w-full flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-lg transition-[width,box-shadow] duration-300 ease-out"
         style={{ width: PREVIEW_WIDTH[mode] }}
       >
-        <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-card/90 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground shadow-sm backdrop-blur">
+        <div className="pointer-events-none absolute left-1/2 top-2 z-10 -translate-x-1/2 rounded-full border border-border/70 bg-card/90 px-3 py-1 text-xs font-black uppercase tracking-widest text-muted-foreground shadow-sm backdrop-blur">
           {PREVIEW_SIZE_LABEL[mode]}
         </div>
         <iframe

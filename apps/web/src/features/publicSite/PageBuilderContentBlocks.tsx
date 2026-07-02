@@ -30,7 +30,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
     <section className="bg-panel" id="home">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:px-6 md:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <div className="flex min-w-0 flex-col justify-center">
-          <p className="inline-flex w-fit items-center gap-2 rounded bg-accent-soft px-3 py-1 text-[10px] font-black uppercase tracking-[0.24em] text-accent">
+          <p className="inline-flex w-fit items-center gap-2 rounded bg-accent-soft px-3 py-1 text-xs font-black uppercase tracking-[0.24em] text-accent">
             <Sparkles aria-hidden="true" className="size-3.5" />
             {textProp(props.badge) ??
               textProp(props.eyebrow) ??
@@ -71,7 +71,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
             />
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3 rounded-lg border border-white/20 bg-app-text/82 p-3 text-white shadow-lg backdrop-blur-sm">
               <span className="min-w-0">
-                <span className="block text-[9px] font-black uppercase tracking-[0.22em] text-white/70">
+                <span className="block text-xs font-black uppercase tracking-[0.22em] text-white/70">
                   Destaque
                 </span>
                 <span className="block text-sm font-black leading-tight">
@@ -98,7 +98,7 @@ export function AboutBlock({ component }: BuilderBlockProps) {
   const imageLeft = textProp(props.imagePosition) === "left";
   const textContent = (
     <div className="flex min-w-0 flex-col justify-center">
-      <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+      <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
         SOBRE A LOJA
       </p>
       <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
@@ -256,7 +256,7 @@ export function DividerBlock({ component }: BuilderBlockProps) {
         style={lineStyle}
       />
       {text ? (
-        <span className="text-[10px] font-black uppercase tracking-[0.24em] text-muted">
+        <span className="text-xs font-black uppercase tracking-[0.24em] text-muted">
           {text}
         </span>
       ) : null}
@@ -286,7 +286,7 @@ export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
           </div>
         ) : null}
         <div className="flex min-w-0 flex-col justify-center">
-          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
             DESTAQUE ESPECIAL
           </p>
           <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">

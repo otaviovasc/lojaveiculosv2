@@ -41,7 +41,7 @@ export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
         <header className="p-4 border-b border-line/45 flex items-center justify-between shrink-0 bg-app-elevated/45">
           <div>
             <h3 className="text-sm font-black text-app-text">Editar Etapa</h3>
-            <p className="text-[10px] font-bold text-muted mt-0.5">
+            <p className="text-xs font-bold text-muted mt-0.5">
               Altere o nome, cor ou SLA da etapa
             </p>
           </div>
@@ -100,7 +100,7 @@ export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5 border-t border-line/20 pt-3">
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Cores sugeridas
             </span>
             <div className="flex items-center gap-2">

@@ -1,5 +1,6 @@
 import { useState, useEffect, type DragEvent } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { getTextColorForBackground } from "../../lib/colors";
 import { CrmLeadCard } from "./CrmLeadCard";
 import { getLeadStageId, getLinkedLeadVehicles } from "./crmLeadData";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
@@ -117,6 +118,7 @@ export function CrmKanbanBoard({
           const stageLeads = getLeadsForStage(stage.id, stage.status);
           const isCollapsed = collapsedStages[stage.id] === true;
           const isOver = dragOverStageId === stage.id;
+          const stageBadgeTextColor = getTextColorForBackground(stage.color);
 
           if (isCollapsed) {
             return (
@@ -143,7 +145,7 @@ export function CrmKanbanBoard({
                     style={{ backgroundColor: stage.color }}
                   />
                   <span
-                    className="text-[10px] font-bold text-app-text select-none whitespace-nowrap"
+                    className="text-xs font-bold text-app-text select-none whitespace-nowrap"
                     style={{
                       writingMode: "vertical-rl",
                     }}
@@ -151,7 +153,7 @@ export function CrmKanbanBoard({
                     {stage.name}
                   </span>
                 </div>
-                <div className="size-5 rounded-full bg-line/25 border border-line/40 text-muted text-[10px] font-black flex items-center justify-center shrink-0">
+                <div className="size-5 rounded-full bg-line/25 border border-line/40 text-muted text-xs font-black flex items-center justify-center shrink-0">
                   {stageLeads.length}
                 </div>
               </div>
@@ -179,8 +181,11 @@ export function CrmKanbanBoard({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 min-w-0">
                     <span
-                      className="px-2.5 py-0.5 rounded text-[10px] font-black text-white uppercase shrink-0"
-                      style={{ backgroundColor: stage.color }}
+                      className="px-2.5 py-0.5 rounded text-xs font-black uppercase shrink-0"
+                      style={{
+                        backgroundColor: stage.color,
+                        color: stageBadgeTextColor,
+                      }}
                     >
                       {stage.name}
                     </span>
@@ -284,7 +289,7 @@ export function CrmKanbanBoard({
               className="size-5.5 text-muted group-hover:text-accent transition-colors"
             />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-widest">
+          <span className="text-xs font-black uppercase tracking-widest">
             Criar fase
           </span>
         </button>

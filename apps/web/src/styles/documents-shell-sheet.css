@@ -73,7 +73,7 @@
 
 .documents-table-sheet-header-label {
   color: var(--color-muted);
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -81,7 +81,7 @@
 
 .documents-table-sheet-header-count {
   color: var(--color-muted);
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
   margin-left: 0.35rem;
 }
@@ -101,7 +101,7 @@
   border-radius: 999px;
   color: var(--color-inverse);
   display: inline-flex;
-  font-size: 0.7rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   letter-spacing: 0.04em;
   padding: 0.2rem 0.65rem;
@@ -137,7 +137,7 @@
   color: var(--color-inverse);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.74rem;
+  font-size: var(--font-size-xs);
   font-weight: 900;
   gap: 0.35rem;
   height: 1.85rem;

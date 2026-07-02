@@ -119,7 +119,7 @@ export function StickySaleSummary({
 
       {/* Structured Completion Checklist */}
       <div className="flex flex-col gap-2">
-        <span className="text-[10px] font-bold text-muted uppercase tracking-wider mb-1">
+        <span className="text-xs font-bold text-muted uppercase tracking-wider mb-1">
           Requisitos de Fechamento
         </span>
         <div className="flex flex-col gap-2 bg-app-elevated/40 p-3 rounded-xl border border-line/40">
@@ -139,7 +139,7 @@ export function StickySaleSummary({
                   {check.label}
                 </span>
                 {!check.ok && (
-                  <span className="text-[9px] font-bold text-warning-strong mt-0.5">
+                  <span className="text-xs font-bold text-warning-strong mt-0.5">
                     {check.desc}
                   </span>
                 )}
@@ -175,7 +175,7 @@ export function StickySaleSummary({
         ) : (
           <div className="flex items-center gap-2 bg-warning/5 text-warning px-3 py-2 rounded-xl border border-warning/10 text-xs font-bold mb-1 justify-center">
             <ShieldAlert className="size-4 shrink-0" />
-            <span className="text-[10px] font-black uppercase tracking-wider">
+            <span className="text-xs font-black uppercase tracking-wider">
               Aguardando Pendências
             </span>
           </div>

@@ -92,7 +92,7 @@ export function FeatureStatCard({
       )}
     >
       <div className="min-w-0">
-        <span className="block text-[10px] font-black uppercase tracking-wider text-muted">
+        <span className="block text-xs font-black uppercase tracking-wider text-muted">
           {label}
         </span>
         <strong className="mt-1 block text-2xl font-black text-app-text tabular-nums">

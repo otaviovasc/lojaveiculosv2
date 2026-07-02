@@ -4,7 +4,7 @@ export function AgencyStatsPage() {
   return (
     <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
       <div>
-        <span className="text-[10px] font-black uppercase tracking-widest text-accent">
+        <span className="text-xs font-black uppercase tracking-widest text-accent">
           Desempenho
         </span>
         <h1 className="text-3xl font-black italic uppercase tracking-tighter text-primary mt-1">
@@ -19,13 +19,13 @@ export function AgencyStatsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Visualizações Totais
             </span>
             <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
               124.502
             </h3>
-            <p className="text-[10px] font-black text-green-end flex items-center gap-0.5 mt-2">
+            <p className="text-xs font-black text-green-end flex items-center gap-0.5 mt-2">
               <TrendingUp className="size-3" /> +14.2% este mês
             </p>
           </div>
@@ -36,13 +36,13 @@ export function AgencyStatsPage() {
 
         <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Leads Gerados
             </span>
             <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
               3.840
             </h3>
-            <p className="text-[10px] font-black text-green-end flex items-center gap-0.5 mt-2">
+            <p className="text-xs font-black text-green-end flex items-center gap-0.5 mt-2">
               <TrendingUp className="size-3" /> +8.7% este mês
             </p>
           </div>
@@ -53,13 +53,13 @@ export function AgencyStatsPage() {
 
         <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
           <div>
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Conversão Média
             </span>
             <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
               3.1%
             </h3>
-            <p className="text-[10px] font-black text-green-end flex items-center gap-0.5 mt-2">
+            <p className="text-xs font-black text-green-end flex items-center gap-0.5 mt-2">
               <TrendingUp className="size-3" /> +0.4% este mês
             </p>
           </div>

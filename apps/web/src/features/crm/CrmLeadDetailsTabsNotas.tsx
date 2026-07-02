@@ -60,7 +60,7 @@ export function CrmLeadDetailsTabsNotas({
               <span className="text-xs font-bold text-app-text leading-relaxed whitespace-pre-wrap">
                 {n.content}
               </span>
-              <span className="text-[10px] font-bold text-muted self-end mt-1">
+              <span className="text-xs font-bold text-muted self-end mt-1">
                 {new Date(n.occurredAt).toLocaleString("pt-BR")}
               </span>
             </div>
@@ -97,7 +97,7 @@ export function CrmLeadDetailsTabsNotas({
 
             <div className="flex flex-col gap-4">
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Conteúdo
                 </span>
                 <textarea

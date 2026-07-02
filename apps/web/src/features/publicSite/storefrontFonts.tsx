@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 
-export const DEFAULT_STOREFRONT_BODY_FONT = "Plus Jakarta Sans";
+export const DEFAULT_STOREFRONT_BODY_FONT = "Inter";
 export const DEFAULT_STOREFRONT_HEADING_FONT = "Bricolage Grotesque";
 
 export const storefrontFontOptions = [

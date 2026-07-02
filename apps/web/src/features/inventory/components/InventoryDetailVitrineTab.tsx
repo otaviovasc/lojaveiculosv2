@@ -214,7 +214,7 @@ export function InventoryDetailVitrineTab({
               </label>
               <span
                 className={
-                  "text-[10px] font-black px-2.5 py-0.5 rounded-full border " +
+                  "text-xs font-black px-2.5 py-0.5 rounded-full border " +
                   (activePage.visible
                     ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/25"
                     : "bg-muted/10 text-muted border-line")
@@ -236,7 +236,7 @@ export function InventoryDetailVitrineTab({
 
           {/* URL Block */}
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+            <span className="text-xs font-black uppercase tracking-wider text-muted">
               URL pública da Vitrine
             </span>
             <div className="flex items-center justify-between min-h-10 rounded-xl border border-line bg-app/30 px-3.5 font-bold text-xs">

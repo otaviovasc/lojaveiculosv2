@@ -95,7 +95,7 @@ export function TwoColumnBlock({ component, context }: BuilderBlockProps) {
 function LayoutEmptySlot({ label }: { label: string }) {
   return (
     <div className="grid min-h-32 place-items-center rounded-xl border border-dashed border-line bg-panel/70 p-6 text-center">
-      <span className="text-[10px] font-black uppercase tracking-[0.24em] text-muted">
+      <span className="text-xs font-black uppercase tracking-[0.24em] text-muted">
         {label}
       </span>
     </div>

@@ -51,7 +51,7 @@ export function VehicleSpecsBlock({
     <section className="bg-panel border-y border-line/45 py-14">
       <div className="public-storefront-shell px-4 md:px-6">
         <div className="text-center max-w-2xl mx-auto mb-10">
-          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
             Ficha Técnica
           </p>
           <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
@@ -76,7 +76,7 @@ export function VehicleSpecsBlock({
                 className="bg-app border border-line/50 rounded-xl p-4.5 flex flex-col justify-between gap-3 shadow-[0_2px_8px_rgba(15,23,42,0.01)] transition-all duration-300 hover:border-accent/30 hover:shadow-[0_8px_20px_rgba(15,23,42,0.03)]"
               >
                 <div className="flex items-center justify-between gap-2 border-b border-line/30 pb-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-muted truncate">
+                  <span className="text-xs font-black uppercase tracking-wider text-muted truncate">
                     {label}
                   </span>
                   {getIconForSpec(label)}

@@ -53,7 +53,7 @@ export function VehicleDetailHeader({
         </p>
       </div>
       <div className="rounded-xl border border-line bg-panel p-4 shadow-sm lg:min-w-64">
-        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted">
+        <span className="text-xs font-black uppercase tracking-[0.2em] text-muted">
           Preço anunciado
         </span>
         <p className="mt-1 text-3xl font-black tracking-tight text-accent">
@@ -94,7 +94,7 @@ export function VehicleLeadCard({
     <aside className="lg:sticky lg:top-20">
       <div className="overflow-hidden rounded-xl border border-line bg-panel shadow-xl">
         <div className="border-b-4 border-accent bg-zinc-950 p-6 text-white">
-          <span className="text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
+          <span className="text-xs font-black uppercase tracking-[0.22em] text-white/45">
             Oferta da loja
           </span>
           <p className="mt-2 text-4xl font-black tracking-tight">
@@ -145,7 +145,7 @@ export function VehicleLeadCard({
           <div className="rounded-xl border border-line bg-app p-4">
             <div className="flex items-center gap-2">
               <Mail aria-hidden="true" className="size-4 text-accent" />
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-app-text">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-app-text">
                 Enviar interesse
               </p>
             </div>

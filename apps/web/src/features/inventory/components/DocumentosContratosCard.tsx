@@ -79,7 +79,7 @@ export function DocumentosContratosCard() {
                   <span className="text-app-text font-black truncate">
                     {c.title}
                   </span>
-                  <span className="text-[10px] text-muted font-bold mt-0.5">
+                  <span className="text-xs text-muted font-bold mt-0.5">
                     {c.date}
                   </span>
                 </div>
@@ -87,7 +87,7 @@ export function DocumentosContratosCard() {
               <div className="flex items-center gap-3 shrink-0">
                 <span
                   className={
-                    "text-[9px] font-black px-2 py-0.5 rounded-full border " +
+                    "text-xs font-black px-2 py-0.5 rounded-full border " +
                     (c.status === "Assinado"
                       ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/25"
                       : c.status === "Pendente"
@@ -117,14 +117,14 @@ export function DocumentosContratosCard() {
             Gerar Contrato
           </h3>
           <button
-            className="text-[10px] font-black text-accent hover:underline uppercase tracking-wider cursor-pointer"
+            className="text-xs font-black text-accent hover:underline uppercase tracking-wider cursor-pointer"
             type="button"
           >
             Avançado
           </button>
         </div>
 
-        <p className="text-[10px] text-muted font-bold leading-relaxed bg-app/30 border border-line p-3 rounded-xl">
+        <p className="text-xs text-muted font-bold leading-relaxed bg-app/30 border border-line p-3 rounded-xl">
           Os contratos serão auto-preenchidos usando as informações deste
           veículo, da loja e do cliente vinculado.
         </p>
@@ -143,7 +143,7 @@ export function DocumentosContratosCard() {
                 </div>
                 <div className="flex flex-col leading-tight">
                   <span className="text-app-text font-black">{t.name}</span>
-                  <span className="text-[9px] text-muted font-black uppercase tracking-wider mt-0.5">
+                  <span className="text-xs text-muted font-black uppercase tracking-wider mt-0.5">
                     {t.scope}
                   </span>
                 </div>
@@ -154,7 +154,7 @@ export function DocumentosContratosCard() {
         </div>
 
         <button
-          className="mt-1 text-center text-[10px] font-black text-muted hover:text-accent transition-colors uppercase tracking-wider block border-t border-line/45 pt-3.5 cursor-pointer"
+          className="mt-1 text-center text-xs font-black text-muted hover:text-accent transition-colors uppercase tracking-wider block border-t border-line/45 pt-3.5 cursor-pointer"
           type="button"
         >
           Visualizar todos os modelos disponíveis

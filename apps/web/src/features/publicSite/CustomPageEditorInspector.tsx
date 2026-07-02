@@ -41,7 +41,7 @@ export function BuilderInspector({
         )}
       >
         <div className="mb-4 flex items-center justify-between gap-3">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Configurações da página
           </p>
           <button
@@ -72,7 +72,7 @@ export function BuilderInspector({
     >
       <div className="mb-4 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Ajustes do bloco
           </p>
           <h3 className="truncate text-base font-semibold">

@@ -141,7 +141,7 @@ export function FinanceiroCustosSection({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-bold">
               <thead>
-                <tr className="border-b border-line text-muted uppercase text-[9px] tracking-wider">
+                <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
                   <th className="py-2">Conta / Descrição</th>
                   <th className="py-2">Status</th>
                   <th className="py-2 text-right">Valor</th>
@@ -160,7 +160,7 @@ export function FinanceiroCustosSection({
                     <td className="py-3">
                       <span
                         className={
-                          "text-[10px] font-black px-2.5 py-0.5 rounded-full border " +
+                          "text-xs font-black px-2.5 py-0.5 rounded-full border " +
                           (c.status === "Pago"
                             ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/25"
                             : "bg-amber-500/10 text-amber-500 border-amber-500/25")
@@ -204,7 +204,7 @@ export function FinanceiroCustosSection({
             <p className="text-xs font-black text-app-text">
               Nenhum custo registrado com este filtro.
             </p>
-            <p className="text-[10px] text-muted font-bold mt-1">
+            <p className="text-xs text-muted font-bold mt-1">
               Insira uma descrição e valor acima para cadastrar novos gastos.
             </p>
           </div>

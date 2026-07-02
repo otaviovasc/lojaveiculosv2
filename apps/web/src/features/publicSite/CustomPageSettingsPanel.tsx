@@ -31,7 +31,7 @@ export function PageSettingsFields({
   return (
     <div className="grid gap-4">
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Configuracoes da pagina
         </p>
         <h3 className="text-base font-semibold text-foreground">
@@ -152,7 +152,7 @@ function PageTypographyFields({
             </option>
           ))}
         </select>
-        <p className="text-[11px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Padrao atual: {config.fonts.body}
         </p>
       </div>

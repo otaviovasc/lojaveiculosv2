@@ -80,7 +80,7 @@ export function InventoryCreateForm({
       >
         <div className="flex flex-wrap gap-x-6 gap-y-4 items-start border-b border-line/60 pb-4 mb-4 text-xs">
           <div className="flex flex-col gap-1.5">
-            <span className="font-black text-muted uppercase tracking-wider text-[10px]">
+            <span className="font-black text-muted uppercase tracking-wider text-xs">
               Loja Operacional
               <span className="text-accent-strong ml-1" aria-hidden="true">
                 *
@@ -100,7 +100,7 @@ export function InventoryCreateForm({
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="font-black text-muted uppercase tracking-wider text-[10px]">
+            <span className="font-black text-muted uppercase tracking-wider text-xs">
               Status inicial no estoque
             </span>
             <div className="flex flex-wrap gap-1.5">

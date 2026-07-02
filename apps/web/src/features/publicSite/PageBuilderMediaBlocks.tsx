@@ -1,4 +1,4 @@
-import { ImageIcon, MapPin, Star, X } from "lucide-react";
+import { ImageIcon, MapPin, Star, UserRound, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { cx } from "../../components/ui/featureShared";
 import { PageBuilderPreviewEmptyState } from "./PageBuilderEmptyState";
@@ -110,35 +110,51 @@ export function TestimonialsBlock({ component }: BuilderBlockProps) {
       <div className="public-storefront-shell px-4 py-16 md:px-6 md:py-20">
         <BlockHeading props={component.props} />
         <div className="mt-10 grid gap-6 md:grid-cols-2">
-          {testimonials.map((item, index) => (
-            <article
-              className="public-editorial-card rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_28px_rgba(15,23,42,0.04)]"
-              key={textProp(item.id) ?? `${index}`}
-            >
-              <div className="flex gap-1 text-accent">
-                {[0, 1, 2, 3, 4].map((i) => (
-                  <Star
-                    key={i}
-                    aria-hidden="true"
-                    className="size-4 fill-current"
-                  />
-                ))}
-              </div>
-              <p className="mt-5 text-base font-semibold leading-relaxed text-app-text italic">
-                "{textProp(item.quote) ?? ""}"
-              </p>
-              <div className="mt-6 flex flex-col">
-                <strong className="text-sm font-bold text-app-text">
-                  {textProp(item.name) ?? "Cliente"}
-                </strong>
-                {textProp(item.role) ? (
-                  <span className="text-xs font-semibold text-muted mt-0.5">
-                    {textProp(item.role)}
-                  </span>
-                ) : null}
-              </div>
-            </article>
-          ))}
+          {testimonials.map((item, index) => {
+            const imageSrc = textProp(item.imageSrc) ?? textProp(item.imageUrl);
+            return (
+              <article
+                className="public-editorial-card rounded-xl p-8 transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_28px_rgba(15,23,42,0.04)]"
+                key={textProp(item.id) ?? `${index}`}
+              >
+                <div className="flex gap-1 text-accent">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Star
+                      key={i}
+                      aria-hidden="true"
+                      className="size-4 fill-current"
+                    />
+                  ))}
+                </div>
+                <p className="mt-5 text-base font-semibold leading-relaxed text-app-text italic">
+                  "{textProp(item.quote) ?? ""}"
+                </p>
+                <div className="mt-6 flex items-center gap-3">
+                  {imageSrc ? (
+                    <img
+                      alt=""
+                      className="size-12 shrink-0 rounded-full border border-line bg-app object-cover"
+                      src={imageSrc}
+                    />
+                  ) : (
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full border border-line bg-app text-muted">
+                      <UserRound aria-hidden="true" className="size-5" />
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <strong className="block truncate text-sm font-bold text-app-text">
+                      {textProp(item.name) ?? "Cliente"}
+                    </strong>
+                    {textProp(item.role) ? (
+                      <span className="mt-0.5 block truncate text-xs font-semibold text-muted">
+                        {textProp(item.role)}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -174,7 +190,7 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
           rel="noreferrer"
           target="_blank"
         >
-          <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
             LOCALIZAÇÃO
           </p>
           <p className="mt-2 text-xl font-extrabold tracking-tight text-app-text">
@@ -280,7 +296,7 @@ export function TypewriterBlock({ component, context }: BuilderBlockProps) {
 function BlockHeading({ props }: { props: Record<string, unknown> }) {
   return (
     <div>
-      <p className="text-[10px] font-black uppercase tracking-[0.26em] text-accent">
+      <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
         DESTAQUE
       </p>
       <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">

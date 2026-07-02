@@ -1,4 +1,5 @@
 import { FileText } from "lucide-react";
+import { Logo } from "../../components/ui/logo";
 import { kindLabel, statusLabel } from "./documentLabels";
 import type { DocumentPreview, WorkspaceDocument } from "./types";
 
@@ -15,7 +16,9 @@ export function DocumentGeneratedPreview({
     <article className="documents-template-paper documents-generated-paper">
       <div className="documents-template-paper-heading">
         <div className="documents-template-paper-brand">
-          <span>LV</span>
+          <span>
+            <Logo className="max-h-5 w-8" variant="white" />
+          </span>
           <div>
             <strong>Loja Veículos</strong>
             <small>{kindLabel(document.kind)}</small>

@@ -208,7 +208,7 @@ export function PaymentsSection({ sale, update }: SectionProps) {
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <div className="flex justify-between items-center text-[10px] font-bold">
+          <div className="flex justify-between items-center text-xs font-bold">
             <span className="text-muted">
               Total Lançado: {sale.payments.length} parcelas
             </span>

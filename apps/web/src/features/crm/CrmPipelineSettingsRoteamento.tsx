@@ -89,7 +89,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
       ) : (
         <div className="border border-line/20 bg-panel/30 rounded-xl overflow-hidden mt-2">
           {/* Table Header */}
-          <div className="grid grid-cols-[140px_1fr_50px] items-center px-5 py-3 border-b border-line/15 text-[10px] font-black uppercase tracking-wider text-muted">
+          <div className="grid grid-cols-[140px_1fr_50px] items-center px-5 py-3 border-b border-line/15 text-xs font-black uppercase tracking-wider text-muted">
             <span>Origem</span>
             <span>Loja</span>
             <span className="text-right"></span>
@@ -111,7 +111,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
                 >
                   {/* Origin Badges */}
                   <div className="flex">
-                    <span className="px-2.5 py-1 rounded bg-line/20 border border-line/35 text-[10px] tracking-wide font-black text-app-text">
+                    <span className="px-2.5 py-1 rounded bg-line/20 border border-line/35 text-xs tracking-wide font-black text-app-text">
                       {originLabel}
                     </span>
                   </div>
@@ -156,7 +156,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
 
             <div className="flex flex-col gap-4 mt-2">
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                <span className="text-xs font-black uppercase tracking-wider text-muted">
                   Origem do Lead
                 </span>
                 <select
@@ -173,7 +173,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
               </label>
 
               <label className="flex flex-col gap-1.5">
-                <span className="text-[10px] font-black uppercase tracking-wider text-muted">
+                <span className="text-xs font-black uppercase tracking-wider text-muted">
                   Loja (opcional)
                 </span>
                 <select
@@ -186,7 +186,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
                   <option value="matriz">Matriz</option>
                   <option value="filial">Filial Norte</option>
                 </select>
-                <span className="text-[10px] font-bold text-muted mt-0.5">
+                <span className="text-xs font-bold text-muted mt-0.5">
                   Restringe a regra a uma loja específica do time.
                 </span>
               </label>

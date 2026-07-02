@@ -53,7 +53,7 @@
 
 .documents-list-title strong {
   color: var(--color-text);
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   font-weight: 950;
 }
 
@@ -61,7 +61,7 @@
 .documents-list-meta,
 .documents-list-meta time {
   color: var(--color-muted);
-  font-size: 0.76rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
 }
 
@@ -103,7 +103,7 @@
   border: 1px solid transparent;
   border-radius: 999px;
   display: inline-flex;
-  font-size: 0.74rem;
+  font-size: var(--font-size-xs);
   font-weight: 950;
   gap: 0.35rem;
   min-height: 1.75rem;
@@ -187,12 +187,12 @@
 
 .documents-state strong {
   color: var(--color-text);
-  font-size: 1rem;
+  font-size: var(--font-size-sm);
   font-weight: 950;
 }
 
 .documents-state p {
-  font-size: 0.9rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
   margin: 0;
 }

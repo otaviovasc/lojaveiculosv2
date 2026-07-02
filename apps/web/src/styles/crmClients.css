@@ -28,13 +28,13 @@
 
 .crm-client-stat span {
   color: var(--color-muted);
-  font-size: 0.8125rem;
+  font-size: var(--font-size-sm);
   font-weight: 800;
 }
 
 .crm-client-stat strong {
   color: var(--color-text);
-  font-size: 1.75rem;
+  font-size: var(--font-size-2xl);
   font-weight: 900;
 }
 

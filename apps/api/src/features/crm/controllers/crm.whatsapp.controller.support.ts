@@ -42,7 +42,9 @@ export function createRepassesAuth(
   repassesConnectionId?: number,
 ) {
   const authorization = context.req.header("authorization");
-  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  const token =
+    authorization?.match(/^Bearer\s+(.+)$/i)?.[1] ??
+    readLocalDemoRepassesToken();
   if (!token) {
     throw new RepassesCrmAuthError(
       "CRM WhatsApp requires a Clerk bearer token.",
@@ -57,6 +59,13 @@ export function createRepassesAuth(
     ...(storeSlug ? { storeSlug } : {}),
     ...(serviceContext.tenantId ? { tenantId: serviceContext.tenantId } : {}),
   };
+}
+
+function readLocalDemoRepassesToken() {
+  if (process.env.APP_ENV !== "local") return undefined;
+  if (process.env.LOCAL_AUTH_BYPASS !== "true") return undefined;
+  if (process.env.REPASSES_CRM_LOCAL_DEMO !== "true") return undefined;
+  return "local-demo-repasses-token";
 }
 
 export function readNumericParam(context: Context, name: string): number {

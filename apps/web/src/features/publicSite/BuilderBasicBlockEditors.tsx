@@ -1,5 +1,6 @@
 import {
   BuilderNumberInput,
+  BuilderImageInput,
   BuilderSelectInput,
   BuilderTextareaInput,
   BuilderTextInput,
@@ -53,7 +54,7 @@ export function HeroBlockEditor({ props, setProp }: PropsEditor) {
         onChange={(value) => setProp("ctaUrl", value)}
         value={props.ctaUrl}
       />
-      <BuilderTextInput
+      <BuilderImageInput
         label="Imagem"
         onChange={(value) => setProp("imageUrl", value)}
         value={props.imageUrl}
@@ -80,7 +81,7 @@ export function AboutBlockEditor({ props, setProp }: PropsEditor) {
         onChange={(value) => setProp("text", value)}
         value={props.text}
       />
-      <BuilderTextInput
+      <BuilderImageInput
         label="Imagem"
         onChange={(value) => setProp("imageUrl", value)}
         value={props.imageUrl}
@@ -122,7 +123,7 @@ export function TextBlockEditor({ props, setProp }: PropsEditor) {
 export function ImageBlockEditor({ props, setProp }: PropsEditor) {
   return (
     <EditorStack>
-      <BuilderTextInput
+      <BuilderImageInput
         label="Imagem"
         onChange={(value) => setProp("imageUrl", value)}
         value={props.imageUrl ?? props.url}

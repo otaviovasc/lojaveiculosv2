@@ -22,6 +22,10 @@ export const customDomainStatus = pgEnum("custom_domain_status", [
   "failed",
 ]);
 
+export const storefrontMediaAssetKind = pgEnum("storefront_media_asset_kind", [
+  "image",
+]);
+
 export const storeProfiles = pgTable(
   "store_profiles",
   {
@@ -123,5 +127,35 @@ export const storeCustomPages = pgTable(
     uniqueIndex("store_custom_pages_store_slug_deleted_unique")
       .on(table.storeId, table.slug)
       .where(sql`${table.isDeleted} = false`),
+  ],
+);
+
+export const storefrontMediaAssets = pgTable(
+  "storefront_media_assets",
+  {
+    ...lifecycleColumns,
+    ...softDeleteColumns,
+    contentType: varchar("content_type", { length: 120 }).notNull(),
+    fileName: varchar("file_name", { length: 191 }).notNull(),
+    height: integer("height"),
+    kind: storefrontMediaAssetKind("kind").notNull().default("image"),
+    metadata: jsonb("metadata").notNull().default({}),
+    publicUrl: text("public_url").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    storageKey: text("storage_key").notNull(),
+    storeId: uuid("store_id")
+      .notNull()
+      .references(() => stores.id),
+    tenantId: uuid("tenant_id")
+      .notNull()
+      .references(() => tenants.id),
+    width: integer("width"),
+  },
+  (table) => [
+    index("storefront_media_assets_store_id_idx").on(table.storeId),
+    index("storefront_media_assets_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("storefront_media_assets_storage_key_unique").on(
+      table.storageKey,
+    ),
   ],
 );

@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ClerkAuthProvider } from "../account/ClerkAuthProvider";
+import { selectLocalDevAccount } from "../account/localDevAuth";
 import { LandingAuthActions } from "./LandingAuthActions";
 
 describe("LandingAuthActions", () => {
@@ -16,6 +17,7 @@ describe("LandingAuthActions", () => {
   it("uses local auth links without Clerk hooks when bypass is enabled", () => {
     vi.stubEnv("VITE_LOCAL_AUTH_BYPASS", "true");
     vi.stubEnv("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_local");
+    selectLocalDevAccount("clerk_seed_owner");
 
     render(
       <MemoryRouter>

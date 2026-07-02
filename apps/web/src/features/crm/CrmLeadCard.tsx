@@ -71,7 +71,7 @@ export function CrmLeadCard({
       </div>
 
       {/* SLA warning indicator */}
-      <div className="text-[10px] font-bold text-red-500 flex items-center gap-1 leading-none">
+      <div className="text-xs font-bold text-red-700 dark:text-red-500 flex items-center gap-1 leading-none">
         <span>{formatLeadTimelineLabel(lead)}</span>
       </div>
 
@@ -109,11 +109,11 @@ export function CrmLeadCard({
                     )}
                   </div>
                   <div className="flex-grow min-w-0 flex flex-col justify-center">
-                    <span className="text-[9px] font-black text-app-text truncate leading-tight">
+                    <span className="text-xs font-black text-app-text truncate leading-tight">
                       {v.label}
                     </span>
                     {(formattedPrice || v.detail) && (
-                      <span className="text-[8px] font-bold text-muted truncate mt-0.5 leading-none">
+                      <span className="text-xs font-bold text-muted truncate mt-0.5 leading-none">
                         {formattedPrice
                           ? formattedPrice
                           : v.detail || v.manufactureYear || ""}
@@ -125,7 +125,7 @@ export function CrmLeadCard({
             })}
           </div>
           {remainingCount > 0 && (
-            <div className="text-[8px] font-black text-accent bg-accent-soft/10 border border-accent/20 rounded px-1.5 py-0.5 w-fit mt-0.5 self-end">
+            <div className="text-xs font-black text-accent bg-accent-soft/10 border border-accent/20 rounded px-1.5 py-0.5 w-fit mt-0.5 self-end">
               +{remainingCount} {remainingCount === 1 ? "carro" : "carros"}
             </div>
           )}
@@ -134,7 +134,7 @@ export function CrmLeadCard({
 
       {/* Bottom Owner and Source Row */}
       <div className="flex items-center justify-between gap-2 border-t border-line/20 pt-2 mt-1">
-        <div className="min-w-0 flex items-center gap-1 text-[10px] font-bold text-muted truncate">
+        <div className="min-w-0 flex items-center gap-1 text-xs font-bold text-muted truncate">
           <span>{formatLeadOwner(lead)}</span>
           <span>·</span>
           <span className="truncate">{lead.source}</span>
@@ -150,7 +150,7 @@ export function CrmLeadCard({
 
       {/* Low-profile Simulation Button */}
       <button
-        className="w-full inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-line/60 bg-app-elevated px-3 text-[10px] font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors mt-0.5"
+        className="w-full inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-line/60 bg-app-elevated px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer transition-colors mt-0.5"
         onClick={handleSimulate}
         type="button"
       >

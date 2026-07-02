@@ -1,6 +1,7 @@
 import type { StorefrontBuilderComponent } from "@lojaveiculosv2/shared";
 import {
   BuilderNumberInput,
+  BuilderImageInput,
   BuilderSelectInput,
   BuilderTextInput,
   BuilderToggleInput,
@@ -251,7 +252,7 @@ export function SimpleBlockEditor({ component, setProp }: EditorHelpers) {
   return (
     <EditorStack>
       <TitleSubtitleFields props={props} setProp={setProp} />
-      <BuilderTextInput
+      <BuilderImageInput
         label="Imagem"
         onChange={(value) => setProp("imageUrl", value)}
         value={props.imageUrl}

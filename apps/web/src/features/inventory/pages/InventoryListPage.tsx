@@ -141,6 +141,8 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
                     void selectListing(listingId, unitId)
                   }
                   onAction={(action, item) => void handleAction(action, item)}
+                  onSortChange={setSortBy}
+                  sortBy={sortBy}
                   visibleColumns={visibleColumns}
                 />
               )}

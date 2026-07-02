@@ -99,7 +99,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
 
       {/* Amber/Yellow warning banner */}
       {(!hasWon || !hasLost) && (
-        <div className="border border-amber-500/25 bg-amber-500/10 text-amber-500 rounded-lg p-3 text-xs font-bold flex items-center gap-2">
+        <div className="border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-500 rounded-lg p-3 text-xs font-bold flex items-center gap-2">
           <CircleAlert className="size-4 shrink-0" />
           <span>
             Configure uma etapa de Venda e uma de Perda para que vendedores
@@ -144,7 +144,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
                 className="size-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: stage.color }}
               />
-              <span className="font-mono text-[10px] tracking-wider">
+              <span className="font-mono text-xs tracking-wider">
                 {stage.color.toUpperCase()}
               </span>
             </div>
@@ -205,7 +205,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
             {/* System label or delete action */}
             <div className="shrink-0 flex items-center justify-center w-8">
               {stage.isSystem ? (
-                <span className="text-[9px] font-black uppercase bg-line/35 text-muted px-1.5 py-0.5 rounded border border-line/45">
+                <span className="text-xs font-black uppercase bg-line/35 text-muted px-1.5 py-0.5 rounded border border-line/45">
                   Sistema
                 </span>
               ) : (

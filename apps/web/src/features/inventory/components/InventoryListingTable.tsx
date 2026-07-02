@@ -4,7 +4,6 @@ import {
   FileArchive,
   Image as ImageIcon,
   Printer,
-  Flame,
 } from "lucide-react";
 import {
   formatInventoryPrice,
@@ -17,6 +16,7 @@ import {
   getInventoryFipeComparison,
   getInventoryLeadsCount,
 } from "../model/listCatalogModel";
+import type { InventoryListSortKey } from "../model/inventoryListSortModel";
 import type { InventoryListingSummary } from "../model/types";
 import {
   EmptyCatalog,
@@ -28,11 +28,15 @@ import {
   FeatureRowActions,
   FeatureTableFrame,
 } from "../../../components/ui/FeatureTable";
+import { InventoryLeadBadge } from "./InventoryLeadBadge";
+import { InventorySortableHeader } from "./InventorySortableHeader";
 
 export function InventoryListingTable({
   items,
   onSelect,
   onAction,
+  onSortChange,
+  sortBy,
   visibleColumns = {
     fotos: true,
     placa: true,
@@ -51,6 +55,8 @@ export function InventoryListingTable({
     action: "template" | "test-drive" | "zip-photos",
     item: InventoryListingSummary,
   ) => void;
+  onSortChange: (value: InventoryListSortKey) => void;
+  sortBy: InventoryListSortKey;
   visibleColumns?: Record<string, boolean>;
 }) {
   if (items.length === 0) {
@@ -65,18 +71,72 @@ export function InventoryListingTable({
   return (
     <FeatureTableFrame>
       <table className="min-w-full border-collapse text-left text-sm">
-        <thead className="bg-app/80 text-[10px] font-black uppercase tracking-wider text-muted border-b border-line">
+        <thead className="bg-app/80 text-xs font-black uppercase tracking-wider text-muted border-b border-line">
           <tr>
-            {visibleColumns.fotos && <th className="px-4 py-3.5">Fotos</th>}
-            {visibleColumns.placa && <th className="px-4 py-3.5">Placa</th>}
-            {visibleColumns.marcaModelo && (
-              <th className="px-4 py-3.5">Marca/Modelo</th>
+            {visibleColumns.fotos && (
+              <InventorySortableHeader
+                column="fotos"
+                label="Fotos"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
             )}
-            {visibleColumns.anoKm && <th className="px-4 py-3.5">Ano/KM</th>}
-            {visibleColumns.preco && <th className="px-4 py-3.5">Preço</th>}
-            {visibleColumns.dias && <th className="px-4 py-3.5">Dias</th>}
-            {visibleColumns.fase && <th className="px-4 py-3.5">Fase</th>}
-            {visibleColumns.leads && <th className="px-4 py-3.5">Leads</th>}
+            {visibleColumns.placa && (
+              <InventorySortableHeader
+                column="placa"
+                label="Placa"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
+            {visibleColumns.marcaModelo && (
+              <InventorySortableHeader
+                column="marcaModelo"
+                label="Marca/Modelo"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
+            {visibleColumns.anoKm && (
+              <InventorySortableHeader
+                column="anoKm"
+                label="Ano/KM"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
+            {visibleColumns.preco && (
+              <InventorySortableHeader
+                column="preco"
+                label="Preço"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
+            {visibleColumns.dias && (
+              <InventorySortableHeader
+                column="dias"
+                label="Dias"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
+            {visibleColumns.fase && (
+              <InventorySortableHeader
+                column="fase"
+                label="Fase"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
+            {visibleColumns.leads && (
+              <InventorySortableHeader
+                column="leads"
+                label="Leads"
+                onSortChange={onSortChange}
+                sortBy={sortBy}
+              />
+            )}
             {visibleColumns.acoes && (
               <th className="px-4 py-3.5 text-right">Ações</th>
             )}
@@ -134,7 +194,7 @@ export function InventoryListingTable({
                     <div className="truncate font-black text-sm text-app-text group-hover:text-accent transition-colors">
                       {listing.title}
                     </div>
-                    <div className="truncate text-[10px] font-bold text-muted mt-0.5">
+                    <div className="truncate text-xs font-bold text-muted mt-0.5">
                       {getInventoryCatalogLine(listing.catalog, listing)}
                     </div>
                   </td>
@@ -153,14 +213,29 @@ export function InventoryListingTable({
                 {/* Preço */}
                 {visibleColumns.preco && (
                   <td className="px-4 py-3 whitespace-nowrap text-xs align-middle">
-                    <div className="font-black text-accent-strong text-sm">
+                    <div
+                      className={
+                        "font-black text-sm " +
+                        (fipe.percentage > 10
+                          ? "text-accent-strong"
+                          : fipe.percentage > 3
+                            ? "text-amber-500"
+                            : fipe.percentage > 0 || fipe.isBelow
+                              ? "text-emerald-500"
+                              : "text-app-text")
+                      }
+                    >
                       {formatInventoryPrice(listing.priceCents)}
                     </div>
                     {fipe.percentage !== 0 && (
                       <div
                         className={
-                          "text-[10px] font-black mt-0.5 " +
-                          (fipe.isBelow ? "text-emerald-500" : "text-amber-500")
+                          "text-xs font-black mt-0.5 " +
+                          (fipe.isBelow || fipe.percentage <= 3
+                            ? "text-emerald-500"
+                            : fipe.percentage > 10
+                              ? "text-accent-strong"
+                              : "text-amber-500")
                         }
                       >
                         {fipe.label}
@@ -173,7 +248,14 @@ export function InventoryListingTable({
                 {visibleColumns.dias && (
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     <div className="flex items-center h-10">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 text-violet-500 border border-violet-500/20 px-2 py-0.5 text-[11px] font-black">
+                      <span
+                        className={
+                          "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-black border " +
+                          (days > 30
+                            ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                            : "bg-panel text-muted border-line")
+                        }
+                      >
                         <Clock className="size-3" />
                         <span>{days}d</span>
                       </span>
@@ -195,14 +277,9 @@ export function InventoryListingTable({
                   <td className="px-4 py-3 whitespace-nowrap align-middle">
                     <div className="flex items-center h-10">
                       {leads > 0 ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-black bg-accent-soft/30 text-accent-strong px-2 py-0.5 rounded-full border border-accent-soft/45">
-                          <Flame className="size-3 text-accent animate-pulse" />
-                          <span>
-                            {leads} {leads === 1 ? "lead" : "leads"}
-                          </span>
-                        </span>
+                        <InventoryLeadBadge leads={leads} />
                       ) : (
-                        <span className="text-muted text-[11px] font-bold">
+                        <span className="text-muted text-xs font-bold">
                           Sem leads
                         </span>
                       )}

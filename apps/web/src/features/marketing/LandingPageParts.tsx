@@ -1,5 +1,6 @@
 import { Check, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Logo } from "../../components/ui";
 import { LandingAuthActions } from "./LandingAuthActions";
 import {
   landingFeatures,
@@ -68,11 +69,7 @@ export function LandingNav() {
     <header className="absolute inset-x-0 top-0 z-20">
       <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
         <Link className="flex items-center gap-3" to="/">
-          <img
-            alt="Loja Veículos"
-            className="h-9 w-auto"
-            src="/icons/logo_lv_white.svg"
-          />
+          <Logo className="h-9 w-auto" variant="full-white" />
         </Link>
         <div className="flex items-center gap-2">
           <LandingAuthActions compact primaryLabel="Criar conta" />

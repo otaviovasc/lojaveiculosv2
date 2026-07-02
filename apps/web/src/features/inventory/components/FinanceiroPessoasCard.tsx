@@ -72,7 +72,7 @@ export function FinanceiroPessoasCard({
                 key={idx}
                 className="flex flex-col gap-1 border-b border-line/30 pb-2"
               >
-                <span className="text-[9px] uppercase tracking-wider text-muted">
+                <span className="text-xs uppercase tracking-wider text-muted">
                   {row.label}
                 </span>
                 <span className="text-app-text font-black">
@@ -81,7 +81,7 @@ export function FinanceiroPessoasCard({
               </div>
             ))}
             <div className="flex flex-col gap-1.5 pt-1">
-              <span className="text-[9px] uppercase tracking-wider text-muted">
+              <span className="text-xs uppercase tracking-wider text-muted">
                 Captadores
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -89,7 +89,7 @@ export function FinanceiroPessoasCard({
                   pessoas.captadores.map((cap) => (
                     <span
                       key={cap}
-                      className="bg-accent-soft text-accent-strong text-[10px] font-black px-2 py-0.5 rounded-full border border-accent-soft/20"
+                      className="bg-accent-soft text-accent-strong text-xs font-black px-2 py-0.5 rounded-full border border-accent-soft/20"
                     >
                       {cap}
                     </span>
@@ -200,7 +200,7 @@ export function FinanceiroPessoasCard({
                 {tempPessoas.captadores.map((cap) => (
                   <span
                     key={cap}
-                    className="inline-flex items-center gap-1 bg-accent-soft text-accent-strong text-[10px] font-black px-2 py-0.5 rounded-full border border-accent-soft/20"
+                    className="inline-flex items-center gap-1 bg-accent-soft text-accent-strong text-xs font-black px-2 py-0.5 rounded-full border border-accent-soft/20"
                   >
                     <span>{cap}</span>
                     <button

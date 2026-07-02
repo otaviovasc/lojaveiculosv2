@@ -91,22 +91,22 @@ function KpiCardButton({
   const className = cx(
     "kpi-card-premium flex items-center gap-3 !p-3 !px-4 !rounded-xl",
     gradientClass(tone),
-    "w-full min-w-[min(100%,12rem)] flex-[1_1_12rem] border border-white/10 shadow-sm text-left text-white transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.015]",
+    "w-full min-w-[min(100%,12rem)] flex-[1_1_12rem] border border-white/10 shadow-sm text-left transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.015]",
     onClick && "cursor-pointer",
-    active && "ring-2 ring-white/70 ring-offset-2 ring-offset-app",
+    active && "ring-2 ring-accent/70 ring-offset-2 ring-offset-app",
     disabled && "cursor-not-allowed opacity-70",
   );
   const content = (
     <>
       <div className="gloss-overlay" />
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/15 border border-white/10 relative z-10">
-        <IconComponent aria-hidden="true" className="size-4.5 text-white" />
+      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/15 border border-line/20 dark:border-white/10 relative z-10">
+        <IconComponent aria-hidden="true" className="size-4.5 kpi-card-icon" />
       </div>
       <div className="min-w-0 relative z-10">
-        <span className="block text-[9px] font-black uppercase tracking-wider text-white/70 leading-none">
+        <span className="block text-xs font-black uppercase tracking-wider kpi-card-label leading-none">
           {label}
         </span>
-        <strong className="block text-lg font-black text-white mt-1.5 leading-none">
+        <strong className="block text-lg font-black kpi-card-value mt-1.5 leading-none">
           {typeof value === "number" ? (
             <AnimatedCounter value={value} />
           ) : (

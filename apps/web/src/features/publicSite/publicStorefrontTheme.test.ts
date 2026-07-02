@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createVisibleSections } from "./publicStorefrontTheme";
+import {
+  createVisibleSections,
+  readTestimonials,
+} from "./publicStorefrontTheme";
 
 describe("createVisibleSections", () => {
   it("keeps a visible hero section first even when persisted after inventory", () => {
@@ -29,5 +32,29 @@ describe("createVisibleSections", () => {
     );
 
     expect(sections.map((section) => section.type)).toEqual(["featured"]);
+  });
+});
+
+describe("readTestimonials", () => {
+  it("keeps the optional testimonial image URL for public rendering", () => {
+    const testimonials = readTestimonials([
+      {
+        id: "t1",
+        imageSrc: "https://cdn.example.com/client.png",
+        name: "Cliente",
+        quote: "Atendimento transparente.",
+        role: "Comprador",
+      },
+    ]);
+
+    expect(testimonials).toEqual([
+      {
+        id: "t1",
+        imageSrc: "https://cdn.example.com/client.png",
+        name: "Cliente",
+        quote: "Atendimento transparente.",
+        role: "Comprador",
+      },
+    ]);
   });
 });

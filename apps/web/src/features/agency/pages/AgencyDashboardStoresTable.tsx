@@ -144,7 +144,7 @@ function AgencyStoreRow({
       </td>
       <td>
         <div className="flex flex-col items-center gap-1.5">
-          <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+          <span className="text-xs font-black uppercase text-muted tracking-wider">
             {store.plano}
           </span>
           <div className={`badge-flat ${status.classes}`}>

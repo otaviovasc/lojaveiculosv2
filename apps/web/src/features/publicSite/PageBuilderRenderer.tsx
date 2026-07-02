@@ -228,7 +228,7 @@ function BuilderBlockFrame({
     >
       <div
         className={cn(
-          "pointer-events-none absolute left-3 top-3 z-50 inline-flex translate-y-1 items-center gap-2 rounded-full border border-line bg-panel/95 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-app-text opacity-0 shadow-lg backdrop-blur transition-all duration-200",
+          "pointer-events-none absolute left-3 top-3 z-50 inline-flex translate-y-1 items-center gap-2 rounded-full border border-line bg-panel/95 px-3 py-1 text-xs font-black uppercase tracking-widest text-app-text opacity-0 shadow-lg backdrop-blur transition-all duration-200",
           selected
             ? "translate-y-0 opacity-100"
             : "group-hover:translate-y-0 group-hover:opacity-100",
@@ -236,7 +236,7 @@ function BuilderBlockFrame({
       >
         {blockLabel(component.type)}
         {!component.visible ? (
-          <span className="rounded-full bg-warning px-2 py-0.5 text-[9px] text-warning-foreground">
+          <span className="rounded-full bg-warning px-2 py-0.5 text-xs text-warning-foreground">
             Oculto
           </span>
         ) : null}

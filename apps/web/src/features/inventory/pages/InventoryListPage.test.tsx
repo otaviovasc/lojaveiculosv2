@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -21,6 +27,7 @@ vi.mock("../../../components/ui/CountUp", () => ({
 }));
 
 afterEach(() => {
+  cleanup();
   vi.unstubAllGlobals();
 });
 
@@ -55,13 +62,62 @@ describe("InventoryListPage", () => {
     });
     expect(within(statusFilter).getByText("Reservado")).toBeVisible();
   });
+
+  it("sorts the table when clicking column titles", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("{}", { status: 200 })),
+    );
+    const api = createInventoryApiStub();
+    const user = userEvent.setup();
+
+    render(<InventoryListPage api={api} />);
+
+    await waitFor(() =>
+      expect(api.listListings).toHaveBeenCalledWith({ limit: 100 }),
+    );
+
+    expect(tableTitles()).toEqual([
+      "Veiculo available",
+      "Veiculo reserved",
+      "Veiculo sold",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Ordenar por Preço" }));
+
+    expect(tableTitles()).toEqual([
+      "Veiculo available",
+      "Veiculo sold",
+      "Veiculo reserved",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Ordenar por Preço" }));
+
+    expect(tableTitles()).toEqual([
+      "Veiculo reserved",
+      "Veiculo sold",
+      "Veiculo available",
+    ]);
+
+    await user.click(screen.getByRole("button", { name: "Ordenar por Preço" }));
+
+    expect(tableTitles()).toEqual([
+      "Veiculo available",
+      "Veiculo reserved",
+      "Veiculo sold",
+    ]);
+  });
 });
 
 function createInventoryApiStub() {
   const items = [
-    summary("listing_available", "published", "available"),
-    summary("listing_reserved", "published", "reserved"),
-    summary("listing_sold", "sold_out", "sold"),
+    summary("listing_available", "published", "available", {
+      priceCents: 10000000,
+    }),
+    summary("listing_reserved", "published", "reserved", {
+      priceCents: 30000000,
+    }),
+    summary("listing_sold", "sold_out", "sold", { priceCents: 20000000 }),
   ];
 
   const listListings = vi.fn(async (input?: ListInventoryInput) => {
@@ -89,6 +145,7 @@ function summary(
   id: string,
   status: InventoryListingSummary["listing"]["status"],
   unitStatus: InventoryListingSummary["units"][number]["status"],
+  overrides: { priceCents?: number } = {},
 ): InventoryListingSummary {
   return {
     listing: {
@@ -105,14 +162,14 @@ function summary(
       mileageKm: null,
       modelYear: 2025,
       plate: null,
-      priceCents: 12345678,
+      priceCents: overrides.priceCents ?? 12345678,
       status,
       storeId: "store_1",
       tenantId: "tenant_1",
       title: `Veiculo ${unitStatus}`,
       transmission: null,
       trimName: null,
-      unitIds: ["unit_1"],
+      unitIds: [`${id}_unit`],
       updatedAt: "2026-01-01T00:00:00.000Z",
     },
     mediaCount: 0,
@@ -120,7 +177,7 @@ function summary(
     primaryUnit: {
       colorName: null,
       createdAt: "2026-01-01T00:00:00.000Z",
-      id: "unit_1",
+      id: `${id}_unit`,
       listingId: id,
       plate: "ABC1D23",
       status: unitStatus,
@@ -134,7 +191,7 @@ function summary(
       {
         colorName: null,
         createdAt: "2026-01-01T00:00:00.000Z",
-        id: "unit_1",
+        id: `${id}_unit`,
         listingId: id,
         plate: "ABC1D23",
         status: unitStatus,
@@ -146,4 +203,12 @@ function summary(
       },
     ],
   };
+}
+
+function tableTitles() {
+  const [, ...rows] = within(screen.getByRole("table")).getAllByRole("row");
+  return rows.map((row) => {
+    const title = within(row).getByText(/^Veiculo /);
+    return title.textContent;
+  });
 }

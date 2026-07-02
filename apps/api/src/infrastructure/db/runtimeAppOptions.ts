@@ -43,6 +43,7 @@ import {
   createDrizzleStorefrontPageRepository,
   type DrizzleStorefrontPageClient,
 } from "./storefront/drizzleStorefrontPageRepository.js";
+import { createRuntimeStorefrontMediaServices } from "./runtimeStorefrontMediaServices.js";
 import {
   createDrizzleAuditSink,
   type DrizzleAuditSinkClient,
@@ -169,6 +170,10 @@ export function createRuntimeHttpAppOptions({
     ),
     storefrontPageRepository: createDrizzleStorefrontPageRepository(
       db as DrizzleStorefrontPageClient,
+    ),
+    storefrontMediaServices: createRuntimeStorefrontMediaServices(
+      db,
+      objectStorage,
     ),
     publicStorefrontCrmRepository: createDrizzleCrmRepository(
       db as unknown as DrizzleCrmClient,

@@ -167,7 +167,7 @@ export function CrmQuickAddPipelineModal({ onClose, onCreatePipeline }: Props) {
         <header className="p-4 border-b border-line/45 flex items-center justify-between shrink-0 bg-app-elevated/45">
           <div>
             <h3 className="text-sm font-black text-app-text">Novo Pipeline</h3>
-            <p className="text-[10px] font-bold text-muted mt-0.5">
+            <p className="text-xs font-bold text-muted mt-0.5">
               Criar funil de vendas personalizado
             </p>
           </div>
@@ -225,7 +225,7 @@ export function CrmQuickAddPipelineModal({ onClose, onCreatePipeline }: Props) {
                         {preset.name}
                       </span>
                     </div>
-                    <p className="text-[10px] font-bold text-muted mt-1.5 leading-relaxed">
+                    <p className="text-xs font-bold text-muted mt-1.5 leading-relaxed">
                       {preset.description}
                     </p>
                   </button>
@@ -235,14 +235,14 @@ export function CrmQuickAddPipelineModal({ onClose, onCreatePipeline }: Props) {
           </div>
 
           <div className="flex flex-col gap-2 bg-app-elevated/20 border border-line/60 rounded-xl p-3.5 mt-1">
-            <span className="text-[10px] font-black uppercase text-muted tracking-wider">
+            <span className="text-xs font-black uppercase text-muted tracking-wider">
               Visualização das Etapas Iniciais ({selectedPreset.stages.length})
             </span>
             <div className="flex items-center gap-1.5 flex-wrap mt-1">
               {selectedPreset.stages.map((stage, idx) => (
                 <div key={idx} className="flex items-center gap-1.5">
                   <span
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border uppercase tracking-wider"
                     style={{
                       backgroundColor: stage.color + "15",
                       borderColor: stage.color,
@@ -252,7 +252,7 @@ export function CrmQuickAddPipelineModal({ onClose, onCreatePipeline }: Props) {
                     {stage.name}
                   </span>
                   {idx < selectedPreset.stages.length - 1 && (
-                    <span className="text-muted text-[10px] font-black font-mono">
+                    <span className="text-muted text-xs font-black font-mono">
                       →
                     </span>
                   )}

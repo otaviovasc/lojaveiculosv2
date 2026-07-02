@@ -39,7 +39,7 @@ export function LookupStatus({
         <div className="grid gap-1">
           <span>{state.message}</span>
           {state.requestId ? (
-            <span className="font-mono text-[10px] text-danger/80">
+            <span className="font-mono text-xs text-danger/80">
               ID do erro: {state.requestId}
             </span>
           ) : null}
@@ -57,7 +57,7 @@ export function LookupStatus({
   return (
     <div className="rounded-xl border border-line bg-app p-4 space-y-3 shadow-inner">
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] font-black uppercase tracking-wide text-muted">
+        <span className="text-xs font-black uppercase tracking-wide text-muted">
           Dados encontrados
         </span>
         <strong className="text-sm font-black text-app-text">
@@ -71,7 +71,7 @@ export function LookupStatus({
         <div className="flex flex-wrap gap-1.5 pt-2 border-t border-line/60">
           {state.value.metadata.slice(0, 6).map((item) => (
             <span
-              className="rounded-lg border border-line bg-panel px-2 py-1 text-[10px] font-bold text-muted"
+              className="rounded-lg border border-line bg-panel px-2 py-1 text-xs font-bold text-muted"
               key={`${item.label}:${item.value}`}
             >
               {item.label}: {item.value}
@@ -101,7 +101,7 @@ export function AnalysisPanel({
           <span className="text-xs font-black uppercase tracking-wider text-app-text">
             Copilot de Revenda
           </span>
-          <span className="bg-accent-soft text-accent-strong text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent-soft/20">
+          <span className="bg-accent-soft text-accent-strong text-xs font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-accent-soft/20">
             IA
           </span>
         </div>
@@ -139,7 +139,7 @@ function AnalysisStatus({
         <div className="flex flex-col gap-2 rounded-xl border border-line bg-app p-4 text-xs font-bold text-muted transition-all">
           <div className="flex items-center gap-2 text-warning">
             <Info className="size-4 shrink-0" />
-            <span className="font-black uppercase tracking-wider text-[10px]">
+            <span className="font-black uppercase tracking-wider text-xs">
               Dados Insuficientes
             </span>
           </div>
@@ -153,7 +153,7 @@ function AnalysisStatus({
       <div className="flex flex-col gap-2 rounded-xl border border-accent-soft/20 bg-accent-soft/5 p-4 text-xs font-bold text-app-text transition-all animate-pulse">
         <div className="flex items-center gap-2 text-accent-strong">
           <Bot className="size-4 shrink-0 animate-bounce" />
-          <span className="font-black uppercase tracking-wider text-[10px]">
+          <span className="font-black uppercase tracking-wider text-xs">
             Pronto para Analisar
           </span>
         </div>
@@ -194,7 +194,7 @@ function AnalysisStatus({
         <div className="grid gap-1">
           <p>{state.message}</p>
           {state.requestId ? (
-            <span className="font-mono text-[10px] text-danger/80">
+            <span className="font-mono text-xs text-danger/80">
               ID do erro: {state.requestId}
             </span>
           ) : null}
@@ -232,11 +232,11 @@ function AnalysisStatus({
     <div className="flex flex-col gap-4">
       <div className={`rounded-xl border p-4 transition-all ${riskBgClass}`}>
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-black uppercase tracking-wide text-muted">
+          <span className="text-xs font-black uppercase tracking-wide text-muted">
             Score de Risco do Negócio
           </span>
           <span
-            className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-current/20 ${riskColorClass}`}
+            className={`text-xs font-black uppercase tracking-wider px-2 py-0.5 rounded border border-current/20 ${riskColorClass}`}
           >
             {riskText}
           </span>
@@ -268,14 +268,14 @@ function AnalysisStatus({
         <div className="rounded-xl border border-line bg-app p-4 space-y-2 shadow-sm animate-fade-in">
           <div className="flex items-center gap-1.5 text-accent-strong">
             <Bot className="size-3.5" />
-            <span className="text-[10px] font-black uppercase tracking-wide text-muted">
+            <span className="text-xs font-black uppercase tracking-wide text-muted">
               Sugestão de Descrição por IA
             </span>
           </div>
           <p className="text-xs font-semibold leading-relaxed text-muted font-mono bg-panel p-2.5 rounded-lg border border-line/50 select-all cursor-pointer hover:border-line transition-all">
             {state.value.suggestedDescription}
           </p>
-          <p className="text-[9px] font-bold text-muted text-right">
+          <p className="text-xs font-bold text-muted text-right">
             Clique no texto acima para selecionar e copiar
           </p>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Car, Globe, MessageSquare, ChevronDown, Clock } from "lucide-react";
+import { getContrastColorForText } from "../../lib/colors";
 import type { ProductCrmLead } from "./productCrmTypes";
 import type { CrmListViewProps } from "./CrmPipelineViewTypes";
 import { formatLeadName } from "./crmPipelineModels";
@@ -63,19 +64,19 @@ export function CrmListView({
       <table className="crm-table w-full border-collapse text-left">
         <thead>
           <tr className="border-b border-line bg-app-elevated/45">
-            <th className="p-3 text-[10px] font-black uppercase text-muted tracking-wider">
+            <th className="p-3 text-xs font-black uppercase text-muted tracking-wider">
               Veículos
             </th>
-            <th className="p-3 text-[10px] font-black uppercase text-muted tracking-wider">
+            <th className="p-3 text-xs font-black uppercase text-muted tracking-wider">
               Cliente
             </th>
-            <th className="p-3 text-[10px] font-black uppercase text-muted tracking-wider">
+            <th className="p-3 text-xs font-black uppercase text-muted tracking-wider">
               Fase
             </th>
-            <th className="p-3 text-[10px] font-black uppercase text-muted tracking-wider">
+            <th className="p-3 text-xs font-black uppercase text-muted tracking-wider">
               Tempo
             </th>
-            <th className="p-3 text-[10px] font-black uppercase text-muted tracking-wider">
+            <th className="p-3 text-xs font-black uppercase text-muted tracking-wider">
               Origem
             </th>
           </tr>
@@ -88,6 +89,7 @@ export function CrmListView({
             const activeStageId = getLeadStageId(lead);
             const currentStage =
               stages.find((s) => s.id === activeStageId) ?? stages[0];
+            const currentStageColor = currentStage?.color ?? "";
             const remainingCount = vehicles.length - 1;
 
             return (
@@ -115,7 +117,7 @@ export function CrmListView({
                         {firstVehicle ? firstVehicle.label : "Sem veículo"}
                       </span>
                       {remainingCount > 0 && (
-                        <span className="text-[9px] font-black text-accent bg-accent-soft/10 border border-accent/20 rounded px-1.5 py-0.2 w-fit mt-0.5">
+                        <span className="text-xs font-black text-accent bg-accent-soft/10 border border-accent/20 rounded px-1.5 py-0.2 w-fit mt-0.5">
                           +{remainingCount} veículo(s)
                         </span>
                       )}
@@ -129,7 +131,7 @@ export function CrmListView({
                     <span className="text-xs font-black text-app-text tracking-wider">
                       {leadName}
                     </span>
-                    <span className="text-[10px] font-bold text-muted mt-0.5">
+                    <span className="text-xs font-bold text-muted mt-0.5">
                       {lead.buyerPhone || "Sem telefone"}
                     </span>
                   </div>
@@ -142,16 +144,18 @@ export function CrmListView({
                     ref={activeDropdownLeadId === lead.id ? dropdownRef : null}
                   >
                     <button
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black border uppercase tracking-wider transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black border uppercase tracking-wider transition-colors cursor-pointer"
                       onClick={() =>
                         setActiveDropdownLeadId(
                           activeDropdownLeadId === lead.id ? null : lead.id,
                         )
                       }
                       style={{
-                        backgroundColor: `${currentStage?.color}15`,
-                        borderColor: currentStage?.color,
-                        color: currentStage?.color,
+                        backgroundColor: currentStageColor
+                          ? `${currentStageColor}15`
+                          : "transparent",
+                        borderColor: currentStageColor || "var(--color-line)",
+                        color: getContrastColorForText(currentStageColor),
                       }}
                       type="button"
                     >
@@ -187,7 +191,7 @@ export function CrmListView({
 
                 {/* Tempo Column */}
                 <td className="p-3">
-                  <div className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/5 border border-red-500/10 rounded-lg px-2 py-1 w-fit">
+                  <div className="flex items-center gap-1 text-xs font-bold text-red-700 dark:text-red-500 bg-red-500/5 border border-red-500/10 rounded-lg px-2 py-1 w-fit">
                     <Clock className="size-3 shrink-0" />
                     <span>{formatLeadTimelineLabel(lead)}</span>
                   </div>

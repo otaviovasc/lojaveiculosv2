@@ -69,12 +69,12 @@ export function MembrosSidebar({
                   {member.user.name ?? member.user.email}
                 </strong>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-[9px] font-black uppercase text-accent-strong tracking-wider">
+                  <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-xs font-black uppercase text-accent-strong tracking-wider">
                     {label}
                   </span>
                   <span
                     className={cx(
-                      "inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider",
+                      "inline-flex items-center rounded px-1.5 py-0.5 text-xs font-black uppercase tracking-wider",
                       member.manageable
                         ? "bg-green-soft text-emerald-500"
                         : "bg-line/50 text-muted",
@@ -88,7 +88,7 @@ export function MembrosSidebar({
           );
         })}
         {roles.pendingInvitations.length ? (
-          <span className="px-1 pt-1 text-[10px] font-black uppercase tracking-wider text-muted">
+          <span className="px-1 pt-1 text-xs font-black uppercase tracking-wider text-muted">
             Convites pendentes
           </span>
         ) : null}
@@ -105,15 +105,15 @@ export function MembrosSidebar({
                 {invitation.name ?? invitation.email}
               </strong>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-accent-strong">
+                <span className="inline-flex items-center rounded bg-accent-soft px-1.5 py-0.5 text-xs font-black uppercase tracking-wider text-accent-strong">
                   {roleLabel(invitation.role, roles)}
                 </span>
-                <span className="inline-flex items-center rounded bg-amber-500/10 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-600">
+                <span className="inline-flex items-center rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-black uppercase tracking-wider text-amber-600">
                   Pendente
                 </span>
               </div>
               {invitation.name ? (
-                <span className="block truncate text-[10px] font-bold text-muted">
+                <span className="block truncate text-xs font-bold text-muted">
                   {invitation.email}
                 </span>
               ) : null}

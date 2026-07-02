@@ -45,7 +45,7 @@ export function PageCard({
             </div>
           </div>
           {!page.visible ? (
-            <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-[10px] font-medium text-warning">
+            <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
               Rascunho
             </span>
           ) : null}

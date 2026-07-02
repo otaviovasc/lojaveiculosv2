@@ -26,7 +26,7 @@ export function AgencyTeamAccessPage() {
     <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-accent">
+          <span className="text-xs font-black uppercase tracking-widest text-accent">
             Controle de Equipe
           </span>
           <h1 className="text-3xl font-black italic uppercase tracking-tighter text-primary mt-1">
@@ -74,12 +74,12 @@ export function AgencyTeamAccessPage() {
                   </div>
                 </td>
                 <td className="text-center">
-                  <span className="badge-flat badge-active text-[10px]">
+                  <span className="badge-flat badge-active text-xs">
                     {member.status}
                   </span>
                 </td>
                 <td className="text-right">
-                  <button className="btn-secondary-flat py-1 px-3.5 text-[10px]">
+                  <button className="btn-secondary-flat py-1 px-3.5 text-xs">
                     <Key className="size-3" />
                     Editar
                   </button>

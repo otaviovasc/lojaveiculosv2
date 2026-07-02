@@ -162,7 +162,7 @@ export const defaultStorefrontBuilderConfig: StorefrontBuilderConfig = {
   backgroundColor: "#F8F5F0",
   contact: {},
   fonts: {
-    body: "Plus Jakarta Sans",
+    body: "Inter",
     heading: "Plus Jakarta Sans",
   },
   socialLinks: {},

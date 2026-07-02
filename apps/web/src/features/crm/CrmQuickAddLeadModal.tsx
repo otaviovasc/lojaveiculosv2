@@ -114,7 +114,7 @@ export function CrmQuickAddLeadModal({
             </div>
             <div className="grid grid-cols-3 gap-4 mt-1">
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Nome do contato
                 </span>
                 <FeatureInput
@@ -126,7 +126,7 @@ export function CrmQuickAddLeadModal({
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   Telefone
                 </span>
                 <FeatureInput
@@ -137,7 +137,7 @@ export function CrmQuickAddLeadModal({
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-[10px] font-black uppercase text-muted">
+                <span className="text-xs font-black uppercase text-muted">
                   E-mail
                 </span>
                 <FeatureInput

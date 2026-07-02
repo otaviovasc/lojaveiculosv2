@@ -30,7 +30,7 @@
 .documents-folder-nav header span,
 .documents-folder-list small {
   color: var(--color-muted);
-  font-size: 0.72rem;
+  font-size: var(--font-size-xs);
   font-weight: 800;
 }
 
@@ -67,7 +67,7 @@
 }
 
 .documents-folder-list strong {
-  font-size: 0.84rem;
+  font-size: var(--font-size-sm);
   font-weight: 950;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,7 +79,7 @@
   border: 1px solid var(--color-line);
   border-radius: 999px;
   color: var(--color-muted);
-  font-size: 0.74rem;
+  font-size: var(--font-size-xs);
   font-style: normal;
   font-weight: 950;
   min-width: 1.75rem;
@@ -107,7 +107,7 @@
 }
 
 .documents-filter-title strong {
-  font-size: 0.95rem;
+  font-size: var(--font-size-sm);
   font-weight: 950;
 }
 
@@ -126,7 +126,7 @@
   align-items: center;
   color: var(--color-muted);
   display: inline-flex;
-  font-size: 0.76rem;
+  font-size: var(--font-size-sm);
   font-weight: 900;
   gap: 0.4rem;
 }

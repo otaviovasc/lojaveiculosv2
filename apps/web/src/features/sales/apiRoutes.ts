@@ -1,8 +1,8 @@
 import type { SalesAuth, SalesListQuery } from "./types";
 
 export function salesEndpoint(baseUrl: string | undefined, path = "") {
-  const base = baseUrl ? baseUrl.replace(/\/$/, "") : "";
-  return `${base}/api/v1/sales${path}`;
+  const base = (baseUrl ?? "/api/v1").replace(/\/$/, "");
+  return `${base}/sales${path}`;
 }
 
 export const salesRoutes = {

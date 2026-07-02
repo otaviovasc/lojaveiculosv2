@@ -9,13 +9,17 @@ import { downloadAndZipPhotos } from "../components/zipPhotos";
 import {
   createInventoryErrorState,
   createListQuery,
-  sortInventoryListItems,
   summarizeInventoryList,
   type InventoryDetailSelectionState,
   type InventoryListQueryInput,
   type InventoryListState,
   type InventoryListStatusFilter,
 } from "./listCatalogModel";
+import {
+  DEFAULT_INVENTORY_LIST_SORT,
+  sortInventoryListItems,
+  type InventoryListSortKey,
+} from "./inventoryListSortModel";
 import {
   readCurrentInventoryRouteState,
   writeInventoryScreenHash,
@@ -57,8 +61,6 @@ export function useInventoryList(api?: InventoryApi) {
   const [selection, setSelection] = useState<InventoryDetailSelectionState>({
     kind: "idle",
   });
-  const editPanelRef = useRef<HTMLDivElement>(null);
-
   // V1 Migrated Actions and settings states
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [isTestDriveOpen, setIsTestDriveOpen] = useState(false);
@@ -80,7 +82,9 @@ export function useInventoryList(api?: InventoryApi) {
     );
     return saved === "cards" || saved === "list" ? saved : "list";
   });
-  const [sortBy, setSortBy] = useState("newest");
+  const [sortBy, setSortBy] = useState<InventoryListSortKey>(
+    DEFAULT_INVENTORY_LIST_SORT,
+  );
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     {
       fotos: true,
@@ -108,17 +112,6 @@ export function useInventoryList(api?: InventoryApi) {
   const handleColumnToggle = (key: string, visible: boolean) => {
     setVisibleColumns((prev) => ({ ...prev, [key]: visible }));
   };
-
-  useEffect(() => {
-    if (detail) {
-      setTimeout(() => {
-        editPanelRef.current?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      }, 80);
-    }
-  }, [detail]);
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -322,7 +315,6 @@ export function useInventoryList(api?: InventoryApi) {
     setDetail,
     selectedUnitId,
     selection,
-    editPanelRef,
     isTemplateOpen,
     setIsTemplateOpen,
     isTestDriveOpen,

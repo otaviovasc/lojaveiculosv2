@@ -139,12 +139,12 @@ export function ReciboReservaPrint({
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{buyer.name || "Comprador"}</p>
-            <p className="text-[10px]">CLIENTE</p>
+            <p className="text-xs">CLIENTE</p>
           </div>
           <div className="w-1/2 flex flex-col items-center">
             <div className="w-full border-t border-black mb-1" />
             <p className="font-bold">{storeName}</p>
-            <p className="text-[10px]">VENDEDOR / REPRESENTANTE</p>
+            <p className="text-xs">VENDEDOR / REPRESENTANTE</p>
           </div>
         </div>
       </div>

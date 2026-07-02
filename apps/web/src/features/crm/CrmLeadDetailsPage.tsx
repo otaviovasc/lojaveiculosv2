@@ -89,14 +89,14 @@ export function CrmLeadDetailsPage({
             <h2 className="text-base font-black text-app-text uppercase tracking-wide leading-none">
               {leadName}
             </h2>
-            <span className="text-[10px] font-bold text-muted mt-1 uppercase tracking-wider">
+            <span className="text-xs font-bold text-muted mt-1 uppercase tracking-wider">
               {lead.source || "Manual"}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-500">
+          <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-black text-amber-700 dark:text-amber-500">
             {formatLeadTimelineLabel(lead)}
           </span>
 
@@ -166,7 +166,7 @@ export function CrmLeadDetailsPage({
         {/* Left Column Workspace */}
         <div className="flex flex-col gap-5 min-w-0">
           {/* Tabs row bar */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1.5 border-b border-line/10 scrollbar-none">
+          <div className="custom-scrollbar flex items-center gap-1 overflow-x-auto pb-1.5 border-b border-line/10">
             {tabs.map((tab) => (
               <button
                 className={

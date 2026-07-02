@@ -17,7 +17,7 @@ const defaultConfig: StorefrontBuilderConfig = {
   accentColor: "#C9A84C",
   backgroundColor: "#F8F5F0",
   contact: {},
-  fonts: { body: "Plus Jakarta Sans", heading: "Plus Jakarta Sans" },
+  fonts: { body: "Inter", heading: "Plus Jakarta Sans" },
   socialLinks: {},
   storeName: "Loja Demo",
   templateId: "classic",

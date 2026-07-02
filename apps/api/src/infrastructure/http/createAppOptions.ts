@@ -20,6 +20,7 @@ import type { ExternalApiRepository } from "../../domains/externalApi/ports/exte
 import type { PublicStorefrontRepository } from "../../domains/storefront/ports/publicStorefrontRepository.js";
 import type { StorefrontPageRepository } from "../../domains/storefront/ports/storefrontPageRepository.js";
 import type { CrmRepository } from "../../domains/crm/ports/crmRepository.js";
+import type { StorefrontMediaServices } from "../../features/storefront/controllers/storefrontMediaServices.js";
 import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 
@@ -43,6 +44,7 @@ export type CreateAppOptions = {
   inventoryListingServices?: InventoryListingServices;
   publicStorefrontRepository?: PublicStorefrontRepository;
   storefrontPageRepository?: StorefrontPageRepository;
+  storefrontMediaServices?: StorefrontMediaServices;
   publicStorefrontCrmRepository?: CrmRepository;
   roleServices?: RoleServices;
   salesServices?: SalesServices;
