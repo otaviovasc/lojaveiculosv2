@@ -80,7 +80,10 @@ function canShowNavigationItem(
   item: NavigationItem,
   session: SessionBootstrap,
 ) {
-  return getModulePermission(item.id, session).canView;
+  return (
+    getModulePermission(item.id, session).canView &&
+    hasModuleEntitlement(item, session)
+  );
 }
 
 function gate(
@@ -102,4 +105,11 @@ function hasModulePermissions(
   return rule.mode === "any"
     ? rule.permissions.some(check)
     : rule.permissions.every(check);
+}
+
+function hasModuleEntitlement(item: NavigationItem, session: SessionBootstrap) {
+  if (!item.entitlementKey) return true;
+  const entitlements = session.defaultStore?.entitlements;
+  if (!entitlements) return true;
+  return entitlements.includes(item.entitlementKey);
 }

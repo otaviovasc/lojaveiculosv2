@@ -3,7 +3,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { FiscalDocument } from "../../ports/fiscalRepository.js";
+import type {
+  FiscalDocument,
+  FiscalDocumentStatus,
+} from "../../ports/fiscalRepository.js";
 import {
   requireFiscalScope,
   requireScopedFiscalDocument,
@@ -28,12 +31,12 @@ export async function syncFiscalDocumentStatus(
       documentId: input.documentId,
     }),
   );
-
   const persistedDocument = await requireScopedFiscalDocument(
     scope,
     input.documentId,
     ports.fiscalRepository,
   );
+
   const providerResult = await ports.fiscalProviderGateway.syncDocumentStatus({
     providerDocumentId: persistedDocument.providerDocumentId,
     storeId: scope.storeId,
@@ -42,8 +45,17 @@ export async function syncFiscalDocumentStatus(
   const document = await ports.fiscalRepository.updateDocumentStatus({
     accessKey: providerResult.accessKey,
     documentId: input.documentId,
-    status:
-      providerResult.status === "processing" ? "draft" : providerResult.status,
+    metadata: { providerStatus: providerResult.status },
+    providerDocumentId: providerResult.providerDocumentId,
+    status: mapStatus(providerResult.status),
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
+  await ports.fiscalRepository.createDocumentSnapshot({
+    actorId: context.actor.id,
+    fiscalDocumentId: document.id,
+    providerResponse: providerResult.rawResponse ?? {},
+    snapshotType: "status_sync_response",
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
@@ -58,7 +70,7 @@ export async function syncFiscalDocumentStatus(
       providerDocumentId: document.providerDocumentId,
       status: document.status,
     },
-    outcome: document.status === "failed" ? "failed" : "succeeded",
+    outcome: "succeeded",
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
@@ -66,4 +78,14 @@ export async function syncFiscalDocumentStatus(
   });
 
   return document;
+}
+
+function mapStatus(status: string): FiscalDocumentStatus {
+  if (status === "processing") return "processing";
+  if (status === "queued") return "queued";
+  if (status === "authorized") return "authorized";
+  if (status === "issued") return "issued";
+  if (status === "cancelled") return "cancelled";
+  if (status === "rejected") return "rejected";
+  return status === "error" ? "error" : "failed";
 }

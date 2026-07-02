@@ -66,7 +66,11 @@ describe("production smoke contracts", () => {
       "/api/v1/fiscal",
       createFiscalFeature({
         contextFactory: async () =>
-          createUserContext(["fiscal.manage"], undefined, ["nfe"]),
+          createUserContext(
+            ["fiscal.manage", "fiscal.document.issue"],
+            undefined,
+            ["nfe"],
+          ),
         services: createFiscalServices({
           fiscalProviderGateway: createSpedyHttpFiscalProviderGateway({
             env: { SPEDY_RUNTIME_IMPLEMENTATION: "http" },
@@ -93,7 +97,7 @@ describe("production smoke contracts", () => {
     expect(body).toMatchObject({
       code: "FISCAL_PROVIDER_UNAVAILABLE",
       message:
-        "SPEDY fiscal gateway is not configured: SPEDY_API_URL, SPEDY_API_TOKEN, SPEDY_WEBHOOK_SECRET, SPEDY_ISSUE_PATH, SPEDY_CANCEL_PATH, SPEDY_STATUS_PATH",
+        "SPEDY fiscal gateway is not configured: SPEDY_API_URL, SPEDY_API_TOKEN, SPEDY_WEBHOOK_SECRET, SPEDY_ISSUE_PATH or SPEDY_NFE_ISSUE_PATH/SPEDY_NFSE_ISSUE_PATH, SPEDY_CANCEL_PATH, SPEDY_STATUS_PATH",
     });
     expect(typeof body.requestId).toBe("string");
   });

@@ -24,6 +24,7 @@ export type IdentityUserSummary = {
 export type StoreAccessSummary = {
   billingManagedBy: "agency" | "store_owner";
   effectivePermissions: readonly PermissionKey[];
+  entitlements: readonly EntitlementKey[];
   role: RoleKey;
   status: "active" | "invited" | "suspended";
   storeId: StoreId;

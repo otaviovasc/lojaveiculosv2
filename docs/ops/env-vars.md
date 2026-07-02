@@ -198,7 +198,9 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `SPEDY_API_TOKEN`                       | Yes      | staging, production | Yes    | SPEDY API token.                                                                              |
 | `SPEDY_AUTH_HEADER`                     | No       | staging, production | No     | Header name used for SPEDY authentication. Defaults to `Authorization`.                       |
 | `SPEDY_AUTH_SCHEME`                     | No       | staging, production | No     | Authorization scheme used with `SPEDY_API_TOKEN`. Defaults to `Bearer`.                       |
-| `SPEDY_ISSUE_PATH`                      | Yes      | staging, production | No     | Provider path for issuing fiscal documents.                                                   |
+| `SPEDY_ISSUE_PATH`                      | Conditional | staging, production | No     | Generic issue path. Required unless both kind-specific paths are configured.                  |
+| `SPEDY_NFE_ISSUE_PATH`                  | Conditional | staging, production | No     | NF-e issue path; overrides `SPEDY_ISSUE_PATH` when configured.                               |
+| `SPEDY_NFSE_ISSUE_PATH`                 | Conditional | staging, production | No     | NFS-e issue path; overrides `SPEDY_ISSUE_PATH` when configured.                              |
 | `SPEDY_CANCEL_PATH`                     | Yes      | staging, production | No     | Provider path for canceling fiscal documents.                                                 |
 | `SPEDY_STATUS_PATH`                     | Yes      | staging, production | No     | Provider path for polling fiscal document status.                                             |
 | `SPEDY_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | SPEDY webhook secret.                                                                         |

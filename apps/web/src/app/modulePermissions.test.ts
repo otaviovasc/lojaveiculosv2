@@ -139,15 +139,36 @@ describe("module permissions", () => {
     expect(getModulePermission("inventory", session).canView).toBe(true);
     expect(getModulePermission("billing", session).canView).toBe(false);
   });
+
+  it("hides entitlement-gated fiscal navigation without nfe access", () => {
+    const session = sessionForRole("owner", ["fiscal.manage"]);
+    const visibleIds = filterNavigationGroups(navigationGroups, session)
+      .flatMap((group) => group.items)
+      .map((item) => item.id);
+
+    expect(getModulePermission("fiscal", session).canView).toBe(true);
+    expect(visibleIds).not.toContain("fiscal");
+  });
+
+  it("shows entitlement-gated fiscal navigation with nfe access", () => {
+    const session = sessionForRole("owner", ["fiscal.manage"], ["nfe"]);
+    const visibleIds = filterNavigationGroups(navigationGroups, session)
+      .flatMap((group) => group.items)
+      .map((item) => item.id);
+
+    expect(visibleIds).toContain("fiscal");
+  });
 });
 
 function sessionForRole(
   role: string,
   effectivePermissions: readonly string[],
+  entitlements: readonly string[] = [],
 ): SessionBootstrap {
   return {
     defaultStore: {
       effectivePermissions,
+      entitlements,
       role,
       status: "active",
       storeId: "store_1",

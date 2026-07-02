@@ -44,6 +44,20 @@ describe("access policy", () => {
     });
   });
 
+  it("allows store owners to manage fiscal documents, recipients, and templates", () => {
+    const permissions = resolvePermissions({ role: "owner" });
+
+    expect(permissions).toEqual(
+      expect.arrayContaining([
+        "fiscal.manage",
+        "fiscal.document.issue",
+        "fiscal.document.cancel",
+        "fiscal.recipient.manage",
+        "fiscal.template.manage",
+      ]),
+    );
+  });
+
   it("keeps WhatsApp permissions explicit and operator-manageable", () => {
     const crmPermissions =
       permissionGroups.find((group) => group.key === "crm")?.permissions ?? [];

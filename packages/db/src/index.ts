@@ -21,6 +21,7 @@ export * from "./schema/billingCheckout.js";
 export * from "./schema/bankingReserve.js";
 export * from "./schema/providerEvents.js";
 export * from "./schema/integrations.js";
+export * from "./schema/fiscalCatalog.js";
 export * from "./schema/fiscal.js";
 export * from "./schema/externalApi.js";
 export * from "./schema/migration.js";

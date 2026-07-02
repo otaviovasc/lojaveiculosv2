@@ -1,13 +1,5 @@
-import {
-  FileQuestion,
-  FileText,
-  RefreshCcw,
-  Send,
-  ShieldAlert,
-} from "lucide-react";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { FeatureInput } from "../../components/ui/FeatureControls";
-import { FeatureField } from "../../components/ui/FeatureForms";
+import { FileQuestion, FileText, RefreshCcw, ShieldAlert } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FeatureActionButton,
   FeaturePageHeader,
@@ -25,10 +17,12 @@ import {
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import { createFiscalApi, type FiscalApi } from "./apiClient";
-import { FiscalIssueReviewDialog } from "./FiscalIssueReviewDialog";
+import type { FiscalApi } from "./apiClient";
+import { FiscalCatalogPanels } from "./FiscalCatalogPanels";
+import { FiscalDocumentActions } from "./FiscalDocumentActions";
+import { FiscalIssueComposer } from "./FiscalIssueComposer";
 import { FiscalProviderPanel } from "./FiscalProviderPanel";
-import { createFiscalApiOptions } from "./runtimeApi";
+import { createRuntimeFiscalApi } from "./runtimeApi";
 import {
   formatFiscalDate,
   getFiscalDocumentStatusLabel,
@@ -41,8 +35,6 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
   const fiscalApi = useMemo(() => api ?? createRuntimeFiscalApi(), [api]);
   const [overview, setOverview] = useState<FiscalOverview | null>(null);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
-  const [reference, setReference] = useState("");
-  const [pendingReference, setPendingReference] = useState<string | null>(null);
 
   const refresh = async () => {
     setStatus({ kind: "loading" });
@@ -57,29 +49,6 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
   useEffect(() => {
     void refresh();
   }, []);
-
-  const issue = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!overview?.provider.configured || !reference.trim()) return;
-    setPendingReference(reference.trim());
-  };
-
-  const confirmIssue = async () => {
-    if (!pendingReference) return;
-    setStatus({ kind: "saving" });
-    try {
-      await fiscalApi.issueDocument({
-        documentType: "nfe_vehicle_sale",
-        externalReference: pendingReference,
-      });
-      setReference("");
-      setPendingReference(null);
-      await refresh();
-    } catch (error) {
-      setPendingReference(null);
-      setStatus({ kind: "error", message: errorMessage(error) });
-    }
-  };
 
   return (
     <FeaturePageShell mainClassName="feature-shell">
@@ -104,53 +73,17 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
         <>
           <section className="fiscal-setup-grid">
             <FiscalProviderPanel overview={overview} />
-            <FeatureSection
-              className="feature-panel"
-              description="Informe a venda ou o lançamento que dará origem à nota."
-              title="Emitir NF-e de venda de veículo"
-            >
-              {overview.provider.configured ? (
-                <form
-                  className="feature-form-row"
-                  onSubmit={(event) => void issue(event)}
-                >
-                  <FeatureField
-                    hint="Use a referência da operação registrada no sistema."
-                    label="Operação de origem"
-                  >
-                    <FeatureInput
-                      aria-label="Operação de origem"
-                      disabled={status.kind === "saving"}
-                      maxLength={191}
-                      name="externalReference"
-                      onChange={(event) => setReference(event.target.value)}
-                      placeholder="Ex.: venda 1042"
-                      required
-                      value={reference}
-                    />
-                  </FeatureField>
-                  <FeatureActionButton
-                    disabled={!reference.trim()}
-                    icon={Send}
-                    isBusy={status.kind === "saving"}
-                    label={
-                      status.kind === "saving" ? "Emitindo NF-e" : "Emitir NF-e"
-                    }
-                    type="submit"
-                    variant="primary"
-                  />
-                </form>
-              ) : (
-                <FeatureAlert title="Emissão indisponível" tone="warning">
-                  <p>
-                    A integração fiscal ainda precisa ser concluída por um
-                    administrador. Nenhuma nota será emitida até a configuração
-                    estar pronta.
-                  </p>
-                </FeatureAlert>
-              )}
-            </FeatureSection>
+            <FiscalIssueComposer
+              api={fiscalApi}
+              disabled={status.kind === "saving" || !overview.provider.configured}
+              onError={(message) => setStatus({ kind: "error", message })}
+              onIssued={refresh}
+            />
           </section>
+          <FiscalCatalogPanels
+            api={fiscalApi}
+            onError={(message) => setStatus({ kind: "error", message })}
+          />
           <FeatureKpiStrip ariaLabel="Resumo fiscal">
             <FeatureKpiCard
               icon={FileText}
@@ -191,6 +124,14 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
                     <small>
                       Registrado em {formatFiscalDate(document.createdAt)}
                     </small>
+                    <FiscalDocumentActions
+                      api={fiscalApi}
+                      document={document}
+                      onError={(message) =>
+                        setStatus({ kind: "error", message })
+                      }
+                      onRefresh={refresh}
+                    />
                   </article>
                 ))}
               </div>
@@ -219,12 +160,6 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
       ) : (
         <FeatureLoadingState>Carregando operação fiscal</FeatureLoadingState>
       )}
-      <FiscalIssueReviewDialog
-        isSaving={status.kind === "saving"}
-        onClose={() => setPendingReference(null)}
-        onConfirm={() => void confirmIssue()}
-        reference={pendingReference}
-      />
     </FeaturePageShell>
   );
 }
@@ -241,15 +176,6 @@ type LoadStatus =
   | { kind: "loading" }
   | { kind: "ready" }
   | { kind: "saving" };
-
-function createRuntimeFiscalApi(): FiscalApi {
-  return {
-    getOverview: async () =>
-      createFiscalApi(await createFiscalApiOptions()).getOverview(),
-    issueDocument: async (input) =>
-      createFiscalApi(await createFiscalApiOptions()).issueDocument(input),
-  };
-}
 
 function errorMessage(error: unknown) {
   return formatApiErrorDisplay(

@@ -16,8 +16,14 @@ export const llmsText = `# Loja Veiculos API
 - Agency tenant billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/billing/provider/checkout, POST /api/v1/agency/tenants/{tenantId}/billing/provider/subscription/sync
 - Update agency-managed store entitlement: PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}
 - Fiscal overview: GET /api/v1/fiscal/overview
+- List fiscal service recipients: GET /api/v1/fiscal/recipients
+- Create fiscal service recipient: POST /api/v1/fiscal/recipients
+- List fiscal NFS-e templates: GET /api/v1/fiscal/templates
+- Create fiscal NFS-e template: POST /api/v1/fiscal/templates
+- Preview fiscal NFS-e template: POST /api/v1/fiscal/templates/preview
 - Issue fiscal document: POST /api/v1/fiscal/documents
 - Cancel fiscal document: POST /api/v1/fiscal/documents/{documentId}/cancel
+- Repeat fiscal document: POST /api/v1/fiscal/documents/{documentId}/repeat
 - Sync fiscal status: POST /api/v1/fiscal/documents/{documentId}/status-sync
 - Finance summary: GET /api/v1/finance/summary
 - List finance entries: GET /api/v1/finance/entries
@@ -106,6 +112,10 @@ export const llmsText = `# Loja Veiculos API
 - analytics.read: required to read reports and commercial dashboards.
 - compliance.manage: required to read and operate LGPD/security controls.
 - fiscal.manage: required to operate SPEDY/NF-e lifecycle workflows.
+- fiscal.document.issue: required to emit NF-e or NFS-e documents.
+- fiscal.document.cancel: required to cancel fiscal documents.
+- fiscal.recipient.manage: required to manage NFS-e service recipients.
+- fiscal.template.manage: required to manage NFS-e service invoice templates.
 - finance.read: required to read finance entries, summaries, rules, and documents.
 - finance.create: required to create finance entries, recurring entries, and commission rules.
 - finance.update: required to update, pay, cancel, or delete finance entries.
@@ -173,8 +183,12 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}: updates one agency-managed store entitlement and writes critical audit.
 ## Current fiscal endpoints
 - GET /api/v1/fiscal/overview: returns SPEDY readiness, NF-e document summary, recent documents, and fiscal events; requires fiscal.manage and nfe entitlement.
-- POST /api/v1/fiscal/documents: records one fiscal issue attempt and persists provider status; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
-- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
+- GET/POST /api/v1/fiscal/recipients: lists and creates store-scoped NFS-e tomadores/financeiras; writes require fiscal.recipient.manage and nfe entitlement.
+- GET/POST /api/v1/fiscal/templates: lists and creates store-scoped NFS-e templates with service codes, retention config, and safe description variables; writes require fiscal.template.manage and nfe entitlement.
+- POST /api/v1/fiscal/templates/preview: renders a template preview and reports unresolved variables without sending a provider request.
+- POST /api/v1/fiscal/documents: records one fiscal issue attempt, snapshots provider payload/response, and persists provider status; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.document.issue and nfe entitlement.
+- POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the configured SPEDY HTTP gateway; requires fiscal.document.cancel and nfe entitlement.
+- POST /api/v1/fiscal/documents/{documentId}/repeat: creates a draft from a prior note with source metadata and review-required flag; it never sends a provider request.
 - POST /api/v1/fiscal/documents/{documentId}/status-sync: reconciles one persisted fiscal document status with the configured gateway state; requires fiscal.manage and nfe entitlement.
 ## Current finance endpoints
 - GET /api/v1/finance/summary: returns revenue, expense, pending, and balance totals for the current store; requires finance.read.
