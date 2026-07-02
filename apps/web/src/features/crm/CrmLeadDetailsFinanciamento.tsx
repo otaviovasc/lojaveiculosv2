@@ -1,19 +1,32 @@
 import { useState, useEffect } from "react";
-import { DollarSign, Save } from "lucide-react";
+import { Save } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import {
+  getPrimaryLeadVehiclePriceCents,
+  type FinancingSimulationDraft,
+} from "./crmLeadData";
+import type {
+  CreateProductCrmActivityInput,
+  ProductCrmLead,
+} from "./productCrmTypes";
 
 type Props = {
-  lead: any;
-  onCreateActivity: (leadId: string, input: any) => Promise<void>;
-  onUpdateLead: (leadId: string, input: any) => Promise<void>;
+  lead: ProductCrmLead;
+  onCreateActivity: (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => Promise<void>;
+  vehicleOptions: LeadVehicleOption[];
 };
 
 export function CrmLeadDetailsFinanciamento({
   lead,
   onCreateActivity,
-  onUpdateLead,
+  vehicleOptions,
 }: Props) {
-  const initialValue = (lead.metadata?.simulationValue as number) ?? 8500000;
+  const initialValue =
+    getPrimaryLeadVehiclePriceCents(lead, vehicleOptions) ?? 0;
   const [val, setVal] = useState(initialValue / 100);
   const [down, setDown] = useState((initialValue * 0.3) / 100);
   const [rate, setRate] = useState(1.39);
@@ -41,20 +54,13 @@ export function CrmLeadDetailsFinanciamento({
   }, [val, down, rate, months]);
 
   const handleSave = async () => {
-    const data = {
-      vehicleValue: val * 100,
-      downpayment: down * 100,
+    const data: FinancingSimulationDraft = {
+      vehicleValueCents: Math.round(val * 100),
+      downpaymentCents: Math.round(down * 100),
       months,
       interestRate: rate,
-      monthlyPayment: payment * 100,
+      monthlyPaymentCents: Math.round(payment * 100),
     };
-    await onUpdateLead(lead.id, {
-      metadata: {
-        ...lead.metadata,
-        simulationValue: val * 100,
-        simulation: data,
-      },
-    });
 
     const valFormatted = formatBrl(val);
     const downFormatted = formatBrl(down);
@@ -64,9 +70,8 @@ export function CrmLeadDetailsFinanciamento({
       activityType: "note",
       content: `Simulação de Financiamento: Veículo ${valFormatted}, Entrada ${downFormatted}, ${months}x de ${payFormatted} (Juros: ${rate}% a.m.)`,
       direction: "internal",
+      metadata: data,
     });
-
-    alert("Simulação salva com sucesso e registrada no histórico!");
   };
 
   const formatBrl = (num: number) => {
@@ -183,7 +188,7 @@ export function CrmLeadDetailsFinanciamento({
 
           <button
             className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm transition-opacity"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />

@@ -1,5 +1,6 @@
-import { User, Calendar, X } from "lucide-react";
+import { Calendar } from "lucide-react";
 import type { PipelineStage } from "./crmPipelineStorage";
+import type { CrmLeadSource } from "./productCrmTypes";
 
 type Props = {
   stages: PipelineStage[];
@@ -11,16 +12,14 @@ type Props = {
   setUrgency: (val: string) => void;
   preferredContact: string;
   setPreferredContact: (val: string) => void;
-  source: string;
-  setSource: (val: string) => void;
+  source: CrmLeadSource | "";
+  setSource: (val: CrmLeadSource | "") => void;
   notes: string;
   setNotes: (val: string) => void;
   estimatedClosedDate: string;
   setEstimatedClosedDate: (val: string) => void;
   category: string;
   setCategory: (val: string) => void;
-  assignedUserId: string;
-  setAssignedUserId: (val: string) => void;
 };
 
 export function CrmQuickAddLeadMoreOptions({
@@ -41,8 +40,6 @@ export function CrmQuickAddLeadMoreOptions({
   setEstimatedClosedDate,
   category,
   setCategory,
-  assignedUserId,
-  setAssignedUserId,
 }: Props) {
   return (
     <div className="flex flex-col gap-4 border-t border-line/35 pt-4 mt-1">
@@ -144,48 +141,25 @@ export function CrmQuickAddLeadMoreOptions({
         </label>
       </div>
 
-      {/* Row 3: Responsável & Fonte */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <span className="text-xs font-black uppercase text-muted tracking-wider">
-            Responsável
-          </span>
-          <div className="relative flex items-center">
-            <User className="absolute left-3 size-4 text-accent shrink-0" />
-            <select
-              className="w-full min-h-11 rounded-lg border border-line bg-app pl-9 pr-9 text-sm font-bold text-app-text outline-none cursor-pointer"
-              onChange={(e) => setAssignedUserId(e.target.value)}
-              value={assignedUserId}
-            >
-              <option value="">Sem responsável</option>
-              <option value="Kauan Massuia">Kauan Massuia</option>
-            </select>
-            {assignedUserId && (
-              <button
-                className="absolute right-3 p-1 rounded-full hover:bg-line/20 text-muted hover:text-app-text cursor-pointer flex items-center justify-center"
-                onClick={() => setAssignedUserId("")}
-                type="button"
-              >
-                <X className="size-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
+      {/* Row 3: Fonte */}
+      <div className="grid grid-cols-1 gap-4">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-black uppercase text-muted tracking-wider">
             Fonte
           </span>
           <select
             className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none cursor-pointer"
-            onChange={(e) => setSource(e.target.value)}
+            onChange={(e) => setSource(e.target.value as CrmLeadSource | "")}
             value={source}
           >
             <option value="">Selecionar origem</option>
             <option value="manual">Manual</option>
             <option value="whatsapp">WhatsApp</option>
-            <option value="site">Site</option>
-            <option value="proposta">Proposta</option>
-            <option value="instagram">Instagram</option>
+            <option value="public_site">Site público</option>
+            <option value="crm">CRM</option>
+            <option value="external_api">API externa</option>
+            <option value="olx">OLX</option>
+            <option value="other">Outro</option>
           </select>
         </label>
       </div>

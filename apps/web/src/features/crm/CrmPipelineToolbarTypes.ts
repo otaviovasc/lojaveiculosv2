@@ -25,13 +25,13 @@ export const FILTER_CONFIGS: FilterConfig[] = [
     key: "origem",
     label: "Origem",
     options: [
-      { id: "Manual", label: "Manual" },
-      { id: "OLX", label: "OLX" },
-      { id: "ICarros", label: "ICarros" },
-      { id: "Webmotors", label: "Webmotors" },
-      { id: "NaPista", label: "NaPista" },
-      { id: "UsadosBR", label: "UsadosBR" },
-      { id: "Mobiauto", label: "Mobiauto" },
+      { id: "manual", label: "Manual" },
+      { id: "public_site", label: "Site publico" },
+      { id: "crm", label: "CRM" },
+      { id: "external_api", label: "API externa" },
+      { id: "olx", label: "OLX" },
+      { id: "whatsapp", label: "WhatsApp" },
+      { id: "other", label: "Outro" },
     ],
   },
   {
@@ -39,7 +39,7 @@ export const FILTER_CONFIGS: FilterConfig[] = [
     label: "Responsavel",
     options: [
       { id: "unassigned", label: "Sem responsavel" },
-      { id: "kauan-massuia", label: "Kauan Massuia" },
+      { id: "assigned", label: "Com responsavel" },
     ],
   },
   {
@@ -56,6 +56,10 @@ export const FILTER_CONFIGS: FilterConfig[] = [
   {
     key: "fonte",
     label: "Fonte",
-    options: [{ id: "Instagram", label: "Instagram" }],
+    options: [
+      { id: "public_site", label: "Site publico" },
+      { id: "external_api", label: "API externa" },
+      { id: "whatsapp", label: "WhatsApp" },
+    ],
   },
 ];

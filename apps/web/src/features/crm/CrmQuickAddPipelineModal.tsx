@@ -8,17 +8,11 @@ import {
   Layers,
 } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import type { PipelineStageDraft } from "./crmPipelineStorage";
 
 type Props = {
   onClose: () => void;
-  onCreatePipeline: (name: string, stages?: any[]) => void;
-};
-
-type PresetStage = {
-  name: string;
-  color: string;
-  slaDays: number | null;
-  status: "open" | "won" | "lost";
+  onCreatePipeline: (name: string, stages?: PipelineStageDraft[]) => void;
 };
 
 type PipelinePreset = {
@@ -26,7 +20,7 @@ type PipelinePreset = {
   name: string;
   description: string;
   iconName: "vendas" | "pos_venda" | "recuperacao" | "em_branco";
-  stages: PresetStage[];
+  stages: PipelineStageDraft[];
 };
 
 const PRESETS: PipelinePreset[] = [

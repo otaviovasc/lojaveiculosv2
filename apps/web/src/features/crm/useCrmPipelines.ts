@@ -5,6 +5,7 @@ import {
   savePipelines,
   saveActivePipelineId,
   type Pipeline,
+  type PipelineStageDraft,
 } from "./crmPipelineStorage";
 
 export function useCrmPipelines(storeId: string) {
@@ -21,7 +22,10 @@ export function useCrmPipelines(storeId: string) {
     [activePipelineId, pipelines],
   );
 
-  const handleCreatePipelineConfirm = (name: string, customStages?: any[]) => {
+  const handleCreatePipelineConfirm = (
+    name: string,
+    customStages?: PipelineStageDraft[],
+  ) => {
     const nextId = `pipeline_${Date.now()}`;
     const defaultStages = [
       {

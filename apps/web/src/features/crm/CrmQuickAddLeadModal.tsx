@@ -4,6 +4,7 @@ import { FeatureInput } from "../../components/ui/FeatureControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
 import type { PipelineStage } from "./crmPipelineStorage";
+import type { CrmLeadSource } from "./productCrmTypes";
 import { CrmQuickAddLeadMoreOptions } from "./CrmQuickAddLeadMoreOptions";
 
 type Props = {
@@ -26,17 +27,14 @@ export function CrmQuickAddLeadModal({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [vehicleId, setVehicleId] = useState("");
-  const [title, setTitle] = useState("");
-  const [valueStr, setValueStr] = useState("0,00");
   const [showMore, setShowMore] = useState(false);
   const [priority, setPriority] = useState("Média");
   const [urgency, setUrgency] = useState("Média");
   const [preferredContact, setPreferredContact] = useState("WhatsApp");
-  const [source, setSource] = useState("");
+  const [source, setSource] = useState<CrmLeadSource | "">("");
   const [notes, setNotes] = useState("");
   const [estimatedClosedDate, setEstimatedClosedDate] = useState("");
   const [category, setCategory] = useState("Não definida");
-  const [assignedUserId, setAssignedUserId] = useState("Kauan Massuia");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,32 +42,24 @@ export function CrmQuickAddLeadModal({
     if (!name.trim()) return;
     setIsSubmitting(true);
     try {
-      const numericVal =
-        parseFloat(valueStr.replace(/\./g, "").replace(",", ".")) || 0;
-      const selectedStage = stages.find((s) => s.id === selectedStageId);
-      const status = selectedStage?.status || "new";
+      const metadata = cleanLeadMetadata({
+        stageId: selectedStageId,
+        priority,
+        urgency,
+        preferredContact,
+        notes: notes.trim() || undefined,
+        estimatedClosedDate: estimatedClosedDate || undefined,
+        category: category !== "Não definida" ? category : undefined,
+      });
 
       await onCreateLead({
         buyerName: name.trim(),
-        buyerPhone: phone.trim() || undefined,
-        buyerEmail: email.trim() || undefined,
-        source: (source || "manual") as any,
-        status: status,
-        listingId: vehicleId || undefined,
-        metadata: {
-          stageId: selectedStageId,
-          listingIds: vehicleId ? [vehicleId] : [],
-          title: title.trim() || undefined,
-          value: numericVal * 100, // store as cents
-          priority,
-          urgency,
-          preferredContact,
-          notes: notes.trim() || undefined,
-          estimatedClosedDate: estimatedClosedDate || undefined,
-          category: category !== "Não definida" ? category : undefined,
-          assignedUserId: assignedUserId || undefined,
-        },
-      } as LeadCreateDraft);
+        source: source || "manual",
+        ...(phone.trim() ? { buyerPhone: phone.trim() } : {}),
+        ...(email.trim() ? { buyerEmail: email.trim() } : {}),
+        ...(vehicleId ? { listingId: vehicleId } : {}),
+        metadata,
+      });
       onClose();
     } catch (err) {
       console.error(err);
@@ -82,7 +72,7 @@ export function CrmQuickAddLeadModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
       <form
         className="w-full max-w-2xl bg-panel rounded-2xl border border-line shadow-2xl flex flex-col my-8"
-        onSubmit={handleSubmit}
+        onSubmit={(event) => void handleSubmit(event)}
       >
         <header className="p-4 border-b border-line flex items-center justify-between bg-app-elevated/50">
           <div>
@@ -160,16 +150,8 @@ export function CrmQuickAddLeadModal({
             </div>
           </div>
 
-          {/* Loja & Veículos Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black uppercase text-muted tracking-wider">
-                Loja *
-              </span>
-              <select className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none cursor-pointer">
-                <option>DMS multimarcas</option>
-              </select>
-            </label>
+          {/* Veículos Row */}
+          <div className="grid grid-cols-1 gap-4">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-black uppercase text-muted tracking-wider">
                 Veículos de Interesse
@@ -179,16 +161,6 @@ export function CrmQuickAddLeadModal({
                 onChange={(e) => {
                   const val = e.target.value;
                   setVehicleId(val);
-                  const opt = vehicleOptions.find((o) => o.id === val);
-                  if (opt) {
-                    setTitle(opt.label);
-                    setValueStr(
-                      new Intl.NumberFormat("pt-BR", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format((opt.priceCents ?? 0) / 100),
-                    );
-                  }
                 }}
                 value={vehicleId}
               >
@@ -201,33 +173,6 @@ export function CrmQuickAddLeadModal({
                   </option>
                 ))}
               </select>
-            </label>
-          </div>
-
-          {/* Titulo & Valor Row */}
-          <div className="grid grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black uppercase text-muted tracking-wider">
-                Título *
-              </span>
-              <FeatureInput
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex: Honda Civic 2024"
-                required
-                type="text"
-                value={title}
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black uppercase text-muted tracking-wider">
-                Valor (R$)
-              </span>
-              <FeatureInput
-                onChange={(e) => setValueStr(e.target.value)}
-                placeholder="0,00"
-                type="text"
-                value={valueStr}
-              />
             </label>
           </div>
 
@@ -262,8 +207,6 @@ export function CrmQuickAddLeadModal({
                 setEstimatedClosedDate={setEstimatedClosedDate}
                 category={category}
                 setCategory={setCategory}
-                assignedUserId={assignedUserId}
-                setAssignedUserId={setAssignedUserId}
               />
             )}
           </div>
@@ -288,5 +231,11 @@ export function CrmQuickAddLeadModal({
         </footer>
       </form>
     </div>
+  );
+}
+
+function cleanLeadMetadata(input: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined),
   );
 }

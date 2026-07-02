@@ -188,11 +188,12 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
             <div className="shrink-0">
               <select
                 className="min-h-8 rounded-lg border border-line bg-app px-2 text-xs font-bold text-app-text outline-none focus:border-accent"
-                onChange={(e) =>
-                  handleUpdateStage(stage.id, {
-                    status: e.target.value as any,
-                  })
-                }
+                onChange={(e) => {
+                  const status = e.target.value;
+                  if (isPipelineStageStatus(status)) {
+                    handleUpdateStage(stage.id, { status });
+                  }
+                }}
                 value={stage.status}
               >
                 <option value="open">Aberto</option>
@@ -222,4 +223,10 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
       </div>
     </div>
   );
+}
+
+function isPipelineStageStatus(
+  value: string,
+): value is PipelineStage["status"] {
+  return value === "open" || value === "won" || value === "lost";
 }

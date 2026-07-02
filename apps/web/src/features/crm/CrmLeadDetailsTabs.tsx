@@ -8,7 +8,11 @@ import {
   Globe,
 } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
-import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
+import type {
+  CreateProductCrmActivityInput,
+  ProductCrmLead,
+  ProductCrmLeadActivity,
+} from "./productCrmTypes";
 import type { PipelineStage } from "./crmPipelineStorage";
 import { CrmLeadDetailsFinanciamento } from "./CrmLeadDetailsFinanciamento";
 import { CrmLeadDetailsTabsTarefas } from "./CrmLeadDetailsTabsTarefas";
@@ -21,8 +25,10 @@ type Props = {
   lead: ProductCrmLead;
   activities: ProductCrmLeadActivity[];
   stages: PipelineStage[];
-  onCreateActivity: (leadId: string, input: any) => Promise<void>;
-  onUpdateLead: (leadId: string, input: any) => Promise<void>;
+  onCreateActivity: (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
 };
 
@@ -32,7 +38,6 @@ export function CrmLeadDetailsTabs({
   activities,
   stages,
   onCreateActivity,
-  onUpdateLead,
   vehicleOptions,
 }: Props) {
   // 1. Overview Tab
@@ -41,7 +46,6 @@ export function CrmLeadDetailsTabs({
       <CrmLeadDetailsTabsVisao
         activities={activities}
         lead={lead}
-        onCreateActivity={onCreateActivity}
         stages={stages}
         vehicleOptions={vehicleOptions}
       />
@@ -144,7 +148,7 @@ export function CrmLeadDetailsTabs({
       <CrmLeadDetailsFinanciamento
         lead={lead}
         onCreateActivity={onCreateActivity}
-        onUpdateLead={onUpdateLead}
+        vehicleOptions={vehicleOptions}
       />
     );
   }

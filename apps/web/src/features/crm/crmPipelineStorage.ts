@@ -7,6 +7,11 @@ export type PipelineStage = {
   isSystem: boolean;
 };
 
+export type PipelineStageDraft = Pick<
+  PipelineStage,
+  "color" | "name" | "slaDays" | "status"
+>;
+
 export type RoutingRule = {
   id: string;
   origin: string;

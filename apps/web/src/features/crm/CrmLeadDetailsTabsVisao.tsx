@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Sparkles, Clock, User } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import {
+  formatBrlCents,
+  formatLeadOwner,
+  getLeadStageId,
+  getLinkedLeadVehicles,
+} from "./crmLeadData";
 import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
 import type { PipelineStage } from "./crmPipelineStorage";
 
@@ -8,7 +14,6 @@ type Props = {
   lead: ProductCrmLead;
   activities: ProductCrmLeadActivity[];
   stages: PipelineStage[];
-  onCreateActivity: (leadId: string, input: any) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
 };
 
@@ -20,26 +25,12 @@ export function CrmLeadDetailsTabsVisao({
 }: Props) {
   const [loadingAi, setLoadingAi] = useState(false);
 
-  const listingIds: string[] = Array.isArray(lead.metadata?.listingIds)
-    ? (lead.metadata.listingIds as string[])
-    : lead.listingId
-      ? [lead.listingId]
-      : [];
+  const leadVehicles = getLinkedLeadVehicles(lead, vehicleOptions);
+  const valueFormatted = lead.listingId
+    ? formatBrlCents(leadVehicles[0]?.priceCents)
+    : "Sem veiculo vinculado";
 
-  const leadVehicles = listingIds
-    .map((id) => vehicleOptions.find((v) => v.id === id))
-    .filter((v): v is LeadVehicleOption => !!v);
-
-  const firstVehiclePrice = leadVehicles[0]?.priceCents;
-
-  const valueFormatted = firstVehiclePrice
-    ? new Intl.NumberFormat("pt-BR", {
-        currency: "BRL",
-        style: "currency",
-      }).format(firstVehiclePrice / 100)
-    : "R$ 410.000,00";
-
-  const activeStageId = (lead.metadata?.stageId as string) || lead.status;
+  const activeStageId = getLeadStageId(lead);
   const currentStage = stages.find((s) => s.id === activeStageId) ?? stages[0];
   const currentStageIndex = stages.findIndex((s) => s.id === activeStageId);
   const activeIndex = currentStageIndex >= 0 ? currentStageIndex : 0;
@@ -103,7 +94,7 @@ export function CrmLeadDetailsTabsVisao({
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-sm font-black text-app-text">
               <User className="size-3.5 text-blue-500" />
-              <span>Kauan Massuia</span>
+              <span>{formatLeadOwner(lead)}</span>
             </div>
             <div className="h-1 mt-2" />
           </div>
@@ -210,11 +201,14 @@ export function CrmLeadDetailsTabsVisao({
               <span className="absolute left-0 top-1.5 size-2 rounded-full bg-blue-600 border border-blue-600" />
               <div className="flex flex-col gap-0.5">
                 <span className="text-xs font-bold text-app-text">
-                  Negócio criado
+                  Lead criado
                 </span>
               </div>
               <span className="text-[10px] font-bold text-muted shrink-0">
-                há 5 dias
+                {new Date(lead.createdAt).toLocaleString("pt-BR", {
+                  dateStyle: "short",
+                  timeStyle: "short",
+                })}
               </span>
             </div>
           )}

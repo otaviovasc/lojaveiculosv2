@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Car, Globe, MessageSquare, ChevronDown, Clock } from "lucide-react";
-import type { ProductCrmLead, CrmLeadStatus } from "./productCrmTypes";
-import type {
-  LeadVehicleOption,
-  CrmListViewProps,
-} from "./CrmPipelineViewTypes";
-import type { PipelineStage } from "./crmPipelineStorage";
-import { formatLeadName, type LeadContactPatch } from "./crmPipelineModels";
+import type { ProductCrmLead } from "./productCrmTypes";
+import type { CrmListViewProps } from "./CrmPipelineViewTypes";
+import { formatLeadName } from "./crmPipelineModels";
+import {
+  formatLeadTimelineLabel,
+  getLeadStageId,
+  getLinkedLeadVehicles,
+} from "./crmLeadData";
 
 export function CrmListView({
   leads,
@@ -54,14 +55,7 @@ export function CrmListView({
   };
 
   const getLeadVehicles = (lead: ProductCrmLead) => {
-    const listingIds: string[] = Array.isArray(lead.metadata?.listingIds)
-      ? (lead.metadata.listingIds as string[])
-      : lead.listingId
-        ? [lead.listingId]
-        : [];
-    return listingIds
-      .map((id) => vehicleOptions.find((v) => v.id === id))
-      .filter((v): v is LeadVehicleOption => !!v);
+    return getLinkedLeadVehicles(lead, vehicleOptions);
   };
 
   return (
@@ -91,17 +85,10 @@ export function CrmListView({
             const vehicles = getLeadVehicles(lead);
             const firstVehicle = vehicles[0];
             const leadName = formatLeadName(lead).toUpperCase();
-            const activeStageId =
-              (lead.metadata?.stageId as string) || lead.status;
+            const activeStageId = getLeadStageId(lead);
             const currentStage =
               stages.find((s) => s.id === activeStageId) ?? stages[0];
             const remainingCount = vehicles.length - 1;
-
-            const interactionDays =
-              Math.floor(
-                (Date.now() - new Date(lead.createdAt).getTime()) /
-                  (24 * 60 * 60 * 1000),
-              ) || 3;
 
             return (
               <tr
@@ -202,7 +189,7 @@ export function CrmListView({
                 <td className="p-3">
                   <div className="flex items-center gap-1 text-[10px] font-bold text-red-500 bg-red-500/5 border border-red-500/10 rounded-lg px-2 py-1 w-fit">
                     <Clock className="size-3 shrink-0" />
-                    <span>Última interação há {interactionDays} dias</span>
+                    <span>{formatLeadTimelineLabel(lead)}</span>
                   </div>
                 </td>
 

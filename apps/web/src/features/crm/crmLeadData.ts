@@ -1,0 +1,81 @@
+import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import { formatRelativeDate } from "./crmPipelineModels";
+import type { ProductCrmLead } from "./productCrmTypes";
+
+export type FinancingSimulationDraft = {
+  downpaymentCents: number;
+  interestRate: number;
+  monthlyPaymentCents: number;
+  months: number;
+  vehicleValueCents: number;
+};
+
+export function getLeadStageId(lead: ProductCrmLead) {
+  return readMetadataString(lead.metadata, "stageId") ?? lead.status;
+}
+
+export function getLinkedLeadVehicles(
+  lead: ProductCrmLead,
+  vehicleOptions: readonly LeadVehicleOption[],
+): LeadVehicleOption[] {
+  if (!lead.listingId) return [];
+
+  const option = vehicleOptions.find(
+    (vehicle) => vehicle.id === lead.listingId,
+  );
+  if (option) return [option];
+
+  if (!lead.vehicleTitle) return [];
+
+  return [
+    {
+      detail: "Vinculado ao lead",
+      id: lead.listingId,
+      label: lead.vehicleTitle,
+      imageUrl: null,
+      priceCents: null,
+      manufactureYear: null,
+      modelYear: null,
+    },
+  ];
+}
+
+export function getPrimaryLeadVehiclePriceCents(
+  lead: ProductCrmLead,
+  vehicleOptions: readonly LeadVehicleOption[],
+) {
+  return getLinkedLeadVehicles(lead, vehicleOptions)[0]?.priceCents ?? null;
+}
+
+export function formatBrlCents(valueCents: number | null | undefined) {
+  if (!valueCents) return "Sob consulta";
+
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  }).format(valueCents / 100);
+}
+
+export function formatLeadOwner(lead: ProductCrmLead) {
+  return lead.assignedUserId ? "Responsavel atribuido" : "Sem responsavel";
+}
+
+export function hasAssignedLeadOwner(lead: ProductCrmLead) {
+  return Boolean(lead.assignedUserId);
+}
+
+export function formatLeadTimelineLabel(lead: ProductCrmLead) {
+  if (lead.lastInteractionAt) {
+    return `Ultima interacao ${formatRelativeDate(lead.lastInteractionAt)}`;
+  }
+
+  return `Criado ${formatRelativeDate(lead.createdAt)}`;
+}
+
+export function readMetadataString(
+  metadata: Record<string, unknown>,
+  key: string,
+) {
+  const value = metadata[key];
+  return typeof value === "string" && value.trim() ? value : undefined;
+}

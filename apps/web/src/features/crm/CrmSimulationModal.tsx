@@ -1,16 +1,33 @@
 import { useState, useEffect } from "react";
 import { Calculator, X, Save } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import {
+  getPrimaryLeadVehiclePriceCents,
+  type FinancingSimulationDraft,
+} from "./crmLeadData";
 import type { ProductCrmLead } from "./productCrmTypes";
+
+export type { FinancingSimulationDraft } from "./crmLeadData";
 
 type Props = {
   lead: ProductCrmLead;
   onClose: () => void;
-  onSaveSimulation: (leadId: string, data: any) => Promise<void>;
+  onSaveSimulation: (
+    leadId: string,
+    data: FinancingSimulationDraft,
+  ) => Promise<void>;
+  vehicleOptions: LeadVehicleOption[];
 };
 
-export function CrmSimulationModal({ lead, onClose, onSaveSimulation }: Props) {
-  const initialValue = (lead.metadata?.simulationValue as number) ?? 8500000; // in cents
+export function CrmSimulationModal({
+  lead,
+  onClose,
+  onSaveSimulation,
+  vehicleOptions,
+}: Props) {
+  const initialValue =
+    getPrimaryLeadVehiclePriceCents(lead, vehicleOptions) ?? 0;
   const [vehicleValue, setVehicleValue] = useState(initialValue / 100);
   const [downpayment, setDownpayment] = useState((initialValue * 0.3) / 100);
   const [months, setMonths] = useState(48);
@@ -39,12 +56,12 @@ export function CrmSimulationModal({ lead, onClose, onSaveSimulation }: Props) {
   }, [vehicleValue, downpayment, months, interestRate]);
 
   const handleSave = async () => {
-    const data = {
-      vehicleValue: vehicleValue * 100,
-      downpayment: downpayment * 100,
+    const data: FinancingSimulationDraft = {
+      vehicleValueCents: Math.round(vehicleValue * 100),
+      downpaymentCents: Math.round(downpayment * 100),
       months,
       interestRate,
-      monthlyPayment: monthlyPayment * 100,
+      monthlyPaymentCents: Math.round(monthlyPayment * 100),
     };
     await onSaveSimulation(lead.id, data);
     onClose();
@@ -193,7 +210,7 @@ export function CrmSimulationModal({ lead, onClose, onSaveSimulation }: Props) {
           </button>
           <button
             className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />

@@ -17,7 +17,7 @@ describe("commission workspace model", () => {
   });
 
   it("groups commission entries by seller and keeps paid versus pending visible", () => {
-    const filters = initialCommissionFilters();
+    const filters = juneCommissionFilters();
     const workspace = buildCommissionWorkspace(
       [
         entry("1", "seller-a", "sales_commission", "pending", 10000),
@@ -44,7 +44,7 @@ describe("commission workspace model", () => {
 
   it("filters seller payable entries by active origin", () => {
     const filters = {
-      ...initialCommissionFilters(),
+      ...juneCommissionFilters(),
       origin: "manual_bonus",
     };
     const workspace = buildCommissionWorkspace(
@@ -104,6 +104,15 @@ describe("commission workspace model", () => {
     ]);
   });
 });
+
+function juneCommissionFilters() {
+  return {
+    ...initialCommissionFilters(),
+    from: "2026-06-01",
+    period: "custom" as const,
+    to: "2026-06-30",
+  };
+}
 
 function entry(
   id: string,

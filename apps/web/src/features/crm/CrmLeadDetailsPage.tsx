@@ -1,7 +1,11 @@
 import { useState } from "react";
 import { ArrowLeft, ChevronDown, Star, Trash2 } from "lucide-react";
 import { formatLeadName } from "./crmPipelineModels";
-import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import {
+  formatLeadTimelineLabel,
+  getLeadStageId,
+  getLinkedLeadVehicles,
+} from "./crmLeadData";
 import type {
   CrmLeadDetailsPageProps,
   DetailTab,
@@ -23,18 +27,9 @@ export function CrmLeadDetailsPage({
   const [isStageDropdownOpen, setIsStageDropdownOpen] = useState(false);
 
   const leadName = formatLeadName(lead);
-  const activeStageId = (lead.metadata?.stageId as string) || lead.status;
+  const activeStageId = getLeadStageId(lead);
   const currentStage = stages.find((s) => s.id === activeStageId) ?? stages[0];
-
-  const listingIds: string[] = Array.isArray(lead.metadata?.listingIds)
-    ? (lead.metadata.listingIds as string[])
-    : lead.listingId
-      ? [lead.listingId]
-      : [];
-
-  const leadVehicles = listingIds
-    .map((id) => vehicleOptions.find((v) => v.id === id))
-    .filter((v): v is LeadVehicleOption => !!v);
+  const leadVehicles = getLinkedLeadVehicles(lead, vehicleOptions);
 
   const handleStageChange = async (stageId: string) => {
     const targetStage = stages.find((s) => s.id === stageId);
@@ -102,7 +97,7 @@ export function CrmLeadDetailsPage({
 
         <div className="flex items-center gap-3">
           <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[10px] font-black text-amber-500">
-            Última Interação há 5 dias
+            {formatLeadTimelineLabel(lead)}
           </span>
 
           <div className="relative">
@@ -197,7 +192,6 @@ export function CrmLeadDetailsPage({
               lead={lead}
               stages={stages}
               onCreateActivity={onCreateActivity}
-              onUpdateLead={onUpdateLead}
               vehicleOptions={vehicleOptions}
             />
           </div>
@@ -208,9 +202,7 @@ export function CrmLeadDetailsPage({
           lead={lead}
           leadName={leadName}
           activities={activities}
-          vehicleOptions={vehicleOptions}
           leadVehicles={leadVehicles}
-          onUpdateLead={onUpdateLead}
           onCreateActivity={onCreateActivity}
         />
       </div>

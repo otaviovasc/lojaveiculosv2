@@ -1,11 +1,18 @@
 import { useState } from "react";
 import { Plus, X, Calendar, Video } from "lucide-react";
-import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
+import type {
+  CreateProductCrmActivityInput,
+  ProductCrmLead,
+  ProductCrmLeadActivity,
+} from "./productCrmTypes";
 
 type Props = {
   lead: ProductCrmLead;
   activities: ProductCrmLeadActivity[];
-  onCreateActivity: (leadId: string, input: any) => Promise<void>;
+  onCreateActivity: (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => Promise<void>;
 };
 
 export function CrmLeadDetailsTabsReunioes({
@@ -170,7 +177,7 @@ export function CrmLeadDetailsTabsReunioes({
                 Cancelar
               </button>
               <button
-                onClick={handleCreate}
+                onClick={() => void handleCreate()}
                 className="h-9 px-4 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors cursor-pointer"
                 type="button"
               >

@@ -1,5 +1,4 @@
 import {
-  Clock,
   DollarSign,
   Car,
   Globe,
@@ -8,6 +7,11 @@ import {
 } from "lucide-react";
 import type { DragEvent, MouseEvent } from "react";
 import { formatLeadName } from "./crmPipelineModels";
+import {
+  formatLeadOwner,
+  formatLeadTimelineLabel,
+  getLinkedLeadVehicles,
+} from "./crmLeadData";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { ProductCrmLead } from "./productCrmTypes";
 
@@ -27,16 +31,7 @@ export function CrmLeadCard({
   vehicleOptions,
 }: Props) {
   const leadName = formatLeadName(lead).toUpperCase();
-
-  const listingIds: string[] = Array.isArray(lead.metadata?.listingIds)
-    ? (lead.metadata.listingIds as string[])
-    : lead.listingId
-      ? [lead.listingId]
-      : [];
-
-  const vehicles = listingIds
-    .map((id) => vehicleOptions.find((v) => v.id === id))
-    .filter((v): v is LeadVehicleOption => !!v);
+  const vehicles = getLinkedLeadVehicles(lead, vehicleOptions);
 
   const displayVehicles = vehicles.slice(0, 2);
   const remainingCount = vehicles.length - displayVehicles.length;
@@ -50,11 +45,6 @@ export function CrmLeadCard({
     event.stopPropagation();
     onSimulateClick(lead);
   };
-
-  const interactionDays =
-    Math.floor(
-      (Date.now() - new Date(lead.createdAt).getTime()) / (24 * 60 * 60 * 1000),
-    ) || 3;
 
   return (
     <article
@@ -82,7 +72,7 @@ export function CrmLeadCard({
 
       {/* SLA warning indicator */}
       <div className="text-[10px] font-bold text-red-500 flex items-center gap-1 leading-none">
-        <span>Última interação há {interactionDays} dias</span>
+        <span>{formatLeadTimelineLabel(lead)}</span>
       </div>
 
       {/* Vehicle of interest small cards side-by-side */}
@@ -145,9 +135,9 @@ export function CrmLeadCard({
       {/* Bottom Owner and Source Row */}
       <div className="flex items-center justify-between gap-2 border-t border-line/20 pt-2 mt-1">
         <div className="min-w-0 flex items-center gap-1 text-[10px] font-bold text-muted truncate">
-          <span>Kauan Massuia</span>
+          <span>{formatLeadOwner(lead)}</span>
           <span>·</span>
-          <span className="truncate">DMS multimarcas</span>
+          <span className="truncate">{lead.source}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 text-muted">
           {lead.source === "whatsapp" ? (

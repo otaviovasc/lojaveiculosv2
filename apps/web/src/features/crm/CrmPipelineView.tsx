@@ -5,7 +5,10 @@ import { CrmKanbanBoard } from "./CrmKanbanBoard";
 import { CrmLeadDetailsPage } from "./CrmLeadDetailsPage";
 import { CrmPipelineToolbar } from "./CrmPipelineToolbar";
 import { CrmPipelineSettingsLayout } from "./CrmPipelineSettingsLayout";
-import { CrmSimulationModal } from "./CrmSimulationModal";
+import {
+  CrmSimulationModal,
+  type FinancingSimulationDraft,
+} from "./CrmSimulationModal";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import { saveActivePipelineId, type PipelineStage } from "./crmPipelineStorage";
 import {
@@ -93,35 +96,26 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     });
   };
 
-  const handleSaveSimulation = async (leadId: string, data: any) => {
+  const handleSaveSimulation = async (
+    leadId: string,
+    data: FinancingSimulationDraft,
+  ) => {
     const lead = props.leads.find((l) => l.id === leadId);
     if (!lead) return;
-    await props.onUpdateLead(leadId, {
-      metadata: {
-        ...lead.metadata,
-        simulationValue: data.vehicleValue,
-        simulation: data,
-      },
-    });
     const payF = new Intl.NumberFormat("pt-BR", {
       style: "currency",
       currency: "BRL",
-    }).format(data.monthlyPayment / 100);
+    }).format(data.monthlyPaymentCents / 100);
     await props.onCreateActivity(leadId, {
       activityType: "note",
-      content: `Simulação via card: ${data.months}x de ${payF} (Taxa: ${data.interestRate}% a.m.)`,
+      content: `Simulacao de financiamento: ${data.months}x de ${payF} (Taxa: ${data.interestRate}% a.m.)`,
       direction: "internal",
     });
   };
 
   const filteredLeads = useMemo(() => {
-    return getFilteredLeads(
-      props.viewLeads,
-      activePipeline,
-      customFilters,
-      props.vehicleOptions,
-    );
-  }, [props.viewLeads, activePipeline, props.vehicleOptions, customFilters]);
+    return getFilteredLeads(props.viewLeads, activePipeline, customFilters);
+  }, [props.viewLeads, activePipeline, customFilters]);
 
   if (isCreateOpen) {
     return (
@@ -256,6 +250,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           lead={simulateLead}
           onClose={() => setSimulateLead(null)}
           onSaveSimulation={handleSaveSimulation}
+          vehicleOptions={props.vehicleOptions}
         />
       )}
 

@@ -26,7 +26,6 @@ import {
   createLeadVehicleOption,
   listAllMatchingLeads,
   loadActivitiesByLeadId,
-  MOCK_FALLBACK_VEHICLES,
 } from "./crmModuleData";
 import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
 import { CrmSurfaceTabs } from "./CrmSurfaceTabs";
@@ -108,15 +107,11 @@ export function CrmModule({
       )
       .then((result) => {
         if (isActive) {
-          if (result.items && result.items.length > 0) {
-            setVehicleOptions(result.items.map(createLeadVehicleOption));
-          } else {
-            setVehicleOptions(MOCK_FALLBACK_VEHICLES);
-          }
+          setVehicleOptions(result.items.map(createLeadVehicleOption));
         }
       })
       .catch(() => {
-        if (isActive) setVehicleOptions(MOCK_FALLBACK_VEHICLES);
+        if (isActive) setVehicleOptions([]);
       });
 
     return () => {
@@ -134,6 +129,7 @@ export function CrmModule({
         ? { buyerPhone: input.buyerPhone }
         : {}),
       ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
+      ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
       source: input.source,
     });
     setLeads((current) => [lead, ...current]);

@@ -1,43 +1,31 @@
 import { useState } from "react";
-import { Plus, User, Smile, SendHorizontal, Phone, Mail } from "lucide-react";
+import { Car, User, Smile, SendHorizontal, Phone, Mail } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
-import type { ProductCrmLead, ProductCrmLeadActivity } from "./productCrmTypes";
+import type {
+  CreateProductCrmActivityInput,
+  ProductCrmLead,
+  ProductCrmLeadActivity,
+} from "./productCrmTypes";
 
 type Props = {
   lead: ProductCrmLead;
   leadName: string;
   activities: ProductCrmLeadActivity[];
-  vehicleOptions: LeadVehicleOption[];
   leadVehicles: LeadVehicleOption[];
-  onUpdateLead: (leadId: string, input: any) => Promise<void>;
-  onCreateActivity: (leadId: string, input: any) => Promise<void>;
+  onCreateActivity: (
+    leadId: string,
+    input: CreateProductCrmActivityInput,
+  ) => Promise<void>;
 };
 
 export function CrmLeadDetailsSidebar({
   lead,
   leadName,
   activities,
-  vehicleOptions,
   leadVehicles,
-  onUpdateLead,
   onCreateActivity,
 }: Props) {
   const [commentText, setCommentText] = useState("");
-  const [showAddVehicle, setShowAddVehicle] = useState(false);
-
-  const handleAddVehicle = async (vehicleId: string) => {
-    const listingIds: string[] = Array.isArray(lead.metadata?.listingIds)
-      ? (lead.metadata.listingIds as string[])
-      : lead.listingId
-        ? [lead.listingId]
-        : [];
-    if (listingIds.includes(vehicleId)) return;
-    const nextIds = [...listingIds, vehicleId];
-    await onUpdateLead(lead.id, {
-      metadata: { ...lead.metadata, listingIds: nextIds },
-    });
-    setShowAddVehicle(false);
-  };
 
   const handlePostComment = async () => {
     if (!commentText.trim()) return;
@@ -75,35 +63,9 @@ export function CrmLeadDetailsSidebar({
       <div className="border border-line/25 bg-panel/30 rounded-xl p-5 flex flex-col gap-4 relative">
         <div className="flex items-center justify-between">
           <span className="text-xs font-black text-app-text">
-            Veículos ({leadVehicles.length || 1})
+            Veículos ({leadVehicles.length})
           </span>
-          <button
-            className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-line bg-panel/15 px-2.5 text-[10px] font-black text-app-text hover:bg-line/20 transition-colors cursor-pointer"
-            onClick={() => setShowAddVehicle(!showAddVehicle)}
-            type="button"
-          >
-            <Plus className="size-3" />
-            <span>Veículo</span>
-          </button>
         </div>
-
-        {showAddVehicle && (
-          <div className="absolute top-12 right-5 z-40 w-56 bg-panel border border-line rounded-xl shadow-xl p-2.5 max-h-48 overflow-y-auto">
-            <span className="text-[9px] font-black uppercase text-muted block mb-1">
-              Selecione o veículo
-            </span>
-            {vehicleOptions.map((opt) => (
-              <button
-                className="w-full text-left px-2 py-1 text-xs font-bold hover:bg-line/15 rounded truncate cursor-pointer"
-                key={opt.id}
-                onClick={() => void handleAddVehicle(opt.id)}
-                type="button"
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
-        )}
 
         <div className="flex flex-col gap-2.5">
           {leadVehicles.length > 0 ? (
@@ -120,12 +82,12 @@ export function CrmLeadDetailsSidebar({
                   />
                 ) : (
                   <div className="w-10 h-7 rounded bg-line/25 flex items-center justify-center shrink-0">
-                    <span className="text-[10px]">🚗</span>
+                    <Car className="size-4 text-muted" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1 flex flex-col gap-0.5">
                   <span className="text-xs font-black text-app-text truncate">
-                    ⭐ {v.label}
+                    {v.label}
                   </span>
                   <span className="text-[10px] font-bold text-muted">
                     {v.priceCents
@@ -139,18 +101,9 @@ export function CrmLeadDetailsSidebar({
               </div>
             ))
           ) : (
-            <div className="flex items-center gap-3 p-2 rounded-lg bg-panel/10 border border-line/15">
-              <div className="w-10 h-7 rounded bg-line/25 flex items-center justify-center shrink-0">
-                <span className="text-[10px]">🚗</span>
-              </div>
-              <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-                <span className="text-xs font-black text-app-text truncate">
-                  ⭐ Ford Ranger 2024
-                </span>
-                <span className="text-[10px] font-black text-app-text">
-                  R$ 410.000
-                </span>
-              </div>
+            <div className="flex items-center gap-3 p-2 rounded-lg bg-panel/10 border border-line/15 text-muted">
+              <Car className="size-4 shrink-0" />
+              <span className="text-xs font-bold">Sem veículo vinculado</span>
             </div>
           )}
         </div>

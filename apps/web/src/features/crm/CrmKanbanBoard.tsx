@@ -1,6 +1,7 @@
 import { useState, useEffect, type DragEvent } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { CrmLeadCard } from "./CrmLeadCard";
+import { getLeadStageId, getLinkedLeadVehicles } from "./crmLeadData";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { PipelineStage } from "./crmPipelineStorage";
 import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
@@ -63,8 +64,7 @@ export function CrmKanbanBoard({
     const leadId = event.dataTransfer.getData("text/plain") || draggedLeadId;
     setDraggedLeadId(null);
     const lead = leadId ? viewLeads.find((l) => l.id === leadId) : null;
-    if (!lead || (lead.metadata?.stageId || lead.status) === targetStage.id)
-      return;
+    if (!lead || getLeadStageId(lead) === targetStage.id) return;
 
     const statusUpdate =
       targetStage.status === "won"
@@ -82,7 +82,7 @@ export function CrmKanbanBoard({
     stageStatus: PipelineStage["status"],
   ) => {
     return viewLeads.filter((lead) => {
-      const leadStageId = lead.metadata?.stageId as string | undefined;
+      const leadStageId = getLeadStageId(lead);
       return leadStageId
         ? leadStageId === stageId
         : lead.status === stageId ||
@@ -93,10 +93,10 @@ export function CrmKanbanBoard({
   };
 
   const getStageTotalValue = (stageLeads: ProductCrmLead[]) => {
-    const total = stageLeads.reduce(
-      (acc, l) => acc + ((l.metadata as any)?.value || 0),
-      0,
-    );
+    const total = stageLeads.reduce((acc, lead) => {
+      const value = getLinkedLeadVehicles(lead, vehicleOptions)[0]?.priceCents;
+      return acc + (value ?? 0);
+    }, 0);
     return total === 0
       ? "R$ 0"
       : new Intl.NumberFormat("pt-BR", {
