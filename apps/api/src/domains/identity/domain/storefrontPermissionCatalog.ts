@@ -111,6 +111,30 @@ export const platformPermissionGroup: PermissionGroup = {
       "high",
     ),
     permission(
+      "fiscal.document.issue",
+      "Emitir documentos fiscais",
+      "Criar tentativas de emissão de NF-e e NFS-e pela integração fiscal.",
+      "high",
+    ),
+    permission(
+      "fiscal.document.cancel",
+      "Cancelar documentos fiscais",
+      "Solicitar cancelamento de documentos fiscais emitidos.",
+      "high",
+    ),
+    permission(
+      "fiscal.recipient.manage",
+      "Gerenciar tomadores fiscais",
+      "Cadastrar e atualizar financeiras, bancos e tomadores de serviço.",
+      "high",
+    ),
+    permission(
+      "fiscal.template.manage",
+      "Gerenciar modelos de NFS-e",
+      "Cadastrar modelos de discriminação, retenções e códigos de serviço.",
+      "high",
+    ),
+    permission(
       "tenant.manage",
       "Configurações globais da conta",
       "Ajustar regras gerais da conta master da loja.",

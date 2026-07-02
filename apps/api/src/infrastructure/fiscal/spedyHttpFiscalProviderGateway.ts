@@ -65,7 +65,12 @@ export function createSpedyHttpFiscalProviderGateway({
     async issueDocument(input) {
       assertConfigured(status);
       return toIssueResult(
-        await request(fetcher, env, requireEnv(env, "SPEDY_ISSUE_PATH"), input),
+        await request(
+          fetcher,
+          env,
+          selectIssuePath(env, input.documentKind),
+          input,
+        ),
       );
     },
     async syncDocumentStatus(input) {
@@ -96,7 +101,9 @@ export function getSpedyProviderStatus(
       ? ["SPEDY_RUNTIME_IMPLEMENTATION=http"]
       : []),
     ...(env.SPEDY_WEBHOOK_SECRET ? [] : ["SPEDY_WEBHOOK_SECRET"]),
-    ...(env.SPEDY_ISSUE_PATH ? [] : ["SPEDY_ISSUE_PATH"]),
+    ...(hasIssuePath(env)
+      ? []
+      : ["SPEDY_ISSUE_PATH or SPEDY_NFE_ISSUE_PATH/SPEDY_NFSE_ISSUE_PATH"]),
     ...(env.SPEDY_CANCEL_PATH ? [] : ["SPEDY_CANCEL_PATH"]),
     ...(env.SPEDY_STATUS_PATH ? [] : ["SPEDY_STATUS_PATH"]),
   ];
@@ -173,6 +180,29 @@ function requireEnv(env: Record<string, string | undefined>, key: string) {
   const value = env[key];
   if (!value) throw new SpedyGatewayConfigurationError([key]);
   return value;
+}
+
+function hasIssuePath(env: Record<string, string | undefined>) {
+  return Boolean(
+    env.SPEDY_ISSUE_PATH ||
+    (env.SPEDY_NFE_ISSUE_PATH && env.SPEDY_NFSE_ISSUE_PATH),
+  );
+}
+
+function selectIssuePath(
+  env: Record<string, string | undefined>,
+  documentKind: "nfe" | "nfse",
+) {
+  const kindPath =
+    documentKind === "nfe"
+      ? env.SPEDY_NFE_ISSUE_PATH
+      : env.SPEDY_NFSE_ISSUE_PATH;
+  const path = kindPath ?? env.SPEDY_ISSUE_PATH;
+  if (path) return path;
+  throw new SpedyGatewayConfigurationError([
+    documentKind === "nfe" ? "SPEDY_NFE_ISSUE_PATH" : "SPEDY_NFSE_ISSUE_PATH",
+    "SPEDY_ISSUE_PATH",
+  ]);
 }
 
 function toUrl(baseUrl: string, path: string) {

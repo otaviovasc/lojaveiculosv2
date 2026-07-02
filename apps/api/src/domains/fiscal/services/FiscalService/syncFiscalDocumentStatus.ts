@@ -3,7 +3,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { FiscalDocument } from "../../ports/fiscalRepository.js";
+import type {
+  FiscalDocument,
+  FiscalDocumentStatus,
+} from "../../ports/fiscalRepository.js";
 import {
   requireFiscalScope,
   type FiscalServicePorts,
@@ -38,9 +41,17 @@ export async function syncFiscalDocumentStatus(
   const document = await ports.fiscalRepository.updateDocumentStatus({
     accessKey: providerResult.accessKey,
     documentId: input.documentId,
+    metadata: { providerStatus: providerResult.status },
     providerDocumentId: providerResult.providerDocumentId,
-    status:
-      providerResult.status === "processing" ? "draft" : providerResult.status,
+    status: mapStatus(providerResult.status),
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
+  await ports.fiscalRepository.createDocumentSnapshot({
+    actorId: context.actor.id,
+    fiscalDocumentId: document.id,
+    providerResponse: providerResult.rawResponse ?? {},
+    snapshotType: "status_sync_response",
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
@@ -63,4 +74,14 @@ export async function syncFiscalDocumentStatus(
   });
 
   return document;
+}
+
+function mapStatus(status: string): FiscalDocumentStatus {
+  if (status === "processing") return "processing";
+  if (status === "queued") return "queued";
+  if (status === "authorized") return "authorized";
+  if (status === "issued") return "issued";
+  if (status === "cancelled") return "cancelled";
+  if (status === "rejected") return "rejected";
+  return status === "error" ? "error" : "failed";
 }

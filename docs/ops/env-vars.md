@@ -109,27 +109,35 @@ Use one auth mode at a time:
 
 ## Integrations
 
-| Name                                    | Required | Environments        | Secret | Notes                                              |
-| --------------------------------------- | -------- | ------------------- | ------ | -------------------------------------------------- |
-| `ASAAS_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when Asaas config is complete.     |
-| `ASAAS_API_URL`                         | Yes      | staging, production | No     | Asaas API base URL.                                |
-| `ASAAS_API_KEY`                         | Yes      | staging, production | Yes    | Asaas API key.                                     |
-| `ASAAS_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | Asaas webhook secret.                              |
-| `ASAAS_WEBHOOK_URL`                     | Yes      | staging, production | No     | Public webhook URL.                                |
-| `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when SPEDY config is complete.     |
-| `SPEDY_API_URL`                         | Yes      | staging, production | No     | SPEDY API base URL.                                |
-| `SPEDY_API_TOKEN`                       | Yes      | staging, production | Yes    | SPEDY API token.                                   |
-| `SPEDY_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | SPEDY webhook secret.                              |
-| `API_PLACA_KEY`                         | No       | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.   |
-| `API_PLACA_BASE_URL`                    | No       | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`. |
-| `API_PLACA_DADOS_PATH`                  | No       | staging, production | No     | Defaults to `/vehicles/base/000/dados`.            |
-| `API_PLACA_CACHE_TTL_DAYS`              | No       | staging, production | No     | Plate lookup reuse window. Defaults to `30`.       |
-| `API_OPENAI_KEY`                        | No       | staging, production | Yes    | OpenAI API key for inventory resale analysis.      |
-| `API_OPENAI_DEFAULT_MODEL`              | No       | staging, production | No     | Defaults AI tasks to `gpt-5.4-mini`.               |
-| `API_OPENAI_INVENTORY_RESALE_MODEL`     | No       | staging, production | No     | Optional override for inventory resale analysis.   |
-| `API_OPENAI_MODEL`                      | No       | staging, production | No     | Legacy fallback after task-specific model vars.    |
-| `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                  |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`           | No       | staging, production | Yes    | OpenTelemetry collector endpoint.                  |
+| Name                                    | Required    | Environments        | Secret | Notes                                                                                                     |
+| --------------------------------------- | ----------- | ------------------- | ------ | --------------------------------------------------------------------------------------------------------- |
+| `ASAAS_RUNTIME_IMPLEMENTATION`          | Yes         | staging, production | No     | Use `http` only when Asaas config is complete.                                                            |
+| `ASAAS_API_URL`                         | Yes         | staging, production | No     | Asaas API base URL.                                                                                       |
+| `ASAAS_API_KEY`                         | Yes         | staging, production | Yes    | Asaas API key.                                                                                            |
+| `ASAAS_WEBHOOK_SECRET`                  | Yes         | staging, production | Yes    | Asaas webhook secret.                                                                                     |
+| `ASAAS_WEBHOOK_URL`                     | Yes         | staging, production | No     | Public webhook URL.                                                                                       |
+| `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes         | staging, production | No     | Use `http` only when SPEDY config is complete.                                                            |
+| `SPEDY_API_URL`                         | Yes         | staging, production | No     | SPEDY API base URL.                                                                                       |
+| `SPEDY_API_TOKEN`                       | Yes         | staging, production | Yes    | SPEDY API token.                                                                                          |
+| `SPEDY_AUTH_HEADER`                     | No          | staging, production | No     | Auth header name; defaults to `Authorization`. Use `X-Api-Key` when required by the configured SPEDY API. |
+| `SPEDY_AUTH_SCHEME`                     | No          | staging, production | No     | Auth scheme; defaults to `Bearer`. Use an empty value when the token is sent directly.                    |
+| `SPEDY_WEBHOOK_SECRET`                  | Yes         | staging, production | Yes    | SPEDY webhook secret.                                                                                     |
+| `SPEDY_ISSUE_PATH`                      | Conditional | staging, production | No     | Generic SPEDY issue endpoint path. Required unless both kind-specific paths are configured.               |
+| `SPEDY_NFE_ISSUE_PATH`                  | Conditional | staging, production | No     | NF-e/product issue endpoint path. Overrides `SPEDY_ISSUE_PATH` for NF-e when set.                         |
+| `SPEDY_NFSE_ISSUE_PATH`                 | Conditional | staging, production | No     | NFS-e/service issue endpoint path. Overrides `SPEDY_ISSUE_PATH` for NFS-e when set.                       |
+| `SPEDY_CANCEL_PATH`                     | Yes         | staging, production | No     | SPEDY cancel endpoint path template.                                                                      |
+| `SPEDY_STATUS_PATH`                     | Yes         | staging, production | No     | SPEDY status endpoint path template.                                                                      |
+| `SPEDY_WEBHOOK_URL`                     | No          | staging, production | No     | Public webhook URL registered with SPEDY.                                                                 |
+| `API_PLACA_KEY`                         | No          | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.                                                          |
+| `API_PLACA_BASE_URL`                    | No          | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`.                                                        |
+| `API_PLACA_DADOS_PATH`                  | No          | staging, production | No     | Defaults to `/vehicles/base/000/dados`.                                                                   |
+| `API_PLACA_CACHE_TTL_DAYS`              | No          | staging, production | No     | Plate lookup reuse window. Defaults to `30`.                                                              |
+| `API_OPENAI_KEY`                        | No          | staging, production | Yes    | OpenAI API key for inventory resale analysis.                                                             |
+| `API_OPENAI_DEFAULT_MODEL`              | No          | staging, production | No     | Defaults AI tasks to `gpt-5.4-mini`.                                                                      |
+| `API_OPENAI_INVENTORY_RESALE_MODEL`     | No          | staging, production | No     | Optional override for inventory resale analysis.                                                          |
+| `API_OPENAI_MODEL`                      | No          | staging, production | No     | Legacy fallback after task-specific model vars.                                                           |
+| `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes         | staging, production | Yes    | Encrypts marketplace credentials.                                                                         |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`           | No          | staging, production | Yes    | OpenTelemetry collector endpoint.                                                                         |
 
 ## Vehicle Catalog Sync
 

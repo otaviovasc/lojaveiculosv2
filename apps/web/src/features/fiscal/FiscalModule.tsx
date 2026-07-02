@@ -1,4 +1,4 @@
-import { FileText, RefreshCcw, Send, ShieldAlert } from "lucide-react";
+import { FileText, RefreshCcw, ShieldAlert } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   FeatureActionButton,
@@ -15,15 +15,17 @@ import {
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import { createFiscalApi, type FiscalApi } from "./apiClient";
-import { createFiscalApiOptions } from "./runtimeApi";
+import type { FiscalApi } from "./apiClient";
+import { FiscalCatalogPanels } from "./FiscalCatalogPanels";
+import { FiscalDocumentActions } from "./FiscalDocumentActions";
+import { FiscalIssueComposer } from "./FiscalIssueComposer";
+import { createRuntimeFiscalApi } from "./runtimeApi";
 import type { FiscalOverview } from "./types";
 
 export function FiscalModule({ api }: { api?: FiscalApi }) {
   const fiscalApi = useMemo(() => api ?? createRuntimeFiscalApi(), [api]);
   const [overview, setOverview] = useState<FiscalOverview | null>(null);
   const [status, setStatus] = useState<LoadStatus>({ kind: "loading" });
-  const [reference, setReference] = useState("");
 
   const refresh = async () => {
     setStatus({ kind: "loading" });
@@ -38,20 +40,6 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
   useEffect(() => {
     void refresh();
   }, []);
-
-  const issue = async () => {
-    setStatus({ kind: "saving" });
-    try {
-      await fiscalApi.issueDocument({
-        documentType: "nfe_vehicle_sale",
-        externalReference: reference || "manual-fiscal-test",
-      });
-      setReference("");
-      await refresh();
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
-    }
-  };
 
   return (
     <FeaturePageShell className="feature-shell" variant="content">
@@ -75,24 +63,16 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
       {overview ? (
         <>
           <ProviderPanel overview={overview} />
-          <FeatureSection className="feature-panel" title="Emitir documento">
-            <div className="feature-form-row">
-              <input
-                aria-label="Referencia externa"
-                onChange={(event) => setReference(event.target.value)}
-                placeholder="Venda, lead ou lancamento"
-                value={reference}
-              />
-              <button
-                disabled={status.kind === "saving"}
-                onClick={() => void issue()}
-                type="button"
-              >
-                <Send aria-hidden="true" className="size-4" />
-                Emitir
-              </button>
-            </div>
-          </FeatureSection>
+          <FiscalIssueComposer
+            api={fiscalApi}
+            disabled={status.kind === "saving"}
+            onError={(message) => setStatus({ kind: "error", message })}
+            onIssued={refresh}
+          />
+          <FiscalCatalogPanels
+            api={fiscalApi}
+            onError={(message) => setStatus({ kind: "error", message })}
+          />
           <FeatureKpiStrip ariaLabel="Resumo fiscal">
             <FeatureKpiCard
               icon={FileText}
@@ -129,6 +109,14 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
                     <small>
                       {document.providerDocumentId ?? "sem id provider"}
                     </small>
+                    <FiscalDocumentActions
+                      api={fiscalApi}
+                      document={document}
+                      onError={(message) =>
+                        setStatus({ kind: "error", message })
+                      }
+                      onRefresh={refresh}
+                    />
                   </article>
                 ))
               ) : (
@@ -169,15 +157,6 @@ type LoadStatus =
   | { kind: "loading" }
   | { kind: "ready" }
   | { kind: "saving" };
-
-function createRuntimeFiscalApi(): FiscalApi {
-  return {
-    getOverview: async () =>
-      createFiscalApi(await createFiscalApiOptions()).getOverview(),
-    issueDocument: async (input) =>
-      createFiscalApi(await createFiscalApiOptions()).issueDocument(input),
-  };
-}
 
 function errorMessage(error: unknown) {
   return formatApiErrorDisplay(

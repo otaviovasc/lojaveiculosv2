@@ -17,6 +17,8 @@ import {
   type IdentityUserSummary,
 } from "../../../domains/identity/ports/accountProvisioningRepository.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
+import { toUserSummary } from "./drizzleIdentityMappers.js";
+import { resolveStoreEntitlements } from "./drizzleStoreEntitlementReads.js";
 
 export async function ensureUser(
   db: DrizzleAccountProvisioningClient,
@@ -83,8 +85,10 @@ export async function listStores(
         membershipId: row.membershipId,
         role: row.role,
       });
+      const entitlements = await resolveStoreEntitlements(db, row.storeId);
       return {
         effectivePermissions,
+        entitlements,
         role: row.role,
         status: row.status,
         storeId: row.storeId as never,
@@ -235,13 +239,4 @@ async function updateUserProfile(
     .returning();
   if (!updated) throw new Error("Failed to update V2 user.");
   return toUserSummary(updated);
-}
-
-function toUserSummary(user: typeof users.$inferSelect): IdentityUserSummary {
-  return {
-    clerkUserId: user.clerkUserId,
-    email: user.email,
-    id: user.id as never,
-    name: user.name,
-  };
 }

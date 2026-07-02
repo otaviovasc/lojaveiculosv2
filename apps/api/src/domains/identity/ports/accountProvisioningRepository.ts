@@ -23,6 +23,7 @@ export type IdentityUserSummary = {
 
 export type StoreAccessSummary = {
   effectivePermissions: readonly PermissionKey[];
+  entitlements: readonly EntitlementKey[];
   role: RoleKey;
   status: "active" | "invited" | "suspended";
   storeId: StoreId;

@@ -18,6 +18,7 @@ export function toIssueResult(
     accessKey: readString(payload, accessKeyFields),
     providerDocumentId:
       readString(payload, documentIdFields) ?? crypto.randomUUID(),
+    rawResponse: payload,
     status: mapIssueStatus(payload.status),
   };
 }
@@ -30,33 +31,42 @@ export function toStatusResult(
     accessKey: readString(payload, accessKeyFields),
     providerDocumentId:
       readString(payload, documentIdFields) ?? fallbackProviderDocumentId,
+    rawResponse: payload,
     status: mapStatus(payload.status),
   };
 }
 
 function mapIssueStatus(status: unknown): FiscalIssueResult["status"] {
   const normalized = normalizeStatus(status);
-  return normalized === "failed" ? "failed" : "issued";
+  return normalized === "failed" || normalized === "rejected"
+    ? normalized
+    : normalized === "processing" || normalized === "queued"
+      ? normalized
+      : "authorized";
 }
 
 function mapStatus(status: unknown): FiscalStatusResult["status"] {
   const normalized = normalizeStatus(status);
   if (normalized === "cancelled") return "cancelled";
   if (normalized === "failed") return "failed";
+  if (normalized === "rejected") return "rejected";
   if (normalized === "processing") return "processing";
-  return "issued";
+  if (normalized === "queued") return "queued";
+  return "authorized";
 }
 
 function normalizeStatus(status: unknown) {
-  if (typeof status !== "string") return "issued";
+  if (typeof status !== "string") return "authorized";
   const normalized = status.toLowerCase();
   if (["cancelled", "canceled", "cancelada", "cancelado"].includes(normalized))
     return "cancelled";
-  if (["failed", "error", "erro", "rejected", "rejeitada"].includes(normalized))
-    return "failed";
-  if (["processing", "pending", "processando", "draft"].includes(normalized))
-    return "processing";
-  return "issued";
+  if (["failed", "error", "erro"].includes(normalized)) return "failed";
+  if (["rejected", "rejeitada", "rejeitado"].includes(normalized))
+    return "rejected";
+  if (["processing", "processando"].includes(normalized)) return "processing";
+  if (["queued", "pending", "draft", "enqueued"].includes(normalized))
+    return "queued";
+  return "authorized";
 }
 
 function readString(
