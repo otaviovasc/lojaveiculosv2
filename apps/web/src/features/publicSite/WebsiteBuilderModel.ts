@@ -16,7 +16,7 @@ export const websiteBuilderTemplateInfo: Record<
   { description: string; name: string }
 > = {
   aurora: {
-    description: "Elegante e refinado - ideal para veiculos de alto padrao",
+    description: "Elegante e refinado - ideal para veículos de alto padrão",
     name: "Aurora",
   },
   quadra: {
@@ -33,7 +33,7 @@ export const websiteBuilderTemplateBranding: Record<
     gradient:
       "from-amber-500/20 via-orange-400/10 to-rose-400/15 dark:from-amber-500/15 dark:via-orange-400/8 dark:to-rose-400/10",
     icon: "*",
-    tagline: "Alto padrao",
+    tagline: "Alto padrão",
   },
   quadra: {
     gradient:
@@ -50,7 +50,7 @@ export const websiteBuilderColorPalettes = [
       backgroundColor: hex("F8F5F0"),
       brandColor: hex("1A1A1A"),
     },
-    name: "Elegancia Classica",
+    name: "Elegância Clássica",
   },
   {
     colors: {
@@ -144,7 +144,7 @@ export function createWebsiteConfigFromSettings(
     heroTitle:
       stringOrNull(theme.heroTitle) ??
       stringOrNull(theme.headline) ??
-      "Encontre o veiculo ideal para sua garagem",
+      "Encontre o veículo ideal para sua garagem",
     logoUrl: settings.profile.logoImageUrl ?? stringOrNull(theme.logoUrl),
     sections: readSections(theme.sections),
     seo: {

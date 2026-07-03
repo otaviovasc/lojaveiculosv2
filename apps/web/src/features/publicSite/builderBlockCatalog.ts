@@ -37,28 +37,28 @@ export const builderBlockLabels: Record<
   string
 > = {
   about: "Sobre",
-  contact_section: "Formulario de contato",
+  contact_section: "Formulário de contato",
   container: "Container",
   cta: "Chamada",
   divider: "Divisor",
   featured: "Estoque em destaque",
-  footer: "Rodape",
+  footer: "Rodapé",
   gallery: "Galeria",
-  header: "Cabecalho",
+  header: "Cabeçalho",
   hero: "Hero",
   image: "Imagem",
   map: "Mapa",
   marquee: "Faixa animada",
-  properties_grid: "Grade de veiculos",
+  properties_grid: "Grade de veículos",
   scroll_zoom: "Imagem com destaque",
-  section_wrapper: "Secao",
-  spacer: "Espacador",
+  section_wrapper: "Seção",
+  spacer: "Espaçador",
   testimonials: "Depoimentos",
   text_block: "Texto",
   two_column: "Duas colunas",
   typewriter: "Texto digitado",
   vehicle_specs: "Ficha Técnica",
-  video: "Video",
+  video: "Vídeo",
 };
 
 export const builderBlockIcons: Record<
@@ -99,7 +99,7 @@ export const builderBlockGroups: ReadonlyArray<{
     types: ["header", "hero", "about", "text_block", "cta", "footer"],
   },
   {
-    label: "Midia",
+    label: "Mídia",
     types: [
       "image",
       "gallery",
@@ -141,14 +141,14 @@ const defaultBlockProps: Record<
   about: {
     imagePosition: "right",
     imageUrl: pageBuilderDefaultMedia.bmwGreen,
-    text: "Apresente a curadoria da loja, a preparacao dos veiculos e o atendimento que acompanha o cliente ate a entrega.",
+    text: "Apresente a curadoria da loja, a preparação dos veículos e o atendimento que acompanha o cliente até a entrega.",
     title: "Compra assistida, estoque revisado",
   },
   contact_section: {
     fields: { email: true, message: true, name: true, phone: true },
     submitButtonText: "Enviar mensagem",
     subtitle: "Informe seus dados para a equipe retornar.",
-    successMessage: "Mensagem registrada. A loja retornara em breve.",
+    successMessage: "Mensagem registrada. A loja retornará em breve.",
     title: "Fale com a loja",
   },
   container: {
@@ -163,13 +163,13 @@ const defaultBlockProps: Record<
     buttonUrl: "#contato",
     subtitle:
       "Converse com a equipe para simular financiamento, avaliar troca ou reservar uma visita.",
-    title: "Pronto para encontrar o proximo veiculo?",
+    title: "Pronto para encontrar o próximo veículo?",
   },
   divider: { lineVariant: "solid", text: "" },
   featured: {
     maxProperties: 6,
     showAllLink: true,
-    subtitle: "Selecao publicada pela loja.",
+    subtitle: "Seleção publicada pela loja.",
     title: "Estoque em destaque",
   },
   footer: {
@@ -192,14 +192,14 @@ const defaultBlockProps: Record<
     layout: "grid",
     lightboxEnabled: true,
     showCaptions: true,
-    subtitle: "Fotos do estoque, detalhes e preparacao dos veiculos.",
+    subtitle: "Fotos do estoque, detalhes e preparação dos veículos.",
     title: "Galeria da loja",
   },
   header: {
     contactButtonLink: "#contato",
     contactButtonText: "Fale conosco",
     links: [
-      { href: "#home", title: "Inicio" },
+      { href: "#home", title: "Início" },
       { href: "#estoque", title: "Estoque" },
       { href: "#contato", title: "Contato" },
     ],
@@ -209,14 +209,14 @@ const defaultBlockProps: Record<
     sticky: true,
   },
   hero: {
-    badge: "Loja de veiculos",
+    badge: "Loja de veículos",
     ctaLabel: "Ver estoque",
     ctaUrl: "#estoque",
     fullHeight: false,
     imageUrl: pageBuilderDefaultMedia.audiFront,
     subtitle:
-      "Estoque selecionado, atendimento consultivo e publicacao direta pela loja.",
-    title: "Encontre seu proximo veiculo com confianca",
+      "Estoque selecionado, atendimento consultivo e publicação direta pela loja.",
+    title: "Encontre seu próximo veículo com confiança",
   },
   image: {
     alignment: "center",
@@ -236,13 +236,13 @@ const defaultBlockProps: Record<
   properties_grid: {
     maxProperties: 9,
     showAllLink: true,
-    subtitle: "Confira os veiculos disponiveis.",
-    title: "Veiculos disponiveis",
+    subtitle: "Confira os veículos disponíveis.",
+    title: "Veículos disponíveis",
   },
   scroll_zoom: {
     imageUrl: pageBuilderDefaultMedia.audiRear,
     subtitle: "Mostre uma entrega, preparação ou veículo especial da loja.",
-    title: "Experiencia de compra premium",
+    title: "Experiência de compra premium",
   },
   section_wrapper: {
     children: [],
@@ -256,7 +256,7 @@ const defaultBlockProps: Record<
         id: "t1",
         imageSrc: "",
         name: "Cliente",
-        quote: "Atendimento claro e rapido do primeiro contato ate a entrega.",
+        quote: "Atendimento claro e rápido do primeiro contato até a entrega.",
         role: "Comprador",
       },
     ],
@@ -265,7 +265,7 @@ const defaultBlockProps: Record<
   text_block: {
     alignment: "left",
     content:
-      "Use este espaco para apresentar condicoes, garantias, processo de compra ou diferenciais da loja.",
+      "Use este espaço para apresentar condições, garantias, processo de compra ou diferenciais da loja.",
     maxWidth: "lg",
   },
   two_column: {
@@ -279,14 +279,14 @@ const defaultBlockProps: Record<
   typewriter: {
     cursorChar: "|",
     postText: "",
-    preText: "Aqui voce encontra",
+    preText: "Aqui você encontra",
     showCursor: true,
     speed: 70,
     textPosition: "center",
     texts: [
       "seminovos revisados",
       "atendimento direto",
-      "opcoes de financiamento",
+      "opções de financiamento",
     ],
     waitTime: 1800,
   },

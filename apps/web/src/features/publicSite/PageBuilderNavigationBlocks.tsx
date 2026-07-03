@@ -152,10 +152,10 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
                 <CarFront aria-hidden="true" className="size-5" />
               </span>
               <h3 className="mt-4 text-base font-black text-app-text">
-                Estoque em atualizacao
+                Estoque em atualização
               </h3>
               <p className="mt-2 max-w-sm text-sm font-semibold text-muted">
-                Publique veiculos para preencher este bloco automaticamente.
+                Publique veículos para preencher este bloco automaticamente.
               </p>
             </div>
           </div>
@@ -211,7 +211,7 @@ export function VehicleGridBlock({ component, context }: BuilderBlockProps) {
                           className="size-1 rounded-full bg-line-strong"
                           aria-hidden="true"
                         />
-                        <span className="uppercase opacity-80">Disponivel</span>
+                        <span className="uppercase opacity-80">Disponível</span>
                       </div>
                     </div>
                   </div>

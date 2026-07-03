@@ -24,19 +24,19 @@ export type StorefrontTemplate = {
 
 export const storefrontTemplates: readonly StorefrontTemplate[] = [
   {
-    description: "Visual refinado para vitrines de alto padrao.",
+    description: "Visual refinado para vitrines de alto padrão.",
     key: "aurora",
     label: "Aurora",
     theme: {
       badgeLabel: "Curadoria da loja",
       ctaLabel: "Chamar no WhatsApp",
-      headline: "Veiculos selecionados para compra segura",
+      headline: "Veículos selecionados para compra segura",
       sections: ["featured", "trust", "contact"],
       tone: "premium",
     },
   },
   {
-    description: "Marca direta com foco em estoque e contato rapido.",
+    description: "Marca direta com foco em estoque e contato rápido.",
     key: "quadra",
     label: "Quadra",
     theme: {
@@ -48,13 +48,13 @@ export const storefrontTemplates: readonly StorefrontTemplate[] = [
     },
   },
   {
-    description: "Hero visual, prova de confianca e cards maiores.",
+    description: "Hero visual, prova de confiança e cards maiores.",
     key: "showroom",
     label: "Showroom",
     theme: {
       badgeLabel: "Curadoria da loja",
       ctaLabel: "Chamar no WhatsApp",
-      headline: "Veiculos selecionados para compra segura",
+      headline: "Veículos selecionados para compra segura",
       sections: ["featured", "financing", "trust", "contact"],
       tone: "premium",
     },
@@ -62,7 +62,7 @@ export const storefrontTemplates: readonly StorefrontTemplate[] = [
   {
     description: "Listagem objetiva para estoque com maior giro.",
     key: "classic",
-    label: "Classico",
+    label: "Clássico",
     theme: {
       badgeLabel: "Estoque atualizado",
       ctaLabel: "Tenho interesse",

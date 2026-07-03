@@ -19,7 +19,7 @@ const colorFields = [
   {
     fallback: websiteBuilderColorPalettes[0].colors.backgroundColor,
     key: "backgroundColor",
-    label: "Fundo das Secoes",
+    label: "Fundo das Seções",
   },
 ] as const;
 

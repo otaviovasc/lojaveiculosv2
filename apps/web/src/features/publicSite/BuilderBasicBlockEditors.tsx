@@ -30,12 +30,12 @@ export function HeroBlockEditor({ props, setProp }: PropsEditor) {
   return (
     <EditorStack>
       <BuilderTextInput
-        label="Titulo"
+        label="Título"
         onChange={(value) => setProp("title", value)}
         value={props.title}
       />
       <BuilderTextareaInput
-        label="Subtitulo"
+        label="Subtítulo"
         onChange={(value) => setProp("subtitle", value)}
         value={props.subtitle}
       />
@@ -45,12 +45,12 @@ export function HeroBlockEditor({ props, setProp }: PropsEditor) {
         value={props.badge ?? props.eyebrow}
       />
       <BuilderTextInput
-        label="Texto do botao"
+        label="Texto do botão"
         onChange={(value) => setProp("ctaLabel", value)}
         value={props.ctaLabel ?? props.primaryLabel}
       />
       <BuilderTextInput
-        label="Link do botao"
+        label="Link do botão"
         onChange={(value) => setProp("ctaUrl", value)}
         value={props.ctaUrl}
       />
@@ -72,7 +72,7 @@ export function AboutBlockEditor({ props, setProp }: PropsEditor) {
   return (
     <EditorStack>
       <BuilderTextInput
-        label="Titulo"
+        label="Título"
         onChange={(value) => setProp("title", value)}
         value={props.title}
       />
@@ -87,7 +87,7 @@ export function AboutBlockEditor({ props, setProp }: PropsEditor) {
         value={props.imageUrl}
       />
       <BuilderSelectInput
-        label="Posicao da imagem"
+        label="Posição da imagem"
         onChange={(value) => setProp("imagePosition", value)}
         options={imagePositionOptions}
         value={props.imagePosition ?? "right"}
@@ -100,7 +100,7 @@ export function TextBlockEditor({ props, setProp }: PropsEditor) {
   return (
     <EditorStack>
       <BuilderTextareaInput
-        label="Conteudo"
+        label="Conteúdo"
         onChange={(value) => setProp("content", value)}
         value={props.content ?? props.text}
       />
@@ -166,7 +166,7 @@ export function GalleryBlockEditor({ props, setProp }: PropsEditor) {
         value={props.columns ?? 3}
       />
       <BuilderSelectInput
-        label="Espacamento"
+        label="Espaçamento"
         onChange={(value) => setProp("gap", value)}
         options={gapOptions}
         value={props.gap ?? "md"}
@@ -193,7 +193,7 @@ export function VideoBlockEditor({ props, setProp }: PropsEditor) {
   return (
     <EditorStack>
       <BuilderTextInput
-        label="Video"
+        label="Vídeo"
         onChange={(value) => setProp("videoUrl", value)}
         value={props.videoUrl ?? props.url}
       />

@@ -82,7 +82,7 @@ export function PublicCustomPageRoute({ api }: { api?: PublicStorefrontApi }) {
           </button>
         }
         icon={<RefreshCcw aria-hidden="true" className="size-6" />}
-        title="Pagina temporariamente indisponivel"
+        title="Página temporariamente indisponível"
       />
     );
   }
@@ -90,7 +90,7 @@ export function PublicCustomPageRoute({ api }: { api?: PublicStorefrontApi }) {
   return (
     <StorefrontStateFrame
       icon={<RefreshCcw aria-hidden="true" className="size-6 animate-spin" />}
-      title="Carregando pagina"
+      title="Carregando página"
     />
   );
 }

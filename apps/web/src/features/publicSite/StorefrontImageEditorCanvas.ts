@@ -40,7 +40,7 @@ export function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
-      else reject(new Error("Nao foi possivel gerar a imagem."));
+      else reject(new Error("Não foi possível gerar a imagem."));
     }, "image/png");
   });
 }

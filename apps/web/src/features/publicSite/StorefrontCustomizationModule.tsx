@@ -154,7 +154,7 @@ export function StorefrontCustomizationModule({
           ? { description: page.description }
           : {}),
         slug: createDuplicatePageSlug(page.slug, pages),
-        title: `${page.title} copia`,
+        title: `${page.title} cópia`,
       });
       const saved = await runtimePagesApi.updatePage(copy.id, {
         ...toPageUpdate(page),
@@ -286,7 +286,7 @@ function toStatusMessage(status: StorefrontCustomizationStatus) {
 }
 
 function errorMessage(error: unknown) {
-  return formatApiErrorDisplay(error, "Nao foi possivel salvar a vitrine.");
+  return formatApiErrorDisplay(error, "Não foi possível salvar a vitrine.");
 }
 
 function cleanUndefined<T extends Record<string, unknown>>(input: T): T {

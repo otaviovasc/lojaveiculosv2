@@ -104,10 +104,10 @@ export function HeroMedia({
         : ImageIcon;
   const label =
     kind === "video"
-      ? "Video do veiculo"
+      ? "Vídeo do veículo"
       : kind === "document_preview"
         ? "Documento"
-        : "Midia";
+        : "Mídia";
   return (
     <div className="flex aspect-[16/10] flex-col items-center justify-center gap-3 rounded-xl border border-line bg-accent-soft text-accent">
       <Icon aria-hidden="true" className="size-12" />
@@ -148,10 +148,10 @@ function MediaFrame({
         : ImageIcon;
   const label =
     media?.kind === "video"
-      ? "Video do veiculo"
+      ? "Vídeo do veículo"
       : media?.kind === "document_preview"
         ? "Documento"
-        : "Midia em breve";
+        : "Mídia em breve";
 
   return (
     <span

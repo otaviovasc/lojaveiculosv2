@@ -57,7 +57,7 @@ export function PageCard({
           </div>
           <div className="flex items-center gap-1.5">
             <Eye className="h-3.5 w-3.5" />
-            <span>{page.visible ? "Publica" : "Oculta"}</span>
+            <span>{page.visible ? "Pública" : "Oculta"}</span>
           </div>
         </div>
       </div>
@@ -80,6 +80,7 @@ export function PageCard({
         />
         <Button className="h-8 w-8 p-0" size="sm" variant="outline" asChild>
           <a
+            aria-label={`Visualizar ${page.title}`}
             href={previewUrl}
             rel="noopener noreferrer"
             target="_blank"
@@ -122,8 +123,10 @@ export function CustomPagesDialog({
       />
       <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-lg">
         <button
+          aria-label="Fechar"
           className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
           onClick={onClose}
+          title="Fechar"
           type="button"
         >
           <X className="h-4 w-4" />
@@ -150,6 +153,7 @@ function IconButton({
 }) {
   return (
     <Button
+      aria-label={label}
       className={["h-8 w-8 p-0", className].filter(Boolean).join(" ")}
       disabled={disabled}
       onClick={onClick}

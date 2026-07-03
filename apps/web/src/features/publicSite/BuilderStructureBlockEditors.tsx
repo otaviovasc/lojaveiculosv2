@@ -53,7 +53,7 @@ export function HeaderFooterEditor({ component, setProp }: EditorHelpers) {
         value={props.sticky}
       />
       <BuilderToggleInput
-        label="Mostrar botao de contato"
+        label="Mostrar botão de contato"
         onChange={(value) => setProp("showContactButton", value)}
         value={props.showContactButton}
       />
@@ -63,12 +63,12 @@ export function HeaderFooterEditor({ component, setProp }: EditorHelpers) {
         value={props.showSocial}
       />
       <BuilderTextInput
-        label="Texto do botao"
+        label="Texto do botão"
         onChange={(value) => setProp("contactButtonText", value)}
         value={props.contactButtonText}
       />
       <BuilderTextInput
-        label="Link do botao"
+        label="Link do botão"
         onChange={(value) => setProp("contactButtonLink", value)}
         value={props.contactButtonLink}
       />
@@ -102,7 +102,7 @@ export function NestedLayoutEditor({
           value={props.leftColumnWidth ?? 50}
         />
         <BuilderSelectInput
-          label="Espacamento"
+          label="Espaçamento"
           onChange={(value) => setProp("gap", value)}
           options={gapOptions}
           value={props.gap ?? "lg"}
@@ -145,7 +145,7 @@ export function NestedLayoutEditor({
             value={props.direction ?? "column"}
           />
           <BuilderSelectInput
-            label="Espacamento"
+            label="Espaçamento"
             onChange={(value) => setProp("gap", value)}
             options={gapOptions}
             value={props.gap ?? "lg"}
@@ -209,7 +209,7 @@ export function SimpleBlockEditor({ component, setProp }: EditorHelpers) {
     return (
       <EditorStack>
         <BuilderTextInput
-          label="Endereco"
+          label="Endereço"
           onChange={(value) => setProp("address", value)}
           value={props.address}
         />

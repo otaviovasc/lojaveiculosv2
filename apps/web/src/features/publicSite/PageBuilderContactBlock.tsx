@@ -33,7 +33,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           method: "POST",
         },
       );
-      await readApiVoid(response, { feature: "Vitrine publica" });
+      await readApiVoid(response, { feature: "Vitrine pública" });
       event.currentTarget.reset();
       setStatus({ kind: "sent" });
     } catch (error) {
@@ -41,7 +41,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel enviar a mensagem no momento.",
+          "Não foi possível enviar a mensagem no momento.",
         ),
       });
     }

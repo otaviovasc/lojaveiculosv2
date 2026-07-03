@@ -143,6 +143,7 @@ export function WebsiteBuilderDesign({
           <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
             <span className="text-sm font-semibold">Preview</span>
             <Button
+              aria-label="Fechar preview"
               onClick={() => setShowMobilePreview(false)}
               size="sm"
               type="button"
@@ -193,8 +194,10 @@ export function WebsiteBuilderDesign({
 
       {mobileTab === "edit" && !showMobilePreview ? (
         <button
+          aria-label="Abrir preview mobile"
           className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 active:scale-95 md:hidden"
           onClick={() => setShowMobilePreview(true)}
+          title="Abrir preview mobile"
           type="button"
         >
           <Smartphone className="h-5 w-5" />

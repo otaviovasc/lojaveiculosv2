@@ -82,12 +82,12 @@ export function TitleSubtitleFields({
   return (
     <>
       <BuilderTextInput
-        label="Titulo"
+        label="Título"
         onChange={(value) => setProp("title", value)}
         value={props.title}
       />
       <BuilderTextareaInput
-        label="Subtitulo"
+        label="Subtítulo"
         onChange={(value) => setProp("subtitle", value)}
         value={props.subtitle ?? props.text}
       />

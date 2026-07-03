@@ -98,7 +98,7 @@ export function createWebsiteBuilderAccordionItems({
       ),
       icon: Info,
       id: "about",
-      title: "Secao Sobre",
+      title: "Seção Sobre",
     },
     {
       children: (

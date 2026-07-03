@@ -32,7 +32,7 @@ export function PageSettingsFields({
     <div className="grid gap-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Configuracoes da pagina
+          Configurações da página
         </p>
         <h3 className="text-base font-semibold text-foreground">
           {draft.title}
@@ -59,7 +59,7 @@ export function PageSettingsFields({
       <PageSeoFields draft={draft} onDraftChange={onDraftChange} />
       <PreviewLinkField previewUrl={previewUrl} />
       <label className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3 text-sm font-semibold">
-        <span>Publicar pagina</span>
+        <span>Publicar página</span>
         <input
           checked={draft.visible}
           onChange={(event) =>
@@ -82,7 +82,7 @@ function PageIdentityFields({
   return (
     <>
       <div className="space-y-2">
-        <Label>Titulo</Label>
+        <Label>Título</Label>
         <Input
           maxLength={120}
           onChange={(event) =>
@@ -105,7 +105,7 @@ function PageIdentityFields({
         />
       </div>
       <div className="space-y-2">
-        <Label>Descricao</Label>
+        <Label>Descrição</Label>
         <Textarea
           maxLength={320}
           onChange={(event) =>
@@ -133,7 +133,7 @@ function PageTypographyFields({
         Tipografia
       </p>
       <div className="space-y-2">
-        <Label>Fonte da pagina</Label>
+        <Label>Fonte da página</Label>
         <select
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           onChange={(event) =>
@@ -153,7 +153,7 @@ function PageTypographyFields({
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          Padrao atual: {config.fonts.body}
+          Padrão atual: {config.fonts.body}
         </p>
       </div>
     </div>
@@ -197,7 +197,7 @@ function PageColorFields({
       </div>
       <div className="space-y-3 rounded-lg border border-border bg-card p-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Fundo da pagina
+          Fundo da página
         </p>
         <Label>Cor de fundo</Label>
         <Input
@@ -244,7 +244,7 @@ function PageSeoFields({
             seo: { ...(draft.seo ?? {}), metaTitle: event.target.value },
           })
         }
-        placeholder="Titulo meta"
+        placeholder="Título meta"
         value={draft.seo?.metaTitle ?? ""}
       />
       <Textarea
@@ -258,7 +258,7 @@ function PageSeoFields({
             },
           })
         }
-        placeholder="Descricao meta"
+        placeholder="Descrição meta"
         rows={3}
         value={draft.seo?.metaDescription ?? ""}
       />

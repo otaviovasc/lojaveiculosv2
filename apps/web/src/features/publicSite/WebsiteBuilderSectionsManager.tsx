@@ -11,9 +11,9 @@ import type { WebsiteBuilderSection } from "./WebsiteBuilderTypes";
 
 const sectionLabels: Record<string, string> = {
   about: "Sobre",
-  all_properties: "Todos os Veiculos",
+  all_properties: "Todos os Veículos",
   contact: "Contato",
-  cta: "Chamada para Acao",
+  cta: "Chamada para Ação",
   featured: "Destaques",
   hero: "Capa (Hero)",
   map: "Mapa",
@@ -55,7 +55,7 @@ export function WebsiteBuilderSectionsManager({
           Ordem e Visibilidade
         </Label>
         <p className="text-xs text-muted-foreground">
-          Reordene com os botoes e oculte secoes que nao deseja exibir.
+          Reordene com os botões e oculte seções que não deseja exibir.
         </p>
       </div>
       <div className="space-y-2">
@@ -82,6 +82,11 @@ export function WebsiteBuilderSectionsManager({
             </span>
             <div className="flex shrink-0 items-center gap-1">
               <button
+                aria-label={
+                  section.visible
+                    ? `Ocultar seção ${sectionLabels[section.type] ?? section.type}`
+                    : `Mostrar seção ${sectionLabels[section.type] ?? section.type}`
+                }
                 className={cn(
                   "rounded-lg p-2 transition-colors",
                   section.visible
@@ -89,7 +94,7 @@ export function WebsiteBuilderSectionsManager({
                     : "text-muted-foreground hover:bg-muted",
                 )}
                 onClick={() => toggleVisibility(section.id)}
-                title={section.visible ? "Ocultar secao" : "Mostrar secao"}
+                title={section.visible ? "Ocultar seção" : "Mostrar seção"}
                 type="button"
               >
                 {section.visible ? (
@@ -99,6 +104,7 @@ export function WebsiteBuilderSectionsManager({
                 )}
               </button>
               <button
+                aria-label={`Mover seção ${sectionLabels[section.type] ?? section.type} para cima`}
                 className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
                 disabled={index === 0}
                 onClick={() => moveSection(index, -1)}
@@ -108,6 +114,7 @@ export function WebsiteBuilderSectionsManager({
                 <ChevronUp className="h-4 w-4" />
               </button>
               <button
+                aria-label={`Mover seção ${sectionLabels[section.type] ?? section.type} para baixo`}
                 className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
                 disabled={index === sorted.length - 1}
                 onClick={() => moveSection(index, 1)}
