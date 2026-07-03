@@ -6,7 +6,7 @@
 - Worker branch: `agent/qa/sales`
 - Worktree: `.worktrees/qa-sales`
 - Base branch: `agent/qa-integration`
-- Latest commit: `a4d0176` before worker changes
+- Latest commit: `e0ebf96`
 - Artifact root: `/tmp/lojaveiculosv2-qa/agent-qa-sales/sales/`
 - Persona coverage: local seed owner (`clerk_seed_owner`)
 - Viewports: desktop 1440x900, mobile 390x844
@@ -42,8 +42,8 @@
 
 | ID        | Severity | Status   | Route               | Owner | Evidence                                      | Reviewer |
 | --------- | -------- | -------- | ------------------- | ----- | --------------------------------------------- | -------- |
-| SALES-001 | High     | fixed    | `/dashboard#/sales` | sales | `05-closed-sale-review.png`, `sales-list.png` | Epicurus |
-| SALES-002 | Medium   | deferred | `/dashboard#/sales` | sales | `12-mobile-sales.png`, `13-mobile-menu.png`   | Epicurus |
+| SALES-001 | High     | verified | `/dashboard#/sales` | sales | `05-closed-sale-review.png`, `sales-list.png` | approved |
+| SALES-002 | Medium   | deferred | `/dashboard#/sales` | sales | `12-mobile-sales.png`, `13-mobile-menu.png`   | accepted |
 | SHUI-004  | Low      | deferred | `/dashboard#/sales` | sales | `12-mobile-sales.png`, `13-mobile-menu.png`   | Epicurus |
 
 SALES-001: Closed Hilux sale showed paid payments as `R$ 0,00`, leaving the
@@ -101,15 +101,14 @@ one-off truncation patch.
 
 ## Reviewer Feedback
 
-- Discovery gate: completed by Epicurus.
-- Implementation gate: changes requested by Epicurus on the first worker commit;
-  follow-up now addresses the missing SALES-001 regression assertion and names
-  SHUI-004 as a sales-owned low deferred follow-up under SALES-002.
+- Discovery gate: approved by Epicurus.
+- Implementation gate: approved after the SALES-001 regression assertion and
+  SHUI-004 disposition follow-up.
 - Required follow-up: decide owner and scope for richer sales links/pickers
   across CRM, inventory, documents, commissions, and finance.
 
 ## Final State
 
-- Ready for orchestrator merge: no, pending reviewer.
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
 - Deferred findings: SALES-002.
 - Notes: Browser plugin is not available for this campaign; Playwright was used.
