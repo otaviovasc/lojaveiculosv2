@@ -57,7 +57,8 @@
 - Discovery gate: complete.
 - Implementation gate: approved by Halley after Wegener's VDET-005 finding was fixed.
 - Wegener changes requested: High VDET-005 fixed. Financeiro no longer renders local mock vehicle data for the seeded Audi detail.
-- Required follow-up: run the full vehicle-details Playwright spec from the merged integration branch with integration-owned local services in the final campaign pass.
+- Required follow-up: complete. The merged integration branch passed the final
+  full Playwright campaign with integration-owned local services.
 
 ## Final State
 

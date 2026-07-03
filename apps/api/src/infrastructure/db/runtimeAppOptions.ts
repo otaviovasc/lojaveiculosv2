@@ -18,10 +18,6 @@ import {
   type SettingsServices,
 } from "../../features/settings/controllers/settingsServices.js";
 import {
-  createSalesServices,
-  type SalesServices,
-} from "../../features/sales/controllers/salesServices.js";
-import {
   createRoleServices,
   type RoleServices,
 } from "../../features/identity/controllers/roleServices.js";
@@ -48,14 +44,9 @@ import {
   createDrizzleAuditSink,
   type DrizzleAuditSinkClient,
 } from "./audit/drizzleAuditSink.js";
-import {
-  createDrizzleDocumentRepository,
-  type DrizzleDocumentClient,
-} from "./documents/drizzleDocumentRepository.js";
 import type { DrizzleInternalMonitoringClient } from "./internal/drizzleInternalMonitoringRepository.js";
 import type { DrizzleFinanceClient } from "./finance/drizzleFinanceRepository.js";
 import type { DrizzleCrmClient } from "./crm/drizzleCrmRepository.js";
-import type { DrizzleSalesClient } from "./sales/drizzleSalesRepository.js";
 import { createDrizzleCrmRepository } from "./crm/drizzleCrmRepository.js";
 import type { DrizzleStoreSettingsClient } from "./settings/drizzleStoreSettingsRepository.js";
 import {
@@ -67,10 +58,6 @@ import {
   type DrizzleBillingClient,
 } from "./billing/drizzleBillingRepository.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
-import {
-  createDrizzleVehicleInventoryRepositories,
-  type DrizzleVehicleInventoryClient,
-} from "./vehicleInventory/drizzleVehicleInventoryRepository.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
 import {
   createRuntimeAnalyticsServices,
@@ -87,6 +74,8 @@ import {
 } from "./externalApi/drizzleExternalApiRepository.js";
 import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
 import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
+import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
+import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
 
 type RuntimeHttpAppOptionsInput = {
   auditDb: unknown | null;
@@ -111,6 +100,7 @@ export function createRuntimeHttpAppOptions({
   const audit = auditDb
     ? createDrizzleAuditSink(auditDb as unknown as DrizzleAuditSinkClient)
     : null;
+  const runtimeObjectStorage = objectStorage ?? createRuntimeObjectStorage(env);
 
   return {
     analyticsServices: createRuntimeAnalyticsServices(
@@ -135,12 +125,16 @@ export function createRuntimeHttpAppOptions({
     }),
     complianceServices: createRuntimeComplianceServices(),
     crmServices: createRuntimeCrmServices(db, env),
-    documentServices: createRuntimeDocumentServices(db, env, objectStorage),
+    documentServices: createRuntimeDocumentServices(
+      db,
+      env,
+      runtimeObjectStorage,
+    ),
     externalApiRepository: createDrizzleExternalApiRepository(
       db as unknown as DrizzleExternalApiClient,
     ),
     externalApiServices: createRuntimeExternalApiServices(db),
-    financeServices: createRuntimeFinanceServices(db, objectStorage),
+    financeServices: createRuntimeFinanceServices(db, runtimeObjectStorage),
     fiscalServices: createRuntimeFiscalServices(db, env),
     ...(identityVerifier ? { identityVerifier } : {}),
     ...(clerkAccountProviders.clerkUserProfileProvider
@@ -156,7 +150,7 @@ export function createRuntimeHttpAppOptions({
     inventoryListingServices: createRuntimeInventoryServices(
       db,
       env,
-      objectStorage,
+      runtimeObjectStorage,
     ),
     internalMonitoringServices: auditDb
       ? createRuntimeInternalMonitoringServices(auditDb)
@@ -173,13 +167,13 @@ export function createRuntimeHttpAppOptions({
     ),
     storefrontMediaServices: createRuntimeStorefrontMediaServices(
       db,
-      objectStorage,
+      runtimeObjectStorage,
     ),
     publicStorefrontCrmRepository: createDrizzleCrmRepository(
       db as unknown as DrizzleCrmClient,
     ),
     roleServices: createRuntimeRoleServices(db),
-    salesServices: createRuntimeSalesServices(db, objectStorage),
+    salesServices: createRuntimeSalesServices(db, runtimeObjectStorage),
     settingsServices: createRuntimeSettingsServices(db),
     storeAccessRepository: createDrizzleStoreAccessRepository(
       db as unknown as DrizzleStoreAccessClient,
@@ -213,24 +207,6 @@ function createRuntimeRoleServices(db: unknown): RoleServices {
       db as unknown as DrizzleRoleManagementClient,
     ),
   );
-}
-
-function createRuntimeSalesServices(
-  db: unknown,
-  mediaStorage: ObjectStorage | null,
-): SalesServices {
-  return createSalesServices({
-    drizzleClient: db as DrizzleSalesClient,
-    workflowAdapter: (client) => ({
-      ...createDrizzleVehicleInventoryRepositories(
-        client as unknown as DrizzleVehicleInventoryClient,
-      ),
-      documentTemplateRepository: createDrizzleDocumentRepository(
-        client as unknown as DrizzleDocumentClient,
-      ),
-      ...(mediaStorage ? { mediaStorage } : {}),
-    }),
-  });
 }
 
 function createRuntimeFinanceServices(

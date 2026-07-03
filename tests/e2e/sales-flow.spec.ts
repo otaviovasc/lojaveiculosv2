@@ -20,6 +20,8 @@ const availableSaleContext = new URLSearchParams({
   unitLabel: "LV-A4-PRETO",
 });
 
+const seedOwnerUserId = "02020202-0202-4202-8202-020202020202";
+
 test.use({ baseURL: process.env.QA_BASE_URL ?? "http://127.0.0.1:5173" });
 
 test.describe("Sales QA flow", () => {
@@ -80,9 +82,7 @@ test.describe("Sales QA flow", () => {
     await expect(page.getByLabel("Nome do Comprador")).toHaveValue(
       "Cliente QA Sales",
     );
-    await page
-      .getByLabel("Vendedor Responsável")
-      .fill("99999999-9999-4999-8999-999999999999");
+    await page.getByLabel("Vendedor Responsável").fill(seedOwnerUserId);
 
     await page
       .locator(".sales-wizard-step")

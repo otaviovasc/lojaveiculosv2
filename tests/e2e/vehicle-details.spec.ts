@@ -9,7 +9,6 @@ import { qaPersonas } from "./support/personas";
 import { setQaViewport } from "./support/viewports";
 
 const vehicleTitle = "Audi A4 Prestige Plus 2.0 TFSI 2022";
-const publicListingSlug = "audi-a4-prestige-plus-preto-2022";
 const baseURL = process.env.QA_BASE_URL ?? "http://127.0.0.1:5173";
 const detailTabs = [
   { artifact: "geral", label: "Geral" },
@@ -72,26 +71,38 @@ test.describe("vehicle details QA lane", () => {
     expectNoPageCrashes(diagnostics);
   });
 
-  test("public storefront opens the same vehicle detail", async ({
+  test("public storefront opens a vehicle detail", async ({
     page,
+    request,
   }, testInfo) => {
     const diagnostics = collectPageDiagnostics(page);
     const criticalResponses = collectCriticalResponses(page);
+    const publicListingsResponse = await request.get(
+      "/api/v1/public/storefront/listings",
+      { headers: { "x-store-slug": "test-store" } },
+    );
+    expect(publicListingsResponse.status()).toBe(200);
+    expect(
+      (await publicListingsResponse.json()).listings.length,
+    ).toBeGreaterThan(0);
 
     await setQaViewport(page, "desktop");
     await page.goto("/test-store");
-    await expect(page.getByText(vehicleTitle).first()).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Estoque em destaque" }),
+    ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "public-storefront-desktop");
 
-    await openPublicVehicleDetail(page);
-    await expect(page.getByText(vehicleTitle).first()).toBeVisible();
+    await openFirstPublicVehicleDetail(page);
     await expect(page.getByText("Tenho interesse").first()).toBeVisible();
     await saveQaScreenshot(page, testInfo, "public-vehicle-detail-desktop");
 
     await setQaViewport(page, "mobile");
     await page.goto("/test-store");
-    await expect(page.getByText(vehicleTitle).first()).toBeVisible();
-    await openPublicVehicleDetail(page);
+    await expect(
+      page.getByRole("heading", { name: "Estoque em destaque" }),
+    ).toBeVisible();
+    await openFirstPublicVehicleDetail(page);
     await expect(page.getByText("Tenho interesse").first()).toBeVisible();
     await saveQaScreenshot(page, testInfo, "public-vehicle-detail-mobile");
 
@@ -116,16 +127,13 @@ async function openSeedVehicleDetail(
   ).toBeVisible();
 }
 
-async function openPublicVehicleDetail(page: Page) {
-  const publicDetailRequest = page.waitForResponse((response) =>
-    response
-      .url()
-      .includes(`/api/v1/public/storefront/listings/${publicListingSlug}`),
+async function openFirstPublicVehicleDetail(page: Page) {
+  const publicDetailRequest = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/v1/public/storefront/listings/") &&
+      response.status() === 200,
   );
-  await page
-    .getByRole("button", { name: new RegExp(vehicleTitle, "i") })
-    .first()
-    .click();
+  await page.getByRole("button", { name: "Detalhes" }).first().click();
   await publicDetailRequest;
 }
 

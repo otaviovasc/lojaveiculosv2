@@ -51,16 +51,16 @@ test.describe("shared UI primitives", () => {
     await gotoQaRoute(page, "/page-builder");
 
     const heading = page.getByRole("heading", {
-      name: "Nenhuma pagina criada",
+      name: "Nenhuma página criada",
     });
     await expect(heading).toBeVisible();
     await expect(
       page.getByText(
-        "Crie sua primeira pagina personalizada para lancamentos, ofertas ou qualquer outro conteudo.",
+        "Crie sua primeira página personalizada para lançamentos, ofertas ou qualquer outro conteúdo.",
       ),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Criar Primeira Pagina" }),
+      page.getByRole("button", { name: "Criar Primeira Página" }),
     ).toBeVisible();
 
     const emptyPanel = heading.locator(

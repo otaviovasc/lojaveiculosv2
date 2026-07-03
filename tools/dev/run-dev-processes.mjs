@@ -134,6 +134,13 @@ function createProcessSpecs(useLocalEnv) {
             DEV_CLERK_USER_ID: "clerk_seed_owner",
             DEV_STORE_SLUG: "test-store",
             LOCAL_AUTH_BYPASS: "true",
+            R2_ACCESS_KEY_ID: "",
+            R2_BUCKET_NAME: "",
+            R2_ENDPOINT: "",
+            R2_PUBLIC_BASE_URL: "",
+            R2_REGION: "",
+            R2_SECRET_ACCESS_KEY: "",
+            R2_UPLOAD_URL_EXPIRES_SECONDS: "",
             REPASSES_CRM_LOCAL_DEMO: "true",
           }
         : {},

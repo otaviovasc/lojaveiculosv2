@@ -124,7 +124,21 @@ test.describe("documents center QA flow", () => {
       .getByRole("textbox", { name: /Título do arquivo/ })
       .fill(uploadTitle);
     await saveQaScreenshot(page, testInfo, "upload-dialog-after");
-    await page.getByRole("button", { name: "Salvar documento" }).click();
+    const uploadDialog = page.getByRole("dialog", {
+      name: "Anexar documentos",
+    });
+    const uploadResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/documents/uploads") &&
+        response.request().method() === "POST" &&
+        response.status() === 201,
+    );
+    const saveUploadButton = uploadDialog.getByRole("button", {
+      name: "Salvar documento",
+    });
+    await expect(saveUploadButton).toBeEnabled();
+    await saveUploadButton.click();
+    await uploadResponse;
     await expect(
       page.getByRole("dialog", { name: "Anexar documentos" }),
     ).toHaveCount(0);

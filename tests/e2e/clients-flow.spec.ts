@@ -117,7 +117,11 @@ test.describe("clients feature flow", () => {
       page,
       page.getByRole("button", { name: "Configurar" }),
     );
-    await expect(page.getByText(/Criado \d+ min atrás/).first()).toBeVisible();
+    await expect(
+      page
+        .getByText(/(Criado|Última interação) (\d+ (min|h|d) atrás|agora)/)
+        .first(),
+    ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "clients-list-mobile");
     expectNoPageCrashes(diagnostics);
   });

@@ -17,15 +17,15 @@ import {
 } from "./vehicleCatalog/drizzleVehicleCatalogRepository.js";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import { createFipeVehicleCatalogProvider } from "../catalog/fipeVehicleCatalogProvider.js";
-import { createR2ObjectStorageFromEnv } from "../storage/r2ObjectStorage.js";
 import { createClientTransactionRunner } from "../../shared/transaction.js";
+import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 
 export function createRuntimeInventoryServices(
   db: unknown,
   env: Record<string, string | undefined>,
   runtimeMediaStorage?: ObjectStorage | null,
 ): InventoryListingServices {
-  const mediaStorage = runtimeMediaStorage ?? createR2ObjectStorageFromEnv(env);
+  const mediaStorage = runtimeMediaStorage ?? createRuntimeObjectStorage(env);
   const catalogProvider = createFipeVehicleCatalogProvider({
     ...(env.FIPE_API_BASE_URL ? { baseUrl: env.FIPE_API_BASE_URL } : {}),
     ...(env.FIPE_API_TOKEN ? { token: env.FIPE_API_TOKEN } : {}),

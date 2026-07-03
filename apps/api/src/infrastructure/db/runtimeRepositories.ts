@@ -1,8 +1,5 @@
 import type { CreateAppOptions } from "../http/createApp.js";
-import {
-  createR2ObjectStorageFromEnv,
-  validateR2ObjectStorageEnv,
-} from "../storage/r2ObjectStorage.js";
+import { validateR2ObjectStorageEnv } from "../storage/r2ObjectStorage.js";
 import { createRuntimeHttpAppOptions } from "./runtimeAppOptions.js";
 import {
   assertRuntimeIdentityVerifierConfig,
@@ -19,6 +16,7 @@ import {
   createProductDb,
   type RuntimeResource,
 } from "./runtimeResources.js";
+import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 
 export { RuntimeDatabaseConfigError } from "./runtimeConfig.js";
 export type { RuntimeResource } from "./runtimeResources.js";
@@ -69,7 +67,7 @@ export function createRuntimeAppDependencies(
 
   const productDb = createProductDb(databaseUrl, env);
   const auditDatabase = createAuditDb(env);
-  const objectStorage = createR2ObjectStorageFromEnv(env);
+  const objectStorage = createRuntimeObjectStorage(env);
   const clerkAccountProviders = createRuntimeClerkAccountProviders(env);
   const resources: RuntimeResource[] = [
     productDb.resource,
