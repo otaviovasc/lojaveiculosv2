@@ -95,7 +95,7 @@ export function FinanceModule({
           kind: "error",
           message: formatApiErrorDisplay(
             error,
-            "Nao foi possivel carregar o financeiro.",
+            "Não foi possível carregar o financeiro.",
           ),
         });
       });
@@ -110,21 +110,21 @@ export function FinanceModule({
         await updateEntryFromDraft(runtimeApi, modalEntry, draft);
         setToast({
           kind: "success",
-          title: "Lancamento salvo",
+          title: "Lançamento salvo",
           message: draft.name,
         });
       } else if (draft.recurrence === "recurring") {
         await runtimeApi.createRecurringEntry(toRecurringInput(draft));
         setToast({
           kind: "success",
-          title: "Recorrencia criada",
+          title: "Recorrência criada",
           message: draft.name,
         });
       } else {
         await runtimeApi.createEntryFlow(toEntryInput(draft));
         setToast({
           kind: "success",
-          title: "Lancamento criado",
+          title: "Lançamento criado",
           message: draft.name,
         });
       }
@@ -134,7 +134,7 @@ export function FinanceModule({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel salvar o lancamento.",
+          "Não foi possível salvar o lançamento.",
         ),
         title: "Erro ao salvar",
       });

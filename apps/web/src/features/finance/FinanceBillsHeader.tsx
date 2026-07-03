@@ -26,18 +26,18 @@ export function FinanceBillsHeader({
             />
             <FeatureActionButton
               icon={FileBarChart2}
-              label="Relatorios"
+              label="Relatórios"
               onClick={onReports}
             />
             <FeatureActionButton
               icon={PlusCircle}
-              label="Novo lancamento"
+              label="Novo lançamento"
               onClick={onCreate}
               variant="primary"
             />
           </>
         }
-        description="Fluxo de caixa da loja com vencimentos, status de pagamento, recorrencias e comprovantes vinculados aos lancamentos."
+        description="Fluxo de caixa da loja com vencimentos, status de pagamento, recorrências e comprovantes vinculados aos lançamentos."
         eyebrow={
           <>
             Financeiro
@@ -49,7 +49,7 @@ export function FinanceBillsHeader({
       />
       <FeatureAlert className="feature-alert">
         <ReceiptText aria-hidden="true" className="size-4" />
-        Recibos usam upload assinado e vinculo auditado ao lancamento
+        Recibos usam upload assinado e vínculo auditado ao lançamento
         financeiro.
       </FeatureAlert>
     </>

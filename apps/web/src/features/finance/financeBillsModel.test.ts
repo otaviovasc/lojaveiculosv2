@@ -5,6 +5,7 @@ import {
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
+import { formatFinanceCategory } from "./financeBillsFormat";
 import type { FinanceEntry } from "./types";
 
 describe("finance bills model", () => {
@@ -65,7 +66,7 @@ describe("finance bills model", () => {
   it("filters entries by status, due window, and search query", () => {
     const entries = [
       entry("1", "Aluguel", "Operacional", "pending", "2026-06-25"),
-      entry("2", "Seguro", "Veiculo", "paid", "2026-06-25"),
+      entry("2", "Seguro", "Veículo", "paid", "2026-06-25"),
       entry("3", "Marketing", "Marketing", "pending", "2026-08-01"),
     ];
 
@@ -78,16 +79,119 @@ describe("finance bills model", () => {
     ).toEqual(["1"]);
   });
 
-  it("keeps undated entries out of date-window filters", () => {
+  it("matches raw backend categories by their localized display label", () => {
     const entries = [
-      entry("dated", "Aluguel", "Operacional", "pending", "2026-06-25"),
-      { ...entry("undated", "Despesa sem vencimento", "Outros", "pending", "2026-06-25"), dueAt: null },
+      entry("1", "Revisao Audi A4", "preparation", "paid", "2026-06-25"),
+      entry(
+        "2",
+        "Midia performance estoque",
+        "traffic",
+        "pending",
+        "2026-06-25",
+      ),
     ];
 
     expect(
-      filterEntries(entries, { query: "", status: "all", window: "next30" }).map(
-        (item) => item.id,
+      filterEntries(entries, {
+        query: "preparação",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["1"]);
+    expect(
+      filterEntries(entries, {
+        query: "tráfego",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["2"]);
+  });
+
+  it("formats vehicle cost categories created by inventory workflows", () => {
+    expect(formatFinanceCategory("vehicle_preparation")).toBe("Preparação");
+    expect(formatFinanceCategory("vehicle_acquisition")).toBe("Aquisição");
+    expect(formatFinanceCategory("vehicle_repair")).toBe("Reparo");
+    expect(formatFinanceCategory("vehicle_transport")).toBe("Transporte");
+    expect(formatFinanceCategory("vehicle_fee")).toBe("Taxas");
+    expect(formatFinanceCategory("vehicle_tax")).toBe("Impostos");
+    expect(formatFinanceCategory("vehicle_other")).toBe("Outros");
+
+    expect(formatFinanceCategory("vehicle_maintenance")).toBe("Manutenção");
+    expect(formatFinanceCategory("vehicle_inspection")).toBe("Inspeção");
+    expect(formatFinanceCategory("vehicle_unknown_custom")).toBe(
+      "vehicle_unknown_custom",
+    );
+  });
+
+  it("matches vehicle cost categories by localized labels and raw unknown values", () => {
+    const entries = [
+      entry(
+        "1",
+        "Custo de veiculo - Audi A4",
+        "vehicle_preparation",
+        "paid",
+        "2026-06-25",
       ),
+      entry(
+        "2",
+        "Custo de veiculo - Corolla",
+        "vehicle_repair",
+        "paid",
+        "2026-06-25",
+      ),
+      entry(
+        "3",
+        "Custo de veiculo - Compass",
+        "vehicle_unknown_custom",
+        "paid",
+        "2026-06-25",
+      ),
+    ];
+
+    expect(
+      filterEntries(entries, {
+        query: "preparação",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["1"]);
+    expect(
+      filterEntries(entries, {
+        query: "reparo",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["2"]);
+    expect(
+      filterEntries(entries, {
+        query: "vehicle_unknown_custom",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["3"]);
+  });
+
+  it("keeps undated entries out of date-window filters", () => {
+    const entries = [
+      entry("dated", "Aluguel", "Operacional", "pending", "2026-06-25"),
+      {
+        ...entry(
+          "undated",
+          "Despesa sem vencimento",
+          "Outros",
+          "pending",
+          "2026-06-25",
+        ),
+        dueAt: null,
+      },
+    ];
+
+    expect(
+      filterEntries(entries, {
+        query: "",
+        status: "all",
+        window: "next30",
+      }).map((item) => item.id),
     ).toEqual(["dated"]);
     expect(
       filterEntries(entries, { query: "", status: "all", window: "all" }).map(

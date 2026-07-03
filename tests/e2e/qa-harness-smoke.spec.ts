@@ -8,6 +8,8 @@ import {
 import { accountHeaders, qaPersonas } from "./support/personas";
 import { setQaViewport } from "./support/viewports";
 
+test.use({ baseURL: process.env.QA_BASE_URL ?? "http://127.0.0.1:5173" });
+
 test.describe("QA harness smoke", () => {
   test("logs in as seeded owner and captures a stable baseline", async ({
     page,
@@ -22,7 +24,7 @@ test.describe("QA harness smoke", () => {
     await expect(
       page.getByRole("navigation", { name: "Modulos" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Inicio" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Início" })).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Dashboard Gerencial" }),
     ).toBeVisible();

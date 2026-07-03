@@ -14,6 +14,6 @@ describe("FinanceEntryModalSteps", () => {
     );
 
     expect(html).not.toContain("Comprovante opcional");
-    expect(html).toContain("Frequencia");
+    expect(html).toContain("Frequência");
   });
 });

@@ -64,7 +64,7 @@ export function FinanceEntryModal({
       onClose();
     } catch (error) {
       setSaveError(
-        formatApiErrorDisplay(error, "Nao foi possivel salvar o lancamento."),
+        formatApiErrorDisplay(error, "Não foi possível salvar o lançamento."),
       );
     } finally {
       setIsSaving(false);
@@ -80,7 +80,7 @@ export function FinanceEntryModal({
         <header className="flex items-center justify-between border-b border-line p-5">
           <div>
             <h2 className="text-xl font-black text-app-text">
-              {entry ? "Editar lancamento" : "Novo lancamento"}
+              {entry ? "Editar lançamento" : "Novo lançamento"}
             </h2>
             <p className="text-sm font-bold text-muted">
               {financeTypeLabels[draft.type]} com vencimento, status e recibo.
@@ -142,7 +142,7 @@ export function FinanceEntryModal({
               onClick={() => setStep((current) => (current + 1) as 2 | 3)}
               type="button"
             >
-              Proximo
+              Próximo
               <ChevronRight aria-hidden="true" className="size-4" />
             </button>
           ) : (
@@ -152,7 +152,7 @@ export function FinanceEntryModal({
               type="submit"
             >
               <Check aria-hidden="true" className="size-4" />
-              {isSaving ? "Salvando..." : "Salvar lancamento"}
+              {isSaving ? "Salvando..." : "Salvar lançamento"}
             </button>
           )}
         </footer>

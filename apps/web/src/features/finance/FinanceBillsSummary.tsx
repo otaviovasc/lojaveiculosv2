@@ -1,9 +1,6 @@
 import { AlertTriangle, CheckCircle2, Clock3, Sigma } from "lucide-react";
 import type { FinanceEntry } from "./types";
-import {
-  summarizeEntries,
-  upcomingEntries,
-} from "./financeBillsModel";
+import { summarizeEntries, upcomingEntries } from "./financeBillsModel";
 import { formatCurrency, formatDate } from "./financeBillsFormat";
 
 export function FinanceBillsSummary({
@@ -31,12 +28,18 @@ export function FinanceBillsSummary({
       <section className="rounded-lg border border-line bg-panel p-4">
         <div className="grid gap-3 md:grid-cols-4">
           {items.map(({ icon: Icon, label, value }) => (
-            <article className="rounded-lg border border-line bg-app p-3" key={label}>
+            <article
+              className="rounded-lg border border-line bg-app p-3"
+              key={label}
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-black uppercase text-muted">
                   {label}
                 </span>
-                <Icon aria-hidden="true" className="size-4 text-accent-strong" />
+                <Icon
+                  aria-hidden="true"
+                  className="size-4 text-accent-strong"
+                />
               </div>
               <strong className="mt-2 block text-xl font-black text-app-text">
                 {formatCurrency(value)}
@@ -50,7 +53,7 @@ export function FinanceBillsSummary({
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-black text-app-text">
-              Proximos vencimentos
+              Próximos vencimentos
             </h3>
             <p className="text-xs font-bold text-muted">
               Contas pendentes ordenadas por data.

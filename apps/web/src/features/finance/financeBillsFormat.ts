@@ -1,5 +1,26 @@
 import type { FinanceRecurringEntry } from "./types";
 
+const financeCategoryLabels: Record<string, string> = {
+  Consignacao: "Consignação",
+  Manutencao: "Manutenção",
+  Servico: "Serviço",
+  Veiculo: "Veículo",
+  preparation: "Preparação",
+  rent: "Aluguel",
+  traffic: "Tráfego",
+  vehicle_acquisition: "Aquisição",
+  vehicle_fee: "Taxas",
+  vehicle_inspection: "Inspeção",
+  vehicle_maintenance: "Manutenção",
+  vehicle_other: "Outros",
+  vehicle_preparation: "Preparação",
+  vehicle_repair: "Reparo",
+  vehicle_reservation_signal: "Sinal de reserva",
+  vehicle_sale: "Venda de veículo",
+  vehicle_tax: "Impostos",
+  vehicle_transport: "Transporte",
+};
+
 export function formatCurrency(valueCents: number) {
   return new Intl.NumberFormat("pt-BR", {
     currency: "BRL",
@@ -21,4 +42,8 @@ export function recurrenceLabel(entry: FinanceRecurringEntry) {
     yearly: "Anual",
   } satisfies Record<FinanceRecurringEntry["frequency"], string>;
   return `${frequency[entry.frequency]} desde ${formatDate(entry.nextDueAt)}`;
+}
+
+export function formatFinanceCategory(category: string) {
+  return financeCategoryLabels[category] ?? category;
 }

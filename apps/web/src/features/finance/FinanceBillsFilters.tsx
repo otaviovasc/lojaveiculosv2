@@ -27,7 +27,7 @@ export function FinanceBillsFilters({
             onChange={(event) =>
               onChange({ ...filters, query: event.target.value })
             }
-            placeholder="Descricao ou categoria"
+            placeholder="Descrição ou categoria"
             value={filters.query}
           />
         </label>
@@ -59,7 +59,7 @@ export function FinanceBillsFilters({
               })
             }
             options={[
-              { label: "Proximos 30 dias", value: "next30" },
+              { label: "Próximos 30 dias", value: "next30" },
               { label: "Vencidos", value: "overdue" },
               { label: "Todos", value: "all" },
             ]}

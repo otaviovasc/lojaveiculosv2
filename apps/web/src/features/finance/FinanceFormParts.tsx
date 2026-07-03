@@ -9,7 +9,7 @@ import type { CustomSelectOption } from "../../components/ui/CustomSelect";
 import type { FinanceEntryStatus, FinanceEntryType } from "./types";
 
 export const financeTypeLabels: Record<FinanceEntryType, string> = {
-  commission: "Comissoes",
+  commission: "Comissões",
   expense: "Gastos",
   revenue: "Receitas",
 };

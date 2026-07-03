@@ -42,10 +42,10 @@ export function FinanceModuleHeader() {
             <FinanceBadge>Anexos opcionais</FinanceBadge>
           </div>
           <h2 className="text-2xl font-black text-app-text lg:text-4xl">
-            Lancamentos financeiros
+            Lançamentos financeiros
           </h2>
           <p className="max-w-3xl text-sm font-bold text-muted">
-            Registre gastos, receitas e comissoes com status operacional,
+            Registre gastos, receitas e comissões com status operacional,
             vencimento e comprovante opcional por upload assinado.
           </p>
         </div>

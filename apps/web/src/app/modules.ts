@@ -70,8 +70,8 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Operação diária",
     items: [
-      { icon: Home, id: "dashboard", label: "Inicio" },
-      { icon: Car, id: "inventory", label: "Veiculos" },
+      { icon: Home, id: "dashboard", label: "Início" },
+      { icon: Car, id: "inventory", label: "Veículos" },
       { icon: BadgeDollarSign, id: "sales", label: "Vendas" },
       { icon: Users, id: "customers", label: "Clientes" },
       {
@@ -81,27 +81,27 @@ export const navigationGroups: NavigationGroup[] = [
         label: "WhatsApp",
       },
       { icon: FileText, id: "documents", label: "Documentos" },
-      { icon: Calculator, id: "simulations", label: "Simulacoes" },
+      { icon: Calculator, id: "simulations", label: "Simulações" },
     ],
   },
   {
-    label: "Gestao",
+    label: "Gestão",
     items: [
-      { icon: Bot, id: "auto-entries", label: "Lancamentos" },
-      { icon: HandCoins, id: "commissions", label: "Comissoes" },
-      { icon: Receipt, id: "billing", label: "Billing" },
+      { icon: Bot, id: "auto-entries", label: "Lançamentos" },
+      { icon: HandCoins, id: "commissions", label: "Comissões" },
+      { icon: Receipt, id: "billing", label: "Assinatura" },
       { icon: Receipt, id: "expenses", label: "Gastos" },
       {
         entitlementKey: "analytics",
         icon: BarChart3,
         id: "reports",
-        label: "Relatorios",
+        label: "Relatórios",
       },
       { icon: ShieldCheck, id: "checklists", label: "Checklists" },
     ],
   },
   {
-    label: "Servicos",
+    label: "Serviços",
     items: [
       {
         entitlementKey: "nfe",
@@ -115,8 +115,8 @@ export const navigationGroups: NavigationGroup[] = [
     label: "Canais",
     items: [
       { icon: Palette, id: "public-site", label: "Personalizar" },
-      { icon: FileText, id: "custom-pages", label: "Paginas" },
-      { icon: Globe, id: "domain", label: "Dominio" },
+      { icon: FileText, id: "custom-pages", label: "Páginas" },
+      { icon: Globe, id: "domain", label: "Domínio" },
       {
         entitlementKey: "marketplace",
         icon: Store,

@@ -1,7 +1,5 @@
-import type {
-  CreateFinanceEntryFlowInput,
-  FinanceApi,
-} from "./apiClient";
+import type { CreateFinanceEntryFlowInput, FinanceApi } from "./apiClient";
+import { formatFinanceCategory } from "./financeBillsFormat";
 import type {
   CreateFinanceRecurringEntryInput,
   FinanceEntry,
@@ -14,9 +12,7 @@ export type FinanceToast =
   | { kind: "success"; message: string; title: string };
 
 export type FinanceListState =
-  | { kind: "error"; message: string }
-  | { kind: "loading" }
-  | { kind: "ready" };
+  { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
 
 export type FinanceFilters = {
   query: string;
@@ -52,9 +48,9 @@ export const expenseCategories = [
   "Operacional",
   "Aluguel",
   "Despachante",
-  "Manutencao",
+  "Manutenção",
   "Marketing",
-  "Veiculo",
+  "Veículo",
   "Impostos",
   "Outros",
 ];
@@ -62,8 +58,8 @@ export const expenseCategories = [
 export const revenueCategories = [
   "Venda",
   "Sinal",
-  "Servico",
-  "Consignacao",
+  "Serviço",
+  "Consignação",
   "Outros",
 ];
 
@@ -95,7 +91,8 @@ export function entryToDraft(entry: FinanceEntry): FinanceEntryDraft {
     category: entry.category,
     dueAt: entry.dueAt ? entry.dueAt.slice(0, 10) : "",
     name: entry.name,
-    notes: typeof entry.metadata?.notes === "string" ? entry.metadata.notes : "",
+    notes:
+      typeof entry.metadata?.notes === "string" ? entry.metadata.notes : "",
     paidAt: entry.paidAt ? entry.paidAt.slice(0, 10) : "",
     sellerUserId: entry.sellerUserId ?? "",
     status: entry.status,
@@ -117,7 +114,8 @@ export function toEntryInput(
       source: "finance_bills_slice",
     },
     name: draft.name.trim(),
-    paidAt: draft.status === "paid" ? toIsoDate(draft.paidAt || draft.dueAt) : null,
+    paidAt:
+      draft.status === "paid" ? toIsoDate(draft.paidAt || draft.dueAt) : null,
     sellerUserId: draft.sellerUserId.trim() || null,
     status: draft.status,
     type: draft.type,
@@ -153,12 +151,13 @@ export async function loadFinanceWorkspace(
   api: FinanceApi,
   activeType: FinanceEntryType,
 ) {
-  const [entries, summary, recurringEntries, commissionRules] = await Promise.all([
-    api.listAllEntries(activeType),
-    api.getSummary(),
-    api.listRecurringEntries(),
-    api.listCommissionRules(),
-  ]);
+  const [entries, summary, recurringEntries, commissionRules] =
+    await Promise.all([
+      api.listAllEntries(activeType),
+      api.getSummary(),
+      api.listRecurringEntries(),
+      api.listCommissionRules(),
+    ]);
 
   return { commissionRules, entries, recurringEntries, summary };
 }
@@ -173,8 +172,11 @@ export function filterEntries(
   inThirtyDays.setDate(inThirtyDays.getDate() + 30);
 
   return entries.filter((entry) => {
-    if (filters.status !== "all" && entry.status !== filters.status) return false;
-    if (query && !`${entry.name} ${entry.category}`.toLowerCase().includes(query)) {
+    if (filters.status !== "all" && entry.status !== filters.status)
+      return false;
+    const searchableText =
+      `${entry.name} ${entry.category} ${formatFinanceCategory(entry.category)}`.toLowerCase();
+    if (query && !searchableText.includes(query)) {
       return false;
     }
     if (filters.window === "all") return true;
@@ -193,8 +195,7 @@ export function summarizeEntries(entries: readonly FinanceEntry[]) {
   return entries.reduce(
     (summary, entry) => ({
       overdueCents:
-        summary.overdueCents +
-        (isOverdue(entry) ? entry.amountCents : 0),
+        summary.overdueCents + (isOverdue(entry) ? entry.amountCents : 0),
       paidCents:
         summary.paidCents + (entry.status === "paid" ? entry.amountCents : 0),
       pendingCents:
@@ -209,7 +210,10 @@ export function summarizeEntries(entries: readonly FinanceEntry[]) {
 export function upcomingEntries(entries: readonly FinanceEntry[]) {
   return entries
     .filter((entry) => entry.status === "pending" && entry.dueAt)
-    .sort((left, right) => Number(new Date(left.dueAt ?? 0)) - Number(new Date(right.dueAt ?? 0)))
+    .sort(
+      (left, right) =>
+        Number(new Date(left.dueAt ?? 0)) - Number(new Date(right.dueAt ?? 0)),
+    )
     .slice(0, 3);
 }
 
