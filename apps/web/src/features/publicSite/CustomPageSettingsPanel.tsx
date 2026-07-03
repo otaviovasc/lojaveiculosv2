@@ -4,6 +4,7 @@ import type {
   StorefrontCustomPage,
 } from "@lojaveiculosv2/shared";
 import { Copy } from "lucide-react";
+import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -173,46 +174,40 @@ function PageColorFields({
 }) {
   return (
     <>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label>Destaque</Label>
-          <Input
-            onChange={(event) =>
-              onDraftChange({ ...draft, accentColor: event.target.value })
-            }
-            type="color"
-            value={draft.accentColor ?? config.accentColor}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Fundo</Label>
-          <Input
-            onChange={(event) =>
-              onDraftChange({ ...draft, backgroundColor: event.target.value })
-            }
-            type="color"
-            value={draft.backgroundColor ?? config.backgroundColor}
-          />
-        </div>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <FeatureColorPicker
+          fallbackColor={config.accentColor}
+          label="Destaque"
+          onChange={(accentColor) => onDraftChange({ ...draft, accentColor })}
+          value={draft.accentColor ?? config.accentColor}
+        />
+        <FeatureColorPicker
+          fallbackColor={config.backgroundColor}
+          label="Fundo"
+          onChange={(backgroundColor) =>
+            onDraftChange({ ...draft, backgroundColor })
+          }
+          value={draft.backgroundColor ?? config.backgroundColor}
+        />
       </div>
       <div className="space-y-3 rounded-lg border border-border bg-card p-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Fundo da página
         </p>
-        <Label>Cor de fundo</Label>
-        <Input
-          onChange={(event) =>
+        <FeatureColorPicker
+          fallbackColor={config.backgroundColor}
+          label="Cor de fundo"
+          onChange={(backgroundColor) =>
             onDraftChange({
               ...draft,
-              backgroundColor: event.target.value,
+              backgroundColor,
               pageBackground: {
                 ...pageBackground,
-                solidColor: event.target.value,
+                solidColor: backgroundColor,
                 type: "solid",
               },
             })
           }
-          type="color"
           value={
             pageBackground.type === "solid"
               ? (pageBackground.solidColor ?? config.backgroundColor)

@@ -23,6 +23,10 @@ describe("App routes", () => {
     expect(
       screen.getByRole("heading", { level: 1, name: "Loja Veiculos" }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId("landing-hero-shader")).toHaveAttribute(
+      "data-shader-state",
+      "fallback",
+    );
     expect(
       screen.queryByText("Configuração de autenticação ausente"),
     ).not.toBeInTheDocument();

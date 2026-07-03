@@ -1,4 +1,5 @@
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
+import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -120,22 +121,13 @@ function ColorTextField({
   value: string;
 }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <div className="flex items-center gap-2">
-        <Input
-          className="h-10 w-14 shrink-0 p-1"
-          onChange={(event) => onChange(event.target.value)}
-          type="color"
-          value={value || fallbackColor}
-        />
-        <Input
-          className="font-mono text-xs"
-          onChange={(event) => onChange(event.target.value)}
-          placeholder="Padrão do tema"
-          value={value}
-        />
-      </div>
-    </div>
+    <FeatureColorPicker
+      allowEmpty
+      fallbackColor={fallbackColor}
+      label={label}
+      onChange={onChange}
+      placeholder="Padrão do tema"
+      value={value}
+    />
   );
 }

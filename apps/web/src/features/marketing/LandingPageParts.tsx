@@ -2,6 +2,7 @@ import { Check, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Logo } from "../../components/ui";
 import { LandingAuthActions } from "./LandingAuthActions";
+import { LandingHeroShader } from "./LandingHeroShader";
 import {
   landingFeatures,
   landingOutcomes,
@@ -20,6 +21,7 @@ export function HeroSection() {
         playsInline
         src="https://cdn.lojaveiculos.com.br/videos-lv/landings/VSL%20LV%202.mp4"
       />
+      <LandingHeroShader />
       <div className="absolute inset-0 -z-10 bg-black/68" />
       <LandingNav />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 pb-14 pt-28 sm:px-8 lg:px-10">

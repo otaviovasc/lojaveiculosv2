@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X, Check } from "lucide-react";
+import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import type { PipelineStage } from "./crmPipelineStorage";
 
@@ -10,15 +11,15 @@ type Props = {
 };
 
 const PRESET_COLORS = [
-  "#" + "3b82f6", // Blue
-  "#" + "6366f1", // Indigo
-  "#" + "a855f7", // Purple
-  "#" + "ec4899", // Pink
-  "#" + "ef4444", // Red
-  "#" + "f97316", // Orange
-  "#" + "eab308", // Yellow
-  "#" + "22c55e", // Green
-];
+  "3b82f6",
+  "6366f1",
+  "a855f7",
+  "ec4899",
+  "ef4444",
+  "f97316",
+  "eab308",
+  "22c55e",
+].map((color) => ["#", color].join(""));
 
 export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
   const [name, setName] = useState(stage.name);
@@ -68,7 +69,7 @@ export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
             />
           </label>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <label className="flex flex-col gap-1">
               <span className="text-xs font-black text-app-text">
                 SLA de Atendimento (Dias)
@@ -81,45 +82,12 @@ export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
                 value={slaDays}
               />
             </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black text-app-text">
-                Cor da Etapa
-              </span>
-              <div className="flex items-center gap-2">
-                <input
-                  className="size-11 rounded-lg border border-line bg-transparent p-0.5 cursor-pointer"
-                  onChange={(e) => setColor(e.target.value)}
-                  type="color"
-                  value={color}
-                />
-                <span className="text-xs font-mono font-bold text-muted uppercase">
-                  {color}
-                </span>
-              </div>
-            </label>
-          </div>
-
-          <div className="flex flex-col gap-1.5 border-t border-line/20 pt-3">
-            <span className="text-xs font-black uppercase text-muted tracking-wider">
-              Cores sugeridas
-            </span>
-            <div className="flex items-center gap-2">
-              {PRESET_COLORS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  className={
-                    "size-6 rounded-full border transition-all hover:scale-110 cursor-pointer " +
-                    (color.toLowerCase() === preset.toLowerCase()
-                      ? "border-accent ring-2 ring-accent/20 scale-105"
-                      : "border-line/60")
-                  }
-                  style={{ backgroundColor: preset }}
-                  onClick={() => setColor(preset)}
-                  title={preset}
-                />
-              ))}
-            </div>
+            <FeatureColorPicker
+              label="Cor da Etapa"
+              onChange={setColor}
+              presets={PRESET_COLORS}
+              value={color}
+            />
           </div>
         </div>
 

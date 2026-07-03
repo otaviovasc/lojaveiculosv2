@@ -24,6 +24,8 @@ minimumReleaseAgeExclude:
   - "@tanstack/query-devtools@5.101.1"
   - "@tanstack/react-query-devtools@5.101.1"
   - prettier@3.9.3
+  - "@paper-design/shaders-react@0.0.77"
+  - "@paper-design/shaders@0.0.77"
 allowBuilds:
   "@clerk/shared": false
   esbuild: true

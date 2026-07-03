@@ -99,7 +99,7 @@ export function FeatureSegmentedControl<Value extends string>({
   return (
     <div
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-1 rounded-lg bg-app-elevated border border-line/60 p-0.5 shrink-0"
+      className="flex w-full max-w-full items-center rounded-lg border border-line/60 bg-app-elevated p-0.5 sm:gap-1"
       role="group"
     >
       {options.map((option) => {
@@ -109,7 +109,7 @@ export function FeatureSegmentedControl<Value extends string>({
           <button
             aria-pressed={active}
             className={cx(
-              "inline-flex h-7 items-center gap-1 rounded-md px-2.5 text-xs font-black transition-all cursor-pointer",
+              "inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-0 text-xs font-bold transition-all cursor-pointer sm:px-2.5 sm:font-black",
               active
                 ? "bg-accent text-inverse shadow-sm"
                 : "text-muted hover:text-app-text",
@@ -122,7 +122,7 @@ export function FeatureSegmentedControl<Value extends string>({
             {OptionIcon ? (
               <OptionIcon aria-hidden="true" className="size-3.5" />
             ) : null}
-            <span>{option.label}</span>
+            <span className="whitespace-nowrap">{option.label}</span>
           </button>
         );
       })}

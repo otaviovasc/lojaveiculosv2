@@ -1,6 +1,5 @@
 import { Check } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { cn } from "@/lib/utils";
 import { websiteBuilderColorPalettes } from "./WebsiteBuilderModel";
 import type { WebsiteBuilderConfig } from "./WebsiteBuilderTypes";
@@ -100,26 +99,16 @@ export function WebsiteBuilderColorsSection({
         </h4>
         <div className="space-y-4">
           {colorFields.map(({ fallback, key, label }) => (
-            <div className="space-y-2" key={key}>
-              <Label className="text-xs font-medium">{label}</Label>
-              <div className="flex items-center gap-3">
-                <input
-                  className="h-11 w-11 shrink-0 cursor-pointer rounded-xl border-2 border-border/50 shadow-inner"
-                  onChange={(event) =>
-                    onUpdate(key, event.target.value as never)
-                  }
-                  type="color"
-                  value={(config[key] as string | undefined) ?? fallback}
-                />
-                <Input
-                  className="h-10 flex-1 font-mono text-xs"
-                  onChange={(event) =>
-                    onUpdate(key, event.target.value as never)
-                  }
-                  value={(config[key] as string | undefined) ?? ""}
-                />
-              </div>
-            </div>
+            <FeatureColorPicker
+              fallbackColor={fallback}
+              key={key}
+              label={label}
+              onChange={(value) => onUpdate(key, value as never)}
+              presets={websiteBuilderColorPalettes.map(
+                (palette) => palette.colors[key],
+              )}
+              value={(config[key] as string | undefined) ?? fallback}
+            />
           ))}
         </div>
       </div>

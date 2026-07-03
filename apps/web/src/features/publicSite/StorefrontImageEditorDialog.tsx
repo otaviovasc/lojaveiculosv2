@@ -4,10 +4,8 @@ import {
   FeatureDialog,
   FeatureDialogActions,
 } from "../../components/ui/FeatureOverlay";
-import {
-  FeatureInput,
-  FeatureSegmentedControl,
-} from "../../components/ui/FeatureControls";
+import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
+import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
 import { cx } from "../../components/ui/featureShared";
 import { canvasToPng, renderEditedImage } from "./StorefrontImageEditorCanvas";
 import {
@@ -100,7 +98,7 @@ export function StorefrontImageEditorDialog({
 
   return (
     <FeatureDialog
-      className="max-w-5xl"
+      className="max-w-7xl"
       footer={
         <FeatureDialogActions
           confirmDisabled={!file}
@@ -116,15 +114,15 @@ export function StorefrontImageEditorDialog({
       onClose={onClose}
       title="Recortar e ajustar imagem"
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="grid min-h-[18rem] place-items-center overflow-hidden rounded-lg border border-line bg-app p-3">
+      <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid min-h-[14rem] place-items-center overflow-hidden rounded-lg border border-line bg-app p-3 sm:min-h-[18rem]">
           <canvas
             aria-label="Prévia da imagem ajustada"
-            className="max-h-[58vh] max-w-full rounded-lg object-contain shadow-lg"
+            className="h-auto max-h-[min(58dvh,38rem)] max-w-full rounded-lg object-contain shadow-lg"
             ref={canvasRef}
           />
         </div>
-        <div className="grid content-start gap-4">
+        <div className="grid min-w-0 content-start gap-4">
           <FeatureSegmentedControl
             ariaLabel="Formato de corte"
             onChange={(aspect) =>
@@ -222,27 +220,29 @@ export function StorefrontImageEditorDialog({
               />
               Remover cor selecionada
             </label>
-            <FeatureInput
-              aria-label="Cor do fundo para remover"
-              className="min-h-10 px-1"
-              onChange={(event) =>
-                setSettings((current) => ({
-                  ...current,
-                  removeColor: event.target.value,
-                }))
-              }
-              type="color"
-              value={settings.removeColor}
-            />
-            <RangeControl
-              label="Tolerancia"
-              max={120}
-              min={0}
-              onChange={(removeTolerance) =>
-                setSettings((current) => ({ ...current, removeTolerance }))
-              }
-              value={settings.removeTolerance}
-            />
+            {settings.removeColorEnabled ? (
+              <>
+                <FeatureColorPicker
+                  label="Cor do fundo"
+                  onChange={(removeColor) =>
+                    setSettings((current) => ({ ...current, removeColor }))
+                  }
+                  value={settings.removeColor}
+                />
+                <RangeControl
+                  label="Tolerancia"
+                  max={120}
+                  min={0}
+                  onChange={(removeTolerance) =>
+                    setSettings((current) => ({
+                      ...current,
+                      removeTolerance,
+                    }))
+                  }
+                  value={settings.removeTolerance}
+                />
+              </>
+            ) : null}
           </ControlGroup>
           {status ? (
             <p className="text-sm font-black text-danger">{status}</p>

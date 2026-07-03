@@ -22,35 +22,39 @@ export function FeatureDialog({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
       <button
         aria-label="Fechar dialogo"
-        className="absolute inset-0 bg-overlay"
+        className="absolute inset-0 bg-overlay backdrop-blur-sm"
         onClick={onClose}
         type="button"
       />
       <section
         className={cx(
-          "relative w-full max-w-xl rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)] animate-fade-in",
-          className,
+          "relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)] animate-fade-in sm:max-h-[calc(100dvh-2rem)]",
+          className ?? "max-w-xl",
         )}
         role="dialog"
         aria-modal="true"
       >
-        <div className="flex items-center justify-between gap-3 border-b border-line p-4">
-          <h3 className="text-lg font-black text-app-text">{title}</h3>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line p-4">
+          <h3 className="min-w-0 text-lg font-black leading-tight text-app-text">
+            {title}
+          </h3>
           <button
             aria-label="Fechar"
-            className="rounded-lg border border-line bg-app p-2 text-muted hover:text-app-text"
+            className="shrink-0 rounded-lg border border-line bg-app p-2 text-muted hover:text-app-text"
             onClick={onClose}
             type="button"
           >
             <X aria-hidden="true" className="size-4" />
           </button>
         </div>
-        <div className="p-4">{children}</div>
+        <div className="min-h-0 flex-1 scroll-pb-6 overflow-y-auto p-4 pb-6">
+          {children}
+        </div>
         {footer ? (
-          <div className="border-t border-line p-4">{footer}</div>
+          <div className="shrink-0 border-t border-line p-4">{footer}</div>
         ) : null}
       </section>
     </div>,

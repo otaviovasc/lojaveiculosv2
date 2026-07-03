@@ -131,6 +131,9 @@ importers:
       "@lojaveiculosv2/shared":
         specifier: workspace:*
         version: link:../../packages/shared
+      "@paper-design/shaders-react":
+        specifier: 0.0.77
+        version: 0.0.77(@types/react@19.2.17)(react@19.2.7)
       "@radix-ui/react-progress":
         specifier: ^1.1.10
         version: 1.1.10(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1741,6 +1744,24 @@ packages:
     resolution:
       {
         integrity: sha512-WT+Gb24i8hmvo85AIv2oEYouEXkRlKAlT9WaCa3TfLgNCN+GhrJOGZuIlMouAh38Qe4QOx26eUOVsq70qXrywA==,
+      }
+
+  "@paper-design/shaders-react@0.0.77":
+    resolution:
+      {
+        integrity: sha512-VCjhK7k6GT1BMjq7kLsDHMnMy1ryjCTALdhOVIf2Z5b1jh5eEHXqHdQCvMAJ7v6evjiN1twzjM1KUNOg2RoXBw==,
+      }
+    peerDependencies:
+      "@types/react": ^18 || ^19
+      react: ^18 || ^19
+    peerDependenciesMeta:
+      "@types/react":
+        optional: true
+
+  "@paper-design/shaders@0.0.77":
+    resolution:
+      {
+        integrity: sha512-y0mR3brBu6qvVgbnvBdXX3zL/hajdamkECLt8NbexaEc1L46W3a+ZIEwxu1NJ2/bqwxAgjJC0o2+4CAii5wp/w==,
       }
 
   "@pdf-lib/standard-fonts@1.0.0":
@@ -6458,6 +6479,15 @@ snapshots:
   "@opentelemetry/semantic-conventions@1.41.1": {}
 
   "@oxc-project/types@0.137.0": {}
+
+  "@paper-design/shaders-react@0.0.77(@types/react@19.2.17)(react@19.2.7)":
+    dependencies:
+      "@paper-design/shaders": 0.0.77
+      react: 19.2.7
+    optionalDependencies:
+      "@types/react": 19.2.17
+
+  "@paper-design/shaders@0.0.77": {}
 
   "@pdf-lib/standard-fonts@1.0.0":
     dependencies:

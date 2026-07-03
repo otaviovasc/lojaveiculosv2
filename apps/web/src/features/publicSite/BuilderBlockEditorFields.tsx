@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import {
   FeatureInput,
   FeatureSelect,
@@ -119,20 +120,14 @@ export function BuilderColorInput({
   value: unknown;
 }) {
   return (
-    <BuilderField label={label}>
-      <div className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-2">
-        <FeatureInput
-          className="min-h-10 w-14 shrink-0 px-1"
-          onChange={(event) => onChange(event.target.value)}
-          type="color"
-          value={colorValue(value)}
-        />
-        <FeatureInput
-          onChange={(event) => onChange(event.target.value)}
-          value={textValue(value)}
-        />
-      </div>
-    </BuilderField>
+    <FeatureColorPicker
+      allowEmpty
+      fallbackColor={colorValue(value)}
+      label={label}
+      onChange={onChange}
+      placeholder="Herdar"
+      value={textValue(value)}
+    />
   );
 }
 

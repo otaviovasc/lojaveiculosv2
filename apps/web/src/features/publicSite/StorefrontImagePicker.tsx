@@ -115,7 +115,7 @@ function StorefrontImageLibraryDialog({
   return (
     <>
       <FeatureDialog
-        className="max-w-4xl"
+        className="max-w-6xl"
         footer={
           <FeatureDialogActions
             cancelLabel="Fechar"
@@ -131,9 +131,9 @@ function StorefrontImageLibraryDialog({
         onClose={onClose}
         title="Galeria da sua loja"
       >
-        <div className="grid gap-4">
+        <div className="grid min-h-0 gap-4">
           <label
-            className="grid min-h-[8rem] cursor-pointer place-items-center rounded-lg border-2 border-dashed border-line bg-app p-4 text-center text-muted transition-colors hover:border-accent hover:text-app-text"
+            className="grid min-h-[8rem] cursor-pointer place-items-center rounded-lg border-2 border-dashed border-line bg-app p-4 text-center text-muted transition-colors hover:border-accent hover:text-app-text sm:p-5"
             onDragOver={(event) => event.preventDefault()}
             onDrop={(event) => {
               event.preventDefault();
@@ -160,7 +160,7 @@ function StorefrontImageLibraryDialog({
               </small>
             </span>
           </label>
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-xs font-black uppercase tracking-widest text-muted">
               Imagens salvas
             </p>
@@ -251,7 +251,7 @@ function AssetGrid({
     );
   }
   return (
-    <div className="grid max-h-[45vh] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="grid min-h-0 max-h-[clamp(16rem,45dvh,34rem)] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
       {assets.map((asset) => (
         <button
           aria-pressed={asset.publicUrl === selectedUrl}

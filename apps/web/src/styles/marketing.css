@@ -1,0 +1,47 @@
+.landing-hero-shader {
+  background:
+    radial-gradient(
+      circle at 18% 24%,
+      color-mix(in srgb, var(--color-accent) 72%, transparent),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 72% 18%,
+      color-mix(in srgb, var(--color-blue-start) 62%, transparent),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 78% 76%,
+      color-mix(in srgb, var(--color-green-start) 46%, transparent),
+      transparent 35%
+    ),
+    radial-gradient(
+      circle at 38% 82%,
+      color-mix(in srgb, var(--color-warning) 42%, transparent),
+      transparent 30%
+    );
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.52;
+  pointer-events: none;
+  position: absolute;
+  z-index: -15;
+}
+
+.landing-hero-shader-canvas,
+.landing-hero-shader-canvas canvas {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.landing-hero-shader-canvas {
+  inset: 0;
+  position: absolute;
+}
+
+@media (max-width: 767px) {
+  .landing-hero-shader {
+    opacity: 0.42;
+  }
+}
