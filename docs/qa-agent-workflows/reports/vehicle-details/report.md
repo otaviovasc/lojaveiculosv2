@@ -6,7 +6,7 @@
 - Worker branch: agent/qa/vehicle-details
 - Worktree: .worktrees/qa-vehicle-details
 - Base branch: agent/qa-integration
-- Latest commit: worker commit noted in final handoff
+- Latest worker commit: `40507bc`; merged to `agent/qa-integration`
 - Artifact root: /tmp/lojaveiculosv2-qa/agent-qa-vehicle-details/vehicle-details
 - Persona coverage: local seed owner (`clerk_seed_owner`)
 - Viewports: desktop, mobile
@@ -25,13 +25,13 @@
 
 ## Findings
 
-| ID       | Severity | Status | Route                                                     | Owner           | Evidence                                                                                                        | Reviewer     |
-| -------- | -------- | ------ | --------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- | ------------ |
-| VDET-001 | High     | fixed  | `/inventory` vehicle detail, Anúncio/Documentos/Histórico | vehicle-details | `admin-detail-anuncio-desktop.png`, `admin-detail-documentos-desktop.png`, `admin-detail-historico-desktop.png` | orchestrator |
-| VDET-002 | Medium   | fixed  | `/inventory` vehicle detail tabs                          | vehicle-details | `admin-detail-geral-desktop.png`, tab assertions in `tests/e2e/vehicle-details.spec.ts`                         | orchestrator |
-| VDET-003 | Medium   | fixed  | `/test-store` public listing detail                       | vehicle-details | `public-vehicle-detail-desktop.png`, `public-vehicle-detail-mobile.png`                                         | orchestrator |
-| VDET-004 | Low      | fixed  | Admin detail media/financeiro/vendas/documentos copy      | vehicle-details | `admin-detail-financeiro-desktop.png`, `admin-detail-vendas-desktop.png`, `admin-detail-documentos-desktop.png` | orchestrator |
-| VDET-005 | High     | fixed  | `/inventory` vehicle detail, Financeiro                   | vehicle-details | `admin-detail-financeiro-desktop.png`, seeded Audi assertions in `tests/e2e/vehicle-details.spec.ts`            | Wegener      |
+| ID       | Severity | Status   | Route                                                     | Owner           | Evidence                                                                                                        | Reviewer |
+| -------- | -------- | -------- | --------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------- | -------- |
+| VDET-001 | High     | verified | `/inventory` vehicle detail, Anúncio/Documentos/Histórico | vehicle-details | `admin-detail-anuncio-desktop.png`, `admin-detail-documentos-desktop.png`, `admin-detail-historico-desktop.png` | approved |
+| VDET-002 | Medium   | verified | `/inventory` vehicle detail tabs                          | vehicle-details | `admin-detail-geral-desktop.png`, tab assertions in `tests/e2e/vehicle-details.spec.ts`                         | approved |
+| VDET-003 | Medium   | verified | `/test-store` public listing detail                       | vehicle-details | `public-vehicle-detail-desktop.png`, `public-vehicle-detail-mobile.png`                                         | approved |
+| VDET-004 | Low      | verified | Admin detail media/financeiro/vendas/documentos copy      | vehicle-details | `admin-detail-financeiro-desktop.png`, `admin-detail-vendas-desktop.png`, `admin-detail-documentos-desktop.png` | approved |
+| VDET-005 | High     | verified | `/inventory` vehicle detail, Financeiro                   | vehicle-details | `admin-detail-financeiro-desktop.png`, seeded Audi assertions in `tests/e2e/vehicle-details.spec.ts`            | approved |
 
 ## Implementation
 
@@ -50,16 +50,17 @@
 - `pnpm run validate:commit`: passed.
 - Other checks: local DB reseeded with product-test-user and vehicle catalog seed; local API/web servers only.
 - Reviewer regression coverage: Financeiro Playwright assertions require the seeded Audi values (`R$ 189.900`, `32.000 km`, `LV-A4-PRETO`, `Revisao completa pre-venda`, `R$ 1.850`) and reject the old mock values (`R$ 120.000`, `R$ 150.000`, `R$ 145.000`, `R$ 5.000`, `32.500 km`, `Parachoques`, `Laudo Dekra`).
+- Integration validation: `pnpm --filter @lojaveiculosv2/web typecheck` passed; `pnpm --filter @lojaveiculosv2/web test -- listCatalogModel.test.ts` passed with 77 files / 236 tests; `pnpm exec playwright test tests/e2e/vehicle-details.spec.ts --list` registered 3 tests; `pnpm run validate:commit` passed.
 
 ## Reviewer Feedback
 
 - Discovery gate: complete.
-- Implementation gate: complete.
+- Implementation gate: approved by Halley after Wegener's VDET-005 finding was fixed.
 - Wegener changes requested: High VDET-005 fixed. Financeiro no longer renders local mock vehicle data for the seeded Audi detail.
-- Required follow-up: none currently known for this lane.
+- Required follow-up: run the full vehicle-details Playwright spec from the merged integration branch with integration-owned local services in the final campaign pass.
 
 ## Final State
 
-- Ready for orchestrator merge: yes.
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
 - Deferred findings: none.
 - Notes: artifact screenshots include all admin tabs, admin mobile Vitrine, public storefront, and public detail desktop/mobile.

@@ -19,7 +19,7 @@
 | shared-ui              | `agent/qa/shared-ui`              | Popper       | Lorentz   | approved | Proactive cramped text/popover/layout pass              |
 | customize-page-builder | `agent/qa/customize-page-builder` | Archimedes   | Bacon     | approved | Includes public storefront/custom page verification     |
 | inventory-list         | `agent/qa/inventory-list`         | Goodall      | Boole     | approved | Includes column sorting and lead heat colors            |
-| vehicle-details        | `agent/qa/vehicle-details`        | Poincare     | pending   | pending  | All detail tabs plus public vehicle detail verification |
+| vehicle-details        | `agent/qa/vehicle-details`        | Poincare     | Halley    | approved | All detail tabs plus public vehicle detail verification |
 | documents              | `agent/qa/documents`              | Socrates     | Aristotle | approved | Documents center workflows                              |
 | clients                | `agent/qa/clients`                | Nash         | Boyle     | approved | Clients list and client detail surfaces                 |
 | sales                  | `agent/qa/sales`                  | Jason        | Epicurus  | approved | Sales workflows                                         |
@@ -79,6 +79,11 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | CLIENTS-005 | Low      | deferred | clients                | integration                   | client detail documents/sales links                | `/tmp/lojaveiculosv2-qa/agent-qa-clients/clients/clients-detail-tabs.png`                                         | Reviewer accepted |
 | CLIENTS-006 | Medium   | verified | clients                | clients worker                | `/dashboard#/crm?surface=leads`                    | `/tmp/lojaveiculosv2-qa/agent-qa-clients-review/clients/clients-list-mobile.png`                                  | Reviewer approved |
 | CLIENTS-007 | Medium   | verified | clients                | clients worker                | `/dashboard#/crm?surface=leads`                    | `/tmp/lojaveiculosv2-qa/agent-qa-clients-review/clients/clients-list-mobile.png`                                  | Reviewer approved |
+| VDET-001    | High     | verified | vehicle-details        | vehicle-details worker        | `/inventory` vehicle detail                        | `/tmp/lojaveiculosv2-qa/agent-qa-vehicle-details/vehicle-details/admin-detail-anuncio-desktop.png`                | Reviewer approved |
+| VDET-002    | Medium   | verified | vehicle-details        | vehicle-details worker        | `/inventory` vehicle detail tabs                   | `/tmp/lojaveiculosv2-qa/agent-qa-vehicle-details/vehicle-details/admin-detail-geral-desktop.png`                  | Reviewer approved |
+| VDET-003    | Medium   | verified | vehicle-details        | vehicle-details worker        | `/test-store` public listing detail                | `/tmp/lojaveiculosv2-qa/agent-qa-vehicle-details/vehicle-details/public-vehicle-detail-desktop.png`               | Reviewer approved |
+| VDET-004    | Low      | verified | vehicle-details        | vehicle-details worker        | Admin detail copy                                  | `/tmp/lojaveiculosv2-qa/agent-qa-vehicle-details/vehicle-details/admin-detail-financeiro-desktop.png`             | Reviewer approved |
+| VDET-005    | High     | verified | vehicle-details        | vehicle-details worker        | `/inventory` vehicle detail Financeiro             | `tests/e2e/vehicle-details.spec.ts`                                                                               | Reviewer approved |
 
 ## Validation Ledger
 
@@ -102,6 +107,10 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | Sales API tests            | `pnpm --filter @lojaveiculosv2/api test -- sales`                                                                                                                                               | passed  | 114 files / 427 tests passed       |
 | Clients focused tests      | `pnpm --filter @lojaveiculosv2/web test -- crmPipelineModels`                                                                                                                                   | passed  | 77 files / 236 tests passed        |
 | Clients reviewer checks    | `git diff --check`, Prettier check on touched files, focused web tests                                                                                                                          | passed  | Reviewer approved                  |
+| Vehicle details typecheck  | `pnpm --filter @lojaveiculosv2/web typecheck`                                                                                                                                                   | passed  | Post-merge tree                    |
+| Vehicle details catalog    | `pnpm --filter @lojaveiculosv2/web test -- listCatalogModel.test.ts`                                                                                                                            | passed  | 77 files / 236 tests passed        |
+| Vehicle details E2E list   | `pnpm exec playwright test tests/e2e/vehicle-details.spec.ts --list`                                                                                                                            | passed  | 3 tests registered                 |
+| Vehicle details guardrails | `pnpm run validate:commit`                                                                                                                                                                      | passed  | Post-merge tree                    |
 | Final integration validate | pending                                                                                                                                                                                         | pending | Run after all lanes                |
 | Final Playwright campaign  | pending                                                                                                                                                                                         | pending | Clean local seed                   |
 
