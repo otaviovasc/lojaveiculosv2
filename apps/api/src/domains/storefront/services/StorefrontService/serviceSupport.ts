@@ -105,3 +105,59 @@ export function requireStorefrontPageScope(context: ServiceContext): {
 }
 
 export const requireStorefrontMediaScope = requireStorefrontPageScope;
+
+export const storefrontMediaPermission = "store_public_site.manage";
+
+const maxStorefrontMediaImageBytes = 15 * 1024 * 1024;
+
+export type StorefrontMediaUploadInput = {
+  contentType: string;
+  fileName: string;
+  height?: number | null;
+  sizeBytes: number;
+  width?: number | null;
+};
+type StorefrontMediaScopeInput = {
+  storeId: string;
+  tenantId: string;
+};
+
+export function validateStorefrontMediaUpload(
+  input: StorefrontMediaUploadInput,
+) {
+  if (!input.contentType.startsWith("image/")) {
+    throw new StorefrontMediaValidationError(
+      "Storefront media uploads must be images.",
+    );
+  }
+  if (input.sizeBytes < 1 || input.sizeBytes > maxStorefrontMediaImageBytes) {
+    throw new StorefrontMediaValidationError(
+      "Storefront media uploads must be between 1 byte and 15 MiB.",
+    );
+  }
+}
+
+export function createStorefrontMediaScopeSegments(
+  scope: StorefrontMediaScopeInput,
+) {
+  return [
+    "tenants",
+    scope.tenantId,
+    "stores",
+    scope.storeId,
+    "storefront",
+    "media",
+  ];
+}
+
+export function assertStorefrontMediaStorageKey(
+  scope: StorefrontMediaScopeInput,
+  storageKey: string,
+) {
+  const prefix = `${createStorefrontMediaScopeSegments(scope).join("/")}/`;
+  if (!storageKey.startsWith(prefix)) {
+    throw new StorefrontMediaValidationError(
+      "Storefront media storage key does not belong to this store.",
+    );
+  }
+}

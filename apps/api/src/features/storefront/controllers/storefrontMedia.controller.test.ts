@@ -47,6 +47,37 @@ describe("storefront media routes", () => {
     });
   });
 
+  it("completes a storefront image upload", async () => {
+    const services = createServices();
+    const app = createTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/storefront/media/uploads/complete",
+      {
+        body: JSON.stringify({
+          contentType: "image/png",
+          fileName: "fachada.png",
+          height: 900,
+          sizeBytes: 2048,
+          storageKey: assetResponse.storageKey,
+          width: 1600,
+        }),
+        method: "POST",
+      },
+    );
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ asset: assetResponse });
+    expect(services.completeUpload).toHaveBeenCalledWith(expect.any(Object), {
+      contentType: "image/png",
+      fileName: "fachada.png",
+      height: 900,
+      sizeBytes: 2048,
+      storageKey: assetResponse.storageKey,
+      width: 1600,
+    });
+  });
+
   it("rejects invalid upload bodies", async () => {
     const app = createTestApp(createServices());
 
@@ -77,6 +108,7 @@ function createTestApp(
 
 function createServices(): StorefrontMediaServices {
   return {
+    completeUpload: vi.fn(async () => assetResponse),
     listAssets: vi.fn(async () => [assetResponse]),
     requestUpload: vi.fn(async () => uploadResponse),
   };
@@ -107,7 +139,6 @@ const assetResponse = {
 };
 
 const uploadResponse = {
-  asset: assetResponse,
   expiresAt: "2026-01-01T00:15:00.000Z",
   publicUrl: assetResponse.publicUrl,
   storageKey: assetResponse.storageKey,

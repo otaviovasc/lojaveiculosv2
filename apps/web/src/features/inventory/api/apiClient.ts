@@ -30,9 +30,9 @@ import {
   cleanJson,
   cleanMediaInput,
   readJson,
-  readUpload,
   type JsonBody,
 } from "./apiClientSupport";
+import { uploadObjectToStorage } from "../../../lib/objectUpload";
 import type { CreateInventoryApiOptions, InventoryApi } from "./apiTypes";
 
 export { createInventoryHeaders, inventoryRoutes } from "./apiRoutes";
@@ -256,11 +256,10 @@ export function createInventoryApi({
       }
 
       const upload = await mediaApi.requestMediaUpload(unitId, input.media);
-      await fetch(upload.uploadUrl, {
-        body: input.media.file,
-        headers: upload.uploadHeaders,
-        method: upload.uploadMethod,
-      }).then(readUpload);
+      await uploadObjectToStorage(upload, input.media.file, {
+        failureMessage: "Falha no upload da imagem para o armazenamento.",
+        fetch,
+      });
       const media = await mediaApi.createMedia(
         unitId,
         cleanMediaInput(input.media, upload.storageKey),

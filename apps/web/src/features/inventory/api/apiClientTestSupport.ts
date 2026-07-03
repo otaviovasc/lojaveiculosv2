@@ -8,7 +8,10 @@ export function createFakeFetch(payloads: unknown[]) {
   const fakeFetch: typeof fetch = async (input, init) => {
     calls.push({ init, input });
 
-    if (String(input).startsWith("https://upload.local/")) {
+    if (
+      String(input).startsWith("https://upload.local/") ||
+      String(input).startsWith("https://storage.example/")
+    ) {
       return new Response(null, { status: 200 });
     }
 

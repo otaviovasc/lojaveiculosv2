@@ -73,7 +73,7 @@ describe("createInventoryApi", () => {
         storageKey: "tenants/t/stores/s/units/unit_1/front.jpg",
         uploadHeaders: { "content-type": "image/jpeg" },
         uploadMethod: "PUT",
-        uploadUrl: "https://upload.local/front.jpg",
+        uploadUrl: "https://storage.example/front.jpg",
       },
       {
         mediaId: "media_1",
@@ -106,7 +106,7 @@ describe("createInventoryApi", () => {
       sizeBytes: file.size,
     });
     expect(callAt(fake.calls, 3)).toMatchObject({
-      input: "https://upload.local/front.jpg",
+      input: "https://storage.example/front.jpg",
       init: {
         body: file,
         headers: { "content-type": "image/jpeg" },

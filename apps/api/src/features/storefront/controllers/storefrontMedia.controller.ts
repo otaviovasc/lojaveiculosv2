@@ -22,6 +22,9 @@ const mediaUploadSchema = z.object({
   sizeBytes: z.number().int().min(1).max(maxImageBytes),
   width: z.number().int().min(1).max(12000).nullable().optional(),
 });
+const mediaUploadCompleteSchema = mediaUploadSchema.extend({
+  storageKey: z.string().trim().min(1).max(1024),
+});
 
 export type StorefrontMediaContextFactory = (
   context: Context,
@@ -62,6 +65,18 @@ export function createStorefrontMediaFeature(
     }),
   );
 
+  feature.post("/media/uploads/complete", (context) =>
+    handleStorefrontMedia(context, async () => {
+      const input = await parseJson(context, mediaUploadCompleteSchema);
+      const serviceContext = await createContext(context);
+      const asset = await services.completeUpload(
+        serviceContext,
+        cleanCompleteUploadInput(input),
+      );
+      return context.json({ asset }, 201);
+    }),
+  );
+
   return feature;
 }
 
@@ -72,6 +87,15 @@ function cleanUploadInput(input: z.infer<typeof mediaUploadSchema>) {
     ...(input.height !== undefined ? { height: input.height } : {}),
     sizeBytes: input.sizeBytes,
     ...(input.width !== undefined ? { width: input.width } : {}),
+  };
+}
+
+function cleanCompleteUploadInput(
+  input: z.infer<typeof mediaUploadCompleteSchema>,
+) {
+  return {
+    ...cleanUploadInput(input),
+    storageKey: input.storageKey,
   };
 }
 

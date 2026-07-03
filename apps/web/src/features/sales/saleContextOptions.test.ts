@@ -68,4 +68,47 @@ describe("sale context options", () => {
       },
     ]);
   });
+
+  it("loads only available inventory units for sale selection", async () => {
+    getRoleManagement.mockResolvedValue({ memberships: [] });
+    listListings.mockResolvedValue({
+      items: [
+        {
+          listing: {
+            id: "listing_1",
+            priceCents: 1000000,
+            title: "Carro demo",
+          },
+          primaryUnit: null,
+          units: [
+            {
+              id: "unit_available",
+              plate: "ABC1D23",
+              status: "available",
+              stockNumber: "EST-1",
+            },
+            {
+              id: "unit_sold",
+              plate: "ZZZ9Z99",
+              status: "sold",
+              stockNumber: "EST-2",
+            },
+          ],
+        },
+      ],
+    });
+
+    const state = await loadSaleContextOptions();
+
+    expect(listListings).toHaveBeenCalledWith({
+      limit: 100,
+      status: "available",
+    });
+    expect(state.options.units).toEqual([
+      expect.objectContaining({
+        id: "unit_available",
+        label: "Carro demo · EST-1",
+      }),
+    ]);
+  });
 });

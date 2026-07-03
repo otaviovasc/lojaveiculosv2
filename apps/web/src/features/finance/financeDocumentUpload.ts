@@ -1,4 +1,5 @@
 import { readUpload } from "./apiJson";
+import { isLocalMockUploadUrl } from "../../lib/objectUpload";
 import type { FinanceDocumentUpload } from "./types";
 
 export async function uploadFinanceDocumentObject(
@@ -12,13 +13,4 @@ export async function uploadFinanceDocumentObject(
     method: upload.uploadMethod ?? "PUT",
     ...(upload.uploadHeaders ? { headers: upload.uploadHeaders } : {}),
   }).then(readUpload);
-}
-
-function isLocalMockUploadUrl(uploadUrl: string) {
-  try {
-    const url = new URL(uploadUrl);
-    return url.hostname === "upload.local";
-  } catch {
-    return false;
-  }
 }

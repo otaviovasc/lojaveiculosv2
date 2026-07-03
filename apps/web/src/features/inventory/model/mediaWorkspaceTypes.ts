@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { uploadObjectToStorage } from "../../../lib/objectUpload";
 import type { InventoryListingDetail, InventoryMediaUpload } from "./types";
 
 export type InventoryMediaState =
@@ -21,15 +22,7 @@ export async function uploadInventoryFile(
   file: File,
   upload: InventoryMediaUpload,
 ) {
-  const response = await fetch(upload.uploadUrl, {
-    body: file,
-    headers: upload.uploadHeaders,
-    method: upload.uploadMethod,
+  await uploadObjectToStorage(upload, file, {
+    failureMessage: "Falha no upload da imagem para o armazenamento.",
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `Falha no upload da imagem para o armazenamento. Codigo HTTP ${response.status}.`,
-    );
-  }
 }

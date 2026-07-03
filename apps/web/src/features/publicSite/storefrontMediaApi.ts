@@ -3,6 +3,7 @@ import type {
   StorefrontMediaUpload,
 } from "@lojaveiculosv2/shared";
 import { readApiJson } from "../../lib/apiErrors";
+import { uploadObjectToStorage } from "../../lib/objectUpload";
 import type { SettingsAuth } from "../settings/types";
 
 export type StorefrontMediaUploadPayload = {
@@ -42,17 +43,22 @@ export function createStorefrontMediaApi({
         { auth, fetch, ...(baseUrl ? { baseUrl } : {}) },
         input,
       );
-      await fetch(upload.uploadUrl, {
-        body: input.blob,
-        headers: upload.uploadHeaders,
-        method: upload.uploadMethod,
-      }).then(readUploadResponse);
-      return upload.asset;
+      await uploadObjectToStorage(upload, input.blob, {
+        failureMessage: "Nao foi possivel enviar a imagem para o R2.",
+        fetch,
+      });
+      return completeUpload(
+        { auth, fetch, ...(baseUrl ? { baseUrl } : {}) },
+        input,
+        upload.storageKey,
+      );
     },
   };
 }
 
 export const storefrontMediaRoutes = {
+  completeUpload: (baseUrl?: string) =>
+    createEndpoint("/storefront/media/uploads/complete", baseUrl),
   media: (baseUrl?: string) => createEndpoint("/storefront/media", baseUrl),
   uploads: (baseUrl?: string) =>
     createEndpoint("/storefront/media/uploads", baseUrl),
@@ -77,6 +83,28 @@ async function requestUpload(
     .then(readJson<StorefrontMediaUpload>);
 }
 
+async function completeUpload(
+  options: CreateStorefrontMediaApiOptions,
+  input: StorefrontMediaUploadPayload,
+  storageKey: string,
+) {
+  return options
+    .fetch(storefrontMediaRoutes.completeUpload(options.baseUrl), {
+      body: JSON.stringify({
+        contentType: input.blob.type || "image/png",
+        fileName: input.fileName,
+        height: input.height,
+        sizeBytes: input.blob.size,
+        storageKey,
+        width: input.width,
+      }),
+      headers: createHeaders(options.auth ?? {}),
+      method: "POST",
+    })
+    .then(readJson<{ asset: StorefrontMediaAsset }>)
+    .then((data) => data.asset);
+}
+
 function createHeaders(auth: SettingsAuth): HeadersInit {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -95,10 +123,4 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 
 async function readJson<T>(response: Response): Promise<T> {
   return readApiJson<T>(response, { feature: "Galeria da loja" });
-}
-
-async function readUploadResponse(response: Response) {
-  if (!response.ok) {
-    throw new Error("Não foi possível enviar a imagem para o R2.");
-  }
 }

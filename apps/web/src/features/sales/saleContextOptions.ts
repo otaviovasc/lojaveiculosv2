@@ -2,10 +2,7 @@ import { createProductCrmApi } from "../crm/productCrmApi";
 import { createProductCrmApiOptions } from "../crm/runtimeApi";
 import { createInventoryApi } from "../inventory/api/apiClient";
 import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
-import type {
-  InventoryListingSummary,
-  InventoryUnitStatus,
-} from "../inventory/model/types";
+import type { InventoryListingSummary } from "../inventory/model/types";
 import { createSettingsApi } from "../settings/apiClient";
 import { createSettingsApiOptions } from "../settings/runtimeApi";
 import type { RoleKey, RoleMemberView } from "../settings/types";
@@ -100,7 +97,7 @@ async function loadLeadOptions() {
 
 async function loadUnitOptions() {
   const api = createInventoryApi(await createInventoryApiOptions());
-  const result = await api.listListings({ limit: 100 });
+  const result = await api.listListings({ limit: 100, status: "available" });
   return result.items.flatMap(toUnitOptions);
 }
 
@@ -156,25 +153,28 @@ function toUnitOptions(item: InventoryListingSummary): SaleUnitOption[] {
         ? [item.primaryUnit]
         : [];
 
-  return units.map((unit, index) => {
-    const unitLabel = unit.stockNumber || unit.plate || `Unidade ${index + 1}`;
-    const detailParts = [
-      unitLabel,
-      unit.plate,
-      statusLabel(unit.status),
-      formatCents(item.listing.priceCents),
-    ].filter(Boolean);
+  return units
+    .filter((unit) => unit.status === "available")
+    .map((unit, index) => {
+      const unitLabel =
+        unit.stockNumber || unit.plate || `Unidade ${index + 1}`;
+      const detailParts = [
+        unitLabel,
+        unit.plate,
+        "Disponivel",
+        formatCents(item.listing.priceCents),
+      ].filter(Boolean);
 
-    return {
-      detail: detailParts.join(" · "),
-      id: unit.id,
-      label: `${item.listing.title} · ${unitLabel}`,
-      listingId: item.listing.id,
-      listingTitle: item.listing.title,
-      priceCents: item.listing.priceCents,
-      unitLabel,
-    };
-  });
+      return {
+        detail: detailParts.join(" · "),
+        id: unit.id,
+        label: `${item.listing.title} · ${unitLabel}`,
+        listingId: item.listing.id,
+        listingTitle: item.listing.title,
+        priceCents: item.listing.priceCents,
+        unitLabel,
+      };
+    });
 }
 
 function toSellerOption(member: RoleMemberView): SaleSellerOption {
@@ -202,19 +202,6 @@ function mergeSellerOptions(
 ) {
   const loadedIds = new Set(loaded.map((option) => option.id));
   return [...seeded.filter((option) => !loadedIds.has(option.id)), ...loaded];
-}
-
-function statusLabel(status: InventoryUnitStatus) {
-  const labels: Record<InventoryUnitStatus, string> = {
-    acquired: "Adquirido",
-    available: "Disponivel",
-    delivered: "Entregue",
-    inactive: "Inativo",
-    in_preparation: "Em preparacao",
-    reserved: "Reservado",
-    sold: "Vendido",
-  };
-  return labels[status];
 }
 
 function roleLabel(role: RoleKey) {

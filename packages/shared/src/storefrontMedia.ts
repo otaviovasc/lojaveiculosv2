@@ -15,7 +15,6 @@ export type StorefrontMediaAsset = {
 };
 
 export type StorefrontMediaUpload = {
-  asset: StorefrontMediaAsset;
   expiresAt: string;
   publicUrl: string;
   storageKey: string;

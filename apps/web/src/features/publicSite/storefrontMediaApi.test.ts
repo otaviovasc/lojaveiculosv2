@@ -30,6 +30,9 @@ describe("createStorefrontMediaApi", () => {
       auth: { clerkUserId: "clerk_1", storeSlug: "demo" },
       fetch: async (input, init) => {
         calls.push({ init, input });
+        if (String(input).includes("/uploads/complete")) {
+          return jsonResponse({ asset });
+        }
         if (String(input).includes("/uploads")) return jsonResponse(upload);
         return new Response(null, { status: 200 });
       },
@@ -63,13 +66,60 @@ describe("createStorefrontMediaApi", () => {
       },
     });
     expect(calls[1]).toMatchObject({
-      input: "https://upload.local/fachada.png",
+      input: "https://storage.example/fachada.png",
       init: {
         body: blob,
         headers: { "content-type": "image/png" },
         method: "PUT",
       },
     });
+    expect(calls[2]).toMatchObject({
+      input: "/api/v1/storefront/media/uploads/complete",
+      init: {
+        body: JSON.stringify({
+          contentType: "image/png",
+          fileName: "fachada.png",
+          height: 900,
+          sizeBytes: blob.size,
+          storageKey: asset.storageKey,
+          width: 1600,
+        }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-clerk-user-id": "clerk_1",
+          "x-store-slug": "demo",
+        },
+        method: "POST",
+      },
+    });
+  });
+
+  it("skips local mock object uploads before registering the asset", async () => {
+    const calls: FetchCall[] = [];
+    const api = createStorefrontMediaApi({
+      fetch: async (input, init) => {
+        calls.push({ init, input });
+        if (String(input).includes("/uploads/complete")) {
+          return jsonResponse({ asset });
+        }
+        return jsonResponse({
+          ...upload,
+          uploadUrl: "https://upload.local/fachada.png",
+        });
+      },
+    });
+
+    await api.uploadImage({
+      blob: new Blob(["png"], { type: "image/png" }),
+      fileName: "fachada.png",
+      height: 900,
+      width: 1600,
+    });
+
+    expect(calls.map((call) => call.input)).toEqual([
+      "/api/v1/storefront/media/uploads",
+      "/api/v1/storefront/media/uploads/complete",
+    ]);
   });
 });
 
@@ -95,11 +145,10 @@ const asset = {
 };
 
 const upload = {
-  asset,
   expiresAt: "2026-01-01T00:15:00.000Z",
   publicUrl: asset.publicUrl,
   storageKey: asset.storageKey,
   uploadHeaders: { "content-type": "image/png" },
   uploadMethod: "PUT",
-  uploadUrl: "https://upload.local/fachada.png",
+  uploadUrl: "https://storage.example/fachada.png",
 };
