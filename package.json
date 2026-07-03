@@ -38,6 +38,8 @@
     "test:dashboard-animation": "pnpm --filter @lojaveiculosv2/web test -- dashboardHomeAnimation",
     "test:e2e": "playwright test",
     "test:e2e:local": "pnpm run db:clean:local && pnpm run test:e2e",
+    "qa:flows": "pnpm run test:e2e",
+    "qa:flows:local": "pnpm run test:e2e:local",
     "test:frontend-design": "pnpm --filter @lojaveiculosv2/web exec vitest run tools/quality/frontend-design-rules.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api test -- productionSmoke",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",
