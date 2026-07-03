@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatLeadName } from "./crmPipelineModels";
 import {
@@ -13,6 +13,11 @@ import type {
 import { CrmLeadDetailsTabs } from "./CrmLeadDetailsTabs";
 import { CrmLeadDetailsSidebar } from "./CrmLeadDetailsSidebar";
 import { sourceLabels } from "./crmPipelineConfig";
+import {
+  emptyCrmLeadLinkedRecords,
+  loadCrmLeadLinkedRecords,
+  type CrmLeadLinkedRecordsState,
+} from "./crmLeadLinkedRecords";
 
 export function CrmLeadDetailsPage({
   lead,
@@ -26,11 +31,35 @@ export function CrmLeadDetailsPage({
 }: CrmLeadDetailsPageProps) {
   const [activeTab, setActiveTab] = useState<DetailTab>("visao");
   const [isStageDropdownOpen, setIsStageDropdownOpen] = useState(false);
+  const [linkedRecords, setLinkedRecords] = useState<CrmLeadLinkedRecordsState>(
+    emptyCrmLeadLinkedRecords,
+  );
 
   const leadName = formatLeadName(lead);
   const activeStageId = getLeadStageId(lead);
   const currentStage = stages.find((s) => s.id === activeStageId) ?? stages[0];
   const leadVehicles = getLinkedLeadVehicles(lead, vehicleOptions);
+
+  useEffect(() => {
+    let isActive = true;
+    setLinkedRecords({ ...emptyCrmLeadLinkedRecords });
+    void loadCrmLeadLinkedRecords(lead.id)
+      .then((state) => {
+        if (isActive) setLinkedRecords(state);
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setLinkedRecords({
+          documents: [],
+          kind: "error",
+          message: "Nao foi possivel carregar vendas e documentos vinculados.",
+          sales: [],
+        });
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [lead.id]);
 
   const handleStageChange = async (stageId: string) => {
     const targetStage = stages.find((s) => s.id === stageId);
@@ -190,6 +219,7 @@ export function CrmLeadDetailsPage({
               activeTab={activeTab}
               activities={activities}
               lead={lead}
+              linkedRecords={linkedRecords}
               stages={stages}
               onCreateActivity={onCreateActivity}
               vehicleOptions={vehicleOptions}

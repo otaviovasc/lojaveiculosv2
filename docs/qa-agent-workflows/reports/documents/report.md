@@ -56,10 +56,12 @@
 
 - Discovery gate: approved.
 - Implementation gate: approved after DOC-007 re-review.
-- Required follow-up: none.
+- Required follow-up: none. The follow-up pass also verified documents mobile
+  action spacing and linked client/sales document surfaces.
 
 ## Final State
 
 - Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
-- Deferred findings: deeper vehicle/client/sales/settings document surface audits beyond links visible from this document center were not expanded after the center flow fixes.
+- Deferred findings: none for the tracked campaign follow-ups. Deeper settings
+  document surfaces remain outside this pass.
 - Notes: no real external storage/provider calls were made; local `upload.local` descriptors are treated as successful mock uploads only in the frontend helper.

@@ -45,6 +45,19 @@ test.describe("documents center QA flow", () => {
       permissions: documentOwnerPermissions,
       persona: qaPersonas.owner,
     });
+    await page.route(
+      /https:\/\/[^/]+\.r2\.cloudflarestorage\.com\/.*/,
+      async (route) => {
+        if (route.request().method() !== "PUT") {
+          await route.continue();
+          return;
+        }
+        await route.fulfill({
+          headers: { etag: '"qa-document-upload"' },
+          status: 200,
+        });
+      },
+    );
     await page.goto("/documents");
 
     await expect(page.getByRole("heading", { name: "Geral" })).toBeVisible();
@@ -53,9 +66,11 @@ test.describe("documents center QA flow", () => {
     ).toBeVisible();
     await expect(page.locator("tbody tr").first()).toBeVisible();
     await page.setViewportSize({ height: 900, width: 1100 });
-    await expect(
-      page.getByRole("columnheader", { name: "Unidade" }),
-    ).toBeHidden();
+    const unitColumnHeader = page
+      .locator("thead th.documents-table-wide-only")
+      .filter({ hasText: "Unidade" });
+    await expect(unitColumnHeader).toHaveCount(1);
+    await expect(unitColumnHeader).toBeHidden();
     await expect(
       page.getByRole("columnheader", { name: "Tipo" }),
     ).toBeVisible();

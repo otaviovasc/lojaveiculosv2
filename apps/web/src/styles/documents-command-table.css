@@ -3,6 +3,16 @@
   gap: 0.55rem;
 }
 
+.documents-table-wide-only {
+  display: none !important;
+}
+
+@media (min-width: 1200px) {
+  .documents-table-wide-only {
+    display: table-cell !important;
+  }
+}
+
 .documents-list-item {
   align-items: center;
   background: var(--color-app);

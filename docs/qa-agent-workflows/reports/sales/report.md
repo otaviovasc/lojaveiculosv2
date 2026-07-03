@@ -24,9 +24,9 @@
 - UI issues: seeded closed sale incorrectly rendered `Total em Pagamentos` as
   `R$ 0,00` and a full remaining balance; fixed. Post-review coverage now
   asserts the closed Hilux detail renders `Total em Pagamentos` and
-  `Total Lançado` as `R$ 146.500,00`, with no remaining balance. Some sales
-  fields still show raw linked lead/unit UUIDs when context-started from another
-  module.
+  `Total Lançado` as `R$ 146.500,00`, with no remaining balance. The tracked
+  follow-up for raw linked lead/unit values is now closed with readable lead,
+  unit, and seller pickers plus mobile-safe linked details.
 - Backend/API gaps: no API route failure found. The local seed payment rows
   missed `principal_cents`, so the API returned paid payments with zero
   principal.
@@ -40,11 +40,11 @@
 
 ## Findings
 
-| ID        | Severity | Status   | Route               | Owner | Evidence                                      | Reviewer |
-| --------- | -------- | -------- | ------------------- | ----- | --------------------------------------------- | -------- |
-| SALES-001 | High     | verified | `/dashboard#/sales` | sales | `05-closed-sale-review.png`, `sales-list.png` | approved |
-| SALES-002 | Medium   | deferred | `/dashboard#/sales` | sales | `12-mobile-sales.png`, `13-mobile-menu.png`   | accepted |
-| SHUI-004  | Low      | deferred | `/dashboard#/sales` | sales | `12-mobile-sales.png`, `13-mobile-menu.png`   | Epicurus |
+| ID        | Severity | Status   | Route               | Owner | Evidence                                          | Reviewer |
+| --------- | -------- | -------- | ------------------- | ----- | ------------------------------------------------- | -------- |
+| SALES-001 | High     | verified | `/dashboard#/sales` | sales | `05-closed-sale-review.png`, `sales-list.png`     | approved |
+| SALES-002 | Medium   | verified | `/dashboard#/sales` | sales | `sales-ready-review.png`, `sales-mobile-menu.png` | closed   |
+| SHUI-004  | Low      | verified | `/dashboard#/sales` | sales | `sales-mobile-menu.png`                           | closed   |
 
 SALES-001: Closed Hilux sale showed paid payments as `R$ 0,00`, leaving the
 review and summary panels in a contradictory state. Fixed by adding
@@ -56,15 +56,12 @@ and `Total Lançado` both render `R$ 146.500,00`, asserts no remaining balance i
 shown, and refreshes `05-closed-sale-review.png` with post-fix evidence.
 
 SALES-002: Sales can consume linked lead/unit context and lifecycle actions
-work, but the sales workspace still lacks rich in-place pickers/deep links for
-lead, vehicle, generated documents, commissions, and finance records. Deferred
-because this crosses sales, inventory, CRM, documents, and finance surfaces.
+work. The follow-up now adds in-place lead, vehicle-unit, and seller pickers,
+fallback labels for existing IDs, buyer/listing snapshot hydration, and quick
+links back to clients and inventory.
 
-SHUI-004 disposition: accepted as a low sales follow-up and tracked under
-SALES-002, not reassigned. The current sales UI still exposes readonly linked
-lead/unit UUID fragments in narrow/mobile contexts; resolving this cleanly
-belongs with the richer linked-entity display/picker work rather than a local
-one-off truncation patch.
+SHUI-004 disposition: closed with SALES-002. Narrow/mobile sales contexts now
+show readable linked labels and details instead of UUID-like truncation.
 
 ## Implementation
 
@@ -72,6 +69,8 @@ one-off truncation patch.
   - `docker/postgres/seed/product-test-user.sql`
   - `apps/web/src/features/sales/SalesModule.tsx`
   - `apps/web/src/features/sales/SaleWorkspace.tsx`
+  - `apps/web/src/features/sales/SaleContextSection.tsx`
+  - `apps/web/src/features/sales/saleContextOptions.ts`
   - `apps/web/src/features/sales/salesModel.ts`
   - `tests/e2e/sales-flow.spec.ts`
 - Backend/API contracts changed: none.
@@ -94,6 +93,9 @@ one-off truncation patch.
   - Post-review rerun refreshed `05-closed-sale-review.png`; it now shows the
     closed Hilux detail with `Total em Pagamentos` and `Total Lançado` at
     `R$ 146.500,00` and no `Saldo devedor`.
+  - Follow-up rerun:
+    `PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_BASE_URL=http://127.0.0.1:5174 PLAYWRIGHT_SKIP_WEB_SERVER=true pnpm exec playwright test tests/e2e/sales-flow.spec.ts --project=chromium`
+    passed on the isolated local stack.
 - `pnpm run validate:commit`: passed.
 - Other checks:
   - `pnpm exec prettier --check` passed for touched TS/TSX/report files.
@@ -102,13 +104,12 @@ one-off truncation patch.
 ## Reviewer Feedback
 
 - Discovery gate: approved by Epicurus.
-- Implementation gate: approved after the SALES-001 regression assertion and
-  SHUI-004 disposition follow-up.
-- Required follow-up: decide owner and scope for richer sales links/pickers
-  across CRM, inventory, documents, commissions, and finance.
+- Implementation gate: approved after the SALES-001 regression assertion;
+  SHUI-004/SALES-002 is now closed by the tracked follow-up pass.
+- Required follow-up: none.
 
 ## Final State
 
 - Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
-- Deferred findings: SALES-002.
+- Deferred findings: none.
 - Notes: Browser plugin is not available for this campaign; Playwright was used.

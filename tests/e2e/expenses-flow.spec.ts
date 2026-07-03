@@ -1,3 +1,4 @@
+import { writeFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import { saveQaScreenshot } from "./support/artifacts";
 import { installLocalSession, loginAs } from "./support/auth";
@@ -17,9 +18,11 @@ test.describe("expenses flow", () => {
     const diagnostics = collectPageDiagnostics(page);
     const uniqueName = `Gasto QA ${Date.now()}`;
     const editedName = `${uniqueName} editado`;
+    const receiptTitle = `Recibo ${uniqueName}`;
 
     await setQaViewport(page, "desktop");
     await loginAs(page, qaPersonas.owner, testInfo);
+    await mockSignedStorageUploads(page);
     await page.goto("/expenses");
 
     await expect(
@@ -31,11 +34,12 @@ test.describe("expenses flow", () => {
     await saveQaScreenshot(page, testInfo, "expenses-desktop-default");
 
     await selectFilter(page, "Janela", "Todos");
-    await expect(page.getByText(/Revis[aã]o Audi A4/)).toBeVisible();
-    await expect(page.getByText("Preparação")).toBeVisible();
+    const audiRow = page.getByRole("row", { name: /Revis[aã]o Audi A4/ });
+    await expect(audiRow).toBeVisible();
+    await expect(audiRow).toContainText("Preparação");
 
     await page.getByPlaceholder(/Descri[cç][aã]o ou categoria/i).fill("Audi");
-    await expect(page.getByText(/Revis[aã]o Audi A4/)).toBeVisible();
+    await expect(audiRow).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-filtered-audi");
 
     await page.getByPlaceholder(/Descri[cç][aã]o ou categoria/i).fill("");
@@ -59,10 +63,43 @@ test.describe("expenses flow", () => {
     await expect(createdRow).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-created");
 
+    const receiptPath = testInfo.outputPath("expenses-receipt.pdf");
+    await writeFile(
+      receiptPath,
+      Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"),
+    );
     await createdRow.getByRole("button", { name: /Anexar recibo/i }).click();
     await expect(page.getByText(/Comprovante opcional/i)).toBeVisible();
+    const receiptDialog = page.getByRole("dialog", {
+      name: /Editar lan[cç]amento/i,
+    });
+    await receiptDialog
+      .locator('input[type="file"]')
+      .setInputFiles(receiptPath);
+    await receiptDialog.getByLabel("Título").fill(receiptTitle);
     await saveQaScreenshot(page, testInfo, "expenses-receipt-modal");
-    await page.getByRole("button", { exact: true, name: "Cancelar" }).click();
+    const uploadResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/finance/entries/") &&
+        response.url().includes("/documents/uploads") &&
+        response.request().method() === "POST",
+    );
+    const attachResponse = page.waitForResponse(
+      (response) =>
+        response.url().includes("/api/v1/finance/entries/") &&
+        response.url().includes("/documents") &&
+        !response.url().includes("/uploads") &&
+        response.request().method() === "POST",
+    );
+    await receiptDialog
+      .getByRole("button", { name: /Salvar lan[cç]amento/i })
+      .click();
+    await expect((await uploadResponse).status()).toBe(201);
+    await expect((await attachResponse).status()).toBe(201);
+    await expect(
+      createdRow.getByText(`Comprovante: ${receiptTitle}`),
+    ).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "expenses-receipt-attached");
 
     await createdRow.getByRole("button", { name: /Editar/i }).click();
     await page.getByLabel(/Identifica[cç][aã]o/i).fill(editedName);
@@ -86,6 +123,12 @@ test.describe("expenses flow", () => {
     await page.goto("/expenses");
     await expect(
       page.getByRole("heading", { name: "Gastos e contas" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByLabel("Lançamentos móveis")
+        .getByLabel(/Lançamento/)
+        .first(),
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-mobile");
 
@@ -112,4 +155,20 @@ async function selectFilter(page: Page, label: string, nextValue: string) {
   const field = page.locator("label").filter({ hasText: label }).first();
   await field.getByRole("button", { name: label }).click();
   await page.getByRole("option", { name: nextValue }).click();
+}
+
+async function mockSignedStorageUploads(page: Page) {
+  await page.route(
+    /https:\/\/[^/]+\.r2\.cloudflarestorage\.com\/.*/,
+    async (route) => {
+      if (route.request().method() !== "PUT") {
+        await route.continue();
+        return;
+      }
+      await route.fulfill({
+        headers: { etag: '"qa-finance-upload"' },
+        status: 200,
+      });
+    },
+  );
 }

@@ -49,10 +49,10 @@ export function DocumentsTable({
             {showSelect ? <th className="px-3 py-3.5 w-10" /> : null}
             <th className="px-4 py-3.5">Documento</th>
             <th className="hidden px-4 py-3.5 lg:table-cell">Origem</th>
-            <th className="hidden px-4 py-3.5 xl:table-cell">Unidade</th>
+            <th className="documents-table-wide-only px-4 py-3.5">Unidade</th>
             <th className="px-4 py-3.5">Tipo</th>
             <th className="px-4 py-3.5">Status</th>
-            <th className="hidden px-4 py-3.5 xl:table-cell">Enviado</th>
+            <th className="documents-table-wide-only px-4 py-3.5">Enviado</th>
             <th className="hidden px-4 py-3.5 2xl:table-cell">Tamanho</th>
             <th className="sticky right-0 z-10 bg-panel px-4 py-3.5 text-right">
               Ações
@@ -114,7 +114,7 @@ export function DocumentsTable({
                 </td>
 
                 {/* Unidade (placa Mercosul) */}
-                <td className="hidden px-4 py-3 whitespace-nowrap align-middle xl:table-cell">
+                <td className="documents-table-wide-only px-4 py-3 whitespace-nowrap align-middle">
                   <div className="flex items-center h-10">
                     {vehicle?.plate ? (
                       <MercosulPlateBadge plate={vehicle.plate} />
@@ -147,7 +147,7 @@ export function DocumentsTable({
                 </td>
 
                 {/* Enviado */}
-                <td className="hidden px-4 py-3 whitespace-nowrap text-xs align-middle xl:table-cell">
+                <td className="documents-table-wide-only px-4 py-3 whitespace-nowrap text-xs align-middle">
                   <div className="font-black text-app-text">
                     {formatDateTime(document.uploadedAt)}
                   </div>

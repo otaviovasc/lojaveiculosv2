@@ -1,26 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { saveQaScreenshot } from "./support/artifacts";
 import { loginAs } from "./support/auth";
 import {
   collectPageDiagnostics,
   expectNoPageCrashes,
 } from "./support/diagnostics";
-import { qaPersonas } from "./support/personas";
+import { accountHeaders, qaPersonas } from "./support/personas";
 import { setQaViewport } from "./support/viewports";
-
-const availableSaleContext = new URLSearchParams({
-  buyerEmail: "qa.sales@example.test",
-  buyerName: "Cliente QA Sales",
-  buyerPhone: "(11) 97777-0000",
-  leadId: "20000000-0000-4000-8000-000000000001",
-  listingId: "10000000-0000-4000-8000-000000000001",
-  listingTitle: "Audi A4 Prestige Plus 2.0 TFSI 2022",
-  priceCents: "18990000",
-  unitId: "11000000-0000-4000-8000-000000000001",
-  unitLabel: "LV-A4-PRETO",
-});
-
-const seedOwnerUserId = "02020202-0202-4202-8202-020202020202";
 
 test.use({ baseURL: process.env.QA_BASE_URL ?? "http://127.0.0.1:5173" });
 
@@ -76,13 +62,21 @@ test.describe("Sales QA flow", () => {
     await expect(page.getByText("Nenhuma venda encontrada")).toBeVisible();
     await saveQaScreenshot(page, testInfo, "sales-search-empty");
 
+    const availableSaleContext = await buildAvailableSaleContext(page);
     await page.goto(
-      `/dashboard?qa=${Date.now()}#/sales?${availableSaleContext.toString()}`,
+      `/dashboard?qa=${Date.now()}#/sales?${availableSaleContext}`,
     );
     await expect(page.getByLabel("Nome do Comprador")).toHaveValue(
       "Cliente QA Sales",
     );
-    await page.getByLabel("Vendedor Responsável").fill(seedOwnerUserId);
+    const sellerPicker = page.getByLabel("Vendedor Responsável");
+    const sellerOption = sellerPicker.locator("option").filter({
+      hasNotText: "Selecione o vendedor",
+    });
+    await expect(sellerOption.first()).toBeAttached();
+    const sellerOptionValue = await sellerOption.first().getAttribute("value");
+    expect(sellerOptionValue).toBeTruthy();
+    await sellerPicker.selectOption(sellerOptionValue!);
 
     await page
       .locator(".sales-wizard-step")
@@ -137,3 +131,106 @@ test.describe("Sales QA flow", () => {
     expectNoPageCrashes(diagnostics);
   });
 });
+
+async function buildAvailableSaleContext(page: Page) {
+  let item = await loadFirstAvailableSaleUnit(page);
+  if (!item) {
+    item = await createAvailableSaleUnit(page);
+  }
+  expect(item, "sales flow requires an available inventory unit").toBeTruthy();
+  expect(
+    item?.unit,
+    "available inventory row should include unit",
+  ).toBeTruthy();
+
+  const params = new URLSearchParams({
+    buyerEmail: "qa.sales@example.test",
+    buyerName: "Cliente QA Sales",
+    buyerPhone: "(11) 97777-0000",
+    leadId: "20000000-0000-4000-8000-000000000001",
+    listingId: item!.listing.id,
+    listingTitle: item!.listing.title,
+    unitId: item!.unit!.id,
+    unitLabel:
+      item!.unit!.stockNumber ||
+      item!.unit!.plate ||
+      item!.unit!.id.slice(0, 8),
+  });
+  if (item!.listing.priceCents !== null) {
+    params.set("priceCents", String(item!.listing.priceCents));
+  }
+  return params.toString();
+}
+
+async function loadFirstAvailableSaleUnit(page: Page) {
+  const response = await page.request.get(
+    "/api/v1/inventory/units?status=available&limit=20",
+    {
+      headers: inventoryRequestHeaders(),
+    },
+  );
+  expect(response.ok()).toBe(true);
+  const payload = (await response.json()) as {
+    items: SaleUnitContext[];
+  };
+  return payload.items.find((candidate) => candidate.unit) ?? null;
+}
+
+async function createAvailableSaleUnit(page: Page): Promise<SaleUnitContext> {
+  const unique = Date.now();
+  const listingResponse = await page.request.post(
+    "/api/v1/inventory/listings",
+    {
+      data: {
+        description: "Veiculo criado pelo fluxo QA de vendas.",
+        fuelType: "flex",
+        mileageKm: 12000,
+        modelYear: 2024,
+        plate: null,
+        priceCents: 18990000,
+        status: "published",
+        title: `QA Sales Vehicle ${unique}`,
+        transmission: "automatic",
+      },
+      headers: inventoryRequestHeaders(),
+    },
+  );
+  expect(listingResponse.status()).toBe(201);
+  const listingPayload = (await listingResponse.json()) as SaleUnitContext;
+
+  const unitResponse = await page.request.put(
+    `/api/v1/inventory/listings/${listingPayload.listing.id}/unit`,
+    {
+      data: {
+        colorName: "black",
+        plate: null,
+        stockNumber: `QA-SALE-${unique}`,
+        vin: null,
+      },
+      headers: inventoryRequestHeaders(),
+    },
+  );
+  expect(unitResponse.ok()).toBe(true);
+  const unitPayload = (await unitResponse.json()) as {
+    listing: SaleUnitContext["listing"];
+    units: NonNullable<SaleUnitContext["unit"]>[];
+  };
+  const unit = unitPayload.units.at(-1);
+  expect(unit, "created sales fixture should include a unit").toBeTruthy();
+  return {
+    listing: unitPayload.listing,
+    unit,
+  };
+}
+
+function inventoryRequestHeaders() {
+  return {
+    ...accountHeaders(qaPersonas.owner),
+    "x-store-slug": qaPersonas.owner.storeSlug ?? "test-store",
+  };
+}
+
+type SaleUnitContext = {
+  listing: { id: string; priceCents: number | null; title: string };
+  unit?: { id: string; plate: string | null; stockNumber: string | null };
+};

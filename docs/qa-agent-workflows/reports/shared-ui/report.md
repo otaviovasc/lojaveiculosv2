@@ -38,10 +38,10 @@
 - UI issues:
   - `SHUI-001`: inventory columns menu clipped/offscreen on mobile.
   - `SHUI-002`: page-builder empty state copy was misaligned.
-  - `SHUI-003`: documents mobile bottom action labels run together; likely
-    documents-lane CSS/action-bar issue, not a shared primitive.
+  - `SHUI-003`: documents mobile bottom action labels run together; closed in
+    the follow-up by giving top-bar actions a mobile grid and wrapping labels.
   - `SHUI-004`: sales mobile readonly UUID-like values truncate in context
-    fields; likely sales-lane field presentation issue.
+    fields; closed with the sales linked picker follow-up.
 - Backend/API gaps: none found for shared-ui scope.
 - Permission/audit concerns: none. Testing was local-only and did not mutate
   staging, production, Railway, providers, billing, or customer data.
@@ -58,12 +58,12 @@
 
 ## Findings
 
-| ID       | Severity | Status   | Route                   | Owner     | Evidence                                                                | Reviewer |
-| -------- | -------- | -------- | ----------------------- | --------- | ----------------------------------------------------------------------- | -------- |
-| SHUI-001 | High     | verified | `/inventory` mobile     | shared-ui | `inventory-columns-dropdown-mobile.png`, `inventory-columns-mobile.png` | approved |
-| SHUI-002 | Medium   | verified | `/page-builder` desktop | shared-ui | `page-builder-desktop.png`, `page-builder-empty-state.png`              | approved |
-| SHUI-003 | Medium   | assigned | `/documents` mobile     | documents | `documents-mobile.png`                                                  | pending  |
-| SHUI-004 | Low      | assigned | `/sales` mobile         | sales     | `sales-mobile.png`                                                      | pending  |
+| ID       | Severity | Status   | Route                   | Owner     | Evidence                                                                                | Reviewer |
+| -------- | -------- | -------- | ----------------------- | --------- | --------------------------------------------------------------------------------------- | -------- |
+| SHUI-001 | High     | verified | `/inventory` mobile     | shared-ui | `inventory-columns-dropdown-mobile.png`, `inventory-columns-mobile.png`                 | approved |
+| SHUI-002 | Medium   | verified | `/page-builder` desktop | shared-ui | `page-builder-desktop.png`, `page-builder-empty-state.png`                              | approved |
+| SHUI-003 | Medium   | verified | `/documents` mobile     | documents | `/tmp/lojaveiculosv2-qa/agent-qa-integration/documents-flow/documents-mobile-after.png` | closed   |
+| SHUI-004 | Low      | verified | `/sales` mobile         | sales     | `/tmp/lojaveiculosv2-qa/agent-qa-integration/sales-flow/sales-mobile-menu.png`          | closed   |
 
 ## Implementation
 
@@ -103,16 +103,12 @@
 
 - Discovery gate: approved
 - Implementation gate: approved
-- Required follow-up:
-  - Documents lane should handle `SHUI-003` unless reassigned.
-  - Sales lane should handle `SHUI-004` unless reassigned.
+- Required follow-up: none.
 
 ## Final State
 
 - Ready for orchestrator merge: yes, merged to `agent/qa-integration`
-- Deferred findings:
-  - `SHUI-003` documents mobile action-label spacing, assigned to documents.
-  - `SHUI-004` sales mobile long-value truncation, assigned to sales.
+- Deferred findings: none.
 - Notes:
   - Shared-ui blockers found in this pass are fixed and covered by component
     and Playwright regression tests.

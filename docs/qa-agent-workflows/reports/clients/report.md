@@ -14,7 +14,10 @@
 ## Discovery
 
 - Routes tested: `/dashboard#/crm?surface=leads`
-- Current behavior: clients open through the dashboard sidebar, render CRM pipelines, support search/filter, kanban/list view toggles, create modal, detail view, detail stage updates, and detail tabs.
+- Current behavior: clients open through the dashboard sidebar, render CRM
+  pipelines, support search/filter, kanban/list view toggles, create modal,
+  detail view, detail stage updates, detail tabs, and linked sales/documents
+  for seeded customer records.
 - Console/API errors: no page crashes in the happy path; forced `/api/v1/crm/leads` failure renders the generic API error with request id.
 - UI issues: filtered kanban had no global empty state, mobile list view squeezed the desktop table, several compact controls lacked accessible names, client detail exposed nonfunctional favorite/delete/AI/upload/chat actions, and visible copy mixed raw enums or unaccented Portuguese.
 - Backend/API gaps: no backend fix was required. Local list, create, detail, stage update, and activity creation calls worked with seed data.
@@ -25,15 +28,15 @@
 
 ## Findings
 
-| ID          | Severity | Status   | Route                               | Owner          | Evidence                                                | Reviewer |
-| ----------- | -------- | -------- | ----------------------------------- | -------------- | ------------------------------------------------------- | -------- |
-| CLIENTS-001 | High     | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-list-empty-filter.png`                         | approved |
-| CLIENTS-002 | High     | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-list-mobile.png`                               | approved |
-| CLIENTS-003 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-detail-created.png`, `clients-detail-tabs.png` | approved |
-| CLIENTS-004 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-list-api-error.png`                            | approved |
-| CLIENTS-005 | Low      | deferred | client detail documents/sales links | integration    | `clients-detail-tabs.png`                               | accepted |
-| CLIENTS-006 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `agent-qa-clients-review/clients-list-mobile.png`       | approved |
-| CLIENTS-007 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `agent-qa-clients-review/clients-list-mobile.png`       | approved |
+| ID          | Severity | Status   | Route                               | Owner          | Evidence                                                   | Reviewer |
+| ----------- | -------- | -------- | ----------------------------------- | -------------- | ---------------------------------------------------------- | -------- |
+| CLIENTS-001 | High     | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-list-empty-filter.png`                            | approved |
+| CLIENTS-002 | High     | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-list-mobile.png`                                  | approved |
+| CLIENTS-003 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-detail-created.png`, `clients-detail-tabs.png`    | approved |
+| CLIENTS-004 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `clients-list-api-error.png`                               | approved |
+| CLIENTS-005 | Low      | verified | client detail documents/sales links | integration    | `clients-linked-sales.png`, `clients-linked-documents.png` | closed   |
+| CLIENTS-006 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `agent-qa-clients-review/clients-list-mobile.png`          | approved |
+| CLIENTS-007 | Medium   | verified | `/dashboard#/crm?surface=leads`     | clients worker | `agent-qa-clients-review/clients-list-mobile.png`          | approved |
 
 ## Implementation
 
@@ -51,6 +54,7 @@
   - `apps/web/src/features/crm/CrmLeadDetailsTabsReunioes.tsx`
   - `apps/web/src/features/crm/CrmLeadDetailsTabsTarefas.tsx`
   - `apps/web/src/features/crm/CrmLeadDetailsTabsVisao.tsx`
+  - `apps/web/src/features/crm/crmLeadLinkedRecords.ts`
   - `apps/web/src/features/crm/CrmLeadTable.tsx`
   - `apps/web/src/features/crm/CrmListView.tsx`
   - `apps/web/src/features/crm/CrmPipelineToolbar.tsx`
@@ -66,6 +70,7 @@
   - `apps/web/src/features/crm/crmPipelineModels.test.ts`
   - `playwright.config.ts`
   - `tests/e2e/clients-flow.spec.ts`
+  - `tests/e2e/clients-linked-records.spec.ts`
 - Backend/API contracts changed: none
 - DB/schema changes: none
 - Seed changes: none
@@ -82,6 +87,9 @@
 - Feature Playwright flow:
   - `QA_BRANCH_SLUG=agent-qa-clients QA_FEATURE_SLUG=clients PLAYWRIGHT_BASE_URL=http://127.0.0.1:5200 PLAYWRIGHT_SKIP_WEB_SERVER=true pnpm exec playwright test tests/e2e/clients-flow.spec.ts --project=chromium`
   - Reviewer fix rerun: `QA_BRANCH_SLUG=agent-qa-clients-review QA_FEATURE_SLUG=clients PLAYWRIGHT_BASE_URL=http://127.0.0.1:5201 PLAYWRIGHT_SKIP_WEB_SERVER=true pnpm exec playwright test tests/e2e/clients-flow.spec.ts --project=chromium`
+  - Linked-record follow-up:
+    `PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_BASE_URL=http://127.0.0.1:5174 PLAYWRIGHT_SKIP_WEB_SERVER=true pnpm exec playwright test tests/e2e/clients-linked-records.spec.ts --project=chromium`
+    passed with seeded Carla/Hilux sale and documents.
 - `pnpm run validate:commit`: passed
 - Other checks: local DB push/clean/seed completed with `COMPOSE_PROJECT_NAME=lojaveiculosv2` because fixed compose container names were already running from the main checkout. Reviewer fix rerun used a refreshed local seed and local trusted-header auth with Clerk verifier disabled for the API process.
 
@@ -90,13 +98,12 @@
 - Discovery gate: approved.
 - Implementation gate: approved by Boyle after CLIENTS-006 and CLIENTS-007 were fixed in follow-up.
 - Integration gate: Darwin re-review approved the UX fixes and identified only the expected `playwright.config.ts` merge conflict; orchestrator resolved it by preserving `PLAYWRIGHT_SKIP_WEB_SERVER`.
-- Required follow-up: decide whether linked sales/documents should be backed by CRM client detail APIs in this migration phase.
+- Required follow-up: none.
 
 ## Final State
 
 - Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
-- Deferred findings:
-  - CLIENTS-005: linked sales/documents are not yet integrated in the current client detail tabs; the UI now presents honest empty states instead of upload controls without an implementation.
+- Deferred findings: none.
 - Notes:
   - Screenshots captured: `clients-list-kanban-desktop.png`, `clients-list-search-filter.png`, `clients-list-empty-filter.png`, `clients-list-table-desktop.png`, `clients-create-modal.png`, `clients-detail-created.png`, `clients-detail-tabs.png`, `clients-list-mobile.png`, `clients-permission-restricted.png`, `clients-list-api-error.png`.
   - Boyle review fixes verified in `/tmp/lojaveiculosv2-qa/agent-qa-clients-review/clients/clients-list-mobile.png`: mobile toolbar wraps instead of clipping `Configurar`, and relative-date labels render as `atrás`.

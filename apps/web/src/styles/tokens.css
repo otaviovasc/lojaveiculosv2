@@ -32,6 +32,8 @@
   --color-accent: #e11f26;
   --color-accent-strong: #b81820;
   --color-accent-soft: #fce8e9;
+  --color-accent-soft-foreground: #151515;
+  --color-accent-soft-muted: #4a4444;
   --color-app-elevated: #e8e3e2;
   --color-blue-start: #182ab8;
   --color-blue-end: #182ab8;
@@ -52,6 +54,7 @@
   --color-header-surface: rgb(244 239 238 / 0.88);
   --color-overlay: rgb(21 21 21 / 0.42);
   --color-primary: #151515;
+  --color-primary-contrast: #ffffff;
 
   /* App spacing tokens. Keep names outside Tailwind's --spacing-* namespace. */
   --app-space-xs: 5px;
@@ -83,6 +86,8 @@
   --color-accent: #e11f26;
   --color-accent-strong: #b81820;
   --color-accent-soft: #fce8e9;
+  --color-accent-soft-foreground: #151515;
+  --color-accent-soft-muted: #4a4444;
   --color-app-elevated: #4a4444;
   --color-blue-start: #182ab8;
   --color-blue-soft: rgba(24, 42, 184, 0.14);
@@ -97,6 +102,7 @@
   --color-header-surface: rgb(42 36 36 / 0.9);
   --color-overlay: rgb(0 0 0 / 0.65);
   --color-primary: #f4efee;
+  --color-primary-contrast: #151515;
   --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.4);
 
   /* App spacing tokens. Keep names outside Tailwind's --spacing-* namespace. */
@@ -127,6 +133,8 @@
   --color-accent: var(--color-accent);
   --color-accent-strong: var(--color-accent-strong);
   --color-accent-soft: var(--color-accent-soft);
+  --color-accent-soft-foreground: var(--color-accent-soft-foreground);
+  --color-accent-soft-muted: var(--color-accent-soft-muted);
   --color-brand: var(--color-accent);
   --color-brand-dark: var(--color-accent-strong);
   --color-blue-soft: var(--color-blue-soft);
@@ -139,7 +147,7 @@
   --color-destructive: var(--color-danger);
   --color-destructive-foreground: var(--color-inverse);
   --color-primary: var(--color-primary);
-  --color-primary-foreground: var(--color-inverse);
+  --color-primary-foreground: var(--color-primary-contrast);
   --color-secondary: var(--color-app-elevated);
   --color-secondary-foreground: var(--color-text);
   --color-success: var(--color-green-end);

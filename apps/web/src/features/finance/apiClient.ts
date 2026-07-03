@@ -19,7 +19,9 @@ import {
   financeRoutes,
   type ListFinanceEntriesInput,
 } from "./apiRoutes";
-import { cleanJson, readJson, readUpload, type JsonBody } from "./apiJson";
+import { cleanJson, readJson, type JsonBody } from "./apiJson";
+import { mergeEntryMetadata } from "./financeBillsActions";
+import { uploadFinanceDocumentObject } from "./financeDocumentUpload";
 
 export {
   createFinanceEndpoint,
@@ -148,11 +150,7 @@ export function createFinanceApi({
       if (!documentFile) return bundle;
 
       const upload = await requestDocumentUpload(bundle.entry.id, documentFile);
-      await fetch(upload.uploadUrl, {
-        body: documentFile,
-        method: upload.uploadMethod ?? "PUT",
-        ...(upload.uploadHeaders ? { headers: upload.uploadHeaders } : {}),
-      }).then(readUpload);
+      await uploadFinanceDocumentObject(upload, documentFile, fetch);
       await attachDocument(bundle.entry.id, {
         fileName: documentFile.name,
         fileSizeBytes: documentFile.size,
@@ -162,7 +160,17 @@ export function createFinanceApi({
         title: documentTitle || documentFile.name,
       });
 
-      return bundle;
+      return patchJson<FinanceEntryBundle>(
+        financeRoutes.entry(bundle.entry.id, baseUrl),
+        {
+          metadata: mergeEntryMetadata(input.metadata, {
+            receipt: {
+              fileName: documentFile.name,
+              title: documentTitle || documentFile.name,
+            },
+          }),
+        },
+      );
     },
     createRecurringEntry: (input) =>
       postJson<FinanceRecurringEntry>(

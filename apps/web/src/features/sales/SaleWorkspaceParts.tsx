@@ -1,125 +1,17 @@
-import {
-  Activity,
-  Banknote,
-  Car,
-  Check,
-  Coins,
-  FileText,
-  HelpCircle,
-  Plus,
-  User,
-} from "lucide-react";
+import { Banknote, Check, Coins, FileText, Plus } from "lucide-react";
 import {
   defaultRequiredDocumentKinds,
   formatCents,
   parseCurrencyInput,
   paymentPrincipalTotal,
   requiredDocumentKinds,
-  saleMissingFields,
 } from "./salesModel";
 import { PaymentRow, newPayment } from "./SalePaymentRow";
 import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import type { SaleRecord } from "./types";
+export { ContextSection } from "./SaleContextSection";
 
 type UpdateSale = (updater: (sale: SaleRecord) => SaleRecord) => void;
-
-export function ContextSection({ sale, update }: SectionProps) {
-  return (
-    <SaleFormSection
-      title="Contexto da Venda"
-      icon={<Activity className="size-4.5 text-accent" />}
-    >
-      <SaleField label="Lead Vinculado">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            update((draft) => ({
-              ...draft,
-              leadId: event.target.value || null,
-            }))
-          }
-          placeholder="Selecione ou informe o lead vinculado"
-          value={sale.leadId ?? ""}
-        />
-      </SaleField>
-      <SaleField label="Unidade do Veículo">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            update((draft) => ({
-              ...draft,
-              unitId: event.target.value || null,
-            }))
-          }
-          placeholder="Selecione a unidade do veículo"
-          value={sale.unitId ?? ""}
-        />
-      </SaleField>
-      <SaleField label="Nome do Comprador">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            updateBuyer(sale, update, "name", event.target.value)
-          }
-          placeholder="Nome completo do cliente"
-          value={String(sale.buyerSnapshot.name ?? "")}
-        />
-      </SaleField>
-      <SaleField label="Telefone do Comprador">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            updateBuyer(sale, update, "phone", event.target.value)
-          }
-          placeholder="(00) 00000-0000"
-          value={String(sale.buyerSnapshot.phone ?? "")}
-        />
-      </SaleField>
-      <SaleField label="E-mail do Comprador">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            updateBuyer(sale, update, "email", event.target.value)
-          }
-          placeholder="email@cliente.com.br"
-          value={String(sale.buyerSnapshot.email ?? "")}
-        />
-      </SaleField>
-      <SaleField label="Vendedor Responsável">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            update((draft) => ({
-              ...draft,
-              sellerUserId: event.target.value || null,
-            }))
-          }
-          placeholder="Nome ou usuário do vendedor"
-          value={sale.sellerUserId ?? ""}
-        />
-      </SaleField>
-
-      {typeof sale.listingSnapshot?.title === "string" &&
-        sale.listingSnapshot.title && (
-          <div className="md:col-span-2 sales-vehicle-preview">
-            <div className="sales-vehicle-preview-icon">
-              <Car className="size-5" />
-            </div>
-            <div className="sales-vehicle-preview-details">
-              <span className="sales-vehicle-preview-title">
-                {String(sale.listingSnapshot.title)}
-              </span>
-              <span className="sales-vehicle-preview-subtitle">
-                {sale.listingSnapshot.unitLabel
-                  ? `Unidade: ${String(sale.listingSnapshot.unitLabel)}`
-                  : "Unidade não vinculada"}
-              </span>
-            </div>
-          </div>
-        )}
-    </SaleFormSection>
-  );
-}
 
 export function TermsSection({ sale, update }: SectionProps) {
   return (
@@ -312,18 +204,6 @@ export function DocumentsSection({ sale, update }: SectionProps) {
 }
 
 type SectionProps = { sale: SaleRecord; update: UpdateSale };
-
-function updateBuyer(
-  sale: SaleRecord,
-  update: UpdateSale,
-  key: string,
-  value: string,
-) {
-  update(() => ({
-    ...sale,
-    buyerSnapshot: { ...sale.buyerSnapshot, [key]: value },
-  }));
-}
 
 function formatDocumentKindLabel(kind: string): string {
   switch (kind) {

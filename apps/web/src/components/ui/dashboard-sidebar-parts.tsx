@@ -159,7 +159,7 @@ export function DashboardSidebarNavItem<Id extends string>({
       className={
         "group relative flex min-h-9 items-center rounded-lg text-sm transition-all duration-200 cursor-pointer " +
         (active
-          ? "bg-accent border border-accent/25 text-inverse font-black shadow-sm"
+          ? "dashboard-sidebar-nav-item-active border font-black shadow-sm"
           : "text-muted hover:bg-app-elevated/60 hover:text-app-text border border-transparent") +
         " " +
         (collapsed

@@ -1,9 +1,11 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { getContrastColorForText, getTextColorForBackground } from "./colors";
 
 const hex = (value: string) => "#" + value;
+const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
 
 describe("color contrast helpers", () => {
   it("uses dark text on bright solid stage colors", () => {
@@ -35,7 +37,89 @@ describe("color contrast helpers", () => {
 
     expect(contrastRatio(blueText, hex("151515"))).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("keeps selected-state token pairs readable in light and dark themes", () => {
+    const pairs = [
+      {
+        background: "--color-primary",
+        foreground: "--color-primary-contrast",
+        label: "primary selected controls",
+      },
+      {
+        background: "--color-accent",
+        foreground: "--color-inverse",
+        label: "accent selected controls",
+      },
+      {
+        background: "--color-accent-soft",
+        foreground: "--color-accent-strong",
+        label: "soft accent selected labels",
+      },
+      {
+        background: "--color-accent-soft",
+        foreground: "--color-accent-soft-foreground",
+        label: "soft accent selected text",
+      },
+      {
+        background: "--color-accent-soft",
+        foreground: "--color-accent-soft-muted",
+        label: "soft accent selected metadata",
+      },
+    ] as const;
+
+    for (const theme of ["light", "dark"] as const) {
+      const variables = readThemeVariables(theme);
+      for (const pair of pairs) {
+        const foreground = resolveVariable(variables, pair.foreground);
+        const background = resolveVariable(variables, pair.background);
+        expect(
+          contrastRatio(foreground, background),
+          `${pair.label} should pass in ${theme} theme`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it("maps Tailwind primary foreground to the explicit readable contrast token", () => {
+    expect(tokensCss).toContain(
+      "--color-primary-foreground: var(--color-primary-contrast);",
+    );
+  });
 });
+
+function readThemeVariables(theme: "dark" | "light"): Record<string, string> {
+  return {
+    ...readVariablesFromBlock(":root"),
+    ...(theme === "dark"
+      ? readVariablesFromBlock(':root[data-theme="dark"]')
+      : {}),
+  };
+}
+
+function readVariablesFromBlock(selector: string): Record<string, string> {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = tokensCss.match(new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`));
+  if (!match?.[1]) return {};
+  const variables: Record<string, string> = {};
+  for (const line of match[1].split("\n")) {
+    const declaration = line.trim().match(/^(--[\w-]+):\s*([^;]+);/);
+    if (declaration?.[1] && declaration[2]) {
+      variables[declaration[1]] = declaration[2].trim();
+    }
+  }
+  return variables;
+}
+
+function resolveVariable(
+  variables: Record<string, string>,
+  variable: string,
+): string {
+  const value = variables[variable];
+  if (!value) throw new Error(`Missing CSS variable ${variable}`);
+  const reference = value.match(/^var\((--[\w-]+)\)$/);
+  if (!reference?.[1]) return value;
+  return resolveVariable(variables, reference[1]);
+}
 
 function contrastRatio(foreground: string, background: string): number {
   const foregroundLuminance = relativeLuminance(parseHexColor(foreground));

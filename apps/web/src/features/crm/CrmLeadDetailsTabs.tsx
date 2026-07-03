@@ -1,5 +1,8 @@
-import { Calendar, MessageSquare, Upload, Globe } from "lucide-react";
+import { Calendar, FileText, Globe, MessageSquare, Upload } from "lucide-react";
+import { kindLabel, statusLabel } from "../documents/documentLabels";
+import { formatDateTime } from "../documents/documentsWorkspaceModel";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
+import type { CrmLeadLinkedRecordsState } from "./crmLeadLinkedRecords";
 import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
@@ -16,6 +19,7 @@ type Props = {
   activeTab: string;
   lead: ProductCrmLead;
   activities: ProductCrmLeadActivity[];
+  linkedRecords: CrmLeadLinkedRecordsState;
   stages: PipelineStage[];
   onCreateActivity: (
     leadId: string,
@@ -28,6 +32,7 @@ export function CrmLeadDetailsTabs({
   activeTab,
   lead,
   activities,
+  linkedRecords,
   stages,
   onCreateActivity,
   vehicleOptions,
@@ -37,6 +42,7 @@ export function CrmLeadDetailsTabs({
       <CrmLeadDetailsTabsVisao
         activities={activities}
         lead={lead}
+        linkedRecords={linkedRecords}
         stages={stages}
         vehicleOptions={vehicleOptions}
       />
@@ -96,19 +102,7 @@ export function CrmLeadDetailsTabs({
         <div className="flex items-center justify-between">
           <span className="text-sm font-black text-app-text">Arquivos</span>
         </div>
-        <div className="border border-dashed border-line/35 bg-panel/5 rounded-xl p-10 flex flex-col items-center justify-center text-center gap-3">
-          <Upload className="size-7 text-muted" />
-          <span className="text-xs font-bold text-app-text">
-            Nenhum arquivo enviado.
-          </span>
-          <span className="text-xs font-bold text-muted">Máximo 30MB</span>
-        </div>
-        <div className="text-center py-2">
-          <span className="text-xs font-bold text-muted">
-            O envio aparecerá aqui quando a integração de documentos estiver
-            ativa.
-          </span>
-        </div>
+        <LinkedDocumentsPanel linkedRecords={linkedRecords} />
       </div>
     );
   }
@@ -142,6 +136,70 @@ export function CrmLeadDetailsTabs({
       <span className="text-xs font-bold">
         Nenhum registro encontrado nesta aba.
       </span>
+    </div>
+  );
+}
+
+function LinkedDocumentsPanel({
+  linkedRecords,
+}: {
+  linkedRecords: CrmLeadLinkedRecordsState;
+}) {
+  if (linkedRecords.kind === "loading") {
+    return (
+      <div className="border border-line/35 bg-panel/5 rounded-xl p-6 text-xs font-bold text-muted">
+        Carregando documentos vinculados.
+      </div>
+    );
+  }
+
+  if (linkedRecords.kind === "error") {
+    return (
+      <div className="border border-line/35 bg-panel/5 rounded-xl p-6 text-xs font-bold text-muted">
+        {linkedRecords.message}
+      </div>
+    );
+  }
+
+  if (linkedRecords.documents.length === 0) {
+    return (
+      <div className="border border-dashed border-line/35 bg-panel/5 rounded-xl p-10 flex flex-col items-center justify-center text-center gap-3">
+        <Upload className="size-7 text-muted" />
+        <span className="text-xs font-bold text-app-text">
+          Nenhum arquivo vinculado a este cliente ainda.
+        </span>
+        <span className="text-xs font-bold text-muted">
+          Documentos de leads e vendas aparecerão aqui automaticamente.
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3">
+      {linkedRecords.documents.map((document) => (
+        <article
+          className="rounded-xl border border-line/35 bg-panel/10 p-4"
+          key={document.id}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <FileText aria-hidden="true" className="size-4 text-muted" />
+                <strong className="break-words text-sm font-black text-app-text">
+                  {document.title}
+                </strong>
+              </div>
+              <p className="mt-1 text-xs font-bold text-muted">
+                {kindLabel(document.kind)} · {statusLabel(document.status)}
+              </p>
+            </div>
+            <span className="shrink-0 text-xs font-bold text-muted">
+              {formatDateTime(document.uploadedAt)}
+            </span>
+          </div>
+        </article>
+      ))}
     </div>
   );
 }

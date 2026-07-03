@@ -58,7 +58,20 @@ export function FinanceEntryTable({
         </button>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="grid gap-3 md:hidden" aria-label="Lançamentos móveis">
+        {entries.map((entry) => (
+          <FinanceEntryCard
+            entry={entry}
+            key={entry.id}
+            onCancel={onCancel}
+            onEdit={onEdit}
+            onMarkPending={onMarkPending}
+            onPay={onPay}
+          />
+        ))}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[840px] text-left text-sm">
           <thead className="border-b border-line text-xs font-black uppercase tracking-widest text-muted">
             <tr>
@@ -80,6 +93,7 @@ export function FinanceEntryTable({
                       ? "Vinculado a vendedor"
                       : "Lançamento geral"}
                   </span>
+                  <ReceiptMarker metadata={entry.metadata} />
                 </td>
                 <td className="py-3 pr-4">
                   <FinanceBadge>
@@ -159,6 +173,137 @@ export function FinanceEntryTable({
         </p>
       ) : null}
     </FinancePanel>
+  );
+}
+
+function FinanceEntryCard({
+  entry,
+  onCancel,
+  onEdit,
+  onMarkPending,
+  onPay,
+}: {
+  entry: FinanceEntry;
+  onCancel: (entry: FinanceEntry) => void;
+  onEdit: (entry: FinanceEntry) => void;
+  onMarkPending: (entry: FinanceEntry) => void;
+  onPay: (entry: FinanceEntry) => void;
+}) {
+  return (
+    <article
+      aria-label={`Lançamento ${entry.name}`}
+      className="rounded-lg border border-line bg-app p-4 shadow-sm"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="break-words text-sm font-black text-app-text">
+            {entry.name}
+          </h3>
+          <p className="mt-1 text-xs font-bold text-muted">
+            {formatFinanceCategory(entry.category)} · {formatDate(entry.dueAt)}
+          </p>
+          <ReceiptMarker metadata={entry.metadata} />
+        </div>
+        <strong className="shrink-0 text-sm font-black text-app-text">
+          {formatCurrency(entry.amountCents)}
+        </strong>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <button
+          className="rounded-full bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong disabled:opacity-60"
+          disabled={entry.status === "cancelled"}
+          onClick={() =>
+            entry.status === "paid" ? onMarkPending(entry) : onPay(entry)
+          }
+          type="button"
+        >
+          {financeStatusLabels[entry.status]}
+        </button>
+        <span className="text-xs font-bold text-muted">
+          {entry.sellerUserId ? "Vinculado a vendedor" : "Lançamento geral"}
+        </span>
+      </div>
+
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <MobileAction
+          icon={<ReceiptText aria-hidden="true" className="size-4" />}
+          label="Anexar"
+          onClick={() => onEdit(entry)}
+        />
+        <MobileAction
+          icon={<Pencil aria-hidden="true" className="size-4" />}
+          label="Editar"
+          onClick={() => onEdit(entry)}
+        />
+        <MobileAction
+          disabled={entry.status === "paid"}
+          icon={<CheckCircle2 aria-hidden="true" className="size-4" />}
+          label="Pagar"
+          onClick={() => onPay(entry)}
+        />
+        <MobileAction
+          disabled={entry.status === "cancelled"}
+          icon={<XCircle aria-hidden="true" className="size-4" />}
+          label="Cancelar"
+          onClick={() => onCancel(entry)}
+        />
+      </div>
+    </article>
+  );
+}
+
+function ReceiptMarker({
+  metadata,
+}: {
+  metadata: Record<string, unknown> | undefined;
+}) {
+  const label = receiptLabel(metadata);
+  if (!label) return null;
+  return (
+    <span className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full border border-line bg-accent-soft px-2 py-1 text-xs font-black text-accent-strong">
+      <ReceiptText aria-hidden="true" className="size-3 shrink-0" />
+      <span className="min-w-0 truncate">Comprovante: {label}</span>
+    </span>
+  );
+}
+
+function receiptLabel(metadata?: Record<string, unknown>) {
+  const receipt = metadata?.receipt;
+  if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) {
+    return null;
+  }
+  const record = receipt as Record<string, unknown>;
+  if (typeof record.title === "string" && record.title.trim()) {
+    return record.title;
+  }
+  if (typeof record.fileName === "string" && record.fileName.trim()) {
+    return record.fileName;
+  }
+  return null;
+}
+
+function MobileAction({
+  disabled,
+  icon,
+  label,
+  onClick,
+}: {
+  disabled?: boolean;
+  icon: ReactNode;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-panel px-3 text-xs font-black text-accent-strong disabled:text-muted disabled:opacity-60"
+      disabled={disabled}
+      onClick={onClick}
+      type="button"
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 

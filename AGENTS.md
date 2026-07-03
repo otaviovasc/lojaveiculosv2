@@ -19,6 +19,11 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Follow `docs/repo-organization.md` before adding or moving files.
 - For non-trivial work, also follow
   `docs/agents/lojaveiculosv2-repo-skill.md`.
+- If the `codebase-memory-mcp` tools are available in the active agent
+  surface, use them before repo exploration and while navigating unfamiliar
+  code paths. Prefer indexing/searching the current checkout with
+  `codebase-memory-mcp` over broad manual scans, and refresh the index after
+  meaningful code movement or feature-flow changes.
 - For Railway, CI/CD, staging, production, or incident work, read
   `docs/maximum-agentic-loop-railway-terraform.md`,
   `docs/railway.md`, and the relevant runbook in `docs/runbooks/`.

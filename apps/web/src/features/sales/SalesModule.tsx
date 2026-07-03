@@ -9,6 +9,7 @@ import {
   FeatureKpiStrip,
 } from "../../components/ui/FeatureKpis";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { useOptionalAccountSession } from "../account/accountSession";
 import { createSalesApi, type SalesApi } from "./apiClient";
 import { createSalesApiOptions } from "./runtimeApi";
 import { SalesPipeline } from "./SalesPipeline";
@@ -19,10 +20,19 @@ import {
   parseSaleStartContext,
   toDraftInput,
 } from "./salesModel";
+import {
+  emptySaleContextOptions,
+  loadSaleContextOptions,
+  type SaleContextOptionsState,
+} from "./saleContextOptions";
 import type { SaleRecord, SaleStatus } from "./types";
 
 export function SalesModule({ api }: { api?: SalesApi }) {
+  const accountSession = useOptionalAccountSession();
   const [runtimeApi, setRuntimeApi] = useState<SalesApi | null>(api ?? null);
+  const [contextOptions, setContextOptions] = useState<SaleContextOptionsState>(
+    { kind: "loading", options: emptySaleContextOptions },
+  );
   const [sales, setSales] = useState<readonly SaleRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [filter, setFilter] = useState<SaleStatus | "all">("all");
@@ -38,6 +48,35 @@ export function SalesModule({ api }: { api?: SalesApi }) {
       setRuntimeApi(createSalesApi(options)),
     );
   }, [api]);
+
+  useEffect(() => {
+    let isActive = true;
+    setContextOptions({ kind: "loading", options: emptySaleContextOptions });
+    void loadSaleContextOptions(
+      accountSession
+        ? {
+            email: accountSession.user.email,
+            id: accountSession.user.id,
+            name: accountSession.user.name,
+            role: accountSession.defaultStore?.role ?? null,
+          }
+        : null,
+    )
+      .then((state) => {
+        if (isActive) setContextOptions(state);
+      })
+      .catch(() => {
+        if (!isActive) return;
+        setContextOptions({
+          kind: "error",
+          message: "Nao foi possivel carregar os vinculos da venda.",
+          options: emptySaleContextOptions,
+        });
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [accountSession]);
 
   const loadSales = useCallback(async () => {
     if (!runtimeApi) return;
@@ -180,6 +219,8 @@ export function SalesModule({ api }: { api?: SalesApi }) {
           sales={visibleSales}
         />
         <SaleWorkspace
+          contextMessage={contextMessage(contextOptions)}
+          contextOptions={contextOptions.options}
           onCancel={(sale) => transition(sale, "cancel")}
           onClose={(sale) => transition(sale, "close")}
           onReserve={(sale) => transition(sale, "reserve")}
@@ -189,6 +230,14 @@ export function SalesModule({ api }: { api?: SalesApi }) {
       </div>
     </FeaturePageShell>
   );
+}
+
+function contextMessage(state: SaleContextOptionsState): string | null {
+  if (state.kind === "loading") {
+    return "Carregando leads, veiculos e vendedores vinculaveis.";
+  }
+  if (state.kind === "error") return state.message;
+  return null;
 }
 
 function replaceSale(

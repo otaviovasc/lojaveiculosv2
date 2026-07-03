@@ -1,5 +1,5 @@
 import type { FinanceApi } from "./apiClient";
-import { readUpload } from "./apiJson";
+import { uploadFinanceDocumentObject } from "./financeDocumentUpload";
 import { formatFinanceCategory } from "./financeBillsFormat";
 import {
   toEntryInput,
@@ -33,19 +33,25 @@ export async function updateEntryFromDraft(
     update.sellerUserId = input.sellerUserId;
   await api.updateEntry(entry.id, update);
   if (!draft.documentFile) return;
+  const documentTitle = draft.documentTitle.trim() || draft.documentFile.name;
   const upload = await api.requestDocumentUpload(entry.id, draft.documentFile);
-  await fetch(upload.uploadUrl, {
-    body: draft.documentFile,
-    method: upload.uploadMethod ?? "PUT",
-    ...(upload.uploadHeaders ? { headers: upload.uploadHeaders } : {}),
-  }).then(readUpload);
+  await uploadFinanceDocumentObject(upload, draft.documentFile);
   await api.attachDocument(entry.id, {
     fileName: draft.documentFile.name,
     fileSizeBytes: draft.documentFile.size,
     kind: "finance_receipt",
     mimeType: draft.documentFile.type || "application/octet-stream",
     storageKey: upload.storageKey,
-    title: draft.documentTitle.trim() || draft.documentFile.name,
+    title: documentTitle,
+  });
+  await api.updateEntry(entry.id, {
+    metadata: mergeEntryMetadata(entry.metadata, {
+      ...input.metadata,
+      receipt: {
+        fileName: draft.documentFile.name,
+        title: documentTitle,
+      },
+    }),
   });
 }
 
@@ -53,12 +59,20 @@ export function mergeEntryMetadata(
   existing: Record<string, unknown> | undefined,
   incoming: Record<string, unknown>,
 ) {
+  const incomingReceipt = isRecord(incoming.receipt)
+    ? incoming.receipt
+    : undefined;
   return {
     ...(existing ?? {}),
     notes:
       typeof incoming.notes === "string" ? incoming.notes : existing?.notes,
+    receipt: incomingReceipt ?? existing?.receipt,
     source: existing?.source ?? incoming.source,
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 export async function cancelEntry(

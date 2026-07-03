@@ -74,12 +74,18 @@ export function FinanceEntryModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] p-3">
       <form
+        aria-labelledby="finance-entry-modal-title"
+        aria-modal="true"
         className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]"
         onSubmit={(event) => void submit(event)}
+        role="dialog"
       >
         <header className="flex items-center justify-between border-b border-line p-5">
           <div>
-            <h2 className="text-xl font-black text-app-text">
+            <h2
+              className="text-xl font-black text-app-text"
+              id="finance-entry-modal-title"
+            >
               {entry ? "Editar lançamento" : "Novo lançamento"}
             </h2>
             <p className="text-sm font-bold text-muted">

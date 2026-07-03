@@ -26,6 +26,11 @@ Read these before changing behavior:
 2. `docs/repo-organization.md`
 3. `docs/architecture.md`
 
+If `codebase-memory-mcp` tools are available in the active agent surface, use
+them before broad manual repository scans. Index or search the current checkout
+to find ownership, references, and call paths, and refresh the index after
+meaningful feature-flow or file-organization changes.
+
 Read these when relevant:
 
 - Railway/deploys: `docs/railway.md`, `docs/runbooks/deploy.md`

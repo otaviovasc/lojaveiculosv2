@@ -50,8 +50,21 @@ describe("finance api client", () => {
           uploadUrl: "https://upload.local/receipt.pdf",
         }),
       )
-      .mockResolvedValueOnce(new Response(null, { status: 204 }))
-      .mockResolvedValueOnce(jsonResponse({ id: "document_1" }));
+      .mockResolvedValueOnce(jsonResponse({ id: "document_1" }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          entry: {
+            id: "entry_1",
+            metadata: {
+              receipt: {
+                fileName: "receipt.pdf",
+                title: "receipt.pdf",
+              },
+            },
+          },
+          links: [],
+        }),
+      );
     const api = createFinanceApi({ fetch: fetchMock });
     const file = new File(["receipt"], "receipt.pdf", {
       type: "application/pdf",
@@ -78,14 +91,23 @@ describe("finance api client", () => {
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
       3,
-      "https://upload.local/receipt.pdf",
-      expect.objectContaining({ body: file, method: "PUT" }),
-    );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      4,
       "/api/v1/finance/entries/entry_1/documents",
       expect.objectContaining({ method: "POST" }),
     );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      "/api/v1/finance/entries/entry_1",
+      expect.objectContaining({ method: "PATCH" }),
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[3]?.[1]?.body))).toEqual({
+      metadata: {
+        receipt: {
+          fileName: "receipt.pdf",
+          title: "receipt.pdf",
+        },
+      },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it("calls lifecycle and finance-core endpoints", async () => {

@@ -10,15 +10,23 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { ReviewSection } from "./SaleReviewSection";
 import { StickySaleSummary } from "./SaleSummaryPanel";
 import { toDraftInput } from "./salesModel";
+import {
+  emptySaleContextOptions,
+  type SaleContextOptions,
+} from "./saleContextOptions";
 import type { SaleRecord } from "./types";
 
 export function SaleWorkspace({
+  contextMessage = null,
+  contextOptions = emptySaleContextOptions,
   onCancel,
   onClose,
   onReserve,
   onSave,
   sale,
 }: {
+  contextMessage?: string | null;
+  contextOptions?: SaleContextOptions;
   onCancel: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onClose: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
@@ -177,7 +185,14 @@ export function SaleWorkspace({
 
         {/* Wizard Step Forms */}
         <div className="flex flex-col gap-4">
-          {currentStep === 0 && <ContextSection sale={draft} update={update} />}
+          {currentStep === 0 && (
+            <ContextSection
+              contextMessage={contextMessage}
+              options={contextOptions}
+              sale={draft}
+              update={update}
+            />
+          )}
           {currentStep === 1 && <TermsSection sale={draft} update={update} />}
           {currentStep === 2 && (
             <PaymentsSection sale={draft} update={update} />
