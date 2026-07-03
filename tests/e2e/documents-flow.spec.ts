@@ -52,6 +52,15 @@ test.describe("documents center QA flow", () => {
       page.getByRole("button", { name: "Enviar documento" }),
     ).toBeVisible();
     await expect(page.locator("tbody tr").first()).toBeVisible();
+    await page.setViewportSize({ height: 900, width: 1100 });
+    await expect(
+      page.getByRole("columnheader", { name: "Unidade" }),
+    ).toBeHidden();
+    await expect(
+      page.getByRole("columnheader", { name: "Tipo" }),
+    ).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "documents-table-tablet-after");
+    await setQaViewport(page, "desktop");
     await saveQaScreenshot(page, testInfo, "documents-list-after");
 
     const documentsResponse = await request.get("/api/v1/documents", {

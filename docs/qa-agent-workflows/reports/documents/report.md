@@ -6,10 +6,10 @@
 - Worker branch: `agent/qa/documents`
 - Worktree: `.worktrees/qa-documents`
 - Base branch: `agent/qa-integration`
-- Latest commit: branch head (`Validate documents QA flow`)
+- Latest commit: branch head (`Fix documents table responsive headers`)
 - Artifact root: `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/`
 - Persona coverage: Seed Owner; restricted local session without `documents.read`
-- Viewports: desktop `1440x900`; mobile `390x844`
+- Viewports: desktop `1440x900`; tablet `1100x900`; mobile `390x844`
 
 ## Discovery
 
@@ -25,14 +25,15 @@
 
 ## Findings
 
-| ID      | Severity | Status   | Route          | Owner     | Evidence                                                                | Reviewer |
-| ------- | -------- | -------- | -------------- | --------- | ----------------------------------------------------------------------- | -------- |
-| DOC-001 | High     | verified | `/documents`   | documents | `07-upload-after-submit-before.png`, `upload-dialog-after.png`          | pending  |
-| DOC-002 | High     | verified | `/download`    | documents | `03-document-detail-before.png`, `document-detail-after.png`            | pending  |
-| DOC-003 | Medium   | verified | `/templates`   | documents | `02-document-templates-before.png`, `document-templates-after.png`      | pending  |
-| DOC-004 | Medium   | verified | mobile folders | documents | `08-documents-mobile-before.png`, `documents-mobile-after.png`          | pending  |
-| DOC-005 | Medium   | verified | `/documents`   | documents | `01-documents-list-desktop-before.png`, `documents-list-after.png`      | pending  |
-| DOC-006 | Low      | verified | `/documents`   | documents | `documents-restricted-after.png`, Playwright restricted-state assertion | pending  |
+| ID      | Severity | Status   | Route          | Owner     | Evidence                                                                | Reviewer  |
+| ------- | -------- | -------- | -------------- | --------- | ----------------------------------------------------------------------- | --------- |
+| DOC-001 | High     | verified | `/documents`   | documents | `07-upload-after-submit-before.png`, `upload-dialog-after.png`          | pending   |
+| DOC-002 | High     | verified | `/download`    | documents | `03-document-detail-before.png`, `document-detail-after.png`            | pending   |
+| DOC-003 | Medium   | verified | `/templates`   | documents | `02-document-templates-before.png`, `document-templates-after.png`      | pending   |
+| DOC-004 | Medium   | verified | mobile folders | documents | `08-documents-mobile-before.png`, `documents-mobile-after.png`          | pending   |
+| DOC-005 | Medium   | verified | `/documents`   | documents | `01-documents-list-desktop-before.png`, `documents-list-after.png`      | pending   |
+| DOC-006 | Low      | verified | `/documents`   | documents | `documents-restricted-after.png`, Playwright restricted-state assertion | pending   |
+| DOC-007 | Medium   | fixed    | `/documents`   | documents | Aristotle review; `documents-table-tablet-after.png`                    | Aristotle |
 
 ## Implementation
 
@@ -48,13 +49,14 @@
 - Focused tests: `pnpm --filter @lojaveiculosv2/api test -- documentOperations downloadDocument drizzleDocumentTemplates` passed; `pnpm --filter @lojaveiculosv2/web test -- DocumentUploadDialog documentsWorkspaceModel documentDisplayModel documentTemplatePreview` passed.
 - Feature Playwright flow: `QA_BRANCH_SLUG=agent-qa-documents QA_FEATURE_SLUG=documents PLAYWRIGHT_BASE_URL=http://127.0.0.1:5299 pnpm exec playwright test tests/e2e/documents-flow.spec.ts --project=chromium` passed, 2 tests.
 - `pnpm run validate:commit`: passed.
+- Reviewer fix validation: `QA_BRANCH_SLUG=agent-qa-documents QA_FEATURE_SLUG=documents PLAYWRIGHT_BASE_URL=http://127.0.0.1:5299 pnpm exec playwright test tests/e2e/documents-flow.spec.ts --project=chromium` passed after the DOC-007 table breakpoint fix; the spec asserts `Unidade` is hidden and `Tipo` is visible at `1100x900`, with evidence in `documents-table-tablet-after.png`.
 - Other checks: post-reload curl probe confirmed the previously failing seed document download now returns a descriptor.
 
 ## Reviewer Feedback
 
 - Discovery gate: pending.
-- Implementation gate: pending.
-- Required follow-up: reviewer should confirm whether additional role-specific action disabling beyond `documents.read` restricted state is required for this campaign.
+- Implementation gate: DOC-007 fixed locally after Aristotle's changes-requested review.
+- Required follow-up: Aristotle should confirm DOC-007 against the updated tablet Playwright evidence.
 
 ## Final State
 

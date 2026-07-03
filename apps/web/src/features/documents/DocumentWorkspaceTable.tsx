@@ -49,8 +49,8 @@ export function DocumentsTable({
             {showSelect ? <th className="px-3 py-3.5 w-10" /> : null}
             <th className="px-4 py-3.5">Documento</th>
             <th className="hidden px-4 py-3.5 lg:table-cell">Origem</th>
-            <th className="px-4 py-3.5">Unidade</th>
-            <th className="hidden px-4 py-3.5 xl:table-cell">Tipo</th>
+            <th className="hidden px-4 py-3.5 xl:table-cell">Unidade</th>
+            <th className="px-4 py-3.5">Tipo</th>
             <th className="px-4 py-3.5">Status</th>
             <th className="hidden px-4 py-3.5 xl:table-cell">Enviado</th>
             <th className="hidden px-4 py-3.5 2xl:table-cell">Tamanho</th>
