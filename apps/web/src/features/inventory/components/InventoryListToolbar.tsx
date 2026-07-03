@@ -6,7 +6,7 @@ import {
   List,
   LayoutGrid,
 } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { motion } from "motion/react";
 import { InventorySelect } from "./InventoryFormParts";
 import {
@@ -17,6 +17,7 @@ import {
   FeatureActionButton,
   FeatureToolbar,
 } from "../../../components/ui/FeatureLayout";
+import { FeatureAnchoredPopover } from "../../../components/ui/FeaturePopover";
 import {
   inventoryListStatusOptions,
   type InventoryListStatusFilter,
@@ -58,6 +59,7 @@ export function InventoryListToolbar({
   onColumnToggle: (key: string, visible: boolean) => void;
 }) {
   const [columnsDropdownOpen, setColumnsDropdownOpen] = useState(false);
+  const columnsButtonRef = useRef<HTMLButtonElement>(null);
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -131,41 +133,41 @@ export function InventoryListToolbar({
           {viewMode === "list" && (
             <div className="relative z-50 inline-block text-left">
               <button
-                type="button"
+                aria-expanded={columnsDropdownOpen}
+                aria-haspopup="menu"
                 onClick={() => setColumnsDropdownOpen(!columnsDropdownOpen)}
+                ref={columnsButtonRef}
                 className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-app-elevated border border-line px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer"
+                type="button"
               >
                 <Columns className="size-3.5 text-muted" />
                 <span>Colunas</span>
               </button>
-              {columnsDropdownOpen && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setColumnsDropdownOpen(false)}
-                  />
-                  <div className="absolute left-0 mt-2 z-50 w-44 rounded-xl border border-line bg-panel p-2 shadow-2xl">
-                    <div className="flex flex-col gap-1 text-xs font-bold">
-                      {columnOptions.map((opt) => (
-                        <label
-                          key={opt.key}
-                          className="flex items-center gap-2 p-1.5 rounded hover:bg-line/25 cursor-pointer text-app-text"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={visibleColumns[opt.key]}
-                            onChange={(e) =>
-                              onColumnToggle(opt.key, e.target.checked)
-                            }
-                            className="rounded border-line text-accent focus:ring-accent"
-                          />
-                          <span>{opt.label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
+              <FeatureAnchoredPopover
+                anchorRef={columnsButtonRef}
+                className="w-56 max-w-[calc(100vw-1.5rem)]"
+                isOpen={columnsDropdownOpen}
+                onClose={() => setColumnsDropdownOpen(false)}
+              >
+                <div className="flex flex-col gap-1 text-xs font-bold">
+                  {columnOptions.map((opt) => (
+                    <label
+                      key={opt.key}
+                      className="flex min-w-0 items-center gap-2 rounded p-1.5 text-app-text hover:bg-line/25 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={visibleColumns[opt.key]}
+                        onChange={(e) =>
+                          onColumnToggle(opt.key, e.target.checked)
+                        }
+                        className="rounded border-line text-accent focus:ring-accent"
+                      />
+                      <span className="min-w-0 break-words">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </FeatureAnchoredPopover>
             </div>
           )}
         </div>
