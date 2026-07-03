@@ -31,27 +31,16 @@ is the public URL stored on media records.
 Configure R2 CORS before testing uploads from the web app. Browser uploads use
 presigned `PUT` requests and will fail preflight without CORS.
 
-Example bucket CORS:
+Use the project-owned policies:
 
-```json
-[
-  {
-    "AllowedOrigins": [
-      "http://localhost:5173",
-      "https://app-v2.lojaveiculos.com.br",
-      "https://lojaveiculos.com.br",
-      "https://www.lojaveiculos.com.br"
-    ],
-    "AllowedMethods": ["PUT", "GET", "HEAD"],
-    "AllowedHeaders": ["Content-Type"],
-    "ExposeHeaders": ["ETag"],
-    "MaxAgeSeconds": 3600
-  }
-]
-```
+- `docs/ops/r2-cors-lojaveiculosv2.json` for the Cloudflare dashboard JSON tab.
+- `docs/ops/r2-cors-lojaveiculosv2-wrangler.json` for
+  `wrangler r2 bucket cors set`.
 
-The same policy is available at `docs/ops/r2-cors-lojaveiculosv2.json` for
-copying into the Cloudflare R2 dashboard JSON editor.
+The policies include deployed V2 origins plus local Playwright and parallel
+agent ports used by the QA workflow. See `docs/ops/r2-cors.md` for application
+and verification steps. Add any new agent port as an exact origin before using
+browser uploads from that port.
 
 Keep the bucket public only if sensitive document and finance uploads are not
 enabled for production. The current storage adapter is shared by vehicle media,

@@ -107,6 +107,13 @@ Use one auth mode at a time:
 | `R2_REGION`                     | Yes      | staging, production | No     | S3 region value expected by SDK. |
 | `R2_UPLOAD_URL_EXPIRES_SECONDS` | Yes      | staging, production | No     | Presigned upload TTL.            |
 
+R2 browser uploads require a bucket-level CORS policy in addition to these
+runtime variables. Use `docs/ops/r2-cors-lojaveiculosv2.json` for the
+Cloudflare dashboard or `docs/ops/r2-cors-lojaveiculosv2-wrangler.json` for
+Wrangler. The local policy includes Playwright and parallel-agent web ports;
+if a new lane uses another port, add the exact `http://localhost:<port>` and
+`http://127.0.0.1:<port>` origins.
+
 ## Integrations
 
 | Name                                    | Required | Environments        | Secret | Notes                                              |
