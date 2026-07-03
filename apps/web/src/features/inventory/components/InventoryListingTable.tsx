@@ -190,11 +190,11 @@ export function InventoryListingTable({
 
                 {/* Marca/Modelo */}
                 {visibleColumns.marcaModelo && (
-                  <td className="px-4 py-3 max-w-[220px] align-middle">
-                    <div className="truncate font-black text-sm text-app-text group-hover:text-accent transition-colors">
+                  <td className="px-4 py-3 min-w-[220px] max-w-[280px] align-middle">
+                    <div className="whitespace-normal break-words text-sm font-black leading-snug text-app-text transition-colors group-hover:text-accent">
                       {listing.title}
                     </div>
-                    <div className="truncate text-xs font-bold text-muted mt-0.5">
+                    <div className="mt-1 whitespace-normal break-words text-xs font-bold leading-snug text-muted">
                       {getInventoryCatalogLine(listing.catalog, listing)}
                     </div>
                   </td>
