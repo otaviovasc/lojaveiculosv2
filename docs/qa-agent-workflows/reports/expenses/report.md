@@ -22,7 +22,8 @@
   intentional unavailable state instead of a broken page.
 - Console/API errors: none in the final expenses Playwright flow.
 - UI issues: raw backend categories and accentless Portuguese copy were visible
-  on the expenses surface and sidebar.
+  on the expenses surface and sidebar. Reviewer follow-up found the same leak
+  for vehicle-cost categories such as `vehicle_preparation`.
 - Backend/API gaps: full browser receipt upload is not validated because local
   object storage is not configured for the presigned upload path in this lane.
 - Permission/audit concerns: no permission contract changes. The restricted
@@ -41,6 +42,7 @@
 | EXP-003 | Medium   | deferred | `/expenses` | backend/storage | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-receipt-modal.png`   | pending  |
 | EXP-004 | Low      | deferred | `/expenses` | shared-ui       | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-mobile.png`          | pending  |
 | EXP-005 | Medium   | fixed    | `tests/e2e` | expenses worker | `tests/e2e/local-permissions.spec.ts`, `tests/e2e/qa-harness-smoke.spec.ts`      | pending  |
+| EXP-006 | Medium   | fixed    | `/expenses` | expenses worker | `apps/web/src/features/finance/financeBillsModel.test.ts`                        | Locke    |
 
 ## Implementation
 
@@ -49,6 +51,8 @@
   `tests/e2e/expenses-flow.spec.ts`,
   `tests/e2e/local-permissions.spec.ts`,
   `tests/e2e/qa-harness-smoke.spec.ts`
+- Reviewer follow-up changed: `financeBillsFormat.ts`,
+  `financeBillsModel.test.ts`, and this report
 - Backend/API contracts changed: none
 - DB/schema changes: none
 - Seed changes: none
@@ -59,6 +63,9 @@
 ## Validation
 
 - Focused tests: `pnpm --filter @lojaveiculosv2/web test -- financeBillsModel FinanceEntryModalSteps FinanceBillsSummary` passed, 75 files and 227 tests
+- Reviewer focused tests:
+  `pnpm --filter @lojaveiculosv2/web test -- financeBillsModel` passed, 75
+  files and 229 tests
 - Feature Playwright flow:
   `QA_BASE_URL=http://127.0.0.1:5185 QA_BRANCH_SLUG=agent-qa-expenses QA_FEATURE_SLUG=expenses pnpm exec playwright test tests/e2e/local-permissions.spec.ts tests/e2e/qa-harness-smoke.spec.ts tests/e2e/expenses-flow.spec.ts --project=chromium`
   passed, 5 tests
@@ -68,7 +75,7 @@
 ## Reviewer Feedback
 
 - Discovery gate: pending
-- Implementation gate: pending
+- Implementation gate: Locke requested changes for EXP-006; worker fix complete
 - Required follow-up: reviewer approval is needed for EXP-003 if receipt upload
   must be fully exercised before merge.
 

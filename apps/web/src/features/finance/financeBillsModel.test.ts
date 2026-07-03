@@ -5,6 +5,7 @@ import {
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
+import { formatFinanceCategory } from "./financeBillsFormat";
 import type { FinanceEntry } from "./types";
 
 describe("finance bills model", () => {
@@ -104,6 +105,70 @@ describe("finance bills model", () => {
         window: "all",
       }).map((item) => item.id),
     ).toEqual(["2"]);
+  });
+
+  it("formats vehicle cost categories created by inventory workflows", () => {
+    expect(formatFinanceCategory("vehicle_preparation")).toBe("Preparação");
+    expect(formatFinanceCategory("vehicle_acquisition")).toBe("Aquisição");
+    expect(formatFinanceCategory("vehicle_repair")).toBe("Reparo");
+    expect(formatFinanceCategory("vehicle_transport")).toBe("Transporte");
+    expect(formatFinanceCategory("vehicle_fee")).toBe("Taxas");
+    expect(formatFinanceCategory("vehicle_tax")).toBe("Impostos");
+    expect(formatFinanceCategory("vehicle_other")).toBe("Outros");
+
+    expect(formatFinanceCategory("vehicle_maintenance")).toBe("Manutenção");
+    expect(formatFinanceCategory("vehicle_inspection")).toBe("Inspeção");
+    expect(formatFinanceCategory("vehicle_unknown_custom")).toBe(
+      "vehicle_unknown_custom",
+    );
+  });
+
+  it("matches vehicle cost categories by localized labels and raw unknown values", () => {
+    const entries = [
+      entry(
+        "1",
+        "Custo de veiculo - Audi A4",
+        "vehicle_preparation",
+        "paid",
+        "2026-06-25",
+      ),
+      entry(
+        "2",
+        "Custo de veiculo - Corolla",
+        "vehicle_repair",
+        "paid",
+        "2026-06-25",
+      ),
+      entry(
+        "3",
+        "Custo de veiculo - Compass",
+        "vehicle_unknown_custom",
+        "paid",
+        "2026-06-25",
+      ),
+    ];
+
+    expect(
+      filterEntries(entries, {
+        query: "preparação",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["1"]);
+    expect(
+      filterEntries(entries, {
+        query: "reparo",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["2"]);
+    expect(
+      filterEntries(entries, {
+        query: "vehicle_unknown_custom",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["3"]);
   });
 
   it("keeps undated entries out of date-window filters", () => {
