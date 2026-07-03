@@ -39,6 +39,9 @@ test.describe("vehicle details QA lane", () => {
       const tabButton = tabNav.getByRole("button", { name: tab.label });
       await tabButton.click();
       await expect(tabButton).toHaveAttribute("aria-pressed", "true");
+      if (tab.label === "Financeiro") {
+        await expectFinanceiroUsesSeededVehicle(page);
+      }
       await saveQaScreenshot(
         page,
         testInfo,
@@ -124,6 +127,28 @@ async function openPublicVehicleDetail(page: Page) {
     .first()
     .click();
   await publicDetailRequest;
+}
+
+async function expectFinanceiroUsesSeededVehicle(page: Page) {
+  const financeiro = page.getByRole("region", {
+    name: "Financeiro do veículo",
+  });
+  await expect(financeiro.getByText("Preço anunciado")).toBeVisible();
+  await expect(financeiro.getByText("R$ 189.900").first()).toBeVisible();
+  await expect(financeiro.getByText("32.000 km")).toBeVisible();
+  await expect(financeiro.getByText("LV-A4-PRETO")).toBeVisible();
+  await expect(
+    financeiro.getByText("Revisao completa pre-venda").first(),
+  ).toBeVisible();
+  await expect(financeiro.getByText("R$ 1.850").first()).toBeVisible();
+
+  await expect(financeiro.getByText("R$ 120.000")).toHaveCount(0);
+  await expect(financeiro.getByText("R$ 150.000")).toHaveCount(0);
+  await expect(financeiro.getByText("R$ 145.000")).toHaveCount(0);
+  await expect(financeiro.getByText("R$ 5.000")).toHaveCount(0);
+  await expect(financeiro.getByText("32.500 km")).toHaveCount(0);
+  await expect(financeiro.getByText("Parachoques")).toHaveCount(0);
+  await expect(financeiro.getByText("Laudo Dekra")).toHaveCount(0);
 }
 
 function collectCriticalResponses(page: Page) {

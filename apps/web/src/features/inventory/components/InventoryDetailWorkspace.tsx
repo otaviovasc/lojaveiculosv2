@@ -248,7 +248,8 @@ export function InventoryDetailWorkspace({
         {activeTab === "financeiro" && (
           <InventoryDetailFinanceiroTab
             api={api}
-            listingId={listing.id}
+            detail={detail}
+            onUpdated={handleUpdatedDetail}
             unit={primaryUnit}
           />
         )}
