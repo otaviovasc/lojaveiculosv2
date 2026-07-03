@@ -6,7 +6,7 @@
 - Worker branch: `agent/qa/shared-ui`
 - Worktree: `.worktrees/qa-shared-ui`
 - Base branch: `agent/qa-integration`
-- Latest commit: branch head
+- Latest commit: `95617a5`
 - Artifact root: `/tmp/lojaveiculosv2-qa/agent-qa-shared-ui/shared-ui/`
 - Persona coverage: Seed Owner local session; public storefront anonymous
 - Viewports: desktop `1440x900`, mobile `390x844`
@@ -60,8 +60,8 @@
 
 | ID       | Severity | Status   | Route                   | Owner     | Evidence                                                                | Reviewer |
 | -------- | -------- | -------- | ----------------------- | --------- | ----------------------------------------------------------------------- | -------- |
-| SHUI-001 | High     | fixed    | `/inventory` mobile     | shared-ui | `inventory-columns-dropdown-mobile.png`, `inventory-columns-mobile.png` | pending  |
-| SHUI-002 | Medium   | fixed    | `/page-builder` desktop | shared-ui | `page-builder-desktop.png`, `page-builder-empty-state.png`              | pending  |
+| SHUI-001 | High     | verified | `/inventory` mobile     | shared-ui | `inventory-columns-dropdown-mobile.png`, `inventory-columns-mobile.png` | approved |
+| SHUI-002 | Medium   | verified | `/page-builder` desktop | shared-ui | `page-builder-desktop.png`, `page-builder-empty-state.png`              | approved |
 | SHUI-003 | Medium   | assigned | `/documents` mobile     | documents | `documents-mobile.png`                                                  | pending  |
 | SHUI-004 | Low      | assigned | `/sales` mobile         | sales     | `sales-mobile.png`                                                      | pending  |
 
@@ -101,16 +101,15 @@
 
 ## Reviewer Feedback
 
-- Discovery gate: pending
-- Implementation gate: pending
+- Discovery gate: approved
+- Implementation gate: approved
 - Required follow-up:
-  - Reviewer should verify `SHUI-001` and `SHUI-002`.
   - Documents lane should handle `SHUI-003` unless reassigned.
   - Sales lane should handle `SHUI-004` unless reassigned.
 
 ## Final State
 
-- Ready for orchestrator merge: no, pending reviewer implementation gate
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`
 - Deferred findings:
   - `SHUI-003` documents mobile action-label spacing, assigned to documents.
   - `SHUI-004` sales mobile long-value truncation, assigned to sales.
