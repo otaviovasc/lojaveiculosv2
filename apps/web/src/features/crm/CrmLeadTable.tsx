@@ -27,7 +27,7 @@ export function LeadTableView({
             <th>Contato</th>
             <th>Fase</th>
             <th>Origem</th>
-            <th>Ultima atividade</th>
+            <th>Última atividade</th>
           </tr>
         </thead>
         <tbody>

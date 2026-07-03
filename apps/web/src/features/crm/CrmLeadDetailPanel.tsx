@@ -107,7 +107,7 @@ export function LeadDetailPanel({
       <div className="crm-lead-summary">
         <span>{formatLeadContact(lead)}</span>
         <span>{sourceLabels[lead.source]}</span>
-        <span>{lead.vehicleTitle ?? "Sem veiculo vinculado"}</span>
+        <span>{lead.vehicleTitle ?? "Sem veículo vinculado"}</span>
       </div>
       <div className="crm-status-actions">
         {Object.entries(statusLabels).map(([status, label]) => (

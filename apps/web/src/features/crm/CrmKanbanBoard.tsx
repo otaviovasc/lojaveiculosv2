@@ -128,6 +128,7 @@ export function CrmKanbanBoard({
                 style={{ height: "550px" }}
               >
                 <button
+                  aria-label={`Expandir fase ${stage.name}`}
                   className="p-1 rounded hover:bg-line/25 text-muted hover:text-app-text cursor-pointer transition-colors"
                   onClick={() =>
                     setCollapsedStages((prev) => ({
@@ -196,6 +197,8 @@ export function CrmKanbanBoard({
                   <div className="flex items-center gap-1.5 text-muted">
                     <div className="relative crm-stage-menu-container">
                       <button
+                        aria-expanded={activeMenuStageId === stage.id}
+                        aria-label={`Abrir menu da fase ${stage.name}`}
                         className="p-1 rounded hover:bg-line/20 hover:text-app-text cursor-pointer flex items-center justify-center size-5"
                         onClick={() =>
                           setActiveMenuStageId(
@@ -218,12 +221,13 @@ export function CrmKanbanBoard({
                             }}
                             type="button"
                           >
-                            Editar Etapa
+                            Editar etapa
                           </button>
                         </div>
                       )}
                     </div>
                     <button
+                      aria-label={`Recolher fase ${stage.name}`}
                       className="p-1 rounded hover:bg-line/20 hover:text-app-text cursor-pointer"
                       onClick={() =>
                         setCollapsedStages((prev) => ({

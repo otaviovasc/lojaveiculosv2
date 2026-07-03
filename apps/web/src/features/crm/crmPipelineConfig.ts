@@ -51,8 +51,8 @@ export const sourceOptions: Array<CrmLeadSource | "all"> = [
 ];
 
 export const activityTypeLabels: Record<LeadActivityType, string> = {
-  call: "Ligacao",
-  email: "Email",
+  call: "Ligação",
+  email: "E-mail",
   note: "Nota",
   status_change: "Status",
   task: "Tarefa",
@@ -61,6 +61,6 @@ export const activityTypeLabels: Record<LeadActivityType, string> = {
 
 export const quickTaskOptions = [
   { hoursFromNow: 2, label: "Hoje" },
-  { hoursFromNow: 24, label: "Amanha" },
+  { hoursFromNow: 24, label: "Amanhã" },
   { hoursFromNow: 72, label: "Em 3 dias" },
 ] as const;

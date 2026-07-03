@@ -14,6 +14,7 @@ import {
 } from "./crmLeadData";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { ProductCrmLead } from "./productCrmTypes";
+import { sourceLabels } from "./crmPipelineConfig";
 
 type Props = {
   lead: ProductCrmLead;
@@ -59,6 +60,7 @@ export function CrmLeadCard({
           {leadName}
         </h4>
         <button
+          aria-label={`Abrir detalhes de ${formatLeadName(lead)}`}
           className="p-1 rounded hover:bg-line/20 text-muted hover:text-app-text cursor-pointer shrink-0"
           onClick={(e) => {
             e.stopPropagation();
@@ -66,7 +68,7 @@ export function CrmLeadCard({
           }}
           type="button"
         >
-          <MoreVertical className="size-3.5" />
+          <MoreVertical aria-hidden="true" className="size-3.5" />
         </button>
       </div>
 
@@ -137,7 +139,7 @@ export function CrmLeadCard({
         <div className="min-w-0 flex items-center gap-1 text-xs font-bold text-muted truncate">
           <span>{formatLeadOwner(lead)}</span>
           <span>·</span>
-          <span className="truncate">{lead.source}</span>
+          <span className="truncate">{sourceLabels[lead.source]}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0 text-muted">
           {lead.source === "whatsapp" ? (
@@ -154,8 +156,11 @@ export function CrmLeadCard({
         onClick={handleSimulate}
         type="button"
       >
-        <DollarSign className="size-3 text-emerald-500 shrink-0" />
-        <span>Simular Financiamento</span>
+        <DollarSign
+          aria-hidden="true"
+          className="size-3 text-emerald-500 shrink-0"
+        />
+        <span>Simular financiamento</span>
       </button>
     </article>
   );

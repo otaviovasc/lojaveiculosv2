@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Sparkles, Clock, User } from "lucide-react";
+import { Clock, User } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import {
   formatBrlCents,
@@ -23,12 +22,10 @@ export function CrmLeadDetailsTabsVisao({
   stages,
   vehicleOptions,
 }: Props) {
-  const [loadingAi, setLoadingAi] = useState(false);
-
   const leadVehicles = getLinkedLeadVehicles(lead, vehicleOptions);
   const valueFormatted = lead.listingId
     ? formatBrlCents(leadVehicles[0]?.priceCents)
-    : "Sem veiculo vinculado";
+    : "Sem veículo vinculado";
 
   const activeStageId = getLeadStageId(lead);
   const currentStage = stages.find((s) => s.id === activeStageId) ?? stages[0];
@@ -44,13 +41,11 @@ export function CrmLeadDetailsTabsVisao({
 
   return (
     <div className="flex flex-col gap-6 text-app-text select-none">
-      {/* HIGHLIGHTS Section */}
       <div>
         <span className="text-xs font-black uppercase text-muted tracking-wider block mb-3">
-          Highlights
+          Resumo
         </span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card: Fase */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-4 flex flex-col justify-between min-h-[90px]">
             <span className="text-xs font-bold text-muted uppercase">Fase</span>
             <span className="text-sm font-black text-app-text">
@@ -74,7 +69,6 @@ export function CrmLeadDetailsTabsVisao({
             </div>
           </div>
 
-          {/* Card: Valor */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-4 flex flex-col justify-between min-h-[90px]">
             <span className="text-xs font-bold text-muted uppercase">
               Valor
@@ -85,13 +79,12 @@ export function CrmLeadDetailsTabsVisao({
             <div className="h-1 mt-2" />
           </div>
 
-          {/* Card: Responsável */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-4 flex flex-col justify-between min-h-[90px]">
             <span className="text-xs font-bold text-muted uppercase">
               Responsável
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-sm font-black text-app-text">
-              <User className="size-3.5 text-blue-500" />
+              <User aria-hidden="true" className="size-3.5 text-blue-500" />
               <span>{formatLeadOwner(lead)}</span>
             </div>
             <div className="h-1 mt-2" />
@@ -99,7 +92,6 @@ export function CrmLeadDetailsTabsVisao({
         </div>
       </div>
 
-      {/* Task & Interaction row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border border-line/20 bg-panel/10 rounded-xl p-4">
           <span className="text-xs font-bold text-muted uppercase">
@@ -125,7 +117,7 @@ export function CrmLeadDetailsTabsVisao({
         </div>
         <div className="border border-line/20 bg-panel/10 rounded-xl p-4">
           <span className="text-xs font-bold text-muted uppercase">
-            Última Interação
+            Última interação
           </span>
           {lastActivity ? (
             <div className="flex flex-col gap-0.5 mt-1">
@@ -144,33 +136,9 @@ export function CrmLeadDetailsTabsVisao({
         </div>
       </div>
 
-      {/* AI Insights banner */}
-      <div className="border border-dashed border-blue-600/30 bg-blue-600/5 rounded-xl p-4 flex items-center justify-between gap-4 mt-2">
-        <div className="flex items-start gap-3">
-          <Sparkles className="size-4.5 text-blue-500 shrink-0 mt-0.5" />
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-black text-app-text">
-              Insights IA
-            </span>
-            <span className="text-xs font-bold text-muted">
-              Analise esta oportunidade com IA
-            </span>
-          </div>
-        </div>
-        <button
-          onClick={() => setLoadingAi(true)}
-          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 transition-colors shrink-0"
-          type="button"
-        >
-          <Sparkles className="size-3" />
-          <span>{loadingAi ? "Analisando..." : "Analisar"}</span>
-        </button>
-      </div>
-
-      {/* Histórico Section */}
       <div className="flex flex-col gap-3.5 mt-2">
         <div className="flex items-center gap-1.5 text-xs font-black text-app-text">
-          <Clock className="size-4 text-muted" />
+          <Clock aria-hidden="true" className="size-4 text-muted" />
           <span>Histórico</span>
         </div>
         <div className="flex flex-col pl-3.5 relative before:absolute before:left-1 before:top-2 before:bottom-2 before:w-0.5 before:bg-line/20 gap-3.5">

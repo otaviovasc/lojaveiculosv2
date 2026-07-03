@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, LoaderCircle, SearchX } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmLeadCreateFullPage } from "./CrmLeadCreateFullPage";
 import { CrmKanbanBoard } from "./CrmKanbanBoard";
@@ -16,7 +16,11 @@ import {
   FeaturePageShell,
   FeaturePageHeader,
 } from "../../components/ui/FeatureLayout";
-import { FeatureAlert } from "../../components/ui/FeatureStates";
+import {
+  FeatureAlert,
+  FeatureEmptyState,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
 import { CrmQuickAddLeadModal } from "./CrmQuickAddLeadModal";
 import { CrmQuickAddPipelineModal } from "./CrmQuickAddPipelineModal";
@@ -24,7 +28,7 @@ import { CrmQuickAddStageModal } from "./CrmQuickAddStageModal";
 import { CrmEditStageModal } from "./CrmEditStageModal";
 import { CrmListView } from "./CrmListView";
 import { useCrmPipelines } from "./useCrmPipelines";
-import { getFilteredLeads } from "./CrmPipelineViewFilters";
+import { getFilteredLeads, hasAnyClientFilter } from "./CrmPipelineViewFilters";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
   const storeId = props.leads[0]?.storeId ?? "default";
@@ -109,7 +113,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     }).format(data.monthlyPaymentCents / 100);
     await props.onCreateActivity(leadId, {
       activityType: "note",
-      content: `Simulacao de financiamento: ${data.months}x de ${payF} (Taxa: ${data.interestRate}% a.m.)`,
+      content: `Simulação de financiamento: ${data.months}x de ${payF} (Taxa: ${data.interestRate}% a.m.)`,
       direction: "internal",
     });
   };
@@ -117,6 +121,19 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
   const filteredLeads = useMemo(() => {
     return getFilteredLeads(props.viewLeads, activePipeline, customFilters);
   }, [props.viewLeads, activePipeline, customFilters]);
+  const hasActiveFilters = hasAnyClientFilter(props.filters, customFilters);
+  const openQuickAddLead = () =>
+    setQuickAddLeadStageId(activePipeline?.stages[0]?.id ?? "new");
+  const resetClientFilters = () => {
+    props.onChangeFilters({ search: "", source: "all", status: "all" });
+    setCustomFilters({
+      resposta: [],
+      origem: [],
+      responsavel: [],
+      semInteracao: "",
+      fonte: [],
+    });
+  };
 
   if (isCreateOpen) {
     return (
@@ -184,7 +201,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           <span>
             {formatApiErrorDisplay(
               props.error,
-              "Nao foi possivel carregar o CRM.",
+              "Não foi possível carregar os clientes.",
             )}
           </span>
         </FeatureAlert>
@@ -199,9 +216,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             onChangeCustomFilters={setCustomFilters}
             onChangeFilters={props.onChangeFilters}
             onConfigureClick={() => setIsSettingsOpen(true)}
-            onCreateClick={() =>
-              setQuickAddLeadStageId(activePipeline?.stages[0]?.id || "new")
-            }
+            onCreateClick={openQuickAddLead}
             onCreatePipeline={() => setIsQuickPipelineOpen(true)}
             onSelectPipeline={(id) => {
               setActivePipelineId(id);
@@ -220,7 +235,40 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             onChangeViewMode={props.onChangeViewMode}
           />
 
-          {props.viewMode === "kanban" ? (
+          {props.error ? null : props.isLoading ? (
+            <FeatureLoadingState
+              className="glass-panel-branded flex items-center gap-3 p-6 text-sm font-bold text-muted"
+              icon={LoaderCircle}
+              title="Carregando clientes"
+            >
+              <span>Buscando clientes e atividades do CRM.</span>
+            </FeatureLoadingState>
+          ) : filteredLeads.length === 0 ? (
+            <FeatureEmptyState
+              action={
+                <button
+                  className="crm-action"
+                  onClick={
+                    hasActiveFilters ? resetClientFilters : openQuickAddLead
+                  }
+                  type="button"
+                >
+                  {hasActiveFilters ? "Limpar filtros" : "Nova negociação"}
+                </button>
+              }
+              body={
+                hasActiveFilters
+                  ? "Ajuste a busca ou limpe os filtros para voltar à lista de clientes."
+                  : "Cadastre o primeiro cliente ou negócio para iniciar o acompanhamento comercial."
+              }
+              icon={SearchX}
+              title={
+                hasActiveFilters
+                  ? "Nenhum negócio encontrado para os filtros ativos."
+                  : "Nenhum cliente cadastrado."
+              }
+            />
+          ) : props.viewMode === "kanban" ? (
             <CrmKanbanBoard
               onAddStage={() => setIsQuickStageOpen(true)}
               onQuickAddDeal={setQuickAddLeadStageId}

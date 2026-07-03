@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Search, UserPlus, ChevronDown, Handshake } from "lucide-react";
+import { X, ChevronDown, Handshake } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
@@ -82,6 +82,7 @@ export function CrmQuickAddLeadModal({
             </p>
           </div>
           <button
+            aria-label="Fechar novo negócio"
             className="p-1.5 rounded-lg hover:bg-line/25 text-muted hover:text-app-text cursor-pointer transition-colors"
             onClick={onClose}
             type="button"
@@ -96,23 +97,7 @@ export function CrmQuickAddLeadModal({
             <span className="text-xs font-black uppercase text-muted tracking-wider">
               Cliente
             </span>
-            <div className="flex gap-2">
-              <div className="relative flex-grow">
-                <Search className="absolute left-3 top-3.5 size-4 text-muted" />
-                <input
-                  className="w-full min-h-11 rounded-lg border border-line bg-app pl-9 pr-3 text-sm font-bold text-app-text outline-none"
-                  placeholder="Buscar cliente por nome, e-mail ou CPF..."
-                  type="text"
-                />
-              </div>
-              <button
-                className="p-2.5 rounded-lg border border-line bg-app-elevated hover:bg-line/25 text-app-text cursor-pointer transition-colors flex items-center justify-center"
-                type="button"
-              >
-                <UserPlus className="size-5 text-accent" />
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-4 mt-1">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <label className="flex flex-col gap-1">
                 <span className="text-xs font-black uppercase text-muted">
                   Nome do contato
@@ -179,12 +164,14 @@ export function CrmQuickAddLeadModal({
           {/* Mais Opções Toggle */}
           <div className="flex flex-col gap-1">
             <button
+              aria-expanded={showMore}
               className="flex items-center gap-1 text-xs font-black uppercase text-accent hover:text-accent-strong cursor-pointer w-fit"
               onClick={() => setShowMore(!showMore)}
               type="button"
             >
               <span>Mais opções</span>
               <ChevronDown
+                aria-hidden="true"
                 className={`size-4 transition-transform ${showMore ? "rotate-180" : ""}`}
               />
             </button>

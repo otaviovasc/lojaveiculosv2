@@ -97,7 +97,7 @@ export function CrmLeadCreateSidebarSection({
               onChange={(event) => onChange({ listingId: event.target.value })}
               value={state.listingId}
             >
-              <option value="">Selecione um veiculo</option>
+              <option value="">Selecione um veículo</option>
               {vehicleOptions.map((vehicle) => (
                 <option key={vehicle.id} value={vehicle.id}>
                   {vehicle.label} ({vehicle.detail})

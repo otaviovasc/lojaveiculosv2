@@ -54,12 +54,12 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
         <WhatsappNotice
           message={formatApiErrorDisplay(
             inbox.error,
-            "Nao foi possivel carregar o WhatsApp.",
+            "Não foi possível carregar o WhatsApp.",
           )}
         />
       ) : null}
       {inbox.hasConnection === false ? (
-        <WhatsappNotice message="Nenhuma conexao WhatsApp ativa foi encontrada para a loja." />
+        <WhatsappNotice message="Nenhuma conexão WhatsApp ativa foi encontrada para a loja." />
       ) : null}
 
       <WhatsappToolbar onSearch={inbox.setSearch} search={inbox.search} />
