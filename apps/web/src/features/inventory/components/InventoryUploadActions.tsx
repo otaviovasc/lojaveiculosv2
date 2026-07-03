@@ -78,7 +78,7 @@ export function InventoryUploadActions({
 
   return (
     <div className="grid gap-3 rounded-lg border border-line bg-app p-3 md:grid-cols-2">
-      <InventoryField label="Galeria publica">
+      <InventoryField label="Galeria pública">
         <UploadSelect value={mediaKind} onChange={setMediaKind} />
         <FileButton
           icon={<ImageUp className="size-4" />}

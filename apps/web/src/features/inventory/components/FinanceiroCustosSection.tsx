@@ -1,54 +1,61 @@
 import { useState } from "react";
-import { Filter, Plus, Trash2, DollarSign, Sparkles } from "lucide-react";
+import { Filter, Plus, DollarSign } from "lucide-react";
+import type { InventoryCostKind } from "../model/types";
 
-const costStatuses = ["Pago", "Pendente"] as const;
-const costFilterStatuses = ["Todos", ...costStatuses] as const;
+const costKindOptions = [
+  "acquisition",
+  "preparation",
+  "repair",
+  "fee",
+  "tax",
+  "transport",
+  "other",
+] as const satisfies readonly InventoryCostKind[];
+const costFilterKinds = ["Todos", ...costKindOptions] as const;
 
-type CostStatus = (typeof costStatuses)[number];
-type CostFilterStatus = (typeof costFilterStatuses)[number];
+type CostFilterKind = (typeof costFilterKinds)[number];
 
 export interface CostItem {
   id: string;
   account: string;
-  status: CostStatus;
+  date: string;
+  kind: InventoryCostKind;
+  kindLabel: string;
   value: number;
 }
 
 interface FinanceiroCustosSectionProps {
-  costs: CostItem[];
-  onAddCost: (account: string, value: number, status: CostStatus) => void;
-  onDeleteCost: (id: string) => void;
+  addStatus?: string | null;
+  costs: readonly CostItem[];
   formatBRL: (cents: number) => string;
+  isAdding?: boolean;
+  onAddCost: (account: string, value: number, kind: InventoryCostKind) => void;
 }
 
 export function FinanceiroCustosSection({
+  addStatus,
   costs,
-  onAddCost,
-  onDeleteCost,
   formatBRL,
+  isAdding = false,
+  onAddCost,
 }: FinanceiroCustosSectionProps) {
-  const [costAccount, setCostAccount] = useState("Higienização");
-  const [costValue, setCostValue] = useState("350");
-  const [costStatus, setCostStatus] = useState<CostStatus>("Pago");
-  const [costFilterStatus, setCostFilterStatus] =
-    useState<CostFilterStatus>("Todos");
-  const [costFilterAccount] = useState("Todos"); // placeholder or default
+  const [costAccount, setCostAccount] = useState("");
+  const [costValue, setCostValue] = useState("");
+  const [costKind, setCostKind] = useState<InventoryCostKind>("preparation");
+  const [costFilterKind, setCostFilterKind] = useState<CostFilterKind>("Todos");
 
   const handleAddCost = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanValue = parseFloat(costValue.replace(/[^0-9.-]+/g, "")) * 100;
     if (isNaN(cleanValue) || cleanValue <= 0 || !costAccount) return;
 
-    onAddCost(costAccount, cleanValue, costStatus);
+    onAddCost(costAccount, cleanValue, costKind);
+    setCostAccount("");
     setCostValue("");
   };
 
   const filteredCosts = costs.filter((c) => {
-    const matchStatus =
-      costFilterStatus === "Todos" || c.status === costFilterStatus;
-    const matchAccount =
-      costFilterAccount === "Todos" || c.account === costFilterAccount;
-    return matchStatus && matchAccount;
+    return costFilterKind === "Todos" || c.kind === costFilterKind;
   });
 
   const totalCostsSum = filteredCosts.reduce(
@@ -56,15 +63,15 @@ export function FinanceiroCustosSection({
     0,
   );
 
-  const selectCostFilterStatus = (value: string) => {
-    if (costFilterStatuses.includes(value as CostFilterStatus)) {
-      setCostFilterStatus(value as CostFilterStatus);
+  const selectCostFilterKind = (value: string) => {
+    if (costFilterKinds.includes(value as CostFilterKind)) {
+      setCostFilterKind(value as CostFilterKind);
     }
   };
 
-  const selectCostStatus = (value: string) => {
-    if (costStatuses.includes(value as CostStatus)) {
-      setCostStatus(value as CostStatus);
+  const selectCostKind = (value: string) => {
+    if (costKindOptions.includes(value as InventoryCostKind)) {
+      setCostKind(value as InventoryCostKind);
     }
   };
 
@@ -83,15 +90,15 @@ export function FinanceiroCustosSection({
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-xs font-bold text-muted border-r border-line pr-3">
             <Filter className="size-3.5" />
-            <span>Status:</span>
+            <span>Tipo:</span>
             <select
-              value={costFilterStatus}
-              onChange={(e) => selectCostFilterStatus(e.target.value)}
+              value={costFilterKind}
+              onChange={(e) => selectCostFilterKind(e.target.value)}
               className="bg-app-elevated border border-line rounded px-1.5 py-0.5 text-xs font-bold outline-none"
             >
-              {costFilterStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
+              {costFilterKinds.map((kind) => (
+                <option key={kind} value={kind}>
+                  {kind === "Todos" ? kind : costKindLabel(kind)}
                 </option>
               ))}
             </select>
@@ -115,26 +122,33 @@ export function FinanceiroCustosSection({
               required
             />
             <select
-              value={costStatus}
-              onChange={(e) => selectCostStatus(e.target.value)}
+              value={costKind}
+              onChange={(e) => selectCostKind(e.target.value)}
               className="min-h-8 rounded-lg border border-line bg-app px-2 text-xs font-bold outline-none"
             >
-              {costStatuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
+              {costKindOptions.map((kind) => (
+                <option key={kind} value={kind}>
+                  {costKindLabel(kind)}
                 </option>
               ))}
             </select>
             <button
+              disabled={isAdding}
               type="submit"
-              className="min-h-8 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-3.5 flex items-center gap-1"
+              className="min-h-8 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-3.5 flex items-center gap-1 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <Plus className="size-3.5" />
-              <span>Adicionar</span>
+              <span>{isAdding ? "Salvando" : "Adicionar"}</span>
             </button>
           </form>
         </div>
       </div>
+
+      {addStatus ? (
+        <div className="rounded-xl border border-line bg-app px-3 py-2 text-xs font-bold text-muted">
+          {addStatus}
+        </div>
+      ) : null}
 
       {filteredCosts.length > 0 ? (
         <div className="flex flex-col gap-2.5">
@@ -143,9 +157,9 @@ export function FinanceiroCustosSection({
               <thead>
                 <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
                   <th className="py-2">Conta / Descrição</th>
-                  <th className="py-2">Status</th>
+                  <th className="py-2">Tipo</th>
+                  <th className="py-2">Data</th>
                   <th className="py-2 text-right">Valor</th>
-                  <th className="py-2 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -158,29 +172,13 @@ export function FinanceiroCustosSection({
                       {c.account}
                     </td>
                     <td className="py-3">
-                      <span
-                        className={
-                          "text-xs font-black px-2.5 py-0.5 rounded-full border " +
-                          (c.status === "Pago"
-                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/25"
-                            : "bg-amber-500/10 text-amber-500 border-amber-500/25")
-                        }
-                      >
-                        {c.status}
+                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full border bg-app text-muted border-line">
+                        {c.kindLabel}
                       </span>
                     </td>
+                    <td className="py-3 text-muted">{c.date}</td>
                     <td className="py-3 text-right font-black text-app-text">
                       {formatBRL(c.value)}
-                    </td>
-                    <td className="py-3 text-right">
-                      <button
-                        onClick={() => onDeleteCost(c.id)}
-                        className="p-1 rounded bg-transparent hover:bg-danger/10 text-muted hover:text-danger cursor-pointer transition-all"
-                        title="Excluir custo"
-                        type="button"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -208,18 +206,21 @@ export function FinanceiroCustosSection({
               Insira uma descrição e valor acima para cadastrar novos gastos.
             </p>
           </div>
-          <button
-            onClick={() => {
-              onAddCost("Polimento", 25000, "Pago");
-            }}
-            className="mt-2 min-h-8 rounded-lg bg-accent/15 border border-accent/25 text-accent-strong font-black text-xs hover:bg-accent/25 cursor-pointer px-4 flex items-center gap-1.5"
-            type="button"
-          >
-            <Sparkles className="size-3.5" />
-            <span>Adicionar Custo Inicial (Demo)</span>
-          </button>
         </div>
       )}
     </div>
   );
+}
+
+export function costKindLabel(kind: InventoryCostKind) {
+  const labels: Record<InventoryCostKind, string> = {
+    acquisition: "Aquisição",
+    fee: "Taxa",
+    other: "Outro",
+    preparation: "Preparação",
+    repair: "Reparo",
+    tax: "Imposto",
+    transport: "Transporte",
+  };
+  return labels[kind];
 }

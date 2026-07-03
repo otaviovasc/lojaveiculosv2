@@ -6,7 +6,7 @@ export interface TransactionItem {
   description: string;
   origin: string;
   value: number;
-  status: "Pago" | "Pendente";
+  status: "Registrado";
 }
 
 interface FinanceiroCashFlowSectionProps {
@@ -78,54 +78,50 @@ export function FinanceiroCashFlowSection({
         </div>
       </div>
 
-      <div className="overflow-x-auto mt-2">
-        <table className="w-full text-left text-xs font-bold">
-          <thead>
-            <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
-              <th className="py-2">Data</th>
-              <th className="py-2">Descrição</th>
-              <th className="py-2">Origem</th>
-              <th className="py-2 text-right">Valor</th>
-              <th className="py-2 text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b border-line/30 hover:bg-app/10 transition-colors"
-              >
-                <td className="py-3 text-muted">{item.date}</td>
-                <td className="py-3 text-app-text font-black">
-                  {item.description}
-                </td>
-                <td className="py-3 text-muted">{item.origin}</td>
-                <td className="py-3 text-right font-black text-rose-500">
-                  {formatBRL(item.value)}
-                </td>
-                <td className="py-3 text-right">
-                  <span className="inline-flex items-center gap-1">
-                    {item.status === "Pago" ? (
-                      <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    ) : (
-                      <span className="size-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-                    )}
-                    <span
-                      className={
-                        item.status === "Pago"
-                          ? "text-emerald-500 font-bold"
-                          : "text-amber-500 font-bold"
-                      }
-                    >
-                      {item.status}
-                    </span>
-                  </span>
-                </td>
+      {items.length > 0 ? (
+        <div className="overflow-x-auto mt-2">
+          <table className="w-full text-left text-xs font-bold">
+            <thead>
+              <tr className="border-b border-line text-muted uppercase text-xs tracking-wider">
+                <th className="py-2">Data</th>
+                <th className="py-2">Descrição</th>
+                <th className="py-2">Origem</th>
+                <th className="py-2 text-right">Valor</th>
+                <th className="py-2 text-right">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {items.map((item) => (
+                <tr
+                  key={item.id}
+                  className="border-b border-line/30 hover:bg-app/10 transition-colors"
+                >
+                  <td className="py-3 text-muted">{item.date}</td>
+                  <td className="py-3 text-app-text font-black">
+                    {item.description}
+                  </td>
+                  <td className="py-3 text-muted">{item.origin}</td>
+                  <td className="py-3 text-right font-black text-rose-500">
+                    {formatBRL(item.value)}
+                  </td>
+                  <td className="py-3 text-right">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-accent shrink-0" />
+                      <span className="text-accent font-bold">
+                        {item.status}
+                      </span>
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="rounded-xl border border-line border-dashed bg-app/10 px-4 py-8 text-center text-xs font-bold text-muted">
+          Nenhum custo registrado para compor o fluxo de caixa deste veículo.
+        </div>
+      )}
     </div>
   );
 }

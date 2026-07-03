@@ -163,6 +163,7 @@ function summary(
       modelYear: 2025,
       plate: null,
       priceCents: overrides.priceCents ?? 12345678,
+      publicSlug: null,
       status,
       storeId: "store_1",
       tenantId: "tenant_1",

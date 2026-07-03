@@ -95,6 +95,7 @@ function summary(): InventoryListingSummary {
       modelYear: null,
       plate: null,
       priceCents: null,
+      publicSlug: null,
       status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",

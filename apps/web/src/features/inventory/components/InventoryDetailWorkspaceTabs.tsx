@@ -2,14 +2,16 @@ import { Layers } from "lucide-react";
 import type { TabId } from "./InventoryDetailWorkspaceParts";
 
 const inventoryDetailTabs = [
-  "geral",
-  "financeiro",
-  "anuncio",
-  "documentos",
-  "vendas",
-  "historico",
-  "vitrine",
+  { id: "geral", label: "Geral" },
+  { id: "financeiro", label: "Financeiro" },
+  { id: "anuncio", label: "Anúncio" },
+  { id: "documentos", label: "Documentos" },
+  { id: "vendas", label: "Vendas" },
+  { id: "historico", label: "Histórico" },
+  { id: "vitrine", label: "Vitrine" },
 ] as const;
+
+const inventoryDetailTabIds = inventoryDetailTabs.map((tab) => tab.id);
 
 export function InventoryDetailWorkspaceTabs({
   activeTab,
@@ -20,20 +22,21 @@ export function InventoryDetailWorkspaceTabs({
 }) {
   return (
     <div className="custom-scrollbar border-b border-line overflow-x-auto select-none">
-      <nav className="flex gap-6 min-w-max">
+      <nav aria-label="Abas do veículo" className="flex gap-6 min-w-max">
         {inventoryDetailTabs.map((tab) => (
           <button
+            aria-pressed={activeTab === tab.id}
             className={
-              "pb-4 text-sm font-black transition-all border-b-2 cursor-pointer relative capitalize " +
-              (activeTab === tab
+              "pb-4 text-sm font-black transition-all border-b-2 cursor-pointer relative " +
+              (activeTab === tab.id
                 ? "border-accent text-accent"
                 : "border-transparent text-muted hover:text-app-text")
             }
-            key={tab}
-            onClick={() => onTabChange(tab)}
+            key={tab.id}
+            onClick={() => onTabChange(tab.id)}
             type="button"
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </nav>
@@ -42,7 +45,7 @@ export function InventoryDetailWorkspaceTabs({
 }
 
 export function InventoryDetailEmptyTab({ activeTab }: { activeTab: TabId }) {
-  if (inventoryDetailTabs.includes(activeTab)) return null;
+  if (inventoryDetailTabIds.includes(activeTab)) return null;
 
   return (
     <div className="flex flex-col items-center justify-center text-center py-20 bg-panel/30 border border-line border-dashed rounded-2xl">

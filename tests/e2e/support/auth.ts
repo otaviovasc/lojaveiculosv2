@@ -23,7 +23,11 @@ export async function loginAs(
   if (testInfo) {
     await saveQaScreenshot(page, testInfo, `${persona.userId}-sign-in`);
   }
-  await page.getByRole("button", { name: new RegExp(persona.name) }).click();
+  await page
+    .getByRole("button", {
+      name: new RegExp(`^${escapeRegExp(persona.name)}\\b`),
+    })
+    .click();
   await expect(page).toHaveURL(persona.expectedPath);
 }
 
@@ -81,4 +85,8 @@ function buildLocalBootstrap(persona: QaPersona, permissions?: string[]) {
       name: persona.name,
     },
   };
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

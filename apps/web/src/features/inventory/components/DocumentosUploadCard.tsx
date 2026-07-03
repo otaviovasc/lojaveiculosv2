@@ -22,7 +22,7 @@ export function DocumentosUploadCard() {
             type="button"
           >
             <Upload className="size-3.5 shrink-0" />
-            <span>Upload</span>
+            <span>Enviar</span>
           </button>
         </div>
       </div>

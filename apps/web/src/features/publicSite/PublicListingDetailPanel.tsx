@@ -1,5 +1,5 @@
 import { ArrowLeft, RefreshCcw } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { PublicListingDetailContent } from "./PublicListingDetailContent";
 import type {
   PublicStorefrontLeadInput,
@@ -33,8 +33,12 @@ export function PublicListingDetailPanel({
 }) {
   const listing = detail.data?.listing;
 
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [detail.listingSlug]);
+
   return (
-    <section className="public-light-surface fixed inset-0 z-20 overflow-y-auto bg-app">
+    <section className="public-light-surface min-h-screen bg-app">
       <article className="min-h-dvh">
         <header className="sticky top-0 z-10 border-b border-line bg-panel/95 shadow-sm backdrop-blur">
           <div className="public-storefront-shell flex min-h-16 items-center justify-between gap-3 px-4 py-3 sm:px-6">

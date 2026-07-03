@@ -47,7 +47,7 @@ export function InventoryMediaWorkspace({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel atualizar as midias.",
+          "Não foi possível atualizar as mídias.",
         ),
       });
     }
@@ -56,7 +56,7 @@ export function InventoryMediaWorkspace({
   return (
     <InventoryPanel
       icon={<ImageUp className="size-5" />}
-      title="Midia e documentos"
+      title="Mídia e documentos"
     >
       <div className="grid gap-4">
         <UnitMediaSelect
@@ -122,7 +122,7 @@ function MediaReadiness({ media }: { media: InventoryListingDetail["media"] }) {
   return (
     <div className="grid gap-2 rounded-lg border border-line bg-app p-3 text-sm font-black text-muted sm:grid-cols-3">
       <StatusTile label="Capa" value={cover ? "Pronta" : "Pendente"} />
-      <StatusTile label="Fotos publicas" value={publicPhotos.length} />
+      <StatusTile label="Fotos públicas" value={publicPhotos.length} />
       <StatusTile label="Ocultos" value={hiddenItems} />
     </div>
   );
@@ -151,6 +151,6 @@ function WorkspaceStatus({ state }: { state: InventoryMediaState }) {
     return <p className="text-sm font-black text-danger">{state.message}</p>;
   }
   return (
-    <p className="text-sm font-bold text-muted">Auditoria de midia ativa.</p>
+    <p className="text-sm font-bold text-muted">Auditoria de mídia ativa.</p>
   );
 }

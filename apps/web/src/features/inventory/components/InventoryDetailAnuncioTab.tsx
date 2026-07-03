@@ -8,6 +8,8 @@ import {
   Info,
   X,
 } from "lucide-react";
+import type { InventoryListingDetail } from "../model/types";
+import { formatPrice } from "./InventoryDetailWorkspaceMocks";
 
 interface TagItem {
   id: string;
@@ -15,7 +17,17 @@ interface TagItem {
   checked: boolean;
 }
 
-export function InventoryDetailAnuncioTab() {
+export function InventoryDetailAnuncioTab({
+  detail,
+}: {
+  detail: InventoryListingDetail;
+}) {
+  const listing = detail.listing;
+  const advertisedPrice = listing.priceCents
+    ? formatPrice(listing.priceCents)
+    : "Sob consulta";
+  const portalSlug = listing.publicSlug ?? listing.id;
+  const portalPath = `/veiculo/${portalSlug}`;
   const [description, setDescription] = useState<string | null>(null);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [tempDesc, setTempDesc] = useState("");
@@ -33,7 +45,7 @@ export function InventoryDetailAnuncioTab() {
 
   const [customTags, setCustomTags] = useState<string[]>([]);
   const [customTagInput, setCustomTagInput] = useState("");
-  const [anuncioPrice, setAnuncioPrice] = useState("");
+  const [anuncioPrice, setAnuncioPrice] = useState(advertisedPrice);
   const [videoLink, setVideoLink] = useState("");
   const [portalActive, setPortalActive] = useState(true);
   const [showConfig, setShowConfig] = useState(false);
@@ -211,7 +223,7 @@ export function InventoryDetailAnuncioTab() {
                   className="min-h-9 w-full rounded-lg border border-line bg-app px-2.5 text-xs font-bold outline-none"
                 />
                 <span className="text-xs font-bold text-muted mt-0.5">
-                  Referência venda: R$ 150.000
+                  Referência venda: {advertisedPrice}
                 </span>
               </div>
 
@@ -250,7 +262,7 @@ export function InventoryDetailAnuncioTab() {
             Portais
           </h3>
           <span className="text-xs font-black text-muted uppercase tracking-wider">
-            Veículo: Civic 2.0 EXL 2020 • R$ 150.000
+            Veículo: {listing.title} • {advertisedPrice}
           </span>
         </div>
 
@@ -260,7 +272,7 @@ export function InventoryDetailAnuncioTab() {
               Portal próprio
             </span>
             <div className="flex items-center gap-1 text-xs font-bold text-accent hover:underline cursor-pointer">
-              <span>https://loja.lojaveiculosv2.com.br/veiculo/civic-2020</span>
+              <span>https://loja.lojaveiculosv2.com.br{portalPath}</span>
               <ExternalLink className="size-3" />
             </div>
           </div>

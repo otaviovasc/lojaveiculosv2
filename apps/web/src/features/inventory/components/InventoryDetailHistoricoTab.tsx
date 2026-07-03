@@ -11,6 +11,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import type { InventoryListingDetail } from "../model/types";
+import { formatPrice } from "./InventoryDetailWorkspaceMocks";
 
 interface TimelineEvent {
   id: string;
@@ -27,7 +29,15 @@ interface AuditEntry {
   details: string;
 }
 
-export function InventoryDetailHistoricoTab() {
+export function InventoryDetailHistoricoTab({
+  detail,
+}: {
+  detail: InventoryListingDetail;
+}) {
+  const vehicleName = detail.listing.title;
+  const advertisedPrice = detail.listing.priceCents
+    ? formatPrice(detail.listing.priceCents)
+    : "preço sob consulta";
   const [isIaExpanded, setIsIaExpanded] = useState(true);
   const [userFilter, setUserFilter] = useState("Todos");
   const [typeFilter, setTypeFilter] = useState("Todos");
@@ -61,7 +71,7 @@ export function InventoryDetailHistoricoTab() {
       date: "11/06/2026 14:20",
       user: "Carlos Cunha",
       action: "Cadastro",
-      details: "Entrada do veículo Civic 2020 cadastrada",
+      details: `Entrada do veículo ${vehicleName} cadastrada`,
     },
     {
       id: "a2",
@@ -110,7 +120,7 @@ export function InventoryDetailHistoricoTab() {
         <div className="text-xs font-bold leading-relaxed text-muted">
           <p>
             Veículo de alta liquidez na praça. O giro médio estimado para
-            modelos Civic Sedan nesta cor e ano é de 15 dias.
+            modelos similares a {vehicleName} nesta cor e ano é de 15 dias.
           </p>
 
           {isIaExpanded && (
@@ -132,8 +142,9 @@ export function InventoryDetailHistoricoTab() {
                   Análise de Mercado
                 </h4>
                 <p>
-                  Modelos similares estão precificados em média a R$ 152.000 na
-                  região. Nossa margem de R$ 150.000 é atrativa.
+                  Modelos similares estão precificados próximos de{" "}
+                  {advertisedPrice} na região. Revise a margem antes de negociar
+                  a proposta final.
                 </p>
               </div>
 
@@ -252,7 +263,9 @@ export function InventoryDetailHistoricoTab() {
               Data Inicial
             </span>
             <input
-              type="date"
+              inputMode="numeric"
+              placeholder="dd/mm/aaaa"
+              type="text"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               className="min-h-8 bg-app border border-line rounded-lg px-2 text-xs font-bold outline-none"
@@ -264,7 +277,9 @@ export function InventoryDetailHistoricoTab() {
               Data Final
             </span>
             <input
-              type="date"
+              inputMode="numeric"
+              placeholder="dd/mm/aaaa"
+              type="text"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
               className="min-h-8 bg-app border border-line rounded-lg px-2 text-xs font-bold outline-none"

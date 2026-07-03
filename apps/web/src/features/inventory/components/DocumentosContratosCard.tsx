@@ -20,11 +20,15 @@ interface Template {
   scope: string;
 }
 
-export function DocumentosContratosCard() {
+export function DocumentosContratosCard({
+  listingTitle,
+}: {
+  listingTitle: string;
+}) {
   const [contracts, setContracts] = useState<Contract[]>([
     {
       id: "c1",
-      title: "Contrato de Compra e Venda - Civic 2020",
+      title: `Contrato de Compra e Venda - ${listingTitle}`,
       status: "Assinado",
       date: "12/06/2026",
     },

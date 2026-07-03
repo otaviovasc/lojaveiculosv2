@@ -81,12 +81,12 @@ export function VehicleAcquisitionSupplierPanel({
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <TextField
-          label="Provider"
+          label="Provedor"
           onChange={(value) => onUpdateSupplierDraft("provider", value)}
           value={supplierDraft.provider}
         />
         <TextField
-          label="Codigo externo"
+          label="Código externo"
           onChange={(value) =>
             onUpdateSupplierDraft("externalProviderId", value)
           }

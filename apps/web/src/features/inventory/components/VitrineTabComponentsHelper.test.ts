@@ -121,6 +121,7 @@ function listingDetail(
       modelYear: 2025,
       plate: "ABC1D23",
       priceCents: 12000000,
+      publicSlug: null,
       status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",

@@ -29,7 +29,7 @@ export function InventoryMediaGrid({
 }) {
   if (media.length === 0) {
     return (
-      <p className="text-sm font-bold text-muted">Nenhuma midia enviada.</p>
+      <p className="text-sm font-bold text-muted">Nenhuma mídia enviada.</p>
     );
   }
 
@@ -67,11 +67,11 @@ function MediaCard({
 }) {
   const [altText, setAltText] = useState(media.altText ?? "");
   const saveAlt = () =>
-    run("Salvando midia", () =>
+    run("Salvando mídia", () =>
       api.updateMedia(unitId, media.id, { altText: altText.trim() || null }),
     );
   const togglePublic = () =>
-    run("Atualizando midia", () =>
+    run("Atualizando mídia", () =>
       api.updateMedia(unitId, media.id, { isPublic: !media.isPublic }),
     );
   const coverId = firstPublicPhoto(mediaItems)?.id;
@@ -81,7 +81,7 @@ function MediaCard({
       <MediaPreview media={media} />
       <div className="flex items-center justify-between gap-2">
         <InventoryBadge tone={media.isPublic ? "accent" : "warning"}>
-          {media.id === coverId ? "capa" : media.kind}
+          {media.id === coverId ? "capa" : mediaKindLabel(media.kind)}
         </InventoryBadge>
         <div className="flex gap-1">
           {media.kind === "photo" ? (
@@ -117,7 +117,7 @@ function MediaCard({
           <IconAction
             label="Remover"
             onClick={() =>
-              void run("Removendo midia", () =>
+              void run("Removendo mídia", () =>
                 api.deleteMedia(unitId, media.id),
               )
             }
@@ -144,11 +144,17 @@ function firstPublicPhoto(media: readonly InventoryMedia[]) {
   return media.find((item) => item.kind === "photo" && item.isPublic);
 }
 
+function mediaKindLabel(kind: InventoryMedia["kind"]) {
+  if (kind === "photo") return "foto";
+  if (kind === "video") return "vídeo";
+  return "documento";
+}
+
 function MediaPreview({ media }: { media: InventoryMedia }) {
   if (media.kind === "photo") {
     return (
       <img
-        alt={media.altText ?? "Midia do veiculo"}
+        alt={media.altText ?? "Mídia do veículo"}
         className="aspect-video w-full rounded-lg bg-app object-cover"
         src={media.url}
       />
@@ -189,7 +195,7 @@ function reorder(
   if (!currentItem || !targetItem) return;
   next[index] = targetItem;
   next[target] = currentItem;
-  void run("Reordenando midia", () =>
+  void run("Reordenando mídia", () =>
     api.reorderMedia(
       unitId,
       next.map((item, displayOrder) => ({ displayOrder, mediaId: item.id })),
@@ -208,7 +214,7 @@ function setCover(
     media,
     ...mediaItems.filter((item) => item.id !== media.id),
   ].map((item, displayOrder) => ({ displayOrder, mediaId: item.id }));
-  void run("Definindo capa publica", async () => {
+  void run("Definindo capa pública", async () => {
     if (!media.isPublic) {
       await api.updateMedia(unitId, media.id, { isPublic: true });
     }
