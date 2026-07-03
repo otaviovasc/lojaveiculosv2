@@ -26,7 +26,7 @@ describe("document operations", () => {
 
     expect(preview.document.id).toBe(document.id);
     expect(preview.sections.map((section) => section.heading)).toContain(
-      "Clausulas",
+      "Cláusulas",
     );
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "documents.preview" }),

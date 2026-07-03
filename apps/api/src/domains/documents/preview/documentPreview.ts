@@ -1,4 +1,8 @@
-import type { LinkedDocument } from "../ports/documentRepository.js";
+import type {
+  DocumentKind,
+  DocumentStatus,
+  LinkedDocument,
+} from "../ports/documentRepository.js";
 
 export type DocumentPreviewSection = {
   heading: string;
@@ -26,9 +30,9 @@ export function buildDocumentPreview(
     sections: [
       { heading: "Documento", lines: documentLines(document, metadata) },
       { heading: "Comprador", lines: partyLines(buyer) },
-      { heading: "Veiculo", lines: vehicleLines(vehicle) },
+      { heading: "Veículo", lines: vehicleLines(vehicle) },
       { heading: "Valores", lines: financeLines(finance) },
-      { heading: "Clausulas", lines: clauses.length ? clauses : ["-"] },
+      { heading: "Cláusulas", lines: clauses.length ? clauses : ["-"] },
     ],
   };
 }
@@ -38,9 +42,9 @@ function documentLines(
   metadata: Record<string, unknown>,
 ) {
   return [
-    `Titulo: ${document.title}`,
-    `Tipo: ${document.kind}`,
-    `Status: ${document.status}`,
+    `Título: ${document.title}`,
+    `Tipo: ${kindLabel(document.kind)}`,
+    `Status: ${statusLabel(document.status)}`,
     `Modelo: ${text(metadata.templateTitle ?? metadata.template)}`,
   ];
 }
@@ -56,7 +60,7 @@ function partyLines(party: Record<string, unknown>) {
 
 function vehicleLines(vehicle: Record<string, unknown>) {
   return [
-    `Titulo: ${text(vehicle.title)}`,
+    `Título: ${text(vehicle.title)}`,
     `Placa: ${text(vehicle.plate)}`,
     `Chassi/VIN: ${text(vehicle.vin)}`,
   ];
@@ -92,4 +96,37 @@ function money(value: unknown) {
 function text(value: unknown) {
   if (value === null || value === undefined || value === "") return "-";
   return String(value);
+}
+
+function kindLabel(kind: DocumentKind) {
+  return (
+    {
+      buyer_document: "Cadastro comprador",
+      delivery_term: "Termo de entrega",
+      finance_receipt: "Financeiro",
+      inspection: "Vistoria",
+      internal: "Interno",
+      invoice: "Nota fiscal",
+      other: "Outro",
+      power_of_attorney: "Procuração",
+      reservation_receipt: "Reserva",
+      sale_contract: "Contrato",
+      sale_receipt: "Recibo",
+      test_drive: "Test drive",
+      vehicle_registration: "Documento da unidade",
+    } satisfies Record<DocumentKind, string>
+  )[kind];
+}
+
+function statusLabel(status: DocumentStatus) {
+  return (
+    {
+      archived: "Arquivado",
+      draft: "Rascunho",
+      issued: "Emitido",
+      pending_signature: "Aguardando assinatura",
+      signed: "Assinado",
+      voided: "Cancelado",
+    } satisfies Record<DocumentStatus, string>
+  )[status];
 }

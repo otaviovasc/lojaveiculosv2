@@ -66,11 +66,16 @@ export function DocumentManageLinksDialog({
   };
 
   return (
-    <div className="documents-modal-backdrop" onClick={onClose}>
+    <div
+      className="documents-modal-backdrop"
+      onClick={isBusy ? undefined : onClose}
+    >
       <section
         aria-label="Gerenciar vínculos do documento"
+        aria-modal="true"
         className="documents-links-dialog"
         onClick={(event) => event.stopPropagation()}
+        role="dialog"
       >
         <header className="documents-upload-header">
           <div>
@@ -80,6 +85,7 @@ export function DocumentManageLinksDialog({
           <button
             aria-label="Fechar"
             className="documents-icon-button"
+            disabled={isBusy}
             onClick={onClose}
             title="Fechar"
             type="button"

@@ -23,8 +23,10 @@ export function DocumentDeleteDialog({
       <AnimatedContent distance={30} duration={0.4} ease="power2.out">
         <section
           aria-label="Excluir documento"
+          aria-modal="true"
           className="glass-panel-branded documents-delete-dialog !p-6 relative overflow-hidden flex flex-col items-center text-center gap-4"
           onClick={(event) => event.stopPropagation()}
+          role="dialog"
         >
           <button
             aria-label="Fechar"

@@ -99,13 +99,22 @@ async function findTemplateRow(
 
 function toOverride(row: TemplateRow) {
   return {
-    clauses: toClauses(row.clauses),
+    clauses: toTemplateClauses(row.clauses),
     title: row.title,
     updatedAt: row.updatedAt,
   };
 }
 
-function toClauses(value: unknown): readonly string[] {
+export function toTemplateClauses(value: unknown): readonly string[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((item): item is string => typeof item === "string");
+  return value
+    .map((item) => {
+      if (typeof item === "string") return item;
+      if (item && typeof item === "object" && "body" in item) {
+        const body = (item as { body?: unknown }).body;
+        return typeof body === "string" ? body : null;
+      }
+      return null;
+    })
+    .filter((item): item is string => Boolean(item?.trim()));
 }

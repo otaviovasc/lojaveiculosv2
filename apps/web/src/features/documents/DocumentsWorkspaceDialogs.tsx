@@ -6,7 +6,6 @@ import {
   DocumentUploadDialog,
   type DocumentUploadTarget,
 } from "./DocumentUploadDialog";
-import { DocumentsMobileShell } from "./DocumentsMobileShell";
 import { DocumentsFolderSidebar } from "./DocumentsFolderSidebar";
 import type { DocumentsApi } from "./apiClient";
 import type {
@@ -23,12 +22,10 @@ import type {
 export type DocumentsMobileTab = "documentos" | "pastas";
 
 export function DocumentsWorkspaceDialogs({
-  canUpload,
   deleteDocument,
   documentToDelete,
   documents,
   isDocumentActionBusy,
-  isRefreshing,
   isSavingTemplate,
   isTemplatesDialogOpen,
   isUploadDialogOpen,
@@ -37,29 +34,23 @@ export function DocumentsWorkspaceDialogs({
   onMobileTabChange,
   onRefresh,
   onSelectFolder,
-  onUpload,
   onUpdateDocument,
   runtimeApi,
   saveTemplate,
-  selectedFolderTitle,
   selectedKey,
   setDocumentToDelete,
   setIsTemplatesDialogOpen,
   setIsUploadDialogOpen,
   setLinkDocument,
-  showUpload,
   templates,
   unitFoldersStatus,
   uploadTarget,
-  uploadTitle,
   vehicleOptions,
 }: {
-  canUpload: boolean;
   deleteDocument: () => Promise<void>;
   documentToDelete: WorkspaceDocument | null;
   documents: readonly WorkspaceDocument[];
   isDocumentActionBusy: boolean;
-  isRefreshing: boolean;
   isSavingTemplate: boolean;
   isTemplatesDialogOpen: boolean;
   isUploadDialogOpen: boolean;
@@ -72,51 +63,34 @@ export function DocumentsWorkspaceDialogs({
     doc: WorkspaceDocument,
     input: UpdateDocumentInput,
   ) => Promise<WorkspaceDocument | null>;
-  onUpload: () => void;
   runtimeApi: DocumentsApi | null;
   saveTemplate: (
     kind: DocumentKind,
     input: UpdateDocumentTemplateInput,
   ) => Promise<void>;
-  selectedFolderTitle: string;
   selectedKey: DocumentsFolderKey;
   setDocumentToDelete: (doc: WorkspaceDocument | null) => void;
   setIsTemplatesDialogOpen: (open: boolean) => void;
   setIsUploadDialogOpen: (open: boolean) => void;
   setLinkDocument: (doc: WorkspaceDocument | null) => void;
-  showUpload: boolean;
   templates: readonly DocumentTemplate[];
   unitFoldersStatus: "idle" | "loading" | "ready" | "error";
   uploadTarget: DocumentUploadTarget | null;
-  uploadTitle: string;
   vehicleOptions: readonly DocumentVehicleOption[];
 }) {
   return (
     <>
-      <div className="md:hidden">
-        <DocumentsMobileShell
-          activeTab={mobileTab}
-          canUpload={canUpload}
-          isRefreshing={isRefreshing}
-          onSelectFolder={onSelectFolder}
-          onTabChange={onMobileTabChange}
-          onTemplates={() => setIsTemplatesDialogOpen(true)}
-          onRefresh={() => void onRefresh()}
-          onUpload={onUpload}
-          selectedFolderTitle={selectedFolderTitle}
-          showUpload={showUpload}
-          uploadTitle={uploadTitle}
-        />
-      </div>
-
       {mobileTab === "pastas" ? (
         <div
           className="documents-modal-backdrop md:hidden"
           onClick={() => onMobileTabChange("documentos")}
         >
           <div
+            aria-label="Pastas de documentos"
+            aria-modal="true"
             className="documents-mobile-folders"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
           >
             <DocumentsFolderSidebar
               documents={documents}

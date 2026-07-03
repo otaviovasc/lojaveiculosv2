@@ -123,7 +123,7 @@ export function DocumentsModule({
   const showUpload = Boolean(uploadTarget);
   const uploadTitle = uploadTarget
     ? "Enviar documento para esta pasta"
-    : "Esta unidade ainda nao tem vinculo de anuncio para envio";
+    : "Esta unidade ainda não tem vínculo de anúncio para envio";
 
   const selection = useDocumentsBulkSelection(sortedVisible);
   const visibleSelectedCount = selection.visibleSelectedCount;
@@ -198,7 +198,7 @@ export function DocumentsModule({
             </button>
           }
           className="documents-state documents-error-state"
-          title="Nao foi possivel carregar os documentos"
+          title="Não foi possível carregar os documentos"
         >
           <p>{errorMessage}</p>
         </FeatureAlert>
@@ -253,12 +253,10 @@ export function DocumentsModule({
       </section>
 
       <DocumentsWorkspaceDialogs
-        canUpload={Boolean(runtimeApi && uploadTarget)}
         deleteDocument={state.deleteDocument}
         documentToDelete={state.documentToDelete}
         documents={state.documents}
         isDocumentActionBusy={state.isDocumentActionBusy}
-        isRefreshing={isLoading}
         isSavingTemplate={state.isSavingTemplate}
         isTemplatesDialogOpen={isTemplatesDialogOpen}
         isUploadDialogOpen={state.isUploadDialogOpen}
@@ -268,20 +266,16 @@ export function DocumentsModule({
         onRefresh={state.resetAndReload}
         onSelectFolder={selectFolder}
         onUpdateDocument={state.updateDocument}
-        onUpload={() => state.setIsUploadDialogOpen(true)}
         runtimeApi={runtimeApi}
         saveTemplate={state.saveTemplate}
-        selectedFolderTitle={folderTitle}
         selectedKey={selectedFolderKey}
         setDocumentToDelete={state.setDocumentToDelete}
         setIsTemplatesDialogOpen={setIsTemplatesDialogOpen}
         setIsUploadDialogOpen={state.setIsUploadDialogOpen}
         setLinkDocument={setLinkDocument}
-        showUpload={showUpload}
         templates={state.templates}
         unitFoldersStatus={unitFolders.status}
         uploadTarget={uploadTarget}
-        uploadTitle={uploadTitle}
         vehicleOptions={vehicleOptions as readonly DocumentVehicleOption[]}
       />
     </FeaturePageShell>

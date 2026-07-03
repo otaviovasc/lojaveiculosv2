@@ -7,7 +7,7 @@ import {
   DocumentUploadQueue,
   type UploadQueueItem,
 } from "./DocumentUploadQueue";
-import type { WorkspaceDocument } from "./types";
+import type { DocumentUpload, WorkspaceDocument } from "./types";
 
 export type DocumentUploadTarget =
   | { label: string; mode: "general" }
@@ -122,11 +122,7 @@ export function DocumentUploadDialog({
                 fileName: item.file.name,
                 sizeBytes: item.file.size,
               });
-        await fetch(upload.uploadUrl, {
-          body: item.file,
-          headers: upload.uploadHeaders,
-          method: upload.uploadMethod,
-        }).then(readDocumentUploadResponse);
+        await uploadDocumentObject(upload, item.file);
         setItems((current) =>
           current.map((entry) =>
             entry.id === item.id
@@ -176,7 +172,7 @@ export function DocumentUploadDialog({
         ),
       );
       setStatus(
-        formatApiErrorDisplay(error, "Nao foi possivel enviar os documentos."),
+        formatApiErrorDisplay(error, "Não foi possível enviar os documentos."),
       );
     } finally {
       setIsUploading(false);
@@ -316,8 +312,30 @@ export async function readDocumentUploadResponse(
 ): Promise<void> {
   if (!response.ok) {
     throw new Error(
-      `Falha no envio do documento para o armazenamento. Codigo HTTP ${response.status}.`,
+      `Falha no envio do documento para o armazenamento. Código HTTP ${response.status}.`,
     );
+  }
+}
+
+export async function uploadDocumentObject(
+  upload: DocumentUpload,
+  file: File,
+  fetchImpl: typeof fetch = fetch,
+): Promise<void> {
+  if (isLocalMockUploadUrl(upload.uploadUrl)) return;
+  await fetchImpl(upload.uploadUrl, {
+    body: file,
+    headers: upload.uploadHeaders,
+    method: upload.uploadMethod,
+  }).then(readDocumentUploadResponse);
+}
+
+function isLocalMockUploadUrl(uploadUrl: string) {
+  try {
+    const url = new URL(uploadUrl);
+    return url.hostname === "upload.local";
+  } catch {
+    return false;
   }
 }
 

@@ -143,7 +143,7 @@ export function useDocumentsModuleActions({
         documentId,
         versionId,
       );
-      openDocumentDownload(download.downloadUrl);
+      openDocumentDownload(download);
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });

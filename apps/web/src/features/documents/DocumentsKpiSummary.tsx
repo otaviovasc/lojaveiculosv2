@@ -44,7 +44,7 @@ export function DocumentsKpiSummary({
     {
       filter: "automatic",
       icon: Bot,
-      label: "Automaticos",
+      label: "Automáticos",
       tone: "blue",
       value: summary.automatic,
     },

@@ -1,5 +1,6 @@
 import { Plus, RotateCcw, Save, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { InventorySelect } from "../inventory/components/InventoryFormParts";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
 import { kindLabel } from "./documentLabels";
 import {
@@ -35,6 +36,14 @@ export function DocumentTemplatesPanel({
 
   useEffect(() => setDraft(createDraft(selected)), [selected]);
 
+  const templateOptions = useMemo(
+    () =>
+      templates.map((template) => ({
+        label: template.title,
+        value: template.kind,
+      })),
+    [templates],
+  );
   const previewKind = selected?.kind ?? templates[0]?.kind ?? "sale_contract";
   const preview = useMemo(
     () => renderDocumentTemplatePreview(draft, previewKind),
@@ -59,21 +68,12 @@ export function DocumentTemplatesPanel({
       <header className="documents-template-picker-bar">
         <label className="documents-template-picker">
           <span>Modelo</span>
-          <select
-            onChange={(event) => {
-              const nextTemplate = templates.find(
-                (template) => template.kind === event.target.value,
-              );
-              if (nextTemplate) setSelectedKind(nextTemplate.kind);
-            }}
+          <InventorySelect<DocumentKind>
+            ariaLabel="Selecionar modelo de documento"
+            onChange={setSelectedKind}
+            options={templateOptions}
             value={selected.kind}
-          >
-            {templates.map((template) => (
-              <option key={template.kind} value={template.kind}>
-                {template.title}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         <div className="documents-template-picker-summary">
           <span>{kindLabel(selected.kind)}</span>
@@ -201,8 +201,11 @@ export function DocumentTemplatesPanel({
 function createDraft(
   template: DocumentTemplate | undefined,
 ): DocumentTemplateDraft {
+  const clauses = template?.clauses.length
+    ? template.clauses
+    : (template?.defaultClauses ?? []);
   return {
-    clauses: [...(template?.clauses ?? [])],
+    clauses: [...clauses],
     title: template?.title ?? "",
   };
 }

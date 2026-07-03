@@ -9,7 +9,8 @@ import {
   FeatureTableFrame,
 } from "../../components/ui/FeatureTable";
 import { MercosulPlateBadge } from "../inventory/components/InventoryListingCardGrid";
-import { documentOrigin, documentVehicleInfo } from "./documentDisplayModel";
+import { DocumentOriginBadge } from "./DocumentBadges";
+import { documentVehicleInfo } from "./documentDisplayModel";
 import {
   documentFileLabel,
   documentKindBadge,
@@ -42,25 +43,26 @@ export function DocumentsTable({
 
   return (
     <FeatureTableFrame>
-      <table className="min-w-full border-collapse text-left text-sm">
+      <table className="min-w-[56rem] border-collapse text-left text-sm xl:min-w-full">
         <thead className="bg-app/80 text-xs font-black uppercase tracking-wider text-muted border-b border-line">
           <tr>
             {showSelect ? <th className="px-3 py-3.5 w-10" /> : null}
             <th className="px-4 py-3.5">Documento</th>
-            <th className="px-4 py-3.5">Origem</th>
-            <th className="px-4 py-3.5">Unidade</th>
+            <th className="hidden px-4 py-3.5 lg:table-cell">Origem</th>
+            <th className="hidden px-4 py-3.5 xl:table-cell">Unidade</th>
             <th className="px-4 py-3.5">Tipo</th>
             <th className="px-4 py-3.5">Status</th>
-            <th className="px-4 py-3.5">Enviado</th>
-            <th className="px-4 py-3.5">Tamanho</th>
-            <th className="px-4 py-3.5 text-right">Ações</th>
+            <th className="hidden px-4 py-3.5 xl:table-cell">Enviado</th>
+            <th className="hidden px-4 py-3.5 2xl:table-cell">Tamanho</th>
+            <th className="sticky right-0 z-10 bg-panel px-4 py-3.5 text-right">
+              Ações
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line/40">
           {documents.map((document) => {
             const isChecked = Boolean(selectedIds?.has(document.id));
             const vehicle = documentVehicleInfo(document);
-            const origin = documentOrigin(document);
 
             return (
               <tr
@@ -90,7 +92,7 @@ export function DocumentsTable({
                 ) : null}
 
                 {/* Documento */}
-                <td className="px-4 py-3 max-w-[280px] align-middle">
+                <td className="px-4 py-3 max-w-[20rem] align-middle">
                   <div
                     className={
                       "truncate font-black text-sm text-app-text group-hover:text-accent transition-colors " +
@@ -105,24 +107,14 @@ export function DocumentsTable({
                 </td>
 
                 {/* Origem */}
-                <td className="px-4 py-3 whitespace-nowrap align-middle">
+                <td className="hidden px-4 py-3 whitespace-nowrap align-middle lg:table-cell">
                   <div className="flex items-center h-10">
-                    <span
-                      className={
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider " +
-                        (origin === "manual"
-                          ? "bg-pink-500/10 text-pink-500 border border-pink-500/20"
-                          : "bg-violet-500/10 text-violet-500 border border-violet-500/20")
-                      }
-                    >
-                      <span className="size-1.5 rounded-full bg-current" />
-                      {origin === "manual" ? "Manual" : "Automatico"}
-                    </span>
+                    <DocumentOriginBadge document={document} />
                   </div>
                 </td>
 
                 {/* Unidade (placa Mercosul) */}
-                <td className="px-4 py-3 whitespace-nowrap align-middle">
+                <td className="hidden px-4 py-3 whitespace-nowrap align-middle xl:table-cell">
                   <div className="flex items-center h-10">
                     {vehicle?.plate ? (
                       <MercosulPlateBadge plate={vehicle.plate} />
@@ -155,7 +147,7 @@ export function DocumentsTable({
                 </td>
 
                 {/* Enviado */}
-                <td className="px-4 py-3 whitespace-nowrap text-xs align-middle">
+                <td className="hidden px-4 py-3 whitespace-nowrap text-xs align-middle xl:table-cell">
                   <div className="font-black text-app-text">
                     {formatDateTime(document.uploadedAt)}
                   </div>
@@ -167,7 +159,7 @@ export function DocumentsTable({
                 </td>
 
                 {/* Tamanho */}
-                <td className="px-4 py-3 whitespace-nowrap text-xs align-middle">
+                <td className="hidden px-4 py-3 whitespace-nowrap text-xs align-middle 2xl:table-cell">
                   <div className="font-bold text-muted">
                     {documentFileLabel(document)}
                   </div>
@@ -175,14 +167,13 @@ export function DocumentsTable({
 
                 {/* Ações */}
                 <td
-                  className="px-4 py-3 whitespace-nowrap text-right align-middle"
+                  className="sticky right-0 bg-panel px-4 py-3 whitespace-nowrap text-right align-middle group-hover:bg-app-elevated"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <FeatureRowActions>
                     <FeatureRowAction
                       ariaLabel="Visualizar documento"
                       icon={FileSearch}
-                      iconClassName="text-blue-500"
                       onClick={() => onSelect(document)}
                       tooltip="Visualizar"
                     />
@@ -190,7 +181,6 @@ export function DocumentsTable({
                       ariaLabel="Baixar documento"
                       disabled={isBusy}
                       icon={Download}
-                      iconClassName="text-emerald-500"
                       onClick={() => void onDownload(document.id)}
                       tooltip="Baixar"
                     />
@@ -198,7 +188,6 @@ export function DocumentsTable({
                       ariaLabel="Excluir documento"
                       disabled={isBusy || document.status === "voided"}
                       icon={Trash2}
-                      iconClassName="text-pink-500"
                       onClick={() => onDelete(document)}
                       tooltip="Excluir"
                     />
