@@ -10,9 +10,11 @@ import {
   summarizeInventoryList,
 } from "./listCatalogModel";
 import {
+  DEFAULT_INVENTORY_LIST_SORT,
   getInventoryColumnSortDirection,
   getNextInventoryColumnSort,
   sortInventoryListItems,
+  type InventorySortableColumn,
 } from "./inventoryListSortModel";
 import type { InventoryListingList, InventoryListingSummary } from "./types";
 
@@ -78,11 +80,32 @@ describe("inventory list catalog model", () => {
   });
 
   it("toggles table column sort keys", () => {
-    expect(getNextInventoryColumnSort("newest", "preco")).toBe("price_asc");
-    expect(getNextInventoryColumnSort("price_asc", "preco")).toBe("price_desc");
-    expect(getNextInventoryColumnSort("price_desc", "preco")).toBe("newest");
-    expect(getInventoryColumnSortDirection("price_asc", "preco")).toBe("asc");
-    expect(getInventoryColumnSortDirection("newest", "preco")).toBeNull();
+    const columns: InventorySortableColumn[] = [
+      "fotos",
+      "placa",
+      "marcaModelo",
+      "anoKm",
+      "preco",
+      "dias",
+      "fase",
+      "leads",
+    ];
+
+    for (const column of columns) {
+      const ascending = getNextInventoryColumnSort(
+        DEFAULT_INVENTORY_LIST_SORT,
+        column,
+      );
+      const descending = getNextInventoryColumnSort(ascending, column);
+      const reset = getNextInventoryColumnSort(descending, column);
+
+      expect(getInventoryColumnSortDirection(ascending, column)).toBe("asc");
+      expect(getInventoryColumnSortDirection(descending, column)).toBe("desc");
+      expect(reset).toBe(DEFAULT_INVENTORY_LIST_SORT);
+      expect(
+        getInventoryColumnSortDirection(DEFAULT_INVENTORY_LIST_SORT, column),
+      ).toBeNull();
+    }
   });
 
   it("sorts loaded inventory by table columns", () => {
