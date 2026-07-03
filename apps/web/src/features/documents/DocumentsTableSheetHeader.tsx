@@ -83,7 +83,7 @@ export function DocumentsTableSheetHeader({
         <div
           className="documents-table-sheet-header-actions"
           role="toolbar"
-          aria-label="Acoes da selecao"
+          aria-label="Ações da seleção"
         >
           <span className="documents-table-sheet-header-pill">
             {selectedCount} selecionado{selectedCount === 1 ? "" : "s"}

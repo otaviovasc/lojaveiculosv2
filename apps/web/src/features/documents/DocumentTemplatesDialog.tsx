@@ -28,8 +28,10 @@ export function DocumentTemplatesDialog({
     <div className="documents-modal-backdrop" onClick={onClose}>
       <section
         aria-label="Modelos de documentos"
+        aria-modal="true"
         className="documents-templates-dialog"
         onClick={(event) => event.stopPropagation()}
+        role="dialog"
       >
         <header className="documents-upload-header">
           <div>

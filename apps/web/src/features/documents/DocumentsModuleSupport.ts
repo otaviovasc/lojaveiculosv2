@@ -1,5 +1,5 @@
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import type { WorkspaceDocument } from "./types";
+import type { DocumentDownload, WorkspaceDocument } from "./types";
 
 export const DOCUMENTS_PAGE_SIZE = 200;
 
@@ -29,13 +29,14 @@ export function summarizeDocuments(documents: WorkspaceDocument[]) {
 export function errorMessage(error: unknown) {
   return formatApiErrorDisplay(
     error,
-    "Nao foi possivel carregar os documentos.",
+    "Não foi possível carregar os documentos.",
   );
 }
 
-export function openDocumentDownload(url: string) {
+export function openDocumentDownload(download: DocumentDownload) {
   const link = document.createElement("a");
-  link.href = url;
+  link.href = download.downloadUrl;
+  link.download = download.fileName;
   link.rel = "noopener noreferrer";
   link.target = "_blank";
   document.body.appendChild(link);

@@ -3,7 +3,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type { LinkedDocument } from "../../ports/documentRepository.js";
+import type {
+  DocumentVersion,
+  LinkedDocument,
+} from "../../ports/documentRepository.js";
 import type { DocumentWorkspaceServicePorts } from "../DocumentWorkspaceService/serviceSupport.js";
 import {
   DocumentOperationNotFoundError,
@@ -36,12 +39,13 @@ export async function downloadDocument(
     input.documentId,
   );
   if (!ports?.objectStorage) throw new DocumentOperationStorageError();
-  const [version] = await repository.listVersions({
+  const [storedVersion] = await repository.listVersions({
     documentId: document.id,
     ...(input.versionId ? { versionId: input.versionId } : {}),
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
+  const version = storedVersion ?? currentDocumentVersion(document, input);
   if (!version) throw new DocumentOperationNotFoundError(input.documentId);
   const download = await ports.objectStorage.createDownload({
     fileName: version.fileName,
@@ -84,5 +88,26 @@ export async function downloadDocument(
     mimeType: version.mimeType,
     versionId: version.id,
     versionNumber: version.versionNumber,
+  };
+}
+
+function currentDocumentVersion(
+  document: LinkedDocument,
+  input: { versionId?: string | undefined },
+): DocumentVersion | null {
+  if (input.versionId) return null;
+  return {
+    createdAt: document.uploadedAt,
+    createdByUserId: null,
+    documentId: document.id,
+    fileName: document.fileName,
+    fileSizeBytes: document.fileSizeBytes,
+    id: document.id,
+    metadata: document.metadata,
+    mimeType: document.mimeType,
+    storageKey: document.storageKey,
+    storeId: document.storeId,
+    tenantId: document.tenantId,
+    versionNumber: 1,
   };
 }

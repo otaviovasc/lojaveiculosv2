@@ -167,7 +167,9 @@
   box-shadow: var(--shadow-panel);
   display: grid;
   gap: 1rem;
+  max-height: calc(100vh - 2rem);
   max-width: 32rem;
+  overflow: auto;
   padding: 1rem;
   width: 100%;
 }

@@ -16,8 +16,8 @@ export const DOCUMENTS_SORT_OPTIONS: Array<{
 }> = [
   { label: "Mais recentes", value: "created_desc" },
   { label: "Mais antigos", value: "created_asc" },
-  { label: "Titulo (A-Z)", value: "title_asc" },
-  { label: "Titulo (Z-A)", value: "title_desc" },
+  { label: "Título (A-Z)", value: "title_asc" },
+  { label: "Título (Z-A)", value: "title_desc" },
   { label: "Status", value: "status_asc" },
 ];
 
@@ -164,7 +164,7 @@ function OriginChip({
 }) {
   const chips: Array<{ filter: DocumentOriginFilter; label: string }> = [
     { filter: "all", label: "Todos" },
-    { filter: "automatic", label: "Automaticos" },
+    { filter: "automatic", label: "Automáticos" },
     { filter: "manual", label: "Manuais" },
   ];
   return (

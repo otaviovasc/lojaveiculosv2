@@ -154,8 +154,8 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
               kind="folder-empty"
               message={
                 selectedFolderKey === "general"
-                  ? "Nenhum documento na pasta Geral. Envios manuais e documentos emitidos sem vinculo aparecerao aqui."
-                  : "Esta unidade ainda nao tem documentos. Use o botao Enviar para adicionar."
+                  ? "Nenhum documento na pasta Geral. Envios manuais e documentos emitidos sem vínculo aparecerão aqui."
+                  : "Esta unidade ainda não tem documentos. Use o botão Enviar para adicionar."
               }
               title={
                 selectedFolderKey === "general"
@@ -171,7 +171,7 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
             <DocumentsEmptyState
               ctaLabel="Limpar filtros"
               kind="no-results"
-              message="Nenhum documento corresponde aos filtros desta pasta. Tente alterar origem, status, tipo, periodo ou busca."
+              message="Nenhum documento corresponde aos filtros desta pasta. Tente alterar origem, status, tipo, período ou busca."
               onAction={clearAllFilters}
               title="Sem resultados para os filtros"
             />
