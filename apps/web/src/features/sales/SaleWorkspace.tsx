@@ -235,7 +235,7 @@ function serializeSale(sale: SaleRecord): string {
 }
 
 function errorMessage(error: unknown): string {
-  return formatApiErrorDisplay(error, "Nao foi possivel salvar a venda.");
+  return formatApiErrorDisplay(error, "Não foi possível salvar a venda.");
 }
 
 function clearAutosaveTimer(ref: RefObject<number | undefined>) {

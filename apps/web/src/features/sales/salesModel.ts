@@ -86,9 +86,9 @@ export function saleMissingFields(sale: SaleRecord): string[] {
   const missing: string[] = [];
   if (!hasBuyerName(sale.buyerSnapshot)) missing.push("Comprador");
   if (!sale.leadId) missing.push("Lead");
-  if (!sale.unitId) missing.push("Veiculo");
+  if (!sale.unitId) missing.push("Veículo");
   if (!sale.sellerUserId) missing.push("Vendedor");
-  if (!sale.salePriceCents) missing.push("Preco");
+  if (!sale.salePriceCents) missing.push("Preço");
   if (paymentPrincipalTotal(sale) < (sale.salePriceCents ?? 0)) {
     missing.push("Pagamentos");
   }
