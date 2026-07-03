@@ -6,7 +6,7 @@
 - Worker branch: `agent/qa/expenses`
 - Worktree: `.worktrees/qa-expenses`
 - Base branch: `agent/qa-integration`
-- Latest commit: branch head after lane commit
+- Latest commit: `a19152e`
 - Artifact root: `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/`
 - Persona coverage: Seed Owner, Seed Agency, Seed Supervisor, Seed Salesman,
   restricted owner permissions
@@ -37,12 +37,12 @@
 
 | ID      | Severity | Status   | Route       | Owner           | Evidence                                                                         | Reviewer |
 | ------- | -------- | -------- | ----------- | --------------- | -------------------------------------------------------------------------------- | -------- |
-| EXP-001 | Medium   | fixed    | `/expenses` | expenses worker | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-filtered-audi.png`   | pending  |
-| EXP-002 | Medium   | fixed    | `/expenses` | expenses worker | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-desktop-default.png` | pending  |
-| EXP-003 | Medium   | deferred | `/expenses` | backend/storage | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-receipt-modal.png`   | pending  |
-| EXP-004 | Low      | deferred | `/expenses` | shared-ui       | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-mobile.png`          | pending  |
-| EXP-005 | Medium   | fixed    | `tests/e2e` | expenses worker | `tests/e2e/local-permissions.spec.ts`, `tests/e2e/qa-harness-smoke.spec.ts`      | pending  |
-| EXP-006 | Medium   | fixed    | `/expenses` | expenses worker | `apps/web/src/features/finance/financeBillsModel.test.ts`                        | Locke    |
+| EXP-001 | Medium   | verified | `/expenses` | expenses worker | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-filtered-audi.png`   | approved |
+| EXP-002 | Medium   | verified | `/expenses` | expenses worker | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-desktop-default.png` | approved |
+| EXP-003 | Medium   | deferred | `/expenses` | backend/storage | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-receipt-modal.png`   | accepted |
+| EXP-004 | Low      | deferred | `/expenses` | shared-ui       | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-mobile.png`          | accepted |
+| EXP-005 | Medium   | verified | `tests/e2e` | expenses worker | `tests/e2e/local-permissions.spec.ts`, `tests/e2e/qa-harness-smoke.spec.ts`      | approved |
+| EXP-006 | Medium   | verified | `/expenses` | expenses worker | `apps/web/src/features/finance/financeBillsModel.test.ts`                        | approved |
 
 ## Implementation
 
@@ -74,14 +74,14 @@
 
 ## Reviewer Feedback
 
-- Discovery gate: pending
-- Implementation gate: Locke requested changes for EXP-006; worker fix complete
+- Discovery gate: approved
+- Implementation gate: Locke requested changes for EXP-006; worker fix approved
 - Required follow-up: reviewer approval is needed for EXP-003 if receipt upload
   must be fully exercised before merge.
 
 ## Final State
 
-- Ready for orchestrator merge: yes, with reviewer decision on deferred EXP-003
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`
 - Deferred findings: EXP-003 keeps full receipt upload for a shared
   backend/storage lane; EXP-004 keeps a mobile table action treatment for
   shared-ui.

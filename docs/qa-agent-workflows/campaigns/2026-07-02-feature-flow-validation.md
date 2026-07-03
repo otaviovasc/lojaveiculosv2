@@ -23,7 +23,7 @@
 | documents              | `agent/qa/documents`              | pending      | pending  | pending  | Documents center workflows                              |
 | clients                | `agent/qa/clients`                | pending      | pending  | pending  | Clients list and client detail surfaces                 |
 | sales                  | `agent/qa/sales`                  | pending      | pending  | pending  | Sales workflows                                         |
-| expenses               | `agent/qa/expenses`               | pending      | pending  | pending  | Gastos workflows                                        |
+| expenses               | `agent/qa/expenses`               | Mill         | Locke    | approved | Gastos workflows                                        |
 
 ## Integration Order
 
@@ -57,6 +57,12 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | CPB-001  | Medium   | verified | customize-page-builder | customize-page-builder worker | `/dashboard#/personalizar`                         | `/tmp/lojaveiculosv2-qa/agent-qa-customize-page-builder/customize-page-builder/15-personalizar-mobile-fixed.png`  | Reviewer approved      |
 | CPB-002  | Medium   | verified | customize-page-builder | customize-page-builder worker | `/dashboard#/custom-pages`                         | `/tmp/lojaveiculosv2-qa/agent-qa-customize-page-builder/customize-page-builder/16-custom-page-dialog-fixed.png`   | Reviewer approved      |
 | CPB-003  | Medium   | verified | customize-page-builder | customize-page-builder worker | `/dashboard#/custom-pages`, `/test-store/p/<slug>` | `/tmp/lojaveiculosv2-qa/agent-qa-customize-page-builder/customize-page-builder/11-public-custom-page-desktop.png` | Reviewer approved      |
+| EXP-001  | Medium   | verified | expenses               | expenses worker               | `/expenses`                                        | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-filtered-audi.png`                                    | Reviewer approved      |
+| EXP-002  | Medium   | verified | expenses               | expenses worker               | `/expenses`                                        | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-desktop-default.png`                                  | Reviewer approved      |
+| EXP-003  | Medium   | deferred | expenses               | backend/storage               | `/expenses`                                        | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-receipt-modal.png`                                    | Reviewer accepted      |
+| EXP-004  | Low      | deferred | expenses               | shared-ui                     | `/expenses`                                        | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-mobile.png`                                           | Reviewer accepted      |
+| EXP-005  | Medium   | verified | expenses               | expenses worker               | `tests/e2e`                                        | `tests/e2e/local-permissions.spec.ts`, `tests/e2e/qa-harness-smoke.spec.ts`                                       | Reviewer approved      |
+| EXP-006  | Medium   | verified | expenses               | expenses worker               | `/expenses`                                        | `apps/web/src/features/finance/financeBillsModel.test.ts`                                                         | Reviewer approved      |
 
 ## Validation Ledger
 
@@ -72,6 +78,8 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | Shared UI reviewer checks  | `git diff --check`, merge-tree, `pnpm run check:lines`, focused web tests                                                                                                                       | passed  | Reviewer approved                  |
 | Customize focused tests    | `pnpm --filter @lojaveiculosv2/web test -- publicSite`                                                                                                                                          | passed  | 77 files / 230 tests passed        |
 | Customize reviewer checks  | `git diff --check`, Prettier check on touched files, merge-tree                                                                                                                                 | passed  | Reviewer approved                  |
+| Expenses focused tests     | `pnpm --filter @lojaveiculosv2/web test -- financeBillsModel`                                                                                                                                   | passed  | 75 files / 229 tests passed        |
+| Expenses reviewer checks   | `git diff --check`, merge-tree, focused web tests                                                                                                                                               | passed  | Reviewer approved                  |
 | Final integration validate | pending                                                                                                                                                                                         | pending | Run after all lanes                |
 | Final Playwright campaign  | pending                                                                                                                                                                                         | pending | Clean local seed                   |
 
@@ -81,3 +89,6 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
   documents lane.
 - `SHUI-004`: sales mobile readonly long values truncate in context fields;
   assigned to sales lane.
+- `EXP-003`: full receipt file upload needs local object-storage support.
+- `EXP-004`: expenses mobile table actions still rely on horizontal table
+  behavior.
