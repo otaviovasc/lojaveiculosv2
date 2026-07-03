@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, ChevronDown, Star, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { formatLeadName } from "./crmPipelineModels";
 import {
   formatLeadTimelineLabel,
@@ -12,6 +12,7 @@ import type {
 } from "./CrmPipelineViewTypes";
 import { CrmLeadDetailsTabs } from "./CrmLeadDetailsTabs";
 import { CrmLeadDetailsSidebar } from "./CrmLeadDetailsSidebar";
+import { sourceLabels } from "./crmPipelineConfig";
 
 export function CrmLeadDetailsPage({
   lead,
@@ -56,7 +57,7 @@ export function CrmLeadDetailsPage({
   };
 
   const tabs = [
-    { id: "visao", label: "Overview" },
+    { id: "visao", label: "Visão geral" },
     { id: "chat", label: "Chat" },
     { id: "tarefas", label: "Tarefas" },
     { id: "reunioes", label: "Reuniões" },
@@ -73,24 +74,19 @@ export function CrmLeadDetailsPage({
       <header className="flex items-center justify-between py-2 border-b border-line/10">
         <div className="flex items-center gap-3.5">
           <button
+            aria-label="Voltar para clientes"
             onClick={onBack}
             className="p-2 -ml-2 rounded-lg text-muted hover:text-app-text hover:bg-line/15 transition-colors cursor-pointer"
             type="button"
           >
-            <ArrowLeft className="size-5" />
-          </button>
-          <button
-            className="p-1 text-muted hover:text-yellow-500 rounded transition-colors cursor-pointer"
-            type="button"
-          >
-            <Star className="size-4.5" />
+            <ArrowLeft aria-hidden="true" className="size-5" />
           </button>
           <div className="flex flex-col">
             <h2 className="text-base font-black text-app-text uppercase tracking-wide leading-none">
               {leadName}
             </h2>
             <span className="text-xs font-bold text-muted mt-1 uppercase tracking-wider">
-              {lead.source || "Manual"}
+              {sourceLabels[lead.source]}
             </span>
           </div>
         </div>
@@ -102,6 +98,8 @@ export function CrmLeadDetailsPage({
 
           <div className="relative">
             <button
+              aria-expanded={isStageDropdownOpen}
+              aria-label={`Alterar fase de ${leadName}`}
               onClick={() => setIsStageDropdownOpen(!isStageDropdownOpen)}
               className="inline-flex h-9 items-center justify-between gap-2.5 rounded-lg border border-line/35 bg-panel/40 pl-4 pr-3 text-xs font-bold text-app-text outline-none hover:bg-line/10 cursor-pointer transition-colors min-w-[140px]"
               type="button"
@@ -115,7 +113,10 @@ export function CrmLeadDetailsPage({
                 />
                 <span>{currentStage?.name || "Novo Lead"}</span>
               </div>
-              <ChevronDown className="size-3.5 text-muted shrink-0" />
+              <ChevronDown
+                aria-hidden="true"
+                className="size-3.5 text-muted shrink-0"
+              />
             </button>
 
             {isStageDropdownOpen && (
@@ -151,13 +152,6 @@ export function CrmLeadDetailsPage({
               </>
             )}
           </div>
-
-          <button
-            className="p-2 text-muted hover:text-red-500 rounded-lg hover:bg-red-500/10 cursor-pointer transition-colors"
-            type="button"
-          >
-            <Trash2 className="size-4.5" />
-          </button>
         </div>
       </header>
 
@@ -166,9 +160,14 @@ export function CrmLeadDetailsPage({
         {/* Left Column Workspace */}
         <div className="flex flex-col gap-5 min-w-0">
           {/* Tabs row bar */}
-          <div className="custom-scrollbar flex items-center gap-1 overflow-x-auto pb-1.5 border-b border-line/10">
+          <div
+            aria-label="Seções do cliente"
+            className="custom-scrollbar flex items-center gap-1 overflow-x-auto pb-1.5 border-b border-line/10"
+            role="tablist"
+          >
             {tabs.map((tab) => (
               <button
+                aria-selected={activeTab === tab.id}
                 className={
                   "px-4 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 " +
                   (activeTab === tab.id
@@ -177,6 +176,7 @@ export function CrmLeadDetailsPage({
                 }
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as DetailTab)}
+                role="tab"
                 type="button"
               >
                 {tab.label}

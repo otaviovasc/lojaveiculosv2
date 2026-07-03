@@ -88,10 +88,12 @@ export function CrmLeadDetailsTabsNotas({
             <div className="flex justify-between items-center">
               <h3 className="text-sm font-black text-app-text">Nova Nota</h3>
               <button
+                aria-label="Fechar nova nota"
                 onClick={() => setIsOpen(false)}
                 className="text-muted hover:text-app-text transition-colors"
+                type="button"
               >
-                <X className="size-4" />
+                <X aria-hidden="true" className="size-4" />
               </button>
             </div>
 

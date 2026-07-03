@@ -57,7 +57,7 @@ export function formatBrlCents(valueCents: number | null | undefined) {
 }
 
 export function formatLeadOwner(lead: ProductCrmLead) {
-  return lead.assignedUserId ? "Responsavel atribuido" : "Sem responsavel";
+  return lead.assignedUserId ? "Responsável atribuído" : "Sem responsável";
 }
 
 export function hasAssignedLeadOwner(lead: ProductCrmLead) {
@@ -66,7 +66,7 @@ export function hasAssignedLeadOwner(lead: ProductCrmLead) {
 
 export function formatLeadTimelineLabel(lead: ProductCrmLead) {
   if (lead.lastInteractionAt) {
-    return `Ultima interacao ${formatRelativeDate(lead.lastInteractionAt)}`;
+    return `Última interação ${formatRelativeDate(lead.lastInteractionAt)}`;
   }
 
   return `Criado ${formatRelativeDate(lead.createdAt)}`;

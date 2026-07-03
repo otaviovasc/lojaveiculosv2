@@ -49,7 +49,7 @@ export function CrmKanbanLeadCard({
       {vehicle?.imageUrl ? (
         <div className="crm-client-vehicle-media">
           <img alt={vehicle.label} src={vehicle.imageUrl} />
-          <span className="crm-client-vehicle-badge">Estoque proprio</span>
+          <span className="crm-client-vehicle-badge">Estoque próprio</span>
           <span className="crm-client-live-dot" />
           <div className="crm-client-vehicle-caption">{detail}</div>
         </div>
@@ -125,6 +125,6 @@ function formatPrice(priceCents: number | null | undefined) {
 
 function formatVehicleYear(vehicle: LeadVehicleOption | undefined) {
   if (!vehicle?.manufactureYear || !vehicle.modelYear)
-    return "Ano nao informado";
+    return "Ano não informado";
   return `${vehicle.manufactureYear}/${vehicle.modelYear}`;
 }

@@ -133,14 +133,14 @@ export function formatLeadContact(lead: ProductCrmLead) {
 }
 
 export function formatRelativeDate(value: string | null) {
-  if (!value) return "Sem interacao";
+  if (!value) return "Sem interação";
   const date = new Date(value);
   const diffMs = Date.now() - date.getTime();
   const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
-  if (diffMinutes < 60) return `${diffMinutes || 1} min atras`;
+  if (diffMinutes < 60) return `${diffMinutes || 1} min atrás`;
   const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours} h atras`;
-  return `${Math.floor(diffHours / 24)} d atras`;
+  if (diffHours < 24) return `${diffHours} h atrás`;
+  return `${Math.floor(diffHours / 24)} d atrás`;
 }
 
 function normalize(value: string | null | undefined) {

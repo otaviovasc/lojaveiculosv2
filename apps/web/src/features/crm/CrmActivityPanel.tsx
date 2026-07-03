@@ -83,9 +83,10 @@ export function ActivityPanel({
           value={activityType}
         />
         <textarea
+          aria-label="Descrição da interação"
           className="crm-input crm-textarea"
           onChange={(event) => setContent(event.target.value)}
-          placeholder="Descreva a interacao realizada"
+          placeholder="Descreva a interação realizada"
           value={content}
         />
         <button

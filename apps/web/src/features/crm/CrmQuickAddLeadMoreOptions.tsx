@@ -44,7 +44,7 @@ export function CrmQuickAddLeadMoreOptions({
   return (
     <div className="flex flex-col gap-4 border-t border-line/35 pt-4 mt-1">
       {/* Row 1: Fase, Prioridade, Previsão fechamento */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-black uppercase text-muted">Fase</span>
           <select
@@ -79,7 +79,7 @@ export function CrmQuickAddLeadMoreOptions({
           </span>
           <div className="relative">
             <span className="absolute left-2.5 top-3 text-muted">
-              <Calendar className="size-3.5" />
+              <Calendar aria-hidden="true" className="size-3.5" />
             </span>
             <input
               className="w-full min-h-10 rounded-lg border border-line bg-app pl-8 pr-2.5 text-xs font-bold text-app-text outline-none"
@@ -92,7 +92,7 @@ export function CrmQuickAddLeadMoreOptions({
       </div>
 
       {/* Row 2: Urgência, Categoria, Contato preferido */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <label className="flex flex-col gap-1">
           <span className="text-xs font-black uppercase text-muted">
             Urgência

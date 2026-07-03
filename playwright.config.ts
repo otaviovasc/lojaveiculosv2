@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5173";
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEB_SERVER === "true";
 
 export default defineConfig({
   expect: {
@@ -23,11 +24,15 @@ export default defineConfig({
     trace: "retain-on-failure",
     video: "retain-on-failure",
   },
-  webServer: {
-    command: "pnpm run dev:all:local",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    url: baseURL,
-  },
+  ...(skipWebServer
+    ? {}
+    : {
+        webServer: {
+          command: "pnpm run dev:all:local",
+          reuseExistingServer: !process.env.CI,
+          timeout: 120_000,
+          url: baseURL,
+        },
+      }),
   workers: 1,
 });

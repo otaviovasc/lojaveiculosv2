@@ -77,6 +77,8 @@ export function CrmSimulationModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div
+        aria-modal="true"
+        aria-labelledby="crm-financing-modal-title"
         className="w-full max-w-lg glass-panel-branded bg-panel rounded-2xl border border-line shadow-2xl overflow-hidden flex flex-col"
         role="dialog"
       >
@@ -85,15 +87,19 @@ export function CrmSimulationModal({
           <div className="flex items-center gap-2">
             <Calculator aria-hidden="true" className="size-5 text-accent" />
             <div>
-              <h3 className="text-sm font-black text-app-text">
-                Simular Financiamento
+              <h3
+                className="text-sm font-black text-app-text"
+                id="crm-financing-modal-title"
+              >
+                Simular financiamento
               </h3>
               <p className="text-xs font-bold text-muted mt-0.5">
-                Cliente: {lead.buyerName || "Sem Nome"}
+                Cliente: {lead.buyerName || "Sem nome"}
               </p>
             </div>
           </div>
           <button
+            aria-label="Fechar simulação de financiamento"
             className="p-1 rounded-lg hover:bg-line/25 text-muted hover:text-app-text cursor-pointer transition-colors"
             onClick={onClose}
             type="button"

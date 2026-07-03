@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Car, User, Smile, SendHorizontal, Phone, Mail } from "lucide-react";
+import { Car, User, SendHorizontal, Phone, Mail } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type {
   CreateProductCrmActivityInput,
@@ -211,6 +211,7 @@ export function CrmLeadDetailsSidebar({
           {/* Text Area Box */}
           <div className="border border-line/20 bg-panel/10 rounded-xl p-3 flex flex-col gap-2 mt-2">
             <textarea
+              aria-label="Comentário interno"
               className="w-full min-h-[50px] bg-transparent text-xs font-bold text-app-text outline-none resize-none placeholder:text-muted/65"
               placeholder="Escreva um comentário... use @ para mencionar"
               value={commentText}
@@ -223,17 +224,13 @@ export function CrmLeadDetailsSidebar({
             />
             <div className="flex items-center justify-between border-t border-line/10 pt-2">
               <button
-                className="text-muted hover:text-app-text transition-colors p-1"
-                type="button"
-              >
-                <Smile className="size-4" />
-              </button>
-              <button
+                aria-label="Enviar comentário"
+                className="size-7 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!commentText.trim()}
                 onClick={() => void handlePostComment()}
-                className="size-7 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white transition-colors cursor-pointer"
                 type="button"
               >
-                <SendHorizontal className="size-3.5" />
+                <SendHorizontal aria-hidden="true" className="size-3.5" />
               </button>
             </div>
           </div>

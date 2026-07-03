@@ -1,12 +1,4 @@
-import { useState } from "react";
-import {
-  Calendar,
-  Plus,
-  MessageSquare,
-  Mail,
-  Upload,
-  Globe,
-} from "lucide-react";
+import { Calendar, MessageSquare, Upload, Globe } from "lucide-react";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type {
   CreateProductCrmActivityInput,
@@ -40,7 +32,6 @@ export function CrmLeadDetailsTabs({
   onCreateActivity,
   vehicleOptions,
 }: Props) {
-  // 1. Overview Tab
   if (activeTab === "visao") {
     return (
       <CrmLeadDetailsTabsVisao
@@ -52,7 +43,6 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  // 2. Chat Tab
   if (activeTab === "chat") {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center select-none text-app-text">
@@ -63,23 +53,13 @@ export function CrmLeadDetailsTabs({
           Nenhuma mensagem com esse cliente ainda
         </h3>
         <p className="text-xs font-bold text-muted max-w-sm mt-1 mb-6 leading-relaxed">
-          Inicie uma conversa para registrar todas as mensagens neste lead.
+          As conversas aparecerão aqui quando uma integração de mensagens
+          estiver vinculada a este cliente.
         </p>
-        <div className="flex items-center gap-3">
-          <button className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 transition-colors cursor-pointer">
-            <MessageSquare className="size-3.5" />
-            <span>Iniciar por WhatsApp</span>
-          </button>
-          <button className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-line bg-panel/10 px-4 text-xs font-bold text-app-text hover:bg-line/10 transition-colors cursor-pointer">
-            <Mail className="size-3.5" />
-            <span>Iniciar por E-mail</span>
-          </button>
-        </div>
       </div>
     );
   }
 
-  // 3. Tarefas Tab
   if (activeTab === "tarefas") {
     return (
       <CrmLeadDetailsTabsTarefas
@@ -90,7 +70,6 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  // 4. Reuniões Tab
   if (activeTab === "reunioes") {
     return (
       <CrmLeadDetailsTabsReunioes
@@ -101,7 +80,6 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  // 5. Notas Tab
   if (activeTab === "notas") {
     return (
       <CrmLeadDetailsTabsNotas
@@ -112,37 +90,29 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  // 6. Arquivos Tab
   if (activeTab === "arquivos") {
     return (
       <div className="flex flex-col gap-5 select-none text-app-text">
         <div className="flex items-center justify-between">
           <span className="text-sm font-black text-app-text">Arquivos</span>
-          <button className="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel/10 px-3 text-xs font-bold text-app-text hover:bg-line/15 transition-colors cursor-pointer">
-            <Plus className="size-3.5" />
-            <span>Adicionar</span>
-          </button>
         </div>
         <div className="border border-dashed border-line/35 bg-panel/5 rounded-xl p-10 flex flex-col items-center justify-center text-center gap-3">
           <Upload className="size-7 text-muted" />
           <span className="text-xs font-bold text-app-text">
-            Arraste um arquivo aqui ou{" "}
-            <span className="text-blue-500 cursor-pointer hover:underline">
-              selecione do computador
-            </span>
+            Nenhum arquivo enviado.
           </span>
           <span className="text-xs font-bold text-muted">Máximo 30MB</span>
         </div>
         <div className="text-center py-2">
           <span className="text-xs font-bold text-muted">
-            Nenhum arquivo enviado.
+            O envio aparecerá aqui quando a integração de documentos estiver
+            ativa.
           </span>
         </div>
       </div>
     );
   }
 
-  // 7. Financiamento Tab
   if (activeTab === "financeiro") {
     return (
       <CrmLeadDetailsFinanciamento
@@ -153,7 +123,6 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  // 8. Portal Tab
   if (activeTab === "portal") {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center select-none text-app-text">
@@ -167,7 +136,6 @@ export function CrmLeadDetailsTabs({
     );
   }
 
-  // Fallback empty view for other tabs
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center text-muted">
       <Calendar className="size-8 text-muted/65 mb-2" />

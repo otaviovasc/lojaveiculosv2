@@ -2,12 +2,18 @@ import type { Pipeline } from "./crmPipelineStorage";
 import { getLeadStageId, hasAssignedLeadOwner } from "./crmLeadData";
 import type { ProductCrmLead } from "./productCrmTypes";
 
-type CustomFilters = {
+export type CustomFilters = {
   resposta: string[];
   origem: string[];
   responsavel: string[];
   semInteracao: string;
   fonte: string[];
+};
+
+type BaseClientFilters = {
+  search: string;
+  source: string;
+  status: string;
 };
 
 export function getFilteredLeads(
@@ -79,4 +85,20 @@ export function getFilteredLeads(
   }
 
   return rawLeads;
+}
+
+export function hasAnyClientFilter(
+  filters: BaseClientFilters,
+  customFilters: CustomFilters,
+) {
+  return Boolean(
+    filters.search.trim() ||
+    filters.source !== "all" ||
+    filters.status !== "all" ||
+    customFilters.resposta.length ||
+    customFilters.origem.length ||
+    customFilters.responsavel.length ||
+    customFilters.semInteracao ||
+    customFilters.fonte.length,
+  );
 }

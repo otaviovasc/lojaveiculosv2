@@ -85,12 +85,12 @@ export function CrmPipelineToolbar({
   return (
     <div className="crm-pipeline-toolbar flex flex-col gap-4 relative z-30 pb-2.5">
       {/* Active Pipeline Selector Tabs Row */}
-      <div className="flex items-center justify-between gap-4 border-b border-line/20 pb-3">
-        <div className="flex items-center gap-1">
+      <div className="flex flex-col gap-3 border-b border-line/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex max-w-full min-w-0 flex-wrap items-center gap-1 pb-1 sm:pb-0">
           {pipelines.map((p) => (
             <button
               className={
-                "min-h-9 items-center justify-center px-4 rounded-lg text-xs font-black transition-all cursor-pointer " +
+                "inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 text-xs font-black transition-all cursor-pointer " +
                 (p.id === activePipelineId
                   ? "bg-panel border border-line/60 text-app-text shadow-sm"
                   : "text-muted hover:text-app-text hover:bg-line/10")
@@ -103,7 +103,7 @@ export function CrmPipelineToolbar({
             </button>
           ))}
           <button
-            className="inline-flex min-h-9 items-center gap-1.5 px-3 rounded-lg text-xs font-black text-muted hover:text-app-text hover:bg-line/10 cursor-pointer transition-all"
+            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-black text-muted hover:text-app-text hover:bg-line/10 cursor-pointer transition-all"
             onClick={onCreatePipeline}
             type="button"
           >
@@ -113,7 +113,7 @@ export function CrmPipelineToolbar({
         </div>
 
         <button
-          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-black text-muted hover:text-app-text hover:bg-line/10 cursor-pointer transition-colors"
+          className="inline-flex min-h-9 w-fit shrink-0 self-start items-center justify-center gap-1.5 rounded-lg text-xs font-black text-muted hover:text-app-text hover:bg-line/10 cursor-pointer transition-colors sm:self-auto"
           onClick={onConfigureClick}
           type="button"
         >
@@ -128,6 +128,7 @@ export function CrmPipelineToolbar({
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative min-w-[200px]">
             <input
+              aria-label="Buscar negócios"
               className="min-h-9 w-full rounded-lg border border-line bg-app px-3 text-xs font-bold text-app-text outline-none placeholder:text-muted"
               onChange={(e) =>
                 onChangeFilters({ ...filters, search: e.target.value })
@@ -165,9 +166,10 @@ export function CrmPipelineToolbar({
                     <div className="relative">
                       <Search className="absolute left-2.5 top-2.5 size-3 text-muted" />
                       <input
+                        aria-label={`Buscar opções de ${cfg.label}`}
                         className="w-full min-h-8 rounded-lg border border-line bg-app pl-7 pr-2.5 text-xs font-bold text-app-text outline-none"
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={`Q ${cfg.label}`}
+                        placeholder={`Buscar ${cfg.label.toLowerCase()}`}
                         type="text"
                         value={searchQuery}
                       />
@@ -216,6 +218,7 @@ export function CrmPipelineToolbar({
         <div className="flex items-center gap-2">
           <div className="relative">
             <button
+              aria-expanded={showFasesDropdown}
               className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-app-elevated border border-line/50 px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer"
               onClick={() => setShowFasesDropdown(!showFasesDropdown)}
               type="button"
@@ -260,6 +263,8 @@ export function CrmPipelineToolbar({
 
           <div className="flex items-center border border-line/50 rounded-lg overflow-hidden shrink-0 bg-app-elevated/45">
             <button
+              aria-label="Exibir kanban"
+              aria-pressed={viewMode === "kanban"}
               className={
                 "p-2 cursor-pointer " +
                 (viewMode === "kanban"
@@ -272,6 +277,8 @@ export function CrmPipelineToolbar({
               <Grid className="size-3.5" />
             </button>
             <button
+              aria-label="Exibir lista"
+              aria-pressed={viewMode === "list"}
               className={
                 "p-2 cursor-pointer " +
                 (viewMode === "list"
