@@ -1,7 +1,16 @@
 import type { FinanceApi } from "./apiClient";
 import { readUpload } from "./apiJson";
-import { toEntryInput, type FinanceEntryDraft, type FinanceToast } from "./financeBillsModel";
-import type { FinanceEntry, FinanceEntryType, UpdateFinanceEntryInput } from "./types";
+import { formatFinanceCategory } from "./financeBillsFormat";
+import {
+  toEntryInput,
+  type FinanceEntryDraft,
+  type FinanceToast,
+} from "./financeBillsModel";
+import type {
+  FinanceEntry,
+  FinanceEntryType,
+  UpdateFinanceEntryInput,
+} from "./types";
 
 export async function updateEntryFromDraft(
   api: FinanceApi,
@@ -20,7 +29,8 @@ export async function updateEntryFromDraft(
     update.metadata = mergeEntryMetadata(entry.metadata, input.metadata);
   }
   if (input.paidAt !== undefined) update.paidAt = input.paidAt;
-  if (input.sellerUserId !== undefined) update.sellerUserId = input.sellerUserId;
+  if (input.sellerUserId !== undefined)
+    update.sellerUserId = input.sellerUserId;
   await api.updateEntry(entry.id, update);
   if (!draft.documentFile) return;
   const upload = await api.requestDocumentUpload(entry.id, draft.documentFile);
@@ -45,7 +55,8 @@ export function mergeEntryMetadata(
 ) {
   return {
     ...(existing ?? {}),
-    notes: typeof incoming.notes === "string" ? incoming.notes : existing?.notes,
+    notes:
+      typeof incoming.notes === "string" ? incoming.notes : existing?.notes,
     source: existing?.source ?? incoming.source,
   };
 }
@@ -58,7 +69,11 @@ export async function cancelEntry(
 ) {
   if (!api || !window.confirm(`Cancelar ${entry.name}?`)) return;
   await api.cancelEntry(entry.id, "Cancelado pela tela de gastos.");
-  setToast({ kind: "success", title: "Lancamento cancelado", message: entry.name });
+  setToast({
+    kind: "success",
+    title: "Lançamento cancelado",
+    message: entry.name,
+  });
   refresh();
 }
 
@@ -70,7 +85,7 @@ export function exportFinanceCsv(
     ["nome", "categoria", "status", "vencimento", "valor_centavos"],
     ...entries.map((entry) => [
       entry.name,
-      entry.category,
+      formatFinanceCategory(entry.category),
       entry.status,
       entry.dueAt ?? "",
       String(entry.amountCents),

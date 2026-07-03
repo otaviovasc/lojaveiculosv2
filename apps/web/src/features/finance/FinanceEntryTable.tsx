@@ -13,7 +13,11 @@ import {
   financeStatusLabels,
 } from "./FinanceFormParts";
 import type { FinanceEntry } from "./types";
-import { formatCurrency, formatDate } from "./financeBillsFormat";
+import {
+  formatCurrency,
+  formatDate,
+  formatFinanceCategory,
+} from "./financeBillsFormat";
 import type { ReactNode } from "react";
 
 export function FinanceEntryTable({
@@ -34,11 +38,14 @@ export function FinanceEntryTable({
   onPay: (entry: FinanceEntry) => void;
 }) {
   return (
-    <FinancePanel icon={<FileText className="size-5" />} title="Registro de atividades">
+    <FinancePanel
+      icon={<FileText className="size-5" />}
+      title="Registro de atividades"
+    >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-xs font-black uppercase tracking-widest text-muted">
-            {entries.length} lancamentos encontrados
+            {entries.length} lançamentos encontrados
           </p>
         </div>
         <button
@@ -55,12 +62,12 @@ export function FinanceEntryTable({
         <table className="w-full min-w-[840px] text-left text-sm">
           <thead className="border-b border-line text-xs font-black uppercase tracking-widest text-muted">
             <tr>
-              <th className="py-3 pr-4">Lancamento</th>
+              <th className="py-3 pr-4">Lançamento</th>
               <th className="py-3 pr-4">Categoria</th>
               <th className="py-3 pr-4">Vencimento</th>
               <th className="py-3 pr-4">Status</th>
               <th className="py-3 text-right">Valor</th>
-              <th className="py-3 pl-4 text-right">Acoes</th>
+              <th className="py-3 pl-4 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -69,11 +76,15 @@ export function FinanceEntryTable({
                 <td className="py-3 pr-4">
                   <strong className="block text-app-text">{entry.name}</strong>
                   <span className="text-xs font-bold text-muted">
-                    {entry.sellerUserId ? "Vinculado a vendedor" : "Lancamento geral"}
+                    {entry.sellerUserId
+                      ? "Vinculado a vendedor"
+                      : "Lançamento geral"}
                   </span>
                 </td>
                 <td className="py-3 pr-4">
-                  <FinanceBadge>{entry.category}</FinanceBadge>
+                  <FinanceBadge>
+                    {formatFinanceCategory(entry.category)}
+                  </FinanceBadge>
                 </td>
                 <td className="py-3 pr-4 font-bold text-muted">
                   {formatDate(entry.dueAt)}
@@ -83,7 +94,9 @@ export function FinanceEntryTable({
                     className="rounded-full bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong disabled:opacity-60"
                     disabled={entry.status === "cancelled"}
                     onClick={() =>
-                      entry.status === "paid" ? onMarkPending(entry) : onPay(entry)
+                      entry.status === "paid"
+                        ? onMarkPending(entry)
+                        : onPay(entry)
                     }
                     type="button"
                   >
@@ -96,25 +109,29 @@ export function FinanceEntryTable({
                 <td className="py-3 pl-4">
                   <div className="flex justify-end gap-2">
                     <IconAction
-                      icon={<ReceiptText aria-hidden="true" className="size-4" />}
+                      icon={
+                        <ReceiptText aria-hidden="true" className="size-4" />
+                      }
                       label="Anexar recibo"
                       onClick={() => onEdit(entry)}
                     />
                     <IconAction
                       icon={<Pencil aria-hidden="true" className="size-4" />}
-                      label="Editar lancamento"
+                      label="Editar lançamento"
                       onClick={() => onEdit(entry)}
                     />
                     <IconAction
                       disabled={entry.status === "paid"}
-                      icon={<CheckCircle2 aria-hidden="true" className="size-4" />}
+                      icon={
+                        <CheckCircle2 aria-hidden="true" className="size-4" />
+                      }
                       label="Marcar como pago"
                       onClick={() => onPay(entry)}
                     />
                     <IconAction
                       disabled={entry.status === "cancelled"}
                       icon={<XCircle aria-hidden="true" className="size-4" />}
-                      label="Cancelar lancamento"
+                      label="Cancelar lançamento"
                       onClick={() => onCancel(entry)}
                     />
                   </div>
@@ -129,7 +146,7 @@ export function FinanceEntryTable({
         <div className="mt-4 rounded-lg border border-line bg-app p-6 text-center">
           <FilePenLine className="mx-auto size-8 text-muted" />
           <h3 className="mt-3 text-base font-black text-app-text">
-            Nenhum lancamento encontrado
+            Nenhum lançamento encontrado
           </h3>
           <p className="mt-1 text-sm font-bold text-muted">
             Crie o primeiro gasto, receita ou conta recorrente da loja.
@@ -138,7 +155,7 @@ export function FinanceEntryTable({
       ) : null}
       {isLoading ? (
         <p className="mt-4 rounded-lg border border-line bg-app p-4 text-sm font-black text-muted">
-          Carregando lancamentos.
+          Carregando lançamentos.
         </p>
       ) : null}
     </FinancePanel>

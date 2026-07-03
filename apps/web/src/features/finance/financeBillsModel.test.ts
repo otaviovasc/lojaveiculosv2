@@ -65,7 +65,7 @@ describe("finance bills model", () => {
   it("filters entries by status, due window, and search query", () => {
     const entries = [
       entry("1", "Aluguel", "Operacional", "pending", "2026-06-25"),
-      entry("2", "Seguro", "Veiculo", "paid", "2026-06-25"),
+      entry("2", "Seguro", "Veículo", "paid", "2026-06-25"),
       entry("3", "Marketing", "Marketing", "pending", "2026-08-01"),
     ];
 
@@ -78,16 +78,55 @@ describe("finance bills model", () => {
     ).toEqual(["1"]);
   });
 
-  it("keeps undated entries out of date-window filters", () => {
+  it("matches raw backend categories by their localized display label", () => {
     const entries = [
-      entry("dated", "Aluguel", "Operacional", "pending", "2026-06-25"),
-      { ...entry("undated", "Despesa sem vencimento", "Outros", "pending", "2026-06-25"), dueAt: null },
+      entry("1", "Revisao Audi A4", "preparation", "paid", "2026-06-25"),
+      entry(
+        "2",
+        "Midia performance estoque",
+        "traffic",
+        "pending",
+        "2026-06-25",
+      ),
     ];
 
     expect(
-      filterEntries(entries, { query: "", status: "all", window: "next30" }).map(
-        (item) => item.id,
-      ),
+      filterEntries(entries, {
+        query: "preparação",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["1"]);
+    expect(
+      filterEntries(entries, {
+        query: "tráfego",
+        status: "all",
+        window: "all",
+      }).map((item) => item.id),
+    ).toEqual(["2"]);
+  });
+
+  it("keeps undated entries out of date-window filters", () => {
+    const entries = [
+      entry("dated", "Aluguel", "Operacional", "pending", "2026-06-25"),
+      {
+        ...entry(
+          "undated",
+          "Despesa sem vencimento",
+          "Outros",
+          "pending",
+          "2026-06-25",
+        ),
+        dueAt: null,
+      },
+    ];
+
+    expect(
+      filterEntries(entries, {
+        query: "",
+        status: "all",
+        window: "next30",
+      }).map((item) => item.id),
     ).toEqual(["dated"]);
     expect(
       filterEntries(entries, { query: "", status: "all", window: "all" }).map(

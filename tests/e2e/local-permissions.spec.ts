@@ -7,6 +7,8 @@ import {
 } from "./support/diagnostics";
 import { accountHeaders, qaPersonas } from "./support/personas";
 
+test.use({ baseURL: process.env.QA_BASE_URL ?? "http://127.0.0.1:5173" });
+
 test.describe("local seeded permission UX", () => {
   test("routes seeded personas to the correct shells", async ({
     page,
@@ -52,13 +54,13 @@ test.describe("local seeded permission UX", () => {
       await expect(
         page.getByRole("navigation", { name: "Modulos" }),
       ).toBeVisible();
-      await expect(page.getByRole("button", { name: "Inicio" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Início" })).toBeVisible();
       if (persona === qaPersonas.salesman) {
-        await expect(page.getByRole("button", { name: "Billing" })).toHaveCount(
-          0,
-        );
         await expect(
-          page.getByRole("button", { name: "Relatorios" }),
+          page.getByRole("button", { name: "Assinatura" }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole("button", { name: "Relatórios" }),
         ).toHaveCount(0);
         await expect(
           page.getByRole("heading", { name: "Painel gerencial restrito" }),
@@ -67,18 +69,18 @@ test.describe("local seeded permission UX", () => {
           page.getByRole("button", { name: "Ir para veículos" }),
         ).toBeVisible();
       } else if (persona === qaPersonas.supervisor) {
-        await expect(page.getByRole("button", { name: "Billing" })).toHaveCount(
-          0,
-        );
         await expect(
-          page.getByRole("button", { name: "Relatorios" }),
+          page.getByRole("button", { name: "Assinatura" }),
+        ).toHaveCount(0);
+        await expect(
+          page.getByRole("button", { name: "Relatórios" }),
         ).toBeVisible();
       } else {
         await expect(
-          page.getByRole("button", { name: "Billing" }),
+          page.getByRole("button", { name: "Assinatura" }),
         ).toBeVisible();
         await expect(
-          page.getByRole("button", { name: "Relatorios" }),
+          page.getByRole("button", { name: "Relatórios" }),
         ).toBeVisible();
         await expect(
           page.getByRole("heading", { name: "Dashboard Gerencial" }),

@@ -18,7 +18,7 @@ import type { FinanceEntryType } from "./types";
 export function StepHeader({ step }: { step: 1 | 2 | 3 }) {
   return (
     <div className="mb-5 grid grid-cols-3 gap-2">
-      {["Tipo", "Recorrencia", "Detalhes"].map((label, index) => (
+      {["Tipo", "Recorrência", "Detalhes"].map((label, index) => (
         <div
           className={[
             "rounded-lg border px-3 py-2 text-center text-xs font-black uppercase",
@@ -57,7 +57,7 @@ export function TypeStep({
           </strong>
           <span className="mt-2 block text-sm font-bold text-muted">
             {type === "expense"
-              ? "Saidas e contas a pagar"
+              ? "Saídas e contas a pagar"
               : "Entradas da loja"}
           </span>
         </button>
@@ -93,11 +93,11 @@ export function RecurrenceStep({
         >
           <Repeat2 aria-hidden="true" className="mb-4 size-5" />
           <strong className="block text-base font-black">
-            {recurrence === "once" ? "Unico" : "Recorrente"}
+            {recurrence === "once" ? "Único" : "Recorrente"}
           </strong>
           <span className="mt-2 block text-sm font-bold text-muted">
             {recurrence === "once"
-              ? "Lancamento pontual"
+              ? "Lançamento pontual"
               : "Mensalidade, aluguel ou parcelamento"}
           </span>
         </button>
@@ -119,7 +119,7 @@ export function DetailsStep({
     draft.type === "expense" ? expenseCategories : revenueCategories;
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <FinanceField label="Identificacao">
+      <FinanceField label="Identificação">
         <FinanceInput onChange={setField("name")} required value={draft.name} />
       </FinanceField>
       <FinanceField label="Categoria">
@@ -169,14 +169,14 @@ export function DetailsStep({
           value={draft.paidAt}
         />
       </FinanceField>
-      <FinanceField label="Vendedor" hint="Opcional para comissoes.">
+      <FinanceField label="Vendedor" hint="Opcional para comissões.">
         <FinanceInput
           onChange={setField("sellerUserId")}
-          placeholder="Nome ou usuario responsavel"
+          placeholder="Nome ou usuário responsável"
           value={draft.sellerUserId}
         />
       </FinanceField>
-      <FinanceField label="Observacao">
+      <FinanceField label="Observação">
         <FinanceInput onChange={setField("notes")} value={draft.notes} />
       </FinanceField>
       {draft.recurrence === "recurring" ? (
@@ -217,7 +217,7 @@ function ReceiptFields({
             type="file"
           />
         </FinanceField>
-        <FinanceField label="Titulo">
+        <FinanceField label="Título">
           <FinanceInput
             disabled={!draft.documentFile}
             onChange={setField("documentTitle")}
@@ -238,7 +238,7 @@ function RecurringFields({
 }) {
   return (
     <div className="grid gap-4 rounded-lg border border-line bg-app p-3 md:col-span-2 md:grid-cols-3">
-      <FinanceField label="Frequencia">
+      <FinanceField label="Frequência">
         <FinanceSelect
           onChange={setField("recurrenceFrequency")}
           options={[
@@ -258,7 +258,7 @@ function RecurringFields({
           value={draft.recurrenceDay}
         />
       </FinanceField>
-      <FinanceField label="Duracao em ciclos">
+      <FinanceField label="Duração em ciclos">
         <FinanceInput
           min="1"
           onChange={setField("recurrenceOccurrences")}

@@ -1,5 +1,15 @@
 import type { FinanceRecurringEntry } from "./types";
 
+const financeCategoryLabels: Record<string, string> = {
+  Consignacao: "Consignação",
+  Manutencao: "Manutenção",
+  Servico: "Serviço",
+  Veiculo: "Veículo",
+  preparation: "Preparação",
+  rent: "Aluguel",
+  traffic: "Tráfego",
+};
+
 export function formatCurrency(valueCents: number) {
   return new Intl.NumberFormat("pt-BR", {
     currency: "BRL",
@@ -21,4 +31,8 @@ export function recurrenceLabel(entry: FinanceRecurringEntry) {
     yearly: "Anual",
   } satisfies Record<FinanceRecurringEntry["frequency"], string>;
   return `${frequency[entry.frequency]} desde ${formatDate(entry.nextDueAt)}`;
+}
+
+export function formatFinanceCategory(category: string) {
+  return financeCategoryLabels[category] ?? category;
 }
