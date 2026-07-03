@@ -40,6 +40,27 @@ test.describe("Sales QA flow", () => {
     await expect(
       page.getByRole("button", { name: /Toyota Hilux SRX 2021 Carla/ }),
     ).toBeVisible();
+    await page
+      .getByRole("button", { name: /Toyota Hilux SRX 2021 Carla/ })
+      .click();
+    await page
+      .locator(".sales-wizard-step")
+      .filter({ hasText: "Revisão" })
+      .click();
+    const closedSaleReview = page
+      .locator("div.sales-glass-panel")
+      .filter({ hasText: "Composição Financeira" });
+    await expect(closedSaleReview).toContainText(
+      /Total em Pagamentos\s*R\$\s*146\.500,00/,
+    );
+    await expect(closedSaleReview).toContainText(/Diferença\s*Quitada/);
+    await expect(closedSaleReview).not.toContainText(/restante/i);
+    const closedSaleSummary = page.locator(".sales-summary-aside");
+    await expect(closedSaleSummary).toContainText(
+      /Total Lançado\s*R\$\s*146\.500,00/,
+    );
+    await expect(closedSaleSummary).not.toContainText("Saldo devedor");
+    await saveQaScreenshot(page, testInfo, "05-closed-sale-review");
     await saveQaScreenshot(page, testInfo, "sales-list");
 
     await page.getByRole("button", { name: "Fechada", exact: true }).click();
