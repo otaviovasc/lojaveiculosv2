@@ -6,7 +6,7 @@
 - Worker branch: `agent/qa/customize-page-builder`
 - Worktree: `.worktrees/qa-customize-page-builder`
 - Base branch: `agent/qa-integration`
-- Latest commit: `a4d0176` before lane commit
+- Latest commit: `641b7fd`
 - Artifact root:
   `/tmp/lojaveiculosv2-qa/agent-qa-customize-page-builder/customize-page-builder/`
 - Persona coverage: Seed Owner (`clerk_seed_owner`)
@@ -46,11 +46,11 @@
 
 ## Findings
 
-| ID      | Severity | Status | Route                                              | Owner                  | Evidence                                                                                                                | Reviewer |
-| ------- | -------- | ------ | -------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------- |
-| CPB-001 | Medium   | fixed  | `/dashboard#/personalizar`                         | customize-page-builder | `12-personalizar-mobile.png`, `15-personalizar-mobile-fixed.png`                                                        | pending  |
-| CPB-002 | Medium   | fixed  | `/dashboard#/custom-pages`                         | customize-page-builder | `07-custom-page-create-dialog-desktop.png`, `16-custom-page-dialog-fixed.png`                                           | pending  |
-| CPB-003 | Medium   | fixed  | `/dashboard#/custom-pages`, `/test-store/p/<slug>` | customize-page-builder | `06-custom-pages-list-desktop.png`, `09-custom-page-editor-hero-added-desktop.png`, `11-public-custom-page-desktop.png` | pending  |
+| ID      | Severity | Status   | Route                                              | Owner                  | Evidence                                                                                                                | Reviewer |
+| ------- | -------- | -------- | -------------------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------- |
+| CPB-001 | Medium   | verified | `/dashboard#/personalizar`                         | customize-page-builder | `12-personalizar-mobile.png`, `15-personalizar-mobile-fixed.png`                                                        | approved |
+| CPB-002 | Medium   | verified | `/dashboard#/custom-pages`                         | customize-page-builder | `07-custom-page-create-dialog-desktop.png`, `16-custom-page-dialog-fixed.png`                                           | approved |
+| CPB-003 | Medium   | verified | `/dashboard#/custom-pages`, `/test-store/p/<slug>` | customize-page-builder | `06-custom-pages-list-desktop.png`, `09-custom-page-editor-hero-added-desktop.png`, `11-public-custom-page-desktop.png` | approved |
 
 ## Implementation
 
@@ -84,13 +84,13 @@
 
 ## Reviewer Feedback
 
-- Discovery gate: pending.
-- Implementation gate: pending.
-- Required follow-up: reviewer rerun of the feature flow.
+- Discovery gate: approved.
+- Implementation gate: approved.
+- Required follow-up: none.
 
 ## Final State
 
-- Ready for orchestrator merge: pending reviewer.
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
 - Deferred findings: none.
 - Notes: local API ran on port `8797` and web on port `5183` because the default
   Vite port was already occupied by another checkout. No `qa-builder-*` custom
