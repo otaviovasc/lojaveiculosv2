@@ -145,13 +145,13 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         />
         <FeatureKpiCard
           icon={FileText}
-          label="Em edicao"
+          label="Em edição"
           tone="violet"
           value={sales.filter((sale) => sale.status === "draft").length}
         />
         <FeatureKpiCard
           icon={Clock}
-          label="Veiculos reservados"
+          label="Veículos reservados"
           tone="pink"
           value={sales.filter((sale) => sale.status === "pending").length}
         />
@@ -201,5 +201,5 @@ function replaceSale(
 }
 
 function errorMessage(error: unknown): string {
-  return formatApiErrorDisplay(error, "Nao foi possivel carregar as vendas.");
+  return formatApiErrorDisplay(error, "Não foi possível carregar as vendas.");
 }

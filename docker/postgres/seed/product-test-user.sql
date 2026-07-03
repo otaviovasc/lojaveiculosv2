@@ -936,6 +936,7 @@ ON CONFLICT (id) DO NOTHING;
 INSERT INTO sale_payments (
   id,
   amount_cents,
+  principal_cents,
   method,
   paid_at,
   provider_payment_id,
@@ -945,9 +946,19 @@ INSERT INTO sale_payments (
   tenant_id
 )
 VALUES
-  ('32000000-0000-4000-8000-000000000001', 4000000, 'pix', now() - interval '12 days', 'local_pix_signal_hilux', '30000000-0000-4000-8000-000000000001', 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('32000000-0000-4000-8000-000000000002', 10650000, 'financing', now() - interval '10 days', 'local_financing_hilux', '30000000-0000-4000-8000-000000000001', 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (id) DO NOTHING;
+  ('32000000-0000-4000-8000-000000000001', 4000000, 4000000, 'pix', now() - interval '12 days', 'local_pix_signal_hilux', '30000000-0000-4000-8000-000000000001', 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('32000000-0000-4000-8000-000000000002', 10650000, 10650000, 'financing', now() - interval '10 days', 'local_financing_hilux', '30000000-0000-4000-8000-000000000001', 'paid', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (id) DO UPDATE SET
+  amount_cents = EXCLUDED.amount_cents,
+  principal_cents = EXCLUDED.principal_cents,
+  method = EXCLUDED.method,
+  paid_at = EXCLUDED.paid_at,
+  provider_payment_id = EXCLUDED.provider_payment_id,
+  sale_id = EXCLUDED.sale_id,
+  status = EXCLUDED.status,
+  store_id = EXCLUDED.store_id,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO finance_entries (
   id,
