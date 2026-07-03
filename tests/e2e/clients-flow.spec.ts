@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { saveQaScreenshot } from "./support/artifacts";
 import { installLocalSession } from "./support/auth";
 import {
@@ -109,6 +109,15 @@ test.describe("clients feature flow", () => {
     await goBackToClientsList(page);
     await setQaViewport(page, "mobile");
     await expect(page.getByRole("heading", { name: "Clientes" })).toBeVisible();
+    await expectControlInsideViewport(
+      page,
+      page.getByRole("button", { name: "Novo pipeline" }),
+    );
+    await expectControlInsideViewport(
+      page,
+      page.getByRole("button", { name: "Configurar" }),
+    );
+    await expect(page.getByText(/Criado \d+ min atrás/).first()).toBeVisible();
     await saveQaScreenshot(page, testInfo, "clients-list-mobile");
     expectNoPageCrashes(diagnostics);
   });
@@ -222,4 +231,15 @@ async function selectDetailTab(page: Page, tabName: string) {
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function expectControlInsideViewport(page: Page, locator: Locator) {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize();
+
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(viewport!.width);
 }

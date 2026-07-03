@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createTaskActivityInput,
   deriveLeadStats,
   filterLeads,
+  formatRelativeDate,
   groupLeadsByStatus,
   readTaskMetadata,
 } from "./crmPipelineModels";
@@ -25,6 +26,10 @@ const lead = {
   updatedAt: "2026-06-22T12:00:00.000Z",
   vehicleTitle: "Corolla XEi",
 } satisfies ProductCrmLead;
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("CRM pipeline models", () => {
   it("filters leads by search, source, and status", () => {
@@ -88,6 +93,16 @@ describe("CRM pipeline models", () => {
         [{ ...baseActivity(), activityType: "task" }],
       ),
     ).toMatchObject({ open: 1, taskCount: 1, total: 2, won: 1 });
+  });
+
+  it("formats relative dates with Portuguese accents", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-06-22T12:00:00.000Z"));
+
+    expect(formatRelativeDate(null)).toBe("Sem interação");
+    expect(formatRelativeDate("2026-06-22T11:59:20.000Z")).toBe("1 min atrás");
+    expect(formatRelativeDate("2026-06-22T10:00:00.000Z")).toBe("2 h atrás");
+    expect(formatRelativeDate("2026-06-19T12:00:00.000Z")).toBe("3 d atrás");
   });
 });
 
