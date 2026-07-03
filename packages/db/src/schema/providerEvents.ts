@@ -3,6 +3,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  text,
   timestamp,
   uniqueIndex,
   uuid,
@@ -22,7 +23,9 @@ export const providerEvents = pgTable(
   "provider_events",
   {
     ...lifecycleColumns,
+    connectionId: uuid("connection_id"),
     environment: varchar("environment", { length: 80 }).notNull(),
+    errorMessage: text("error_message"),
     eventType: varchar("event_type", { length: 120 }).notNull(),
     payload: jsonb("payload").notNull().default({}),
     processedAt: timestamp("processed_at", { withTimezone: true }),
@@ -34,6 +37,7 @@ export const providerEvents = pgTable(
   },
   (table) => [
     index("provider_events_status_idx").on(table.status),
+    index("provider_events_connection_id_idx").on(table.connectionId),
     index("provider_events_store_id_idx").on(table.storeId),
     index("provider_events_tenant_id_idx").on(table.tenantId),
     uniqueIndex("provider_events_provider_event_unique").on(

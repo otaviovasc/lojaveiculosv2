@@ -62,6 +62,21 @@ describe("module permissions", () => {
     expect(visibleIds).not.toContain("reports");
     expect(visibleIds).not.toContain("settings");
   });
+
+  it("shows CRM for read-only WhatsApp users", () => {
+    const session = sessionForRole("investor", [
+      "crm.whatsapp.list",
+      "crm.whatsapp.read",
+      "lead.read",
+    ]);
+
+    expect(getModulePermission("crm", session).canView).toBe(true);
+    expect(
+      filterNavigationGroups(navigationGroups, session)
+        .flatMap((group) => group.items)
+        .some((item) => item.id === "crm"),
+    ).toBe(true);
+  });
 });
 
 function sessionForRole(

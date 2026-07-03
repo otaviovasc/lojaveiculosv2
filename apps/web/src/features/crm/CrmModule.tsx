@@ -28,9 +28,9 @@ import {
   loadActivitiesByLeadId,
 } from "./crmModuleData";
 import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
-import { CrmSurfaceTabs } from "./CrmSurfaceTabs";
 import {
   crmSurfaceHash,
+  readCrmLeadIdFromHash,
   readCrmSurfaceFromHash,
   type CrmSurface,
 } from "./crmRouteState";
@@ -48,7 +48,9 @@ export function CrmModule({
   const crmApi = useMemo(() => api ?? createRuntimeProductCrmApi(), [api]);
   const [activitiesByLeadId, setActivitiesByLeadId] =
     useState<LeadActivitiesById>({});
-  const [activeLeadId, setActiveLeadId] = useState<string | null>(null);
+  const [activeLeadId, setActiveLeadId] = useState<string | null>(() =>
+    readInitialLeadId(),
+  );
   const [error, setError] = useState<Error | null>(null);
   const [filters, setFilters] = useState<LeadFilters>({
     search: "",
@@ -59,6 +61,7 @@ export function CrmModule({
   const [leads, setLeads] = useState<ProductCrmLead[]>([]);
   const [vehicleOptions, setVehicleOptions] = useState<LeadVehicleOption[]>([]);
   const [viewMode, setViewMode] = useState<CrmViewMode>("kanban");
+  const canLoadPipeline = activeSurface !== "whatsapp";
   const activeActivities = activeLeadId
     ? (activitiesByLeadId[activeLeadId] ?? [])
     : [];
@@ -77,9 +80,11 @@ export function CrmModule({
       const nextActivities = await loadActivitiesByLeadId(crmApi, nextLeads);
       setLeads(nextLeads);
       setActivitiesByLeadId(nextActivities);
-      setActiveLeadId((current) =>
-        nextLeads.some((lead) => lead.id === current) ? current : null,
-      );
+      setActiveLeadId((current) => {
+        if (nextLeads.some((lead) => lead.id === current)) return current;
+        const leadId = readInitialLeadId();
+        return nextLeads.some((lead) => lead.id === leadId) ? leadId : null;
+      });
     } catch (caught) {
       setError(caught instanceof Error ? caught : new Error(String(caught)));
     } finally {
@@ -88,14 +93,19 @@ export function CrmModule({
   }, [crmApi, filters.search, filters.source, filters.status]);
 
   useEffect(() => {
+    if (!canLoadPipeline) {
+      setIsLoading(false);
+      return;
+    }
     void refreshLeads();
-  }, [refreshLeads]);
+  }, [canLoadPipeline, refreshLeads]);
 
   useEffect(() => {
     if (routeSurface) setActiveSurface(routeSurface);
   }, [routeSurface]);
 
   useEffect(() => {
+    if (!canLoadPipeline) return undefined;
     let isActive = true;
 
     void createInventoryApiOptions()
@@ -117,7 +127,7 @@ export function CrmModule({
     return () => {
       isActive = false;
     };
-  }, []);
+  }, [canLoadPipeline]);
 
   const createLead = async (input: LeadCreateDraft) => {
     const lead = await crmApi.createLead({
@@ -216,4 +226,9 @@ export function CrmModule({
 function readInitialSurface(): CrmSurface {
   if (typeof window === "undefined") return "whatsapp";
   return readCrmSurfaceFromHash(window.location.hash);
+}
+
+function readInitialLeadId() {
+  if (typeof window === "undefined") return null;
+  return readCrmLeadIdFromHash(window.location.hash);
 }

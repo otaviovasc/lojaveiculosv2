@@ -13,6 +13,7 @@ try {
     "--wait",
     "lojaveiculosv2-postgres",
     "lojaveiculosv2-audit-postgres",
+    "lojaveiculosv2-redis",
   ]);
   run(pnpmCommand(), ["run", "db:push:local"]);
   run(pnpmCommand(), ["run", "db:seed:local"]);

@@ -18,6 +18,7 @@ export type PermissionKey =
   | "crm.manage"
   | "crm.whatsapp.assign"
   | "crm.whatsapp.close"
+  | "crm.whatsapp.ingest"
   | "crm.whatsapp.list"
   | "crm.whatsapp.read"
   | "crm.whatsapp.send"

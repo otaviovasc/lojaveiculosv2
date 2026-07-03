@@ -12,6 +12,8 @@ const ignored = new Set([
   ".terraform",
   ".agents",
   ".worktrees",
+  "playwright-report",
+  "test-results",
 ]);
 const extensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css", ".md"]);
 

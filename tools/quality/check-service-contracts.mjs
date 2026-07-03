@@ -21,14 +21,20 @@ function walk(dir, files = []) {
 
 function isServiceFile(file) {
   const fileName = basename(file);
-  return (
-    file.includes("/services/") &&
-    fileName !== "auditVehicleServiceEvent.ts" &&
-    fileName !== "index.ts" &&
-    fileName !== "serviceSupport.ts" &&
-    fileName !== "testSupport.ts" &&
-    fileName !== "types.ts"
-  );
+  const nonEntrypointFiles = new Set([
+    "auditVehicleServiceEvent.ts",
+    "index.ts",
+    "sendWhatsappVehicleSupport.ts",
+    "serviceSupport.ts",
+    "testSupport.ts",
+    "types.ts",
+    "whatsappMessageActionSupport.ts",
+    "whatsappQuickMessageMedia.ts",
+    "whatsappQuickMessageModels.ts",
+    "whatsappQuickMessageServiceSupport.ts",
+    "whatsappSessionMutationSupport.ts",
+  ]);
+  return file.includes("/services/") && !nonEntrypointFiles.has(fileName);
 }
 
 const failures = [];
@@ -49,6 +55,9 @@ for (const file of walk(domainsRoot).filter(isServiceFile)) {
     !source.includes("context.audit.record(") &&
     !source.includes("input.audit.record(") &&
     !source.includes("auditFinanceServiceEvent(") &&
+    !source.includes("auditWhatsappServiceEvent(") &&
+    !source.includes("auditZapiWebhook(") &&
+    !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(")
   ) {
@@ -59,6 +68,7 @@ for (const file of walk(domainsRoot).filter(isServiceFile)) {
     !source.includes("context.logger.") &&
     !source.includes("input.logger.") &&
     !source.includes("logFinanceServiceEvent(") &&
+    !source.includes("logWhatsappServiceEvent(") &&
     !source.includes("logSalesServiceEvent(") &&
     !source.includes("logVehicleServiceEvent(")
   ) {

@@ -181,6 +181,7 @@ export function LocalDevAuthPage() {
 
 function roleLabel(role: LocalDevAccount["role"]) {
   if (role === "agency") return "Agência";
+  if (role === "investor") return "Investidor";
   if (role === "owner") return "Owner";
   if (role === "supervisor") return "Supervisor";
   return "Vendedor";

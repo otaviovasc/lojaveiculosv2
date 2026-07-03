@@ -1,5 +1,5 @@
 export type LocalDevAccountRole =
-  "agency" | "owner" | "salesman" | "supervisor";
+  "agency" | "investor" | "owner" | "salesman" | "supervisor";
 
 export type LocalDevAccount = {
   email: string;
@@ -38,6 +38,13 @@ export const localDevAccounts: readonly LocalDevAccount[] = [
     role: "salesman",
     storeSlug: "test-store",
     userId: "clerk_seed_salesman",
+  },
+  {
+    email: "investor@lojaveiculos.com.br",
+    name: "Test Investor",
+    role: "investor",
+    storeSlug: "test-store",
+    userId: "clerk_test_investor",
   },
 ] as const;
 

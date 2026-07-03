@@ -1,0 +1,145 @@
+import type { CrmWhatsappMessageType } from "../ports/crmWhatsappRepository.js";
+import { isTruthy, readRecord, readString } from "./zapiPayloadRead.js";
+import { extractZapiInboundContent } from "./zapiInboundContent.js";
+
+export type ParsedZapiInboundMessage = {
+  buyerName?: string;
+  chatLid?: string;
+  content: string;
+  externalId: string;
+  fromMe: boolean;
+  mediaType?: string;
+  mediaUrl?: string;
+  metadata: Record<string, unknown>;
+  phone: string;
+  providerTimestamp: Date;
+  type: CrmWhatsappMessageType;
+};
+
+export function parseZapiInboundMessage(
+  payload: Record<string, unknown>,
+): ParsedZapiInboundMessage | null {
+  if (isTruthy(payload.isGroup) || isTruthy(payload.broadcast)) return null;
+  if (isTruthy(payload.waitingMessage) || isTruthy(payload.isNewsletter)) {
+    return null;
+  }
+  if (isNotification(payload)) return null;
+  if (isTruthy(payload.isStatusReply) && !hasContent(payload)) return null;
+
+  const externalId = readString(payload.messageId);
+  if (!externalId) return null;
+
+  const chatLid = readString(payload.chatLid) ?? readString(payload.senderLid);
+  const phone = resolvePhone(payload, chatLid);
+  if (!phone) return null;
+
+  const content = extractZapiInboundContent(payload);
+  if (!content) return null;
+  const buyerName = isTruthy(payload.fromMe)
+    ? readString(payload.chatName)
+    : readString(payload.senderName);
+
+  return {
+    ...(buyerName ? { buyerName } : {}),
+    ...(chatLid ? { chatLid } : {}),
+    content: content.content,
+    externalId,
+    fromMe: isTruthy(payload.fromMe),
+    ...(content.mediaType ? { mediaType: content.mediaType } : {}),
+    ...(content.mediaUrl ? { mediaUrl: content.mediaUrl } : {}),
+    metadata: buildMetadata(payload, chatLid, content.metadata),
+    phone,
+    providerTimestamp: readZapiTimestamp(payload),
+    type: content.type,
+  };
+}
+
+function resolvePhone(
+  payload: Record<string, unknown>,
+  chatLid?: string,
+): string | null {
+  const rawPhone = readString(payload.phone);
+  let resolved = normalizePhone(rawPhone);
+  const ctwaPhone = readCtwaPhone(payload);
+
+  if (isLid(rawPhone) || isLikelyLidNumber(resolved, chatLid)) {
+    const chatPhone = normalizePhone(readString(payload.chatPhone));
+    if (chatPhone && !isLid(readString(payload.chatPhone))) {
+      resolved = chatPhone;
+    } else {
+      const chatNamePhone = normalizeChatNamePhone(
+        readString(payload.chatName),
+      );
+      resolved = chatNamePhone ?? ctwaPhone ?? chatLid ?? null;
+    }
+  }
+
+  return resolved || null;
+}
+
+function normalizePhone(value?: string) {
+  return value?.replace(/@[a-z.]+$/i, "").replace(/[^\d+]/g, "") || null;
+}
+
+function isLid(value?: string) {
+  return Boolean(value && /@lid/i.test(value));
+}
+
+function isLikelyLidNumber(value?: string | null, chatLid?: string) {
+  if (!value) return false;
+  const strippedLid = chatLid?.replace(/@[a-z.]+$/i, "").replace(/[^\d]/g, "");
+  if (strippedLid && value === strippedLid) return true;
+  if (value.length > 15 || value.length < 7) return true;
+  return /^(\d)\1+$/.test(value);
+}
+
+function normalizeChatNamePhone(value?: string) {
+  const digits = value?.replace(/[^\d]/g, "");
+  return digits && /^\d{7,15}$/.test(digits) ? digits : null;
+}
+
+function readCtwaPhone(payload: Record<string, unknown>) {
+  const context = readRecord(payload.ctwaContext);
+  const referral = readRecord(context.referral);
+  const sourceId =
+    readString(referral.sourceId) ?? readString(context.sourceId);
+  return sourceId?.startsWith("+") ? normalizePhone(sourceId) : null;
+}
+
+function hasContent(payload: Record<string, unknown>) {
+  return Boolean(extractZapiInboundContent(payload));
+}
+
+function buildMetadata(
+  payload: Record<string, unknown>,
+  chatLid: string | undefined,
+  contentMetadata: Record<string, unknown>,
+) {
+  return {
+    ...contentMetadata,
+    chatLid: chatLid ?? null,
+    ctwaContext: payload.ctwaContext ?? null,
+    externalAdReply: payload.externalAdReply ?? null,
+    isEdit: payload.isEdit ?? null,
+    payloadKeys: Object.keys(payload).sort(),
+    participantLid: payload.participantLid ?? null,
+    provider: "zapi",
+    senderLid: payload.senderLid ?? null,
+  };
+}
+
+function readZapiTimestamp(payload: Record<string, unknown>) {
+  const momment = readString(payload.momment);
+  if (momment) return new Date(momment);
+  const timestamp =
+    typeof payload.timestamp === "number" ? payload.timestamp : null;
+  return timestamp ? new Date(timestamp * 1000) : new Date();
+}
+
+function isNotification(payload: Record<string, unknown>) {
+  return (
+    payload.notification === true ||
+    typeof payload.notification === "string" ||
+    payload.type === "notification"
+  );
+}

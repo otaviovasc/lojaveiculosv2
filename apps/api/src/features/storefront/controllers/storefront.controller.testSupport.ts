@@ -139,6 +139,7 @@ export function createCrmRepository(): CrmRepository {
       vehicleTitle: null,
     })),
     findLeadById: vi.fn(async () => null),
+    findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),
     listLeads: vi.fn(async () => []),
     updateLead: vi.fn(async () => {

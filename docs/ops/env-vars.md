@@ -91,21 +91,64 @@ Use one auth mode at a time:
   `LOCAL_AUTH_BYPASS=true`, clears Clerk verifier secrets for the API child
   process, and sets `VITE_LOCAL_AUTH_BYPASS=true` for the web child process.
   This exposes the local `/sign-in` account switcher for seeded agency, owner,
-  supervisor, and salesman personas.
+  supervisor, salesman, and investor personas.
 - Permission QA: after `pnpm run db:clean:local` and `pnpm run dev:all:local`,
   run `pnpm run qa:permissions:local`.
 
+## CRM WhatsApp Development
+
+The seeded local database creates a sandbox `crm_connections` row for a ZAPI
+test connection; it stores only env var names in `credentials_ref`, not
+secrets.
+
+Redis is part of the complete CRM WhatsApp migration for ephemeral
+coordination: ticketed SSE fanout, future rate limits, distributed locks, and
+queue scheduling. Postgres remains the durable source of truth for webhook
+payloads, leads, sessions, messages, activities, and idempotency through
+`provider_events`.
+
+| Name                           | Required | Environments               | Secret | Notes                                                                                                                                     |
+| ------------------------------ | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDIS_URL`                    | No       | local, staging, production | Yes    | Local default is `redis://localhost:63790`; enables Redis-backed CRM WhatsApp SSE tickets/fanout. In-process fallback is used when unset. |
+| `CRM_ZAPI_API_BASE_URL`        | No       | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                |
+| `CRM_ZAPI_TEST_INSTANCE_ID`    | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                               |
+| `CRM_ZAPI_TEST_INSTANCE_TOKEN` | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                            |
+| `CRM_ZAPI_TEST_CLIENT_TOKEN`   | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                       |
+| `CRM_ZAPI_TEST_PAIR_PHONE`     | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                              |
+| `CRM_ZAPI_WEBHOOK_TOKEN`       | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                     |
+| `RUN_ZAPI_E2E`                 | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                               |
+
+ZAPI callback URLs use the public API base URL plus the CRM connection id:
+
+- Received messages: `/api/v1/crm/whatsapp/webhooks/zapi/{connectionId}/received`
+- Delivery receipts: `/api/v1/crm/whatsapp/webhooks/zapi/{connectionId}/delivery`
+- Message status: `/api/v1/crm/whatsapp/webhooks/zapi/{connectionId}/status`
+- Connected: `/api/v1/crm/whatsapp/webhooks/zapi/{connectionId}/connected`
+- Disconnected: `/api/v1/crm/whatsapp/webhooks/zapi/{connectionId}/disconnected`
+- Chat presence: `/api/v1/crm/whatsapp/webhooks/zapi/{connectionId}/chat-presence`
+
+For local ngrok testing, use the ngrok HTTPS origin as the public API base URL.
+Outside `APP_ENV=local`, include `CRM_ZAPI_WEBHOOK_TOKEN` with the callback as
+`?token=...` or send it in the `x-crm-webhook-token` header.
+
 ## Object Storage
 
-| Name                            | Required | Environments        | Secret | Notes                            |
-| ------------------------------- | -------- | ------------------- | ------ | -------------------------------- |
-| `R2_BUCKET_NAME`                | Yes      | staging, production | No     | Vehicle media bucket.            |
-| `R2_ACCESS_KEY_ID`              | Yes      | staging, production | Yes    | Storage access key.              |
-| `R2_SECRET_ACCESS_KEY`          | Yes      | staging, production | Yes    | Storage secret key.              |
-| `R2_ENDPOINT`                   | Yes      | staging, production | No     | S3-compatible endpoint.          |
-| `R2_PUBLIC_BASE_URL`            | Yes      | staging, production | No     | Public media base URL.           |
-| `R2_REGION`                     | Yes      | staging, production | No     | S3 region value expected by SDK. |
-| `R2_UPLOAD_URL_EXPIRES_SECONDS` | Yes      | staging, production | No     | Presigned upload TTL.            |
+| Name                              | Required | Environments        | Secret | Notes                                                                                                           |
+| --------------------------------- | -------- | ------------------- | ------ | --------------------------------------------------------------------------------------------------------------- |
+| `R2_BUCKET_NAME`                  | Yes      | staging, production | No     | Application media bucket for inventory, documents, finance attachments, and CRM WhatsApp inbound media mirrors. |
+| `R2_ACCESS_KEY_ID`                | Yes      | staging, production | Yes    | Storage access key.                                                                                             |
+| `R2_SECRET_ACCESS_KEY`            | Yes      | staging, production | Yes    | Storage secret key.                                                                                             |
+| `R2_ENDPOINT`                     | Yes      | staging, production | No     | S3-compatible endpoint.                                                                                         |
+| `R2_PUBLIC_BASE_URL`              | Yes      | staging, production | No     | Public media base URL.                                                                                          |
+| `R2_REGION`                       | Yes      | staging, production | No     | S3 region value expected by SDK.                                                                                |
+| `R2_UPLOAD_URL_EXPIRES_SECONDS`   | Yes      | staging, production | No     | Presigned upload TTL.                                                                                           |
+| `R2_DOWNLOAD_URL_EXPIRES_SECONDS` | No       | staging, production | No     | Presigned download TTL for private/download flows. Defaults to `300`.                                           |
+
+CRM WhatsApp inbound media is mirrored best-effort through the shared object
+storage adapter. Successful mirrors store the public R2 URL on
+`crm_whatsapp_messages.media_url` and persist provider URL, storage key, content
+type, byte size, and mirror timestamp under `metadata.media`. Failed mirrors
+keep the provider URL and set `metadata.media.mirrorStatus=failed`.
 
 R2 browser uploads require a bucket-level CORS policy in addition to these
 runtime variables. Use `docs/ops/r2-cors-lojaveiculosv2.json` for the

@@ -82,6 +82,23 @@ external references needed for WhatsApp/team workflow continuity. Migration must
 copy V1 lead records into V2 lead tables, preserving CRM references as external
 ids rather than making repasses the lead source of truth.
 
+Current CRM WhatsApp migration status:
+
+- V2 owns the WhatsApp session/message persistence path, lead creation/reuse,
+  lead activities, permissions, audit metadata, and provider event storage.
+- Starting a conversation to a new WhatsApp number creates a local pending
+  message/session first, then sends through ZAPI, then marks the message sent
+  with the provider id. If ZAPI fails, the failed local message remains visible
+  for follow-up/retry work instead of losing the CRM record.
+- Existing leads are reused by normalized phone digits, including leads that
+  were stored with formatted Brazilian phone strings before the WhatsApp start.
+- WhatsApp-only operators can access the WhatsApp CRM surface without triggering
+  lead-pipeline or inventory API reads that require broader CRM/inventory
+  permissions.
+- Quick messages are user-created only; V2 no longer seeds default templates.
+  The composer guides users to create the first quick message and then invoke it
+  with `/` in the text field.
+
 ### Shared Documents
 
 Documents are migrated once into a shared documents domain. Links attach each

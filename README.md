@@ -71,8 +71,8 @@ VITE_DEV_STORE_SLUG=test-store
 `pnpm run dev:all:local` sets these local-only values for the child API/web
 processes and clears Clerk secrets so the trusted-header flow cannot be mixed
 with a real Clerk token verifier by accident. In the browser, `/sign-in` becomes
-a local QA account switcher for seeded agency, owner, supervisor, and salesman
-personas. After the stack is running, execute:
+a local QA account switcher for seeded agency, owner, supervisor, salesman, and
+investor personas. After the stack is running, execute:
 
 ```bash
 pnpm run qa:permissions:local

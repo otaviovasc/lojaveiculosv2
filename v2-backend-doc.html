@@ -1199,8 +1199,10 @@
                   references.
                 </li>
                 <li>
-                  Repasses backend remains CRM source of truth during frontend
-                  migration.
+                  CRM WhatsApp migrated paths are V2-owned. Repasses remains a
+                  behavior reference and later import/backfill source, not a
+                  runtime source of truth for the migrated ZAPI inbox, webhooks,
+                  sends, tags, templates, or assignment flows.
                 </li>
                 <li>
                   Audit database is separate; product tables do not depend on
@@ -1387,8 +1389,9 @@
             <div class="tile">
               <strong>repasses-lojaveiculos-backend</strong>
               <p>
-                CRM backend remains separate for now. Integration should use the
-                same Clerk instance rather than iframe bridge auth.
+                CRM WhatsApp behavior reference. Migrated WhatsApp runtime paths
+                are now V2-owned; Repasses is not a runtime dependency for the
+                current ZAPI inbox/webhook slice.
               </p>
             </div>
           </div>
@@ -1452,10 +1455,11 @@
                   backend API contracts, iframe bridge behavior, dead-code map.
                 </td>
                 <td>
-                  <span class="status recommended">First slice mapped</span>
-                  Active CRM routes, token bridge behavior, SSE entrypoints, API
-                  client assumptions, and dead-code risks were mapped from the
-                  copied Repasses repos.
+                  <span class="status recommended">V2 rewrite active</span>
+                  Repasses CRM WhatsApp behavior was mapped and the V2-owned
+                  ZAPI inbox, webhook ingestion, durable event capture, audit,
+                  and live-update foundation is active. Remaining Repasses
+                  features are imported by slice, not by iframe/backend bridge.
                 </td>
               </tr>
               <tr>
@@ -2295,12 +2299,87 @@
                   default or injected Drizzle-backed ports.
                 </li>
                 <li>
-                  Completed: exact Repasses read-only CRM chat endpoints and DTO
-                  contracts are mapped into V2 web route helpers.
+                  Superseded: exact Repasses read-only CRM chat endpoints, DTO
+                  contracts, and typed route helpers were mapped as migration
+                  evidence, but the active WhatsApp inbox path now uses V2
+                  services and repositories directly.
                 </li>
                 <li>
-                  Completed: typed CRM read-only fetch client and injectable
-                  HTTP identity context factory in <code>864fad0</code>.
+                  Completed: CRM WhatsApp V2 runtime now owns the ZAPI
+                  connection/session/message path for received messages,
+                  outbound text sends, assignment, conclude, intervention,
+                  delivery/status updates, connected/disconnected callbacks, and
+                  chat-presence callbacks.
+                </li>
+                <li>
+                  Completed: ZAPI callbacks are captured in product
+                  <code>provider_events</code> before business processing,
+                  deduped by deterministic provider event id, and summarized in
+                  audit DB as scoped integration evidence without storing raw
+                  payloads in audit rows.
+                </li>
+                <li>
+                  Completed: CRM WhatsApp live updates use ticketed SSE with a
+                  Redis-backed broker when <code>REDIS_URL</code> is configured
+                  and in-process fallback for local/test. The frontend consumes
+                  message, session, message-status, connection-status, and
+                  presence events.
+                </li>
+                <li>
+                  Completed: CRM WhatsApp ticketed SSE now emits stable event
+                  ids, tracks the frontend's last processed id, and replays
+                  missed scoped events from Redis Streams on reconnect. Local
+                  and test runtimes keep a bounded in-process replay buffer.
+                </li>
+                <li>
+                  Completed: failed ZAPI provider events can be listed and
+                  retried from V2. <code>provider_events.connection_id</code>
+                  stores route context for deterministic retry; older rows can
+                  retry only when their store has a single unambiguous ZAPI
+                  connection.
+                </li>
+                <li>
+                  Completed: inbound ZAPI media receive/display now supports
+                  image, audio, video, document, sticker, location, contact, and
+                  interactive payload normalization. Provider media is mirrored
+                  best-effort to R2 through the shared object storage port;
+                  successful mirrors store the R2 public URL on the message,
+                  while failed mirrors keep the provider URL with failure
+                  metadata.
+                </li>
+                <li>
+                  Completed: CRM WhatsApp outbound image/audio/document/video
+                  media now uses the shared object storage port to persist
+                  selected files before provider send, sends ZAPI public media
+                  URLs through a shared gateway method, flags video sends for
+                  async ZAPI processing, stores media metadata on outbound
+                  messages, emits the same audit/realtime/lead activity flow as
+                  text sends, and exposes a frontend WhatsApp-style modal
+                  preview editor before sending.
+                </li>
+                <li>
+                  Completed: CRM WhatsApp quick messages, normalized session
+                  tags, assignment controls, read/unread session state, catalog
+                  sends, location sends, and vehicle sends are active in the V2
+                  backend/frontend. Tags are first-class CRM rows in
+                  <code>crm_tags</code> and
+                  <code>crm_whatsapp_session_tags</code>, not session metadata.
+                  Quick messages now persist in
+                  <code>crm_whatsapp_quick_messages</code>, keep only two system
+                  defaults, support text/image/audio template creation and
+                  editing, store template deletion, R2-backed template media,
+                  and direct audited template sends from the frontend slash
+                  picker. Catalog sends use the ZAPI business catalog endpoint
+                  with the connection phone or live connected phone as
+                  <code>catalogPhone</code>; catalog product list/send routes
+                  are active through ZAPI <code>/catalogs</code> and
+                  <code>/send-product</code> with explicit load failure UX.
+                  Vehicle sends use V2 inventory units/media, send a provider
+                  media sequence when public images/videos are available, and
+                  finish with a structured summary text message. If provider
+                  media send fails mid-sequence, V2 stops before the summary
+                  text, keeps already-persisted media messages as evidence, and
+                  returns <code>CRM_WHATSAPP_VEHICLE_PARTIAL_SEND</code>.
                 </li>
                 <li>
                   Completed: production StoreAccessRepository Drizzle adapter
@@ -2438,6 +2517,16 @@
                 <li>
                   Pending: AI WhatsApp assistant must call audited domain tools
                   through permissions, never direct DB access.
+                </li>
+                <li>
+                  Pending: CRM WhatsApp next slices are message actions
+                  (reply/quote, forward, react, delete), scheduled messages and
+                  campaigns, contact side-panel CRM data, visit/financing and
+                  interested-vehicle management, external bot actions, full tag
+                  catalog administration, richer send retry UX, connection
+                  administration, voice recording/notifications, and Playwright
+                  role-matrix coverage for owner/admin/attendant/restricted
+                  users. MiniBot migration is intentionally skipped for now.
                 </li>
                 <li>
                   Pending: finance frontend integration, recurring-entry
@@ -3221,38 +3310,88 @@
             </div>
 
             <div class="schema-domain">
-              <h3>CRM Bridge</h3>
+              <h3>CRM WhatsApp</h3>
               <p>
                 <span class="status recommended"
-                  >First migration slice mapped</span
+                  >V2-owned ZAPI slice active</span
                 >
               </p>
               <ul>
                 <li>
-                  <code>crm_bridge_identities</code>: V2 user/store identity
-                  snapshot used to issue bridge credentials.
+                  <code>crm_connections</code>: V2 store-scoped WhatsApp
+                  provider connection, credentials reference, status, phone,
+                  metadata, and webhook URL.
                 </li>
                 <li>
-                  <code>crm_connection_mappings</code>: V2 store to repasses
-                  connection/workspace ids.
+                  <code>crm_whatsapp_sessions</code>: conversation queue state,
+                  linked lead, assignee, freshness, read markers, intervention,
+                  and last-message preview.
                 </li>
                 <li>
-                  <code>crm_agent_mappings</code>: V2 user/Clerk actor to
-                  repasses CRM agent ids.
+                  <code>crm_whatsapp_messages</code>: inbound/outbound message
+                  records, provider ids, media URL/type, normalized media
+                  metadata, monotonic delivery/read status, and provider
+                  timestamps.
                 </li>
                 <li>
-                  <code>crm_lead_mappings</code>: local lead/contact reference
-                  to repasses session/contact ids.
+                  <code>crm_tags</code>: store-scoped CRM tag catalog with
+                  optional WhatsApp connection scope, color, emoji, column flag,
+                  and sort order.
                 </li>
                 <li>
-                  <code>crm_tag_mappings</code>: V2 column/tag reference to
-                  repasses tags and column tags.
+                  <code>crm_whatsapp_session_tags</code>: normalized
+                  many-to-many assignment between WhatsApp sessions and CRM
+                  tags. Session tags are not stored in JSON metadata so they can
+                  support filtering, reporting, audit, and future automations.
+                </li>
+                <li>
+                  <code>crm_whatsapp_quick_messages</code>: store-scoped CRM
+                  WhatsApp templates with normalized shortcut uniqueness,
+                  text/image/audio kind, optional R2 media URL/storage key,
+                  creator, active flag, and sort order. System defaults are
+                  capped at two and are not persisted per store.
+                </li>
+                <li>
+                  <code>provider_events</code>: raw ZAPI callback payloads,
+                  deterministic idempotency keys, processing status, errors,
+                  connection id, and store/tenant scope. This is the retry and
+                  debug source of truth for provider callbacks.
+                </li>
+                <li>
+                  <code>audit_events</code>: append-only evidence that a ZAPI
+                  callback or CRM WhatsApp mutation was accepted/processed,
+                  scoped to actor/entity/request with minimal metadata. Raw ZAPI
+                  payloads do not belong here.
                 </li>
                 <li>
                   <code>crm_sync_events</code>: idempotent inbound/outbound CRM
-                  sync events and retries.
+                  sync events and retries for future cross-system imports. It is
+                  not used as a Repasses runtime bridge for the migrated ZAPI
+                  WhatsApp slice.
                 </li>
               </ul>
+              <p class="muted">
+                Current webhook templates:
+                <code
+                  >/api/v1/crm/whatsapp/webhooks/zapi/:connectionId/received</code
+                >, <code>/delivery</code>, <code>/status</code>,
+                <code>/connected</code>, <code>/disconnected</code>, and
+                <code>/chat-presence</code>. <code>CRM_ZAPI_WEBHOOK_TOKEN</code>
+                is required outside local/test development and must be sent as
+                <code>x-crm-webhook-token</code> or callback URL
+                <code>?token=...</code>. Session read state is mutated through
+                <code>/api/v1/crm/whatsapp/sessions/:sessionId/read</code> and
+                <code>/unread</code>; unread counts are derived from inbound
+                message timestamps relative to
+                <code>crm_whatsapp_sessions.last_read_at</code>. Vehicle partial
+                send failures use API code
+                <code>CRM_WHATSAPP_VEHICLE_PARTIAL_SEND</code>. Observed ZAPI
+                behavior: some API-sent outbound messages also arrive on
+                <code>/received</code> as <code>fromMe: true</code> callbacks
+                with provider status <code>SENT</code>; V2 treats those as
+                idempotent provider evidence and does not create a duplicate
+                message when the external id already exists.
+              </p>
             </div>
 
             <div class="schema-domain">
@@ -3568,11 +3707,10 @@
                   <span class="status recommended">Explorer complete</span>
                 </td>
                 <td>
-                  Repasses remains CRM source of truth. V2 should store external
-                  mappings, bridge identity snapshots, and idempotent sync
-                  events, not mirror repasses internals. Current iframe bridge
-                  depends on signed tokens and localStorage; same-Clerk native
-                  integration remains the target.
+                  Historical bridge finding. The migrated CRM WhatsApp path is
+                  V2-owned and must not call Repasses at runtime. Keep external
+                  mappings and idempotent sync events for future imports and
+                  reconciliation, not for live chat operations.
                 </td>
               </tr>
               <tr>
@@ -3581,25 +3719,16 @@
                   <span class="status recommended">Read-only API mapped</span>
                 </td>
                 <td>
-                  Start with <code>CrmContext</code>, <code>AuthContext</code>,
-                  <code>src/lib/api.ts</code>, <code>CrmLogin</code>, and the
-                  main <code>CrmWhatsApp</code> shell. Preserve
-                  <code>CRM_REQUEST_BRIDGE_REFRESH</code>,
-                  <code>CRM_BRIDGE_TOKEN_REFRESH</code>,
-                  <code>embedded=1</code>, <code>Authorization</code>,
-                  <code>x-crm-agent-id</code>, <code>POST /auth/bridge</code>,
-                  <code>POST /crm/agents/login</code>,
-                  <code>POST /crm/sse/ticket</code>, and
-                  <code>GET /crm/sse</code>. Read-only chat uses
-                  <code>GET /crm/chat/sessions</code> and
-                  <code>GET /crm/chat/messages/:sessionId</code> with
-                  <code>Authorization</code> and <code>x-crm-agent-id</code>.
-                  Defer message-send endpoints to phase 2 because they mutate
-                  external WhatsApp/provider state. Also defer campaigns,
-                  agendas, visits, labels, integrations, and minibot until chat
-                  read is native in V2. V2 web now has typed read-only route
-                  helpers and query serializers for these contracts. The next
-                  checkpoint adds the typed fetch client with injected
+                  Historical bridge inventory covered
+                  <code>CrmContext</code>, <code>AuthContext</code>,
+                  <code>CrmLogin</code>, bridge refresh messages, signed tokens,
+                  and Repasses SSE/read-only chat endpoints. Those contracts are
+                  retained as evidence only. Current V2 CRM WhatsApp owns
+                  sessions, messages, sends, webhooks, SSE, catalog, tags, quick
+                  messages, assignment, and provider-event retry directly.
+                  Campaigns, agendas, visits, full labels administration,
+                  integrations, and minibot remain separate future slices. The
+                  next checkpoint adds the typed fetch client with injected
                   <code>fetch</code>, base URL, and auth state. Checkpoint:
                   <code>864fad0</code>.
                 </td>
@@ -4170,11 +4299,11 @@
         crm: {
           title: "CRM / Repasses",
           summary:
-            "V2 migrates the CRM frontend first while Repasses remains the backend source of truth.",
+            "Migrated CRM WhatsApp paths are V2-owned; Repasses is now behavior evidence and a later import source for this slice.",
           details: [
-            "Preserve bridge refresh messages, <code>Authorization</code>, <code>x-crm-agent-id</code>, SSE ticketing, and read-only chat contracts.",
-            "V2 should store external mappings and sync events, not clone Repasses internals.",
-            "Message-send, campaigns, agendas, visits, labels, integrations, and minibot remain later slices.",
+            "Current V2 owns sessions, messages, sends, ZAPI webhooks, ticketed SSE, tags, quick messages, catalog, vehicle sends, assignment, and failed provider-event retries.",
+            "External mappings and sync events are for future imports/reconciliation, not a live Repasses runtime bridge.",
+            "Campaigns, agendas, visits, full labels administration, integrations, and minibot remain later slices.",
           ],
         },
         assistant: {
@@ -4539,21 +4668,21 @@
           ],
         },
         crm: {
-          title: "CRM / Repasses Bridge",
+          title: "CRM / WhatsApp Migration",
           summary:
-            "V2 keeps mappings and idempotent sync events while Repasses remains CRM source of truth during migration.",
+            "V2 keeps mappings and idempotent sync events for import/reconciliation while migrated WhatsApp runtime stays V2-owned.",
           nodes: [
             [
               "crm_bridge_identities",
-              "V2 user/store identity snapshot for bridge credentials.",
+              "Historical V2 user/store identity snapshot for old bridge credentials.",
             ],
             [
               "crm_connection_mappings",
-              "Store to Repasses connection/workspace ids.",
+              "Store to legacy Repasses connection/workspace ids for import metadata.",
             ],
             [
               "crm_agent_mappings",
-              "V2 user/Clerk actor to Repasses agent ids.",
+              "V2 user/Clerk actor to legacy Repasses agent ids for import metadata.",
             ],
             [
               "crm_sync_events",
@@ -4568,7 +4697,7 @@
             ["stores.id", "crm_connection_mappings.store_id"],
             ["users.id", "crm_agent_mappings.user_id"],
             ["leads", "crm_lead_mappings"],
-            ["sync_events", "idempotent Repasses bridge operations"],
+            ["sync_events", "idempotent CRM import/reconciliation operations"],
           ],
         },
         billing: {

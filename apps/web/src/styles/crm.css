@@ -126,6 +126,13 @@
   background: var(--color-blue-start);
 }
 
+.crm-action:disabled {
+  background: var(--color-line);
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
 .crm-contract-row,
 .crm-header-row {
   justify-content: space-between;

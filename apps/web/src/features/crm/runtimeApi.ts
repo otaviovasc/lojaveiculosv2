@@ -37,47 +37,144 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
 
 export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
   return {
-    assignSession: async (sessionId, agentId, connectionId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).assignSession(
+    addSessionTag: async (sessionId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).addSessionTag(
         sessionId,
-        agentId,
-        connectionId,
-      ),
-    bootstrap: async () =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).bootstrap(),
-    closeSession: async (sessionId, mode, connectionId) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
-        sessionId,
-        mode,
-        connectionId,
-      ),
-    createSession: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).createSession(
         input,
       ),
+    assignSession: async (sessionId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).assignSession(
+        sessionId,
+        input,
+      ),
+    closeSession: async (sessionId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
+        sessionId,
+      ),
+    createQuickMessage: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).createQuickMessage(input),
+    deleteQuickMessage: async (quickMessageId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).deleteQuickMessage(quickMessageId),
+    deleteMessage: async (messageId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).deleteMessage(
+        messageId,
+      ),
+    interveneSession: async (sessionId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).interveneSession(
+        sessionId,
+        input,
+      ),
+    listConnections: async () =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).listConnections(),
     listMessages: async (sessionId, query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
         sessionId,
         query,
       ),
+    listCatalogProducts: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).listCatalogProducts(input),
+    listQuickMessages: async () =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).listQuickMessages(),
+    listTags: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listTags(input),
+    listFailedProviderEvents: async () =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).listFailedProviderEvents(),
+    markSessionRead: async (sessionId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).markSessionRead(
+        sessionId,
+      ),
+    markSessionUnread: async (sessionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).markSessionUnread(sessionId),
     listSessions: async (query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listSessions(
         query,
       ),
-    markSessionAsRead: async (sessionId, connectionId) =>
+    listSessionCounts: async (query) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).markSessionAsRead(sessionId, connectionId),
-    markSessionAsUnread: async (sessionId, lastReadAt, connectionId) =>
+      ).listSessionCounts(query),
+    removeSessionTag: async (sessionId, tagId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).removeSessionTag(
+        sessionId,
+        tagId,
+      ),
+    removeReaction: async (messageId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).removeReaction(
+        messageId,
+      ),
+    retryProviderEvent: async (eventId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).markSessionAsUnread(sessionId, lastReadAt, connectionId),
+      ).retryProviderEvent(eventId),
+    sendCatalog: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendCatalog(
+        input,
+      ),
+    sendCatalogProduct: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).sendCatalogProduct(input),
+    sendLocation: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendLocation(
+        input,
+      ),
+    sendMedia: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendMedia(input),
+    sendReaction: async (messageId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendReaction(
+        messageId,
+        input,
+      ),
+    sendQuickMessage: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendQuickMessage(
+        input,
+      ),
     sendText: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).sendText(input),
-    toggleIntervention: async (sessionId, connectionId) =>
+    sendVehicle: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).sendVehicle(
+        input,
+      ),
+    startConversation: async (input) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).toggleIntervention(sessionId, connectionId),
+      ).startConversation(input),
+    updateQuickMessage: async (quickMessageId, input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).updateQuickMessage(quickMessageId, input),
+    subscribeEvents: (input) => {
+      let unsubscribe: (() => void) | null = null;
+      let closed = false;
+      void createProductCrmApiOptions()
+        .then((options) => {
+          if (closed) return;
+          unsubscribe = createCrmWhatsappApi(options).subscribeEvents(input);
+        })
+        .catch((error) => {
+          input.onError?.(
+            error instanceof Error ? error : new Error(String(error)),
+          );
+        });
+      return () => {
+        closed = true;
+        unsubscribe?.();
+      };
+    },
   };
 }
 

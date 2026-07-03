@@ -38,6 +38,15 @@ const personas = [
     storeSlug: "test-store",
     userId: "clerk_seed_salesman",
   },
+  {
+    email: "investor@lojaveiculos.com.br",
+    expectedDestination: "/dashboard",
+    expectedRole: "investor",
+    key: "investor",
+    name: "Test Investor",
+    storeSlug: "test-store",
+    userId: "clerk_test_investor",
+  },
 ];
 
 const results = [];
@@ -47,6 +56,7 @@ async function main() {
   console.log(`Local permission smoke: ${apiBaseUrl}`);
   await waitForApi();
   await verifyBootstrapDestinations();
+  verifyCrmWhatsappPermissions();
   await verifyStoreScopedAccess();
   await verifyRoleManagementBoundaries();
   await verifyAgencyStoreAuthorization();
@@ -110,7 +120,7 @@ async function verifyBootstrapDestinations() {
 }
 
 async function verifyStoreScopedAccess() {
-  for (const key of ["owner", "supervisor", "salesman"]) {
+  for (const key of ["owner", "supervisor", "salesman", "investor"]) {
     const account = persona(key);
     const inventory = await request(
       account,
@@ -131,7 +141,7 @@ async function verifyStoreScopedAccess() {
   );
   expectStatus("owner: store settings", ownerSettings, [200]);
 
-  for (const key of ["supervisor", "salesman"]) {
+  for (const key of ["supervisor", "salesman", "investor"]) {
     const response = await request(persona(key), "GET", "/settings/store", {
       includeStore: true,
     });
@@ -152,7 +162,7 @@ async function verifyRoleManagementBoundaries() {
     );
   }
 
-  for (const key of ["supervisor", "salesman"]) {
+  for (const key of ["supervisor", "salesman", "investor"]) {
     const response = await request(persona(key), "GET", "/identity/roles", {
       includeStore: true,
     });
@@ -213,6 +223,53 @@ async function verifyAgencyStoreAuthorization() {
     },
   );
   expectStatus("owner: agency store creation denied", ownerDenied, [403]);
+}
+
+function verifyCrmWhatsappPermissions() {
+  const operatorPermissions = [
+    "crm.whatsapp.assign",
+    "crm.whatsapp.close",
+    "crm.whatsapp.list",
+    "crm.whatsapp.read",
+    "crm.whatsapp.send",
+    "crm.whatsapp.toggle_intervention",
+  ];
+  for (const key of ["owner", "supervisor", "salesman"]) {
+    expectPermissionSet(`${key}: WhatsApp operator permissions`, key, {
+      includes: operatorPermissions,
+    });
+  }
+  expectPermissionSet("investor: WhatsApp read-only permissions", "investor", {
+    excludes: [
+      "crm.whatsapp.assign",
+      "crm.whatsapp.close",
+      "crm.whatsapp.send",
+      "crm.whatsapp.toggle_intervention",
+    ],
+    includes: ["crm.whatsapp.list", "crm.whatsapp.read"],
+  });
+}
+
+function expectPermissionSet(name, key, expectation) {
+  const permissions = bootstraps.get(key)?.defaultStore?.effectivePermissions;
+  if (!Array.isArray(permissions)) {
+    fail(name, "missing defaultStore.effectivePermissions");
+    return;
+  }
+  for (const permission of expectation.includes ?? []) {
+    expect(
+      `${name}: includes ${permission}`,
+      permissions.includes(permission),
+      `expected ${permission}`,
+    );
+  }
+  for (const permission of expectation.excludes ?? []) {
+    expect(
+      `${name}: excludes ${permission}`,
+      !permissions.includes(permission),
+      `did not expect ${permission}`,
+    );
+  }
 }
 
 function persona(key) {

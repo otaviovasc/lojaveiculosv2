@@ -8,7 +8,10 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
-  REPASSES_CRM_API_URL: z.string().url(),
+  REDIS_URL: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

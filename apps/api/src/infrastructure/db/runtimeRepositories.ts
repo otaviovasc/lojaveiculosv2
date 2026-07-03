@@ -1,6 +1,7 @@
 import type { CreateAppOptions } from "../http/createApp.js";
 import { validateR2ObjectStorageEnv } from "../storage/r2ObjectStorage.js";
 import { createRuntimeHttpAppOptions } from "./runtimeAppOptions.js";
+import { createRuntimeCrmRealtimeBroker } from "../crm/redisCrmRealtimeBroker.js";
 import {
   assertRuntimeIdentityVerifierConfig,
   allowsMemoryRuntimeFallback,
@@ -68,6 +69,12 @@ export function createRuntimeAppDependencies(
   const productDb = createProductDb(databaseUrl, env);
   const auditDatabase = createAuditDb(env);
   const objectStorage = createRuntimeObjectStorage(env);
+  const crmRealtimeBroker = createRuntimeCrmRealtimeBroker(env);
+  const closeCrmRealtimeBroker =
+    "close" in crmRealtimeBroker &&
+    typeof crmRealtimeBroker.close === "function"
+      ? (crmRealtimeBroker.close as () => Promise<void>)
+      : null;
   const clerkAccountProviders = createRuntimeClerkAccountProviders(env);
   const resources: RuntimeResource[] = [
     productDb.resource,
@@ -87,6 +94,14 @@ export function createRuntimeAppDependencies(
           }),
         ]
       : []),
+    ...(closeCrmRealtimeBroker
+      ? [
+          createIdempotentResource({
+            close: closeCrmRealtimeBroker,
+            name: "crm-realtime-broker",
+          }),
+        ]
+      : []),
   ];
 
   try {
@@ -94,6 +109,7 @@ export function createRuntimeAppDependencies(
       appOptions: createRuntimeHttpAppOptions({
         auditDb: auditDatabase?.db ?? null,
         clerkAccountProviders,
+        crmRealtimeBroker,
         db: productDb.db,
         env,
         identityVerifier: createRuntimeIdentityVerifier(env),

@@ -18,7 +18,11 @@ const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   billing: gate(["billing.manage"], "assinatura e faturamento"),
   checklists: gate(["inventory.checklist_read"], "checklists"),
   commissions: gate(["finance.read"], "comissões"),
-  crm: gate(["crm.access"], "WhatsApp e atendimento"),
+  crm: gate(
+    ["crm.access", "crm.whatsapp.list"],
+    "WhatsApp e atendimento",
+    "any",
+  ),
   "custom-pages": gate(["store_public_site.manage"], "páginas da vitrine"),
   customers: gate(["lead.read"], "clientes"),
   documents: gate(["documents.read"], "documentos"),

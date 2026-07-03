@@ -1,13 +1,17 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { ClerkAuthProvider } from "../account/ClerkAuthProvider";
 import { selectLocalDevAccount } from "../account/localDevAuth";
 import { LandingAuthActions } from "./LandingAuthActions";
 
 describe("LandingAuthActions", () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   afterEach(() => {
     cleanup();
     localStorage.clear();
@@ -18,6 +22,7 @@ describe("LandingAuthActions", () => {
     vi.stubEnv("VITE_LOCAL_AUTH_BYPASS", "true");
     vi.stubEnv("VITE_CLERK_PUBLISHABLE_KEY", "pk_test_local");
     selectLocalDevAccount("clerk_seed_owner");
+    vi.stubEnv("VITE_DEV_CLERK_USER_ID", "");
 
     render(
       <MemoryRouter>

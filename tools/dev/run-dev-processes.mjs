@@ -141,7 +141,6 @@ function createProcessSpecs(useLocalEnv) {
             R2_REGION: "",
             R2_SECRET_ACCESS_KEY: "",
             R2_UPLOAD_URL_EXPIRES_SECONDS: "",
-            REPASSES_CRM_LOCAL_DEMO: "true",
           }
         : {},
       name: "api",
@@ -158,6 +157,8 @@ function createProcessSpecs(useLocalEnv) {
       env: useLocalEnv
         ? {
             VITE_CLERK_PUBLISHABLE_KEY: "",
+            VITE_DEV_CLERK_USER_ID: "clerk_seed_owner",
+            VITE_DEV_STORE_SLUG: "test-store",
             VITE_LOCAL_AUTH_BYPASS: "true",
           }
         : {},

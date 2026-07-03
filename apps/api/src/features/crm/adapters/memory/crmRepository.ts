@@ -8,6 +8,7 @@ import type {
   ListLeadActivitiesInput,
   UpdateCrmLeadInput,
 } from "../../../../domains/crm/ports/crmRepository.js";
+import { whatsappPhoneLookupCandidates } from "../../../../domains/crm/whatsapp/whatsappPhone.js";
 
 export function createMemoryCrmRepository(): CrmRepository {
   const leads: CrmLead[] = [];
@@ -58,6 +59,19 @@ export function createMemoryCrmRepository(): CrmRepository {
     },
     async findLeadById(input) {
       return findScopedLead(leads, input.leadId, input) ?? null;
+    },
+    async findLeadByPhone(input) {
+      const candidates = whatsappPhoneLookupCandidates(input.buyerPhone);
+      return (
+        leads
+          .filter((lead) => lead.storeId === input.storeId)
+          .filter((lead) => lead.tenantId === input.tenantId)
+          .filter((lead) => matchesLeadPhone(lead.buyerPhone, candidates))
+          .sort(
+            (left, right) =>
+              right.updatedAt.getTime() - left.updatedAt.getTime(),
+          )[0] ?? null
+      );
     },
     async listActivities(input) {
       return activities
@@ -118,6 +132,11 @@ function applyLeadUpdate(lead: CrmLead, input: UpdateCrmLeadInput) {
   if (input.buyerPhone !== undefined) lead.buyerPhone = input.buyerPhone;
   if (input.metadata) lead.metadata = input.metadata;
   if (input.status) lead.status = input.status;
+}
+
+function matchesLeadPhone(value: string | null, candidates: string[]) {
+  if (!value) return false;
+  return candidates.includes(value.replace(/\D/g, ""));
 }
 
 function matchesSearch(lead: CrmLead, search: ListCrmLeadsInput["search"]) {

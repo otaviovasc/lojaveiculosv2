@@ -12,6 +12,7 @@ import type {
   CrmRepository,
   UpdateCrmLeadInput,
 } from "../../../domains/crm/ports/crmRepository.js";
+import { findLeadByPhoneInDatabase } from "./drizzleCrmLeadLookup.js";
 import { findLeadIdsByVehicleTitle } from "./drizzleCrmLeadSearch.js";
 import { toActivity, toLead } from "./drizzleCrmMappers.js";
 import {
@@ -104,6 +105,9 @@ export function createDrizzleCrmRepository(
         }),
       );
     },
+    async findLeadByPhone(input) {
+      return findLeadByPhoneInDatabase(db, input);
+    },
     async listActivities(input) {
       const rows = await db
         .select()
@@ -138,7 +142,12 @@ export function createDrizzleCrmRepository(
             ),
           );
         if (!linkedRows.length) return [];
-        filters.push(inArray(leads.id, linkedRows.map((row) => row.leadId)));
+        filters.push(
+          inArray(
+            leads.id,
+            linkedRows.map((row) => row.leadId),
+          ),
+        );
       }
       if (input.source) filters.push(eq(leads.source, input.source));
       if (input.status) filters.push(eq(leads.status, input.status));

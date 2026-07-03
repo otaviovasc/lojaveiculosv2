@@ -376,8 +376,10 @@
           </div>
           <div class="finding">
             <strong>phase-1-audit-004 · blocker</strong><br />WhatsApp text
-            continuity merged, but media and audio composer parity is still
-            missing.<br /><span class="muted"
+            continuity, inbound media, and image/audio/document/video outbound
+            composer parity are merged; quick messages, normalized tags, and
+            replayable SSE are active; failed provider event retry is active;
+            persistent admin and bot actions remain.<br /><span class="muted"
               >Remediation: lvv2-r004-whatsapp-media-audio-composer</span
             >
           </div>
@@ -444,8 +446,11 @@
           <article class="card remediation">
             <strong>lvv2-r004-whatsapp-media-audio-composer</strong
             ><span>WhatsApp Media And Audio Composer Parity</span
-            ><span class="status planned">planned</span
-            ><span class="muted">Depends on lvv2-f006-crm-whatsapp-inbox</span>
+            ><span class="status merged">merged</span
+            ><span class="muted"
+              >Image/audio/document/video send, async video processing metadata,
+              and modal preview editor done</span
+            >
           </article>
           <article class="card remediation">
             <strong>lvv2-r005-composition-exceptions-burn-down</strong
@@ -552,7 +557,9 @@
                 <span class="merged">merged</span>
               </td>
               <td>
-                Operator Parity Gate<br /><span class="blocked">blocked</span>
+                Runtime Reliability Gate<br /><span class="merged"
+                  >runtime-ready</span
+                >
               </td>
               <td>
                 <span class="pill"
@@ -753,6 +760,30 @@
                   >npm run qa:visual -- --slice
                   lvv2-f006-crm-whatsapp-inbox</code
                 >
+                <br />current: V2-owned ZAPI received/delivery/status/
+                connected/disconnected/chat-presence callbacks, durable
+                <code>provider_events</code>, audit DB evidence, Redis-backed
+                ticketed SSE, frontend live updates, and inbound media
+                receive/display with R2 mirroring are implemented. The migrated
+                WhatsApp paths do not call Repasses as a runtime bridge; the old
+                codebases are behavior references and later import sources only.
+                The composer now sends image/audio/document/video media through
+                R2-backed outbound ZAPI URLs with a WhatsApp-style modal preview
+                editor. Quick messages now have V2 persistence, two capped
+                system defaults, text/image/audio template creation, media
+                preview, edit/delete controls for store templates, and direct
+                template sends through the audited outbound flow. Normalized
+                session tags, assignment/assume flows, read/unread session
+                state, catalog/product sends through the real ZAPI business
+                catalog, location sends, and V2 inventory vehicle packages with
+                image sequence plus summary text are active with Playwright
+                coverage. Vehicle package sends stop on provider media failure,
+                preserve already-sent media evidence, and return a specific
+                partial-send API error instead of pretending the whole package
+                succeeded. Ticketed SSE now stores Redis Stream cursors for
+                reconnect replay with in-process fallback. Failed ZAPI provider
+                events can be listed and retried from the compact reliability
+                strip; MiniBot remains intentionally out of scope.
               </td>
             </tr>
             <tr data-priority="P1">
@@ -786,6 +817,12 @@
                   >npm run qa:visual -- --slice
                   lvv2-f007-crm-team-settings-tags-connections</code
                 >
+                <br />current: session tag assignment is already implemented in
+                <code>lvv2-f006</code> through normalized
+                <code>crm_tags</code> and
+                <code>crm_whatsapp_session_tags</code>. This slice now owns full
+                tag catalog management, team/settings screens, and provider
+                connection administration.
               </td>
             </tr>
             <tr data-priority="P1">
@@ -1890,7 +1927,10 @@
                 visual required<br /><code
                   >npm run qa:visual -- --slice
                   lvv2-r004-whatsapp-media-audio-composer</code
-                >
+                ><br />current: image/audio/document/video send paths, async
+                video ZAPI processing flag, outbound media metadata, modal
+                preview editor, and desktop/mobile Playwright coverage are
+                implemented.
               </td>
             </tr>
             <tr data-priority="P0">

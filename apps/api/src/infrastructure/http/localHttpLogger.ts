@@ -53,6 +53,7 @@ function logHttpRequest({
 }) {
   const metadata = readHttpErrorMetadata(context);
   const failed = status >= 400;
+  const normalizedError = error ?? context.error;
   const payload = {
     component: "http",
     event: failed ? "request.failed" : "request.completed",
@@ -63,7 +64,12 @@ function logHttpRequest({
     tookMs: Math.round(performance.now() - startedAt),
     ...(failed ? { code: metadata?.code ?? `HTTP_${status}` } : {}),
     ...(metadata?.errorName ? { errorName: metadata.errorName } : {}),
-    ...(error instanceof Error ? { errorName: error.name } : {}),
+    ...(normalizedError instanceof Error
+      ? {
+          errorMessage: normalizedError.message,
+          errorName: normalizedError.name,
+        }
+      : {}),
   };
 
   const line = JSON.stringify(payload);

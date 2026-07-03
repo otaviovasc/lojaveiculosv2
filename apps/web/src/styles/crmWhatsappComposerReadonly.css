@@ -1,0 +1,33 @@
+.crm-whatsapp-composer-readonly {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-panel) 82%, var(--color-app));
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 4rem;
+}
+
+.crm-whatsapp-composer-readonly > svg {
+  color: var(--color-accent-strong);
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.crm-whatsapp-composer-readonly span {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-composer-readonly strong {
+  color: var(--color-text);
+  font-size: calc(var(--font-size-xs) * 1.3);
+  font-weight: 950;
+}
+
+.crm-whatsapp-composer-readonly small {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.2);
+  font-weight: 800;
+}

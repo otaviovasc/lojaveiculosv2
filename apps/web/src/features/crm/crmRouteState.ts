@@ -15,6 +15,11 @@ export function readCrmSurfaceFromHash(
   return isCrmSurface(surface) ? surface : fallback;
 }
 
+export function readCrmLeadIdFromHash(hash: string) {
+  const query = hash.split("?")[1] ?? "";
+  return new URLSearchParams(query).get("leadId");
+}
+
 export function isCrmSurface(value: string | null): value is CrmSurface {
   return crmSurfaces.has(value as CrmSurface);
 }

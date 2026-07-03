@@ -1,0 +1,168 @@
+// @vitest-environment jsdom
+import "@testing-library/jest-dom/vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
+import type {
+  CrmWhatsappProviderConnection,
+  CrmWhatsappSessionCounts,
+  CrmWhatsappTag,
+} from "./crmWhatsappTypes";
+
+describe("WhatsappToolbar", () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("renders queue metrics and applies every queue filter control", async () => {
+    const user = userEvent.setup();
+    const callbacks = {
+      onConnectionFilterChange: vi.fn(),
+      onQuickFilterChange: vi.fn(),
+      onSearch: vi.fn(),
+      onStartConversation: vi.fn(),
+      onStatusFilterChange: vi.fn(),
+      onTagFilterToggle: vi.fn(),
+      onUnreadOnlyChange: vi.fn(),
+    };
+
+    render(
+      <WhatsappToolbar
+        availableTags={createTags()}
+        canStartConversation
+        connectionFilterId={null}
+        connectionId="connection_1"
+        connections={createConnections()}
+        quickFilter="fresh"
+        search=""
+        selectedTagIds={["tag_hot"]}
+        sessionCount={3}
+        sessionCounts={createCounts()}
+        statusFilter=""
+        statusLabel="ZAPI conectado"
+        statusTone="online"
+        unreadOnly={false}
+        {...callbacks}
+      />,
+    );
+
+    expect(
+      screen.getByRole("heading", { name: "Conversas" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("3 nesta lista")).toBeInTheDocument();
+    expect(screen.getByText("ZAPI conectado")).toBeInTheDocument();
+    expect(metric("Total")).toHaveTextContent("12");
+    expect(metric("Nao lidas")).toHaveTextContent("5");
+
+    await user.click(screen.getByRole("button", { name: "Nova" }));
+    expect(callbacks.onStartConversation).toHaveBeenCalledTimes(1);
+
+    await user.type(
+      screen.getByPlaceholderText("Buscar por contato, telefone ou mensagem"),
+      "j",
+    );
+    expect(callbacks.onSearch).toHaveBeenLastCalledWith("j");
+
+    await user.click(screen.getByRole("button", { name: /Meus/ }));
+    expect(callbacks.onQuickFilterChange).toHaveBeenCalledWith("mine");
+
+    await user.click(screen.getByRole("button", { name: /^Nao lidas/ }));
+    expect(callbacks.onUnreadOnlyChange).toHaveBeenCalledWith(true);
+
+    await user.selectOptions(
+      screen.getByLabelText("Filtrar por status"),
+      "HUMAN_TAKEOVER",
+    );
+    expect(callbacks.onStatusFilterChange).toHaveBeenCalledWith(
+      "HUMAN_TAKEOVER",
+    );
+
+    await user.selectOptions(
+      screen.getByLabelText("Filtrar por conexao"),
+      "connection_2",
+    );
+    expect(callbacks.onConnectionFilterChange).toHaveBeenCalledWith(
+      "connection_2",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Quente" }));
+    expect(callbacks.onTagFilterToggle).toHaveBeenCalledWith("tag_hot");
+    expect(screen.getByRole("button", { name: "Quente" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+});
+
+function metric(label: string) {
+  const labelElement = screen
+    .getAllByText(label)
+    .find((element) => element.tagName.toLowerCase() === "small");
+  if (!labelElement?.parentElement) {
+    throw new Error(`Metric not found: ${label}`);
+  }
+  return labelElement.parentElement;
+}
+
+function createCounts(): CrmWhatsappSessionCounts {
+  return {
+    filters: {
+      all: 12,
+      fresh: 3,
+      mine: 2,
+      others: 4,
+      unassigned: 6,
+    },
+    statuses: {
+      ACTIVE: 7,
+      COMPLETED: 1,
+      EXPIRED: 1,
+      HUMAN_TAKEOVER: 2,
+      MINIBOT_ACTIVE: 1,
+    },
+    total: 12,
+    unread: 5,
+  };
+}
+
+function createConnections(): CrmWhatsappProviderConnection[] {
+  return [
+    createConnection("connection_1", "Loja Matriz"),
+    createConnection("connection_2", "Loja Centro"),
+  ];
+}
+
+function createConnection(
+  id: string,
+  displayName: string,
+): CrmWhatsappProviderConnection {
+  return {
+    displayName,
+    externalConnectionId: id,
+    externalInstanceId: `instance_${id}`,
+    id,
+    live: {
+      checkedAt: "2026-07-03T12:00:00.000Z",
+      connected: true,
+      connectedPhone: "5511999999999",
+      providerStatus: "connected",
+      smartphoneConnected: true,
+    },
+    phone: "5511999999999",
+    provider: "zapi",
+    status: "connected",
+    webhookUrl: null,
+  };
+}
+
+function createTags(): CrmWhatsappTag[] {
+  return [
+    { color: "var(--color-danger)", id: "tag_hot", name: "Quente" },
+    {
+      color: "var(--color-accent)",
+      id: "tag_financing",
+      name: "Financiamento",
+    },
+  ];
+}

@@ -789,75 +789,59 @@ ON CONFLICT (id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
-INSERT INTO crm_connection_mappings (
+INSERT INTO crm_connections (
   id,
-  last_seen_at,
-  repasses_connection_id,
+  credentials_ref,
+  display_name,
+  external_connection_id,
+  external_instance_id,
+  metadata,
+  phone,
+  provider,
   status,
   store_id,
-  tenant_id
+  tenant_id,
+  webhook_url
 )
 VALUES (
-  '24000000-0000-4000-8000-000000000001',
-  now() - interval '10 minutes',
-  'repasses_conn_test_store',
+  '24000000-0000-4000-8000-000000000101',
+  '{
+    "mode": "env",
+    "env": {
+      "apiBaseUrl": "CRM_ZAPI_API_BASE_URL",
+      "instanceId": "CRM_ZAPI_TEST_INSTANCE_ID",
+      "instanceToken": "CRM_ZAPI_TEST_INSTANCE_TOKEN",
+      "clientToken": "CRM_ZAPI_TEST_CLIENT_TOKEN"
+    }
+  }'::jsonb,
+  'ZAPI Test Connection',
+  null,
+  null,
+  '{
+    "catalogPhone": "5511940231407",
+    "connectedPhone": "5511940231407",
+    "purpose": "crm_whatsapp_migration_rehearsal",
+    "migrationUnit": "test-store-zapi",
+    "runRealE2EFlag": "RUN_ZAPI_E2E",
+    "safeToReset": true,
+    "source": "local_seed"
+  }'::jsonb,
+  '5511940231407',
+  'zapi',
   'active',
   '66666666-6666-4666-8666-666666666666',
-  '77777777-7777-4777-8777-777777777777'
+  '77777777-7777-4777-8777-777777777777',
+  null
 )
-ON CONFLICT (store_id) DO UPDATE SET
-  last_seen_at = EXCLUDED.last_seen_at,
+ON CONFLICT (store_id, provider, display_name) DO UPDATE SET
+  credentials_ref = EXCLUDED.credentials_ref,
+  external_connection_id = EXCLUDED.external_connection_id,
+  external_instance_id = EXCLUDED.external_instance_id,
+  metadata = EXCLUDED.metadata,
+  phone = EXCLUDED.phone,
   status = EXCLUDED.status,
+  webhook_url = EXCLUDED.webhook_url,
   updated_at = now();
-
-INSERT INTO crm_agent_mappings (
-  id,
-  repasses_agent_id,
-  role,
-  store_id,
-  tenant_id,
-  user_id
-)
-VALUES
-  ('25000000-0000-4000-8000-000000000001', 'repasses_agent_owner', 'owner', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '88888888-8888-4888-8888-888888888888'),
-  ('25000000-0000-4000-8000-000000000002', 'repasses_agent_salesman', 'salesman', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', '99999999-9999-4999-8999-999999999999')
-ON CONFLICT (store_id, user_id) DO NOTHING;
-
-INSERT INTO crm_lead_mappings (
-  id,
-  channel,
-  lead_id,
-  repasses_contact_id,
-  repasses_session_id,
-  store_id,
-  tenant_id
-)
-VALUES
-  ('26000000-0000-4000-8000-000000000001', 'whatsapp', '20000000-0000-4000-8000-000000000001', 'contact_ana_silva', 'session_ana_a4', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('26000000-0000-4000-8000-000000000002', 'whatsapp', '20000000-0000-4000-8000-000000000002', 'contact_marcos_lima', 'session_marcos_m3', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (id) DO UPDATE SET
-  channel = EXCLUDED.channel,
-  lead_id = EXCLUDED.lead_id,
-  repasses_contact_id = EXCLUDED.repasses_contact_id,
-  repasses_session_id = EXCLUDED.repasses_session_id,
-  store_id = EXCLUDED.store_id,
-  tenant_id = EXCLUDED.tenant_id,
-  updated_at = now();
-
-INSERT INTO crm_tag_mappings (
-  id,
-  is_column,
-  local_key,
-  name,
-  repasses_tag_id,
-  store_id,
-  tenant_id
-)
-VALUES
-  ('27000000-0000-4000-8000-000000000001', 1, 'new', 'Novos', 'tag_new', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('27000000-0000-4000-8000-000000000002', 1, 'negotiating', 'Negociacao', 'tag_negotiating', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('27000000-0000-4000-8000-000000000003', 1, 'won', 'Vendidos', 'tag_won', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (store_id, local_key) DO NOTHING;
 
 INSERT INTO crm_sync_events (
   id,

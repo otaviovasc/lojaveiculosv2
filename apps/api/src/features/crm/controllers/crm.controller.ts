@@ -7,6 +7,7 @@ import {
   HttpContextRequestPolicyError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
+import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
@@ -33,7 +34,9 @@ export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
 export type CreateCrmFeatureOptions = {
   contextFactory?: CrmContextFactory;
+  realtimeBroker?: CrmRealtimeBroker;
   services?: CrmServices;
+  webhookContextFactory?: CrmContextFactory;
 };
 
 export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
@@ -110,7 +113,16 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
     }),
   );
 
-  registerCrmWhatsappRoutes(crmFeature, { createContext, services });
+  registerCrmWhatsappRoutes(crmFeature, {
+    createContext,
+    ...(options.webhookContextFactory
+      ? { createWebhookContext: options.webhookContextFactory }
+      : {}),
+    ...(options.realtimeBroker
+      ? { realtimeBroker: options.realtimeBroker }
+      : {}),
+    services,
+  });
 
   return crmFeature;
 }

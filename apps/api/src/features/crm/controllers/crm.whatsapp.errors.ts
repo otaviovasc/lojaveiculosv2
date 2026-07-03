@@ -1,9 +1,18 @@
 import type { Context } from "hono";
+import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import { WhatsappQuickMessageError } from "../../../domains/crm/services/CrmWhatsapp/whatsappQuickMessageServiceSupport.js";
+import { WhatsappWebhookEventRetryError } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import {
-  RepassesCrmAuthError,
-  RepassesCrmRequestError,
-  RepassesCrmUnavailableError,
-} from "../../../domains/crm/acl/repassesCrmClient.js";
+  WhatsappConnectionNotFoundError,
+  WhatsappMessageActionError,
+  WhatsappMessageNotFoundError,
+  WhatsappSessionNotFoundError,
+  WhatsappUnsupportedProviderError,
+} from "../../../domains/crm/whatsapp/whatsappSendErrors.js";
+import {
+  WhatsappVehicleNotFoundError,
+  WhatsappVehiclePartialSendError,
+} from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappVehicle.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 
@@ -22,14 +31,6 @@ export async function handleWhatsapp(
         status: 400,
       });
     }
-    if (error instanceof RepassesCrmAuthError) {
-      return jsonApiError(context, {
-        code: "REPASSES_CRM_AUTH_ERROR",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
     if (error instanceof AuthorizationError) {
       return jsonApiError(context, {
         code: "AUTHORIZATION_DENIED",
@@ -38,20 +39,68 @@ export async function handleWhatsapp(
         status: 403,
       });
     }
-    if (error instanceof RepassesCrmUnavailableError) {
+    if (
+      error instanceof WhatsappSessionNotFoundError ||
+      error instanceof WhatsappMessageNotFoundError ||
+      error instanceof WhatsappConnectionNotFoundError ||
+      error instanceof WhatsappVehicleNotFoundError
+    ) {
       return jsonApiError(context, {
-        code: "REPASSES_CRM_UNAVAILABLE",
+        code: "CRM_WHATSAPP_NOT_FOUND",
         error,
         message: error.message,
-        status: 503,
+        status: 404,
       });
     }
-    if (error instanceof RepassesCrmRequestError) {
+    if (error instanceof WhatsappMessageActionError) {
       return jsonApiError(context, {
-        code: "REPASSES_CRM_REQUEST_ERROR",
+        code: "CRM_WHATSAPP_MESSAGE_ACTION_ERROR",
         error,
         message: error.message,
-        status: mapUpstreamStatus(error.statusCode),
+        status: error.status,
+      });
+    }
+    if (error instanceof WhatsappUnsupportedProviderError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_UNSUPPORTED_PROVIDER",
+        error,
+        message: error.message,
+        status: 422,
+      });
+    }
+    if (error instanceof CrmWhatsappGatewayError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_GATEWAY_ERROR",
+        error,
+        message: error.message,
+        status: 502,
+      });
+    }
+    if (error instanceof WhatsappVehiclePartialSendError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_VEHICLE_PARTIAL_SEND",
+        error,
+        message: error.message,
+        status: 502,
+      });
+    }
+    if (error instanceof WhatsappQuickMessageError) {
+      const status = [400, 404, 422].includes(error.status)
+        ? (error.status as 400 | 404 | 422)
+        : 400;
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_QUICK_MESSAGE_ERROR",
+        error,
+        message: error.message,
+        status,
+      });
+    }
+    if (error instanceof WhatsappWebhookEventRetryError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_WEBHOOK_EVENT_RETRY_ERROR",
+        error,
+        message: error.message,
+        status: error.status,
       });
     }
     return jsonApiError(context, {
@@ -67,22 +116,5 @@ export class CrmWhatsappValidationError extends Error {
   constructor(message = "Request is invalid.") {
     super(message);
     this.name = "CrmWhatsappValidationError";
-  }
-}
-
-type WhatsappErrorStatus = 400 | 401 | 403 | 404 | 409 | 422 | 429 | 502;
-
-function mapUpstreamStatus(statusCode: number): WhatsappErrorStatus {
-  switch (statusCode) {
-    case 400:
-    case 401:
-    case 403:
-    case 404:
-    case 409:
-    case 422:
-    case 429:
-      return statusCode;
-    default:
-      return statusCode >= 400 && statusCode < 500 ? 400 : 502;
   }
 }

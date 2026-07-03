@@ -1,25 +1,12 @@
-import type { AuditOutcome, SafeAuditMetadata } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import type { Context } from "hono";
 import type { z } from "zod";
-import { RepassesCrmAuthError } from "../../../domains/crm/acl/repassesCrmClient.js";
-import { resolveStoreSlugFromRequest } from "../../../infrastructure/http/storeScope.js";
 import {
   assertEntitlement,
   assertPermission,
 } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { CrmWhatsappValidationError } from "./crm.whatsapp.errors.js";
-
-export type WhatsappAuditInput = {
-  action: string;
-  category: "data_access" | "data_change";
-  entityId?: number | string;
-  entityType?: string;
-  metadata?: SafeAuditMetadata;
-  permission: PermissionKey;
-  summary: string;
-};
 
 export async function parseWhatsappJson<Schema extends z.ZodType>(
   context: Context,
@@ -34,38 +21,6 @@ export async function parseWhatsappJson<Schema extends z.ZodType>(
   const parsed = schema.safeParse(body);
   if (!parsed.success) throw new CrmWhatsappValidationError();
   return parsed.data;
-}
-
-export function createRepassesAuth(
-  context: Context,
-  serviceContext: ServiceContext,
-  repassesConnectionId?: number,
-) {
-  const authorization = context.req.header("authorization");
-  const token =
-    authorization?.match(/^Bearer\s+(.+)$/i)?.[1] ??
-    readLocalDemoRepassesToken();
-  if (!token) {
-    throw new RepassesCrmAuthError(
-      "CRM WhatsApp requires a Clerk bearer token.",
-    );
-  }
-  const storeSlug =
-    context.req.header("x-store-slug") ?? resolveStoreSlugFromRequest(context);
-  return {
-    clerkSessionToken: token,
-    ...(repassesConnectionId ? { repassesConnectionId } : {}),
-    ...(serviceContext.storeId ? { storeId: serviceContext.storeId } : {}),
-    ...(storeSlug ? { storeSlug } : {}),
-    ...(serviceContext.tenantId ? { tenantId: serviceContext.tenantId } : {}),
-  };
-}
-
-function readLocalDemoRepassesToken() {
-  if (process.env.APP_ENV !== "local") return undefined;
-  if (process.env.LOCAL_AUTH_BYPASS !== "true") return undefined;
-  if (process.env.REPASSES_CRM_LOCAL_DEMO !== "true") return undefined;
-  return "local-demo-repasses-token";
 }
 
 export function readNumericParam(context: Context, name: string): number {
@@ -103,50 +58,6 @@ export function assertWhatsappClose(context: ServiceContext) {
 
 export function assertWhatsappToggleIntervention(context: ServiceContext) {
   return assertWhatsappPermission(context, "crm.whatsapp.toggle_intervention");
-}
-
-export async function recordWhatsappAudit(
-  context: ServiceContext,
-  input: WhatsappAuditInput,
-  outcome: AuditOutcome = "succeeded",
-  metadata: SafeAuditMetadata = {},
-) {
-  const scope = readWhatsappScope(context);
-  await context.audit.record({
-    action: input.action,
-    actor: context.actor,
-    category: input.category,
-    entityId: String(input.entityId ?? scope.storeId),
-    entityType: input.entityType ?? "store",
-    metadata: {
-      permission: input.permission,
-      ...(input.metadata ?? {}),
-      ...metadata,
-    },
-    outcome,
-    requestId: context.requestId,
-    storeId: scope.storeId,
-    summary: input.summary,
-    tenantId: scope.tenantId,
-  });
-}
-
-export async function recordWhatsappMutation<T>(
-  context: ServiceContext,
-  input: WhatsappAuditInput,
-  action: () => Promise<T>,
-): Promise<T> {
-  await recordWhatsappAudit(context, input, "attempted");
-  try {
-    const result = await action();
-    await recordWhatsappAudit(context, input, "succeeded");
-    return result;
-  } catch (error) {
-    await recordWhatsappAudit(context, input, "failed", {
-      errorName: error instanceof Error ? error.name : "UnknownError",
-    });
-    throw error;
-  }
 }
 
 function assertWhatsappPermission(

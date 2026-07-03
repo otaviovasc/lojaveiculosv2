@@ -1,0 +1,37 @@
+.crm-whatsapp-action-panel footer {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  padding: 0.75rem 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .crm-whatsapp-action-dialog {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .crm-whatsapp-action-panel {
+    border-bottom: 0;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    max-height: 92dvh;
+    width: 100%;
+  }
+
+  .crm-whatsapp-action-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-whatsapp-vehicle-option {
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  .crm-whatsapp-vehicle-meta {
+    grid-column: 1 / -1;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    justify-items: start;
+  }
+}

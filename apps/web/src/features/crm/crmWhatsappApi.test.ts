@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  createCrmWhatsappApi,
-  createCrmWhatsappSessionQuery,
-  crmWhatsappRoutes,
-} from "./crmWhatsappApi";
+import { createCrmWhatsappApi } from "./crmWhatsappApi";
 
 type FetchCall = {
   init: RequestInit | undefined;
@@ -23,29 +19,6 @@ function createFakeFetch(payloads: unknown[]) {
 }
 
 describe("CRM WhatsApp API", () => {
-  it("builds V2 WhatsApp routes", () => {
-    expect(crmWhatsappRoutes.bootstrap()).toBe(
-      "/api/v1/crm/whatsapp/bootstrap",
-    );
-    expect(crmWhatsappRoutes.sessions()).toBe("/api/v1/crm/whatsapp/sessions");
-    expect(crmWhatsappRoutes.messages(42)).toBe(
-      "/api/v1/crm/whatsapp/messages/42",
-    );
-    expect(crmWhatsappRoutes.sendText()).toBe("/api/v1/crm/whatsapp/send/text");
-  });
-
-  it("serializes inbox session queries", () => {
-    expect(
-      createCrmWhatsappSessionQuery({
-        connectionId: 7,
-        limit: 40,
-        offset: 80,
-        search: "maria",
-        sessionId: 123,
-      }).toString(),
-    ).toBe("connectionId=7&limit=40&offset=80&search=maria&sessionId=123");
-  });
-
   it("uses product auth headers and posts text messages through V2", async () => {
     const fake = createFakeFetch([{ id: 99 }]);
     const api = createCrmWhatsappApi({
@@ -57,12 +30,12 @@ describe("CRM WhatsApp API", () => {
       fetch: fake.fetch,
     });
 
-    await api.sendText({ sessionId: 42, text: "Ola" });
+    await api.sendText({ sessionId: "session_1", text: "Ola" });
 
     expect(fake.calls[0]).toMatchObject({
       input: "/api/v1/crm/whatsapp/send/text",
       init: {
-        body: JSON.stringify({ sessionId: 42, text: "Ola" }),
+        body: JSON.stringify({ sessionId: "session_1", text: "Ola" }),
         method: "POST",
       },
     });
@@ -73,22 +46,232 @@ describe("CRM WhatsApp API", () => {
     });
   });
 
-  it("serializes the selected connection for assignment mutations", async () => {
-    const fake = createFakeFetch([{ id: 42 }]);
+  it("posts quoted text messages through V2", async () => {
+    const fake = createFakeFetch([{ id: "message_2" }]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
-    await api.assignSession(42, 7, 10);
-    await api.markSessionAsRead(42, 10);
-    await api.toggleIntervention(42, 10);
+    await api.sendText({
+      replyToMessageId: "550e8400-e29b-41d4-a716-446655440000",
+      sessionId: "session_1",
+      text: "Sim, esta disponivel.",
+    });
 
-    expect(fake.calls[0]?.init?.body).toBe(
-      JSON.stringify({ agentId: 7, connectionId: 10 }),
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/send/text",
+      init: {
+        body: JSON.stringify({
+          replyToMessageId: "550e8400-e29b-41d4-a716-446655440000",
+          sessionId: "session_1",
+          text: "Sim, esta disponivel.",
+        }),
+        method: "POST",
+      },
+    });
+  });
+
+  it("starts WhatsApp conversations through V2", async () => {
+    const fake = createFakeFetch([{ session: { id: "session_1" } }]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await api.startConversation({
+      buyerName: "Ana",
+      connectionId: "connection_1",
+      phone: "(11) 99999-9999",
+      text: "Ola",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/conversations/start",
+      init: {
+        body: JSON.stringify({
+          buyerName: "Ana",
+          connectionId: "connection_1",
+          phone: "(11) 99999-9999",
+          text: "Ola",
+        }),
+        method: "POST",
+      },
+    });
+  });
+
+  it("posts media messages through V2", async () => {
+    const fake = createFakeFetch([{ id: 100 }, { id: 101 }]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await api.sendMedia({
+      base64: "aW1hZ2U=",
+      caption: "Foto",
+      fileName: "foto.jpg",
+      mediaType: "image",
+      mimeType: "image/jpeg",
+      sessionId: "session_1",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/send/media",
+      init: {
+        body: JSON.stringify({
+          base64: "aW1hZ2U=",
+          caption: "Foto",
+          fileName: "foto.jpg",
+          mediaType: "image",
+          mimeType: "image/jpeg",
+          sessionId: "session_1",
+        }),
+        method: "POST",
+      },
+    });
+
+    await api.sendMedia({
+      base64: "dmlkZW8=",
+      caption: "Video",
+      fileName: "video.mp4",
+      mediaType: "video",
+      mimeType: "video/mp4",
+      sessionId: "session_1",
+    });
+
+    expect(fake.calls[1]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/send/media",
+      init: {
+        body: JSON.stringify({
+          base64: "dmlkZW8=",
+          caption: "Video",
+          fileName: "video.mp4",
+          mediaType: "video",
+          mimeType: "video/mp4",
+          sessionId: "session_1",
+        }),
+        method: "POST",
+      },
+    });
+  });
+
+  it("loads WhatsApp connections through V2", async () => {
+    const fake = createFakeFetch([{ connections: [{ id: "connection_1" }] }]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(api.listConnections()).resolves.toEqual({
+      connections: [{ id: "connection_1" }],
+    });
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/connections",
+      init: { method: "GET" },
+    });
+  });
+
+  it("loads WhatsApp sessions, counts, and messages through V2", async () => {
+    const fake = createFakeFetch([
+      [{ id: "session_1" }],
+      { filters: { all: 1 }, total: 1, unread: 1 },
+      [{ id: "message_1" }],
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(
+      api.listSessions({ connectionId: "connection_1", limit: 10 }),
+    ).resolves.toEqual([{ id: "session_1" }]);
+    await expect(
+      api.listSessionCounts({ connectionId: "connection_1", unreadOnly: true }),
+    ).resolves.toMatchObject({ total: 1, unread: 1 });
+    await expect(api.listMessages("session_1")).resolves.toEqual([
+      { id: "message_1" },
+    ]);
+
+    expect(fake.calls[0]?.input).toBe(
+      "/api/v1/crm/whatsapp/sessions?connectionId=connection_1&limit=10",
     );
     expect(fake.calls[1]?.input).toBe(
-      "/api/v1/crm/whatsapp/sessions/42/read?connectionId=10",
+      "/api/v1/crm/whatsapp/session-counts?connectionId=connection_1&unreadOnly=true",
     );
     expect(fake.calls[2]?.input).toBe(
-      "/api/v1/crm/whatsapp/sessions/42/toggle-intervention?connectionId=10",
+      "/api/v1/crm/whatsapp/messages/session_1",
     );
+  });
+
+  it("posts WhatsApp session actions through V2", async () => {
+    const fake = createFakeFetch([
+      { id: "session_1", assignedAgentId: "user_1" },
+      { id: "session_1", status: "COMPLETED" },
+      { id: "session_1", status: "HUMAN_TAKEOVER" },
+      { id: "session_1", unreadCount: 0 },
+      { id: "session_1", unreadCount: 1 },
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(
+      api.assignSession("session_1", { assignedUserId: "user_1" }),
+    ).resolves.toMatchObject({ assignedAgentId: "user_1" });
+    await expect(api.closeSession("session_1")).resolves.toMatchObject({
+      status: "COMPLETED",
+    });
+    await expect(
+      api.interveneSession("session_1", { enabled: true }),
+    ).resolves.toMatchObject({ status: "HUMAN_TAKEOVER" });
+    await expect(api.markSessionRead("session_1")).resolves.toMatchObject({
+      unreadCount: 0,
+    });
+    await expect(api.markSessionUnread("session_1")).resolves.toMatchObject({
+      unreadCount: 1,
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/sessions/session_1/assign",
+      init: {
+        body: JSON.stringify({ assignedUserId: "user_1" }),
+        method: "POST",
+      },
+    });
+    expect(fake.calls[1]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/sessions/session_1/close",
+      init: { body: JSON.stringify({}), method: "POST" },
+    });
+    expect(fake.calls[2]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/sessions/session_1/intervention",
+      init: { body: JSON.stringify({ enabled: true }), method: "POST" },
+    });
+    expect(fake.calls[3]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/sessions/session_1/read",
+      init: { body: JSON.stringify({}), method: "POST" },
+    });
+    expect(fake.calls[4]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/sessions/session_1/unread",
+      init: { body: JSON.stringify({}), method: "POST" },
+    });
+  });
+
+  it("posts WhatsApp message actions through V2", async () => {
+    const fake = createFakeFetch([
+      { id: "message_1", metadata: { reaction: { value: "👍" } } },
+      { id: "message_1", metadata: { reactionRemoved: {} } },
+      { deletedAt: "2026-07-02T19:00:00.000Z", id: "message_1" },
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(
+      api.sendReaction("message_1", { reaction: "👍" }),
+    ).resolves.toMatchObject({ id: "message_1" });
+    await expect(api.removeReaction("message_1")).resolves.toMatchObject({
+      id: "message_1",
+    });
+    await expect(api.deleteMessage("message_1")).resolves.toMatchObject({
+      id: "message_1",
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/messages/message_1/reaction",
+      init: {
+        body: JSON.stringify({ reaction: "👍" }),
+        method: "POST",
+      },
+    });
+    expect(fake.calls[1]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/messages/message_1/reaction",
+      init: { method: "DELETE" },
+    });
+    expect(fake.calls[2]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/messages/message_1",
+      init: { method: "DELETE" },
+    });
   });
 });

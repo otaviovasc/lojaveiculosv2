@@ -208,6 +208,7 @@ function createCrmRepository(): CrmRepository {
       return lead;
     }),
     findLeadById: vi.fn(async () => null),
+    findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),
     listLeads: vi.fn<CrmRepository["listLeads"]>(async (input) =>
       leads

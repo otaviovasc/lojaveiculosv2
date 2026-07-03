@@ -24,6 +24,8 @@ import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
 import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
+import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
+
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -183,6 +185,10 @@ export function createApp(options: CreateAppOptions = {}) {
     "/api/v1/crm",
     createCrmFeature({
       contextFactory,
+      ...(options.crmRealtimeBroker
+        ? { realtimeBroker: options.crmRealtimeBroker }
+        : {}),
+      webhookContextFactory: createCrmWebhookContextFactory(options.audit),
       ...(options.crmServices ? { services: options.crmServices } : {}),
     }),
   );

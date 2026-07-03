@@ -32,6 +32,19 @@ describe("local dev auth", () => {
     });
   });
 
+  it("exposes the seeded read-only investor account", () => {
+    selectLocalDevAccount("clerk_test_investor");
+
+    expect(
+      readLocalDevAccount({ VITE_LOCAL_AUTH_BYPASS: "true" }),
+    ).toMatchObject({
+      email: "investor@lojaveiculos.com.br",
+      role: "investor",
+      storeSlug: "test-store",
+      userId: "clerk_test_investor",
+    });
+  });
+
   it("clears the selected local account", () => {
     selectLocalDevAccount("clerk_seed_salesman");
     clearLocalDevAccount();

@@ -44,7 +44,17 @@ describe("access policy", () => {
 
   it("mirrors prior WhatsApp role behavior with explicit CRM permissions", () => {
     const investor = resolvePermissions({ role: "investor" });
+    const owner = resolvePermissions({ role: "owner" });
     const salesman = resolvePermissions({ role: "salesman" });
+    const supervisor = resolvePermissions({ role: "supervisor" });
+    const operatorPermissions = [
+      "crm.whatsapp.list",
+      "crm.whatsapp.read",
+      "crm.whatsapp.send",
+      "crm.whatsapp.assign",
+      "crm.whatsapp.close",
+      "crm.whatsapp.toggle_intervention",
+    ] as const;
 
     expect(canAccess(investor, "crm.whatsapp.read")).toEqual({
       allowed: true,
@@ -53,11 +63,10 @@ describe("access policy", () => {
       allowed: false,
       reason: "Missing permission: crm.whatsapp.send",
     });
-    expect(canAccess(salesman, "crm.whatsapp.send")).toEqual({
-      allowed: true,
-    });
-    expect(canAccess(salesman, "crm.whatsapp.assign")).toEqual({
-      allowed: true,
-    });
+    for (const permissions of [owner, salesman, supervisor]) {
+      for (const permission of operatorPermissions) {
+        expect(canAccess(permissions, permission)).toEqual({ allowed: true });
+      }
+    }
   });
 });

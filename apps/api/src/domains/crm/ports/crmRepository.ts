@@ -19,12 +19,7 @@ export type LeadSource =
   | "other";
 
 export type LeadActivityType =
-  | "note"
-  | "call"
-  | "whatsapp"
-  | "email"
-  | "status_change"
-  | "task";
+  "note" | "call" | "whatsapp" | "email" | "status_change" | "task";
 
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
@@ -122,6 +117,11 @@ export type CrmRepository = {
   createLead: (input: CreateCrmLeadInput) => Promise<CrmLead>;
   findLeadById: (input: {
     leadId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmLead | null>;
+  findLeadByPhone: (input: {
+    buyerPhone: string;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;

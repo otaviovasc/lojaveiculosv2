@@ -76,6 +76,7 @@ import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
 import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
+import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
 
 type RuntimeHttpAppOptionsInput = {
   auditDb: unknown | null;
@@ -85,6 +86,7 @@ type RuntimeHttpAppOptionsInput = {
   };
   db: unknown;
   env: Record<string, string | undefined>;
+  crmRealtimeBroker: CrmRealtimeBroker;
   identityVerifier: CreateAppOptions["identityVerifier"] | null;
   objectStorage: ObjectStorage | null;
 };
@@ -92,6 +94,7 @@ type RuntimeHttpAppOptionsInput = {
 export function createRuntimeHttpAppOptions({
   auditDb,
   clerkAccountProviders = {},
+  crmRealtimeBroker,
   db,
   env,
   identityVerifier,
@@ -124,7 +127,13 @@ export function createRuntimeHttpAppOptions({
       },
     }),
     complianceServices: createRuntimeComplianceServices(),
-    crmServices: createRuntimeCrmServices(db, env),
+    crmRealtimeBroker,
+    crmServices: createRuntimeCrmServices(
+      db,
+      env,
+      crmRealtimeBroker,
+      runtimeObjectStorage,
+    ),
     documentServices: createRuntimeDocumentServices(
       db,
       env,

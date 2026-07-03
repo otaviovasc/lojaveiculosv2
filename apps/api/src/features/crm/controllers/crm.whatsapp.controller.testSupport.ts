@@ -2,7 +2,14 @@ import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
-import type { RepassesCrmClient } from "../../../domains/crm/acl/repassesCrmClient.js";
+import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
+import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
+import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createCrmFeature } from "./crm.controller.js";
@@ -18,11 +25,18 @@ export const defaultWhatsappPermissions = [
 ] satisfies PermissionKey[];
 
 export function createTestApp(
-  repassesCrm: RepassesCrmClient,
   options: {
     audit?: AuditSink;
+    crmConnectionRepository?: CrmConnectionRepository;
+    crmRealtimeBroker?: CrmRealtimeBroker;
+    crmRepository?: CrmRepository;
+    crmWebhookEventRepository?: CrmWebhookEventRepository;
+    crmWhatsappGateway?: Partial<CrmWhatsappGateway>;
+    crmWhatsappMediaStorage?: ObjectStorage;
+    crmWhatsappRepository?: CrmWhatsappRepository;
     entitlements?: EntitlementKey[];
     permissions?: PermissionKey[];
+    vehicleInventory?: CrmServicePorts["vehicleInventory"];
   } = {},
 ) {
   const app = new Hono();
@@ -32,7 +46,10 @@ export function createTestApp(
       contextFactory: async () =>
         Object.assign(
           createServiceContext({
-            actor: { id: "user_1", kind: "user" },
+            actor: {
+              id: "02020202-0202-4202-8202-020202020202",
+              kind: "user",
+            },
             ...(options.audit ? { audit: options.audit } : {}),
             permissions: options.permissions ?? defaultWhatsappPermissions,
             request: { requestId: "req_1" },
@@ -41,37 +58,82 @@ export function createTestApp(
           }),
           { entitlements: options.entitlements ?? ["crm"] },
         ),
+      webhookContextFactory: async () =>
+        createServiceContext({
+          actor: {
+            id: "zapi",
+            kind: "integration",
+          },
+          ...(options.audit ? { audit: options.audit } : {}),
+          permissions: ["crm.whatsapp.ingest"],
+          request: { requestId: "req_1" },
+          storeId: null,
+          tenantId: null,
+        }),
       services: createCrmServices({
-        ports: { crmRepository: createMemoryCrmRepository() },
-        repassesCrmClient: repassesCrm,
+        ports: {
+          ...(options.crmConnectionRepository
+            ? { crmConnectionRepository: options.crmConnectionRepository }
+            : {}),
+          crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
+          ...(options.crmWhatsappRepository
+            ? { crmWhatsappRepository: options.crmWhatsappRepository }
+            : {}),
+          ...(options.crmWebhookEventRepository
+            ? { crmWebhookEventRepository: options.crmWebhookEventRepository }
+            : {}),
+          ...(options.crmWhatsappGateway
+            ? {
+                crmWhatsappGateway: createTestWhatsappGateway(
+                  options.crmWhatsappGateway,
+                ),
+              }
+            : {}),
+          ...(options.crmWhatsappMediaStorage
+            ? { crmWhatsappMediaStorage: options.crmWhatsappMediaStorage }
+            : {}),
+          ...(options.vehicleInventory
+            ? { vehicleInventory: options.vehicleInventory }
+            : {}),
+        },
       }),
+      ...(options.crmRealtimeBroker
+        ? { realtimeBroker: options.crmRealtimeBroker }
+        : {}),
     }),
   );
   return app;
 }
 
-export function createRepassesCrmStub(
-  overrides: Partial<RepassesCrmClient> = {},
-): RepassesCrmClient {
+function createTestWhatsappGateway(
+  overrides: Partial<CrmWhatsappGateway>,
+): CrmWhatsappGateway {
+  const send = vi.fn(async () => ({
+    externalId: "test-whatsapp-outbound",
+    providerTimestamp: new Date("2026-07-02T19:00:00.000Z"),
+    raw: {},
+  }));
   return {
-    assignSession: vi.fn(),
-    closeSession: vi.fn(),
-    createSession: vi.fn(),
-    getAgents: vi.fn(),
-    getAuthContext: vi.fn(async () => ({
-      canAssignSessions: false,
-      connectionId: null,
+    deleteMessage: vi.fn(async () => ({ raw: {} })),
+    getConnectionStatus: vi.fn(async () => ({
+      checkedAt: new Date("2026-07-02T19:00:00.000Z"),
+      connected: false,
+      connectedPhone: null,
+      providerStatus: "unknown" as const,
+      smartphoneConnected: null,
     })),
-    getConnections: vi.fn(async () => ({
-      connections: [{ id: 10, lojaSlug: "test-store", status: "CONNECTED" }],
+    listCatalogProducts: vi.fn(async () => ({
+      cartEnabled: null,
+      nextCursor: null,
+      products: [],
+      raw: {},
     })),
-    getConversation: vi.fn(),
-    listMessages: vi.fn(),
-    listSessions: vi.fn(),
-    markSessionAsRead: vi.fn(),
-    markSessionAsUnread: vi.fn(),
-    sendText: vi.fn(),
-    toggleIntervention: vi.fn(),
+    sendCatalog: send,
+    sendMedia: send,
+    sendProduct: send,
+    removeReaction: send,
+    sendReaction: send,
+    sendText: send,
     ...overrides,
   };
 }

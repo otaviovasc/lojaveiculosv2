@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -10,8 +11,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { leads } from "./leads.js";
-import { stores, tenants, users } from "./identity.js";
+import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
 export const crmSyncStatus = pgEnum("crm_sync_status", [
@@ -21,99 +21,78 @@ export const crmSyncStatus = pgEnum("crm_sync_status", [
   "ignored",
 ]);
 
-export const crmConnectionMappings = pgTable(
-  "crm_connection_mappings",
+export const crmConnectionProvider = pgEnum("crm_connection_provider", [
+  "zapi",
+  "evolution",
+  "cloud_api",
+]);
+
+export const crmConnectionStatus = pgEnum("crm_connection_status", [
+  "sandbox",
+  "active",
+  "paused",
+  "disconnected",
+  "error",
+  "archived",
+]);
+
+export const crmConnections = pgTable(
+  "crm_connections",
   {
     ...lifecycleColumns,
-    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
-    repassesConnectionId: varchar("repasses_connection_id", {
-      length: 120,
-    }).notNull(),
-    status: varchar("status", { length: 80 }).notNull().default("active"),
+    credentialsRef: jsonb("credentials_ref").notNull().default({}),
+    displayName: varchar("display_name", { length: 160 }).notNull(),
+    externalConnectionId: varchar("external_connection_id", { length: 191 }),
+    externalInstanceId: varchar("external_instance_id", { length: 191 }),
+    metadata: jsonb("metadata").notNull().default({}),
+    phone: varchar("phone", { length: 40 }),
+    provider: crmConnectionProvider("provider").notNull(),
+    status: crmConnectionStatus("status").notNull().default("sandbox"),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    webhookUrl: varchar("webhook_url", { length: 500 }),
   },
   (table) => [
-    uniqueIndex("crm_connection_mappings_store_unique").on(table.storeId),
-    uniqueIndex("crm_connection_mappings_repasses_unique").on(
-      table.repassesConnectionId,
+    index("crm_connections_store_status_idx").on(table.storeId, table.status),
+    uniqueIndex("crm_connections_store_provider_name_unique").on(
+      table.storeId,
+      table.provider,
+      table.displayName,
+    ),
+    uniqueIndex("crm_connections_provider_external_unique").on(
+      table.provider,
+      table.externalConnectionId,
     ),
   ],
 );
 
-export const crmAgentMappings = pgTable(
-  "crm_agent_mappings",
+export const crmTags = pgTable(
+  "crm_tags",
   {
     ...lifecycleColumns,
-    repassesAgentId: varchar("repasses_agent_id", { length: 120 }).notNull(),
-    role: varchar("role", { length: 80 }).notNull(),
+    color: varchar("color", { length: 16 }).notNull().default("#64748b"),
+    connectionId: uuid("connection_id").references(() => crmConnections.id),
+    emoji: varchar("emoji", { length: 16 }),
+    isColumn: boolean("is_column").notNull().default(false),
+    name: varchar("name", { length: 80 }).notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
   },
   (table) => [
-    uniqueIndex("crm_agent_mappings_store_user_unique").on(
+    index("crm_tags_store_idx").on(table.storeId, table.sortOrder),
+    uniqueIndex("crm_tags_store_connection_name_unique").on(
       table.storeId,
-      table.userId,
-    ),
-    uniqueIndex("crm_agent_mappings_repasses_unique").on(table.repassesAgentId),
-  ],
-);
-
-export const crmLeadMappings = pgTable(
-  "crm_lead_mappings",
-  {
-    ...lifecycleColumns,
-    channel: varchar("channel", { length: 80 }),
-    leadId: uuid("lead_id")
-      .notNull()
-      .references(() => leads.id),
-    repassesContactId: varchar("repasses_contact_id", { length: 120 }),
-    repassesSessionId: varchar("repasses_session_id", {
-      length: 120,
-    }).notNull(),
-    storeId: uuid("store_id")
-      .notNull()
-      .references(() => stores.id),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-  },
-  (table) => [
-    index("crm_lead_mappings_lead_id_idx").on(table.leadId),
-    uniqueIndex("crm_lead_mappings_session_unique").on(table.repassesSessionId),
-  ],
-);
-
-export const crmTagMappings = pgTable(
-  "crm_tag_mappings",
-  {
-    ...lifecycleColumns,
-    isColumn: integer("is_column").notNull().default(0),
-    localKey: varchar("local_key", { length: 120 }).notNull(),
-    name: varchar("name", { length: 120 }).notNull(),
-    repassesTagId: varchar("repasses_tag_id", { length: 120 }).notNull(),
-    storeId: uuid("store_id")
-      .notNull()
-      .references(() => stores.id),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-  },
-  (table) => [
-    uniqueIndex("crm_tag_mappings_store_local_unique").on(
-      table.storeId,
-      table.localKey,
+      table.connectionId,
+      table.name,
     ),
   ],
 );

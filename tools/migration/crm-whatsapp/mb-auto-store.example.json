@@ -1,0 +1,88 @@
+{
+  "manifestVersion": 1,
+  "migrationUnit": "mb-auto-store-zapi-rehearsal",
+  "mode": "dry_run_first",
+  "source": {
+    "lojaveiculosV1": {
+      "lojaId": null,
+      "lojaSlug": "mb-auto-store",
+      "requiredTables": [
+        "Loja",
+        "User",
+        "Lead",
+        "LeadInteraction",
+        "LeadInterestedVehicle",
+        "Veiculo"
+      ]
+    },
+    "repassesBackend": {
+      "connectionId": null,
+      "connectionMode": "CRM",
+      "requiredTables": [
+        "connections",
+        "crm_agents",
+        "chat_sessions",
+        "messages",
+        "crm_tags",
+        "crm_session_tags",
+        "crm_quick_messages",
+        "crm_message_campaigns",
+        "crm_scheduled_messages"
+      ]
+    }
+  },
+  "target": {
+    "tenantId": "77777777-7777-4777-8777-777777777777",
+    "storeId": "66666666-6666-4666-8666-666666666666",
+    "storeSlug": "test-store",
+    "crmConnectionId": "24000000-0000-4000-8000-000000000101",
+    "provider": "zapi"
+  },
+  "identityMappings": {
+    "ownerUser": {
+      "v2UserId": "02020202-0202-4202-8202-020202020202",
+      "v2ClerkUserId": "clerk_seed_owner",
+      "v1UserId": null,
+      "repassesUserId": null,
+      "repassesAgentId": null
+    },
+    "operators": [
+      {
+        "v2UserId": "03030303-0303-4303-8303-030303030303",
+        "v2ClerkUserId": "clerk_seed_supervisor",
+        "v1UserId": null,
+        "repassesUserId": null,
+        "repassesAgentId": null
+      },
+      {
+        "v2UserId": "04040404-0404-4404-8404-040404040404",
+        "v2ClerkUserId": "clerk_seed_salesman",
+        "v1UserId": null,
+        "repassesUserId": null,
+        "repassesAgentId": null
+      }
+    ]
+  },
+  "dataScope": {
+    "history": "full_selected_connection",
+    "leadLinking": "match_or_create",
+    "media": "keep_existing_urls",
+    "legacyUnmappedAgents": "snapshot_only",
+    "includeCampaigns": true,
+    "includeMiniBot": false,
+    "includeLegacyTeamAdmin": false
+  },
+  "cutover": {
+    "strategy": "v2_ingress_early",
+    "requiresScheduledWindow": true,
+    "rollback": "delta_capable",
+    "archiveRepassesAfterCutover": "read_only"
+  },
+  "zapiCredentials": {
+    "apiBaseUrlEnv": "CRM_ZAPI_API_BASE_URL",
+    "instanceIdEnv": "CRM_ZAPI_TEST_INSTANCE_ID",
+    "instanceTokenEnv": "CRM_ZAPI_TEST_INSTANCE_TOKEN",
+    "clientTokenEnv": "CRM_ZAPI_TEST_CLIENT_TOKEN",
+    "runRealE2EEnv": "RUN_ZAPI_E2E"
+  }
+}

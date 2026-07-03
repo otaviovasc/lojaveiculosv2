@@ -1,23 +1,64 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBootstrap } from "./crmWhatsappModel";
+import { mergeMessagesFromServer } from "./crmWhatsappModel";
+import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 
-describe("CRM WhatsApp model", () => {
-  it("normalizes bootstrap scope from V2 responses", () => {
-    expect(
-      normalizeBootstrap({
-        agents: { agents: [] },
-        connections: { connections: [] },
-        scope: { canAssignSessions: true, connectionId: 10 },
-      }).scope,
-    ).toEqual({ canAssignSessions: true, connectionId: 10 });
+describe("crmWhatsappModel", () => {
+  it("preserves local sent echoes until the server returns the message", () => {
+    const localEcho = createMessage({
+      clientId: "local-catalog",
+      content: "Catalogo da loja",
+      direction: "OUTBOUND",
+      id: "catalog-response",
+      status: "SENT",
+      type: "CATALOG",
+    });
+    const inbound = createMessage({
+      content: "Ola",
+      direction: "INBOUND",
+      id: "inbound-1",
+      type: "TEXT",
+    });
+
+    expect(mergeMessagesFromServer([inbound, localEcho], [inbound])).toEqual([
+      inbound,
+      localEcho,
+    ]);
   });
 
-  it("defaults assignment scope to disabled when legacy payloads omit it", () => {
-    expect(
-      normalizeBootstrap({
-        agents: [],
-        connections: [],
-      }).scope,
-    ).toEqual({ canAssignSessions: false, connectionId: null });
+  it("drops a local echo once an equivalent server message arrives", () => {
+    const localEcho = createMessage({
+      clientId: "local-location",
+      content: "Loja",
+      direction: "OUTBOUND",
+      id: "location-response",
+      status: "SENT",
+      type: "LOCATION",
+    });
+    const serverEcho = createMessage({
+      content: "Loja",
+      direction: "OUTBOUND",
+      id: "location-db",
+      status: "SENT",
+      type: "LOCATION",
+    });
+
+    expect(mergeMessagesFromServer([localEcho], [serverEcho])).toEqual([
+      serverEcho,
+    ]);
   });
 });
+
+function createMessage(
+  input: Partial<CrmWhatsappMessage> & { clientId?: string },
+): CrmWhatsappMessage & { clientId?: string } {
+  return {
+    content: "Ola",
+    createdAt: "2026-07-03T12:00:00.000Z",
+    direction: "INBOUND",
+    id: "message-1",
+    senderType: "CUSTOMER",
+    status: "DELIVERED",
+    type: "TEXT",
+    ...input,
+  };
+}

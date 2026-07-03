@@ -1,32 +1,14 @@
-import {
-  type CrmWhatsappAgent,
-  type CrmWhatsappConnection,
-  type CrmWhatsappMessage,
-  type CrmWhatsappSession,
-  defaultWhatsappScope,
+import type {
+  CrmWhatsappAgent,
+  CrmWhatsappMessage,
+  CrmWhatsappSendMediaType,
+  CrmWhatsappSession,
 } from "./crmWhatsappTypes";
-import type { CrmWhatsappBootstrap } from "./crmWhatsappApi";
 
 export type WhatsappMessageView = CrmWhatsappMessage & {
   clientId?: string;
   quotedMessageText?: string;
 };
-
-export function normalizeBootstrap(payload: CrmWhatsappBootstrap) {
-  return {
-    agents: Array.isArray(payload.agents)
-      ? payload.agents
-      : payload.agents.agents,
-    connections: Array.isArray(payload.connections)
-      ? payload.connections
-      : payload.connections.connections,
-    scope: payload.scope ?? defaultWhatsappScope,
-  };
-}
-
-export function hasConnectedWhatsapp(connections: CrmWhatsappConnection[]) {
-  return connections.some((connection) => connection.status === "CONNECTED");
-}
 
 export function formatSessionName(session: CrmWhatsappSession) {
   const name = session.buyerName?.trim();
@@ -108,26 +90,36 @@ export function mergeMessagesFromServer(
   const existingIds = new Set(
     serverMessages.map((message) => String(message.id)),
   );
-  const pending = current.filter(
+  const localEchoes = current.filter(
     (message) =>
-      message.status === "PENDING" &&
+      Boolean(message.clientId) &&
       !existingIds.has(String(message.id)) &&
-      !serverMessages.some(
-        (serverMessage) =>
-          serverMessage.content === message.content &&
-          serverMessage.direction === message.direction &&
-          serverMessage.type === message.type,
-      ),
+      !hasServerEquivalent(serverMessages, message),
   );
 
-  return [...serverMessages, ...pending].sort(
+  return [...serverMessages, ...localEchoes].sort(
     (left, right) =>
       new Date(left.providerTimestamp ?? left.createdAt).getTime() -
       new Date(right.providerTimestamp ?? right.createdAt).getTime(),
   );
 }
 
-export function createOptimisticTextMessage(text: string): WhatsappMessageView {
+function hasServerEquivalent(
+  serverMessages: CrmWhatsappMessage[],
+  message: CrmWhatsappMessage,
+) {
+  return serverMessages.some(
+    (serverMessage) =>
+      serverMessage.content === message.content &&
+      serverMessage.direction === message.direction &&
+      serverMessage.type === message.type,
+  );
+}
+
+export function createOptimisticTextMessage(
+  text: string,
+  metadata?: Record<string, unknown>,
+): WhatsappMessageView {
   const clientId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return {
     clientId,
@@ -135,10 +127,79 @@ export function createOptimisticTextMessage(text: string): WhatsappMessageView {
     createdAt: new Date().toISOString(),
     direction: "OUTBOUND",
     id: clientId,
+    ...(metadata ? { metadata } : {}),
     senderType: "HUMAN",
     status: "PENDING",
     type: "TEXT",
   };
+}
+
+export function createOptimisticStructuredMessage(input: {
+  content: string;
+  metadata?: Record<string, unknown>;
+  type: "CATALOG" | "LOCATION";
+}): WhatsappMessageView {
+  const clientId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return {
+    clientId,
+    content: input.content,
+    createdAt: new Date().toISOString(),
+    direction: "OUTBOUND",
+    id: clientId,
+    ...(input.metadata ? { metadata: input.metadata } : {}),
+    senderType: "HUMAN",
+    status: "PENDING",
+    type: input.type,
+  };
+}
+
+export function createOptimisticMediaMessage(input: {
+  caption?: string;
+  fileName?: string;
+  localUrl: string;
+  mediaType: CrmWhatsappSendMediaType;
+  mimeType?: string;
+}): WhatsappMessageView {
+  const clientId = `local-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return {
+    clientId,
+    content: optimisticMediaContent(input),
+    createdAt: new Date().toISOString(),
+    direction: "OUTBOUND",
+    id: clientId,
+    mediaType: input.mediaType,
+    mediaUrl: input.localUrl,
+    metadata: {
+      media: {
+        ...(input.mediaType === "video"
+          ? { videoProcessingStage: "UPLOADING" }
+          : {}),
+        ...(input.caption ? { caption: input.caption } : {}),
+        ...(input.fileName ? { fileName: input.fileName } : {}),
+        ...(input.mimeType ? { mimeType: input.mimeType } : {}),
+      },
+    },
+    senderType: "HUMAN",
+    status: "PENDING",
+    type: mediaMessageType(input.mediaType),
+  };
+}
+
+function optimisticMediaContent(input: {
+  caption?: string;
+  fileName?: string;
+  mediaType: CrmWhatsappSendMediaType;
+}) {
+  if (input.caption?.trim()) return input.caption.trim();
+  if (input.mediaType === "document") return input.fileName ?? "Documento";
+  if (input.mediaType === "image") return "[image]";
+  return input.mediaType === "video" ? "[video]" : "[audio]";
+}
+
+function mediaMessageType(mediaType: CrmWhatsappSendMediaType) {
+  if (mediaType === "image") return "IMAGE";
+  if (mediaType === "audio") return "AUDIO";
+  return mediaType === "video" ? "VIDEO" : "DOCUMENT";
 }
 
 export function getSenderLabel(message: CrmWhatsappMessage) {
