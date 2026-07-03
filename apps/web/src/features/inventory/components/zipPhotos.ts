@@ -9,8 +9,7 @@ export async function downloadAndZipPhotos(
   const details = await runtimeApi.getListing(item.listing.id);
   const mediaItems = details?.media || [];
   if (mediaItems.length === 0) {
-    alert("Nenhuma imagem cadastrada para este veículo.");
-    return;
+    throw new Error("Nenhuma imagem cadastrada para este veículo.");
   }
   const zip = new JSZip();
   for (let i = 0; i < mediaItems.length; i++) {

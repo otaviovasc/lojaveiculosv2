@@ -1,4 +1,5 @@
 import { Activity, Car, ExternalLink } from "lucide-react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import type {
   SaleContextOptions,
@@ -27,7 +28,7 @@ export function ContextSection({
     buyerPhone: null,
     detail: "Lead informado no rascunho",
     id,
-    label: `Lead ${shortId(id)}`,
+    label: "Lead vinculado ao rascunho",
     listingId: sale.listingId,
     vehicleTitle:
       typeof sale.listingSnapshot.title === "string"
@@ -37,7 +38,7 @@ export function ContextSection({
   const unitOptions = withFallback(options.units, sale.unitId, (id) => ({
     detail: "Unidade informada no rascunho",
     id,
-    label: `Unidade ${shortId(id)}`,
+    label: "Unidade vinculada ao rascunho",
     listingId: sale.listingId ?? "",
     listingTitle:
       typeof sale.listingSnapshot.title === "string"
@@ -47,7 +48,7 @@ export function ContextSection({
     unitLabel:
       typeof sale.listingSnapshot.unitLabel === "string"
         ? sale.listingSnapshot.unitLabel
-        : shortId(id),
+        : "Unidade vinculada",
   }));
   const sellerOptions = withFallback(
     options.sellers,
@@ -55,7 +56,7 @@ export function ContextSection({
     (id) => ({
       detail: "Usuario informado no rascunho",
       id,
-      label: `Usuario ${shortId(id)}`,
+      label: "Usuario vinculado ao rascunho",
       role: "salesman" as const,
     }),
   );
@@ -200,18 +201,19 @@ function LinkedSelect({
   value: string;
 }) {
   return (
-    <select
+    <FeatureSelect
+      ariaLabel={emptyLabel}
       className="sales-input"
-      onChange={(event) => onChange(event.target.value)}
+      onChange={onChange}
+      options={[
+        { label: emptyLabel, value: "" },
+        ...options.map((option) => ({
+          label: option.label,
+          value: option.id,
+        })),
+      ]}
       value={value}
-    >
-      <option value="">{emptyLabel}</option>
-      {options.map((option) => (
-        <option key={option.id} value={option.id}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    />
   );
 }
 
@@ -312,8 +314,4 @@ function updateBuyer(
       [key]: value,
     },
   }));
-}
-
-function shortId(value: string) {
-  return value.slice(0, 8);
 }

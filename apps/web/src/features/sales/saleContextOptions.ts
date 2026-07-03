@@ -128,7 +128,8 @@ function fulfilledOrEmpty<T>(
 }
 
 function toLeadOption(lead: ProductCrmLead): SaleLeadOption {
-  const label = lead.buyerName || lead.buyerPhone || lead.buyerEmail || lead.id;
+  const label =
+    lead.buyerName || lead.buyerPhone || lead.buyerEmail || "Lead sem nome";
   const detailParts = [
     lead.vehicleTitle,
     lead.buyerPhone,
@@ -155,8 +156,8 @@ function toUnitOptions(item: InventoryListingSummary): SaleUnitOption[] {
         ? [item.primaryUnit]
         : [];
 
-  return units.map((unit) => {
-    const unitLabel = unit.stockNumber || unit.plate || shortId(unit.id);
+  return units.map((unit, index) => {
+    const unitLabel = unit.stockNumber || unit.plate || `Unidade ${index + 1}`;
     const detailParts = [
       unitLabel,
       unit.plate,
@@ -246,8 +247,4 @@ function formatCents(value: number | null) {
     currency: "BRL",
     style: "currency",
   }).format(value / 100);
-}
-
-function shortId(value: string) {
-  return value.slice(0, 8);
 }

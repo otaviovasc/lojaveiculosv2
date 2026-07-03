@@ -4,8 +4,6 @@ import {
   RefreshCw,
   Clock,
   User,
-  Calendar,
-  Filter,
   Database,
   AlertTriangle,
   ChevronDown,
@@ -13,6 +11,8 @@ import {
 } from "lucide-react";
 import type { InventoryListingDetail } from "../model/types";
 import { formatPrice } from "./InventoryDetailWorkspaceMocks";
+import { DatePickerField } from "../../../components/ui/DatePickerField";
+import { InventorySelect } from "./InventoryFormParts";
 
 interface TimelineEvent {
   id: string;
@@ -41,8 +41,8 @@ export function InventoryDetailHistoricoTab({
   const [isIaExpanded, setIsIaExpanded] = useState(true);
   const [userFilter, setUserFilter] = useState("Todos");
   const [typeFilter, setTypeFilter] = useState("Todos");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
 
   const timelineEvents: TimelineEvent[] = [
     {
@@ -231,44 +231,37 @@ export function InventoryDetailHistoricoTab({
             <span className="text-xs uppercase tracking-wider text-muted">
               Operador
             </span>
-            <select
+            <InventorySelect
+              ariaLabel="Filtrar auditoria por operador"
+              className="min-h-8 px-2 text-xs"
               value={userFilter}
-              onChange={(e) => setUserFilter(e.target.value)}
-              className="min-h-8 bg-app border border-line rounded-lg px-2 text-xs font-bold outline-none"
-            >
-              <option value="Todos">Todos</option>
-              <option value="Carlos Cunha">Carlos Cunha</option>
-              <option value="Ana Paula">Ana Paula</option>
-            </select>
+              onChange={setUserFilter}
+              options={operatorFilterOptions}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
             <span className="text-xs uppercase tracking-wider text-muted">
               Ação
             </span>
-            <select
+            <InventorySelect
+              ariaLabel="Filtrar auditoria por ação"
+              className="min-h-8 px-2 text-xs"
               value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="min-h-8 bg-app border border-line rounded-lg px-2 text-xs font-bold outline-none"
-            >
-              <option value="Todos">Todos</option>
-              <option value="Cadastro">Cadastro</option>
-              <option value="Custo">Custo</option>
-              <option value="Anúncio">Anúncio</option>
-            </select>
+              onChange={setTypeFilter}
+              options={auditActionFilterOptions}
+            />
           </div>
 
           <div className="flex flex-col gap-1">
             <span className="text-xs uppercase tracking-wider text-muted">
               Data Inicial
             </span>
-            <input
-              inputMode="numeric"
-              placeholder="dd/mm/aaaa"
-              type="text"
+            <DatePickerField
+              label="De"
+              maxDate={endDate}
+              onChange={setStartDate}
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="min-h-8 bg-app border border-line rounded-lg px-2 text-xs font-bold outline-none"
             />
           </div>
 
@@ -276,13 +269,12 @@ export function InventoryDetailHistoricoTab({
             <span className="text-xs uppercase tracking-wider text-muted">
               Data Final
             </span>
-            <input
-              inputMode="numeric"
-              placeholder="dd/mm/aaaa"
-              type="text"
+            <DatePickerField
+              align="right"
+              label="Até"
+              minDate={startDate}
+              onChange={setEndDate}
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="min-h-8 bg-app border border-line rounded-lg px-2 text-xs font-bold outline-none"
             />
           </div>
         </div>
@@ -334,3 +326,16 @@ export function InventoryDetailHistoricoTab({
     </div>
   );
 }
+
+const operatorFilterOptions = [
+  { label: "Todos", value: "Todos" },
+  { label: "Carlos Cunha", value: "Carlos Cunha" },
+  { label: "Ana Paula", value: "Ana Paula" },
+];
+
+const auditActionFilterOptions = [
+  { label: "Todos", value: "Todos" },
+  { label: "Cadastro", value: "Cadastro" },
+  { label: "Custo", value: "Custo" },
+  { label: "Anúncio", value: "Anúncio" },
+];

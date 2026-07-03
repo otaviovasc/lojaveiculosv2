@@ -71,6 +71,24 @@ describe("SaleWorkspace", () => {
       screen.queryByRole("button", { name: /Cancelar/ }),
     ).not.toBeInTheDocument();
   });
+
+  it("uses custom pickers without exposing fallback unit ids", () => {
+    const { container } = render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onSave={vi.fn()}
+        sale={saleRecord({ unitId: "unit_sensitive_123456" })}
+      />,
+    );
+
+    expect(container.querySelector("select")).toBeNull();
+    expect(
+      screen.getByText("Unidade vinculada ao rascunho"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/unit_sensitive/i)).not.toBeInTheDocument();
+  });
 });
 
 function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {

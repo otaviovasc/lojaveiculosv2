@@ -58,6 +58,7 @@ export default function TestDriveWizard({
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showPrint, setShowPrint] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   // Leads state
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -106,6 +107,7 @@ export default function TestDriveWizard({
       setDriver(createEmptyDriver());
       setDepartureTime(getCurrentDepartureTime());
       setReturnTime("");
+      setNotice(null);
     }
   }, [isOpen]);
 
@@ -148,23 +150,25 @@ export default function TestDriveWizard({
   const handleNextStep = () => {
     if (step === "lead") {
       if (!selectedLead && !isNewLead) {
-        alert("Por favor, selecione ou crie um lead.");
+        setNotice("Selecione ou crie um lead para continuar.");
         return;
       }
       if (isNewLead && (!driver.name || !driver.phone)) {
-        alert("Preencha nome e telefone do novo lead.");
+        setNotice("Preencha nome e telefone do novo lead.");
         return;
       }
+      setNotice(null);
       setStep("details");
     }
   };
 
   const handleSubmit = async () => {
     if (!driver.name || !driver.cpf || !driver.phone || !departureTime) {
-      alert("Por favor, preencha todos os campos obrigatórios (*).");
+      setNotice("Preencha todos os campos obrigatórios antes de finalizar.");
       return;
     }
 
+    setNotice(null);
     setSubmitting(true);
     try {
       const headers = await createInventoryRuntimeHeaders();
@@ -214,7 +218,7 @@ export default function TestDriveWizard({
       onSuccess?.();
     } catch (err) {
       console.error(err);
-      alert("Ocorreu um erro ao salvar o registro de Test Drive.");
+      setNotice("Não foi possível salvar o registro de test drive.");
     } finally {
       setSubmitting(false);
     }
@@ -267,6 +271,12 @@ export default function TestDriveWizard({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
+              {notice ? (
+                <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-bold text-danger">
+                  {notice}
+                </div>
+              ) : null}
+
               {step === "lead" && (
                 <TestDriveLeadStep
                   driver={driver}

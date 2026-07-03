@@ -1,7 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { CalendarDays, Check, Copy, Eye } from "lucide-react";
+import { Check, Copy, Eye } from "lucide-react";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
-import { Calendar } from "./ui/calendar";
+import { DatePickerField } from "./ui/DatePickerField";
 
 export function DashboardHomeToolbar({
   copyState,
@@ -22,34 +21,6 @@ export function DashboardHomeToolbar({
   onStartDateChange: (date: Date) => void;
   onEndDateChange: (date: Date) => void;
 }) {
-  const [openFrom, setOpenFrom] = useState(false);
-  const [openTo, setOpenTo] = useState(false);
-  const fromRef = useRef<HTMLDivElement>(null);
-  const toRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (fromRef.current && !fromRef.current.contains(event.target as Node)) {
-        setOpenFrom(false);
-      }
-      if (toRef.current && !toRef.current.contains(event.target as Node)) {
-        setOpenTo(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return "DD/MM/AAAA";
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  };
-
   const publicUrl = publicSlug
     ? `${publicSlug}.lojaveiculos.com.br`
     : "Loja sem link público";
@@ -74,87 +45,22 @@ export function DashboardHomeToolbar({
           <div className="control-group-wrapper">
             <span className="control-group-label">Período</span>
             <div className="datepicker-range-picker">
-              <div className="relative" ref={fromRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenFrom(!openFrom);
-                    setOpenTo(false);
-                  }}
-                  className="datepicker-field-trigger"
-                >
-                  <CalendarDays className="size-4 text-muted shrink-0" />
-                  <span className="datepicker-field-label">De:</span>
-                  <span className="font-semibold text-sm">
-                    {formatDate(startDate)}
-                  </span>
-                </button>
-
-                {openFrom && (
-                  <div className="datepicker-popover left-0">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          onStartDateChange(date);
-                          setOpenFrom(false);
-                        }
-                      }}
-                      disabled={(date) => (endDate ? date > endDate : false)}
-                      classNames={{
-                        weekday:
-                          "text-muted-foreground rounded-md w-9 font-black text-xs uppercase tracking-tighter text-center",
-                        day_button:
-                          "h-9 w-9 p-0 font-normal rounded-md transition-all hover:bg-primary hover:text-white text-xs flex items-center justify-center",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <DatePickerField
+                label="De"
+                maxDate={endDate}
+                onChange={onStartDateChange}
+                value={startDate}
+              />
 
               <span className="datepicker-separator-text">até</span>
 
-              <div className="relative" ref={toRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setOpenTo(!openTo);
-                    setOpenFrom(false);
-                  }}
-                  className="datepicker-field-trigger"
-                >
-                  <CalendarDays className="size-4 text-muted shrink-0" />
-                  <span className="datepicker-field-label">Até:</span>
-                  <span className="font-semibold text-sm">
-                    {formatDate(endDate)}
-                  </span>
-                </button>
-
-                {openTo && (
-                  <div className="datepicker-popover right-0">
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={(date) => {
-                        if (date) {
-                          onEndDateChange(date);
-                          setOpenTo(false);
-                        }
-                      }}
-                      disabled={(date) =>
-                        startDate ? date < startDate : false
-                      }
-                      classNames={{
-                        weekday:
-                          "text-muted-foreground rounded-md w-9 font-black text-xs uppercase tracking-tighter text-center",
-                        day_button:
-                          "h-9 w-9 p-0 font-normal rounded-md transition-all hover:bg-primary hover:text-white text-xs flex items-center justify-center",
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              <DatePickerField
+                align="right"
+                label="Até"
+                minDate={startDate}
+                onChange={onEndDateChange}
+                value={endDate}
+              />
             </div>
           </div>
         </DashboardHomeEntry>

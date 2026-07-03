@@ -1,4 +1,7 @@
 import { Banknote, Check, Coins, FileText, Plus } from "lucide-react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
+import { kindLabel } from "../documents/documentLabels";
+import type { DocumentKind } from "../documents/types";
 import {
   defaultRequiredDocumentKinds,
   formatCents,
@@ -34,25 +37,21 @@ export function TermsSection({ sale, update }: SectionProps) {
         />
       </SaleField>
       <SaleField label="Origem Comercial">
-        <select
+        <FeatureSelect
+          ariaLabel="Origem comercial"
           className="sales-input"
-          onChange={(event) =>
+          onChange={(source) =>
             update((draft) => ({
               ...draft,
               saleSourceSnapshot: {
                 ...draft.saleSourceSnapshot,
-                source: event.target.value,
+                source,
               },
             }))
           }
+          options={saleSourceOptions}
           value={String(sale.saleSourceSnapshot.source ?? "lead")}
-        >
-          <option value="lead">Lead Digital</option>
-          <option value="walk_in">Loja Física (Walk-in)</option>
-          <option value="whatsapp">WhatsApp Comercial</option>
-          <option value="marketplace">Marketplace Externo</option>
-          <option value="custom">Outro Canal</option>
-        </select>
+        />
       </SaleField>
     </SaleFormSection>
   );
@@ -205,6 +204,14 @@ export function DocumentsSection({ sale, update }: SectionProps) {
 
 type SectionProps = { sale: SaleRecord; update: UpdateSale };
 
+const saleSourceOptions = [
+  { label: "Lead Digital", value: "lead" },
+  { label: "Loja Física (Walk-in)", value: "walk_in" },
+  { label: "WhatsApp Comercial", value: "whatsapp" },
+  { label: "Marketplace Externo", value: "marketplace" },
+  { label: "Outro Canal", value: "custom" },
+];
+
 function formatDocumentKindLabel(kind: string): string {
   switch (kind) {
     case "sale_contract":
@@ -216,6 +223,6 @@ function formatDocumentKindLabel(kind: string): string {
     case "power_of_attorney":
       return "Procuração";
     default:
-      return kind.replace(/_/g, " ").toUpperCase();
+      return kindLabel(kind as DocumentKind);
   }
 }

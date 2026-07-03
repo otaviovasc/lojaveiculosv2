@@ -1,5 +1,5 @@
 import { ImageUp } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
@@ -7,6 +7,7 @@ import { InventoryDocumentList } from "./InventoryDocumentList";
 import { InventoryMediaGrid } from "./InventoryMediaGrid";
 import { InventoryUploadActions } from "./InventoryUploadActions";
 import { InventoryPanel, InventorySelect } from "./InventoryFormParts";
+import { InternalPhotosZone } from "./InternalPhotosZone";
 import type { InventoryListingDetail } from "../model/types";
 import type {
   InventoryMediaRun,
@@ -36,6 +37,12 @@ export function InventoryMediaWorkspace({
   const selectedMedia = currentUnitId
     ? detail.media.filter((item) => item.unitId === currentUnitId)
     : detail.media;
+  const galleryMedia = selectedMedia.filter(
+    (item) => item.kind === "photo" || item.kind === "video",
+  );
+  const internalMedia = selectedMedia.filter(
+    (item) => item.kind === "document_preview",
+  );
 
   const run: InventoryMediaRun = async (label, action) => {
     setState({ kind: "busy", label });
@@ -56,7 +63,7 @@ export function InventoryMediaWorkspace({
   return (
     <InventoryPanel
       icon={<ImageUp className="size-5" />}
-      title="Mídia e documentos"
+      title="Fotos, vídeos e documentos"
     >
       <div className="grid gap-4">
         <UnitMediaSelect
@@ -72,16 +79,54 @@ export function InventoryMediaWorkspace({
           run={run}
           unitId={currentUnitId}
         />
-        <InventoryMediaGrid
-          api={api}
-          media={selectedMedia}
-          run={run}
-          unitId={currentUnitId}
-        />
-        <InventoryDocumentList detail={detail} />
+        <MediaSection
+          description="Fotos e vídeos usados na vitrine pública e nos anúncios."
+          title="Galeria pública"
+        >
+          <InventoryMediaGrid
+            api={api}
+            media={galleryMedia}
+            run={run}
+            unitId={currentUnitId}
+          />
+        </MediaSection>
+        <MediaSection
+          description="Laudos, fotos de reparo e arquivos que não entram na vitrine."
+          title="Registros internos"
+        >
+          <InternalPhotosZone internalPhotos={internalMedia} />
+        </MediaSection>
+        <MediaSection
+          description="Documentos operacionais vinculados à unidade."
+          title="Documentos"
+        >
+          <InventoryDocumentList detail={detail} unitId={currentUnitId} />
+        </MediaSection>
         <WorkspaceStatus state={state} />
       </div>
     </InventoryPanel>
+  );
+}
+
+function MediaSection({
+  children,
+  description,
+  title,
+}: {
+  children: ReactNode;
+  description: string;
+  title: string;
+}) {
+  return (
+    <section className="grid gap-3 rounded-xl border border-line bg-app/35 p-3">
+      <div>
+        <h4 className="text-xs font-black uppercase tracking-wider text-app-text">
+          {title}
+        </h4>
+        <p className="mt-1 text-xs font-bold text-muted">{description}</p>
+      </div>
+      {children}
+    </section>
   );
 }
 

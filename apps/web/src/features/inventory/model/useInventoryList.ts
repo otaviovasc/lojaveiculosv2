@@ -287,7 +287,13 @@ export function useInventoryList(api?: InventoryApi) {
         }
       } catch (err) {
         console.error(err);
-        alert("Erro ao baixar fotos do veículo.");
+        setListState({
+          kind: "error",
+          message: formatApiErrorDisplay(
+            err,
+            "Nao foi possivel baixar as fotos do veiculo.",
+          ),
+        });
       } finally {
         setLoadingMore(false);
       }

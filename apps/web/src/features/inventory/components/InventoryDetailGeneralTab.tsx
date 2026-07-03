@@ -1,8 +1,6 @@
-import { Info } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 import type { InventoryApi } from "../api/apiClient";
-import type { InventoryListingDetail, InventoryMedia } from "../model/types";
-import { InternalPhotosZone } from "./InternalPhotosZone";
+import type { InventoryListingDetail } from "../model/types";
 import { InventoryMediaWorkspace } from "./InventoryMediaWorkspace";
 import { TechnicalSpecsPanel } from "./InventoryDetailWorkspaceParts";
 import type {
@@ -30,7 +28,6 @@ export function InventoryDetailGeneralTab({
   api,
   detail,
   initialUnitId,
-  internalPhotos,
   notasInternas,
   observacoes,
   onUpdated,
@@ -44,7 +41,6 @@ export function InventoryDetailGeneralTab({
   api: InventoryApi;
   detail: InventoryListingDetail;
   initialUnitId?: string | null;
-  internalPhotos: InventoryMedia[];
   notasInternas: string;
   observacoes: ToggleObservation[];
   onUpdated: (detail: InventoryListingDetail) => void;
@@ -79,28 +75,6 @@ export function InventoryDetailGeneralTab({
             onSaveNotasInternas={onSaveNotasInternas}
           />
         </div>
-      </div>
-
-      <div className="flex flex-col gap-4 mt-4 w-full">
-        <div>
-          <h3 className="text-lg font-black text-app-text">
-            Fotos e Registros Internos
-          </h3>
-          <p className="text-xs text-muted font-bold mt-0.5">
-            Arquivos para controle interno da equipe comercial.
-          </p>
-        </div>
-
-        <div className="bg-blue-500/10 text-blue-500 border border-blue-500/20 px-4 py-3 rounded-2xl flex items-center gap-3">
-          <Info className="size-5 shrink-0 animate-pulse text-blue-500" />
-          <p className="text-xs font-bold leading-relaxed">
-            <strong>Atenção:</strong> Estas fotos são estritamente para uso
-            interno (avaliações, pequenos reparos, etc.) e <strong>NÃO</strong>{" "}
-            serão publicadas em anúncios ou feeds externos.
-          </p>
-        </div>
-
-        <InternalPhotosZone internalPhotos={internalPhotos} />
       </div>
     </div>
   );

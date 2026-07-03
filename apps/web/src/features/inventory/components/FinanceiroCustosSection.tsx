@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Filter, Plus, DollarSign } from "lucide-react";
 import type { InventoryCostKind } from "../model/types";
+import { InventorySelect } from "./InventoryFormParts";
 
 const costKindOptions = [
   "acquisition",
@@ -91,17 +92,16 @@ export function FinanceiroCustosSection({
           <div className="flex items-center gap-1.5 text-xs font-bold text-muted border-r border-line pr-3">
             <Filter className="size-3.5" />
             <span>Tipo:</span>
-            <select
+            <InventorySelect
+              ariaLabel="Filtrar custos por tipo"
+              className="min-h-8 px-2 py-0 text-xs"
               value={costFilterKind}
-              onChange={(e) => selectCostFilterKind(e.target.value)}
-              className="bg-app-elevated border border-line rounded px-1.5 py-0.5 text-xs font-bold outline-none"
-            >
-              {costFilterKinds.map((kind) => (
-                <option key={kind} value={kind}>
-                  {kind === "Todos" ? kind : costKindLabel(kind)}
-                </option>
-              ))}
-            </select>
+              onChange={selectCostFilterKind}
+              options={costFilterKinds.map((kind) => ({
+                label: kind === "Todos" ? kind : costKindLabel(kind),
+                value: kind,
+              }))}
+            />
           </div>
 
           <form onSubmit={handleAddCost} className="flex items-center gap-2">
@@ -121,17 +121,16 @@ export function FinanceiroCustosSection({
               className="min-h-8 rounded-lg border border-line bg-app px-2 text-xs font-bold outline-none w-20"
               required
             />
-            <select
+            <InventorySelect
+              ariaLabel="Tipo do custo"
+              className="min-h-8 px-2 text-xs"
               value={costKind}
-              onChange={(e) => selectCostKind(e.target.value)}
-              className="min-h-8 rounded-lg border border-line bg-app px-2 text-xs font-bold outline-none"
-            >
-              {costKindOptions.map((kind) => (
-                <option key={kind} value={kind}>
-                  {costKindLabel(kind)}
-                </option>
-              ))}
-            </select>
+              onChange={selectCostKind}
+              options={costKindOptions.map((kind) => ({
+                label: costKindLabel(kind),
+                value: kind,
+              }))}
+            />
             <button
               disabled={isAdding}
               type="submit"

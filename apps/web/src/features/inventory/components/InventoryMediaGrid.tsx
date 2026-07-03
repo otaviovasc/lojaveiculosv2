@@ -3,11 +3,13 @@ import {
   ArrowUp,
   Eye,
   EyeOff,
+  FileText,
+  Move,
   Save,
   Star,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import { InventoryBadge, InventoryInput } from "./InventoryFormParts";
 import type { InventoryMedia } from "../model/types";
@@ -27,6 +29,8 @@ export function InventoryMediaGrid({
   run: InventoryMediaRun;
   unitId: string;
 }) {
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
   if (media.length === 0) {
     return (
       <p className="text-sm font-bold text-muted">Nenhuma mídia enviada.</p>
@@ -39,9 +43,23 @@ export function InventoryMediaGrid({
         <MediaCard
           api={api}
           index={index}
+          isDragging={draggedIndex === index}
           key={item.id}
           media={item}
           mediaItems={media}
+          onDragEnd={() => setDraggedIndex(null)}
+          onDragOver={(event) => event.preventDefault()}
+          onDragStart={(event) => {
+            setDraggedIndex(index);
+            event.dataTransfer.effectAllowed = "move";
+          }}
+          onDrop={(event) => {
+            event.preventDefault();
+            if (draggedIndex !== null) {
+              reorderTo(api, media, draggedIndex, index, run, unitId);
+            }
+            setDraggedIndex(null);
+          }}
           run={run}
           unitId={unitId}
         />
@@ -53,15 +71,25 @@ export function InventoryMediaGrid({
 function MediaCard({
   api,
   index,
+  isDragging,
   media,
   mediaItems,
+  onDragEnd,
+  onDragOver,
+  onDragStart,
+  onDrop,
   run,
   unitId,
 }: {
   api: InventoryApi;
   index: number;
+  isDragging: boolean;
   media: InventoryMedia;
   mediaItems: readonly InventoryMedia[];
+  onDragEnd: () => void;
+  onDragOver: (event: DragEvent<HTMLElement>) => void;
+  onDragStart: (event: DragEvent<HTMLElement>) => void;
+  onDrop: (event: DragEvent<HTMLElement>) => void;
   run: InventoryMediaRun;
   unitId: string;
 }) {
@@ -77,12 +105,30 @@ function MediaCard({
   const coverId = firstPublicPhoto(mediaItems)?.id;
 
   return (
-    <article className="grid min-w-0 gap-3 rounded-lg border border-line bg-panel p-3">
+    <article
+      className={
+        "grid min-w-0 cursor-grab gap-3 rounded-lg border border-line bg-panel p-3 transition-all active:cursor-grabbing " +
+        (isDragging
+          ? "border-accent opacity-70 shadow-lg"
+          : "hover:border-line-strong")
+      }
+      draggable
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDragStart={onDragStart}
+      onDrop={onDrop}
+    >
       <MediaPreview media={media} />
       <div className="flex items-center justify-between gap-2">
-        <InventoryBadge tone={media.isPublic ? "accent" : "warning"}>
-          {media.id === coverId ? "capa" : mediaKindLabel(media.kind)}
-        </InventoryBadge>
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <InventoryBadge tone={media.isPublic ? "accent" : "warning"}>
+            {media.id === coverId ? "capa" : mediaKindLabel(media.kind)}
+          </InventoryBadge>
+          <span className="inline-flex items-center gap-1 rounded-md border border-line bg-app px-2 py-1 text-xs font-black text-muted">
+            <Move className="size-3" />
+            Arraste
+          </span>
+        </div>
         <div className="flex gap-1">
           {media.kind === "photo" ? (
             <IconAction
@@ -155,14 +201,24 @@ function MediaPreview({ media }: { media: InventoryMedia }) {
     return (
       <img
         alt={media.altText ?? "Mídia do veículo"}
-        className="aspect-video w-full rounded-lg bg-app object-cover"
+        className="aspect-video w-full rounded-lg border border-line bg-app object-contain"
+        src={media.url}
+      />
+    );
+  }
+  if (media.kind === "video") {
+    return (
+      <video
+        className="aspect-video w-full rounded-lg border border-line bg-app object-contain"
+        controls
+        preload="metadata"
         src={media.url}
       />
     );
   }
   return (
-    <div className="grid aspect-video place-items-center rounded-lg bg-accent-soft text-sm font-black text-accent-strong">
-      {media.kind === "video" ? "VIDEO" : "DOC"}
+    <div className="grid aspect-video place-items-center rounded-lg border border-line bg-accent-soft text-sm font-black text-accent-strong">
+      <FileText aria-hidden="true" className="size-5" />
     </div>
   );
 }
@@ -195,6 +251,27 @@ function reorder(
   if (!currentItem || !targetItem) return;
   next[index] = targetItem;
   next[target] = currentItem;
+  void run("Reordenando mídia", () =>
+    api.reorderMedia(
+      unitId,
+      next.map((item, displayOrder) => ({ displayOrder, mediaId: item.id })),
+    ),
+  );
+}
+
+function reorderTo(
+  api: InventoryApi,
+  mediaItems: readonly InventoryMedia[],
+  from: number,
+  to: number,
+  run: InventoryMediaRun,
+  unitId: string,
+) {
+  if (from === to || from < 0 || to < 0 || from >= mediaItems.length) return;
+  const next = [...mediaItems];
+  const [moved] = next.splice(from, 1);
+  if (!moved) return;
+  next.splice(Math.min(to, next.length), 0, moved);
   void run("Reordenando mídia", () =>
     api.reorderMedia(
       unitId,

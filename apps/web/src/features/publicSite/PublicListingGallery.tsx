@@ -90,7 +90,7 @@ export function HeroMedia({
       <div className="relative overflow-hidden rounded-xl border border-line bg-panel shadow-sm">
         <img
           alt={altText}
-          className="aspect-[16/10] w-full object-cover"
+          className="aspect-[16/10] w-full bg-app object-contain"
           src={heroUrl}
         />
       </div>
@@ -133,7 +133,7 @@ function MediaFrame({
         alt={altText}
         className={cn(
           className,
-          "object-cover transition-transform duration-700 ease-out group-hover:scale-[1.025]",
+          "bg-app object-contain transition-transform duration-700 ease-out group-hover:scale-[1.025]",
         )}
         src={media.url}
       />
@@ -204,7 +204,7 @@ export function MediaStrip({
           {item.kind === "photo" ? (
             <img
               alt=""
-              className="size-full object-cover transition-transform duration-300 group-hover:scale-[1.04]"
+              className="size-full bg-app object-contain transition-transform duration-300 group-hover:scale-[1.04]"
               src={item.url}
             />
           ) : (

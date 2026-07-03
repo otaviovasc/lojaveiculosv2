@@ -3,7 +3,12 @@ import { FileText, Image as ImageIcon } from "lucide-react";
 export function InternalPhotosZone({
   internalPhotos,
 }: {
-  internalPhotos: readonly { id: string; url: string; filename?: string }[];
+  internalPhotos: readonly {
+    altText?: string | null;
+    filename?: string | null;
+    id: string;
+    url: string;
+  }[];
 }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -17,7 +22,7 @@ export function InternalPhotosZone({
               {photo.url ? (
                 <img
                   src={photo.url}
-                  alt={photo.filename || "Arquivo Interno"}
+                  alt={photo.filename || photo.altText || "Arquivo Interno"}
                   className="size-full object-cover animate-none"
                 />
               ) : (
@@ -25,7 +30,7 @@ export function InternalPhotosZone({
               )}
             </div>
             <span className="text-xs font-bold text-app-text truncate">
-              {photo.filename || `Arquivo #${photo.id.substring(0, 6)}`}
+              {photo.filename || photo.altText || "Registro interno"}
             </span>
           </div>
         ))

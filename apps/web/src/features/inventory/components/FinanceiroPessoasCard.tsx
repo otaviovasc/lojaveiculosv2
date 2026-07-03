@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Users, Pencil, UserPlus, X } from "lucide-react";
+import { InventorySelect } from "./InventoryFormParts";
 
 interface PessoasData {
   proprietario: string;
@@ -174,11 +175,11 @@ export function FinanceiroPessoasCard({
             <div className="flex flex-col gap-1.5 pt-1">
               <span>Captadores</span>
               <div className="flex gap-2">
-                <select
-                  className="min-h-9 flex-1 rounded-lg border border-line bg-app px-2 text-xs font-bold outline-none"
+                <InventorySelect
+                  ariaLabel="Adicionar captador"
+                  className="min-h-9 flex-1 px-2 text-xs"
                   value={searchCaptador}
-                  onChange={(e) => {
-                    const val = e.target.value;
+                  onChange={(val) => {
                     if (val && !tempPessoas.captadores.includes(val)) {
                       setTempPessoas({
                         ...tempPessoas,
@@ -187,14 +188,14 @@ export function FinanceiroPessoasCard({
                     }
                     setSearchCaptador("");
                   }}
-                >
-                  <option value="">Selecione para adicionar...</option>
-                  {availableCaptadores.map((name) => (
-                    <option key={name} value={name}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { label: "Selecione para adicionar...", value: "" },
+                    ...availableCaptadores.map((name) => ({
+                      label: name,
+                      value: name,
+                    })),
+                  ]}
+                />
               </div>
               <div className="flex flex-wrap gap-1.5 mt-1.5">
                 {tempPessoas.captadores.map((cap) => (

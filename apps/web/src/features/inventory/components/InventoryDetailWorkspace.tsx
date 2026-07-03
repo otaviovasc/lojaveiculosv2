@@ -89,11 +89,6 @@ export function InventoryDetailWorkspace({
   const [isSpecsOpen, setIsSpecsOpen] = useState(false);
 
   const primaryUnitId = primaryUnit?.id ?? null;
-  const internalPhotos = detail.media.filter(
-    (m) =>
-      m.kind === "document_preview" &&
-      (!primaryUnitId || m.unitId === primaryUnitId),
-  );
 
   const showNotification = (msg: string) => {
     setNotification(msg);
@@ -230,7 +225,6 @@ export function InventoryDetailWorkspace({
             api={api}
             detail={detail}
             initialUnitId={primaryUnitId}
-            internalPhotos={internalPhotos}
             notasInternas={notasInternas}
             observacoes={observacoes}
             onUpdated={handleUpdatedDetail}

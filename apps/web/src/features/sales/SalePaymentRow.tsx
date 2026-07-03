@@ -1,4 +1,5 @@
 import { Trash2 } from "lucide-react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { formatCents, parseCurrencyInput, paymentMethods } from "./salesModel";
 import type { SalePaymentLine } from "./types";
 
@@ -12,19 +13,16 @@ export function PaymentRow({
     <div className="sales-payment-row">
       <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
         Método de Pagamento
-        <select
+        <FeatureSelect
+          ariaLabel="Método de pagamento"
           className="sales-input"
-          onChange={(event) =>
-            onChange({ ...payment, method: event.target.value })
-          }
+          onChange={(method) => onChange({ ...payment, method })}
+          options={paymentMethods.map((method) => ({
+            label: formatPaymentMethod(method),
+            value: method,
+          }))}
           value={payment.method}
-        >
-          {paymentMethods.map((method) => (
-            <option key={method} value={method}>
-              {formatPaymentMethod(method)}
-            </option>
-          ))}
-        </select>
+        />
       </label>
       <MoneyInput
         label="Valor Principal"
