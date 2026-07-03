@@ -40,7 +40,7 @@ export function VehicleAcquisitionSourcePanel({
             value={acquisitionDraft.channel}
           />
         </InventoryField>
-        <InventoryField label="Comissao">
+        <InventoryField label="Comissão">
           <InventorySelect
             onChange={(value) =>
               setAcquisitionDraft((current) => ({
@@ -72,13 +72,13 @@ export function VehicleAcquisitionSourcePanel({
               acquisitionDate: value || null,
             }))
           }
-          type="date"
+          placeholder="dd/mm/aaaa"
           value={acquisitionDraft.acquisitionDate}
         />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <TextField
-          label="Lead origem"
+          label="Lead de origem"
           onChange={(value) =>
             setAcquisitionDraft((current) => ({
               ...current,
@@ -88,7 +88,7 @@ export function VehicleAcquisitionSourcePanel({
           value={acquisitionDraft.leadId}
         />
         <TextField
-          label="Rotulo"
+          label="Rótulo"
           onChange={(value) =>
             setAcquisitionDraft((current) => ({
               ...current,
@@ -98,7 +98,7 @@ export function VehicleAcquisitionSourcePanel({
           value={acquisitionDraft.customChannelLabel}
         />
       </div>
-      <InventoryField label="Observacoes">
+      <InventoryField label="Observações">
         <InventoryTextarea
           onChange={(event) =>
             setAcquisitionDraft((current) => ({

@@ -7,7 +7,7 @@ export function CardHeader({ isLoading }: { isLoading: boolean }) {
     <div className="flex items-center justify-between border-b border-line pb-3">
       <h3 className="text-sm font-black uppercase tracking-wider flex items-center gap-2">
         <Truck className="size-4 text-muted" />
-        <span>Aquisicao</span>
+        <span>Aquisição</span>
       </h3>
       {isLoading ? (
         <RefreshCw className="size-4 animate-spin text-muted" />
@@ -19,11 +19,13 @@ export function CardHeader({ isLoading }: { isLoading: boolean }) {
 export function TextField({
   label,
   onChange,
+  placeholder,
   type = "text",
   value,
 }: {
   label: string;
   onChange: (value: string) => void;
+  placeholder?: string | undefined;
   type?: string | undefined;
   value?: string | null | undefined;
 }) {
@@ -31,6 +33,7 @@ export function TextField({
     <InventoryField label={label}>
       <InventoryInput
         onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
         type={type}
         value={value ?? ""}
       />

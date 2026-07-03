@@ -91,10 +91,10 @@ export function DocumentosRenaveCard() {
                       : "bg-line")
                 }
               />
-              <div className="flex justify-between items-center text-xs font-black uppercase tracking-widest min-w-0">
+              <div className="flex min-w-0 items-center justify-center text-xs font-black uppercase leading-tight tracking-normal">
                 <span
                   className={
-                    "truncate " +
+                    "text-center " +
                     (step.status === "completed"
                       ? "text-emerald-500 font-bold"
                       : step.status === "active"

@@ -12,8 +12,8 @@ import {
 import type { InventoryCostKind, InventoryListingDetail } from "../model/types";
 
 const costKinds: { label: string; value: InventoryCostKind }[] = [
-  { label: "Aquisicao", value: "acquisition" },
-  { label: "Preparacao", value: "preparation" },
+  { label: "Aquisição", value: "acquisition" },
+  { label: "Preparação", value: "preparation" },
   { label: "Reparo", value: "repair" },
   { label: "Transporte", value: "transport" },
   { label: "Taxa", value: "fee" },

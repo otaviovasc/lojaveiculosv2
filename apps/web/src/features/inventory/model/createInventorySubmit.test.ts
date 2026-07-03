@@ -311,6 +311,7 @@ function listingDetail(
       modelYear: null,
       plate: "ABC1D23",
       priceCents: 12000000,
+      publicSlug: null,
       status: "draft",
       storeId: "store_1",
       tenantId: "tenant_1",

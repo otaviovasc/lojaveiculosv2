@@ -104,10 +104,10 @@ export function HeroMedia({
         : ImageIcon;
   const label =
     kind === "video"
-      ? "Video do veiculo"
+      ? "Vídeo do veículo"
       : kind === "document_preview"
         ? "Documento"
-        : "Midia";
+        : "Mídia";
   return (
     <div className="flex aspect-[16/10] flex-col items-center justify-center gap-3 rounded-xl border border-line bg-accent-soft text-accent">
       <Icon aria-hidden="true" className="size-12" />
@@ -148,10 +148,10 @@ function MediaFrame({
         : ImageIcon;
   const label =
     media?.kind === "video"
-      ? "Video do veiculo"
+      ? "Vídeo do veículo"
       : media?.kind === "document_preview"
         ? "Documento"
-        : "Midia em breve";
+        : "Mídia em breve";
 
   return (
     <span
@@ -172,9 +172,9 @@ function GalleryActionLabel({ count }: { count: number }) {
   if (count <= 1) return null;
 
   return (
-    <span className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded bg-black/70 px-3 py-2 text-xs font-black uppercase tracking-[0.16em] text-white shadow-lg backdrop-blur">
+    <span className="absolute bottom-4 right-4 inline-flex items-center gap-2 rounded bg-black/70 px-3 py-2 text-xs font-black text-white shadow-lg backdrop-blur">
       <Maximize2 aria-hidden="true" className="size-3.5" />
-      {count} midias
+      {count} mídias
     </span>
   );
 }

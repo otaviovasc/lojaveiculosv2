@@ -32,11 +32,11 @@ export const emptyAcquisitionDraft: AcquisitionDraft = {
 
 export const supplierKindOptions: CustomSelectOption<VehicleSupplierKind>[] = [
   { label: "Lead / troca", value: "lead" },
-  { label: "Pessoa fisica", value: "person" },
+  { label: "Pessoa física", value: "person" },
   { label: "Empresa", value: "company" },
-  { label: "Provider", value: "provider" },
+  { label: "Provedor", value: "provider" },
   { label: "Parceiro", value: "partner" },
-  { label: "Leilao", value: "auction" },
+  { label: "Leilão", value: "auction" },
   { label: "Outro", value: "other" },
 ];
 
@@ -46,15 +46,15 @@ export const channelOptions: CustomSelectOption<VehicleAcquisitionChannel>[] = [
   { label: "Fornecedor CNPJ", value: "supplier_company" },
   { label: "Auto Avaliar", value: "auto_avaliar" },
   { label: "Parceiro repasse", value: "repasse_partner" },
-  { label: "Leilao", value: "auction" },
-  { label: "Consignacao", value: "consignment" },
+  { label: "Leilão", value: "auction" },
+  { label: "Consignação", value: "consignment" },
   { label: "Marketplace", value: "marketplace" },
   { label: "Outro", value: "other" },
 ];
 
 export const commissionOptions: CustomSelectOption<VehicleAcquisitionCommissionTiming>[] =
   [
-    { label: "Na aquisicao", value: "acquisition" },
+    { label: "Na aquisição", value: "acquisition" },
     { label: "Na reserva", value: "reserve" },
     { label: "Na venda", value: "closed" },
   ];

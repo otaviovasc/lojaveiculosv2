@@ -41,7 +41,9 @@ export function VehicleDetailHeader({
             <DetailBadge>{detail.listing.trimName}</DetailBadge>
           ) : null}
           {colorNames.length ? (
-            <DetailBadge>{colorNames.length} cores</DetailBadge>
+            <DetailBadge>
+              {colorNames.length} {colorNames.length === 1 ? "cor" : "cores"}
+            </DetailBadge>
           ) : null}
         </div>
         <h1 className="mt-4 max-w-4xl text-4xl font-black leading-[0.98] tracking-tight text-app-text md:text-5xl lg:text-6xl">

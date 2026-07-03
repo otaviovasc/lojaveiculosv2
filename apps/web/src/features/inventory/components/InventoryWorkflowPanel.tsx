@@ -27,6 +27,7 @@ import {
   validateWorkflowForm,
   type WorkflowForm,
 } from "./InventoryWorkflowFormModel";
+import { inventoryUnitStatusLabels } from "../model/listCatalogModel";
 import type { InventoryListingDetail } from "../model/types";
 import type { InventoryStoreSettings } from "./InventoryPrintTypes";
 import {
@@ -130,7 +131,7 @@ export function InventoryWorkflowPanel({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel concluir a operacao.",
+          "Não foi possível concluir a operação.",
         ),
       });
     }
@@ -152,7 +153,7 @@ export function InventoryWorkflowPanel({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel liberar a reserva.",
+          "Não foi possível liberar a reserva.",
         ),
       });
     }
@@ -163,7 +164,7 @@ export function InventoryWorkflowPanel({
   return (
     <InventoryPanel
       icon={<Handshake className="size-5" />}
-      title="Operacoes da loja"
+      title="Operações da loja"
     >
       <form className="grid gap-4" onSubmit={(event) => void submit(event)}>
         <WorkflowModePicker
@@ -180,7 +181,11 @@ export function InventoryWorkflowPanel({
               options={[
                 { label: "Selecione", value: "" },
                 ...detail.units.map((unit) => ({
-                  label: [unit.stockNumber, unit.plate, unit.status]
+                  label: [
+                    unit.stockNumber,
+                    unit.plate,
+                    inventoryUnitStatusLabels[unit.status],
+                  ]
                     .filter(Boolean)
                     .join(" / "),
                   value: unit.id,
@@ -221,7 +226,7 @@ export function InventoryWorkflowPanel({
               value={form.buyerPhone}
             />
           </InventoryField>
-          <InventoryField label="Email">
+          <InventoryField label="E-mail">
             <InventoryInput
               disabled={isSaving}
               onChange={setField("buyerEmail")}
@@ -261,14 +266,14 @@ export function InventoryWorkflowPanel({
           )}
         </div>
 
-        <InventoryField label="Endereco">
+        <InventoryField label="Endereço">
           <InventoryInput
             disabled={isSaving}
             onChange={setField("buyerAddress")}
             value={form.buyerAddress}
           />
         </InventoryField>
-        <InventoryField label="Observacao interna">
+        <InventoryField label="Observação interna">
           <InventoryTextarea
             disabled={isSaving}
             onChange={setField("reason")}

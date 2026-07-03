@@ -89,7 +89,7 @@ export function InventoryDetailOverview({
           <div className="grid content-start gap-4 border-t border-line bg-app p-5 md:border-l md:border-t-0">
             <div>
               <span className="text-xs font-black uppercase tracking-widest text-muted">
-                Preco anunciado
+                Preço anunciado
               </span>
               <p className="mt-1 text-3xl font-black tracking-tight text-accent">
                 {listing.priceCents
@@ -139,7 +139,7 @@ export function InventoryDetailOverview({
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-muted">
-              Prontidao do anuncio
+              Prontidão do anúncio
             </p>
             <h3 className="mt-1 text-xl font-black text-app-text">
               {readinessPercent}% completo
@@ -243,22 +243,22 @@ function createReadinessItems(
   return [
     {
       done: publicPhotos.length >= 4,
-      label: "Galeria publica",
+      label: "Galeria pública",
       value: `${publicPhotos.length}/4 fotos`,
     },
     {
       done: Boolean(listing.priceCents),
-      label: "Preco",
+      label: "Preço",
       value: listing.priceCents ? "Definido" : "Pendente",
     },
     {
       done: Boolean(listing.description?.trim()),
-      label: "Descricao",
-      value: listing.description?.trim() ? "Publicavel" : "Pendente",
+      label: "Descrição",
+      value: listing.description?.trim() ? "Publicável" : "Pendente",
     },
     {
       done: hasSpecs,
-      label: "Ficha tecnica",
+      label: "Ficha técnica",
       value: hasSpecs ? "Completa" : "Revisar",
     },
     {
@@ -278,7 +278,7 @@ function statusLabel(status: InventoryListingDetail["listing"]["status"]) {
   const labels: Record<InventoryListingDetail["listing"]["status"], string> = {
     archived: "Arquivado",
     draft: "Rascunho",
-    in_preparation: "Preparacao",
+    in_preparation: "Preparação",
     published: "Publicado",
     sold_out: "Vendido",
     unpublished: "Fora da vitrine",
@@ -289,10 +289,10 @@ function statusLabel(status: InventoryListingDetail["listing"]["status"]) {
 function unitStatusLabel(status: InventoryUnit["status"]) {
   const labels: Record<InventoryUnit["status"], string> = {
     acquired: "Adquirido",
-    available: "Disponivel",
+    available: "Disponível",
     delivered: "Entregue",
     inactive: "Inativo",
-    in_preparation: "Preparacao",
+    in_preparation: "Preparação",
     reserved: "Reservado",
     sold: "Vendido",
   };

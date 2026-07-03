@@ -165,7 +165,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     return (
       <StorefrontStateFrame
         icon={<SearchX aria-hidden="true" className="size-6" />}
-        title="Estoque indisponivel"
+        title="Estoque indisponível"
       />
     );
   }
@@ -184,7 +184,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
           </button>
         }
         icon={<RefreshCcw aria-hidden="true" className="size-6" />}
-        title="Vitrine temporariamente indisponivel"
+        title="Vitrine temporariamente indisponível"
       />
     );
   }

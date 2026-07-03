@@ -107,6 +107,7 @@ export type InventoryListing = {
   modelYear: number | null;
   plate: string | null;
   priceCents: number | null;
+  publicSlug: string | null;
   status: InventoryListingStatus;
   storeId: string | null;
   tenantId: string | null;
@@ -141,17 +142,10 @@ export type InventoryUnit = {
 export type InventoryUnitStatus = InventoryUnit["status"];
 
 export type InventoryChecklistStatus =
-  | "failed"
-  | "in_progress"
-  | "passed"
-  | "pending"
-  | "waived";
+  "failed" | "in_progress" | "passed" | "pending" | "waived";
 
 export type InventoryChecklistItemStatus =
-  | "failed"
-  | "passed"
-  | "pending"
-  | "waived";
+  "failed" | "passed" | "pending" | "waived";
 
 export type InventoryChecklistItem = {
   id: string;

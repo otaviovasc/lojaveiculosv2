@@ -253,9 +253,13 @@ export function InventoryDetailWorkspace({
           />
         )}
 
-        {activeTab === "anuncio" && <InventoryDetailAnuncioTab />}
+        {activeTab === "anuncio" && (
+          <InventoryDetailAnuncioTab detail={detail} />
+        )}
 
-        {activeTab === "documentos" && <InventoryDetailDocumentosTab />}
+        {activeTab === "documentos" && (
+          <InventoryDetailDocumentosTab detail={detail} />
+        )}
 
         {activeTab === "vendas" && (
           <InventoryWorkflowPanel
@@ -266,7 +270,9 @@ export function InventoryDetailWorkspace({
           />
         )}
 
-        {activeTab === "historico" && <InventoryDetailHistoricoTab />}
+        {activeTab === "historico" && (
+          <InventoryDetailHistoricoTab detail={detail} />
+        )}
 
         {activeTab === "vitrine" && (
           <InventoryDetailVitrineTab
@@ -311,7 +317,7 @@ function vehicleTypeLabel(
   vehicleType: "cars" | "motorcycles" | "trucks" | null | undefined,
 ) {
   if (vehicleType === "motorcycles") return "Moto";
-  if (vehicleType === "trucks") return "Caminhao";
+  if (vehicleType === "trucks") return "Caminhão";
   return "Carro";
 }
 
@@ -328,7 +334,7 @@ function statusLabel(status: InventoryListingDetail["listing"]["status"]) {
   const labels: Record<InventoryListingDetail["listing"]["status"], string> = {
     archived: "Arquivado",
     draft: "Rascunho",
-    in_preparation: "Preparacao",
+    in_preparation: "Preparação",
     published: "Publicado",
     sold_out: "Vendido",
     unpublished: "Fora da vitrine",

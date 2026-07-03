@@ -68,48 +68,6 @@ export function PublicStorefront({
         data-layout={layoutKey}
         style={style}
       >
-        {visibleSections.map((section) => {
-          if (section.type === "hero") {
-            return (
-              <HeroSection
-                data={data}
-                key={section.id}
-                sections={visibleSections}
-                theme={theme}
-                onOpenListing={onOpenListing}
-              />
-            );
-          }
-          if (isStockSection(section.type)) {
-            return (
-              <StockSection
-                key={section.id}
-                listings={data.listings}
-                onOpenListing={onOpenListing}
-                query={searchQuery}
-                sectionType={section.type}
-                setQuery={setSearchQuery}
-              />
-            );
-          }
-          if (section.type === "about") {
-            return <AboutSection data={data} key={section.id} />;
-          }
-          if (section.type === "testimonials") {
-            return <TestimonialsSection key={section.id} theme={rawTheme} />;
-          }
-          if (section.type === "contact") {
-            return (
-              <LeadPanel
-                ctaLabel={theme.ctaLabel}
-                key={section.id}
-                settings={data.settings}
-              />
-            );
-          }
-          return null;
-        })}
-
         {detail.listingSlug ? (
           <PublicListingDetailPanel
             detail={detail}
@@ -118,7 +76,49 @@ export function PublicStorefront({
             onSubmitInterest={onSubmitListingInterest}
             settings={data.settings}
           />
-        ) : null}
+        ) : (
+          visibleSections.map((section) => {
+            if (section.type === "hero") {
+              return (
+                <HeroSection
+                  data={data}
+                  key={section.id}
+                  sections={visibleSections}
+                  theme={theme}
+                  onOpenListing={onOpenListing}
+                />
+              );
+            }
+            if (isStockSection(section.type)) {
+              return (
+                <StockSection
+                  key={section.id}
+                  listings={data.listings}
+                  onOpenListing={onOpenListing}
+                  query={searchQuery}
+                  sectionType={section.type}
+                  setQuery={setSearchQuery}
+                />
+              );
+            }
+            if (section.type === "about") {
+              return <AboutSection data={data} key={section.id} />;
+            }
+            if (section.type === "testimonials") {
+              return <TestimonialsSection key={section.id} theme={rawTheme} />;
+            }
+            if (section.type === "contact") {
+              return (
+                <LeadPanel
+                  ctaLabel={theme.ctaLabel}
+                  key={section.id}
+                  settings={data.settings}
+                />
+              );
+            }
+            return null;
+          })
+        )}
       </main>
     </>
   );

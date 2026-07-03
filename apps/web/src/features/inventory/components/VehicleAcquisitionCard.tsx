@@ -69,7 +69,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
         );
       })
       .catch(() => {
-        if (!cancelled) setMessage("Nao foi possivel carregar a aquisicao.");
+        if (!cancelled) setMessage("Não foi possível carregar a aquisição.");
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -120,7 +120,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
       }));
       setMessage("Fornecedor salvo.");
     } catch {
-      setMessage("Nao foi possivel salvar o fornecedor.");
+      setMessage("Não foi possível salvar o fornecedor.");
     } finally {
       setIsSaving(false);
     }
@@ -129,7 +129,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
   const archiveSupplier = async () => {
     if (!selectedSupplierId) return;
     if (acquisitionDraft.supplierId === selectedSupplierId) {
-      setMessage("Desvincule o fornecedor da aquisicao antes de arquivar.");
+      setMessage("Desvincule o fornecedor da aquisição antes de arquivar.");
       return;
     }
     setIsSaving(true);
@@ -142,7 +142,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
       setSupplierDraft(emptySupplierDraft);
       setMessage("Fornecedor arquivado.");
     } catch {
-      setMessage("Nao foi possivel arquivar o fornecedor.");
+      setMessage("Não foi possível arquivar o fornecedor.");
     } finally {
       setIsSaving(false);
     }
@@ -158,9 +158,9 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
       );
       setAcquisitionDraft(fromAcquisition(acquisition));
       setSelectedSupplierId(acquisition.supplierId ?? selectedSupplierId);
-      setMessage("Origem de aquisicao salva.");
+      setMessage("Origem de aquisição salva.");
     } catch {
-      setMessage("Nao foi possivel salvar a origem de aquisicao.");
+      setMessage("Não foi possível salvar a origem de aquisição.");
     } finally {
       setIsSaving(false);
     }
@@ -171,7 +171,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
       <section className="bg-panel border border-line rounded-2xl p-5 min-h-[360px]">
         <CardHeader isLoading={false} />
         <p className="text-xs font-bold text-muted">
-          Adicione uma unidade ao veiculo para cadastrar origem e fornecedor.
+          Adicione uma unidade ao veículo para cadastrar origem e fornecedor.
         </p>
       </section>
     );
