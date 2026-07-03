@@ -128,7 +128,7 @@ export function searchListings(
 
 export function stockEyebrow(type: string) {
   if (type === "search") return "Busca";
-  if (type === "all_properties") return "Todos os veiculos";
+  if (type === "all_properties") return "Todos os veículos";
   return "Destaques";
 }
 

@@ -8,7 +8,7 @@ export function applyPublicStorefrontMetadata(
   const title = data.settings.site.seoTitle ?? data.settings.store.name;
   const description =
     data.settings.site.seoDescription ??
-    `Estoque de veiculos da ${data.settings.store.name}.`;
+    `Estoque de veículos da ${data.settings.store.name}.`;
   const canonicalUrl = `https://${data.settings.store.publicUrl}`;
   const previousTitle = document.title;
   const descriptionMeta = upsertMeta("description");

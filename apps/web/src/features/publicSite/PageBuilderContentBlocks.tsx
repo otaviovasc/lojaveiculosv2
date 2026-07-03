@@ -75,7 +75,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
                   Destaque
                 </span>
                 <span className="block text-sm font-black leading-tight">
-                  Publicacao pronta para conversao
+                  Publicação pronta para conversão
                 </span>
               </span>
               <span
@@ -197,8 +197,8 @@ export function VideoBlock({ component, context }: BuilderBlockProps) {
     return context.preview ? (
       <PageBuilderPreviewEmptyState
         icon={Play}
-        title="Video sem link"
-        text="Cole um YouTube ou arquivo de video para ativar o bloco."
+        title="Vídeo sem link"
+        text="Cole um YouTube ou arquivo de vídeo para ativar o bloco."
       />
     ) : null;
   }
@@ -215,7 +215,7 @@ export function VideoBlock({ component, context }: BuilderBlockProps) {
           allowFullScreen
           className="aspect-video w-full border-0"
           src={embedUrl}
-          title="Video"
+          title="Vídeo"
         />
       ) : (
         <video

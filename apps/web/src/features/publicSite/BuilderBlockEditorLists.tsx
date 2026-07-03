@@ -73,7 +73,7 @@ export function BuilderLinksList({
                 updateRecordAt(items, index, "title", event.target.value),
               )
             }
-            placeholder="Titulo"
+            placeholder="Título"
             value={textValue(item.title)}
           />
           <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
@@ -195,7 +195,7 @@ export function BuilderTestimonialsItems({
             onChange={(event) =>
               onChange(updateRecordAt(items, index, "role", event.target.value))
             }
-            placeholder="Descricao"
+            placeholder="Descrição"
             value={textValue(item.role)}
           />
           <FeatureTextarea
@@ -252,7 +252,7 @@ export function BuilderFooterColumns({
                     updateRecordAt(items, index, "label", event.target.value),
                   )
                 }
-                placeholder="Titulo da coluna"
+                placeholder="Título da coluna"
                 value={textValue(item.label)}
               />
               <FeatureActionButton

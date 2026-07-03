@@ -169,8 +169,8 @@ export function MapBlock({ component, context }: BuilderBlockProps) {
     return context.preview ? (
       <PageBuilderPreviewEmptyState
         icon={MapPin}
-        title="Mapa sem endereco"
-        text="Informe o endereco da loja para exibir a rota publica."
+        title="Mapa sem endereço"
+        text="Informe o endereço da loja para exibir a rota pública."
       />
     ) : null;
   }

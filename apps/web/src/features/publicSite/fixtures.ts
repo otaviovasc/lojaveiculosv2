@@ -65,7 +65,7 @@ export const publicStorefrontPreview = {
     },
     {
       condition: "used",
-      description: "Hatch economico para giro rapido de estoque.",
+      description: "Hatch econômico para giro rápido de estoque.",
       doors: 4,
       engineAspiration: "aspirated",
       engineDisplacement: "1.0",

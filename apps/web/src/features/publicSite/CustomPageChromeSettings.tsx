@@ -20,11 +20,11 @@ export function PageChromeFields({
   return (
     <div className="space-y-3 rounded-lg border border-border bg-card p-3">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Cabecalho e rodape
+        Cabeçalho e rodapé
       </p>
       <ChromeCheckbox
         checked={pageChrome.showHeader !== false}
-        label="Mostrar cabecalho"
+        label="Mostrar cabeçalho"
         onChange={(checked) => updateChrome({ showHeader: checked })}
       />
       <ChromeCheckbox
@@ -34,7 +34,7 @@ export function PageChromeFields({
       />
       <ChromeCheckbox
         checked={pageChrome.showFooter !== false}
-        label="Mostrar rodape"
+        label="Mostrar rodapé"
         onChange={(checked) => updateChrome({ showFooter: checked })}
       />
       <div className="space-y-2">
@@ -51,7 +51,7 @@ export function PageChromeFields({
         >
           <option value="minimal">Vidro leve</option>
           <option value="glass">Vidro forte</option>
-          <option value="solid">Solido</option>
+          <option value="solid">Sólido</option>
         </select>
       </div>
       {pageChrome.headerVariant === "solid" ? (
@@ -72,12 +72,12 @@ export function PageChromeFields({
         onChange={(event) =>
           updateChrome({ footerExtraLine: event.target.value || null })
         }
-        placeholder="Texto extra no rodape"
+        placeholder="Texto extra no rodapé"
         value={pageChrome.footerExtraLine ?? ""}
       />
       <ColorTextField
         fallbackColor={fallbackColor}
-        label="Cor do texto do rodape"
+        label="Cor do texto do rodapé"
         onChange={(value) =>
           updateChrome({ footerChromeTextColor: value || null })
         }
@@ -132,7 +132,7 @@ function ColorTextField({
         <Input
           className="font-mono text-xs"
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Padrao do tema"
+          placeholder="Padrão do tema"
           value={value}
         />
       </div>

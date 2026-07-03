@@ -114,7 +114,7 @@ function createEndpoint(path: string, baseUrl = "/api/v1") {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  return readApiJson<T>(response, { feature: "Paginas da vitrine" });
+  return readApiJson<T>(response, { feature: "Páginas da vitrine" });
 }
 
 function cleanJson(input: Record<string, unknown>) {

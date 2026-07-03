@@ -49,7 +49,7 @@ export function StorefrontImageEditorDialog({
       imageRef.current = image;
       drawPreview(settings);
     };
-    image.onerror = () => setStatus("Nao foi possivel ler esta imagem.");
+    image.onerror = () => setStatus("Não foi possível ler esta imagem.");
     image.src = url;
     return () => URL.revokeObjectURL(url);
   }, [file, isOpen]);
@@ -91,7 +91,7 @@ export function StorefrontImageEditorDialog({
       });
     } catch (error) {
       setStatus(
-        error instanceof Error ? error.message : "Nao foi possivel salvar.",
+        error instanceof Error ? error.message : "Não foi possível salvar.",
       );
     } finally {
       setIsSaving(false);
@@ -119,7 +119,7 @@ export function StorefrontImageEditorDialog({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="grid min-h-[18rem] place-items-center overflow-hidden rounded-lg border border-line bg-app p-3">
           <canvas
-            aria-label="Previa da imagem ajustada"
+            aria-label="Prévia da imagem ajustada"
             className="max-h-[58vh] max-w-full rounded-lg object-contain shadow-lg"
             ref={canvasRef}
           />
@@ -184,7 +184,7 @@ export function StorefrontImageEditorDialog({
               value={settings.contrast}
             />
             <RangeControl
-              label="Saturacao"
+              label="Saturação"
               max={2}
               min={0}
               onChange={(saturation) =>

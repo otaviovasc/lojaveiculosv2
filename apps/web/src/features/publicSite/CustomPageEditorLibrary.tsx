@@ -128,7 +128,7 @@ export function BuilderBlockList({
   return (
     <div className="max-h-[46%] min-h-48 shrink-0 overflow-y-auto border-t border-border/50 p-3">
       <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Blocos da pagina
+        Blocos da página
       </h3>
       {components.length ? (
         <div className="grid gap-2">

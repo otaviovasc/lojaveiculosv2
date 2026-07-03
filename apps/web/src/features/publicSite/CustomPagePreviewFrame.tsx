@@ -186,7 +186,7 @@ export function CustomPagePreviewFrame({
           className="block h-full min-h-0 w-full flex-1 border-0 bg-background"
           ref={iframeRef}
           src="about:blank"
-          title="Pre-visualizacao da pagina"
+          title="Pré-visualização da página"
         />
         {mountNode ? createPortal(children, mountNode) : null}
       </div>

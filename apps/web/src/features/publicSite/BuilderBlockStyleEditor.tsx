@@ -15,10 +15,10 @@ import { storefrontFontOptions } from "./storefrontFonts";
 const fontSizeOptions = [
   { label: "Herdar", value: "none" },
   { label: "Pequeno", value: "0.875rem" },
-  { label: "Padrao", value: "1rem" },
+  { label: "Padrão", value: "1rem" },
   { label: "Medio", value: "1.125rem" },
   { label: "Grande", value: "1.25rem" },
-  { label: "Titulo", value: "1.5rem" },
+  { label: "Título", value: "1.5rem" },
   { label: "Hero", value: "2rem" },
 ] as const;
 
@@ -26,7 +26,7 @@ const spacingOptions = [
   { label: "Herdar", value: "none" },
   { label: "Nenhum", value: "0" },
   { label: "Pequeno", value: "0.5rem" },
-  { label: "Padrao", value: "1rem" },
+  { label: "Padrão", value: "1rem" },
   { label: "Medio", value: "1.5rem" },
   { label: "Grande", value: "2rem" },
   { label: "Extra", value: "3rem" },
@@ -36,7 +36,7 @@ const radiusOptions = [
   { label: "Herdar", value: "none" },
   { label: "Nenhum", value: "0" },
   { label: "Pequeno", value: "0.375rem" },
-  { label: "Padrao", value: "0.5rem" },
+  { label: "Padrão", value: "0.5rem" },
   { label: "Grande", value: "0.75rem" },
   { label: "Extra", value: "1rem" },
   { label: "Circular", value: "9999px" },
@@ -121,13 +121,13 @@ export function BuilderBlockStyleEditor({
           value={style.backgroundColor}
         />
         <BuilderSelectInput
-          label="Espacamento interno"
+          label="Espaçamento interno"
           onChange={(value) => updateStyle("padding", value)}
           options={spacingOptions}
           value={style.padding ?? "none"}
         />
         <BuilderSelectInput
-          label="Espacamento externo"
+          label="Espaçamento externo"
           onChange={(value) => updateStyle("margin", value)}
           options={spacingOptions}
           value={style.margin ?? "none"}
@@ -157,25 +157,25 @@ export function BuilderBlockStyleEditor({
           value={style.shadow ?? "none"}
         />
         <BuilderTextInput
-          label="Altura minima"
+          label="Altura mínima"
           onChange={(value) => updateStyle("minHeight", value)}
           placeholder="Ex: 320px"
           value={style.minHeight}
         />
         <BuilderTextInput
-          label="Altura maxima"
+          label="Altura máxima"
           onChange={(value) => updateStyle("maxHeight", value)}
           placeholder="Ex: 640px"
           value={style.maxHeight}
         />
         <BuilderSelectInput
-          label="Animacao"
+          label="Animação"
           onChange={(value) => updateStyle("animation", value)}
           options={animationOptions}
           value={style.animation ?? "none"}
         />
         <BuilderNumberInput
-          label="Duracao"
+          label="Duração"
           max={10}
           min={0}
           onChange={(value) => updateStyle("animationDuration", value)}

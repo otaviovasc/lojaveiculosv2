@@ -46,9 +46,11 @@ export function CustomPageEditorTopBar({
     <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-card/80 px-4 py-2.5 backdrop-blur-sm">
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Button
+          aria-label="Voltar para páginas"
           className="px-2 sm:px-3"
           onClick={onBack}
           size="sm"
+          title="Voltar"
           type="button"
           variant="ghost"
         >
@@ -73,7 +75,7 @@ export function CustomPageEditorTopBar({
           )}
           disabled={isSaving}
           onClick={onTogglePublished}
-          title={page.visible ? "Voltar para rascunho" : "Publicar pagina"}
+          title={page.visible ? "Voltar para rascunho" : "Publicar página"}
           type="button"
         >
           {page.visible ? "Publicado" : "Rascunho"}
@@ -81,27 +83,29 @@ export function CustomPageEditorTopBar({
         {dirty ? (
           <span className="mr-2 hidden items-center gap-1.5 text-xs font-medium text-warning lg:flex">
             <span className="size-2 rounded-full bg-warning" />
-            Alteracoes nao salvas
+            Alterações não salvas
           </span>
         ) : null}
       </div>
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <Button
+          aria-label="Abrir configurações da página"
           className="px-2.5 sm:px-3"
           onClick={onShowSettings}
           size="sm"
-          title="Configuracoes"
+          title="Configurações"
           type="button"
           variant="outline"
         >
           <Settings className="h-3.5 w-3.5 sm:mr-1.5" />
-          <span className="hidden sm:inline">Configuracoes</span>
+          <span className="hidden sm:inline">Configurações</span>
         </Button>
         <Button
+          aria-label="Copiar prévia"
           className="px-2.5 sm:px-3"
           onClick={onCopyPreview}
           size="sm"
-          title="Copiar previa"
+          title="Copiar prévia"
           type="button"
           variant="outline"
         >
@@ -110,6 +114,7 @@ export function CustomPageEditorTopBar({
         </Button>
         <Button className="px-2.5 sm:px-3" size="sm" variant="outline" asChild>
           <a
+            aria-label="Visualizar página"
             href={previewUrl}
             rel="noreferrer"
             target="_blank"
@@ -120,6 +125,7 @@ export function CustomPageEditorTopBar({
           </a>
         </Button>
         <Button
+          aria-label="Salvar página"
           className="px-2.5 sm:px-3"
           disabled={isSaving}
           onClick={onSave}

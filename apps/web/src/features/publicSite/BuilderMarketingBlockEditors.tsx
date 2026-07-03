@@ -30,7 +30,7 @@ export function TestimonialsBlockEditor({ props, setProp }: PropsEditor) {
   return (
     <EditorStack>
       <BuilderTextInput
-        label="Titulo"
+        label="Título"
         onChange={(value) => setProp("title", value)}
         value={props.title}
       />
@@ -67,7 +67,7 @@ export function CtaBlockEditor({ props, setProp }: PropsEditor) {
     <EditorStack>
       <TitleSubtitleFields props={props} setProp={setProp} />
       <BuilderTextInput
-        label="Texto do botao"
+        label="Texto do botão"
         onChange={(value) => setProp("buttonLabel", value)}
         value={props.buttonLabel ?? props.label}
       />
@@ -92,7 +92,7 @@ export function ContactSectionBlockEditor({ props, setProp }: PropsEditor) {
     <EditorStack>
       <TitleSubtitleFields props={props} setProp={setProp} />
       <BuilderTextInput
-        label="Texto do botao"
+        label="Texto do botão"
         onChange={(value) => setProp("submitButtonText", value)}
         value={props.submitButtonText}
       />

@@ -26,23 +26,23 @@ export function WebsiteBuilderAboutPanel({
     <div className="space-y-6">
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Conteudo
+          Conteúdo
         </h4>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="aboutTitle">Titulo da Secao</Label>
+            <Label htmlFor="aboutTitle">Título da Seção</Label>
             <Input
               className="h-10"
               id="aboutTitle"
               onChange={(event) =>
                 updateConfig("aboutTitle", event.target.value)
               }
-              placeholder="Ex: Sobre Nos"
+              placeholder="Ex: Sobre Nós"
               value={config.aboutTitle ?? ""}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="aboutText">Texto Sobre Voce</Label>
+            <Label htmlFor="aboutText">Texto Sobre Você</Label>
             <Textarea
               className="min-h-[120px] resize-y"
               id="aboutText"
@@ -61,7 +61,7 @@ export function WebsiteBuilderAboutPanel({
       </div>
       <WebsiteBuilderImageUrlField
         imageClassName="h-32 w-full rounded-xl"
-        label="Imagem da Secao"
+        label="Imagem da Seção"
         onChange={(value) => updateConfig("aboutImageUrl", value)}
         value={config.aboutImageUrl ?? ""}
       />
@@ -79,7 +79,7 @@ export function WebsiteBuilderContactPanel({
   return (
     <div className="space-y-6">
       <p className="text-xs text-muted-foreground">
-        Informacoes de contato exibidas no site.
+        Informações de contato exibidas no site.
       </p>
       <div className="space-y-4">
         <div className="space-y-2">
@@ -202,7 +202,7 @@ export function WebsiteBuilderTestimonialsPanel({
                 value={testimonial.imageSrc ?? ""}
               />
               <div className="space-y-2">
-                <Label>Descricao</Label>
+                <Label>Descrição</Label>
                 <Input
                   onChange={(event) =>
                     updateTestimonial(testimonial.id, {

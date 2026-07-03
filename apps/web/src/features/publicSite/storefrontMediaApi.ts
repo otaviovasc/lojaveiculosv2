@@ -99,6 +99,6 @@ async function readJson<T>(response: Response): Promise<T> {
 
 async function readUploadResponse(response: Response) {
   if (!response.ok) {
-    throw new Error("Nao foi possivel enviar a imagem para o R2.");
+    throw new Error("Não foi possível enviar a imagem para o R2.");
   }
 }

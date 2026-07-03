@@ -59,15 +59,15 @@ export function CustomPagesList({
     event.preventDefault();
     const slug = createSlug.trim();
     if (!createTitle.trim() || !slug) {
-      setFormError("Preencha o nome e a URL da pagina.");
+      setFormError("Preencha o nome e a URL da página.");
       return;
     }
     if (!isValidCustomPageSlug(slug)) {
-      setFormError("Use apenas letras minusculas, numeros e hifens na URL.");
+      setFormError("Use apenas letras minúsculas, números e hifens na URL.");
       return;
     }
     if (pages.some((page) => page.slug === slug)) {
-      setFormError("Esta URL ja esta em uso.");
+      setFormError("Esta URL já está em uso.");
       return;
     }
 
@@ -79,15 +79,15 @@ export function CustomPagesList({
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Paginas Personalizadas</h1>
+          <h1 className="text-2xl font-bold">Páginas Personalizadas</h1>
           <p className="text-sm text-muted-foreground">
-            Crie paginas personalizadas para campanhas, ofertas e conteudo
+            Crie páginas personalizadas para campanhas, ofertas e conteúdo
             institucional.
           </p>
         </div>
         <Button disabled={isBusy} onClick={() => setCreateOpen(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Nova Pagina
+          Nova Página
         </Button>
       </div>
 
@@ -108,14 +108,14 @@ export function CustomPagesList({
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
             <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="mb-2 text-lg font-semibold">Nenhuma pagina criada</h3>
+          <h3 className="mb-2 text-lg font-semibold">Nenhuma página criada</h3>
           <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-            Crie sua primeira pagina personalizada para lancamentos, ofertas ou
-            qualquer outro conteudo.
+            Crie sua primeira página personalizada para lançamentos, ofertas ou
+            qualquer outro conteúdo.
           </p>
           <Button disabled={isBusy} onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Criar Primeira Pagina
+            Criar Primeira Página
           </Button>
         </div>
       ) : (
@@ -137,7 +137,7 @@ export function CustomPagesList({
       <CustomPagesDialog
         onClose={resetCreate}
         open={createOpen}
-        title="Criar Nova Pagina"
+        title="Criar Nova Página"
       >
         <form
           className="space-y-4"
@@ -146,7 +146,7 @@ export function CustomPagesList({
           }}
         >
           <p className="text-sm text-muted-foreground">
-            Crie uma nova pagina modular com componentes personalizados.
+            Crie uma nova página modular com componentes personalizados.
           </p>
           {formError ? (
             <FeatureAlert className="feature-alert text-danger">
@@ -154,12 +154,12 @@ export function CustomPagesList({
             </FeatureAlert>
           ) : null}
           <div className="space-y-2">
-            <Label htmlFor="page-title">Nome da Pagina</Label>
+            <Label htmlFor="page-title">Nome da Página</Label>
             <Input
               disabled={isBusy}
               id="page-title"
               onChange={(event) => onCreateTitleChange(event.target.value)}
-              placeholder="Ex: Lancamento Especial"
+              placeholder="Ex: Lançamento Especial"
               required
               value={createTitle}
             />
@@ -178,18 +178,18 @@ export function CustomPagesList({
               />
             </div>
             <p className="text-xs text-muted-foreground">
-              Letras, numeros e hifens apenas.
+              Letras, números e hifens apenas.
             </p>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="page-description">Descricao</Label>
+            <Label htmlFor="page-description">Descrição</Label>
             <Input
               disabled={isBusy}
               id="page-description"
               onChange={(event) =>
                 onCreateDescriptionChange(event.target.value)
               }
-              placeholder="Resumo curto para identificar a pagina"
+              placeholder="Resumo curto para identificar a página"
               value={createDescription}
             />
           </div>
@@ -206,7 +206,7 @@ export function CustomPagesList({
               {isBusy ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              Criar Pagina
+              Criar Página
             </Button>
           </div>
         </form>
@@ -215,12 +215,12 @@ export function CustomPagesList({
       <CustomPagesDialog
         onClose={() => setPageToDelete(null)}
         open={Boolean(pageToDelete)}
-        title="Excluir Pagina"
+        title="Excluir Página"
       >
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja excluir "{pageToDelete?.title}"? Esta acao
-            nao pode ser desfeita.
+            Tem certeza que deseja excluir "{pageToDelete?.title}"? Esta ação
+            não pode ser desfeita.
           </p>
           <div className="flex justify-end gap-2">
             <Button

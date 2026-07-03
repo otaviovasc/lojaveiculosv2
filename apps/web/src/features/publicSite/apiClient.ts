@@ -131,7 +131,7 @@ function createPublicStorefrontHeaders(
 }
 
 async function readJson<T>(response: Response): Promise<T> {
-  return readApiJson<T>(response, { feature: "Vitrine publica" });
+  return readApiJson<T>(response, { feature: "Vitrine pública" });
 }
 
 function withQuery(route: string, params: URLSearchParams[]) {

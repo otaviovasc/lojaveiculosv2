@@ -131,7 +131,7 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
         <div className="flex items-center gap-2">
           <Eye className="h-3.5 w-3.5 text-primary" />
           <span className="text-xs font-medium text-muted-foreground">
-            Pre-visualizacao ao vivo
+            Pré-visualização ao vivo
           </span>
         </div>
 
@@ -208,7 +208,7 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
                 height: viewportMode === "desktop" ? "100%" : "80vh",
                 minHeight: "600px",
               }}
-              title="Pre-visualizacao"
+              title="Pré-visualização"
             />
           ) : null}
         </div>

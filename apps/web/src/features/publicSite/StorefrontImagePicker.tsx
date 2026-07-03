@@ -197,7 +197,7 @@ function StorefrontImageLibraryDialog({
           } catch (error) {
             const message = formatApiErrorDisplay(
               error,
-              "Nao foi possivel enviar a imagem.",
+              "Não foi possível enviar a imagem.",
             );
             setUploadStatus(message);
             throw new Error(message);
@@ -244,7 +244,7 @@ function AssetGrid({
             Nenhuma imagem ainda
           </strong>
           <span className="text-xs font-bold">
-            Envie a primeira imagem para reutilizar nos proximos blocos.
+            Envie a primeira imagem para reutilizar nos próximos blocos.
           </span>
         </div>
       </div>

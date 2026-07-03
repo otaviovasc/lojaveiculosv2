@@ -46,7 +46,7 @@ export function SectionWrapperBlock({ component, context }: BuilderBlockProps) {
       {children.length ? (
         context.renderBlocks(children)
       ) : (
-        <LayoutEmptySlot label="Secao vazia" />
+        <LayoutEmptySlot label="Seção vazia" />
       )}
     </section>
   );

@@ -112,23 +112,23 @@ export function WebsiteBuilderBrandPanel({
     <div className="space-y-8">
       <div className="space-y-4">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Informacoes
+          Informações
         </h4>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="corretorName">Nome / Titulo da Marca</Label>
+            <Label htmlFor="corretorName">Nome / Título da Marca</Label>
             <Input
               className="h-10"
               id="corretorName"
               onChange={(event) =>
                 updateConfig("corretorName", event.target.value)
               }
-              placeholder="Ex: Loja Veiculos Premium"
+              placeholder="Ex: Loja Veículos Premium"
               value={config.corretorName ?? ""}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="corretorCreci">Registro / Identificacao</Label>
+            <Label htmlFor="corretorCreci">Registro / Identificação</Label>
             <Input
               className="h-10"
               id="corretorCreci"
@@ -170,7 +170,7 @@ export function WebsiteBuilderTypographyPanel({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="headingFont">Fonte dos titulos</Label>
+        <Label htmlFor="headingFont">Fonte dos títulos</Label>
         <select
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           id="headingFont"
@@ -228,7 +228,7 @@ export function WebsiteBuilderHeroPanel({
         </h4>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="heroTitle">Titulo de Impacto</Label>
+            <Label htmlFor="heroTitle">Título de Impacto</Label>
             <Input
               className="h-10"
               id="heroTitle"
@@ -236,7 +236,7 @@ export function WebsiteBuilderHeroPanel({
               onChange={(event) =>
                 updateConfig("heroTitle", event.target.value)
               }
-              placeholder="Ex: O veiculo dos seus sonhos esta aqui"
+              placeholder="Ex: O veículo dos seus sonhos está aqui"
               value={config.heroTitle}
             />
             <span className="text-xs text-muted-foreground">
@@ -244,7 +244,7 @@ export function WebsiteBuilderHeroPanel({
             </span>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="heroSubtitle">Subtitulo ou Chamada</Label>
+            <Label htmlFor="heroSubtitle">Subtítulo ou Chamada</Label>
             <Input
               className="h-10"
               id="heroSubtitle"

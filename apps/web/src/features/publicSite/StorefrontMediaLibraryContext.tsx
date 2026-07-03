@@ -45,7 +45,7 @@ export function StorefrontMediaLibraryProvider({
       setStatusMessage(null);
     } catch (error) {
       setStatusMessage(
-        formatApiErrorDisplay(error, "Nao foi possivel carregar a galeria."),
+        formatApiErrorDisplay(error, "Não foi possível carregar a galeria."),
       );
     } finally {
       setIsLoading(false);
