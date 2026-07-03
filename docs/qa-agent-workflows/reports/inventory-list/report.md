@@ -6,7 +6,7 @@
 - Worker branch: `agent/qa/inventory-list`
 - Worktree: `.worktrees/qa-inventory-list`
 - Base branch: `agent/qa-integration`
-- Latest commit: branch head before lane edits (`a4d0176`)
+- Latest commit: `b23f5cf`
 - Artifact root: `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/`
 - Persona coverage: Seed Owner (`clerk_seed_owner`, `test-store`)
 - Viewports: desktop 1366x900, mobile 390x844
@@ -25,11 +25,11 @@
 
 ## Findings
 
-| ID       | Severity | Status | Route                   | Owner                 | Evidence                                                                                           | Reviewer |
-| -------- | -------- | ------ | ----------------------- | --------------------- | -------------------------------------------------------------------------------------------------- | -------- |
-| INVL-001 | Medium   | fixed  | `/dashboard#/inventory` | inventory-list worker | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-after-fix.png`              | pending  |
-| INVL-002 | Low      | fixed  | `/dashboard#/inventory` | inventory-list worker | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-sort-price-reset.png`       | pending  |
-| INVL-003 | Low      | fixed  | `/dashboard#/inventory` | inventory-list worker | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-columns-open-after-fix.png` | pending  |
+| ID       | Severity | Status   | Route                   | Owner                 | Evidence                                                                                           | Reviewer |
+| -------- | -------- | -------- | ----------------------- | --------------------- | -------------------------------------------------------------------------------------------------- | -------- |
+| INVL-001 | Medium   | verified | `/dashboard#/inventory` | inventory-list worker | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-after-fix.png`              | approved |
+| INVL-002 | Low      | verified | `/dashboard#/inventory` | inventory-list worker | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-sort-price-reset.png`       | approved |
+| INVL-003 | Low      | verified | `/dashboard#/inventory` | inventory-list worker | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-columns-open-after-fix.png` | approved |
 
 ## Implementation
 
@@ -49,12 +49,12 @@
 
 ## Reviewer Feedback
 
-- Discovery gate: ready for reviewer
-- Implementation gate: ready for reviewer
-- Required follow-up: reviewer should rerun the inventory list flow from the integration worktree after merge
+- Discovery gate: approved
+- Implementation gate: approved
+- Required follow-up: none
 
 ## Final State
 
-- Ready for orchestrator merge: yes, pending reviewer rerun
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`
 - Deferred findings: none
 - Notes: Evidence screenshots captured `desktop-initial.png`, `desktop-columns-open.png`, `desktop-sort-price-asc.png`, `desktop-sort-price-desc.png`, `desktop-sort-price-reset.png`, `mobile-initial.png`, `desktop-after-fix.png`, `desktop-columns-open-after-fix.png`, and `mobile-after-fix.png`.

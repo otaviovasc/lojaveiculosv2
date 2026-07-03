@@ -18,7 +18,7 @@
 | harness                | `agent/qa-harness`                | orchestrator | Hegel    | approved | Reusable docs, templates, helpers                       |
 | shared-ui              | `agent/qa/shared-ui`              | pending      | pending  | pending  | Proactive cramped text/popover/layout pass              |
 | customize-page-builder | `agent/qa/customize-page-builder` | pending      | pending  | pending  | Includes public storefront/custom page verification     |
-| inventory-list         | `agent/qa/inventory-list`         | pending      | pending  | pending  | Includes column sorting and lead heat colors            |
+| inventory-list         | `agent/qa/inventory-list`         | Goodall      | Boole    | approved | Includes column sorting and lead heat colors            |
 | vehicle-details        | `agent/qa/vehicle-details`        | pending      | pending  | pending  | All detail tabs plus public vehicle detail verification |
 | documents              | `agent/qa/documents`              | pending      | pending  | pending  | Documents center workflows                              |
 | clients                | `agent/qa/clients`                | pending      | pending  | pending  | Clients list and client detail surfaces                 |
@@ -42,11 +42,14 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 
 ## Findings
 
-| ID       | Severity | Status   | Lane    | Owner        | Route       | Evidence                                   | Decision          |
-| -------- | -------- | -------- | ------- | ------------ | ----------- | ------------------------------------------ | ----------------- |
-| HARN-001 | Medium   | verified | harness | orchestrator | `tests/e2e` | `/tmp/lojaveiculosv2-qa/agent-qa-harness/` | Reviewer approved |
-| HARN-002 | Medium   | verified | harness | orchestrator | workflow    | `docs/qa-agent-workflows/README.md`        | Reviewer approved |
-| HARN-003 | Low      | verified | harness | orchestrator | workflow    | `templates/reviewer-report.md`             | Reviewer approved |
+| ID       | Severity | Status   | Lane           | Owner                 | Route                   | Evidence                                                                                           | Decision          |
+| -------- | -------- | -------- | -------------- | --------------------- | ----------------------- | -------------------------------------------------------------------------------------------------- | ----------------- |
+| HARN-001 | Medium   | verified | harness        | orchestrator          | `tests/e2e`             | `/tmp/lojaveiculosv2-qa/agent-qa-harness/`                                                         | Reviewer approved |
+| HARN-002 | Medium   | verified | harness        | orchestrator          | workflow                | `docs/qa-agent-workflows/README.md`                                                                | Reviewer approved |
+| HARN-003 | Low      | verified | harness        | orchestrator          | workflow                | `templates/reviewer-report.md`                                                                     | Reviewer approved |
+| INVL-001 | Medium   | verified | inventory-list | inventory-list worker | `/dashboard#/inventory` | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-after-fix.png`              | Reviewer approved |
+| INVL-002 | Low      | verified | inventory-list | inventory-list worker | `/dashboard#/inventory` | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-sort-price-reset.png`       | Reviewer approved |
+| INVL-003 | Low      | verified | inventory-list | inventory-list worker | `/dashboard#/inventory` | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-columns-open-after-fix.png` | Reviewer approved |
 
 ## Validation Ledger
 
@@ -56,6 +59,8 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | Harness artifact check     | `find /tmp/lojaveiculosv2-qa/agent-qa-harness -type f`                                                                                                                                          | passed  | Canonical screenshots written      |
 | Harness formatting         | `pnpm exec prettier --check package.json docs/qa-agent-workflows tests/e2e && git diff --check`                                                                                                 | passed  | Formatting and whitespace clean    |
 | Harness `validate:commit`  | `pnpm run validate:commit`                                                                                                                                                                      | passed  | Guardrails plus design test passed |
+| Inventory focused tests    | `pnpm --filter @lojaveiculosv2/web test -- InventoryLeadBadge listCatalogModel InventoryListPage`                                                                                               | passed  | 76 files / 228 tests passed        |
+| Inventory reviewer smoke   | Headless browser spot check on `http://127.0.0.1:5174`                                                                                                                                          | passed  | Sort reset, columns overlay, text  |
 | Final integration validate | pending                                                                                                                                                                                         | pending | Run after all lanes                |
 | Final Playwright campaign  | pending                                                                                                                                                                                         | pending | Clean local seed                   |
 
