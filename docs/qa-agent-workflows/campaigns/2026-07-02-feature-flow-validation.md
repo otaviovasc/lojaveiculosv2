@@ -13,17 +13,17 @@
 
 ## Scope
 
-| Lane                   | Branch                            | Worker       | Reviewer | Status   | Notes                                                   |
-| ---------------------- | --------------------------------- | ------------ | -------- | -------- | ------------------------------------------------------- |
-| harness                | `agent/qa-harness`                | orchestrator | Hegel    | approved | Reusable docs, templates, helpers                       |
-| shared-ui              | `agent/qa/shared-ui`              | Popper       | Lorentz  | approved | Proactive cramped text/popover/layout pass              |
-| customize-page-builder | `agent/qa/customize-page-builder` | Archimedes   | Bacon    | approved | Includes public storefront/custom page verification     |
-| inventory-list         | `agent/qa/inventory-list`         | Goodall      | Boole    | approved | Includes column sorting and lead heat colors            |
-| vehicle-details        | `agent/qa/vehicle-details`        | pending      | pending  | pending  | All detail tabs plus public vehicle detail verification |
-| documents              | `agent/qa/documents`              | pending      | pending  | pending  | Documents center workflows                              |
-| clients                | `agent/qa/clients`                | pending      | pending  | pending  | Clients list and client detail surfaces                 |
-| sales                  | `agent/qa/sales`                  | pending      | pending  | pending  | Sales workflows                                         |
-| expenses               | `agent/qa/expenses`               | Mill         | Locke    | approved | Gastos workflows                                        |
+| Lane                   | Branch                            | Worker       | Reviewer  | Status   | Notes                                                   |
+| ---------------------- | --------------------------------- | ------------ | --------- | -------- | ------------------------------------------------------- |
+| harness                | `agent/qa-harness`                | orchestrator | Hegel     | approved | Reusable docs, templates, helpers                       |
+| shared-ui              | `agent/qa/shared-ui`              | Popper       | Lorentz   | approved | Proactive cramped text/popover/layout pass              |
+| customize-page-builder | `agent/qa/customize-page-builder` | Archimedes   | Bacon     | approved | Includes public storefront/custom page verification     |
+| inventory-list         | `agent/qa/inventory-list`         | Goodall      | Boole     | approved | Includes column sorting and lead heat colors            |
+| vehicle-details        | `agent/qa/vehicle-details`        | pending      | pending   | pending  | All detail tabs plus public vehicle detail verification |
+| documents              | `agent/qa/documents`              | Socrates     | Aristotle | approved | Documents center workflows                              |
+| clients                | `agent/qa/clients`                | pending      | pending   | pending  | Clients list and client detail surfaces                 |
+| sales                  | `agent/qa/sales`                  | pending      | pending   | pending  | Sales workflows                                         |
+| expenses               | `agent/qa/expenses`               | Mill         | Locke     | approved | Gastos workflows                                        |
 
 ## Integration Order
 
@@ -52,7 +52,7 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | INVL-003 | Low      | verified | inventory-list         | inventory-list worker         | `/dashboard#/inventory`                            | `/tmp/lojaveiculosv2-qa/agent-qa-inventory-list/inventory-list/desktop-columns-open-after-fix.png`                | Reviewer approved      |
 | SHUI-001 | High     | verified | shared-ui              | shared-ui worker              | `/inventory` mobile                                | `/tmp/lojaveiculosv2-qa/agent-qa-shared-ui/shared-ui/inventory-columns-mobile.png`                                | Reviewer approved      |
 | SHUI-002 | Medium   | verified | shared-ui              | shared-ui worker              | `/page-builder`                                    | `/tmp/lojaveiculosv2-qa/agent-qa-shared-ui/shared-ui/page-builder-empty-state.png`                                | Reviewer approved      |
-| SHUI-003 | Medium   | assigned | documents              | documents worker              | `/documents` mobile                                | `/tmp/lojaveiculosv2-qa/agent-qa-shared-ui/shared-ui/documents-mobile.png`                                        | Feature-lane follow-up |
+| SHUI-003 | Medium   | verified | documents              | documents worker              | `/documents` mobile                                | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/documents-mobile-after.png`                                  | Reviewer approved      |
 | SHUI-004 | Low      | assigned | sales                  | sales worker                  | `/sales` mobile                                    | `/tmp/lojaveiculosv2-qa/agent-qa-shared-ui/shared-ui/sales-mobile.png`                                            | Feature-lane follow-up |
 | CPB-001  | Medium   | verified | customize-page-builder | customize-page-builder worker | `/dashboard#/personalizar`                         | `/tmp/lojaveiculosv2-qa/agent-qa-customize-page-builder/customize-page-builder/15-personalizar-mobile-fixed.png`  | Reviewer approved      |
 | CPB-002  | Medium   | verified | customize-page-builder | customize-page-builder worker | `/dashboard#/custom-pages`                         | `/tmp/lojaveiculosv2-qa/agent-qa-customize-page-builder/customize-page-builder/16-custom-page-dialog-fixed.png`   | Reviewer approved      |
@@ -63,6 +63,13 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | EXP-004  | Low      | deferred | expenses               | shared-ui                     | `/expenses`                                        | `/tmp/lojaveiculosv2-qa/agent-qa-expenses/expenses/expenses-mobile.png`                                           | Reviewer accepted      |
 | EXP-005  | Medium   | verified | expenses               | expenses worker               | `tests/e2e`                                        | `tests/e2e/local-permissions.spec.ts`, `tests/e2e/qa-harness-smoke.spec.ts`                                       | Reviewer approved      |
 | EXP-006  | Medium   | verified | expenses               | expenses worker               | `/expenses`                                        | `apps/web/src/features/finance/financeBillsModel.test.ts`                                                         | Reviewer approved      |
+| DOC-001  | High     | verified | documents              | documents worker              | `/documents`                                       | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/upload-dialog-after.png`                                     | Reviewer approved      |
+| DOC-002  | High     | verified | documents              | documents worker              | `/download`                                        | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/document-detail-after.png`                                   | Reviewer approved      |
+| DOC-003  | Medium   | verified | documents              | documents worker              | `/templates`                                       | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/document-templates-after.png`                                | Reviewer approved      |
+| DOC-004  | Medium   | verified | documents              | documents worker              | mobile folders                                     | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/documents-mobile-after.png`                                  | Reviewer approved      |
+| DOC-005  | Medium   | verified | documents              | documents worker              | `/documents`                                       | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/documents-list-after.png`                                    | Reviewer approved      |
+| DOC-006  | Low      | verified | documents              | documents worker              | `/documents`                                       | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/documents-restricted-after.png`                              | Reviewer approved      |
+| DOC-007  | Medium   | verified | documents              | documents worker              | `/documents`                                       | `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/documents-table-tablet-after.png`                            | Reviewer approved      |
 
 ## Validation Ledger
 
@@ -80,13 +87,13 @@ requires it. Shared UI conflicts are resolved before feature branch merge.
 | Customize reviewer checks  | `git diff --check`, Prettier check on touched files, merge-tree                                                                                                                                 | passed  | Reviewer approved                  |
 | Expenses focused tests     | `pnpm --filter @lojaveiculosv2/web test -- financeBillsModel`                                                                                                                                   | passed  | 75 files / 229 tests passed        |
 | Expenses reviewer checks   | `git diff --check`, merge-tree, focused web tests                                                                                                                                               | passed  | Reviewer approved                  |
+| Documents API tests        | `pnpm --filter @lojaveiculosv2/api test -- documentOperations downloadDocument drizzleDocumentTemplates`                                                                                        | passed  | 114 files / 427 tests passed       |
+| Documents web tests        | `pnpm --filter @lojaveiculosv2/web test -- DocumentUploadDialog documentsWorkspaceModel documentDisplayModel documentTemplatePreview`                                                           | passed  | 77 files / 235 tests passed        |
 | Final integration validate | pending                                                                                                                                                                                         | pending | Run after all lanes                |
 | Final Playwright campaign  | pending                                                                                                                                                                                         | pending | Clean local seed                   |
 
 ## Deferred Follow-up
 
-- `SHUI-003`: documents mobile bottom action labels run together; assigned to
-  documents lane.
 - `SHUI-004`: sales mobile readonly long values truncate in context fields;
   assigned to sales lane.
 - `EXP-003`: full receipt file upload needs local object-storage support.

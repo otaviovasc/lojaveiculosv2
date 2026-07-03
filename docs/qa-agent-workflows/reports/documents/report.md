@@ -6,7 +6,7 @@
 - Worker branch: `agent/qa/documents`
 - Worktree: `.worktrees/qa-documents`
 - Base branch: `agent/qa-integration`
-- Latest commit: branch head (`Fix documents table responsive headers`)
+- Latest commit: `53ccc01`
 - Artifact root: `/tmp/lojaveiculosv2-qa/agent-qa-documents/documents/`
 - Persona coverage: Seed Owner; restricted local session without `documents.read`
 - Viewports: desktop `1440x900`; tablet `1100x900`; mobile `390x844`
@@ -25,15 +25,15 @@
 
 ## Findings
 
-| ID      | Severity | Status   | Route          | Owner     | Evidence                                                                | Reviewer  |
-| ------- | -------- | -------- | -------------- | --------- | ----------------------------------------------------------------------- | --------- |
-| DOC-001 | High     | verified | `/documents`   | documents | `07-upload-after-submit-before.png`, `upload-dialog-after.png`          | pending   |
-| DOC-002 | High     | verified | `/download`    | documents | `03-document-detail-before.png`, `document-detail-after.png`            | pending   |
-| DOC-003 | Medium   | verified | `/templates`   | documents | `02-document-templates-before.png`, `document-templates-after.png`      | pending   |
-| DOC-004 | Medium   | verified | mobile folders | documents | `08-documents-mobile-before.png`, `documents-mobile-after.png`          | pending   |
-| DOC-005 | Medium   | verified | `/documents`   | documents | `01-documents-list-desktop-before.png`, `documents-list-after.png`      | pending   |
-| DOC-006 | Low      | verified | `/documents`   | documents | `documents-restricted-after.png`, Playwright restricted-state assertion | pending   |
-| DOC-007 | Medium   | fixed    | `/documents`   | documents | Aristotle review; `documents-table-tablet-after.png`                    | Aristotle |
+| ID      | Severity | Status   | Route          | Owner     | Evidence                                                                | Reviewer |
+| ------- | -------- | -------- | -------------- | --------- | ----------------------------------------------------------------------- | -------- |
+| DOC-001 | High     | verified | `/documents`   | documents | `07-upload-after-submit-before.png`, `upload-dialog-after.png`          | approved |
+| DOC-002 | High     | verified | `/download`    | documents | `03-document-detail-before.png`, `document-detail-after.png`            | approved |
+| DOC-003 | Medium   | verified | `/templates`   | documents | `02-document-templates-before.png`, `document-templates-after.png`      | approved |
+| DOC-004 | Medium   | verified | mobile folders | documents | `08-documents-mobile-before.png`, `documents-mobile-after.png`          | approved |
+| DOC-005 | Medium   | verified | `/documents`   | documents | `01-documents-list-desktop-before.png`, `documents-list-after.png`      | approved |
+| DOC-006 | Low      | verified | `/documents`   | documents | `documents-restricted-after.png`, Playwright restricted-state assertion | approved |
+| DOC-007 | Medium   | verified | `/documents`   | documents | Aristotle review; `documents-table-tablet-after.png`                    | approved |
 
 ## Implementation
 
@@ -54,12 +54,12 @@
 
 ## Reviewer Feedback
 
-- Discovery gate: pending.
-- Implementation gate: DOC-007 fixed locally after Aristotle's changes-requested review.
-- Required follow-up: Aristotle should confirm DOC-007 against the updated tablet Playwright evidence.
+- Discovery gate: approved.
+- Implementation gate: approved after DOC-007 re-review.
+- Required follow-up: none.
 
 ## Final State
 
-- Ready for orchestrator merge: yes.
+- Ready for orchestrator merge: yes, merged to `agent/qa-integration`.
 - Deferred findings: deeper vehicle/client/sales/settings document surface audits beyond links visible from this document center were not expanded after the center flow fixes.
 - Notes: no real external storage/provider calls were made; local `upload.local` descriptors are treated as successful mock uploads only in the frontend helper.
