@@ -2,7 +2,7 @@ import { FileText, Loader2, Plus } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import { Button } from "@/components/ui/button";
-import { FeatureAlert } from "@/components/ui/FeatureStates";
+import { FeatureAlert, FeatureEmptyState } from "@/components/ui/FeatureStates";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isValidCustomPageSlug } from "./customPageUtils";
@@ -104,20 +104,17 @@ export function CustomPagesList({
       ) : null}
 
       {pages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <FileText className="h-8 w-8 text-muted-foreground" />
-          </div>
-          <h3 className="mb-2 text-lg font-semibold">Nenhuma pagina criada</h3>
-          <p className="mb-6 max-w-sm text-sm text-muted-foreground">
-            Crie sua primeira pagina personalizada para lancamentos, ofertas ou
-            qualquer outro conteudo.
-          </p>
-          <Button disabled={isBusy} onClick={() => setCreateOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Criar Primeira Pagina
-          </Button>
-        </div>
+        <FeatureEmptyState
+          action={
+            <Button disabled={isBusy} onClick={() => setCreateOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Primeira Pagina
+            </Button>
+          }
+          body="Crie sua primeira pagina personalizada para lancamentos, ofertas ou qualquer outro conteudo."
+          icon={FileText}
+          title="Nenhuma pagina criada"
+        />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {pages.map((page) => (

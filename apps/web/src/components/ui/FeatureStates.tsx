@@ -26,9 +26,9 @@ export function FeatureEmptyState({
     >
       <IconComponent aria-hidden="true" className="mb-4 size-14 text-muted" />
       <h3 className="text-xl font-black text-app-text">{title}</h3>
-      <p className="mt-2 text-sm font-bold text-muted max-w-md w-full">
-        {body}
-      </p>
+      <div className="mt-2 flex w-full justify-center">
+        <p className="w-full max-w-md text-sm font-bold text-muted">{body}</p>
+      </div>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );
