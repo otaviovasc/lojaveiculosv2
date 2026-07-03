@@ -80,6 +80,14 @@ export function createSalesFeature(options: CreateSalesFeatureOptions = {}) {
     }),
   );
 
+  feature.delete("/:saleId", async (context) =>
+    handleSales(context, async () => {
+      const serviceContext = await createContext(context);
+      await services.delete(serviceContext, context.req.param("saleId"));
+      return new Response(null, { status: 204 });
+    }),
+  );
+
   for (const [path, status] of [
     ["reserve", "pending"],
     ["close", "closed"],

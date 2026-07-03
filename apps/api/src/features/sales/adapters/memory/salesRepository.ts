@@ -9,6 +9,7 @@ import type {
   TransitionSaleInput,
   UpdateSaleDraftInput,
 } from "../../../../domains/sales/ports/salesRepository.js";
+import { SaleDraftDeletionStateError } from "../../../../domains/sales/services/SalesService/serviceSupport.js";
 
 export function createMemorySalesRepository(): SalesRepository {
   const sales = new Map<string, SaleRecord>();
@@ -42,6 +43,17 @@ export function createMemorySalesRepository(): SalesRepository {
       };
       sales.set(sale.id, sale);
       return sale;
+    },
+    async deleteDraft(scope, saleId) {
+      const current = sales.get(saleId);
+      if (!current || !matchesScope(current, scope)) {
+        throw new Error(`Sale not found: ${saleId}`);
+      }
+      if (current.status !== "draft") {
+        throw new SaleDraftDeletionStateError(current.status);
+      }
+      sales.delete(saleId);
+      return current;
     },
     async findById(scope, saleId) {
       const sale = sales.get(saleId);

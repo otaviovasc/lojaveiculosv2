@@ -27,6 +27,12 @@ export type SaleUnitOption = {
   listingTitle: string;
   priceCents: number | null;
   unitLabel: string;
+  primaryMediaUrl: string | null;
+  plate: string | null;
+  colorName: string | null;
+  manufactureYear: number | null;
+  modelYear: number | null;
+  mileageKm: number | null;
 };
 
 export type SaleSellerOption = {
@@ -173,6 +179,12 @@ function toUnitOptions(item: InventoryListingSummary): SaleUnitOption[] {
         listingTitle: item.listing.title,
         priceCents: item.listing.priceCents,
         unitLabel,
+        primaryMediaUrl: item.primaryMediaUrl ?? null,
+        plate: unit.plate || item.listing.plate || null,
+        colorName: unit.colorName ?? null,
+        manufactureYear: item.listing.manufactureYear ?? null,
+        modelYear: item.listing.modelYear ?? null,
+        mileageKm: item.listing.mileageKm ?? null,
       };
     });
 }

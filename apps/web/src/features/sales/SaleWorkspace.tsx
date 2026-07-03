@@ -1,13 +1,24 @@
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
-import { Check, HelpCircle, Save } from "lucide-react";
 import {
-  ContextSection,
-  DocumentsSection,
-  PaymentsSection,
-  TermsSection,
-} from "./SaleWorkspaceParts";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
+import {
+  Check,
+  HelpCircle,
+  Save,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+import { ContextSection } from "./SaleContextSection";
+import { ServicesSection } from "./SaleServicesSection";
+import { DocumentsSection } from "./SaleDocumentsSection";
+import { FinalizationSection } from "./SaleFinalizationSection";
 import { ReviewSection } from "./SaleReviewSection";
+import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { StickySaleSummary } from "./SaleSummaryPanel";
 import { toDraftInput } from "./salesModel";
 import {
@@ -24,6 +35,7 @@ export function SaleWorkspace({
   onReserve,
   onSave,
   sale,
+  onBack,
 }: {
   contextMessage?: string | null;
   contextOptions?: SaleContextOptions;
@@ -32,22 +44,40 @@ export function SaleWorkspace({
   onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onSave: (sale: SaleRecord) => Promise<SaleRecord>;
   sale: SaleRecord | null;
+  onBack?: () => void;
 }) {
   const [draft, setDraft] = useState<SaleRecord | null>(sale);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const autosaveTimerRef = useRef<number | undefined>(undefined);
+  const draftRef = useRef<SaleRecord | null>(sale);
   const lastSavedRef = useRef("");
 
   useEffect(() => {
+    const previousDraftId = draftRef.current?.id;
     setDraft(sale);
+    draftRef.current = sale;
     lastSavedRef.current = sale ? serializeSale(sale) : "";
-    // Reset step to 0 when a new sale is selected
-    if (sale?.id !== draft?.id) {
+    if (sale?.id !== previousDraftId) {
       setCurrentStep(0);
     }
   }, [sale]);
+
+  const persistDraft = useCallback(
+    async (saleToSave: SaleRecord | null) => {
+      if (!saleToSave || saleToSave.status !== "draft") return saleToSave;
+      const serialized = serializeSale(saleToSave);
+      if (serialized === lastSavedRef.current) return saleToSave;
+      clearAutosaveTimer(autosaveTimerRef);
+      const saved = await onSave(saleToSave);
+      lastSavedRef.current = serializeSale(saved);
+      setDraft(saved);
+      draftRef.current = saved;
+      return saved;
+    },
+    [onSave],
+  );
 
   useEffect(() => {
     if (!draft) return;
@@ -57,9 +87,8 @@ export function SaleWorkspace({
     setIsSaving(true);
     clearAutosaveTimer(autosaveTimerRef);
     autosaveTimerRef.current = window.setTimeout(() => {
-      void onSave(draft)
+      void persistDraft(draft)
         .then(() => {
-          lastSavedRef.current = serialized;
           setMessage("Rascunho salvo automaticamente");
         })
         .catch((error) => setMessage(errorMessage(error)))
@@ -69,7 +98,7 @@ export function SaleWorkspace({
         });
     }, 650);
     return () => clearAutosaveTimer(autosaveTimerRef);
-  }, [draft, onSave]);
+  }, [draft, persistDraft]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -82,11 +111,34 @@ export function SaleWorkspace({
   }, [message]);
 
   const update = (updater: (sale: SaleRecord) => SaleRecord) => {
-    setDraft((current) => (current ? updater(current) : current));
+    setDraft((current) => {
+      const next = current ? updater(current) : current;
+      draftRef.current = next;
+      return next;
+    });
+  };
+
+  const handleBack = async () => {
+    if (!onBack) return;
+    clearAutosaveTimer(autosaveTimerRef);
+    setIsSaving(true);
+    try {
+      await persistDraft(draftRef.current);
+      onBack();
+    } catch (error) {
+      setMessage(errorMessage(error));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const steps = useMemo(
-    () => ["Contexto", "Valores", "Pagamentos", "Documentos", "Revisão"],
+    () => [
+      "Veículo & Comprador",
+      "Valores, Pagos & Serviços",
+      "Documentos & Validação",
+      "Formalização & Download",
+    ],
     [],
   );
 
@@ -96,13 +148,22 @@ export function SaleWorkspace({
         <div className="size-16 rounded-full bg-app-elevated flex items-center justify-center text-muted mb-4 border border-line/45">
           <HelpCircle className="size-8 text-muted/60" />
         </div>
-        <h3 className="text-lg font-black text-app-text">
+        <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
           Nenhuma venda selecionada
         </h3>
         <p className="mt-2 text-xs font-bold text-muted max-w-sm w-full leading-relaxed">
-          Selecione um rascunho de venda no pipeline ao lado ou inicie um novo
-          preenchimento clicando no botão de adição.
+          Selecione um rascunho de venda no pipeline ou inicie um novo
+          preenchimento clicando no botão.
         </p>
+        {onBack && (
+          <button
+            onClick={() => void handleBack()}
+            className="sales-secondary-button mt-4 text-xs"
+            type="button"
+          >
+            Voltar para Lista de Vendas
+          </button>
+        )}
       </section>
     );
   }
@@ -113,7 +174,8 @@ export function SaleWorkspace({
     clearAutosaveTimer(autosaveTimerRef);
     setIsSaving(true);
     try {
-      const saved = await onSave(draft);
+      const saved = await persistDraft(draft);
+      if (!saved) return;
       const transitioned = await action(saved);
       lastSavedRef.current = serializeSale(transitioned ?? saved);
       setMessage("Status da venda atualizado");
@@ -127,17 +189,29 @@ export function SaleWorkspace({
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] items-start">
       <div className="flex flex-col gap-4">
-        {/* Wizard Controls Panel */}
-        <div className="sales-glass-panel p-5 bg-panel border border-line">
+        <div className="sales-glass-panel p-5 bg-panel border border-line flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-black text-app-text leading-tight">
-                Fluxo de Formalização
-              </h2>
-              <p className="text-xs font-bold text-muted mt-1">
-                Ref: {draft.id.slice(0, 8)} · Revisão {draft.revision}
-              </p>
+            <div className="flex items-center gap-3">
+              {onBack && (
+                <button
+                  type="button"
+                  onClick={() => void handleBack()}
+                  className="sales-secondary-button !min-h-9 !h-9 !py-0 !px-3 text-xs flex items-center gap-1.5 hover:bg-app-elevated/80"
+                >
+                  <ChevronLeft className="size-4 text-accent" />
+                  <span>Voltar</span>
+                </button>
+              )}
+              <div>
+                <h2 className="text-base font-black text-app-text uppercase tracking-wider leading-tight">
+                  Formalização de Venda
+                </h2>
+                <p className="text-xs font-bold text-muted mt-0.5">
+                  Revisão {draft.revision}
+                </p>
+              </div>
             </div>
+
             <div className="flex items-center gap-1.5 text-xs font-black text-muted bg-app-elevated/60 px-3 py-1.5 rounded-full border border-line">
               <Save
                 className={
@@ -177,13 +251,17 @@ export function SaleWorkspace({
         </div>
 
         {message ? (
-          <div className="rounded-2xl border border-line bg-accent-soft px-4 py-3 text-xs font-black text-accent-strong flex items-center gap-2">
-            <span className="size-1.5 rounded-full bg-accent-strong animate-ping" />
-            <span>{message}</span>
+          <div className="fixed bottom-6 right-6 z-[9999] rounded-2xl border border-line bg-panel p-4 shadow-xl flex items-center gap-3 max-w-sm">
+            <span className="size-2 rounded-full bg-accent animate-ping" />
+            <div className="flex flex-col gap-0.5 text-left">
+              <span className="text-xs font-black text-muted uppercase tracking-wider">
+                Formalização
+              </span>
+              <span className="text-xs font-bold text-app-text">{message}</span>
+            </div>
           </div>
         ) : null}
 
-        {/* Wizard Step Forms */}
         <div className="flex flex-col gap-4">
           {currentStep === 0 && (
             <ContextSection
@@ -193,17 +271,20 @@ export function SaleWorkspace({
               update={update}
             />
           )}
-          {currentStep === 1 && <TermsSection sale={draft} update={update} />}
-          {currentStep === 2 && (
-            <PaymentsSection sale={draft} update={update} />
+          {currentStep === 1 && (
+            <ServicesSection sale={draft} update={update} />
           )}
-          {currentStep === 3 && (
+          {currentStep === 2 && (
             <DocumentsSection sale={draft} update={update} />
           )}
-          {currentStep === 4 && <ReviewSection sale={draft} />}
+          {currentStep === 3 && (
+            <div className="flex flex-col gap-4">
+              <ReviewSection sale={draft} />
+              <FinalizationSection sale={draft} />
+            </div>
+          )}
         </div>
 
-        {/* Navigation Buttons Row */}
         <div className="sales-glass-panel p-4 bg-panel border border-line flex justify-between items-center">
           <button
             className="sales-secondary-button"
@@ -217,19 +298,26 @@ export function SaleWorkspace({
           >
             Voltar
           </button>
+
           {currentStep < steps.length - 1 ? (
             <button
-              className="sales-primary-button"
+              className="sales-primary-button flex items-center gap-1"
               onClick={() => setCurrentStep((prev) => prev + 1)}
               type="button"
             >
-              Avançar
+              <div className="gloss-overlay" />
+              <span>Avançar</span>
+              <ChevronRight className="size-4" />
             </button>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-3 py-1.5 rounded-xl uppercase tracking-wider">
-              <Check className="size-4" />
-              Revisão Finalizada
-            </span>
+            <button
+              className="sales-secondary-button border-emerald-500/30 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40"
+              onClick={() => void handleBack()}
+              type="button"
+            >
+              <Check className="size-4 shrink-0" />
+              <span>Finalizar e Ver Lista</span>
+            </button>
           )}
         </div>
       </div>

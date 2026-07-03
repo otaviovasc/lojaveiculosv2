@@ -27,7 +27,9 @@ export type VehicleUnitAcquisitionInput = {
   commissionTiming?: VehicleAcquisitionCommissionTiming | undefined;
   customChannelLabel?: string | null | undefined;
   leadId?: string | null | undefined;
+  metadata?: Record<string, unknown> | undefined;
   notes?: string | null | undefined;
+  sourceSnapshot?: Record<string, unknown> | undefined;
   supplierId?: string | null | undefined;
   unitId: string;
 };
@@ -122,9 +124,9 @@ function acquisitionRecord(
     commissionTiming: input.commissionTiming ?? "closed",
     customChannelLabel: input.customChannelLabel ?? null,
     leadId: input.leadId ?? null,
-    metadata: {},
+    metadata: input.metadata ?? {},
     notes: input.notes ?? null,
-    sourceSnapshot: {},
+    sourceSnapshot: input.sourceSnapshot ?? {},
     supplierId: input.supplierId ?? null,
     unitId: input.unitId,
   };

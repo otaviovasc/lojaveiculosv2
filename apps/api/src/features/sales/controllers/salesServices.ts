@@ -6,6 +6,7 @@ import {
   type DrizzleVehicleInventoryClient,
 } from "../../../infrastructure/db/vehicleInventory/drizzleVehicleInventoryRepository.js";
 import { createSaleDraft } from "../../../domains/sales/services/SalesService/createSaleDraft.js";
+import { deleteSaleDraft } from "../../../domains/sales/services/SalesService/deleteSaleDraft.js";
 import { listSales } from "../../../domains/sales/services/SalesService/listSales.js";
 import { updateSaleDraft } from "../../../domains/sales/services/SalesService/updateSaleDraft.js";
 import type {
@@ -33,6 +34,7 @@ export type SalesServices = {
     context: ServiceContext,
     input: SaveSaleDraftInput,
   ) => Promise<SaleRecord>;
+  delete: (context: ServiceContext, saleId: string) => Promise<SaleRecord>;
   list: (
     context: ServiceContext,
     input: Omit<ListSalesInput, "storeId" | "tenantId">,
@@ -84,6 +86,10 @@ export function createSalesServices(
     createDraft: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         createSaleDraft(context, input, txPorts),
+      ),
+    delete: (context, saleId) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        deleteSaleDraft(context, saleId, txPorts),
       ),
     list: (context, input) => listSales(context, input, ports),
     transition: (context, input) =>

@@ -194,6 +194,7 @@ export function StickySaleSummary({
               }}
               type="button"
             >
+              <div className="gloss-overlay" />
               Fechar Venda
             </button>
 

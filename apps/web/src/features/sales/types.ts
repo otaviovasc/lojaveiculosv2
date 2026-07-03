@@ -85,4 +85,7 @@ export type SaleStartContext = {
   priceCents?: number;
   unitId?: string;
   unitLabel?: string;
+  plate?: string;
+  colorName?: string;
+  primaryMediaUrl?: string;
 };

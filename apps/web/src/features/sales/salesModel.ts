@@ -56,6 +56,9 @@ export function createDraftFromContext(
     listingSnapshot: {
       title: context.listingTitle ?? "",
       unitLabel: context.unitLabel ?? "",
+      plate: context.plate ?? null,
+      colorName: context.colorName ?? null,
+      primaryMediaUrl: context.primaryMediaUrl ?? null,
     },
     payments: [],
     salePriceCents: context.priceCents ?? null,
@@ -77,6 +80,9 @@ export function parseSaleStartContext(): SaleStartContext {
   setParam(context, "listingTitle", params.get("listingTitle"));
   setParam(context, "unitId", params.get("unitId"));
   setParam(context, "unitLabel", params.get("unitLabel"));
+  setParam(context, "plate", params.get("plate") || params.get("placa"));
+  setParam(context, "colorName", params.get("colorName") || params.get("cor"));
+  setParam(context, "primaryMediaUrl", params.get("primaryMediaUrl"));
   const priceCents = readNumber(params.get("priceCents"));
   if (priceCents !== undefined) context.priceCents = priceCents;
   return context;

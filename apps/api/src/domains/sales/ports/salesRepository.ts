@@ -95,6 +95,7 @@ export type SalesRepository = {
     scope: SaleScope,
     input: SaveSaleDraftInput,
   ) => Promise<SaleRecord>;
+  deleteDraft: (scope: SaleScope, saleId: string) => Promise<SaleRecord>;
   findById: (scope: SaleScope, saleId: string) => Promise<SaleRecord | null>;
   list: (input: ListSalesInput) => Promise<readonly SaleRecord[]>;
   transition: (input: TransitionSaleInput) => Promise<SaleRecord>;

@@ -12,6 +12,7 @@ describe("sales transaction composition", () => {
     (services: ReturnType<typeof createSalesServices>) => Promise<unknown>,
   ][] = [
     ["createDraft", (services) => services.createDraft(context(), draft())],
+    ["delete", (services) => services.delete(context(), "sale_1")],
     [
       "transition",
       (services) =>

@@ -112,6 +112,9 @@ describe("sales controller", () => {
       createDraft: async () => {
         throw new SaleReferenceError("lead");
       },
+      delete: async () => {
+        throw new Error("Unexpected delete call.");
+      },
       list: async () => [],
       transition: async () => {
         throw new Error("Unexpected transition call.");

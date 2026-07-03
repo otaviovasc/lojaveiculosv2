@@ -49,6 +49,15 @@ export class SaleTransitionStateError extends Error {
   }
 }
 
+export class SaleDraftDeletionStateError extends Error {
+  constructor(readonly currentStatus: SaleRecord["status"]) {
+    super(
+      `Sale draft can only be deleted while draft. Current status: ${currentStatus}.`,
+    );
+    this.name = "SaleDraftDeletionStateError";
+  }
+}
+
 export class SaleReferenceError extends Error {
   constructor(readonly reference: "lead" | "vehicle_unit" | "unknown") {
     super(referenceMessage(reference));

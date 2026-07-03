@@ -1,4 +1,4 @@
-import { readApiJson } from "../../lib/apiErrors";
+import { readApiJson, readApiVoid } from "../../lib/apiErrors";
 import { createSalesHeaders, salesRoutes } from "./apiRoutes";
 import type {
   SaleDraftInput,
@@ -11,6 +11,7 @@ export type SalesApi = {
   cancel: (saleId: string, reason?: string | null) => Promise<SaleRecord>;
   close: (saleId: string, input: TransitionInput) => Promise<SaleRecord>;
   createDraft: (input: SaleDraftInput) => Promise<SaleRecord>;
+  delete: (saleId: string) => Promise<void>;
   list: (query?: SalesListQuery) => Promise<readonly SaleRecord[]>;
   reserve: (saleId: string, input: TransitionInput) => Promise<SaleRecord>;
   updateDraft: (saleId: string, input: SaleDraftInput) => Promise<SaleRecord>;
@@ -54,6 +55,11 @@ export function createSalesApi({
       postJson<SaleRecord>(salesRoutes.close(saleId, baseUrl), input),
     createDraft: (input) =>
       postJson<SaleRecord>(salesRoutes.drafts(baseUrl), input),
+    delete: (saleId) =>
+      fetch(salesRoutes.delete(saleId, baseUrl), {
+        headers: createSalesHeaders(auth),
+        method: "DELETE",
+      }).then(readSalesVoid),
     list: (query = {}) =>
       fetch(salesRoutes.list(baseUrl, query), {
         headers: createSalesHeaders(auth),
@@ -69,6 +75,10 @@ export function createSalesApi({
 
 async function readSalesJson<T>(response: Response): Promise<T> {
   return readApiJson<T>(response, { feature: "Vendas" });
+}
+
+async function readSalesVoid(response: Response): Promise<void> {
+  return readApiVoid(response, { feature: "Vendas" });
 }
 
 function cleanJson(value: unknown): unknown {

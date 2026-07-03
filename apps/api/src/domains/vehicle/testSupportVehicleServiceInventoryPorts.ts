@@ -145,11 +145,12 @@ function createUnitRepository(
 ): VehicleUnitRepository {
   return {
     create: vi.fn(async (record: CreateVehicleUnitRecord) => {
+      const id = nextUnitId(units, nextSequence);
       const unit: VehicleUnit = {
         ...record,
         colorName: record.colorName ?? null,
         createdAt: testNow,
-        id: `unit_${nextSequence()}`,
+        id,
         updatedAt: testNow,
       };
       units.set(unit.id, unit);
@@ -178,6 +179,17 @@ function createUnitRepository(
       return updated;
     }),
   };
+}
+
+function nextUnitId(
+  units: Map<string, VehicleUnit>,
+  nextSequence: () => number,
+) {
+  let id = `unit_${nextSequence()}`;
+  while (units.has(id)) {
+    id = `unit_${nextSequence()}`;
+  }
+  return id;
 }
 
 function createMediaRepository(

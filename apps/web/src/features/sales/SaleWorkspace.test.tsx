@@ -37,7 +37,7 @@ describe("SaleWorkspace", () => {
     );
 
     await user.type(
-      screen.getByLabelText("Telefone do Comprador"),
+      screen.getByPlaceholderText("Ex: (11) 99999-9999"),
       "(11) 90000-0000",
     );
     await user.click(screen.getByRole("button", { name: "Reservar Veículo" }));
@@ -85,7 +85,7 @@ describe("SaleWorkspace", () => {
 
     expect(container.querySelector("select")).toBeNull();
     expect(
-      screen.getByText("Unidade vinculada ao rascunho"),
+      screen.getByText("Nenhum veículo selecionado ainda."),
     ).toBeInTheDocument();
     expect(screen.queryByText(/unit_sensitive/i)).not.toBeInTheDocument();
   });

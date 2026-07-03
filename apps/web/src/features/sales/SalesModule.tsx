@@ -12,7 +12,7 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { useOptionalAccountSession } from "../account/accountSession";
 import { createSalesApi, type SalesApi } from "./apiClient";
 import { createSalesApiOptions } from "./runtimeApi";
-import { SalesPipeline } from "./SalesPipeline";
+import { SalesList } from "./SalesList";
 import { SaleWorkspace } from "./SaleWorkspace";
 import {
   createDraftFromContext,
@@ -35,6 +35,7 @@ export function SalesModule({ api }: { api?: SalesApi }) {
   );
   const [sales, setSales] = useState<readonly SaleRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "workspace">("list");
   const [filter, setFilter] = useState<SaleStatus | "all">("all");
   const [message, setMessage] = useState<string | null>(null);
   const startContextUsed = useRef(false);
@@ -83,7 +84,6 @@ export function SalesModule({ api }: { api?: SalesApi }) {
     try {
       const result = await runtimeApi.list({ status: filter });
       setSales(result);
-      setActiveId((current) => current ?? result[0]?.id ?? null);
     } catch (error) {
       setMessage(errorMessage(error));
     }
@@ -91,7 +91,11 @@ export function SalesModule({ api }: { api?: SalesApi }) {
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    if (message === "Rascunho criado" || message === "Venda atualizada") {
+    if (
+      message === "Rascunho criado" ||
+      message === "Venda atualizada" ||
+      message?.includes("excluída")
+    ) {
       timer = setTimeout(() => setMessage(null), 3000);
     }
     return () => {
@@ -112,6 +116,7 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         );
         setSales((current) => [sale, ...current]);
         setActiveId(sale.id);
+        setViewMode("workspace");
         setMessage("Rascunho criado");
       } catch (error) {
         setMessage(errorMessage(error));
@@ -143,6 +148,23 @@ export function SalesModule({ api }: { api?: SalesApi }) {
     [runtimeApi],
   );
 
+  const handleDelete = useCallback(
+    async (saleId: string) => {
+      if (!runtimeApi) return;
+      try {
+        await runtimeApi.delete(saleId);
+        setSales((current) => current.filter((sale) => sale.id !== saleId));
+        if (activeId === saleId) {
+          setActiveId(null);
+        }
+        setMessage("Venda excluída com sucesso");
+      } catch (error) {
+        setMessage(errorMessage(error));
+      }
+    },
+    [activeId, runtimeApi],
+  );
+
   const transition = useCallback(
     async (sale: SaleRecord, action: "cancel" | "close" | "reserve") => {
       if (!runtimeApi) return;
@@ -159,12 +181,6 @@ export function SalesModule({ api }: { api?: SalesApi }) {
     [runtimeApi],
   );
 
-  const visibleSales = useMemo(
-    () =>
-      filter === "all" ? sales : sales.filter((sale) => sale.status === filter),
-    [filter, sales],
-  );
-
   const closedTotal = useMemo(() => {
     return sales
       .filter((s) => s.status === "closed")
@@ -173,7 +189,7 @@ export function SalesModule({ api }: { api?: SalesApi }) {
 
   return (
     <FeaturePageShell mainClassName="flex flex-col gap-6">
-      <FeaturePageHeader eyebrow="Comercial" title="Workspace de Vendas" />
+      <FeaturePageHeader eyebrow="Comercial" title="Formalização de Vendas" />
 
       <FeatureKpiStrip ariaLabel="Resumo de vendas">
         <FeatureKpiCard
@@ -209,15 +225,19 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[22rem_minmax(0,1fr)]">
-        <SalesPipeline
-          activeId={activeId}
-          filter={filter}
+      {viewMode === "list" ? (
+        <SalesList
+          sales={sales}
+          onEdit={(sale) => {
+            setActiveId(sale.id);
+            setViewMode("workspace");
+          }}
+          onDelete={(saleId) => {
+            void handleDelete(saleId);
+          }}
           onCreate={() => void createDraft({})}
-          onFilterChange={setFilter}
-          onSelect={(sale) => setActiveId(sale.id)}
-          sales={visibleSales}
         />
+      ) : (
         <SaleWorkspace
           contextMessage={contextMessage(contextOptions)}
           contextOptions={contextOptions.options}
@@ -226,8 +246,9 @@ export function SalesModule({ api }: { api?: SalesApi }) {
           onReserve={(sale) => transition(sale, "reserve")}
           onSave={saveSale}
           sale={selectedSale}
+          onBack={() => setViewMode("list")}
         />
-      </div>
+      )}
     </FeaturePageShell>
   );
 }

@@ -35,6 +35,7 @@ import type {
   VehicleSalePayment,
   VehicleSaleStatus,
 } from "../../../domains/vehicle/ports/vehicleSalesRepository.js";
+import { registerTradeInAcquisition } from "./salesTradeInAcquisition.js";
 
 export type SalesWorkflowPorts = SalesServicePorts & {
   vehiclePorts: VehicleInventoryServicePorts;
@@ -131,6 +132,7 @@ async function completeWorkflowForTransition(
     sale: workflowSale,
     unit,
   });
+  await registerTradeInAcquisition(context, sale, ports.vehiclePorts);
 }
 
 function toVehicleSaleBundle(

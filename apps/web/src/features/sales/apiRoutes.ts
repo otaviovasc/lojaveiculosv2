@@ -10,6 +10,8 @@ export const salesRoutes = {
     salesEndpoint(baseUrl, `/${saleId}/cancel`),
   close: (saleId: string, baseUrl?: string) =>
     salesEndpoint(baseUrl, `/${saleId}/close`),
+  delete: (saleId: string, baseUrl?: string) =>
+    salesEndpoint(baseUrl, `/${saleId}`),
   draft: (saleId: string, baseUrl?: string) =>
     salesEndpoint(baseUrl, `/${saleId}`),
   drafts: (baseUrl?: string) => salesEndpoint(baseUrl, "/drafts"),

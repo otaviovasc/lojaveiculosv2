@@ -16,6 +16,7 @@ import {
   toUpdateSale,
   type PaymentRow,
 } from "./drizzleSalesMappers.js";
+import { deleteSalesDraft } from "./drizzleSalesDelete.js";
 
 export type DrizzleSalesClient = PostgresJsDatabase<typeof schema>;
 
@@ -37,6 +38,13 @@ export function createDrizzleSalesRepository(
           input.payments,
         );
         return toSaleRecord(row, payments);
+      } catch (error) {
+        throw mapSalesRepositoryError(error);
+      }
+    },
+    async deleteDraft(scope, saleId) {
+      try {
+        return await deleteSalesDraft(db, scope, saleId);
       } catch (error) {
         throw mapSalesRepositoryError(error);
       }

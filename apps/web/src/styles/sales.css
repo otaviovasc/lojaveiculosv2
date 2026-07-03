@@ -204,14 +204,19 @@
   background: var(--color-accent);
   color: var(--color-inverse);
   border: none;
-  box-shadow: 0 4px 14px rgba(225, 31, 38, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
 }
 .sales-primary-button:hover {
   background: var(--color-accent-strong);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(225, 31, 38, 0.28);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+.sales-primary-button:hover .gloss-overlay {
+  left: 130%;
 }
 .sales-primary-button:active {
   transform: translateY(0);

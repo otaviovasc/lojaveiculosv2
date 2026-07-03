@@ -8,6 +8,7 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
+  SaleDraftDeletionStateError,
   SaleNotFoundError,
   SaleReadinessError,
   SaleReferenceError,
@@ -70,6 +71,15 @@ export async function handleSales(
           currentStatus: error.currentStatus,
           nextStatus: error.nextStatus,
         },
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+    if (error instanceof SaleDraftDeletionStateError) {
+      return jsonApiError(context, {
+        code: "SALE_DRAFT_DELETE_STATE_ERROR",
+        details: { currentStatus: error.currentStatus },
         error,
         message: error.message,
         status: 409,
