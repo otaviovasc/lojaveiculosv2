@@ -60,6 +60,8 @@ export function createDrizzleCrmRepository(
           buyerName: input.buyerName ?? null,
           buyerPhone: input.buyerPhone ?? null,
           metadata: input.metadata ?? {},
+          pipelineId: input.pipelineId ?? null,
+          pipelineStageId: input.pipelineStageId ?? null,
           source: input.source,
           storeId: input.storeId,
           tenantId: input.tenantId,
@@ -201,6 +203,12 @@ export function createDrizzleCrmRepository(
             ? { buyerPhone: input.buyerPhone }
             : {}),
           ...(input.metadata ? { metadata: input.metadata } : {}),
+          ...(input.pipelineId !== undefined
+            ? { pipelineId: input.pipelineId }
+            : {}),
+          ...(input.pipelineStageId !== undefined
+            ? { pipelineStageId: input.pipelineStageId }
+            : {}),
           ...(input.status ? { status: input.status } : {}),
           ...(input.status ? { lastInteractionAt: new Date() } : {}),
         })

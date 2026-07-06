@@ -68,4 +68,39 @@ describe("createProductCrmApi", () => {
       priority: 1,
     });
   });
+
+  it("uses V2 pipeline routes for pipeline config and lead moves", async () => {
+    const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input: String(input) });
+      const body = String(input).endsWith("/pipelines")
+        ? { pipelines: [] }
+        : { id: "lead-1" };
+      return new Response(JSON.stringify(body), {
+        headers: { "Content-Type": "application/json" },
+        status: 200,
+      });
+    };
+    const api = createProductCrmApi({
+      baseUrl: "/api/v1",
+      fetch: fakeFetch,
+    });
+
+    await api.listPipelines();
+    await api.moveLeadPipelineStage("lead-1", {
+      pipelineStageId: "22222222-2222-4222-8222-222222222222",
+    });
+
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/crm/pipelines",
+      init: { method: "GET" },
+    });
+    expect(calls[1]).toMatchObject({
+      input: "/api/v1/crm/leads/lead-1/pipeline-stage",
+      init: { method: "PATCH" },
+    });
+    expect(JSON.parse(String(calls[1]?.init?.body))).toEqual({
+      pipelineStageId: "22222222-2222-4222-8222-222222222222",
+    });
+  });
 });

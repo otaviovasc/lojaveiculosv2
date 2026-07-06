@@ -3,17 +3,9 @@ import type { z } from "zod";
 import {
   createHttpServiceContext,
   HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
-  HttpContextRequestPolicyError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
-import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
-import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import {
-  CrmLeadNotFoundError,
-  CrmScopeError,
-} from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import {
   cleanCreateActivityInput,
   cleanCreateLeadInput,
@@ -27,6 +19,11 @@ import {
   listLeadsQuerySchema,
   updateLeadSchema,
 } from "./crm.controller.schemas.js";
+import { registerCrmPipelineRoutes } from "./crm.pipeline.routes.js";
+import {
+  CrmRequestValidationError,
+  handleCrm,
+} from "./crm.controller.errors.js";
 import { crmServices, type CrmServices } from "./crmServices.js";
 import { registerCrmWhatsappRoutes } from "./crm.whatsapp.controller.js";
 
@@ -73,6 +70,13 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
       return context.json(lead, 201);
     }),
   );
+
+  registerCrmPipelineRoutes(crmFeature, {
+    createContext,
+    handleCrm,
+    parseJson,
+    services,
+  });
 
   crmFeature.patch("/leads/:leadId", async (context) =>
     handleCrm(context, async () => {
@@ -142,7 +146,7 @@ async function createProtectedServiceContext(
   return serviceContext;
 }
 
-async function parseJson<Schema extends z.ZodType>(
+export async function parseJson<Schema extends z.ZodType>(
   context: Context,
   schema: Schema,
 ): Promise<z.infer<Schema>> {
@@ -160,84 +164,4 @@ async function parseJson<Schema extends z.ZodType>(
   }
 
   return parsed.data;
-}
-
-async function handleCrm(
-  context: Context,
-  action: () => Promise<Response>,
-): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    if (error instanceof CrmRequestValidationError) {
-      return jsonApiError(context, {
-        code: "CRM_REQUEST_VALIDATION_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
-
-    if (error instanceof HttpContextAuthenticationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHENTICATION_REQUIRED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-
-    if (
-      error instanceof AuthorizationError ||
-      error instanceof HttpContextAuthorizationError
-    ) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-
-    if (error instanceof HttpContextRequestPolicyError) {
-      return jsonApiError(context, {
-        code: "HTTP_REQUEST_POLICY_ERROR",
-        error,
-        message: error.message,
-        status: error.statusCode,
-      });
-    }
-
-    if (error instanceof CrmLeadNotFoundError) {
-      return jsonApiError(context, {
-        code: "CRM_LEAD_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
-
-    if (error instanceof CrmScopeError) {
-      return jsonApiError(context, {
-        code: "CRM_SCOPE_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
-
-    return jsonApiError(context, {
-      code: "INTERNAL_SERVER_ERROR",
-      error,
-      message: "Internal server error.",
-      status: 500,
-    });
-  }
-}
-
-export class CrmRequestValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "CrmRequestValidationError";
-  }
 }

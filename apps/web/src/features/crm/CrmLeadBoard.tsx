@@ -1,6 +1,7 @@
 import { LeadTableView } from "./CrmLeadTable";
 import { LeadKanbanView, LeadListView } from "./CrmLeadViews";
-import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
+import type { CrmViewMode } from "./crmPipelineModels";
+import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
 
 export function LeadBoardByMode({
   activeLeadId,
@@ -8,7 +9,13 @@ export function LeadBoardByMode({
   onUpdateStatus,
   viewLeads,
   viewMode,
-}: CrmPipelineViewProps) {
+}: {
+  activeLeadId: string | null;
+  onSelectLead: (leadId: string | null) => void;
+  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  viewLeads: ProductCrmLead[];
+  viewMode: CrmViewMode;
+}) {
   if (viewMode === "list") {
     return (
       <LeadListView

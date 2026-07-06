@@ -13,6 +13,7 @@ import {
 import { stores, tenants, users } from "./identity.js";
 import { vehicleListings, vehicleUnits } from "./inventory.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
+import { crmPipelines, crmPipelineStages } from "./crmPipeline.js";
 
 export const leadStatus = pgEnum("lead_status", [
   "new",
@@ -60,6 +61,10 @@ export const leads = pgTable(
     buyerPhone: varchar("buyer_phone", { length: 40 }),
     lastInteractionAt: timestamp("last_interaction_at", { withTimezone: true }),
     metadata: jsonb("metadata").notNull().default({}),
+    pipelineId: uuid("pipeline_id").references(() => crmPipelines.id),
+    pipelineStageId: uuid("pipeline_stage_id").references(
+      () => crmPipelineStages.id,
+    ),
     source: leadSource("source").notNull(),
     status: leadStatus("status").notNull().default("new"),
     storeId: uuid("store_id")
@@ -71,6 +76,8 @@ export const leads = pgTable(
   },
   (table) => [
     index("leads_assigned_user_id_idx").on(table.assignedUserId),
+    index("leads_pipeline_id_idx").on(table.pipelineId),
+    index("leads_pipeline_stage_id_idx").on(table.pipelineStageId),
     index("leads_source_idx").on(table.source),
     index("leads_status_idx").on(table.status),
     index("leads_store_status_idx").on(table.storeId, table.status),

@@ -3,20 +3,31 @@ import { createLeadActivity } from "../../../domains/crm/services/CrmService/cre
 import type { CreateLeadActivityInput } from "../../../domains/crm/services/CrmService/createLeadActivity.js";
 import { createCrmLead } from "../../../domains/crm/services/CrmService/createCrmLead.js";
 import type { CreateCrmLeadInput } from "../../../domains/crm/services/CrmService/createCrmLead.js";
+import { createCrmPipeline } from "../../../domains/crm/services/CrmService/createCrmPipeline.js";
+import type { CreateCrmPipelineInput } from "../../../domains/crm/services/CrmService/createCrmPipeline.js";
+import { deleteCrmPipeline } from "../../../domains/crm/services/CrmService/deleteCrmPipeline.js";
+import type { DeleteCrmPipelineInput } from "../../../domains/crm/services/CrmService/deleteCrmPipeline.js";
 import { getCrmLead } from "../../../domains/crm/services/CrmService/getCrmLead.js";
 import type { GetCrmLeadInput } from "../../../domains/crm/services/CrmService/getCrmLead.js";
 import { listCrmLeads } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
 import type { ListCrmLeadsInput } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
+import { listCrmPipelines } from "../../../domains/crm/services/CrmService/listCrmPipelines.js";
 import { listLeadActivities } from "../../../domains/crm/services/CrmService/listLeadActivities.js";
 import type { ListLeadActivitiesInput } from "../../../domains/crm/services/CrmService/listLeadActivities.js";
+import { moveCrmLeadPipelineStage } from "../../../domains/crm/services/CrmService/moveCrmLeadPipelineStage.js";
+import type { MoveCrmLeadPipelineStageInput } from "../../../domains/crm/services/CrmService/moveCrmLeadPipelineStage.js";
+import { updateCrmPipeline } from "../../../domains/crm/services/CrmService/updateCrmPipeline.js";
+import type { UpdateCrmPipelineInput } from "../../../domains/crm/services/CrmService/updateCrmPipeline.js";
 import { updateCrmLead } from "../../../domains/crm/services/CrmService/updateCrmLead.js";
 import type { UpdateCrmLeadInput } from "../../../domains/crm/services/CrmService/updateCrmLead.js";
+import type { CrmPipeline } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type {
   CrmLead,
   CrmLeadActivity,
 } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
+import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWebhookEventRepository } from "../adapters/memory/crmWebhookEventRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
@@ -24,6 +35,7 @@ import {
   createDrizzleCrmRepository,
   type DrizzleCrmClient,
 } from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
+import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
 import { createDrizzleCrmWebhookEventRepository } from "../../../infrastructure/db/crm/drizzleCrmWebhookEventRepository.js";
 import { createDrizzleCrmWhatsappRepository } from "../../../infrastructure/db/crm/drizzleCrmWhatsappRepository.js";
@@ -45,6 +57,14 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: CreateCrmLeadInput,
   ) => Promise<CrmLead>;
+  createPipeline: (
+    context: ServiceContext,
+    input: CreateCrmPipelineInput,
+  ) => Promise<CrmPipeline>;
+  deletePipeline: (
+    context: ServiceContext,
+    input: DeleteCrmPipelineInput,
+  ) => Promise<{ deleted: true }>;
   getLead: (
     context: ServiceContext,
     input: GetCrmLeadInput,
@@ -57,6 +77,15 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: ListCrmLeadsInput,
   ) => Promise<readonly CrmLead[]>;
+  listPipelines: (context: ServiceContext) => Promise<readonly CrmPipeline[]>;
+  moveLeadPipelineStage: (
+    context: ServiceContext,
+    input: MoveCrmLeadPipelineStageInput,
+  ) => Promise<CrmLead>;
+  updatePipeline: (
+    context: ServiceContext,
+    input: UpdateCrmPipelineInput,
+  ) => Promise<CrmPipeline>;
   updateLead: (
     context: ServiceContext,
     input: UpdateCrmLeadInput,
@@ -78,10 +107,19 @@ export function createCrmServices(
     createActivity: (context, input) =>
       createLeadActivity(context, input, ports),
     createLead: (context, input) => createCrmLead(context, input, ports),
+    createPipeline: (context, input) =>
+      createCrmPipeline(context, input, ports),
+    deletePipeline: (context, input) =>
+      deleteCrmPipeline(context, input, ports),
     getLead: (context, input) => getCrmLead(context, input, ports),
     listActivities: (context, input) =>
       listLeadActivities(context, input, ports),
     listLeads: (context, input) => listCrmLeads(context, input, ports),
+    listPipelines: (context) => listCrmPipelines(context, ports),
+    moveLeadPipelineStage: (context, input) =>
+      moveCrmLeadPipelineStage(context, input, ports),
+    updatePipeline: (context, input) =>
+      updateCrmPipeline(context, input, ports),
     updateLead: (context, input) => updateCrmLead(context, input, ports),
     ...createCrmWhatsappServiceBindings(ports),
   };
@@ -103,6 +141,9 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
           options.drizzleClient,
         ),
+        crmPipelineRepository: createDrizzleCrmPipelineRepository(
+          options.drizzleClient,
+        ),
         crmRepository: createDrizzleCrmRepository(options.drizzleClient),
         crmWebhookEventRepository: createDrizzleCrmWebhookEventRepository(
           options.drizzleClient,
@@ -115,6 +156,7 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
       }
     : {
         crmConnectionRepository: createMemoryCrmConnectionRepository(),
+        crmPipelineRepository: createMemoryCrmPipelineRepository(),
         crmRepository: createMemoryCrmRepository(),
         crmWebhookEventRepository: createMemoryCrmWebhookEventRepository(),
         crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
@@ -129,6 +171,9 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
         return action({
           ...transactionPorts,
           crmConnectionRepository: createDrizzleCrmConnectionRepository(
+            tx as DrizzleCrmClient,
+          ),
+          crmPipelineRepository: createDrizzleCrmPipelineRepository(
             tx as DrizzleCrmClient,
           ),
           crmRepository: createDrizzleCrmRepository(tx as DrizzleCrmClient),

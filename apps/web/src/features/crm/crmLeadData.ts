@@ -11,7 +11,7 @@ export type FinancingSimulationDraft = {
 };
 
 export function getLeadStageId(lead: ProductCrmLead) {
-  return readMetadataString(lead.metadata, "stageId") ?? lead.status;
+  return lead.pipelineStageId ?? readMetadataString(lead.metadata, "stageId");
 }
 
 export function getLinkedLeadVehicles(

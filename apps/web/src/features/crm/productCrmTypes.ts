@@ -32,6 +32,8 @@ export type ProductCrmLead = {
   lastInteractionAt: string | null;
   listingId: string | null;
   metadata: Record<string, unknown>;
+  pipelineId: string | null;
+  pipelineStageId: string | null;
   source: CrmLeadSource;
   status: CrmLeadStatus;
   storeId: string;
@@ -41,12 +43,7 @@ export type ProductCrmLead = {
 };
 
 export type LeadActivityType =
-  | "note"
-  | "call"
-  | "whatsapp"
-  | "email"
-  | "status_change"
-  | "task";
+  "note" | "call" | "whatsapp" | "email" | "status_change" | "task";
 
 export type LeadActivityDirection = "inbound" | "outbound" | "internal";
 
@@ -72,6 +69,8 @@ export type CreateProductCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string | null;
+  pipelineStageId?: string | null;
   source: CrmLeadSource;
 };
 
@@ -81,6 +80,8 @@ export type UpdateProductCrmLeadInput = {
   buyerName?: string | null;
   buyerPhone?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string | null;
+  pipelineStageId?: string | null;
   status?: CrmLeadStatus;
 };
 

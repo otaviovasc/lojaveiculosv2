@@ -3,6 +3,7 @@ import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
@@ -12,6 +13,7 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
+import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createCrmFeature } from "./crm.controller.js";
 import { createCrmServices } from "./crmServices.js";
 
@@ -43,6 +45,7 @@ export function createTestApp(
   options: {
     audit?: AuditSink;
     crmConnectionRepository?: CrmConnectionRepository;
+    crmPipelineRepository?: CrmPipelineRepository;
     crmRealtimeBroker?: CrmRealtimeBroker;
     crmRepository?: CrmRepository;
     crmWebhookEventRepository?: CrmWebhookEventRepository;
@@ -90,6 +93,9 @@ export function createTestApp(
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),
+          crmPipelineRepository:
+            options.crmPipelineRepository ??
+            createMemoryCrmPipelineRepository(),
           crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
           ...(options.crmWhatsappRepository
             ? { crmWhatsappRepository: options.crmWhatsappRepository }

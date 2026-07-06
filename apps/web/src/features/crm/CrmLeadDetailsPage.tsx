@@ -24,8 +24,7 @@ export function CrmLeadDetailsPage({
   activities,
   stages,
   onBack,
-  onUpdateLead,
-  onUpdateStatus,
+  onMoveLeadPipelineStage,
   onCreateActivity,
   vehicleOptions,
 }: CrmLeadDetailsPageProps) {
@@ -65,24 +64,7 @@ export function CrmLeadDetailsPage({
     const targetStage = stages.find((s) => s.id === stageId);
     if (!targetStage) return;
 
-    let statusUpdate = lead.status;
-    if (targetStage.status === "won") statusUpdate = "won";
-    else if (targetStage.status === "lost") statusUpdate = "lost";
-    else if (lead.status === "won" || lead.status === "lost")
-      statusUpdate = "negotiating";
-
-    if (statusUpdate !== lead.status) {
-      await onUpdateStatus(lead.id, statusUpdate);
-    }
-    await onUpdateLead(lead.id, {
-      metadata: { ...lead.metadata, stageId },
-    });
-
-    await onCreateActivity(lead.id, {
-      activityType: "status_change",
-      content: `Alterou a etapa para "${targetStage.name}"`,
-      direction: "internal",
-    });
+    await onMoveLeadPipelineStage(lead.id, targetStage.id);
   };
 
   const tabs = [

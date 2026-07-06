@@ -10,6 +10,7 @@ import type {
   ProductCrmLead,
   ProductCrmLeadActivity,
 } from "./productCrmTypes";
+import type { ProductCrmApi } from "./productCrmApi";
 
 export type LeadActivitiesById = Record<string, ProductCrmLeadActivity[]>;
 
@@ -38,10 +39,14 @@ export type CrmPipelineViewProps = {
     input: CreateProductCrmActivityInput,
   ) => Promise<void>;
   onCreateLead: (input: LeadCreateDraft) => Promise<void>;
+  onMoveLeadPipelineStage: (
+    leadId: string,
+    pipelineStageId: string,
+  ) => Promise<void>;
   onRefresh: () => Promise<void>;
   onSelectLead: (leadId: string | null) => void;
   onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
-  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  pipelineApi: ProductCrmApi;
   vehicleOptions: LeadVehicleOption[];
   viewLeads: ProductCrmLead[];
   viewMode: CrmViewMode;
@@ -86,8 +91,10 @@ export type CrmLeadDetailsPageProps = {
   activities: ProductCrmLeadActivity[];
   stages: PipelineStage[];
   onBack: () => void;
-  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
-  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  onMoveLeadPipelineStage: (
+    leadId: string,
+    pipelineStageId: string,
+  ) => Promise<void>;
   onCreateActivity: (
     leadId: string,
     input: CreateProductCrmActivityInput,
@@ -100,6 +107,8 @@ export type CrmListViewProps = {
   stages: PipelineStage[];
   vehicleOptions: LeadVehicleOption[];
   onSelectLead: (leadId: string) => void;
-  onUpdateLead: (leadId: string, input: LeadContactPatch) => Promise<void>;
-  onUpdateStatus: (leadId: string, status: CrmLeadStatus) => Promise<void>;
+  onMoveLeadPipelineStage: (
+    leadId: string,
+    pipelineStageId: string,
+  ) => Promise<void>;
 };

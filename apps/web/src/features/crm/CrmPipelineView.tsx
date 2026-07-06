@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { CircleAlert, LoaderCircle, SearchX } from "lucide-react";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { SearchX } from "lucide-react";
 import { CrmLeadCreateFullPage } from "./CrmLeadCreateFullPage";
 import { CrmKanbanBoard } from "./CrmKanbanBoard";
 import { CrmLeadDetailsPage } from "./CrmLeadDetailsPage";
@@ -11,22 +10,19 @@ import {
   type FinancingSimulationDraft,
 } from "./CrmSimulationModal";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
-import { saveActivePipelineId, type PipelineStage } from "./crmPipelineStorage";
+import { type PipelineStage } from "./crmPipelineStorage";
 import {
   FeaturePageShell,
   FeaturePageHeader,
 } from "../../components/ui/FeatureLayout";
-import {
-  FeatureAlert,
-  FeatureEmptyState,
-  FeatureLoadingState,
-} from "../../components/ui/FeatureStates";
-import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
+import { FeatureEmptyState } from "../../components/ui/FeatureStates";
+import type { ProductCrmLead } from "./productCrmTypes";
 import { CrmQuickAddLeadModal } from "./CrmQuickAddLeadModal";
 import { CrmQuickAddPipelineModal } from "./CrmQuickAddPipelineModal";
 import { CrmQuickAddStageModal } from "./CrmQuickAddStageModal";
 import { CrmEditStageModal } from "./CrmEditStageModal";
 import { CrmListView } from "./CrmListView";
+import { CrmPipelineAlert, CrmPipelineLoading } from "./CrmPipelineViewStates";
 import { useCrmPipelines } from "./useCrmPipelines";
 import { getFilteredLeads, hasAnyClientFilter } from "./CrmPipelineViewFilters";
 
@@ -42,7 +38,9 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     handleUpdatePipeline,
     handleDeletePipeline,
     handleAddStage,
-  } = useCrmPipelines(storeId);
+    isLoading: isPipelineLoading,
+    error: pipelineError,
+  } = useCrmPipelines(storeId, props.pipelineApi);
 
   const [visibleStages, setVisibleStages] = useState<Record<string, boolean>>(
     {},
@@ -86,19 +84,10 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     [props.activeLeadId, props.leads],
   );
 
-  const handleUpdateStage = async (
-    leadId: string,
-    stageId: string,
-    status: CrmLeadStatus,
-  ) => {
+  const handleUpdateStage = async (leadId: string, stageId: string) => {
     const lead = props.leads.find((l) => l.id === leadId);
     if (!lead) return;
-    if (status !== lead.status) {
-      await props.onUpdateStatus(leadId, status);
-    }
-    await props.onUpdateLead(leadId, {
-      metadata: { ...(lead.metadata ?? {}), stageId },
-    });
+    await props.onMoveLeadPipelineStage(leadId, stageId);
   };
 
   const handleSaveSimulation = async (
@@ -144,7 +133,16 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         <CrmLeadCreateFullPage
           onCancel={() => setIsCreateOpen(false)}
           onCreateLead={async (draft) => {
-            await props.onCreateLead(draft);
+            const firstStageId = activePipeline?.stages[0]?.id;
+            await props.onCreateLead({
+              ...draft,
+              ...(activePipeline && firstStageId
+                ? {
+                    pipelineId: activePipeline.id,
+                    pipelineStageId: firstStageId,
+                  }
+                : {}),
+            });
             setIsCreateOpen(false);
           }}
           vehicleOptions={props.vehicleOptions}
@@ -164,8 +162,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
           lead={activeLead}
           onBack={() => props.onSelectLead(null)}
           onCreateActivity={props.onCreateActivity}
-          onUpdateLead={props.onUpdateLead}
-          onUpdateStatus={props.onUpdateStatus}
+          onMoveLeadPipelineStage={props.onMoveLeadPipelineStage}
           stages={activePipeline.stages}
           vehicleOptions={props.vehicleOptions}
         />
@@ -194,17 +191,24 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       <FeaturePageHeader eyebrow="Atendimento" title="Clientes" />
 
       {props.error && (
-        <FeatureAlert
-          className="crm-note"
-          icon={<CircleAlert aria-hidden="true" className="size-5 shrink-0" />}
-        >
-          <span>
-            {formatApiErrorDisplay(
-              props.error,
-              "Não foi possível carregar os clientes.",
-            )}
-          </span>
-        </FeatureAlert>
+        <CrmPipelineAlert
+          error={props.error}
+          fallback="Não foi possível carregar os clientes."
+        />
+      )}
+
+      {pipelineError && (
+        <CrmPipelineAlert
+          error={pipelineError}
+          fallback="Não foi possível carregar os pipelines."
+        />
+      )}
+
+      {!activePipeline && isPipelineLoading && !pipelineError && (
+        <CrmPipelineLoading
+          body="Buscando etapas e configurações do CRM."
+          title="Carregando pipelines"
+        />
       )}
 
       {activePipeline && (
@@ -218,10 +222,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             onConfigureClick={() => setIsSettingsOpen(true)}
             onCreateClick={openQuickAddLead}
             onCreatePipeline={() => setIsQuickPipelineOpen(true)}
-            onSelectPipeline={(id) => {
-              setActivePipelineId(id);
-              saveActivePipelineId(id, storeId);
-            }}
+            onSelectPipeline={setActivePipelineId}
             onToggleStageVisibility={(id) =>
               setVisibleStages((prev) => ({
                 ...prev,
@@ -235,14 +236,16 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             onChangeViewMode={props.onChangeViewMode}
           />
 
-          {props.error ? null : props.isLoading ? (
-            <FeatureLoadingState
-              className="glass-panel-branded flex items-center gap-3 p-6 text-sm font-bold text-muted"
-              icon={LoaderCircle}
+          {props.error || pipelineError ? null : isPipelineLoading ? (
+            <CrmPipelineLoading
+              body="Buscando etapas e configurações do CRM."
+              title="Carregando pipelines"
+            />
+          ) : props.isLoading ? (
+            <CrmPipelineLoading
+              body="Buscando clientes e atividades do CRM."
               title="Carregando clientes"
-            >
-              <span>Buscando clientes e atividades do CRM.</span>
-            </FeatureLoadingState>
+            />
           ) : filteredLeads.length === 0 ? (
             <FeatureEmptyState
               action={
@@ -287,8 +290,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
               stages={activePipeline.stages}
               vehicleOptions={props.vehicleOptions}
               onSelectLead={props.onSelectLead}
-              onUpdateLead={props.onUpdateLead}
-              onUpdateStatus={props.onUpdateStatus}
+              onMoveLeadPipelineStage={props.onMoveLeadPipelineStage}
             />
           )}
         </>
@@ -307,6 +309,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         <CrmQuickAddLeadModal
           onCreateLead={props.onCreateLead}
           onClose={() => setQuickAddLeadStageId(null)}
+          pipelineId={activePipeline.id}
           stageId={quickAddLeadStageId}
           stages={activePipeline.stages}
           vehicleOptions={props.vehicleOptions}

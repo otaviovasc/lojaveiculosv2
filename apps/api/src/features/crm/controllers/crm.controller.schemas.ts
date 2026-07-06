@@ -60,6 +60,8 @@ export const createLeadSchema = z.object({
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   listingId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  pipelineId: z.string().uuid().nullable().optional(),
+  pipelineStageId: z.string().uuid().nullable().optional(),
   source: leadSourceSchema.default("manual"),
 });
 
@@ -69,7 +71,36 @@ export const updateLeadSchema = z.object({
   buyerName: z.string().trim().min(1).max(191).nullable().optional(),
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
+  pipelineId: z.string().uuid().nullable().optional(),
+  pipelineStageId: z.string().uuid().nullable().optional(),
   status: leadStatusSchema.optional(),
+});
+
+export const pipelineStageStatusSchema = z.enum(["open", "won", "lost"]);
+
+export const pipelineStageSchema = z.object({
+  color: z.string().trim().min(1).max(16),
+  id: z.string().uuid().optional(),
+  isSystem: z.boolean().optional(),
+  leadStatus: leadStatusSchema.optional(),
+  name: z.string().trim().min(1).max(120),
+  slaDays: z.number().int().min(0).max(365).nullable().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  status: pipelineStageStatusSchema,
+});
+
+export const createPipelineSchema = z.object({
+  description: z.string().max(2000).optional(),
+  isDefault: z.boolean().optional(),
+  name: z.string().trim().min(1).max(120),
+  rotationActive: z.boolean().optional(),
+  stages: z.array(pipelineStageSchema).optional(),
+});
+
+export const updatePipelineSchema = createPipelineSchema.partial();
+
+export const moveLeadPipelineStageSchema = z.object({
+  pipelineStageId: z.string().uuid(),
 });
 
 export const listActivitiesQuerySchema = z.object({

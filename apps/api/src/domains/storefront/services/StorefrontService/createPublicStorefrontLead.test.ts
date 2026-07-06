@@ -197,6 +197,8 @@ function createCrmRepository(): CrmRepository {
         lastInteractionAt: null,
         listingId: input.listingId ?? null,
         metadata: input.metadata ?? {},
+        pipelineId: input.pipelineId ?? null,
+        pipelineStageId: input.pipelineStageId ?? null,
         source: input.source,
         status: "new" as const,
         storeId: input.storeId,

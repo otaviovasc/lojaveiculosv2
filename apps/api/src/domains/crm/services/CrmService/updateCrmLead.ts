@@ -19,6 +19,8 @@ export type UpdateCrmLeadInput = {
   buyerPhone?: string | null;
   leadId: string;
   metadata?: Record<string, unknown>;
+  pipelineId?: string | null;
+  pipelineStageId?: string | null;
   status?: LeadStatus;
 };
 
@@ -56,6 +58,10 @@ export async function updateCrmLead(
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
     leadId: input.leadId,
     ...(input.metadata ? { metadata: input.metadata } : {}),
+    ...(input.pipelineId !== undefined ? { pipelineId: input.pipelineId } : {}),
+    ...(input.pipelineStageId !== undefined
+      ? { pipelineStageId: input.pipelineStageId }
+      : {}),
     ...(input.status ? { status: input.status } : {}),
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
@@ -88,6 +94,8 @@ function summarizeChangedFields(before: CrmLead, after: CrmLead) {
     ["buyerEmail", before.buyerEmail, after.buyerEmail],
     ["buyerName", before.buyerName, after.buyerName],
     ["buyerPhone", before.buyerPhone, after.buyerPhone],
+    ["pipelineId", before.pipelineId, after.pipelineId],
+    ["pipelineStageId", before.pipelineStageId, after.pipelineStageId],
     ["status", before.status, after.status],
   ]
     .filter(([, previous, next]) => previous !== next)

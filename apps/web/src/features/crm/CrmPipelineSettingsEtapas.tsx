@@ -56,6 +56,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
       color: PRESET_COLORS[stages.length % PRESET_COLORS.length]!,
       slaDays: 2,
       status: "open",
+      leadStatus: "negotiating",
       isSystem: false,
     };
     saveStages([...stages, newStage]);
@@ -191,7 +192,10 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
                 onChange={(e) => {
                   const status = e.target.value;
                   if (isPipelineStageStatus(status)) {
-                    handleUpdateStage(stage.id, { status });
+                    handleUpdateStage(stage.id, {
+                      leadStatus: mapStageLeadStatus(status),
+                      status,
+                    });
                   }
                 }}
                 value={stage.status}
@@ -229,4 +233,10 @@ function isPipelineStageStatus(
   value: string,
 ): value is PipelineStage["status"] {
   return value === "open" || value === "won" || value === "lost";
+}
+
+function mapStageLeadStatus(status: PipelineStage["status"]) {
+  if (status === "won") return "won";
+  if (status === "lost") return "lost";
+  return "negotiating";
 }

@@ -19,6 +19,8 @@ const lead = {
   lastInteractionAt: null,
   listingId: null,
   metadata: {},
+  pipelineId: null,
+  pipelineStageId: null,
   source: "manual",
   status: "new",
   storeId: "store-1",

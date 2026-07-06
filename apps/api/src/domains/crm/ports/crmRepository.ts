@@ -33,6 +33,8 @@ export type CrmLead = {
   lastInteractionAt: Date | null;
   listingId: string | null;
   metadata: Record<string, unknown>;
+  pipelineId: string | null;
+  pipelineStageId: string | null;
   source: LeadSource;
   status: LeadStatus;
   storeId: StoreId;
@@ -64,6 +66,8 @@ export type CreateCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string | null;
+  pipelineStageId?: string | null;
   source: LeadSource;
   storeId: StoreId;
   tenantId: TenantId;
@@ -76,6 +80,8 @@ export type UpdateCrmLeadInput = {
   buyerPhone?: string | null;
   leadId: string;
   metadata?: Record<string, unknown>;
+  pipelineId?: string | null;
+  pipelineStageId?: string | null;
   status?: LeadStatus;
   storeId: StoreId;
   tenantId: TenantId;

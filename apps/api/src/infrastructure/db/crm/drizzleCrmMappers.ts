@@ -27,6 +27,8 @@ export function toLead(
     lastInteractionAt: row.lastInteractionAt,
     listingId: reference?.listingId ?? null,
     metadata: toRecord(row.metadata),
+    pipelineId: row.pipelineId,
+    pipelineStageId: row.pipelineStageId,
     source: row.source,
     status: row.status,
     storeId: row.storeId as StoreId,

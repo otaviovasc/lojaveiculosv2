@@ -4,6 +4,7 @@ import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
+import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
   createNoopCrmRealtimePublisher,
   type CrmRealtimePublisher,
@@ -20,6 +21,7 @@ import type {
 
 export type CrmServicePorts = {
   crmConnectionRepository?: CrmConnectionRepository;
+  crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;
@@ -44,6 +46,20 @@ export class CrmLeadNotFoundError extends Error {
   }
 }
 
+export class CrmPipelineNotFoundError extends Error {
+  constructor(pipelineId: string) {
+    super(`CRM pipeline not found: ${pipelineId}`);
+    this.name = "CrmPipelineNotFoundError";
+  }
+}
+
+export class CrmPipelineStageNotFoundError extends Error {
+  constructor(stageId: string) {
+    super(`CRM pipeline stage not found: ${stageId}`);
+    this.name = "CrmPipelineStageNotFoundError";
+  }
+}
+
 export class CrmScopeError extends Error {
   constructor(fieldName: string) {
     super(`CRM service requires ${fieldName}.`);
@@ -63,6 +79,15 @@ export function requireCrmScope(context: ServiceContext): {
 
 export function getCrmRepository(ports: CrmServicePorts): CrmRepository {
   return ports.crmRepository;
+}
+
+export function getCrmPipelineRepository(
+  ports: CrmServicePorts,
+): CrmPipelineRepository {
+  if (!ports.crmPipelineRepository) {
+    throw new CrmScopeError("crmPipelineRepository");
+  }
+  return ports.crmPipelineRepository;
 }
 
 export function getCrmRealtimePublisher(

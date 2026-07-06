@@ -1,124 +1,154 @@
-import { useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { ProductCrmApi } from "./productCrmApi";
 import {
-  getPipelines,
+  DEFAULT_PIPELINES,
   getActivePipelineId,
-  savePipelines,
   saveActivePipelineId,
   type Pipeline,
   type PipelineStageDraft,
 } from "./crmPipelineStorage";
 
-export function useCrmPipelines(storeId: string) {
-  const [pipelines, setPipelines] = useState<Pipeline[]>(() =>
-    getPipelines(storeId),
-  );
-  const [activePipelineId, setActivePipelineId] = useState<string>(() =>
+export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
+  const [pipelines, setPipelines] = useState<Pipeline[]>([]);
+  const [activePipelineId, setActivePipelineIdState] = useState<string>(() =>
     getActivePipelineId(storeId),
   );
+  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const activePipeline = useMemo(
     () =>
-      pipelines.find((p) => p.id === activePipelineId) ?? pipelines[0] ?? null,
+      pipelines.find((p) => p.id === activePipelineId) ??
+      pipelines.find((p) => p.isDefault) ??
+      pipelines[0] ??
+      null,
     [activePipelineId, pipelines],
   );
 
-  const handleCreatePipelineConfirm = (
+  const setActivePipelineId = useCallback(
+    (id: string) => {
+      setActivePipelineIdState(id);
+      saveActivePipelineId(id, storeId);
+    },
+    [storeId],
+  );
+
+  const loadPipelines = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const loaded = await loadOrCreateDefaultPipeline(api);
+      setPipelines(loaded);
+      const current = getActivePipelineId(storeId);
+      const nextActive =
+        loaded.find((pipeline) => pipeline.id === current)?.id ??
+        loaded.find((pipeline) => pipeline.isDefault)?.id ??
+        loaded[0]?.id ??
+        "";
+      if (nextActive) setActivePipelineId(nextActive);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught : new Error(String(caught)));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [api, setActivePipelineId, storeId]);
+
+  useEffect(() => {
+    void loadPipelines();
+  }, [loadPipelines]);
+
+  const handleCreatePipelineConfirm = async (
     name: string,
     customStages?: PipelineStageDraft[],
   ) => {
-    const nextId = `pipeline_${Date.now()}`;
-    const defaultStages = [
-      {
-        id: `${nextId}_new`,
-        name: "Novo",
-        color: "#" + "3b82f6",
-        slaDays: 1,
-        status: "open" as const,
-        isSystem: false,
-      },
-      {
-        id: `${nextId}_won`,
-        name: "Ganho",
-        color: "#" + "22c55e",
-        slaDays: null,
-        status: "won" as const,
-        isSystem: false,
-      },
-      {
-        id: `${nextId}_lost`,
-        name: "Perdido",
-        color: "#" + "ef4444",
-        slaDays: null,
-        status: "lost" as const,
-        isSystem: false,
-      },
-    ];
-    const stagesToUse = customStages
-      ? customStages.map((s, idx) => ({
-          ...s,
-          id: `${nextId}_stage_${idx}`,
-          isSystem: s.status !== "open",
-        }))
-      : defaultStages;
-
-    const nextPipelines: Pipeline[] = [
-      ...pipelines,
-      {
-        id: nextId,
-        name: name,
-        description: "",
-        isDefault: false,
-        stages: stagesToUse,
-        routingRules: [],
-        rotationActive: false,
-      },
-    ];
-    setPipelines(nextPipelines);
-    savePipelines(nextPipelines, storeId);
-    setActivePipelineId(nextId);
-    saveActivePipelineId(nextId, storeId);
+    const created = await api.createPipeline({
+      isDefault: pipelines.length === 0,
+      name,
+      stages: customStages ?? createStageDraftsFromDefault(),
+    });
+    setPipelines((current) => [...current, created]);
+    setActivePipelineId(created.id);
   };
 
-  const handleUpdatePipeline = (updated: Pipeline) => {
-    const next = pipelines.map((p) => (p.id === updated.id ? updated : p));
-    setPipelines(next);
-    savePipelines(next, storeId);
+  const handleUpdatePipeline = async (updated: Pipeline) => {
+    const saved = await api.updatePipeline(updated.id, {
+      description: updated.description,
+      isDefault: updated.isDefault,
+      name: updated.name,
+      rotationActive: updated.rotationActive,
+      stages: updated.stages,
+    });
+    setPipelines((current) =>
+      current.map((pipeline) => (pipeline.id === saved.id ? saved : pipeline)),
+    );
   };
 
-  const handleDeletePipeline = (id: string, callback?: () => void) => {
-    const next = pipelines.filter((p) => p.id !== id);
-    setPipelines(next);
-    savePipelines(next, storeId);
-    const fallbackId = next[0]?.id ?? "vendas";
-    setActivePipelineId(fallbackId);
-    saveActivePipelineId(fallbackId, storeId);
-    if (callback) callback();
+  const handleDeletePipeline = async (id: string, callback?: () => void) => {
+    await api.deletePipeline(id);
+    setPipelines((current) => {
+      const next = current.filter((pipeline) => pipeline.id !== id);
+      const fallbackId = next[0]?.id ?? "";
+      if (fallbackId) setActivePipelineId(fallbackId);
+      return next;
+    });
+    callback?.();
   };
 
-  const handleAddStage = (name: string, color: string, slaDays: number) => {
+  const handleAddStage = async (
+    name: string,
+    color: string,
+    slaDays: number,
+  ) => {
     if (!activePipeline) return;
-    const nextStages = [
-      ...activePipeline.stages,
-      {
-        id: `stage_${Date.now()}`,
-        name: name,
-        color: color,
-        slaDays: slaDays || null,
-        status: "open" as const,
-        isSystem: false,
-      },
-    ];
-    handleUpdatePipeline({ ...activePipeline, stages: nextStages });
+    const saved = await api.updatePipeline(activePipeline.id, {
+      stages: [
+        ...activePipeline.stages,
+        {
+          color,
+          leadStatus: "negotiating",
+          name,
+          slaDays: slaDays || null,
+          status: "open",
+        },
+      ],
+    });
+    setPipelines((current) =>
+      current.map((pipeline) => (pipeline.id === saved.id ? saved : pipeline)),
+    );
   };
 
   return {
-    pipelines,
-    activePipelineId,
     activePipeline,
-    setActivePipelineId,
-    handleCreatePipelineConfirm,
-    handleUpdatePipeline,
-    handleDeletePipeline,
+    activePipelineId,
+    error,
     handleAddStage,
+    handleCreatePipelineConfirm,
+    handleDeletePipeline,
+    handleUpdatePipeline,
+    isLoading,
+    pipelines,
+    reloadPipelines: loadPipelines,
+    setActivePipelineId,
   };
+}
+
+async function loadOrCreateDefaultPipeline(api: ProductCrmApi) {
+  const loaded = await api.listPipelines();
+  if (loaded.length) return loaded;
+  const seed = DEFAULT_PIPELINES[0]!;
+  return [
+    await api.createPipeline({
+      description: seed.description,
+      isDefault: true,
+      name: seed.name,
+      rotationActive: seed.rotationActive,
+      stages: seed.stages.map(({ id: _id, ...stage }) => stage),
+    }),
+  ];
+}
+
+function createStageDraftsFromDefault(): PipelineStageDraft[] {
+  return DEFAULT_PIPELINES[0]!.stages.map(
+    ({ id: _id, isSystem: _system, ...stage }) => stage,
+  );
 }

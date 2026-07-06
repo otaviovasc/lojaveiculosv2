@@ -15,7 +15,6 @@ import {
 import { createRuntimeProductCrmApi } from "./runtimeApi";
 import type {
   CreateProductCrmActivityInput,
-  CrmLeadStatus,
   ProductCrmLead,
 } from "./productCrmTypes";
 import type {
@@ -140,6 +139,12 @@ export function CrmModule({
         : {}),
       ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
       ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+      ...(input.pipelineId !== undefined
+        ? { pipelineId: input.pipelineId }
+        : {}),
+      ...(input.pipelineStageId !== undefined
+        ? { pipelineStageId: input.pipelineStageId }
+        : {}),
       source: input.source,
     });
     setLeads((current) => [lead, ...current]);
@@ -156,8 +161,13 @@ export function CrmModule({
     }
   };
 
-  const updateLeadStatus = async (leadId: string, status: CrmLeadStatus) => {
-    const lead = await crmApi.updateLead(leadId, { status });
+  const moveLeadPipelineStage = async (
+    leadId: string,
+    pipelineStageId: string,
+  ) => {
+    const lead = await crmApi.moveLeadPipelineStage(leadId, {
+      pipelineStageId,
+    });
     setLeads((current) =>
       current.map((item) => (item.id === lead.id ? lead : item)),
     );
@@ -212,10 +222,11 @@ export function CrmModule({
       onChangeViewMode={setViewMode}
       onCreateActivity={createActivity}
       onCreateLead={createLead}
+      onMoveLeadPipelineStage={moveLeadPipelineStage}
       onRefresh={refreshLeads}
       onSelectLead={setActiveLeadId}
       onUpdateLead={updateLeadContact}
-      onUpdateStatus={updateLeadStatus}
+      pipelineApi={crmApi}
       vehicleOptions={vehicleOptions}
       viewLeads={filterLeads(leads, filters)}
       viewMode={viewMode}

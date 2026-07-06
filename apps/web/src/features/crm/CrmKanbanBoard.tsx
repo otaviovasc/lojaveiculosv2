@@ -5,17 +5,13 @@ import { CrmLeadCard } from "./CrmLeadCard";
 import { getLeadStageId, getLinkedLeadVehicles } from "./crmLeadData";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { PipelineStage } from "./crmPipelineStorage";
-import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
+import type { ProductCrmLead } from "./productCrmTypes";
 
 type Props = {
   stages: PipelineStage[];
   visibleStages: Record<string, boolean>;
   onSelectLead: (leadId: string) => void;
-  onUpdateStage: (
-    leadId: string,
-    stageId: string,
-    status: CrmLeadStatus,
-  ) => Promise<void>;
+  onUpdateStage: (leadId: string, stageId: string) => Promise<void>;
   vehicleOptions: LeadVehicleOption[];
   viewLeads: ProductCrmLead[];
   onQuickAddDeal: (stageId: string) => void;
@@ -67,15 +63,7 @@ export function CrmKanbanBoard({
     const lead = leadId ? viewLeads.find((l) => l.id === leadId) : null;
     if (!lead || getLeadStageId(lead) === targetStage.id) return;
 
-    const statusUpdate =
-      targetStage.status === "won"
-        ? "won"
-        : targetStage.status === "lost"
-          ? "lost"
-          : lead.status === "won" || lead.status === "lost"
-            ? "negotiating"
-            : lead.status;
-    await onUpdateStage(lead.id, targetStage.id, statusUpdate);
+    await onUpdateStage(lead.id, targetStage.id);
   };
 
   const getLeadsForStage = (

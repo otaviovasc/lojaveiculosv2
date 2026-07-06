@@ -47,6 +47,8 @@ export function createMemoryCrmRepository(): CrmRepository {
         lastInteractionAt: null,
         listingId: input.listingId ?? null,
         metadata: input.metadata ?? {},
+        pipelineId: input.pipelineId ?? null,
+        pipelineStageId: input.pipelineStageId ?? null,
         source: input.source,
         status: "new",
         storeId: input.storeId,
@@ -131,6 +133,10 @@ function applyLeadUpdate(lead: CrmLead, input: UpdateCrmLeadInput) {
   if (input.buyerName !== undefined) lead.buyerName = input.buyerName;
   if (input.buyerPhone !== undefined) lead.buyerPhone = input.buyerPhone;
   if (input.metadata) lead.metadata = input.metadata;
+  if (input.pipelineId !== undefined) lead.pipelineId = input.pipelineId;
+  if (input.pipelineStageId !== undefined) {
+    lead.pipelineStageId = input.pipelineStageId;
+  }
   if (input.status) lead.status = input.status;
 }
 

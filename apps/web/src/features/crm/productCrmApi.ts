@@ -9,6 +9,11 @@ import type {
   ProductCrmLeadActivity,
   UpdateProductCrmLeadInput,
 } from "./productCrmTypes";
+import type {
+  Pipeline,
+  PipelineStage,
+  PipelineStageDraft,
+} from "./crmPipelineStorage";
 import { createCrmEndpoint } from "./apiClient";
 
 export type ProductCrmApi = {
@@ -17,12 +22,38 @@ export type ProductCrmApi = {
     input: CreateProductCrmActivityInput,
   ) => Promise<ProductCrmLeadActivity>;
   createLead: (input: CreateProductCrmLeadInput) => Promise<ProductCrmLead>;
+  createPipeline: (input: CreateProductCrmPipelineInput) => Promise<Pipeline>;
+  deletePipeline: (pipelineId: string) => Promise<{ deleted: true }>;
   listActivities: (leadId: string) => Promise<ProductCrmLeadActivity[]>;
   listLeads: (query?: ProductCrmLeadQuery) => Promise<ProductCrmLead[]>;
+  listPipelines: () => Promise<Pipeline[]>;
+  moveLeadPipelineStage: (
+    leadId: string,
+    input: MoveProductCrmLeadStageInput,
+  ) => Promise<ProductCrmLead>;
+  updatePipeline: (
+    pipelineId: string,
+    input: UpdateProductCrmPipelineInput,
+  ) => Promise<Pipeline>;
   updateLead: (
     leadId: string,
     input: UpdateProductCrmLeadInput,
   ) => Promise<ProductCrmLead>;
+};
+
+export type CreateProductCrmPipelineInput = {
+  description?: string;
+  isDefault?: boolean;
+  name: string;
+  rotationActive?: boolean;
+  stages?: Array<PipelineStage | PipelineStageDraft>;
+};
+
+export type UpdateProductCrmPipelineInput =
+  Partial<CreateProductCrmPipelineInput>;
+
+export type MoveProductCrmLeadStageInput = {
+  pipelineStageId: string;
 };
 
 export type ProductCrmLeadQuery = {
@@ -40,7 +71,7 @@ export type CreateProductCrmApiOptions = {
   fetch: typeof fetch;
 };
 
-type JsonBody = Record<string, unknown>;
+type JsonBody = object;
 
 export function createProductCrmApi({
   auth = {},
@@ -69,6 +100,13 @@ export function createProductCrmApi({
     createActivity: (leadId, input) =>
       postJson(productCrmRoutes.activities(leadId, baseUrl), input),
     createLead: (input) => postJson(productCrmRoutes.leads(baseUrl), input),
+    createPipeline: (input) =>
+      postJson(productCrmRoutes.pipelines(baseUrl), input),
+    deletePipeline: (pipelineId) =>
+      fetch(productCrmRoutes.pipeline(pipelineId, baseUrl), {
+        headers: createProductCrmHeaders(auth),
+        method: "DELETE",
+      }).then(readJson<{ deleted: true }>),
     listActivities: (leadId) =>
       getJson<{ activities: ProductCrmLeadActivity[] }>(
         productCrmRoutes.activities(leadId, baseUrl),
@@ -79,6 +117,14 @@ export function createProductCrmApi({
           createProductCrmLeadQuery(query),
         ]),
       ).then((payload) => payload.leads),
+    listPipelines: () =>
+      getJson<{ pipelines: Pipeline[] }>(
+        productCrmRoutes.pipelines(baseUrl),
+      ).then((payload) => payload.pipelines),
+    moveLeadPipelineStage: (leadId, input) =>
+      patchJson(productCrmRoutes.leadPipelineStage(leadId, baseUrl), input),
+    updatePipeline: (pipelineId, input) =>
+      patchJson(productCrmRoutes.pipeline(pipelineId, baseUrl), input),
     updateLead: (leadId, input) =>
       patchJson(productCrmRoutes.lead(leadId, baseUrl), input),
   };
@@ -104,7 +150,18 @@ export const productCrmRoutes = {
     ),
   lead: (leadId: string, baseUrl?: string) =>
     createCrmEndpoint(`/crm/leads/${encodeURIComponent(leadId)}`, baseUrl),
+  leadPipelineStage: (leadId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/leads/${encodeURIComponent(leadId)}/pipeline-stage`,
+      baseUrl,
+    ),
   leads: (baseUrl?: string) => createCrmEndpoint("/crm/leads", baseUrl),
+  pipeline: (pipelineId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/pipelines/${encodeURIComponent(pipelineId)}`,
+      baseUrl,
+    ),
+  pipelines: (baseUrl?: string) => createCrmEndpoint("/crm/pipelines", baseUrl),
 } as const;
 
 export function createProductCrmLeadQuery(query: ProductCrmLeadQuery = {}) {

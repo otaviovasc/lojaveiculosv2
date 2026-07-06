@@ -47,10 +47,23 @@ function createProductCrmApi(): ProductCrmApi {
     createLead: vi.fn(async () => {
       throw new Error("createLead should not be called");
     }),
+    createPipeline: vi.fn(async () => {
+      throw new Error("createPipeline should not be called");
+    }),
+    deletePipeline: vi.fn(async () => {
+      throw new Error("deletePipeline should not be called");
+    }),
     listActivities: vi.fn(async () => {
       throw new Error("listActivities should not be called");
     }),
     listLeads: vi.fn(async () => []),
+    listPipelines: vi.fn(async () => []),
+    moveLeadPipelineStage: vi.fn(async () => {
+      throw new Error("moveLeadPipelineStage should not be called");
+    }),
+    updatePipeline: vi.fn(async () => {
+      throw new Error("updatePipeline should not be called");
+    }),
     updateLead: vi.fn(async () => {
       throw new Error("updateLead should not be called");
     }),

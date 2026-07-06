@@ -1,16 +1,19 @@
+import type { CrmLeadStatus } from "./productCrmTypes";
+
 export type PipelineStage = {
   id: string;
   name: string;
   color: string;
   slaDays: number | null;
   status: "open" | "won" | "lost";
+  leadStatus: CrmLeadStatus;
   isSystem: boolean;
 };
 
 export type PipelineStageDraft = Pick<
   PipelineStage,
   "color" | "name" | "slaDays" | "status"
->;
+> & { leadStatus?: CrmLeadStatus };
 
 export type RoutingRule = {
   id: string;
@@ -35,6 +38,7 @@ const DEFAULT_VENDAS_STAGES: PipelineStage[] = [
     color: "#" + "3b82f6",
     slaDays: 1,
     status: "open",
+    leadStatus: "new",
     isSystem: true,
   },
   {
@@ -43,6 +47,7 @@ const DEFAULT_VENDAS_STAGES: PipelineStage[] = [
     color: "#" + "a855f7",
     slaDays: 2,
     status: "open",
+    leadStatus: "contacted",
     isSystem: true,
   },
   {
@@ -51,6 +56,7 @@ const DEFAULT_VENDAS_STAGES: PipelineStage[] = [
     color: "#" + "eab308",
     slaDays: 3,
     status: "open",
+    leadStatus: "qualified",
     isSystem: true,
   },
   {
@@ -59,6 +65,7 @@ const DEFAULT_VENDAS_STAGES: PipelineStage[] = [
     color: "#" + "f97316",
     slaDays: 5,
     status: "open",
+    leadStatus: "negotiating",
     isSystem: true,
   },
   {
@@ -67,6 +74,7 @@ const DEFAULT_VENDAS_STAGES: PipelineStage[] = [
     color: "#" + "22c55e",
     slaDays: null,
     status: "won",
+    leadStatus: "won",
     isSystem: true,
   },
   {
@@ -75,6 +83,7 @@ const DEFAULT_VENDAS_STAGES: PipelineStage[] = [
     color: "#" + "ef4444",
     slaDays: null,
     status: "lost",
+    leadStatus: "lost",
     isSystem: true,
   },
 ];
@@ -86,6 +95,7 @@ const DEFAULT_CAPTACAO_STAGES: PipelineStage[] = [
     color: "#" + "3b82f6",
     slaDays: 1,
     status: "open",
+    leadStatus: "new",
     isSystem: false,
   },
   {
@@ -94,6 +104,7 @@ const DEFAULT_CAPTACAO_STAGES: PipelineStage[] = [
     color: "#" + "a855f7",
     slaDays: 2,
     status: "open",
+    leadStatus: "qualified",
     isSystem: false,
   },
   {
@@ -102,6 +113,7 @@ const DEFAULT_CAPTACAO_STAGES: PipelineStage[] = [
     color: "#" + "eab308",
     slaDays: 2,
     status: "open",
+    leadStatus: "negotiating",
     isSystem: false,
   },
   {
@@ -110,6 +122,7 @@ const DEFAULT_CAPTACAO_STAGES: PipelineStage[] = [
     color: "#" + "22c55e",
     slaDays: null,
     status: "won",
+    leadStatus: "won",
     isSystem: false,
   },
   {
@@ -118,6 +131,7 @@ const DEFAULT_CAPTACAO_STAGES: PipelineStage[] = [
     color: "#" + "ef4444",
     slaDays: null,
     status: "lost",
+    leadStatus: "lost",
     isSystem: false,
   },
 ];
@@ -146,38 +160,12 @@ export const DEFAULT_PIPELINES: Pipeline[] = [
   },
 ];
 
-export function getPipelines(storeId = "default"): Pipeline[] {
-  if (typeof window === "undefined") return DEFAULT_PIPELINES;
-  const key = `crm_pipelines_${storeId}`;
-  const stored = localStorage.getItem(key);
-  if (!stored) {
-    localStorage.setItem(key, JSON.stringify(DEFAULT_PIPELINES));
-    return DEFAULT_PIPELINES;
-  }
-  try {
-    return JSON.parse(stored) as Pipeline[];
-  } catch {
-    return DEFAULT_PIPELINES;
-  }
-}
-
-export function savePipelines(
-  pipelines: Pipeline[],
-  storeId = "default",
-): void {
-  if (typeof window === "undefined") return;
-  const key = `crm_pipelines_${storeId}`;
-  localStorage.setItem(key, JSON.stringify(pipelines));
-}
-
 export function getActivePipelineId(storeId = "default"): string {
   if (typeof window === "undefined") return "vendas";
   const key = `crm_active_pipeline_${storeId}`;
   const active = localStorage.getItem(key);
   if (active) return active;
-  const pipelines = getPipelines(storeId);
-  const def = pipelines.find((p) => p.isDefault) ?? pipelines[0];
-  return def?.id ?? "vendas";
+  return "vendas";
 }
 
 export function saveActivePipelineId(id: string, storeId = "default"): void {

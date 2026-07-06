@@ -21,12 +21,31 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
       ),
     createLead: async (input) =>
       createProductCrmApi(await createProductCrmApiOptions()).createLead(input),
+    createPipeline: async (input) =>
+      createProductCrmApi(await createProductCrmApiOptions()).createPipeline(
+        input,
+      ),
+    deletePipeline: async (pipelineId) =>
+      createProductCrmApi(await createProductCrmApiOptions()).deletePipeline(
+        pipelineId,
+      ),
     listActivities: async (leadId) =>
       createProductCrmApi(await createProductCrmApiOptions()).listActivities(
         leadId,
       ),
     listLeads: async (query) =>
       createProductCrmApi(await createProductCrmApiOptions()).listLeads(query),
+    listPipelines: async () =>
+      createProductCrmApi(await createProductCrmApiOptions()).listPipelines(),
+    moveLeadPipelineStage: async (leadId, input) =>
+      createProductCrmApi(
+        await createProductCrmApiOptions(),
+      ).moveLeadPipelineStage(leadId, input),
+    updatePipeline: async (pipelineId, input) =>
+      createProductCrmApi(await createProductCrmApiOptions()).updatePipeline(
+        pipelineId,
+        input,
+      ),
     updateLead: async (leadId, input) =>
       createProductCrmApi(await createProductCrmApiOptions()).updateLead(
         leadId,

@@ -16,8 +16,7 @@ export function CrmListView({
   stages,
   vehicleOptions,
   onSelectLead,
-  onUpdateLead,
-  onUpdateStatus,
+  onMoveLeadPipelineStage,
 }: CrmListViewProps) {
   const [activeDropdownLeadId, setActiveDropdownLeadId] = useState<
     string | null
@@ -41,18 +40,7 @@ export function CrmListView({
     const targetStage = stages.find((s) => s.id === stageId);
     if (!targetStage) return;
 
-    let statusUpdate = lead.status;
-    if (targetStage.status === "won") statusUpdate = "won";
-    else if (targetStage.status === "lost") statusUpdate = "lost";
-    else if (lead.status === "won" || lead.status === "lost")
-      statusUpdate = "negotiating";
-
-    if (statusUpdate !== lead.status) {
-      await onUpdateStatus(lead.id, statusUpdate);
-    }
-    await onUpdateLead(lead.id, {
-      metadata: { ...lead.metadata, stageId },
-    });
+    await onMoveLeadPipelineStage(lead.id, targetStage.id);
     setActiveDropdownLeadId(null);
   };
 

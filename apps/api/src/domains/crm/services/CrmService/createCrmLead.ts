@@ -18,6 +18,8 @@ export type CreateCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
+  pipelineId?: string | null;
+  pipelineStageId?: string | null;
   source: LeadSource;
 };
 
@@ -46,6 +48,8 @@ export async function createCrmLead(
     buyerPhone: input.buyerPhone ?? null,
     listingId: input.listingId ?? null,
     metadata: input.metadata ?? {},
+    pipelineId: input.pipelineId ?? null,
+    pipelineStageId: input.pipelineStageId ?? null,
     source: input.source,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
