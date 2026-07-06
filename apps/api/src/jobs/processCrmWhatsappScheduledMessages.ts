@@ -97,7 +97,7 @@ function createWorkerContext(input: {
     actor: { id: "crm_whatsapp_schedule_worker", kind: "system" },
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
-    permissions: ["crm.whatsapp.schedule.process", "crm.whatsapp.send"],
+    permissions: ["crm.whatsapp.schedules.process", "crm.whatsapp.send"],
     request: { requestId: input.requestId },
     source: { component: "crm-whatsapp-schedule-worker", service: "api" },
   });
@@ -112,7 +112,7 @@ function createWorkerStoreContext(input: {
     actor: { id: "crm_whatsapp_schedule_worker", kind: "system" },
     ...(input.audit ? { audit: input.audit } : {}),
     logger: input.logger,
-    permissions: ["crm.whatsapp.schedule.process", "crm.whatsapp.send"],
+    permissions: ["crm.whatsapp.schedules.process", "crm.whatsapp.send"],
     request: {
       requestId: `crm_whatsapp_schedule_${input.scope.storeId}_${Date.now()}`,
     },

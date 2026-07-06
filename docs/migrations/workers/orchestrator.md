@@ -67,10 +67,10 @@ Final output:
 ## Merge Order
 
 1. Control-plane docs.
-2. Shell/nav cleanup.
-3. Connection page.
-4. Tags page.
-5. Permission normalization.
+2. Permission normalization.
+3. Shell/nav cleanup.
+4. Connection page.
+5. Tags page.
 6. Pipeline persistence.
 7. Lead/WhatsApp identity.
 8. Visits.

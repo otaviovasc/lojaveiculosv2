@@ -29,9 +29,9 @@ export type {
   ProcessDueWhatsappScheduledMessagesResult,
 } from "./whatsappScheduledMessageProcessor.js";
 
-const readPermission = "crm.whatsapp.schedule.read";
-const createPermission = "crm.whatsapp.schedule.create";
-const cancelPermission = "crm.whatsapp.schedule.cancel";
+const readPermission = "crm.whatsapp.schedules.read";
+const createPermission = "crm.whatsapp.schedules.create";
+const cancelPermission = "crm.whatsapp.schedules.cancel";
 
 export type CreateWhatsappScheduledMessageInput = {
   scheduledAt: Date;
@@ -80,13 +80,13 @@ export async function createWhatsappScheduledMessage(
       "Scheduled message time must be in the future.",
     );
   }
-  logWhatsappServiceEvent(context, "crm.whatsapp.schedule.create.started", {
+  logWhatsappServiceEvent(context, "crm.whatsapp.schedules.create.started", {
     sessionId: input.sessionId,
   });
   return recordWhatsappServiceMutation(
     context,
     {
-      action: "crm.whatsapp.schedule.create",
+      action: "crm.whatsapp.schedules.create",
       category: "data_change",
       entityId: input.sessionId,
       entityType: "crm_whatsapp_session",
@@ -124,7 +124,7 @@ export async function cancelWhatsappScheduledMessage(
   return recordWhatsappServiceMutation(
     context,
     {
-      action: "crm.whatsapp.schedule.cancel",
+      action: "crm.whatsapp.schedules.cancel",
       category: "data_change",
       entityId: input.scheduledMessageId,
       entityType: "crm_whatsapp_scheduled_message",

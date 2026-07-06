@@ -3,19 +3,16 @@ import type { SessionBootstrap } from "../account/apiClient";
 const permissions = {
   assign: "crm.whatsapp.assign",
   close: "crm.whatsapp.close",
-  connectionUpdateCredentials: "crm.whatsapp.connection.update_credentials",
-  connectionUpdateMetadata: "crm.whatsapp.connection.update_metadata",
-  connectionUpdateStatus: "crm.whatsapp.connection.update_status",
-  connectionUpdateWebhooks: "crm.whatsapp.connection.update_webhooks",
+  connectionManage: "crm.whatsapp.connection.manage",
   list: "crm.whatsapp.list",
   read: "crm.whatsapp.read",
-  scheduleCancel: "crm.whatsapp.schedule.cancel",
-  scheduleCreate: "crm.whatsapp.schedule.create",
-  scheduleProcess: "crm.whatsapp.schedule.process",
-  scheduleRead: "crm.whatsapp.schedule.read",
+  scheduleCancel: "crm.whatsapp.schedules.cancel",
+  scheduleCreate: "crm.whatsapp.schedules.create",
+  scheduleProcess: "crm.whatsapp.schedules.process",
+  scheduleRead: "crm.whatsapp.schedules.read",
   send: "crm.whatsapp.send",
-  tagAssign: "crm.whatsapp.tag.assign",
-  tagManage: "crm.whatsapp.tag.manage",
+  tagAssign: "crm.whatsapp.tags.assign",
+  tagManage: "crm.whatsapp.tags.manage",
   toggleIntervention: "crm.whatsapp.toggle_intervention",
 } as const;
 
@@ -41,11 +38,10 @@ export function readCrmWhatsappCapabilities(
   return {
     canAssign: hasWhatsappPermission(session, permissions.assign),
     canClose: hasWhatsappPermission(session, permissions.close),
-    canConnectionManage:
-      hasWhatsappPermission(session, permissions.connectionUpdateCredentials) &&
-      hasWhatsappPermission(session, permissions.connectionUpdateMetadata) &&
-      hasWhatsappPermission(session, permissions.connectionUpdateStatus) &&
-      hasWhatsappPermission(session, permissions.connectionUpdateWebhooks),
+    canConnectionManage: hasWhatsappPermission(
+      session,
+      permissions.connectionManage,
+    ),
     canList: hasWhatsappPermission(session, permissions.list),
     canRead: hasWhatsappPermission(session, permissions.read),
     canScheduleCancel: hasWhatsappPermission(

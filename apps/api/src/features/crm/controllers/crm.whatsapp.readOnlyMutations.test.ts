@@ -113,13 +113,13 @@ function readOnlyRoutes(sessionId: string, messageId: string) {
       init: jsonPost({ name: "Quente" }),
       name: "add tag",
       path: `/api/v1/crm/whatsapp/sessions/${sessionId}/tags`,
-      permission: "crm.whatsapp.tag.assign",
+      permission: "crm.whatsapp.tags.assign",
     },
     {
       init: { method: "DELETE" },
       name: "remove tag",
       path: `/api/v1/crm/whatsapp/sessions/${sessionId}/tags/tag_1`,
-      permission: "crm.whatsapp.tag.assign",
+      permission: "crm.whatsapp.tags.assign",
     },
     {
       init: jsonPost({ content: "Ola", shortcut: "/ola", title: "Ola" }),

@@ -6,7 +6,7 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 0: Recon and control plane.
+Phase 1: Foundation guardrails and Wave 1 worker integration.
 
 ## Completed This Pass
 
@@ -23,6 +23,10 @@ Phase 0: Recon and control plane.
   `docs/migrations/crm-v2-status.md`,
   `docs/migrations/crm-v2-integration-contracts.md`,
   `docs/migrations/crm-v2-smoke-checklist.md`.
+- Committed Phase 0 control-plane docs in `7b579eb`.
+- Spawned non-Spark Wave 1 workers on `gpt-5.5` high in in-repo worktrees.
+- Normalized CRM operation permission names for connection, tags, schedules,
+  campaigns, integrations, pipeline, and visits.
 
 ## Key Findings
 
@@ -31,9 +35,8 @@ Phase 0: Recon and control plane.
   scheduled messages, and `lead_visits`.
 - Scheduled-message backend support exists; the missing work is the store-wide
   operations page and future campaign linkage.
-- V2 currently has old singular permission keys for tags/schedules and split
-  connection update permissions. The requested plural/manage permission names
-  are not yet normalized.
+- V2 permission catalog and current tag/schedule/connection services now use
+  the active V2 permission contract names.
 - Pipeline config remains browser-local through
   `apps/web/src/features/crm/crmPipelineStorage.ts`.
 - Visits are schema-only today: `lead_visits` exists, but no
@@ -65,14 +68,17 @@ Phase 0: Recon and control plane.
 
 Wave 1:
 
-- Worker A: shell/nav cleanup.
-- Worker B: connection page.
-- Worker C: tags page.
-- Worker D: dead provider/source scan and docs updates.
+- Worker A: shell/nav cleanup. Completed in `f34bad1`; pending orchestrator
+  merge.
+- Worker B: connection page. In progress.
+- Worker C: tags page. Completed in `4acd701`; pending orchestrator merge.
+- Worker D: dead provider/source scan and docs updates. Completed in
+  `a8e924e`; pending orchestrator merge.
 
 Wave 2:
 
 - Worker E: permission normalization and service helper compatibility.
+  Implemented by orchestrator because it unblocks all later shared contracts.
 - Worker F: pipeline persistence.
 - Worker G: scheduled messages page.
 
@@ -100,16 +106,23 @@ rg --files apps/web/src apps/api/src packages docs | rg 'crm|whatsapp|lead|visit
 find ../repasses-frontend -maxdepth 4 -type f
 find ../repasses-lojaveiculos-backend -maxdepth 5 -type f
 rg -n 'CRM|WhatsApp|ZAPI|Repasses' v2-plan.html v2-backend-doc.html
+rg -n 'crm\.whatsapp\.(tag\.(manage|assign)|schedule\.(read|create|cancel|process)|connection\.update_(credentials|metadata|status|webhooks))' packages/shared/src apps/api/src apps/web/src docs
+pnpm --filter @lojaveiculosv2/web test -- crmWhatsappPermissions.test.ts
+pnpm --filter @lojaveiculosv2/api test -- accessPolicy crm.whatsapp.connections.test crm.whatsapp.tags.test crm.whatsapp.scheduled
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web typecheck
+pnpm run check:lines
+pnpm exec prettier --check packages/shared/src/index.ts apps/api/src/domains/crm/services/CrmWhatsapp/listWhatsappConnections.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappScheduledMessageProcessor.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappScheduledMessages.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappSessionTags.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappTagManagement.ts apps/api/src/domains/identity/domain/crmWhatsappAccessPermissions.ts apps/api/src/domains/identity/domain/crmWhatsappPermissionCatalog.ts apps/api/src/features/crm/controllers/crm.whatsapp.controller.support.ts apps/api/src/features/crm/controllers/crm.whatsapp.controller.testSupport.ts apps/api/src/features/crm/controllers/crm.whatsapp.readOnlyMutations.test.ts apps/api/src/jobs/processCrmWhatsappScheduledMessages.ts apps/web/src/features/crm/crmWhatsappPermissions.ts apps/web/src/features/crm/crmWhatsappPermissions.test.ts docs/identity-permissions.md docs/migrations/crm-v2-integration-contracts.md docs/migrations/crm-v2-smoke-checklist.md docs/migrations/crm-v2-status.md docs/migrations/workers/orchestrator.md
 ```
 
-No validation command has been run yet because Phase 0 is documentation only and
-the active docs are still being drafted.
+Phase 1 permission validation passed. `pnpm run check:lines` initially failed
+because it scanned generated `.pnpm-store` package copies; removing the local
+store cache fixed the unrelated scan input and the guard passed.
 
 ## Next Orchestrator Actions
 
-1. Review non-Spark mapping-agent reports and fold concrete findings into this
-   status file.
-2. Commit the control-plane docs after a docs diff review.
-3. Assign Wave 1 workers with owned and avoided files.
-4. Merge Wave 1 in this order: shell/nav, connection page, tags page, dead-code
-   scan docs.
+1. Commit the Phase 1 permission slice.
+2. Review and merge Worker A shell/nav.
+3. Review and merge Worker B connection page.
+4. Merge Worker C tags page and resolve admin CSS conflicts.
+5. Merge Worker D source scan docs.

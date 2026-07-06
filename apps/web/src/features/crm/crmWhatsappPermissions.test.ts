@@ -36,11 +36,11 @@ describe("CRM WhatsApp permissions", () => {
           "crm.whatsapp.close",
           "crm.whatsapp.list",
           "crm.whatsapp.read",
-          "crm.whatsapp.schedule.cancel",
-          "crm.whatsapp.schedule.create",
-          "crm.whatsapp.schedule.read",
+          "crm.whatsapp.schedules.cancel",
+          "crm.whatsapp.schedules.create",
+          "crm.whatsapp.schedules.read",
           "crm.whatsapp.send",
-          "crm.whatsapp.tag.assign",
+          "crm.whatsapp.tags.assign",
           "crm.whatsapp.toggle_intervention",
         ]),
       ),
@@ -59,6 +59,14 @@ describe("CRM WhatsApp permissions", () => {
       canTagManage: false,
       canToggleIntervention: true,
     });
+  });
+
+  it("uses one V2 manage key for connection administration", () => {
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession(["crm.whatsapp.connection.manage"]),
+      ).canConnectionManage,
+    ).toBe(true);
   });
 
   it("keeps assignable member discovery tied to WhatsApp queue access", () => {

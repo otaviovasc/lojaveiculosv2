@@ -12,7 +12,7 @@ import {
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 
-const processPermission = "crm.whatsapp.schedule.process";
+const processPermission = "crm.whatsapp.schedules.process";
 
 export type ProcessDueWhatsappScheduledMessagesInput = {
   dueAt?: Date;
@@ -71,7 +71,7 @@ export async function processDueWhatsappScheduledMessages(
   const limit = input.limit ?? 25;
   logWhatsappServiceEvent(
     context,
-    "crm.whatsapp.schedule.process_due.started",
+    "crm.whatsapp.schedules.process_due.started",
     {
       dueAt: dueAt.toISOString(),
       limit,
@@ -80,7 +80,7 @@ export async function processDueWhatsappScheduledMessages(
   return recordWhatsappServiceMutation(
     context,
     {
-      action: "crm.whatsapp.schedule.process_due",
+      action: "crm.whatsapp.schedules.process_due",
       category: "data_change",
       metadata: { dueAt: dueAt.toISOString(), limit },
       permission: processPermission,

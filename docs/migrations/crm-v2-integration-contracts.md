@@ -119,26 +119,15 @@ Use these canonical permissions for new CRM work:
 - `crm.whatsapp.campaigns.read`
 - `crm.whatsapp.campaigns.manage`
 - `crm.whatsapp.integrations.manage`
+- `crm.pipeline.read`
+- `crm.pipeline.move`
+- `crm.pipeline.manage`
 - `crm.visits.read`
 - `crm.visits.manage`
 
-Current V2 code still has older singular schedule/tag and split connection
-permissions:
-
-- `crm.whatsapp.connection.update_credentials`
-- `crm.whatsapp.connection.update_metadata`
-- `crm.whatsapp.connection.update_status`
-- `crm.whatsapp.connection.update_webhooks`
-- `crm.whatsapp.schedule.read`
-- `crm.whatsapp.schedule.create`
-- `crm.whatsapp.schedule.cancel`
-- `crm.whatsapp.schedule.process`
-- `crm.whatsapp.tag.manage`
-- `crm.whatsapp.tag.assign`
-
-Phase 1 must normalize the catalog, bootstrap capability reader, and service
-checks without weakening existing access. Until that lands, feature workers
-must not invent new permission spellings.
+Phase 1 normalized the permission catalog, bootstrap capability reader, test
+contexts, scheduled-message worker, and current tag/schedule/connection service
+checks to these names. Feature workers must not invent alternate spellings.
 
 Existing conversation permissions remain:
 

@@ -54,20 +54,24 @@ manage these explicit permissions in the CRM group:
 - `crm.whatsapp.assign`: assign conversations.
 - `crm.whatsapp.close`: close conversations.
 - `crm.whatsapp.toggle_intervention`: toggle manual intervention.
-- `crm.whatsapp.tag.assign`: attach and remove existing tags on sessions.
-- `crm.whatsapp.tag.manage`: create, edit, delete, and reorder tags.
-- `crm.whatsapp.schedule.read`: list scheduled WhatsApp messages.
-- `crm.whatsapp.schedule.create`: schedule a WhatsApp text message.
-- `crm.whatsapp.schedule.cancel`: cancel a pending scheduled message.
-- `crm.whatsapp.schedule.process`: process due scheduled messages.
-- `crm.whatsapp.connection.update_metadata`: edit safe ZAPI connection labels,
-  phone fields, external ids, and admin metadata.
-- `crm.whatsapp.connection.update_status`: change the V2 configured connection
-  status.
-- `crm.whatsapp.connection.update_credentials`: change the environment variable
-  references used to resolve ZAPI credentials.
-- `crm.whatsapp.connection.update_webhooks`: change the connection webhook base
-  URL.
+- `crm.whatsapp.tags.assign`: attach and remove existing tags on sessions.
+- `crm.whatsapp.tags.manage`: create, edit, delete, and reorder tags.
+- `crm.whatsapp.schedules.read`: list scheduled WhatsApp messages.
+- `crm.whatsapp.schedules.create`: schedule a WhatsApp text message.
+- `crm.whatsapp.schedules.cancel`: cancel a pending scheduled message.
+- `crm.whatsapp.schedules.process`: process due scheduled messages.
+- `crm.whatsapp.connection.manage`: edit ZAPI metadata, configured status,
+  env-var credential references, and webhook base URL.
+- `crm.whatsapp.campaigns.read`: view WhatsApp campaigns and metrics.
+- `crm.whatsapp.campaigns.manage`: create, pause, resume, and cancel WhatsApp
+  campaigns.
+- `crm.whatsapp.integrations.manage`: configure external bot integrations and
+  write-only webhook secrets.
+- `crm.pipeline.read`: view CRM pipeline stages and settings.
+- `crm.pipeline.move`: move leads through persisted CRM pipeline stages.
+- `crm.pipeline.manage`: configure CRM pipeline stages and rules.
+- `crm.visits.read`: view lead visits.
+- `crm.visits.manage`: create, update, complete, and cancel lead visits.
 
 V2 asserts these permissions, tenant/store scope, CRM entitlement context, and
 audit metadata before every WhatsApp operation. Pre-launch WhatsApp code should

@@ -12,7 +12,7 @@ import {
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 
-const tagManagePermission = "crm.whatsapp.tag.manage";
+const tagManagePermission = "crm.whatsapp.tags.manage";
 
 export type CreateWhatsappTagInput = {
   color?: string;

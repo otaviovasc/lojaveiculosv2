@@ -36,7 +36,7 @@ export type {
   UpdateWhatsappTagInput,
 } from "./whatsappTagManagement.js";
 
-const tagAssignPermission = "crm.whatsapp.tag.assign";
+const tagAssignPermission = "crm.whatsapp.tags.assign";
 
 export type AddWhatsappSessionTagInput = {
   color?: string;

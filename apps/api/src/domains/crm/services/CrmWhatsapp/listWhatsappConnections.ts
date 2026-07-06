@@ -25,11 +25,7 @@ import {
 export type { WhatsappConnection } from "../../whatsapp/whatsappConnectionModels.js";
 
 const readPermission = "crm.whatsapp.list";
-const updateCredentialsPermission =
-  "crm.whatsapp.connection.update_credentials";
-const updateMetadataPermission = "crm.whatsapp.connection.update_metadata";
-const updateStatusPermission = "crm.whatsapp.connection.update_status";
-const updateWebhooksPermission = "crm.whatsapp.connection.update_webhooks";
+const updatePermission = "crm.whatsapp.connection.manage";
 
 export type UpdateWhatsappConnectionInput = {
   catalogPhone?: string | null;
@@ -87,7 +83,7 @@ export async function updateWhatsappConnection(
   input: UpdateWhatsappConnectionInput,
   ports: CrmServicePorts,
 ): Promise<WhatsappConnection> {
-  assertConnectionUpdatePermissions(context, input);
+  assertPermission(context, updatePermission);
   const scope = requireCrmScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.connection.update.started", {
     connectionId: input.connectionId,
@@ -105,7 +101,7 @@ export async function updateWhatsappConnection(
           .filter((key) => key !== "connectionId")
           .join(","),
       },
-      permission: readConnectionUpdateAuditPermission(input),
+      permission: updatePermission,
       summary: "Updated CRM WhatsApp ZAPI connection",
     },
     async () => {
@@ -148,38 +144,6 @@ export async function updateWhatsappConnection(
       );
     },
   );
-}
-
-function assertConnectionUpdatePermissions(
-  context: ServiceContext,
-  input: UpdateWhatsappConnectionInput,
-) {
-  if (input.credentialsEnv)
-    assertPermission(context, updateCredentialsPermission);
-  if (input.status) assertPermission(context, updateStatusPermission);
-  if (input.webhookUrl !== undefined) {
-    assertPermission(context, updateWebhooksPermission);
-  }
-  if (
-    input.catalogPhone !== undefined ||
-    input.connectedPhone !== undefined ||
-    input.displayName !== undefined ||
-    input.externalConnectionId !== undefined ||
-    input.externalInstanceId !== undefined ||
-    input.phone !== undefined ||
-    input.purpose !== undefined
-  ) {
-    assertPermission(context, updateMetadataPermission);
-  }
-}
-
-function readConnectionUpdateAuditPermission(
-  input: UpdateWhatsappConnectionInput,
-) {
-  if (input.credentialsEnv) return updateCredentialsPermission;
-  if (input.webhookUrl !== undefined) return updateWebhooksPermission;
-  if (input.status) return updateStatusPermission;
-  return updateMetadataPermission;
 }
 
 async function readConnectionLiveStatus(

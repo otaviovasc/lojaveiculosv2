@@ -47,6 +47,18 @@ evidence folder is documented.
 - Verify no pipeline/column wording appears.
 - Capture desktop and mobile screenshots.
 
+## Permission Contract
+
+- Verify no old singular permission keys remain:
+  `crm.whatsapp.tag.*`, `crm.whatsapp.schedule.*`,
+  `crm.whatsapp.connection.update_*`.
+- Verify canonical keys are present in shared types, identity catalog,
+  role defaults, frontend capability reader, service checks, and test contexts.
+- Verify connection admin requires `crm.whatsapp.connection.manage`.
+- Verify tag management uses `crm.whatsapp.tags.manage`.
+- Verify tag assignment uses `crm.whatsapp.tags.assign`.
+- Verify scheduled messages use `crm.whatsapp.schedules.*`.
+
 ## Pipeline
 
 - Create/edit/reorder pipeline stage.
