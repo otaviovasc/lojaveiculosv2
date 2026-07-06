@@ -3,8 +3,12 @@ import type {
   CrmWhatsappMessage,
   CrmWhatsappSession,
   CrmWhatsappTag,
+  CreateCrmWhatsappTagInput,
+  DeleteCrmWhatsappTagInput,
   FindOrCreateCrmWhatsappTagInput,
   ListCrmWhatsappTagsInput,
+  ReorderCrmWhatsappTagsInput,
+  UpdateCrmWhatsappTagInput,
   UpdateCrmWhatsappSessionTagInput,
 } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
 import { updateMemoryWhatsappSession } from "./crmWhatsappMemoryMutations.js";
@@ -21,7 +25,6 @@ export function addMemorySessionTag(
   input: UpdateCrmWhatsappSessionTagInput,
 ) {
   if (!hasSession(sessions, input)) return null;
-  enforceMemoryColumnExclusivity(state, input);
   if (!state.sessionTags.some((item) => sameSessionTag(item, input))) {
     state.sessionTags.push({
       sessionId: input.sessionId,
@@ -56,7 +59,6 @@ export function findOrCreateMemoryTag(
     connectionId: input.connectionId ?? null,
     emoji: input.emoji ?? null,
     id: randomUUID(),
-    isColumn: input.isColumn ?? false,
     name: input.name,
     sortOrder: input.sortOrder ?? state.tags.length,
     storeId: input.storeId,
@@ -64,6 +66,69 @@ export function findOrCreateMemoryTag(
   };
   state.tags.push(tag);
   return tag;
+}
+
+export function createMemoryTag(
+  state: MemoryWhatsappTagState,
+  input: CreateCrmWhatsappTagInput,
+) {
+  return findOrCreateMemoryTag(state, input);
+}
+
+export function updateMemoryTag(
+  state: MemoryWhatsappTagState,
+  input: UpdateCrmWhatsappTagInput,
+) {
+  const tag = state.tags.find(
+    (item) =>
+      item.id === input.id &&
+      item.storeId === input.storeId &&
+      item.tenantId === input.tenantId,
+  );
+  if (!tag) return null;
+  if (input.color !== undefined) tag.color = input.color;
+  if (input.emoji !== undefined) tag.emoji = input.emoji;
+  if (input.name !== undefined) tag.name = input.name;
+  if (input.sortOrder !== undefined) tag.sortOrder = input.sortOrder;
+  return tag;
+}
+
+export function deleteMemoryTag(
+  state: MemoryWhatsappTagState,
+  input: DeleteCrmWhatsappTagInput,
+) {
+  const index = state.tags.findIndex(
+    (tag) =>
+      tag.id === input.id &&
+      tag.storeId === input.storeId &&
+      tag.tenantId === input.tenantId,
+  );
+  if (index < 0) return null;
+  const [deleted] = state.tags.splice(index, 1);
+  state.sessionTags = state.sessionTags.filter(
+    (item) => item.tagId !== input.id,
+  );
+  return deleted ?? null;
+}
+
+export function reorderMemoryTags(
+  state: MemoryWhatsappTagState,
+  input: ReorderCrmWhatsappTagsInput,
+) {
+  for (const [sortOrder, tagId] of input.tagIds.entries()) {
+    const tag = state.tags.find(
+      (item) =>
+        item.id === tagId &&
+        item.storeId === input.storeId &&
+        item.tenantId === input.tenantId,
+    );
+    if (tag) tag.sortOrder = sortOrder;
+  }
+  return listMemoryTags(state, {
+    limit: state.tags.length,
+    storeId: input.storeId,
+    tenantId: input.tenantId,
+  });
 }
 
 export function listMemoryTags(
@@ -98,7 +163,9 @@ export function hydrateSessionTags(
   );
   return {
     ...session,
-    sessionTags: state.tags.filter((tag) => tagIds.has(tag.id)),
+    sessionTags: state.tags
+      .filter((tag) => tagIds.has(tag.id))
+      .sort(compareMemoryTags),
   };
 }
 
@@ -148,26 +215,7 @@ function sameSessionTag(
   return item.sessionId === input.sessionId && item.tagId === input.tagId;
 }
 
-function enforceMemoryColumnExclusivity(
-  state: MemoryWhatsappTagState,
-  input: UpdateCrmWhatsappSessionTagInput,
-) {
-  const tag = state.tags.find((item) => item.id === input.tagId);
-  if (!tag?.isColumn) return;
-  const columnTagIds = new Set(
-    state.tags
-      .filter((item) => item.isColumn)
-      .filter((item) => item.id !== input.tagId)
-      .map((item) => item.id),
-  );
-  state.sessionTags = state.sessionTags.filter(
-    (item) =>
-      item.sessionId !== input.sessionId || !columnTagIds.has(item.tagId),
-  );
-}
-
 function compareMemoryTags(left: CrmWhatsappTag, right: CrmWhatsappTag) {
-  if (left.isColumn !== right.isColumn) return left.isColumn ? -1 : 1;
   if (left.sortOrder !== right.sortOrder)
     return left.sortOrder - right.sortOrder;
   return left.name.localeCompare(right.name, "pt-BR");

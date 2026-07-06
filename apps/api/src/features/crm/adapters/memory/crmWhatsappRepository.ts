@@ -2,6 +2,7 @@ import type {
   CrmWhatsappMessage,
   CrmWhatsappQuickMessage,
   CrmWhatsappRepository,
+  CrmWhatsappScheduledMessage,
   CrmWhatsappSession,
 } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
 import {
@@ -31,12 +32,23 @@ import {
   updateMemoryQuickMessage,
 } from "./crmWhatsappMemoryQuickMessages.js";
 import {
+  createMemoryScheduledMessage,
+  findDueMemoryScheduledMessageScopes,
+  findDueMemoryScheduledMessages,
+  listMemoryScheduledMessages,
+  updateMemoryScheduledMessage,
+} from "./crmWhatsappMemoryScheduledMessages.js";
+import {
   addMemorySessionTag,
+  createMemoryTag,
+  deleteMemoryTag,
   findOrCreateMemoryTag,
   hydrateSessionTags,
   listMemoryTags,
+  reorderMemoryTags,
   removeMemorySessionTag,
   requireHydratedSession,
+  updateMemoryTag,
   type MemoryWhatsappTagState,
 } from "./crmWhatsappMemoryTags.js";
 
@@ -48,6 +60,7 @@ export function createMemoryCrmWhatsappRepository(
   const sessions = [...initialSessions];
   const messages = [...initialMessages];
   const quickMessages = [...initialQuickMessages];
+  const scheduledMessages: CrmWhatsappScheduledMessage[] = [];
   const tagState: MemoryWhatsappTagState = { sessionTags: [], tags: [] };
 
   return {
@@ -62,6 +75,21 @@ export function createMemoryCrmWhatsappRepository(
     },
     async findOrCreateTag(input) {
       return findOrCreateMemoryTag(tagState, input);
+    },
+    async findDueScheduledMessageScopes(input) {
+      return findDueMemoryScheduledMessageScopes(scheduledMessages, input);
+    },
+    async createTag(input) {
+      return createMemoryTag(tagState, input);
+    },
+    async updateTag(input) {
+      return updateMemoryTag(tagState, input);
+    },
+    async deleteTag(input) {
+      return deleteMemoryTag(tagState, input);
+    },
+    async reorderTags(input) {
+      return reorderMemoryTags(tagState, input);
     },
     async listTags(input) {
       return listMemoryTags(tagState, input);
@@ -182,6 +210,18 @@ export function createMemoryCrmWhatsappRepository(
         .filter((session) => !input.unreadOnly || session.unreadCount > 0)
         .sort(compareSessionsNewestFirst)
         .slice(input.offset, input.offset + input.limit);
+    },
+    async createScheduledMessage(input) {
+      return createMemoryScheduledMessage(scheduledMessages, input);
+    },
+    async findDueScheduledMessages(input) {
+      return findDueMemoryScheduledMessages(scheduledMessages, input);
+    },
+    async listScheduledMessages(input) {
+      return listMemoryScheduledMessages(scheduledMessages, input);
+    },
+    async updateScheduledMessage(input) {
+      return updateMemoryScheduledMessage(scheduledMessages, input);
     },
     async deleteQuickMessage(input) {
       return deleteMemoryQuickMessage(quickMessages, input);

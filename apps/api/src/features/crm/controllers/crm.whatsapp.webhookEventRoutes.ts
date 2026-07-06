@@ -26,13 +26,13 @@ export function registerCrmWhatsappWebhookEventRoutes(
   crmFeature: Hono,
   { createContext, services }: RegisterCrmWhatsappWebhookEventRoutesOptions,
 ) {
-  crmFeature.get("/whatsapp/provider-events/failed", async (context) =>
+  crmFeature.get("/whatsapp/provider-events/issues", async (context) =>
     handleWhatsapp(context, async () => {
       const parsed = webhookEventsQuerySchema.safeParse(context.req.query());
       if (!parsed.success) throw new CrmWhatsappValidationError();
       const serviceContext = await createContext(context);
       assertWhatsappRead(serviceContext);
-      const events = await services.listWhatsappFailedWebhookEvents(
+      const events = await services.listWhatsappWebhookEventIssues(
         serviceContext,
         {
           ...(parsed.data.connectionId

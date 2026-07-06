@@ -11,6 +11,7 @@ import {
 } from "../CrmService/serviceSupport.js";
 import type { CrmLead } from "../../ports/crmRepository.js";
 import { parseZapiInboundMessage } from "../../whatsapp/parseZapiInboundMessage.js";
+import { findOrCreateWhatsappLead } from "../../whatsapp/whatsappLeadLinking.js";
 import { mirrorZapiWhatsappMedia } from "../../whatsapp/mirrorZapiWhatsappMedia.js";
 import type {
   WhatsappMessage,
@@ -39,7 +40,7 @@ export type IngestZapiWhatsappWebhookResult =
       status: "duplicate";
     }
   | {
-      reason: "connection_not_found" | "not_processable" | "wrong_provider";
+      reason: "connection_not_found" | "not_processable";
       status: "ignored";
     }
   | {
@@ -61,9 +62,6 @@ export async function ingestZapiWhatsappWebhook(
     input.connectionId,
   );
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
-  if (connection.provider !== "zapi") {
-    return { reason: "wrong_provider", status: "ignored" };
-  }
 
   const parsed = parseZapiInboundMessage(input.payload);
   if (!parsed) return { reason: "not_processable", status: "ignored" };
@@ -196,42 +194,6 @@ async function createWhatsappActivity(
       provider: "zapi",
     },
     occurredAt: input.occurredAt,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
-}
-
-async function findOrCreateWhatsappLead(
-  ports: CrmServicePorts,
-  input: {
-    buyerName: string | null;
-    buyerPhone: string;
-    connectionId: string;
-    direction: "INBOUND" | "OUTBOUND";
-    externalId: string;
-    storeId: CrmLead["storeId"];
-    tenantId: CrmLead["tenantId"];
-  },
-) {
-  const repository = getCrmRepository(ports);
-  const existing = await repository.findLeadByPhone({
-    buyerPhone: input.buyerPhone,
-    storeId: input.storeId,
-    tenantId: input.tenantId,
-  });
-  if (existing) return existing;
-
-  return repository.createLead({
-    buyerName: input.buyerName,
-    buyerPhone: input.buyerPhone,
-    metadata: {
-      crmWhatsapp: {
-        connectionId: input.connectionId,
-        firstDirection: input.direction,
-        firstMessageExternalId: input.externalId,
-      },
-    },
-    source: "whatsapp",
     storeId: input.storeId,
     tenantId: input.tenantId,
   });

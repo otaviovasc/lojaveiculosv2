@@ -43,6 +43,14 @@ export function assertWhatsappSend(context: ServiceContext) {
   return assertWhatsappPermission(context, "crm.whatsapp.send");
 }
 
+export function assertWhatsappTagAssign(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.tag.assign");
+}
+
+export function assertWhatsappTagManage(context: ServiceContext) {
+  return assertWhatsappPermission(context, "crm.whatsapp.tag.manage");
+}
+
 export function assertWhatsappAssign(context: ServiceContext) {
   return assertWhatsappPermission(context, "crm.whatsapp.assign");
 }

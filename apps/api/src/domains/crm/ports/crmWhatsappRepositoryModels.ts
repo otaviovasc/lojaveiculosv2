@@ -46,7 +46,6 @@ export type CrmWhatsappTag = {
   connectionId: string | null;
   emoji: string | null;
   id: string;
-  isColumn: boolean;
   name: string;
   sortOrder: number;
   storeId: StoreId;
@@ -74,6 +73,34 @@ export type CrmWhatsappMessage = {
   tenantId: TenantId;
   type: CrmWhatsappMessageType;
   updatedAt: Date;
+};
+
+export type CrmWhatsappScheduledMessageStatus =
+  "cancelled" | "failed" | "pending" | "sending" | "sent";
+
+export type CrmWhatsappScheduledMessage = {
+  cancelledAt: Date | null;
+  connectionId: string;
+  createdAt: Date;
+  createdByUserId: UserId | null;
+  errorMessage: string | null;
+  id: string;
+  metadata: Record<string, unknown>;
+  phone: string;
+  scheduledAt: Date;
+  sentAt: Date | null;
+  sentMessageId: string | null;
+  sessionId: string;
+  status: CrmWhatsappScheduledMessageStatus;
+  storeId: StoreId;
+  tenantId: TenantId;
+  text: string;
+  updatedAt: Date;
+};
+
+export type CrmWhatsappScheduledMessageScope = {
+  storeId: StoreId;
+  tenantId: TenantId;
 };
 
 export type IngestCrmWhatsappMessageResult = {

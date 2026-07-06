@@ -26,14 +26,25 @@ import {
   listWhatsappQuickMessages,
   updateWhatsappQuickMessage,
 } from "./drizzleCrmWhatsappQuickMessages.js";
+import {
+  createWhatsappScheduledMessage,
+  findDueWhatsappScheduledMessageScopes,
+  findDueWhatsappScheduledMessages,
+  listWhatsappScheduledMessages,
+  updateWhatsappScheduledMessage,
+} from "./drizzleCrmWhatsappScheduledMessages.js";
 import { ingestMessageInDatabase } from "./drizzleCrmWhatsappIngest.js";
 import { cleanSessionUpdate } from "./drizzleCrmWhatsappUpdates.js";
 import {
   addWhatsappSessionTag,
+  createWhatsappTag,
+  deleteWhatsappTag,
   findOrCreateWhatsappTag,
   hydrateWhatsappSession,
   listWhatsappTags,
+  reorderWhatsappTags,
   removeWhatsappSessionTag,
+  updateWhatsappTag,
 } from "./drizzleCrmWhatsappTags.js";
 
 export function createDrizzleCrmWhatsappRepository(
@@ -52,6 +63,21 @@ export function createDrizzleCrmWhatsappRepository(
     },
     async findOrCreateTag(input) {
       return findOrCreateWhatsappTag(db, input);
+    },
+    async findDueScheduledMessageScopes(input) {
+      return findDueWhatsappScheduledMessageScopes(db, input);
+    },
+    async createTag(input) {
+      return createWhatsappTag(db, input);
+    },
+    async updateTag(input) {
+      return updateWhatsappTag(db, input);
+    },
+    async deleteTag(input) {
+      return deleteWhatsappTag(db, input);
+    },
+    async reorderTags(input) {
+      return reorderWhatsappTags(db, input);
     },
     async listTags(input) {
       return listWhatsappTags(db, input);
@@ -130,6 +156,18 @@ export function createDrizzleCrmWhatsappRepository(
         ),
       );
       return sessions;
+    },
+    async createScheduledMessage(input) {
+      return createWhatsappScheduledMessage(db, input);
+    },
+    async findDueScheduledMessages(input) {
+      return findDueWhatsappScheduledMessages(db, input);
+    },
+    async listScheduledMessages(input) {
+      return listWhatsappScheduledMessages(db, input);
+    },
+    async updateScheduledMessage(input) {
+      return updateWhatsappScheduledMessage(db, input);
     },
     async deleteQuickMessage(input) {
       return deleteWhatsappQuickMessage(db, input);

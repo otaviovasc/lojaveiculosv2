@@ -12,6 +12,7 @@ describe("resolveStoreContext", () => {
   it("resolves permissions, entitlements, tenant, store, and audit", async () => {
     const audit = { record: vi.fn(async () => undefined) };
     const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
       entitlements: ["crm", "subdomain"],
       overrides: [{ allowed: true, permission: "inventory.update_price" }],
       role: "salesman",
@@ -41,6 +42,8 @@ describe("resolveStoreContext", () => {
       kind: "user",
     });
     expect(context.entitlements).toContain("crm");
+    expect(context.billingManagedBy).toBe("store_owner");
+    expect(context.membershipRole).toBe("salesman");
     expect(context.permissions).toContain("inventory.update_price");
     expect(audit.record).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -53,6 +56,31 @@ describe("resolveStoreContext", () => {
         requestId: "req_1",
       }),
     );
+  });
+
+  it("removes owner billing permission when an agency manages the billing", async () => {
+    const access: StoreAccessRecord = {
+      billingManagedBy: "agency",
+      entitlements: ["crm"],
+      overrides: [],
+      role: "owner",
+      storeId: "store_1" as never,
+      tenantId: "tenant_1" as never,
+      userId: "user_1" as never,
+    };
+
+    const context = await resolveStoreContext({
+      actor: { id: "user_1", kind: "user" },
+      audit: { record: vi.fn(async () => undefined) },
+      clerkUserId: "clerk_1",
+      logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+      repository: { findByClerkUserAndStoreSlug: vi.fn(async () => access) },
+      requestId: "req_1",
+      storeSlug: "demo",
+    });
+
+    expect(context.billingManagedBy).toBe("agency");
+    expect(context.permissions).not.toContain("billing.manage");
   });
 
   it("fails with a typed error when user cannot access store", async () => {

@@ -3,16 +3,18 @@ import type { SessionBootstrap } from "../account/apiClient";
 import { createSettingsApi } from "../settings/apiClient";
 import { createSettingsApiOptions } from "../settings/runtimeApi";
 import type { RoleManagementView, RoleMemberView } from "../settings/types";
-import type { CrmWhatsappAgent } from "./crmWhatsappTypes";
+import type { CrmWhatsappAssignableMember } from "./crmWhatsappTypes";
 import {
   hasWhatsappPermission,
   hasWhatsappQueueAccess,
 } from "./crmWhatsappPermissions";
 
-export function useCrmWhatsappAgents(session: SessionBootstrap | null) {
-  const [agents, setAgents] = useState<CrmWhatsappAgent[]>(() =>
-    session ? [currentUserAgent(session)] : [],
-  );
+export function useCrmWhatsappAssignableMembers(
+  session: SessionBootstrap | null,
+) {
+  const [assignableMembers, setAssignableMembers] = useState<
+    CrmWhatsappAssignableMember[]
+  >(() => (session ? [currentUserAssignableMember(session)] : []));
   const canAssignSessions = useMemo(
     () => canAssignWhatsappSessions(session),
     [session],
@@ -20,7 +22,7 @@ export function useCrmWhatsappAgents(session: SessionBootstrap | null) {
 
   useEffect(() => {
     if (!session) {
-      setAgents([]);
+      setAssignableMembers([]);
       return;
     }
     let active = true;
@@ -28,39 +30,46 @@ export function useCrmWhatsappAgents(session: SessionBootstrap | null) {
       .then((options) => createSettingsApi(options).getRoleManagement())
       .then((roles) => {
         if (active)
-          setAgents(mapRoleManagementToWhatsappAgents(roles, session));
+          setAssignableMembers(
+            mapRoleManagementToWhatsappAssignableMembers(roles, session),
+          );
       })
       .catch(() => {
-        if (active) setAgents([currentUserAgent(session)]);
+        if (active)
+          setAssignableMembers([currentUserAssignableMember(session)]);
       });
     return () => {
       active = false;
     };
   }, [session]);
 
-  return { agents, canAssignSessions };
+  return { assignableMembers, canAssignSessions };
 }
 
 export function canAssignWhatsappSessions(session: SessionBootstrap | null) {
   return hasWhatsappPermission(session, "crm.whatsapp.assign");
 }
 
-export function mapRoleManagementToWhatsappAgents(
+export function mapRoleManagementToWhatsappAssignableMembers(
   roles: RoleManagementView,
   session: SessionBootstrap,
-): CrmWhatsappAgent[] {
-  const agents = roles.memberships
+): CrmWhatsappAssignableMember[] {
+  const assignableMembers = roles.memberships
     .filter((member) => member.status === "active")
     .filter((member) => hasWhatsappAccess(member))
-    .map(toWhatsappAgent);
-  return agents.length ? agents : [currentUserAgent(session)];
+    .map(toWhatsappAssignableMember);
+  return assignableMembers.length
+    ? assignableMembers
+    : [currentUserAssignableMember(session)];
 }
 
 function hasWhatsappAccess(member: RoleMemberView) {
   return hasWhatsappQueueAccess(member.effectivePermissions);
 }
 
-function toWhatsappAgent(member: RoleMemberView): CrmWhatsappAgent {
+function toWhatsappAssignableMember(
+  member: RoleMemberView,
+): CrmWhatsappAssignableMember {
   return {
     email: member.user.email,
     id: member.user.id as never,
@@ -73,13 +82,15 @@ function toWhatsappAgent(member: RoleMemberView): CrmWhatsappAgent {
   };
 }
 
-function currentUserAgent(session: SessionBootstrap): CrmWhatsappAgent {
+function currentUserAssignableMember(
+  session: SessionBootstrap,
+): CrmWhatsappAssignableMember {
   return {
     email: session.user.email,
     id: session.user.id as never,
     isActive: true,
     name: session.user.name ?? session.user.email,
-    role: session.defaultStore?.role?.toUpperCase() ?? "AGENT",
+    role: session.defaultStore?.role?.toUpperCase() ?? "MEMBER",
     seeUnassignedChats: canAssignWhatsappSessions(session),
   };
 }

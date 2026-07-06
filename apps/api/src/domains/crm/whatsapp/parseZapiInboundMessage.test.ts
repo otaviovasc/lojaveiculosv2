@@ -70,6 +70,28 @@ describe("parseZapiInboundMessage", () => {
     });
   });
 
+  it("uses participantPhone when live ZAPI phone is a long identifier", () => {
+    const parsed = parseZapiInboundMessage({
+      connectedPhone: "5511000000000",
+      fromMe: false,
+      messageId: "live-zapi-text-1",
+      momment: "2026-07-06T13:20:00.000Z",
+      participantPhone: "5511999990000",
+      phone: "123456789012345678901234",
+      senderName: "Lead WhatsApp",
+      text: { message: "Ola vivo" },
+      type: "ReceivedCallback",
+    });
+
+    expect(parsed).toMatchObject({
+      buyerName: "Lead WhatsApp",
+      content: "Ola vivo",
+      externalId: "live-zapi-text-1",
+      phone: "5511999990000",
+      type: "TEXT",
+    });
+  });
+
   it("normalizes location payloads into message metadata", () => {
     const parsed = parseZapiInboundMessage({
       location: {

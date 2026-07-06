@@ -77,6 +77,7 @@ function matchesList(
   event: CrmProviderWebhookEvent,
   input: {
     connectionId?: string | null;
+    eventType?: string;
     provider?: "zapi";
     status?: string;
     storeId: string;
@@ -87,6 +88,7 @@ function matchesList(
   if (event.tenantId !== input.tenantId) return false;
   if (input.connectionId && event.connectionId !== input.connectionId)
     return false;
+  if (input.eventType && event.eventType !== input.eventType) return false;
   if (input.provider && event.provider !== input.provider) return false;
   if (input.status && event.status !== input.status) return false;
   return true;

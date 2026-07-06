@@ -1,5 +1,15 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
+import {
+  toWhatsappSession,
+  type WhatsappSession,
+  type WhatsappSessionTag,
+} from "../../whatsapp/whatsappModels.js";
+import {
+  WhatsappConnectionNotFoundError,
+  WhatsappSessionNotFoundError,
+} from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
   getCrmWhatsappRepository,
@@ -8,27 +18,29 @@ import {
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
-  toWhatsappSession,
-  type WhatsappSession,
-  type WhatsappSessionTag,
-} from "../../whatsapp/whatsappModels.js";
-import type { CrmWhatsappSession } from "../../ports/crmWhatsappRepository.js";
-import {
-  WhatsappConnectionNotFoundError,
-  WhatsappSessionNotFoundError,
-} from "../../whatsapp/whatsappSendErrors.js";
-import {
   logWhatsappServiceEvent,
   publishWhatsappSessionUpdate,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 
-const permission = "crm.whatsapp.send";
+export {
+  createWhatsappTag,
+  deleteWhatsappTag,
+  reorderWhatsappTags,
+  updateWhatsappTag,
+} from "./whatsappTagManagement.js";
+export type {
+  CreateWhatsappTagInput,
+  DeleteWhatsappTagInput,
+  ReorderWhatsappTagsInput,
+  UpdateWhatsappTagInput,
+} from "./whatsappTagManagement.js";
+
+const tagAssignPermission = "crm.whatsapp.tag.assign";
 
 export type AddWhatsappSessionTagInput = {
   color?: string;
   emoji?: string | null;
-  isColumn?: boolean;
   name: string;
   sessionId: string;
 };
@@ -51,8 +63,7 @@ export async function listWhatsappTags(
 ): Promise<readonly WhatsappSessionTag[]> {
   assertPermission(context, "crm.whatsapp.read");
   const scope = requireCrmScope(context);
-  const repository = getCrmWhatsappRepository(ports);
-  return repository.listTags({
+  return getCrmWhatsappRepository(ports).listTags({
     ...(input.connectionId !== undefined
       ? { connectionId: input.connectionId }
       : {}),
@@ -68,7 +79,7 @@ export async function addWhatsappSessionTag(
   input: AddWhatsappSessionTagInput,
   ports: CrmServicePorts,
 ): Promise<WhatsappSession> {
-  assertPermission(context, permission);
+  assertPermission(context, tagAssignPermission);
   const name = input.name.trim();
   logWhatsappServiceEvent(context, "crm.whatsapp.session.tag.add.started", {
     name,
@@ -82,7 +93,7 @@ export async function addWhatsappSessionTag(
       entityId: input.sessionId,
       entityType: "crm_whatsapp_session",
       metadata: { name },
-      permission,
+      permission: tagAssignPermission,
       summary: "Added CRM WhatsApp session tag",
     },
     () => addSessionTag(context, { ...input, name }, ports),
@@ -94,7 +105,7 @@ export async function removeWhatsappSessionTag(
   input: RemoveWhatsappSessionTagInput,
   ports: CrmServicePorts,
 ): Promise<WhatsappSession> {
-  assertPermission(context, permission);
+  assertPermission(context, tagAssignPermission);
   logWhatsappServiceEvent(context, "crm.whatsapp.session.tag.remove.started", {
     sessionId: input.sessionId,
     tagId: input.tagId,
@@ -107,7 +118,7 @@ export async function removeWhatsappSessionTag(
       entityId: input.sessionId,
       entityType: "crm_whatsapp_session",
       metadata: { tagId: input.tagId },
-      permission,
+      permission: tagAssignPermission,
       summary: "Removed CRM WhatsApp session tag",
     },
     () => removeSessionTag(context, input, ports),
@@ -131,7 +142,6 @@ async function addSessionTag(
       color: input.color ?? "#64748b",
       connectionId: session.connectionId,
       emoji: input.emoji ?? null,
-      isColumn: input.isColumn ?? false,
       name: input.name,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,

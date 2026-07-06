@@ -5,6 +5,7 @@ import {
   storeEntitlements,
   storeMemberships,
   stores,
+  tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
 import { createDrizzleStoreAccessRepository } from "./drizzleStoreAccessRepository.js";
@@ -24,6 +25,7 @@ describe("Drizzle store access repository", () => {
     });
 
     expect(access).toEqual({
+      billingManagedBy: "store_owner",
       entitlements: ["crm", "subdomain"],
       overrides: [
         { allowed: true, permission: "inventory.update_price" },
@@ -42,8 +44,36 @@ describe("Drizzle store access repository", () => {
         roleTemplates,
         membershipPermissionOverrides,
         storeEntitlements,
+        tenantMemberships,
       ]),
     );
+  });
+
+  it("marks billing as agency-managed when the tenant has an active agency membership", async () => {
+    const rows = createStoreAccessRows({
+      roleTemplates: [
+        { id: "role_salesman", roleKey: "salesman" },
+        { id: "role_agency", roleKey: "agency" },
+      ],
+      tenantMemberships: [
+        {
+          roleTemplateId: "role_agency",
+          status: "active",
+          tenantId: "tenant_1" as never,
+          userId: "agency_user" as never,
+        },
+      ],
+    });
+    const repository = createDrizzleStoreAccessRepository(
+      createFakeStoreAccessDb(rows),
+    );
+
+    const access = await repository.findByClerkUserAndStoreSlug({
+      clerkUserId: "clerk_1",
+      storeSlug: "demo",
+    });
+
+    expect(access?.billingManagedBy).toBe("agency");
   });
 
   it("returns null when the membership is not active", async () => {

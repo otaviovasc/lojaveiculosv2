@@ -16,7 +16,6 @@ export {
   WhatsappMessageActionError,
   WhatsappMessageNotFoundError,
   WhatsappSessionNotFoundError,
-  WhatsappUnsupportedProviderError,
 } from "../../whatsapp/whatsappSendErrors.js";
 import {
   WhatsappMessageActionError,

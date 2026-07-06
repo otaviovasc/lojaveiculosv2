@@ -14,9 +14,16 @@ describe("CRM WhatsApp permissions", () => {
     ).toEqual({
       canAssign: false,
       canClose: false,
+      canConnectionManage: false,
       canList: true,
       canRead: true,
+      canScheduleCancel: false,
+      canScheduleCreate: false,
+      canScheduleProcess: false,
+      canScheduleRead: false,
       canSend: false,
+      canTagAssign: false,
+      canTagManage: false,
       canToggleIntervention: false,
     });
   });
@@ -29,21 +36,32 @@ describe("CRM WhatsApp permissions", () => {
           "crm.whatsapp.close",
           "crm.whatsapp.list",
           "crm.whatsapp.read",
+          "crm.whatsapp.schedule.cancel",
+          "crm.whatsapp.schedule.create",
+          "crm.whatsapp.schedule.read",
           "crm.whatsapp.send",
+          "crm.whatsapp.tag.assign",
           "crm.whatsapp.toggle_intervention",
         ]),
       ),
     ).toEqual({
       canAssign: true,
       canClose: true,
+      canConnectionManage: false,
       canList: true,
       canRead: true,
+      canScheduleCancel: true,
+      canScheduleCreate: true,
+      canScheduleProcess: false,
+      canScheduleRead: true,
       canSend: true,
+      canTagAssign: true,
+      canTagManage: false,
       canToggleIntervention: true,
     });
   });
 
-  it("keeps assignable agent discovery tied to WhatsApp queue access", () => {
+  it("keeps assignable member discovery tied to WhatsApp queue access", () => {
     expect(hasWhatsappQueueAccess(["crm.whatsapp.read"])).toBe(true);
     expect(hasWhatsappQueueAccess(["crm.whatsapp.list"])).toBe(true);
     expect(hasWhatsappQueueAccess(["lead.read"])).toBe(false);

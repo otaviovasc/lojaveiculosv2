@@ -4,9 +4,9 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { CrmWhatsappFailedEventsPanel } from "./CrmWhatsappFailedEventsPanel";
+import { CrmWhatsappProviderEventIssuesPanel } from "./CrmWhatsappProviderEventIssuesPanel";
 
-describe("CrmWhatsappFailedEventsPanel", () => {
+describe("CrmWhatsappProviderEventIssuesPanel", () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -16,11 +16,11 @@ describe("CrmWhatsappFailedEventsPanel", () => {
     const api = createApi();
     const user = userEvent.setup();
 
-    render(<CrmWhatsappFailedEventsPanel api={api} canRetry={true} />);
+    render(<CrmWhatsappProviderEventIssuesPanel api={api} canRetry={true} />);
 
     expect(
       await screen.findByRole("button", {
-        name: /1 evento ZAPI com falha/i,
+        name: /1 evento ZAPI com atencao/i,
       }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /1 evento/i }));
@@ -28,7 +28,7 @@ describe("CrmWhatsappFailedEventsPanel", () => {
 
     expect(api.retryProviderEvent).toHaveBeenCalledWith("event_1");
     await waitFor(() =>
-      expect(api.listFailedProviderEvents).toHaveBeenCalledTimes(2),
+      expect(api.listProviderEventIssues).toHaveBeenCalledTimes(2),
     );
   });
 
@@ -36,11 +36,11 @@ describe("CrmWhatsappFailedEventsPanel", () => {
     const api = createApi();
     const user = userEvent.setup();
 
-    render(<CrmWhatsappFailedEventsPanel api={api} canRetry={false} />);
+    render(<CrmWhatsappProviderEventIssuesPanel api={api} canRetry={false} />);
 
     await user.click(
       await screen.findByRole("button", {
-        name: /1 evento ZAPI com falha/i,
+        name: /1 evento ZAPI com atencao/i,
       }),
     );
 
@@ -54,11 +54,12 @@ describe("CrmWhatsappFailedEventsPanel", () => {
 
 function createApi(): CrmWhatsappApi {
   return {
-    listFailedProviderEvents: vi
+    listProviderEventIssues: vi
       .fn()
       .mockResolvedValueOnce({
         events: [
           {
+            attentionReason: "processing_failed",
             connectionId: "connection_1",
             createdAt: "2026-07-03T00:00:00.000Z",
             errorMessage: "Timeout",
@@ -66,6 +67,7 @@ function createApi(): CrmWhatsappApi {
             id: "event_1",
             processedAt: null,
             providerEventId: "provider_1",
+            retryable: true,
             status: "failed",
             updatedAt: "2026-07-03T00:00:00.000Z",
             webhookType: "connected",

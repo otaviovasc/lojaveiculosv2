@@ -11,7 +11,7 @@ import {
   waitForApiReady,
 } from "./crm-whatsapp-test-helpers";
 import { installExtrasActionRoutes } from "./crm-whatsapp-extras-helpers";
-import { installFailedProviderEventRoutes } from "./crm-whatsapp-provider-events-helpers";
+import { installProviderEventIssueRoutes } from "./crm-whatsapp-provider-events-helpers";
 
 const connectionId = "24000000-0000-4000-8000-000000000101";
 
@@ -174,14 +174,16 @@ test.describe("CRM WhatsApp extras", () => {
     });
     await installConnectedWhatsappConnectionStub(page, connectionId);
     await installFailingCatalogRoute(page);
-    await installFailedProviderEventRoutes(page);
+    await installProviderEventIssueRoutes(page);
     await installLocalOwnerSession(page);
 
     await page.goto("/crm#/crm?surface=whatsapp");
     await expect(
-      page.getByRole("button", { name: /1 evento ZAPI com falha/ }),
+      page.getByRole("button", { name: /1 evento ZAPI com atencao/ }),
     ).toBeVisible();
-    await page.getByRole("button", { name: /1 evento ZAPI com falha/ }).click();
+    await page
+      .getByRole("button", { name: /1 evento ZAPI com atencao/ })
+      .click();
     await expect(page.getByText("timeout na entrega")).toBeVisible();
     await page.getByRole("button", { name: "Reprocessar" }).click();
     await expect(

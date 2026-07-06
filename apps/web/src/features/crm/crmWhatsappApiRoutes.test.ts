@@ -46,8 +46,8 @@ describe("CRM WhatsApp API routes", () => {
     expect(crmWhatsappRoutes.quickMessage("quick_1")).toBe(
       "/api/v1/crm/whatsapp/quick-messages/quick_1",
     );
-    expect(crmWhatsappRoutes.failedProviderEvents()).toBe(
-      "/api/v1/crm/whatsapp/provider-events/failed",
+    expect(crmWhatsappRoutes.providerEventIssues()).toBe(
+      "/api/v1/crm/whatsapp/provider-events/issues",
     );
     expect(crmWhatsappRoutes.retryProviderEvent("event_1")).toBe(
       "/api/v1/crm/whatsapp/provider-events/event_1/retry",

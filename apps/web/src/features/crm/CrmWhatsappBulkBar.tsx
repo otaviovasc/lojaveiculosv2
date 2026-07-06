@@ -7,10 +7,10 @@ import {
   X,
 } from "lucide-react";
 import { selectedCountLabel } from "./crmWhatsappQueueState";
-import type { CrmWhatsappAgent } from "./crmWhatsappTypes";
+import type { CrmWhatsappAssignableMember } from "./crmWhatsappTypes";
 
 export function WhatsappBulkBar({
-  agents,
+  assignableMembers,
   canAssign,
   canClose,
   canRead,
@@ -22,7 +22,7 @@ export function WhatsappBulkBar({
   onSelectAll,
   selectedCount,
 }: {
-  agents: CrmWhatsappAgent[];
+  assignableMembers: CrmWhatsappAssignableMember[];
   canAssign: boolean;
   canClose: boolean;
   canRead: boolean;
@@ -49,11 +49,11 @@ export function WhatsappBulkBar({
             value=""
           >
             <option value="">Atribuir a...</option>
-            {agents
-              .filter((agent) => agent.isActive)
-              .map((agent) => (
-                <option key={agent.id} value={String(agent.id)}>
-                  {agent.name}
+            {assignableMembers
+              .filter((member) => member.isActive)
+              .map((member) => (
+                <option key={member.id} value={String(member.id)}>
+                  {member.name}
                 </option>
               ))}
           </select>

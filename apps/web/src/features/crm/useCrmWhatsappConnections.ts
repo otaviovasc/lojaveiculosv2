@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
-import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappConnectionId,
+  CrmWhatsappProviderConnection,
+  CrmWhatsappUpdateConnectionInput,
+} from "./crmWhatsappTypes";
 
 export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
   const [connections, setConnections] = useState<
@@ -13,9 +17,34 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
   const loadConnections = useCallback(() => api.listConnections(), [api]);
 
   const refreshConnections = useCallback(async () => {
-    const payload = await loadConnections();
-    setConnections(payload.connections);
+    try {
+      const payload = await loadConnections();
+      setConnections(payload.connections);
+    } catch (caught) {
+      setError(asError(caught));
+    }
   }, [loadConnections]);
+
+  const updateConnection = useCallback(
+    async (
+      connectionId: CrmWhatsappConnectionId,
+      input: CrmWhatsappUpdateConnectionInput,
+    ) => {
+      try {
+        const updated = await api.updateConnection(connectionId, input);
+        setConnections((current) =>
+          current.map((connection) =>
+            connection.id === updated.id ? updated : connection,
+          ),
+        );
+        return true;
+      } catch (caught) {
+        setError(asError(caught));
+        return false;
+      }
+    },
+    [api],
+  );
 
   useEffect(() => {
     let active = true;
@@ -47,5 +76,6 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     ),
     isLoading,
     refreshConnections,
+    updateConnection,
   };
 }

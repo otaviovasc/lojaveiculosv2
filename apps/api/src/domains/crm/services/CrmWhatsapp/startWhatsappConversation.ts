@@ -9,10 +9,7 @@ import {
   toWhatsappMessage,
   toWhatsappSession,
 } from "../../whatsapp/whatsappModels.js";
-import {
-  WhatsappConnectionNotFoundError,
-  WhatsappUnsupportedProviderError,
-} from "../../whatsapp/whatsappSendErrors.js";
+import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
@@ -30,22 +27,22 @@ import {
   failedMessageMetadata,
   findConversationSession,
   findOrCreateLead,
-  normalizeWhatsappPhone,
   publishConversation,
   recordLeadInteraction,
   sentMessageMetadata,
   updateStartedConversationMessage,
 } from "../../whatsapp/startWhatsappConversationSupport.js";
+import { resolveStartConversationTarget } from "../../whatsapp/startWhatsappConversationTarget.js";
 
 const permission = "crm.whatsapp.send";
 type SentWhatsappText = Awaited<
   ReturnType<ReturnType<typeof getCrmWhatsappGateway>["sendText"]>
 >;
-
 export type StartWhatsappConversationInput = {
   buyerName?: string;
   connectionId: string;
-  phone: string;
+  leadId?: string;
+  phone?: string;
   text: string;
 };
 
@@ -62,10 +59,11 @@ export async function startWhatsappConversation(
 ): Promise<StartWhatsappConversationResult> {
   assertPermission(context, permission);
   const scope = requireCrmScope(context);
-  const phone = normalizeWhatsappPhone(input.phone);
+  const target = await resolveStartConversationTarget(context, input, ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.conversation.start.started", {
     connectionId: input.connectionId,
-    phoneLength: phone.length,
+    leadId: target.lead?.id ?? null,
+    phoneLength: target.phone.length,
   });
   return recordWhatsappServiceMutation(
     context,
@@ -89,26 +87,22 @@ export async function startWhatsappConversation(
       ) {
         throw new WhatsappConnectionNotFoundError(input.connectionId);
       }
-      if (connection.provider !== "zapi") {
-        throw new WhatsappUnsupportedProviderError(connection.provider);
-      }
-
       const pendingExternalId = createLocalWhatsappExternalId();
       const pendingAt = new Date();
       const pending = await runCrmTransaction(
         ports,
         async (transactionPorts) => {
           const lead = await findOrCreateLead(context, transactionPorts, {
-            ...(input.buyerName ? { buyerName: input.buyerName } : {}),
+            ...(target.buyerName ? { buyerName: target.buyerName } : {}),
             connectionId: connection.id,
             externalId: pendingExternalId,
-            phone,
-          });
+            phone: target.phone,
+          }).then((createdLead) => target.lead ?? createdLead);
           const ingested = await getCrmWhatsappRepository(
             transactionPorts,
           ).ingestMessage({
-            ...(input.buyerName ? { buyerName: input.buyerName } : {}),
-            buyerPhone: phone,
+            ...(target.buyerName ? { buyerName: target.buyerName } : {}),
+            buyerPhone: target.phone,
             channel: "WHATSAPP",
             connectionId: connection.id,
             content: input.text,
@@ -136,7 +130,7 @@ export async function startWhatsappConversation(
       let sent: SentWhatsappText;
       try {
         sent = await getCrmWhatsappGateway(ports).sendText(connection, {
-          phone,
+          phone: target.phone,
           text: input.text,
         });
       } catch (error) {

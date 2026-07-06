@@ -1,5 +1,5 @@
 import type { AuditFailureTier, AuditSink } from "@lojaveiculosv2/audit";
-import type { EntitlementKey } from "@lojaveiculosv2/shared";
+import type { EntitlementKey, RoleKey } from "@lojaveiculosv2/shared";
 import {
   createNoopAuditSink,
   createPolicyAwareAuditSink,
@@ -11,6 +11,7 @@ import {
 } from "./serviceLogger.js";
 
 export type ActorKind = "user" | "system" | "public" | "integration";
+export type BillingManagedBy = "agency" | "store_owner";
 
 export type ServiceActor = {
   displayName?: string;
@@ -42,8 +43,10 @@ export type ServiceContext = {
   actor: ServiceActor;
   audit: AuditSink;
   auditFailureTier?: AuditFailureTier;
+  billingManagedBy?: BillingManagedBy;
   correlationId?: string;
   logger: ServiceLogger;
+  membershipRole?: RoleKey;
   permissions: string[];
   request?: ServiceRequestContext;
   requestId: string;
@@ -63,6 +66,8 @@ export type CreateServiceContextInput = {
   audit?: AuditSink;
   auditFailureTier?: AuditFailureTier;
   logger?: ServiceLogger;
+  billingManagedBy?: BillingManagedBy;
+  membershipRole?: RoleKey;
   permissions?: readonly string[];
   request: ServiceRequestContext;
   source?: ServiceContextSource;
@@ -91,6 +96,10 @@ export function createServiceContext(
         : {}),
     }),
     logger,
+    ...(input.billingManagedBy
+      ? { billingManagedBy: input.billingManagedBy }
+      : {}),
+    ...(input.membershipRole ? { membershipRole: input.membershipRole } : {}),
     permissions: [...(input.permissions ?? [])],
     request: input.request,
     requestId: input.request.requestId,
@@ -114,7 +123,9 @@ export function createServiceLogMetadata(
     actorExternalId: context.actor.externalId ?? null,
     actorId: context.actor.id,
     actorKind: context.actor.kind,
+    billingManagedBy: context.billingManagedBy ?? null,
     correlationId: context.correlationId ?? null,
+    membershipRole: context.membershipRole ?? null,
     requestId: context.requestId,
     storeId: context.storeId,
     tenantId: context.tenantId,

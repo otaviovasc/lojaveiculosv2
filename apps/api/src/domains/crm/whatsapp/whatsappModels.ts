@@ -6,8 +6,8 @@ import type {
 } from "../ports/crmWhatsappRepository.js";
 
 export type WhatsappSession = {
-  assignedAgent: null;
-  assignedAgentId: string | null;
+  assignedMember: null;
+  assignedUserId: string | null;
   buyerName: string | null;
   buyerPhone: string;
   channel: string;
@@ -40,7 +40,7 @@ export type WhatsappSession = {
 
 export type WhatsappSessionTag = Pick<
   CrmWhatsappTag,
-  "color" | "emoji" | "id" | "isColumn" | "name" | "sortOrder"
+  "color" | "emoji" | "id" | "name" | "sortOrder"
 >;
 
 export type WhatsappSessionVehicle = {
@@ -72,8 +72,8 @@ export function toWhatsappSession(
   connection: CrmConnection,
 ): WhatsappSession {
   return {
-    assignedAgent: null,
-    assignedAgentId: session.assignedUserId,
+    assignedMember: null,
+    assignedUserId: session.assignedUserId,
     buyerName: session.buyerName,
     buyerPhone: session.buyerPhone,
     channel: session.channel,

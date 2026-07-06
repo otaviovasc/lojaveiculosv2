@@ -44,7 +44,7 @@ describe("CRM WhatsApp tags", () => {
     await expect(removed.json()).resolves.toMatchObject({ sessionTags: [] });
   });
 
-  it("lists tags and enforces one CRM column tag per session", async () => {
+  it("lists simple tags without CRM column behavior", async () => {
     const whatsappRepository = createMemoryCrmWhatsappRepository();
     const inbound = await seedSession(whatsappRepository, "column-tag");
     const app = createTestApp({
@@ -59,7 +59,6 @@ describe("CRM WhatsApp tags", () => {
       {
         body: JSON.stringify({
           color: "#2563eb",
-          isColumn: true,
           name: "Em atendimento",
         }),
         headers: { "Content-Type": "application/json" },
@@ -71,7 +70,6 @@ describe("CRM WhatsApp tags", () => {
       {
         body: JSON.stringify({
           color: "#16a34a",
-          isColumn: true,
           name: "Visita agendada",
         }),
         headers: { "Content-Type": "application/json" },
@@ -81,16 +79,18 @@ describe("CRM WhatsApp tags", () => {
 
     expect(moved.status).toBe(200);
     await expect(moved.json()).resolves.toMatchObject({
-      sessionTags: [{ isColumn: true, name: "Visita agendada" }],
+      sessionTags: [{ name: "Em atendimento" }, { name: "Visita agendada" }],
     });
     const tags = await app.request("/api/v1/crm/whatsapp/tags");
     expect(tags.status).toBe(200);
-    await expect(tags.json()).resolves.toEqual(
+    const body = (await tags.json()) as Array<{ name: string }>;
+    expect(body).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ isColumn: true, name: "Em atendimento" }),
-        expect.objectContaining({ isColumn: true, name: "Visita agendada" }),
+        expect.objectContaining({ name: "Em atendimento" }),
+        expect.objectContaining({ name: "Visita agendada" }),
       ]),
     );
+    expect(JSON.stringify(body)).not.toContain("isColumn");
   });
 
   it("filters sessions by assigned CRM WhatsApp tags", async () => {

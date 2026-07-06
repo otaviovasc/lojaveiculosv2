@@ -20,12 +20,14 @@ import {
   CrmWhatsappValidationError,
   handleWhatsapp,
 } from "./crm.whatsapp.errors.js";
+import { registerCrmWhatsappConnectionRoutes } from "./crm.whatsapp.connectionRoutes.js";
 import { registerCrmWhatsappExtrasRoutes } from "./crm.whatsapp.extrasRoutes.js";
 import {
   cleanWhatsappSessionCountsQuery,
   cleanWhatsappSessionsQuery,
 } from "./crm.whatsapp.query.js";
 import { registerCrmWhatsappSessionRoutes } from "./crm.whatsapp.sessionRoutes.js";
+import { registerCrmWhatsappScheduledRoutes } from "./crm.whatsapp.scheduledRoutes.js";
 import { registerCrmWhatsappWebhookEventRoutes } from "./crm.whatsapp.webhookEventRoutes.js";
 import { registerCrmWhatsappWebhookRoutes } from "./crm.whatsapp.webhookRoutes.js";
 import type { CrmServices } from "./crmServices.js";
@@ -44,16 +46,7 @@ export function registerCrmWhatsappApiRoutes(
     services,
   }: RegisterCrmWhatsappApiRoutesOptions,
 ) {
-  crmFeature.get("/whatsapp/connections", async (context) =>
-    handleWhatsapp(context, async () => {
-      const serviceContext = await createContext(context);
-      assertWhatsappList(serviceContext);
-      const connections =
-        await services.listWhatsappConnections(serviceContext);
-
-      return context.json({ connections });
-    }),
-  );
+  registerCrmWhatsappConnectionRoutes(crmFeature, { createContext, services });
 
   crmFeature.get("/whatsapp/sessions", async (context) =>
     handleWhatsapp(context, async () => {
@@ -61,10 +54,9 @@ export function registerCrmWhatsappApiRoutes(
       if (!parsed.success) throw new CrmWhatsappValidationError();
       const serviceContext = await createContext(context);
       assertWhatsappList(serviceContext);
-      const input = cleanWhatsappSessionsQuery(parsed.data);
       const sessions = await services.listWhatsappSessions(
         serviceContext,
-        input,
+        cleanWhatsappSessionsQuery(parsed.data),
       );
       return context.json(sessions);
     }),
@@ -92,10 +84,9 @@ export function registerCrmWhatsappApiRoutes(
       if (!parsed.success) throw new CrmWhatsappValidationError();
       const serviceContext = await createContext(context);
       assertWhatsappRead(serviceContext);
-      const sessionId = context.req.param("sessionId");
       const messages = await services.listWhatsappMessages(serviceContext, {
         ...parsed.data,
-        sessionId,
+        sessionId: context.req.param("sessionId"),
       });
       return context.json(messages);
     }),
@@ -128,7 +119,8 @@ export function registerCrmWhatsappApiRoutes(
       const result = await services.startWhatsappConversation(serviceContext, {
         ...(input.buyerName ? { buyerName: input.buyerName } : {}),
         connectionId: input.connectionId,
-        phone: input.phone,
+        ...(input.leadId ? { leadId: input.leadId } : {}),
+        ...(input.phone ? { phone: input.phone } : {}),
         text: input.text,
       });
       return context.json(result, 201);
@@ -197,12 +189,12 @@ export function registerCrmWhatsappApiRoutes(
   );
 
   registerCrmWhatsappSessionRoutes(crmFeature, { createContext, services });
+  registerCrmWhatsappScheduledRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappExtrasRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappWebhookEventRoutes(crmFeature, {
     createContext,
     services,
   });
-
   registerCrmWhatsappWebhookRoutes(crmFeature, {
     createWebhookContext,
     services,

@@ -4,7 +4,7 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type { CrmWhatsappProviderEvent } from "./crmWhatsappTypes";
 
-export function CrmWhatsappFailedEventsPanel({
+export function CrmWhatsappProviderEventIssuesPanel({
   api,
   canRetry,
 }: {
@@ -21,7 +21,7 @@ export function CrmWhatsappFailedEventsPanel({
     setIsLoading(true);
     setError(null);
     try {
-      const result = await api.listFailedProviderEvents();
+      const result = await api.listProviderEventIssues();
       setEvents(result.events);
       setIsExpanded((current) => current && result.events.length > 0);
     } catch (caught) {
@@ -67,7 +67,7 @@ export function CrmWhatsappFailedEventsPanel({
       >
         <span>
           {events.length > 0
-            ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com falha`
+            ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com atencao`
             : "Falha ao verificar eventos ZAPI"}
         </span>
         <RefreshCw aria-hidden="true" size={16} />
@@ -83,10 +83,11 @@ export function CrmWhatsappFailedEventsPanel({
             <article className="crm-whatsapp-reliability-event" key={event.id}>
               <div>
                 <strong>{formatWebhookType(event.webhookType)}</strong>
+                <span>{formatAttentionReason(event.attentionReason)}</span>
                 <span>{formatDate(event.updatedAt)}</span>
                 {event.errorMessage ? <p>{event.errorMessage}</p> : null}
               </div>
-              {canRetry ? (
+              {canRetry && event.retryable ? (
                 <button
                   disabled={isLoading || retryingId === event.id}
                   onClick={() => void retry(event.id)}
@@ -102,6 +103,16 @@ export function CrmWhatsappFailedEventsPanel({
       ) : null}
     </section>
   );
+}
+
+function formatAttentionReason(
+  reason: CrmWhatsappProviderEvent["attentionReason"],
+) {
+  const labels: Record<string, string> = {
+    processing_failed: "Falha no processamento",
+    received_message_ignored: "Mensagem recebida ignorada",
+  };
+  return reason ? (labels[reason] ?? "Evento com atencao") : "Evento ZAPI";
 }
 
 function formatWebhookType(type: CrmWhatsappProviderEvent["webhookType"]) {

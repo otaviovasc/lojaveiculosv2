@@ -26,12 +26,26 @@ export function createMemoryCrmConnectionRepository(
     },
     async updateConnection(input) {
       const connection = connections.find(
-        (item) => item.id === input.connectionId,
+        (item) =>
+          item.id === input.connectionId &&
+          item.storeId === input.storeId &&
+          item.tenantId === input.tenantId,
       );
       if (!connection) return null;
+      if (input.credentialsRef)
+        connection.credentialsRef = input.credentialsRef;
+      if (input.displayName) connection.displayName = input.displayName;
+      if (input.externalConnectionId !== undefined) {
+        connection.externalConnectionId = input.externalConnectionId;
+      }
+      if (input.externalInstanceId !== undefined) {
+        connection.externalInstanceId = input.externalInstanceId;
+      }
       if (input.metadata) connection.metadata = input.metadata;
       if (input.phone !== undefined) connection.phone = input.phone;
       if (input.status) connection.status = input.status;
+      if (input.webhookUrl !== undefined)
+        connection.webhookUrl = input.webhookUrl;
       return connection;
     },
   };

@@ -191,7 +191,7 @@ describe("CRM WhatsApp API", () => {
 
   it("posts WhatsApp session actions through V2", async () => {
     const fake = createFakeFetch([
-      { id: "session_1", assignedAgentId: "user_1" },
+      { id: "session_1", assignedUserId: "user_1" },
       { id: "session_1", status: "COMPLETED" },
       { id: "session_1", status: "HUMAN_TAKEOVER" },
       { id: "session_1", unreadCount: 0 },
@@ -201,7 +201,7 @@ describe("CRM WhatsApp API", () => {
 
     await expect(
       api.assignSession("session_1", { assignedUserId: "user_1" }),
-    ).resolves.toMatchObject({ assignedAgentId: "user_1" });
+    ).resolves.toMatchObject({ assignedUserId: "user_1" });
     await expect(api.closeSession("session_1")).resolves.toMatchObject({
       status: "COMPLETED",
     });

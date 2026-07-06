@@ -1,43 +1,13 @@
 import { readApiJson } from "../../lib/apiErrors";
 import { createProductCrmHeaders } from "./productCrmApi";
-import type { ProductCrmAuth } from "./productCrmTypes";
 import type {
-  CrmWhatsappAddSessionTagInput,
-  CrmWhatsappAssignSessionInput,
-  CrmWhatsappCatalogProductsPage,
-  CrmWhatsappCreateQuickMessageInput,
-  CrmWhatsappSendCatalogInput,
-  CrmWhatsappListCatalogProductsInput,
-  CrmWhatsappListTagsInput,
-  CrmWhatsappConnectionId,
-  CrmWhatsappInterventionInput,
-  CrmWhatsappMessageQuery,
-  CrmWhatsappMessage,
-  CrmWhatsappConnectionsResponse,
-  CrmWhatsappProviderEventsResponse,
-  CrmWhatsappQuickMessage,
-  CrmWhatsappRealtimeEvent,
-  CrmWhatsappRetryProviderEventResponse,
-  CrmWhatsappSendLocationInput,
-  CrmWhatsappSendMediaInput,
-  CrmWhatsappSendCatalogProductInput,
-  CrmWhatsappSendQuickMessageInput,
-  CrmWhatsappSendReactionInput,
-  CrmWhatsappSendTextInput,
-  CrmWhatsappSendVehicleInput,
-  CrmWhatsappSession,
-  CrmWhatsappSessionCounts,
-  CrmWhatsappSessionCountsQuery,
-  CrmWhatsappSessionId,
-  CrmWhatsappSessionQuery,
-  CrmWhatsappStartConversationInput,
-  CrmWhatsappStartConversationResult,
-  CrmWhatsappTag,
-  CrmWhatsappUpdateQuickMessageInput,
-} from "./crmWhatsappTypes";
+  CreateCrmWhatsappApiOptions,
+  CrmWhatsappApi,
+} from "./crmWhatsappApiTypes";
 import {
   createCrmWhatsappCatalogProductsQuery,
   createCrmWhatsappMessageQuery,
+  createCrmWhatsappScheduledMessagesQuery,
   createCrmWhatsappSessionCountsQuery,
   createCrmWhatsappSessionQuery,
   createCrmWhatsappTagsQuery,
@@ -50,108 +20,11 @@ export {
   createCrmWhatsappSessionQuery,
   crmWhatsappRoutes,
 } from "./crmWhatsappApiRoutes";
-
-export type CrmWhatsappApi = {
-  assignSession: (
-    sessionId: CrmWhatsappSessionId,
-    input: CrmWhatsappAssignSessionInput,
-  ) => Promise<CrmWhatsappSession | null>;
-  closeSession: (
-    sessionId: CrmWhatsappSessionId,
-  ) => Promise<CrmWhatsappSession | null>;
-  interveneSession: (
-    sessionId: CrmWhatsappSessionId,
-    input: CrmWhatsappInterventionInput,
-  ) => Promise<CrmWhatsappSession | null>;
-  markSessionRead: (
-    sessionId: CrmWhatsappSessionId,
-  ) => Promise<CrmWhatsappSession | null>;
-  markSessionUnread: (
-    sessionId: CrmWhatsappSessionId,
-  ) => Promise<CrmWhatsappSession | null>;
-  listConnections: () => Promise<CrmWhatsappConnectionsResponse>;
-  deleteMessage: (
-    messageId: CrmWhatsappMessage["id"],
-  ) => Promise<CrmWhatsappMessage | null>;
-  listMessages: (
-    sessionId: CrmWhatsappSessionId,
-    query?: Omit<CrmWhatsappMessageQuery, "connectionId">,
-  ) => Promise<CrmWhatsappMessage[]>;
-  listSessions: (
-    query?: CrmWhatsappSessionQuery,
-  ) => Promise<CrmWhatsappSession[]>;
-  listSessionCounts: (
-    query?: CrmWhatsappSessionCountsQuery,
-  ) => Promise<CrmWhatsappSessionCounts>;
-  sendMedia: (input: CrmWhatsappSendMediaInput) => Promise<CrmWhatsappMessage>;
-  removeReaction: (
-    messageId: CrmWhatsappMessage["id"],
-  ) => Promise<CrmWhatsappMessage | null>;
-  sendReaction: (
-    messageId: CrmWhatsappMessage["id"],
-    input: CrmWhatsappSendReactionInput,
-  ) => Promise<CrmWhatsappMessage>;
-  sendText: (input: CrmWhatsappSendTextInput) => Promise<CrmWhatsappMessage>;
-  startConversation: (
-    input: CrmWhatsappStartConversationInput,
-  ) => Promise<CrmWhatsappStartConversationResult>;
-  subscribeEvents: (input: {
-    connectionId?: CrmWhatsappConnectionId | null;
-    onError?: (error: Error) => void;
-    onEvent: (event: CrmWhatsappRealtimeEvent) => void;
-  }) => () => void;
-} & CrmWhatsappExtrasApi;
-
-export type CrmWhatsappExtrasApi = {
-  addSessionTag: (
-    sessionId: CrmWhatsappSessionId,
-    input: CrmWhatsappAddSessionTagInput,
-  ) => Promise<CrmWhatsappSession | null>;
-  createQuickMessage: (
-    input: CrmWhatsappCreateQuickMessageInput,
-  ) => Promise<CrmWhatsappQuickMessage>;
-  deleteQuickMessage: (
-    quickMessageId: string,
-  ) => Promise<CrmWhatsappQuickMessage | null>;
-  listQuickMessages: () => Promise<CrmWhatsappQuickMessage[]>;
-  listTags: (input?: CrmWhatsappListTagsInput) => Promise<CrmWhatsappTag[]>;
-  listCatalogProducts: (
-    input: CrmWhatsappListCatalogProductsInput,
-  ) => Promise<CrmWhatsappCatalogProductsPage>;
-  listFailedProviderEvents: () => Promise<CrmWhatsappProviderEventsResponse>;
-  removeSessionTag: (
-    sessionId: CrmWhatsappSessionId,
-    tagId: string,
-  ) => Promise<CrmWhatsappSession | null>;
-  sendCatalog: (
-    input: CrmWhatsappSendCatalogInput,
-  ) => Promise<CrmWhatsappMessage>;
-  sendCatalogProduct: (
-    input: CrmWhatsappSendCatalogProductInput,
-  ) => Promise<CrmWhatsappMessage>;
-  sendLocation: (
-    input: CrmWhatsappSendLocationInput,
-  ) => Promise<CrmWhatsappMessage>;
-  sendQuickMessage: (
-    input: CrmWhatsappSendQuickMessageInput,
-  ) => Promise<CrmWhatsappMessage>;
-  sendVehicle: (
-    input: CrmWhatsappSendVehicleInput,
-  ) => Promise<CrmWhatsappMessage>;
-  updateQuickMessage: (
-    quickMessageId: string,
-    input: CrmWhatsappUpdateQuickMessageInput,
-  ) => Promise<CrmWhatsappQuickMessage>;
-  retryProviderEvent: (
-    eventId: string,
-  ) => Promise<CrmWhatsappRetryProviderEventResponse>;
-};
-
-export type CreateCrmWhatsappApiOptions = {
-  auth?: ProductCrmAuth;
-  baseUrl?: string;
-  fetch: typeof fetch;
-};
+export type {
+  CreateCrmWhatsappApiOptions,
+  CrmWhatsappApi,
+  CrmWhatsappExtrasApi,
+} from "./crmWhatsappApiTypes";
 
 type JsonBody = Record<string, unknown>;
 
@@ -196,32 +69,27 @@ export function createCrmWhatsappApi({
       postMaybeJson(crmWhatsappRoutes.assignSession(sessionId, baseUrl), {
         assignedUserId: input.assignedUserId,
       }),
+    cancelScheduledMessage: (scheduledMessageId) =>
+      deleteMaybeJson(
+        crmWhatsappRoutes.scheduledMessage(scheduledMessageId, baseUrl),
+      ),
     closeSession: (sessionId) =>
       postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl)),
     createQuickMessage: (input) =>
       postJson(crmWhatsappRoutes.quickMessages(baseUrl), input),
-    deleteQuickMessage: (quickMessageId) =>
-      deleteMaybeJson(crmWhatsappRoutes.quickMessage(quickMessageId, baseUrl)),
+    createScheduledMessage: (input) =>
+      postJson(crmWhatsappRoutes.scheduledMessages(baseUrl), input),
+    createTag: (input) => postJson(crmWhatsappRoutes.tags(baseUrl), input),
     deleteMessage: (messageId) =>
       deleteMaybeJson(crmWhatsappRoutes.message(messageId, baseUrl)),
+    deleteQuickMessage: (quickMessageId) =>
+      deleteMaybeJson(crmWhatsappRoutes.quickMessage(quickMessageId, baseUrl)),
+    deleteTag: (tagId) =>
+      deleteMaybeJson(crmWhatsappRoutes.tag(tagId, baseUrl)),
     interveneSession: (sessionId, input) =>
       postMaybeJson(
         crmWhatsappRoutes.interveneSession(sessionId, baseUrl),
         input,
-      ),
-    listConnections: () => getJson(crmWhatsappRoutes.connections(baseUrl)),
-    listMessages: (sessionId, query) =>
-      getJson(
-        withQuery(crmWhatsappRoutes.messages(sessionId, baseUrl), [
-          createCrmWhatsappMessageQuery(query),
-        ]),
-      ),
-    listQuickMessages: () => getJson(crmWhatsappRoutes.quickMessages(baseUrl)),
-    listTags: (input) =>
-      getJson(
-        withQuery(crmWhatsappRoutes.tags(baseUrl), [
-          createCrmWhatsappTagsQuery(input),
-        ]),
       ),
     listCatalogProducts: (input) =>
       getJson(
@@ -229,16 +97,20 @@ export function createCrmWhatsappApi({
           createCrmWhatsappCatalogProductsQuery(input),
         ]),
       ),
-    listFailedProviderEvents: () =>
-      getJson(crmWhatsappRoutes.failedProviderEvents(baseUrl)),
-    markSessionRead: (sessionId) =>
-      postMaybeJson(crmWhatsappRoutes.markSessionRead(sessionId, baseUrl)),
-    markSessionUnread: (sessionId) =>
-      postMaybeJson(crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl)),
-    listSessions: (query) =>
+    listConnections: () => getJson(crmWhatsappRoutes.connections(baseUrl)),
+    listProviderEventIssues: () =>
+      getJson(crmWhatsappRoutes.providerEventIssues(baseUrl)),
+    listMessages: (sessionId, query) =>
       getJson(
-        withQuery(crmWhatsappRoutes.sessions(baseUrl), [
-          createCrmWhatsappSessionQuery(query),
+        withQuery(crmWhatsappRoutes.messages(sessionId, baseUrl), [
+          createCrmWhatsappMessageQuery(query),
+        ]),
+      ),
+    listQuickMessages: () => getJson(crmWhatsappRoutes.quickMessages(baseUrl)),
+    listScheduledMessages: (input) =>
+      getJson(
+        withQuery(crmWhatsappRoutes.scheduledMessages(baseUrl), [
+          createCrmWhatsappScheduledMessagesQuery(input),
         ]),
       ),
     listSessionCounts: (query) =>
@@ -247,10 +119,30 @@ export function createCrmWhatsappApi({
           createCrmWhatsappSessionCountsQuery(query),
         ]),
       ),
-    removeSessionTag: (sessionId, tagId) =>
-      deleteMaybeJson(crmWhatsappRoutes.sessionTag(sessionId, tagId, baseUrl)),
+    listSessions: (query) =>
+      getJson(
+        withQuery(crmWhatsappRoutes.sessions(baseUrl), [
+          createCrmWhatsappSessionQuery(query),
+        ]),
+      ),
+    listTags: (input) =>
+      getJson(
+        withQuery(crmWhatsappRoutes.tags(baseUrl), [
+          createCrmWhatsappTagsQuery(input),
+        ]),
+      ),
+    markSessionRead: (sessionId) =>
+      postMaybeJson(crmWhatsappRoutes.markSessionRead(sessionId, baseUrl)),
+    markSessionUnread: (sessionId) =>
+      postMaybeJson(crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl)),
+    processDueScheduledMessages: (input = {}) =>
+      postJson(crmWhatsappRoutes.scheduledMessagesProcessDue(baseUrl), input),
     removeReaction: (messageId) =>
       deleteMaybeJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl)),
+    removeSessionTag: (sessionId, tagId) =>
+      deleteMaybeJson(crmWhatsappRoutes.sessionTag(sessionId, tagId, baseUrl)),
+    reorderTags: (input) =>
+      patchJson(crmWhatsappRoutes.tagsReorder(baseUrl), input),
     retryProviderEvent: (eventId) =>
       postJson(crmWhatsappRoutes.retryProviderEvent(eventId, baseUrl)),
     sendCatalog: (input) =>
@@ -260,13 +152,13 @@ export function createCrmWhatsappApi({
     sendLocation: (input) =>
       postJson(crmWhatsappRoutes.sendLocation(baseUrl), input),
     sendMedia: (input) => postJson(crmWhatsappRoutes.sendMedia(baseUrl), input),
-    sendReaction: (messageId, input) =>
-      postJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl), input),
     sendQuickMessage: (input) =>
       postJson(
         crmWhatsappRoutes.sendQuickMessage(input.quickMessageId, baseUrl),
         { sessionId: input.sessionId },
       ),
+    sendReaction: (messageId, input) =>
+      postJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl), input),
     sendText: (input) => postJson(crmWhatsappRoutes.sendText(baseUrl), input),
     sendVehicle: (input) =>
       postJson(crmWhatsappRoutes.sendVehicle(baseUrl), input),
@@ -281,8 +173,12 @@ export function createCrmWhatsappApi({
         onEvent: input.onEvent,
         postJson,
       }),
+    updateConnection: (connectionId, input) =>
+      patchJson(crmWhatsappRoutes.connection(connectionId, baseUrl), input),
     updateQuickMessage: (quickMessageId, input) =>
       patchJson(crmWhatsappRoutes.quickMessage(quickMessageId, baseUrl), input),
+    updateTag: (tagId, input) =>
+      patchJson(crmWhatsappRoutes.tag(tagId, baseUrl), input),
   };
 }
 

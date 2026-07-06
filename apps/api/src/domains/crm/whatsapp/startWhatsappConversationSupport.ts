@@ -4,6 +4,7 @@ import type { CrmLead } from "../ports/crmRepository.js";
 import type { WhatsappMessage, WhatsappSession } from "./whatsappModels.js";
 import { whatsappPhoneDigits } from "./whatsappPhone.js";
 import { WhatsappMessageActionError } from "./whatsappSendErrors.js";
+import { findOrCreateWhatsappLead } from "./whatsappLeadLinking.js";
 import {
   getCrmRealtimePublisher,
   getCrmRepository,
@@ -42,24 +43,12 @@ export async function findOrCreateLead(
   },
 ) {
   const scope = requireCrmScope(context);
-  const repository = getCrmRepository(ports);
-  const existing = await repository.findLeadByPhone({
+  return findOrCreateWhatsappLead(ports, {
+    buyerName: input.buyerName ?? null,
     buyerPhone: input.phone,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
-  });
-  if (existing) return existing;
-  return repository.createLead({
-    ...(input.buyerName?.trim() ? { buyerName: input.buyerName.trim() } : {}),
-    buyerPhone: input.phone,
-    metadata: {
-      crmWhatsapp: {
-        firstDirection: "OUTBOUND",
-        firstConnectionId: input.connectionId,
-        firstMessageExternalId: input.externalId,
-      },
-    },
-    source: "whatsapp",
+    connectionId: input.connectionId,
+    direction: "OUTBOUND",
+    externalId: input.externalId,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });

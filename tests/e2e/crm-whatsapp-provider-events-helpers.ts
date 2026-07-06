@@ -1,10 +1,10 @@
 import type { Page } from "@playwright/test";
 
-export async function installFailedProviderEventRoutes(page: Page) {
+export async function installProviderEventIssueRoutes(page: Page) {
   let retried = false;
-  await page.route("**/provider-events/failed**", async (route) => {
+  await page.route("**/provider-events/issues**", async (route) => {
     await route.fulfill({
-      body: JSON.stringify({ events: retried ? [] : [failedProviderEvent()] }),
+      body: JSON.stringify({ events: retried ? [] : [providerEventIssue()] }),
       headers: { "content-type": "application/json" },
       status: 200,
     });
@@ -13,7 +13,7 @@ export async function installFailedProviderEventRoutes(page: Page) {
     retried = true;
     await route.fulfill({
       body: JSON.stringify({
-        event: { ...failedProviderEvent(), status: "processed" },
+        event: { ...providerEventIssue(), status: "processed" },
         result: { status: "accepted" },
       }),
       headers: { "content-type": "application/json" },
@@ -22,7 +22,7 @@ export async function installFailedProviderEventRoutes(page: Page) {
   });
 }
 
-function failedProviderEvent() {
+function providerEventIssue() {
   return {
     connectionId: "24000000-0000-4000-8000-000000000101",
     createdAt: new Date().toISOString(),

@@ -109,6 +109,8 @@ async function updateConnectionState(
     },
     ...(input.connectedPhone ? { phone: input.connectedPhone } : {}),
     status: input.status,
+    storeId: connection.storeId,
+    tenantId: connection.tenantId,
   });
   await auditZapiWebhook(context, connection, input.eventType, {
     ...(input.connectedPhone ? { connectedPhone: input.connectedPhone } : {}),

@@ -8,6 +8,7 @@
     "catalog:normalize-names": "tsx src/jobs/normalizeVehicleCatalogNames.ts",
     "catalog:sync": "tsx src/jobs/syncVehicleCatalog.ts",
     "billing:asaas:sync-smoke": "tsx src/jobs/syncBillingProviderSubscription.ts",
+    "crm:whatsapp:schedule:process": "tsx src/jobs/processCrmWhatsappScheduledMessages.ts",
     "build": "tsc -b",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",

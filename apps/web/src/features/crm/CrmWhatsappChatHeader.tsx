@@ -1,5 +1,7 @@
 import {
   Bot,
+  CalendarClock,
+  ExternalLink,
   CheckCheck,
   MailCheck,
   MailOpen,
@@ -14,19 +16,20 @@ import { formatSessionName } from "./crmWhatsappModel";
 import { TagMenu } from "./CrmWhatsappTagMenu";
 import type {
   CrmWhatsappAddSessionTagInput,
-  CrmWhatsappAgent,
+  CrmWhatsappAssignableMember,
   CrmWhatsappSession,
   CrmWhatsappTag,
 } from "./crmWhatsappTypes";
 
 export function ChatHeader({
   actionsDisabled,
-  agents,
+  assignableMembers,
   availableTags,
   canAssignSession,
   canCloseSession,
   canMarkRead,
-  canSendMessages,
+  canTagSessions,
+  canScheduleMessages,
   canToggleIntervention,
   currentUserId,
   onAssign,
@@ -36,16 +39,18 @@ export function ChatHeader({
   onMarkUnread,
   onOpenDetails,
   onRemoveTag,
+  onScheduleMessage,
   onToggleIntervention,
   session,
 }: {
   actionsDisabled?: boolean;
-  agents: CrmWhatsappAgent[];
+  assignableMembers: CrmWhatsappAssignableMember[];
   availableTags?: CrmWhatsappTag[];
   canAssignSession: boolean;
   canCloseSession: boolean;
   canMarkRead: boolean;
-  canSendMessages: boolean;
+  canTagSessions: boolean;
+  canScheduleMessages: boolean;
   canToggleIntervention: boolean;
   currentUserId?: string | null;
   onAddTag: (input: CrmWhatsappAddSessionTagInput) => Promise<boolean>;
@@ -55,13 +60,14 @@ export function ChatHeader({
   onMarkUnread: () => void;
   onOpenDetails: () => void;
   onRemoveTag: (tagId: string) => Promise<boolean>;
+  onScheduleMessage: () => void;
   onToggleIntervention: () => void;
   session: CrmWhatsappSession;
 }) {
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
   const disabled = Boolean(actionsDisabled);
   const assignedToCurrentUser =
-    Boolean(currentUserId) && session.assignedAgentId === currentUserId;
+    Boolean(currentUserId) && session.assignedUserId === currentUserId;
   return (
     <header className="crm-whatsapp-chat-header">
       <div className="crm-whatsapp-chat-identity">
@@ -82,7 +88,7 @@ export function ChatHeader({
           </span>
         </button>
         <SessionTagRow
-          disabled={disabled || !canSendMessages}
+          disabled={disabled || !canTagSessions}
           onRemoveTag={onRemoveTag}
           tags={session.sessionTags ?? []}
         />
@@ -106,7 +112,7 @@ export function ChatHeader({
             {session.unreadCount ? <MailCheck /> : <MailOpen />}
           </button>
         ) : null}
-        {canSendMessages ? (
+        {canTagSessions ? (
           <div className="crm-whatsapp-tag-menu-anchor">
             <button
               aria-label="Adicionar etiqueta"
@@ -132,6 +138,28 @@ export function ChatHeader({
             ) : null}
           </div>
         ) : null}
+        {canScheduleMessages ? (
+          <button
+            aria-label="Abrir agendamentos"
+            className="crm-icon-action"
+            disabled={disabled}
+            onClick={onScheduleMessage}
+            title="Agendamentos"
+            type="button"
+          >
+            <CalendarClock />
+          </button>
+        ) : null}
+        {session.leadId ? (
+          <a
+            aria-label="Abrir lead vinculado"
+            className="crm-icon-action"
+            href={`#/crm?surface=leads&leadId=${encodeURIComponent(session.leadId)}`}
+            title="Abrir lead vinculado"
+          >
+            <ExternalLink />
+          </a>
+        ) : null}
         {canToggleIntervention ? (
           <button
             aria-label="Alternar atendimento humano"
@@ -156,16 +184,14 @@ export function ChatHeader({
             onChange={(agentId) => onAssign(agentId || null)}
             options={[
               { label: "Sem atribuicao", value: "" },
-              ...agents
-                .filter((agent) => agent.isActive)
-                .map((agent) => ({
-                  label: agent.name,
-                  value: String(agent.id),
+              ...assignableMembers
+                .filter((member) => member.isActive)
+                .map((member) => ({
+                  label: member.name,
+                  value: String(member.id),
                 })),
             ]}
-            value={
-              session.assignedAgentId ? String(session.assignedAgentId) : ""
-            }
+            value={session.assignedUserId ? String(session.assignedUserId) : ""}
           />
         ) : null}
         {currentUserId && canAssignSession ? (

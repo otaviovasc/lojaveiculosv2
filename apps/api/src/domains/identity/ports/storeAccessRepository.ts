@@ -7,7 +7,10 @@ import type {
   UserId,
 } from "@lojaveiculosv2/shared";
 
+export type BillingManagedBy = "agency" | "store_owner";
+
 export type StoreAccessRecord = {
+  billingManagedBy: BillingManagedBy;
   entitlements: readonly EntitlementKey[];
   overrides: readonly {
     allowed: boolean;

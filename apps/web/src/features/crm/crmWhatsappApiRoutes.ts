@@ -39,14 +39,19 @@ export const crmWhatsappRoutes = {
     createCrmEndpoint("/crm/whatsapp/catalog/products", baseUrl),
   connections: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/connections", baseUrl),
+  connection: (connectionId: CrmWhatsappConnectionId, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}`,
+      baseUrl,
+    ),
   conversationsStart: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/conversations/start", baseUrl),
   events: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/events", baseUrl),
   eventsTicket: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/events/ticket", baseUrl),
-  failedProviderEvents: (baseUrl?: string) =>
-    createCrmEndpoint("/crm/whatsapp/provider-events/failed", baseUrl),
+  providerEventIssues: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/whatsapp/provider-events/issues", baseUrl),
   messages: (sessionId: CrmWhatsappSessionId, baseUrl?: string) =>
     createCrmEndpoint(`/crm/whatsapp/messages/${sessionId}`, baseUrl),
   message: (messageId: string | number, baseUrl?: string) =>
@@ -71,6 +76,15 @@ export const crmWhatsappRoutes = {
       `/crm/whatsapp/provider-events/${encodeURIComponent(eventId)}/retry`,
       baseUrl,
     ),
+  scheduledMessage: (scheduledMessageId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/scheduled-messages/${encodeURIComponent(scheduledMessageId)}`,
+      baseUrl,
+    ),
+  scheduledMessages: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/whatsapp/scheduled-messages", baseUrl),
+  scheduledMessagesProcessDue: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/whatsapp/scheduled-messages/process-due", baseUrl),
   sessions: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/sessions", baseUrl),
   sessionCounts: (baseUrl?: string) =>
@@ -89,6 +103,13 @@ export const crmWhatsappRoutes = {
       `/crm/whatsapp/sessions/${encodeURIComponent(String(sessionId))}/tags`,
       baseUrl,
     ),
+  tag: (tagId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/tags/${encodeURIComponent(tagId)}`,
+      baseUrl,
+    ),
+  tagsReorder: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/whatsapp/tags/reorder", baseUrl),
   tags: (baseUrl?: string) => createCrmEndpoint("/crm/whatsapp/tags", baseUrl),
   sendCatalog: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/send/catalog", baseUrl),
@@ -167,6 +188,20 @@ export function createCrmWhatsappTagsQuery(
   return params;
 }
 
+export function createCrmWhatsappScheduledMessagesQuery(
+  input: {
+    connectionId?: CrmWhatsappConnectionId;
+    sessionId?: CrmWhatsappSessionId;
+    status?: string;
+  } = {},
+) {
+  const params = new URLSearchParams();
+  addOptionalParam(params, "connectionId", input.connectionId);
+  addOptionalParam(params, "sessionId", input.sessionId);
+  addOptionalParam(params, "status", input.status);
+  return params;
+}
+
 export function withQuery(route: string, params: URLSearchParams[]) {
   const query = params
     .map((param) => param.toString())
@@ -178,7 +213,12 @@ export function withQuery(route: string, params: URLSearchParams[]) {
 function addOptionalParam(
   params: URLSearchParams,
   key: string,
-  value: boolean | CrmWhatsappConnectionId | CrmWhatsappSessionId | undefined,
+  value:
+    | boolean
+    | CrmWhatsappConnectionId
+    | CrmWhatsappSessionId
+    | string
+    | undefined,
 ) {
   if (value !== undefined && value !== "") params.set(key, String(value));
 }

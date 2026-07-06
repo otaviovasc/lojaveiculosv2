@@ -8,22 +8,26 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { formatSessionName } from "./crmWhatsappModel";
-import type { CrmWhatsappAgent, CrmWhatsappSession } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappAssignableMember,
+  CrmWhatsappSession,
+} from "./crmWhatsappTypes";
 
 export function CrmWhatsappSessionDetailsPanel({
-  agents,
+  assignableMembers,
   onClose,
   session,
 }: {
-  agents: CrmWhatsappAgent[];
+  assignableMembers: CrmWhatsappAssignableMember[];
   onClose: () => void;
   session: CrmWhatsappSession;
 }) {
   const name = formatSessionName(session);
   const agentName =
-    session.assignedAgent?.name ??
-    agents.find((agent) => String(agent.id) === String(session.assignedAgentId))
-      ?.name ??
+    session.assignedMember?.name ??
+    assignableMembers.find(
+      (member) => String(member.id) === String(session.assignedUserId),
+    )?.name ??
     null;
   return (
     <aside

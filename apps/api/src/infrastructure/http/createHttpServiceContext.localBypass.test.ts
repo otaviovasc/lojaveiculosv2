@@ -17,6 +17,7 @@ describe("createHttpServiceContext local auth bypass", () => {
     vi.stubEnv("DEV_CLERK_USER_ID", "clerk_test_user");
     vi.stubEnv("DEV_STORE_SLUG", "test-store");
     const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
       entitlements: ["crm"],
       overrides: [],
       role: "owner",

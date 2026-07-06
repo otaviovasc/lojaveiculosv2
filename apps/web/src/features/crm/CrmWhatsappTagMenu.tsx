@@ -84,7 +84,6 @@ export function TagMenu({
                   {tag.emoji ? `${tag.emoji} ` : ""}
                   {tag.name}
                 </span>
-                {tag.isColumn ? <small>Coluna</small> : null}
               </button>
             );
           })}

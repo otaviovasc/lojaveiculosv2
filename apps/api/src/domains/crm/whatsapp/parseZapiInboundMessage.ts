@@ -61,6 +61,8 @@ function resolvePhone(
   const rawPhone = readString(payload.phone);
   let resolved = normalizePhone(rawPhone);
   const ctwaPhone = readCtwaPhone(payload);
+  const participantPhone = normalizePhone(readString(payload.participantPhone));
+  const connectedPhone = normalizePhone(readString(payload.connectedPhone));
 
   if (isLid(rawPhone) || isLikelyLidNumber(resolved, chatLid)) {
     const chatPhone = normalizePhone(readString(payload.chatPhone));
@@ -70,11 +72,16 @@ function resolvePhone(
       const chatNamePhone = normalizeChatNamePhone(
         readString(payload.chatName),
       );
-      resolved = chatNamePhone ?? ctwaPhone ?? chatLid ?? null;
+      resolved =
+        participantPhone ??
+        chatNamePhone ??
+        ctwaPhone ??
+        connectedPhone ??
+        null;
     }
   }
 
-  return resolved || null;
+  return resolved || participantPhone || ctwaPhone || connectedPhone || null;
 }
 
 function normalizePhone(value?: string) {

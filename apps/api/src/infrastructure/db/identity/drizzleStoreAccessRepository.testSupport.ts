@@ -4,67 +4,12 @@ import {
   storeEntitlements,
   storeMemberships,
   stores,
+  tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
-import type {
-  EntitlementKey,
-  PermissionKey,
-  RoleKey,
-  StoreId,
-  TenantId,
-  UserId,
-} from "@lojaveiculosv2/shared";
+import type { StoreId, TenantId, UserId } from "@lojaveiculosv2/shared";
 import type { DrizzleStoreAccessClient } from "./drizzleStoreAccessRepository.js";
-
-type UserRow = {
-  clerkUserId: string;
-  deletedAt: Date | null;
-  id: UserId;
-  isDeleted: boolean;
-};
-
-type StoreRow = {
-  deletedAt: Date | null;
-  id: StoreId;
-  isDeleted: boolean;
-  publicSlug: string;
-  tenantId: TenantId;
-};
-
-type MembershipRow = {
-  id: string;
-  roleTemplateId: string;
-  status: "active" | "invited" | "suspended";
-  storeId: StoreId;
-  tenantId: TenantId;
-  userId: UserId;
-};
-
-type RoleTemplateRow = {
-  id: string;
-  roleKey: RoleKey;
-};
-
-type OverrideRow = {
-  allowed: boolean;
-  membershipId: string;
-  permissionKey: PermissionKey;
-};
-
-type EntitlementRow = {
-  featureKey: EntitlementKey;
-  status: "active" | "inactive" | "trialing" | "suspended";
-  storeId: StoreId;
-};
-
-type StoredRows = {
-  entitlements: EntitlementRow[];
-  memberships: MembershipRow[];
-  overrides: OverrideRow[];
-  roleTemplates: RoleTemplateRow[];
-  stores: StoreRow[];
-  users: UserRow[];
-};
+import type { StoredRows } from "./drizzleStoreAccessRepository.testRows.js";
 
 export function createFakeStoreAccessDb(initialRows: Partial<StoredRows> = {}) {
   const rows = createStoreAccessRows(initialRows);
@@ -150,6 +95,14 @@ export function createStoreAccessRows(overrides: Partial<StoredRows> = {}) {
         tenantId,
       },
     ],
+    tenantMemberships: overrides.tenantMemberships ?? [
+      {
+        roleTemplateId: "role_owner",
+        status: "active",
+        tenantId,
+        userId,
+      },
+    ],
     users: overrides.users ?? [
       {
         clerkUserId: "clerk_1",
@@ -169,8 +122,29 @@ function selectRows(
   if (table === users) return findAccessRows(rows);
   if (table === membershipPermissionOverrides) return findOverrideRows(rows);
   if (table === storeEntitlements) return findEntitlementRows(rows);
+  if (table === tenantMemberships) return findTenantBillingOwnerRows(rows);
 
   throw new Error(`Unhandled fake identity table: ${String(table)}`);
+}
+
+function findTenantBillingOwnerRows(rows: StoredRows) {
+  const access = findAccessRows(rows)[0];
+  if (!access) return [];
+
+  return rows.tenantMemberships.flatMap((membership) => {
+    const role = rows.roleTemplates.find(
+      (candidate) => candidate.id === membership.roleTemplateId,
+    );
+    if (
+      membership.status !== "active" ||
+      membership.tenantId !== access.tenantId ||
+      role?.roleKey !== "agency"
+    ) {
+      return [];
+    }
+
+    return [{ role: role.roleKey }];
+  });
 }
 
 function findAccessRows(rows: StoredRows) {

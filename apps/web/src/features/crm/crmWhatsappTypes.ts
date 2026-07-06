@@ -7,13 +7,13 @@ export type CrmWhatsappStatus =
 export type CrmWhatsappSessionFilter =
   "all" | "fresh" | "mine" | "others" | "unassigned";
 
-export type CrmWhatsappAgent = {
+export type CrmWhatsappAssignableMember = {
   activeChatCount?: number;
   email: string | null;
   id: number;
   isActive: boolean;
   name: string;
-  role: "AGENT" | "OWNER" | string;
+  role: "MEMBER" | "OWNER" | string;
   seeUnassignedChats: boolean;
 };
 
@@ -44,36 +44,87 @@ export type CrmWhatsappConnectionLiveStatus =
     };
 
 export type CrmWhatsappProviderConnection = {
+  credentials?: CrmWhatsappConnectionCredentialRefs;
   displayName: string;
   externalConnectionId: string | null;
   externalInstanceId: string | null;
   id: string;
   live: CrmWhatsappConnectionLiveStatus;
+  metadata?: CrmWhatsappConnectionMetadata;
   phone: string | null;
-  provider: "zapi" | "evolution" | "cloud_api" | string;
-  status: string;
+  provider: "zapi";
+  status: CrmWhatsappConnectionConfiguredStatus;
+  webhookEndpoints?: CrmWhatsappWebhookEndpoint[];
+  webhookTokenRequired?: boolean;
   webhookUrl: string | null;
+};
+
+export type CrmWhatsappConnectionConfiguredStatus =
+  "active" | "archived" | "disconnected" | "error" | "paused" | "sandbox";
+
+export type CrmWhatsappConnectionCredentialRefs = {
+  apiBaseUrlEnv: string | null;
+  clientTokenEnv: string | null;
+  instanceIdEnv: string | null;
+  instanceTokenEnv: string | null;
+  mode: string | null;
+};
+
+export type CrmWhatsappConnectionMetadata = {
+  catalogPhone: string | null;
+  connectedPhone: string | null;
+  migrationUnit: string | null;
+  purpose: string | null;
+};
+
+export type CrmWhatsappWebhookEndpoint = {
+  label: string;
+  type:
+    | "chat-presence"
+    | "connected"
+    | "delivery"
+    | "disconnected"
+    | "received"
+    | "status";
+  url: string;
 };
 
 export type CrmWhatsappConnectionsResponse = {
   connections: CrmWhatsappProviderConnection[];
 };
 
+export type CrmWhatsappUpdateConnectionInput = {
+  catalogPhone?: string | null;
+  connectedPhone?: string | null;
+  credentialsEnv?: {
+    apiBaseUrl: string;
+    clientToken: string;
+    instanceId: string;
+    instanceToken: string;
+  };
+  displayName?: string;
+  externalConnectionId?: string | null;
+  externalInstanceId?: string | null;
+  phone?: string | null;
+  purpose?: string | null;
+  status?: CrmWhatsappConnectionConfiguredStatus;
+  webhookUrl?: string | null;
+};
+
 export type CrmWhatsappTag = {
   color?: string;
   emoji?: string | null;
   id: string;
-  isColumn?: boolean;
   name: string;
   sortOrder?: number;
 };
 
 export type CrmWhatsappSession = {
-  assignedAgent?: Pick<
-    CrmWhatsappAgent,
+  assignedMember?: Pick<
+    CrmWhatsappAssignableMember,
     "email" | "id" | "name" | "role"
   > | null;
-  assignedAgentId?: string | null;
+  assignedUserId?: string | null;
   buyerName?: string | null;
   buyerPhone?: string | null;
   channel: CrmWhatsappChannel;

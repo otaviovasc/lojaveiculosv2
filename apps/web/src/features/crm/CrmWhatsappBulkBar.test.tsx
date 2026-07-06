@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WhatsappBulkBar } from "./CrmWhatsappBulkBar";
-import type { CrmWhatsappAgent } from "./crmWhatsappTypes";
+import type { CrmWhatsappAssignableMember } from "./crmWhatsappTypes";
 
 describe("WhatsappBulkBar", () => {
   afterEach(() => {
@@ -91,7 +91,7 @@ function renderBulkBar(
 ) {
   return render(
     <WhatsappBulkBar
-      agents={createAgents()}
+      assignableMembers={createAssignableMembers()}
       canAssign={true}
       canClose={true}
       canRead={true}
@@ -113,21 +113,24 @@ function createCallbacks() {
   };
 }
 
-function createAgents(): CrmWhatsappAgent[] {
+function createAssignableMembers(): CrmWhatsappAssignableMember[] {
   return [
-    createAgent(1, "Ana"),
-    createAgent(2, "Bruno"),
-    { ...createAgent(3, "Inativo"), isActive: false },
+    createAssignableMember(1, "Ana"),
+    createAssignableMember(2, "Bruno"),
+    { ...createAssignableMember(3, "Inativo"), isActive: false },
   ];
 }
 
-function createAgent(id: number, name: string): CrmWhatsappAgent {
+function createAssignableMember(
+  id: number,
+  name: string,
+): CrmWhatsappAssignableMember {
   return {
     email: `${name.toLowerCase()}@loja.local`,
     id,
     isActive: true,
     name,
-    role: "AGENT",
+    role: "MEMBER",
     seeUnassignedChats: true,
   };
 }

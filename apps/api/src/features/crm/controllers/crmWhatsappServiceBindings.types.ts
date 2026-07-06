@@ -1,6 +1,13 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmWhatsappCatalogProductsPage } from "../../../domains/crm/ports/crmWhatsappGateway.js";
-import type { WhatsappConnection } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import type {
+  CrmWhatsappScheduledMessage,
+  CrmWhatsappScheduledMessageScope,
+} from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type {
+  UpdateWhatsappConnectionInput,
+  WhatsappConnection,
+} from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
 import type {
   IngestZapiWhatsappWebhookInput,
   IngestZapiWhatsappWebhookResult,
@@ -30,15 +37,27 @@ import type {
   SendWhatsappReactionInput,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappMessageActions.js";
 import type {
-  ListWhatsappFailedWebhookEventsInput,
+  ListWhatsappWebhookEventIssuesInput,
   RetryWhatsappWebhookEventInput,
   RetryWhatsappWebhookEventResult,
   WhatsappWebhookEventSummary,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import type {
+  CancelWhatsappScheduledMessageInput,
+  CreateWhatsappScheduledMessageInput,
+  ListDueWhatsappScheduledMessageScopesInput,
+  ListWhatsappScheduledMessagesInput,
+  ProcessDueWhatsappScheduledMessagesInput,
+  ProcessDueWhatsappScheduledMessagesResult,
+} from "../../../domains/crm/services/CrmWhatsapp/whatsappScheduledMessages.js";
+import type {
   AddWhatsappSessionTagInput,
+  CreateWhatsappTagInput,
+  DeleteWhatsappTagInput,
   ListWhatsappTagsInput,
+  ReorderWhatsappTagsInput,
   RemoveWhatsappSessionTagInput,
+  UpdateWhatsappTagInput,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappSessionTags.js";
 import type {
   AssignWhatsappSessionInput,
@@ -76,9 +95,25 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
     CloseWhatsappSessionInput,
     WhatsappSession
   >;
+  cancelWhatsappScheduledMessage: CrmContextService<
+    CancelWhatsappScheduledMessageInput,
+    CrmWhatsappScheduledMessage
+  >;
   countWhatsappSessions: CrmContextService<
     CountWhatsappSessionsInput,
     WhatsappSessionCounts
+  >;
+  createWhatsappScheduledMessage: CrmContextService<
+    CreateWhatsappScheduledMessageInput,
+    CrmWhatsappScheduledMessage
+  >;
+  createWhatsappTag: CrmContextService<
+    CreateWhatsappTagInput,
+    WhatsappSessionTag
+  >;
+  deleteWhatsappTag: CrmContextService<
+    DeleteWhatsappTagInput,
+    WhatsappSessionTag
   >;
   deleteWhatsappMessage: CrmContextService<
     DeleteWhatsappMessageInput,
@@ -95,8 +130,12 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   listWhatsappConnections: (
     context: ServiceContext,
   ) => Promise<readonly WhatsappConnection[]>;
-  listWhatsappFailedWebhookEvents: CrmContextService<
-    ListWhatsappFailedWebhookEventsInput,
+  updateWhatsappConnection: CrmContextService<
+    UpdateWhatsappConnectionInput,
+    WhatsappConnection
+  >;
+  listWhatsappWebhookEventIssues: CrmContextService<
+    ListWhatsappWebhookEventIssuesInput,
     readonly WhatsappWebhookEventSummary[]
   >;
   listWhatsappMessages: CrmContextService<
@@ -106,6 +145,14 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   listWhatsappSessions: CrmContextService<
     ListWhatsappSessionsInput,
     readonly WhatsappSession[]
+  >;
+  listWhatsappScheduledMessages: CrmContextService<
+    ListWhatsappScheduledMessagesInput,
+    readonly CrmWhatsappScheduledMessage[]
+  >;
+  listDueWhatsappScheduledMessageScopes: CrmContextService<
+    ListDueWhatsappScheduledMessageScopesInput,
+    readonly CrmWhatsappScheduledMessageScope[]
   >;
   listWhatsappTags: CrmContextService<
     ListWhatsappTagsInput,
@@ -120,6 +167,10 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   processZapiWhatsappDeliveryWebhook: ZapiWebhookProcessor;
   processZapiWhatsappDisconnectedWebhook: ZapiWebhookProcessor;
   processZapiWhatsappStatusWebhook: ZapiWebhookProcessor;
+  processDueWhatsappScheduledMessages: CrmContextService<
+    ProcessDueWhatsappScheduledMessagesInput,
+    ProcessDueWhatsappScheduledMessagesResult
+  >;
   removeWhatsappReaction: CrmContextService<
     RemoveWhatsappReactionInput,
     WhatsappMessage
@@ -127,6 +178,10 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   removeWhatsappSessionTag: CrmContextService<
     RemoveWhatsappSessionTagInput,
     WhatsappSession
+  >;
+  reorderWhatsappTags: CrmContextService<
+    ReorderWhatsappTagsInput,
+    readonly WhatsappSessionTag[]
   >;
   retryWhatsappWebhookEvent: CrmContextService<
     RetryWhatsappWebhookEventInput,
@@ -161,5 +216,9 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   toggleWhatsappIntervention: CrmContextService<
     ToggleWhatsappInterventionInput,
     WhatsappSession
+  >;
+  updateWhatsappTag: CrmContextService<
+    UpdateWhatsappTagInput,
+    WhatsappSessionTag
   >;
 };

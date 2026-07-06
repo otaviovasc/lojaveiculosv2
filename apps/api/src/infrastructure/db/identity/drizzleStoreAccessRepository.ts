@@ -5,6 +5,7 @@ import {
   storeEntitlements,
   storeMemberships,
   stores,
+  tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
 import type {
@@ -37,6 +38,10 @@ type EntitlementRow = {
   entitlement: EntitlementKey;
 };
 
+type TenantBillingOwnerRow = {
+  role: RoleKey;
+};
+
 type SelectLimitBuilder<Row> = {
   limit: (count: number) => Promise<readonly Row[]>;
 };
@@ -66,6 +71,7 @@ export type DrizzleStoreAccessClient = {
       permission: unknown;
     }): SelectFromBuilder<OverrideRow>;
     (selection: { entitlement: unknown }): SelectFromBuilder<EntitlementRow>;
+    (selection: { role: unknown }): SelectFromBuilder<TenantBillingOwnerRow>;
   };
 };
 
@@ -109,35 +115,57 @@ export function createDrizzleStoreAccessRepository(
 
       if (!access) return null;
 
-      const [overrides, entitlements] = await Promise.all([
-        db
-          .select({
-            allowed: membershipPermissionOverrides.allowed,
-            permission: membershipPermissionOverrides.permissionKey,
-          })
-          .from(membershipPermissionOverrides)
-          .where(
-            eq(membershipPermissionOverrides.membershipId, access.membershipId),
-          )
-          .limit(100),
-        db
-          .select({
-            entitlement: storeEntitlements.featureKey,
-          })
-          .from(storeEntitlements)
-          .where(
-            and(
-              eq(storeEntitlements.storeId, access.storeId),
-              or(
-                eq(storeEntitlements.status, "active"),
-                eq(storeEntitlements.status, "trialing"),
+      const [overrides, entitlements, tenantAgencyMemberships] =
+        await Promise.all([
+          db
+            .select({
+              allowed: membershipPermissionOverrides.allowed,
+              permission: membershipPermissionOverrides.permissionKey,
+            })
+            .from(membershipPermissionOverrides)
+            .where(
+              eq(
+                membershipPermissionOverrides.membershipId,
+                access.membershipId,
               ),
-            ),
-          )
-          .limit(100),
-      ]);
+            )
+            .limit(100),
+          db
+            .select({
+              entitlement: storeEntitlements.featureKey,
+            })
+            .from(storeEntitlements)
+            .where(
+              and(
+                eq(storeEntitlements.storeId, access.storeId),
+                or(
+                  eq(storeEntitlements.status, "active"),
+                  eq(storeEntitlements.status, "trialing"),
+                ),
+              ),
+            )
+            .limit(100),
+          db
+            .select({ role: roleTemplates.roleKey })
+            .from(tenantMemberships)
+            .innerJoin(
+              roleTemplates,
+              eq(roleTemplates.id, tenantMemberships.roleTemplateId),
+            )
+            .where(
+              and(
+                eq(tenantMemberships.tenantId, access.tenantId),
+                eq(tenantMemberships.status, "active"),
+                eq(roleTemplates.roleKey, "agency"),
+              ),
+            )
+            .limit(1),
+        ]);
 
       return {
+        billingManagedBy: tenantAgencyMemberships.length
+          ? "agency"
+          : "store_owner",
         entitlements: entitlements.map((row) => row.entitlement),
         overrides,
         role: access.role,

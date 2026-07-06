@@ -2,8 +2,6 @@ import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   whatsappCatalogProductsQuerySchema,
-  whatsappAddSessionTagSchema,
-  whatsappTagsQuerySchema,
   whatsappSendCatalogSchema,
   whatsappSendCatalogProductSchema,
   whatsappSendLocationSchema,
@@ -19,6 +17,7 @@ import {
   handleWhatsapp,
 } from "./crm.whatsapp.errors.js";
 import { registerCrmWhatsappQuickMessageRoutes } from "./crm.whatsapp.quickMessageRoutes.js";
+import { registerCrmWhatsappTagRoutes } from "./crm.whatsapp.tagRoutes.js";
 import type { CrmServices } from "./crmServices.js";
 
 type RegisterCrmWhatsappExtrasRoutesOptions = {
@@ -34,6 +33,7 @@ export function registerCrmWhatsappExtrasRoutes(
     createContext,
     services,
   });
+  registerCrmWhatsappTagRoutes(crmFeature, { createContext, services });
 
   crmFeature.get("/whatsapp/catalog/products", async (context) =>
     handleWhatsapp(context, async () => {
@@ -56,23 +56,6 @@ export function registerCrmWhatsappExtrasRoutes(
         },
       );
       return context.json(products);
-    }),
-  );
-
-  crmFeature.get("/whatsapp/tags", async (context) =>
-    handleWhatsapp(context, async () => {
-      const input = whatsappTagsQuerySchema.safeParse(context.req.query());
-      if (!input.success) throw new CrmWhatsappValidationError();
-      const serviceContext = await createContext(context);
-      assertWhatsappRead(serviceContext);
-      const tags = await services.listWhatsappTags(serviceContext, {
-        ...(input.data.connectionId !== undefined
-          ? { connectionId: input.data.connectionId }
-          : {}),
-        limit: input.data.limit,
-        ...(input.data.search ? { search: input.data.search } : {}),
-      });
-      return context.json(tags);
     }),
   );
 
@@ -158,45 +141,5 @@ export function registerCrmWhatsappExtrasRoutes(
       });
       return context.json(message, 201);
     }),
-  );
-
-  crmFeature.post("/whatsapp/sessions/:sessionId/tags", async (context) =>
-    handleWhatsapp(context, async () => {
-      const input = await parseWhatsappJson(
-        context,
-        whatsappAddSessionTagSchema,
-      );
-      const serviceContext = await createContext(context);
-      assertWhatsappSend(serviceContext);
-      const session = await services.addWhatsappSessionTag(serviceContext, {
-        ...(input.color ? { color: input.color } : {}),
-        ...(input.emoji !== undefined ? { emoji: input.emoji } : {}),
-        ...(input.isColumn !== undefined ? { isColumn: input.isColumn } : {}),
-        name: input.name,
-        sessionId: context.req.param("sessionId"),
-      });
-      return context.json(session);
-    }),
-  );
-
-  crmFeature.delete(
-    "/whatsapp/sessions/:sessionId/tags/:tagId",
-    async (context) =>
-      handleWhatsapp(context, async () => {
-        const tagId = context.req.param("tagId");
-        if (!tagId) {
-          throw new CrmWhatsappValidationError("Route param tagId is invalid.");
-        }
-        const serviceContext = await createContext(context);
-        assertWhatsappSend(serviceContext);
-        const session = await services.removeWhatsappSessionTag(
-          serviceContext,
-          {
-            sessionId: context.req.param("sessionId"),
-            tagId,
-          },
-        );
-        return context.json(session);
-      }),
   );
 }

@@ -54,7 +54,22 @@ manage these explicit permissions in the CRM group:
 - `crm.whatsapp.assign`: assign conversations.
 - `crm.whatsapp.close`: close conversations.
 - `crm.whatsapp.toggle_intervention`: toggle manual intervention.
+- `crm.whatsapp.tag.assign`: attach and remove existing tags on sessions.
+- `crm.whatsapp.tag.manage`: create, edit, delete, and reorder tags.
+- `crm.whatsapp.schedule.read`: list scheduled WhatsApp messages.
+- `crm.whatsapp.schedule.create`: schedule a WhatsApp text message.
+- `crm.whatsapp.schedule.cancel`: cancel a pending scheduled message.
+- `crm.whatsapp.schedule.process`: process due scheduled messages.
+- `crm.whatsapp.connection.update_metadata`: edit safe ZAPI connection labels,
+  phone fields, external ids, and admin metadata.
+- `crm.whatsapp.connection.update_status`: change the V2 configured connection
+  status.
+- `crm.whatsapp.connection.update_credentials`: change the environment variable
+  references used to resolve ZAPI credentials.
+- `crm.whatsapp.connection.update_webhooks`: change the connection webhook base
+  URL.
 
-The transitional Repasses CRM backend may still apply its own agent/owner rules,
-but V2 must assert these permissions, tenant/store scope, entitlement context,
-and audit metadata before proxying WhatsApp operations.
+V2 asserts these permissions, tenant/store scope, CRM entitlement context, and
+audit metadata before every WhatsApp operation. Pre-launch WhatsApp code should
+not keep Repasses payload compatibility or dead fallback branches unless a new
+explicit business requirement says otherwise.

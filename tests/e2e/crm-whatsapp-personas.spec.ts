@@ -4,7 +4,7 @@ import {
   installConnectedWhatsappConnectionStub,
   seedWhatsappSession,
 } from "./crm-whatsapp-test-helpers";
-import { installFailedProviderEventRoutes } from "./crm-whatsapp-provider-events-helpers";
+import { installProviderEventIssueRoutes } from "./crm-whatsapp-provider-events-helpers";
 
 type Persona = {
   key: string;
@@ -38,7 +38,7 @@ test.describe("CRM WhatsApp personas", () => {
       phone: `551166${String(Date.now()).slice(-8)}`,
     });
     await installConnectedWhatsappConnectionStub(page, connectionId);
-    await installFailedProviderEventRoutes(page);
+    await installProviderEventIssueRoutes(page);
     const sentTexts = await installSendTextRoute(page);
 
     for (const persona of personas) {
@@ -133,7 +133,7 @@ async function expectOperatorActions(page: Page) {
 
 async function expectReadOnlyActions(page: Page) {
   const failedSummary = page.getByRole("button", {
-    name: /1 evento ZAPI com falha/,
+    name: /1 evento ZAPI com atencao/,
   });
   await expect(failedSummary).toBeVisible();
   await failedSummary.click();

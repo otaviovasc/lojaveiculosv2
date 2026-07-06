@@ -19,7 +19,6 @@ import { toWhatsappMessage, toWhatsappSession } from "./whatsappModels.js";
 import {
   WhatsappConnectionNotFoundError,
   WhatsappSessionNotFoundError,
-  WhatsappUnsupportedProviderError,
 } from "./whatsappSendErrors.js";
 
 const terminalLeadStatuses = new Set(["archived", "lost", "won"]);
@@ -77,10 +76,6 @@ export async function sendWhatsappOutboundMessage(
   ) {
     throw new WhatsappConnectionNotFoundError(session.connectionId);
   }
-  if (connection.provider !== "zapi") {
-    throw new WhatsappUnsupportedProviderError(connection.provider);
-  }
-
   const prepared = await input.prepare({
     connection,
     gateway: getCrmWhatsappGateway(ports),

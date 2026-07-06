@@ -37,27 +37,38 @@ describe("CRM WhatsApp connections", () => {
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as { connections: unknown[] };
-    expect(body).toEqual({
-      connections: [
-        {
-          displayName: "ZAPI Test Connection",
-          externalConnectionId: null,
-          externalInstanceId: null,
-          id: connectionId,
-          live: {
-            checkedAt: "2026-07-02T19:00:00.000Z",
-            connected: true,
-            connectedPhone: "5511940231407",
-            providerStatus: "connected",
-            smartphoneConnected: true,
-          },
-          phone: null,
-          provider: "zapi",
-          status: "sandbox",
-          webhookUrl: null,
-        },
-      ],
+    expect(body.connections[0]).toMatchObject({
+      credentials: {
+        apiBaseUrlEnv: "CRM_ZAPI_API_BASE_URL",
+        clientTokenEnv: "CRM_ZAPI_TEST_CLIENT_TOKEN",
+        instanceIdEnv: "CRM_ZAPI_TEST_INSTANCE_ID",
+        instanceTokenEnv: "CRM_ZAPI_TEST_INSTANCE_TOKEN",
+        mode: "env",
+      },
+      displayName: "ZAPI Test Connection",
+      externalConnectionId: null,
+      externalInstanceId: null,
+      id: connectionId,
+      live: {
+        checkedAt: "2026-07-02T19:00:00.000Z",
+        connected: true,
+        connectedPhone: "5511940231407",
+        providerStatus: "connected",
+        smartphoneConnected: true,
+      },
+      metadata: {
+        catalogPhone: null,
+        connectedPhone: null,
+        migrationUnit: null,
+        purpose: null,
+      },
+      phone: null,
+      provider: "zapi",
+      status: "sandbox",
+      webhookTokenRequired: false,
+      webhookUrl: null,
     });
+    expect(JSON.stringify(body)).toContain("/webhooks/zapi/");
     expect(JSON.stringify(body)).not.toContain("credentialsRef");
     expect(getConnectionStatus).toHaveBeenCalledTimes(1);
     expect(record.mock.calls[0]?.[0]).toMatchObject({

@@ -163,7 +163,6 @@ async function readSessionConnection(
   );
   if (
     !connection ||
-    connection.provider !== "zapi" ||
     connection.storeId !== session.storeId ||
     connection.tenantId !== session.tenantId
   ) {

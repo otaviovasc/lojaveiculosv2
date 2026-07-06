@@ -55,10 +55,18 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).createQuickMessage(input),
+    createScheduledMessage: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).createScheduledMessage(input),
+    createTag: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).createTag(input),
     deleteQuickMessage: async (quickMessageId) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).deleteQuickMessage(quickMessageId),
+    deleteTag: async (tagId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).deleteTag(tagId),
     deleteMessage: async (messageId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).deleteMessage(
         messageId,
@@ -72,6 +80,11 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).listConnections(),
+    updateConnection: async (connectionId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).updateConnection(
+        connectionId,
+        input,
+      ),
     listMessages: async (sessionId, query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
         sessionId,
@@ -85,12 +98,16 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).listQuickMessages(),
-    listTags: async (input) =>
-      createCrmWhatsappApi(await createProductCrmApiOptions()).listTags(input),
-    listFailedProviderEvents: async () =>
+    listScheduledMessages: async (input) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
-      ).listFailedProviderEvents(),
+      ).listScheduledMessages(input),
+    listTags: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listTags(input),
+    listProviderEventIssues: async () =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).listProviderEventIssues(),
     markSessionRead: async (sessionId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).markSessionRead(
         sessionId,
@@ -111,6 +128,18 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).removeSessionTag(
         sessionId,
         tagId,
+      ),
+    cancelScheduledMessage: async (scheduledMessageId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).cancelScheduledMessage(scheduledMessageId),
+    processDueScheduledMessages: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).processDueScheduledMessages(input),
+    reorderTags: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).reorderTags(
+        input,
       ),
     removeReaction: async (messageId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).removeReaction(
@@ -157,6 +186,11 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).updateQuickMessage(quickMessageId, input),
+    updateTag: async (tagId, input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).updateTag(
+        tagId,
+        input,
+      ),
     subscribeEvents: (input) => {
       let unsubscribe: (() => void) | null = null;
       let closed = false;

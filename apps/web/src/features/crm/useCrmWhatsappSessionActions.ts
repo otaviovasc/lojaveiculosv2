@@ -72,10 +72,10 @@ export function useCrmWhatsappSessionActions({
         () => api.assignSession(sessionId, { assignedUserId }),
         {
           ...session,
-          assignedAgent: assignedUserId
-            ? (session.assignedAgent ?? null)
+          assignedMember: assignedUserId
+            ? (session.assignedMember ?? null)
             : null,
-          assignedAgentId: assignedUserId,
+          assignedUserId: assignedUserId,
         },
       );
     },
@@ -150,14 +150,11 @@ export function useCrmWhatsappSessionActions({
       return runSessionAction(() => api.addSessionTag(sessionId, input), {
         ...session,
         sessionTags: [
-          ...(input.isColumn
-            ? (session.sessionTags ?? []).filter((tag) => !tag.isColumn)
-            : (session.sessionTags ?? [])),
+          ...(session.sessionTags ?? []),
           {
             color: input.color ?? "var(--color-muted)",
             emoji: input.emoji ?? null,
             id: `local-${name.toLocaleLowerCase("pt-BR")}`,
-            isColumn: input.isColumn ?? false,
             name,
           },
         ],

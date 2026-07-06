@@ -3,17 +3,17 @@ import type { SessionBootstrap } from "../account/apiClient";
 import type { RoleManagementView } from "../settings/types";
 import {
   canAssignWhatsappSessions,
-  mapRoleManagementToWhatsappAgents,
-} from "./useCrmWhatsappAgents";
+  mapRoleManagementToWhatsappAssignableMembers,
+} from "./useCrmWhatsappAssignableMembers";
 
-describe("useCrmWhatsappAgents", () => {
-  it("maps active WhatsApp-capable members to assignable agents", () => {
-    const agents = mapRoleManagementToWhatsappAgents(
+describe("useCrmWhatsappAssignableMembers", () => {
+  it("maps active WhatsApp-capable members to assignable members", () => {
+    const assignableMembers = mapRoleManagementToWhatsappAssignableMembers(
       createRoles(),
       createSession(),
     );
 
-    expect(agents).toEqual([
+    expect(assignableMembers).toEqual([
       expect.objectContaining({
         email: "owner@loja.local",
         id: "user_owner",

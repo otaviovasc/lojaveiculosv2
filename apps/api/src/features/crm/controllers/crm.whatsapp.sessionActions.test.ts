@@ -110,7 +110,7 @@ describe("CRM WhatsApp session actions", () => {
     );
     expect(assignResponse.status).toBe(200);
     await expect(assignResponse.json()).resolves.toMatchObject({
-      assignedAgentId: actorUserId,
+      assignedUserId: actorUserId,
     });
 
     const mineResponse = await app.request(
@@ -134,7 +134,7 @@ describe("CRM WhatsApp session actions", () => {
     );
     expect(closeResponse.status).toBe(200);
     await expect(closeResponse.json()).resolves.toMatchObject({
-      assignedAgentId: null,
+      assignedUserId: null,
       status: "COMPLETED",
     });
 

@@ -18,19 +18,23 @@ import {
   processZapiWhatsappDeliveryWebhook,
   processZapiWhatsappStatusWebhook,
 } from "./processZapiWhatsappMessageWebhook.js";
-import {
-  processZapiWhatsappWebhookEvent,
-  type DurableZapiWebhookResult,
-} from "./processZapiWhatsappWebhookEvent.js";
+import { type DurableZapiWebhookResult } from "./processZapiWhatsappWebhookEvent.js";
 import {
   logWhatsappServiceEvent,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
+import {
+  readWebhookEventAttentionReason,
+  readZapiWebhookType,
+  toWebhookEventSummary,
+  type WhatsappWebhookEventSummary,
+} from "../../whatsapp/whatsappWebhookEventIssues.js";
+export type { WhatsappWebhookEventSummary } from "../../whatsapp/whatsappWebhookEventIssues.js";
 
 const readPermission = "crm.whatsapp.read" as const;
 const retryPermission = "crm.whatsapp.send" as const;
 
-export type ListWhatsappFailedWebhookEventsInput = {
+export type ListWhatsappWebhookEventIssuesInput = {
   connectionId?: string | null;
   limit?: number;
   offset?: number;
@@ -38,19 +42,6 @@ export type ListWhatsappFailedWebhookEventsInput = {
 
 export type RetryWhatsappWebhookEventInput = {
   eventId: string;
-};
-
-export type WhatsappWebhookEventSummary = {
-  connectionId: string | null;
-  createdAt: string;
-  errorMessage: string | null;
-  eventType: string;
-  id: string;
-  processedAt: string | null;
-  providerEventId: string;
-  status: CrmProviderWebhookEvent["status"];
-  updatedAt: string;
-  webhookType: ZapiWebhookType | null;
 };
 
 export type RetryWhatsappWebhookEventResult = {
@@ -64,26 +55,42 @@ type RetryProcessor = (
   ports: CrmServicePorts,
 ) => Promise<DurableZapiWebhookResult>;
 
-export async function listWhatsappFailedWebhookEvents(
+export async function listWhatsappWebhookEventIssues(
   context: ServiceContext,
-  input: ListWhatsappFailedWebhookEventsInput,
+  input: ListWhatsappWebhookEventIssuesInput,
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappWebhookEventSummary[]> {
   assertPermission(context, readPermission);
   const scope = requireCrmScope(context);
-  logWhatsappServiceEvent(context, "crm.whatsapp.webhook.events.failed.list", {
+  logWhatsappServiceEvent(context, "crm.whatsapp.webhook.events.issues.list", {
     connectionId: input.connectionId ?? null,
   });
-  const events = await getCrmWebhookEventRepository(ports).list({
+  const pageEnd = (input.offset ?? 0) + (input.limit ?? 20);
+  const repository = getCrmWebhookEventRepository(ports);
+  const scopeFilter = {
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
-    limit: input.limit ?? 20,
-    offset: input.offset ?? 0,
     provider: "zapi",
-    status: "failed",
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
-  });
-  return events.map(toWebhookEventSummary);
+  } as const;
+  const [failedEvents, ignoredReceivedEvents] = await Promise.all([
+    repository.list({
+      ...scopeFilter,
+      limit: pageEnd,
+      status: "failed",
+    }),
+    repository.list({
+      ...scopeFilter,
+      eventType: "crm.whatsapp.zapi.received",
+      limit: pageEnd,
+      status: "ignored",
+    }),
+  ]);
+  return [...failedEvents, ...ignoredReceivedEvents]
+    .filter(readWebhookEventAttentionReason)
+    .sort((left, right) => right.updatedAt.getTime() - left.updatedAt.getTime())
+    .slice(input.offset ?? 0, pageEnd)
+    .map(toWebhookEventSummary);
 }
 
 export async function retryWhatsappWebhookEvent(
@@ -105,9 +112,9 @@ export async function retryWhatsappWebhookEvent(
       404,
     );
   }
-  if (event.status !== "failed") {
+  if (!readWebhookEventAttentionReason(event)) {
     throw new WhatsappWebhookEventRetryError(
-      "Only failed provider events can be retried.",
+      "Only provider event issues can be retried.",
       409,
     );
   }
@@ -137,13 +144,12 @@ export async function retryWhatsappWebhookEvent(
       summary: "Retried failed ZAPI WhatsApp webhook event",
     },
     async () => {
-      const result = await processZapiWhatsappWebhookEvent(
-        withIngestPermission(context),
-        { connectionId, payload: event.payload },
-        webhookType,
-        readRetryProcessor(webhookType),
+      const result = await retryRecordedZapiWebhookEvent(context, {
+        connectionId,
+        event,
         ports,
-      );
+        webhookType,
+      });
       const updated = await repository.findById({
         eventId: event.id,
         storeId: scope.storeId as never,
@@ -179,6 +185,37 @@ function readRetryProcessor(type: ZapiWebhookType): RetryProcessor {
   return processors[type];
 }
 
+async function retryRecordedZapiWebhookEvent(
+  context: ServiceContext,
+  input: {
+    connectionId: string;
+    event: CrmProviderWebhookEvent;
+    ports: CrmServicePorts;
+    webhookType: ZapiWebhookType;
+  },
+) {
+  const repository = getCrmWebhookEventRepository(input.ports);
+  try {
+    const result = await readRetryProcessor(input.webhookType)(
+      withIngestPermission(context),
+      { connectionId: input.connectionId, payload: input.event.payload },
+      input.ports,
+    );
+    await repository.updateStatus({
+      eventId: input.event.id,
+      status: result.status === "ignored" ? "ignored" : "processed",
+    });
+    return result;
+  } catch (error) {
+    await repository.updateStatus({
+      errorMessage: error instanceof Error ? error.message : "Unknown error",
+      eventId: input.event.id,
+      status: "failed",
+    });
+    throw error;
+  }
+}
+
 async function resolveRetryConnectionId(
   event: CrmProviderWebhookEvent,
   ports: CrmServicePorts,
@@ -195,43 +232,9 @@ async function resolveRetryConnectionId(
   );
 }
 
-function readZapiWebhookType(eventType: string): ZapiWebhookType | null {
-  const prefix = "crm.whatsapp.zapi.";
-  if (!eventType.startsWith(prefix)) return null;
-  const type = eventType.slice(prefix.length);
-  if (
-    type === "chat_presence" ||
-    type === "connected" ||
-    type === "delivery" ||
-    type === "disconnected" ||
-    type === "received" ||
-    type === "status"
-  ) {
-    return type;
-  }
-  return null;
-}
-
 function withIngestPermission(context: ServiceContext): ServiceContext {
   return {
     ...context,
     permissions: [...new Set([...context.permissions, "crm.whatsapp.ingest"])],
-  };
-}
-
-function toWebhookEventSummary(
-  event: CrmProviderWebhookEvent,
-): WhatsappWebhookEventSummary {
-  return {
-    connectionId: event.connectionId,
-    createdAt: event.createdAt.toISOString(),
-    errorMessage: event.errorMessage,
-    eventType: event.eventType,
-    id: event.id,
-    processedAt: event.processedAt?.toISOString() ?? null,
-    providerEventId: event.providerEventId,
-    status: event.status,
-    updatedAt: event.updatedAt.toISOString(),
-    webhookType: readZapiWebhookType(event.eventType),
   };
 }

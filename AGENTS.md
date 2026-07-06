@@ -50,6 +50,12 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Backend improvements during migration must be justified by an existing
   mismatch, correctness issue, or stronger local convention. Avoid
   opportunistic rewrites.
+- This repo is pre-launch. Do not preserve legacy payload compatibility,
+  transitional dead code, or old CRM behavior just because another app used it.
+  When migrating from `repasses-*`, remove obsolete branches and enforce the V2
+  contract unless the user explicitly requests backward compatibility.
+- Compatibility shims require an explicit post-launch business reason, owner,
+  and removal plan. Otherwise, treat them as dead code and remove them.
 
 ## Security And Audit
 

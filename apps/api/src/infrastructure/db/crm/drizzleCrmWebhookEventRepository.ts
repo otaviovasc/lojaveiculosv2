@@ -33,6 +33,9 @@ export function createDrizzleCrmWebhookEventRepository(
       if (input.connectionId) {
         filters.push(eq(providerEvents.connectionId, input.connectionId));
       }
+      if (input.eventType) {
+        filters.push(eq(providerEvents.eventType, input.eventType));
+      }
       if (input.provider) {
         filters.push(eq(providerEvents.provider, input.provider));
       }

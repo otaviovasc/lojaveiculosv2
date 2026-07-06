@@ -40,12 +40,31 @@ export function createDrizzleCrmConnectionRepository(
       const [row] = await db
         .update(crmConnections)
         .set({
+          ...(input.credentialsRef
+            ? { credentialsRef: input.credentialsRef }
+            : {}),
+          ...(input.displayName ? { displayName: input.displayName } : {}),
+          ...(input.externalConnectionId !== undefined
+            ? { externalConnectionId: input.externalConnectionId }
+            : {}),
+          ...(input.externalInstanceId !== undefined
+            ? { externalInstanceId: input.externalInstanceId }
+            : {}),
           ...(input.metadata ? { metadata: input.metadata } : {}),
           ...(input.phone !== undefined ? { phone: input.phone } : {}),
           ...(input.status ? { status: input.status } : {}),
+          ...(input.webhookUrl !== undefined
+            ? { webhookUrl: input.webhookUrl }
+            : {}),
           updatedAt: new Date(),
         })
-        .where(eq(crmConnections.id, input.connectionId))
+        .where(
+          and(
+            eq(crmConnections.id, input.connectionId),
+            eq(crmConnections.storeId, input.storeId),
+            eq(crmConnections.tenantId, input.tenantId),
+          ),
+        )
         .returning();
       return row ? toCrmConnection(row) : null;
     },

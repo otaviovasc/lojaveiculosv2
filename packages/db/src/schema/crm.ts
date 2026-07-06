@@ -23,8 +23,6 @@ export const crmSyncStatus = pgEnum("crm_sync_status", [
 
 export const crmConnectionProvider = pgEnum("crm_connection_provider", [
   "zapi",
-  "evolution",
-  "cloud_api",
 ]);
 
 export const crmConnectionStatus = pgEnum("crm_connection_status", [
@@ -77,7 +75,6 @@ export const crmTags = pgTable(
     color: varchar("color", { length: 16 }).notNull().default("#64748b"),
     connectionId: uuid("connection_id").references(() => crmConnections.id),
     emoji: varchar("emoji", { length: 16 }),
-    isColumn: boolean("is_column").notNull().default(false),
     name: varchar("name", { length: 80 }).notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
     storeId: uuid("store_id")

@@ -14,13 +14,13 @@ describe("CrmWhatsappSessionDetailsPanel", () => {
     const onClose = vi.fn();
     render(
       <CrmWhatsappSessionDetailsPanel
-        agents={[
+        assignableMembers={[
           {
             email: "ana@loja.test",
             id: 12,
             isActive: true,
             name: "Ana",
-            role: "AGENT",
+            role: "MEMBER",
             seeUnassignedChats: true,
           },
         ]}
@@ -41,7 +41,7 @@ describe("CrmWhatsappSessionDetailsPanel", () => {
 
 function session(): CrmWhatsappSession {
   return {
-    assignedAgentId: "12",
+    assignedUserId: "12",
     buyerName: "Maria Cliente",
     buyerPhone: "5511999999999",
     channel: "WHATSAPP",

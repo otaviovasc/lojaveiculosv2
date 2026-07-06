@@ -31,6 +31,7 @@ describe("createHttpServiceContext", () => {
 
   it("resolves authenticated store context from identity headers", async () => {
     const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
       entitlements: ["crm"],
       overrides: [{ allowed: true, permission: "inventory.update_price" }],
       role: "salesman",
@@ -73,6 +74,7 @@ describe("createHttpServiceContext", () => {
 
   it("falls back to the public storefront subdomain for store scope", async () => {
     const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
       entitlements: ["subdomain"],
       overrides: [],
       role: "owner",
@@ -104,6 +106,7 @@ describe("createHttpServiceContext", () => {
   it("resolves authenticated context from a verified Clerk bearer token", async () => {
     vi.stubEnv("APP_ENV", "production");
     const access: StoreAccessRecord = {
+      billingManagedBy: "store_owner",
       entitlements: ["crm"],
       overrides: [],
       role: "owner",

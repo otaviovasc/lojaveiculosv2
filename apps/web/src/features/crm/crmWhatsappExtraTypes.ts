@@ -40,10 +40,55 @@ export type CrmWhatsappSendQuickMessageInput = {
   sessionId: string;
 };
 
+export type CrmWhatsappScheduledMessageStatus =
+  "cancelled" | "failed" | "pending" | "sending" | "sent";
+
+export type CrmWhatsappScheduledMessage = {
+  cancelledAt: string | null;
+  connectionId: string;
+  createdAt: string;
+  createdByUserId: string | null;
+  errorMessage: string | null;
+  id: string;
+  metadata: Record<string, unknown>;
+  phone: string;
+  scheduledAt: string;
+  sentAt: string | null;
+  sentMessageId: string | null;
+  sessionId: string;
+  status: CrmWhatsappScheduledMessageStatus;
+  text: string;
+  updatedAt: string;
+};
+
+export type CrmWhatsappCreateScheduledMessageInput = {
+  scheduledAt: string;
+  sessionId: string;
+  text: string;
+};
+
+export type CrmWhatsappListScheduledMessagesInput = {
+  connectionId?: CrmWhatsappConnectionId;
+  sessionId?: CrmWhatsappSessionId;
+  status?: CrmWhatsappScheduledMessageStatus;
+};
+
+export type CrmWhatsappProcessDueScheduledMessagesInput = {
+  dueAt?: string;
+  limit?: number;
+};
+
+export type CrmWhatsappProcessDueScheduledMessagesResult = {
+  failed: number;
+  processed: number;
+  sent: number;
+};
+
 export type CrmWhatsappStartConversationInput = {
   buyerName?: string;
   connectionId: CrmWhatsappConnectionId;
-  phone: string;
+  leadId?: string;
+  phone?: string;
   text: string;
 };
 
@@ -102,6 +147,24 @@ export type CrmWhatsappListTagsInput = {
   search?: string;
 };
 
+export type CrmWhatsappCreateTagInput = {
+  color?: string;
+  connectionId?: CrmWhatsappConnectionId | null;
+  emoji?: string | null;
+  name: string;
+};
+
+export type CrmWhatsappUpdateTagInput = {
+  color?: string;
+  emoji?: string | null;
+  name?: string;
+  sortOrder?: number;
+};
+
+export type CrmWhatsappReorderTagsInput = {
+  tagIds: string[];
+};
+
 export type CrmWhatsappSendCatalogProductInput = {
   catalogPhone?: string;
   productId: string;
@@ -145,11 +208,11 @@ export type CrmWhatsappVehicleQuery = {
 export type CrmWhatsappAddSessionTagInput = {
   color?: string;
   emoji?: string | null;
-  isColumn?: boolean;
   name: string;
 };
 
 export type CrmWhatsappProviderEvent = {
+  attentionReason: "processing_failed" | "received_message_ignored" | null;
   connectionId: string | null;
   createdAt: string;
   errorMessage: string | null;
@@ -157,6 +220,7 @@ export type CrmWhatsappProviderEvent = {
   id: string;
   processedAt: string | null;
   providerEventId: string;
+  retryable: boolean;
   status: "failed" | "ignored" | "processed" | "received";
   updatedAt: string;
   webhookType:

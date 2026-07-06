@@ -98,9 +98,9 @@ export function SessionList({
               ) : null}
               <span className="crm-whatsapp-session-meta">
                 <ChannelBadge channel={session.channel} />
-                {session.assignedAgent?.name
-                  ? session.assignedAgent.name
-                  : session.assignedAgentId
+                {session.assignedMember?.name
+                  ? session.assignedMember.name
+                  : session.assignedUserId
                     ? "Atribuido"
                     : "Sem dono"}
               </span>

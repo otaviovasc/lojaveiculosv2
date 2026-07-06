@@ -2,20 +2,23 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
-import { CrmWhatsappFailedEventsPanel } from "./CrmWhatsappFailedEventsPanel";
 import { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
-import { ChatHeader, MessageComposer } from "./CrmWhatsappParts";
 import { WhatsappNotice } from "./CrmWhatsappNotice";
-import { MessageList } from "./CrmWhatsappMessageParts";
-import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
-import { SessionList } from "./CrmWhatsappSessionList";
-import { WhatsappBulkBar } from "./CrmWhatsappBulkBar";
 import { CrmWhatsappNewConversationDialog } from "./CrmWhatsappNewConversationDialog";
-import { CrmWhatsappReadOnlyComposer } from "./CrmWhatsappReadOnlyComposer";
-import { CrmWhatsappSessionDetailsPanel } from "./CrmWhatsappSessionDetailsPanel";
+import { CrmWhatsappConnectionAdmin } from "./CrmWhatsappConnectionAdmin";
+import { CrmWhatsappTagManager } from "./CrmWhatsappTagManager";
 import { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
 import { totalUnreadSessions } from "./crmWhatsappQueueState";
-import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
+import {
+  CrmWhatsappScopedNav,
+  type CrmWhatsappScope,
+} from "./CrmWhatsappScopedNav";
+import { CrmWhatsappConversationWorkspace } from "./CrmWhatsappConversationWorkspace";
+import {
+  WhatsappCampaignsSection,
+  WhatsappIntegrationsSection,
+  WhatsappVisitsSection,
+} from "./CrmWhatsappScopedSections";
 
 export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
   const whatsappApi = useMemo(
@@ -24,13 +27,13 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
   );
   const inbox = useCrmWhatsappInbox(whatsappApi);
   const activeSession = inbox.activeSession;
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [activeScope, setActiveScope] =
+    useState<CrmWhatsappScope>("conversations");
   const [newConversationOpen, setNewConversationOpen] = useState(false);
-  const [replyToMessage, setReplyToMessage] =
-    useState<CrmWhatsappMessage | null>(null);
   const originalTitleRef = useRef(
     typeof document === "undefined" ? "CRM" : document.title,
   );
+  const unreadCount = totalUnreadSessions(inbox.sessions);
   const status = readWhatsappStatus({
     hasConnection: inbox.hasConnection,
     isLoading: inbox.connectionIsLoading,
@@ -38,16 +41,10 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
   });
 
   useEffect(() => {
-    setReplyToMessage(null);
-    setDetailsOpen(false);
-  }, [inbox.activeSessionId]);
-
-  useEffect(() => {
-    const totalUnread = totalUnreadSessions(inbox.sessions);
-    document.title = totalUnread
-      ? `(${totalUnread}) Nova mensagem - CRM`
+    document.title = unreadCount
+      ? `(${unreadCount}) Nova mensagem - CRM`
       : originalTitleRef.current;
-  }, [inbox.sessions]);
+  }, [unreadCount]);
 
   return (
     <main className="crm-whatsapp-page">
@@ -65,195 +62,64 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
       {!inbox.permissions.canList ? (
         <WhatsappNotice message="Seu usuario nao tem permissao para visualizar o WhatsApp CRM." />
       ) : null}
-      {inbox.permissions.canRead ? (
-        <CrmWhatsappFailedEventsPanel
-          api={whatsappApi}
-          canRetry={inbox.permissions.canSend}
-        />
-      ) : null}
-
       {inbox.permissions.canList ? (
-        <section className="crm-whatsapp-shell">
-          <aside
-            className="crm-whatsapp-list"
-            aria-label="Conversas do WhatsApp"
-          >
-            <WhatsappToolbar
-              availableTags={inbox.availableTags}
-              canStartConversation={inbox.canSendText}
-              connectionId={inbox.connectionId}
-              connectionFilterId={inbox.connectionFilterId}
-              connections={inbox.connections}
-              onConnectionFilterChange={inbox.setConnectionFilterId}
-              onQuickFilterChange={inbox.setQuickFilter}
-              onSearch={inbox.setSearch}
+        <>
+          <CrmWhatsappScopedNav
+            activeScope={activeScope}
+            connectionLabel={status.label}
+            onChange={setActiveScope}
+            tagCount={inbox.availableTags.length}
+            unreadCount={unreadCount}
+          />
+          {activeScope === "conversations" ? (
+            <CrmWhatsappConversationWorkspace
+              inbox={inbox}
+              onScopeChange={setActiveScope}
               onStartConversation={() => setNewConversationOpen(true)}
-              onStatusFilterChange={inbox.setStatusFilter}
-              onTagFilterToggle={inbox.toggleTagFilter}
-              onUnreadOnlyChange={inbox.setUnreadOnly}
-              quickFilter={inbox.quickFilter}
-              search={inbox.search}
-              selectedTagIds={inbox.selectedTagIds}
-              sessionCounts={inbox.sessionCounts}
-              sessionCount={inbox.sessions.length}
-              statusFilter={inbox.statusFilter}
-              statusLabel={status.label}
-              statusTone={status.tone}
-              unreadOnly={inbox.unreadOnly}
+              status={status}
             />
-            <WhatsappBulkBar
-              agents={inbox.agents}
-              canAssign={inbox.permissions.canAssign && inbox.canAssignSessions}
-              canClose={inbox.permissions.canClose}
-              canRead={inbox.permissions.canRead}
-              onAssign={(assignedUserId) => {
-                void inbox.actions.bulkAssignSessions(assignedUserId);
-              }}
-              onClear={inbox.clearSelectedSessions}
-              onClose={() => {
-                void inbox.actions.bulkCloseSessions();
-              }}
-              onMarkRead={() => {
-                void inbox.actions.bulkMarkSessionsRead();
-              }}
-              onMarkUnread={() => {
-                void inbox.actions.bulkMarkSessionsUnread();
-              }}
-              onSelectAll={inbox.selectAllVisibleSessions}
-              selectedCount={inbox.selectedSessions.length}
-            />
-            {inbox.isLoading ? (
-              <div className="crm-whatsapp-empty crm-whatsapp-empty-list">
-                Carregando conversas...
-              </div>
-            ) : (
-              <SessionList
-                activeSessionId={inbox.activeSessionId}
-                onSelect={inbox.setActiveSessionId}
-                onToggleSelected={inbox.toggleSelectedSession}
-                selectedSessionIds={inbox.selectedSessionIds}
-                sessions={inbox.sessions}
+          ) : null}
+          {activeScope === "connection" ? (
+            <section className="crm-whatsapp-section">
+              <CrmWhatsappConnectionAdmin
+                connections={inbox.connections}
+                disabled={!inbox.permissions.canConnectionManage}
+                embedded
+                onClose={() => setActiveScope("conversations")}
+                onRefresh={inbox.refreshConnections}
+                onUpdate={inbox.updateConnection}
               />
-            )}
-          </aside>
-
-          <section
-            className="crm-whatsapp-chat"
-            aria-label="Detalhe da conversa"
-          >
-            {activeSession ? (
-              <>
-                <ChatHeader
-                  actionsDisabled={inbox.isMutatingSession}
-                  agents={inbox.agents}
-                  availableTags={inbox.availableTags}
-                  canAssignSession={
-                    inbox.permissions.canAssign && inbox.canAssignSessions
-                  }
-                  canCloseSession={inbox.permissions.canClose}
-                  canMarkRead={inbox.permissions.canRead}
-                  canSendMessages={inbox.permissions.canSend}
-                  canToggleIntervention={
-                    inbox.permissions.canToggleIntervention
-                  }
-                  currentUserId={inbox.currentUserId}
-                  onAddTag={async (input) => {
-                    const accepted = await inbox.actions.addSessionTag(
-                      activeSession.id,
-                      input,
-                    );
-                    if (accepted) void inbox.refreshTags();
-                    return accepted;
-                  }}
-                  onAssign={(assignedUserId) => {
-                    void inbox.actions.assignSession(
-                      activeSession.id,
-                      assignedUserId,
-                    );
-                  }}
-                  onClose={() => {
-                    void inbox.actions.closeSession(activeSession.id);
-                  }}
-                  onMarkRead={() => {
-                    void inbox.actions.markSessionRead(activeSession.id);
-                  }}
-                  onMarkUnread={() => {
-                    void inbox.actions.markSessionUnread(activeSession.id);
-                  }}
-                  onOpenDetails={() => setDetailsOpen(true)}
-                  onRemoveTag={(tagId) =>
-                    inbox.actions.removeSessionTag(activeSession.id, tagId)
-                  }
-                  onToggleIntervention={() => {
-                    void inbox.actions.toggleIntervention(
-                      activeSession.id,
-                      activeSession.status !== "HUMAN_TAKEOVER",
-                    );
-                  }}
-                  session={activeSession}
-                />
-                <MessageList
-                  actionsDisabled={inbox.isSending || !inbox.canSendText}
-                  isLoading={inbox.isLoadingMessages}
-                  messages={inbox.messages}
-                  onDelete={
-                    inbox.permissions.canSend ? inbox.deleteMessage : undefined
-                  }
-                  onReact={
-                    inbox.permissions.canSend ? inbox.sendReaction : undefined
-                  }
-                  onRemoveReaction={
-                    inbox.permissions.canSend ? inbox.removeReaction : undefined
-                  }
-                  onReply={
-                    inbox.permissions.canSend ? setReplyToMessage : undefined
-                  }
-                />
-                {inbox.canSendText ? (
-                  <MessageComposer
-                    catalogUrl={inbox.catalogUrl}
-                    defaultLocationName={inbox.storeLocationName}
-                    disabled={inbox.isSending}
-                    onCancelReply={() => setReplyToMessage(null)}
-                    onCreateQuickMessage={inbox.createQuickMessage}
-                    onDeleteQuickMessage={inbox.deleteQuickMessage}
-                    onLoadCatalogProducts={inbox.listCatalogProducts}
-                    onLoadVehicles={inbox.listVehicles}
-                    onSend={async (text) => {
-                      const accepted = await inbox.sendText(text, {
-                        replyToMessage,
-                      });
-                      if (accepted) setReplyToMessage(null);
-                      return accepted;
-                    }}
-                    onSendCatalog={inbox.sendCatalog}
-                    onSendCatalogProduct={inbox.sendCatalogProduct}
-                    onSendLocation={inbox.sendLocation}
-                    onSendMedia={inbox.sendMedia}
-                    onSendQuickMessage={inbox.sendQuickMessage}
-                    onSendVehicle={inbox.sendVehicle}
-                    onUpdateQuickMessage={inbox.updateQuickMessage}
-                    quickMessages={inbox.quickMessages}
-                    replyToMessage={replyToMessage}
-                  />
-                ) : (
-                  <CrmWhatsappReadOnlyComposer />
-                )}
-                {detailsOpen ? (
-                  <CrmWhatsappSessionDetailsPanel
-                    agents={inbox.agents}
-                    onClose={() => setDetailsOpen(false)}
-                    session={activeSession}
-                  />
-                ) : null}
-              </>
-            ) : (
-              <div className="crm-whatsapp-empty">
-                Selecione uma conversa para continuar o atendimento.
-              </div>
-            )}
-          </section>
-        </section>
+            </section>
+          ) : null}
+          {activeScope === "campaigns" ? (
+            <WhatsappCampaignsSection
+              activeSessionId={activeSession ? String(activeSession.id) : null}
+              inbox={inbox}
+            />
+          ) : null}
+          {activeScope === "integrations" ? (
+            <WhatsappIntegrationsSection
+              api={whatsappApi}
+              canRead={inbox.permissions.canRead}
+              canRetry={inbox.permissions.canSend}
+            />
+          ) : null}
+          {activeScope === "tags" ? (
+            <section className="crm-whatsapp-section">
+              <CrmWhatsappTagManager
+                disabled={!inbox.permissions.canTagManage}
+                embedded
+                onClose={() => setActiveScope("conversations")}
+                onCreate={inbox.createTag}
+                onDelete={inbox.deleteTag}
+                onReorder={inbox.reorderTags}
+                onUpdate={inbox.updateTag}
+                tags={inbox.availableTags}
+              />
+            </section>
+          ) : null}
+          {activeScope === "visits" ? <WhatsappVisitsSection /> : null}
+        </>
       ) : null}
       {newConversationOpen ? (
         <CrmWhatsappNewConversationDialog

@@ -147,9 +147,9 @@ describe("getAsaasProviderStatus", () => {
         valueCents: 54899,
       }),
     ).resolves.toMatchObject({ created: false });
-    expect(updateFetcher.calls[0]).toMatchObject({
-      method: "PUT",
-      body: expect.objectContaining({ updatePendingPayments: false }),
+    expect(updateFetcher.calls[0]?.method).toBe("PUT");
+    expect(updateFetcher.calls[0]?.body).toMatchObject({
+      updatePendingPayments: false,
     });
     expect(updateFetcher.calls[0]?.url).toContain("/subscriptions/sub_created");
   });

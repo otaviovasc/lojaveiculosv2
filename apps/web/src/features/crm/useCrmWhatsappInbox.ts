@@ -14,13 +14,14 @@ import {
 } from "./crmWhatsappHookSupport";
 import { useCrmWhatsappMessages } from "./useCrmWhatsappMessages";
 import { useCrmWhatsappConnections } from "./useCrmWhatsappConnections";
-import { useCrmWhatsappAgents } from "./useCrmWhatsappAgents";
+import { useCrmWhatsappAssignableMembers } from "./useCrmWhatsappAssignableMembers";
 import { useCrmWhatsappQuickMessages } from "./useCrmWhatsappQuickMessages";
 import { useCrmWhatsappRealtime } from "./useCrmWhatsappRealtime";
 import { useCrmWhatsappSessionActions } from "./useCrmWhatsappSessionActions";
 import { useCrmWhatsappBulkSelection } from "./useCrmWhatsappBulkSelection";
 import { useCrmWhatsappSessionCounts } from "./useCrmWhatsappSessionCounts";
 import { useCrmWhatsappStartConversation } from "./useCrmWhatsappStartConversation";
+import { useCrmWhatsappScheduledMessages } from "./useCrmWhatsappScheduledMessages";
 import { useCrmWhatsappTags } from "./useCrmWhatsappTags";
 import { useCrmWhatsappVehicleInventory } from "./useCrmWhatsappVehicleInventory";
 import { useCrmWhatsappInboxLifecycle } from "./useCrmWhatsappInboxLifecycle";
@@ -52,7 +53,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     () => readCrmWhatsappCapabilities(accountSession),
     [accountSession],
   );
-  const assignmentState = useCrmWhatsappAgents(accountSession);
+  const assignmentState = useCrmWhatsappAssignableMembers(accountSession);
   const listVehicles = useCrmWhatsappVehicleInventory();
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeSessionId) ?? null,
@@ -223,6 +224,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     setError,
   });
 
+  const scheduledMessages = useCrmWhatsappScheduledMessages(api, setError);
+
   useCrmWhatsappRealtime({
     activeSessionId,
     api,
@@ -254,7 +257,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   return {
     activeSession,
     activeSessionId,
-    agents: assignmentState.agents,
+    assignableMembers: assignmentState.assignableMembers,
     availableTags: tagState.availableTags,
     canAssignSessions: assignmentState.canAssignSessions,
     canSendText: canSendMessages,
@@ -265,10 +268,15 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     connectionError: connections.error,
     connectionIsLoading: connections.isLoading,
     connections: connections.connections,
+    refreshConnections: connections.refreshConnections,
+    updateConnection: connections.updateConnection,
+    createTag: tagState.createTag,
     createQuickMessage: quickMessageState.createQuickMessage,
+    createScheduledMessage: scheduledMessages.createScheduledMessage,
     currentUserId,
     deleteMessage: messageState.deleteMessage,
     deleteQuickMessage: quickMessageState.deleteQuickMessage,
+    deleteTag: tagState.deleteTag,
     error: error ?? connections.error,
     hasConnection: connections.hasConnectedConnection,
     isLoading: connections.isLoading || isLoadingSessions,
@@ -276,14 +284,18 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     isMutatingSession: sessionActions.isMutatingSession,
     isSending: messageState.isSending,
     isStartingConversation: conversationState.isStartingConversation,
+    cancelScheduledMessage: scheduledMessages.cancelScheduledMessage,
     listCatalogProducts: messageState.listCatalogProducts,
+    listScheduledMessages: scheduledMessages.listScheduledMessages,
     listVehicles,
     messages: messageState.messages,
     permissions,
+    processDueScheduledMessages: scheduledMessages.processDueScheduledMessages,
     quickFilter,
     quickMessages: quickMessageState.quickMessages,
     refreshSessions,
     refreshTags: tagState.refreshTags,
+    reorderTags: tagState.reorderTags,
     removeReaction: messageState.removeReaction,
     search,
     selectAllVisibleSessions: bulkSelection.selectAllVisibleSessions,
@@ -313,6 +325,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     toggleTagFilter: tagState.toggleTagFilter,
     unreadOnly,
     updateQuickMessage: quickMessageState.updateQuickMessage,
+    updateTag: tagState.updateTag,
     actions: { ...sessionActions.actions, ...bulkSelection.actions },
   };
 }

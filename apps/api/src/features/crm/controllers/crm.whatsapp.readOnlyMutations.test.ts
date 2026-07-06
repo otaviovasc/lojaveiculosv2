@@ -54,7 +54,7 @@ describe("CRM WhatsApp read-only mutation permissions", () => {
       expect(response.status, route.name).toBe(403);
       await expectApiError(response, {
         code: "AUTHORIZATION_DENIED",
-        message: "Missing permission: crm.whatsapp.send",
+        message: `Missing permission: ${route.permission}`,
       });
     }
     expect(gatewayWasCalled(gateway)).toBe(false);
@@ -67,6 +67,7 @@ function readOnlyRoutes(sessionId: string, messageId: string) {
       init: jsonPost({ sessionId, text: "Ola" }),
       name: "send text",
       path: "/api/v1/crm/whatsapp/send/text",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({
@@ -76,81 +77,97 @@ function readOnlyRoutes(sessionId: string, messageId: string) {
       }),
       name: "start conversation",
       path: "/api/v1/crm/whatsapp/conversations/start",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ base64: "aGk=", mediaType: "image", sessionId }),
       name: "send media",
       path: "/api/v1/crm/whatsapp/send/media",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ latitude: -23.5, longitude: -46.6, sessionId }),
       name: "send location",
       path: "/api/v1/crm/whatsapp/send/location",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ sessionId, title: "Catalogo" }),
       name: "send catalog",
       path: "/api/v1/crm/whatsapp/send/catalog",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ productId: "product_1", sessionId }),
       name: "send product",
       path: "/api/v1/crm/whatsapp/send/catalog/product",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ sessionId, title: "Honda Civic" }),
       name: "send vehicle",
       path: "/api/v1/crm/whatsapp/send/vehicle",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ name: "Quente" }),
       name: "add tag",
       path: `/api/v1/crm/whatsapp/sessions/${sessionId}/tags`,
+      permission: "crm.whatsapp.tag.assign",
     },
     {
       init: { method: "DELETE" },
       name: "remove tag",
       path: `/api/v1/crm/whatsapp/sessions/${sessionId}/tags/tag_1`,
+      permission: "crm.whatsapp.tag.assign",
     },
     {
       init: jsonPost({ content: "Ola", shortcut: "/ola", title: "Ola" }),
       name: "create quick message",
       path: "/api/v1/crm/whatsapp/quick-messages",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPatch({ title: "Ola editado" }),
       name: "update quick message",
       path: "/api/v1/crm/whatsapp/quick-messages/quick_1",
+      permission: "crm.whatsapp.send",
     },
     {
       init: { method: "DELETE" },
       name: "delete quick message",
       path: "/api/v1/crm/whatsapp/quick-messages/quick_1",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ sessionId }),
       name: "send quick message",
       path: "/api/v1/crm/whatsapp/quick-messages/quick_1/send",
+      permission: "crm.whatsapp.send",
     },
     {
       init: jsonPost({ reaction: "ok" }),
       name: "send reaction",
       path: `/api/v1/crm/whatsapp/messages/${messageId}/reaction`,
+      permission: "crm.whatsapp.send",
     },
     {
       init: { method: "DELETE" },
       name: "remove reaction",
       path: `/api/v1/crm/whatsapp/messages/${messageId}/reaction`,
+      permission: "crm.whatsapp.send",
     },
     {
       init: { method: "DELETE" },
       name: "delete message",
       path: `/api/v1/crm/whatsapp/messages/${messageId}`,
+      permission: "crm.whatsapp.send",
     },
     {
       init: { method: "POST" },
       name: "retry provider event",
       path: "/api/v1/crm/whatsapp/provider-events/event_1/retry",
+      permission: "crm.whatsapp.send",
     },
   ];
 }

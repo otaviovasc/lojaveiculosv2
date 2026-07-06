@@ -9,7 +9,6 @@ import {
   WhatsappConnectionNotFoundError,
   WhatsappMessageActionError,
   WhatsappMessageNotFoundError,
-  WhatsappUnsupportedProviderError,
 } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmConnectionRepository,
@@ -58,9 +57,6 @@ export async function loadMessageActionTarget(
   );
   if (!connection) {
     throw new WhatsappConnectionNotFoundError(message.connectionId);
-  }
-  if (connection.provider !== "zapi") {
-    throw new WhatsappUnsupportedProviderError(connection.provider);
   }
   return {
     connection,

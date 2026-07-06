@@ -1,6 +1,6 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
-export type CrmConnectionProvider = "zapi" | "evolution" | "cloud_api";
+export type CrmConnectionProvider = "zapi";
 
 export type CrmConnectionConfiguredStatus =
   "sandbox" | "active" | "paused" | "disconnected" | "error" | "archived";
@@ -28,9 +28,16 @@ export type ListCrmConnectionsInput = {
 
 export type UpdateCrmConnectionInput = {
   connectionId: string;
+  credentialsRef?: Record<string, unknown>;
+  displayName?: string;
+  externalConnectionId?: string | null;
+  externalInstanceId?: string | null;
   metadata?: Record<string, unknown>;
   phone?: string | null;
   status?: CrmConnectionConfiguredStatus;
+  storeId: StoreId;
+  tenantId: TenantId;
+  webhookUrl?: string | null;
 };
 
 export type CrmConnectionRepository = {

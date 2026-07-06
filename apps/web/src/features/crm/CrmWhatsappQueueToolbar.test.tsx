@@ -30,10 +30,14 @@ describe("WhatsappToolbar", () => {
     render(
       <WhatsappToolbar
         availableTags={createTags()}
+        canManageConnections
+        canManageTags
         canStartConversation
         connectionFilterId={null}
         connectionId="connection_1"
         connections={createConnections()}
+        onManageConnections={vi.fn()}
+        onManageTags={vi.fn()}
         quickFilter="fresh"
         search=""
         selectedTagIds={["tag_hot"]}
@@ -151,7 +155,7 @@ function createConnection(
     },
     phone: "5511999999999",
     provider: "zapi",
-    status: "connected",
+    status: "active",
     webhookUrl: null,
   };
 }

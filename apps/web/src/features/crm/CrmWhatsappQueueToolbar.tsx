@@ -5,6 +5,8 @@ import {
   Plug,
   Search,
   SlidersHorizontal,
+  Tags,
+  Wrench,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { countForFilter, whatsappStatusOptions } from "./crmWhatsappQueueState";
@@ -29,10 +31,14 @@ const QUICK_FILTER_OPTIONS: Array<{
 
 export function WhatsappToolbar({
   availableTags,
+  canManageConnections,
+  canManageTags,
   connectionId,
   connectionFilterId,
   connections,
   onConnectionFilterChange,
+  onManageConnections,
+  onManageTags,
   onQuickFilterChange,
   onSearch,
   onStartConversation,
@@ -51,11 +57,15 @@ export function WhatsappToolbar({
   canStartConversation,
 }: {
   availableTags: CrmWhatsappTag[];
+  canManageConnections: boolean;
+  canManageTags: boolean;
   canStartConversation: boolean;
   connectionId: string | number | null;
   connectionFilterId: string | null;
   connections: CrmWhatsappProviderConnection[];
   onConnectionFilterChange: (connectionId: string | null) => void;
+  onManageConnections: () => void;
+  onManageTags: () => void;
   onQuickFilterChange: (filter: CrmWhatsappSessionFilter) => void;
   onSearch: (value: string) => void;
   onStartConversation: () => void;
@@ -95,6 +105,26 @@ export function WhatsappToolbar({
           >
             <MessageSquarePlus aria-hidden="true" className="size-4" />
             Nova
+          </button>
+          <button
+            aria-label="Gerenciar etiquetas"
+            className="crm-icon-action"
+            disabled={!canManageTags}
+            onClick={onManageTags}
+            title="Gerenciar etiquetas"
+            type="button"
+          >
+            <Tags />
+          </button>
+          <button
+            aria-label="Gerenciar conexao ZAPI"
+            className="crm-icon-action"
+            disabled={!canManageConnections}
+            onClick={onManageConnections}
+            title="Gerenciar conexao ZAPI"
+            type="button"
+          >
+            <Wrench />
           </button>
         </div>
       </div>

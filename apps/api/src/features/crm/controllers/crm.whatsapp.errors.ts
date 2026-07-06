@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { CrmLeadNotFoundError } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { WhatsappQuickMessageError } from "../../../domains/crm/services/CrmWhatsapp/whatsappQuickMessageServiceSupport.js";
 import { WhatsappWebhookEventRetryError } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
@@ -6,8 +7,9 @@ import {
   WhatsappConnectionNotFoundError,
   WhatsappMessageActionError,
   WhatsappMessageNotFoundError,
+  WhatsappScheduledMessageNotFoundError,
   WhatsappSessionNotFoundError,
-  WhatsappUnsupportedProviderError,
+  WhatsappTagNotFoundError,
 } from "../../../domains/crm/whatsapp/whatsappSendErrors.js";
 import {
   WhatsappVehicleNotFoundError,
@@ -42,8 +44,11 @@ export async function handleWhatsapp(
     if (
       error instanceof WhatsappSessionNotFoundError ||
       error instanceof WhatsappMessageNotFoundError ||
+      error instanceof WhatsappScheduledMessageNotFoundError ||
+      error instanceof WhatsappTagNotFoundError ||
       error instanceof WhatsappConnectionNotFoundError ||
-      error instanceof WhatsappVehicleNotFoundError
+      error instanceof WhatsappVehicleNotFoundError ||
+      error instanceof CrmLeadNotFoundError
     ) {
       return jsonApiError(context, {
         code: "CRM_WHATSAPP_NOT_FOUND",
@@ -58,14 +63,6 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: error.status,
-      });
-    }
-    if (error instanceof WhatsappUnsupportedProviderError) {
-      return jsonApiError(context, {
-        code: "CRM_WHATSAPP_UNSUPPORTED_PROVIDER",
-        error,
-        message: error.message,
-        status: 422,
       });
     }
     if (error instanceof CrmWhatsappGatewayError) {

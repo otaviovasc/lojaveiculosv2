@@ -33,6 +33,7 @@ export type RecordCrmProviderWebhookEventInput = {
 
 export type ListCrmProviderWebhookEventsInput = {
   connectionId?: string | null;
+  eventType?: string;
   limit?: number;
   offset?: number;
   provider?: "zapi";

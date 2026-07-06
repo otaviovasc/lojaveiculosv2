@@ -90,7 +90,6 @@ describe("CRM WhatsApp start conversation", () => {
   it("reuses an existing lead by normalized phone", async () => {
     const crmRepository = createMemoryCrmRepository();
     const existing = await crmRepository.createLead({
-      buyerName: "Cliente Existente",
       buyerPhone: "5511988887777",
       source: "manual",
       storeId,
@@ -111,6 +110,7 @@ describe("CRM WhatsApp start conversation", () => {
     });
 
     const response = await requestStartConversation(app, {
+      buyerName: "Nome vindo do WhatsApp",
       connectionId,
       phone: "11 98888-7777",
       text: "Retomando o atendimento.",
@@ -118,7 +118,12 @@ describe("CRM WhatsApp start conversation", () => {
 
     expect(response.status).toBe(201);
     await expect(response.json()).resolves.toMatchObject({
-      lead: { id: existing.id, status: "contacted" },
+      lead: {
+        buyerName: "Nome vindo do WhatsApp",
+        id: existing.id,
+        metadata: { crmWhatsapp: { firstDirection: "OUTBOUND" } },
+        status: "contacted",
+      },
       session: { leadId: existing.id },
     });
     expect(sendText).toHaveBeenCalledWith(

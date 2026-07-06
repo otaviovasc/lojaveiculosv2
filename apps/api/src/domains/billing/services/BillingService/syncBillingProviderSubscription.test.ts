@@ -8,10 +8,8 @@ import {
   createChargePreview,
   createChargeableItem,
 } from "../../readModels/billingChargePreviewModel.js";
-import {
-  BillingProviderSyncError,
-  syncBillingProviderSubscription,
-} from "./syncBillingProviderSubscription.js";
+import type { BillingProviderSyncError } from "./syncBillingProviderSubscription.js";
+import { syncBillingProviderSubscription } from "./syncBillingProviderSubscription.js";
 
 describe("syncBillingProviderSubscription", () => {
   it("creates provider customer and subscription from calculated chargeables", async () => {

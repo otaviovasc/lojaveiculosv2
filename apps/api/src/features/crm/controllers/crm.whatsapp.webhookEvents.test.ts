@@ -11,7 +11,7 @@ const storeId = "store_1" as StoreId;
 const tenantId = "tenant_1" as TenantId;
 
 describe("CRM WhatsApp provider event retry", () => {
-  it("lists and retries failed ZAPI webhook events", async () => {
+  it("lists and retries ZAPI webhook event issues", async () => {
     const connections = createMemoryCrmConnectionRepository([
       createZapiConnection({ status: "disconnected" }),
     ]);
@@ -42,14 +42,16 @@ describe("CRM WhatsApp provider event retry", () => {
     });
 
     const listResponse = await app.request(
-      "/api/v1/crm/whatsapp/provider-events/failed",
+      "/api/v1/crm/whatsapp/provider-events/issues",
     );
     expect(listResponse.status).toBe(200);
     const listBody = (await listResponse.json()) as { events: unknown[] };
     expect(listBody.events).toHaveLength(1);
     expect(listBody.events[0]).toMatchObject({
       connectionId,
+      attentionReason: "processing_failed",
       errorMessage: "Temporary processing failure",
+      retryable: true,
       status: "failed",
       webhookType: "connected",
     });
@@ -73,6 +75,96 @@ describe("CRM WhatsApp provider event retry", () => {
       phone: "5511999999999",
       status: "active",
     });
+  });
+
+  it("lists ignored received messages as retryable parser issues", async () => {
+    const connections = createMemoryCrmConnectionRepository([
+      createZapiConnection({ status: "active" }),
+    ]);
+    const webhookEvents = createMemoryCrmWebhookEventRepository();
+    const payload = {
+      messageId: "message_ignored_1",
+      participantPhone: "5511999999999",
+      phone: "123456789012345678901234",
+      text: { message: "Ola" },
+      type: "ReceivedCallback",
+    };
+    const recorded = await webhookEvents.recordReceived({
+      connectionId,
+      environment: "test",
+      eventType: "crm.whatsapp.zapi.received",
+      payload,
+      provider: "zapi",
+      providerEventId: buildZapiProviderEventId({
+        connectionId,
+        payload,
+        type: "received",
+      }),
+      storeId,
+      tenantId,
+    });
+    await webhookEvents.updateStatus({
+      eventId: recorded.event.id,
+      status: "ignored",
+    });
+    const app = createTestApp({
+      crmConnectionRepository: connections,
+      crmWebhookEventRepository: webhookEvents,
+    });
+
+    const listResponse = await app.request(
+      "/api/v1/crm/whatsapp/provider-events/issues",
+    );
+
+    expect(listResponse.status).toBe(200);
+    const listBody = (await listResponse.json()) as { events: unknown[] };
+    expect(listBody.events).toHaveLength(1);
+    expect(listBody.events[0]).toMatchObject({
+      attentionReason: "received_message_ignored",
+      retryable: true,
+      status: "ignored",
+      webhookType: "received",
+    });
+  });
+
+  it("does not list ignored ZAPI group callbacks as parser issues", async () => {
+    const webhookEvents = createMemoryCrmWebhookEventRepository();
+    const payload = {
+      isGroup: true,
+      messageId: "message_group_1",
+      participantPhone: "5511999999999",
+      phone: "123456789012345678901234",
+      text: { message: "Grupo" },
+      type: "ReceivedCallback",
+    };
+    const recorded = await webhookEvents.recordReceived({
+      connectionId,
+      environment: "test",
+      eventType: "crm.whatsapp.zapi.received",
+      payload,
+      provider: "zapi",
+      providerEventId: buildZapiProviderEventId({
+        connectionId,
+        payload,
+        type: "received",
+      }),
+      storeId,
+      tenantId,
+    });
+    await webhookEvents.updateStatus({
+      eventId: recorded.event.id,
+      status: "ignored",
+    });
+    const app = createTestApp({
+      crmWebhookEventRepository: webhookEvents,
+    });
+
+    const response = await app.request(
+      "/api/v1/crm/whatsapp/provider-events/issues",
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ events: [] });
   });
 });
 

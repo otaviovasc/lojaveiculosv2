@@ -1,18 +1,10 @@
-import { listWhatsappConnections } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
-import { ingestZapiWhatsappWebhook } from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
+import {
+  listWhatsappConnections,
+  updateWhatsappConnection,
+} from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
 import { listWhatsappMessages } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappMessages.js";
 import { countWhatsappSessions } from "../../../domains/crm/services/CrmWhatsapp/countWhatsappSessions.js";
 import { listWhatsappSessions } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappSessions.js";
-import {
-  processZapiWhatsappChatPresenceWebhook,
-  processZapiWhatsappConnectedWebhook,
-  processZapiWhatsappDisconnectedWebhook,
-} from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappConnectionWebhook.js";
-import {
-  processZapiWhatsappDeliveryWebhook,
-  processZapiWhatsappStatusWebhook,
-} from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappMessageWebhook.js";
-import { processZapiWhatsappWebhookEvent } from "../../../domains/crm/services/CrmWhatsapp/processZapiWhatsappWebhookEvent.js";
 import { sendWhatsappMedia } from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappMedia.js";
 import { sendWhatsappCatalog } from "../../../domains/crm/services/CrmWhatsapp/sendWhatsappCatalog.js";
 import {
@@ -28,13 +20,24 @@ import {
   sendWhatsappReaction,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappMessageActions.js";
 import {
-  listWhatsappFailedWebhookEvents,
+  listWhatsappWebhookEventIssues,
   retryWhatsappWebhookEvent,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import {
+  cancelWhatsappScheduledMessage,
+  createWhatsappScheduledMessage,
+  listDueWhatsappScheduledMessageScopes,
+  listWhatsappScheduledMessages,
+  processDueWhatsappScheduledMessages,
+} from "../../../domains/crm/services/CrmWhatsapp/whatsappScheduledMessages.js";
+import {
   addWhatsappSessionTag,
+  createWhatsappTag,
+  deleteWhatsappTag,
   listWhatsappTags,
+  reorderWhatsappTags,
   removeWhatsappSessionTag,
+  updateWhatsappTag,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappSessionTags.js";
 import {
   assignWhatsappSession,
@@ -46,6 +49,7 @@ import { startWhatsappConversation } from "../../../domains/crm/services/CrmWhat
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createCrmWhatsappQuickMessageBindings } from "./crmWhatsappQuickMessageBindings.js";
 import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
+import { buildWebhookBindings } from "./crmWhatsappWebhookBindings.js";
 
 type CatalogBindings = Pick<
   CrmWhatsappServices,
@@ -54,7 +58,10 @@ type CatalogBindings = Pick<
   | "sendWhatsappCatalogProduct"
 >;
 
-type ConnectionBindings = Pick<CrmWhatsappServices, "listWhatsappConnections">;
+type ConnectionBindings = Pick<
+  CrmWhatsappServices,
+  "listWhatsappConnections" | "updateWhatsappConnection"
+>;
 
 type MessageBindings = Pick<
   CrmWhatsappServices,
@@ -69,87 +76,37 @@ type MessageBindings = Pick<
 
 type SessionActionBindings = Pick<
   CrmWhatsappServices,
+  | "cancelWhatsappScheduledMessage"
   | "assignWhatsappSession"
   | "closeWhatsappSession"
   | "countWhatsappSessions"
+  | "createWhatsappScheduledMessage"
+  | "listDueWhatsappScheduledMessageScopes"
   | "listWhatsappSessions"
+  | "listWhatsappScheduledMessages"
   | "markWhatsappSessionReadState"
+  | "processDueWhatsappScheduledMessages"
   | "startWhatsappConversation"
   | "toggleWhatsappIntervention"
 >;
 
 type TagBindings = Pick<
   CrmWhatsappServices,
-  "addWhatsappSessionTag" | "listWhatsappTags" | "removeWhatsappSessionTag"
->;
-
-type WebhookBindings = Pick<
-  CrmWhatsappServices,
-  | "ingestZapiWhatsappWebhook"
-  | "processZapiWhatsappChatPresenceWebhook"
-  | "processZapiWhatsappConnectedWebhook"
-  | "processZapiWhatsappDeliveryWebhook"
-  | "processZapiWhatsappDisconnectedWebhook"
-  | "processZapiWhatsappStatusWebhook"
+  | "addWhatsappSessionTag"
+  | "createWhatsappTag"
+  | "deleteWhatsappTag"
+  | "listWhatsappTags"
+  | "removeWhatsappSessionTag"
+  | "reorderWhatsappTags"
+  | "updateWhatsappTag"
 >;
 
 type WebhookEventBindings = Pick<
   CrmWhatsappServices,
-  | "listWhatsappFailedWebhookEvents"
+  | "listWhatsappWebhookEventIssues"
   | "removeWhatsappReaction"
   | "retryWhatsappWebhookEvent"
 >;
-
-const buildWebhookBindings = (ports: CrmServicePorts): WebhookBindings => ({
-  ingestZapiWhatsappWebhook: (context, input) =>
-    processZapiWhatsappWebhookEvent(
-      context,
-      input,
-      "received",
-      ingestZapiWhatsappWebhook,
-      ports,
-    ),
-  processZapiWhatsappChatPresenceWebhook: (context, input) =>
-    processZapiWhatsappWebhookEvent(
-      context,
-      input,
-      "chat_presence",
-      processZapiWhatsappChatPresenceWebhook,
-      ports,
-    ),
-  processZapiWhatsappConnectedWebhook: (context, input) =>
-    processZapiWhatsappWebhookEvent(
-      context,
-      input,
-      "connected",
-      processZapiWhatsappConnectedWebhook,
-      ports,
-    ),
-  processZapiWhatsappDeliveryWebhook: (context, input) =>
-    processZapiWhatsappWebhookEvent(
-      context,
-      input,
-      "delivery",
-      processZapiWhatsappDeliveryWebhook,
-      ports,
-    ),
-  processZapiWhatsappDisconnectedWebhook: (context, input) =>
-    processZapiWhatsappWebhookEvent(
-      context,
-      input,
-      "disconnected",
-      processZapiWhatsappDisconnectedWebhook,
-      ports,
-    ),
-  processZapiWhatsappStatusWebhook: (context, input) =>
-    processZapiWhatsappWebhookEvent(
-      context,
-      input,
-      "status",
-      processZapiWhatsappStatusWebhook,
-      ports,
-    ),
-});
 
 const buildCatalogBindings = (ports: CrmServicePorts): CatalogBindings => ({
   listWhatsappCatalogProducts: (context, input) =>
@@ -164,6 +121,8 @@ const buildConnectionBindings = (
   ports: CrmServicePorts,
 ): ConnectionBindings => ({
   listWhatsappConnections: (context) => listWhatsappConnections(context, ports),
+  updateWhatsappConnection: (context, input) =>
+    updateWhatsappConnection(context, input, ports),
 });
 
 const buildMessageBindings = (ports: CrmServicePorts): MessageBindings => ({
@@ -185,16 +144,26 @@ const buildMessageBindings = (ports: CrmServicePorts): MessageBindings => ({
 const buildSessionActionBindings = (
   ports: CrmServicePorts,
 ): SessionActionBindings => ({
+  cancelWhatsappScheduledMessage: (context, input) =>
+    cancelWhatsappScheduledMessage(context, input, ports),
   assignWhatsappSession: (context, input) =>
     assignWhatsappSession(context, input, ports),
   closeWhatsappSession: (context, input) =>
     closeWhatsappSession(context, input, ports),
   countWhatsappSessions: (context, input) =>
     countWhatsappSessions(context, input, ports),
+  createWhatsappScheduledMessage: (context, input) =>
+    createWhatsappScheduledMessage(context, input, ports),
+  listDueWhatsappScheduledMessageScopes: (context, input) =>
+    listDueWhatsappScheduledMessageScopes(context, input, ports),
   listWhatsappSessions: (context, input) =>
     listWhatsappSessions(context, input, ports),
+  listWhatsappScheduledMessages: (context, input) =>
+    listWhatsappScheduledMessages(context, input, ports),
   markWhatsappSessionReadState: (context, input) =>
     markWhatsappSessionReadState(context, input, ports),
+  processDueWhatsappScheduledMessages: (context, input) =>
+    processDueWhatsappScheduledMessages(context, input, ports),
   startWhatsappConversation: (context, input) =>
     startWhatsappConversation(context, input, ports),
   toggleWhatsappIntervention: (context, input) =>
@@ -204,16 +173,24 @@ const buildSessionActionBindings = (
 const buildTagBindings = (ports: CrmServicePorts): TagBindings => ({
   addWhatsappSessionTag: (context, input) =>
     addWhatsappSessionTag(context, input, ports),
+  createWhatsappTag: (context, input) =>
+    createWhatsappTag(context, input, ports),
+  deleteWhatsappTag: (context, input) =>
+    deleteWhatsappTag(context, input, ports),
   listWhatsappTags: (context, input) => listWhatsappTags(context, input, ports),
   removeWhatsappSessionTag: (context, input) =>
     removeWhatsappSessionTag(context, input, ports),
+  reorderWhatsappTags: (context, input) =>
+    reorderWhatsappTags(context, input, ports),
+  updateWhatsappTag: (context, input) =>
+    updateWhatsappTag(context, input, ports),
 });
 
 const buildWebhookEventBindings = (
   ports: CrmServicePorts,
 ): WebhookEventBindings => ({
-  listWhatsappFailedWebhookEvents: (context, input) =>
-    listWhatsappFailedWebhookEvents(context, input, ports),
+  listWhatsappWebhookEventIssues: (context, input) =>
+    listWhatsappWebhookEventIssues(context, input, ports),
   retryWhatsappWebhookEvent: (context, input) =>
     retryWhatsappWebhookEvent(context, input, ports),
   removeWhatsappReaction: (context, input) =>

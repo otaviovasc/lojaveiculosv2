@@ -47,8 +47,9 @@ export async function resolveStoreContext(
     throw new StoreAccessDeniedError();
   }
 
-  const permissions = resolvePermissions({
+  const permissions = resolveBillingAuthorityPermissions({
     overrides: access.overrides,
+    billingManagedBy: access.billingManagedBy,
     role: access.role,
   });
   const actor: ServiceActor = {
@@ -70,11 +71,30 @@ export async function resolveStoreContext(
   return {
     actor,
     audit: input.audit,
+    billingManagedBy: access.billingManagedBy,
     entitlements: access.entitlements,
     logger: input.logger,
+    membershipRole: access.role,
     permissions,
     requestId: input.requestId,
     storeId: access.storeId,
     tenantId: access.tenantId,
   };
+}
+
+function resolveBillingAuthorityPermissions(input: {
+  billingManagedBy: "agency" | "store_owner";
+  overrides: Parameters<typeof resolvePermissions>[0]["overrides"];
+  role: Parameters<typeof resolvePermissions>[0]["role"];
+}) {
+  const permissions = resolvePermissions({
+    role: input.role,
+    ...(input.overrides ? { overrides: input.overrides } : {}),
+  });
+
+  if (input.billingManagedBy !== "agency" || input.role === "agency") {
+    return permissions;
+  }
+
+  return permissions.filter((permission) => permission !== "billing.manage");
 }

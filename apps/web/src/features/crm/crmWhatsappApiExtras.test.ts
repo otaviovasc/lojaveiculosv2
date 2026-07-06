@@ -233,9 +233,7 @@ describe("CRM WhatsApp extras API", () => {
   });
 
   it("lists reusable CRM WhatsApp tags through V2", async () => {
-    const fake = createFakeFetch([
-      [{ id: "tag_1", isColumn: true, name: "Visita agendada" }],
-    ]);
+    const fake = createFakeFetch([[{ id: "tag_1", name: "Visita agendada" }]]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(
@@ -243,9 +241,7 @@ describe("CRM WhatsApp extras API", () => {
         connectionId: "24000000-0000-4000-8000-000000000101",
         search: "visita",
       }),
-    ).resolves.toEqual([
-      { id: "tag_1", isColumn: true, name: "Visita agendada" },
-    ]);
+    ).resolves.toEqual([{ id: "tag_1", name: "Visita agendada" }]);
 
     expect(fake.calls[0]).toMatchObject({
       input:
@@ -261,7 +257,7 @@ describe("CRM WhatsApp extras API", () => {
     ]);
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
-    await expect(api.listFailedProviderEvents()).resolves.toEqual({
+    await expect(api.listProviderEventIssues()).resolves.toEqual({
       events: [{ id: "event_1", status: "failed" }],
     });
     await expect(api.retryProviderEvent("event_1")).resolves.toMatchObject({
@@ -269,7 +265,7 @@ describe("CRM WhatsApp extras API", () => {
     });
 
     expect(fake.calls[0]).toMatchObject({
-      input: "/api/v1/crm/whatsapp/provider-events/failed",
+      input: "/api/v1/crm/whatsapp/provider-events/issues",
       init: { method: "GET" },
     });
     expect(fake.calls[1]).toMatchObject({

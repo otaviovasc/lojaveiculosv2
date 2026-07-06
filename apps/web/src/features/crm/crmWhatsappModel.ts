@@ -1,5 +1,5 @@
 import type {
-  CrmWhatsappAgent,
+  CrmWhatsappAssignableMember,
   CrmWhatsappMessage,
   CrmWhatsappSendMediaType,
   CrmWhatsappSession,
@@ -205,14 +205,12 @@ function mediaMessageType(mediaType: CrmWhatsappSendMediaType) {
 export function getSenderLabel(message: CrmWhatsappMessage) {
   const metadata = message.metadata ?? {};
   if (typeof metadata.authorName === "string") return metadata.authorName;
-  if (typeof metadata.senderAgentName === "string")
-    return metadata.senderAgentName;
   if (message.senderType === "AI") return "IA";
   if (message.senderType === "SYSTEM") return "Sistema";
   if (message.direction === "OUTBOUND") return "Atendente";
   return null;
 }
 
-export function canAssign(agent: CrmWhatsappAgent) {
-  return agent.isActive;
+export function canAssign(member: CrmWhatsappAssignableMember) {
+  return member.isActive;
 }

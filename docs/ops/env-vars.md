@@ -107,16 +107,19 @@ queue scheduling. Postgres remains the durable source of truth for webhook
 payloads, leads, sessions, messages, activities, and idempotency through
 `provider_events`.
 
-| Name                           | Required | Environments               | Secret | Notes                                                                                                                                     |
-| ------------------------------ | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `REDIS_URL`                    | No       | local, staging, production | Yes    | Local default is `redis://localhost:63790`; enables Redis-backed CRM WhatsApp SSE tickets/fanout. In-process fallback is used when unset. |
-| `CRM_ZAPI_API_BASE_URL`        | No       | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                |
-| `CRM_ZAPI_TEST_INSTANCE_ID`    | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                               |
-| `CRM_ZAPI_TEST_INSTANCE_TOKEN` | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                            |
-| `CRM_ZAPI_TEST_CLIENT_TOKEN`   | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                       |
-| `CRM_ZAPI_TEST_PAIR_PHONE`     | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                              |
-| `CRM_ZAPI_WEBHOOK_TOKEN`       | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                     |
-| `RUN_ZAPI_E2E`                 | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                               |
+| Name                                | Required | Environments               | Secret | Notes                                                                                                                                     |
+| ----------------------------------- | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDIS_URL`                         | No       | local, staging, production | Yes    | Local default is `redis://localhost:63790`; enables Redis-backed CRM WhatsApp SSE tickets/fanout. In-process fallback is used when unset. |
+| `CRM_ZAPI_API_BASE_URL`             | No       | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                |
+| `CRM_ZAPI_TEST_INSTANCE_ID`         | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                               |
+| `CRM_ZAPI_TEST_INSTANCE_TOKEN`      | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                            |
+| `CRM_ZAPI_TEST_CLIENT_TOKEN`        | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                       |
+| `CRM_ZAPI_TEST_PAIR_PHONE`          | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                              |
+| `CRM_ZAPI_WEBHOOK_TOKEN`            | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                     |
+| `RUN_ZAPI_E2E`                      | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                               |
+| `CRM_WHATSAPP_SCHEDULE_BATCH_SIZE`  | No       | local, staging, production | No     | Scheduled-message worker send limit per store scope. Defaults to `25`.                                                                    |
+| `CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT` | No       | local, staging, production | No     | Scheduled-message worker due store-scope discovery limit per run. Defaults to `100`.                                                      |
+| `CRM_WHATSAPP_SCHEDULE_DUE_AT`      | No       | local                      | No     | Optional ISO datetime override for local/manual scheduled-message worker runs. Leave empty in deployed cron runs.                         |
 
 ZAPI callback URLs use the public API base URL plus the CRM connection id:
 
@@ -130,6 +133,11 @@ ZAPI callback URLs use the public API base URL plus the CRM connection id:
 For local ngrok testing, use the ngrok HTTPS origin as the public API base URL.
 Outside `APP_ENV=local`, include `CRM_ZAPI_WEBHOOK_TOKEN` with the callback as
 `?token=...` or send it in the `x-crm-webhook-token` header.
+
+CRM WhatsApp scheduled messages are stored durably in Postgres. Run
+`pnpm run crm:whatsapp:schedule:process` from a local shell or Railway cron
+worker to process due messages. The worker discovers due store scopes, then
+sends through the same scoped CRM service path used by authenticated requests.
 
 ## Object Storage
 
