@@ -6,7 +6,8 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 5: V2-backed pipeline contract and Wave 2 implementation.
+Phase 6: lead/WhatsApp identity link planning after the Wave 2
+pipeline/schedules merge.
 
 ## Completed This Pass
 
@@ -40,6 +41,10 @@ Phase 5: V2-backed pipeline contract and Wave 2 implementation.
   `pipelineStageId`, and an audited lead stage move endpoint.
 - Merged Worker G scheduled messages operations page:
   - `d8dde89` merged Worker G schedules page (`a448939`).
+- Merged Worker F DB-backed pipeline persistence:
+  - `489d249` merged Worker F pipeline (`cc8e16a`, `4f5f568`).
+- Re-ran focused post-merge pipeline and schedules validation for API, web,
+  typecheck, and guardrails.
 
 ## Key Findings
 
@@ -50,10 +55,12 @@ Phase 5: V2-backed pipeline contract and Wave 2 implementation.
   operations page and future campaign linkage.
 - V2 permission catalog and current tag/schedule/connection services now use
   the active V2 permission contract names.
-- Pipeline config remains browser-local through
-  `apps/web/src/features/crm/crmPipelineStorage.ts`; the active contract now
-  requires replacing that with DB-backed pipeline definitions and lead stage
-  fields.
+- Pipeline config is now DB-backed through `crm_pipelines` and
+  `crm_pipeline_stages`; lead pipeline movement is an audited backend mutation
+  through `PATCH /crm/leads/:leadId/pipeline-stage`.
+- Generic lead create/update no longer writes pipeline fields directly. Lead
+  stage changes must use the pipeline move service so scope, active-stage, and
+  audit rules stay centralized.
 - Visits are schema-only today: `lead_visits` exists, but no
   service/controller/repository references it in `apps/api/src`.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
@@ -71,8 +78,7 @@ Phase 5: V2-backed pipeline contract and Wave 2 implementation.
 ## Active Risks
 
 - Parallel workers can easily invent conflicting permission or API names.
-- Campaign work depends on stable pipeline, tag, lead identity, and schedule
-  contracts.
+- Campaign work depends on stable tag, lead identity, and schedule contracts.
 - Visit work depends on lead/WhatsApp identity resolution.
 - The HTML dashboards include some historical/stale CRM details. Use
   `docs/migrations/crm-v2-integration-contracts.md` as the active contract.
@@ -93,7 +99,8 @@ Wave 2:
 
 - Worker E: permission normalization and service helper compatibility.
   Implemented by orchestrator because it unblocks all later shared contracts.
-- Worker F: pipeline persistence.
+- Worker F: pipeline persistence. Completed in `cc8e16a` and `4f5f568`;
+  merged by `489d249`.
 - Worker G: scheduled messages page. Completed in `a448939`; merged by
   `d8dde89`.
 
@@ -135,11 +142,21 @@ pnpm run test:frontend-design
 pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappSchedulesPage.test crmWhatsappApiExtras.test
 pnpm --filter @lojaveiculosv2/web typecheck
 pnpm run check:lines
+pnpm --filter @lojaveiculosv2/api test -- crm.pipeline
+pnpm --filter @lojaveiculosv2/web test -- productCrmApi crmPipelineModels crmLeadCreation CrmWhatsappSchedulesPage.test crmWhatsappApiExtras.test
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web typecheck
+pnpm run check:db
+pnpm run check:services
+pnpm run check:frontend
+pnpm run check:lines
 ```
 
 Phase 1 permission validation passed. `pnpm run check:lines` initially failed
 because it scanned generated `.pnpm-store` package copies; removing the local
-store cache fixed the unrelated scan input and the guard passed.
+store cache fixed the unrelated scan input and the guard passed. The same
+cache-only issue recurred after the pipeline merge; removing `.pnpm-store`
+again made `check:lines` pass.
 
 ## Evidence
 
@@ -159,12 +176,17 @@ store cache fixed the unrelated scan input and the guard passed.
 - Worker G screenshots:
   `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/schedules-desktop.png`,
   `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/schedules-mobile.png`.
+- Pipeline persistence evidence:
+  `packages/db/drizzle/0002_crm_pipeline_persistence.sql`,
+  `apps/api/src/features/crm/controllers/crm.pipeline.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.pipeline.integrity.test.ts`,
+  `apps/web/src/features/crm/crmLeadCreation.test.ts`.
 
 ## Next Orchestrator Actions
 
-1. Review Worker F DB-backed pipeline persistence when it completes.
-2. Merge Worker F if it satisfies schema, ServiceContext, permission, audit,
-   stable-error, and frontend API requirements.
-3. Run focused API/web validation for pipeline and schedules together.
-4. Keep visits and campaign work blocked behind pipeline and lead identity
+1. Start Phase 6 lead/WhatsApp identity link contract and implementation.
+2. Start visits backend/UI only after the identity link is stable.
+3. Keep campaign backend/UI blocked behind lead identity, schedules, and visit
    contracts.
+4. Run full validation when the next stable CRM slice is merged, or record any
+   unrelated failures explicitly here.
