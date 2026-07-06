@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { RefreshCw, Truck } from "lucide-react";
+import { RefreshCw, Save, Truck } from "lucide-react";
 import type { CustomSelectOption } from "../../../components/ui/CustomSelect";
 import type { InventoryApi } from "../api/apiClient";
 import type {
@@ -7,20 +7,24 @@ import type {
   VehicleSupplier,
   VehicleSupplierKind,
 } from "../model/types";
-import { InventoryPanel } from "./InventoryFormParts";
+import {
+  InventoryField,
+  InventoryPanel,
+  InventorySelect,
+} from "./InventoryFormParts";
 import {
   cleanAcquisitionDraft,
   cleanSupplierDraft,
   emptyAcquisitionDraft,
-  emptySupplierDraft,
   fromAcquisition,
-  fromSupplier,
   type AcquisitionDraft,
   type SupplierDraft,
   upsertSupplier,
 } from "./VehicleAcquisitionCardModel";
 import { VehicleAcquisitionSourcePanel } from "./VehicleAcquisitionSourcePanel";
-import { VehicleAcquisitionSupplierPanel } from "./VehicleAcquisitionSupplierPanel";
+import { VehicleAcquisitionSupplierModal } from "./VehicleAcquisitionSupplierModal";
+import { IconButton } from "./VehicleAcquisitionCardParts";
+import { SupplierSummaryCard } from "./SupplierSummaryCard";
 
 type Props = {
   api: InventoryApi;
@@ -34,10 +38,10 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingSupplier, setIsSavingSupplier] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [selectedSupplierId, setSelectedSupplierId] = useState("");
-  const [supplierDraft, setSupplierDraft] =
-    useState<SupplierDraft>(emptySupplierDraft);
   const [suppliers, setSuppliers] = useState<readonly VehicleSupplier[]>([]);
 
   const supplierOptions = useMemo<CustomSelectOption[]>(() => {
@@ -45,8 +49,12 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
       label: supplier.displayName,
       value: supplier.id,
     }));
-    return [{ label: "Novo fornecedor", value: "" }, ...supplierRows];
+    return [{ label: "Selecionar fornecedor...", value: "" }, ...supplierRows];
   }, [suppliers]);
+
+  const selectedSupplier = useMemo(() => {
+    return suppliers.find((s) => s.id === selectedSupplierId) ?? null;
+  }, [suppliers, selectedSupplierId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,9 +73,6 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
           supplierList.find((item) => item.id === acquisition?.supplierId) ??
           null;
         setSelectedSupplierId(supplier?.id ?? "");
-        setSupplierDraft(
-          supplier ? fromSupplier(supplier) : emptySupplierDraft,
-        );
       })
       .catch(() => {
         if (!cancelled) setMessage("Não foi possível carregar a aquisição.");
@@ -80,72 +85,57 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
     };
   }, [api, unit?.id]);
 
-  const updateSupplierDraft = (
-    field: keyof SupplierDraft,
-    value: string | VehicleSupplierKind,
-  ) => {
-    setSupplierDraft((current) => ({
-      ...current,
-      [field]: value === "" ? null : value,
-    }));
-  };
-
   const selectSupplier = (supplierId: string) => {
-    const supplier = suppliers.find((item) => item.id === supplierId);
     setSelectedSupplierId(supplierId);
-    setSupplierDraft(supplier ? fromSupplier(supplier) : emptySupplierDraft);
     setAcquisitionDraft((current) => ({
       ...current,
       supplierId: supplierId || null,
     }));
   };
 
-  const saveSupplier = async () => {
-    const displayName = supplierDraft.displayName.trim();
-    if (!displayName) {
-      setMessage("Informe o nome do fornecedor.");
-      return;
-    }
-    setIsSaving(true);
+  const handleSaveSupplier = async (draft: SupplierDraft) => {
+    setIsSavingSupplier(true);
     try {
-      const payload = cleanSupplierDraft({ ...supplierDraft, displayName });
+      const payload = cleanSupplierDraft(draft);
       const supplier = selectedSupplierId
         ? await api.updateVehicleSupplier(selectedSupplierId, payload)
         : await api.createVehicleSupplier(payload);
       setSuppliers((current) => upsertSupplier(current, supplier));
       setSelectedSupplierId(supplier.id);
-      setSupplierDraft(fromSupplier(supplier));
       setAcquisitionDraft((current) => ({
         ...current,
         supplierId: supplier.id,
       }));
-      setMessage("Fornecedor salvo.");
+      setMessage("Fornecedor salvo com sucesso.");
     } catch {
-      setMessage("Não foi possível salvar o fornecedor.");
+      throw new Error("Erro ao salvar fornecedor.");
     } finally {
-      setIsSaving(false);
+      setIsSavingSupplier(false);
     }
   };
 
-  const archiveSupplier = async () => {
+  const handleArchiveSupplier = async () => {
     if (!selectedSupplierId) return;
     if (acquisitionDraft.supplierId === selectedSupplierId) {
       setMessage("Desvincule o fornecedor da aquisição antes de arquivar.");
       return;
     }
-    setIsSaving(true);
+    setIsSavingSupplier(true);
     try {
       await api.archiveVehicleSupplier(selectedSupplierId);
       setSuppliers((current) =>
         current.filter((supplier) => supplier.id !== selectedSupplierId),
       );
       setSelectedSupplierId("");
-      setSupplierDraft(emptySupplierDraft);
-      setMessage("Fornecedor arquivado.");
+      setAcquisitionDraft((current) => ({
+        ...current,
+        supplierId: null,
+      }));
+      setMessage("Fornecedor arquivado com sucesso.");
     } catch {
-      setMessage("Não foi possível arquivar o fornecedor.");
+      throw new Error("Erro ao arquivar fornecedor.");
     } finally {
-      setIsSaving(false);
+      setIsSavingSupplier(false);
     }
   };
 
@@ -159,7 +149,7 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
       );
       setAcquisitionDraft(fromAcquisition(acquisition));
       setSelectedSupplierId(acquisition.supplierId ?? selectedSupplierId);
-      setMessage("Origem de aquisição salva.");
+      setMessage("Dados de aquisição salvos com sucesso.");
     } catch {
       setMessage("Não foi possível salvar a origem de aquisição.");
     } finally {
@@ -203,16 +193,38 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
             <h4 className="text-xs font-black uppercase tracking-wider text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
               <span>Fornecedor</span>
             </h4>
-            <VehicleAcquisitionSupplierPanel
-              isSaving={isSaving}
-              onArchive={() => void archiveSupplier()}
-              onSave={() => void saveSupplier()}
-              onSelectSupplier={selectSupplier}
-              onUpdateSupplierDraft={updateSupplierDraft}
-              selectedSupplierId={selectedSupplierId}
-              supplierDraft={supplierDraft}
-              supplierOptions={supplierOptions}
-            />
+            <div className="grid gap-3">
+              <InventoryField label="Selecionar Fornecedor">
+                <InventorySelect
+                  onChange={selectSupplier}
+                  options={supplierOptions}
+                  value={selectedSupplierId}
+                />
+              </InventoryField>
+
+              {selectedSupplier ? (
+                <SupplierSummaryCard
+                  supplier={selectedSupplier}
+                  onEdit={() => setIsModalOpen(true)}
+                />
+              ) : (
+                <div className="rounded-xl border border-line border-dashed bg-panel/10 p-6 flex flex-col items-center justify-center text-center gap-3">
+                  <span className="text-xs text-muted font-bold">
+                    Nenhum fornecedor selecionado.
+                  </span>
+                  <button
+                    onClick={() => {
+                      setSelectedSupplierId("");
+                      setIsModalOpen(true);
+                    }}
+                    className="min-h-9 rounded-lg px-4 text-xs font-black border border-line text-app-text hover:bg-line/25 transition-all cursor-pointer flex items-center gap-1.5"
+                    type="button"
+                  >
+                    <span>Cadastrar Novo Fornecedor</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Centered line dividers */}
@@ -225,13 +237,30 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
             </h4>
             <VehicleAcquisitionSourcePanel
               acquisitionDraft={acquisitionDraft}
-              isSaving={isSaving}
-              onSave={() => void saveAcquisition()}
               setAcquisitionDraft={setAcquisitionDraft}
             />
           </div>
         </div>
+
+        <div className="flex justify-end border-t border-line/30 pt-4 mt-2">
+          <IconButton
+            disabled={isSaving || isLoading}
+            icon={<Save className="size-3.5" />}
+            label="Salvar alterações"
+            onClick={() => void saveAcquisition()}
+            variant="primary"
+          />
+        </div>
       </div>
+
+      <VehicleAcquisitionSupplierModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        supplier={selectedSupplier}
+        onSave={handleSaveSupplier}
+        onArchive={handleArchiveSupplier}
+        isSaving={isSavingSupplier}
+      />
     </InventoryPanel>
   );
 }

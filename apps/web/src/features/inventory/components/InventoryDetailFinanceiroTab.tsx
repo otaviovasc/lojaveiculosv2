@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { FinanceiroCustosSection } from "./FinanceiroCustosSection";
-import { costKindLabel, type CostItem } from "./FinanceiroCustosSection";
+import type { CostItem } from "./FinanceiroCustosSectionModel";
 import { FinanceiroCashFlowSection } from "./FinanceiroCashFlowSection";
 import { FinanceiroNotasFiscaisSection } from "./FinanceiroNotasFiscaisSection";
 import { VehicleAcquisitionCard } from "./VehicleAcquisitionCard";
@@ -12,8 +12,22 @@ import type {
   InventoryListingDetail,
   InventoryUnit,
 } from "../model/types";
-import type { InventoryCost } from "../model/operationTypes";
-import type { TransactionItem } from "./FinanceiroCashFlowSection";
+import { createDocumentsApi } from "../../documents/apiClient";
+import { createDocumentsApiOptions } from "../../documents/runtimeApi";
+import { openDocumentDownload } from "../../documents/DocumentsModuleSupport";
+import { uploadInventoryFile } from "../model/mediaWorkspaceTypes";
+import {
+  costToItem,
+  costToCashFlowItem,
+  summarizeCosts,
+  sumCosts,
+  sumOrNull,
+  formatOptionalBRL,
+  formatBRL,
+  formatDate,
+  formatMileage,
+  formatUnitLabel,
+} from "./InventoryDetailFinanceiroTabSupport";
 
 export function InventoryDetailFinanceiroTab({
   api,
@@ -55,35 +69,74 @@ export function InventoryDetailFinanceiroTab({
       ? (expectedResultCents / listing.priceCents) * 100
       : null;
 
-  const costItems = selectedCosts.map(costToItem);
+  const costItems = selectedCosts.map((cost) =>
+    costToItem(cost, detail.documents),
+  );
   const cashFlowItems = selectedCosts.map(costToCashFlowItem);
 
   const handleAddCost = async (
     account: string,
     value: number,
     kind: InventoryCostKind,
-  ) => {
+    file?: File | null,
+  ): Promise<boolean> => {
     if (!selectedUnit) {
       setCostMessage("Adicione uma unidade ao veículo antes de lançar custos.");
-      return;
+      return false;
     }
 
     setIsAddingCost(true);
     setCostMessage(null);
     try {
-      const updated = await api.addCost(selectedUnit.id, {
+      let updated = await api.addCost(selectedUnit.id, {
         amountCents: Math.round(value),
         description: account.trim(),
         kind,
       });
+
+      if (file) {
+        // Find the new cost to get its ID
+        const existingIds = new Set(detail.costs.map((c) => c.id));
+        const newCost = updated.costs.find((c) => !existingIds.has(c.id));
+
+        if (newCost) {
+          const upload = await api.requestUnitDocumentUpload(selectedUnit.id, {
+            file,
+            kind: "other",
+          });
+          await uploadInventoryFile(file, upload);
+          updated = await api.attachUnitDocument(selectedUnit.id, {
+            fileName: file.name,
+            fileSizeBytes: file.size,
+            kind: "other",
+            mimeType: file.type || "application/octet-stream",
+            storageKey: upload.storageKey,
+            title: `Recibo Custo: ${newCost.id}`,
+          });
+        }
+      }
+
       onUpdated(updated);
-      setCostMessage("Custo registrado no veículo.");
+      setCostMessage(null);
+      return true;
     } catch (error) {
       setCostMessage(
         formatApiErrorDisplay(error, "Não foi possível registrar o custo."),
       );
+      return false;
     } finally {
       setIsAddingCost(false);
+    }
+  };
+
+  const handleDownloadReceipt = async (documentId: string) => {
+    try {
+      const opts = await createDocumentsApiOptions();
+      const docsApi = createDocumentsApi(opts);
+      const download = await docsApi.downloadDocument(documentId);
+      openDocumentDownload(download);
+    } catch (error) {
+      console.error("Erro ao baixar o comprovante", error);
     }
   };
 
@@ -200,12 +253,14 @@ export function InventoryDetailFinanceiroTab({
 
       <FinanceiroCustosSection
         addStatus={costMessage}
+        clearStatus={() => setCostMessage(null)}
         costs={costItems}
         formatBRL={formatBRL}
         isAdding={isAddingCost}
-        onAddCost={(account, value, kind) =>
-          void handleAddCost(account, value, kind)
-        }
+        onAddCost={handleAddCost}
+        onDownloadReceipt={(documentId) => {
+          void handleDownloadReceipt(documentId);
+        }}
       />
 
       <FinanceiroNotasFiscaisSection formatBRL={formatBRL} />
@@ -232,71 +287,4 @@ function FinanceiroReadOnlyNote({
       </p>
     </div>
   );
-}
-
-function costToItem(cost: InventoryCost): CostItem {
-  return {
-    account: cost.description || costKindLabel(cost.kind),
-    date: formatDate(cost.costDate),
-    id: cost.id,
-    kind: cost.kind,
-    kindLabel: costKindLabel(cost.kind),
-    value: cost.amountCents,
-  };
-}
-
-function costToCashFlowItem(cost: InventoryCost): TransactionItem {
-  return {
-    date: formatDate(cost.costDate),
-    description: cost.description || `Custo: ${costKindLabel(cost.kind)}`,
-    id: cost.id,
-    origin: costKindLabel(cost.kind),
-    status: "Registrado",
-    value: -cost.amountCents,
-  };
-}
-
-function summarizeCosts(costs: readonly InventoryCost[]) {
-  if (!costs.length) return "Sem custos registrados para esta unidade.";
-  return costs
-    .map(
-      (cost) => `${costKindLabel(cost.kind)}: ${formatBRL(cost.amountCents)}`,
-    )
-    .join(" | ");
-}
-
-function sumCosts(costs: readonly InventoryCost[]) {
-  return costs.reduce((sum, cost) => sum + cost.amountCents, 0);
-}
-
-function sumOrNull(costs: readonly InventoryCost[]) {
-  return costs.length ? sumCosts(costs) : null;
-}
-
-function formatOptionalBRL(value: number | null) {
-  return value === null ? "Não informado" : formatBRL(value);
-}
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
-    style: "currency",
-  }).format(cents / 100);
-}
-
-function formatDate(value: string | null | undefined) {
-  if (!value) return "Não informado";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Não informado";
-  return new Intl.DateTimeFormat("pt-BR").format(date);
-}
-
-function formatMileage(value: number | null) {
-  return value === null
-    ? "Não informado"
-    : `${value.toLocaleString("pt-BR")} km`;
-}
-
-function formatUnitLabel(unit: InventoryUnit | null) {
-  return unit?.stockNumber || unit?.plate || unit?.vin || "Não informado";
 }

@@ -15,7 +15,7 @@ export function InventoryDetailDocumentosTab({
         {/* Left Column: Document Upload, Contratos, Gerar Contrato */}
         <div className="lg:col-span-7 flex flex-col gap-6">
           <DocumentosUploadCard />
-          <DocumentosContratosCard listingTitle={detail.listing.title} />
+          <DocumentosContratosCard detail={detail} />
         </div>
 
         {/* Right Column: Fluxo RENAVE, Checklist */}

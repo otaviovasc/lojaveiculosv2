@@ -70,11 +70,11 @@ describe("sales controller", () => {
     expect(payload.details.missingFields).toContain("lead");
     expect(payload.details.missingFields).toContain("seller");
     expect(payload.details.missingFields).toContain(
-      "payment_principal_coverage",
+      "reservation_signal_payment",
     );
   });
 
-  it("reserves complete sale drafts", async () => {
+  it("reserves sale drafts with a signal payment", async () => {
     const app = createTestApp();
     const createResponse = await requestJson(app, "/sales/drafts", {
       buyerSnapshot: { name: "Maria" },
@@ -84,13 +84,12 @@ describe("sales controller", () => {
       leadId: "lead-1",
       payments: [
         {
-          amountCents: 5000000,
+          amountCents: 100000,
           method: "pix",
-          principalCents: 5000000,
+          principalCents: 100000,
         },
       ],
       salePriceCents: 5000000,
-      selectedDocumentKinds: ["sale_contract"],
       sellerUserId: "seller-1",
       unitId: "unit_1",
     });

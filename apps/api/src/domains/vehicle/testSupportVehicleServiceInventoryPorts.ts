@@ -10,15 +10,12 @@ import {
 import type {
   CreateVehicleDocumentRecord,
   CreateVehicleListingRecord,
-  CreateVehicleMediaRecord,
   CreateVehicleUnitRecord,
   ListVehicleChildrenInput,
-  ListVehicleUnitChildrenInput,
   VehicleDocument,
   VehicleMedia,
   VehicleListing,
   VehicleListingRepository,
-  VehicleMediaRepository,
   VehicleUnit,
   VehicleUnitRepository,
 } from "./ports/vehicleInventoryRepository.js";
@@ -38,9 +35,9 @@ import { createTestVehicleDocumentRepository } from "./testSupportVehicleDocumen
 import { createListing, testNow } from "./testSupportVehicleServiceFixtures.js";
 import {
   isScopedChild,
-  isScopedMediaForListings,
   matchesSearch,
 } from "./testSupportVehicleInventoryPredicates.js";
+import { createTestVehicleMediaRepository } from "./testSupportVehicleMediaRepository.js";
 
 export type TestVehicleInventoryPorts = VehicleInventoryServicePorts & {
   acquisitionRepository: TestVehicleAcquisitionRepository;
@@ -65,11 +62,6 @@ export function createInMemoryVehiclePorts(
   let documentSequence = 1;
   let mediaSequence = 1;
   let unitSequence = 1;
-  const listingRepository = createListingRepository(
-    listings,
-    () => listingSequence++,
-  );
-
   return {
     acquisitionRepository: createTestVehicleAcquisitionRepository(),
     documentRepository: createTestVehicleDocumentRepository(
@@ -79,10 +71,17 @@ export function createInMemoryVehiclePorts(
     checklistRepository: createTestVehicleChecklistRepository(),
     documents,
     financeRepository: createTestFinanceRepository(),
-    listingRepository,
+    listingRepository: createListingRepository(
+      listings,
+      () => listingSequence++,
+    ),
     listings,
     media,
-    mediaRepository: createMediaRepository(media, units, () => mediaSequence++),
+    mediaRepository: createTestVehicleMediaRepository(
+      media,
+      units,
+      () => mediaSequence++,
+    ),
     mediaStorage: createTestVehicleMediaStorage(),
     operationsRepository: createTestOperationsRepository(),
     salesRepository: createTestVehicleSalesRepository(),
@@ -105,6 +104,11 @@ function createListingRepository(
       });
       listings.set(listing.id, listing);
       return listing;
+    }),
+    delete: vi.fn(async (listing: VehicleListing) => {
+      const updated = { ...listing, updatedAt: new Date() };
+      listings.delete(listing.id);
+      return updated;
     }),
     findById: vi.fn(async ({ listingId, storeId, tenantId }) => {
       const listing = listings.get(listingId);
@@ -156,6 +160,11 @@ function createUnitRepository(
       units.set(unit.id, unit);
       return unit;
     }),
+    delete: vi.fn(async (unit: VehicleUnit) => {
+      const updated = { ...unit, updatedAt: new Date() };
+      units.delete(unit.id);
+      return updated;
+    }),
     findById: vi.fn(async ({ listingId, storeId, tenantId, unitId }) => {
       const unit = units.get(unitId);
       if (!unit) return null;
@@ -190,54 +199,4 @@ function nextUnitId(
     id = `unit_${nextSequence()}`;
   }
   return id;
-}
-
-function createMediaRepository(
-  media: Map<string, VehicleMedia>,
-  units: Map<string, VehicleUnit>,
-  nextSequence: () => number,
-): VehicleMediaRepository {
-  return {
-    create: vi.fn(async (record: CreateVehicleMediaRecord) => {
-      const item: VehicleMedia = {
-        ...record,
-        createdAt: testNow,
-        id: `media_${nextSequence()}`,
-        updatedAt: testNow,
-      };
-      media.set(item.id, item);
-      return item;
-    }),
-    delete: vi.fn(async (item: VehicleMedia) => {
-      media.delete(item.id);
-      return { ...item, updatedAt: new Date() };
-    }),
-    findById: vi.fn(async ({ mediaId, storeId, tenantId, unitId }) => {
-      const item = media.get(mediaId);
-      if (!item) return null;
-      if (item.unitId !== unitId) return null;
-      if (item.storeId !== storeId || item.tenantId !== tenantId) return null;
-      return item;
-    }),
-    listByListingIds: vi.fn(async (input: ListVehicleChildrenInput) =>
-      [...media.values()].filter((item) =>
-        isScopedMediaForListings(item, units, input),
-      ),
-    ),
-    listByUnitIds: vi.fn(
-      async ({ storeId, tenantId, unitIds }: ListVehicleUnitChildrenInput) => {
-        return [...media.values()].filter(
-          (item) =>
-            unitIds.includes(item.unitId) &&
-            item.storeId === storeId &&
-            item.tenantId === tenantId,
-        );
-      },
-    ),
-    save: vi.fn(async (item: VehicleMedia) => {
-      const updated = { ...item, updatedAt: new Date() };
-      media.set(item.id, updated);
-      return updated;
-    }),
-  };
 }

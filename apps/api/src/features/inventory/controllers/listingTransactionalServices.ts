@@ -3,6 +3,7 @@ import { attachVehicleDocument } from "../../../domains/vehicle/services/Vehicle
 import { attachVehicleUnit } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import { changeVehicleStatus } from "../../../domains/vehicle/services/VehicleService/changeVehicleStatus.js";
 import { createVehicleChecklist } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
+import { deleteVehicleListing } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
 import { releaseVehicleUnitReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleUnitReservation.js";
 import { reserveVehicleUnit } from "../../../domains/vehicle/services/VehicleService/reserveVehicleUnit.js";
 import { sellVehicleUnit } from "../../../domains/vehicle/services/VehicleService/sellVehicleUnit.js";
@@ -35,6 +36,7 @@ type InventoryTransactionalServices = Pick<
   | "attachVehicleDocument"
   | "changeListingStatus"
   | "createChecklist"
+  | "deleteListing"
   | "publishListing"
   | "releaseUnitReservation"
   | "reserveUnit"
@@ -117,6 +119,11 @@ export function createInventoryTransactionalServices(input: {
         await findListingIdForUnit(context, checklistInput.unitId, ports),
         ports,
         "inventory.checklist_update",
+      );
+    },
+    async deleteListing(context, deleteInput) {
+      await runVehicleInventoryMutation(transactionRunner, (transactionPorts) =>
+        deleteVehicleListing(context, deleteInput, transactionPorts),
       );
     },
     async reserveUnit(context, reserveInput) {

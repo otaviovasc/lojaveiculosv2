@@ -11,12 +11,22 @@ describe("SaleWorkspace", () => {
 
   it("runs lifecycle transitions with the saved sale returned by the API", async () => {
     const user = userEvent.setup();
+    const clientSignalPayment = {
+      ...payment("client-payment"),
+      amountCents: 100000,
+      principalCents: 100000,
+    };
+    const serverSignalPayment = {
+      ...payment("server-payment"),
+      amountCents: 100000,
+      principalCents: 100000,
+    };
     const draft = saleRecord({
-      payments: [payment("client-payment")],
+      payments: [clientSignalPayment],
       status: "draft",
     });
     const saved = saleRecord({
-      payments: [payment("server-payment")],
+      payments: [serverSignalPayment],
       revision: 2,
       status: "draft",
     });
@@ -40,7 +50,12 @@ describe("SaleWorkspace", () => {
       screen.getByPlaceholderText("Ex: (11) 99999-9999"),
       "(11) 90000-0000",
     );
-    await user.click(screen.getByRole("button", { name: "Reservar Veículo" }));
+    const reserveButton = screen.getByRole("button", {
+      name: "Reservar Veículo",
+    });
+    expect(screen.getByRole("button", { name: "Fechar Venda" })).toBeDisabled();
+    expect(reserveButton).toBeEnabled();
+    await user.click(reserveButton);
 
     await waitFor(() => expect(onReserve).toHaveBeenCalledOnce());
     expect(onSave).toHaveBeenCalledOnce();

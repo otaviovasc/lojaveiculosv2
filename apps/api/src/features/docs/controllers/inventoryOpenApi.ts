@@ -91,6 +91,21 @@ export const inventoryPaths = {
         ...authResponses,
       },
     },
+    delete: {
+      tags: ["Inventory"],
+      summary: "Delete listing",
+      description:
+        "Soft-deletes a listing and its vehicle units through the inventory delete service boundary.",
+      operationId: "deleteInventoryListing",
+      security: [{ bearerAuth: ["inventory.delete"] }],
+      parameters: [listingIdParameter],
+      responses: {
+        "204": {
+          description: "Listing soft-deleted.",
+        },
+        ...authResponses,
+      },
+    },
     patch: {
       tags: ["Inventory"],
       summary: "Update listing details",

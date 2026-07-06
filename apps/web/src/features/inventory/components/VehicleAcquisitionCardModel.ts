@@ -148,3 +148,14 @@ function formatCents(cents: number | null) {
     minimumFractionDigits: 2,
   });
 }
+
+export function formatCurrencyBRL(value: string): string {
+  const cleanValue = value.replace(/\D/g, "");
+  if (!cleanValue) return "";
+  const cents = parseInt(cleanValue, 10);
+  if (isNaN(cents)) return "";
+  return (cents / 100).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { InventoryListingDetail } from "../model/types";
 import { formatPrice } from "./InventoryDetailWorkspaceMocks";
+import { InventoryDetailPortaisSection } from "./InventoryDetailPortaisSection";
 
 interface TagItem {
   id: string;
@@ -47,8 +48,6 @@ export function InventoryDetailAnuncioTab({
   const [customTagInput, setCustomTagInput] = useState("");
   const [anuncioPrice, setAnuncioPrice] = useState(advertisedPrice);
   const [videoLink, setVideoLink] = useState("");
-  const [portalActive, setPortalActive] = useState(true);
-  const [showConfig, setShowConfig] = useState(false);
 
   const handleToggleTag = (id: string) => {
     setTags((prev) =>
@@ -256,83 +255,11 @@ export function InventoryDetailAnuncioTab({
       </div>
 
       {/* Card 2: Portais */}
-      <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-4">
-        <div className="flex items-center justify-between border-b border-line pb-3">
-          <h3 className="text-sm font-black uppercase tracking-wider">
-            Portais
-          </h3>
-          <span className="text-xs font-black text-muted uppercase tracking-wider">
-            Veículo: {listing.title} • {advertisedPrice}
-          </span>
-        </div>
-
-        <div className="flex items-center justify-between p-3.5 rounded-xl border border-line bg-app/30">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-black text-app-text">
-              Portal próprio
-            </span>
-            <div className="flex items-center gap-1 text-xs font-bold text-accent hover:underline cursor-pointer">
-              <span>https://loja.lojaveiculosv2.com.br{portalPath}</span>
-              <ExternalLink className="size-3" />
-            </div>
-          </div>
-          <label className="relative inline-flex items-center cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={portalActive}
-              onChange={(e) => setPortalActive(e.target.checked)}
-              className="sr-only peer"
-            />
-            <div className="w-8 h-4.5 bg-line peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-accent" />
-          </label>
-        </div>
-
-        <div className="py-8 text-center flex flex-col items-center justify-center bg-app/10 border border-line border-dashed rounded-xl gap-2">
-          <p className="text-xs font-black text-app-text">
-            Nenhum portal parceiro configurado para este veículo.
-          </p>
-          <p className="text-xs text-muted font-bold">
-            Ative integrações com Webmotors, iCarros, OLX nas configurações.
-          </p>
-          <button
-            onClick={() => setShowConfig(true)}
-            className="mt-1.5 min-h-8 rounded-lg bg-accent/15 border border-accent/25 text-accent-strong font-black text-xs hover:bg-accent/25 cursor-pointer px-4 flex items-center justify-center"
-            type="button"
-          >
-            Configurar portais
-          </button>
-        </div>
-      </div>
-
-      {showConfig && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-panel border border-line w-full max-w-sm rounded-2xl p-5 shadow-2xl flex flex-col gap-3">
-            <div className="flex justify-between items-center border-b border-line pb-2">
-              <h4 className="text-xs font-black uppercase tracking-wider">
-                Integrações de Portais
-              </h4>
-              <button
-                onClick={() => setShowConfig(false)}
-                className="text-muted hover:text-app-text cursor-pointer"
-                type="button"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-            <p className="text-xs font-bold leading-normal text-muted">
-              A integração direta com os portais parceiros requer chaves de API
-              válidas e permissões comerciais. Contate o administrador.
-            </p>
-            <button
-              onClick={() => setShowConfig(false)}
-              className="mt-2 min-h-9 w-full rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer flex items-center justify-center"
-              type="button"
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      )}
+      <InventoryDetailPortaisSection
+        title={listing.title}
+        portalSlug={portalSlug}
+        advertisedPrice={advertisedPrice}
+      />
     </div>
   );
 }

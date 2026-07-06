@@ -65,6 +65,10 @@ describe("API docs routes", () => {
         .security,
     ).toEqual([{ bearerAuth: ["inventory.read"] }]);
     expect(
+      openApiDocument.paths["/api/v1/inventory/listings/{listingId}"].delete
+        .security,
+    ).toEqual([{ bearerAuth: ["inventory.delete"] }]);
+    expect(
       openApiDocument.paths["/api/v1/inventory/listings"].get.security,
     ).toEqual([{ bearerAuth: ["inventory.read"] }]);
     expect(

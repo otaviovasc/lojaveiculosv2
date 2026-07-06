@@ -13,10 +13,17 @@ import { InventoryListingTable } from "../components/InventoryListingTable";
 import { InventoryListModals } from "../components/InventoryListModals";
 import { InventoryCreateMode } from "./InventoryCreateMode";
 import { InventoryDetailWorkspace } from "../components/InventoryDetailWorkspace";
+import type { InventoryDetailStoreLink } from "../components/InventoryDetailPublicRoute";
 import { useInventoryList } from "../model/useInventoryList";
 import { FeaturePageShell } from "../../../components/ui/FeatureLayout";
 
-export function InventoryListPage({ api }: { api?: InventoryApi }) {
+export function InventoryListPage({
+  api,
+  stores = [],
+}: {
+  api?: InventoryApi;
+  stores?: readonly InventoryDetailStoreLink[];
+}) {
   const {
     routeStateRef,
     runtimeApi,
@@ -75,6 +82,7 @@ export function InventoryListPage({ api }: { api?: InventoryApi }) {
         api={runtimeApi}
         detail={detail}
         selectedUnitId={selectedUnitId}
+        stores={stores}
         onBack={() => {
           setScreenMode("list");
           setDetail(null);

@@ -193,6 +193,18 @@ describe("createInventoryApi", () => {
     });
   });
 
+  it("soft deletes listings through the canonical detail route", async () => {
+    const fake = createFakeFetch([null]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await api.deleteListing("listing_1");
+
+    expect(callAt(fake.calls, 0).input).toBe(
+      "/api/v1/inventory/listings/listing_1",
+    );
+    expect(callAt(fake.calls, 0).init?.method).toBe("DELETE");
+  });
+
   it("lists, creates, and updates vehicle checklists", async () => {
     const fake = createFakeFetch([
       {

@@ -104,6 +104,17 @@ export function createInventoryFeature(
     }),
   );
 
+  inventoryFeature.delete("/listings/:listingId", async (context) =>
+    handle(context, async () => {
+      const serviceContext = await createContext(context);
+      await services.deleteListing(serviceContext, {
+        listingId: context.req.param("listingId"),
+      });
+
+      return context.body(null, 204);
+    }),
+  );
+
   inventoryFeature.patch("/listings/:listingId", async (context) =>
     handle(context, async () => {
       const input = await parseJson(context, updateListingDetailsSchema);

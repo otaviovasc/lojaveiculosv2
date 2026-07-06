@@ -15,7 +15,7 @@ describe("sales workflow transition", () => {
         {
           amountCents: 100000,
           method: "pix",
-          principalCents: 5000000,
+          principalCents: 100000,
         },
       ],
     });
@@ -70,6 +70,39 @@ describe("sales workflow transition", () => {
     expectFinanceLinkedToSale(vehiclePorts, draft.id);
   });
 
+  it("keeps full principal coverage required when closing a sale", async () => {
+    const { services } = createHarness("reserved");
+    const draft = await services.createDraft(context(["sale.draft"]), {
+      ...completeDraft(),
+      payments: [
+        {
+          amountCents: 100000,
+          method: "pix",
+          principalCents: 100000,
+        },
+      ],
+    });
+
+    const error = await services
+      .transition(context(["sale.close"]), {
+        saleId: draft.id,
+        status: "closed",
+      })
+      .then(
+        () => null,
+        (caught: unknown) => caught,
+      );
+    const missingFields =
+      error && typeof error === "object" && "missingFields" in error
+        ? error.missingFields
+        : null;
+
+    if (!Array.isArray(missingFields)) {
+      throw new Error("Expected sale readiness missing fields.");
+    }
+    expect(missingFields).toContain("payment_principal_coverage");
+  });
+
   it("cancels a pending sales reservation through the canonical release workflow", async () => {
     const { services, vehiclePorts } = createHarness("available");
     const draft = await services.createDraft(context(["sale.draft"]), {
@@ -78,7 +111,7 @@ describe("sales workflow transition", () => {
         {
           amountCents: 100000,
           method: "pix",
-          principalCents: 5000000,
+          principalCents: 100000,
         },
       ],
     });
@@ -112,7 +145,7 @@ describe("sales workflow transition", () => {
         {
           amountCents: 100000,
           method: "pix",
-          principalCents: 5000000,
+          principalCents: 100000,
         },
       ],
     });
@@ -131,7 +164,7 @@ describe("sales workflow transition", () => {
           {
             amountCents: 100000,
             method: "pix",
-            principalCents: 5000000,
+            principalCents: 100000,
           },
         ],
       },

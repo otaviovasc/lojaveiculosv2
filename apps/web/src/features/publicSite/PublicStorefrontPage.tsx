@@ -23,7 +23,7 @@ import {
 
 export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   const { storeSlug } = useParams<{ storeSlug?: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isEditorMode = searchParams.get("editor") === "1";
   const storefrontApi = useMemo(
     () =>
@@ -38,8 +38,8 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   });
   const [detailSnapshot, setDetailSnapshot] =
     useState<PublicListingDetailSnapshot>({
-      isLoading: false,
-      listingSlug: null,
+      isLoading: Boolean(searchParams.get("listing")),
+      listingSlug: searchParams.get("listing"),
     });
   const [previewConfig, setPreviewConfig] =
     useState<WebsiteBuilderPreviewConfig | null>(null);
@@ -98,6 +98,14 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     };
   }, [detailRetryKey, detailSnapshot.listingSlug, storefrontApi]);
 
+  useEffect(() => {
+    const listingSlug = searchParams.get("listing");
+    setDetailSnapshot((current) => {
+      if (current.listingSlug === listingSlug) return current;
+      return { isLoading: Boolean(listingSlug), listingSlug };
+    });
+  }, [searchParams]);
+
   const state = useMemo(
     () => derivePublicStorefrontState(snapshot),
     [snapshot],
@@ -142,17 +150,17 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     return applyPublicStorefrontMetadata(renderedState.data);
   }, [renderedState]);
 
+  const setListingSearchParam = (listingSlug: string | null) => {
+    setSearchParams(setListingParam(searchParams, listingSlug));
+  };
+
   if (renderedState.kind === "ready") {
     return (
       <PublicStorefront
         data={renderedState.data}
         detail={detailSnapshot}
-        onCloseListing={() =>
-          setDetailSnapshot({ isLoading: false, listingSlug: null })
-        }
-        onOpenListing={(listingSlug) =>
-          setDetailSnapshot({ isLoading: true, listingSlug })
-        }
+        onCloseListing={() => setListingSearchParam(null)}
+        onOpenListing={setListingSearchParam}
         onRetryListing={() => setDetailRetryKey((current) => current + 1)}
         onSubmitListingInterest={(listingSlug, input) =>
           storefrontApi.submitListingInterest(listingSlug, input)
@@ -195,6 +203,19 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
       title="Carregando estoque"
     />
   );
+}
+
+export function setListingParam(
+  searchParams: URLSearchParams,
+  listingSlug: string | null,
+) {
+  const next = new URLSearchParams(searchParams);
+  if (listingSlug) {
+    next.set("listing", listingSlug);
+  } else {
+    next.delete("listing");
+  }
+  return next;
 }
 
 function isEditorUpdateMessage(

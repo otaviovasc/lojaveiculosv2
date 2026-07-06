@@ -25,6 +25,7 @@ export type * from "./vehicleInventoryTypes.js";
 
 export type VehicleListingRepository = {
   create: (record: CreateVehicleListingRecord) => Promise<VehicleListing>;
+  delete: (listing: VehicleListing) => Promise<VehicleListing>;
   findById: (input: FindVehicleListingInput) => Promise<VehicleListing | null>;
   findByPublicSlug: (
     input: FindVehicleListingByPublicSlugInput,
@@ -35,6 +36,7 @@ export type VehicleListingRepository = {
 
 export type VehicleUnitRepository = {
   create: (record: CreateVehicleUnitRecord) => Promise<VehicleUnit>;
+  delete: (unit: VehicleUnit) => Promise<VehicleUnit>;
   findById: (input: FindVehicleUnitInput) => Promise<VehicleUnit | null>;
   listByListingIds: (
     input: ListVehicleChildrenInput,

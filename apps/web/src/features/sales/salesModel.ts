@@ -23,6 +23,8 @@ export const paymentMethods = [
   "trade_in",
 ] as const;
 
+export type SaleReadinessPurpose = "close" | "reserve";
+
 export function toDraftInput(sale: SaleRecord): SaleDraftInput {
   return {
     buyerSnapshot: sale.buyerSnapshot,
@@ -88,13 +90,25 @@ export function parseSaleStartContext(): SaleStartContext {
   return context;
 }
 
-export function saleMissingFields(sale: SaleRecord): string[] {
+export function saleMissingFields(
+  sale: SaleRecord,
+  purpose: SaleReadinessPurpose = "close",
+): string[] {
   const missing: string[] = [];
   if (!hasBuyerName(sale.buyerSnapshot)) missing.push("Comprador");
   if (!sale.leadId) missing.push("Lead");
   if (!sale.unitId) missing.push("Veículo");
   if (!sale.sellerUserId) missing.push("Vendedor");
   if (!sale.salePriceCents) missing.push("Preço");
+
+  if (purpose === "reserve") {
+    const [signalPayment] = sale.payments;
+    if (!signalPayment || signalPayment.amountCents <= 0) {
+      missing.push("Sinal de reserva");
+    }
+    return missing;
+  }
+
   if (paymentPrincipalTotal(sale) < (sale.salePriceCents ?? 0)) {
     missing.push("Pagamentos");
   }

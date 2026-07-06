@@ -44,9 +44,10 @@ export async function transitionSale(
   assertTransitionAllowed(current.status, input.status);
 
   if (input.status !== "cancelled") {
-    const missingFields = collectMissingSaleFields(current);
+    const readinessPurpose = input.status === "pending" ? "reserve" : "close";
+    const missingFields = collectMissingSaleFields(current, readinessPurpose);
     if (missingFields.length && !input.overrideRequiredFields) {
-      validateSaleReadiness(current);
+      validateSaleReadiness(current, readinessPurpose);
     }
     if (missingFields.length && input.overrideRequiredFields) {
       assertPermission(context, "sale.override_required_fields");

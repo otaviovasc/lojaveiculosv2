@@ -52,6 +52,30 @@ export function createDrizzleVehicleUnitRepository(
 
       return toVehicleUnit(requireReturnedRow(row, "vehicle unit create"));
     },
+    async delete(unit) {
+      const scope = requireWriteScope(unit);
+      const deletedAt = new Date();
+      const [row] = await db
+        .update(vehicleUnits)
+        .set({
+          deletedAt,
+          isDeleted: true,
+          updatedAt: deletedAt,
+        })
+        .where(
+          and(
+            eq(vehicleUnits.id, unit.id),
+            eq(vehicleUnits.listingId, unit.listingId),
+            eq(vehicleUnits.storeId, scope.storeId),
+            eq(vehicleUnits.tenantId, scope.tenantId),
+            eq(vehicleUnits.isDeleted, false),
+            isNull(vehicleUnits.deletedAt),
+          ),
+        )
+        .returning();
+
+      return toVehicleUnit(requireReturnedRow(row, "vehicle unit delete"));
+    },
     async findById(input) {
       if (!isUuid(input.unitId)) return null;
       const [row] = await db

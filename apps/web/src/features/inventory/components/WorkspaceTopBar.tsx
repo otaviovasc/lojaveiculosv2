@@ -1,22 +1,29 @@
 import {
   ArrowLeft,
-  Printer,
-  MapPin,
-  Trash2,
-  ExternalLink,
   DollarSign,
+  ExternalLink,
+  MapPin,
+  Printer,
+  Trash2,
 } from "lucide-react";
 
+export type WorkspaceTopBarAction =
+  "delete" | "print" | "sell" | "transfer" | "view-public-listing";
+
 export function WorkspaceTopBar({
-  title,
-  plate,
+  canTransferStores,
+  publicListingUrl,
   onBack,
   onAction,
+  plate,
+  title,
 }: {
-  title: string;
-  plate: string;
+  canTransferStores: boolean;
+  publicListingUrl: string | null;
   onBack: () => void;
-  onAction: (action: string) => void;
+  onAction: (action: WorkspaceTopBarAction) => void;
+  plate: string;
+  title: string;
 }) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-line pb-5">
@@ -44,39 +51,47 @@ export function WorkspaceTopBar({
       {/* Main Actions Panel */}
       <div className="flex flex-wrap items-center gap-2">
         <button
-          onClick={() => onAction("Imprimir Ficha")}
+          onClick={() => onAction("print")}
           className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
           type="button"
         >
           <Printer className="size-3.5 text-muted" />
           <span>Imprimir</span>
         </button>
+        {canTransferStores ? (
+          <button
+            onClick={() => onAction("transfer")}
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
+            type="button"
+          >
+            <MapPin className="size-3.5 text-muted" />
+            <span>Transferir</span>
+          </button>
+        ) : null}
         <button
-          onClick={() => onAction("Transferir Loja")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
-          type="button"
-        >
-          <MapPin className="size-3.5 text-muted" />
-          <span>Transferir</span>
-        </button>
-        <button
-          onClick={() => onAction("Devolução")}
+          onClick={() => onAction("delete")}
           className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
           type="button"
         >
           <Trash2 className="size-3.5 text-danger" />
-          <span>Devolver</span>
+          <span>Excluir</span>
         </button>
         <button
-          onClick={() => onAction("Anunciar")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer"
+          disabled={!publicListingUrl}
+          onClick={() => onAction("view-public-listing")}
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/25 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-55"
+          title={
+            publicListingUrl
+              ? "Abrir anuncio publico"
+              : "Publique o veiculo para gerar o anuncio publico"
+          }
           type="button"
         >
-          <ExternalLink className="size-3.5 text-violet-500" />
-          <span>Anunciar</span>
+          <ExternalLink className="size-3.5 text-accent" />
+          <span>Ver anúncio</span>
         </button>
         <button
-          onClick={() => onAction("Vender")}
+          onClick={() => onAction("sell")}
           className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse hover:bg-accent-strong transition-all cursor-pointer"
           type="button"
         >

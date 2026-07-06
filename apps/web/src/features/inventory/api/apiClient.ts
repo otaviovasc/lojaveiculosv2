@@ -30,6 +30,8 @@ import {
   cleanJson,
   cleanMediaInput,
   readJson,
+  readVoid,
+  readUpload,
   type JsonBody,
 } from "./apiClientSupport";
 import { uploadObjectToStorage } from "../../../lib/objectUpload";
@@ -162,6 +164,12 @@ export function createInventoryApi({
       headers: createInventoryHeaders(auth),
     }).then(readJson<InventoryListingDetail>);
 
+  const deleteListing = (listingId: string) =>
+    fetch(inventoryRoutes.detail(listingId, baseUrl), {
+      headers: createInventoryHeaders(auth),
+      method: "DELETE",
+    }).then(readVoid);
+
   const listListings = (input: ListInventoryInput = {}) =>
     fetch(inventoryRoutes.list(input, baseUrl), {
       headers: createInventoryHeaders(auth),
@@ -268,6 +276,7 @@ export function createInventoryApi({
       return { listing, media, unit, upload };
     },
     createListing,
+    deleteListing,
     getListing,
     lookupPlate,
     ...acquisitionApi,

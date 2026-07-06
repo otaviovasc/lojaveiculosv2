@@ -62,6 +62,7 @@ export function createInventoryTestServices(): InventoryListingServices {
     changeListingStatus: vi.fn(async () => listingDetailResult()),
     createChecklist: vi.fn(async () => listingDetailResult()),
     createListing: vi.fn(async () => listingDetailResult()),
+    deleteListing: vi.fn(async () => undefined),
     createVehicleSupplier: vi.fn(async () => supplierResult()),
     createMedia: vi.fn(async () => ({
       mediaId: "media_1",

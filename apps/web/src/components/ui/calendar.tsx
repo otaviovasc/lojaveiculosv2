@@ -15,84 +15,310 @@ import { cn } from "@/lib/utils";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
+/* ── Month names in pt-BR ─────────────────────────────────────────── */
+const MONTH_NAMES_SHORT = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+];
+
+/* ── Custom Month/Year Caption ─────────────────────────────────────── */
+function CalendarCaption({
+  displayMonth,
+  onMonthChange,
+  startYear,
+  endYear,
+}: {
+  displayMonth: Date;
+  onMonthChange: (date: Date) => void;
+  startYear: number;
+  endYear: number;
+}) {
+  const [pickerView, setPickerView] = React.useState<"none" | "month" | "year">(
+    "none",
+  );
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  const currentMonth = displayMonth.getMonth();
+  const currentYear = displayMonth.getFullYear();
+
+  React.useEffect(() => {
+    if (pickerView === "none") return;
+    const onClick = (e: MouseEvent) => {
+      if (!panelRef.current?.contains(e.target as Node)) {
+        setPickerView("none");
+      }
+    };
+    document.addEventListener("pointerdown", onClick);
+    return () => document.removeEventListener("pointerdown", onClick);
+  }, [pickerView]);
+
+  const handlePrevMonth = () => {
+    const prev = new Date(currentYear, currentMonth - 1, 1);
+    onMonthChange(prev);
+  };
+
+  const handleNextMonth = () => {
+    const next = new Date(currentYear, currentMonth + 1, 1);
+    onMonthChange(next);
+  };
+
+  const selectMonth = (monthIndex: number) => {
+    onMonthChange(new Date(currentYear, monthIndex, 1));
+    setPickerView("none");
+  };
+
+  const selectYear = (year: number) => {
+    onMonthChange(new Date(year, currentMonth, 1));
+    setPickerView("none");
+  };
+
+  /* Build year page (show 12 years at a time centered on current) */
+  const [yearPageOffset, setYearPageOffset] = React.useState(0);
+  const YEARS_PER_PAGE = 12;
+  const baseYear =
+    currentYear -
+    Math.floor(YEARS_PER_PAGE / 2) +
+    yearPageOffset * YEARS_PER_PAGE;
+  const pageYears = Array.from(
+    { length: YEARS_PER_PAGE },
+    (_, i) => baseYear + i,
+  ).filter((y) => y >= startYear && y <= endYear);
+
+  /* Reset year page when opening */
+  React.useEffect(() => {
+    if (pickerView === "year") setYearPageOffset(0);
+  }, [pickerView]);
+
+  return (
+    <div className="relative" ref={panelRef}>
+      {/* ── Header row: ◀  [Month] [Year]  ▶ ── */}
+      <div className="flex items-center justify-center gap-1.5 h-9 mb-2">
+        {/* Prev arrow */}
+        <button
+          type="button"
+          onClick={handlePrevMonth}
+          className="calendar-nav-btn"
+          aria-label="Mês anterior"
+        >
+          <ChevronLeft className="size-3.5" />
+        </button>
+
+        {/* Month button */}
+        <button
+          type="button"
+          onClick={() =>
+            setPickerView((v) => (v === "month" ? "none" : "month"))
+          }
+          className={cn(
+            "calendar-caption-btn",
+            pickerView === "month" && "calendar-caption-btn--active",
+          )}
+        >
+          <span>{MONTH_NAMES_SHORT[currentMonth]}</span>
+          <ChevronDown
+            className={cn(
+              "size-3 transition-transform duration-200",
+              pickerView === "month" && "rotate-180",
+            )}
+          />
+        </button>
+
+        {/* Year button */}
+        <button
+          type="button"
+          onClick={() => setPickerView((v) => (v === "year" ? "none" : "year"))}
+          className={cn(
+            "calendar-caption-btn",
+            pickerView === "year" && "calendar-caption-btn--active",
+          )}
+        >
+          <span>{currentYear}</span>
+          <ChevronDown
+            className={cn(
+              "size-3 transition-transform duration-200",
+              pickerView === "year" && "rotate-180",
+            )}
+          />
+        </button>
+
+        {/* Next arrow */}
+        <button
+          type="button"
+          onClick={handleNextMonth}
+          className="calendar-nav-btn"
+          aria-label="Próximo mês"
+        >
+          <ChevronRight className="size-3.5" />
+        </button>
+      </div>
+
+      {/* ── Month grid (4×3) ── */}
+      {pickerView === "month" && (
+        <div className="calendar-picker-panel animate-in fade-in-0 zoom-in-95 duration-150">
+          <div className="grid grid-cols-3 gap-1">
+            {MONTH_NAMES_SHORT.map((name, i) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => selectMonth(i)}
+                className={cn(
+                  "calendar-picker-cell",
+                  i === currentMonth && "calendar-picker-cell--selected",
+                )}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Year grid (4×3 with paging) ── */}
+      {pickerView === "year" && (
+        <div className="calendar-picker-panel animate-in fade-in-0 zoom-in-95 duration-150">
+          <div className="flex items-center justify-between mb-1.5">
+            <button
+              type="button"
+              onClick={() => setYearPageOffset((p) => p - 1)}
+              disabled={baseYear <= startYear}
+              className="calendar-nav-btn disabled:opacity-20"
+            >
+              <ChevronLeft className="size-3" />
+            </button>
+            <span className="text-xs font-bold text-muted uppercase tracking-widest">
+              {pageYears[0]}–{pageYears[pageYears.length - 1]}
+            </span>
+            <button
+              type="button"
+              onClick={() => setYearPageOffset((p) => p + 1)}
+              disabled={baseYear + YEARS_PER_PAGE > endYear}
+              className="calendar-nav-btn disabled:opacity-20"
+            >
+              <ChevronRight className="size-3" />
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-1">
+            {pageYears.map((year) => (
+              <button
+                key={year}
+                type="button"
+                onClick={() => selectYear(year)}
+                className={cn(
+                  "calendar-picker-cell",
+                  year === currentYear && "calendar-picker-cell--selected",
+                )}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Calendar wrapper ──────────────────────────────────────────────── */
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
+  const now = new Date();
+  const startYear = props.startMonth?.getFullYear() ?? now.getFullYear() - 80;
+  const endYear = props.endMonth?.getFullYear() ?? now.getFullYear() + 10;
+
+  const [displayMonth, setDisplayMonth] = React.useState(
+    () => props.defaultMonth ?? props.month ?? now,
+  );
+
+  /* Sync controlled month */
+  React.useEffect(() => {
+    if (props.month) setDisplayMonth(props.month);
+  }, [props.month]);
+
+  const handleMonthChange = (date: Date) => {
+    setDisplayMonth(date);
+    props.onMonthChange?.(date);
+  };
+
   return (
-    <DayPicker
-      showOutsideDays={showOutsideDays}
-      className={cn("p-1", className)}
-      locale={ptBR}
-      classNames={{
-        months: "flex flex-col sm:flex-row space-y-1 sm:space-x-2 sm:space-y-0",
-        month: "space-y-1",
-        month_caption:
-          "flex justify-center pt-0.5 relative items-center mb-0.5",
-        caption_label:
-          "text-xs font-black uppercase tracking-widest text-primary",
-        nav: "space-x-1 flex items-center",
-        button_previous: cn(
-          buttonVariants({ variant: "outline" }),
-          "absolute left-0.5 h-5 w-5 bg-transparent p-0 opacity-50 hover:opacity-100 border-border/50 rounded-md transition-all",
-        ),
-        button_next: cn(
-          buttonVariants({ variant: "outline" }),
-          "absolute right-0.5 h-5 w-5 bg-transparent p-0 opacity-50 hover:opacity-100 border-border/50 rounded-md transition-all",
-        ),
-        month_grid: "w-full border-collapse space-y-0",
-        weekdays: "flex",
-        weekday:
-          "text-muted-foreground rounded-md w-6 font-black text-xs uppercase tracking-tighter",
-        week: "flex w-full mt-0.5",
-        day: cn(
-          "relative p-0 text-center text-xs focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-primary/5 first:[&:has([aria-selected])]:rounded-l-sm last:[&:has([aria-selected])]:rounded-r-sm",
-          props.mode === "range"
-            ? "[&:has(>.day-range-end)]:rounded-r-sm [&:has(>.day-range-start)]:rounded-l-sm first:[&:has([aria-selected])]:rounded-l-sm last:[&:has([aria-selected])]:rounded-r-sm"
-            : "[&:has([aria-selected])]:rounded-sm",
-        ),
-        day_button: cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-6 w-6 p-0 font-normal rounded-sm transition-all hover:bg-primary hover:text-white text-xs",
-        ),
-        range_start:
-          "day-range-start [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:font-bold [&>button]:rounded-l-sm",
-        range_end:
-          "day-range-end [&>button]:bg-primary [&>button]:text-primary-foreground [&>button]:font-bold [&>button]:rounded-r-sm",
-        selected:
-          "[&:not(.day-outside)>button]:bg-primary [&:not(.day-outside)>button]:text-primary-foreground [&:not(.day-outside)>button:hover]:bg-accent-strong [&:not(.day-outside)>button:hover]:text-inverse [&:not(.day-outside)>button:focus]:bg-primary [&:not(.day-outside)>button:focus]:text-primary-foreground",
-        today:
-          "[&:not(.day-outside)>button]:bg-accent [&:not(.day-outside)>button]:text-accent-foreground [&:not(.day-outside)>button]:font-bold",
-        outside:
-          "day-outside [&>button]:text-muted-foreground/20 opacity-30 pointer-events-none",
-        disabled: "[&>button]:text-muted-foreground opacity-30",
-        range_middle: "[&>button]:bg-primary/10 [&>button]:text-primary",
-        hidden: "invisible",
-        ...classNames,
-      }}
-      components={{
-        Chevron: ({ className, orientation }) => {
-          const iconClassName = cn("h-3 w-3", className);
-
-          if (orientation === "left") {
-            return <ChevronLeft aria-hidden="true" className={iconClassName} />;
-          }
-
-          if (orientation === "up") {
-            return <ChevronUp aria-hidden="true" className={iconClassName} />;
-          }
-
-          if (orientation === "down") {
-            return <ChevronDown aria-hidden="true" className={iconClassName} />;
-          }
-
-          return <ChevronRight aria-hidden="true" className={iconClassName} />;
-        },
-      }}
-      {...props}
-    />
+    <div className={cn("calendar-root", className)}>
+      <CalendarCaption
+        displayMonth={displayMonth}
+        onMonthChange={handleMonthChange}
+        startYear={startYear}
+        endYear={endYear}
+      />
+      <DayPicker
+        showOutsideDays={showOutsideDays}
+        className="calendar-grid"
+        locale={ptBR}
+        month={displayMonth}
+        onMonthChange={handleMonthChange}
+        hideNavigation
+        classNames={{
+          months: "flex flex-col",
+          month: "w-full",
+          month_caption: "hidden",
+          nav: "hidden",
+          month_grid: "w-full border-collapse",
+          weekdays: "flex w-full mb-1",
+          weekday:
+            "text-muted/50 w-9 text-xs font-bold uppercase tracking-wider text-center flex items-center justify-center h-6",
+          week: "flex w-full",
+          day: cn(
+            "relative p-0 text-center text-xs focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-accent/8 first:[&:has([aria-selected])]:rounded-l-lg last:[&:has([aria-selected])]:rounded-r-lg",
+            props.mode === "range"
+              ? "[&:has(>.day-range-end)]:rounded-r-lg [&:has(>.day-range-start)]:rounded-l-lg first:[&:has([aria-selected])]:rounded-l-lg last:[&:has([aria-selected])]:rounded-r-lg"
+              : "[&:has([aria-selected])]:rounded-lg",
+          ),
+          day_button: cn(
+            buttonVariants({ variant: "ghost" }),
+            "h-9 w-9 p-0 font-medium rounded-lg text-xs flex items-center justify-center transition-all duration-150 hover:bg-accent/10 hover:text-accent active:scale-95",
+          ),
+          range_start:
+            "day-range-start [&>button]:bg-accent [&>button]:text-inverse [&>button]:font-bold [&>button]:rounded-l-lg [&>button]:shadow-md",
+          range_end:
+            "day-range-end [&>button]:bg-accent [&>button]:text-inverse [&>button]:font-bold [&>button]:rounded-r-lg [&>button]:shadow-md",
+          selected:
+            "[&:not(.day-outside)>button]:bg-accent [&:not(.day-outside)>button]:text-inverse [&:not(.day-outside)>button]:font-bold [&:not(.day-outside)>button]:shadow-md [&:not(.day-outside)>button:hover]:bg-accent-strong [&:not(.day-outside)>button:hover]:text-inverse [&:not(.day-outside)>button:focus]:bg-accent [&:not(.day-outside)>button:focus]:text-inverse",
+          today:
+            "[&:not(.day-outside)>button]:bg-accent/12 [&:not(.day-outside)>button]:text-accent [&:not(.day-outside)>button]:font-black [&:not(.day-outside)>button]:ring-1 [&:not(.day-outside)>button]:ring-accent/30",
+          outside:
+            "day-outside [&>button]:text-muted/20 opacity-30 pointer-events-none",
+          disabled: "[&>button]:text-muted/30 opacity-30 pointer-events-none",
+          range_middle:
+            "[&>button]:bg-accent/8 [&>button]:text-accent [&>button]:font-medium",
+          hidden: "invisible",
+          ...classNames,
+        }}
+        components={{
+          Chevron: ({ className: chevronClassName, orientation }) => {
+            const iconCn = cn("h-3.5 w-3.5", chevronClassName);
+            if (orientation === "left")
+              return <ChevronLeft aria-hidden="true" className={iconCn} />;
+            if (orientation === "up")
+              return <ChevronUp aria-hidden="true" className={iconCn} />;
+            if (orientation === "down")
+              return <ChevronDown aria-hidden="true" className={iconCn} />;
+            return <ChevronRight aria-hidden="true" className={iconCn} />;
+          },
+        }}
+        {...props}
+      />
+    </div>
   );
 }
 Calendar.displayName = "Calendar";

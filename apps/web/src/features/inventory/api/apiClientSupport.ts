@@ -7,6 +7,10 @@ export async function readJson<T>(response: Response): Promise<T> {
   return readApiJson<T>(response, { feature: "Inventory" });
 }
 
+export async function readVoid(response: Response): Promise<void> {
+  return readApiVoid(response, { feature: "Inventory" });
+}
+
 export async function readUpload(response: Response): Promise<void> {
   return readApiVoid(response, { feature: "Inventory media upload" });
 }

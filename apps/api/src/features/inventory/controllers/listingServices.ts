@@ -4,6 +4,7 @@ import type { AddVehicleCostInput } from "../../../domains/vehicle/services/Vehi
 import type { CreateVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
+import type { DeleteVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
 import type { ListVehicleListingsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
 import type { ListVehicleUnitsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
 import type { CreateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
@@ -98,6 +99,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: CreateListingInput,
   ) => Promise<InventoryListingDetailResponse>;
+  deleteListing: (
+    context: ServiceContext,
+    input: DeleteVehicleListingInput,
+  ) => Promise<void>;
   createVehicleSupplier: (
     context: ServiceContext,
     input: CreateVehicleSupplierInput,

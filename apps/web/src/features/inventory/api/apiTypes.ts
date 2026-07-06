@@ -45,6 +45,7 @@ export type InventoryApi = {
   createListing: (
     input: CreateInventoryListingInput,
   ) => Promise<InventoryListingDetail>;
+  deleteListing: (listingId: string) => Promise<void>;
   getListing: (listingId: string) => Promise<InventoryListingDetail>;
   lookupPlate: (input: {
     plate: string;

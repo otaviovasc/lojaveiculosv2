@@ -65,6 +65,8 @@ export class SaleReferenceError extends Error {
   }
 }
 
+export type SaleReadinessPurpose = "close" | "reserve";
+
 function referenceMessage(reference: "lead" | "vehicle_unit" | "unknown") {
   if (reference === "lead") return "Referenced lead was not found.";
   if (reference === "vehicle_unit") {
@@ -97,12 +99,18 @@ export async function findScopedSale(
   return sale;
 }
 
-export function validateSaleReadiness(sale: SaleRecord): void {
-  const missing = collectMissingSaleFields(sale);
+export function validateSaleReadiness(
+  sale: SaleRecord,
+  purpose: SaleReadinessPurpose = "close",
+): void {
+  const missing = collectMissingSaleFields(sale, purpose);
   if (missing.length) throw new SaleReadinessError(missing);
 }
 
-export function collectMissingSaleFields(sale: SaleRecord): readonly string[] {
+export function collectMissingSaleFields(
+  sale: SaleRecord,
+  purpose: SaleReadinessPurpose = "close",
+): readonly string[] {
   const missing: string[] = [];
   if (!hasBuyerName(sale.buyerSnapshot)) missing.push("buyer");
   if (!sale.leadId) missing.push("lead");
@@ -111,6 +119,15 @@ export function collectMissingSaleFields(sale: SaleRecord): readonly string[] {
   if (!sale.salePriceCents || sale.salePriceCents <= 0) {
     missing.push("sale_price");
   }
+
+  if (purpose === "reserve") {
+    const [signalPayment] = sale.payments;
+    if (!signalPayment || signalPayment.amountCents <= 0) {
+      missing.push("reservation_signal_payment");
+    }
+    return missing;
+  }
+
   const principalTotal = sale.payments.reduce(
     (total, payment) => total + payment.principalCents,
     0,

@@ -12,6 +12,7 @@ import {
   paymentPrincipalTotal,
   saleMissingFields,
 } from "./salesModel";
+import { SummaryRow } from "./SaleSummaryPanelParts";
 import type { SaleRecord } from "./types";
 
 export function StickySaleSummary({
@@ -27,21 +28,23 @@ export function StickySaleSummary({
   onReserve: () => void;
   sale: SaleRecord;
 }) {
-  const missing = saleMissingFields(sale);
-  const isReady = missing.length === 0;
+  const closeMissing = saleMissingFields(sale, "close");
+  const reserveMissing = saleMissingFields(sale, "reserve");
+  const isCloseReady = closeMissing.length === 0;
+  const isReserveReady = reserveMissing.length === 0;
 
   const totalPaid = paymentPrincipalTotal(sale);
+  const signalAmount = sale.payments[0]?.amountCents ?? 0;
   const salePrice = sale.salePriceCents ?? 0;
   const balance = salePrice - totalPaid;
   const canClose =
-    isReady && (sale.status === "draft" || sale.status === "pending");
-  const canReserve = isReady && sale.status === "draft";
+    isCloseReady && (sale.status === "draft" || sale.status === "pending");
+  const canReserve = isReserveReady && sale.status === "draft";
   const canCancel = sale.status === "draft" || sale.status === "pending";
   const isTerminal = sale.status === "closed" || sale.status === "cancelled";
   const cancelLabel =
     sale.status === "pending" ? "Cancelar reserva" : "Cancelar rascunho";
 
-  // Requirements checklist
   const checks = [
     {
       label: "Comprador Identificado",
@@ -62,6 +65,11 @@ export function StickySaleSummary({
       label: "Preço Comercial",
       ok: !!sale.salePriceCents,
       desc: "Preço de venda zerado",
+    },
+    {
+      label: "Sinal de Reserva",
+      ok: signalAmount > 0,
+      desc: "Sinal de reserva pendente",
     },
     {
       label: "Quitação de Parcelas",
@@ -167,10 +175,15 @@ export function StickySaleSummary({
             <ShieldAlert className="size-4" />
             <span>Reserva ativa</span>
           </div>
-        ) : isReady ? (
+        ) : isCloseReady ? (
           <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-2 rounded-xl border border-emerald-500/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
             <CheckCircle2 className="size-4" />
             <span>Pronta para Emitir</span>
+          </div>
+        ) : isReserveReady ? (
+          <div className="flex items-center gap-2 bg-accent/10 text-accent px-3 py-2 rounded-xl border border-accent/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+            <CheckCircle2 className="size-4" />
+            <span>Pronta para Reservar</span>
           </div>
         ) : (
           <div className="flex items-center gap-2 bg-warning/5 text-warning px-3 py-2 rounded-xl border border-warning/10 text-xs font-bold mb-1 justify-center">
@@ -223,22 +236,5 @@ export function StickySaleSummary({
         )}
       </div>
     </aside>
-  );
-}
-
-function SummaryRow({
-  label,
-  value,
-  valueClassName = "text-app-text",
-}: {
-  label: string;
-  value: string;
-  valueClassName?: string;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-3 text-xs">
-      <dt className="text-muted font-bold">{label}</dt>
-      <dd className={valueClassName}>{value}</dd>
-    </div>
   );
 }

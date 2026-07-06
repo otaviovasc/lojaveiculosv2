@@ -54,6 +54,7 @@ export const llmsText = `# Loja Veiculos API
 - List inventory listing groups: GET /api/v1/inventory/listings
 - Create listing: POST /api/v1/inventory/listings
 - Get listing: GET /api/v1/inventory/listings/{listingId}
+- Delete listing: DELETE /api/v1/inventory/listings/{listingId}
 - Update listing details: PATCH /api/v1/inventory/listings/{listingId}
 - Update listing description: PATCH /api/v1/inventory/listings/{listingId}/description
 - Update listing price: PATCH /api/v1/inventory/listings/{listingId}/price
@@ -131,6 +132,7 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/inventory/listings: returns listing-group DTOs; requires inventory.read.
 - POST /api/v1/inventory/listings: creates a listing and returns canonical V2 listing detail; requires inventory.create.
 - GET /api/v1/inventory/listings/{listingId}: returns canonical V2 listing detail with units and media; requires inventory.read.
+- DELETE /api/v1/inventory/listings/{listingId}: soft-deletes the listing and its units; requires inventory.delete.
 - PATCH /api/v1/inventory/listings/{listingId}: updates listing details; workflow statuses are blocked.
 - PATCH /api/v1/inventory/listings/{listingId}/description: updates descriptive fields; requires inventory.update_description.
 - PATCH /api/v1/inventory/listings/{listingId}/price: updates price; requires inventory.update_price.
@@ -171,7 +173,6 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/fiscal/documents: records one fiscal issue attempt and persists provider status; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
 - POST /api/v1/fiscal/documents/{documentId}/cancel: records one fiscal cancellation attempt with a reason; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
 - POST /api/v1/fiscal/documents/{documentId}/status-sync: reconciles one persisted fiscal document status with the configured gateway state; requires fiscal.manage and nfe entitlement.
-
 ## Current finance endpoints
 - GET /api/v1/finance/summary: returns revenue, expense, pending, and balance totals for the current store; requires finance.read.
 - GET /api/v1/finance/entries: lists finance entries with type, status, target link, limit, and offset filters; requires finance.read.

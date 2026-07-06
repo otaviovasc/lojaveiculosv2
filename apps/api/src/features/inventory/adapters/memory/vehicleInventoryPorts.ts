@@ -44,6 +44,10 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
       listings.set(listing.id, listing);
       return listing;
     },
+    delete: async (listing) => {
+      listings.delete(listing.id);
+      return { ...listing, updatedAt: new Date() };
+    },
     findById: async ({ listingId, storeId, tenantId }) => {
       const listing = listings.get(listingId);
       if (!listing) return null;
@@ -78,6 +82,10 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
       unitSequence += 1;
       units.set(unit.id, unit);
       return unit;
+    },
+    delete: async (unit) => {
+      units.delete(unit.id);
+      return { ...unit, updatedAt: new Date() };
     },
     findById: async ({ listingId, storeId, tenantId, unitId }) => {
       const unit = units.get(unitId);

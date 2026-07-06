@@ -41,7 +41,7 @@ export function AdminApp() {
       ) : activeSurface === "dashboard" ? (
         <DashboardHome onNavigate={navigate} />
       ) : activeSurface === "inventory" ? (
-        <InventoryListPage />
+        <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
       ) : activeSurface === "crm-leads" ? (
         <CrmModule routeSurface="leads" />
       ) : activeSurface === "sales" ? (
@@ -75,4 +75,24 @@ export function AdminApp() {
       )}
     </AppShell>
   );
+}
+
+function inventoryStoreLinks(
+  accountSession: ReturnType<typeof useOptionalAccountSession>,
+) {
+  if (!accountSession) return [];
+  const storesById = new Map<string, { id: string; slug: string }>();
+  for (const store of accountSession.stores) {
+    storesById.set(store.storeId, {
+      id: store.storeId,
+      slug: store.storeSlug,
+    });
+  }
+  if (accountSession.defaultStore) {
+    storesById.set(accountSession.defaultStore.storeId, {
+      id: accountSession.defaultStore.storeId,
+      slug: accountSession.defaultStore.storeSlug,
+    });
+  }
+  return [...storesById.values()];
 }
