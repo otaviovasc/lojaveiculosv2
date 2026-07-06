@@ -38,6 +38,8 @@ Phase 5: V2-backed pipeline contract and Wave 2 implementation.
 - Defined the Wave 2 pipeline persistence contract: DB-backed
   `crm_pipelines`/`crm_pipeline_stages`, lead-owned `pipelineId` and
   `pipelineStageId`, and an audited lead stage move endpoint.
+- Merged Worker G scheduled messages operations page:
+  - `d8dde89` merged Worker G schedules page (`a448939`).
 
 ## Key Findings
 
@@ -92,7 +94,8 @@ Wave 2:
 - Worker E: permission normalization and service helper compatibility.
   Implemented by orchestrator because it unblocks all later shared contracts.
 - Worker F: pipeline persistence.
-- Worker G: scheduled messages page.
+- Worker G: scheduled messages page. Completed in `a448939`; merged by
+  `d8dde89`.
 
 Wave 3:
 
@@ -129,6 +132,9 @@ pnpm --filter @lojaveiculosv2/web test -- CrmModule.test.tsx crmWhatsappConnecti
 pnpm --filter @lojaveiculosv2/web typecheck
 pnpm run validate:core-guardrails
 pnpm run test:frontend-design
+pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappSchedulesPage.test crmWhatsappApiExtras.test
+pnpm --filter @lojaveiculosv2/web typecheck
+pnpm run check:lines
 ```
 
 Phase 1 permission validation passed. `pnpm run check:lines` initially failed
@@ -150,11 +156,15 @@ store cache fixed the unrelated scan input and the guard passed.
   `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/tags-mobile.png`.
 - Worker B diagnostic-only screenshots remain under
   `/tmp/lojaveiculosv2-qa/crm-v2/worker-b/`.
+- Worker G screenshots:
+  `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/schedules-desktop.png`,
+  `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/schedules-mobile.png`.
 
 ## Next Orchestrator Actions
 
-1. Commit the Wave 2 pipeline contract update.
-2. Spawn Worker F for DB-backed pipeline persistence from the updated contract.
-3. Review Worker G scheduled-message page when it completes.
+1. Review Worker F DB-backed pipeline persistence when it completes.
+2. Merge Worker F if it satisfies schema, ServiceContext, permission, audit,
+   stable-error, and frontend API requirements.
+3. Run focused API/web validation for pipeline and schedules together.
 4. Keep visits and campaign work blocked behind pipeline and lead identity
    contracts.
