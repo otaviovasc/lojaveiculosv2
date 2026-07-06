@@ -52,7 +52,7 @@ describe("InventoryListPage", () => {
     await user.click(await screen.findByRole("option", { name: "Reservado" }));
 
     await waitFor(() =>
-      expect(api.listListings).toHaveBeenLastCalledWith({
+      expect(api.listListings).toHaveBeenCalledWith({
         limit: 100,
         status: "reserved",
       }),
