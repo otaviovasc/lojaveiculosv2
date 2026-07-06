@@ -1,5 +1,5 @@
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { CrmWhatsappProviderEventIssuesPanel } from "./CrmWhatsappProviderEventIssuesPanel";
+import { CrmWhatsappIntegrationsPage } from "./CrmWhatsappIntegrationsPage";
 import { CrmWhatsappSchedulesPage } from "./CrmWhatsappSchedulesPage";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 
@@ -26,60 +26,21 @@ export function WhatsappCampaignsSection({ inbox }: { inbox: InboxState }) {
 
 export function WhatsappIntegrationsSection({
   api,
+  canManage,
   canRead,
   canRetry,
 }: {
   api: CrmWhatsappApi;
+  canManage: boolean;
   canRead: boolean;
   canRetry: boolean;
 }) {
   return (
-    <section className="crm-whatsapp-section">
-      <WhatsappSectionIntro
-        eyebrow="Integracoes"
-        title="Bot externo, webhooks e eventos ZAPI"
-      />
-      {canRead ? (
-        <CrmWhatsappProviderEventIssuesPanel api={api} canRetry={canRetry} />
-      ) : null}
-      <div className="crm-whatsapp-feature-grid">
-        <WhatsappFeatureCard
-          body="Acoes do bot externo devem manter o mesmo contrato operacional do Repasses."
-          title="Bot actions"
-        />
-        <WhatsappFeatureCard
-          body="Entrada dedicada para Received, Delivery, Status, Connected, Disconnected e Chat Presence."
-          title="Webhooks"
-        />
-        <WhatsappFeatureCard
-          body="Eventos externos e reprocessamento ficam aqui, separados da rotina de atendimento."
-          title="Eventos"
-        />
-      </div>
-    </section>
-  );
-}
-
-function WhatsappSectionIntro({
-  eyebrow,
-  title,
-}: {
-  eyebrow: string;
-  title: string;
-}) {
-  return (
-    <header className="crm-whatsapp-section-intro">
-      <span>{eyebrow}</span>
-      <h2>{title}</h2>
-    </header>
-  );
-}
-
-function WhatsappFeatureCard({ body, title }: { body: string; title: string }) {
-  return (
-    <article className="crm-whatsapp-feature-card">
-      <strong>{title}</strong>
-      <p>{body}</p>
-    </article>
+    <CrmWhatsappIntegrationsPage
+      api={api}
+      canManage={canManage}
+      canRead={canRead}
+      canRetry={canRetry}
+    />
   );
 }

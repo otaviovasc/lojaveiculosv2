@@ -1,6 +1,7 @@
 import type { Context } from "hono";
 import { CrmLeadNotFoundError } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { CrmWhatsappGatewayError } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import { WhatsappBotIntegrationIncompleteError } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import { WhatsappQuickMessageError } from "../../../domains/crm/services/CrmWhatsapp/whatsappQuickMessageServiceSupport.js";
 import { WhatsappWebhookEventRetryError } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import {
@@ -71,6 +72,14 @@ export async function handleWhatsapp(
         error,
         message: error.message,
         status: 502,
+      });
+    }
+    if (error instanceof WhatsappBotIntegrationIncompleteError) {
+      return jsonApiError(context, {
+        code: "CRM_WHATSAPP_BOT_INTEGRATION_INCOMPLETE",
+        error,
+        message: error.message,
+        status: 422,
       });
     }
     if (error instanceof WhatsappVehiclePartialSendError) {

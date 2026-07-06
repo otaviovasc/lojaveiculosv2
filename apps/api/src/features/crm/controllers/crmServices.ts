@@ -31,6 +31,7 @@ import type {
 } from "../../../domains/crm/ports/crmRepository.js";
 import type { CrmLeadVisit } from "../../../domains/crm/ports/crmVisitRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
@@ -41,6 +42,7 @@ import {
   createDrizzleCrmRepository,
   type DrizzleCrmClient,
 } from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
+import { createDrizzleCrmBotIntegrationRepository } from "../../../infrastructure/db/crm/drizzleCrmBotIntegrationRepository.js";
 import { createDrizzleCrmVisitRepository } from "../../../infrastructure/db/crm/drizzleCrmVisitRepository.js";
 import { createDrizzleCrmPipelineRepository } from "../../../infrastructure/db/crm/drizzleCrmPipelineRepository.js";
 import { createDrizzleCrmConnectionRepository } from "../../../infrastructure/db/crm/drizzleCrmConnectionRepository.js";
@@ -172,6 +174,9 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
   };
   const defaultPorts = options.drizzleClient
     ? {
+        crmBotIntegrationRepository: createDrizzleCrmBotIntegrationRepository(
+          options.drizzleClient,
+        ),
         crmConnectionRepository: createDrizzleCrmConnectionRepository(
           options.drizzleClient,
         ),
@@ -192,6 +197,7 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
         vehicleInventory: createVehicleInventory(options.drizzleClient),
       }
     : {
+        crmBotIntegrationRepository: createMemoryCrmBotIntegrationRepository(),
         crmConnectionRepository: createMemoryCrmConnectionRepository(),
         crmPipelineRepository: createMemoryCrmPipelineRepository(),
         crmRepository: createMemoryCrmRepository(),
@@ -208,6 +214,9 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
         const { transaction: _transaction, ...transactionPorts } = ports;
         return action({
           ...transactionPorts,
+          crmBotIntegrationRepository: createDrizzleCrmBotIntegrationRepository(
+            tx as DrizzleCrmClient,
+          ),
           crmConnectionRepository: createDrizzleCrmConnectionRepository(
             tx as DrizzleCrmClient,
           ),

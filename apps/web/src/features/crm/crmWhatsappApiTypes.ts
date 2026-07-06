@@ -1,5 +1,9 @@
 import type { ProductCrmAuth } from "./productCrmTypes";
 import type {
+  CrmWhatsappBotIntegrationResponse,
+  CrmWhatsappUpdateBotIntegrationInput,
+} from "./crmWhatsappIntegrationTypes";
+import type {
   CrmWhatsappAddSessionTagInput,
   CrmWhatsappAssignSessionInput,
   CrmWhatsappCatalogProductsPage,
@@ -59,6 +63,7 @@ export type CrmWhatsappApi = {
     sessionId: CrmWhatsappSessionId,
     input: CrmWhatsappInterventionInput,
   ) => Promise<CrmWhatsappSession | null>;
+  getBotIntegration: () => Promise<CrmWhatsappBotIntegrationResponse>;
   listConnections: () => Promise<CrmWhatsappConnectionsResponse>;
   listMessages: (
     sessionId: CrmWhatsappSessionId,
@@ -97,6 +102,9 @@ export type CrmWhatsappApi = {
     connectionId: CrmWhatsappConnectionId,
     input: CrmWhatsappUpdateConnectionInput,
   ) => Promise<CrmWhatsappProviderConnection>;
+  updateBotIntegration: (
+    input: CrmWhatsappUpdateBotIntegrationInput,
+  ) => Promise<CrmWhatsappBotIntegrationResponse>;
 } & CrmWhatsappExtrasApi;
 
 export type CrmWhatsappExtrasApi = {

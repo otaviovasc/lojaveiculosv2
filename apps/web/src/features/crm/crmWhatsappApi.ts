@@ -91,6 +91,7 @@ export function createCrmWhatsappApi({
         crmWhatsappRoutes.interveneSession(sessionId, baseUrl),
         input,
       ),
+    getBotIntegration: () => getJson(crmWhatsappRoutes.botIntegration(baseUrl)),
     listCatalogProducts: (input) =>
       getJson(
         withQuery(crmWhatsappRoutes.catalogProducts(baseUrl), [
@@ -175,6 +176,8 @@ export function createCrmWhatsappApi({
       }),
     updateConnection: (connectionId, input) =>
       patchJson(crmWhatsappRoutes.connection(connectionId, baseUrl), input),
+    updateBotIntegration: (input) =>
+      patchJson(crmWhatsappRoutes.botIntegration(baseUrl), input),
     updateQuickMessage: (quickMessageId, input) =>
       patchJson(crmWhatsappRoutes.quickMessage(quickMessageId, baseUrl), input),
     updateTag: (tagId, input) =>

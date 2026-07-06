@@ -95,6 +95,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
         sessionId,
         input,
       ),
+    getBotIntegration: async () =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).getBotIntegration(),
     listConnections: async () =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -104,6 +108,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
         connectionId,
         input,
       ),
+    updateBotIntegration: async (input) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).updateBotIntegration(input),
     listMessages: async (sessionId, query) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).listMessages(
         sessionId,

@@ -292,4 +292,41 @@ describe("CRM WhatsApp extras API", () => {
       init: { body: JSON.stringify({}), method: "POST" },
     });
   });
+
+  it("loads and updates the external bot integration through V2", async () => {
+    const fake = createFakeFetch([
+      { integration: { enabled: false, secretConfigured: false } },
+      { integration: { enabled: true, secretConfigured: true } },
+    ]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(api.getBotIntegration()).resolves.toMatchObject({
+      integration: { enabled: false },
+    });
+    await expect(
+      api.updateBotIntegration({
+        enabled: true,
+        webhookSecret: "bot-secret",
+        webhookUrl: "https://bot.example.test/webhook",
+      }),
+    ).resolves.toMatchObject({
+      integration: { enabled: true, secretConfigured: true },
+    });
+
+    expect(fake.calls[0]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/integrations/bot",
+      init: { method: "GET" },
+    });
+    expect(fake.calls[1]).toMatchObject({
+      input: "/api/v1/crm/whatsapp/integrations/bot",
+      init: {
+        body: JSON.stringify({
+          enabled: true,
+          webhookSecret: "bot-secret",
+          webhookUrl: "https://bot.example.test/webhook",
+        }),
+        method: "PATCH",
+      },
+    });
+  });
 });

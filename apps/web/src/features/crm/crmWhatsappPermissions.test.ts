@@ -15,6 +15,7 @@ describe("CRM WhatsApp permissions", () => {
       canAssign: false,
       canClose: false,
       canConnectionManage: false,
+      canIntegrationsManage: false,
       canList: true,
       canRead: true,
       canScheduleCancel: false,
@@ -50,6 +51,7 @@ describe("CRM WhatsApp permissions", () => {
       canAssign: true,
       canClose: true,
       canConnectionManage: false,
+      canIntegrationsManage: false,
       canList: true,
       canRead: true,
       canScheduleCancel: true,
@@ -82,6 +84,16 @@ describe("CRM WhatsApp permissions", () => {
         createSession(["crm.whatsapp.connection.manage"]),
       ).canConnectionManage,
     ).toBe(true);
+  });
+
+  it("maps the integrations manage permission independently", () => {
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession(["crm.whatsapp.integrations.manage"]),
+      ),
+    ).toMatchObject({
+      canIntegrationsManage: true,
+    });
   });
 
   it("keeps assignable member discovery tied to WhatsApp queue access", () => {

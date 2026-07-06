@@ -97,6 +97,7 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
           {activeScope === "integrations" ? (
             <WhatsappIntegrationsSection
               api={whatsappApi}
+              canManage={inbox.permissions.canIntegrationsManage}
               canRead={inbox.permissions.canRead}
               canRetry={inbox.permissions.canSend}
             />

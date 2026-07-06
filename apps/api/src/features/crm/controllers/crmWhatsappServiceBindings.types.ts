@@ -8,6 +8,8 @@ import type {
   UpdateWhatsappConnectionInput,
   WhatsappConnection,
 } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
+import type { CrmBotIntegration } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
 import type {
   IngestZapiWhatsappWebhookInput,
   IngestZapiWhatsappWebhookResult,
@@ -130,6 +132,13 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   listWhatsappConnections: (
     context: ServiceContext,
   ) => Promise<readonly WhatsappConnection[]>;
+  getWhatsappBotIntegration: (
+    context: ServiceContext,
+  ) => Promise<CrmBotIntegration>;
+  updateWhatsappBotIntegration: CrmContextService<
+    UpdateWhatsappBotIntegrationInput,
+    CrmBotIntegration
+  >;
   updateWhatsappConnection: CrmContextService<
     UpdateWhatsappConnectionInput,
     WhatsappConnection

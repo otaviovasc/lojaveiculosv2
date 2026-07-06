@@ -2,6 +2,7 @@ import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
+import type { CrmBotIntegrationRepository } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
@@ -13,6 +14,7 @@ import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsa
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
+import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
@@ -46,6 +48,7 @@ export const defaultWhatsappPermissions = [
 export function createTestApp(
   options: {
     audit?: AuditSink;
+    crmBotIntegrationRepository?: CrmBotIntegrationRepository;
     crmConnectionRepository?: CrmConnectionRepository;
     crmPipelineRepository?: CrmPipelineRepository;
     crmRealtimeBroker?: CrmRealtimeBroker;
@@ -94,6 +97,9 @@ export function createTestApp(
         }),
       services: createCrmServices({
         ports: {
+          crmBotIntegrationRepository:
+            options.crmBotIntegrationRepository ??
+            createMemoryCrmBotIntegrationRepository(),
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),

@@ -43,6 +43,9 @@ describe("CRM WhatsApp API routes", () => {
     expect(crmWhatsappRoutes.quickMessages()).toBe(
       "/api/v1/crm/whatsapp/quick-messages",
     );
+    expect(crmWhatsappRoutes.botIntegration()).toBe(
+      "/api/v1/crm/whatsapp/integrations/bot",
+    );
     expect(crmWhatsappRoutes.quickMessage("quick_1")).toBe(
       "/api/v1/crm/whatsapp/quick-messages/quick_1",
     );

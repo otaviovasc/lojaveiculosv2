@@ -3,6 +3,7 @@ import type { StoreScopedServiceContext } from "../../../../shared/serviceContex
 import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
+import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
@@ -21,6 +22,7 @@ import type {
 } from "../../../vehicle/ports/vehicleInventoryRepository.js";
 
 export type CrmServicePorts = {
+  crmBotIntegrationRepository?: CrmBotIntegrationRepository;
   crmConnectionRepository?: CrmConnectionRepository;
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
@@ -109,6 +111,15 @@ export function requireCrmScope(context: ServiceContext): {
 
 export function getCrmRepository(ports: CrmServicePorts): CrmRepository {
   return ports.crmRepository;
+}
+
+export function getCrmBotIntegrationRepository(
+  ports: CrmServicePorts,
+): CrmBotIntegrationRepository {
+  if (!ports.crmBotIntegrationRepository) {
+    throw new CrmScopeError("crmBotIntegrationRepository");
+  }
+  return ports.crmBotIntegrationRepository;
 }
 
 export function getCrmVisitRepository(
