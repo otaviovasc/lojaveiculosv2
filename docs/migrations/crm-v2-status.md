@@ -6,8 +6,7 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 6: lead/WhatsApp identity link planning after the Wave 2
-pipeline/schedules merge.
+Phase 7: visits backend/UI after the lead/WhatsApp identity link.
 
 ## Completed This Pass
 
@@ -24,6 +23,7 @@ pipeline/schedules merge.
   `docs/migrations/crm-v2-status.md`,
   `docs/migrations/crm-v2-integration-contracts.md`,
   `docs/migrations/crm-v2-bot-contract.md`,
+  `docs/migrations/crm-v2-visits-contract.md`,
   `docs/migrations/crm-v2-smoke-checklist.md`.
 - Committed Phase 0 control-plane docs in `7b579eb`.
 - Spawned non-Spark Wave 1 workers on `gpt-5.5` high in in-repo worktrees.
@@ -45,6 +45,16 @@ pipeline/schedules merge.
   - `489d249` merged Worker F pipeline (`cc8e16a`, `4f5f568`).
 - Re-ran focused post-merge pipeline and schedules validation for API, web,
   typecheck, and guardrails.
+- Clarified the `GET /crm/whatsapp/sessions?leadId=<uuid>` contract in
+  `d1609ab`.
+- Defined the visits API/service contract in
+  `docs/migrations/crm-v2-visits-contract.md`.
+- Completed the lead/WhatsApp identity slice in `62ac658`:
+  - WhatsApp sessions can be filtered by linked V2 `leadId`.
+  - Lead detail Chat tab resolves existing linked sessions.
+  - Lead detail Chat tab can start a conversation through the existing
+    V2-native `leadId` start-conversation API.
+  - WhatsApp deep links now use `#/crm?surface=whatsapp&sessionId=<id>`.
 
 ## Key Findings
 
@@ -61,6 +71,9 @@ pipeline/schedules merge.
 - Generic lead create/update no longer writes pipeline fields directly. Lead
   stage changes must use the pipeline move service so scope, active-stage, and
   audit rules stay centralized.
+- Lead/WhatsApp identity now has a concrete frontend and backend path:
+  sessions expose `leadId`, lead detail resolves by `leadId`, and existing
+  session panels keep the reverse lead detail link.
 - Visits are schema-only today: `lead_visits` exists, but no
   service/controller/repository references it in `apps/api/src`.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
@@ -78,8 +91,7 @@ pipeline/schedules merge.
 ## Active Risks
 
 - Parallel workers can easily invent conflicting permission or API names.
-- Campaign work depends on stable tag, lead identity, and schedule contracts.
-- Visit work depends on lead/WhatsApp identity resolution.
+- Campaign work depends on stable tag, schedule, visit, and recipient contracts.
 - The HTML dashboards include some historical/stale CRM details. Use
   `docs/migrations/crm-v2-integration-contracts.md` as the active contract.
 - Known stale HTML details: a CRM tag column flag mention and one older note
@@ -106,7 +118,7 @@ Wave 2:
 
 Wave 3:
 
-- Worker H: lead/WhatsApp identity link.
+- Worker H: lead/WhatsApp identity link. Completed in `62ac658`.
 - Worker I: visits backend/UI.
 - Worker J: integrations/bot contract.
 
@@ -150,6 +162,17 @@ pnpm run check:db
 pnpm run check:services
 pnpm run check:frontend
 pnpm run check:lines
+pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.sessions crm.whatsapp.startConversationLead
+pnpm --filter @lojaveiculosv2/web test -- CrmLeadWhatsappPanel crmWhatsappApi CrmModule
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web typecheck
+pnpm run check:frontend
+pnpm run check:services
+pnpm run check:lines
+pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.sessions crm.whatsapp.sessions.leadFilter crm.whatsapp.startConversationLead
+pnpm --filter @lojaveiculosv2/web test -- CrmLeadWhatsappPanel crmWhatsappApi CrmModule
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web typecheck
 ```
 
 Phase 1 permission validation passed. `pnpm run check:lines` initially failed
@@ -181,12 +204,16 @@ again made `check:lines` pass.
   `apps/api/src/features/crm/controllers/crm.pipeline.test.ts`,
   `apps/api/src/features/crm/controllers/crm.pipeline.integrity.test.ts`,
   `apps/web/src/features/crm/crmLeadCreation.test.ts`.
+- Lead/WhatsApp identity evidence:
+  `apps/api/src/features/crm/controllers/crm.whatsapp.sessions.leadFilter.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.whatsapp.startConversationLead.test.ts`,
+  `apps/web/src/features/crm/CrmLeadWhatsappPanel.test.tsx`.
 
 ## Next Orchestrator Actions
 
-1. Start Phase 6 lead/WhatsApp identity link contract and implementation.
-2. Start visits backend/UI only after the identity link is stable.
-3. Keep campaign backend/UI blocked behind lead identity, schedules, and visit
+1. Start Worker I visits backend/UI from
+   `docs/migrations/crm-v2-visits-contract.md`.
+2. Keep campaign backend/UI blocked behind visits, schedules, and recipient
    contracts.
-4. Run full validation when the next stable CRM slice is merged, or record any
+3. Run full validation when the next stable CRM slice is merged, or record any
    unrelated failures explicitly here.

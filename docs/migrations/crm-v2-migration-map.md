@@ -41,11 +41,12 @@ Already V2-owned:
   the store-wide operations page is now present; the missing work is campaign
   linkage.
 - DB-backed CRM pipelines and stages with audited lead stage movement.
+- Lead detail Chat tab resolves WhatsApp sessions by V2 `leadId` and can start
+  a V2-native WhatsApp conversation by `leadId`.
 
 Still incomplete:
 
 - Dedicated visits, integrations, and campaigns pages.
-- Lead detail to WhatsApp navigation and session to lead detail polish.
 - Visit services and UI over `lead_visits`.
 - Visit backend service/controller/repository over `lead_visits`.
 - External bot integration and action API.
@@ -62,7 +63,7 @@ Still incomplete:
 | Connection page                | Completed | `CrmWhatsappConnectionAdmin.tsx`, `CrmWhatsappConnectionAdminParts.tsx`, `useCrmWhatsappConnections.ts`, CSS                                         | `CrmIntegracoes.tsx`, backend connection controllers                 | Real page; secrets stay write-only.                         |
 | Tags page                      | Completed | `CrmWhatsappTagManager.tsx`, `CrmWhatsappTagManagerParts.tsx`, `useCrmWhatsappTags.ts`, tag API tests                                                | `CrmEtiquetas.tsx`, `SortableTagItem.tsx`                            | Tags are labels only; no column/pipeline semantics.         |
 | Pipeline persistence           | Completed | new CRM pipeline schema/service/controller/API client; replace `crmPipelineStorage.ts`                                                               | V2 lead/pipeline UI                                                  | Landed before campaign/visit deep linking.                  |
-| Lead/WhatsApp identity         | Pending   | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                         | Lead is source of truth.                                    |
+| Lead/WhatsApp identity         | Completed | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                         | Lead is source of truth.                                    |
 | Visits                         | Pending   | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`                                                                       | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                          | Use `lead_visits`; no financing/test-drive-specific fields. |
 | Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `useCrmWhatsappScheduledMessages.ts`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                                 | Store-wide page landed; campaign linkage remains separate.  |
 | Integrations/bot               | Pending   | bot integration schema/services/controllers, `CrmWhatsappIntegrationsPage.tsx`                                                                       | `BotActionsController.ts`, `botRoutes.ts`, `CrmIntegracoes.tsx`      | V2 UUIDs, write-only secret, no old agents.                 |
