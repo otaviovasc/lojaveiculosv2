@@ -41,6 +41,8 @@
     "qa:flows": "pnpm run test:e2e",
     "qa:flows:local": "pnpm run test:e2e:local",
     "crm:zapi:diagnose": "node tools/migration/crm-whatsapp/zapi-connection-diagnostic.mjs",
+    "billing:asaas:sync-smoke": "pnpm --filter @lojaveiculosv2/api billing:asaas:sync-smoke",
+    "billing:asaas:webhook-smoke": "node tools/qa/asaas-billing-webhook-smoke.mjs",
     "test:frontend-design": "pnpm --filter @lojaveiculosv2/web exec vitest run tools/quality/frontend-design-rules.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api test -- productionSmoke",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",

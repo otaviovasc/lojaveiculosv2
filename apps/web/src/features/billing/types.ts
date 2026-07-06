@@ -16,10 +16,7 @@ export type EntitlementKey =
   | "subdomain";
 
 export type BillingEntitlementStatus =
-  | "active"
-  | "inactive"
-  | "suspended"
-  | "trialing";
+  "active" | "inactive" | "suspended" | "trialing";
 
 export type BillingPlan = {
   code: string;
@@ -59,6 +56,14 @@ export type BillingFinancialSummary = {
   paidThisPeriodCents: number;
 };
 
+export type BillingAuthority = {
+  currentActorCanManage: boolean;
+  managedBy: "agency" | "store_owner";
+  managerLabel: string;
+  ownerBillingAccess: "allowed" | "blocked_by_agency";
+  summary: string;
+};
+
 export type BillingStoreAllocation = {
   activeEntitlementCount: number;
   addonCount: number;
@@ -69,6 +74,40 @@ export type BillingStoreAllocation = {
   storeName: string;
   storeSlug: string;
   subscriptionStatus: BillingSubscription["status"] | null;
+};
+
+export type BillingChargePreviewLineItem = {
+  allocationPercent: number;
+  amountCents: number;
+  description: string | null;
+  endsAt: string | null;
+  fullAmountCents: number;
+  id: string;
+  itemType: "addon" | "plan";
+  kind: "subscription_item";
+  label: string;
+  periodEnd: string | null;
+  periodStart: string | null;
+  prorationApplied: boolean;
+  prorationFactor: number;
+  quantity: number;
+  sourceId: string | null;
+  startsAt: string | null;
+  storeId: string | null;
+  storeName: string | null;
+  unitAmountCents: number;
+};
+
+export type BillingChargePreview = {
+  cadence: "monthly";
+  collectionMethod: "card_on_file";
+  collectionTiming: "cycle_end";
+  currency: "BRL";
+  hasAgencyDiscount: false;
+  lineItems: readonly BillingChargePreviewLineItem[];
+  prorationPolicy: "store_days_active";
+  subtotalCents: number;
+  totalCents: number;
 };
 
 export type BillingEntitlementMatrixRow = {
@@ -95,6 +134,8 @@ export type BillingEntitlementEvent = {
 
 export type BillingOverview = {
   allocations: readonly BillingStoreAllocation[];
+  authority: BillingAuthority;
+  chargePreview: BillingChargePreview;
   entitlementEvents: readonly BillingEntitlementEvent[];
   entitlementMatrix: readonly BillingEntitlementMatrixRow[];
   entitlements: readonly StoreEntitlement[];

@@ -22,6 +22,8 @@ export async function getBillingOverview(
   );
 
   const overview = await ports.billingRepository.getOverview({
+    billingManagedBy: context.billingManagedBy ?? "store_owner",
+    currentActorCanManage: context.permissions.includes("billing.manage"),
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });

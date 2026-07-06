@@ -1,5 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import {
+  addons,
   payments,
   storeEntitlements,
   storeEntitlementEvents,
@@ -7,12 +8,14 @@ import {
   subscriptionItems,
 } from "@lojaveiculosv2/db";
 import type {
+  BillingChargeableItem,
   BillingEntitlementEvent,
   BillingFinancialSummary,
   BillingPlan,
   BillingStoreAllocation,
   BillingSubscription,
 } from "../../../domains/billing/ports/billingRepository.js";
+import { createChargeableItem } from "../../../domains/billing/readModels/billingChargePreviewModel.js";
 import { isUsableEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
@@ -133,6 +136,50 @@ export async function getFinancialSummary(
   };
 }
 
+export async function listChargeables(
+  db: DrizzleBillingClient,
+  input: { tenantId: string },
+  billingPlans: readonly BillingPlan[],
+  subscription: BillingSubscription | null,
+): Promise<BillingChargeableItem[]> {
+  if (!subscription) return [];
+
+  const [itemRows, storeRows, addonRows] = await Promise.all([
+    listSubscriptionItems(db, subscription.id),
+    db
+      .select()
+      .from(stores)
+      .where(eq(stores.tenantId, input.tenantId))
+      .limit(100),
+    db.select().from(addons).limit(100),
+  ]);
+  const storesById = new Map(storeRows.map((store) => [store.id, store]));
+  const plansById = new Map(billingPlans.map((plan) => [plan.id, plan]));
+  const addonsById = new Map(addonRows.map((addon) => [addon.id, addon]));
+
+  return itemRows.map((item) => {
+    const itemType = item.itemType;
+    const plan = item.planId ? plansById.get(item.planId) : null;
+    const addon = item.addonId ? addonsById.get(item.addonId) : null;
+    const store = item.storeId ? storesById.get(item.storeId) : null;
+
+    return createChargeableItem({
+      endsAt: item.endsAt,
+      id: item.id,
+      itemType,
+      label: chargeableLabel(itemType, plan?.name, addon?.name),
+      periodEnd: subscription.currentPeriodEnd,
+      periodStart: subscription.currentPeriodStart,
+      quantity: item.quantity,
+      sourceId: item.planId ?? item.addonId ?? null,
+      startsAt: item.startsAt,
+      storeId: item.storeId ? (item.storeId as never) : null,
+      storeName: store?.tradingName ?? null,
+      unitAmountCents: item.unitAmountCents,
+    });
+  });
+}
+
 function listSubscriptionItems(
   db: DrizzleBillingClient,
   subscriptionId: string,
@@ -146,6 +193,15 @@ function listSubscriptionItems(
 
 function isGlobalPlanItem(item: { itemType: string; storeId: string | null }) {
   return item.itemType === "plan" && !item.storeId;
+}
+
+function chargeableLabel(
+  itemType: "addon" | "plan",
+  planName?: string,
+  addonName?: string,
+) {
+  if (itemType === "plan") return planName ?? "Plano da loja";
+  return addonName ?? "Add-on";
 }
 
 function toRecord(value: unknown): Record<string, unknown> {

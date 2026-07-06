@@ -13,6 +13,7 @@ export type PermissionKey =
   | "audit.read"
   | "analytics.read"
   | "billing.manage"
+  | "billing.webhook.ingest"
   | "compliance.manage"
   | "crm.access"
   | "crm.manage"

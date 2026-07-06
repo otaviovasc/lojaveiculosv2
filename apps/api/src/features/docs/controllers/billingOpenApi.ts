@@ -1,3 +1,8 @@
+import {
+  billingProviderSyncPaths,
+  billingProviderSyncSchemas,
+} from "./billingProviderSyncOpenApi.js";
+
 export const billingSchemas = {
   BillingEntitlement: {
     type: "object",
@@ -20,6 +25,8 @@ export const billingSchemas = {
     additionalProperties: true,
     required: [
       "allocations",
+      "authority",
+      "chargePreview",
       "entitlementEvents",
       "entitlementMatrix",
       "entitlements",
@@ -30,6 +37,8 @@ export const billingSchemas = {
     ],
     properties: {
       allocations: { type: "array", items: { type: "object" } },
+      authority: { type: "object", additionalProperties: true },
+      chargePreview: { type: "object", additionalProperties: true },
       entitlementEvents: { type: "array", items: { type: "object" } },
       entitlementMatrix: { type: "array", items: { type: "object" } },
       entitlements: {
@@ -59,6 +68,7 @@ export const billingSchemas = {
       webhookConfigured: { type: "boolean" },
     },
   },
+  ...billingProviderSyncSchemas,
 } as const;
 
 export const billingPaths = {
@@ -95,6 +105,49 @@ export const billingPaths = {
               schema: { $ref: "#/components/schemas/BillingProviderStatus" },
             },
           },
+        },
+      },
+    },
+  },
+  ...billingProviderSyncPaths,
+  "/api/v1/billing/webhooks/asaas": {
+    post: {
+      tags: ["Billing"],
+      summary: "Receive Asaas billing webhooks",
+      operationId: "receiveAsaasBillingWebhook",
+      parameters: [
+        {
+          in: "header",
+          name: "asaas-access-token",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              additionalProperties: true,
+              required: ["id", "event"],
+              properties: {
+                event: { type: "string" },
+                id: { type: "string" },
+                payment: { type: "object", additionalProperties: true },
+                subscription: { type: "object", additionalProperties: true },
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        "200": {
+          description:
+            "Webhook accepted, idempotently recorded, and synchronized or ignored.",
+        },
+        "403": {
+          description: "Invalid Asaas webhook token.",
         },
       },
     },

@@ -32,6 +32,8 @@ export async function updateStoreEntitlement(
   assertPermission(context, "billing.manage");
   const scope = requireBillingScope(context);
   const before = await ports.billingRepository.getOverview({
+    billingManagedBy: context.billingManagedBy ?? "store_owner",
+    currentActorCanManage: context.permissions.includes("billing.manage"),
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
@@ -49,9 +51,11 @@ export async function updateStoreEntitlement(
   );
 
   const overview = await ports.billingRepository.updateStoreEntitlement({
+    billingManagedBy: context.billingManagedBy ?? "store_owner",
     featureKey: input.featureKey,
     metadata: input.metadata ?? {},
     actorId: context.actor.kind === "user" ? context.actor.id : null,
+    currentActorCanManage: context.permissions.includes("billing.manage"),
     previousStatus: beforeEntitlement?.status ?? null,
     reason: input.reason ?? null,
     source: "billing_console",

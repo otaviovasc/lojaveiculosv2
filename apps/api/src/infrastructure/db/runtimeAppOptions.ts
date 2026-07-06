@@ -57,6 +57,8 @@ import {
   createDrizzleBillingRepository,
   type DrizzleBillingClient,
 } from "./billing/drizzleBillingRepository.js";
+import { createDrizzleBillingProviderRepository } from "./billing/drizzleBillingProviderRepository.js";
+import { createDrizzleBillingWebhookRepository } from "./billing/drizzleBillingWebhookRepository.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
 import {
@@ -120,9 +122,16 @@ export function createRuntimeHttpAppOptions({
     }),
     billingServices: createBillingServices({
       ports: {
+        billingProviderRepository: createDrizzleBillingProviderRepository(
+          db as DrizzleBillingClient,
+        ),
         billingRepository: createDrizzleBillingRepository(
           db as DrizzleBillingClient,
         ),
+        billingWebhookRepository: createDrizzleBillingWebhookRepository(
+          db as DrizzleBillingClient,
+        ),
+        environment: env.APP_ENV ?? env.NODE_ENV ?? "production",
         paymentProviderGateway: createAsaasPaymentProviderGateway(env),
       },
     }),

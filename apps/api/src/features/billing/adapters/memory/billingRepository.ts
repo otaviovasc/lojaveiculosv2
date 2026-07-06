@@ -5,7 +5,10 @@ import type {
   BillingRepository,
   StoreEntitlement,
 } from "../../../../domains/billing/ports/billingRepository.js";
-import { createBillingOverview } from "../../../../domains/billing/readModels/billingOverviewModel.js";
+import {
+  createBillingAuthority,
+  createBillingOverview,
+} from "../../../../domains/billing/readModels/billingOverviewModel.js";
 
 const defaultPlans: readonly BillingPlan[] = [
   {
@@ -56,6 +59,8 @@ export function createMemoryBillingRepository(): BillingRepository {
         input.tenantId,
         entitlements,
         entitlementEvents,
+        input.billingManagedBy,
+        input.currentActorCanManage,
       );
     },
     async updateStoreEntitlement(input) {
@@ -95,6 +100,8 @@ export function createMemoryBillingRepository(): BillingRepository {
         input.tenantId,
         entitlements,
         entitlementEvents,
+        input.billingManagedBy,
+        input.currentActorCanManage,
       );
     },
   };
@@ -105,6 +112,8 @@ function toOverview(
   tenantId: string,
   entitlements: StoreEntitlement[],
   entitlementEvents: BillingEntitlementEvent[],
+  billingManagedBy: "agency" | "store_owner" = "store_owner",
+  currentActorCanManage = true,
 ): BillingOverview {
   return createBillingOverview({
     allocations: [
@@ -122,6 +131,10 @@ function toOverview(
         subscriptionStatus: "trialing",
       },
     ],
+    authority: createBillingAuthority({
+      billingManagedBy,
+      currentActorCanManage,
+    }),
     entitlementEvents,
     entitlements,
     financialSummary: {

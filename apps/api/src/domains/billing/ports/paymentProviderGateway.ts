@@ -1,5 +1,8 @@
 export type PaymentProvider = "asaas";
 
+export type PaymentProviderBillingType =
+  "BOLETO" | "CREDIT_CARD" | "PIX" | "UNDEFINED";
+
 export type PaymentProviderStatus = {
   configured: boolean;
   missingConfiguration: readonly string[];
@@ -7,6 +10,46 @@ export type PaymentProviderStatus = {
   webhookConfigured: boolean;
 };
 
+export type PaymentProviderCustomerInput = {
+  documentNumber: string | null;
+  email: string | null;
+  existingProviderCustomerId?: string | null;
+  externalReference: string;
+  name: string;
+};
+
+export type PaymentProviderCustomerResult = {
+  created: boolean;
+  provider: PaymentProvider;
+  providerCustomerId: string;
+};
+
+export type PaymentProviderSubscriptionInput = {
+  billingType: PaymentProviderBillingType;
+  customerId: string;
+  description: string;
+  existingProviderSubscriptionId?: string | null;
+  externalReference: string;
+  nextDueDate: string;
+  updatePendingPayments: boolean;
+  valueCents: number;
+};
+
+export type PaymentProviderSubscriptionResult = {
+  created: boolean;
+  currentPeriodEnd: Date | null;
+  provider: PaymentProvider;
+  providerSubscriptionId: string;
+  status: "ACTIVE" | "EXPIRED" | "INACTIVE" | "OVERDUE" | "UNKNOWN";
+};
+
 export type PaymentProviderGateway = {
   getProviderStatus: () => Promise<PaymentProviderStatus>;
+  syncCustomer?: (
+    input: PaymentProviderCustomerInput,
+  ) => Promise<PaymentProviderCustomerResult>;
+  syncSubscription?: (
+    input: PaymentProviderSubscriptionInput,
+  ) => Promise<PaymentProviderSubscriptionResult>;
+  verifyWebhookToken?: (token: string | null) => boolean;
 };

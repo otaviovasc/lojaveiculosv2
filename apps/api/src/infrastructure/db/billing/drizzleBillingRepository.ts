@@ -16,10 +16,14 @@ import type {
   BillingSubscription,
   StoreEntitlement,
 } from "../../../domains/billing/ports/billingRepository.js";
-import { createBillingOverview } from "../../../domains/billing/readModels/billingOverviewModel.js";
+import {
+  createBillingAuthority,
+  createBillingOverview,
+} from "../../../domains/billing/readModels/billingOverviewModel.js";
 import {
   getFinancialSummary,
   listAllocations,
+  listChargeables,
   listEntitlementEvents,
 } from "./drizzleBillingOverviewSupport.js";
 
@@ -81,10 +85,14 @@ export function createDrizzleBillingRepository(
     },
   };
 }
-
 async function getOverview(
   db: DrizzleBillingClient,
-  input: { storeId: string; tenantId: string },
+  input: {
+    billingManagedBy?: "agency" | "store_owner";
+    currentActorCanManage?: boolean;
+    storeId: string;
+    tenantId: string;
+  },
 ): Promise<BillingOverview> {
   const [billingPlans, entitlements, subscription, events] = await Promise.all([
     listPlans(db),
@@ -92,13 +100,23 @@ async function getOverview(
     findSubscription(db, input),
     listEntitlementEvents(db, input),
   ]);
-  const [allocations, financialSummary] = await Promise.all([
+  const [allocations, chargeables, financialSummary] = await Promise.all([
     listAllocations(db, input, billingPlans, subscription),
+    listChargeables(db, input, billingPlans, subscription),
     getFinancialSummary(db, input, subscription),
   ]);
 
   return createBillingOverview({
     allocations,
+    authority: createBillingAuthority({
+      ...(input.billingManagedBy
+        ? { billingManagedBy: input.billingManagedBy }
+        : {}),
+      ...(typeof input.currentActorCanManage === "boolean"
+        ? { currentActorCanManage: input.currentActorCanManage }
+        : {}),
+    }),
+    chargeables,
     entitlementEvents: events,
     entitlements,
     plans: billingPlans,
@@ -108,7 +126,6 @@ async function getOverview(
     tenantId: input.tenantId as never,
   });
 }
-
 async function listPlans(db: DrizzleBillingClient): Promise<BillingPlan[]> {
   const [planRows, featureRows] = await Promise.all([
     db.select().from(plans).orderBy(plans.monthlyPriceCents).limit(50),
@@ -130,7 +147,6 @@ async function listPlans(db: DrizzleBillingClient): Promise<BillingPlan[]> {
     status: plan.status,
   }));
 }
-
 async function listEntitlements(
   db: DrizzleBillingClient,
   input: { storeId: string; tenantId: string },
@@ -155,7 +171,6 @@ async function listEntitlements(
     status: row.status,
   }));
 }
-
 async function findSubscription(
   db: DrizzleBillingClient,
   input: { storeId: string; tenantId: string },
@@ -193,7 +208,6 @@ async function findSubscription(
     status: subscription.status,
   };
 }
-
 async function findPlan(
   db: DrizzleBillingClient,
   planId: string,
@@ -224,7 +238,6 @@ async function findPlan(
     status: plan.status,
   };
 }
-
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)

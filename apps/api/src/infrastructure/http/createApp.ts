@@ -25,6 +25,7 @@ import { installAccountProvisioningRoutes } from "./installAccountProvisioningRo
 import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
+import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
 
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
@@ -122,6 +123,7 @@ export function createApp(options: CreateAppOptions = {}) {
     "/api/v1/billing",
     createBillingFeature({
       contextFactory,
+      webhookContextFactory: createBillingWebhookContextFactory(options.audit),
       ...(options.billingServices ? { services: options.billingServices } : {}),
     }),
   );

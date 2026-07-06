@@ -67,7 +67,7 @@ export function BillingAllocationTable({
       <header className="billing-panel-header">
         <div>
           <h3>Alocacao por loja</h3>
-          <p>Plano, add-ons e custo mensal por unidade da agencia.</p>
+          <p>Plano, add-ons e custo mensal por loja.</p>
         </div>
       </header>
       <div className="billing-table-wrap">

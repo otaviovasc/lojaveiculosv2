@@ -2,6 +2,9 @@ import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import type {
   BillingEntitlementMatrixRow,
   BillingEntitlementStatus,
+  BillingAuthority,
+  BillingChargeableItem,
+  BillingChargePreview,
   BillingFinancialSummary,
   BillingOverview,
   BillingPlan,
@@ -9,6 +12,7 @@ import type {
   BillingSubscription,
   StoreEntitlement,
 } from "../ports/billingRepository.js";
+import { createChargePreview } from "./billingChargePreviewModel.js";
 
 export const billingFeatureOrder = [
   "subdomain",
@@ -22,6 +26,9 @@ export const billingFeatureOrder = [
 
 export function createBillingOverview(input: {
   allocations?: readonly BillingStoreAllocation[];
+  authority?: BillingAuthority;
+  chargeables?: readonly BillingChargeableItem[];
+  chargePreview?: BillingChargePreview;
   entitlementEvents?: BillingOverview["entitlementEvents"];
   entitlements: readonly StoreEntitlement[];
   financialSummary?: BillingFinancialSummary;
@@ -30,8 +37,18 @@ export function createBillingOverview(input: {
   subscription: BillingSubscription | null;
   tenantId: BillingOverview["tenantId"];
 }): BillingOverview {
+  const allocations = input.allocations ?? [];
   return {
-    allocations: input.allocations ?? [],
+    allocations,
+    authority: input.authority ?? defaultBillingAuthority(),
+    chargePreview:
+      input.chargePreview ??
+      createChargePreview({
+        allocations,
+        ...(input.chargeables !== undefined
+          ? { chargeables: input.chargeables }
+          : {}),
+      }),
     entitlementEvents: input.entitlementEvents ?? [],
     entitlementMatrix: createEntitlementMatrix({
       entitlements: input.entitlements,
@@ -43,6 +60,24 @@ export function createBillingOverview(input: {
     storeId: input.storeId,
     subscription: input.subscription,
     tenantId: input.tenantId,
+  };
+}
+
+export function createBillingAuthority(input: {
+  billingManagedBy?: "agency" | "store_owner";
+  currentActorCanManage?: boolean;
+}): BillingAuthority {
+  const managedBy = input.billingManagedBy ?? "store_owner";
+  const agencyManaged = managedBy === "agency";
+
+  return {
+    currentActorCanManage: input.currentActorCanManage ?? true,
+    managedBy,
+    managerLabel: agencyManaged ? "Agencia" : "Dono da loja",
+    ownerBillingAccess: agencyManaged ? "blocked_by_agency" : "allowed",
+    summary: agencyManaged
+      ? "A agencia gerencia a cobranca das lojas vinculadas."
+      : "O dono da loja gerencia a assinatura desta loja.",
   };
 }
 
@@ -93,4 +128,8 @@ function emptyFinancialSummary(): BillingFinancialSummary {
     overdueInvoiceCount: 0,
     paidThisPeriodCents: 0,
   };
+}
+
+function defaultBillingAuthority(): BillingAuthority {
+  return createBillingAuthority({});
 }

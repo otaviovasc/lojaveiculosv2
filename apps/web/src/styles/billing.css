@@ -72,9 +72,59 @@
 }
 
 .billing-summary-grid,
-.billing-entitlement-list {
+.billing-entitlement-list,
+.billing-auto-summary {
   display: grid;
   gap: 1rem;
+}
+
+.billing-auto-header {
+  align-items: flex-start;
+}
+
+.billing-authority-pill {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.5rem;
+  min-height: 2rem;
+  padding: 0 0.625rem;
+}
+
+.billing-auto-summary {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.billing-auto-summary > div {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 5rem;
+  padding: 0.875rem;
+}
+
+.billing-auto-summary span {
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-auto-summary strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  grid-column: 2;
 }
 
 .billing-provider-panel {
@@ -182,6 +232,10 @@
   }
 
   .billing-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .billing-auto-summary {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 

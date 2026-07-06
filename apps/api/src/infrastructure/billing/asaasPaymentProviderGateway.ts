@@ -1,40 +1,32 @@
-import type {
-  PaymentProviderGateway,
-  PaymentProviderStatus,
-} from "../../domains/billing/ports/paymentProviderGateway.js";
-
-const requiredAsaasKeys = [
-  "ASAAS_RUNTIME_IMPLEMENTATION",
-  "ASAAS_API_URL",
-  "ASAAS_API_KEY",
-] as const;
+import type { PaymentProviderGateway } from "../../domains/billing/ports/paymentProviderGateway.js";
+import { getAsaasProviderStatus } from "./asaasPaymentProviderConfig.js";
+import { createAsaasClient } from "./asaasPaymentProviderHttp.js";
+import {
+  syncAsaasCustomer,
+  syncAsaasSubscription,
+} from "./asaasPaymentProviderSync.js";
 
 export function createAsaasPaymentProviderGateway(
   env: Record<string, string | undefined>,
+  options: { fetcher?: typeof fetch } = {},
 ): PaymentProviderGateway {
+  const fetcher = options.fetcher ?? fetch;
   return {
     async getProviderStatus() {
       return getAsaasProviderStatus(env);
     },
+    async syncCustomer(input) {
+      return syncAsaasCustomer(createAsaasClient(env, fetcher), input);
+    },
+    async syncSubscription(input) {
+      return syncAsaasSubscription(createAsaasClient(env, fetcher), input);
+    },
+    verifyWebhookToken(token) {
+      return Boolean(
+        env.ASAAS_WEBHOOK_SECRET && token === env.ASAAS_WEBHOOK_SECRET,
+      );
+    },
   };
 }
 
-export function getAsaasProviderStatus(
-  env: Record<string, string | undefined>,
-): PaymentProviderStatus {
-  const missingConfiguration = [
-    ...requiredAsaasKeys.filter((key) => !env[key]),
-    ...(env.ASAAS_RUNTIME_IMPLEMENTATION &&
-    env.ASAAS_RUNTIME_IMPLEMENTATION !== "http"
-      ? ["ASAAS_RUNTIME_IMPLEMENTATION=http"]
-      : []),
-    ...(env.ASAAS_WEBHOOK_SECRET ? [] : ["ASAAS_WEBHOOK_SECRET"]),
-  ];
-
-  return {
-    configured: missingConfiguration.length === 0,
-    missingConfiguration,
-    provider: "asaas",
-    webhookConfigured: Boolean(env.ASAAS_WEBHOOK_SECRET),
-  };
-}
+export { getAsaasProviderStatus };

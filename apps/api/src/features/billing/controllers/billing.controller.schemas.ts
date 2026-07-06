@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+export const syncBillingProviderSubscriptionSchema = z.object({
+  billingType: z.enum(["BOLETO", "CREDIT_CARD", "PIX", "UNDEFINED"]).optional(),
+  nextDueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  updatePendingPayments: z.boolean().optional(),
+});
+
 export const updateEntitlementSchema = z.object({
   endsAt: z.string().datetime().nullable().optional(),
   featureKey: z.enum([

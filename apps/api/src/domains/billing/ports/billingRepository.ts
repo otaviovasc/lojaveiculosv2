@@ -1,10 +1,7 @@
 import type { EntitlementKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 
 export type BillingEntitlementStatus =
-  | "active"
-  | "inactive"
-  | "suspended"
-  | "trialing";
+  "active" | "inactive" | "suspended" | "trialing";
 
 export type BillingPlanFeature = {
   featureKey: EntitlementKey;
@@ -46,6 +43,14 @@ export type BillingFinancialSummary = {
   paidThisPeriodCents: number;
 };
 
+export type BillingAuthority = {
+  currentActorCanManage: boolean;
+  managedBy: "agency" | "store_owner";
+  managerLabel: string;
+  ownerBillingAccess: "allowed" | "blocked_by_agency";
+  summary: string;
+};
+
 export type BillingStoreAllocation = {
   activeEntitlementCount: number;
   addonCount: number;
@@ -56,6 +61,60 @@ export type BillingStoreAllocation = {
   storeName: string;
   storeSlug: string;
   subscriptionStatus: BillingSubscription["status"] | null;
+};
+
+export type BillingChargeableItem = {
+  amountCents: number;
+  description: string | null;
+  endsAt: Date | null;
+  fullAmountCents: number;
+  id: string;
+  itemType: "addon" | "plan";
+  label: string;
+  periodEnd: Date | null;
+  periodStart: Date | null;
+  prorationApplied: boolean;
+  prorationFactor: number;
+  quantity: number;
+  sourceId: string | null;
+  startsAt: Date | null;
+  storeId: StoreId | null;
+  storeName: string | null;
+  unitAmountCents: number;
+};
+
+export type BillingChargePreviewLineItem = {
+  allocationPercent: number;
+  amountCents: number;
+  description: string | null;
+  endsAt: Date | null;
+  fullAmountCents: number;
+  id: string;
+  itemType: "addon" | "plan";
+  kind: "subscription_item";
+  label: string;
+  periodEnd: Date | null;
+  periodStart: Date | null;
+  prorationApplied: boolean;
+  prorationFactor: number;
+  quantity: number;
+  sourceId: string | null;
+  startsAt: Date | null;
+  storeId: StoreId | null;
+  storeName: string | null;
+  unitAmountCents: number;
+};
+
+export type BillingChargePreview = {
+  cadence: "monthly";
+  collectionMethod: "card_on_file";
+  collectionTiming: "cycle_end";
+  currency: "BRL";
+  hasAgencyDiscount: false;
+  lineItems: readonly BillingChargePreviewLineItem[];
+  prorationPolicy: "store_days_active";
+  subtotalCents: number;
+  totalCents: number;
 };
 
 export type BillingEntitlementMatrixRow = {
@@ -82,6 +141,8 @@ export type BillingEntitlementEvent = {
 
 export type BillingOverview = {
   allocations: readonly BillingStoreAllocation[];
+  authority: BillingAuthority;
+  chargePreview: BillingChargePreview;
   entitlementEvents: readonly BillingEntitlementEvent[];
   entitlementMatrix: readonly BillingEntitlementMatrixRow[];
   entitlements: readonly StoreEntitlement[];
@@ -93,10 +154,12 @@ export type BillingOverview = {
 };
 
 export type UpdateStoreEntitlementInput = {
+  billingManagedBy?: "agency" | "store_owner";
   endsAt?: Date | null;
   featureKey: EntitlementKey;
   metadata?: Record<string, unknown>;
   actorId?: string | null;
+  currentActorCanManage?: boolean;
   previousStatus?: BillingEntitlementStatus | null;
   reason?: string | null;
   source: string;
@@ -108,6 +171,8 @@ export type UpdateStoreEntitlementInput = {
 
 export type BillingRepository = {
   getOverview: (input: {
+    billingManagedBy?: "agency" | "store_owner";
+    currentActorCanManage?: boolean;
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<BillingOverview>;

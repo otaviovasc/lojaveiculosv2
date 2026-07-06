@@ -320,6 +320,17 @@ VALUES
   ('nfe', 0, null, '12121212-1212-4212-8212-121212121212')
 ON CONFLICT (plan_id, feature_key) DO NOTHING;
 
+INSERT INTO addons (id, code, feature_key, monthly_price_cents, name, status)
+VALUES (
+  '15151515-1515-4515-8515-151515151515',
+  'crm_whatsapp_instance',
+  'crm',
+  24999,
+  'CRM WhatsApp',
+  'active'
+)
+ON CONFLICT (code) DO NOTHING;
+
 INSERT INTO billing_customers (
   id,
   document_number,
@@ -331,14 +342,17 @@ INSERT INTO billing_customers (
 )
 VALUES (
   '13131313-1313-4313-8313-131313131313',
-  '00000000000100',
+  '11222333000181',
   'billing-test@lojaveiculos.com.br',
   'Loja Teste LTDA',
   'asaas',
   'local_asaas_customer_test',
   '77777777-7777-4777-8777-777777777777'
 )
-ON CONFLICT (tenant_id, provider) DO NOTHING;
+ON CONFLICT (tenant_id, provider) DO UPDATE SET
+  document_number = EXCLUDED.document_number,
+  email = EXCLUDED.email,
+  name = EXCLUDED.name;
 
 INSERT INTO subscriptions (
   id,
@@ -353,14 +367,32 @@ INSERT INTO subscriptions (
 VALUES (
   '14141414-1414-4414-8414-141414141414',
   '13131313-1313-4313-8313-131313131313',
-  now() + interval '30 days',
-  now(),
+  date_trunc('day', now()) + interval '30 days',
+  date_trunc('day', now()),
   'asaas',
   'local_asaas_subscription_test',
   'trialing',
   '77777777-7777-4777-8777-777777777777'
 )
-ON CONFLICT (provider, provider_subscription_id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+  billing_customer_id = EXCLUDED.billing_customer_id,
+  current_period_end = EXCLUDED.current_period_end,
+  current_period_start = EXCLUDED.current_period_start,
+  provider = EXCLUDED.provider,
+  provider_subscription_id =
+    CASE
+      WHEN subscriptions.provider_subscription_id IS NULL
+        OR subscriptions.provider_subscription_id LIKE 'local_%'
+      THEN EXCLUDED.provider_subscription_id
+      ELSE subscriptions.provider_subscription_id
+    END,
+  status =
+    CASE
+      WHEN subscriptions.provider_subscription_id IS NULL
+        OR subscriptions.provider_subscription_id LIKE 'local_%'
+      THEN EXCLUDED.status
+      ELSE subscriptions.status
+    END;
 
 INSERT INTO subscription_items (
   addon_id,
@@ -378,7 +410,7 @@ SELECT
   'plan',
   '12121212-1212-4212-8212-121212121212',
   1,
-  now(),
+  date_trunc('day', now()),
   '66666666-6666-4666-8666-666666666666',
   '14141414-1414-4414-8414-141414141414',
   '77777777-7777-4777-8777-777777777777',
@@ -390,6 +422,57 @@ WHERE NOT EXISTS (
     AND item_type = 'plan'
     AND store_id = '66666666-6666-4666-8666-666666666666'
 );
+
+UPDATE subscription_items
+SET
+  ends_at = null,
+  quantity = 1,
+  starts_at = date_trunc('day', now()),
+  unit_amount_cents = 29900
+WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
+  AND item_type = 'plan'
+  AND store_id = '66666666-6666-4666-8666-666666666666';
+
+INSERT INTO subscription_items (
+  addon_id,
+  item_type,
+  plan_id,
+  quantity,
+  starts_at,
+  store_id,
+  subscription_id,
+  tenant_id,
+  unit_amount_cents
+)
+SELECT
+  '15151515-1515-4515-8515-151515151515',
+  'addon',
+  null,
+  1,
+  date_trunc('day', now()),
+  '66666666-6666-4666-8666-666666666666',
+  '14141414-1414-4414-8414-141414141414',
+  '77777777-7777-4777-8777-777777777777',
+  24999
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM subscription_items
+  WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
+    AND item_type = 'addon'
+    AND addon_id = '15151515-1515-4515-8515-151515151515'
+    AND store_id = '66666666-6666-4666-8666-666666666666'
+);
+
+UPDATE subscription_items
+SET
+  ends_at = null,
+  quantity = 1,
+  starts_at = date_trunc('day', now()),
+  unit_amount_cents = 24999
+WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
+  AND item_type = 'addon'
+  AND addon_id = '15151515-1515-4515-8515-151515151515'
+  AND store_id = '66666666-6666-4666-8666-666666666666';
 
 INSERT INTO role_template_permissions (role_template_id, permission_key)
 VALUES
@@ -1239,9 +1322,11 @@ INSERT INTO payments (
   tenant_id
 )
 VALUES
-  ('60000000-0000-4000-8000-000000000001', 29900, now() - interval '3 days', 'seed-growth-current', 'https://billing.local/invoices/seed-growth-current', now() - interval '2 days', 'asaas', 'local_asaas_payment_paid', '{"billingType": "PIX"}'::jsonb, 'paid', '66666666-6666-4666-8666-666666666666', '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777'),
-  ('60000000-0000-4000-8000-000000000002', 29900, now() + interval '27 days', 'seed-growth-next', 'https://billing.local/invoices/seed-growth-next', null, 'asaas', 'local_asaas_payment_pending', '{"billingType": "BOLETO"}'::jsonb, 'pending', '66666666-6666-4666-8666-666666666666', '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777')
-ON CONFLICT (id) DO NOTHING;
+  ('60000000-0000-4000-8000-000000000001', 54899, now() - interval '3 days', 'seed-growth-current', 'https://billing.local/invoices/seed-growth-current', now() - interval '2 days', 'asaas', 'local_asaas_payment_paid', '{"billingType": "PIX"}'::jsonb, 'paid', '66666666-6666-4666-8666-666666666666', '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777'),
+  ('60000000-0000-4000-8000-000000000002', 54899, now() + interval '27 days', 'seed-growth-next', 'https://billing.local/invoices/seed-growth-next', null, 'asaas', 'local_asaas_payment_pending', '{"billingType": "BOLETO"}'::jsonb, 'pending', '66666666-6666-4666-8666-666666666666', '14141414-1414-4414-8414-141414141414', '77777777-7777-4777-8777-777777777777')
+ON CONFLICT (id) DO UPDATE SET
+  amount_cents = EXCLUDED.amount_cents,
+  updated_at = now();
 
 INSERT INTO store_entitlement_events (
   id,

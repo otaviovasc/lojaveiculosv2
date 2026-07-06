@@ -11,6 +11,7 @@ import {
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createBillingApi, type BillingApi } from "./apiClient";
+import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
 import {
   BillingAllocationTable,
   BillingEntitlementMatrix,
@@ -89,7 +90,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
         eyebrow={
           <>
             <CreditCard aria-hidden="true" className="size-4" />
-            Agency billing
+            Billing
           </>
         }
         title="Console de billing e entitlements"
@@ -104,6 +105,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
           {providerStatus ? (
             <BillingProviderPanel status={providerStatus} />
           ) : null}
+          <BillingAutomaticBillingPanel overview={overview} />
           <BillingKpiGrid overview={overview} />
           <BillingAllocationTable allocations={overview.allocations} />
           <BillingEntitlementMatrix
@@ -153,8 +155,8 @@ function createRuntimeBillingApi(): BillingApi {
 
 function defaultReason(status: BillingEntitlementStatus) {
   return status === "active"
-    ? "Entitlement enabled from agency billing console."
-    : "Entitlement changed from agency billing console.";
+    ? "Entitlement enabled from billing console."
+    : "Entitlement changed from billing console.";
 }
 
 function errorMessage(error: unknown) {
