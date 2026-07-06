@@ -1,63 +1,85 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import type { CrmWhatsappScheduledMessage } from "./crmWhatsappTypes";
+import type {
+  CrmWhatsappListScheduledMessagesInput,
+  CrmWhatsappScheduledMessage,
+} from "./crmWhatsappTypes";
 import { asError } from "./crmWhatsappHookSupport";
 
 export function useCrmWhatsappScheduledMessages(
   api: CrmWhatsappApi,
   setError: (error: Error) => void,
 ) {
+  const [error, setScheduleError] = useState<Error | null>(null);
+
+  const fail = useCallback(
+    (caught: unknown) => {
+      const error = asError(caught);
+      setScheduleError(error);
+      setError(error);
+    },
+    [setError],
+  );
+
   const createScheduledMessage = useCallback(
     async (input: { scheduledAt: string; sessionId: string; text: string }) => {
       try {
         await api.createScheduledMessage(input);
+        setScheduleError(null);
         return true;
       } catch (caught) {
-        setError(asError(caught));
+        fail(caught);
         return false;
       }
     },
-    [api, setError],
+    [api, fail],
   );
 
   const listScheduledMessages = useCallback(
-    async (sessionId: string): Promise<CrmWhatsappScheduledMessage[]> => {
+    async (
+      input: CrmWhatsappListScheduledMessagesInput = {},
+    ): Promise<CrmWhatsappScheduledMessage[]> => {
       try {
-        return await api.listScheduledMessages({ sessionId });
+        const messages = await api.listScheduledMessages(input);
+        setScheduleError(null);
+        return messages;
       } catch (caught) {
-        setError(asError(caught));
+        fail(caught);
         return [];
       }
     },
-    [api, setError],
+    [api, fail],
   );
 
   const cancelScheduledMessage = useCallback(
     async (scheduledMessageId: string) => {
       try {
         await api.cancelScheduledMessage(scheduledMessageId);
+        setScheduleError(null);
         return true;
       } catch (caught) {
-        setError(asError(caught));
+        fail(caught);
         return false;
       }
     },
-    [api, setError],
+    [api, fail],
   );
 
   const processDueScheduledMessages = useCallback(async () => {
     try {
       await api.processDueScheduledMessages();
+      setScheduleError(null);
       return true;
     } catch (caught) {
-      setError(asError(caught));
+      fail(caught);
       return false;
     }
-  }, [api, setError]);
+  }, [api, fail]);
 
   return {
     cancelScheduledMessage,
     createScheduledMessage,
+    error,
     listScheduledMessages,
     processDueScheduledMessages,
   };

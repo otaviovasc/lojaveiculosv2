@@ -250,6 +250,25 @@ describe("CRM WhatsApp extras API", () => {
     });
   });
 
+  it("lists store-wide scheduled messages through V2 filters", async () => {
+    const fake = createFakeFetch([[{ id: "schedule_1", status: "pending" }]]);
+    const api = createCrmWhatsappApi({ fetch: fake.fetch });
+
+    await expect(
+      api.listScheduledMessages({
+        connectionId: "24000000-0000-4000-8000-000000000101",
+        limit: 100,
+        status: "pending",
+      }),
+    ).resolves.toEqual([{ id: "schedule_1", status: "pending" }]);
+
+    expect(fake.calls[0]).toMatchObject({
+      input:
+        "/api/v1/crm/whatsapp/scheduled-messages?connectionId=24000000-0000-4000-8000-000000000101&limit=100&status=pending",
+      init: { method: "GET" },
+    });
+  });
+
   it("lists and retries failed provider events through V2", async () => {
     const fake = createFakeFetch([
       { events: [{ id: "event_1", status: "failed" }] },

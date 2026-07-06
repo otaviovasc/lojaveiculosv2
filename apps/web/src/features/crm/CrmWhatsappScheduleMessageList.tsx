@@ -1,7 +1,9 @@
 import { Trash2 } from "lucide-react";
+import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappScheduledMessage,
   CrmWhatsappScheduledMessageStatus,
+  CrmWhatsappSession,
 } from "./crmWhatsappTypes";
 
 const statusLabels: Record<CrmWhatsappScheduledMessageStatus, string> = {
@@ -15,33 +17,52 @@ const statusLabels: Record<CrmWhatsappScheduledMessageStatus, string> = {
 export function ScheduleList({
   canCancel,
   cancellingId,
+  confirmingCancelId,
+  emptyLabel = "Nenhum agendamento.",
   isLoading,
   messages,
   onCancel,
+  onCancelRequest,
+  onDismissCancel,
+  sessions,
 }: {
   canCancel: boolean;
   cancellingId: string | null;
+  confirmingCancelId?: string | null;
+  emptyLabel?: string;
   isLoading: boolean;
   messages: CrmWhatsappScheduledMessage[];
+  onCancelRequest?: (scheduledMessageId: string) => void;
   onCancel: (scheduledMessageId: string) => Promise<void>;
+  onDismissCancel?: () => void;
+  sessions?: CrmWhatsappSession[];
 }) {
   if (isLoading) {
     return <p className="crm-whatsapp-schedule-empty">Carregando...</p>;
   }
   if (!messages.length) {
-    return <p className="crm-whatsapp-schedule-empty">Nenhum agendamento.</p>;
+    return <p className="crm-whatsapp-schedule-empty">{emptyLabel}</p>;
   }
   return (
     <div className="crm-whatsapp-schedule-list">
-      {messages.map((message) => (
-        <ScheduleRow
-          canCancel={canCancel}
-          cancellingId={cancellingId}
-          key={message.id}
-          message={message}
-          onCancel={onCancel}
-        />
-      ))}
+      {messages.map((message) => {
+        const session = sessions?.find(
+          (session) => String(session.id) === String(message.sessionId),
+        );
+        return (
+          <ScheduleRow
+            canCancel={canCancel}
+            cancellingId={cancellingId}
+            confirmingCancelId={confirmingCancelId ?? null}
+            key={message.id}
+            message={message}
+            onCancel={onCancel}
+            {...(onCancelRequest ? { onCancelRequest } : {})}
+            {...(onDismissCancel ? { onDismissCancel } : {})}
+            {...(session ? { session } : {})}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -49,40 +70,101 @@ export function ScheduleList({
 function ScheduleRow({
   canCancel,
   cancellingId,
+  confirmingCancelId,
   message,
   onCancel,
+  onCancelRequest,
+  onDismissCancel,
+  session,
 }: {
   canCancel: boolean;
   cancellingId: string | null;
+  confirmingCancelId: string | null;
   message: CrmWhatsappScheduledMessage;
   onCancel: (scheduledMessageId: string) => Promise<void>;
+  onCancelRequest?: (scheduledMessageId: string) => void;
+  onDismissCancel?: () => void;
+  session?: CrmWhatsappSession;
 }) {
+  const isConfirming = confirmingCancelId === message.id;
+  const sessionLabel = session
+    ? `${formatSessionName(session)} (${String(session.id)})`
+    : String(message.sessionId);
+  const leadLabel = session?.leadId ? `Lead ${session.leadId}` : null;
   return (
     <article className="crm-whatsapp-schedule-row">
       <div>
-        <span
-          className={[
-            "crm-whatsapp-schedule-status",
-            `crm-whatsapp-schedule-status-${message.status}`,
-          ].join(" ")}
-        >
-          {statusLabels[message.status]}
-        </span>
-        <strong>{formatDateTime(message.scheduledAt)}</strong>
+        <div className="crm-whatsapp-schedule-row-heading">
+          <span
+            className={[
+              "crm-whatsapp-schedule-status",
+              `crm-whatsapp-schedule-status-${message.status}`,
+            ].join(" ")}
+          >
+            {statusLabels[message.status]}
+          </span>
+          <strong>{formatDateTime(message.scheduledAt)}</strong>
+        </div>
+        <dl className="crm-whatsapp-schedule-meta">
+          <div>
+            <dt>Sessao</dt>
+            <dd>{sessionLabel}</dd>
+          </div>
+          {leadLabel ? (
+            <div>
+              <dt>Lead</dt>
+              <dd>{leadLabel}</dd>
+            </div>
+          ) : null}
+          <div>
+            <dt>Telefone</dt>
+            <dd>{message.phone}</dd>
+          </div>
+        </dl>
         <p>{message.text}</p>
-        {message.errorMessage ? <small>{message.errorMessage}</small> : null}
+        {message.errorMessage ? (
+          <small>Erro: {message.errorMessage}</small>
+        ) : null}
       </div>
       {canCancel && message.status === "pending" ? (
-        <button
-          aria-label="Cancelar agendamento"
-          className="crm-icon-action"
-          disabled={cancellingId === message.id}
-          onClick={() => void onCancel(message.id)}
-          title="Cancelar agendamento"
-          type="button"
-        >
-          <Trash2 />
-        </button>
+        isConfirming ? (
+          <div className="crm-whatsapp-schedule-confirm">
+            <span>Cancelar este agendamento?</span>
+            <button
+              className="crm-action crm-action-danger"
+              disabled={cancellingId === message.id}
+              onClick={() => void onCancel(message.id)}
+              type="button"
+            >
+              Confirmar
+            </button>
+            <button
+              className="crm-action crm-action-muted"
+              disabled={cancellingId === message.id}
+              onClick={onDismissCancel}
+              type="button"
+            >
+              Voltar
+            </button>
+          </div>
+        ) : (
+          <button
+            aria-label={`Cancelar agendamento de ${formatDateTime(
+              message.scheduledAt,
+            )}`}
+            className="crm-icon-action"
+            disabled={cancellingId === message.id}
+            onClick={() =>
+              onCancelRequest
+                ? onCancelRequest(message.id)
+                : void onCancel(message.id)
+            }
+            title="Cancelar agendamento"
+            type="button"
+          >
+            <Trash2 />
+          </button>
+        )
       ) : null}
     </article>
   );

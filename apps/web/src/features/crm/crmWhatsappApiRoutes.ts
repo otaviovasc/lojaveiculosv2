@@ -191,12 +191,14 @@ export function createCrmWhatsappTagsQuery(
 export function createCrmWhatsappScheduledMessagesQuery(
   input: {
     connectionId?: CrmWhatsappConnectionId;
+    limit?: number;
     sessionId?: CrmWhatsappSessionId;
     status?: string;
   } = {},
 ) {
   const params = new URLSearchParams();
   addOptionalParam(params, "connectionId", input.connectionId);
+  addOptionalParam(params, "limit", input.limit);
   addOptionalParam(params, "sessionId", input.sessionId);
   addOptionalParam(params, "status", input.status);
   return params;
@@ -217,6 +219,7 @@ function addOptionalParam(
     | boolean
     | CrmWhatsappConnectionId
     | CrmWhatsappSessionId
+    | number
     | string
     | undefined,
 ) {

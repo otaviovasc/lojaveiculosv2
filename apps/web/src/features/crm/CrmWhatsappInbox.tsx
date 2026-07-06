@@ -26,7 +26,6 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
     [api],
   );
   const inbox = useCrmWhatsappInbox(whatsappApi);
-  const activeSession = inbox.activeSession;
   const [activeScope, setActiveScope] =
     useState<CrmWhatsappScope>("conversations");
   const [newConversationOpen, setNewConversationOpen] = useState(false);
@@ -93,10 +92,7 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             </section>
           ) : null}
           {activeScope === "campaigns" ? (
-            <WhatsappCampaignsSection
-              activeSessionId={activeSession ? String(activeSession.id) : null}
-              inbox={inbox}
-            />
+            <WhatsappCampaignsSection inbox={inbox} />
           ) : null}
           {activeScope === "integrations" ? (
             <WhatsappIntegrationsSection

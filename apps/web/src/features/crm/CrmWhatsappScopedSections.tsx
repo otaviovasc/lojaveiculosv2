@@ -1,62 +1,26 @@
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { CrmWhatsappProviderEventIssuesPanel } from "./CrmWhatsappProviderEventIssuesPanel";
-import { CrmWhatsappScheduleMessageDialog } from "./CrmWhatsappScheduleMessageDialog";
+import { CrmWhatsappSchedulesPage } from "./CrmWhatsappSchedulesPage";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 
 type InboxState = ReturnType<typeof useCrmWhatsappInbox>;
 
-export function WhatsappCampaignsSection({
-  activeSessionId,
-  inbox,
-}: {
-  activeSessionId: string | null;
-  inbox: InboxState;
-}) {
+export function WhatsappCampaignsSection({ inbox }: { inbox: InboxState }) {
   return (
-    <section className="crm-whatsapp-section">
-      <WhatsappSectionIntro
-        eyebrow="Campanhas"
-        title="Agendamentos agora, campanhas em seguida"
-      />
-      {activeSessionId ? (
-        <CrmWhatsappScheduleMessageDialog
-          canCancel={inbox.permissions.canScheduleCancel}
-          canCreate={inbox.permissions.canScheduleCreate}
-          canProcess={inbox.permissions.canScheduleProcess}
-          canRead={inbox.permissions.canScheduleRead}
-          disabled={
-            !inbox.permissions.canScheduleCreate &&
-            !inbox.permissions.canScheduleRead
-          }
-          embedded
-          onCancel={inbox.cancelScheduledMessage}
-          onClose={() => undefined}
-          onList={() => inbox.listScheduledMessages(activeSessionId)}
-          onProcessDue={inbox.processDueScheduledMessages}
-          onSchedule={(input) =>
-            inbox.createScheduledMessage({
-              ...input,
-              sessionId: activeSessionId,
-            })
-          }
-        />
-      ) : (
-        <WhatsappFeatureCard
-          body="Selecione uma conversa para criar ou revisar mensagens agendadas."
-          title="Nenhuma conversa selecionada"
-        />
-      )}
-      <div className="crm-whatsapp-feature-grid">
-        <WhatsappFeatureCard
-          body="Espaco reservado para listas, segmentos, campanhas e envios controlados."
-          title="Campanhas"
-        />
-        <WhatsappFeatureCard
-          body="SLA, lembretes e recuperacao de leads vao viver aqui, fora da inbox."
-          title="Follow-up automatico"
-        />
-      </div>
-    </section>
+    <CrmWhatsappSchedulesPage
+      activeSession={inbox.activeSession}
+      canCancel={inbox.permissions.canScheduleCancel}
+      canCreate={inbox.permissions.canScheduleCreate}
+      canProcess={inbox.permissions.canScheduleProcess}
+      canRead={inbox.permissions.canScheduleRead}
+      connectionId={inbox.connectionId}
+      error={inbox.scheduledMessagesError}
+      onCancel={inbox.cancelScheduledMessage}
+      onList={inbox.listScheduledMessages}
+      onProcessDue={inbox.processDueScheduledMessages}
+      onSchedule={inbox.createScheduledMessage}
+      sessions={inbox.sessions}
+    />
   );
 }
 

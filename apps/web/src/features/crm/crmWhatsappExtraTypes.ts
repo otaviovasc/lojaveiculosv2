@@ -69,6 +69,7 @@ export type CrmWhatsappCreateScheduledMessageInput = {
 
 export type CrmWhatsappListScheduledMessagesInput = {
   connectionId?: CrmWhatsappConnectionId;
+  limit?: number;
   sessionId?: CrmWhatsappSessionId;
   status?: CrmWhatsappScheduledMessageStatus;
 };

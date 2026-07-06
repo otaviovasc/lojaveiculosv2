@@ -302,6 +302,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     selectedSessionIds: bulkSelection.selectedSessionIds,
     selectedSessions: bulkSelection.selectedSessions,
     selectedTagIds,
+    scheduledMessagesError: scheduledMessages.error,
     sendCatalog: messageState.sendCatalog,
     sendCatalogProduct: messageState.sendCatalogProduct,
     sendLocation: messageState.sendLocation,
