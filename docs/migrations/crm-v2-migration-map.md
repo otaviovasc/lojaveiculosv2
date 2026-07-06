@@ -1,0 +1,129 @@
+# CRM V2 Migration Map
+
+Last updated: 2026-07-06
+
+This map coordinates vertical slices for the Loja Veiculos V2 CRM migration.
+It reconciles current V2 code, `docs/migration.md`, `v2-plan.html`,
+`v2-backend-doc.html`, and the Repasses source repos.
+
+## Control Inputs
+
+- V2 target: `apps/web/src/features/crm`,
+  `apps/api/src/domains/crm`, `apps/api/src/features/crm`,
+  `apps/api/src/infrastructure/db/crm`, `packages/db/src/schema`.
+- Source UI reference: `../repasses-frontend/src/pages/crm`,
+  `../repasses-frontend/src/components/crm`, `../repasses-frontend/src/lib`.
+- Source backend reference: `../repasses-lojaveiculos-backend/src/controllers`,
+  `../repasses-lojaveiculos-backend/src/routes`,
+  `../repasses-lojaveiculos-backend/src/services`,
+  `../repasses-lojaveiculos-backend/src/jobs`,
+  `../repasses-lojaveiculos-backend/src/integrations`,
+  `../repasses-lojaveiculos-backend/src/database`.
+- Historical dashboards: `v2-backend-doc.html`, `v2-plan.html`.
+
+## Current V2 Baseline
+
+Already V2-owned:
+
+- ZAPI connection/session/message runtime.
+- ZAPI received, delivery, status, connected, disconnected, and chat-presence
+  webhooks.
+- Durable `provider_events` capture and retry surface.
+- Ticketed SSE live updates.
+- Inbound and outbound media through shared storage.
+- Text, media, location, catalog/product, vehicle sends.
+- Quick messages.
+- Session assignment, close, read/unread, human intervention.
+- Normalized WhatsApp tags with `crm_tags` and
+  `crm_whatsapp_session_tags`.
+- One-off scheduled messages.
+- Scheduled-message backend routes, services, and persistence already exist;
+  the missing work is a store-wide operations page and campaign linkage.
+
+Still incomplete:
+
+- Permission naming normalization for the requested plural/manage contract.
+- Compact WhatsApp scoped nav and page extraction.
+- Dedicated connection, tags, schedules, visits, integrations, and campaigns
+  pages.
+- DB-backed pipeline config.
+- Lead detail to WhatsApp navigation and session to lead detail polish.
+- Visit services and UI over `lead_visits`.
+- Visit backend service/controller/repository over `lead_visits`.
+- External bot integration and action API.
+- Campaign backend and campaign UI.
+- Full Playwright/mobile evidence for the migrated CRM OS.
+
+## Slice Map
+
+| Slice                          | Status  | Target owned files                                                                                                                                   | Source reference                                                     | Notes                                                       |
+| ------------------------------ | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Phase 0 control plane          | Active  | `docs/migrations/**`, optional CRM notes in `docs/migration.md`                                                                                      | `v2-backend-doc.html`, `v2-plan.html`                                | Keep docs current before worker edits.                      |
+| Phase 1 permissions/foundation | Pending | `apps/api/src/domains/identity/domain/*permission*`, `apps/web/src/features/crm/crmWhatsappPermissions.ts`, focused CRM service permission constants | Existing CRM permission tests                                        | Normalize names without weakening current access.           |
+| Shell/nav                      | Pending | `CrmWhatsappScopedNav.tsx`, `CrmWhatsappInbox.tsx`, `CrmWhatsappConversationWorkspace.tsx`, CRM WhatsApp CSS                                         | `CrmNavbar.tsx`, `CrmWhatsApp.tsx`                                   | Remove tab subtitles; rename `Conexao ZAPI` to `Conexao`.   |
+| Connection page                | Pending | `CrmWhatsappConnectionAdmin.tsx`, `CrmWhatsappConnectionAdminParts.tsx`, `useCrmWhatsappConnections.ts`, CSS                                         | `CrmIntegracoes.tsx`, backend connection controllers                 | Make it a real page; keep secrets write-only.               |
+| Tags page                      | Pending | `CrmWhatsappTagManager.tsx`, `CrmWhatsappTagManagerParts.tsx`, `useCrmWhatsappTags.ts`, tag API tests                                                | `CrmEtiquetas.tsx`, `SortableTagItem.tsx`                            | Tags are labels only; no column/pipeline semantics.         |
+| Pipeline persistence           | Pending | new CRM pipeline schema/service/controller/API client; replace `crmPipelineStorage.ts`                                                               | V2 lead/pipeline UI                                                  | Must run before campaign/visit deep linking.                |
+| Lead/WhatsApp identity         | Pending | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                         | Lead is source of truth.                                    |
+| Visits                         | Pending | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`                                                                       | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                          | Use `lead_visits`; no financing/test-drive-specific fields. |
+| Schedules page                 | Pending | `CrmWhatsappSchedulesPage.tsx`, `useCrmWhatsappScheduledMessages.ts`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                                 | Convert dialog-like management into store-wide page.        |
+| Integrations/bot               | Pending | bot integration schema/services/controllers, `CrmWhatsappIntegrationsPage.tsx`                                                                       | `BotActionsController.ts`, `botRoutes.ts`, `CrmIntegracoes.tsx`      | V2 UUIDs, write-only secret, no old agents.                 |
+| Campaign backend               | Pending | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, `crmScheduledMessageJob.ts`, campaign migrations | Needs pipeline/tag/lead contracts stable first.             |
+| Campaign UI                    | Pending | `CrmWhatsappCampaignsPage.tsx`, campaign API client/types/tests                                                                                      | `CrmCampaigns.tsx`                                                   | Starts after backend contract exists.                       |
+| Conversas parity polish        | Pending | existing WhatsApp workspace, message actions, details panel, mobile CSS/tests                                                                        | `CrmWhatsApp.tsx`, `CrmChatSession.tsx`                              | Keep chat focused; no placeholders.                         |
+| QA/evidence                    | Pending | Playwright specs, evidence docs/screenshots                                                                                                          | current QA reports                                                   | Must run throughout, not only at the end.                   |
+
+## Worker Ownership Rules
+
+- Workers own vertical slices, not frontend/backend layers.
+- Do not edit another worker's owned slice unless the orchestrator changes the
+  contract first.
+- Shared files that require orchestrator review before parallel edits:
+  `crmWhatsappTypes.ts`, `crmWhatsappApiTypes.ts`, `crmWhatsappApiRoutes.ts`,
+  `crmWhatsappApi.ts`, `runtimeApi.ts`,
+  `apps/api/src/features/crm/controllers/crmWhatsappServiceBindings*`,
+  `packages/db/src/schema/crm*.ts`, permission catalog files, and
+  `docs/migrations/crm-v2-integration-contracts.md`.
+- If a worker needs a shared contract change, document it in
+  `docs/migrations/workers/<worker>.md` and stop for review.
+
+## Source Behavior To Reuse
+
+- Operational page concepts from Repasses CRM pages.
+- ZAPI webhook and scheduled-message behavior where it maps cleanly to V2 UUIDs.
+- Campaign scheduling rules, recipient preview concepts, variable substitution,
+  rate controls, and metrics ideas.
+- Bot action categories, but not old auth/agent identifiers.
+
+## Source Behavior To Reject
+
+- Evolution provider code and polling jobs.
+- Meta Cloud API provider switching.
+- Old `crm_agents` semantics.
+- MiniBot tables/controllers as the V2 bot implementation.
+- `isColumn` tag behavior.
+- Pipeline semantics stored in tags.
+- Bridge auth contracts such as `x-crm-agent-id`.
+- uaZapi compatibility payloads.
+- Numeric Repasses route ids as V2 contracts.
+- Compatibility shims for old Repasses payloads without explicit owner and
+  removal plan.
+- Rendering or logging secret values.
+
+## Verification Commands
+
+Focused commands used by CRM workers:
+
+```bash
+pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web test -- crmWhatsapp
+pnpm --filter @lojaveiculosv2/web test -- crmPipeline
+pnpm --filter @lojaveiculosv2/web typecheck
+pnpm exec playwright test tests/e2e/crm-whatsapp-extras.spec.ts --project=chromium
+pnpm exec playwright test tests/e2e/crm-whatsapp-personas.spec.ts --project=chromium
+pnpm run validate
+```
+
+Run narrower tests first. Full `pnpm run validate` remains the final handoff
+gate unless unrelated failures are documented.
