@@ -127,110 +127,121 @@ export function CrmWhatsappTagManager({
     }
   };
 
-  return (
-    <div
-      aria-label="Etiquetas WhatsApp"
-      aria-modal={embedded ? undefined : true}
-      className={
-        embedded
-          ? "crm-whatsapp-action-dialog crm-whatsapp-action-embedded crm-whatsapp-tag-manager-shell"
-          : "crm-whatsapp-action-dialog"
-      }
-      role={embedded ? "region" : "dialog"}
-    >
-      <div className="crm-whatsapp-action-panel crm-whatsapp-tag-manager">
-        <header>
-          <span>
-            <Tag />
-          </span>
-          <h2>Etiquetas</h2>
-          {embedded ? null : (
-            <button
-              aria-label="Fechar"
-              className="crm-icon-action"
-              onClick={onClose}
-              type="button"
-            >
-              <X />
-            </button>
-          )}
-        </header>
-        <div className="crm-whatsapp-action-fields">
-          <TagDraftFields
-            disabled={disabled || isSaving}
-            draft={draft}
-            onChange={setDraft}
-          />
-          <p className="crm-whatsapp-tag-manager-note">
-            Etiquetas sao labels simples para organizar conversas no WhatsApp.
-            Use para marcar prioridade, origem ou proxima acao.
-          </p>
-          {localError ? (
-            <p className="crm-whatsapp-tag-manager-error">{localError}</p>
-          ) : null}
-          {statusMessage ? (
-            <p aria-live="polite" className="crm-whatsapp-tag-manager-status">
-              {statusMessage}
-            </p>
-          ) : null}
-          <div className="crm-whatsapp-tag-admin-list">
-            {tags.length ? (
-              tags.map((tag, index) => (
-                <TagAdminRow
-                  disabled={Boolean(disabled) || hasPendingAction}
-                  index={index}
-                  key={tag.id}
-                  onDelete={setTagToDelete}
-                  onEdit={editTag}
-                  onMove={(nextIndex, direction) =>
-                    void moveTag(nextIndex, direction)
-                  }
-                  pendingAction={pendingAction}
-                  tag={tag}
-                  tagsLength={tags.length}
-                />
-              ))
-            ) : (
-              <p className="crm-whatsapp-tag-manager-empty">
-                Nenhuma etiqueta criada.
-              </p>
-            )}
-          </div>
-        </div>
-        <footer>
-          {editing ? (
-            <button
-              className="crm-action crm-action-muted"
-              onClick={reset}
-              type="button"
-            >
-              Nova
-            </button>
-          ) : null}
-          {embedded ? null : (
-            <button
-              className="crm-action crm-action-muted"
-              onClick={onClose}
-              type="button"
-            >
-              Fechar
-            </button>
-          )}
+  const panel = (
+    <div className="crm-whatsapp-action-panel crm-whatsapp-tag-manager">
+      <header>
+        <span>
+          <Tag />
+        </span>
+        <h2>Etiquetas</h2>
+        {embedded ? null : (
           <button
-            className="crm-action"
-            disabled={!canSave}
-            onClick={() => void save()}
+            aria-label="Fechar"
+            className="crm-icon-action"
+            onClick={onClose}
             type="button"
           >
-            {editing ? (
-              <Save aria-hidden="true" />
-            ) : (
-              <Plus aria-hidden="true" />
-            )}
-            {editing ? "Atualizar" : "Criar etiqueta"}
+            <X />
           </button>
-        </footer>
+        )}
+      </header>
+      <div className="crm-whatsapp-action-fields">
+        <TagDraftFields
+          disabled={disabled || isSaving}
+          draft={draft}
+          onChange={setDraft}
+        />
+        <p className="crm-whatsapp-tag-manager-note">
+          Etiquetas sao labels simples para organizar conversas no WhatsApp. Use
+          para marcar prioridade, origem ou proxima acao.
+        </p>
+        {localError ? (
+          <p className="crm-whatsapp-tag-manager-error">{localError}</p>
+        ) : null}
+        {statusMessage ? (
+          <p aria-live="polite" className="crm-whatsapp-tag-manager-status">
+            {statusMessage}
+          </p>
+        ) : null}
+        <div className="crm-whatsapp-tag-admin-list">
+          {tags.length ? (
+            tags.map((tag, index) => (
+              <TagAdminRow
+                disabled={Boolean(disabled) || hasPendingAction}
+                index={index}
+                key={tag.id}
+                onDelete={setTagToDelete}
+                onEdit={editTag}
+                onMove={(nextIndex, direction) =>
+                  void moveTag(nextIndex, direction)
+                }
+                pendingAction={pendingAction}
+                tag={tag}
+                tagsLength={tags.length}
+              />
+            ))
+          ) : (
+            <p className="crm-whatsapp-tag-manager-empty">
+              Nenhuma etiqueta criada.
+            </p>
+          )}
+        </div>
       </div>
+      <footer>
+        {editing ? (
+          <button
+            className="crm-action crm-action-muted"
+            onClick={reset}
+            type="button"
+          >
+            Nova
+          </button>
+        ) : null}
+        {embedded ? null : (
+          <button
+            className="crm-action crm-action-muted"
+            onClick={onClose}
+            type="button"
+          >
+            Fechar
+          </button>
+        )}
+        <button
+          className="crm-action"
+          disabled={!canSave}
+          onClick={() => void save()}
+          type="button"
+        >
+          {editing ? <Save aria-hidden="true" /> : <Plus aria-hidden="true" />}
+          {editing ? "Atualizar" : "Criar etiqueta"}
+        </button>
+      </footer>
+    </div>
+  );
+
+  return embedded ? (
+    <section
+      aria-label="Etiquetas WhatsApp"
+      className="crm-whatsapp-tag-manager-page"
+    >
+      {panel}
+      {tagToDelete ? (
+        <TagDeleteConfirm
+          disabled={Boolean(disabled) || Boolean(pendingAction)}
+          onCancel={() => setTagToDelete(null)}
+          onConfirm={() => void deleteTag()}
+          tag={tagToDelete}
+        />
+      ) : null}
+    </section>
+  ) : (
+    <div
+      aria-label="Etiquetas WhatsApp"
+      aria-modal="true"
+      className="crm-whatsapp-action-dialog"
+      role="dialog"
+    >
+      {panel}
       {tagToDelete ? (
         <TagDeleteConfirm
           disabled={Boolean(disabled) || Boolean(pendingAction)}
