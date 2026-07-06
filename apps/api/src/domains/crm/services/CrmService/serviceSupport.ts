@@ -10,6 +10,7 @@ import {
   type CrmRealtimePublisher,
 } from "../../ports/crmRealtimePublisher.js";
 import type { CrmRepository } from "../../ports/crmRepository.js";
+import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
@@ -24,6 +25,7 @@ export type CrmServicePorts = {
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
   crmRepository: CrmRepository;
+  crmVisitRepository?: CrmVisitRepository;
   crmWebhookEventRepository?: CrmWebhookEventRepository;
   crmWhatsappGateway?: CrmWhatsappGateway;
   crmWhatsappMediaStorage?: ObjectStorage;
@@ -74,6 +76,20 @@ export class CrmPipelineInUseError extends Error {
   }
 }
 
+export class CrmVisitNotFoundError extends Error {
+  constructor(visitId: string) {
+    super(`CRM visit not found: ${visitId}`);
+    this.name = "CrmVisitNotFoundError";
+  }
+}
+
+export class CrmVisitSessionMismatchError extends Error {
+  constructor() {
+    super("WhatsApp session is not linked to the requested lead.");
+    this.name = "CrmVisitSessionMismatchError";
+  }
+}
+
 export class CrmScopeError extends Error {
   constructor(fieldName: string) {
     super(`CRM service requires ${fieldName}.`);
@@ -93,6 +109,15 @@ export function requireCrmScope(context: ServiceContext): {
 
 export function getCrmRepository(ports: CrmServicePorts): CrmRepository {
   return ports.crmRepository;
+}
+
+export function getCrmVisitRepository(
+  ports: CrmServicePorts,
+): CrmVisitRepository {
+  if (!ports.crmVisitRepository) {
+    throw new CrmScopeError("crmVisitRepository");
+  }
+  return ports.crmVisitRepository;
 }
 
 export function getCrmPipelineRepository(

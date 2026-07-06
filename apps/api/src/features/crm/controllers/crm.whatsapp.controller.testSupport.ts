@@ -6,6 +6,7 @@ import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConn
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { CrmVisitRepository } from "../../../domains/crm/ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../../domains/crm/ports/crmWebhookEventRepository.js";
 import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
@@ -13,6 +14,7 @@ import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/s
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
+import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createCrmFeature } from "./crm.controller.js";
 import { createCrmServices } from "./crmServices.js";
@@ -48,6 +50,7 @@ export function createTestApp(
     crmPipelineRepository?: CrmPipelineRepository;
     crmRealtimeBroker?: CrmRealtimeBroker;
     crmRepository?: CrmRepository;
+    crmVisitRepository?: CrmVisitRepository;
     crmWebhookEventRepository?: CrmWebhookEventRepository;
     crmWhatsappGateway?: Partial<CrmWhatsappGateway>;
     crmWhatsappMediaStorage?: ObjectStorage;
@@ -98,6 +101,8 @@ export function createTestApp(
             options.crmPipelineRepository ??
             createMemoryCrmPipelineRepository(),
           crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
+          crmVisitRepository:
+            options.crmVisitRepository ?? createMemoryCrmVisitRepository(),
           ...(options.transaction ? { transaction: options.transaction } : {}),
           ...(options.crmWhatsappRepository
             ? { crmWhatsappRepository: options.crmWhatsappRepository }

@@ -60,27 +60,6 @@ export function WhatsappIntegrationsSection({
   );
 }
 
-export function WhatsappVisitsSection() {
-  return (
-    <section className="crm-whatsapp-section">
-      <WhatsappSectionIntro
-        eyebrow="Visitas"
-        title="Agenda de visitas e test-drives"
-      />
-      <div className="crm-whatsapp-feature-grid">
-        <WhatsappFeatureCard
-          body="Reservado para visitas originadas no WhatsApp, confirmacoes e comparecimento."
-          title="Visitas"
-        />
-        <WhatsappFeatureCard
-          body="Este espaco evita entupir a conversa com a futura gestao de test-drive."
-          title="Operacao da loja"
-        />
-      </div>
-    </section>
-  );
-}
-
 function WhatsappSectionIntro({
   eyebrow,
   title,

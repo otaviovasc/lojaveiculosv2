@@ -20,6 +20,7 @@ import {
   updateLeadSchema,
 } from "./crm.controller.schemas.js";
 import { registerCrmPipelineRoutes } from "./crm.pipeline.routes.js";
+import { registerCrmVisitRoutes } from "./crm.visits.routes.js";
 import {
   CrmRequestValidationError,
   handleCrm,
@@ -72,6 +73,13 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
   );
 
   registerCrmPipelineRoutes(crmFeature, {
+    createContext,
+    handleCrm,
+    parseJson,
+    services,
+  });
+
+  registerCrmVisitRoutes(crmFeature, {
     createContext,
     handleCrm,
     parseJson,

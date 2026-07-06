@@ -13,6 +13,8 @@ import {
   CrmPipelineNotFoundError,
   CrmPipelineStageNotFoundError,
   CrmScopeError,
+  CrmVisitNotFoundError,
+  CrmVisitSessionMismatchError,
 } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 
 export async function handleCrm(
@@ -100,6 +102,24 @@ export async function handleCrm(
     if (error instanceof CrmPipelineInUseError) {
       return jsonApiError(context, {
         code: "CRM_PIPELINE_IN_USE",
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+
+    if (error instanceof CrmVisitNotFoundError) {
+      return jsonApiError(context, {
+        code: "CRM_VISIT_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
+    }
+
+    if (error instanceof CrmVisitSessionMismatchError) {
+      return jsonApiError(context, {
+        code: "CRM_VISIT_SESSION_MISMATCH",
         error,
         message: error.message,
         status: 409,

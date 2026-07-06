@@ -14,6 +14,8 @@ const permissions = {
   tagAssign: "crm.whatsapp.tags.assign",
   tagManage: "crm.whatsapp.tags.manage",
   toggleIntervention: "crm.whatsapp.toggle_intervention",
+  visitsManage: "crm.visits.manage",
+  visitsRead: "crm.visits.read",
 } as const;
 
 export type CrmWhatsappCapabilities = {
@@ -30,6 +32,8 @@ export type CrmWhatsappCapabilities = {
   canTagAssign: boolean;
   canTagManage: boolean;
   canToggleIntervention: boolean;
+  canVisitsManage: boolean;
+  canVisitsRead: boolean;
 };
 
 export function readCrmWhatsappCapabilities(
@@ -64,6 +68,8 @@ export function readCrmWhatsappCapabilities(
       session,
       permissions.toggleIntervention,
     ),
+    canVisitsManage: hasWhatsappPermission(session, permissions.visitsManage),
+    canVisitsRead: hasWhatsappPermission(session, permissions.visitsRead),
   };
 }
 

@@ -24,6 +24,7 @@ function isServiceFile(file) {
   const nonEntrypointFiles = new Set([
     "auditVehicleServiceEvent.ts",
     "index.ts",
+    "leadVisitSupport.ts",
     "sendWhatsappVehicleSupport.ts",
     "serviceSupport.ts",
     "testSupport.ts",

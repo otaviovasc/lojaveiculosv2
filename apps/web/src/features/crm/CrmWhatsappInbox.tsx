@@ -17,8 +17,8 @@ import { CrmWhatsappConversationWorkspace } from "./CrmWhatsappConversationWorks
 import {
   WhatsappCampaignsSection,
   WhatsappIntegrationsSection,
-  WhatsappVisitsSection,
 } from "./CrmWhatsappScopedSections";
+import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
 
 export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
   const whatsappApi = useMemo(
@@ -115,7 +115,13 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
               />
             </section>
           ) : null}
-          {activeScope === "visits" ? <WhatsappVisitsSection /> : null}
+          {activeScope === "visits" ? (
+            <CrmWhatsappVisitsPage
+              activeSession={inbox.activeSession}
+              canManage={inbox.permissions.canVisitsManage}
+              canRead={inbox.permissions.canVisitsRead}
+            />
+          ) : null}
         </>
       ) : null}
       {newConversationOpen ? (

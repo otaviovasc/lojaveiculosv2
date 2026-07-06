@@ -25,6 +25,8 @@ describe("CRM WhatsApp permissions", () => {
       canTagAssign: false,
       canTagManage: false,
       canToggleIntervention: false,
+      canVisitsManage: false,
+      canVisitsRead: false,
     });
   });
 
@@ -58,6 +60,19 @@ describe("CRM WhatsApp permissions", () => {
       canTagAssign: true,
       canTagManage: false,
       canToggleIntervention: true,
+      canVisitsManage: false,
+      canVisitsRead: false,
+    });
+  });
+
+  it("maps visit permissions independently from WhatsApp queue actions", () => {
+    expect(
+      readCrmWhatsappCapabilities(
+        createSession(["crm.visits.manage", "crm.visits.read"]),
+      ),
+    ).toMatchObject({
+      canVisitsManage: true,
+      canVisitsRead: true,
     });
   });
 
