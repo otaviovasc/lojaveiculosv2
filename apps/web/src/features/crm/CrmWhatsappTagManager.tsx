@@ -6,13 +6,16 @@ import type {
   CrmWhatsappTag,
   CrmWhatsappUpdateTagInput,
 } from "./crmWhatsappTypes";
-import { TagAdminRow } from "./CrmWhatsappTagManagerParts";
-
-type TagDraft = {
-  color: string;
-  emoji: string;
-  name: string;
-};
+import {
+  getTagStatusMessage,
+  TagAdminRow,
+  type TagDraft,
+  TagDraftFields,
+  TagDeleteConfirm,
+  type PendingTagAction,
+  toCreateTagInput,
+  toUpdateTagInput,
+} from "./CrmWhatsappTagManagerParts";
 
 const emptyDraft: TagDraft = { color: "", emoji: "", name: "" };
 
@@ -42,8 +45,16 @@ export function CrmWhatsappTagManager({
   const [editing, setEditing] = useState<CrmWhatsappTag | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [savingTagId, setSavingTagId] = useState<string | null>(null);
-  const canSave = Boolean(draft.name.trim()) && !isSaving && !disabled;
+  const [pendingAction, setPendingAction] = useState<PendingTagAction>(null);
+  const [tagToDelete, setTagToDelete] = useState<CrmWhatsappTag | null>(null);
+  const hasPendingAction = Boolean(pendingAction) || isSaving;
+  const canSave = Boolean(draft.name.trim()) && !hasPendingAction && !disabled;
+  const statusMessage = getTagStatusMessage({
+    editing: Boolean(editing),
+    isSaving,
+    pendingAction,
+    tagToDelete,
+  });
 
   const reset = () => {
     setDraft(emptyDraft);
@@ -57,8 +68,8 @@ export function CrmWhatsappTagManager({
     setLocalError(null);
     try {
       const accepted = editing
-        ? await onUpdate(editing.id, toUpdateInput(draft))
-        : await onCreate(toCreateInput(draft));
+        ? await onUpdate(editing.id, toUpdateTagInput(draft))
+        : await onCreate(toCreateTagInput(draft));
       if (accepted) reset();
       else setLocalError("Nao foi possivel salvar a etiqueta.");
     } finally {
@@ -76,35 +87,43 @@ export function CrmWhatsappTagManager({
     setLocalError(null);
   };
 
-  const deleteTag = async (tag: CrmWhatsappTag) => {
-    if (disabled || savingTagId) return;
-    setSavingTagId(tag.id);
+  const deleteTag = async () => {
+    if (!tagToDelete || disabled || hasPendingAction) return;
+    setPendingAction({ kind: "delete", tagId: tagToDelete.id });
     setLocalError(null);
     try {
-      const accepted = await onDelete(tag.id);
+      const accepted = await onDelete(tagToDelete.id);
       if (!accepted) setLocalError("Nao foi possivel excluir a etiqueta.");
-      if (editing?.id === tag.id) reset();
+      if (accepted && editing?.id === tagToDelete.id) reset();
+      if (accepted) setTagToDelete(null);
     } finally {
-      setSavingTagId(null);
+      setPendingAction(null);
     }
   };
 
   const moveTag = async (index: number, direction: -1 | 1) => {
     const targetIndex = index + direction;
-    if (disabled || targetIndex < 0 || targetIndex >= tags.length) return;
+    if (
+      disabled ||
+      hasPendingAction ||
+      targetIndex < 0 ||
+      targetIndex >= tags.length
+    ) {
+      return;
+    }
     const tagIds = tags.map((tag) => tag.id);
     const currentTagId = tagIds[index];
     const targetTagId = tagIds[targetIndex];
     if (!currentTagId || !targetTagId) return;
     tagIds[index] = targetTagId;
     tagIds[targetIndex] = currentTagId;
-    setSavingTagId(currentTagId);
+    setPendingAction({ kind: "move", tagId: currentTagId });
     setLocalError(null);
     try {
       const accepted = await onReorder({ tagIds });
       if (!accepted) setLocalError("Nao foi possivel reordenar etiquetas.");
     } finally {
-      setSavingTagId(null);
+      setPendingAction(null);
     }
   };
 
@@ -114,7 +133,7 @@ export function CrmWhatsappTagManager({
       aria-modal={embedded ? undefined : true}
       className={
         embedded
-          ? "crm-whatsapp-action-dialog crm-whatsapp-action-embedded"
+          ? "crm-whatsapp-action-dialog crm-whatsapp-action-embedded crm-whatsapp-tag-manager-shell"
           : "crm-whatsapp-action-dialog"
       }
       role={embedded ? "region" : "dialog"}
@@ -137,72 +156,36 @@ export function CrmWhatsappTagManager({
           )}
         </header>
         <div className="crm-whatsapp-action-fields">
-          <div className="crm-whatsapp-action-grid">
-            <label>
-              Nome
-              <input
-                disabled={disabled || isSaving}
-                maxLength={40}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    name: event.target.value,
-                  }))
-                }
-                placeholder="Cliente quente"
-                value={draft.name}
-              />
-            </label>
-            <label>
-              Emoji
-              <input
-                disabled={disabled || isSaving}
-                maxLength={16}
-                onChange={(event) =>
-                  setDraft((current) => ({
-                    ...current,
-                    emoji: event.target.value,
-                  }))
-                }
-                placeholder="Opcional"
-                value={draft.emoji}
-              />
-            </label>
-          </div>
-          <label>
-            Cor
-            <input
-              disabled={disabled || isSaving}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  color: event.target.value,
-                }))
-              }
-              placeholder="#RRGGBB"
-              value={draft.color}
-            />
-          </label>
+          <TagDraftFields
+            disabled={disabled || isSaving}
+            draft={draft}
+            onChange={setDraft}
+          />
           <p className="crm-whatsapp-tag-manager-note">
-            Etiquetas sao labels simples para organizar conversas. Pipeline e
-            coluna nao existem mais neste fluxo.
+            Etiquetas sao labels simples para organizar conversas no WhatsApp.
+            Use para marcar prioridade, origem ou proxima acao.
           </p>
           {localError ? (
             <p className="crm-whatsapp-tag-manager-error">{localError}</p>
+          ) : null}
+          {statusMessage ? (
+            <p aria-live="polite" className="crm-whatsapp-tag-manager-status">
+              {statusMessage}
+            </p>
           ) : null}
           <div className="crm-whatsapp-tag-admin-list">
             {tags.length ? (
               tags.map((tag, index) => (
                 <TagAdminRow
-                  disabled={Boolean(disabled)}
+                  disabled={Boolean(disabled) || hasPendingAction}
                   index={index}
                   key={tag.id}
-                  onDelete={(nextTag) => void deleteTag(nextTag)}
+                  onDelete={setTagToDelete}
                   onEdit={editTag}
                   onMove={(nextIndex, direction) =>
                     void moveTag(nextIndex, direction)
                   }
-                  saving={Boolean(savingTagId)}
+                  pendingAction={pendingAction}
                   tag={tag}
                   tagsLength={tags.length}
                 />
@@ -248,22 +231,14 @@ export function CrmWhatsappTagManager({
           </button>
         </footer>
       </div>
+      {tagToDelete ? (
+        <TagDeleteConfirm
+          disabled={Boolean(disabled) || Boolean(pendingAction)}
+          onCancel={() => setTagToDelete(null)}
+          onConfirm={() => void deleteTag()}
+          tag={tagToDelete}
+        />
+      ) : null}
     </div>
   );
-}
-
-function toCreateInput(draft: TagDraft): CrmWhatsappCreateTagInput {
-  return {
-    ...(draft.color.trim() ? { color: draft.color.trim() } : {}),
-    ...(draft.emoji.trim() ? { emoji: draft.emoji.trim() } : {}),
-    name: draft.name.trim(),
-  };
-}
-
-function toUpdateInput(draft: TagDraft): CrmWhatsappUpdateTagInput {
-  return {
-    ...(draft.color.trim() ? { color: draft.color.trim() } : {}),
-    emoji: draft.emoji.trim() || null,
-    name: draft.name.trim(),
-  };
 }

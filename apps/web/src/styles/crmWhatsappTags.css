@@ -1,0 +1,183 @@
+.crm-whatsapp-tag-manager {
+  width: min(34rem, 100%);
+}
+
+.crm-whatsapp-tag-manager-shell {
+  background: transparent;
+  inset: auto;
+  min-height: 0;
+  overflow: visible;
+  padding: 0;
+  position: static;
+}
+
+.crm-whatsapp-tag-manager-shell .crm-whatsapp-tag-manager {
+  box-shadow: var(--shadow-panel);
+  margin: 0 auto;
+  max-height: none;
+  max-width: 70rem;
+  min-height: 0;
+  overflow: visible;
+  width: 100%;
+}
+
+.crm-whatsapp-tag-manager-note,
+.crm-whatsapp-tag-manager-empty,
+.crm-whatsapp-tag-manager-error,
+.crm-whatsapp-tag-manager-status {
+  border-radius: var(--radius-sm);
+  font-size: calc(var(--font-size-xs) * 1.2);
+  font-weight: 850;
+  margin: 0;
+  padding: 0.625rem 0.75rem;
+}
+
+.crm-whatsapp-tag-manager-note,
+.crm-whatsapp-tag-manager-empty,
+.crm-whatsapp-tag-manager-status {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+
+.crm-whatsapp-tag-manager-error {
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent-strong);
+}
+
+.crm-whatsapp-tag-admin-list {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  overflow: hidden;
+}
+
+.crm-whatsapp-tag-admin-row {
+  align-items: center;
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 3rem;
+  padding: 0.5rem 0.625rem;
+}
+
+.crm-whatsapp-tag-admin-row:first-child {
+  border-top: 0;
+}
+
+.crm-whatsapp-tag-admin-row i {
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  display: block;
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.crm-whatsapp-tag-admin-label {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-tag-admin-label strong {
+  color: var(--color-text);
+  font-size: calc(var(--font-size-xs) * 1.25);
+  font-weight: 950;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-tag-admin-label small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-tag-admin-row button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.crm-whatsapp-tag-admin-row button:hover:not(:disabled) {
+  color: var(--color-accent-strong);
+}
+
+.crm-whatsapp-tag-confirm {
+  align-items: center;
+  background: var(--color-overlay);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+  z-index: 80;
+}
+
+.crm-whatsapp-tag-confirm-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.875rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  max-width: min(25rem, 100%);
+  padding: 1rem;
+}
+
+.crm-whatsapp-tag-confirm-icon {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.crm-whatsapp-tag-confirm-icon svg {
+  height: 1.125rem;
+  width: 1.125rem;
+}
+
+.crm-whatsapp-tag-confirm-panel strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.crm-whatsapp-tag-confirm-panel p {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.2);
+  font-weight: 850;
+  line-height: 1.4;
+  margin: 0.25rem 0 0;
+}
+
+.crm-whatsapp-tag-confirm-panel footer {
+  display: flex;
+  gap: 0.5rem;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+}
+
+.crm-action-danger {
+  background: var(--color-danger);
+  color: var(--color-inverse);
+}
