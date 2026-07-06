@@ -6,7 +6,7 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 7: visits backend/UI after the lead/WhatsApp identity link.
+Phase 9: integrations/bot contract after visits backend/UI.
 
 ## Completed This Pass
 
@@ -55,6 +55,12 @@ Phase 7: visits backend/UI after the lead/WhatsApp identity link.
   - Lead detail Chat tab can start a conversation through the existing
     V2-native `leadId` start-conversation API.
   - WhatsApp deep links now use `#/crm?surface=whatsapp&sessionId=<id>`.
+- Completed visits backend/UI in `5d47b6f`:
+  - V2 visit services/controllers/adapters operate on `lead_visits`.
+  - Visits require `crm.visits.read` / `crm.visits.manage`, scoped logs, audit,
+    stable errors, and lead activities.
+  - WhatsApp Visitas is now a real operations page with today/upcoming/overdue/
+    completed views and active-session creation.
 
 ## Key Findings
 
@@ -74,15 +80,15 @@ Phase 7: visits backend/UI after the lead/WhatsApp identity link.
 - Lead/WhatsApp identity now has a concrete frontend and backend path:
   sessions expose `leadId`, lead detail resolves by `leadId`, and existing
   session panels keep the reverse lead detail link.
-- Visits are schema-only today: `lead_visits` exists, but no
-  service/controller/repository references it in `apps/api/src`.
+- Visits are now V2-backed over `lead_visits`; `sessionId` resolves the linked
+  V2 lead but is not persisted on visits.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
   code.
 - Campaigns and external bot integration are not implemented in V2.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
   `Conexao`.
-- `CrmWhatsappScopedSections.tsx` still contains placeholder cards for visits,
-  integrations, and campaign depth. These must not be treated as done.
+- `CrmWhatsappScopedSections.tsx` still contains placeholder cards for
+  integrations and campaign depth. These must not be treated as done.
 - Repasses backend still contains Evolution, old agents, MiniBot, and campaign
   logic. Only behavior should be ported; runtime semantics must be V2-native.
 - Repasses public CRM contracts still route mostly by numeric ids. V2 slices
@@ -119,7 +125,7 @@ Wave 2:
 Wave 3:
 
 - Worker H: lead/WhatsApp identity link. Completed in `62ac658`.
-- Worker I: visits backend/UI.
+- Worker I: visits backend/UI. Completed in `5d47b6f`.
 - Worker J: integrations/bot contract.
 
 Wave 4:
@@ -173,6 +179,12 @@ pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.sessions crm.whatsapp.ses
 pnpm --filter @lojaveiculosv2/web test -- CrmLeadWhatsappPanel crmWhatsappApi CrmModule
 pnpm --filter @lojaveiculosv2/api typecheck
 pnpm --filter @lojaveiculosv2/web typecheck
+pnpm --filter @lojaveiculosv2/api test -- crm.visits
+pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappVisitsPage crmVisitsApi crmWhatsappPermissions
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web typecheck
+pnpm run validate:core-guardrails
+pnpm run test:frontend-design
 ```
 
 Phase 1 permission validation passed. `pnpm run check:lines` initially failed
@@ -208,12 +220,16 @@ again made `check:lines` pass.
   `apps/api/src/features/crm/controllers/crm.whatsapp.sessions.leadFilter.test.ts`,
   `apps/api/src/features/crm/controllers/crm.whatsapp.startConversationLead.test.ts`,
   `apps/web/src/features/crm/CrmLeadWhatsappPanel.test.tsx`.
+- Visits evidence:
+  `apps/api/src/features/crm/controllers/crm.visits.test.ts`,
+  `apps/web/src/features/crm/CrmWhatsappVisitsPage.test.tsx`,
+  `apps/web/src/features/crm/crmVisitsApi.test.ts`.
 
 ## Next Orchestrator Actions
 
-1. Start Worker I visits backend/UI from
-   `docs/migrations/crm-v2-visits-contract.md`.
-2. Keep campaign backend/UI blocked behind visits, schedules, and recipient
+1. Start Worker J integrations/bot contract from
+   `docs/migrations/crm-v2-bot-contract.md`.
+2. Keep campaign backend/UI blocked behind bot, schedules, visits, and recipient
    contracts.
 3. Run full validation when the next stable CRM slice is merged, or record any
    unrelated failures explicitly here.

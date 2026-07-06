@@ -78,6 +78,7 @@ evidence folder is documented.
 ## Visits
 
 - From a WhatsApp session linked to a lead, create a visit.
+- Open store-wide Visitas and verify today/upcoming/overdue/completed views.
 - Verify visit appears on visit page and lead detail.
 - Update status to confirmed/completed/no_show/cancelled.
 - Verify activity and audit evidence.
