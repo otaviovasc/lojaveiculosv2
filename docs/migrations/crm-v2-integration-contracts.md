@@ -72,6 +72,11 @@ and saved metadata, but never render tokens or secrets.
 - `POST /crm/whatsapp/sessions/:sessionId/read`
 - `POST /crm/whatsapp/sessions/:sessionId/unread`
 
+`GET /crm/whatsapp/sessions` supports store-scoped filters for
+`connectionId`, `sessionId`, `leadId`, status, assignment buckets, tags,
+search, unread-only, limit, and offset. Lead detail screens must resolve
+existing WhatsApp sessions through `leadId` before creating a new conversation.
+
 ### Tags
 
 - `GET /crm/whatsapp/tags`
@@ -190,14 +195,14 @@ Current active tables:
 - `crm_whatsapp_session_tags`
 - `crm_whatsapp_quick_messages`
 - `crm_whatsapp_scheduled_messages`
+- `crm_pipelines`
+- `crm_pipeline_stages`
 - `lead_visits` (schema-only until the visits slice lands)
 - `leads`
 - `lead_activities`
 
 Missing/pending tables or fields:
 
-- DB-backed `crm_pipelines` and `crm_pipeline_stages`.
-- Lead `pipelineId` and `pipelineStageId` fields.
 - Campaigns, campaign recipients, campaign metrics, campaign links on scheduled
   messages.
 - Bot integration config with write-only webhook secret.
