@@ -126,6 +126,12 @@ storage. Metadata may remain as a read fallback for pre-migration leads only.
 One-off schedules already exist. Campaign-generated schedules must link to the
 future campaign schema instead of overloading the current `metadata` contract.
 
+### Visits
+
+See `docs/migrations/crm-v2-visits-contract.md`. Visits use `lead_visits` and
+V2 `leads.id`; they do not carry financing, test-drive, vehicle-required, or
+old Repasses session JSON fields.
+
 ### ZAPI Webhooks
 
 - `POST /crm/whatsapp/webhooks/zapi/:connectionId/received`

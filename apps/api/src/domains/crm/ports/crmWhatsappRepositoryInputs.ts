@@ -13,6 +13,7 @@ export type CountCrmWhatsappSessionsInput = {
   assignedUserId?: UserId;
   connectionId?: string;
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
+  leadId?: string;
   search?: string;
   sessionId?: string;
   status?: CrmWhatsappSessionStatus;

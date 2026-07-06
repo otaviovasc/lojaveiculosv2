@@ -183,6 +183,7 @@ export type CrmWhatsappMessage = {
 export type CrmWhatsappSessionQuery = {
   connectionId?: CrmWhatsappConnectionId;
   filter?: CrmWhatsappSessionFilter;
+  leadId?: string;
   limit?: number;
   offset?: number;
   search?: string;

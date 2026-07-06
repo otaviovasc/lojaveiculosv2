@@ -136,6 +136,7 @@ export function createCrmWhatsappSessionQuery(
   const params = new URLSearchParams();
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
+  addOptionalParam(params, "leadId", query.leadId);
   addOptionalParam(params, "limit", query.limit);
   addOptionalParam(params, "offset", query.offset);
   addOptionalParam(params, "search", query.search);
@@ -152,6 +153,7 @@ export function createCrmWhatsappSessionCountsQuery(
   const params = new URLSearchParams();
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
+  addOptionalParam(params, "leadId", query.leadId);
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "status", query.status);
   addOptionalParam(params, "tagIds", query.tagIds?.join(","));

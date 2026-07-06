@@ -19,6 +19,7 @@ const permission = "crm.whatsapp.list";
 export type ListWhatsappSessionsInput = {
   connectionId?: string;
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
+  leadId?: string;
   limit: number;
   offset: number;
   search?: string;
@@ -39,6 +40,7 @@ export async function listWhatsappSessions(
   const connectionRepository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.sessions.list.started", {
     filter: input.filter ?? null,
+    leadId: input.leadId ?? null,
     search: input.search ?? null,
     status: input.status ?? null,
   });
@@ -66,7 +68,11 @@ export async function listWhatsappSessions(
   await auditWhatsappServiceEvent(context, {
     action: "crm.whatsapp.sessions.list",
     category: "data_access",
-    metadata: { filter: input.filter ?? "all", sessionCount: result.length },
+    metadata: {
+      filter: input.filter ?? "all",
+      leadId: input.leadId ?? null,
+      sessionCount: result.length,
+    },
     permission,
     summary: "Listed CRM WhatsApp sessions",
   });

@@ -6,6 +6,10 @@ export function crmSurfaceHash(surface: CrmSurface) {
   return `/crm?surface=${surface}`;
 }
 
+export function crmWhatsappSessionHash(sessionId: string | number) {
+  return `/crm?surface=whatsapp&sessionId=${encodeURIComponent(String(sessionId))}`;
+}
+
 export function readCrmSurfaceFromHash(
   hash: string,
   fallback: CrmSurface = "whatsapp",

@@ -169,7 +169,11 @@ describe("CRM WhatsApp API", () => {
     const api = createCrmWhatsappApi({ fetch: fake.fetch });
 
     await expect(
-      api.listSessions({ connectionId: "connection_1", limit: 10 }),
+      api.listSessions({
+        connectionId: "connection_1",
+        leadId: "lead_1",
+        limit: 10,
+      }),
     ).resolves.toEqual([{ id: "session_1" }]);
     await expect(
       api.listSessionCounts({ connectionId: "connection_1", unreadOnly: true }),
@@ -179,7 +183,7 @@ describe("CRM WhatsApp API", () => {
     ]);
 
     expect(fake.calls[0]?.input).toBe(
-      "/api/v1/crm/whatsapp/sessions?connectionId=connection_1&limit=10",
+      "/api/v1/crm/whatsapp/sessions?connectionId=connection_1&leadId=lead_1&limit=10",
     );
     expect(fake.calls[1]?.input).toBe(
       "/api/v1/crm/whatsapp/session-counts?connectionId=connection_1&unreadOnly=true",

@@ -13,6 +13,7 @@ export function cleanWhatsappSessionsQuery(input: WhatsappSessionsQuery) {
   return {
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     filter: input.filter,
+    ...(input.leadId ? { leadId: input.leadId } : {}),
     limit: input.limit,
     offset: input.offset,
     ...(input.search ? { search: input.search } : {}),
@@ -29,6 +30,7 @@ export function cleanWhatsappSessionCountsQuery(
   return {
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     filter: input.filter,
+    ...(input.leadId ? { leadId: input.leadId } : {}),
     ...(input.search ? { search: input.search } : {}),
     ...(input.status ? { status: input.status } : {}),
     ...(input.tagIds?.length ? { tagIds: input.tagIds } : {}),

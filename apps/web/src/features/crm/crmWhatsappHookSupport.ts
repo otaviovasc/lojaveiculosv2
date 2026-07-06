@@ -10,7 +10,8 @@ export function asError(caught: unknown) {
 export function readInitialSessionId(): CrmWhatsappSessionId | null {
   if (typeof window === "undefined") return null;
   const query = window.location.hash.split("?")[1] ?? "";
-  const raw = new URLSearchParams(query).get("crm_session")?.trim();
+  const params = new URLSearchParams(query);
+  const raw = (params.get("sessionId") ?? params.get("crm_session"))?.trim();
   if (!raw) return null;
   const value = Number(raw);
   return Number.isInteger(value) && value > 0 ? value : raw;

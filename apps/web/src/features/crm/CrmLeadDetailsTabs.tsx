@@ -1,4 +1,4 @@
-import { Calendar, FileText, Globe, MessageSquare, Upload } from "lucide-react";
+import { Calendar, FileText, Globe, Upload } from "lucide-react";
 import { kindLabel, statusLabel } from "../documents/documentLabels";
 import { formatDateTime } from "../documents/documentsWorkspaceModel";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
@@ -14,6 +14,7 @@ import { CrmLeadDetailsTabsTarefas } from "./CrmLeadDetailsTabsTarefas";
 import { CrmLeadDetailsTabsReunioes } from "./CrmLeadDetailsTabsReunioes";
 import { CrmLeadDetailsTabsNotas } from "./CrmLeadDetailsTabsNotas";
 import { CrmLeadDetailsTabsVisao } from "./CrmLeadDetailsTabsVisao";
+import { CrmLeadWhatsappPanel } from "./CrmLeadWhatsappPanel";
 
 type Props = {
   activeTab: string;
@@ -50,20 +51,7 @@ export function CrmLeadDetailsTabs({
   }
 
   if (activeTab === "chat") {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 text-center select-none text-app-text">
-        <div className="size-14 rounded-full bg-line/15 border border-line/25 flex items-center justify-center text-muted mb-4">
-          <MessageSquare className="size-6 text-muted/70" />
-        </div>
-        <h3 className="text-sm font-black text-app-text">
-          Nenhuma mensagem com esse cliente ainda
-        </h3>
-        <p className="text-xs font-bold text-muted max-w-sm mt-1 mb-6 leading-relaxed">
-          As conversas aparecerão aqui quando uma integração de mensagens
-          estiver vinculada a este cliente.
-        </p>
-      </div>
-    );
+    return <CrmLeadWhatsappPanel lead={lead} />;
   }
 
   if (activeTab === "tarefas") {

@@ -105,6 +105,7 @@ export function createMemoryCrmWhatsappRepository(
           (session) =>
             !input.connectionId || session.connectionId === input.connectionId,
         )
+        .filter((session) => !input.leadId || session.leadId === input.leadId)
         .filter((session) => !input.sessionId || session.id === input.sessionId)
         .filter((session) => !input.status || session.status === input.status)
         .filter(
@@ -192,6 +193,7 @@ export function createMemoryCrmWhatsappRepository(
           (session) =>
             !input.connectionId || session.connectionId === input.connectionId,
         )
+        .filter((session) => !input.leadId || session.leadId === input.leadId)
         .filter((session) => !input.sessionId || session.id === input.sessionId)
         .filter((session) => !input.status || session.status === input.status)
         .filter(
