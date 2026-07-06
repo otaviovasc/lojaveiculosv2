@@ -84,6 +84,33 @@ and saved metadata, but never render tokens or secrets.
 
 Tags are plain WhatsApp labels. They are not pipeline columns.
 
+### Pipeline
+
+- `GET /crm/pipelines`
+- `POST /crm/pipelines`
+- `PATCH /crm/pipelines/:pipelineId`
+- `DELETE /crm/pipelines/:pipelineId`
+- `PATCH /crm/leads/:leadId/pipeline-stage`
+
+Pipeline definitions are store-scoped and DB-backed. The `leads` row is the
+source of truth for a lead's active `pipelineId` and `pipelineStageId`. The
+coarse `leads.status` enum remains for filtering, reporting, and compatibility
+with existing lead lists; moving a lead to a stage updates both the stage fields
+and the mapped lead status through the backend.
+
+Stages store:
+
+- `name`
+- `color`
+- `slaDays`
+- `status`: `open`, `won`, or `lost`
+- `leadStatus`: existing V2 lead status mapped for filters and reporting
+- `isSystem`
+- `sortOrder`
+
+Do not persist operational pipeline position in lead metadata or browser
+storage. Metadata may remain as a read fallback for pre-migration leads only.
+
 ### Scheduled Messages
 
 - `GET /crm/whatsapp/scheduled-messages`
@@ -169,7 +196,8 @@ Current active tables:
 
 Missing/pending tables or fields:
 
-- DB-backed pipeline config and stages.
+- DB-backed `crm_pipelines` and `crm_pipeline_stages`.
+- Lead `pipelineId` and `pipelineStageId` fields.
 - Campaigns, campaign recipients, campaign metrics, campaign links on scheduled
   messages.
 - Bot integration config with write-only webhook secret.
@@ -200,35 +228,7 @@ picker, catalog picker, delete/cancel confirmation.
 
 ## Bot Contract
 
-The active V2 bot contract is not implemented yet. When implemented:
-
-- Bot action API authenticates with `X-Webhook-Secret`.
-- Secret values are write-only.
-- Bot actor creates a scoped `ServiceContext`.
-- Human takeover pauses regular bot forwarding.
-- Bot sends are blocked during takeover with a stable error unless ending
-  intervention.
-- V2 UUIDs are used for sessions, leads, tags, visits, and campaigns.
-
-Required actions:
-
-- `send_text`
-- `send_image`
-- `send_audio`
-- `send_document`
-- `add_note`
-- `schedule_message`
-- `create_tag`
-- `assign_tag`
-- `remove_tag`
-- `set_intervention`
-- `update_session`
-- `close_session`
-- `get_session`
-- `list_tags`
-- `set_visita`
-- `remove_visita`
-- `check_connection`
-
-Do not migrate MiniBot as the V2 bot contract. MiniBot remains behavior
-evidence unless a later slice explicitly revives it.
+The active V2 bot contract is not implemented yet. Worker J must read
+`docs/migrations/crm-v2-bot-contract.md` before starting. Do not migrate
+MiniBot as the V2 bot contract; MiniBot remains behavior evidence unless a later
+slice explicitly revives it.

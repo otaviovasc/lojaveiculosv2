@@ -6,7 +6,7 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 1: Foundation guardrails and Wave 1 worker integration.
+Phase 5: V2-backed pipeline contract and Wave 2 implementation.
 
 ## Completed This Pass
 
@@ -22,6 +22,7 @@ Phase 1: Foundation guardrails and Wave 1 worker integration.
   `docs/migrations/crm-v2-migration-map.md`,
   `docs/migrations/crm-v2-status.md`,
   `docs/migrations/crm-v2-integration-contracts.md`,
+  `docs/migrations/crm-v2-bot-contract.md`,
   `docs/migrations/crm-v2-smoke-checklist.md`.
 - Committed Phase 0 control-plane docs in `7b579eb`.
 - Spawned non-Spark Wave 1 workers on `gpt-5.5` high in in-repo worktrees.
@@ -34,6 +35,9 @@ Phase 1: Foundation guardrails and Wave 1 worker integration.
   - `5ffd509` merged Worker D source scan (`a8e924e`).
 - Fixed the integrated Tags surface so embedded mode renders as a page section,
   not dialog chrome; delete confirmation remains the punctual modal.
+- Defined the Wave 2 pipeline persistence contract: DB-backed
+  `crm_pipelines`/`crm_pipeline_stages`, lead-owned `pipelineId` and
+  `pipelineStageId`, and an audited lead stage move endpoint.
 
 ## Key Findings
 
@@ -45,7 +49,9 @@ Phase 1: Foundation guardrails and Wave 1 worker integration.
 - V2 permission catalog and current tag/schedule/connection services now use
   the active V2 permission contract names.
 - Pipeline config remains browser-local through
-  `apps/web/src/features/crm/crmPipelineStorage.ts`.
+  `apps/web/src/features/crm/crmPipelineStorage.ts`; the active contract now
+  requires replacing that with DB-backed pipeline definitions and lead stage
+  fields.
 - Visits are schema-only today: `lead_visits` exists, but no
   service/controller/repository references it in `apps/api/src`.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
@@ -147,8 +153,8 @@ store cache fixed the unrelated scan input and the guard passed.
 
 ## Next Orchestrator Actions
 
-1. Commit the embedded-tags integration fix and status update.
-2. Close Wave 1 worker agents.
-3. Start Wave 2 with DB-backed pipeline persistence and scheduled messages page.
+1. Commit the Wave 2 pipeline contract update.
+2. Spawn Worker F for DB-backed pipeline persistence from the updated contract.
+3. Review Worker G scheduled-message page when it completes.
 4. Keep visits and campaign work blocked behind pipeline and lead identity
    contracts.
