@@ -67,6 +67,7 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
           <CrmWhatsappScopedNav
             activeScope={activeScope}
             connectionLabel={status.label}
+            connectionTone={status.tone}
             onChange={setActiveScope}
             tagCount={inbox.availableTags.length}
             unreadCount={unreadCount}

@@ -6,38 +6,34 @@ export type CrmWhatsappScope =
   | "tags"
   | "visits";
 
+export type CrmWhatsappConnectionTone =
+  "error" | "loading" | "neutral" | "offline" | "online";
+
 const scopes: Array<{
-  description: string;
   id: CrmWhatsappScope;
   label: string;
 }> = [
   {
-    description: "Inbox, atendimento e follow-up",
     id: "conversations",
     label: "Conversas",
   },
   {
-    description: "Instancia, credenciais e webhooks",
     id: "connection",
-    label: "Conexao ZAPI",
+    label: "Conexao",
   },
   {
-    description: "Test-drive e visitas da loja",
     id: "visits",
     label: "Visitas",
   },
   {
-    description: "Campanhas e mensagens agendadas",
     id: "campaigns",
     label: "Campanhas",
   },
   {
-    description: "Bot externo, webhooks e eventos",
     id: "integrations",
     label: "Integracoes",
   },
   {
-    description: "Labels simples da fila",
     id: "tags",
     label: "Tags",
   },
@@ -46,12 +42,14 @@ const scopes: Array<{
 export function CrmWhatsappScopedNav({
   activeScope,
   connectionLabel,
+  connectionTone,
   onChange,
   tagCount,
   unreadCount,
 }: {
   activeScope: CrmWhatsappScope;
   connectionLabel: string;
+  connectionTone: CrmWhatsappConnectionTone;
   onChange: (scope: CrmWhatsappScope) => void;
   tagCount: number;
   unreadCount: number;
@@ -60,7 +58,13 @@ export function CrmWhatsappScopedNav({
     <nav className="crm-whatsapp-scope-nav" aria-label="WhatsApp CRM">
       <div className="crm-whatsapp-scope-title">
         <strong>WhatsApp</strong>
-        <span>{connectionLabel}</span>
+        <span
+          aria-label={`Status da conexao: ${connectionLabel}`}
+          className={`crm-whatsapp-status crm-whatsapp-scope-status crm-whatsapp-status-${connectionTone}`}
+        >
+          <span aria-hidden="true" />
+          {connectionLabel}
+        </span>
       </div>
       <div className="crm-whatsapp-scope-tabs" role="tablist">
         {scopes.map((scope) => {
@@ -79,8 +83,9 @@ export function CrmWhatsappScopedNav({
               type="button"
             >
               <strong>{scope.label}</strong>
-              <small>{scope.description}</small>
-              {badge ? <span>{badge}</span> : null}
+              {badge ? (
+                <span className="crm-whatsapp-scope-tab-badge">{badge}</span>
+              ) : null}
             </button>
           );
         })}
