@@ -45,11 +45,12 @@ Already V2-owned:
   a V2-native WhatsApp conversation by `leadId`.
 - V2 visits operations over `lead_visits` with backend services/controllers,
   audited status changes, lead activities, and the WhatsApp Visitas page.
+- Bot integration config page and write-only secret state.
 
 Still incomplete:
 
-- Dedicated integrations and campaigns pages.
-- External bot integration and action API.
+- External bot action API and webhook forwarding.
+- Dedicated campaign pages.
 - Campaign backend and campaign UI.
 - Full Playwright/mobile evidence for the migrated CRM OS.
 
@@ -66,7 +67,7 @@ Still incomplete:
 | Lead/WhatsApp identity         | Completed | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                         | Lead is source of truth.                                     |
 | Visits                         | Completed | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`                                                                       | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                          | Uses `lead_visits`; no financing/test-drive-specific fields. |
 | Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `useCrmWhatsappScheduledMessages.ts`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                                 | Store-wide page landed; campaign linkage remains separate.   |
-| Integrations/bot               | Pending   | bot integration schema/services/controllers, `CrmWhatsappIntegrationsPage.tsx`                                                                       | `BotActionsController.ts`, `botRoutes.ts`, `CrmIntegracoes.tsx`      | V2 UUIDs, write-only secret, no old agents.                  |
+| Integrations/bot               | Active    | bot integration schema/services/controllers, `CrmWhatsappIntegrationsPage.tsx`                                                                       | `BotActionsController.ts`, `botRoutes.ts`, `CrmIntegracoes.tsx`      | Config done; actions/forwarding pending.                     |
 | Campaign backend               | Pending   | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, `crmScheduledMessageJob.ts`, campaign migrations | Needs pipeline/tag/lead contracts stable first.              |
 | Campaign UI                    | Pending   | `CrmWhatsappCampaignsPage.tsx`, campaign API client/types/tests                                                                                      | `CrmCampaigns.tsx`                                                   | Starts after backend contract exists.                        |
 | Conversas parity polish        | Pending   | existing WhatsApp workspace, message actions, details panel, mobile CSS/tests                                                                        | `CrmWhatsApp.tsx`, `CrmChatSession.tsx`                              | Keep chat focused; no placeholders.                          |

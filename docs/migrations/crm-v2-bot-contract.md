@@ -2,7 +2,9 @@
 
 Last updated: 2026-07-06
 
-The active V2 bot contract is not implemented yet. When implemented:
+The V2 bot config foundation exists at
+`GET/PATCH /crm/whatsapp/integrations/bot`. The action API and outbound
+forwarding are not implemented yet. When implemented:
 
 - Bot action API authenticates with `X-Webhook-Secret`.
 - Secret values are write-only.

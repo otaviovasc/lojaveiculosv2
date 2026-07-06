@@ -203,7 +203,7 @@ Current active tables:
 - `crm_whatsapp_scheduled_messages`
 - `crm_pipelines`
 - `crm_pipeline_stages`
-- `lead_visits` (schema-only until the visits slice lands)
+- `lead_visits`
 - `leads`
 - `lead_activities`
 
@@ -211,8 +211,7 @@ Missing/pending tables or fields:
 
 - Campaigns, campaign recipients, campaign metrics, campaign links on scheduled
   messages.
-- Bot integration config with write-only webhook secret.
-- Explicit visit service/repository surface over `lead_visits`.
+- Bot action API and outbound webhook forwarding.
 
 ## Frontend Surface Contract
 
@@ -239,7 +238,6 @@ picker, catalog picker, delete/cancel confirmation.
 
 ## Bot Contract
 
-The active V2 bot contract is not implemented yet. Worker J must read
-`docs/migrations/crm-v2-bot-contract.md` before starting. Do not migrate
-MiniBot as the V2 bot contract; MiniBot remains behavior evidence unless a later
-slice explicitly revives it.
+The V2 bot config foundation exists at
+`GET/PATCH /crm/whatsapp/integrations/bot`. The action API and outbound
+forwarding remain pending. Do not migrate MiniBot as the V2 bot contract.

@@ -6,7 +6,7 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 9: integrations/bot contract after visits backend/UI.
+Phase 9: bot action API and forwarding after bot config foundation.
 
 ## Completed This Pass
 
@@ -61,6 +61,10 @@ Phase 9: integrations/bot contract after visits backend/UI.
     stable errors, and lead activities.
   - WhatsApp Visitas is now a real operations page with today/upcoming/overdue/
     completed views and active-session creation.
+- Completed bot integration config foundation in `eac31a8`:
+  - `GET/PATCH /crm/whatsapp/integrations/bot` stores bot URL and write-only
+    secret state behind `crm.whatsapp.integrations.manage`.
+  - WhatsApp Integracoes is now a real page for bot config and ZAPI event health.
 
 ## Key Findings
 
@@ -84,11 +88,12 @@ Phase 9: integrations/bot contract after visits backend/UI.
   V2 lead but is not persisted on visits.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
   code.
-- Campaigns and external bot integration are not implemented in V2.
+- Bot action API and outbound webhook forwarding are still pending; bot config
+  exists, but actions must not be treated as complete.
+- Campaigns are not implemented in V2.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
   `Conexao`.
-- `CrmWhatsappScopedSections.tsx` still contains placeholder cards for
-  integrations and campaign depth. These must not be treated as done.
+- `CrmWhatsappScopedSections.tsx` still contains campaign depth placeholders.
 - Repasses backend still contains Evolution, old agents, MiniBot, and campaign
   logic. Only behavior should be ported; runtime semantics must be V2-native.
 - Repasses public CRM contracts still route mostly by numeric ids. V2 slices
@@ -126,7 +131,8 @@ Wave 3:
 
 - Worker H: lead/WhatsApp identity link. Completed in `62ac658`.
 - Worker I: visits backend/UI. Completed in `5d47b6f`.
-- Worker J: integrations/bot contract.
+- Worker J: integrations/bot config foundation. Completed in `eac31a8`; action
+  API and forwarding remain pending.
 
 Wave 4:
 
@@ -185,6 +191,10 @@ pnpm --filter @lojaveiculosv2/api typecheck
 pnpm --filter @lojaveiculosv2/web typecheck
 pnpm run validate:core-guardrails
 pnpm run test:frontend-design
+pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.integrations
+pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappIntegrationsPage crmWhatsappApiExtras crmWhatsappApiRoutes crmWhatsappPermissions
+pnpm --filter @lojaveiculosv2/api typecheck
+pnpm --filter @lojaveiculosv2/web typecheck
 ```
 
 Phase 1 permission validation passed. `pnpm run check:lines` initially failed
@@ -224,12 +234,15 @@ again made `check:lines` pass.
   `apps/api/src/features/crm/controllers/crm.visits.test.ts`,
   `apps/web/src/features/crm/CrmWhatsappVisitsPage.test.tsx`,
   `apps/web/src/features/crm/crmVisitsApi.test.ts`.
+- Bot config evidence:
+  `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,
+  `apps/web/src/features/crm/CrmWhatsappIntegrationsPage.test.tsx`.
 
 ## Next Orchestrator Actions
 
-1. Start Worker J integrations/bot contract from
+1. Implement bot action API and outbound event forwarding from
    `docs/migrations/crm-v2-bot-contract.md`.
-2. Keep campaign backend/UI blocked behind bot, schedules, visits, and recipient
-   contracts.
+2. Keep campaign backend/UI blocked behind bot actions, schedules, visits, and
+   recipient contracts.
 3. Run full validation when the next stable CRM slice is merged, or record any
    unrelated failures explicitly here.
