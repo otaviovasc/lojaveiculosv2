@@ -136,12 +136,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             const firstStageId = activePipeline?.stages[0]?.id;
             await props.onCreateLead({
               ...draft,
-              ...(activePipeline && firstStageId
-                ? {
-                    pipelineId: activePipeline.id,
-                    pipelineStageId: firstStageId,
-                  }
-                : {}),
+              ...(firstStageId ? { initialPipelineStageId: firstStageId } : {}),
             });
             setIsCreateOpen(false);
           }}
@@ -309,7 +304,6 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
         <CrmQuickAddLeadModal
           onCreateLead={props.onCreateLead}
           onClose={() => setQuickAddLeadStageId(null)}
-          pipelineId={activePipeline.id}
           stageId={quickAddLeadStageId}
           stages={activePipeline.stages}
           vehicleOptions={props.vehicleOptions}

@@ -47,8 +47,8 @@ export function createMemoryCrmRepository(): CrmRepository {
         lastInteractionAt: null,
         listingId: input.listingId ?? null,
         metadata: input.metadata ?? {},
-        pipelineId: input.pipelineId ?? null,
-        pipelineStageId: input.pipelineStageId ?? null,
+        pipelineId: null,
+        pipelineStageId: null,
         source: input.source,
         status: "new",
         storeId: input.storeId,
@@ -58,6 +58,24 @@ export function createMemoryCrmRepository(): CrmRepository {
       };
       leads.push(lead);
       return lead;
+    },
+    async countLeadsByPipeline(input) {
+      return leads.filter(
+        (lead) =>
+          lead.storeId === input.storeId &&
+          lead.tenantId === input.tenantId &&
+          lead.pipelineId === input.pipelineId,
+      ).length;
+    },
+    async countLeadsByPipelineStages(input) {
+      if (!input.stageIds.length) return 0;
+      const stageIds = new Set(input.stageIds);
+      return leads.filter(
+        (lead) =>
+          lead.storeId === input.storeId &&
+          lead.tenantId === input.tenantId &&
+          Boolean(lead.pipelineStageId && stageIds.has(lead.pipelineStageId)),
+      ).length;
     },
     async findLeadById(input) {
       return findScopedLead(leads, input.leadId, input) ?? null;

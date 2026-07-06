@@ -66,8 +66,6 @@ export type CreateCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
-  pipelineId?: string | null;
-  pipelineStageId?: string | null;
   source: LeadSource;
   storeId: StoreId;
   tenantId: TenantId;
@@ -131,6 +129,16 @@ export type CrmRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmLead | null>;
+  countLeadsByPipeline: (input: {
+    pipelineId: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<number>;
+  countLeadsByPipelineStages: (input: {
+    stageIds: string[];
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<number>;
   listActivities: (
     input: ListLeadActivitiesInput,
   ) => Promise<readonly CrmLeadActivity[]>;

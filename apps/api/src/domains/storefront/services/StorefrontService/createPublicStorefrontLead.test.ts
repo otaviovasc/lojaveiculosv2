@@ -197,8 +197,8 @@ function createCrmRepository(): CrmRepository {
         lastInteractionAt: null,
         listingId: input.listingId ?? null,
         metadata: input.metadata ?? {},
-        pipelineId: input.pipelineId ?? null,
-        pipelineStageId: input.pipelineStageId ?? null,
+        pipelineId: null,
+        pipelineStageId: null,
         source: input.source,
         status: "new" as const,
         storeId: input.storeId,
@@ -209,6 +209,8 @@ function createCrmRepository(): CrmRepository {
       leads.push(lead);
       return lead;
     }),
+    countLeadsByPipeline: vi.fn(async () => 0),
+    countLeadsByPipelineStages: vi.fn(async () => 0),
     findLeadById: vi.fn(async () => null),
     findLeadByPhone: vi.fn(async () => null),
     listActivities: vi.fn(async () => []),

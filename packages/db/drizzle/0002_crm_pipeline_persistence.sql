@@ -67,8 +67,11 @@ CREATE INDEX IF NOT EXISTS "crm_pipelines_store_default_idx"
 CREATE INDEX IF NOT EXISTS "crm_pipelines_tenant_id_idx"
   ON "crm_pipelines" ("tenant_id");
 
-CREATE UNIQUE INDEX IF NOT EXISTS "crm_pipelines_store_name_unique"
-  ON "crm_pipelines" ("store_id", "name");
+DROP INDEX IF EXISTS "crm_pipelines_store_name_unique";
+
+CREATE UNIQUE INDEX IF NOT EXISTS "crm_pipelines_store_name_active_unique"
+  ON "crm_pipelines" ("store_id", "name")
+  WHERE "is_deleted" = false;
 
 CREATE INDEX IF NOT EXISTS "crm_pipeline_stages_pipeline_idx"
   ON "crm_pipeline_stages" ("pipeline_id", "sort_order");

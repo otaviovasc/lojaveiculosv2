@@ -54,6 +54,7 @@ export function createTestApp(
     crmWhatsappRepository?: CrmWhatsappRepository;
     entitlements?: EntitlementKey[];
     permissions?: PermissionKey[];
+    transaction?: CrmServicePorts["transaction"];
     vehicleInventory?: CrmServicePorts["vehicleInventory"];
   } = {},
 ) {
@@ -97,6 +98,7 @@ export function createTestApp(
             options.crmPipelineRepository ??
             createMemoryCrmPipelineRepository(),
           crmRepository: options.crmRepository ?? createMemoryCrmRepository(),
+          ...(options.transaction ? { transaction: options.transaction } : {}),
           ...(options.crmWhatsappRepository
             ? { crmWhatsappRepository: options.crmWhatsappRepository }
             : {}),

@@ -78,6 +78,11 @@ export type CrmPipelineRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<CrmPipeline | null>;
+  findPipelineByName: (input: {
+    name: string;
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<CrmPipeline | null>;
   findStageById: (input: {
     stageId: string;
     storeId: StoreId;

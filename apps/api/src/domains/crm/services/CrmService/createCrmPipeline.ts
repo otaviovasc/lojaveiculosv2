@@ -6,9 +6,11 @@ import {
   type CrmPipelineStageDraft,
 } from "../../pipeline/crmPipelineInputs.js";
 import type { CrmPipeline } from "../../ports/crmPipelineRepository.js";
+import { assertUniquePipelineName } from "../../pipeline/crmPipelineGuards.js";
 import {
   getCrmPipelineRepository,
   requireCrmScope,
+  runCrmTransaction,
   type CrmServicePorts,
 } from "./serviceSupport.js";
 
@@ -37,29 +39,35 @@ export async function createCrmPipeline(
     }),
   );
 
-  const pipeline = await getCrmPipelineRepository(ports).createPipeline({
-    description: input.description ?? "",
-    isDefault: input.isDefault ?? false,
-    name: input.name,
-    rotationActive: input.rotationActive ?? false,
-    stages: normalizePipelineStages(input.stages),
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+  return runCrmTransaction(ports, async (transactionPorts) => {
+    const repository = getCrmPipelineRepository(transactionPorts);
+    await assertUniquePipelineName(repository, {
+      name: input.name,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    const pipeline = await repository.createPipeline({
+      description: input.description ?? "",
+      isDefault: input.isDefault ?? false,
+      name: input.name,
+      rotationActive: input.rotationActive ?? false,
+      stages: normalizePipelineStages(input.stages),
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    await context.audit.record({
+      action: "crm.pipeline.create",
+      actor: context.actor,
+      category: "data_change",
+      entityId: pipeline.id,
+      entityType: "crm_pipeline",
+      metadata: { isDefault: pipeline.isDefault, permission },
+      outcome: "succeeded",
+      requestId: context.requestId,
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+      summary: "Created CRM pipeline",
+    });
+    return pipeline;
   });
-
-  await context.audit.record({
-    action: "crm.pipeline.create",
-    actor: context.actor,
-    category: "data_change",
-    entityId: pipeline.id,
-    entityType: "crm_pipeline",
-    metadata: { isDefault: pipeline.isDefault, permission },
-    outcome: "succeeded",
-    requestId: context.requestId,
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-    summary: "Created CRM pipeline",
-  });
-
-  return pipeline;
 }

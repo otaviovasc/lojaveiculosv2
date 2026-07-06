@@ -1,14 +1,15 @@
-import { and, asc, eq, notInArray } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { crmPipelineStages, crmPipelines } from "@lojaveiculosv2/db";
-import type {
-  CrmPipelineRepository,
-  CrmPipelineStageInput,
-} from "../../../domains/crm/ports/crmPipelineRepository.js";
+import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   toCrmPipeline,
   toCrmPipelineStage,
 } from "./drizzleCrmPipelineMappers.js";
+import {
+  insertStages,
+  replaceStages,
+} from "./drizzleCrmPipelineStageWrites.js";
 
 export function createDrizzleCrmPipelineRepository(
   db: DrizzleCrmClient,
@@ -46,10 +47,24 @@ export function createDrizzleCrmPipelineRepository(
       await db
         .update(crmPipelineStages)
         .set({ deletedAt: new Date(), isDeleted: true, updatedAt: new Date() })
-        .where(eq(crmPipelineStages.pipelineId, input.pipelineId));
+        .where(
+          and(
+            eq(crmPipelineStages.pipelineId, input.pipelineId),
+            eq(crmPipelineStages.storeId, input.storeId),
+            eq(crmPipelineStages.tenantId, input.tenantId),
+          ),
+        );
       return true;
     },
     findPipelineById: (input) => readPipeline(db, input),
+    async findPipelineByName(input) {
+      const [row] = await db
+        .select()
+        .from(crmPipelines)
+        .where(scopedPipeline(input))
+        .limit(1);
+      return row ? readStagesForPipeline(db, row) : null;
+    },
     async findStageById(input) {
       const [row] = await db
         .select()
@@ -125,97 +140,14 @@ async function readStagesForPipeline(
   return toCrmPipeline(row, stages);
 }
 
-async function insertStages(
-  db: DrizzleCrmClient,
-  pipelineId: string,
-  input: {
-    stages: CrmPipelineStageInput[];
-    storeId: string;
-    tenantId: string;
-  },
-) {
-  if (!input.stages.length) return;
-  await db.insert(crmPipelineStages).values(
-    input.stages.map((stage, index) => ({
-      color: stage.color,
-      ...(stage.id ? { id: stage.id } : {}),
-      isSystem: stage.isSystem ?? false,
-      leadStatus: stage.leadStatus,
-      name: stage.name,
-      pipelineId,
-      slaDays: stage.slaDays ?? null,
-      sortOrder: stage.sortOrder ?? index,
-      status: stage.status,
-      storeId: input.storeId,
-      tenantId: input.tenantId,
-    })),
-  );
-}
-
-async function replaceStages(
-  db: DrizzleCrmClient,
-  input: {
-    pipelineId: string;
-    stages: CrmPipelineStageInput[];
-    storeId: string;
-    tenantId: string;
-  },
-) {
-  const ids = input.stages.map((stage) => stage.id).filter(Boolean) as string[];
-  await softDeleteMissingStages(db, input, ids);
-  for (const [index, stage] of input.stages.entries()) {
-    if (stage.id && (await updateStage(db, input, stage, index))) continue;
-    await insertStages(db, input.pipelineId, { ...input, stages: [stage] });
-  }
-}
-
-async function softDeleteMissingStages(
-  db: DrizzleCrmClient,
-  input: { pipelineId: string; storeId: string; tenantId: string },
-  ids: string[],
-) {
-  await db
-    .update(crmPipelineStages)
-    .set({ deletedAt: new Date(), isDeleted: true, updatedAt: new Date() })
-    .where(
-      and(
-        eq(crmPipelineStages.pipelineId, input.pipelineId),
-        eq(crmPipelineStages.storeId, input.storeId),
-        eq(crmPipelineStages.tenantId, input.tenantId),
-        ...(ids.length ? [notInArray(crmPipelineStages.id, ids)] : []),
-      ),
-    );
-}
-
-async function updateStage(
-  db: DrizzleCrmClient,
-  input: { pipelineId: string; storeId: string; tenantId: string },
-  stage: CrmPipelineStageInput,
-  index: number,
-) {
-  const [row] = await db
-    .update(crmPipelineStages)
-    .set({
-      color: stage.color,
-      isSystem: stage.isSystem ?? false,
-      leadStatus: stage.leadStatus,
-      name: stage.name,
-      slaDays: stage.slaDays ?? null,
-      sortOrder: stage.sortOrder ?? index,
-      status: stage.status,
-      updatedAt: new Date(),
-    })
-    .where(scopedStage({ ...input, stageId: stage.id! }))
-    .returning();
-  return Boolean(row);
-}
-
 function scopedPipeline(input: {
+  name?: string;
   pipelineId?: string;
   storeId: string;
   tenantId: string;
 }) {
   return and(
+    ...(input.name ? [eq(crmPipelines.name, input.name)] : []),
     ...(input.pipelineId ? [eq(crmPipelines.id, input.pipelineId)] : []),
     eq(crmPipelines.storeId, input.storeId),
     eq(crmPipelines.tenantId, input.tenantId),
@@ -224,11 +156,15 @@ function scopedPipeline(input: {
 }
 
 function scopedStage(input: {
+  pipelineId?: string;
   stageId: string;
   storeId: string;
   tenantId: string;
 }) {
   return and(
+    ...(input.pipelineId
+      ? [eq(crmPipelineStages.pipelineId, input.pipelineId)]
+      : []),
     eq(crmPipelineStages.id, input.stageId),
     eq(crmPipelineStages.storeId, input.storeId),
     eq(crmPipelineStages.tenantId, input.tenantId),

@@ -20,6 +20,7 @@ export type LeadFilters = {
 
 export type LeadCreateDraft = CreateProductCrmLeadInput & {
   initialNote?: string;
+  initialPipelineStageId?: string;
   taskDueAt?: string | null;
   taskTitle?: string | null;
 };

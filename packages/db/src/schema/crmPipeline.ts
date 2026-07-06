@@ -9,6 +9,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { stores, tenants } from "./identity.js";
 import { lifecycleColumns, softDeleteColumns } from "./_shared.js";
 
@@ -37,10 +38,9 @@ export const crmPipelines = pgTable(
   (table) => [
     index("crm_pipelines_store_default_idx").on(table.storeId, table.isDefault),
     index("crm_pipelines_tenant_id_idx").on(table.tenantId),
-    uniqueIndex("crm_pipelines_store_name_unique").on(
-      table.storeId,
-      table.name,
-    ),
+    uniqueIndex("crm_pipelines_store_name_active_unique")
+      .on(table.storeId, table.name)
+      .where(sql`${table.isDeleted} = false`),
   ],
 );
 

@@ -39,10 +39,6 @@ export function cleanCreateLeadInput(
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
     ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
-    ...(input.pipelineId !== undefined ? { pipelineId: input.pipelineId } : {}),
-    ...(input.pipelineStageId !== undefined
-      ? { pipelineStageId: input.pipelineStageId }
-      : {}),
     source: input.source,
   };
 }
@@ -58,10 +54,6 @@ export function cleanUpdateLeadInput(
     ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
     ...(input.buyerPhone !== undefined ? { buyerPhone: input.buyerPhone } : {}),
     ...(input.metadata ? { metadata: input.metadata } : {}),
-    ...(input.pipelineId !== undefined ? { pipelineId: input.pipelineId } : {}),
-    ...(input.pipelineStageId !== undefined
-      ? { pipelineStageId: input.pipelineStageId }
-      : {}),
     ...(input.status ? { status: input.status } : {}),
   };
 }

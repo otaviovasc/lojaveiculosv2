@@ -7,9 +7,15 @@ import {
 } from "../../pipeline/crmPipelineInputs.js";
 import type { CrmPipeline } from "../../ports/crmPipelineRepository.js";
 import {
+  assertRemovedStagesUnused,
+  assertUniquePipelineName,
+} from "../../pipeline/crmPipelineGuards.js";
+import {
   CrmPipelineNotFoundError,
   getCrmPipelineRepository,
+  getCrmRepository,
   requireCrmScope,
+  runCrmTransaction,
   type CrmServicePorts,
 } from "./serviceSupport.js";
 
@@ -37,35 +43,64 @@ export async function updateCrmPipeline(
     createServiceLogMetadata(context, { pipelineId: input.pipelineId }),
   );
 
-  const pipeline = await getCrmPipelineRepository(ports).updatePipeline({
-    ...(input.description !== undefined
-      ? { description: input.description }
-      : {}),
-    ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
-    ...(input.name !== undefined ? { name: input.name } : {}),
-    pipelineId: input.pipelineId,
-    ...(input.rotationActive !== undefined
-      ? { rotationActive: input.rotationActive }
-      : {}),
-    ...(input.stages ? { stages: normalizePipelineStages(input.stages) } : {}),
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+  return runCrmTransaction(ports, async (transactionPorts) => {
+    const pipelineRepository = getCrmPipelineRepository(transactionPorts);
+    const current = await pipelineRepository.findPipelineById({
+      pipelineId: input.pipelineId,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (!current) throw new CrmPipelineNotFoundError(input.pipelineId);
+    if (input.name) {
+      await assertUniquePipelineName(pipelineRepository, {
+        exceptPipelineId: input.pipelineId,
+        name: input.name,
+        storeId: scope.storeId as never,
+        tenantId: scope.tenantId as never,
+      });
+    }
+    const stages = input.stages
+      ? normalizePipelineStages(input.stages)
+      : undefined;
+    if (stages) {
+      await assertRemovedStagesUnused(
+        getCrmRepository(transactionPorts),
+        current,
+        {
+          stageIds: stages.map((stage) => stage.id).filter(Boolean) as string[],
+          storeId: scope.storeId as never,
+          tenantId: scope.tenantId as never,
+        },
+      );
+    }
+    const pipeline = await pipelineRepository.updatePipeline({
+      ...(input.description !== undefined
+        ? { description: input.description }
+        : {}),
+      ...(input.isDefault !== undefined ? { isDefault: input.isDefault } : {}),
+      ...(input.name !== undefined ? { name: input.name } : {}),
+      pipelineId: input.pipelineId,
+      ...(input.rotationActive !== undefined
+        ? { rotationActive: input.rotationActive }
+        : {}),
+      ...(stages ? { stages } : {}),
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (!pipeline) throw new CrmPipelineNotFoundError(input.pipelineId);
+    await context.audit.record({
+      action: "crm.pipeline.update",
+      actor: context.actor,
+      category: "data_change",
+      entityId: pipeline.id,
+      entityType: "crm_pipeline",
+      metadata: { permission, stageCount: pipeline.stages.length },
+      outcome: "succeeded",
+      requestId: context.requestId,
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+      summary: "Updated CRM pipeline",
+    });
+    return pipeline;
   });
-  if (!pipeline) throw new CrmPipelineNotFoundError(input.pipelineId);
-
-  await context.audit.record({
-    action: "crm.pipeline.update",
-    actor: context.actor,
-    category: "data_change",
-    entityId: pipeline.id,
-    entityType: "crm_pipeline",
-    metadata: { permission, stageCount: pipeline.stages.length },
-    outcome: "succeeded",
-    requestId: context.requestId,
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-    summary: "Updated CRM pipeline",
-  });
-
-  return pipeline;
 }

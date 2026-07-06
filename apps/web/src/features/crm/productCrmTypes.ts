@@ -69,8 +69,6 @@ export type CreateProductCrmLeadInput = {
   buyerPhone?: string | null;
   listingId?: string | null;
   metadata?: Record<string, unknown>;
-  pipelineId?: string | null;
-  pipelineStageId?: string | null;
   source: CrmLeadSource;
 };
 
@@ -80,8 +78,6 @@ export type UpdateProductCrmLeadInput = {
   buyerName?: string | null;
   buyerPhone?: string | null;
   metadata?: Record<string, unknown>;
-  pipelineId?: string | null;
-  pipelineStageId?: string | null;
   status?: CrmLeadStatus;
 };
 

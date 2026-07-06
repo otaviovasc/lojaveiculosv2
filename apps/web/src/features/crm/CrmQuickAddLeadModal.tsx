@@ -8,7 +8,6 @@ import type { CrmLeadSource } from "./productCrmTypes";
 import { CrmQuickAddLeadMoreOptions } from "./CrmQuickAddLeadMoreOptions";
 
 type Props = {
-  pipelineId: string;
   stageId: string;
   stages: PipelineStage[];
   onClose: () => void;
@@ -18,7 +17,6 @@ type Props = {
 
 export function CrmQuickAddLeadModal({
   stageId,
-  pipelineId,
   stages,
   onClose,
   onCreateLead,
@@ -59,9 +57,8 @@ export function CrmQuickAddLeadModal({
         ...(phone.trim() ? { buyerPhone: phone.trim() } : {}),
         ...(email.trim() ? { buyerEmail: email.trim() } : {}),
         ...(vehicleId ? { listingId: vehicleId } : {}),
+        initialPipelineStageId: selectedStageId,
         metadata,
-        pipelineId,
-        pipelineStageId: selectedStageId,
       });
       onClose();
     } catch (err) {

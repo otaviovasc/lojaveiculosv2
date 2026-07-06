@@ -60,8 +60,6 @@ export const createLeadSchema = z.object({
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   listingId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
-  pipelineId: z.string().uuid().nullable().optional(),
-  pipelineStageId: z.string().uuid().nullable().optional(),
   source: leadSourceSchema.default("manual"),
 });
 
@@ -71,8 +69,6 @@ export const updateLeadSchema = z.object({
   buyerName: z.string().trim().min(1).max(191).nullable().optional(),
   buyerPhone: z.string().trim().min(3).max(40).nullable().optional(),
   metadata: z.record(z.string(), z.unknown()).optional(),
-  pipelineId: z.string().uuid().nullable().optional(),
-  pipelineStageId: z.string().uuid().nullable().optional(),
   status: leadStatusSchema.optional(),
 });
 

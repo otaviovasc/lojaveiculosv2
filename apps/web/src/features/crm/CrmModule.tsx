@@ -26,6 +26,7 @@ import {
   listAllMatchingLeads,
   loadActivitiesByLeadId,
 } from "./crmModuleData";
+import { createLeadWithInitialStage } from "./crmLeadCreation";
 import { CrmWhatsappInbox } from "./CrmWhatsappInbox";
 import {
   crmSurfaceHash,
@@ -129,24 +130,7 @@ export function CrmModule({
   }, [canLoadPipeline]);
 
   const createLead = async (input: LeadCreateDraft) => {
-    const lead = await crmApi.createLead({
-      ...(input.buyerEmail !== undefined
-        ? { buyerEmail: input.buyerEmail }
-        : {}),
-      ...(input.buyerName !== undefined ? { buyerName: input.buyerName } : {}),
-      ...(input.buyerPhone !== undefined
-        ? { buyerPhone: input.buyerPhone }
-        : {}),
-      ...(input.listingId !== undefined ? { listingId: input.listingId } : {}),
-      ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
-      ...(input.pipelineId !== undefined
-        ? { pipelineId: input.pipelineId }
-        : {}),
-      ...(input.pipelineStageId !== undefined
-        ? { pipelineStageId: input.pipelineStageId }
-        : {}),
-      source: input.source,
-    });
+    const lead = await createLeadWithInitialStage(crmApi, input);
     setLeads((current) => [lead, ...current]);
     setActiveLeadId(lead.id);
 

@@ -60,6 +60,20 @@ export class CrmPipelineStageNotFoundError extends Error {
   }
 }
 
+export class CrmPipelineDuplicateNameError extends Error {
+  constructor(name: string) {
+    super(`CRM pipeline name already exists: ${name}`);
+    this.name = "CrmPipelineDuplicateNameError";
+  }
+}
+
+export class CrmPipelineInUseError extends Error {
+  constructor(message = "CRM pipeline is in use by active leads.") {
+    super(message);
+    this.name = "CrmPipelineInUseError";
+  }
+}
+
 export class CrmScopeError extends Error {
   constructor(fieldName: string) {
     super(`CRM service requires ${fieldName}.`);

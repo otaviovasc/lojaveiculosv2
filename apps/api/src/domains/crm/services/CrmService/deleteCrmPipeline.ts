@@ -1,10 +1,13 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import { createServiceLogMetadata } from "../../../../shared/serviceContext.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import { assertPipelineCanBeDeleted } from "../../pipeline/crmPipelineGuards.js";
 import {
   CrmPipelineNotFoundError,
   getCrmPipelineRepository,
+  getCrmRepository,
   requireCrmScope,
+  runCrmTransaction,
   type CrmServicePorts,
 } from "./serviceSupport.js";
 
@@ -27,26 +30,33 @@ export async function deleteCrmPipeline(
     createServiceLogMetadata(context, { pipelineId: input.pipelineId }),
   );
 
-  const deleted = await getCrmPipelineRepository(ports).deletePipeline({
-    pipelineId: input.pipelineId,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+  return runCrmTransaction(ports, async (transactionPorts) => {
+    await assertPipelineCanBeDeleted(getCrmRepository(transactionPorts), {
+      pipelineId: input.pipelineId,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    const deleted = await getCrmPipelineRepository(
+      transactionPorts,
+    ).deletePipeline({
+      pipelineId: input.pipelineId,
+      storeId: scope.storeId as never,
+      tenantId: scope.tenantId as never,
+    });
+    if (!deleted) throw new CrmPipelineNotFoundError(input.pipelineId);
+    await context.audit.record({
+      action: "crm.pipeline.delete",
+      actor: context.actor,
+      category: "data_change",
+      entityId: input.pipelineId,
+      entityType: "crm_pipeline",
+      metadata: { permission },
+      outcome: "succeeded",
+      requestId: context.requestId,
+      storeId: scope.storeId,
+      tenantId: scope.tenantId,
+      summary: "Deleted CRM pipeline",
+    });
+    return { deleted: true };
   });
-  if (!deleted) throw new CrmPipelineNotFoundError(input.pipelineId);
-
-  await context.audit.record({
-    action: "crm.pipeline.delete",
-    actor: context.actor,
-    category: "data_change",
-    entityId: input.pipelineId,
-    entityType: "crm_pipeline",
-    metadata: { permission },
-    outcome: "succeeded",
-    requestId: context.requestId,
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
-    summary: "Deleted CRM pipeline",
-  });
-
-  return { deleted: true };
 }

@@ -8,6 +8,8 @@ import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { AuthorizationError } from "../../../shared/authorization.js";
 import {
   CrmLeadNotFoundError,
+  CrmPipelineDuplicateNameError,
+  CrmPipelineInUseError,
   CrmPipelineNotFoundError,
   CrmPipelineStageNotFoundError,
   CrmScopeError,
@@ -83,6 +85,24 @@ export async function handleCrm(
         error,
         message: error.message,
         status: 404,
+      });
+    }
+
+    if (error instanceof CrmPipelineDuplicateNameError) {
+      return jsonApiError(context, {
+        code: "CRM_PIPELINE_DUPLICATE_NAME",
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+
+    if (error instanceof CrmPipelineInUseError) {
+      return jsonApiError(context, {
+        code: "CRM_PIPELINE_IN_USE",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
 

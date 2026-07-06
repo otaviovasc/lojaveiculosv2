@@ -13,6 +13,10 @@ import type {
   UpdateCrmLeadInput,
 } from "../../../domains/crm/ports/crmRepository.js";
 import { findLeadByPhoneInDatabase } from "./drizzleCrmLeadLookup.js";
+import {
+  countLeadsByPipeline,
+  countLeadsByPipelineStages,
+} from "./drizzleCrmLeadReferenceCounts.js";
 import { findLeadIdsByVehicleTitle } from "./drizzleCrmLeadSearch.js";
 import { toActivity, toLead } from "./drizzleCrmMappers.js";
 import {
@@ -60,8 +64,6 @@ export function createDrizzleCrmRepository(
           buyerName: input.buyerName ?? null,
           buyerPhone: input.buyerPhone ?? null,
           metadata: input.metadata ?? {},
-          pipelineId: input.pipelineId ?? null,
-          pipelineStageId: input.pipelineStageId ?? null,
           source: input.source,
           storeId: input.storeId,
           tenantId: input.tenantId,
@@ -110,6 +112,9 @@ export function createDrizzleCrmRepository(
     async findLeadByPhone(input) {
       return findLeadByPhoneInDatabase(db, input);
     },
+    countLeadsByPipeline: (input) => countLeadsByPipeline(db, input),
+    countLeadsByPipelineStages: (input) =>
+      countLeadsByPipelineStages(db, input),
     async listActivities(input) {
       const rows = await db
         .select()

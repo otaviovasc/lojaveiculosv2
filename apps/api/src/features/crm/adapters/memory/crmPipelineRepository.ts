@@ -24,6 +24,14 @@ export function createMemoryCrmPipelineRepository(): CrmPipelineRepository {
     async findPipelineById(input) {
       return findPipeline(pipelines, input.pipelineId, input) ?? null;
     },
+    async findPipelineByName(input) {
+      return (
+        pipelines.find(
+          (pipeline) =>
+            pipeline.name === input.name && matchesScope(pipeline, input),
+        ) ?? null
+      );
+    },
     async findStageById(input) {
       return (
         pipelines
