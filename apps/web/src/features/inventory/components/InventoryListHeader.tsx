@@ -61,7 +61,7 @@ export function InventoryListHeader({
     <FeatureKpiStrip ariaLabel="Resumo do inventário">
       {stats.map((stat, idx) => (
         <FeatureKpiCard
-          active={stat.status !== "" && activeStatus === stat.status}
+          active={activeStatus === stat.status}
           animationIndex={idx}
           icon={stat.icon}
           key={stat.label}

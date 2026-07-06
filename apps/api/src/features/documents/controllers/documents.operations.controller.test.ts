@@ -9,13 +9,11 @@ import type { DocumentServices } from "./documentServices.js";
 describe("documents operation controller", () => {
   it("routes document preview requests", async () => {
     const services = createServices({
-      preview: vi.fn(
-        async (): Promise<DocumentPreview> => ({
-          document,
-          generatedAt: new Date("2026-01-02T10:00:00.000Z"),
-          sections: [{ heading: "Documento", lines: ["Contrato"] }],
-        }),
-      ),
+      preview: vi.fn(async (): Promise<DocumentPreview> => ({
+        document,
+        generatedAt: new Date("2026-01-02T10:00:00.000Z"),
+        sections: [{ heading: "Documento", lines: ["Contrato"] }],
+      })),
     });
 
     const response = await createApp(services).request(
@@ -78,7 +76,9 @@ describe("documents operation controller", () => {
 
     expect(response.status).toBe(200);
     expect(services.download).toHaveBeenCalledWith(expect.any(Object), {
+      disposition: undefined,
       documentId: "document_1",
+      versionId: undefined,
     });
     expect(await response.json()).toEqual(
       expect.objectContaining({
@@ -86,6 +86,32 @@ describe("documents operation controller", () => {
         versionNumber: 1,
       }),
     );
+  });
+
+  it("routes inline document download descriptor requests", async () => {
+    const services = createServices({
+      download: vi.fn(async () => ({
+        document,
+        downloadMethod: "GET" as const,
+        downloadUrl: "https://download.local/document.pdf",
+        expiresAt: new Date("2026-01-01T10:05:00.000Z"),
+        fileName: "contract.pdf",
+        mimeType: "application/pdf",
+        versionId: "version_1",
+        versionNumber: 1,
+      })),
+    });
+
+    const response = await createApp(services).request(
+      "/api/v1/documents/document_1/download?disposition=inline",
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.download).toHaveBeenCalledWith(expect.any(Object), {
+      disposition: "inline",
+      documentId: "document_1",
+      versionId: undefined,
+    });
   });
 
   it("routes document link update requests", async () => {

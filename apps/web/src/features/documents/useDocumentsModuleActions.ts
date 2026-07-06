@@ -7,8 +7,8 @@ import {
   type WorkspaceStatus,
 } from "./DocumentsModuleSupport";
 import type {
+  DocumentDownload,
   DocumentKind,
-  DocumentPreview,
   DocumentTemplate,
   DocumentVersion,
   UpdateDocumentInput,
@@ -19,7 +19,7 @@ import type {
 type DocumentsActionState = {
   documentToDelete: WorkspaceDocument | null;
   documentsApi: DocumentsApi | null;
-  setDocumentPreview: Dispatch<SetStateAction<DocumentPreview | null>>;
+  setDocumentPreview: Dispatch<SetStateAction<DocumentDownload | null>>;
   setDocumentToDelete: Dispatch<SetStateAction<WorkspaceDocument | null>>;
   setDocumentVersions: Dispatch<SetStateAction<DocumentVersion[]>>;
   setDocuments: Dispatch<SetStateAction<WorkspaceDocument[]>>;
@@ -54,12 +54,15 @@ export function useDocumentsModuleActions({
     setDocumentVersions([]);
     try {
       const [preview, versions] = await Promise.all([
-        requireApi().previewDocument(documentId),
+        requireApi().downloadDocument(documentId, { disposition: "inline" }),
         requireApi().listVersions(documentId),
       ]);
       setDocumentPreview(preview);
       setDocumentVersions(versions);
     } catch (error) {
+      setSelectedDocument(null);
+      setDocumentPreview(null);
+      setDocumentVersions([]);
       setStatus({ kind: "error", message: errorMessage(error) });
     } finally {
       setIsDocumentActionBusy(false);
@@ -73,7 +76,7 @@ export function useDocumentsModuleActions({
     try {
       const updated = await action();
       const [preview, versions] = await Promise.all([
-        requireApi().previewDocument(updated.id),
+        requireApi().downloadDocument(updated.id, { disposition: "inline" }),
         requireApi().listVersions(updated.id),
       ]);
       setDocuments((current) => replaceDocument(current, updated));
@@ -141,7 +144,7 @@ export function useDocumentsModuleActions({
     try {
       const download = await requireApi().downloadDocument(
         documentId,
-        versionId,
+        versionId ? { versionId } : undefined,
       );
       openDocumentDownload(download);
       setStatus({ kind: "ready" });

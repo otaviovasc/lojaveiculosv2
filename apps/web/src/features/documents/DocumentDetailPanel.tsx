@@ -22,8 +22,8 @@ import {
 import { kindLabel, statusLabel } from "./documentLabels";
 import { documentFileLabel, formatDateTime } from "./documentsWorkspaceModel";
 import type {
+  DocumentDownload,
   DocumentKind,
-  DocumentPreview,
   DocumentVersion,
   WorkspaceDocument,
 } from "./types";
@@ -53,7 +53,7 @@ export function DocumentDetailPanel({
     document: WorkspaceDocument,
     input: { kind: DocumentKind; title: string },
   ) => Promise<WorkspaceDocument | null>;
-  preview: DocumentPreview | null;
+  preview: DocumentDownload | null;
   versions: DocumentVersion[];
 }) {
   const [isEditingMetadata, setIsEditingMetadata] = useState(false);

@@ -7,7 +7,7 @@ import {
 } from "./DocumentsModuleSupport";
 import { useDocumentsModuleActions } from "./useDocumentsModuleActions";
 import type {
-  DocumentPreview,
+  DocumentDownload,
   DocumentTemplate,
   DocumentVersion,
   WorkspaceDocument,
@@ -28,7 +28,7 @@ export function useDocumentsModuleState(api: DocumentsApi | null) {
   const [selectedDocument, setSelectedDocument] =
     useState<WorkspaceDocument | null>(null);
   const [documentPreview, setDocumentPreview] =
-    useState<DocumentPreview | null>(null);
+    useState<DocumentDownload | null>(null);
   const [documentVersions, setDocumentVersions] = useState<DocumentVersion[]>(
     [],
   );

@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+} from "@aws-sdk/client-s3";
+import { StorageObjectNotFoundError } from "../../shared/storage/objectStorage.js";
+import type { R2ObjectReader } from "./r2ObjectStorageReader.js";
 import {
   createR2ObjectStorage,
   createR2ObjectStorageFromEnv,
@@ -68,8 +74,12 @@ describe("R2 object storage", () => {
 
   it("creates private signed download urls with a 300 second env default", async () => {
     vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const objectReader = createExistingObjectReader();
     const signer: R2UrlSigner = vi.fn(async (_client, command) => {
-      expect(command).toBeInstanceOf(GetObjectCommand);
+      const input = expectGetObjectCommandInput(command);
+      expect(input.ResponseContentDisposition).toBe(
+        'attachment; filename="contrato.pdf"',
+      );
       return "https://signed-download.example/document.pdf";
     });
     const storage = createR2ObjectStorageFromEnv({
@@ -83,6 +93,7 @@ describe("R2 object storage", () => {
       accessKeyId: "key",
       bucketName: "app-media",
       endpoint: "https://account.r2.cloudflarestorage.com",
+      objectReader,
       publicBaseUrl: "https://media.lojaveiculos.com.br",
       secretAccessKey: "secret",
       signer,
@@ -100,7 +111,75 @@ describe("R2 object storage", () => {
       downloadUrl: "https://signed-download.example/document.pdf",
       expiresAt: new Date("2026-01-01T00:05:00.000Z"),
     });
+    expect(objectReader).toHaveBeenCalledOnce();
     vi.useRealTimers();
+  });
+
+  it("creates inline private signed download urls for PDF viewers", async () => {
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+    const objectReader = createExistingObjectReader();
+    const signer: R2UrlSigner = vi.fn(async (_client, command) => {
+      const input = expectGetObjectCommandInput(command);
+      expect(input.ResponseContentDisposition).toBe(
+        'inline; filename="contrato.pdf"',
+      );
+      expect(input.ResponseContentType).toBe("application/pdf");
+      return "https://signed-download.example/document.pdf";
+    });
+    const storage = createR2ObjectStorage({
+      accessKeyId: "key",
+      bucketName: "app-media",
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      objectReader,
+      publicBaseUrl: "https://media.lojaveiculos.com.br",
+      secretAccessKey: "secret",
+      signer,
+    });
+
+    const download = await storage.createDownload({
+      disposition: "inline",
+      fileName: "Contrato.pdf",
+      mimeType: "application/pdf",
+      storageKey: "private/document.pdf",
+    });
+
+    expect(download.downloadUrl).toBe(
+      "https://signed-download.example/document.pdf",
+    );
+    expect(objectReader).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("does not sign missing private download objects", async () => {
+    const missing = new Error("missing") as Error & {
+      $metadata: { httpStatusCode: number };
+    };
+    missing.name = "NoSuchKey";
+    missing.$metadata = { httpStatusCode: 404 };
+    const objectReader: R2ObjectReader = vi.fn(async () => {
+      throw missing;
+    });
+    const signer: R2UrlSigner = vi.fn(
+      async () => "https://signed-download.example/document.pdf",
+    );
+    const storage = createR2ObjectStorage({
+      accessKeyId: "key",
+      bucketName: "app-media",
+      endpoint: "https://account.r2.cloudflarestorage.com",
+      objectReader,
+      publicBaseUrl: "https://media.lojaveiculos.com.br",
+      secretAccessKey: "secret",
+      signer,
+    });
+
+    await expect(
+      storage.createDownload({
+        fileName: "Contrato.pdf",
+        mimeType: "application/pdf",
+        storageKey: "private/missing-document.pdf",
+      }),
+    ).rejects.toBeInstanceOf(StorageObjectNotFoundError);
+    expect(signer).not.toHaveBeenCalled();
   });
 
   it("deletes objects by storage key", async () => {
@@ -121,3 +200,21 @@ describe("R2 object storage", () => {
     expect(objectDeleter).toHaveBeenCalledOnce();
   });
 });
+
+function expectGetObjectCommandInput(command: GetObjectCommand | unknown) {
+  expect(command).toBeInstanceOf(GetObjectCommand);
+  return (
+    command as {
+      input: {
+        ResponseContentDisposition?: unknown;
+        ResponseContentType?: unknown;
+      };
+    }
+  ).input;
+}
+
+function createExistingObjectReader(): R2ObjectReader {
+  return vi.fn(async (_client, command) => {
+    expect(command).toBeInstanceOf(HeadObjectCommand);
+  });
+}

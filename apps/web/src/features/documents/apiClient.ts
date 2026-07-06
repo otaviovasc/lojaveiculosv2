@@ -18,6 +18,11 @@ import type {
   WorkspaceDocument,
 } from "./types";
 
+export type DocumentDownloadOptions = {
+  disposition?: "attachment" | "inline";
+  versionId?: string;
+};
+
 export type DocumentsApi = {
   createUploadedDocument: (
     input: CreateUploadedDocumentInput,
@@ -29,7 +34,7 @@ export type DocumentsApi = {
   deleteDocument: (documentId: string) => Promise<WorkspaceDocument>;
   downloadDocument: (
     documentId: string,
-    versionId?: string,
+    options?: DocumentDownloadOptions,
   ) => Promise<DocumentDownload>;
   listDocuments: (
     filters?: ListDocumentsFilters,
@@ -90,8 +95,8 @@ export function createDocumentsApi({
         headers: createDocumentsHeaders(auth),
         method: "DELETE",
       }).then(readJson<WorkspaceDocument>),
-    downloadDocument: (documentId, versionId) =>
-      fetch(documentsRoutes.download(documentId, versionId, baseUrl), {
+    downloadDocument: (documentId, options = {}) =>
+      fetch(documentsRoutes.download(documentId, options, baseUrl), {
         headers: createDocumentsHeaders(auth),
       }).then(readJson<DocumentDownload>),
     listDocuments: (filters = {}) =>
@@ -159,10 +164,14 @@ export const documentsRoutes = {
     createEndpoint(`/documents/${encodeURIComponent(documentId)}`, baseUrl),
   documents: (filters: ListDocumentsFilters = {}, baseUrl?: string) =>
     createEndpoint(`/documents${createQuery(filters)}`, baseUrl),
-  download: (documentId: string, versionId?: string, baseUrl?: string) =>
+  download: (
+    documentId: string,
+    options: DocumentDownloadOptions = {},
+    baseUrl?: string,
+  ) =>
     createEndpoint(
-      `/documents/${encodeURIComponent(documentId)}/download${createVersionQuery(
-        versionId,
+      `/documents/${encodeURIComponent(documentId)}/download${createDownloadQuery(
+        options,
       )}`,
       baseUrl,
     ),
@@ -225,9 +234,12 @@ function createQuery(filters: ListDocumentsFilters): string {
   return query ? `?${query}` : "";
 }
 
-function createVersionQuery(versionId?: string): string {
-  if (!versionId) return "";
-  return `?versionId=${encodeURIComponent(versionId)}`;
+function createDownloadQuery(options: DocumentDownloadOptions): string {
+  const params = new URLSearchParams();
+  if (options.versionId) params.set("versionId", options.versionId);
+  if (options.disposition === "inline") params.set("disposition", "inline");
+  const query = params.toString();
+  return query ? `?${query}` : "";
 }
 
 function createEndpoint(path: string, baseUrl = "/api/v1") {

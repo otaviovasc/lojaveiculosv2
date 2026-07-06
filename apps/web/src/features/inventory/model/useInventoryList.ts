@@ -101,42 +101,33 @@ export function useInventoryList(api?: InventoryApi) {
 
   const handleViewModeChange = (mode: "list" | "cards") => {
     setViewMode(mode);
-    if (typeof window !== "undefined") {
-      window.localStorage?.setItem?.(
-        "lojaveiculosv2:inventory_view_preference",
-        mode,
-      );
-    }
+    window.localStorage?.setItem?.(
+      "lojaveiculosv2:inventory_view_preference",
+      mode,
+    );
   };
 
-  const handleColumnToggle = (key: string, visible: boolean) => {
+  const handleColumnToggle = (key: string, visible: boolean) =>
     setVisibleColumns((prev) => ({ ...prev, [key]: visible }));
-  };
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const headers = await createInventoryRuntimeHeaders();
-        const res = await fetch("/api/v1/settings/store", { headers });
-        if (res.ok) {
-          const data = (await res.json()) as InventoryStoreSettings;
-          setStoreSettings(data);
-        }
-      } catch (err) {
-        console.error("Failed to load store settings", err);
-      }
-    };
-    void fetchSettings();
+    void createInventoryRuntimeHeaders()
+      .then((headers) => fetch("/api/v1/settings/store", { headers }))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setStoreSettings(data as InventoryStoreSettings);
+      })
+      .catch((err) => console.error("Failed to load store settings", err));
   }, []);
 
   useEffect(() => {
     if (api) {
       setRuntimeApi(api);
-    } else {
-      void createInventoryApiOptions().then((opts) =>
-        setRuntimeApi(createInventoryApi(opts)),
-      );
+      return;
     }
+    void createInventoryApiOptions().then((opts) =>
+      setRuntimeApi(createInventoryApi(opts)),
+    );
   }, [api]);
 
   const loadListings = useCallback(
@@ -149,9 +140,19 @@ export function useInventoryList(api?: InventoryApi) {
       else setListState({ kind: "loading" });
       try {
         const result = await runtimeApi.listListings(createListQuery(input));
-        if (!input.search && !input.status && mode !== "append") {
-          const sum = summarizeInventoryList(result);
-          setUnfilteredSummary(sum);
+        if (mode !== "append") {
+          if (!input.search && !input.status) {
+            setUnfilteredSummary(summarizeInventoryList(result));
+          } else {
+            try {
+              const unfiltered = await runtimeApi.listListings(
+                createListQuery({ search: "", status: "" }),
+              );
+              setUnfilteredSummary(summarizeInventoryList(unfiltered));
+            } catch (err) {
+              console.error("Failed to load unfiltered summary", err);
+            }
+          }
         }
         setListState((curr) =>
           mode !== "append" || curr.kind !== "ready"
@@ -179,39 +180,30 @@ export function useInventoryList(api?: InventoryApi) {
 
   useEffect(() => {
     if (!runtimeApi) return;
-
     if (!isMountedRef.current) {
       isMountedRef.current = true;
-      const query = { search, status };
-      setAppliedQuery(query);
-      void loadListings(query);
+      setAppliedQuery({ search, status });
+      void loadListings({ search, status });
       return;
     }
-
     if (status !== lastQueryRef.current.status) {
       lastQueryRef.current = { search, status };
-      const query = { search, status };
-      setAppliedQuery(query);
-      void loadListings(query);
+      setAppliedQuery({ search, status });
+      void loadListings({ search, status });
       return;
     }
-
     const delayDebounceFn = setTimeout(() => {
       if (search !== lastQueryRef.current.search) {
         lastQueryRef.current = { search, status };
-        const query = { search, status };
-        setAppliedQuery(query);
-        void loadListings(query);
+        setAppliedQuery({ search, status });
+        void loadListings({ search, status });
       }
     }, 300);
-
     return () => clearTimeout(delayDebounceFn);
   }, [search, status, loadListings, runtimeApi]);
 
   useEffect(() => {
-    if (detail && screenMode === "list") {
-      setScreenMode("detail");
-    }
+    if (detail && screenMode === "list") setScreenMode("detail");
   }, [detail, screenMode]);
 
   useInventoryRouteSelection({
@@ -223,17 +215,12 @@ export function useInventoryList(api?: InventoryApi) {
   });
 
   const refreshListings = () => {
-    const query = { search, status };
-    setAppliedQuery(query);
-    void loadListings(query);
+    setAppliedQuery({ search, status });
+    void loadListings({ search, status });
   };
 
-  const applyStatusFilter = (nextStatus: InventoryListStatusFilter) => {
-    const nextQuery = { search, status: nextStatus };
+  const applyStatusFilter = (nextStatus: InventoryListStatusFilter) =>
     setStatus(nextStatus);
-    setAppliedQuery(nextQuery);
-    void loadListings(nextQuery);
-  };
 
   const selectListing = async (listingId: string, unitId?: string | null) => {
     if (!runtimeApi) return;
@@ -268,12 +255,11 @@ export function useInventoryList(api?: InventoryApi) {
       try {
         const details = await runtimeApi?.getListing(item.listing.id);
         setActiveSummaryItem({ ...item, media: details?.media || [] });
-        setIsTemplateOpen(true);
       } catch (err) {
         console.error(err);
         setActiveSummaryItem({ ...item, media: [] });
-        setIsTemplateOpen(true);
       } finally {
+        setIsTemplateOpen(true);
         void loadListings(appliedQuery);
       }
     } else if (action === "test-drive") {
@@ -282,9 +268,7 @@ export function useInventoryList(api?: InventoryApi) {
     } else if (action === "zip-photos") {
       setLoadingMore(true);
       try {
-        if (runtimeApi) {
-          await downloadAndZipPhotos(runtimeApi, item);
-        }
+        if (runtimeApi) await downloadAndZipPhotos(runtimeApi, item);
       } catch (err) {
         console.error(err);
         setListState({

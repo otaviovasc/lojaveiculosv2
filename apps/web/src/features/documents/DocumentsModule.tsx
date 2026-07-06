@@ -157,6 +157,8 @@ export function DocumentsModule({
   const selectFolder = (folderKey: DocumentsFolderKey) => {
     setSelectedFolderKey(folderKey);
     setMobileTab("documentos");
+    closeDetail();
+    setLinkDocument(null);
     selection.clear();
   };
   const openMobileFolders = useCallback(() => setMobileTab("pastas"), []);

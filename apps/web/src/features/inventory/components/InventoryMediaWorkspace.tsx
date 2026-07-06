@@ -13,6 +13,7 @@ import type {
   InventoryMediaRun,
   InventoryMediaState,
 } from "../model/mediaWorkspaceTypes";
+import { uploadInventoryFile } from "../model/mediaWorkspaceTypes";
 
 export function InventoryMediaWorkspace({
   api,
@@ -60,6 +61,32 @@ export function InventoryMediaWorkspace({
     }
   };
 
+  const handleUploadInternalRecord = async (file: File) => {
+    if (!currentUnitId) {
+      throw new Error("Selecione uma unidade para anexar registro interno.");
+    }
+    const upload = await api.requestMediaUpload(currentUnitId, {
+      file,
+      kind: "document_preview",
+    });
+    await uploadInventoryFile(file, upload);
+    const mediaRecord = await api.createMedia(currentUnitId, {
+      altText: file.name,
+      displayOrder: selectedMedia.length,
+      kind: "document_preview",
+      storageKey: upload.storageKey,
+    });
+    return api.updateMedia(currentUnitId, mediaRecord.mediaId, {
+      isPublic: false,
+    });
+  };
+
+  const uploadInternalRecord = (file: File) => {
+    void run("Anexando registro interno", () =>
+      handleUploadInternalRecord(file),
+    );
+  };
+
   return (
     <InventoryPanel
       icon={<ImageUp className="size-5" />}
@@ -94,7 +121,10 @@ export function InventoryMediaWorkspace({
           description="Laudos, fotos de reparo e arquivos que não entram na vitrine."
           title="Registros internos"
         >
-          <InternalPhotosZone internalPhotos={internalMedia} />
+          <InternalPhotosZone
+            internalPhotos={internalMedia}
+            onUploadInternal={uploadInternalRecord}
+          />
         </MediaSection>
         <MediaSection
           description="Documentos operacionais vinculados à unidade."

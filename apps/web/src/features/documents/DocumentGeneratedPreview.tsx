@@ -1,138 +1,94 @@
-import { FileText } from "lucide-react";
-import { Logo } from "../../components/ui/logo";
+import { FileText, FileWarning } from "lucide-react";
+import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { kindLabel, statusLabel } from "./documentLabels";
-import type {
-  DocumentKind,
-  DocumentPreview,
-  DocumentStatus,
-  WorkspaceDocument,
-} from "./types";
+import { documentStatusTone } from "./documentsWorkspaceModel";
+import type { DocumentDownload, WorkspaceDocument } from "./types";
 
 export function DocumentGeneratedPreview({
   document,
   preview,
 }: {
   document: WorkspaceDocument;
-  preview: DocumentPreview | null;
+  preview: DocumentDownload | null;
 }) {
-  const sections = preview?.sections ?? [];
+  const isPdf = isPdfDocument(preview, document);
+  const viewerUrl = preview && isPdf ? createPdfViewerUrl(preview) : null;
+
+  if (viewerUrl) {
+    return (
+      <article className="documents-pdf-preview-container">
+        <object
+          aria-label={`Prévia PDF de ${document.title}`}
+          className="documents-pdf-preview-frame"
+          data={viewerUrl}
+          type="application/pdf"
+        >
+          <iframe
+            className="documents-pdf-preview-frame"
+            src={viewerUrl}
+            title={`Prévia PDF de ${document.title}`}
+          />
+        </object>
+      </article>
+    );
+  }
 
   return (
-    <article className="documents-template-paper documents-generated-paper">
-      <div className="documents-template-paper-heading">
-        <div className="documents-template-paper-brand">
-          <span>
-            <Logo className="max-h-5 w-8" variant="white" />
+    <article className="documents-pdf-preview-empty-state">
+      <div className="documents-pdf-preview-empty-card">
+        <div className="documents-pdf-preview-empty-icon-wrapper">
+          {isPdf ? (
+            <FileText
+              className="documents-pdf-preview-empty-icon size-8"
+              aria-hidden="true"
+            />
+          ) : (
+            <FileWarning
+              className="documents-pdf-preview-empty-icon size-8"
+              aria-hidden="true"
+            />
+          )}
+        </div>
+        <div className="documents-pdf-preview-empty-info">
+          <span className="documents-pdf-preview-empty-subtitle">
+            {kindLabel(document.kind)}
           </span>
-          <div>
-            <strong>Loja Veículos</strong>
-            <small>{kindLabel(document.kind)}</small>
-            <small>{statusLabel(document.status)}</small>
+          <h3 className="documents-pdf-preview-empty-title">
+            {document.title}
+          </h3>
+          <div className="documents-pdf-preview-empty-badge-row">
+            <FeatureStatusBadge tone={documentStatusTone(document.status)}>
+              {statusLabel(document.status)}
+            </FeatureStatusBadge>
           </div>
         </div>
-        <div className="documents-template-paper-title">
-          <span>Documento emitido</span>
-          <strong>{document.title}</strong>
-          <small>{document.file.fileName}</small>
+        <div className="documents-pdf-preview-empty-details">
+          <strong>
+            {isPdf ? "Carregando PDF" : "Prévia PDF indisponível"}
+          </strong>
+          <p>
+            {isPdf
+              ? "Aguarde enquanto o arquivo emitido é assinado para visualização."
+              : "Este arquivo não está no formato PDF. Faça o download para visualizar o conteúdo."}
+          </p>
         </div>
       </div>
-
-      {sections.length === 0 ? (
-        <section className="documents-template-paper-section">
-          <h3>Prévia indisponível</h3>
-          <p className="documents-template-paper-intro">
-            Use visualizar ou baixar para consultar o arquivo original.
-          </p>
-        </section>
-      ) : (
-        sections.map((section) => (
-          <section
-            className="documents-template-paper-section"
-            key={section.heading}
-          >
-            <h3>{section.heading}</h3>
-            <dl className="documents-template-paper-fields">
-              {section.lines.map((line) => {
-                const field = parsePreviewLine(line);
-                return (
-                  <div key={line}>
-                    <dt>{field.label}</dt>
-                    <dd>{field.value}</dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </section>
-        ))
-      )}
-
-      <div className="documents-template-paper-check">
-        <FileText aria-hidden="true" className="size-4" />
-        <span>Arquivo vinculado ao histórico operacional da loja.</span>
-      </div>
-
-      <footer className="documents-template-paper-signatures">
-        <span>Loja / vendedor</span>
-        <span>Comprador</span>
-      </footer>
     </article>
   );
 }
 
-function parsePreviewLine(line: string) {
-  const separatorIndex = line.indexOf(":");
-  if (separatorIndex === -1) return { label: "Informação", value: line };
-  const label = line.slice(0, separatorIndex).trim() || "Informação";
-  const rawValue = line.slice(separatorIndex + 1).trim() || "-";
-
-  return {
-    label,
-    value: formatPreviewFieldValue(label, rawValue),
-  };
+function isPdfDocument(
+  preview: DocumentDownload | null,
+  document: WorkspaceDocument,
+) {
+  const mimeType = preview?.mimeType ?? document.file.mimeType;
+  return (
+    mimeType === "application/pdf" ||
+    document.file.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
+  );
 }
 
-function formatPreviewFieldValue(label: string, value: string) {
-  if (label.toLocaleLowerCase("pt-BR") === "tipo" && isDocumentKind(value)) {
-    return kindLabel(value);
-  }
-  if (
-    label.toLocaleLowerCase("pt-BR") === "status" &&
-    isDocumentStatus(value)
-  ) {
-    return statusLabel(value);
-  }
-  return value;
+function createPdfViewerUrl(download: DocumentDownload) {
+  if (download.downloadUrl.includes("#")) return download.downloadUrl;
+  return `${download.downloadUrl}#toolbar=1&navpanes=0&view=FitH`;
 }
-
-function isDocumentKind(value: string): value is DocumentKind {
-  return documentKinds.has(value as DocumentKind);
-}
-
-function isDocumentStatus(value: string): value is DocumentStatus {
-  return documentStatuses.has(value as DocumentStatus);
-}
-
-const documentKinds = new Set<DocumentKind>([
-  "buyer_document",
-  "delivery_term",
-  "finance_receipt",
-  "inspection",
-  "internal",
-  "invoice",
-  "other",
-  "power_of_attorney",
-  "reservation_receipt",
-  "sale_contract",
-  "sale_receipt",
-  "test_drive",
-  "vehicle_registration",
-]);
-
-const documentStatuses = new Set<DocumentStatus>([
-  "archived",
-  "draft",
-  "issued",
-  "pending_signature",
-  "signed",
-  "voided",
-]);

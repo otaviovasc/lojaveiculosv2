@@ -15,6 +15,7 @@ import {
   documentFileLabel,
   documentKindBadge,
   documentStatusBadge,
+  documentStatusTone,
   formatDateTime,
 } from "./documentsWorkspaceModel";
 import { kindLabel, statusLabel } from "./documentLabels";
@@ -200,12 +201,4 @@ export function DocumentsTable({
       </table>
     </FeatureTableFrame>
   );
-}
-
-function documentStatusTone(status: DocumentStatus): FeatureStatusTone {
-  if (status === "issued" || status === "signed") return "success";
-  if (status === "pending_signature") return "warning";
-  if (status === "voided") return "pink";
-  if (status === "draft") return "blue";
-  return "neutral";
 }

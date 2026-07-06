@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { RefreshCw, Truck } from "lucide-react";
 import type { CustomSelectOption } from "../../../components/ui/CustomSelect";
 import type { InventoryApi } from "../api/apiClient";
 import type {
@@ -6,7 +7,7 @@ import type {
   VehicleSupplier,
   VehicleSupplierKind,
 } from "../model/types";
-import { CardHeader } from "./VehicleAcquisitionCardParts";
+import { InventoryPanel } from "./InventoryFormParts";
 import {
   cleanAcquisitionDraft,
   cleanSupplierDraft,
@@ -168,42 +169,69 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
 
   if (!unit) {
     return (
-      <section className="bg-panel border border-line rounded-2xl p-5 min-h-[360px]">
-        <CardHeader isLoading={false} />
+      <InventoryPanel
+        icon={<Truck className="size-5" />}
+        title="Origem e Fornecedor de Aquisição"
+      >
         <p className="text-xs font-bold text-muted">
           Adicione uma unidade ao veículo para cadastrar origem e fornecedor.
         </p>
-      </section>
+      </InventoryPanel>
     );
   }
 
   return (
-    <section className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-4 min-h-[360px]">
-      <CardHeader isLoading={isLoading} />
-      {message ? (
-        <div className="rounded-xl border border-line bg-app px-3 py-2 text-xs font-bold text-muted">
-          {message}
+    <InventoryPanel
+      icon={
+        isLoading ? (
+          <RefreshCw className="size-5 animate-spin" />
+        ) : (
+          <Truck className="size-5" />
+        )
+      }
+      title="Origem e Fornecedor de Aquisição"
+    >
+      <div className="grid gap-4">
+        {message ? (
+          <div className="rounded-xl border border-line bg-app px-3 py-2 text-xs font-bold text-muted">
+            {message}
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-0">
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-wider text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
+              <span>Fornecedor</span>
+            </h4>
+            <VehicleAcquisitionSupplierPanel
+              isSaving={isSaving}
+              onArchive={() => void archiveSupplier()}
+              onSave={() => void saveSupplier()}
+              onSelectSupplier={selectSupplier}
+              onUpdateSupplierDraft={updateSupplierDraft}
+              selectedSupplierId={selectedSupplierId}
+              supplierDraft={supplierDraft}
+              supplierOptions={supplierOptions}
+            />
+          </div>
+
+          {/* Centered line dividers */}
+          <div className="hidden lg:block w-px bg-line/60 self-stretch my-2 mx-8" />
+          <div className="block lg:hidden h-px bg-line/60 w-full my-6" />
+
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-wider text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
+              <span>Origem e Valores</span>
+            </h4>
+            <VehicleAcquisitionSourcePanel
+              acquisitionDraft={acquisitionDraft}
+              isSaving={isSaving}
+              onSave={() => void saveAcquisition()}
+              setAcquisitionDraft={setAcquisitionDraft}
+            />
+          </div>
         </div>
-      ) : null}
-      <div className="flex flex-col gap-6">
-        <VehicleAcquisitionSupplierPanel
-          isSaving={isSaving}
-          onArchive={() => void archiveSupplier()}
-          onSave={() => void saveSupplier()}
-          onSelectSupplier={selectSupplier}
-          onUpdateSupplierDraft={updateSupplierDraft}
-          selectedSupplierId={selectedSupplierId}
-          supplierDraft={supplierDraft}
-          supplierOptions={supplierOptions}
-        />
-        <div className="border-t border-line/60" />
-        <VehicleAcquisitionSourcePanel
-          acquisitionDraft={acquisitionDraft}
-          isSaving={isSaving}
-          onSave={() => void saveAcquisition()}
-          setAcquisitionDraft={setAcquisitionDraft}
-        />
       </div>
-    </section>
+    </InventoryPanel>
   );
 }

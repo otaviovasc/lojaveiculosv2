@@ -13,6 +13,7 @@ export type PutStorageObjectInput = {
 };
 
 export type CreateObjectDownloadInput = {
+  disposition?: "attachment" | "inline";
   fileName: string;
   mimeType: string | null;
   storageKey: string;
@@ -50,3 +51,10 @@ export type ObjectStorage = {
   getPublicUrl: (storageKey: string) => string;
   putObject: (input: PutStorageObjectInput) => Promise<StoredObject>;
 };
+
+export class StorageObjectNotFoundError extends Error {
+  constructor() {
+    super("Stored object was not found.");
+    this.name = "StorageObjectNotFoundError";
+  }
+}

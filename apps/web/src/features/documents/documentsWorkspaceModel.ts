@@ -1,6 +1,7 @@
 import { kindLabel, statusLabel, targetLabel } from "./documentLabels";
 import { isVehicleDocumentTargetType } from "./documentDisplayModel";
-import type { WorkspaceDocument } from "./types";
+import type { FeatureStatusTone } from "../../components/ui/FeatureStates";
+import type { DocumentStatus, WorkspaceDocument } from "./types";
 
 // Two structural top-level groups covering all DocumentLinkTarget types:
 // - "geral": store-linked documents (NOT tied to any vehicle)
@@ -153,4 +154,12 @@ function formatFileSize(value: number | null) {
   if (value == null) return null;
   if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
   return `${(value / 1024 / 1024).toFixed(1)} MB`;
+}
+
+export function documentStatusTone(status: DocumentStatus): FeatureStatusTone {
+  if (status === "issued" || status === "signed") return "success";
+  if (status === "pending_signature") return "warning";
+  if (status === "voided") return "pink";
+  if (status === "draft") return "blue";
+  return "neutral";
 }

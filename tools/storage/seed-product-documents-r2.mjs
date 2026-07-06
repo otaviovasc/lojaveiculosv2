@@ -1,0 +1,220 @@
+import {
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import postgres from "postgres";
+import { assertSafeLocalDatabaseOperation } from "../db/local-database-safety.mjs";
+import { loadLocalEnv, requireEnv } from "./storageScriptEnv.mjs";
+
+const localDatabaseUrl =
+  "postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2";
+const args = new Set(process.argv.slice(2));
+const apply = args.has("--apply");
+const skipMissingEnv = args.has("--skip-missing-env");
+
+loadLocalEnv();
+assertSafeLocalDatabaseOperation("r2:seed:documents", ["DATABASE_URL"]);
+
+const config = readR2Config();
+if (!config) {
+  console.info("R2 env absent; skipped seeded document object upload.");
+  process.exit(0);
+}
+
+const client = new S3Client({
+  credentials: {
+    accessKeyId: config.accessKeyId,
+    secretAccessKey: config.secretAccessKey,
+  },
+  endpoint: config.endpoint,
+  forcePathStyle: true,
+  region: process.env.R2_REGION ?? "auto",
+});
+const db = postgres(process.env.DATABASE_URL ?? localDatabaseUrl, { max: 1 });
+
+try {
+  const documents = dedupeByStorageKey(await readSeedDocumentRows());
+  const result = {
+    skippedExisting: 0,
+    uploaded: 0,
+    wouldUpload: 0,
+  };
+
+  for (const document of documents) {
+    if (await objectExists(document.storageKey)) {
+      result.skippedExisting += 1;
+      console.info(`exists ${document.storageKey}`);
+      continue;
+    }
+
+    if (!apply) {
+      result.wouldUpload += 1;
+      console.info(`would upload ${document.storageKey}`);
+      continue;
+    }
+
+    await uploadDocumentFixture(document);
+    result.uploaded += 1;
+    console.info(`uploaded ${document.storageKey}`);
+  }
+
+  console.info(
+    JSON.stringify({ apply, total: documents.length, ...result }, null, 2),
+  );
+  if (!apply) {
+    console.info(
+      "Dry run only. Re-run with --apply to upload missing objects.",
+    );
+  }
+} finally {
+  await db.end({ timeout: 5 });
+  client.destroy();
+}
+
+async function readSeedDocumentRows() {
+  return db`
+    select *
+    from (
+      select
+        'document' as source,
+        d.id,
+        d.id as "documentId",
+        d.title,
+        d.file_name as "fileName",
+        d.mime_type as "mimeType",
+        d.storage_key as "storageKey",
+        d.kind::text as kind,
+        d.status::text as status,
+        d.metadata
+      from documents d
+      where d.storage_key like 'generated/vehicle-workflows/%'
+        or d.storage_key like 'seed/documents/%'
+      union all
+      select
+        'version' as source,
+        v.id,
+        v.document_id as "documentId",
+        coalesce(d.title, v.file_name) as title,
+        v.file_name as "fileName",
+        v.mime_type as "mimeType",
+        v.storage_key as "storageKey",
+        d.kind::text as kind,
+        d.status::text as status,
+        coalesce(v.metadata, d.metadata, '{}'::jsonb) as metadata
+      from document_versions v
+      inner join documents d on d.id = v.document_id
+      where v.storage_key like 'generated/vehicle-workflows/%'
+        or v.storage_key like 'seed/documents/%'
+    ) seeded_documents
+    order by source, title, "fileName"
+  `;
+}
+
+function dedupeByStorageKey(rows) {
+  return Array.from(
+    rows
+      .filter((row) => row.mimeType === "application/pdf")
+      .reduce((items, row) => {
+        if (!items.has(row.storageKey)) items.set(row.storageKey, row);
+        return items;
+      }, new Map())
+      .values(),
+  );
+}
+
+async function objectExists(storageKey) {
+  try {
+    await client.send(
+      new HeadObjectCommand({ Bucket: config.bucketName, Key: storageKey }),
+    );
+    return true;
+  } catch (error) {
+    if (error?.$metadata?.httpStatusCode === 404) return false;
+    throw error;
+  }
+}
+
+async function uploadDocumentFixture(document) {
+  const body = await renderDocumentFixture(document);
+  await client.send(
+    new PutObjectCommand({
+      Body: body,
+      Bucket: config.bucketName,
+      ContentType: "application/pdf",
+      Key: document.storageKey,
+      Metadata: fixtureMetadata(document),
+    }),
+  );
+}
+
+async function renderDocumentFixture(document) {
+  const pdf = await PDFDocument.create();
+  const page = pdf.addPage([595, 842]);
+  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const regular = await pdf.embedFont(StandardFonts.Helvetica);
+  const title = "Loja Veiculos V2";
+  const lines = [
+    "Local seed document fixture",
+    `Title: ${asciiText(document.title)}`,
+    `File: ${asciiText(document.fileName)}`,
+    `Kind: ${asciiText(document.kind)}`,
+    `Status: ${asciiText(document.status)}`,
+    `Document ID: ${document.documentId}`,
+    `Storage key: ${document.storageKey}`,
+    "This placeholder exists only so local seeded PDF previews can load.",
+    "Real workflow documents are generated by reserve and sale services.",
+  ];
+
+  page.drawText(title, {
+    color: rgb(0.03, 0.08, 0.16),
+    font: bold,
+    size: 20,
+    x: 48,
+    y: 790,
+  });
+
+  lines.forEach((line, index) => {
+    page.drawText(line.slice(0, 110), {
+      color: rgb(0.16, 0.19, 0.25),
+      font: regular,
+      size: 10,
+      x: 48,
+      y: 750 - index * 18,
+    });
+  });
+
+  return pdf.save();
+}
+
+function fixtureMetadata(document) {
+  return {
+    documentId: String(document.documentId),
+    fixture: "local-product-seed",
+    source: String(document.source),
+  };
+}
+
+function readR2Config() {
+  const hasAnyConfig = [
+    "R2_BUCKET_NAME",
+    "R2_ENDPOINT",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+  ].some((key) => Boolean(process.env[key]));
+  if (!hasAnyConfig && skipMissingEnv) return null;
+
+  return {
+    accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
+    bucketName: requireEnv("R2_BUCKET_NAME"),
+    endpoint: requireEnv("R2_ENDPOINT"),
+    secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
+  };
+}
+
+function asciiText(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[^\x20-\x7E]/g, "");
+}

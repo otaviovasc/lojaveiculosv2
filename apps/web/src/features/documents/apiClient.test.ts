@@ -24,9 +24,12 @@ describe("documents api client", () => {
     expect(documentsRoutes.download("document 1")).toBe(
       "/api/v1/documents/document%201/download",
     );
-    expect(documentsRoutes.download("document 1", "version 2")).toBe(
-      "/api/v1/documents/document%201/download?versionId=version%202",
-    );
+    expect(
+      documentsRoutes.download("document 1", { versionId: "version 2" }),
+    ).toBe("/api/v1/documents/document%201/download?versionId=version+2");
+    expect(
+      documentsRoutes.download("document 1", { disposition: "inline" }),
+    ).toBe("/api/v1/documents/document%201/download?disposition=inline");
     expect(documentsRoutes.versions("document 1")).toBe(
       "/api/v1/documents/document%201/versions",
     );

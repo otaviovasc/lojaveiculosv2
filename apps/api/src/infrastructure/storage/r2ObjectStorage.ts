@@ -8,6 +8,11 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "node:crypto";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import {
+  assertR2ObjectExists,
+  defaultObjectReader,
+  type R2ObjectReader,
+} from "./r2ObjectStorageReader.js";
+import {
   createR2PublicUrl,
   createR2StorageKey,
   sanitizeR2FileName,
@@ -17,6 +22,7 @@ export type R2ObjectStorageOptions = {
   accessKeyId: string;
   bucketName: string;
   endpoint: string;
+  objectReader?: R2ObjectReader;
   objectWriter?: R2ObjectWriter;
   publicBaseUrl: string;
   region?: string;
@@ -64,6 +70,7 @@ export function createR2ObjectStorage(
 
   const downloadExpiresIn = options.downloadUrlExpiresSeconds ?? 300;
   const objectDeleter = options.objectDeleter ?? defaultObjectDeleter;
+  const objectReader = options.objectReader ?? defaultObjectReader;
   const uploadExpiresIn = options.uploadUrlExpiresSeconds ?? 900;
   const objectWriter = options.objectWriter ?? defaultObjectWriter;
   const publicBaseUrl = options.publicBaseUrl.replace(/\/+$/, "");
@@ -100,10 +107,17 @@ export function createR2ObjectStorage(
       };
     },
     async createDownload(input) {
+      await assertR2ObjectExists(
+        objectReader,
+        client,
+        options.bucketName,
+        input.storageKey,
+      );
+      const disposition = input.disposition ?? "attachment";
       const command = new GetObjectCommand({
         Bucket: options.bucketName,
         Key: input.storageKey,
-        ResponseContentDisposition: `attachment; filename="${sanitizeR2FileName(input.fileName)}"`,
+        ResponseContentDisposition: `${disposition}; filename="${sanitizeR2FileName(input.fileName)}"`,
         ...(input.mimeType ? { ResponseContentType: input.mimeType } : {}),
       });
       return {

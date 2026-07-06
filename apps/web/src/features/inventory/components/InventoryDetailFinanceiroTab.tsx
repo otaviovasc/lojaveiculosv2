@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { FileSpreadsheet } from "lucide-react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { FinanceiroCustosSection } from "./FinanceiroCustosSection";
 import { costKindLabel, type CostItem } from "./FinanceiroCustosSection";
 import { FinanceiroCashFlowSection } from "./FinanceiroCashFlowSection";
+import { FinanceiroNotasFiscaisSection } from "./FinanceiroNotasFiscaisSection";
 import { VehicleAcquisitionCard } from "./VehicleAcquisitionCard";
 import type { InventoryApi } from "../api/apiClient";
 import type {
@@ -28,6 +28,7 @@ export function InventoryDetailFinanceiroTab({
 }) {
   const [isAddingCost, setIsAddingCost] = useState(false);
   const [costMessage, setCostMessage] = useState<string | null>(null);
+
   const listing = detail.listing;
   const selectedUnit = unit ?? detail.units[0] ?? null;
   const selectedCosts = useMemo(
@@ -91,7 +92,7 @@ export function InventoryDetailFinanceiroTab({
       aria-label="Financeiro do veículo"
       className="flex w-full max-w-none flex-col gap-8 text-app-text"
     >
-      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-3">
+      <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col justify-between rounded-2xl border border-line bg-panel p-5">
           <div>
             <h3 className="mb-4 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
@@ -189,13 +190,13 @@ export function InventoryDetailFinanceiroTab({
             />
           </div>
         </div>
-
-        <VehicleAcquisitionCard
-          api={api}
-          listingId={listing.id}
-          unit={selectedUnit}
-        />
       </div>
+
+      <VehicleAcquisitionCard
+        api={api}
+        listingId={listing.id}
+        unit={selectedUnit}
+      />
 
       <FinanceiroCustosSection
         addStatus={costMessage}
@@ -207,22 +208,7 @@ export function InventoryDetailFinanceiroTab({
         }
       />
 
-      <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
-        <h3 className="border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
-          Notas Fiscais
-        </h3>
-        <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-line border-dashed bg-app/10 py-12 text-center">
-          <FileSpreadsheet className="size-8 text-muted animate-none" />
-          <div>
-            <p className="text-xs font-black text-app-text">
-              Nenhuma Nota Fiscal retornada para este veículo.
-            </p>
-            <p className="mt-1 text-xs font-bold text-muted">
-              A emissão fiscal ainda não está conectada a este detalhe.
-            </p>
-          </div>
-        </div>
-      </div>
+      <FinanceiroNotasFiscaisSection formatBRL={formatBRL} />
 
       <FinanceiroCashFlowSection formatBRL={formatBRL} items={cashFlowItems} />
     </section>

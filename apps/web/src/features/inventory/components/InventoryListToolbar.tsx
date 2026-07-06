@@ -118,12 +118,12 @@ export function InventoryListToolbar({
       </form>
 
       {/* Row 2: Sort, Column Visibility, and View Toggle */}
-      <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-between gap-3 border-t border-line/20 pt-4 mt-4 text-xs font-bold w-full">
-        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-          <label className="flex items-center gap-2 whitespace-nowrap">
-            <span className="text-muted">Ordenar por:</span>
+      <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-between gap-4 border-t border-line/20 pt-4 mt-4 text-xs font-bold w-full">
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+          <label className="flex items-center gap-2 whitespace-nowrap w-full sm:w-auto">
+            <span className="text-muted shrink-0">Ordenar por:</span>
             <InventorySelect
-              className="min-h-9 text-xs py-1"
+              className="min-h-9 text-xs py-1 w-full sm:w-48"
               onChange={onSortChange}
               options={inventoryListSortOptions}
               value={sortBy}
@@ -172,15 +172,17 @@ export function InventoryListToolbar({
           )}
         </div>
 
-        <FeatureSegmentedControl
-          ariaLabel="Modo de visualização do estoque"
-          onChange={onViewModeChange}
-          options={[
-            { icon: List, label: "Lista", value: "list" },
-            { icon: LayoutGrid, label: "Cards", value: "cards" },
-          ]}
-          value={viewMode}
-        />
+        <div className="w-full sm:w-48 shrink-0">
+          <FeatureSegmentedControl
+            ariaLabel="Modo de visualização do estoque"
+            onChange={onViewModeChange}
+            options={[
+              { icon: List, label: "Lista", value: "list" },
+              { icon: LayoutGrid, label: "Cards", value: "cards" },
+            ]}
+            value={viewMode}
+          />
+        </div>
       </div>
     </FeatureToolbar>
   );

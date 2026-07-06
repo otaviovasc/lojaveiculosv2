@@ -107,6 +107,8 @@ export function createDocumentsFeature(
     handleDocuments(context, async () => {
       const serviceContext = await createContext(context);
       const download = await services.download(serviceContext, {
+        disposition:
+          context.req.query("disposition") === "inline" ? "inline" : undefined,
         documentId: context.req.param("documentId"),
         versionId: context.req.query("versionId") || undefined,
       });

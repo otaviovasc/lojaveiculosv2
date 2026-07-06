@@ -81,6 +81,14 @@ pnpm run qa:permissions:local
 The product seed creates realistic local data for inventory, CRM/leads,
 finance, commissions, documents, public storefront, billing, marketplace,
 external API, fiscal, provider events, users, roles, and entitlements.
+When R2 variables are present in the root `.env`, `db:seed:local` also uploads
+fixture PDFs for seeded document rows so local previews resolve through the real
+R2 download flow. To inspect or rerun only that repair step:
+
+```bash
+pnpm run r2:seed:documents
+pnpm run r2:seed:documents -- --apply
+```
 
 For local database cleanup:
 

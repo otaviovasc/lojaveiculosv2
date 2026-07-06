@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
+import {
+  StorageObjectNotFoundError,
+  type ObjectStorage,
+} from "../../../../shared/storage/objectStorage.js";
 import type {
   CreateObjectDownloadInput,
   CreateObjectUploadInput,
@@ -31,6 +34,26 @@ describe("download document operation", () => {
     expect(download.downloadUrl).toContain("generated/contract.pdf");
     expect(download.versionId).toBe(document.id);
     expect(download.versionNumber).toBe(1);
+    expect(objectStorage.createDownload).toHaveBeenCalledWith(
+      expect.objectContaining({ disposition: "attachment" }),
+    );
+  });
+
+  it("signs inline descriptors for PDF preview", async () => {
+    const repository = createTestDocumentRepository();
+    const document = await seedDocument(repository);
+    const objectStorage = createTestObjectStorage();
+
+    const download = await downloadDocument(
+      createContext(),
+      { disposition: "inline", documentId: document.id },
+      { documentRepository: repository, objectStorage },
+    );
+
+    expect(download.downloadUrl).toContain("generated/contract.pdf");
+    expect(objectStorage.createDownload).toHaveBeenCalledWith(
+      expect.objectContaining({ disposition: "inline" }),
+    );
   });
 
   it("does not fall back to the current file for an unknown explicit version", async () => {
@@ -53,12 +76,35 @@ describe("download document operation", () => {
     ).rejects.toThrow(`Document not found: ${document.id}`);
     expect(objectStorage.createDownload).not.toHaveBeenCalled();
   });
+
+  it("maps missing stored objects to document not found errors", async () => {
+    const audit = { record: vi.fn(async () => undefined) };
+    const repository = createTestDocumentRepository();
+    const document = await seedDocument(repository);
+    const objectStorage = {
+      ...createTestObjectStorage(),
+      createDownload: vi.fn(async () => {
+        throw new StorageObjectNotFoundError();
+      }),
+    };
+
+    await expect(
+      downloadDocument(
+        createContext({ audit }),
+        { documentId: document.id },
+        { documentRepository: repository, objectStorage },
+      ),
+    ).rejects.toThrow(`Document not found: ${document.id}`);
+    expect(audit.record).not.toHaveBeenCalled();
+  });
 });
 
-function createContext() {
+function createContext(
+  options: { audit?: { record: (event: unknown) => Promise<void> } } = {},
+) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
-    audit: { record: vi.fn(async () => undefined) },
+    audit: options.audit ?? { record: vi.fn(async () => undefined) },
     permissions: ["documents.download", "documents.read"],
     request: { requestId: "req_1" },
     storeId: "store_1",

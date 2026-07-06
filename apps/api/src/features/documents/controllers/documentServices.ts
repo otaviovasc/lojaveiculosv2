@@ -49,7 +49,11 @@ export type DocumentServices = {
   ) => Promise<LinkedDocument>;
   download: (
     context: ServiceContext,
-    input: { documentId: string; versionId?: string | undefined },
+    input: {
+      disposition?: "attachment" | "inline" | undefined;
+      documentId: string;
+      versionId?: string | undefined;
+    },
   ) => Promise<DocumentDownloadDescriptor>;
   listVersions: (
     context: ServiceContext,

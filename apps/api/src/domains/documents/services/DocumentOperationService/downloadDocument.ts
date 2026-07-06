@@ -3,6 +3,10 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
+import {
+  StorageObjectNotFoundError,
+  type ObjectDownload,
+} from "../../../../shared/storage/objectStorage.js";
 import type {
   DocumentVersion,
   LinkedDocument,
@@ -29,7 +33,11 @@ export type DocumentDownloadDescriptor = {
 
 export async function downloadDocument(
   context: ServiceContext,
-  input: { documentId: string; versionId?: string | undefined },
+  input: {
+    disposition?: "attachment" | "inline" | undefined;
+    documentId: string;
+    versionId?: string | undefined;
+  },
   ports?: DocumentWorkspaceServicePorts,
 ): Promise<DocumentDownloadDescriptor> {
   assertPermission(context, permission);
@@ -47,11 +55,20 @@ export async function downloadDocument(
   });
   const version = storedVersion ?? currentDocumentVersion(document, input);
   if (!version) throw new DocumentOperationNotFoundError(input.documentId);
-  const download = await ports.objectStorage.createDownload({
-    fileName: version.fileName,
-    mimeType: version.mimeType,
-    storageKey: version.storageKey,
-  });
+  let download: ObjectDownload;
+  try {
+    download = await ports.objectStorage.createDownload({
+      disposition: input.disposition ?? "attachment",
+      fileName: version.fileName,
+      mimeType: version.mimeType,
+      storageKey: version.storageKey,
+    });
+  } catch (error) {
+    if (error instanceof StorageObjectNotFoundError) {
+      throw new DocumentOperationNotFoundError(input.documentId);
+    }
+    throw error;
+  }
 
   context.logger.info(
     "documents.download",
@@ -69,6 +86,7 @@ export async function downloadDocument(
     metadata: {
       fileName: version.fileName,
       permission,
+      disposition: input.disposition ?? "attachment",
       versionId: version.id,
       versionNumber: version.versionNumber,
     },
