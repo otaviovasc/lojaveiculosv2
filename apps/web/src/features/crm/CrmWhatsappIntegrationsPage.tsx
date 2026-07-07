@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Bot } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmWhatsappBotDocs } from "./CrmWhatsappBotDocs";
 import { CrmWhatsappProviderEventIssuesPanel } from "./CrmWhatsappProviderEventIssuesPanel";
@@ -93,7 +94,16 @@ export function CrmWhatsappIntegrationsPage({
 
   return (
     <section className="crm-whatsapp-section">
-      <div className="grid gap-4">
+      <div className="crm-whatsapp-integrations-page">
+        <header className="crm-whatsapp-integrations-header">
+          <span aria-hidden="true">
+            <Bot className="size-5" />
+          </span>
+          <div>
+            <strong>Integracoes</strong>
+            <h2>Bot externo</h2>
+          </div>
+        </header>
         {canManage ? (
           <BotIntegrationForm
             enabled={enabled}

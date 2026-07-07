@@ -118,6 +118,8 @@ evidence folder is documented.
 - Process a scheduled/campaign message and verify it forwards as
   `senderOrigin: system` without emitting `intervention_started`.
 - Verify bot webhook dispatch audit records contain no secret values.
+- Desktop screenshot evidence:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-integrations-ui/crm-whatsapp-integrations.png`.
 
 ## Campaigns
 

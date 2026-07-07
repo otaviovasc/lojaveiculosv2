@@ -1,0 +1,188 @@
+.crm-whatsapp-bot-docs {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.crm-whatsapp-bot-docs > header,
+.crm-whatsapp-bot-doc-panel summary {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.crm-whatsapp-bot-docs > header > span,
+.crm-whatsapp-bot-doc-panel summary > span {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.crm-whatsapp-bot-docs header p,
+.crm-whatsapp-bot-docs h2,
+.crm-whatsapp-bot-docs h3 {
+  margin: 0;
+}
+
+.crm-whatsapp-bot-docs header p {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.12);
+  font-weight: 850;
+  line-height: 1.45;
+}
+
+.crm-whatsapp-bot-docs > header p {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-bot-docs h2,
+.crm-whatsapp-bot-doc-panel h3 {
+  color: var(--color-text);
+  font-size: calc(var(--font-size-md) * 1.05);
+  font-weight: 950;
+}
+
+.crm-whatsapp-bot-docs-grid,
+.crm-whatsapp-bot-action-list,
+.crm-whatsapp-bot-examples,
+.crm-whatsapp-bot-events,
+.crm-whatsapp-bot-note-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crm-whatsapp-bot-docs-grid {
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+}
+
+.crm-whatsapp-bot-action-list,
+.crm-whatsapp-bot-note-grid {
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.crm-whatsapp-bot-examples,
+.crm-whatsapp-bot-events {
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+}
+
+.crm-whatsapp-bot-docs-grid article,
+.crm-whatsapp-bot-events article,
+.crm-whatsapp-bot-examples article,
+.crm-whatsapp-bot-action-list div,
+.crm-whatsapp-bot-note-grid article,
+.crm-whatsapp-bot-endpoint-card {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.875rem;
+}
+
+.crm-whatsapp-bot-docs-grid h3,
+.crm-whatsapp-bot-events article > header,
+.crm-whatsapp-bot-examples article > header {
+  align-items: start;
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.crm-whatsapp-bot-docs-grid h3 {
+  align-items: center;
+  color: var(--color-text);
+  display: inline-flex;
+  font-size: calc(var(--font-size-xs) * 1.2);
+  font-weight: 950;
+  gap: 0.375rem;
+}
+
+.crm-whatsapp-bot-docs code,
+.crm-whatsapp-bot-docs pre {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: block;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.45;
+  margin: 0;
+  overflow-x: auto;
+  padding: 0.625rem;
+}
+
+.crm-whatsapp-bot-docs p,
+.crm-whatsapp-bot-action-list span,
+.crm-whatsapp-bot-endpoint-card span {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.1);
+  font-weight: 820;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.crm-whatsapp-bot-action-list strong,
+.crm-whatsapp-bot-note-grid strong,
+.crm-whatsapp-bot-endpoint-card strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-bot-doc-panel {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.crm-whatsapp-bot-doc-panel summary {
+  background: var(--color-app);
+  cursor: pointer;
+  list-style: none;
+  padding: 0.875rem;
+}
+
+.crm-whatsapp-bot-doc-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.crm-whatsapp-bot-doc-panel-body {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.875rem;
+}
+
+.crm-whatsapp-bot-copy {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.crm-whatsapp-bot-copy svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}

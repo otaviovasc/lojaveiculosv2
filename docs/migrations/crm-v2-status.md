@@ -6,9 +6,8 @@ Branch: `main`
 
 ## Current Phase
 
-Phase 11-12: persistent campaigns landed; outbound bot event parity hardened;
-campaign recipient review UI is screenshot-verified; remaining polish is broader
-CRM tab parity and mobile evidence.
+Phase 11-12: persistent campaigns and outbound bot parity landed; remaining
+polish is Conversas parity, filtered lead campaigns, and mobile evidence.
 
 ## Completed This Pass
 
@@ -79,7 +78,7 @@ CRM tab parity and mobile evidence.
   - Scoped navbar is compact with the connection status as a small indicator.
   - Conexao now exposes only ZAPI status, write-only instance ID/token update,
     and generated webhook URLs.
-  - Bot Integracoes includes the V2 Action API docs.
+  - Bot Integracoes uses Repasses-style config/docs cards, V2 Action API examples, webhook payload docs, and intervention notes.
 - Added write-only ZAPI instance credential support:
   - `PATCH /crm/whatsapp/connections/:connectionId` accepts
     `instanceCredentials.instanceId` and `instanceCredentials.instanceToken`.
@@ -234,6 +233,8 @@ repaired `node_modules`, then focused checks passed.
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-visits-ui/crm-whatsapp-visits.png`.
 - Current schedules screenshot:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-schedules-ui/crm-whatsapp-schedules.png`.
+- Current integrations screenshot:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-integrations-ui/crm-whatsapp-integrations.png`.
 - Live smoke: local `GET /crm/whatsapp/connections` reported the test ZAPI
   connection as connected; local `POST /crm/whatsapp/conversations/start`
   returned `201` and `SENT` for the approved phone number.
@@ -241,8 +242,7 @@ repaired `node_modules`, then focused checks passed.
 
 ## Next Orchestrator Actions
 
-1. Continue Repasses-style UI parity for Conexao, Tags, Visitas, Agendamentos,
-   Integracoes, and Conversas, with screenshots per tab.
+1. Continue Repasses-style UI parity for Conversas and mobile evidence.
 2. Harden campaign reply tracking against duplicate concurrent replies and add
    paused-campaign reply behavior tests.
 3. Run full validation when the next stable CRM slice is merged, or record any

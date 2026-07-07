@@ -1,4 +1,4 @@
-import { KeyRound, LinkIcon, Save, ShieldCheck } from "lucide-react";
+import { Bot, KeyRound, LinkIcon, Save, ShieldCheck } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type { CrmWhatsappBotIntegration } from "./crmWhatsappIntegrationTypes";
@@ -26,15 +26,18 @@ export type BotIntegrationFormProps = {
 export function BotIntegrationForm(props: BotIntegrationFormProps) {
   const secretConfigured = Boolean(props.integration?.secretConfigured);
   return (
-    <div className="rounded-xl border border-line/35 bg-panel/10 p-4">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="crm-whatsapp-bot-form">
+      <div className="crm-whatsapp-bot-form-header">
+        <span aria-hidden="true">
+          <Bot />
+        </span>
         <div>
-          <span className="text-xs font-black uppercase tracking-wide text-muted">
-            Bot externo
-          </span>
-          <h2 className="text-lg font-black text-app-text">Integracao</h2>
+          <strong>Bot externo</strong>
+          <h2>Automacao</h2>
+          <p>Encaminhe mensagens para n8n, Typebot ou seu bot proprio.</p>
         </div>
         <FeatureStatusBadge
+          className="crm-whatsapp-bot-form-status"
           tone={props.enabled && secretConfigured ? "success" : "neutral"}
         >
           <ShieldCheck aria-hidden="true" className="size-4" />
@@ -43,13 +46,12 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
         </FeatureStatusBadge>
       </div>
 
-      <div className="grid gap-3">
-        <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-muted">
+      <div className="crm-whatsapp-bot-form-grid">
+        <label className="crm-whatsapp-bot-form-field">
           Webhook URL
-          <span className="flex items-center gap-2 rounded-lg border border-line/35 bg-app px-3 py-2">
-            <LinkIcon aria-hidden="true" className="size-4 text-muted" />
+          <span>
+            <LinkIcon aria-hidden="true" />
             <input
-              className="min-w-0 flex-1 bg-transparent text-sm font-bold normal-case text-app-text outline-none"
               onChange={(event) => props.onWebhookUrlChange(event.target.value)}
               placeholder="https://bot.exemplo.com/webhook"
               type="url"
@@ -58,12 +60,11 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
           </span>
         </label>
 
-        <label className="grid gap-1 text-xs font-black uppercase tracking-wide text-muted">
+        <label className="crm-whatsapp-bot-form-field">
           Novo segredo
-          <span className="flex items-center gap-2 rounded-lg border border-line/35 bg-app px-3 py-2">
-            <KeyRound aria-hidden="true" className="size-4 text-muted" />
+          <span>
+            <KeyRound aria-hidden="true" />
             <input
-              className="min-w-0 flex-1 bg-transparent text-sm font-bold normal-case text-app-text outline-none"
               onChange={(event) => props.onSecretChange(event.target.value)}
               placeholder={
                 secretConfigured ? "Segredo configurado" : "Minimo 8 caracteres"
@@ -74,7 +75,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
           </span>
         </label>
 
-        <label className="flex items-center gap-3 text-sm font-bold text-app-text">
+        <label className="crm-whatsapp-bot-form-toggle">
           <input
             checked={props.enabled}
             onChange={(event) => props.onEnabledChange(event.target.checked)}
@@ -83,7 +84,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
           Bot habilitado
         </label>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="crm-whatsapp-bot-form-actions">
           <button
             className="crm-action crm-action-primary"
             disabled={props.isSaving}
