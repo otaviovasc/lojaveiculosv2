@@ -17,6 +17,10 @@ import type {
 import type { WhatsappMessage } from "./whatsappModels.js";
 import { toWhatsappMessage, toWhatsappSession } from "./whatsappModels.js";
 import {
+  forwardWhatsappMessageToBot,
+  notifyWhatsappInterventionChangedToBot,
+} from "./whatsappBotWebhookForwarding.js";
+import {
   WhatsappConnectionNotFoundError,
   WhatsappSessionNotFoundError,
 } from "./whatsappSendErrors.js";
@@ -138,6 +142,29 @@ export async function sendWhatsappOutboundMessage(
     tenantId: connection.tenantId,
     type: "session",
   });
+  await forwardWhatsappMessageToBot(
+    context,
+    {
+      connection,
+      message: result.message,
+      session: result.session,
+    },
+    ports,
+  );
+  if (
+    session.status !== "HUMAN_TAKEOVER" &&
+    result.session.status === "HUMAN_TAKEOVER"
+  ) {
+    await notifyWhatsappInterventionChangedToBot(
+      context,
+      {
+        active: true,
+        connection,
+        session: result.session,
+      },
+      ports,
+    );
+  }
 
   return message;
 }

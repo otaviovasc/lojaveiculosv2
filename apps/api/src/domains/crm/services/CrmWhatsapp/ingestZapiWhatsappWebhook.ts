@@ -13,6 +13,10 @@ import type { CrmLead } from "../../ports/crmRepository.js";
 import { parseZapiInboundMessage } from "../../whatsapp/parseZapiInboundMessage.js";
 import { findOrCreateWhatsappLead } from "../../whatsapp/whatsappLeadLinking.js";
 import { mirrorZapiWhatsappMedia } from "../../whatsapp/mirrorZapiWhatsappMedia.js";
+import {
+  forwardWhatsappMessageToBot,
+  notifyWhatsappInterventionChangedToBot,
+} from "../../whatsapp/whatsappBotWebhookForwarding.js";
 import type {
   WhatsappMessage,
   WhatsappSession,
@@ -149,6 +153,32 @@ export async function ingestZapiWhatsappWebhook(
       tenantId: connection.tenantId,
       type: "message",
     });
+    await forwardWhatsappMessageToBot(
+      context,
+      {
+        connection,
+        message: result.message,
+        session: result.session,
+      },
+      ports,
+    );
+    if (
+      parsed.fromMe &&
+      result.session.status === "HUMAN_TAKEOVER" &&
+      result.session.humanTakeoverAt?.getTime() ===
+        parsed.providerTimestamp.getTime()
+    ) {
+      await notifyWhatsappInterventionChangedToBot(
+        context,
+        {
+          active: true,
+          connection,
+          session: result.session,
+          triggeredBy: "human",
+        },
+        ports,
+      );
+    }
   }
   await getCrmRealtimePublisher(ports).publish({
     connectionId: connection.id,

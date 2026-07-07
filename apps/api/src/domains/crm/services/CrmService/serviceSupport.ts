@@ -4,6 +4,10 @@ import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js";
 import { createDisabledCrmWhatsappGateway } from "../../acl/disabledCrmWhatsappGateway.js";
 import type { CrmBotIntegrationRepository } from "../../ports/crmBotIntegrationRepository.js";
+import {
+  createNoopCrmBotWebhookDispatcher,
+  type CrmBotWebhookDispatcher,
+} from "../../ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../ports/crmConnectionRepository.js";
 import type { CrmPipelineRepository } from "../../ports/crmPipelineRepository.js";
 import {
@@ -23,6 +27,7 @@ import type {
 
 export type CrmServicePorts = {
   crmBotIntegrationRepository?: CrmBotIntegrationRepository;
+  crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
   crmConnectionRepository?: CrmConnectionRepository;
   crmPipelineRepository?: CrmPipelineRepository;
   crmRealtimePublisher?: CrmRealtimePublisher;
@@ -120,6 +125,12 @@ export function getCrmBotIntegrationRepository(
     throw new CrmScopeError("crmBotIntegrationRepository");
   }
   return ports.crmBotIntegrationRepository;
+}
+
+export function getCrmBotWebhookDispatcher(
+  ports: CrmServicePorts,
+): CrmBotWebhookDispatcher {
+  return ports.crmBotWebhookDispatcher ?? createNoopCrmBotWebhookDispatcher();
 }
 
 export function getCrmVisitRepository(

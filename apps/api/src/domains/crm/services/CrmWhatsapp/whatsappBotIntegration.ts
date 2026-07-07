@@ -128,6 +128,7 @@ export async function updateWhatsappBotIntegration(
               webhookSecretHash: input.webhookSecret
                 ? hashWebhookSecret(input.webhookSecret)
                 : null,
+              webhookSecretValue: input.webhookSecret,
             }
           : {}),
         webhookUrl: nextWebhookUrl,

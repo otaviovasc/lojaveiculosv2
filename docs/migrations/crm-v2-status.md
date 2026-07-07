@@ -1,13 +1,12 @@
 # CRM V2 Migration Status
 
-Last updated: 2026-07-06
+Last updated: 2026-07-07
 
 Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 9-11: bot action API, connection polish, and campaign UI before
-persistent campaign backend.
+Phase 10-11: persistent campaign backend, metrics, and richer campaign UI.
 
 ## Completed This Pass
 
@@ -84,6 +83,12 @@ persistent campaign backend.
 - Fixed full-gate lint/typecheck cleanup in CRM tests:
   async JSX handlers are launched explicitly, test transactions are typed, and
   response bodies avoid unsafe `any` assertions.
+- Completed outbound bot forwarding:
+  - write-only bot secret is available to server-only dispatch config,
+  - V2 dispatches Repasses-style `message`, `intervention_started`, and
+    `intervention_ended` events with UUID session/message ids,
+  - regular message events pause during `HUMAN_TAKEOVER`,
+  - bot sends resume as `senderOrigin: bot_api` after intervention ends.
 
 ## Key Findings
 
@@ -107,9 +112,9 @@ persistent campaign backend.
   V2 lead but is not persisted on visits.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
   code.
-- Outbound bot webhook forwarding is still pending; bot config and action API
-  exist.
-- Persistent campaign backend/metrics are not implemented in V2.
+- Bot config, action API, webhook forwarding, and intervention events are now
+  implemented behind V2 UUID contracts.
+- Campaign backend/metrics are the active target.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
   `Conexao`.
 - `CrmWhatsappScopedSections.tsx` now routes Campaigns to the batch scheduler UI.
@@ -150,8 +155,8 @@ Wave 3:
 
 - Worker H: lead/WhatsApp identity link. Completed in `62ac658`.
 - Worker I: visits backend/UI. Completed in `5d47b6f`.
-- Worker J: integrations/bot config foundation. Completed in `eac31a8`; action
-  API added after it; forwarding remains pending.
+- Worker J: integrations/bot foundation. Completed in `eac31a8`; action API
+  and outbound forwarding completed after it.
 
 Wave 4:
 
@@ -187,14 +192,15 @@ pnpm run test:frontend-design
 pnpm --filter @lojaveiculosv2/web lint
 pnpm --filter @lojaveiculosv2/api lint
 pnpm --filter @lojaveiculosv2/api exec tsc --noEmit --pretty false
+CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.botForwarding.test crm.whatsapp.integrations.test
+CI=true pnpm --filter @lojaveiculosv2/api typecheck
+CI=true pnpm run check:lines
+CI=true pnpm run validate:core-guardrails
 pnpm run validate
 ```
 
-Phase 1 permission validation passed. `pnpm run check:lines` initially failed
-because it scanned generated `.pnpm-store` package copies; removing the local
-store cache fixed the unrelated scan input and the guard passed. The same
-cache-only issue recurred after the pipeline merge; removing `.pnpm-store`
-again made `check:lines` pass.
+Phase 1 permission validation passed. Earlier `.pnpm-store` cache-only line
+scan issues were fixed by removing the local generated store cache.
 
 ## Evidence
 
@@ -221,6 +227,7 @@ again made `check:lines` pass.
   `apps/web/src/features/crm/CrmWhatsappIntegrationsPage.test.tsx`.
 - Bot action/Campaign UI evidence:
   `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.whatsapp.botForwarding.test.ts`,
   `apps/web/src/features/crm/CrmWhatsappCampaignsPage.test.tsx`,
   `apps/web/src/features/crm/CrmWhatsappConnectionAdmin.test.tsx`.
 - Screenshot-driven evidence from the current pass is under
@@ -233,9 +240,7 @@ again made `check:lines` pass.
 
 ## Next Orchestrator Actions
 
-1. Implement outbound bot event forwarding from
-   `docs/migrations/crm-v2-bot-contract.md`.
-2. Add persistent campaign backend/metrics on top of schedules, visits, tags,
+1. Add persistent campaign backend/metrics on top of schedules, visits, tags,
    and recipient contracts.
-3. Run full validation when the next stable CRM slice is merged, or record any
+2. Run full validation when the next stable CRM slice is merged, or record any
    unrelated failures explicitly here.

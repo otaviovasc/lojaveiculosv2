@@ -95,13 +95,17 @@ export function updateMemorySessionPreview(
   if (input.direction === "INBOUND") {
     session.freshLeadAt =
       session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp;
-    session.humanTakeoverAt = null;
-    session.status = "ACTIVE";
-  } else {
+    if (session.status !== "HUMAN_TAKEOVER") {
+      session.humanTakeoverAt = null;
+      session.status = "ACTIVE";
+    }
+  } else if (input.senderType === "HUMAN") {
     session.firstHandledAt = session.firstHandledAt ?? input.providerTimestamp;
     session.humanTakeoverAt =
       session.humanTakeoverAt ?? input.providerTimestamp;
     session.status = "HUMAN_TAKEOVER";
+  } else {
+    session.firstHandledAt = session.firstHandledAt ?? input.providerTimestamp;
   }
   session.leadId = session.leadId ?? input.leadId ?? null;
   if (

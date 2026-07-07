@@ -29,16 +29,25 @@ function sessionStatusPreview(
   input: IngestCrmWhatsappMessageInput,
   session: WhatsappSessionRow,
 ) {
-  if (input.direction === "OUTBOUND") {
+  if (input.direction === "OUTBOUND" && input.senderType === "HUMAN") {
     return {
       firstHandledAt: session.firstHandledAt ?? input.providerTimestamp,
       humanTakeoverAt: session.humanTakeoverAt ?? input.providerTimestamp,
       status: "HUMAN_TAKEOVER" as const,
     };
   }
+  if (input.direction === "OUTBOUND") {
+    return {
+      firstHandledAt: session.firstHandledAt ?? input.providerTimestamp,
+    };
+  }
+  const freshLeadAt =
+    session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp;
+  if (session.status === "HUMAN_TAKEOVER") {
+    return { freshLeadAt };
+  }
   return {
-    freshLeadAt:
-      session.freshLeadAt ?? input.freshLeadAt ?? input.providerTimestamp,
+    freshLeadAt,
     humanTakeoverAt: null,
     status: "ACTIVE" as const,
   };

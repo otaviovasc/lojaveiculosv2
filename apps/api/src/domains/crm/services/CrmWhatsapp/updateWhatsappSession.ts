@@ -1,6 +1,7 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
+  getCrmConnectionRepository,
   getCrmRepository,
   getCrmWhatsappRepository,
   type CrmServicePorts,
@@ -13,6 +14,8 @@ import {
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
 import { closeLinkedWhatsappLead } from "../../whatsapp/updateWhatsappLinkedLead.js";
+import { notifyWhatsappInterventionChangedToBot } from "../../whatsapp/whatsappBotWebhookForwarding.js";
+import { WhatsappSessionNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   findScopedWhatsappSession,
   sessionWithConnection,
@@ -219,6 +222,7 @@ async function toggleWhatsappInterventionUnchecked(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
+  if (!updated) throw new WhatsappSessionNotFoundError(input.sessionId);
 
   const realtimeSession = await sessionWithConnection(
     updated,
@@ -226,5 +230,18 @@ async function toggleWhatsappInterventionUnchecked(
     input.sessionId,
   );
   await publishWhatsappSessionUpdate(ports, realtimeSession, scope);
+  const connection = await getCrmConnectionRepository(ports).findConnectionById(
+    updated.connectionId,
+  );
+  if (!connection) return realtimeSession;
+  const sameScope =
+    connection.storeId === updated.storeId &&
+    connection.tenantId === updated.tenantId;
+  if (!sameScope) return realtimeSession;
+  await notifyWhatsappInterventionChangedToBot(
+    context,
+    { active: input.enabled, connection, session: updated },
+    ports,
+  );
   return realtimeSession;
 }

@@ -17,6 +17,7 @@ type BotIntegrationConfig = {
   enabled?: unknown;
   secretUpdatedAt?: unknown;
   webhookSecretHash?: unknown;
+  webhookSecretValue?: unknown;
   webhookUrl?: unknown;
 };
 
@@ -27,6 +28,8 @@ export function createDrizzleCrmBotIntegrationRepository(
     findBotIntegration: (input) => findBotIntegration(db, input),
     findBotIntegrationBySecretHash: (input) =>
       findBotIntegrationBySecretHash(db, input),
+    findBotIntegrationDeliveryConfig: (input) =>
+      findBotIntegrationDeliveryConfig(db, input),
     upsertBotIntegration: (input) => upsertBotIntegration(db, input),
   };
 }
@@ -57,6 +60,22 @@ async function findBotIntegrationBySecretHash(
   return row ? toBotIntegration(row) : null;
 }
 
+async function findBotIntegrationDeliveryConfig(
+  db: DrizzleCrmBotIntegrationClient,
+  input: FindCrmBotIntegrationInput,
+) {
+  const row = await findRow(db, input);
+  if (!row) return null;
+  const config = readConfig(row.config);
+  return {
+    enabled: readBoolean(config.enabled) ?? row.status === "active",
+    storeId: row.storeId as never,
+    tenantId: row.tenantId as never,
+    webhookSecret: readString(config.webhookSecretValue),
+    webhookUrl: readString(config.webhookUrl),
+  };
+}
+
 async function upsertBotIntegration(
   db: DrizzleCrmBotIntegrationClient,
   input: UpsertCrmBotIntegrationInput,
@@ -67,10 +86,15 @@ async function upsertBotIntegration(
     input.webhookSecretHash === undefined
       ? readString(currentConfig.webhookSecretHash)
       : input.webhookSecretHash;
+  const secretValue =
+    input.webhookSecretValue === undefined
+      ? readString(currentConfig.webhookSecretValue)
+      : input.webhookSecretValue;
   const config = {
     enabled: input.enabled,
     secretUpdatedAt: readSecretUpdatedAt(input, currentConfig),
     webhookSecretHash: secretHash,
+    webhookSecretValue: secretValue,
     webhookUrl: input.webhookUrl,
   };
   const [row] = await db

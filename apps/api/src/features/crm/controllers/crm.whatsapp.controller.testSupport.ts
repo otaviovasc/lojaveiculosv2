@@ -3,6 +3,7 @@ import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
 import { Hono } from "hono";
 import { expect, vi } from "vitest";
 import type { CrmBotIntegrationRepository } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
+import type { CrmBotWebhookDispatcher } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
 import type { CrmConnectionRepository } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
@@ -13,7 +14,10 @@ import type { CrmWhatsappGateway } from "../../../domains/crm/ports/crmWhatsappG
 import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import type { ObjectStorage } from "../../../shared/storage/objectStorage.js";
-import { createServiceContext } from "../../../shared/serviceContext.js";
+import {
+  createServiceContext,
+  type ServiceLogger,
+} from "../../../shared/serviceContext.js";
 import { createMemoryCrmBotIntegrationRepository } from "../adapters/memory/crmBotIntegrationRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
@@ -49,6 +53,7 @@ export function createTestApp(
   options: {
     audit?: AuditSink;
     crmBotIntegrationRepository?: CrmBotIntegrationRepository;
+    crmBotWebhookDispatcher?: CrmBotWebhookDispatcher;
     crmConnectionRepository?: CrmConnectionRepository;
     crmPipelineRepository?: CrmPipelineRepository;
     crmRealtimeBroker?: CrmRealtimeBroker;
@@ -59,6 +64,7 @@ export function createTestApp(
     crmWhatsappMediaStorage?: ObjectStorage;
     crmWhatsappRepository?: CrmWhatsappRepository;
     entitlements?: EntitlementKey[];
+    logger?: ServiceLogger;
     permissions?: PermissionKey[];
     transaction?: CrmServicePorts["transaction"];
     vehicleInventory?: CrmServicePorts["vehicleInventory"];
@@ -76,6 +82,7 @@ export function createTestApp(
               kind: "user",
             },
             ...(options.audit ? { audit: options.audit } : {}),
+            ...(options.logger ? { logger: options.logger } : {}),
             permissions: options.permissions ?? defaultWhatsappPermissions,
             request: { requestId: "req_1" },
             storeId: "store_1",
@@ -90,6 +97,7 @@ export function createTestApp(
             kind: "integration",
           },
           ...(options.audit ? { audit: options.audit } : {}),
+          ...(options.logger ? { logger: options.logger } : {}),
           permissions: ["crm.whatsapp.ingest"],
           request: { requestId: "req_1" },
           storeId: null,
@@ -100,6 +108,9 @@ export function createTestApp(
           crmBotIntegrationRepository:
             options.crmBotIntegrationRepository ??
             createMemoryCrmBotIntegrationRepository(),
+          ...(options.crmBotWebhookDispatcher
+            ? { crmBotWebhookDispatcher: options.crmBotWebhookDispatcher }
+            : {}),
           ...(options.crmConnectionRepository
             ? { crmConnectionRepository: options.crmConnectionRepository }
             : {}),

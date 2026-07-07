@@ -7,6 +7,7 @@ import type {
 
 type StoredBotIntegration = CrmBotIntegration & {
   webhookSecretHash: string | null;
+  webhookSecretValue: string | null;
 };
 
 export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepository {
@@ -20,6 +21,18 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
       );
       return record ? withoutSecretHash(record) : null;
     },
+    findBotIntegrationDeliveryConfig: async (input) => {
+      const record = findStoredRecord(records, input);
+      return record
+        ? {
+            enabled: record.enabled,
+            storeId: record.storeId,
+            tenantId: record.tenantId,
+            webhookSecret: record.webhookSecretValue,
+            webhookUrl: record.webhookUrl,
+          }
+        : null;
+    },
     upsertBotIntegration: async (input) => {
       const now = new Date();
       const current = findStoredRecord(records, input);
@@ -27,6 +40,10 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
         input.webhookSecretHash === undefined
           ? (current?.webhookSecretHash ?? null)
           : input.webhookSecretHash;
+      const secretValue =
+        input.webhookSecretValue === undefined
+          ? (current?.webhookSecretValue ?? null)
+          : input.webhookSecretValue;
       const record: StoredBotIntegration = {
         createdAt: current?.createdAt ?? now,
         enabled: input.enabled,
@@ -40,6 +57,7 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
         tenantId: input.tenantId,
         updatedAt: now,
         webhookSecretHash: secretHash,
+        webhookSecretValue: secretValue,
         webhookUrl: input.webhookUrl,
       };
       if (current) {
@@ -71,6 +89,10 @@ function findStoredRecord(
 }
 
 function withoutSecretHash(record: StoredBotIntegration): CrmBotIntegration {
-  const { webhookSecretHash: _webhookSecretHash, ...safe } = record;
+  const {
+    webhookSecretHash: _webhookSecretHash,
+    webhookSecretValue: _webhookSecretValue,
+    ...safe
+  } = record;
   return safe;
 }

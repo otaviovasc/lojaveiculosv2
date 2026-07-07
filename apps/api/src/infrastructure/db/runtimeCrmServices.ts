@@ -1,4 +1,5 @@
 import { createZapiCrmWhatsappGateway } from "../crm/zapiCrmWhatsappGateway.js";
+import { createHttpCrmBotWebhookDispatcher } from "../crm/httpCrmBotWebhookDispatcher.js";
 import {
   createCrmServices,
   type CrmServices,
@@ -19,6 +20,7 @@ export function createRuntimeCrmServices(
     ports: {
       ...(realtimePublisher ? { crmRealtimePublisher: realtimePublisher } : {}),
       ...(objectStorage ? { crmWhatsappMediaStorage: objectStorage } : {}),
+      crmBotWebhookDispatcher: createHttpCrmBotWebhookDispatcher(env),
       crmWhatsappGateway: createZapiCrmWhatsappGateway(env),
     },
   });
