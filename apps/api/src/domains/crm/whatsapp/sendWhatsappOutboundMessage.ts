@@ -11,6 +11,7 @@ import {
 import type { CrmConnection } from "../ports/crmConnectionRepository.js";
 import type { CrmWhatsappGateway } from "../ports/crmWhatsappGateway.js";
 import type {
+  CrmWhatsappMessageSenderType,
   CrmWhatsappMessageType,
   CrmWhatsappSession,
 } from "../ports/crmWhatsappRepository.js";
@@ -51,6 +52,7 @@ export type SendWhatsappOutboundInput = {
     scope: { storeId: string; tenantId: string };
     session: CrmWhatsappSession;
   }) => Promise<PreparedOutboundWhatsappMessage>;
+  senderType?: CrmWhatsappMessageSenderType;
   sessionId: string;
 };
 
@@ -87,6 +89,7 @@ export async function sendWhatsappOutboundMessage(
     scope,
     session,
   });
+  const senderType = input.senderType ?? defaultSenderType(context);
   const result = await whatsappRepository.ingestMessage({
     ...(session.buyerChatLid ? { buyerChatLid: session.buyerChatLid } : {}),
     ...(session.buyerName ? { buyerName: session.buyerName } : {}),
@@ -102,7 +105,7 @@ export async function sendWhatsappOutboundMessage(
     ...(prepared.mediaUrl ? { mediaUrl: prepared.mediaUrl } : {}),
     metadata: prepared.metadata,
     providerTimestamp: prepared.sent.providerTimestamp,
-    senderType: context.actor.kind === "integration" ? "AI" : "HUMAN",
+    senderType,
     status: "SENT",
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
@@ -160,13 +163,23 @@ export async function sendWhatsappOutboundMessage(
       {
         active: true,
         connection,
+        reason: "human_outbound_message",
         session: result.session,
+        startedAt: result.session.humanTakeoverAt ?? new Date(),
       },
       ports,
     );
   }
 
   return message;
+}
+
+function defaultSenderType(
+  context: ServiceContext,
+): CrmWhatsappMessageSenderType {
+  if (context.actor.kind === "integration") return "AI";
+  if (context.actor.kind === "system") return "SYSTEM";
+  return "HUMAN";
 }
 
 async function recordOutboundLeadInteraction(

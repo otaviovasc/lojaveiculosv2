@@ -131,7 +131,11 @@ async function processDueMessages(
     try {
       const message = await sendWhatsappText(
         context,
-        { sessionId: scheduled.sessionId, text: scheduled.text },
+        {
+          senderType: "SYSTEM",
+          sessionId: scheduled.sessionId,
+          text: scheduled.text,
+        },
         ports,
       );
       await repository.updateScheduledMessage({

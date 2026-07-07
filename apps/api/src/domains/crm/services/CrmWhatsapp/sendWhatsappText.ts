@@ -21,12 +21,16 @@ import {
   WhatsappMessageActionError,
   WhatsappMessageNotFoundError,
 } from "../../whatsapp/whatsappSendErrors.js";
-import type { CrmWhatsappMessage } from "../../ports/crmWhatsappRepository.js";
+import type {
+  CrmWhatsappMessage,
+  CrmWhatsappMessageSenderType,
+} from "../../ports/crmWhatsappRepository.js";
 
 const permission = "crm.whatsapp.send";
 
 export type SendWhatsappTextInput = {
   replyToMessageId?: string;
+  senderType?: CrmWhatsappMessageSenderType;
   sessionId: string;
   text: string;
 };
@@ -82,6 +86,7 @@ export async function sendWhatsappText(
               type: "TEXT",
             };
           },
+          ...(input.senderType ? { senderType: input.senderType } : {}),
           sessionId: input.sessionId,
         },
         ports,

@@ -46,7 +46,7 @@ Already V2-owned:
   audited status changes, lead activities, and the WhatsApp Visitas page.
 - Bot integration config page, action API, and write-only secret state.
 - Outbound bot webhook forwarding with Repasses-style message and intervention
-  events.
+  events, handback summaries, dispatch audit, and system-origin scheduled sends.
 - Persistent WhatsApp campaigns with recipient rows, scheduled-message linkage,
   send/reply metrics, and reply-triggered secondary messages.
 
@@ -69,7 +69,7 @@ Still incomplete:
 | Lead/WhatsApp identity         | Completed | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                | Lead is source of truth.                                                        |
 | Visits                         | Completed | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`                                                                       | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                 | Uses `lead_visits`; no financing/test-drive-specific fields.                    |
 | Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `useCrmWhatsappScheduledMessages.ts`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                        | Store-wide page and campaign linkage landed.                                    |
-| Integrations/bot               | Completed | bot integration schema/services/controllers, action API, dispatcher port, `CrmWhatsappIntegrationsPage.tsx`                                          | `BotEventNotificationService.ts`, `BotActionsController.ts` | Forwards message and intervention events with write-only secret.                |
+| Integrations/bot               | Completed | bot integration schema/services/controllers, action API, dispatcher port, `CrmWhatsappIntegrationsPage.tsx`                                          | `BotEventNotificationService.ts`, `BotActionsController.ts` | Forwards message/intervention events with handback summaries and audit.         |
 | Campaign backend               | Completed | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, campaign migrations/reply handler       | V2 campaigns persist metrics and reply tracking.                                |
 | Campaign UI                    | Active    | `CrmWhatsappCampaignsPage.tsx`, campaign overview/detail/tests/CSS                                                                                   | `CrmCampaigns.tsx`                                          | Overview/detail and desktop screenshot landed; richer recipient review remains. |
 | Conversas parity polish        | Pending   | existing WhatsApp workspace, message actions, details panel, mobile CSS/tests                                                                        | `CrmWhatsApp.tsx`, `CrmChatSession.tsx`                     | Keep chat focused; no placeholders.                                             |

@@ -103,7 +103,12 @@ evidence folder is documented.
 - Verify UUID inputs for lead/session/tag/visit.
 - Start human takeover and verify regular forwarding pauses.
 - End intervention through bot action.
+- Verify `intervention_ended` includes started/ended timestamps, duration,
+  message count, and a compact handback summary.
 - Verify bot send action is blocked during takeover.
+- Process a scheduled/campaign message and verify it forwards as
+  `senderOrigin: system` without emitting `intervention_started`.
+- Verify bot webhook dispatch audit records contain no secret values.
 
 ## Campaigns
 

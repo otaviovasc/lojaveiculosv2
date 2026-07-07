@@ -4,7 +4,7 @@ export type CrmBotWebhookEvent =
   "intervention_ended" | "intervention_started" | "message";
 
 export type CrmBotSenderOrigin =
-  "bot_api" | "customer" | "human_crm" | "human_whatsapp";
+  "bot_api" | "customer" | "human_crm" | "human_whatsapp" | "system";
 
 export type CrmBotWebhookPayload = {
   actionsApi: {
@@ -31,6 +31,12 @@ export type CrmBotWebhookPayload = {
   instanceName: string;
   intervention?: {
     active: boolean;
+    durationSeconds: number | null;
+    endedAt: string | null;
+    messageCount: number;
+    reason: string | null;
+    startedAt: string | null;
+    summary: string | null;
     triggeredBy: "bot" | "human" | "system";
   };
   message?: {
@@ -54,7 +60,12 @@ export type CrmBotWebhookPayload = {
     leadId: string | null;
     messageCount: number;
     status: string;
-    tags: Array<{ id: string; name: string }>;
+    tags: Array<{
+      color: string;
+      emoji: string | null;
+      id: string;
+      name: string;
+    }>;
     uuid: string;
   };
   timestamp: string;

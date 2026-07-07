@@ -6,7 +6,8 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 11-12: persistent campaigns landed; recipient review/mobile polish remain.
+Phase 11-12: persistent campaigns landed; outbound bot event parity hardened;
+recipient review/mobile polish remain.
 
 ## Completed This Pass
 
@@ -95,6 +96,10 @@ Phase 11-12: persistent campaigns landed; recipient review/mobile polish remain.
     `intervention_ended` events with UUID session/message ids,
   - regular message events pause during `HUMAN_TAKEOVER`,
   - bot sends resume as `senderOrigin: bot_api` after intervention ends.
+- Hardened outbound bot event parity: intervention payloads now include reason,
+  timestamps, duration, message count, tag color/emoji, and handback summary;
+  scheduled/campaign sends forward as `senderOrigin: system` without takeover
+  noise; dispatch attempts/success/failure are audited without secrets.
 
 ## Key Findings
 
@@ -119,7 +124,8 @@ Phase 11-12: persistent campaigns landed; recipient review/mobile polish remain.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
   code.
 - Bot config, action API, webhook forwarding, and intervention events are now
-  implemented behind V2 UUID contracts.
+  implemented behind V2 UUID contracts, including handback summaries and
+  system-origin scheduled outbound events.
 - Campaign backend/metrics/detail now persist through V2 campaign and recipient
   rows.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
@@ -134,6 +140,7 @@ Phase 11-12: persistent campaigns landed; recipient review/mobile polish remain.
 
 - Parallel workers can easily invent conflicting permission or API names.
 - Campaign work depends on stable tag, schedule, visit, and recipient contracts.
+- Campaign reply tracking still needs race hardening for duplicate inbound replies.
 - The HTML dashboards include some historical/stale CRM details. Use
   `docs/migrations/crm-v2-integration-contracts.md` as the active contract.
 - Known stale HTML details: a CRM tag column flag mention and one older note
@@ -181,6 +188,7 @@ CI=true pnpm --filter @lojaveiculosv2/web typecheck
 CI=true pnpm --filter @lojaveiculosv2/api lint
 CI=true pnpm --filter @lojaveiculosv2/web lint
 CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.campaigns.test
+CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.botForwarding.test
 CI=true pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappCampaignsPage.test crmWhatsappPermissions.test
 CI=true pnpm run check:lines
 CI=true pnpm run validate:core-guardrails
@@ -235,5 +243,7 @@ scan issues were fixed by removing the local generated store cache.
 
 1. Polish Campaigns with richer recipient review, filtered lead source, and
    mobile QA.
-2. Run full validation when the next stable CRM slice is merged, or record any
+2. Harden campaign reply tracking against duplicate concurrent replies and add
+   paused-campaign reply behavior tests.
+3. Run full validation when the next stable CRM slice is merged, or record any
    unrelated failures explicitly here.

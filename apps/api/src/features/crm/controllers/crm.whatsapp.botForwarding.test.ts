@@ -1,36 +1,36 @@
-import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
-import type {
-  CrmBotWebhookDispatcher,
-  DispatchCrmBotWebhookInput,
-} from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
-import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { DispatchCrmBotWebhookInput } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
-import { createTestApp } from "./crm.whatsapp.controller.testSupport.js";
-
-const connectionId = "24000000-0000-4000-8000-000000000101";
-const storeId = "store_1" as StoreId;
-const tenantId = "tenant_1" as TenantId;
+import {
+  configureBot,
+  createBotDispatcher,
+  connectionId,
+  createSendTextSpy,
+  createZapiConnection,
+  jsonRequest,
+  postZapiWebhook,
+  requireDispatch,
+} from "./crm.whatsapp.botForwarding.testSupport.js";
+import {
+  createAuditSpy,
+  createTestApp,
+} from "./crm.whatsapp.controller.testSupport.js";
 
 describe("CRM WhatsApp bot webhook forwarding", () => {
   it("mirrors Repasses inbound, outbound, and intervention events", async () => {
     const dispatched: DispatchCrmBotWebhookInput[] = [];
-    const dispatcher: CrmBotWebhookDispatcher = {
-      actionApiBaseUrl:
-        "https://api.example.test/api/v1/crm/whatsapp/integrations/bot/actions",
-      dispatch: vi.fn(async (input) => {
-        dispatched.push(input);
-      }),
-    };
+    const dispatcher = createBotDispatcher(dispatched);
     const whatsappRepository = createMemoryCrmWhatsappRepository();
     const logger = {
       error: vi.fn(),
       info: vi.fn(),
       warn: vi.fn(),
     };
+    const { audit, record: recordAudit } = createAuditSpy();
     const sendText = createSendTextSpy();
     const app = createTestApp({
+      audit,
       crmBotWebhookDispatcher: dispatcher,
       crmConnectionRepository: createMemoryCrmConnectionRepository([
         createZapiConnection(),
@@ -90,15 +90,26 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
       externalId: "zapi-outbound-1",
     });
     expect(logger.warn).not.toHaveBeenCalled();
-    expect(dispatched.at(-1)?.payload).toMatchObject({
+    const startedPayload = dispatched.at(-1)?.payload;
+    expect(startedPayload).toMatchObject({
       event: "intervention_started",
-      intervention: { active: true, triggeredBy: "human" },
+      intervention: {
+        active: true,
+        endedAt: null,
+        messageCount: 0,
+        reason: "human_outbound_message",
+        summary: null,
+        triggeredBy: "human",
+      },
       session: { isBotActive: false, status: "HUMAN_TAKEOVER" },
     });
+    expect(startedPayload?.intervention?.durationSeconds).toBeNull();
+    expect(typeof startedPayload?.intervention?.startedAt).toBe("string");
 
     const pausedInbound = await postZapiWebhook(app, {
       messageId: "zapi-inbound-paused",
       text: { message: "Tem alguem ai?" },
+      timestamp: 1783018920,
     });
     expect(pausedInbound.status).toBe(201);
     expect(dispatched).toHaveLength(2);
@@ -115,10 +126,25 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
       ),
     );
     expect(resumed.status).toBe(200);
-    expect(dispatched.at(-1)?.payload).toMatchObject({
+    const endedPayload = dispatched.at(-1)?.payload;
+    expect(endedPayload).toMatchObject({
       event: "intervention_ended",
-      intervention: { active: false, triggeredBy: "bot" },
+      intervention: {
+        active: false,
+        messageCount: 2,
+        reason: "bot_action",
+        triggeredBy: "bot",
+      },
     });
+    expect(typeof endedPayload?.intervention?.startedAt).toBe("string");
+    expect(typeof endedPayload?.intervention?.endedAt).toBe("string");
+    expect(typeof endedPayload?.intervention?.durationSeconds).toBe("number");
+    expect(endedPayload?.intervention?.summary).toContain(
+      "Staff: Podemos falar por aqui.",
+    );
+    expect(endedPayload?.intervention?.summary).toContain(
+      "Customer: Tem alguem ai?",
+    );
 
     const botSend = await app.request(
       "/api/v1/crm/whatsapp/integrations/bot/actions",
@@ -140,90 +166,70 @@ describe("CRM WhatsApp bot webhook forwarding", () => {
         wasSentByApi: true,
       },
     });
+    const dispatchAudits = recordAudit.mock.calls
+      .map(([event]) => event)
+      .filter((event) => event.action === "crm.whatsapp.bot.webhook.dispatch");
+    expect(dispatchAudits.length).toBeGreaterThanOrEqual(6);
+    expect(dispatchAudits.map((event) => event.outcome)).toContain("attempted");
+    expect(dispatchAudits.map((event) => event.outcome)).toContain("succeeded");
+    expect(JSON.stringify(dispatchAudits)).not.toContain("bot-secret-value");
+  });
+
+  it("forwards scheduled sends without emitting human takeover events", async () => {
+    const dispatched: DispatchCrmBotWebhookInput[] = [];
+    const dispatcher = createBotDispatcher(dispatched);
+    const app = createTestApp({
+      crmBotWebhookDispatcher: dispatcher,
+      crmConnectionRepository: createMemoryCrmConnectionRepository([
+        createZapiConnection(),
+      ]),
+      crmWhatsappGateway: { sendText: createSendTextSpy() },
+      crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
+    });
+
+    await configureBot(app);
+    const inboundResponse = await postZapiWebhook(app);
+    const inbound = (await inboundResponse.json()) as {
+      session: { id: string };
+    };
+    expect(inboundResponse.status).toBe(201);
+    expect(dispatched).toHaveLength(1);
+
+    const scheduleResponse = await app.request(
+      "/api/v1/crm/whatsapp/scheduled-messages",
+      jsonRequest({
+        scheduledAt: "2030-01-01T10:00:00.000Z",
+        sessionId: inbound.session.id,
+        text: "Mensagem agendada.",
+      }),
+    );
+    expect(scheduleResponse.status).toBe(201);
+
+    const processResponse = await app.request(
+      "/api/v1/crm/whatsapp/scheduled-messages/process-due",
+      jsonRequest({
+        dueAt: "2030-01-01T10:00:30.000Z",
+        limit: 10,
+      }),
+    );
+    expect(processResponse.status).toBe(200);
+    await expect(processResponse.json()).resolves.toMatchObject({
+      failed: 0,
+      processed: 1,
+      sent: 1,
+    });
+
+    expect(
+      dispatched.some((item) => item.payload.event === "intervention_started"),
+    ).toBe(false);
+    expect(dispatched.at(-1)?.payload).toMatchObject({
+      event: "message",
+      message: {
+        content: "Mensagem agendada.",
+        direction: "outbound",
+        senderOrigin: "system",
+      },
+      session: { status: "ACTIVE" },
+    });
   });
 });
-
-async function configureBot(app: ReturnType<typeof createTestApp>) {
-  const response = await app.request(
-    "/api/v1/crm/whatsapp/integrations/bot",
-    jsonRequest(
-      {
-        enabled: true,
-        webhookSecret: "bot-secret-value",
-        webhookUrl: "https://bot.example.test/webhook",
-      },
-      undefined,
-      "PATCH",
-    ),
-  );
-  expect(response.status).toBe(200);
-}
-
-function postZapiWebhook(
-  app: ReturnType<typeof createTestApp>,
-  overrides: Record<string, unknown> = {},
-) {
-  return app.request(
-    `/api/v1/crm/whatsapp/webhooks/zapi/${connectionId}/received`,
-    jsonRequest({
-      messageId: "zapi-inbound-forward-1",
-      phone: "5511999999999",
-      senderName: "Ana",
-      text: { message: "Ola, tenho interesse" },
-      timestamp: 1783029600,
-      ...overrides,
-    }),
-  );
-}
-
-function jsonRequest(
-  body: Record<string, unknown>,
-  headers: Record<string, string> = {},
-  method = "POST",
-) {
-  return {
-    body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", ...headers },
-    method,
-  };
-}
-
-function createSendTextSpy() {
-  let count = 0;
-  return vi.fn(async () => {
-    count += 1;
-    const externalId = `zapi-outbound-${count}`;
-    return {
-      externalId,
-      providerTimestamp: new Date(`2026-07-02T19:0${count}:00.000Z`),
-      raw: { messageId: externalId },
-    };
-  });
-}
-
-function createZapiConnection(): CrmConnection {
-  return {
-    credentialsRef: {},
-    displayName: "ZAPI Test Connection",
-    externalConnectionId: null,
-    externalInstanceId: null,
-    id: connectionId,
-    metadata: {},
-    phone: "5511999999999",
-    provider: "zapi",
-    status: "sandbox",
-    storeId,
-    tenantId,
-    webhookUrl: null,
-  };
-}
-
-function requireDispatch(
-  dispatched: readonly DispatchCrmBotWebhookInput[],
-  index: number,
-) {
-  const value = dispatched[index];
-  expect(value).toBeDefined();
-  if (!value) throw new Error(`Missing dispatch at index ${index}.`);
-  return value;
-}
