@@ -22,17 +22,9 @@ describe("CrmWhatsappSchedulesPage", () => {
       limit: 100,
     });
 
-    await user.selectOptions(
-      screen.getByLabelText("Filtrar agendamentos por status"),
-      "pending",
-    );
-    await waitFor(() =>
-      expect(callbacks.onList).toHaveBeenLastCalledWith({
-        connectionId: "24000000-0000-4000-8000-000000000101",
-        limit: 100,
-        status: "pending",
-      }),
-    );
+    await user.click(screen.getByRole("tab", { name: /Falhas/i }));
+    expect(screen.getByText("Falha futura")).toBeInTheDocument();
+    expect(screen.queryByText("Ola futuro")).not.toBeInTheDocument();
 
     await user.selectOptions(
       screen.getByLabelText("Filtrar agendamentos por conversa"),
@@ -43,7 +35,6 @@ describe("CrmWhatsappSchedulesPage", () => {
         connectionId: "24000000-0000-4000-8000-000000000101",
         limit: 100,
         sessionId: "34000000-0000-4000-8000-000000000001",
-        status: "pending",
       }),
     );
   });
@@ -103,7 +94,15 @@ function renderPage(
   const sessions = overrides.sessions ?? [createSession()];
   const callbacks = {
     onCancel: vi.fn(async () => true),
-    onList: vi.fn(async () => [createScheduledMessage()]),
+    onList: vi.fn(async () => [
+      createScheduledMessage(),
+      createScheduledMessage({
+        errorMessage: "Provider timeout",
+        id: "schedule_2",
+        status: "failed",
+        text: "Falha futura",
+      }),
+    ]),
     onProcessDue: vi.fn(async () => true),
     onSchedule: vi.fn(async () => true),
   };

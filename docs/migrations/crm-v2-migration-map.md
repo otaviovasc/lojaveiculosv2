@@ -53,8 +53,8 @@ Already V2-owned:
 Still incomplete:
 
 - Filtered lead campaign source and full mobile evidence.
-- Remaining UI parity is concentrated in Agendamentos, Integracoes, Conversas,
-  and full mobile evidence.
+- Remaining UI parity is concentrated in Integracoes, Conversas, and full mobile
+  evidence.
 - Full Playwright/mobile evidence for the migrated CRM OS.
 
 ## Slice Map
@@ -69,7 +69,7 @@ Still incomplete:
 | Pipeline persistence           | Completed | new CRM pipeline schema/service/controller/API client; replace `crmPipelineStorage.ts`                                                               | V2 lead/pipeline UI                                         | Landed before campaign/visit deep linking.                                     |
 | Lead/WhatsApp identity         | Completed | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                | Lead is source of truth.                                                       |
 | Visits                         | Completed | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`, visit CSS/tests                                                      | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                 | Repasses-style date filters, counts, and timeline rows over `lead_visits`.     |
-| Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `useCrmWhatsappScheduledMessages.ts`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                        | Store-wide page is exposed in the scoped nav as Agendamentos.                  |
+| Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `CrmWhatsappScheduleMessageList.tsx`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                        | Repasses-style status tabs, stable counts, and schedule cards.                 |
 | Integrations/bot               | Completed | bot integration schema/services/controllers, action API, dispatcher port, `CrmWhatsappIntegrationsPage.tsx`                                          | `BotEventNotificationService.ts`, `BotActionsController.ts` | Forwards message/intervention events with handback summaries and audit.        |
 | Campaign backend               | Completed | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, campaign migrations/reply handler       | V2 campaigns persist metrics and reply tracking.                               |
 | Campaign UI                    | Active    | `CrmWhatsappCampaignsPage.tsx`, campaign overview/detail/tests/CSS                                                                                   | `CrmCampaigns.tsx`                                          | Recipient review and detail filters landed; lead-source/mobile polish remains. |

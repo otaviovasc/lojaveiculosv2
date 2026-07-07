@@ -91,7 +91,7 @@ describe("CrmWhatsappVisitsPage", () => {
     const tomorrowButton = await screen.findByRole("button", {
       name: /Amanha/i,
     });
-    expect(tomorrowButton).toHaveTextContent("1");
+    await waitFor(() => expect(tomorrowButton).toHaveTextContent("1"));
     await user.click(tomorrowButton);
     expect(screen.getByText("Visita de amanha")).toBeVisible();
     expect(screen.queryByText("Visita futura")).not.toBeInTheDocument();

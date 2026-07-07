@@ -106,8 +106,8 @@ CRM tab parity and mobile evidence.
   invalid/unmatched/LID/duplicate rows are visible and blocked until excluded,
   valid rows feed campaign creation with V2 session UUIDs, and campaign detail
   recipients now have status/search filters.
-- Exposed the existing store-wide Agendamentos operations page in the WhatsApp
-  scoped navbar and routed the chat header schedule action there.
+- Imported Repasses-style Agendamentos UI: scoped nav entry/chat action,
+  status tabs with stable counts, and compact schedule cards.
 - Imported Repasses-style label management details into Tags: live preview,
   quick color swatches, emoji presets, pill-style rows, and a desktop editor/list
   layout while keeping V2 tags as WhatsApp labels only.
@@ -182,6 +182,7 @@ CI=true pnpm run validate
 PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-campaigns pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_FEATURE_SLUG=crm-whatsapp-campaigns-ui pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-visits-ui pnpm exec playwright test tests/e2e/crm-whatsapp-visits.spec.ts --project=chromium
+CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-schedules-ui pnpm exec playwright test tests/e2e/crm-whatsapp-schedules.spec.ts --project=chromium
 ```
 
 Phase 1 permission validation passed. Earlier `.pnpm-store` cache-only line
@@ -231,9 +232,8 @@ repaired `node_modules`, then focused checks passed.
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-connection-ui/crm-whatsapp-connection.png`.
 - Current visits screenshot:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-visits-ui/crm-whatsapp-visits.png`.
-- Screenshot-driven evidence from the current pass is under
-  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/` with the
-  `crm-whatsapp-*-desktop-v2/v3.png` and mobile v2 captures.
+- Current schedules screenshot:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-schedules-ui/crm-whatsapp-schedules.png`.
 - Live smoke: local `GET /crm/whatsapp/connections` reported the test ZAPI
   connection as connected; local `POST /crm/whatsapp/conversations/start`
   returned `201` and `SENT` for the approved phone number.

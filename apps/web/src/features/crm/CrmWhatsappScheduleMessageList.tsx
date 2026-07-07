@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Ban, Calendar, Clock, MessageSquare, Phone } from "lucide-react";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappScheduledMessage,
@@ -12,6 +12,13 @@ const statusLabels: Record<CrmWhatsappScheduledMessageStatus, string> = {
   pending: "Pendente",
   sending: "Enviando",
   sent: "Enviada",
+};
+const statusIcons: Record<CrmWhatsappScheduledMessageStatus, typeof Clock> = {
+  cancelled: Ban,
+  failed: Ban,
+  pending: Clock,
+  sending: Clock,
+  sent: MessageSquare,
 };
 
 export function ScheduleList({
@@ -88,9 +95,10 @@ function ScheduleRow({
 }) {
   const isConfirming = confirmingCancelId === message.id;
   const sessionLabel = session
-    ? `${formatSessionName(session)} (${String(session.id)})`
-    : String(message.sessionId);
+    ? formatSessionName(session)
+    : `Sessao ${String(message.sessionId)}`;
   const leadLabel = session?.leadId ? `Lead ${session.leadId}` : null;
+  const StatusIcon = statusIcons[message.status];
   return (
     <article className="crm-whatsapp-schedule-row">
       <div>
@@ -101,13 +109,17 @@ function ScheduleRow({
               `crm-whatsapp-schedule-status-${message.status}`,
             ].join(" ")}
           >
+            <StatusIcon aria-hidden="true" className="size-3" />
             {statusLabels[message.status]}
           </span>
           <strong>{formatDateTime(message.scheduledAt)}</strong>
         </div>
         <dl className="crm-whatsapp-schedule-meta">
           <div>
-            <dt>Sessao</dt>
+            <dt>
+              <MessageSquare aria-hidden="true" className="size-3" />
+              Sessao
+            </dt>
             <dd>{sessionLabel}</dd>
           </div>
           {leadLabel ? (
@@ -117,8 +129,18 @@ function ScheduleRow({
             </div>
           ) : null}
           <div>
-            <dt>Telefone</dt>
+            <dt>
+              <Phone aria-hidden="true" className="size-3" />
+              Telefone
+            </dt>
             <dd>{message.phone}</dd>
+          </div>
+          <div>
+            <dt>
+              <Calendar aria-hidden="true" className="size-3" />
+              Criado
+            </dt>
+            <dd>{formatDate(message.createdAt)}</dd>
           </div>
         </dl>
         <p>{message.text}</p>
@@ -162,7 +184,7 @@ function ScheduleRow({
             title="Cancelar agendamento"
             type="button"
           >
-            <Trash2 />
+            <Ban />
           </button>
         )
       ) : null}
@@ -176,5 +198,13 @@ function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
+  }).format(date);
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
   }).format(date);
 }

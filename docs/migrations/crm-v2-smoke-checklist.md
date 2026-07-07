@@ -100,6 +100,8 @@ evidence folder is documented.
 - Cancel a pending schedule.
 - Process due messages in local/admin/dev mode.
 - Verify rows show status, time, lead/session, preview, and errors.
+- Desktop screenshot evidence:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-schedules-ui/crm-whatsapp-schedules.png`.
 
 ## Integrations And Bot
 

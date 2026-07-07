@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarClock } from "lucide-react";
 import { ScheduleList } from "./CrmWhatsappScheduleMessageList";
 import {
+  createScheduleStatusCounts,
   ScheduleCreateForm,
   ScheduleToolbar,
   type ScheduleStatusFilter,
@@ -69,9 +71,8 @@ export function CrmWhatsappSchedulesPage({
     const input: CrmWhatsappListScheduledMessagesInput = { limit: 100 };
     if (connectionId) input.connectionId = connectionId;
     if (sessionFilter !== "all") input.sessionId = sessionFilter;
-    if (statusFilter !== "all") input.status = statusFilter;
     return input;
-  }, [connectionId, sessionFilter, statusFilter]);
+  }, [connectionId, sessionFilter]);
 
   const loadMessages = useCallback(async () => {
     if (!canRead) return;
@@ -91,6 +92,17 @@ export function CrmWhatsappSchedulesPage({
   const pendingCount = messages.filter(
     (message) => message.status === "pending",
   ).length;
+  const statusCounts = useMemo(
+    () => createScheduleStatusCounts(messages),
+    [messages],
+  );
+  const visibleMessages = useMemo(
+    () =>
+      statusFilter === "all"
+        ? messages
+        : messages.filter((message) => message.status === statusFilter),
+    [messages, statusFilter],
+  );
   const canSave = Boolean(
     canCreate && targetSessionId && scheduledAt && text.trim() && !isSaving,
   );
@@ -153,9 +165,24 @@ export function CrmWhatsappSchedulesPage({
 
   return (
     <section className="crm-whatsapp-section">
-      <header className="crm-whatsapp-section-intro">
-        <span>Operacao</span>
-        <h2>Agendamentos WhatsApp</h2>
+      <header className="crm-whatsapp-schedules-header">
+        <span aria-hidden="true">
+          <CalendarClock className="size-5" />
+        </span>
+        <div>
+          <strong>Agendamentos</strong>
+          <h2>Agendar mensagem</h2>
+        </div>
+        <dl>
+          <div>
+            <dt>Pendentes</dt>
+            <dd>{pendingCount}</dd>
+          </div>
+          <div>
+            <dt>Falhas</dt>
+            <dd>{statusCounts.failed}</dd>
+          </div>
+        </dl>
       </header>
       <div className="crm-whatsapp-schedules-page">
         <ScheduleCreateForm
@@ -182,9 +209,9 @@ export function CrmWhatsappSchedulesPage({
             onRefresh={() => void loadMessages()}
             onSessionFilterChange={setSessionFilter}
             onStatusFilterChange={setStatusFilter}
-            pendingCount={pendingCount}
             sessionFilter={sessionFilter}
             sessions={sessions}
+            statusCounts={statusCounts}
             statusFilter={statusFilter}
           />
           {localError ? (
@@ -200,7 +227,7 @@ export function CrmWhatsappSchedulesPage({
               confirmingCancelId={confirmingCancelId}
               emptyLabel="Nenhum agendamento encontrado para os filtros."
               isLoading={isLoading}
-              messages={messages}
+              messages={visibleMessages}
               onCancel={cancel}
               onCancelRequest={setConfirmingCancelId}
               onDismissCancel={() => setConfirmingCancelId(null)}
