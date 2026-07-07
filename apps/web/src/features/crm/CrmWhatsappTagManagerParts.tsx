@@ -5,6 +5,11 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import {
+  TagColorPicker,
+  TagDraftPreview,
+  TagEmojiPicker,
+} from "./CrmWhatsappTagDraftTools";
 import type {
   CrmWhatsappCreateTagInput,
   CrmWhatsappTag,
@@ -30,7 +35,8 @@ export function TagDraftFields({
 
   return (
     <>
-      <div className="crm-whatsapp-action-grid">
+      <TagDraftPreview draft={draft} />
+      <div className="crm-whatsapp-tag-draft-name">
         <label>
           Nome
           <input
@@ -41,26 +47,17 @@ export function TagDraftFields({
             value={draft.name}
           />
         </label>
-        <label>
-          Emoji
-          <input
-            disabled={disabled}
-            maxLength={16}
-            onChange={(event) => updateDraft({ emoji: event.target.value })}
-            placeholder="Opcional"
-            value={draft.emoji}
-          />
-        </label>
       </div>
-      <label>
-        Cor
-        <input
-          disabled={disabled}
-          onChange={(event) => updateDraft({ color: event.target.value })}
-          placeholder="#RRGGBB"
-          value={draft.color}
-        />
-      </label>
+      <TagColorPicker
+        disabled={disabled}
+        draft={draft}
+        onChange={updateDraft}
+      />
+      <TagEmojiPicker
+        disabled={disabled}
+        draft={draft}
+        onChange={updateDraft}
+      />
     </>
   );
 }
@@ -95,12 +92,11 @@ export function TagAdminRow({
       aria-label={`Etiqueta ${tag.name}, ordem ${index + 1} de ${tagsLength}`}
       className="crm-whatsapp-tag-admin-row"
     >
-      <i
-        aria-hidden="true"
-        style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
-      />
       <span className="crm-whatsapp-tag-admin-label">
-        <strong>
+        <strong
+          className="crm-whatsapp-tag-admin-pill"
+          style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
+        >
           {tag.emoji ? `${tag.emoji} ` : ""}
           {tag.name}
         </strong>

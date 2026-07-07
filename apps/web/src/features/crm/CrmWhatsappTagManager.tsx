@@ -145,46 +145,50 @@ export function CrmWhatsappTagManager({
           </button>
         )}
       </header>
-      <div className="crm-whatsapp-action-fields">
-        <TagDraftFields
-          disabled={disabled || isSaving}
-          draft={draft}
-          onChange={setDraft}
-        />
-        <p className="crm-whatsapp-tag-manager-note">
-          Etiquetas sao labels simples para organizar conversas no WhatsApp. Use
-          para marcar prioridade, origem ou proxima acao.
-        </p>
-        {localError ? (
-          <p className="crm-whatsapp-tag-manager-error">{localError}</p>
-        ) : null}
-        {statusMessage ? (
-          <p aria-live="polite" className="crm-whatsapp-tag-manager-status">
-            {statusMessage}
+      <div className="crm-whatsapp-action-fields crm-whatsapp-tag-manager-body">
+        <div className="crm-whatsapp-tag-editor-column">
+          <TagDraftFields
+            disabled={disabled || isSaving}
+            draft={draft}
+            onChange={setDraft}
+          />
+          <p className="crm-whatsapp-tag-manager-note">
+            Etiquetas sao labels simples para organizar conversas no WhatsApp.
+            Use para marcar prioridade, origem ou proxima acao.
           </p>
-        ) : null}
-        <div className="crm-whatsapp-tag-admin-list">
-          {tags.length ? (
-            tags.map((tag, index) => (
-              <TagAdminRow
-                disabled={Boolean(disabled) || hasPendingAction}
-                index={index}
-                key={tag.id}
-                onDelete={setTagToDelete}
-                onEdit={editTag}
-                onMove={(nextIndex, direction) =>
-                  void moveTag(nextIndex, direction)
-                }
-                pendingAction={pendingAction}
-                tag={tag}
-                tagsLength={tags.length}
-              />
-            ))
-          ) : (
-            <p className="crm-whatsapp-tag-manager-empty">
-              Nenhuma etiqueta criada.
+        </div>
+        <div className="crm-whatsapp-tag-list-column">
+          {localError ? (
+            <p className="crm-whatsapp-tag-manager-error">{localError}</p>
+          ) : null}
+          {statusMessage ? (
+            <p aria-live="polite" className="crm-whatsapp-tag-manager-status">
+              {statusMessage}
             </p>
-          )}
+          ) : null}
+          <div className="crm-whatsapp-tag-admin-list">
+            {tags.length ? (
+              tags.map((tag, index) => (
+                <TagAdminRow
+                  disabled={Boolean(disabled) || hasPendingAction}
+                  index={index}
+                  key={tag.id}
+                  onDelete={setTagToDelete}
+                  onEdit={editTag}
+                  onMove={(nextIndex, direction) =>
+                    void moveTag(nextIndex, direction)
+                  }
+                  pendingAction={pendingAction}
+                  tag={tag}
+                  tagsLength={tags.length}
+                />
+              ))
+            ) : (
+              <p className="crm-whatsapp-tag-manager-empty">
+                Nenhuma etiqueta criada.
+              </p>
+            )}
+          </div>
         </div>
       </div>
       <footer>

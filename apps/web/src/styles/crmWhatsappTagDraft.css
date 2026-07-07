@@ -1,0 +1,93 @@
+.crm-whatsapp-tag-admin-pill,
+.crm-whatsapp-tag-draft-preview strong {
+  border-radius: var(--radius-pill);
+}
+
+.crm-whatsapp-tag-draft-preview,
+.crm-whatsapp-tag-draft-group {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.75rem;
+}
+
+.crm-whatsapp-tag-draft-preview > span,
+.crm-whatsapp-tag-draft-group > span,
+.crm-whatsapp-tag-custom-color,
+.crm-whatsapp-tag-custom-emoji,
+.crm-whatsapp-tag-draft-name label {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-tag-draft-preview strong {
+  color: var(--color-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  inline-size: fit-content;
+  padding: 0.45rem 0.75rem;
+}
+
+.crm-whatsapp-tag-draft-name label,
+.crm-whatsapp-tag-custom-color,
+.crm-whatsapp-tag-custom-emoji {
+  display: grid;
+  gap: 0.375rem;
+}
+
+.crm-whatsapp-tag-color-grid,
+.crm-whatsapp-tag-emoji-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.crm-whatsapp-tag-color-grid button,
+.crm-whatsapp-tag-emoji-grid button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  width: 2.25rem;
+}
+
+.crm-whatsapp-tag-color-grid button[aria-pressed="true"],
+.crm-whatsapp-tag-emoji-grid button[aria-pressed="true"] {
+  border-color: var(--color-accent);
+}
+
+.crm-whatsapp-tag-color-grid i {
+  border-radius: var(--radius-pill);
+  display: block;
+  height: 1.35rem;
+  width: 1.35rem;
+}
+
+.crm-whatsapp-tag-color-grid svg,
+.crm-whatsapp-tag-emoji-grid svg {
+  height: 1rem;
+  position: absolute;
+  width: 1rem;
+}
+
+.crm-whatsapp-tag-custom-color input,
+.crm-whatsapp-tag-custom-emoji input,
+.crm-whatsapp-tag-draft-name input {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  padding: 0.625rem 0.75rem;
+}

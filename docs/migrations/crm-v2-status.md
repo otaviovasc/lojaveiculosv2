@@ -108,6 +108,9 @@ CRM tab parity and mobile evidence.
   recipients now have status/search filters.
 - Exposed the existing store-wide Agendamentos operations page in the WhatsApp
   scoped navbar and routed the chat header schedule action there.
+- Imported Repasses-style label management details into Tags: live preview,
+  quick color swatches, emoji presets, pill-style rows, and a desktop editor/list
+  layout while keeping V2 tags as WhatsApp labels only.
 
 ## Key Findings
 
@@ -210,6 +213,8 @@ scan issues were fixed by removing the local generated store cache.
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns.png`,
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review.png`,
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review-rows.png`.
+- Current tags screenshot:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-tags-ui/crm-whatsapp-tags.png`.
 - Screenshot-driven evidence from the current pass is under
   `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/` with the
   `crm-whatsapp-*-desktop-v2/v3.png` and mobile v2 captures.

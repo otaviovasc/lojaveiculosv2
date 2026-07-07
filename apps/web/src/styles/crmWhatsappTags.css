@@ -17,6 +17,17 @@
   width: 100%;
 }
 
+.crm-whatsapp-tag-manager-body {
+  align-items: start;
+}
+
+.crm-whatsapp-tag-editor-column,
+.crm-whatsapp-tag-list-column {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 .crm-whatsapp-tag-manager-note,
 .crm-whatsapp-tag-manager-empty,
 .crm-whatsapp-tag-manager-error,
@@ -54,21 +65,13 @@
   border-top: 1px solid var(--color-line);
   display: grid;
   gap: 0.625rem;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   min-height: 3rem;
   padding: 0.5rem 0.625rem;
 }
 
 .crm-whatsapp-tag-admin-row:first-child {
   border-top: 0;
-}
-
-.crm-whatsapp-tag-admin-row i {
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  display: block;
-  height: 0.875rem;
-  width: 0.875rem;
 }
 
 .crm-whatsapp-tag-admin-label {
@@ -78,11 +81,13 @@
 }
 
 .crm-whatsapp-tag-admin-label strong {
-  color: var(--color-text);
+  color: var(--color-inverse);
   font-size: calc(var(--font-size-xs) * 1.25);
   font-weight: 950;
+  inline-size: fit-content;
   min-width: 0;
   overflow: hidden;
+  padding: 0.35rem 0.625rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -176,4 +181,10 @@
 .crm-action-danger {
   background: var(--color-danger);
   color: var(--color-inverse);
+}
+
+@media (min-width: 860px) {
+  .crm-whatsapp-tag-manager-page .crm-whatsapp-tag-manager-body {
+    grid-template-columns: minmax(18rem, 0.82fr) minmax(22rem, 1.18fr);
+  }
 }

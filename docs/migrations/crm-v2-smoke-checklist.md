@@ -46,7 +46,9 @@ evidence folder is documented.
 - Remove tag from a session.
 - Delete tag through confirmation modal.
 - Verify no pipeline/column wording appears.
-- Capture desktop and mobile screenshots.
+- Desktop screenshot evidence:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-tags-ui/crm-whatsapp-tags.png`.
+- Capture mobile screenshot.
 
 ## Permission Contract
 

@@ -1,4 +1,5 @@
 @import "./crmWhatsappTags.css";
+@import "./crmWhatsappTagDraft.css";
 
 .crm-whatsapp-schedule-dialog {
   width: min(42rem, 100%);
