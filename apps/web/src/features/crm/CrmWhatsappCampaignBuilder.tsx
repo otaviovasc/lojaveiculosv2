@@ -5,6 +5,10 @@ import {
   CampaignRecipientsPanel,
 } from "./CrmWhatsappCampaignsPageParts";
 import { CampaignReviewPanel } from "./CrmWhatsappCampaignReviewPanel";
+import type {
+  CampaignRecipientReviewRow,
+  CampaignRecipientReviewSummary,
+} from "./CrmWhatsappCampaignRecipientReview";
 import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
 
 export function CrmWhatsappCampaignBuilder({
@@ -27,6 +31,8 @@ export function CrmWhatsappCampaignBuilder({
   onLaunch,
   onQueryChange,
   onReplyTagChange,
+  onReviewNameChange,
+  onReviewRowToggle,
   onSecondaryContentChange,
   onSecondaryDelayMinutesChange,
   onStartAtChange,
@@ -36,6 +42,8 @@ export function CrmWhatsappCampaignBuilder({
   preview,
   query,
   replyTagId,
+  reviewRows,
+  reviewSummary,
   secondaryContent,
   secondaryDelayMinutes,
   selectedCount,
@@ -63,6 +71,8 @@ export function CrmWhatsappCampaignBuilder({
   onLaunch: () => void;
   onQueryChange: (value: string) => void;
   onReplyTagChange: (value: string) => void;
+  onReviewNameChange: (rowId: string, value: string) => void;
+  onReviewRowToggle: (rowId: string) => void;
   onSecondaryContentChange: (value: string) => void;
   onSecondaryDelayMinutesChange: (value: number) => void;
   onStartAtChange: (value: string) => void;
@@ -72,6 +82,8 @@ export function CrmWhatsappCampaignBuilder({
   preview: string;
   query: string;
   replyTagId: string;
+  reviewRows: CampaignRecipientReviewRow[];
+  reviewSummary: CampaignRecipientReviewSummary;
   secondaryContent: string;
   secondaryDelayMinutes: number;
   selectedCount: number;
@@ -127,8 +139,12 @@ export function CrmWhatsappCampaignBuilder({
         lastResult={lastResult}
         localError={localError}
         onLaunch={onLaunch}
+        onNameChange={onReviewNameChange}
+        onToggleRow={onReviewRowToggle}
         preview={preview}
+        rows={reviewRows}
         selectedCount={selectedCount}
+        summary={reviewSummary}
       />
     </div>
   );

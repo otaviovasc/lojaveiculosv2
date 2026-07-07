@@ -17,6 +17,7 @@ import { CrmWhatsappConversationWorkspace } from "./CrmWhatsappConversationWorks
 import {
   WhatsappCampaignsSection,
   WhatsappIntegrationsSection,
+  WhatsappSchedulesSection,
 } from "./CrmWhatsappScopedSections";
 import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
 
@@ -93,6 +94,9 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
           ) : null}
           {activeScope === "campaigns" ? (
             <WhatsappCampaignsSection api={whatsappApi} inbox={inbox} />
+          ) : null}
+          {activeScope === "schedules" ? (
+            <WhatsappSchedulesSection inbox={inbox} />
           ) : null}
           {activeScope === "integrations" ? (
             <WhatsappIntegrationsSection

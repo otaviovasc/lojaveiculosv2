@@ -1,4 +1,5 @@
 import { formatSessionName } from "./crmWhatsappModel";
+import type { CampaignRecipientReviewRow } from "./CrmWhatsappCampaignRecipientReview";
 import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignDetail,
@@ -46,8 +47,8 @@ export function buildCampaignInput(input: {
   replyTagId: string;
   secondaryContent: string;
   secondaryDelayMinutes: number;
-  selectedSessions: CrmWhatsappSession[];
   text: string;
+  validRecipients: CampaignRecipientReviewRow[];
 }): CrmWhatsappCreateCampaignInput {
   return {
     content: input.text,
@@ -56,9 +57,9 @@ export function buildCampaignInput(input: {
       : {}),
     intervalMinutes: input.intervalMinutes,
     name: input.campaignName.trim(),
-    recipients: input.selectedSessions.map((session) => ({
-      sessionId: String(session.id),
-      variables: { nome: formatSessionName(session) },
+    recipients: input.validRecipients.map((row) => ({
+      sessionId: String(row.sessionId),
+      variables: { nome: row.name.trim() || "cliente" },
     })),
     ...(input.replyTagId !== "none" ? { replyTagId: input.replyTagId } : {}),
     scheduledStartAt: input.firstDate.toISOString(),

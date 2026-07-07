@@ -6,11 +6,10 @@ import {
   Reply,
   Tag,
 } from "lucide-react";
-import { formatSessionName } from "./crmWhatsappModel";
+import { CampaignRecipientPreview } from "./CrmWhatsappCampaignRecipientPreview";
 import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignDetail,
-  CrmWhatsappCampaignRecipient,
 } from "./crmWhatsappCampaignTypes";
 import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
 
@@ -75,7 +74,7 @@ export function CrmWhatsappCampaignDetailPanel({
         <AutomationPreview campaign={campaign} tags={tags} />
       </div>
 
-      <RecipientPreview recipients={recipients} sessions={sessions} />
+      <CampaignRecipientPreview recipients={recipients} sessions={sessions} />
     </section>
   );
 }
@@ -120,45 +119,6 @@ function AutomationPreview({
   );
 }
 
-function RecipientPreview({
-  recipients,
-  sessions,
-}: {
-  recipients: readonly CrmWhatsappCampaignRecipient[];
-  sessions: CrmWhatsappSession[];
-}) {
-  const sessionById = new Map(
-    sessions.map((session) => [String(session.id), session]),
-  );
-  return (
-    <div className="crm-whatsapp-campaign-recipient-preview">
-      <div>
-        <h4>Destinatarios</h4>
-        <span>{recipients.length} recentes</span>
-      </div>
-      <div>
-        {recipients.map((recipient) => {
-          const session = sessionById.get(recipient.sessionId);
-          return (
-            <article key={recipient.id}>
-              <div>
-                <strong>
-                  {session ? formatSessionName(session) : recipient.phone}
-                </strong>
-                <span>{recipient.phone}</span>
-              </div>
-              <small>{recipientStatusLabel(recipient.status)}</small>
-              {recipient.replyContentPreview ? (
-                <p>{recipient.replyContentPreview}</p>
-              ) : null}
-            </article>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function detailMetrics(campaign: CrmWhatsappCampaign) {
   return [
     { icon: Clock, label: "Agendadas", value: campaign.scheduledCount },
@@ -200,17 +160,5 @@ function campaignStatusLabel(status: CrmWhatsappCampaign["status"]) {
     draft: "Rascunho",
     paused: "Pausada",
     scheduled: "Agendada",
-  }[status];
-}
-
-function recipientStatusLabel(status: CrmWhatsappCampaignRecipient["status"]) {
-  return {
-    cancelled: "Cancelado",
-    failed: "Falhou",
-    pending: "Pendente",
-    replied: "Respondeu",
-    secondary_scheduled: "Follow-up agendado",
-    secondary_sent: "Follow-up enviado",
-    sent: "Enviado",
   }[status];
 }

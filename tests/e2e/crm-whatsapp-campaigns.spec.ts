@@ -17,6 +17,7 @@ test.describe("CRM WhatsApp campaigns", () => {
     await installCampaignApiMocks(page);
 
     await page.goto("/crm#/crm?surface=whatsapp");
+    await expect(page.getByRole("tab", { name: /Agendamentos/ })).toBeVisible();
     await page.getByRole("tab", { name: /Campanhas/ }).click();
 
     await expect(
@@ -25,5 +26,24 @@ test.describe("CRM WhatsApp campaigns", () => {
     await expect(page.getByText("Follow-up enviado")).toBeVisible();
     await expect(page.getByText("Obrigado pelo retorno")).toBeVisible();
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-campaigns");
+
+    await page.getByRole("button", { name: /Ana Premium/ }).click();
+    await page
+      .getByPlaceholder("telefone,nome\n5511999999999,Ana")
+      .fill("11999999999,Fantasma");
+    await page
+      .getByRole("heading", { name: "Revisao de envio" })
+      .scrollIntoViewIfNeeded();
+    await expect(page.getByText("Conversa V2 nao encontrada")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Criar campanha" }),
+    ).toBeDisabled();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-campaigns-review");
+    await page.getByText("Conversa V2 nao encontrada").scrollIntoViewIfNeeded();
+    await saveQaScreenshot(
+      page,
+      testInfo,
+      "crm-whatsapp-campaigns-review-rows",
+    );
   });
 });

@@ -6,6 +6,7 @@ import type {
 export type CampaignCsvRow = {
   name: string;
   phone: string;
+  rawPhone: string;
 };
 
 export function parseCampaignCsv(value: string): CampaignCsvRow[] {
@@ -17,7 +18,7 @@ export function parseCampaignCsv(value: string): CampaignCsvRow[] {
       const [phone = "", name = ""] = line
         .split(",")
         .map((part) => part.trim());
-      return { name, phone: normalizePhone(phone) };
+      return { name, phone: normalizePhone(phone), rawPhone: phone };
     })
     .filter((row) => row.phone && row.phone !== "telefone");
 }

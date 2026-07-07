@@ -3,6 +3,10 @@ import { CrmWhatsappCampaignBuilder } from "./CrmWhatsappCampaignBuilder";
 import { CrmWhatsappCampaignOverview } from "./CrmWhatsappCampaignOverview";
 import { CampaignHeader, CampaignStats } from "./CrmWhatsappCampaignsPageParts";
 import {
+  buildCampaignRecipientReviewRows,
+  summarizeCampaignRecipientReview,
+} from "./CrmWhatsappCampaignRecipientReview";
+import {
   matchCampaignCsvRows,
   parseCampaignCsv,
   renderCampaignMessage,
@@ -31,6 +35,9 @@ export function CrmWhatsappCampaignsPage({
   tags,
 }: CrmWhatsappCampaignsPageProps) {
   const [csvInput, setCsvInput] = useState("");
+  const [excludedReviewRowIds, setExcludedReviewRowIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [campaigns, setCampaigns] = useState<CrmWhatsappCampaign[]>([]);
   const [campaignDetail, setCampaignDetail] =
     useState<CrmWhatsappCampaignDetail | null>(null);
@@ -53,6 +60,9 @@ export function CrmWhatsappCampaignsPage({
   const [isSaving, setIsSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
+  const [reviewNameOverrides, setReviewNameOverrides] = useState<
+    Record<string, string>
+  >({});
 
   const loadCampaigns = useCallback(async () => {
     if (!canRead) return;
@@ -107,8 +117,23 @@ export function CrmWhatsappCampaignsPage({
     for (const id of matchedCsvSessionIds) next.add(id);
     return next;
   }, [matchedCsvSessionIds, selectedIds]);
-  const selectedSessions = sessions.filter((session) =>
-    effectiveSelectedIds.has(String(session.id)),
+  const reviewRows = useMemo(
+    () =>
+      buildCampaignRecipientReviewRows({
+        csvRows,
+        excludedRowIds: excludedReviewRowIds,
+        nameOverrides: reviewNameOverrides,
+        selectedSessionIds: selectedIds,
+        sessions,
+      }),
+    [csvRows, excludedReviewRowIds, reviewNameOverrides, selectedIds, sessions],
+  );
+  const reviewSummary = useMemo(
+    () => summarizeCampaignRecipientReview(reviewRows),
+    [reviewRows],
+  );
+  const validRecipients = reviewRows.filter(
+    (row) => row.included && row.status !== "blocked" && row.sessionId,
   );
   const filteredSessions = sessions.filter((session) =>
     matchesCampaignFilters(session, query, selectedTagId),
@@ -116,7 +141,8 @@ export function CrmWhatsappCampaignsPage({
   const canLaunch = Boolean(
     canCreate &&
     campaignName.trim() &&
-    selectedSessions.length &&
+    validRecipients.length &&
+    !reviewSummary.blockedIncluded &&
     startAt &&
     text.trim() &&
     !isSaving,
@@ -129,6 +155,19 @@ export function CrmWhatsappCampaignsPage({
       else next.add(sessionId);
       return next;
     });
+  };
+
+  const toggleReviewRow = (rowId: string) => {
+    setExcludedReviewRowIds((current) => {
+      const next = new Set(current);
+      if (next.has(rowId)) next.delete(rowId);
+      else next.add(rowId);
+      return next;
+    });
+  };
+
+  const updateReviewRowName = (rowId: string, value: string) => {
+    setReviewNameOverrides((current) => ({ ...current, [rowId]: value }));
   };
 
   const launch = async () => {
@@ -150,13 +189,15 @@ export function CrmWhatsappCampaignsPage({
         replyTagId,
         secondaryContent,
         secondaryDelayMinutes,
-        selectedSessions,
         text,
+        validRecipients,
       }),
     );
     setIsSaving(false);
     if (campaign) {
       setLastResult(`${campaign.totalRecipients} destinatario(s) agendado(s).`);
+      setExcludedReviewRowIds(new Set());
+      setReviewNameOverrides({});
       setSelectedIds(new Set());
       setSelectedCampaignId(campaign.id);
       await loadCampaigns();
@@ -203,6 +244,8 @@ export function CrmWhatsappCampaignsPage({
           onLaunch={() => void launch()}
           onQueryChange={setQuery}
           onReplyTagChange={setReplyTagId}
+          onReviewNameChange={updateReviewRowName}
+          onReviewRowToggle={toggleReviewRow}
           onSecondaryContentChange={setSecondaryContent}
           onSecondaryDelayMinutesChange={setSecondaryDelayMinutes}
           onStartAtChange={setStartAt}
@@ -210,15 +253,17 @@ export function CrmWhatsappCampaignsPage({
           onTextChange={setText}
           onToggleSession={toggleSession}
           preview={
-            selectedSessions[0]
-              ? renderCampaignMessage(text, selectedSessions[0])
+            validRecipients[0]?.session
+              ? renderCampaignMessage(text, validRecipients[0].session)
               : text
           }
           query={query}
           replyTagId={replyTagId}
+          reviewRows={reviewRows}
+          reviewSummary={reviewSummary}
           secondaryContent={secondaryContent}
           secondaryDelayMinutes={secondaryDelayMinutes}
-          selectedCount={selectedSessions.length}
+          selectedCount={validRecipients.length}
           selectedTagId={selectedTagId}
           startAt={startAt}
           tags={tags}

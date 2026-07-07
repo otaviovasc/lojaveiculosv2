@@ -3,6 +3,7 @@ export type CrmWhatsappScope =
   | "connection"
   | "conversations"
   | "integrations"
+  | "schedules"
   | "tags"
   | "visits";
 
@@ -24,6 +25,10 @@ const scopes: Array<{
   {
     id: "visits",
     label: "Visitas",
+  },
+  {
+    id: "schedules",
+    label: "Agendamentos",
   },
   {
     id: "campaigns",

@@ -144,7 +144,7 @@ export function CrmWhatsappConversationWorkspace({
               onRemoveTag={(tagId) =>
                 inbox.actions.removeSessionTag(activeSession.id, tagId)
               }
-              onScheduleMessage={() => onScopeChange("campaigns")}
+              onScheduleMessage={() => onScopeChange("schedules")}
               onToggleIntervention={() => {
                 void inbox.actions.toggleIntervention(
                   activeSession.id,

@@ -200,7 +200,7 @@ export function CampaignCsvPanel({
       />
       <p>
         Telefones sao usados para localizar conversas existentes. Linhas sem
-        conversa correspondente ficam fora do envio.
+        conversa correspondente aparecem bloqueadas na revisao.
       </p>
       <strong>{matchedCount} conversa(s) encontradas</strong>
     </section>

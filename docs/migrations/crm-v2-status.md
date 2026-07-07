@@ -2,12 +2,13 @@
 
 Last updated: 2026-07-07
 
-Branch: `feat/crm-v2-migration-control-plane`
+Branch: `main`
 
 ## Current Phase
 
 Phase 11-12: persistent campaigns landed; outbound bot event parity hardened;
-recipient review/mobile polish remain.
+campaign recipient review UI is screenshot-verified; remaining polish is broader
+CRM tab parity and mobile evidence.
 
 ## Completed This Pass
 
@@ -100,6 +101,13 @@ recipient review/mobile polish remain.
   timestamps, duration, message count, tag color/emoji, and handback summary;
   scheduled/campaign sends forward as `senderOrigin: system` without takeover
   noise; dispatch attempts/success/failure are audited without secrets.
+- Imported Repasses-style campaign recipient safety review into V2:
+  selected sessions and pasted CSV rows now produce an editable review table,
+  invalid/unmatched/LID/duplicate rows are visible and blocked until excluded,
+  valid rows feed campaign creation with V2 session UUIDs, and campaign detail
+  recipients now have status/search filters.
+- Exposed the existing store-wide Agendamentos operations page in the WhatsApp
+  scoped navbar and routed the chat header schedule action there.
 
 ## Key Findings
 
@@ -146,38 +154,6 @@ recipient review/mobile polish remain.
 - Known stale HTML details: a CRM tag column flag mention and one older note
   still describing scheduled messages as pending.
 
-## Proposed Worker Waves
-
-Wave 1:
-
-- Worker A: shell/nav cleanup. Completed in `f34bad1`; merged by `8a83402`.
-- Worker B: connection page. Completed in `cdbca27`; merged by `30b9b78`.
-- Worker C: tags page. Completed in `4acd701`; merged by `ad560d9`.
-- Worker D: dead provider/source scan and docs updates. Completed in
-  `a8e924e`; merged by `5ffd509`.
-
-Wave 2:
-
-- Worker E: permission normalization and service helper compatibility.
-  Implemented by orchestrator because it unblocks all later shared contracts.
-- Worker F: pipeline persistence. Completed in `cc8e16a` and `4f5f568`;
-  merged by `489d249`.
-- Worker G: scheduled messages page. Completed in `a448939`; merged by
-  `d8dde89`.
-
-Wave 3:
-
-- Worker H: lead/WhatsApp identity link. Completed in `62ac658`.
-- Worker I: visits backend/UI. Completed in `5d47b6f`.
-- Worker J: integrations/bot foundation. Completed in `eac31a8`; action API
-  and outbound forwarding completed after it.
-
-Wave 4:
-
-- Worker K: campaign backend. Completed by orchestrator in current slice.
-- Worker L: persistent campaign UI. Completed by orchestrator in current slice.
-- Worker Q: Playwright/evidence/mobile polish.
-
 ## Command Log
 
 Commands run:
@@ -194,6 +170,7 @@ CI=true pnpm run check:lines
 CI=true pnpm run validate:core-guardrails
 CI=true pnpm run validate
 PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-campaigns pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
+CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_FEATURE_SLUG=crm-whatsapp-campaigns-ui pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 ```
 
 Phase 1 permission validation passed. Earlier `.pnpm-store` cache-only line
@@ -229,8 +206,10 @@ scan issues were fixed by removing the local generated store cache.
   `apps/web/src/features/crm/CrmWhatsappCampaignsPage.test.tsx`,
   `apps/web/src/features/crm/CrmWhatsappConnectionAdmin.test.tsx`,
   `tests/e2e/crm-whatsapp-campaigns.spec.ts`.
-- Current campaign screenshot:
-  `/tmp/lojaveiculosv2-qa/feat-crm-v2-migration-control-plane/crm-whatsapp-campaigns/crm-whatsapp-campaigns.png`.
+- Current campaign screenshots:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns.png`,
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review.png`,
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review-rows.png`.
 - Screenshot-driven evidence from the current pass is under
   `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/` with the
   `crm-whatsapp-*-desktop-v2/v3.png` and mobile v2 captures.
@@ -241,8 +220,8 @@ scan issues were fixed by removing the local generated store cache.
 
 ## Next Orchestrator Actions
 
-1. Polish Campaigns with richer recipient review, filtered lead source, and
-   mobile QA.
+1. Continue Repasses-style UI parity for Conexao, Tags, Visitas, Agendamentos,
+   Integracoes, and Conversas, with screenshots per tab.
 2. Harden campaign reply tracking against duplicate concurrent replies and add
    paused-campaign reply behavior tests.
 3. Run full validation when the next stable CRM slice is merged, or record any

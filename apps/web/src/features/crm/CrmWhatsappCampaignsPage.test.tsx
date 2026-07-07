@@ -55,6 +55,53 @@ describe("CrmWhatsappCampaignsPage", () => {
       }),
     );
   });
+
+  it("blocks campaign launch until invalid csv recipients are excluded", async () => {
+    const user = userEvent.setup();
+    const onCreateCampaign = vi.fn(async () => createCampaign());
+    render(
+      <CrmWhatsappCampaignsPage
+        canCancel
+        canCreate
+        canRead
+        onCancelCampaign={vi.fn(async () => createCampaign())}
+        onCreateCampaign={onCreateCampaign}
+        onGetCampaign={vi.fn(async () => createCampaignDetail())}
+        onListCampaigns={vi.fn(async () => [])}
+        onPauseCampaign={vi.fn(async () => createCampaign())}
+        onResumeCampaign={vi.fn(async () => createCampaign())}
+        sessions={[createSession({ buyerName: "Ana" })]}
+        tags={[]}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Ana/i }));
+    await user.type(
+      screen.getByPlaceholderText(/5511999999999,Ana/i),
+      "5511,Fantasma",
+    );
+    await user.clear(screen.getByLabelText(/inicio/i));
+    await user.type(screen.getByLabelText(/inicio/i), "2099-01-01T10:00");
+
+    expect(
+      screen.getByRole("button", { name: /criar campanha/i }),
+    ).toBeDisabled();
+
+    await user.click(screen.getByLabelText(/Incluir Fantasma/i));
+    await user.click(screen.getByRole("button", { name: /criar campanha/i }));
+
+    await waitFor(() => expect(onCreateCampaign).toHaveBeenCalledTimes(1));
+    expect(onCreateCampaign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        recipients: [
+          {
+            sessionId: "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+            variables: { nome: "Ana" },
+          },
+        ],
+      }),
+    );
+  });
 });
 
 function createSession(

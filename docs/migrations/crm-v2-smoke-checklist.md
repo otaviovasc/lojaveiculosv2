@@ -19,7 +19,7 @@ evidence folder is documented.
 - Open `/dashboard#/crm?surface=whatsapp`.
 - Verify top CRM exposes WhatsApp and Clientes.
 - Verify WhatsApp scoped nav labels:
-  Conversas, Conexao, Visitas, Campanhas, Integracoes, Tags.
+  Conversas, Conexao, Visitas, Agendamentos, Campanhas, Integracoes, Tags.
 - Verify no scoped tab subtitle copy is visible.
 - Verify unread/tag badges appear only when useful.
 - Capture desktop and mobile screenshots.
@@ -126,7 +126,9 @@ evidence folder is documented.
 - Verify metrics: total, scheduled, sent, failed, replied, secondary sent,
   reply rate.
 - Desktop screenshot evidence:
-  `/tmp/lojaveiculosv2-qa/feat-crm-v2-migration-control-plane/crm-whatsapp-campaigns/crm-whatsapp-campaigns.png`.
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns.png`,
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review.png`,
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review-rows.png`.
 
 ## Conversas Parity
 
