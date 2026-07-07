@@ -1,14 +1,8 @@
 import { Check, Megaphone, Search, Upload } from "lucide-react";
 import { formatSessionName } from "./crmWhatsappModel";
-import type {
-  CrmWhatsappScheduledMessage,
-  CrmWhatsappSession,
-  CrmWhatsappTag,
-} from "./crmWhatsappTypes";
-import {
-  readMinDateTimeLocal,
-  summarizeCampaignSchedules,
-} from "./CrmWhatsappCampaignsPageUtils";
+import type { CrmWhatsappCampaign } from "./crmWhatsappCampaignTypes";
+import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
+import { readMinDateTimeLocal } from "./CrmWhatsappCampaignsPageUtils";
 
 export function CampaignHeader() {
   return (
@@ -26,13 +20,13 @@ export function CampaignHeader() {
 }
 
 export function CampaignStats({
-  messages,
+  campaigns,
 }: {
-  messages: CrmWhatsappScheduledMessage[];
+  campaigns: CrmWhatsappCampaign[];
 }) {
   return (
     <div className="crm-whatsapp-campaign-stats">
-      {summarizeCampaignSchedules(messages).map((item) => (
+      {summarizeCampaigns(campaigns).map((item) => (
         <div key={item.label}>
           <strong>{item.value}</strong>
           <span>{item.label}</span>
@@ -44,8 +38,10 @@ export function CampaignStats({
 
 export function CampaignMessagePanel({
   canCreate,
+  campaignName,
   intervalMinutes,
   isSaving,
+  onCampaignNameChange,
   onIntervalMinutesChange,
   onStartAtChange,
   onTextChange,
@@ -53,8 +49,10 @@ export function CampaignMessagePanel({
   text,
 }: {
   canCreate: boolean;
+  campaignName: string;
   intervalMinutes: number;
   isSaving: boolean;
+  onCampaignNameChange: (value: string) => void;
   onIntervalMinutesChange: (value: number) => void;
   onStartAtChange: (value: string) => void;
   onTextChange: (value: string) => void;
@@ -64,6 +62,15 @@ export function CampaignMessagePanel({
   return (
     <section className="crm-whatsapp-campaign-panel">
       <h3>Mensagem e ritmo</h3>
+      <label>
+        Nome da campanha
+        <input
+          disabled={!canCreate || isSaving}
+          maxLength={191}
+          onChange={(event) => onCampaignNameChange(event.target.value)}
+          value={campaignName}
+        />
+      </label>
       <label>
         Mensagem inicial
         <textarea
@@ -198,4 +205,29 @@ export function CampaignCsvPanel({
       <strong>{matchedCount} conversa(s) encontradas</strong>
     </section>
   );
+}
+
+function summarizeCampaigns(campaigns: CrmWhatsappCampaign[]) {
+  const totals = campaigns.reduce(
+    (acc, campaign) => ({
+      failed: acc.failed + campaign.failedCount,
+      recipients: acc.recipients + campaign.totalRecipients,
+      replied: acc.replied + campaign.repliedCount,
+      scheduled: acc.scheduled + campaign.scheduledCount,
+      sent: acc.sent + campaign.sentCount,
+    }),
+    { failed: 0, recipients: 0, replied: 0, scheduled: 0, sent: 0 },
+  );
+  const replyRate =
+    totals.sent > 0
+      ? `${Math.round((totals.replied / totals.sent) * 100)}%`
+      : "0%";
+  return [
+    { label: "Campanhas", value: campaigns.length },
+    { label: "Destinatarios", value: totals.recipients },
+    { label: "Agendadas", value: totals.scheduled },
+    { label: "Enviadas", value: totals.sent },
+    { label: "Falhas", value: totals.failed },
+    { label: "Resposta", value: replyRate },
+  ];
 }

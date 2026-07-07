@@ -30,6 +30,7 @@ import {
   recordWhatsappServiceMutation,
   type WhatsappServiceAuditInput,
 } from "./serviceSupport.js";
+import { trackWhatsappCampaignReply } from "./whatsappCampaignReplyTracking.js";
 
 const permission = "crm.whatsapp.ingest" as const;
 
@@ -137,6 +138,16 @@ export async function ingestZapiWhatsappWebhook(
           storeId: connection.storeId,
           tenantId: connection.tenantId,
         });
+        if (!parsed.fromMe) {
+          await trackWhatsappCampaignReply(
+            context,
+            {
+              message: result.message,
+              session: result.session,
+            },
+            transactionPorts,
+          );
+        }
       }
       return result;
     }),

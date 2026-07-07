@@ -6,6 +6,8 @@ import type {
   UpdateCrmWhatsappQuickMessageInput,
 } from "./crmWhatsappQuickMessageRepository.js";
 import type {
+  CrmWhatsappCampaign,
+  CrmWhatsappCampaignRecipient,
   CrmWhatsappMessage,
   CrmWhatsappScheduledMessage,
   CrmWhatsappScheduledMessageScope,
@@ -35,6 +37,15 @@ import type {
   UpdateCrmWhatsappSessionTagInput,
   UpdateCrmWhatsappTagInput,
 } from "./crmWhatsappRepositoryInputs.js";
+import type {
+  CreateCrmWhatsappCampaignInput,
+  CreateCrmWhatsappCampaignRecipientInput,
+  FindCrmWhatsappCampaignInput,
+  ListCrmWhatsappCampaignRecipientsInput,
+  ListCrmWhatsappCampaignsInput,
+  UpdateCrmWhatsappCampaignInput,
+  UpdateCrmWhatsappCampaignRecipientInput,
+} from "./crmWhatsappCampaignRepositoryInputs.js";
 
 export type {
   CreateCrmWhatsappQuickMessageInput,
@@ -45,6 +56,15 @@ export type {
   UpdateCrmWhatsappQuickMessageInput,
 } from "./crmWhatsappQuickMessageRepository.js";
 export type {
+  CreateCrmWhatsappCampaignInput,
+  CreateCrmWhatsappCampaignRecipientInput,
+  FindCrmWhatsappCampaignInput,
+  ListCrmWhatsappCampaignRecipientsInput,
+  ListCrmWhatsappCampaignsInput,
+  UpdateCrmWhatsappCampaignInput,
+  UpdateCrmWhatsappCampaignRecipientInput,
+} from "./crmWhatsappCampaignRepositoryInputs.js";
+export type {
   CrmWhatsappChannel,
   CrmWhatsappMessageDirection,
   CrmWhatsappMessageSenderType,
@@ -53,6 +73,10 @@ export type {
   CrmWhatsappSessionStatus,
 } from "./crmWhatsappRepositoryTypes.js";
 export type {
+  CrmWhatsappCampaign,
+  CrmWhatsappCampaignRecipient,
+  CrmWhatsappCampaignRecipientStatus,
+  CrmWhatsappCampaignStatus,
   CrmWhatsappMessage,
   CrmWhatsappScheduledMessage,
   CrmWhatsappScheduledMessageScope,
@@ -95,6 +119,12 @@ export type CrmWhatsappRepository = {
   createScheduledMessage: (
     input: CreateCrmWhatsappScheduledMessageInput,
   ) => Promise<CrmWhatsappScheduledMessage>;
+  createCampaign: (
+    input: CreateCrmWhatsappCampaignInput,
+  ) => Promise<CrmWhatsappCampaign>;
+  createCampaignRecipient: (
+    input: CreateCrmWhatsappCampaignRecipientInput,
+  ) => Promise<CrmWhatsappCampaignRecipient>;
   createTag: (input: CreateCrmWhatsappTagInput) => Promise<CrmWhatsappTag>;
   deleteQuickMessage: (
     input: FindCrmWhatsappQuickMessageInput,
@@ -114,6 +144,9 @@ export type CrmWhatsappRepository = {
   findMessageById: (
     input: FindCrmWhatsappMessageByIdInput,
   ) => Promise<CrmWhatsappMessage | null>;
+  findCampaignById: (
+    input: FindCrmWhatsappCampaignInput,
+  ) => Promise<CrmWhatsappCampaign | null>;
   findOrCreateTag: (
     input: FindOrCreateCrmWhatsappTagInput,
   ) => Promise<CrmWhatsappTag>;
@@ -126,6 +159,12 @@ export type CrmWhatsappRepository = {
   listMessages: (
     input: ListCrmWhatsappMessagesInput,
   ) => Promise<readonly CrmWhatsappMessage[]>;
+  listCampaigns: (
+    input: ListCrmWhatsappCampaignsInput,
+  ) => Promise<readonly CrmWhatsappCampaign[]>;
+  listCampaignRecipients: (
+    input: ListCrmWhatsappCampaignRecipientsInput,
+  ) => Promise<readonly CrmWhatsappCampaignRecipient[]>;
   listQuickMessages: (
     input: ListCrmWhatsappQuickMessagesInput,
   ) => Promise<readonly CrmWhatsappQuickMessage[]>;
@@ -153,6 +192,12 @@ export type CrmWhatsappRepository = {
   updateScheduledMessage: (
     input: UpdateCrmWhatsappScheduledMessageInput,
   ) => Promise<CrmWhatsappScheduledMessage | null>;
+  updateCampaign: (
+    input: UpdateCrmWhatsappCampaignInput,
+  ) => Promise<CrmWhatsappCampaign | null>;
+  updateCampaignRecipient: (
+    input: UpdateCrmWhatsappCampaignRecipientInput,
+  ) => Promise<CrmWhatsappCampaignRecipient | null>;
   updateSession: (
     input: UpdateCrmWhatsappSessionInput,
   ) => Promise<CrmWhatsappSession | null>;

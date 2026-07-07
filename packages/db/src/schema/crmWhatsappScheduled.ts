@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -12,6 +13,7 @@ import { crmConnections } from "./crm.js";
 import { users, stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 import { crmWhatsappMessages, crmWhatsappSessions } from "./crmWhatsapp.js";
+import { crmWhatsappCampaigns } from "./crmWhatsappCampaigns.js";
 
 export const crmWhatsappScheduledMessageStatus = pgEnum(
   "crm_whatsapp_scheduled_message_status",
@@ -23,6 +25,10 @@ export const crmWhatsappScheduledMessages = pgTable(
   {
     ...lifecycleColumns,
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    campaignId: uuid("campaign_id").references(() => crmWhatsappCampaigns.id),
+    campaignMessageType: varchar("campaign_message_type", { length: 40 }),
+    campaignRecipientKey: varchar("campaign_recipient_key", { length: 191 }),
+    campaignSequence: integer("campaign_sequence"),
     connectionId: uuid("connection_id")
       .notNull()
       .references(() => crmConnections.id),
@@ -50,6 +56,10 @@ export const crmWhatsappScheduledMessages = pgTable(
     text: text("text").notNull(),
   },
   (table) => [
+    index("crm_whatsapp_scheduled_messages_campaign_idx").on(
+      table.campaignId,
+      table.campaignSequence,
+    ),
     index("crm_whatsapp_scheduled_messages_due_idx").on(
       table.storeId,
       table.status,

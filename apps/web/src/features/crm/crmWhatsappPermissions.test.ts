@@ -13,6 +13,8 @@ describe("CRM WhatsApp permissions", () => {
       ),
     ).toEqual({
       canAssign: false,
+      canCampaignManage: false,
+      canCampaignRead: false,
       canClose: false,
       canConnectionManage: false,
       canIntegrationsManage: false,
@@ -49,6 +51,8 @@ describe("CRM WhatsApp permissions", () => {
       ),
     ).toEqual({
       canAssign: true,
+      canCampaignManage: false,
+      canCampaignRead: false,
       canClose: true,
       canConnectionManage: false,
       canIntegrationsManage: false,

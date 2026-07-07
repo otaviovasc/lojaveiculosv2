@@ -149,6 +149,10 @@ export type UpdateCrmWhatsappSessionTagInput = {
 };
 
 export type CreateCrmWhatsappScheduledMessageInput = {
+  campaignId?: string | null;
+  campaignMessageType?: string | null;
+  campaignRecipientKey?: string | null;
+  campaignSequence?: number | null;
   connectionId: string;
   createdByUserId?: UserId | null;
   metadata?: Record<string, unknown>;
@@ -161,6 +165,7 @@ export type CreateCrmWhatsappScheduledMessageInput = {
 };
 
 export type ListCrmWhatsappScheduledMessagesInput = {
+  campaignId?: string;
   connectionId?: string;
   limit: number;
   sessionId?: string;

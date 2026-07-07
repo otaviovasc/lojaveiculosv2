@@ -5,16 +5,24 @@ import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 
 type InboxState = ReturnType<typeof useCrmWhatsappInbox>;
 
-export function WhatsappCampaignsSection({ inbox }: { inbox: InboxState }) {
+export function WhatsappCampaignsSection({
+  api,
+  inbox,
+}: {
+  api: CrmWhatsappApi;
+  inbox: InboxState;
+}) {
   return (
     <CrmWhatsappCampaignsPage
-      canCancel={inbox.permissions.canScheduleCancel}
-      canCreate={inbox.permissions.canScheduleCreate}
-      canRead={inbox.permissions.canScheduleRead}
-      connectionId={inbox.connectionId}
-      onCancel={inbox.cancelScheduledMessage}
-      onList={inbox.listScheduledMessages}
-      onSchedule={inbox.createScheduledMessage}
+      canCancel={inbox.permissions.canCampaignManage}
+      canCreate={inbox.permissions.canCampaignManage}
+      canRead={inbox.permissions.canCampaignRead}
+      onCancelCampaign={api.cancelCampaign}
+      onCreateCampaign={api.createCampaign}
+      onGetCampaign={api.getCampaign}
+      onListCampaigns={() => api.listCampaigns({ limit: 50 })}
+      onPauseCampaign={api.pauseCampaign}
+      onResumeCampaign={api.resumeCampaign}
       sessions={inbox.sessions}
       tags={inbox.availableTags}
     />

@@ -1,0 +1,110 @@
+.crm-whatsapp-campaign-list {
+  align-content: start;
+}
+
+.crm-whatsapp-campaign-list article {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.875rem;
+}
+
+.crm-whatsapp-campaign-list article.crm-whatsapp-campaign-list-selected {
+  border-color: var(--color-primary);
+}
+
+.crm-whatsapp-campaign-list-main,
+.crm-whatsapp-campaign-list footer {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+}
+
+.crm-whatsapp-campaign-list-main {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+  text-align: start;
+}
+
+.crm-whatsapp-campaign-list-main > span {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-campaign-list-main strong,
+.crm-whatsapp-campaign-detail header strong,
+.crm-whatsapp-campaign-recipient-preview strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.crm-whatsapp-campaign-list-main small,
+.crm-whatsapp-campaign-list article span,
+.crm-whatsapp-campaign-detail header span,
+.crm-whatsapp-campaign-detail header small,
+.crm-whatsapp-campaign-recipient-preview span,
+.crm-whatsapp-campaign-recipient-preview small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+}
+
+.crm-whatsapp-campaign-list-main em {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-style: normal;
+  font-weight: 950;
+}
+
+.crm-whatsapp-campaign-list dl {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(6rem, 1fr));
+  margin: 0;
+}
+
+.crm-whatsapp-campaign-list dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+}
+
+.crm-whatsapp-campaign-list dd {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  margin: 0;
+}
+
+.crm-whatsapp-campaign-list button {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.crm-whatsapp-campaign-list .crm-whatsapp-campaign-list-main {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  height: auto;
+  padding: 0;
+  text-align: start;
+  width: 100%;
+}
+
+.crm-whatsapp-campaign-list button:disabled {
+  opacity: 0.45;
+}

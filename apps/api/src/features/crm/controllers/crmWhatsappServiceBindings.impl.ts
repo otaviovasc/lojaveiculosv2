@@ -55,6 +55,7 @@ import { startWhatsappConversation } from "../../../domains/crm/services/CrmWhat
 import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createCrmWhatsappQuickMessageBindings } from "./crmWhatsappQuickMessageBindings.js";
 import type { CrmWhatsappServices } from "./crmWhatsappServiceBindings.types.js";
+import { createCrmWhatsappCampaignBindings } from "./crmWhatsappCampaignBindings.js";
 import { buildWebhookBindings } from "./crmWhatsappWebhookBindings.js";
 
 type CatalogBindings = Pick<
@@ -223,6 +224,7 @@ export function createCrmWhatsappServiceBindings(
     ...buildConnectionBindings(ports),
     ...buildCatalogBindings(ports),
     ...buildMessageBindings(ports),
+    ...createCrmWhatsappCampaignBindings(ports),
     ...buildSessionActionBindings(ports),
     ...buildTagBindings(ports),
     ...buildWebhookBindings(ports),

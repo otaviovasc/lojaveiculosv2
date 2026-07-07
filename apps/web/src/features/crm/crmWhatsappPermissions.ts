@@ -2,6 +2,8 @@ import type { SessionBootstrap } from "../account/apiClient";
 
 const permissions = {
   assign: "crm.whatsapp.assign",
+  campaignManage: "crm.whatsapp.campaigns.manage",
+  campaignRead: "crm.whatsapp.campaigns.read",
   close: "crm.whatsapp.close",
   connectionManage: "crm.whatsapp.connection.manage",
   integrationsManage: "crm.whatsapp.integrations.manage",
@@ -21,6 +23,8 @@ const permissions = {
 
 export type CrmWhatsappCapabilities = {
   canAssign: boolean;
+  canCampaignManage: boolean;
+  canCampaignRead: boolean;
   canClose: boolean;
   canConnectionManage: boolean;
   canIntegrationsManage: boolean;
@@ -43,6 +47,11 @@ export function readCrmWhatsappCapabilities(
 ): CrmWhatsappCapabilities {
   return {
     canAssign: hasWhatsappPermission(session, permissions.assign),
+    canCampaignManage: hasWhatsappPermission(
+      session,
+      permissions.campaignManage,
+    ),
+    canCampaignRead: hasWhatsappPermission(session, permissions.campaignRead),
     canClose: hasWhatsappPermission(session, permissions.close),
     canConnectionManage: hasWhatsappPermission(
       session,

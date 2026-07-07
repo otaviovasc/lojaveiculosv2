@@ -1,6 +1,6 @@
 # CRM V2 Smoke Checklist
 
-Last updated: 2026-07-06
+Last updated: 2026-07-07
 
 Use this checklist for focused slice evidence and final CRM handoff. Store
 screenshots under `/tmp/lojaveiculosv2-qa/crm-v2/` unless a worker-specific
@@ -107,6 +107,8 @@ evidence folder is documented.
 
 ## Campaigns
 
+- Current V2 UI creates from WhatsApp sessions and CSV/paste matched to
+  sessions; filtered lead source remains a polish item.
 - Create campaign from filtered leads.
 - Create campaign from filtered WhatsApp sessions.
 - Create campaign from CSV/contact paste.
@@ -115,8 +117,11 @@ evidence folder is documented.
   delayed secondary message.
 - Create scheduled campaign sends.
 - Pause, resume, and cancel campaign.
+- Open campaign detail and verify durable recipient statuses.
 - Verify metrics: total, scheduled, sent, failed, replied, secondary sent,
   reply rate.
+- Desktop screenshot evidence:
+  `/tmp/lojaveiculosv2-qa/feat-crm-v2-migration-control-plane/crm-whatsapp-campaigns/crm-whatsapp-campaigns.png`.
 
 ## Conversas Parity
 

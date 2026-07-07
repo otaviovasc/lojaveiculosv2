@@ -6,10 +6,7 @@ import {
 } from "@lojaveiculosv2/db";
 import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
-import {
-  toWhatsappMessage,
-  toWhatsappSession,
-} from "./drizzleCrmWhatsappMappers.js";
+import { toWhatsappSession } from "./drizzleCrmWhatsappMappers.js";
 import {
   countUnreadMessages,
   sessionFilters,
@@ -17,6 +14,7 @@ import {
 import {
   findWhatsappMessageByExternalId,
   findWhatsappMessageById,
+  listWhatsappMessages,
   updateWhatsappMessage,
 } from "./drizzleCrmWhatsappMessages.js";
 import {
@@ -33,6 +31,17 @@ import {
   listWhatsappScheduledMessages,
   updateWhatsappScheduledMessage,
 } from "./drizzleCrmWhatsappScheduledMessages.js";
+import {
+  createWhatsappCampaign,
+  findWhatsappCampaignById,
+  listWhatsappCampaigns,
+  updateWhatsappCampaign,
+} from "./drizzleCrmWhatsappCampaigns.js";
+import {
+  createWhatsappCampaignRecipient,
+  listWhatsappCampaignRecipients,
+  updateWhatsappCampaignRecipient,
+} from "./drizzleCrmWhatsappCampaignRecipients.js";
 import { ingestMessageInDatabase } from "./drizzleCrmWhatsappIngest.js";
 import { cleanSessionUpdate } from "./drizzleCrmWhatsappUpdates.js";
 import {
@@ -85,6 +94,12 @@ export function createDrizzleCrmWhatsappRepository(
     async createQuickMessage(input) {
       return createWhatsappQuickMessage(db, input);
     },
+    async createCampaign(input) {
+      return createWhatsappCampaign(db, input);
+    },
+    async createCampaignRecipient(input) {
+      return createWhatsappCampaignRecipient(db, input);
+    },
     async countSessions(input) {
       const tagSessionIds = await findSessionIdsByTags(db, input);
       if (tagSessionIds && tagSessionIds.length === 0) return 0;
@@ -102,6 +117,9 @@ export function createDrizzleCrmWhatsappRepository(
     async findQuickMessageById(input) {
       return findWhatsappQuickMessageById(db, input);
     },
+    async findCampaignById(input) {
+      return findWhatsappCampaignById(db, input);
+    },
     async ingestMessage(input) {
       const execute = (client: DrizzleCrmClient) =>
         ingestMessageInDatabase(client, input);
@@ -109,24 +127,13 @@ export function createDrizzleCrmWhatsappRepository(
       return db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
     },
     async listMessages(input) {
-      const rows = await db
-        .select()
-        .from(crmWhatsappMessages)
-        .where(
-          and(
-            eq(crmWhatsappMessages.storeId, input.storeId),
-            eq(crmWhatsappMessages.tenantId, input.tenantId),
-            eq(crmWhatsappMessages.sessionId, input.sessionId),
-          ),
-        )
-        .orderBy(
-          desc(crmWhatsappMessages.providerTimestamp),
-          desc(crmWhatsappMessages.createdAt),
-        )
-        .offset(input.offset)
-        .limit(input.limit);
-
-      return rows.map(toWhatsappMessage);
+      return listWhatsappMessages(db, input);
+    },
+    async listCampaigns(input) {
+      return listWhatsappCampaigns(db, input);
+    },
+    async listCampaignRecipients(input) {
+      return listWhatsappCampaignRecipients(db, input);
     },
     async listQuickMessages(input) {
       return listWhatsappQuickMessages(db, input);
@@ -195,6 +202,12 @@ export function createDrizzleCrmWhatsappRepository(
     },
     async updateQuickMessage(input) {
       return updateWhatsappQuickMessage(db, input);
+    },
+    async updateCampaign(input) {
+      return updateWhatsappCampaign(db, input);
+    },
+    async updateCampaignRecipient(input) {
+      return updateWhatsappCampaignRecipient(db, input);
     },
     async removeSessionTag(input) {
       return removeWhatsappSessionTag(db, input);

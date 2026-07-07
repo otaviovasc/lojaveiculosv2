@@ -14,6 +14,10 @@ import {
   crmWhatsappRoutes,
   withQuery,
 } from "./crmWhatsappApiRoutes";
+import {
+  createCrmWhatsappCampaignsQuery,
+  crmWhatsappCampaignRoutes,
+} from "./crmWhatsappCampaignApiRoutes";
 import { subscribeCrmWhatsappEvents } from "./crmWhatsappRealtimeApi";
 
 export {
@@ -75,8 +79,14 @@ export function createCrmWhatsappApi({
       ),
     closeSession: (sessionId) =>
       postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl)),
+    cancelCampaign: (campaignId) =>
+      postJson(
+        crmWhatsappCampaignRoutes.campaignAction(campaignId, "cancel", baseUrl),
+      ),
     createQuickMessage: (input) =>
       postJson(crmWhatsappRoutes.quickMessages(baseUrl), input),
+    createCampaign: (input) =>
+      postJson(crmWhatsappCampaignRoutes.campaigns(baseUrl), input),
     createScheduledMessage: (input) =>
       postJson(crmWhatsappRoutes.scheduledMessages(baseUrl), input),
     createTag: (input) => postJson(crmWhatsappRoutes.tags(baseUrl), input),
@@ -92,10 +102,18 @@ export function createCrmWhatsappApi({
         input,
       ),
     getBotIntegration: () => getJson(crmWhatsappRoutes.botIntegration(baseUrl)),
+    getCampaign: (campaignId) =>
+      getJson(crmWhatsappCampaignRoutes.campaignDetail(campaignId, baseUrl)),
     listCatalogProducts: (input) =>
       getJson(
         withQuery(crmWhatsappRoutes.catalogProducts(baseUrl), [
           createCrmWhatsappCatalogProductsQuery(input),
+        ]),
+      ),
+    listCampaigns: (input) =>
+      getJson(
+        withQuery(crmWhatsappCampaignRoutes.campaigns(baseUrl), [
+          createCrmWhatsappCampaignsQuery(input),
         ]),
       ),
     listConnections: () => getJson(crmWhatsappRoutes.connections(baseUrl)),
@@ -138,6 +156,10 @@ export function createCrmWhatsappApi({
       postMaybeJson(crmWhatsappRoutes.markSessionUnread(sessionId, baseUrl)),
     processDueScheduledMessages: (input = {}) =>
       postJson(crmWhatsappRoutes.scheduledMessagesProcessDue(baseUrl), input),
+    pauseCampaign: (campaignId) =>
+      postJson(
+        crmWhatsappCampaignRoutes.campaignAction(campaignId, "pause", baseUrl),
+      ),
     removeReaction: (messageId) =>
       deleteMaybeJson(crmWhatsappRoutes.messageReaction(messageId, baseUrl)),
     removeSessionTag: (sessionId, tagId) =>
@@ -146,6 +168,10 @@ export function createCrmWhatsappApi({
       patchJson(crmWhatsappRoutes.tagsReorder(baseUrl), input),
     retryProviderEvent: (eventId) =>
       postJson(crmWhatsappRoutes.retryProviderEvent(eventId, baseUrl)),
+    resumeCampaign: (campaignId) =>
+      postJson(
+        crmWhatsappCampaignRoutes.campaignAction(campaignId, "resume", baseUrl),
+      ),
     sendCatalog: (input) =>
       postJson(crmWhatsappRoutes.sendCatalog(baseUrl), input),
     sendCatalogProduct: (input) =>

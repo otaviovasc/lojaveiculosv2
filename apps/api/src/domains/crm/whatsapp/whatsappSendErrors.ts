@@ -26,6 +26,13 @@ export class WhatsappScheduledMessageNotFoundError extends Error {
   }
 }
 
+export class WhatsappCampaignNotFoundError extends Error {
+  constructor(campaignId: string) {
+    super(`CRM WhatsApp campaign not found: ${campaignId}`);
+    this.name = "WhatsappCampaignNotFoundError";
+  }
+}
+
 export class WhatsappMessageActionError extends Error {
   readonly status: 400 | 409 | 422;
 

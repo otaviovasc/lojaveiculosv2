@@ -4,6 +4,12 @@ import type {
   CrmWhatsappUpdateBotIntegrationInput,
 } from "./crmWhatsappIntegrationTypes";
 import type {
+  CrmWhatsappCampaign,
+  CrmWhatsappCampaignDetail,
+  CrmWhatsappCreateCampaignInput,
+  CrmWhatsappListCampaignsInput,
+} from "./crmWhatsappCampaignTypes";
+import type {
   CrmWhatsappAddSessionTagInput,
   CrmWhatsappAssignSessionInput,
   CrmWhatsappCatalogProductsPage,
@@ -121,6 +127,9 @@ export type CrmWhatsappExtrasApi = {
   createScheduledMessage: (
     input: CrmWhatsappCreateScheduledMessageInput,
   ) => Promise<CrmWhatsappScheduledMessage>;
+  createCampaign: (
+    input: CrmWhatsappCreateCampaignInput,
+  ) => Promise<CrmWhatsappCampaign>;
   createTag: (input: CrmWhatsappCreateTagInput) => Promise<CrmWhatsappTag>;
   deleteQuickMessage: (
     quickMessageId: string,
@@ -134,10 +143,16 @@ export type CrmWhatsappExtrasApi = {
   listScheduledMessages: (
     input?: CrmWhatsappListScheduledMessagesInput,
   ) => Promise<CrmWhatsappScheduledMessage[]>;
+  listCampaigns: (
+    input?: CrmWhatsappListCampaignsInput,
+  ) => Promise<CrmWhatsappCampaign[]>;
+  getCampaign: (campaignId: string) => Promise<CrmWhatsappCampaignDetail>;
   listTags: (input?: CrmWhatsappListTagsInput) => Promise<CrmWhatsappTag[]>;
   processDueScheduledMessages: (
     input?: CrmWhatsappProcessDueScheduledMessagesInput,
   ) => Promise<CrmWhatsappProcessDueScheduledMessagesResult>;
+  cancelCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign>;
+  pauseCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign>;
   removeSessionTag: (
     sessionId: CrmWhatsappSessionId,
     tagId: string,
@@ -148,6 +163,7 @@ export type CrmWhatsappExtrasApi = {
   retryProviderEvent: (
     eventId: string,
   ) => Promise<CrmWhatsappRetryProviderEventResponse>;
+  resumeCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign>;
   sendCatalog: (
     input: CrmWhatsappSendCatalogInput,
   ) => Promise<CrmWhatsappMessage>;

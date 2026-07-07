@@ -16,6 +16,10 @@ export async function createWhatsappScheduledMessage(
   const [row] = await db
     .insert(crmWhatsappScheduledMessages)
     .values({
+      campaignId: input.campaignId ?? null,
+      campaignMessageType: input.campaignMessageType ?? null,
+      campaignRecipientKey: input.campaignRecipientKey ?? null,
+      campaignSequence: input.campaignSequence ?? null,
       connectionId: input.connectionId,
       createdByUserId: input.createdByUserId ?? null,
       metadata: input.metadata ?? {},
@@ -43,6 +47,9 @@ export async function listWhatsappScheduledMessages(
     filters.push(
       eq(crmWhatsappScheduledMessages.connectionId, input.connectionId),
     );
+  }
+  if (input.campaignId) {
+    filters.push(eq(crmWhatsappScheduledMessages.campaignId, input.campaignId));
   }
   if (input.sessionId) {
     filters.push(eq(crmWhatsappScheduledMessages.sessionId, input.sessionId));
@@ -141,6 +148,10 @@ function toScheduledMessage(
 ) {
   return {
     cancelledAt: row.cancelledAt,
+    campaignId: row.campaignId,
+    campaignMessageType: row.campaignMessageType,
+    campaignRecipientKey: row.campaignRecipientKey,
+    campaignSequence: row.campaignSequence,
     connectionId: row.connectionId,
     createdAt: row.createdAt,
     createdByUserId: row.createdByUserId as never,

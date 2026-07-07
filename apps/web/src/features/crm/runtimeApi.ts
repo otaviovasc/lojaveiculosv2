@@ -70,6 +70,14 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
         sessionId,
       ),
+    cancelCampaign: async (campaignId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).cancelCampaign(
+        campaignId,
+      ),
+    createCampaign: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).createCampaign(
+        input,
+      ),
     createQuickMessage: async (input) =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -99,6 +107,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).getBotIntegration(),
+    getCampaign: async (campaignId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).getCampaign(
+        campaignId,
+      ),
     listConnections: async () =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -121,6 +133,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).listCatalogProducts(input),
+    listCampaigns: async (input) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).listCampaigns(
+        input,
+      ),
     listQuickMessages: async () =>
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
@@ -164,6 +180,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).processDueScheduledMessages(input),
+    pauseCampaign: async (campaignId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).pauseCampaign(
+        campaignId,
+      ),
     reorderTags: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).reorderTags(
         input,
@@ -176,6 +196,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(
         await createProductCrmApiOptions(),
       ).retryProviderEvent(eventId),
+    resumeCampaign: async (campaignId) =>
+      createCrmWhatsappApi(await createProductCrmApiOptions()).resumeCampaign(
+        campaignId,
+      ),
     sendCatalog: async (input) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).sendCatalog(
         input,

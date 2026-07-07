@@ -1,8 +1,9 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { crmWhatsappMessages } from "@lojaveiculosv2/db";
 import type {
   FindCrmWhatsappMessageByExternalIdInput,
   FindCrmWhatsappMessageByIdInput,
+  ListCrmWhatsappMessagesInput,
   UpdateCrmWhatsappMessageInput,
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
@@ -61,6 +62,29 @@ export async function findWhatsappMessageById(
     )
     .limit(1);
   return row ? toWhatsappMessage(row) : null;
+}
+
+export async function listWhatsappMessages(
+  db: DrizzleCrmClient,
+  input: ListCrmWhatsappMessagesInput,
+) {
+  const rows = await db
+    .select()
+    .from(crmWhatsappMessages)
+    .where(
+      and(
+        eq(crmWhatsappMessages.storeId, input.storeId),
+        eq(crmWhatsappMessages.tenantId, input.tenantId),
+        eq(crmWhatsappMessages.sessionId, input.sessionId),
+      ),
+    )
+    .orderBy(
+      desc(crmWhatsappMessages.providerTimestamp),
+      desc(crmWhatsappMessages.createdAt),
+    )
+    .offset(input.offset)
+    .limit(input.limit);
+  return rows.map(toWhatsappMessage);
 }
 
 export async function updateWhatsappMessage(

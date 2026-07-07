@@ -11,6 +11,10 @@ import {
   logWhatsappServiceEvent,
   recordWhatsappServiceMutation,
 } from "./serviceSupport.js";
+import {
+  findProcessableCampaignForSchedule,
+  recordCampaignScheduledSendResult,
+} from "../../whatsapp/whatsappCampaignDeliveryMetrics.js";
 
 const processPermission = "crm.whatsapp.schedules.process";
 
@@ -110,6 +114,11 @@ async function processDueMessages(
   let sent = 0;
   let failed = 0;
   for (const scheduled of dueMessages) {
+    const campaignGate = await findProcessableCampaignForSchedule(
+      scheduled,
+      ports,
+    );
+    if (campaignGate?.blocked) continue;
     const claimed = await repository.updateScheduledMessage({
       expectedStatus: "pending",
       id: scheduled.id,
@@ -133,15 +142,30 @@ async function processDueMessages(
         storeId: input.scope.storeId as never,
         tenantId: input.scope.tenantId as never,
       });
+      await recordCampaignScheduledSendResult(
+        scheduled,
+        {
+          sentAt: new Date(),
+          sentMessageId: String(message.id),
+        },
+        ports,
+      );
       sent += 1;
     } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       await repository.updateScheduledMessage({
-        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorMessage,
         id: scheduled.id,
         status: "failed",
         storeId: input.scope.storeId as never,
         tenantId: input.scope.tenantId as never,
       });
+      await recordCampaignScheduledSendResult(
+        scheduled,
+        { errorMessage },
+        ports,
+      );
       failed += 1;
     }
   }

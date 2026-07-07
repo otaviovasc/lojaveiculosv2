@@ -10,6 +10,7 @@ import { WhatsappQuickMessageError } from "../../../domains/crm/services/CrmWhat
 import { WhatsappWebhookEventRetryError } from "../../../domains/crm/services/CrmWhatsapp/whatsappWebhookEvents.js";
 import {
   WhatsappConnectionNotFoundError,
+  WhatsappCampaignNotFoundError,
   WhatsappMessageActionError,
   WhatsappMessageNotFoundError,
   WhatsappScheduledMessageNotFoundError,
@@ -49,6 +50,7 @@ export async function handleWhatsapp(
     if (
       error instanceof WhatsappSessionNotFoundError ||
       error instanceof WhatsappMessageNotFoundError ||
+      error instanceof WhatsappCampaignNotFoundError ||
       error instanceof WhatsappScheduledMessageNotFoundError ||
       error instanceof WhatsappTagNotFoundError ||
       error instanceof WhatsappConnectionNotFoundError ||

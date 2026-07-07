@@ -92,7 +92,7 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             </section>
           ) : null}
           {activeScope === "campaigns" ? (
-            <WhatsappCampaignsSection inbox={inbox} />
+            <WhatsappCampaignsSection api={whatsappApi} inbox={inbox} />
           ) : null}
           {activeScope === "integrations" ? (
             <WhatsappIntegrationsSection

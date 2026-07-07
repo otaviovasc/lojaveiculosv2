@@ -15,6 +15,10 @@ export function createMemoryScheduledMessage(
   const now = new Date();
   const message: CrmWhatsappScheduledMessage = {
     cancelledAt: null,
+    campaignId: input.campaignId ?? null,
+    campaignMessageType: input.campaignMessageType ?? null,
+    campaignRecipientKey: input.campaignRecipientKey ?? null,
+    campaignSequence: input.campaignSequence ?? null,
     connectionId: input.connectionId,
     createdAt: now,
     createdByUserId: input.createdByUserId ?? null,
@@ -46,6 +50,9 @@ export function listMemoryScheduledMessages(
     .filter(
       (message) =>
         !input.connectionId || message.connectionId === input.connectionId,
+    )
+    .filter(
+      (message) => !input.campaignId || message.campaignId === input.campaignId,
     )
     .filter(
       (message) => !input.sessionId || message.sessionId === input.sessionId,

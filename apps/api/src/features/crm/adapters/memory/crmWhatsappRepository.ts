@@ -1,5 +1,7 @@
 import type {
   CrmWhatsappMessage,
+  CrmWhatsappCampaign,
+  CrmWhatsappCampaignRecipient,
   CrmWhatsappQuickMessage,
   CrmWhatsappRepository,
   CrmWhatsappScheduledMessage,
@@ -7,11 +9,12 @@ import type {
 } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
 import {
   compareMessagesNewestFirst,
-  compareSessionsNewestFirst,
-  matchesFilter,
-  matchesSearch,
   withUnreadCount,
 } from "./crmWhatsappMemoryQueries.js";
+import {
+  countMemorySessions,
+  listMemorySessions,
+} from "./crmWhatsappMemorySessionViews.js";
 import {
   findMemoryWhatsappMessageByExternalId,
   findMemoryWhatsappMessageById,
@@ -39,6 +42,17 @@ import {
   updateMemoryScheduledMessage,
 } from "./crmWhatsappMemoryScheduledMessages.js";
 import {
+  createMemoryCampaign,
+  findMemoryCampaign,
+  listMemoryCampaigns,
+  updateMemoryCampaign,
+} from "./crmWhatsappMemoryCampaigns.js";
+import {
+  createMemoryCampaignRecipient,
+  listMemoryCampaignRecipients,
+  updateMemoryCampaignRecipient,
+} from "./crmWhatsappMemoryCampaignRecipients.js";
+import {
   addMemorySessionTag,
   createMemoryTag,
   deleteMemoryTag,
@@ -59,6 +73,8 @@ export function createMemoryCrmWhatsappRepository(
 ): CrmWhatsappRepository {
   const sessions = [...initialSessions];
   const messages = [...initialMessages];
+  const campaigns: CrmWhatsappCampaign[] = [];
+  const campaignRecipients: CrmWhatsappCampaignRecipient[] = [];
   const quickMessages = [...initialQuickMessages];
   const scheduledMessages: CrmWhatsappScheduledMessage[] = [];
   const tagState: MemoryWhatsappTagState = { sessionTags: [], tags: [] };
@@ -97,34 +113,25 @@ export function createMemoryCrmWhatsappRepository(
     async createQuickMessage(input) {
       return createMemoryQuickMessage(quickMessages, input);
     },
+    async createCampaign(input) {
+      return createMemoryCampaign(campaigns, input);
+    },
+    async createCampaignRecipient(input) {
+      return createMemoryCampaignRecipient(campaignRecipients, input);
+    },
     async countSessions(input) {
-      return sessions
-        .filter((session) => session.storeId === input.storeId)
-        .filter((session) => session.tenantId === input.tenantId)
-        .filter(
-          (session) =>
-            !input.connectionId || session.connectionId === input.connectionId,
-        )
-        .filter((session) => !input.leadId || session.leadId === input.leadId)
-        .filter((session) => !input.sessionId || session.id === input.sessionId)
-        .filter((session) => !input.status || session.status === input.status)
-        .filter(
-          (session) =>
-            !input.tagIds?.length ||
-            tagState.sessionTags.some(
-              (item) =>
-                item.sessionId === session.id &&
-                input.tagIds!.includes(item.tagId),
-            ),
-        )
-        .filter((session) => matchesFilter(session, input))
-        .filter((session) => matchesSearch(session, input.search))
-        .map((session) => withUnreadCount(session, messages))
-        .filter((session) => !input.unreadOnly || session.unreadCount > 0)
-        .length;
+      return countMemorySessions({
+        messages,
+        query: input,
+        sessions,
+        tagState,
+      });
     },
     async findQuickMessageById(input) {
       return findMemoryQuickMessageById(quickMessages, input);
+    },
+    async findCampaignById(input) {
+      return findMemoryCampaign(campaigns, input);
     },
     async ingestMessage(input) {
       const now = new Date();
@@ -182,36 +189,22 @@ export function createMemoryCrmWhatsappRepository(
         .sort(compareMessagesNewestFirst)
         .slice(input.offset, input.offset + input.limit);
     },
+    async listCampaigns(input) {
+      return listMemoryCampaigns(campaigns, input);
+    },
+    async listCampaignRecipients(input) {
+      return listMemoryCampaignRecipients(campaignRecipients, input);
+    },
     async listQuickMessages(input) {
       return listMemoryQuickMessages(quickMessages, input);
     },
     async listSessions(input) {
-      return sessions
-        .filter((session) => session.storeId === input.storeId)
-        .filter((session) => session.tenantId === input.tenantId)
-        .filter(
-          (session) =>
-            !input.connectionId || session.connectionId === input.connectionId,
-        )
-        .filter((session) => !input.leadId || session.leadId === input.leadId)
-        .filter((session) => !input.sessionId || session.id === input.sessionId)
-        .filter((session) => !input.status || session.status === input.status)
-        .filter(
-          (session) =>
-            !input.tagIds?.length ||
-            tagState.sessionTags.some(
-              (item) =>
-                item.sessionId === session.id &&
-                input.tagIds!.includes(item.tagId),
-            ),
-        )
-        .filter((session) => matchesFilter(session, input))
-        .filter((session) => matchesSearch(session, input.search))
-        .map((session) => withUnreadCount(session, messages))
-        .map((session) => requireHydratedSession(session, tagState))
-        .filter((session) => !input.unreadOnly || session.unreadCount > 0)
-        .sort(compareSessionsNewestFirst)
-        .slice(input.offset, input.offset + input.limit);
+      return listMemorySessions({
+        messages,
+        query: input,
+        sessions,
+        tagState,
+      });
     },
     async createScheduledMessage(input) {
       return createMemoryScheduledMessage(scheduledMessages, input);
@@ -236,6 +229,12 @@ export function createMemoryCrmWhatsappRepository(
     },
     async updateQuickMessage(input) {
       return updateMemoryQuickMessage(quickMessages, input);
+    },
+    async updateCampaign(input) {
+      return updateMemoryCampaign(campaigns, input);
+    },
+    async updateCampaignRecipient(input) {
+      return updateMemoryCampaignRecipient(campaignRecipients, input);
     },
     async updateMessage(input) {
       return updateMemoryWhatsappMessage(messages, input);
