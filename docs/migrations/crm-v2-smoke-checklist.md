@@ -83,11 +83,14 @@ evidence folder is documented.
 ## Visits
 
 - From a WhatsApp session linked to a lead, create a visit.
-- Open store-wide Visitas and verify today/upcoming/overdue/completed views.
+- Open store-wide Visitas and verify today/tomorrow/upcoming/overdue/completed
+  views with visible counts.
 - Verify visit appears on visit page and lead detail.
 - Update status to confirmed/completed/no_show/cancelled.
 - Verify activity and audit evidence.
 - Verify no financing/test-drive-specific fields are required.
+- Desktop screenshot evidence:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-visits-ui/crm-whatsapp-visits.png`.
 
 ## Scheduled Messages
 

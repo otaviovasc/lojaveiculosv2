@@ -43,7 +43,7 @@ Already V2-owned:
 - Lead detail Chat tab resolves WhatsApp sessions by V2 `leadId` and can start
   a V2-native WhatsApp conversation by `leadId`.
 - V2 visits operations over `lead_visits` with backend services/controllers,
-  audited status changes, lead activities, and the WhatsApp Visitas page.
+  audited status changes, lead activities, and a Repasses-style Visitas timeline.
 - Bot integration config page, action API, and write-only secret state.
 - Outbound bot webhook forwarding with Repasses-style message and intervention
   events, handback summaries, dispatch audit, and system-origin scheduled sends.
@@ -53,7 +53,8 @@ Already V2-owned:
 Still incomplete:
 
 - Filtered lead campaign source and full mobile evidence.
-- Repasses-style UI parity pass for the remaining WhatsApp operation tabs.
+- Remaining UI parity is concentrated in Agendamentos, Integracoes, Conversas,
+  and full mobile evidence.
 - Full Playwright/mobile evidence for the migrated CRM OS.
 
 ## Slice Map
@@ -67,7 +68,7 @@ Still incomplete:
 | Tags page                      | Completed | `CrmWhatsappTagManager.tsx`, `CrmWhatsappTagManagerParts.tsx`, `useCrmWhatsappTags.ts`, tag API tests                                                | `CrmEtiquetas.tsx`, `SortableTagItem.tsx`                   | Repasses-style preview/swatches/emoji/list rows; no column/pipeline semantics. |
 | Pipeline persistence           | Completed | new CRM pipeline schema/service/controller/API client; replace `crmPipelineStorage.ts`                                                               | V2 lead/pipeline UI                                         | Landed before campaign/visit deep linking.                                     |
 | Lead/WhatsApp identity         | Completed | `startWhatsappConversation*`, `whatsappLeadLinking.ts`, lead detail components, route state                                                          | Existing start-by-lead tests                                | Lead is source of truth.                                                       |
-| Visits                         | Completed | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`                                                                       | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                 | Uses `lead_visits`; no financing/test-drive-specific fields.                   |
+| Visits                         | Completed | lead visit domain service, repository, controller, `CrmWhatsappVisitsPage.tsx`, visit CSS/tests                                                      | `CrmVisitas.tsx`, `VisitSchedulerModal.tsx`                 | Repasses-style date filters, counts, and timeline rows over `lead_visits`.     |
 | Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `useCrmWhatsappScheduledMessages.ts`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                        | Store-wide page is exposed in the scoped nav as Agendamentos.                  |
 | Integrations/bot               | Completed | bot integration schema/services/controllers, action API, dispatcher port, `CrmWhatsappIntegrationsPage.tsx`                                          | `BotEventNotificationService.ts`, `BotActionsController.ts` | Forwards message/intervention events with handback summaries and audit.        |
 | Campaign backend               | Completed | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, campaign migrations/reply handler       | V2 campaigns persist metrics and reply tracking.                               |

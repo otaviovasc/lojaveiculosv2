@@ -69,6 +69,37 @@ describe("CrmWhatsappVisitsPage", () => {
 
     await waitFor(() => expect(completeVisit).toHaveBeenCalledWith(visit.id));
   });
+
+  it("keeps tomorrow visits out of upcoming", async () => {
+    const user = userEvent.setup();
+    const tomorrow = createVisit({
+      id: "visit_tomorrow",
+      notes: "Visita de amanha",
+      scheduledAt: dateAtOffset(1).toISOString(),
+    });
+    const future = createVisit({
+      id: "visit_future",
+      notes: "Visita futura",
+      scheduledAt: dateAtOffset(3).toISOString(),
+    });
+    const api = createVisitsApi({
+      listVisits: vi.fn(async () => [tomorrow, future]),
+    });
+
+    renderPage(api);
+
+    const tomorrowButton = await screen.findByRole("button", {
+      name: /Amanha/i,
+    });
+    expect(tomorrowButton).toHaveTextContent("1");
+    await user.click(tomorrowButton);
+    expect(screen.getByText("Visita de amanha")).toBeVisible();
+    expect(screen.queryByText("Visita futura")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Proximas/i }));
+    expect(screen.getByText("Visita futura")).toBeVisible();
+    expect(screen.queryByText("Visita de amanha")).not.toBeInTheDocument();
+  });
 });
 
 function renderPage(api: CrmVisitsApi) {
@@ -99,6 +130,13 @@ function toDatetimeLocal(value: Date) {
   const offset = local.getTimezoneOffset();
   const adjusted = new Date(local.getTime() - offset * 60_000);
   return adjusted.toISOString().slice(0, 16);
+}
+
+function dateAtOffset(days: number) {
+  const value = new Date();
+  value.setDate(value.getDate() + days);
+  value.setHours(14, 0, 0, 0);
+  return value;
 }
 
 function createSession(): CrmWhatsappSession {

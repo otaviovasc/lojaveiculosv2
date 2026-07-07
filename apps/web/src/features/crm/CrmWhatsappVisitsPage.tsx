@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { CalendarCheck, RefreshCw } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmLeadVisit, LeadVisitStatus } from "./crmVisitsApi";
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
@@ -12,11 +12,13 @@ import {
 } from "./CrmWhatsappVisitsPageParts";
 
 const viewLabels: Record<VisitView, string> = {
-  completed: "Concluidas",
-  overdue: "Atrasadas",
   today: "Hoje",
+  tomorrow: "Amanha",
   upcoming: "Proximas",
+  overdue: "Atrasadas",
+  completed: "Concluidas",
 };
+const viewOrder = Object.keys(viewLabels) as VisitView[];
 
 export function CrmWhatsappVisitsPage({
   activeSession,
@@ -59,6 +61,16 @@ export function CrmWhatsappVisitsPage({
   const viewVisits = useMemo(
     () => visits.filter((visit) => visitMatchesView(visit, activeView)),
     [activeView, visits],
+  );
+  const viewCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        (Object.keys(viewLabels) as VisitView[]).map((view) => [
+          view,
+          visits.filter((visit) => visitMatchesView(visit, view)).length,
+        ]),
+      ) as Record<VisitView, number>,
+    [visits],
   );
 
   const createVisit = async () => {
@@ -119,15 +131,14 @@ export function CrmWhatsappVisitsPage({
 
   return (
     <section className="crm-whatsapp-section">
-      <div className="flex flex-col gap-5">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+      <div className="crm-whatsapp-visits-page">
+        <header className="crm-whatsapp-visits-header">
+          <span aria-hidden="true">
+            <CalendarCheck className="size-5" />
+          </span>
           <div>
-            <span className="text-xs font-black uppercase tracking-wide text-muted">
-              Visitas
-            </span>
-            <h2 className="text-lg font-black text-app-text">
-              Agenda comercial
-            </h2>
+            <strong>Visitas</strong>
+            <h2>Visitas agendadas</h2>
           </div>
           <button
             className="crm-action crm-action-secondary"
@@ -140,57 +151,69 @@ export function CrmWhatsappVisitsPage({
           </button>
         </header>
 
-        <CreateVisitPanel
-          activeSession={activeSession}
-          canManage={canManage}
-          isSaving={isSaving}
-          linkedLeadId={linkedLeadId}
-          notes={notes}
-          onCreate={() => void createVisit()}
-          onNotesChange={setNotes}
-          onScheduledAtChange={setScheduledAt}
-          scheduledAt={scheduledAt}
-        />
+        <div className="crm-whatsapp-visits-layout">
+          <CreateVisitPanel
+            activeSession={activeSession}
+            canManage={canManage}
+            isSaving={isSaving}
+            linkedLeadId={linkedLeadId}
+            notes={notes}
+            onCreate={() => void createVisit()}
+            onNotesChange={setNotes}
+            onScheduledAtChange={setScheduledAt}
+            scheduledAt={scheduledAt}
+          />
 
-        {error ? (
-          <p className="text-sm font-black text-danger">{error}</p>
-        ) : null}
+          <section className="crm-whatsapp-visits-board">
+            {error ? (
+              <p className="crm-whatsapp-visits-error">{error}</p>
+            ) : null}
 
-        <div className="flex flex-wrap items-center gap-2">
-          {(Object.keys(viewLabels) as VisitView[]).map((view) => (
-            <button
-              aria-pressed={activeView === view}
-              className={
-                "rounded-lg border px-3 py-2 text-xs font-black transition-colors " +
-                (activeView === view
-                  ? "border-primary/40 bg-primary/10 text-app-text"
-                  : "border-line/35 bg-panel/10 text-muted hover:text-app-text")
-              }
-              key={view}
-              onClick={() => setActiveView(view)}
-              type="button"
-            >
-              {viewLabels[view]}
-            </button>
-          ))}
-        </div>
+            <div className="crm-whatsapp-visits-filters">
+              {viewOrder.map((view) => (
+                <button
+                  aria-pressed={activeView === view}
+                  className={
+                    activeView === view
+                      ? "crm-whatsapp-visits-filter crm-whatsapp-visits-filter-active"
+                      : "crm-whatsapp-visits-filter"
+                  }
+                  key={view}
+                  onClick={() => setActiveView(view)}
+                  type="button"
+                >
+                  {viewLabels[view]}
+                  <span>{viewCounts[view]}</span>
+                </button>
+              ))}
+            </div>
 
-        <div className="grid gap-3">
-          {isLoading ? (
-            <VisitEmpty label="Carregando visitas." />
-          ) : viewVisits.length ? (
-            viewVisits.map((visit) => (
-              <VisitRow
-                canManage={canManage}
-                isSaving={isSaving}
-                key={visit.id}
-                onStatus={(visit, status) => void changeStatus(visit, status)}
-                visit={visit}
-              />
-            ))
-          ) : (
-            <VisitEmpty label="Nenhuma visita nesta visao." />
-          )}
+            <div className="crm-whatsapp-visits-group">
+              <header>
+                <span />
+                <h3>{viewLabels[activeView]}</h3>
+              </header>
+              <div className="crm-whatsapp-visits-timeline">
+                {isLoading ? (
+                  <VisitEmpty label="Carregando visitas." />
+                ) : viewVisits.length ? (
+                  viewVisits.map((visit) => (
+                    <VisitRow
+                      canManage={canManage}
+                      isSaving={isSaving}
+                      key={visit.id}
+                      onStatus={(visit, status) =>
+                        void changeStatus(visit, status)
+                      }
+                      visit={visit}
+                    />
+                  ))
+                ) : (
+                  <VisitEmpty label="Nenhuma visita nesta visao." />
+                )}
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </section>
@@ -204,8 +227,9 @@ function visitMatchesView(visit: CrmLeadVisit, view: VisitView) {
   if (view === "completed") return isClosed;
   if (isClosed) return false;
   if (view === "today") return isSameDay(scheduled, now);
+  if (view === "tomorrow") return isSameDay(scheduled, startOfTomorrow(now));
   if (view === "overdue") return scheduled < startOfDay(now);
-  return scheduled >= startOfTomorrow(now);
+  return scheduled >= startOfAfterTomorrow(now);
 }
 
 function isSameDay(left: Date, right: Date) {
@@ -218,4 +242,8 @@ function startOfDay(value: Date) {
 
 function startOfTomorrow(value: Date) {
   return new Date(value.getFullYear(), value.getMonth(), value.getDate() + 1);
+}
+
+function startOfAfterTomorrow(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate() + 2);
 }

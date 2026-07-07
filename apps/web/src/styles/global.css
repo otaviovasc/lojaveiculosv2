@@ -29,6 +29,8 @@
 @import "./crmWhatsappCampaignList.css";
 @import "./crmWhatsappCampaignDetail.css";
 @import "./crmWhatsappConnectionAdmin.css";
+@import "./crmWhatsappVisits.css";
+@import "./crmWhatsappVisitsTimeline.css";
 @import "./crmWhatsappIntegrations.css";
 @import "./crmWhatsappSessions.css";
 @import "./crmWhatsappChat.css";

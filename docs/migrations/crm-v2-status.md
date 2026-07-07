@@ -114,6 +114,9 @@ CRM tab parity and mobile evidence.
 - Simplified Conexao into a two-column operations page: live ZAPI status,
   exactly two write-only instance fields, compact summary, and generated webhook
   URLs with copy controls.
+- Imported the Repasses-style Visitas timeline into V2: Hoje/Amanha/Proximas/
+  Atrasadas/Concluidas filters now have counts, tomorrow is excluded from
+  upcoming, and visit rows render as compact timeline cards.
 
 ## Key Findings
 
@@ -172,15 +175,20 @@ CI=true pnpm --filter @lojaveiculosv2/web lint
 CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.campaigns.test
 CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.botForwarding.test
 CI=true pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappCampaignsPage.test crmWhatsappPermissions.test
+CI=true pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappVisitsPage.test
 CI=true pnpm run check:lines
 CI=true pnpm run validate:core-guardrails
 CI=true pnpm run validate
 PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-campaigns pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_FEATURE_SLUG=crm-whatsapp-campaigns-ui pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
+CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-visits-ui pnpm exec playwright test tests/e2e/crm-whatsapp-visits.spec.ts --project=chromium
 ```
 
 Phase 1 permission validation passed. Earlier `.pnpm-store` cache-only line
 scan issues were fixed by removing the local generated store cache.
+Sandbox note: first Visits typecheck/lint attempts triggered pnpm dependency
+self-heal and failed with `EEXIST`/registry `ENOTFOUND`; frozen install
+repaired `node_modules`, then focused checks passed.
 
 ## Evidence
 
@@ -201,7 +209,8 @@ scan issues were fixed by removing the local generated store cache.
 - Visits evidence:
   `apps/api/src/features/crm/controllers/crm.visits.test.ts`,
   `apps/web/src/features/crm/CrmWhatsappVisitsPage.test.tsx`,
-  `apps/web/src/features/crm/crmVisitsApi.test.ts`.
+  `apps/web/src/features/crm/crmVisitsApi.test.ts`,
+  `tests/e2e/crm-whatsapp-visits.spec.ts`.
 - Bot config evidence:
   `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,
   `apps/web/src/features/crm/CrmWhatsappIntegrationsPage.test.tsx`.
@@ -220,6 +229,8 @@ scan issues were fixed by removing the local generated store cache.
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-tags-ui/crm-whatsapp-tags.png`.
 - Current connection screenshot:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-connection-ui/crm-whatsapp-connection.png`.
+- Current visits screenshot:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-visits-ui/crm-whatsapp-visits.png`.
 - Screenshot-driven evidence from the current pass is under
   `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/` with the
   `crm-whatsapp-*-desktop-v2/v3.png` and mobile v2 captures.

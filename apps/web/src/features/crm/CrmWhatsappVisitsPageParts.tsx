@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarCheck, Check, Clock, X } from "lucide-react";
+import { CalendarCheck, Check, Clock, Link2, X } from "lucide-react";
 import { crmWhatsappSessionHash } from "./crmRouteState";
 import type { CrmWhatsappSession } from "./crmWhatsappTypes";
 import type {
@@ -8,7 +8,8 @@ import type {
   LeadVisitStatus,
 } from "./crmVisitsApi";
 
-export type VisitView = "completed" | "overdue" | "today" | "upcoming";
+export type VisitView =
+  "completed" | "overdue" | "today" | "tomorrow" | "upcoming";
 
 export type CrmWhatsappVisitsPageProps = {
   activeSession: CrmWhatsappSession | null;
@@ -29,13 +30,11 @@ export function CreateVisitPanel(props: {
   scheduledAt: string;
 }) {
   return (
-    <div className="rounded-xl border border-line/35 bg-panel/10 p-4">
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <strong className="text-sm font-black text-app-text">
-          Nova visita
-        </strong>
+    <div className="crm-whatsapp-visit-create">
+      <div className="crm-whatsapp-visit-create-heading">
+        <strong>Nova visita</strong>
         {props.linkedLeadId ? (
-          <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+          <div>
             <a href={`#/crm?surface=leads&leadId=${props.linkedLeadId}`}>
               Lead
             </a>
@@ -48,17 +47,15 @@ export function CreateVisitPanel(props: {
         ) : null}
       </div>
       {props.linkedLeadId ? (
-        <div className="grid gap-3 md:grid-cols-[220px_1fr_auto]">
+        <div className="crm-whatsapp-visit-create-grid">
           <input
             aria-label="Data da visita"
-            className="rounded-lg border border-line/35 bg-app px-3 py-2 text-sm font-bold text-app-text outline-none"
             onChange={(event) => props.onScheduledAtChange(event.target.value)}
             type="datetime-local"
             value={props.scheduledAt}
           />
           <input
             aria-label="Observacoes da visita"
-            className="rounded-lg border border-line/35 bg-app px-3 py-2 text-sm font-bold text-app-text outline-none"
             onChange={(event) => props.onNotesChange(event.target.value)}
             placeholder="Observacoes"
             value={props.notes}
@@ -76,7 +73,7 @@ export function CreateVisitPanel(props: {
           </button>
         </div>
       ) : (
-        <p className="text-xs font-bold text-muted">
+        <p className="crm-whatsapp-visit-create-empty">
           Selecione uma conversa vinculada a um lead.
         </p>
       )}
@@ -96,28 +93,25 @@ export function VisitRow({
   visit: CrmLeadVisit;
 }) {
   return (
-    <article className="rounded-xl border border-line/35 bg-panel/10 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <strong className="text-sm font-black text-app-text">
-            {formatDateTime(visit.scheduledAt)}
-          </strong>
-          <p className="mt-1 text-xs font-bold text-muted">
-            {statusLabel(visit.status)} · Lead {visit.leadId}
-          </p>
-          {visit.notes ? (
-            <p className="mt-2 text-sm font-bold text-app-text">
-              {visit.notes}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <a
-            className="crm-action crm-action-secondary"
-            href={`#/crm?surface=leads&leadId=${visit.leadId}`}
-          >
-            Lead
+    <article className="crm-whatsapp-visit-row">
+      <span aria-hidden="true" className="crm-whatsapp-visit-marker" />
+      <div className="crm-whatsapp-visit-row-main">
+        <div className="crm-whatsapp-visit-row-copy">
+          <div className="crm-whatsapp-visit-badges">
+            <span>
+              <Clock aria-hidden="true" className="size-3" />
+              {formatTime(visit.scheduledAt)}
+            </span>
+            <span>{statusLabel(visit.status)}</span>
+          </div>
+          <strong>{formatDate(visit.scheduledAt)}</strong>
+          <a href={`#/crm?surface=leads&leadId=${visit.leadId}`}>
+            <Link2 aria-hidden="true" className="size-3" />
+            Lead vinculado
           </a>
+          {visit.notes ? <p>{visit.notes}</p> : null}
+        </div>
+        <div className="crm-whatsapp-visit-actions">
           <IconStatusButton
             disabled={!canManage || isSaving}
             icon={<Check aria-hidden="true" className="size-4" />}
@@ -143,11 +137,7 @@ export function VisitRow({
 }
 
 export function VisitEmpty({ label }: { label: string }) {
-  return (
-    <div className="rounded-xl border border-dashed border-line/35 bg-panel/5 p-8 text-center text-sm font-bold text-muted">
-      {label}
-    </div>
-  );
+  return <div className="crm-whatsapp-visit-empty">{label}</div>;
 }
 
 function IconStatusButton(props: {
@@ -181,9 +171,15 @@ function statusLabel(status: LeadVisitStatus) {
   return labels[status];
 }
 
-function formatDateTime(value: string) {
+function formatDate(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
-    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(new Date(value));
 }
