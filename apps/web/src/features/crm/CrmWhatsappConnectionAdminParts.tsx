@@ -15,17 +15,19 @@ import type {
 
 export function ConnectionSectionCard({
   children,
+  className = "",
   description,
   icon,
   title,
 }: {
   children: ReactNode;
+  className?: string;
   description?: string;
   icon?: ReactNode;
   title: string;
 }) {
   return (
-    <section className="crm-whatsapp-connection-card">
+    <section className={`crm-whatsapp-connection-card ${className}`.trim()}>
       <header>
         {icon ? <span>{icon}</span> : null}
         <div>
@@ -103,6 +105,7 @@ export function ConnectionOperationalSummary({
   ];
   return (
     <ConnectionSectionCard
+      className="crm-whatsapp-connection-summary-card"
       description="Somente a instancia ZAPI e editavel. Tokens sao write-only e nunca sao exibidos depois de salvar."
       title="Resumo"
     >
@@ -134,6 +137,7 @@ export function ConnectionWebhookList({
 }) {
   return (
     <ConnectionSectionCard
+      className="crm-whatsapp-connection-webhooks-card"
       description={
         tokenRequired
           ? "Token obrigatorio via header x-crm-webhook-token ou query token."

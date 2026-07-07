@@ -34,7 +34,9 @@ evidence folder is documented.
 - Verify six webhook URLs:
   received, delivery, status, connected, disconnected, chat-presence.
 - Verify permission-denied state disables mutation controls.
-- Capture desktop and mobile screenshots.
+- Desktop screenshot evidence:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-connection-ui/crm-whatsapp-connection.png`.
+- Capture mobile screenshot.
 
 ## Tags
 

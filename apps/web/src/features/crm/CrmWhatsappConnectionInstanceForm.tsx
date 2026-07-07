@@ -24,6 +24,7 @@ export function ConnectionInstanceForm({
 }) {
   return (
     <ConnectionSectionCard
+      className="crm-whatsapp-connection-instance-card"
       description="Atualize somente os dados da instancia ZAPI. O token salvo nunca volta para o navegador."
       icon={<KeyRound aria-hidden="true" />}
       title="Instancia ZAPI"

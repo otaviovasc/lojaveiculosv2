@@ -64,6 +64,19 @@ export function createCampaignConnection() {
     phone: "5518996469432",
     provider: "zapi",
     status: "active",
+    webhookEndpoints: [
+      "received",
+      "delivery",
+      "status",
+      "connected",
+      "disconnected",
+      "chat-presence",
+    ].map((type) => ({
+      label: type,
+      type,
+      url: `http://127.0.0.1:8787/api/v1/crm/whatsapp/webhooks/zapi/${campaignConnectionId}/${type}`,
+    })),
+    webhookTokenRequired: false,
     webhookUrl: null,
   };
 }

@@ -111,6 +111,9 @@ CRM tab parity and mobile evidence.
 - Imported Repasses-style label management details into Tags: live preview,
   quick color swatches, emoji presets, pill-style rows, and a desktop editor/list
   layout while keeping V2 tags as WhatsApp labels only.
+- Simplified Conexao into a two-column operations page: live ZAPI status,
+  exactly two write-only instance fields, compact summary, and generated webhook
+  URLs with copy controls.
 
 ## Key Findings
 
@@ -215,6 +218,8 @@ scan issues were fixed by removing the local generated store cache.
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review-rows.png`.
 - Current tags screenshot:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-tags-ui/crm-whatsapp-tags.png`.
+- Current connection screenshot:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-connection-ui/crm-whatsapp-connection.png`.
 - Screenshot-driven evidence from the current pass is under
   `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/` with the
   `crm-whatsapp-*-desktop-v2/v3.png` and mobile v2 captures.
