@@ -66,6 +66,9 @@ export function registerCrmWhatsappConnectionRoutes(
           ...(input.externalInstanceId !== undefined
             ? { externalInstanceId: input.externalInstanceId }
             : {}),
+          ...(input.instanceCredentials
+            ? { instanceCredentials: input.instanceCredentials }
+            : {}),
           ...(input.phone !== undefined ? { phone: input.phone } : {}),
           ...(input.purpose !== undefined ? { purpose: input.purpose } : {}),
           ...(input.status ? { status: input.status } : {}),

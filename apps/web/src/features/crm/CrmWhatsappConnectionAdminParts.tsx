@@ -1,82 +1,17 @@
-import { Check, Copy, RefreshCw, ShieldCheck, Webhook } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Hash,
+  Phone,
+  RefreshCw,
+  ShieldCheck,
+  Webhook,
+} from "lucide-react";
 import type { ReactNode } from "react";
 import type {
-  CrmWhatsappConnectionConfiguredStatus,
   CrmWhatsappProviderConnection,
-  CrmWhatsappUpdateConnectionInput,
   CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
-
-export type ConnectionDraft = {
-  apiBaseUrlEnv: string;
-  catalogPhone: string;
-  clientTokenEnv: string;
-  connectedPhone: string;
-  displayName: string;
-  externalConnectionId: string;
-  externalInstanceId: string;
-  instanceIdEnv: string;
-  instanceTokenEnv: string;
-  phone: string;
-  purpose: string;
-  status: CrmWhatsappConnectionConfiguredStatus;
-  webhookUrl: string;
-};
-
-export const statusOptions: CrmWhatsappConnectionConfiguredStatus[] = [
-  "active",
-  "sandbox",
-  "paused",
-  "disconnected",
-  "error",
-  "archived",
-];
-
-export function TextField({
-  disabled,
-  label,
-  onChange,
-  placeholder,
-  value,
-}: {
-  disabled?: boolean;
-  label: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  value: string;
-}) {
-  return (
-    <label>
-      {label}
-      <input
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        value={value}
-      />
-    </label>
-  );
-}
-
-export function createConnectionDraft(
-  connection: CrmWhatsappProviderConnection | null,
-): ConnectionDraft {
-  return {
-    apiBaseUrlEnv: connection?.credentials?.apiBaseUrlEnv ?? "",
-    catalogPhone: connection?.metadata?.catalogPhone ?? "",
-    clientTokenEnv: connection?.credentials?.clientTokenEnv ?? "",
-    connectedPhone: connection?.metadata?.connectedPhone ?? "",
-    displayName: connection?.displayName ?? "",
-    externalConnectionId: connection?.externalConnectionId ?? "",
-    externalInstanceId: connection?.externalInstanceId ?? "",
-    instanceIdEnv: connection?.credentials?.instanceIdEnv ?? "",
-    instanceTokenEnv: connection?.credentials?.instanceTokenEnv ?? "",
-    phone: connection?.phone ?? "",
-    purpose: connection?.metadata?.purpose ?? "",
-    status: connection?.status ?? "active",
-    webhookUrl: connection?.webhookUrl ?? "",
-  };
-}
 
 export function ConnectionSectionCard({
   children,
@@ -105,12 +40,10 @@ export function ConnectionSectionCard({
 
 export function ConnectionStatusCard({
   connection,
-  disabled,
   isRefreshing,
   onRefresh,
 }: {
   connection: CrmWhatsappProviderConnection;
-  disabled?: boolean;
   isRefreshing: boolean;
   onRefresh: () => void;
 }) {
@@ -124,7 +57,7 @@ export function ConnectionStatusCard({
       <button
         aria-label="Atualizar status da conexao"
         className="crm-icon-action"
-        disabled={disabled || isRefreshing}
+        disabled={isRefreshing}
         onClick={onRefresh}
         title="Atualizar status"
         type="button"
@@ -132,6 +65,59 @@ export function ConnectionStatusCard({
         <RefreshCw aria-hidden="true" />
       </button>
     </section>
+  );
+}
+
+export function ConnectionOperationalSummary({
+  connection,
+}: {
+  connection: CrmWhatsappProviderConnection;
+}) {
+  const rows = [
+    {
+      icon: <Phone aria-hidden="true" />,
+      label: "Numero",
+      value:
+        connection.live.connectedPhone ??
+        connection.metadata?.connectedPhone ??
+        connection.phone ??
+        "Nao informado",
+    },
+    {
+      icon: <ShieldCheck aria-hidden="true" />,
+      label: "Estado V2",
+      value: readConfiguredStatus(connection.status),
+    },
+    {
+      icon: <Hash aria-hidden="true" />,
+      label: "Conexao",
+      value: connection.displayName,
+    },
+    {
+      icon: <Webhook aria-hidden="true" />,
+      label: "Webhooks",
+      value: connection.webhookTokenRequired
+        ? "Token obrigatorio"
+        : "Sem token local",
+    },
+  ];
+  return (
+    <ConnectionSectionCard
+      description="Somente a instancia ZAPI e editavel. Tokens sao write-only e nunca sao exibidos depois de salvar."
+      title="Resumo"
+    >
+      <dl className="crm-whatsapp-connection-summary">
+        {rows.map((row) => (
+          <div key={row.label}>
+            <dt>
+              {row.icon}
+              {row.label}
+            </dt>
+            <dd>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </ConnectionSectionCard>
   );
 }
 
@@ -200,40 +186,14 @@ function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
   );
 }
 
-export function toConnectionUpdateInput(
-  draft: ConnectionDraft,
-): CrmWhatsappUpdateConnectionInput | null {
-  const credentialValues = [
-    draft.apiBaseUrlEnv,
-    draft.clientTokenEnv,
-    draft.instanceIdEnv,
-    draft.instanceTokenEnv,
-  ].map((value) => value.trim());
-  const hasAnyCredential = credentialValues.some(Boolean);
-  if (hasAnyCredential && !credentialValues.every(Boolean)) return null;
-  return {
-    catalogPhone: nullable(draft.catalogPhone),
-    connectedPhone: nullable(draft.connectedPhone),
-    ...(hasAnyCredential
-      ? {
-          credentialsEnv: {
-            apiBaseUrl: credentialValues[0]!,
-            clientToken: credentialValues[1]!,
-            instanceId: credentialValues[2]!,
-            instanceToken: credentialValues[3]!,
-          },
-        }
-      : {}),
-    displayName: draft.displayName.trim(),
-    externalConnectionId: nullable(draft.externalConnectionId),
-    externalInstanceId: nullable(draft.externalInstanceId),
-    phone: nullable(draft.phone),
-    purpose: nullable(draft.purpose),
-    status: draft.status,
-    webhookUrl: nullable(draft.webhookUrl),
+function readConfiguredStatus(status: CrmWhatsappProviderConnection["status"]) {
+  const labels: Record<CrmWhatsappProviderConnection["status"], string> = {
+    active: "Ativa",
+    archived: "Arquivada",
+    disconnected: "Desconectada",
+    error: "Erro",
+    paused: "Pausada",
+    sandbox: "Sandbox",
   };
-}
-
-function nullable(value: string) {
-  return value.trim() || null;
+  return labels[status];
 }

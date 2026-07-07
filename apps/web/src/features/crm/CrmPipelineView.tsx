@@ -66,7 +66,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     const nextStages = activePipeline.stages.map((s) =>
       s.id === editingStage.id ? { ...s, name, color, slaDays } : s,
     );
-    handleUpdatePipeline({ ...activePipeline, stages: nextStages });
+    void handleUpdatePipeline({ ...activePipeline, stages: nextStages });
     setEditingStage(null);
   };
 
@@ -170,9 +170,9 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       <CrmPipelineSettingsLayout
         onBack={() => setIsSettingsOpen(false)}
         onDeletePipeline={(id) =>
-          handleDeletePipeline(id, () => setIsSettingsOpen(false))
+          void handleDeletePipeline(id, () => setIsSettingsOpen(false))
         }
-        onUpdatePipeline={handleUpdatePipeline}
+        onUpdatePipeline={(updated) => void handleUpdatePipeline(updated)}
         pipeline={activePipeline}
       />
     );
@@ -313,13 +313,17 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
       {isQuickPipelineOpen && (
         <CrmQuickAddPipelineModal
           onClose={() => setIsQuickPipelineOpen(false)}
-          onCreatePipeline={handleCreatePipelineConfirm}
+          onCreatePipeline={(name, stages) =>
+            void handleCreatePipelineConfirm(name, stages)
+          }
         />
       )}
 
       {isQuickStageOpen && (
         <CrmQuickAddStageModal
-          onAddStage={handleAddStage}
+          onAddStage={(name, color, slaDays) =>
+            void handleAddStage(name, color, slaDays)
+          }
           onClose={() => setIsQuickStageOpen(false)}
         />
       )}

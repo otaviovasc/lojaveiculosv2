@@ -19,6 +19,10 @@ export type FindCrmBotIntegrationInput = {
   tenantId: TenantId;
 };
 
+export type FindCrmBotIntegrationBySecretHashInput = {
+  webhookSecretHash: string;
+};
+
 export type UpsertCrmBotIntegrationInput = FindCrmBotIntegrationInput & {
   enabled: boolean;
   secretUpdatedAt?: Date | null;
@@ -29,6 +33,9 @@ export type UpsertCrmBotIntegrationInput = FindCrmBotIntegrationInput & {
 export type CrmBotIntegrationRepository = {
   findBotIntegration: (
     input: FindCrmBotIntegrationInput,
+  ) => Promise<CrmBotIntegration | null>;
+  findBotIntegrationBySecretHash: (
+    input: FindCrmBotIntegrationBySecretHashInput,
   ) => Promise<CrmBotIntegration | null>;
   upsertBotIntegration: (
     input: UpsertCrmBotIntegrationInput,

@@ -1,6 +1,7 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
+import type { WhatsappConnection } from "../../../domains/crm/whatsapp/whatsappConnectionModels.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import {
   createAuditSpy,
@@ -107,6 +108,68 @@ describe("CRM WhatsApp connections", () => {
           },
         },
       ],
+    });
+  });
+
+  it("updates stored ZAPI instance credentials without returning the token", async () => {
+    const { audit, record } = createAuditSpy();
+    const repository = createMemoryCrmConnectionRepository([
+      createZapiConnection({ credentialsRef: {}, externalInstanceId: null }),
+    ]);
+    const app = createTestApp({
+      audit,
+      crmConnectionRepository: repository,
+      crmWhatsappGateway: {
+        getConnectionStatus: vi.fn(async () => ({
+          checkedAt: new Date("2026-07-02T19:00:00.000Z"),
+          connected: false,
+          connectedPhone: null,
+          providerStatus: "disconnected" as const,
+          smartphoneConnected: false,
+        })),
+        sendMedia: vi.fn(),
+        sendText: vi.fn(),
+      },
+    });
+
+    const response = await app.request(
+      `/api/v1/crm/whatsapp/connections/${connectionId}`,
+      {
+        body: JSON.stringify({
+          instanceCredentials: {
+            instanceId: "zapi-instance-1",
+            instanceToken: "zapi-secret-token",
+          },
+        }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as WhatsappConnection;
+    expect(body).toMatchObject({
+      credentials: {
+        mode: "stored",
+        storedInstanceConfigured: true,
+      },
+      externalInstanceId: "zapi-instance-1",
+      id: connectionId,
+    });
+    expect(JSON.stringify(body)).not.toContain("zapi-secret-token");
+    expect(JSON.stringify(record.mock.calls)).not.toContain(
+      "zapi-secret-token",
+    );
+    await expect(
+      repository.findConnectionById(connectionId),
+    ).resolves.toMatchObject({
+      credentialsRef: {
+        mode: "stored",
+        stored: {
+          instanceId: "zapi-instance-1",
+          instanceToken: "zapi-secret-token",
+        },
+      },
     });
   });
 });

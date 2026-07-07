@@ -98,7 +98,7 @@ export async function sendWhatsappOutboundMessage(
     ...(prepared.mediaUrl ? { mediaUrl: prepared.mediaUrl } : {}),
     metadata: prepared.metadata,
     providerTimestamp: prepared.sent.providerTimestamp,
-    senderType: "HUMAN",
+    senderType: context.actor.kind === "integration" ? "AI" : "HUMAN",
     status: "SENT",
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,

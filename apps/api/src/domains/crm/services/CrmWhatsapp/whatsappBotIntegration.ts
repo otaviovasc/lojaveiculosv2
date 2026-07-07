@@ -21,6 +21,29 @@ export type UpdateWhatsappBotIntegrationInput = {
   webhookUrl?: string | null;
 };
 
+export type AuthenticateWhatsappBotSecretInput = {
+  webhookSecret: string;
+};
+
+export type WhatsappBotActionName =
+  | "add_note"
+  | "assign_tag"
+  | "check_connection"
+  | "close_session"
+  | "create_tag"
+  | "get_session"
+  | "list_tags"
+  | "remove_tag"
+  | "remove_visita"
+  | "schedule_message"
+  | "send_audio"
+  | "send_document"
+  | "send_image"
+  | "send_text"
+  | "set_intervention"
+  | "set_visita"
+  | "update_session";
+
 export async function getWhatsappBotIntegration(
   context: ServiceContext,
   ports: CrmServicePorts,
@@ -112,10 +135,56 @@ export async function updateWhatsappBotIntegration(
   );
 }
 
+export async function authenticateWhatsappBotSecret(
+  context: ServiceContext,
+  input: AuthenticateWhatsappBotSecretInput,
+  ports: CrmServicePorts,
+): Promise<CrmBotIntegration> {
+  const integration = await getCrmBotIntegrationRepository(
+    ports,
+  ).findBotIntegrationBySecretHash({
+    webhookSecretHash: hashWebhookSecret(input.webhookSecret),
+  });
+  if (!integration?.enabled || !integration.secretConfigured) {
+    throw new WhatsappBotIntegrationUnauthorizedError();
+  }
+  await auditWhatsappServiceEvent(context, {
+    action: "crm.whatsapp.integrations.bot.authenticate",
+    category: "data_access",
+    metadata: { integrationId: integration.id },
+    permission: "crm.whatsapp.integrations.manage",
+    storeId: integration.storeId,
+    summary: "Authenticated CRM WhatsApp bot action request",
+    tenantId: integration.tenantId,
+  });
+  return integration;
+}
+
 export class WhatsappBotIntegrationIncompleteError extends Error {
   constructor() {
     super("Bot integration requires a webhook URL and secret before enabling.");
     this.name = "WhatsappBotIntegrationIncompleteError";
+  }
+}
+
+export class WhatsappBotIntegrationUnauthorizedError extends Error {
+  constructor() {
+    super("Bot action request is not authorized.");
+    this.name = "WhatsappBotIntegrationUnauthorizedError";
+  }
+}
+
+export class WhatsappBotActionError extends Error {
+  constructor(
+    message: string,
+    readonly code:
+      | "CRM_WHATSAPP_BOT_ACTION_BLOCKED"
+      | "CRM_WHATSAPP_BOT_ACTION_UNSUPPORTED"
+      | "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
+    readonly status: 400 | 403 | 404 | 409 | 422 = 400,
+  ) {
+    super(message);
+    this.name = "WhatsappBotActionError";
   }
 }
 

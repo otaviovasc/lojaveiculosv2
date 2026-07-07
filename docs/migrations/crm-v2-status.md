@@ -6,18 +6,13 @@ Branch: `feat/crm-v2-migration-control-plane`
 
 ## Current Phase
 
-Phase 9: bot action API and forwarding after bot config foundation.
+Phase 9-11: bot action API, connection polish, and campaign UI before
+persistent campaign backend.
 
 ## Completed This Pass
 
-- Read repo rules, repo organization, architecture, and migration docs.
-- Confirmed existing HTML control docs:
-  `v2-backend-doc.html`, `v2-plan.html`,
-  `v2-vehicle-detail-primitives-plan.html`.
-- Confirmed current V2 CRM code already owns substantial WhatsApp runtime.
-- Confirmed source repos are present:
-  `../repasses-frontend`,
-  `../repasses-lojaveiculos-backend`.
+- Read repo rules, HTML control docs, migration docs, current V2 CRM runtime,
+  and source repos under `../repasses-*`.
 - Created active Markdown control plane:
   `docs/migrations/crm-v2-migration-map.md`,
   `docs/migrations/crm-v2-status.md`,
@@ -65,14 +60,38 @@ Phase 9: bot action API and forwarding after bot config foundation.
   - `GET/PATCH /crm/whatsapp/integrations/bot` stores bot URL and write-only
     secret state behind `crm.whatsapp.integrations.manage`.
   - WhatsApp Integracoes is now a real page for bot config and ZAPI event health.
+- Added bot action API and docs after `eac31a8`:
+  - `POST /crm/whatsapp/integrations/bot/actions` authenticates
+    `X-Webhook-Secret`, creates a bot-scoped `ServiceContext`, executes V2 UUID
+    actions, and blocks bot sends during human takeover.
+  - Integracoes now shows V2 Action API docs.
+- Added a Campaigns batch scheduler UI:
+  - `CrmWhatsappCampaignsPage.tsx` creates real scheduled sends from selected
+    existing WhatsApp sessions, tag filters, or CSV phone matches.
+- Refined the WhatsApp shell and operations tabs with screenshot-driven UI:
+  - Scoped navbar is compact with the connection status as a small indicator.
+  - Conexao now exposes only ZAPI status, write-only instance ID/token update,
+    and generated webhook URLs.
+  - Bot Integracoes includes the V2 Action API docs.
+- Added write-only ZAPI instance credential support:
+  - `PATCH /crm/whatsapp/connections/:connectionId` accepts
+    `instanceCredentials.instanceId` and `instanceCredentials.instanceToken`.
+  - Responses expose only configured state; tokens are not returned or audited.
+- Ran a live local ZAPI smoke send to the approved phone number. API returned
+  `201` with outbound message status `SENT`.
+- Completed the final handoff validation for this slice:
+  `pnpm run validate` passed with 320 web tests and 501 API tests passing.
+- Fixed full-gate lint/typecheck cleanup in CRM tests:
+  async JSX handlers are launched explicitly, test transactions are typed, and
+  response bodies avoid unsafe `any` assertions.
 
 ## Key Findings
 
 - V2 schema already has ZAPI-only `crm_connections`, normalized `crm_tags`,
   normalized session tags, WhatsApp sessions/messages, quick messages,
   scheduled messages, and `lead_visits`.
-- Scheduled-message backend support exists; the missing work is the store-wide
-  operations page and future campaign linkage.
+- Scheduled-message backend support and the store-wide operations page exist;
+  campaign backend linkage remains pending.
 - V2 permission catalog and current tag/schedule/connection services now use
   the active V2 permission contract names.
 - Pipeline config is now DB-backed through `crm_pipelines` and
@@ -88,12 +107,12 @@ Phase 9: bot action API and forwarding after bot config foundation.
   V2 lead but is not persisted on visits.
 - `crm_sync_events` exists in schema but is not used by migrated runtime CRM
   code.
-- Bot action API and outbound webhook forwarding are still pending; bot config
-  exists, but actions must not be treated as complete.
-- Campaigns are not implemented in V2.
+- Outbound bot webhook forwarding is still pending; bot config and action API
+  exist.
+- Persistent campaign backend/metrics are not implemented in V2.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
   `Conexao`.
-- `CrmWhatsappScopedSections.tsx` still contains campaign depth placeholders.
+- `CrmWhatsappScopedSections.tsx` now routes Campaigns to the batch scheduler UI.
 - Repasses backend still contains Evolution, old agents, MiniBot, and campaign
   logic. Only behavior should be ported; runtime semantics must be V2-native.
 - Repasses public CRM contracts still route mostly by numeric ids. V2 slices
@@ -132,12 +151,12 @@ Wave 3:
 - Worker H: lead/WhatsApp identity link. Completed in `62ac658`.
 - Worker I: visits backend/UI. Completed in `5d47b6f`.
 - Worker J: integrations/bot config foundation. Completed in `eac31a8`; action
-  API and forwarding remain pending.
+  API added after it; forwarding remains pending.
 
 Wave 4:
 
 - Worker K: campaign backend.
-- Worker L: campaign UI.
+- Worker L: campaign batch scheduler UI active; persistent campaign UI pending.
 - Worker Q: Playwright/evidence/mobile polish.
 
 ## Command Log
@@ -152,49 +171,23 @@ rg --files apps/web/src apps/api/src packages docs | rg 'crm|whatsapp|lead|visit
 find ../repasses-frontend -maxdepth 4 -type f
 find ../repasses-lojaveiculos-backend -maxdepth 5 -type f
 rg -n 'CRM|WhatsApp|ZAPI|Repasses' v2-plan.html v2-backend-doc.html
-rg -n 'crm\.whatsapp\.(tag\.(manage|assign)|schedule\.(read|create|cancel|process)|connection\.update_(credentials|metadata|status|webhooks))' packages/shared/src apps/api/src apps/web/src docs
-pnpm --filter @lojaveiculosv2/web test -- crmWhatsappPermissions.test.ts
-pnpm --filter @lojaveiculosv2/api test -- accessPolicy crm.whatsapp.connections.test crm.whatsapp.tags.test crm.whatsapp.scheduled
-pnpm --filter @lojaveiculosv2/api typecheck
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm run check:lines
-pnpm exec prettier --check packages/shared/src/index.ts apps/api/src/domains/crm/services/CrmWhatsapp/listWhatsappConnections.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappScheduledMessageProcessor.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappScheduledMessages.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappSessionTags.ts apps/api/src/domains/crm/services/CrmWhatsapp/whatsappTagManagement.ts apps/api/src/domains/identity/domain/crmWhatsappAccessPermissions.ts apps/api/src/domains/identity/domain/crmWhatsappPermissionCatalog.ts apps/api/src/features/crm/controllers/crm.whatsapp.controller.support.ts apps/api/src/features/crm/controllers/crm.whatsapp.controller.testSupport.ts apps/api/src/features/crm/controllers/crm.whatsapp.readOnlyMutations.test.ts apps/api/src/jobs/processCrmWhatsappScheduledMessages.ts apps/web/src/features/crm/crmWhatsappPermissions.ts apps/web/src/features/crm/crmWhatsappPermissions.test.ts docs/identity-permissions.md docs/migrations/crm-v2-integration-contracts.md docs/migrations/crm-v2-smoke-checklist.md docs/migrations/crm-v2-status.md docs/migrations/workers/orchestrator.md
-pnpm --filter @lojaveiculosv2/web test -- CrmModule.test.tsx crmWhatsappConnectionStatus.test.ts CrmWhatsappQueueToolbar.test.tsx crmWhatsappApiExtras.test.ts CrmWhatsappTagManager.test.tsx crmWhatsappPermissions.test.ts CrmWhatsappSessionDetailsPanel.test.tsx
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm run validate:core-guardrails
-pnpm run test:frontend-design
-pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappSchedulesPage.test crmWhatsappApiExtras.test
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm run check:lines
-pnpm --filter @lojaveiculosv2/api test -- crm.pipeline
-pnpm --filter @lojaveiculosv2/web test -- productCrmApi crmPipelineModels crmLeadCreation CrmWhatsappSchedulesPage.test crmWhatsappApiExtras.test
-pnpm --filter @lojaveiculosv2/api typecheck
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm run check:db
-pnpm run check:services
-pnpm run check:frontend
-pnpm run check:lines
-pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.sessions crm.whatsapp.startConversationLead
-pnpm --filter @lojaveiculosv2/web test -- CrmLeadWhatsappPanel crmWhatsappApi CrmModule
-pnpm --filter @lojaveiculosv2/api typecheck
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm run check:frontend
-pnpm run check:services
-pnpm run check:lines
-pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.sessions crm.whatsapp.sessions.leadFilter crm.whatsapp.startConversationLead
-pnpm --filter @lojaveiculosv2/web test -- CrmLeadWhatsappPanel crmWhatsappApi CrmModule
-pnpm --filter @lojaveiculosv2/api typecheck
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm --filter @lojaveiculosv2/api test -- crm.visits
-pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappVisitsPage crmVisitsApi crmWhatsappPermissions
-pnpm --filter @lojaveiculosv2/api typecheck
-pnpm --filter @lojaveiculosv2/web typecheck
-pnpm run validate:core-guardrails
-pnpm run test:frontend-design
+pnpm --filter @lojaveiculosv2/api test -- crm.pipeline crm.visits crm.whatsapp.sessions crm.whatsapp.integrations
+pnpm --filter @lojaveiculosv2/web test -- CrmLeadWhatsappPanel CrmWhatsappVisitsPage CrmWhatsappIntegrationsPage CrmWhatsappSchedulesPage crmWhatsappApiExtras
 pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.integrations
-pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappIntegrationsPage crmWhatsappApiExtras crmWhatsappApiRoutes crmWhatsappPermissions
+pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappCampaignsPage CrmWhatsappIntegrationsPage
+pnpm --filter @lojaveiculosv2/api exec tsc --noEmit --pretty false
+pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.connections crm.whatsapp.integrations
+pnpm --filter @lojaveiculosv2/web exec tsc --noEmit --pretty false
+pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappConnectionAdmin CrmWhatsappCampaignsPage CrmWhatsappIntegrationsPage
 pnpm --filter @lojaveiculosv2/api typecheck
 pnpm --filter @lojaveiculosv2/web typecheck
+pnpm run check:lines
+pnpm run validate:core-guardrails
+pnpm run test:frontend-design
+pnpm --filter @lojaveiculosv2/web lint
+pnpm --filter @lojaveiculosv2/api lint
+pnpm --filter @lojaveiculosv2/api exec tsc --noEmit --pretty false
+pnpm run validate
 ```
 
 Phase 1 permission validation passed. `pnpm run check:lines` initially failed
@@ -205,22 +198,11 @@ again made `check:lines` pass.
 
 ## Evidence
 
-- Worker A screenshots:
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-a/crm-whatsapp-shell-nav-desktop.png`,
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-a/crm-whatsapp-shell-nav-mobile.png`.
-- Worker C screenshots:
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-c/tags-desktop.png`,
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-c/tags-mobile.png`.
-- Orchestrator integrated screenshots:
-  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/connection-desktop.png`,
-  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/connection-mobile.png`,
-  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/tags-desktop.png`,
-  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/tags-mobile.png`.
-- Worker B diagnostic-only screenshots remain under
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-b/`.
-- Worker G screenshots:
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/schedules-desktop.png`,
-  `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/schedules-mobile.png`.
+- Screenshot roots:
+  `/tmp/lojaveiculosv2-qa/crm-v2/worker-a/`,
+  `/tmp/lojaveiculosv2-qa/crm-v2/worker-c/`,
+  `/tmp/lojaveiculosv2-qa/crm-v2/worker-g/`, and
+  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/`.
 - Pipeline persistence evidence:
   `packages/db/drizzle/0002_crm_pipeline_persistence.sql`,
   `apps/api/src/features/crm/controllers/crm.pipeline.test.ts`,
@@ -237,12 +219,23 @@ again made `check:lines` pass.
 - Bot config evidence:
   `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,
   `apps/web/src/features/crm/CrmWhatsappIntegrationsPage.test.tsx`.
+- Bot action/Campaign UI evidence:
+  `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,
+  `apps/web/src/features/crm/CrmWhatsappCampaignsPage.test.tsx`,
+  `apps/web/src/features/crm/CrmWhatsappConnectionAdmin.test.tsx`.
+- Screenshot-driven evidence from the current pass is under
+  `/tmp/lojaveiculosv2-qa/crm-v2/orchestrator/` with the
+  `crm-whatsapp-*-desktop-v2/v3.png` and mobile v2 captures.
+- Live smoke: local `GET /crm/whatsapp/connections` reported the test ZAPI
+  connection as connected; local `POST /crm/whatsapp/conversations/start`
+  returned `201` and `SENT` for the approved phone number.
+- Final gate: `pnpm run validate` passed on 2026-07-06.
 
 ## Next Orchestrator Actions
 
-1. Implement bot action API and outbound event forwarding from
+1. Implement outbound bot event forwarding from
    `docs/migrations/crm-v2-bot-contract.md`.
-2. Keep campaign backend/UI blocked behind bot actions, schedules, visits, and
-   recipient contracts.
+2. Add persistent campaign backend/metrics on top of schedules, visits, tags,
+   and recipient contracts.
 3. Run full validation when the next stable CRM slice is merged, or record any
    unrelated failures explicitly here.

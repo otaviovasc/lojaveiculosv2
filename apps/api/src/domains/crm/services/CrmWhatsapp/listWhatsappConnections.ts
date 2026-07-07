@@ -40,6 +40,10 @@ export type UpdateWhatsappConnectionInput = {
   displayName?: string;
   externalConnectionId?: string | null;
   externalInstanceId?: string | null;
+  instanceCredentials?: {
+    instanceId: string;
+    instanceToken: string;
+  };
   phone?: string | null;
   purpose?: string | null;
   status?: CrmConnectionConfiguredStatus;
@@ -115,17 +119,18 @@ export async function updateWhatsappConnection(
         throw new WhatsappConnectionNotFoundError(input.connectionId);
       }
       const metadata = buildUpdatedMetadata(current.metadata, input);
+      const credentialsRef = buildUpdatedCredentialsRef(input, current);
       const updated = await repository.updateConnection({
-        ...(input.credentialsEnv
-          ? { credentialsRef: toCredentialsRef(input.credentialsEnv) }
-          : {}),
+        ...(credentialsRef ? { credentialsRef } : {}),
         ...(input.displayName ? { displayName: input.displayName } : {}),
         ...(input.externalConnectionId !== undefined
           ? { externalConnectionId: input.externalConnectionId }
           : {}),
         ...(input.externalInstanceId !== undefined
           ? { externalInstanceId: input.externalInstanceId }
-          : {}),
+          : input.instanceCredentials
+            ? { externalInstanceId: input.instanceCredentials.instanceId }
+            : {}),
         ...(metadata ? { metadata } : {}),
         ...(input.phone !== undefined ? { phone: input.phone } : {}),
         ...(input.status ? { status: input.status } : {}),
@@ -189,5 +194,41 @@ function toCredentialsRef(
       instanceToken: input.instanceToken,
     },
     mode: "env",
+  };
+}
+
+function buildUpdatedCredentialsRef(
+  input: UpdateWhatsappConnectionInput,
+  current: CrmConnection,
+) {
+  if (input.credentialsEnv) return toCredentialsRef(input.credentialsEnv);
+  if (!input.instanceCredentials) return null;
+  return toStoredCredentialsRef(input.instanceCredentials, current);
+}
+
+function toStoredCredentialsRef(
+  input: NonNullable<UpdateWhatsappConnectionInput["instanceCredentials"]>,
+  current: CrmConnection,
+) {
+  const currentEnv =
+    current.credentialsRef.env &&
+    typeof current.credentialsRef.env === "object" &&
+    !Array.isArray(current.credentialsRef.env)
+      ? (current.credentialsRef.env as Record<string, unknown>)
+      : {};
+  return {
+    env: {
+      ...(typeof currentEnv.apiBaseUrl === "string"
+        ? { apiBaseUrl: currentEnv.apiBaseUrl }
+        : {}),
+      ...(typeof currentEnv.clientToken === "string"
+        ? { clientToken: currentEnv.clientToken }
+        : {}),
+    },
+    mode: "stored",
+    stored: {
+      instanceId: input.instanceId,
+      instanceToken: input.instanceToken,
+    },
   };
 }

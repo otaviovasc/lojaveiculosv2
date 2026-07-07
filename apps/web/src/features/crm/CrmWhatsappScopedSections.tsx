@@ -1,25 +1,22 @@
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
+import { CrmWhatsappCampaignsPage } from "./CrmWhatsappCampaignsPage";
 import { CrmWhatsappIntegrationsPage } from "./CrmWhatsappIntegrationsPage";
-import { CrmWhatsappSchedulesPage } from "./CrmWhatsappSchedulesPage";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 
 type InboxState = ReturnType<typeof useCrmWhatsappInbox>;
 
 export function WhatsappCampaignsSection({ inbox }: { inbox: InboxState }) {
   return (
-    <CrmWhatsappSchedulesPage
-      activeSession={inbox.activeSession}
+    <CrmWhatsappCampaignsPage
       canCancel={inbox.permissions.canScheduleCancel}
       canCreate={inbox.permissions.canScheduleCreate}
-      canProcess={inbox.permissions.canScheduleProcess}
       canRead={inbox.permissions.canScheduleRead}
       connectionId={inbox.connectionId}
-      error={inbox.scheduledMessagesError}
       onCancel={inbox.cancelScheduledMessage}
       onList={inbox.listScheduledMessages}
-      onProcessDue={inbox.processDueScheduledMessages}
       onSchedule={inbox.createScheduledMessage}
       sessions={inbox.sessions}
+      tags={inbox.availableTags}
     />
   );
 }

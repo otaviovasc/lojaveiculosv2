@@ -55,6 +55,13 @@ export const whatsappUpdateConnectionSchema = z
     displayName: z.string().trim().min(1).max(120).optional(),
     externalConnectionId: z.string().trim().max(191).nullable().optional(),
     externalInstanceId: z.string().trim().max(191).nullable().optional(),
+    instanceCredentials: z
+      .object({
+        instanceId: z.string().trim().min(1).max(191),
+        instanceToken: z.string().trim().min(1).max(500),
+      })
+      .strict()
+      .optional(),
     phone: z.string().trim().min(8).max(40).nullable().optional(),
     purpose: z.string().trim().max(160).nullable().optional(),
     status: whatsappConnectionStatusSchema.optional(),

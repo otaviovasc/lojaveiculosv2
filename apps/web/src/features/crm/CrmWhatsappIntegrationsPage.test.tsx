@@ -46,6 +46,10 @@ describe("CrmWhatsappIntegrationsPage", () => {
       }),
     );
     expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("POST /api/v1/crm/whatsapp/integrations/bot/actions"),
+    ).toBeVisible();
+    expect(screen.getByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)).toBeVisible();
   });
 
   it("shows a permission state without loading bot config", async () => {

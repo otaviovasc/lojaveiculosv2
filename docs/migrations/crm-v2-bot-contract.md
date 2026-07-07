@@ -3,13 +3,14 @@
 Last updated: 2026-07-06
 
 The V2 bot config foundation exists at
-`GET/PATCH /crm/whatsapp/integrations/bot`. The action API and outbound
-forwarding are not implemented yet. When implemented:
+`GET/PATCH /crm/whatsapp/integrations/bot`. The action API exists at
+`POST /crm/whatsapp/integrations/bot/actions`. Outbound forwarding to the
+configured bot webhook URL is still pending.
 
 - Bot action API authenticates with `X-Webhook-Secret`.
 - Secret values are write-only.
 - Bot actor creates a scoped `ServiceContext`.
-- Human takeover pauses regular bot forwarding.
+- Human takeover pauses regular bot forwarding once forwarding lands.
 - Bot sends are blocked during takeover with a stable error unless ending
   intervention.
 - V2 UUIDs are used for sessions, leads, tags, visits, and campaigns.

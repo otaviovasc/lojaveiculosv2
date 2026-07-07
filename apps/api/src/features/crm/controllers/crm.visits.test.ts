@@ -1,6 +1,7 @@
 import type { PermissionKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmWhatsappSession } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 import { createMemoryCrmVisitRepository } from "../adapters/memory/crmVisitRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
@@ -22,9 +23,13 @@ describe("CRM visits routes", () => {
     const { audit, record } = createAuditSpy();
     const crmRepository = createMemoryCrmRepository();
     const crmVisitRepository = createMemoryCrmVisitRepository();
-    const transaction = vi.fn(async (action) =>
-      action({ crmRepository, crmVisitRepository }),
-    );
+    const transactionSpy = vi.fn();
+    const transaction: NonNullable<CrmServicePorts["transaction"]> = async (
+      action,
+    ) => {
+      transactionSpy();
+      return action({ crmRepository, crmVisitRepository });
+    };
     const lead = await crmRepository.createLead({
       buyerName: "Lead Visita",
       buyerPhone: "5511999999999",
@@ -78,26 +83,27 @@ describe("CRM visits routes", () => {
       status: "completed",
     });
 
-    await expect(
-      crmRepository.listActivities({
-        leadId: lead.id,
-        limit: 10,
-        storeId,
-        tenantId,
-      }),
-    ).resolves.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          activityType: "task",
-          metadata: expect.objectContaining({ kind: "visit" }),
-        }),
-        expect.objectContaining({
-          activityType: "status_change",
-          metadata: expect.objectContaining({ visitStatus: "completed" }),
-        }),
-      ]),
-    );
-    expect(transaction).toHaveBeenCalledTimes(3);
+    const activities = await crmRepository.listActivities({
+      leadId: lead.id,
+      limit: 10,
+      storeId,
+      tenantId,
+    });
+    expect(
+      activities.some(
+        (activity) =>
+          activity.activityType === "task" &&
+          activity.metadata.kind === "visit",
+      ),
+    ).toBe(true);
+    expect(
+      activities.some(
+        (activity) =>
+          activity.activityType === "status_change" &&
+          activity.metadata.visitStatus === "completed",
+      ),
+    ).toBe(true);
+    expect(transactionSpy).toHaveBeenCalledTimes(3);
     expect(record).toHaveBeenCalledWith(
       expect.objectContaining({ action: "crm.visit.create" }),
     );

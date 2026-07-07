@@ -28,8 +28,9 @@ evidence folder is documented.
 
 - Load seeded/test ZAPI connection.
 - Verify status indicator and live provider status render.
-- Save env reference names and metadata.
-- Verify no secret value is rendered.
+- Save ZAPI instance ID and token through the write-only instance form.
+- Verify the token is not rendered after save and responses only expose
+  configured state.
 - Verify six webhook URLs:
   received, delivery, status, connected, disconnected, chat-presence.
 - Verify permission-denied state disables mutation controls.

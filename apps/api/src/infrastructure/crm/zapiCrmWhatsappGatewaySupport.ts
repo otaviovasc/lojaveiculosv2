@@ -53,6 +53,24 @@ export function resolveZapiCredentials(
   env: Record<string, string | undefined>,
 ): ZapiCredentials {
   const envRefs = readEnvRefs(connection.credentialsRef);
+  const stored = readStoredCredentials(connection.credentialsRef);
+
+  if (stored) {
+    return {
+      apiBaseUrl:
+        readOptionalEnv(env, envRefs.apiBaseUrl) ??
+        env.CRM_ZAPI_API_BASE_URL?.trim() ??
+        "https://api.z-api.io",
+      clientToken:
+        readOptionalEnv(env, envRefs.clientToken) ??
+        env.CRM_ZAPI_CLIENT_TOKEN?.trim() ??
+        env.CRM_ZAPI_TEST_CLIENT_TOKEN?.trim() ??
+        env.ZAPI_CLIENT_TOKEN?.trim() ??
+        readRequiredEnv(env, envRefs.clientToken, "clientToken"),
+      instanceId: stored.instanceId,
+      instanceToken: stored.instanceToken,
+    };
+  }
 
   return {
     apiBaseUrl: readRequiredEnv(env, envRefs.apiBaseUrl, "apiBaseUrl"),
@@ -118,6 +136,25 @@ function readEnvRefs(credentialsRef: Record<string, unknown>) {
     instanceId: readString(envRefs.instanceId),
     instanceToken: readString(envRefs.instanceToken),
   };
+}
+
+function readStoredCredentials(credentialsRef: Record<string, unknown>) {
+  const stored =
+    credentialsRef.stored &&
+    typeof credentialsRef.stored === "object" &&
+    !Array.isArray(credentialsRef.stored)
+      ? (credentialsRef.stored as Record<string, unknown>)
+      : {};
+  const instanceId = readString(stored.instanceId);
+  const instanceToken = readString(stored.instanceToken);
+  return instanceId && instanceToken ? { instanceId, instanceToken } : null;
+}
+
+function readOptionalEnv(
+  env: Record<string, string | undefined>,
+  envName: string | null,
+) {
+  return envName ? env[envName]?.trim() || null : null;
 }
 
 function readRequiredEnv(

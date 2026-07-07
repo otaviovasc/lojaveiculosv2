@@ -146,7 +146,7 @@ export function CrmWhatsappVisitsPage({
           isSaving={isSaving}
           linkedLeadId={linkedLeadId}
           notes={notes}
-          onCreate={createVisit}
+          onCreate={() => void createVisit()}
           onNotesChange={setNotes}
           onScheduledAtChange={setScheduledAt}
           scheduledAt={scheduledAt}
@@ -184,7 +184,7 @@ export function CrmWhatsappVisitsPage({
                 canManage={canManage}
                 isSaving={isSaving}
                 key={visit.id}
-                onStatus={changeStatus}
+                onStatus={(visit, status) => void changeStatus(visit, status)}
                 visit={visit}
               />
             ))

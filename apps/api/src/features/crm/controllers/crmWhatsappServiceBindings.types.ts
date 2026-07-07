@@ -9,6 +9,8 @@ import type {
   WhatsappConnection,
 } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
 import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
+import type { ExecuteWhatsappBotActionInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
+import type { AuthenticateWhatsappBotSecretInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { CrmBotIntegration } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
 import type {
   IngestZapiWhatsappWebhookInput,
@@ -89,6 +91,10 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
     AddWhatsappSessionTagInput,
     WhatsappSession
   >;
+  authenticateWhatsappBotSecret: CrmContextService<
+    AuthenticateWhatsappBotSecretInput,
+    CrmBotIntegration
+  >;
   assignWhatsappSession: CrmContextService<
     AssignWhatsappSessionInput,
     WhatsappSession
@@ -120,6 +126,10 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices & {
   deleteWhatsappMessage: CrmContextService<
     DeleteWhatsappMessageInput,
     WhatsappMessage
+  >;
+  executeWhatsappBotAction: CrmContextService<
+    ExecuteWhatsappBotActionInput,
+    unknown
   >;
   ingestZapiWhatsappWebhook: CrmContextService<
     IngestZapiWhatsappWebhookInput,

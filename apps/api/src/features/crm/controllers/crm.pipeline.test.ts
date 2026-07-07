@@ -5,6 +5,7 @@ import {
   createTestApp,
   expectApiError,
 } from "./crm.whatsapp.controller.testSupport.js";
+import type { CrmServicePorts } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 import { createMemoryCrmPipelineRepository } from "../adapters/memory/crmPipelineRepository.js";
 import { createMemoryCrmRepository } from "../adapters/memory/crmRepository.js";
 
@@ -81,12 +82,13 @@ describe("CRM pipeline routes", () => {
   it("runs pipeline mutations through the CRM transaction port", async () => {
     const crmPipelineRepository = createMemoryCrmPipelineRepository();
     const crmRepository = createMemoryCrmRepository();
-    const transaction = vi.fn(async (action) =>
-      action({
-        crmPipelineRepository,
-        crmRepository,
-      }),
-    );
+    const transactionSpy = vi.fn();
+    const transaction: NonNullable<CrmServicePorts["transaction"]> = async (
+      action,
+    ) => {
+      transactionSpy();
+      return action({ crmPipelineRepository, crmRepository });
+    };
     const app = createTestApp({
       crmPipelineRepository,
       crmRepository,
@@ -110,7 +112,7 @@ describe("CRM pipeline routes", () => {
     });
 
     expect(response.status).toBe(201);
-    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(transactionSpy).toHaveBeenCalledTimes(1);
   });
 
   it("moves a lead to a pipeline stage and maps the coarse lead status", async () => {

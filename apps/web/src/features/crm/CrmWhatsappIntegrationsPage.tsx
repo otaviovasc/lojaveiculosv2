@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { CrmWhatsappBotDocs } from "./CrmWhatsappBotDocs";
 import { CrmWhatsappProviderEventIssuesPanel } from "./CrmWhatsappProviderEventIssuesPanel";
 import type { CrmWhatsappBotIntegration } from "./crmWhatsappIntegrationTypes";
 import {
@@ -113,6 +114,8 @@ export function CrmWhatsappIntegrationsPage({
         {error ? (
           <p className="text-sm font-black text-danger">{error}</p>
         ) : null}
+
+        <CrmWhatsappBotDocs />
 
         {canRead ? (
           <CrmWhatsappProviderEventIssuesPanel api={api} canRetry={canRetry} />

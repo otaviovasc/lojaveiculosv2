@@ -191,7 +191,11 @@ export function registerCrmWhatsappApiRoutes(
 
   registerCrmWhatsappSessionRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappScheduledRoutes(crmFeature, { createContext, services });
-  registerCrmWhatsappIntegrationRoutes(crmFeature, { createContext, services });
+  registerCrmWhatsappIntegrationRoutes(crmFeature, {
+    createContext,
+    createWebhookContext,
+    services,
+  });
   registerCrmWhatsappExtrasRoutes(crmFeature, { createContext, services });
   registerCrmWhatsappWebhookEventRoutes(crmFeature, {
     createContext,

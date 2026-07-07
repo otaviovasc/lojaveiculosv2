@@ -48,8 +48,11 @@ Connection responses include six generated ZAPI webhook endpoints:
 - `disconnected`
 - `chat-presence`
 
-Credential values are write-only. The UI may display env var reference names
-and saved metadata, but never render tokens or secrets.
+Credential values are write-only. Conexao may submit Repasses-style
+`instanceCredentials.instanceId` and `instanceCredentials.instanceToken`, but
+responses only expose credential reference names plus
+`credentials.storedInstanceConfigured`; stored tokens are never returned.
+Env-reference credentials remain supported for Railway/env-managed deployments.
 
 ### Conversations
 

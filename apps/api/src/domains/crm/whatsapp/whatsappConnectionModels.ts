@@ -38,6 +38,7 @@ export type WhatsappConnectionCredentialRefs = {
   instanceIdEnv: string | null;
   instanceTokenEnv: string | null;
   mode: string | null;
+  storedInstanceConfigured: boolean;
 };
 
 export type WhatsappConnectionMetadata = {
@@ -82,7 +83,20 @@ function readCredentialRefs(
     instanceIdEnv: readString(env.instanceId),
     instanceTokenEnv: readString(env.instanceToken),
     mode: readString(credentialsRef.mode),
+    storedInstanceConfigured: hasStoredInstanceCredentials(credentialsRef),
   };
+}
+
+function hasStoredInstanceCredentials(credentialsRef: Record<string, unknown>) {
+  const stored =
+    credentialsRef.stored &&
+    typeof credentialsRef.stored === "object" &&
+    !Array.isArray(credentialsRef.stored)
+      ? (credentialsRef.stored as Record<string, unknown>)
+      : {};
+  return Boolean(
+    readString(stored.instanceId) && readString(stored.instanceToken),
+  );
 }
 
 function readConnectionMetadata(

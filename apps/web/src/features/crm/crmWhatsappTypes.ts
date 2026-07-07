@@ -68,6 +68,7 @@ export type CrmWhatsappConnectionCredentialRefs = {
   instanceIdEnv: string | null;
   instanceTokenEnv: string | null;
   mode: string | null;
+  storedInstanceConfigured?: boolean;
 };
 
 export type CrmWhatsappConnectionMetadata = {
@@ -105,6 +106,10 @@ export type CrmWhatsappUpdateConnectionInput = {
   displayName?: string;
   externalConnectionId?: string | null;
   externalInstanceId?: string | null;
+  instanceCredentials?: {
+    instanceId: string;
+    instanceToken: string;
+  };
   phone?: string | null;
   purpose?: string | null;
   status?: CrmWhatsappConnectionConfiguredStatus;

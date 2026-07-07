@@ -170,7 +170,7 @@ export function CrmLeadWhatsappPanel({ api, lead }: Props) {
             disabled={
               !connection || !permissions.canSend || !draft.trim() || isStarting
             }
-            onClick={startConversation}
+            onClick={() => void startConversation()}
             type="button"
           >
             <Send aria-hidden="true" className="size-4" />

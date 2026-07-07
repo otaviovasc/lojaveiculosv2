@@ -5,6 +5,7 @@ import type * as schema from "@lojaveiculosv2/db";
 import type {
   CrmBotIntegration,
   CrmBotIntegrationRepository,
+  FindCrmBotIntegrationBySecretHashInput,
   FindCrmBotIntegrationInput,
   UpsertCrmBotIntegrationInput,
 } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
@@ -24,6 +25,8 @@ export function createDrizzleCrmBotIntegrationRepository(
 ): CrmBotIntegrationRepository {
   return {
     findBotIntegration: (input) => findBotIntegration(db, input),
+    findBotIntegrationBySecretHash: (input) =>
+      findBotIntegrationBySecretHash(db, input),
     upsertBotIntegration: (input) => upsertBotIntegration(db, input),
   };
 }
@@ -33,6 +36,24 @@ async function findBotIntegration(
   input: FindCrmBotIntegrationInput,
 ) {
   const row = await findRow(db, input);
+  return row ? toBotIntegration(row) : null;
+}
+
+async function findBotIntegrationBySecretHash(
+  db: DrizzleCrmBotIntegrationClient,
+  input: FindCrmBotIntegrationBySecretHashInput,
+) {
+  const rows = await db
+    .select()
+    .from(integrationAccounts)
+    .where(eq(integrationAccounts.provider, crmBotIntegrationProvider));
+  const row = rows.find((item) => {
+    const config = readConfig(item.config);
+    return (
+      item.status === "active" &&
+      readString(config.webhookSecretHash) === input.webhookSecretHash
+    );
+  });
   return row ? toBotIntegration(row) : null;
 }
 

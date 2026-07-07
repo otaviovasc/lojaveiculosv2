@@ -13,6 +13,13 @@ export function createMemoryCrmBotIntegrationRepository(): CrmBotIntegrationRepo
   const records: StoredBotIntegration[] = [];
   return {
     findBotIntegration: async (input) => findRecord(records, input),
+    findBotIntegrationBySecretHash: async (input) => {
+      const record = records.find(
+        (item) =>
+          item.enabled && item.webhookSecretHash === input.webhookSecretHash,
+      );
+      return record ? withoutSecretHash(record) : null;
+    },
     upsertBotIntegration: async (input) => {
       const now = new Date();
       const current = findStoredRecord(records, input);

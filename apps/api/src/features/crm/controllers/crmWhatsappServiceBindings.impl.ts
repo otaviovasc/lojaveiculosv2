@@ -3,9 +3,11 @@ import {
   updateWhatsappConnection,
 } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
 import {
+  authenticateWhatsappBotSecret,
   getWhatsappBotIntegration,
   updateWhatsappBotIntegration,
 } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
+import { executeWhatsappBotAction } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
 import { listWhatsappMessages } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappMessages.js";
 import { countWhatsappSessions } from "../../../domains/crm/services/CrmWhatsapp/countWhatsappSessions.js";
 import { listWhatsappSessions } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappSessions.js";
@@ -64,6 +66,8 @@ type CatalogBindings = Pick<
 
 type ConnectionBindings = Pick<
   CrmWhatsappServices,
+  | "authenticateWhatsappBotSecret"
+  | "executeWhatsappBotAction"
   | "getWhatsappBotIntegration"
   | "listWhatsappConnections"
   | "updateWhatsappBotIntegration"
@@ -127,6 +131,10 @@ const buildCatalogBindings = (ports: CrmServicePorts): CatalogBindings => ({
 const buildConnectionBindings = (
   ports: CrmServicePorts,
 ): ConnectionBindings => ({
+  authenticateWhatsappBotSecret: (context, input) =>
+    authenticateWhatsappBotSecret(context, input, ports),
+  executeWhatsappBotAction: (context, input) =>
+    executeWhatsappBotAction(context, input, ports),
   getWhatsappBotIntegration: (context) =>
     getWhatsappBotIntegration(context, ports),
   listWhatsappConnections: (context) => listWhatsappConnections(context, ports),

@@ -1,0 +1,227 @@
+.crm-whatsapp-campaigns-page {
+  display: grid;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 76rem;
+}
+
+.crm-whatsapp-campaigns-header {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 1rem;
+}
+
+.crm-whatsapp-campaigns-header > span {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.crm-whatsapp-campaigns-header strong,
+.crm-whatsapp-campaign-panel h3 {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-campaigns-header h2,
+.crm-whatsapp-campaigns-header p,
+.crm-whatsapp-campaign-panel h3,
+.crm-whatsapp-campaign-panel p {
+  margin: 0;
+}
+
+.crm-whatsapp-campaigns-header h2 {
+  color: var(--color-text);
+  font-size: calc(var(--font-size-lg) * 1.05);
+  font-weight: 950;
+}
+
+.crm-whatsapp-campaigns-header p,
+.crm-whatsapp-campaign-panel p {
+  color: var(--color-muted);
+  font-size: calc(var(--font-size-xs) * 1.15);
+  font-weight: 800;
+}
+
+.crm-whatsapp-campaign-stats,
+.crm-whatsapp-campaign-layout {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.crm-whatsapp-campaign-stats div,
+.crm-whatsapp-campaign-panel {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1rem;
+}
+
+.crm-whatsapp-campaign-stats strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: 950;
+}
+
+.crm-whatsapp-campaign-stats span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-campaign-panel label {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  gap: 0.375rem;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-campaign-panel input,
+.crm-whatsapp-campaign-panel select,
+.crm-whatsapp-campaign-panel textarea {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  outline: none;
+  padding: 0.625rem 0.75rem;
+  text-transform: none;
+  width: 100%;
+}
+
+.crm-whatsapp-campaign-fields,
+.crm-whatsapp-campaign-review {
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  margin: 0;
+}
+
+.crm-whatsapp-campaign-search {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.75rem;
+}
+
+.crm-whatsapp-campaign-search input {
+  border: 0;
+  flex: 1;
+  font-size: var(--font-size-xs);
+  min-width: 0;
+  padding-inline: 0;
+  width: auto;
+}
+
+.crm-whatsapp-campaign-session-list {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 18rem;
+  overflow: auto;
+}
+
+.crm-whatsapp-campaign-session-list button {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.125rem 0.5rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 3rem;
+  padding: 0.625rem 0.75rem;
+  text-align: left;
+}
+
+.crm-whatsapp-campaign-session-list span {
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-campaign-session-list small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+}
+
+.crm-whatsapp-campaign-session-selected {
+  border-color: var(--color-accent) !important;
+}
+
+.crm-whatsapp-campaign-review div {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem;
+}
+
+.crm-whatsapp-campaign-review dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+}
+
+.crm-whatsapp-campaign-review dd {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 950;
+  margin: 0;
+}
+
+.crm-whatsapp-campaign-panel pre {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+  white-space: pre-wrap;
+}
+
+.crm-whatsapp-campaign-error,
+.crm-whatsapp-campaign-success {
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+}
+
+.crm-whatsapp-campaign-error {
+  background: color-mix(in srgb, var(--color-danger) 12%, var(--color-panel));
+  color: var(--color-danger);
+}
+
+.crm-whatsapp-campaign-success {
+  background: color-mix(in srgb, var(--color-success) 12%, var(--color-panel));
+  color: var(--color-success);
+}
