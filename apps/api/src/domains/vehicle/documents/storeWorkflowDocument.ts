@@ -31,7 +31,7 @@ export async function storeWorkflowDocument(
     fileSizeBytes: body.byteLength,
     metadata: {
       ...(record.metadata ?? {}),
-      renderer: "pdf-lib",
+      renderer: "react-pdf",
     },
     mimeType: "application/pdf",
     storageKey: object.storageKey,

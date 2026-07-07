@@ -14,6 +14,14 @@ import {
   updateDocumentTemplate,
   type UpdateDocumentTemplateInput,
 } from "../../../domains/documents/services/DocumentTemplateService/updateDocumentTemplate.js";
+import {
+  suggestDocumentTemplateEdit,
+  type SuggestDocumentTemplateEditInput,
+} from "../../../domains/documents/services/DocumentTemplateService/suggestDocumentTemplateEdit.js";
+import {
+  recordDocumentTemplateSuggestionOutcome,
+  type RecordDocumentTemplateSuggestionOutcomeInput,
+} from "../../../domains/documents/services/DocumentTemplateService/recordDocumentTemplateSuggestionOutcome.js";
 import { previewDocument } from "../../../domains/documents/services/DocumentOperationService/previewDocument.js";
 import { downloadDocument } from "../../../domains/documents/services/DocumentOperationService/downloadDocument.js";
 import { listDocumentVersions } from "../../../domains/documents/services/DocumentOperationService/listDocumentVersions.js";
@@ -35,7 +43,9 @@ import { createDrizzleDocumentLinkTargetValidator } from "../../../infrastructur
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createMemoryDocumentRepository } from "../adapters/memoryDocumentRepository.js";
+import { createOpenAiDocumentTemplateSuggestionProvider } from "../../../infrastructure/documentTemplates/openAiDocumentTemplateSuggestionProvider.js";
 import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
+import type { DocumentTemplateSuggestion } from "../../../domains/documents/ports/documentTemplateSuggestionProvider.js";
 import {
   createClientTransactionRunner,
   createPassthroughTransactionRunner,
@@ -78,6 +88,14 @@ export type DocumentServices = {
     context: ServiceContext,
     input: RequestDocumentUploadInput,
   ) => Promise<ObjectUpload>;
+  suggestTemplateEdit: (
+    context: ServiceContext,
+    input: SuggestDocumentTemplateEditInput,
+  ) => Promise<DocumentTemplateSuggestion>;
+  recordTemplateSuggestionOutcome: (
+    context: ServiceContext,
+    input: RecordDocumentTemplateSuggestionOutcomeInput,
+  ) => Promise<{ recordedAt: Date }>;
   updateDocument: (
     context: ServiceContext,
     input: UpdateDocumentMetadataInput,
@@ -127,6 +145,10 @@ export function createDocumentServices(
     regenerate: (context, input) => regenerateDocument(context, input, ports),
     requestUpload: (context, input) =>
       requestDocumentUpload(context, input, ports),
+    suggestTemplateEdit: (context, input) =>
+      suggestDocumentTemplateEdit(context, input, ports),
+    recordTemplateSuggestionOutcome: (context, input) =>
+      recordDocumentTemplateSuggestionOutcome(context, input, ports),
     updateDocument: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         updateDocumentMetadata(context, input, txPorts),
@@ -185,7 +207,23 @@ function createDrizzleDocumentPorts(
     linkTargetValidator:
       createDrizzleDocumentLinkTargetValidator(drizzleClient),
     ...(objectStorage ? { objectStorage } : {}),
+    ...createDocumentAiPorts(),
   };
 }
 
 export const documentServices = createDocumentServices();
+
+function createDocumentAiPorts(): Partial<DocumentWorkspaceServicePorts> {
+  const apiKey = process.env.API_OPENAI_KEY;
+  if (!apiKey) return {};
+  return {
+    templateSuggestionProvider: createOpenAiDocumentTemplateSuggestionProvider({
+      apiKey,
+      model:
+        process.env.API_OPENAI_DOCUMENTS_MODEL ??
+        process.env.API_OPENAI_DEFAULT_MODEL ??
+        process.env.API_OPENAI_MODEL ??
+        "gpt-5.4-mini",
+    }),
+  };
+}

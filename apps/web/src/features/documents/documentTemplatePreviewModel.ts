@@ -19,6 +19,7 @@ export type DocumentTemplatePreviewModel = {
   clauses: readonly string[];
   documentNumber: string;
   finance: readonly DocumentTemplatePreviewField[];
+  financeSectionTitle: string;
   intro: string;
   issuedAt: string;
   sections: readonly DocumentTemplatePreviewSection[];
@@ -44,6 +45,7 @@ const sampleValues: Record<string, string> = {
 export function renderDocumentTemplatePreview(
   draft: DocumentTemplateDraft,
   kind: DocumentKind,
+  context = "sale",
 ): DocumentTemplatePreviewModel {
   const renderedTitle = applyTemplateSampleValues(
     draft.title.trim() || kindFallbackTitle(kind),
@@ -67,12 +69,46 @@ export function renderDocumentTemplatePreview(
     { label: "Vendedor", value: "Carlos Vendedor" },
   ];
 
+  if (isOperationalPreviewContext(context)) {
+    return {
+      clauses: draft.clauses.map(renderClause),
+      documentNumber: documentNumber(kind),
+      finance: [
+        { label: "Origem", value: "Sistema" },
+        { label: "Status", value: "Gerado sob demanda" },
+        { label: "Revisão", value: "Modelo travado" },
+      ],
+      financeSectionTitle: context === "fiscal" ? "Controle fiscal" : "Resumo",
+      intro: introForOperationalContext(context),
+      issuedAt: "24/06/2026 13:40",
+      sections: [
+        {
+          fields: [
+            { label: "Loja", value: "Loja Exemplo Veículos" },
+            { label: "Emissão", value: "24/06/2026 13:40" },
+            { label: "Modelo", value: renderedTitle },
+            { label: "Contexto", value: contextLabel(context) },
+          ],
+          title: "Escopo do modelo",
+        },
+      ],
+      store: {
+        address: "Rua das Flores, 123 - Centro, São Paulo - SP",
+        cnpj: "00.000.000/0000-00",
+        name: "Loja Exemplo Veículos",
+        phone: "(11) 99999-9999",
+      },
+      title: renderedTitle,
+    };
+  }
+
   return {
     clauses: draft.clauses.map((clause) =>
       applyTemplateSampleValues(clause.trim() || "Cláusula em branco."),
     ),
     documentNumber: documentNumber(kind),
     finance: financeFields,
+    financeSectionTitle: "Condições comerciais",
     intro: introForKind(kind),
     issuedAt: "24/06/2026 13:40",
     sections: [
@@ -106,6 +142,33 @@ function applyTemplateSampleValues(value: string) {
     (current, [variable, sample]) => current.replaceAll(variable, sample),
     value,
   );
+}
+
+function renderClause(clause: string) {
+  return applyTemplateSampleValues(
+    clause.trim() || "Seção gerada pelo sistema.",
+  );
+}
+
+function isOperationalPreviewContext(context: string) {
+  return context === "finance" || context === "fiscal" || context === "report";
+}
+
+function contextLabel(context: string) {
+  if (context === "finance") return "Financeiro";
+  if (context === "fiscal") return "Fiscal";
+  if (context === "report") return "Relatório";
+  return "Operacional";
+}
+
+function introForOperationalContext(context: string) {
+  if (context === "fiscal") {
+    return "Prévia estrutural do documento fiscal com campos de controle, emissão e conferência usados pelo renderizador compartilhado.";
+  }
+  if (context === "finance") {
+    return "Prévia estrutural do documento financeiro com totais, origem e revisão preservados para emissão operacional.";
+  }
+  return "Prévia estrutural do relatório gerado pelo sistema com cabeçalho, conteúdo e rodapé compartilhados.";
 }
 
 function kindFallbackTitle(kind: DocumentKind) {

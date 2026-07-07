@@ -161,6 +161,25 @@ describe("documents api client", () => {
     );
   });
 
+  it("records document template suggestion outcomes", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ recordedAt: "2026-01-01" }));
+    const api = createDocumentsApi({ fetch: fetchMock });
+
+    await api.recordTemplateSuggestionOutcome("sale_contract", {
+      diffCount: 2,
+      outcome: "accepted",
+    });
+
+    const [url, init] = fetchMock.mock.calls[0] ?? [];
+    expect(String(url)).toContain("sale_contract/suggestions/outcome");
+    expect(init).toMatchObject({
+      body: JSON.stringify({ diffCount: 2, outcome: "accepted" }),
+      method: "POST",
+    });
+  });
+
   it("runs vehicle unit upload operations through inventory routes", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

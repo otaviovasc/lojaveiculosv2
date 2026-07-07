@@ -37,7 +37,7 @@ describe("document transaction composition", () => {
       (services) =>
         services.updateTemplate(context(), {
           clauses: ["Clause"],
-          kind: "sale_contract",
+          templateKey: "sale_contract",
           title: "Contract",
         }),
     ],

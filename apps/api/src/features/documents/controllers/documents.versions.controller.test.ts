@@ -8,24 +8,22 @@ import type { DocumentServices } from "./documentServices.js";
 describe("documents versions controller", () => {
   it("lists immutable document versions", async () => {
     const services = createServices({
-      listVersions: vi.fn(
-        async (): Promise<readonly DocumentVersion[]> => [
-          {
-            createdAt: new Date("2026-01-02T10:00:00.000Z"),
-            createdByUserId: "user_1",
-            documentId: "document_1",
-            fileName: "contract-v2.pdf",
-            fileSizeBytes: 2048,
-            id: "version_2",
-            metadata: { operation: "regenerate" },
-            mimeType: "application/pdf",
-            storageKey: "private/contract-v2.pdf",
-            storeId: "store_1",
-            tenantId: "tenant_1",
-            versionNumber: 2,
-          },
-        ],
-      ),
+      listVersions: vi.fn(async (): Promise<readonly DocumentVersion[]> => [
+        {
+          createdAt: new Date("2026-01-02T10:00:00.000Z"),
+          createdByUserId: "user_1",
+          documentId: "document_1",
+          fileName: "contract-v2.pdf",
+          fileSizeBytes: 2048,
+          id: "version_2",
+          metadata: { operation: "regenerate" },
+          mimeType: "application/pdf",
+          storageKey: "private/contract-v2.pdf",
+          storeId: "store_1",
+          tenantId: "tenant_1",
+          versionNumber: 2,
+        },
+      ]),
     });
 
     const response = await createApp(services).request(
@@ -64,8 +62,12 @@ function createServices(
     listVersions: vi.fn(async () => []),
     listWorkspace: vi.fn(async () => []),
     preview: vi.fn(async () => unexpected("preview")),
+    recordTemplateSuggestionOutcome: vi.fn(async () => ({
+      recordedAt: new Date(),
+    })),
     regenerate: vi.fn(async () => unexpected("regenerate")),
     requestUpload: vi.fn(async () => unexpected("requestUpload")),
+    suggestTemplateEdit: vi.fn(async () => unexpected("suggestTemplateEdit")),
     updateDocument: vi.fn(async () => unexpected("updateDocument")),
     updateTemplate: vi.fn(async () => unexpected("updateTemplate")),
     void: vi.fn(async () => unexpected("void")),

@@ -134,6 +134,11 @@ export function createWebsiteConfigFromSettings(
     corretorName:
       stringOrNull(theme.corretorName) ?? settings.identity.tradingName,
     corretorPhotoUrl: stringOrNull(theme.corretorPhotoUrl),
+    faviconUrl:
+      stringOrNull(theme.faviconUrl) ??
+      stringOrNull(theme.favicon_url) ??
+      stringOrNull(theme.logoIconUrl) ??
+      stringOrNull(theme.logo_icon_url),
     fonts: {
       body: stringOrNull(fonts.body) ?? "Inter",
       heading: stringOrNull(fonts.heading) ?? "Bricolage Grotesque",

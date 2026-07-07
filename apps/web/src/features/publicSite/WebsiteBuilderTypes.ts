@@ -33,6 +33,7 @@ export type WebsiteBuilderConfig = {
   corretorCreci?: string | null;
   corretorName?: string | null;
   corretorPhotoUrl?: string | null;
+  faviconUrl?: string | null;
   fonts: {
     body?: string;
     heading?: string;

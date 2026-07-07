@@ -186,6 +186,7 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `API_PLACA_CACHE_TTL_DAYS`              | No       | staging, production | No     | Plate lookup reuse window. Defaults to `30`.                               |
 | `API_OPENAI_KEY`                        | No       | staging, production | Yes    | OpenAI API key for inventory resale analysis.                              |
 | `API_OPENAI_DEFAULT_MODEL`              | No       | staging, production | No     | Defaults AI tasks to `gpt-5.4-mini`.                                       |
+| `API_OPENAI_DOCUMENTS_MODEL`            | No       | staging, production | No     | Optional override for document-builder template suggestions.               |
 | `API_OPENAI_INVENTORY_RESALE_MODEL`     | No       | staging, production | No     | Optional override for inventory resale analysis.                           |
 | `API_OPENAI_MODEL`                      | No       | staging, production | No     | Legacy fallback after task-specific model vars.                            |
 | `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                                          |

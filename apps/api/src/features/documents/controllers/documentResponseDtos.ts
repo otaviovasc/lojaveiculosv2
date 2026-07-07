@@ -31,11 +31,19 @@ export function toDocumentWorkspaceDto(document: LinkedDocument) {
 export function toDocumentTemplateDto(template: DocumentTemplate) {
   return {
     availableVariables: template.availableVariables,
+    blocks: template.blocks,
+    category: template.category,
     clauses: template.clauses,
+    context: template.context,
+    defaultBlocks: template.defaultBlocks,
     defaultClauses: template.defaultClauses,
     defaultTitle: template.defaultTitle,
+    description: template.description,
     isCustomized: template.isCustomized,
     kind: template.kind,
+    mode: template.mode,
+    source: template.source,
+    templateKey: template.templateKey,
     title: template.title,
     updatedAt: template.updatedAt?.toISOString() ?? null,
   };

@@ -3,10 +3,9 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type {
-  DocumentKind,
-  DocumentTemplate,
-} from "../../ports/documentRepository.js";
+import type { DocumentTemplate } from "../../ports/documentRepository.js";
+import { defaultTemplate } from "../../templates/documentTemplateDefaults.js";
+import { DocumentOperationPolicyError } from "../DocumentOperationService/serviceSupport.js";
 import {
   getDocumentRepository,
   requireDocumentWorkspaceScope,
@@ -16,8 +15,9 @@ import {
 const permission = "documents.template_update";
 
 export type UpdateDocumentTemplateInput = {
+  blocks?: readonly Record<string, unknown>[] | undefined;
   clauses: readonly string[];
-  kind: DocumentKind;
+  templateKey: string;
   title: string;
 };
 
@@ -28,10 +28,24 @@ export async function updateDocumentTemplate(
 ): Promise<DocumentTemplate> {
   assertPermission(context, permission);
   const scope = requireDocumentWorkspaceScope(context);
+  const fallback = defaultTemplate("other", input.templateKey);
+  if (!fallback) {
+    throw new DocumentOperationPolicyError(
+      `Unsupported document template: ${input.templateKey}`,
+    );
+  }
+  if (fallback.mode === "locked") {
+    throw new DocumentOperationPolicyError(
+      "Generated document renderers cannot be edited as templates.",
+    );
+  }
+
   const template = await getDocumentRepository(ports).upsertTemplate({
+    blocks: input.blocks,
     clauses: input.clauses,
-    kind: input.kind,
+    kind: fallback.kind,
     storeId: scope.storeId,
+    templateKey: input.templateKey,
     tenantId: scope.tenantId,
     title: input.title,
     updatedByUserId: context.actor.kind === "user" ? context.actor.id : null,
@@ -42,18 +56,20 @@ export async function updateDocumentTemplate(
     createServiceLogMetadata(context, {
       clauseCount: template.clauses.length,
       kind: template.kind,
+      templateKey: template.templateKey,
     }),
   );
   await context.audit.record({
     action: "documents.template.update",
     actor: context.actor,
     category: "data_change",
-    entityId: template.kind,
+    entityId: template.templateKey,
     entityType: "document_template",
     metadata: {
       clauseCount: template.clauses.length,
       kind: template.kind,
       permission,
+      templateKey: template.templateKey,
     },
     outcome: "succeeded",
     requestId: context.requestId,

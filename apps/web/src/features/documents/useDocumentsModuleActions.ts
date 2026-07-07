@@ -8,7 +8,6 @@ import {
 } from "./DocumentsModuleSupport";
 import type {
   DocumentDownload,
-  DocumentKind,
   DocumentTemplate,
   DocumentVersion,
   UpdateDocumentInput,
@@ -156,15 +155,15 @@ export function useDocumentsModuleActions({
   };
 
   const saveTemplate = async (
-    kind: DocumentKind,
+    templateKey: string,
     input: UpdateDocumentTemplateInput,
   ) => {
     setIsSavingTemplate(true);
     try {
-      const updated = await requireApi().updateTemplate(kind, input);
+      const updated = await requireApi().updateTemplate(templateKey, input);
       setTemplates((current) =>
         current.map((template) =>
-          template.kind === kind ? updated : template,
+          template.templateKey === templateKey ? updated : template,
         ),
       );
       setStatus({ kind: "ready" });

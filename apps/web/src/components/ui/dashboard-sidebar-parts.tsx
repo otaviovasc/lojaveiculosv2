@@ -22,25 +22,32 @@ export type DashboardSidebarItem<Id extends string = string> = {
 
 export function SidebarWorkspace({
   collapsed,
+  iconUrl,
+  logoUrl,
   meta,
   name,
   onClose,
   theme,
 }: {
   collapsed: boolean;
+  iconUrl?: string | null | undefined;
+  logoUrl?: string | null | undefined;
   meta: string;
   name: string;
   onClose: (() => void) | undefined;
   theme: AppTheme;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const compactLogoUrl = iconUrl ?? logoUrl;
 
   if (collapsed) {
     return (
       <div className="flex h-20 items-center justify-center border-b border-line/60 px-2 py-4">
         <Logo
-          variant={theme === "dark" ? "icon-white" : "icon"}
+          alt={name}
           className="h-6 w-auto max-w-[64px] object-contain select-none transition-transform duration-300 hover:scale-105"
+          src={compactLogoUrl}
+          variant={theme === "dark" ? "icon-white" : "icon"}
         />
       </div>
     );
@@ -51,7 +58,9 @@ export function SidebarWorkspace({
       {/* Brand logo container */}
       <div className="mb-4.5 px-1.5 flex items-center justify-center">
         <Logo
+          alt={name}
           className="h-7 w-auto object-contain select-none"
+          src={logoUrl}
           variant={theme === "dark" ? "full-white" : "full"}
         />
       </div>
@@ -66,9 +75,10 @@ export function SidebarWorkspace({
             <span className="flex min-w-0 items-center gap-2.5">
               <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-panel dark:bg-white/5 shadow-inner border border-line-strong/10 group-hover:scale-105 transition-transform duration-300 p-1.5">
                 <Logo
-                  alt="Loja"
-                  variant={theme === "dark" ? "icon-white" : "icon"}
+                  alt={name}
                   className="size-full object-contain select-none"
+                  src={compactLogoUrl}
+                  variant={theme === "dark" ? "icon-white" : "icon"}
                 />
               </span>
               <span className="flex min-w-0 flex-col">

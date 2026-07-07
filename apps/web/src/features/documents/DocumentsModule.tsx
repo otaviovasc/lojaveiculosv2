@@ -4,6 +4,7 @@ import { FeatureAlert } from "../../components/ui/FeatureStates";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import { createDocumentsApi, type DocumentsApi } from "./apiClient";
 import { createDocumentsApiOptions } from "./runtimeApi";
+import { DocumentBuilderWorkspace } from "./DocumentBuilderWorkspace";
 import { DocumentsFolderSidebar } from "./DocumentsFolderSidebar";
 import {
   DocumentsKpiSummary,
@@ -56,7 +57,7 @@ export function DocumentsModule({
   const [filters, setFilters] = useState<DocumentsWorkspaceFilters>(
     EMPTY_DOCUMENT_FILTERS,
   );
-  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [mobileTab, setMobileTab] = useState<DocumentsMobileTab>("documentos");
   const [linkDocument, setLinkDocument] = useState<WorkspaceDocument | null>(
     null,
@@ -168,6 +169,18 @@ export function DocumentsModule({
     [selection, state.downloadDocument],
   );
 
+  if (isBuilderOpen) {
+    return (
+      <DocumentBuilderWorkspace
+        api={runtimeApi}
+        isSaving={state.isSavingTemplate}
+        onClose={() => setIsBuilderOpen(false)}
+        onSave={state.saveTemplate}
+        templates={state.templates}
+      />
+    );
+  }
+
   return (
     <FeaturePageShell className="documents-page" mainClassName="documents-main">
       <DocumentsWorkspaceTopBar
@@ -176,7 +189,7 @@ export function DocumentsModule({
         isRefreshing={isLoading}
         isUploading={!runtimeApi || !uploadTarget}
         onOpenFolders={openMobileFolders}
-        onOpenTemplates={() => setIsTemplatesDialogOpen(true)}
+        onOpenTemplates={() => setIsBuilderOpen(true)}
         onRefresh={() => void state.resetAndReload()}
         onUpload={() => state.setIsUploadDialogOpen(true)}
         selectedKey={selectedFolderKey}
@@ -259,8 +272,6 @@ export function DocumentsModule({
         documentToDelete={state.documentToDelete}
         documents={state.documents}
         isDocumentActionBusy={state.isDocumentActionBusy}
-        isSavingTemplate={state.isSavingTemplate}
-        isTemplatesDialogOpen={isTemplatesDialogOpen}
         isUploadDialogOpen={state.isUploadDialogOpen}
         linkDocument={linkDocument}
         mobileTab={mobileTab}
@@ -269,13 +280,10 @@ export function DocumentsModule({
         onSelectFolder={selectFolder}
         onUpdateDocument={state.updateDocument}
         runtimeApi={runtimeApi}
-        saveTemplate={state.saveTemplate}
         selectedKey={selectedFolderKey}
         setDocumentToDelete={state.setDocumentToDelete}
-        setIsTemplatesDialogOpen={setIsTemplatesDialogOpen}
         setIsUploadDialogOpen={state.setIsUploadDialogOpen}
         setLinkDocument={setLinkDocument}
-        templates={state.templates}
         unitFoldersStatus={unitFolders.status}
         uploadTarget={uploadTarget}
         vehicleOptions={vehicleOptions as readonly DocumentVehicleOption[]}

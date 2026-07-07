@@ -65,6 +65,8 @@
 @import "./documents-upload.css";
 @import "./documents-upload-queue.css";
 @import "./documents-templates.css";
+@import "./documents-builder.css";
+@import "./documents-builder-blocks.css";
 @import "./documents-template-paper.css";
 @import "./internal.css";
 @import "./internalLists.css";

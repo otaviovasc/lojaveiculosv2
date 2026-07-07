@@ -1,4 +1,4 @@
-import { FileText, FileWarning } from "lucide-react";
+import { FileText, FileWarning, ImageIcon } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { kindLabel, statusLabel } from "./documentLabels";
 import { documentStatusTone } from "./documentsWorkspaceModel";
@@ -12,7 +12,9 @@ export function DocumentGeneratedPreview({
   preview: DocumentDownload | null;
 }) {
   const isPdf = isPdfDocument(preview, document);
+  const isImg = isImageDocument(preview, document);
   const viewerUrl = preview && isPdf ? createPdfViewerUrl(preview) : null;
+  const imageUrl = preview && isImg ? preview.downloadUrl : null;
 
   if (viewerUrl) {
     return (
@@ -33,12 +35,29 @@ export function DocumentGeneratedPreview({
     );
   }
 
+  if (imageUrl) {
+    return (
+      <article className="documents-pdf-preview-container flex items-center justify-center p-3 bg-app rounded-xl border border-line/60 overflow-hidden h-[34rem] min-h-[34rem]">
+        <img
+          alt={`Prévia de ${document.title}`}
+          className="max-h-full max-w-full object-contain rounded-lg shadow-md transition-transform hover:scale-102 duration-300"
+          src={imageUrl}
+        />
+      </article>
+    );
+  }
+
   return (
     <article className="documents-pdf-preview-empty-state">
       <div className="documents-pdf-preview-empty-card">
         <div className="documents-pdf-preview-empty-icon-wrapper">
           {isPdf ? (
             <FileText
+              className="documents-pdf-preview-empty-icon size-8"
+              aria-hidden="true"
+            />
+          ) : isImg ? (
+            <ImageIcon
               className="documents-pdf-preview-empty-icon size-8"
               aria-hidden="true"
             />
@@ -64,12 +83,18 @@ export function DocumentGeneratedPreview({
         </div>
         <div className="documents-pdf-preview-empty-details">
           <strong>
-            {isPdf ? "Carregando PDF" : "Prévia PDF indisponível"}
+            {isPdf
+              ? "Carregando PDF"
+              : isImg
+                ? "Carregando imagem"
+                : "Prévia indisponível"}
           </strong>
           <p>
             {isPdf
               ? "Aguarde enquanto o arquivo emitido é assinado para visualização."
-              : "Este arquivo não está no formato PDF. Faça o download para visualizar o conteúdo."}
+              : isImg
+                ? "Aguarde enquanto o arquivo de imagem é assinado para visualização."
+                : "Este arquivo não está em um formato compatível para visualização direta. Faça o download para visualizar o conteúdo."}
           </p>
         </div>
       </div>
@@ -85,6 +110,22 @@ function isPdfDocument(
   return (
     mimeType === "application/pdf" ||
     document.file.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
+  );
+}
+
+function isImageDocument(
+  preview: DocumentDownload | null,
+  document: WorkspaceDocument,
+) {
+  const mimeType = preview?.mimeType ?? document.file.mimeType;
+  if (mimeType?.startsWith("image/")) return true;
+  const name = document.file.fileName.toLowerCase();
+  return (
+    name.endsWith(".png") ||
+    name.endsWith(".jpg") ||
+    name.endsWith(".jpeg") ||
+    name.endsWith(".webp") ||
+    name.endsWith(".gif")
   );
 }
 

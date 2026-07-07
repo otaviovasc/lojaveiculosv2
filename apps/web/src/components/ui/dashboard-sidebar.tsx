@@ -21,6 +21,8 @@ export type DashboardSidebarProps<Id extends string = string> = {
   renderAccountControl?: (options: { isCompact: boolean }) => ReactNode;
   theme: AppTheme;
   variant?: "desktop" | "mobile";
+  workspaceIconUrl?: string | null | undefined;
+  workspaceLogoUrl?: string | null | undefined;
   workspaceMeta?: string;
   workspaceName: string;
 };
@@ -37,6 +39,8 @@ export function DashboardSidebar<Id extends string = string>({
   renderAccountControl,
   theme,
   variant = "desktop",
+  workspaceIconUrl,
+  workspaceLogoUrl,
   workspaceMeta = "Loja atual",
   workspaceName,
 }: DashboardSidebarProps<Id>) {
@@ -59,6 +63,8 @@ export function DashboardSidebar<Id extends string = string>({
         name={workspaceName}
         onClose={onClose}
         theme={theme}
+        iconUrl={workspaceIconUrl}
+        logoUrl={workspaceLogoUrl}
       />
 
       <nav

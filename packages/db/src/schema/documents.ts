@@ -156,6 +156,7 @@ export const documentTemplates = pgTable(
     storeId: uuid("store_id")
       .notNull()
       .references(() => stores.id),
+    templateKey: varchar("template_key", { length: 120 }).notNull(),
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
@@ -166,9 +167,9 @@ export const documentTemplates = pgTable(
     index("document_templates_kind_idx").on(table.kind),
     index("document_templates_store_id_idx").on(table.storeId),
     index("document_templates_tenant_id_idx").on(table.tenantId),
-    uniqueIndex("document_templates_store_kind_unique").on(
+    uniqueIndex("document_templates_store_template_key_unique").on(
       table.storeId,
-      table.kind,
+      table.templateKey,
     ),
   ],
 );
