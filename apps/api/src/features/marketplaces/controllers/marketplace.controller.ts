@@ -1,26 +1,27 @@
 import { Hono, type Context } from "hono";
 import type { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
-import { MarketplaceAccountMissingError } from "../../../domains/marketplace/ports/marketplaceRepository.js";
 import {
   createHttpServiceContext,
   HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
-import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import { MarketplaceScopeError } from "../../../domains/marketplace/services/MarketplaceService/serviceSupport.js";
-import { MarketplaceProviderRuntimeError } from "../../../domains/marketplace/services/MarketplaceService/serviceSupport.js";
 import {
   createMarketplaceSyncJobSchema,
   completeMarketplaceConnectionSchema,
   createMarketplaceConnectUrlSchema,
+  marketplaceStockSyncPreviewSchema,
+  marketplaceStockSyncRunSchema,
+  marketplaceSyncJobRetrySchema,
   upsertMarketplaceAccountSchema,
 } from "./marketplace.controller.schemas.js";
 import {
   marketplaceServices,
   type MarketplaceServices,
 } from "./marketplaceServices.js";
+import {
+  marketplaceErrorResponse,
+  MarketplaceRequestValidationError,
+} from "./marketplaceErrorResponses.js";
 
 export type MarketplaceContextFactory = (
   context: Context,
@@ -114,6 +115,57 @@ export function createMarketplaceFeature(
     }),
   );
 
+  feature.post("/integrations/:provider/stock-sync/preview", async (context) =>
+    handleMarketplace(context, async () => {
+      const input = await parseJson(context, marketplaceStockSyncPreviewSchema);
+      ensureProviderMatch(context.req.param("provider"), input.provider);
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.previewStockSync(serviceContext, {
+          ...(input.listingIds ? { listingIds: input.listingIds } : {}),
+          provider: input.provider,
+        }),
+      );
+    }),
+  );
+
+  feature.post("/integrations/:provider/stock-sync/run", async (context) =>
+    handleMarketplace(context, async () => {
+      const input = await parseJson(context, marketplaceStockSyncRunSchema);
+      ensureProviderMatch(context.req.param("provider"), input.provider);
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.runStockSync(serviceContext, {
+          ...(input.batchId ? { batchId: input.batchId } : {}),
+          ...(input.listingIds ? { listingIds: input.listingIds } : {}),
+          provider: input.provider,
+        }),
+      );
+    }),
+  );
+
+  feature.post("/sync-jobs/:jobId/retry", async (context) =>
+    handleMarketplace(context, async () => {
+      const input = await parseJson(context, marketplaceSyncJobRetrySchema);
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.retrySyncJob(serviceContext, {
+          jobId: context.req.param("jobId"),
+          ...(input.reason ? { reason: input.reason } : {}),
+        }),
+      );
+    }),
+  );
+
   feature.post("/sync-jobs/:jobId/run", async (context) =>
     handleMarketplace(context, async () => {
       const serviceContext = await createProtectedContext(
@@ -148,11 +200,22 @@ async function parseJson<Schema extends z.ZodType>(
   context: Context,
   schema: Schema,
 ): Promise<z.infer<Schema>> {
+  let payload: unknown;
   try {
-    return schema.parse(await context.req.json());
+    payload = await context.req.json();
   } catch {
     throw new MarketplaceRequestValidationError("Request body is invalid.");
   }
+  const result = schema.safeParse(payload);
+  if (!result.success) {
+    throw new MarketplaceRequestValidationError("Request body is invalid.", {
+      issues: result.error.issues.map((issue) => ({
+        code: issue.code,
+        path: issue.path.join("."),
+      })),
+    });
+  }
+  return result.data;
 }
 
 async function handleMarketplace(
@@ -162,56 +225,15 @@ async function handleMarketplace(
   try {
     return await action();
   } catch (error) {
-    if (
-      error instanceof MarketplaceRequestValidationError ||
-      error instanceof MarketplaceAccountMissingError ||
-      error instanceof MarketplaceProviderRuntimeError ||
-      error instanceof MarketplaceScopeError
-    ) {
-      return jsonApiError(context, {
-        code: "MARKETPLACE_REQUEST_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
-    if (error instanceof HttpContextAuthenticationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHENTICATION_REQUIRED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-    if (
-      error instanceof AuthorizationError ||
-      error instanceof HttpContextAuthorizationError
-    ) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-    return jsonApiError(context, {
-      code: "INTERNAL_SERVER_ERROR",
-      error,
-      message: "Internal server error.",
-      status: 500,
-    });
+    return marketplaceErrorResponse(context, error);
   }
 }
 
 function ensureProviderMatch(routeProvider: string, bodyProvider: string) {
   if (routeProvider !== bodyProvider) {
-    throw new MarketplaceRequestValidationError("Provider route mismatch.");
-  }
-}
-
-class MarketplaceRequestValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "MarketplaceRequestValidationError";
+    throw new MarketplaceRequestValidationError("Provider route mismatch.", {
+      bodyProvider,
+      routeProvider,
+    });
   }
 }

@@ -51,6 +51,11 @@ describe("MarketplaceService", () => {
     const ports = {
       gatewayRegistry: {
         getGateway: () => ({
+          checkAccount: async () => ({
+            accountId: "provider_user_1",
+            requirements: [],
+            status: "connected" as const,
+          }),
           createAuthorizationUrl: async () => "https://provider.test/oauth",
           exchangeAuthorizationCode: async () => ({
             accessToken: "token_1",
@@ -63,7 +68,13 @@ describe("MarketplaceService", () => {
           provider: "olx" as const,
           runListingSync: async () => ({
             externalId: "provider_listing_1",
-            metadata: { accepted: true },
+            metadata: {
+              providerResult: {
+                externalId: "provider_listing_1",
+                providerRequestId: null,
+                providerStatus: "active",
+              },
+            },
             providerStatus: "active",
           }),
         }),
@@ -96,7 +107,11 @@ describe("MarketplaceService", () => {
     );
 
     expect(result.status).toBe("succeeded");
-    expect(result.metadata.providerResult).toEqual({ accepted: true });
+    expect(result.metadata.providerResult).toEqual({
+      externalId: "provider_listing_1",
+      providerRequestId: null,
+      providerStatus: "active",
+    });
   });
 
   it("requires marketplace entitlement before reading", async () => {

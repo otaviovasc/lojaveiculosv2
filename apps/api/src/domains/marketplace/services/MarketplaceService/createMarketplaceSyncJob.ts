@@ -1,4 +1,3 @@
-import type { PermissionKey } from "@lojaveiculosv2/shared";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -13,6 +12,7 @@ import {
   requireMarketplaceScope,
   type MarketplaceServicePorts,
 } from "./serviceSupport.js";
+import { permissionForMarketplaceJob } from "./marketplaceJobPermissions.js";
 
 export type CreateMarketplaceSyncJobServiceInput = {
   jobType: MarketplaceSyncJobType;
@@ -25,7 +25,7 @@ export async function createMarketplaceSyncJob(
   input: CreateMarketplaceSyncJobServiceInput,
   ports: MarketplaceServicePorts,
 ): Promise<MarketplaceJob> {
-  const permission = permissionForJob(input.jobType);
+  const permission = permissionForMarketplaceJob(input.jobType);
   assertPermission(context, permission);
   const scope = requireMarketplaceScope(context);
 
@@ -65,14 +65,4 @@ export async function createMarketplaceSyncJob(
   });
 
   return job;
-}
-
-function permissionForJob(jobType: MarketplaceSyncJobType): PermissionKey {
-  if (jobType === "inventory_sync") return "marketplace.inventory_sync";
-  if (jobType === "lead_sync") return "marketplace.lead_sync";
-  if (jobType === "listing_publish") return "marketplace.listing_publish";
-  if (jobType === "listing_unpublish") {
-    return "marketplace.listing_unpublish";
-  }
-  return "marketplace.listing_update";
 }

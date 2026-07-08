@@ -3,19 +3,45 @@ import type {
   MarketplaceProviderGateway,
   MarketplacePublishInput,
   MarketplacePublishResult,
-  MarketplaceTokenSet,
+  MarketplaceServiceErrorCode,
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
 import type { MarketplaceProvider } from "../../domains/marketplace/ports/marketplaceRepository.js";
 import { createProviderListingPayload } from "../../domains/marketplace/payloads/marketplaceListingPayload.js";
+import {
+  assertOlxContract,
+  checkAccount,
+  exchangeToken,
+} from "./httpMarketplaceProviderGatewayAuth.js";
+import {
+  baseUrl,
+  duplicateExternalId,
+  MarketplaceProviderGatewayError,
+  MarketplaceProviderPayloadError,
+  providerHttpError,
+  readString,
+  sanitizedResult,
+} from "./httpMarketplaceProviderGatewaySupport.js";
 
 export type HttpMarketplaceGatewayOptions = {
   auth: MarketplaceGatewayAuthConfig;
   authorizationUrl?: string;
   baseUrl: string;
   fetch?: typeof fetch;
+  accountPath?: string;
   listingPath?: string;
+  requirementConfig?: ProviderRequirementConfig;
   provider: MarketplaceProvider;
   tokenUrl: string;
+};
+
+export type ProviderRequirementConfig = {
+  accountCheckPath?: string;
+  requirements?: readonly {
+    code: MarketplaceServiceErrorCode;
+    message: string;
+    severity: "blocked" | "ok" | "warning";
+    userAction: string;
+  }[];
 };
 
 export function createHttpMarketplaceProviderGateway(
@@ -24,9 +50,11 @@ export function createHttpMarketplaceProviderGateway(
   const fetchImpl = options.fetch ?? fetch;
 
   return {
+    checkAccount: async (input) =>
+      checkAccount(fetchImpl, options, input.token),
     async createAuthorizationUrl(input) {
       if (!options.authorizationUrl) {
-        throw new MarketplaceProviderConfigError(options.provider);
+        throw MarketplaceProviderGatewayError.notConfigured(options.provider);
       }
       const url = new URL(options.authorizationUrl);
       url.searchParams.set("response_type", "code");
@@ -51,64 +79,35 @@ export function createHttpMarketplaceProviderGateway(
   };
 }
 
-async function exchangeToken(
-  fetchImpl: typeof fetch,
-  options: HttpMarketplaceGatewayOptions,
-  values: Record<string, string>,
-): Promise<MarketplaceTokenSet> {
-  const body = new URLSearchParams({
-    client_id: options.auth.clientId,
-    ...(options.auth.clientSecret
-      ? { client_secret: options.auth.clientSecret }
-      : {}),
-    ...values,
-  });
-  const response = await fetchImpl(options.tokenUrl, {
-    body,
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    method: "POST",
-  });
-  const payload = (await response.json()) as Record<string, unknown>;
-  if (!response.ok)
-    throw new MarketplaceProviderHttpError(response.status, payload);
-  return {
-    accessToken: readString(payload.access_token) ?? "",
-    expiresAt: expiresAt(payload.expires_in),
-    providerAccountId: readString(payload.user_id),
-    refreshToken: readString(payload.refresh_token),
-    scope: readString(payload.scope),
-    tokenType: readString(payload.token_type),
-  };
-}
-
 async function runListingSync(
   fetchImpl: typeof fetch,
   options: HttpMarketplaceGatewayOptions,
   input: MarketplacePublishInput,
 ): Promise<MarketplacePublishResult> {
+  if (options.provider === "olx") assertOlxContract(options);
   if (input.jobType === "listing_unpublish") {
     const { method, path } = requestShape(options, input);
-    const response = await fetchImpl(
-      `${options.baseUrl.replace(/\/$/, "")}${path}`,
-      {
-        headers: {
-          Authorization: `Bearer ${input.token.accessToken}`,
-          "Content-Type": "application/json",
-        },
-        method,
+    const response = await fetchImpl(`${baseUrl(options)}${path}`, {
+      headers: {
+        Authorization: `Bearer ${input.token.accessToken}`,
+        "Content-Type": "application/json",
       },
-    );
+      method,
+    });
     const responsePayload = (await response.json().catch(() => ({}))) as Record<
       string,
       unknown
     >;
     if (!response.ok) {
-      throw new MarketplaceProviderHttpError(response.status, responsePayload);
+      throw providerHttpError(options.provider, response, responsePayload);
     }
+    const externalId =
+      readString(responsePayload.id) ?? input.externalId ?? null;
+    const providerStatus = readString(responsePayload.status) ?? "accepted";
     return {
-      externalId: readString(responsePayload.id) ?? input.externalId ?? null,
-      metadata: { providerResponse: responsePayload },
-      providerStatus: readString(responsePayload.status) ?? "accepted",
+      externalId,
+      metadata: sanitizedResult(externalId, response, providerStatus),
+      providerStatus,
     };
   }
 
@@ -127,24 +126,71 @@ async function runListingSync(
     method,
   };
   requestInit.body = JSON.stringify(payload.body);
-  const response = await fetchImpl(
-    `${options.baseUrl.replace(/\/$/, "")}${path}`,
-    requestInit,
-  );
+  const response = await fetchImpl(`${baseUrl(options)}${path}`, requestInit);
   const responsePayload = (await response.json().catch(() => ({}))) as Record<
     string,
     unknown
   >;
   if (!response.ok) {
-    throw new MarketplaceProviderHttpError(response.status, responsePayload);
+    if (response.status === 409 && input.jobType === "listing_publish") {
+      const duplicateId =
+        duplicateExternalId(responsePayload) ?? input.externalId;
+      if (duplicateId) {
+        return updateDuplicateListing(
+          fetchImpl,
+          options,
+          input,
+          duplicateId,
+          payload,
+        );
+      }
+    }
+    throw providerHttpError(options.provider, response, responsePayload);
   }
+  const externalId = readString(responsePayload.id) ?? input.externalId ?? null;
+  const providerStatus = readString(responsePayload.status) ?? "accepted";
   return {
-    externalId: readString(responsePayload.id) ?? input.externalId ?? null,
+    externalId,
     metadata: {
-      payloadAttributes: payload.attributes,
-      providerResponse: responsePayload,
+      providerRequest: payload.attributes,
+      providerResult: sanitizedResult(externalId, response, providerStatus),
     },
-    providerStatus: readString(responsePayload.status) ?? "accepted",
+    providerStatus,
+  };
+}
+
+async function updateDuplicateListing(
+  fetchImpl: typeof fetch,
+  options: HttpMarketplaceGatewayOptions,
+  input: MarketplacePublishInput,
+  externalId: string,
+  payload: ReturnType<typeof createProviderListingPayload>,
+): Promise<MarketplacePublishResult> {
+  const response = await fetchImpl(
+    `${baseUrl(options)}${listingPath(options)}/${externalId}`,
+    {
+      body: JSON.stringify(payload.body),
+      headers: {
+        Authorization: `Bearer ${input.token.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      method: "PUT",
+    },
+  );
+  const responsePayload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  if (!response.ok)
+    throw providerHttpError(options.provider, response, responsePayload);
+  const providerStatus = readString(responsePayload.status) ?? "accepted";
+  return {
+    externalId,
+    metadata: {
+      providerRequest: payload.attributes,
+      providerResult: sanitizedResult(externalId, response, providerStatus),
+    },
+    providerStatus,
   };
 }
 
@@ -172,37 +218,4 @@ function listingPath(options: HttpMarketplaceGatewayOptions) {
     options.listingPath ??
     (options.provider === "mercado_livre" ? "/items" : "/listings")
   );
-}
-
-function expiresAt(value: unknown) {
-  return typeof value === "number" ? new Date(Date.now() + value * 1000) : null;
-}
-
-function readString(value: unknown): string | null {
-  if (typeof value === "number") return String(value);
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-export class MarketplaceProviderConfigError extends Error {
-  constructor(provider: MarketplaceProvider) {
-    super(`Marketplace provider ${provider} is not configured.`);
-    this.name = "MarketplaceProviderConfigError";
-  }
-}
-
-export class MarketplaceProviderHttpError extends Error {
-  constructor(
-    readonly status: number,
-    readonly payload: Record<string, unknown>,
-  ) {
-    super(`Marketplace provider request failed with status ${status}.`);
-    this.name = "MarketplaceProviderHttpError";
-  }
-}
-
-export class MarketplaceProviderPayloadError extends Error {
-  constructor(jobType: string) {
-    super(`Marketplace listing payload is required for ${jobType}.`);
-    this.name = "MarketplaceProviderPayloadError";
-  }
 }

@@ -89,6 +89,71 @@ export const marketplacePaths = {
       },
     },
   },
+  "/api/v1/marketplaces/integrations/{provider}/stock-sync/preview": {
+    post: {
+      tags: ["Marketplaces"],
+      summary: "Preview marketplace stock synchronization",
+      operationId: "previewMarketplaceStockSync",
+      security: [{ bearerAuth: ["marketplace.inventory_sync"] }],
+      parameters: [providerParameter()],
+      responses: {
+        "200": {
+          description:
+            "Stock sync batch id and per-listing publish/update/unpublish/no-op/blocker plan.",
+        },
+        "400": { description: "Invalid provider, body, or listing metadata." },
+        "403": {
+          description: "Missing marketplace entitlement or sync permission.",
+        },
+      },
+    },
+  },
+  "/api/v1/marketplaces/integrations/{provider}/stock-sync/run": {
+    post: {
+      tags: ["Marketplaces"],
+      summary: "Queue and run marketplace stock synchronization",
+      operationId: "runMarketplaceStockSync",
+      security: [{ bearerAuth: ["marketplace.inventory_sync"] }],
+      parameters: [providerParameter()],
+      responses: {
+        "200": {
+          description:
+            "Created sync jobs after planning, ran provider listing calls synchronously, and returned job statuses.",
+        },
+        "400": {
+          description:
+            "Stable marketplace error such as account not connected, invalid metadata, or provider validation failure.",
+        },
+        "403": {
+          description: "Missing marketplace entitlement or listing permission.",
+        },
+      },
+    },
+  },
+  "/api/v1/marketplaces/sync-jobs/{jobId}/retry": {
+    post: {
+      tags: ["Marketplaces"],
+      summary: "Retry a failed marketplace sync job",
+      operationId: "retryMarketplaceSyncJob",
+      security: [{ bearerAuth: ["marketplace.inventory_sync"] }],
+      parameters: [
+        {
+          in: "path",
+          name: "jobId",
+          required: true,
+          schema: { type: "string" },
+        },
+      ],
+      responses: {
+        "200": {
+          description:
+            "Queued and ran a retry job with sanitized metadata linked to the previous failed job.",
+        },
+        "400": { description: "Previous job metadata is invalid." },
+        "409": { description: "Previous job is not retryable." },
+      },
+    },
+  },
   "/api/v1/marketplaces/sync-jobs/{jobId}/run": {
     post: {
       tags: ["Marketplaces"],

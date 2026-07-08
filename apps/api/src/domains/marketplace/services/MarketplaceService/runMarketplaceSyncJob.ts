@@ -1,4 +1,3 @@
-import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
@@ -14,6 +13,10 @@ import {
   requireMarketplaceScope,
   type MarketplaceServicePorts,
 } from "./serviceSupport.js";
+import { MarketplaceServiceError } from "./marketplaceErrors.js";
+import { permissionForMarketplaceJob } from "./marketplaceJobPermissions.js";
+import { readMarketplaceAccountToken } from "./marketplaceAccountPreflight.js";
+import { recordRunAudit } from "./runMarketplaceSyncJobAudit.js";
 
 export type RunMarketplaceSyncJobInput = {
   jobId: string;
@@ -31,8 +34,27 @@ export async function runMarketplaceSyncJob(
     tenantId: scope.tenantId as never,
   });
   if (!queuedJob) throw new MarketplaceProviderRuntimeError("Job missing.");
-  const permission = permissionForJob(queuedJob.jobType);
+  if (queuedJob.status !== "queued") {
+    throw new MarketplaceServiceError({
+      code: "MARKETPLACE_SYNC_JOB_STALE",
+      details: { jobId: queuedJob.id, status: queuedJob.status },
+      jobId: queuedJob.id,
+      message: "Marketplace sync job is not queued.",
+      provider: queuedJob.provider,
+      status: 409,
+      userAction: "Create or retry a fresh marketplace sync job.",
+    });
+  }
+  const permission = permissionForMarketplaceJob(queuedJob.jobType);
   assertPermission(context, permission);
+  context.logger.info(
+    "marketplace.sync_job.run.started",
+    createServiceLogMetadata(context, {
+      jobId: queuedJob.id,
+      jobType: queuedJob.jobType,
+      provider: queuedJob.provider,
+    }),
+  );
   const runningJob = await ports.marketplaceRepository.markJobRunning({
     jobId: input.jobId,
     storeId: scope.storeId as never,
@@ -84,28 +106,20 @@ export async function runMarketplaceSyncJob(
       assertMarketplaceProjectionReady(runningJob.jobType, listing);
     }
 
-    const credentials = readCredentials(account.config);
-    const connection = readObject(account.config.connection);
+    const token = readMarketplaceAccountToken(account, runningJob.provider);
     const result = await gateway.runListingSync({
       ...(externalId ? { externalId } : {}),
       jobType: runningJob.jobType,
       ...(listing ? { listing } : {}),
       metadata: runningJob.metadata,
-      token: {
-        accessToken: credentials.accessToken,
-        expiresAt: readDate(connection, "expiresAt"),
-        providerAccountId: readString(connection.providerAccountId),
-        refreshToken: credentials.refreshToken,
-        scope: readString(connection.scope),
-        tokenType: readString(connection.tokenType),
-      },
+      token,
     });
     const completed = await ports.marketplaceRepository.markJobCompleted({
       completedAt: new Date(),
       externalId: result.externalId,
       jobId: runningJob.id,
       listingId,
-      metadata: { ...runningJob.metadata, providerResult: result.metadata },
+      metadata: { ...runningJob.metadata, ...result.metadata },
       provider: runningJob.provider,
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
@@ -118,7 +132,7 @@ export async function runMarketplaceSyncJob(
       completedAt: new Date(),
       errorMessage: errorMessage(error),
       jobId: runningJob.id,
-      metadata: runningJob.metadata,
+      metadata: { ...runningJob.metadata, ...safeErrorMetadata(error) },
       storeId: scope.storeId as never,
       tenantId: scope.tenantId as never,
     });
@@ -144,79 +158,25 @@ function assertMarketplaceProjectionReady(
   }
 }
 
-async function recordRunAudit(
-  context: ServiceContext,
-  job: MarketplaceJob,
-  outcome: "failed" | "succeeded",
-  errorMessage: string | null,
-) {
-  context.logger.info(
-    "marketplace.sync_job.run",
-    createServiceLogMetadata(context, {
-      jobId: job.id,
-      jobType: job.jobType,
-      outcome,
-      provider: job.provider,
-    }),
-  );
-
-  await context.audit.record({
-    action: "marketplace.sync_job.run",
-    actor: context.actor,
-    category: "data_change",
-    entityId: job.id,
-    entityType: "marketplace_job",
-    metadata: {
-      errorMessage,
-      jobType: job.jobType,
-      permission: permissionForJob(job.jobType),
-      provider: job.provider,
-      status: job.status,
-    },
-    outcome,
-    requestId: context.requestId,
-    storeId: context.storeId,
-    tenantId: context.tenantId,
-    summary: "Ran marketplace provider sync job",
-  });
-}
-
-function permissionForJob(jobType: MarketplaceJob["jobType"]): PermissionKey {
-  if (jobType === "inventory_sync") return "marketplace.inventory_sync";
-  if (jobType === "lead_sync") return "marketplace.lead_sync";
-  if (jobType === "listing_publish") return "marketplace.listing_publish";
-  if (jobType === "listing_unpublish") {
-    return "marketplace.listing_unpublish";
-  }
-  return "marketplace.listing_update";
-}
-
-function readCredentials(config: Record<string, unknown>) {
-  const credentials = readObject(config.credentials);
-  const accessToken = readString(credentials.accessToken);
-  if (!accessToken) throw new MarketplaceProviderRuntimeError("Token missing.");
-  return {
-    accessToken,
-    refreshToken: readString(credentials.refreshToken),
-  };
-}
-
-function readObject(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function readDate(value: unknown, key: string): Date | null {
-  if (!value || typeof value !== "object") return null;
-  const raw = readString((value as Record<string, unknown>)[key]);
-  return raw ? new Date(raw) : null;
-}
-
 function readString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function safeErrorMetadata(error: unknown) {
+  if (!error || typeof error !== "object") return {};
+  const record = error as Record<string, unknown>;
+  return {
+    providerResult: {
+      ...(typeof record.code === "string"
+        ? { providerStatus: record.code }
+        : {}),
+      ...(typeof record.requestId === "string"
+        ? { providerRequestId: record.requestId }
+        : {}),
+    },
+  };
 }

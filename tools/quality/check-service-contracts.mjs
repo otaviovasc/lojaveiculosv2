@@ -25,6 +25,13 @@ function isServiceFile(file) {
     "auditVehicleServiceEvent.ts",
     "index.ts",
     "leadVisitSupport.ts",
+    "marketplaceAccountPreflight.ts",
+    "marketplaceAccountPreflightMessages.ts",
+    "marketplaceErrors.ts",
+    "marketplaceJobPermissions.ts",
+    "marketplaceStockPlanRules.ts",
+    "marketplaceStockPlanTypes.ts",
+    "runMarketplaceSyncJobAudit.ts",
     "sendWhatsappVehicleSupport.ts",
     "serviceSupport.ts",
     "testSupport.ts",
@@ -60,7 +67,8 @@ for (const file of walk(domainsRoot).filter(isServiceFile)) {
     !source.includes("auditZapiWebhook(") &&
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
-    !source.includes("auditVehicleServiceEvent(")
+    !source.includes("auditVehicleServiceEvent(") &&
+    !source.includes("recordRunAudit(")
   ) {
     failures.push(`${file}: service must emit an audit event`);
   }

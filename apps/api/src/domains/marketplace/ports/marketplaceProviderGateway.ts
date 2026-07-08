@@ -1,8 +1,13 @@
 import type {
+  MarketplaceAccountConnectionStatus,
+  MarketplaceAccountRequirement,
   MarketplaceListingProjection,
   MarketplaceProvider,
+  MarketplaceServiceErrorCode,
   MarketplaceSyncJobType,
 } from "./marketplaceRepository.js";
+
+export type { MarketplaceServiceErrorCode };
 
 export type MarketplaceTokenSet = {
   accessToken: string;
@@ -23,6 +28,16 @@ export type MarketplaceGatewayAuthConfig = {
   clientSecret?: string;
 };
 
+export type MarketplaceProviderAccountInput = {
+  token: MarketplaceTokenSet;
+};
+
+export type MarketplaceProviderAccountStatus = {
+  accountId: string | null;
+  requirements: MarketplaceAccountRequirement[];
+  status: MarketplaceAccountConnectionStatus;
+};
+
 export type MarketplacePublishInput = {
   externalId?: string | null;
   jobType: MarketplaceSyncJobType;
@@ -38,6 +53,9 @@ export type MarketplacePublishResult = {
 };
 
 export type MarketplaceProviderGateway = {
+  checkAccount: (
+    input: MarketplaceProviderAccountInput,
+  ) => Promise<MarketplaceProviderAccountStatus>;
   createAuthorizationUrl: (
     input: MarketplaceAuthorizationRequest,
   ) => Promise<string>;

@@ -27,22 +27,21 @@ Use a dedicated Clerk project for V2. Do not reuse V1 Clerk secrets or
 publishable keys across V1 and V2 environments; this keeps redirect URLs,
 JWT/audience settings, webhooks, invitations, and rollout testing isolated.
 
-| Name                            | Required | Environments               | Secret | Notes                                                                                                       |
-| ------------------------------- | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
-| `CLERK_SECRET_KEY`              | Yes      | staging, production        | Yes    | Clerk backend secret for the V2 Clerk project. Rotate immediately if exposed.                               |
-| `CLERK_JWT_KEY`                 | No       | staging, production        | Yes    | Optional Clerk JWT public key for networkless verification; `CLERK_SECRET_KEY` is enough for baseline auth. |
-| `CLERK_AUDIENCE`                | No       | staging, production        | No     | Optional advanced check; set only after frontend tokens intentionally include the same `aud` claim.         |
-| `CLERK_AUTHORIZED_PARTIES`      | Yes      | staging, production        | No     | Comma-separated allowed frontend origins, for example `https://app.example.com`.                            |
-| `VITE_CLERK_PUBLISHABLE_KEY`    | Yes      | staging, production        | No     | Frontend publishable key for the V2 Clerk project.                                                          |
-| `CLERK_WEBHOOK_SECRET`          | No       | staging, production        | Yes    | Reserved until a Clerk webhook route is mounted; use the endpoint signing secret from Clerk.                |
-| `CLERK_SIGN_IN_URL`             | Yes      | staging, production        | No     | Frontend sign-in URL.                                                                                       |
-| `CLERK_SIGN_UP_URL`             | Yes      | staging, production        | No     | Frontend sign-up URL.                                                                                       |
-| `CLERK_AFTER_SIGN_IN_URL`       | Yes      | staging, production        | No     | Post sign-in redirect. Use `/auth/session`.                                                                 |
-| `CLERK_AFTER_SIGN_UP_URL`       | Yes      | staging, production        | No     | Post sign-up redirect. Use `/auth/session`.                                                                 |
-| `CLERK_INVITATION_REDIRECT_URL` | No       | local, staging, production | No     | Absolute URL Clerk should send accepted invitations back to. Defaults to `PUBLIC_APP_URL/auth/session`.     |
-| `VITE_API_BASE_URL`             | Yes      | staging, production        | No     | Public API base URL used by the web app runtime.                                                            |
-
-Professional Clerk baseline for this codebase:
+| Name                                           | Required | Environments               | Secret | Notes                                                                                                       |
+| ---------------------------------------------- | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------- |
+| `CLERK_SECRET_KEY`                             | Yes      | staging, production        | Yes    | Clerk backend secret for the V2 Clerk project. Rotate immediately if exposed.                               |
+| `CLERK_JWT_KEY`                                | No       | staging, production        | Yes    | Optional Clerk JWT public key for networkless verification; `CLERK_SECRET_KEY` is enough for baseline auth. |
+| `CLERK_AUDIENCE`                               | No       | staging, production        | No     | Optional advanced check; set only after frontend tokens intentionally include the same `aud` claim.         |
+| `CLERK_AUTHORIZED_PARTIES`                     | Yes      | staging, production        | No     | Comma-separated allowed frontend origins, for example `https://app.example.com`.                            |
+| `VITE_CLERK_PUBLISHABLE_KEY`                   | Yes      | staging, production        | No     | Frontend publishable key for the V2 Clerk project.                                                          |
+| `CLERK_WEBHOOK_SECRET`                         | No       | staging, production        | Yes    | Reserved until a Clerk webhook route is mounted; use the endpoint signing secret from Clerk.                |
+| `CLERK_SIGN_IN_URL`                            | Yes      | staging, production        | No     | Frontend sign-in URL.                                                                                       |
+| `CLERK_SIGN_UP_URL`                            | Yes      | staging, production        | No     | Frontend sign-up URL.                                                                                       |
+| `CLERK_AFTER_SIGN_IN_URL`                      | Yes      | staging, production        | No     | Post sign-in redirect. Use `/auth/session`.                                                                 |
+| `CLERK_AFTER_SIGN_UP_URL`                      | Yes      | staging, production        | No     | Post sign-up redirect. Use `/auth/session`.                                                                 |
+| `CLERK_INVITATION_REDIRECT_URL`                | No       | local, staging, production | No     | Absolute URL Clerk should send accepted invitations back to. Defaults to `PUBLIC_APP_URL/auth/session`.     |
+| `VITE_API_BASE_URL`                            | Yes      | staging, production        | No     | Public API base URL used by the web app runtime.                                                            |
+| Professional Clerk baseline for this codebase: |
 
 - Keep `CLERK_AUDIENCE` empty until the frontend explicitly calls Clerk
   `getToken()` with a JWT template or token configuration that emits a matching
@@ -73,16 +72,15 @@ variables service-scoped: only `VITE_*` public build-time values belong on the
 web service, while Clerk secrets and database credentials belong on the API
 service.
 
-| Name                     | Required | Environments | Secret | Notes                                                                                 |
-| ------------------------ | -------- | ------------ | ------ | ------------------------------------------------------------------------------------- |
-| `LOCAL_AUTH_BYPASS`      | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                    |
-| `DEV_CLERK_USER_ID`      | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.            |
-| `DEV_STORE_SLUG`         | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.          |
-| `VITE_LOCAL_AUTH_BYPASS` | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production. |
-| `VITE_DEV_CLERK_USER_ID` | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                |
-| `VITE_DEV_STORE_SLUG`    | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.              |
-
-Use one auth mode at a time:
+| Name                         | Required | Environments | Secret | Notes                                                                                 |
+| ---------------------------- | -------- | ------------ | ------ | ------------------------------------------------------------------------------------- |
+| `LOCAL_AUTH_BYPASS`          | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                    |
+| `DEV_CLERK_USER_ID`          | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.            |
+| `DEV_STORE_SLUG`             | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.          |
+| `VITE_LOCAL_AUTH_BYPASS`     | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production. |
+| `VITE_DEV_CLERK_USER_ID`     | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                |
+| `VITE_DEV_STORE_SLUG`        | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.              |
+| Use one auth mode at a time: |
 
 - Real Clerk QA: configure `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,
   `CLERK_AUTHORIZED_PARTIES`, `PUBLIC_APP_URL`, and Clerk redirect URLs; leave
@@ -190,6 +188,19 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `API_OPENAI_INVENTORY_RESALE_MODEL`     | No       | staging, production | No     | Optional override for inventory resale analysis.                           |
 | `API_OPENAI_MODEL`                      | No       | staging, production | No     | Legacy fallback after task-specific model vars.                            |
 | `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                                          |
+| `MERCADO_LIVRE_CLIENT_ID`               | Yes      | staging, production | Yes    | Enables Mercado Livre OAuth and stock sync.                                |
+| `MERCADO_LIVRE_CLIENT_SECRET`           | No       | staging, production | Yes    | OAuth client secret when required by the provider app.                     |
+| `MERCADO_LIVRE_AUTHORIZATION_URL`       | No       | staging, production | No     | Defaults to `https://auth.mercadolivre.com.br/authorization`.              |
+| `MERCADO_LIVRE_API_BASE_URL`            | No       | staging, production | No     | Defaults to `https://api.mercadolibre.com`.                                |
+| `MERCADO_LIVRE_TOKEN_URL`               | No       | staging, production | No     | Defaults to `https://api.mercadolibre.com/oauth/token`.                    |
+| `MERCADO_LIVRE_ACCOUNT_PATH`            | No       | staging, production | No     | Defaults to `/users/me`.                                                   |
+| `OLX_CLIENT_ID`                         | Yes      | staging, production | Yes    | Required with the other OLX vars to enable OLX stock sync.                 |
+| `OLX_CLIENT_SECRET`                     | No       | staging, production | Yes    | OAuth client secret when required by the OLX partner app.                  |
+| `OLX_AUTHORIZATION_URL`                 | Yes      | staging, production | No     | OLX partner authorization URL. Missing config fails closed.                |
+| `OLX_API_BASE_URL`                      | Yes      | staging, production | No     | OLX partner API base URL. Missing config fails closed.                     |
+| `OLX_TOKEN_URL`                         | Yes      | staging, production | No     | OLX partner token URL. Missing config fails closed.                        |
+| `OLX_LISTINGS_PATH`                     | Yes      | staging, production | No     | OLX partner listings path. Missing config fails closed.                    |
+| `OLX_REQUIREMENT_CONFIG`                | Yes      | staging, production | No     | JSON account-check and requirement contract. Missing config fails closed.  |
 | `OTEL_EXPORTER_OTLP_ENDPOINT`           | No       | staging, production | Yes    | OpenTelemetry collector endpoint.                                          |
 
 ## Vehicle Catalog Sync
@@ -235,6 +246,3 @@ AUDIT_DATABASE_URL=${{ AuditPostgres.DATABASE_URL }}
 API_BASE_URL=https://${{ lojaveiculosv2-api.RAILWAY_PUBLIC_DOMAIN }}
 PUBLIC_APP_URL=https://${{ lojaveiculosv2-web.RAILWAY_PUBLIC_DOMAIN }}
 ```
-
-Keep production and staging values separate. Do not copy sealed production
-secrets into staging.

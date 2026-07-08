@@ -21,7 +21,11 @@ import {
   createMarketplaceCredentialCodec,
   type MarketplaceCredentialCodec,
 } from "../../marketplace/marketplaceCredentialCodec.js";
-import { findListingProjection } from "./drizzleMarketplaceReads.js";
+import {
+  findListingProjection,
+  listListingProjections,
+} from "./drizzleMarketplaceReads.js";
+import { findCatalogMapping } from "./drizzleMarketplaceCatalogMappings.js";
 import {
   findSyncJob,
   markJobCompleted,
@@ -29,6 +33,7 @@ import {
   markJobRunning,
 } from "./drizzleMarketplaceJobs.js";
 import { toAccount, toJob, toRecord } from "./drizzleMarketplaceMappers.js";
+import { buildProviderStates } from "./drizzleMarketplaceOverview.js";
 
 export type DrizzleMarketplaceClient = PostgresJsDatabase<typeof schema>;
 
@@ -43,9 +48,11 @@ export function createDrizzleMarketplaceRepository(
   return {
     createSyncJob: (input) => createSyncJob(db, input),
     findAccount: (input) => findAccount(db, input, codec),
+    findCatalogMapping: (input) => findCatalogMapping(db, input),
     findListingProjection: (input) => findListingProjection(db, input),
     findProviderListing: (input) => findProviderListing(db, input),
     findSyncJob: (input) => findSyncJob(db, input),
+    listListingProjections: (input) => listListingProjections(db, input),
     listOverview: (input) => listOverview(db, input),
     markJobCompleted: (input) => markJobCompleted(db, input),
     markJobFailed: (input) => markJobFailed(db, input),
@@ -138,12 +145,15 @@ async function listOverview(
     toAccount(row, codec.redactAccountConfig),
   );
 
+  const jobs = jobRows.map((row) => {
+    const account = accounts.find((item) => item.id === row.accountId);
+    return toJob(row, account?.provider ?? "olx");
+  });
+
   return {
     accounts,
-    jobs: jobRows.map((row) => {
-      const account = accounts.find((item) => item.id === row.accountId);
-      return toJob(row, account?.provider ?? "olx");
-    }),
+    jobs,
+    providerStates: buildProviderStates({ accounts, jobs, providers }),
     providers,
     storeId: input.storeId as never,
     tenantId: input.tenantId as never,

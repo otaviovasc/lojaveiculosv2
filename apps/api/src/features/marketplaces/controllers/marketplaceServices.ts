@@ -11,6 +11,21 @@ import type { CreateMarketplaceSyncJobServiceInput } from "../../../domains/mark
 import { listMarketplaceOverview } from "../../../domains/marketplace/services/MarketplaceService/listMarketplaceOverview.js";
 import { runMarketplaceSyncJob } from "../../../domains/marketplace/services/MarketplaceService/runMarketplaceSyncJob.js";
 import type { RunMarketplaceSyncJobInput } from "../../../domains/marketplace/services/MarketplaceService/runMarketplaceSyncJob.js";
+import {
+  previewMarketplaceStockSync,
+  runMarketplaceStockSync,
+} from "../../../domains/marketplace/services/MarketplaceService/runMarketplaceStockSync.js";
+import type {
+  MarketplaceStockSyncPreviewInput,
+  MarketplaceStockSyncPreviewResult,
+  MarketplaceStockSyncRunInput,
+  MarketplaceStockSyncRunResult,
+} from "../../../domains/marketplace/services/MarketplaceService/runMarketplaceStockSync.js";
+import { retryMarketplaceSyncJob } from "../../../domains/marketplace/services/MarketplaceService/retryMarketplaceSyncJob.js";
+import type {
+  RetryMarketplaceSyncJobInput,
+  RetryMarketplaceSyncJobResult,
+} from "../../../domains/marketplace/services/MarketplaceService/retryMarketplaceSyncJob.js";
 import { upsertMarketplaceAccount } from "../../../domains/marketplace/services/MarketplaceService/upsertMarketplaceAccount.js";
 import type { UpsertMarketplaceAccountServiceInput } from "../../../domains/marketplace/services/MarketplaceService/upsertMarketplaceAccount.js";
 import type {
@@ -39,6 +54,18 @@ export type MarketplaceServices = {
     input: CreateMarketplaceSyncJobServiceInput,
   ) => Promise<MarketplaceJob>;
   listOverview: (context: ServiceContext) => Promise<MarketplaceOverview>;
+  previewStockSync: (
+    context: ServiceContext,
+    input: MarketplaceStockSyncPreviewInput,
+  ) => Promise<MarketplaceStockSyncPreviewResult>;
+  retrySyncJob: (
+    context: ServiceContext,
+    input: RetryMarketplaceSyncJobInput,
+  ) => Promise<RetryMarketplaceSyncJobResult>;
+  runStockSync: (
+    context: ServiceContext,
+    input: MarketplaceStockSyncRunInput,
+  ) => Promise<MarketplaceStockSyncRunResult>;
   runSyncJob: (
     context: ServiceContext,
     input: RunMarketplaceSyncJobInput,
@@ -70,6 +97,12 @@ export function createMarketplaceServices(
     createSyncJob: (context, input) =>
       createMarketplaceSyncJob(context, input, ports),
     listOverview: (context) => listMarketplaceOverview(context, ports),
+    previewStockSync: (context, input) =>
+      previewMarketplaceStockSync(context, input, ports),
+    retrySyncJob: (context, input) =>
+      retryMarketplaceSyncJob(context, input, ports),
+    runStockSync: (context, input) =>
+      runMarketplaceStockSync(context, input, ports),
     runSyncJob: (context, input) =>
       runMarketplaceSyncJob(context, input, ports),
     upsertAccount: (context, input) =>

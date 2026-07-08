@@ -83,18 +83,114 @@ export async function findListingProjection(
   const mediaUrls = selectedUnitId
     ? (mediaByUnitId.get(selectedUnitId) ?? []).map((media) => media.url)
     : [];
+  const selectedMedia = selectedUnitId
+    ? (mediaByUnitId.get(selectedUnitId) ?? []).map((media) => ({
+        altText: media.altText,
+        url: media.url,
+      }))
+    : [];
+
+  const catalog = catalogSnapshot(listing.metadata);
 
   return {
+    catalog,
     description: listing.description,
+    doors: listing.doors,
+    fuelType: listing.fuelType,
     isVisibleOnPublicSite: listing.isVisibleOnPublicSite,
     listingId: listing.id,
     mediaUrls,
+    mileageKm: listing.mileageKm,
     modelYear: listing.modelYear,
     priceCents: listing.askingPriceCents,
+    publicSlug: listing.publicSlug,
+    selectedMedia,
+    selectedUnitId: selectedUnitId ?? null,
     status: listing.status,
+    stockLabel: selectedUnitId
+      ? (sortedUnits.find((unit) => unit.id === selectedUnitId)?.stockNumber ??
+        null)
+      : null,
     title: listing.title,
-    vehicleType: null,
+    trimName: listing.trimName,
+    vehicleType: catalog?.vehicleType ?? null,
   };
+}
+
+export async function listListingProjections(
+  db: DrizzleMarketplaceClient,
+  input: { listingIds?: readonly string[]; storeId: string; tenantId: string },
+): Promise<MarketplaceListingProjection[]> {
+  const rows = await db
+    .select({ id: vehicleListings.id })
+    .from(vehicleListings)
+    .where(
+      and(
+        eq(vehicleListings.storeId, input.storeId),
+        eq(vehicleListings.tenantId, input.tenantId),
+        eq(vehicleListings.isDeleted, false),
+        isNull(vehicleListings.deletedAt),
+        ...(input.listingIds?.length
+          ? [inArray(vehicleListings.id, [...input.listingIds])]
+          : []),
+      ),
+    )
+    .limit(500);
+  const projections = await Promise.all(
+    rows.map((row) =>
+      findListingProjection(db, {
+        listingId: row.id,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      }),
+    ),
+  );
+  return projections.filter((item): item is MarketplaceListingProjection =>
+    Boolean(item),
+  );
+}
+
+function catalogSnapshot(
+  metadata: unknown,
+): MarketplaceListingProjection["catalog"] {
+  const catalog = readObject(readObject(metadata).catalog);
+  if (!catalog) return null;
+  return {
+    brandCode: readString(catalog.brandCode),
+    brandName: readString(catalog.brandName),
+    fipeCode: readString(catalog.fipeCode),
+    fuel: readString(catalog.fuel),
+    modelCode: readString(catalog.modelCode),
+    modelName: readString(catalog.modelName),
+    modelYear: readNumber(catalog.modelYear),
+    referenceMonth: readString(catalog.referenceMonth),
+    source: readString(catalog.source) === "fipe" ? "fipe" : null,
+    vehicleType: readVehicleType(catalog.vehicleType),
+    yearCode: readString(catalog.yearCode),
+    yearName: readString(catalog.yearName),
+  };
+}
+
+function readObject(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readNumber(value: unknown): number | null {
+  return typeof value === "number" ? value : null;
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function readVehicleType(
+  value: unknown,
+): MarketplaceListingProjection["vehicleType"] {
+  return value === "cars" || value === "motorcycles" || value === "trucks"
+    ? value
+    : null;
 }
 
 const marketplaceEligibleUnitStatuses = [

@@ -8,6 +8,12 @@ import type {
   MarketplaceJob,
   MarketplaceOverview,
   MarketplaceProvider,
+  MarketplaceStockSyncPreviewRequest,
+  MarketplaceStockSyncPreviewResponse,
+  MarketplaceStockSyncRunRequest,
+  MarketplaceStockSyncRunResponse,
+  MarketplaceSyncJobRetryRequest,
+  MarketplaceSyncJobRetryResponse,
   UpsertMarketplaceAccountInput,
 } from "./types";
 
@@ -23,7 +29,19 @@ export type MarketplaceApi = {
     input: CreateMarketplaceSyncJobInput,
   ) => Promise<MarketplaceJob>;
   getOverview: () => Promise<MarketplaceOverview>;
+  previewStockSync: (
+    provider: MarketplaceProvider,
+    input: MarketplaceStockSyncPreviewRequest,
+  ) => Promise<MarketplaceStockSyncPreviewResponse>;
+  retrySyncJob: (
+    jobId: string,
+    input?: MarketplaceSyncJobRetryRequest,
+  ) => Promise<MarketplaceSyncJobRetryResponse>;
   runSyncJob: (jobId: string) => Promise<MarketplaceJob>;
+  runStockSync: (
+    provider: MarketplaceProvider,
+    input: MarketplaceStockSyncRunRequest,
+  ) => Promise<MarketplaceStockSyncRunResponse>;
   upsertAccount: (
     provider: MarketplaceProvider,
     input: UpsertMarketplaceAccountInput,
@@ -64,11 +82,29 @@ export function createMarketplaceApi({
       fetch(marketplaceRoutes.overview(baseUrl), {
         headers: createMarketplaceHeaders(auth),
       }).then(readJson<MarketplaceOverview>),
+    previewStockSync: (provider, input) =>
+      fetch(marketplaceRoutes.stockSyncPreview(provider, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createMarketplaceHeaders(auth),
+        method: "POST",
+      }).then(readJson<MarketplaceStockSyncPreviewResponse>),
+    retrySyncJob: (jobId, input = {}) =>
+      fetch(marketplaceRoutes.retryJob(jobId, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createMarketplaceHeaders(auth),
+        method: "POST",
+      }).then(readJson<MarketplaceSyncJobRetryResponse>),
     runSyncJob: (jobId) =>
       fetch(marketplaceRoutes.runJob(jobId, baseUrl), {
         headers: createMarketplaceHeaders(auth),
         method: "POST",
       }).then(readJson<MarketplaceJob>),
+    runStockSync: (provider, input) =>
+      fetch(marketplaceRoutes.stockSyncRun(provider, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createMarketplaceHeaders(auth),
+        method: "POST",
+      }).then(readJson<MarketplaceStockSyncRunResponse>),
     upsertAccount: (provider, input) =>
       fetch(marketplaceRoutes.integration(provider, baseUrl), {
         body: JSON.stringify(input),
@@ -92,6 +128,21 @@ export const marketplaceRoutes = {
     createMarketplaceEndpoint("/marketplaces/overview", baseUrl),
   runJob: (jobId: string, baseUrl?: string) =>
     createMarketplaceEndpoint(`/marketplaces/sync-jobs/${jobId}/run`, baseUrl),
+  retryJob: (jobId: string, baseUrl?: string) =>
+    createMarketplaceEndpoint(
+      `/marketplaces/sync-jobs/${jobId}/retry`,
+      baseUrl,
+    ),
+  stockSyncPreview: (provider: MarketplaceProvider, baseUrl?: string) =>
+    createMarketplaceEndpoint(
+      `/marketplaces/integrations/${provider}/stock-sync/preview`,
+      baseUrl,
+    ),
+  stockSyncRun: (provider: MarketplaceProvider, baseUrl?: string) =>
+    createMarketplaceEndpoint(
+      `/marketplaces/integrations/${provider}/stock-sync/run`,
+      baseUrl,
+    ),
   syncJobs: (provider: MarketplaceProvider, baseUrl?: string) =>
     createMarketplaceEndpoint(
       `/marketplaces/integrations/${provider}/sync-jobs`,

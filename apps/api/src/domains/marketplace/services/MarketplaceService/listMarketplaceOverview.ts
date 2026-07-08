@@ -4,6 +4,7 @@ import {
 } from "../../../../shared/serviceContext.js";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { MarketplaceOverview } from "../../ports/marketplaceRepository.js";
+import { checkMarketplaceAccountPreflight } from "./marketplaceAccountPreflight.js";
 import {
   requireMarketplaceScope,
   type MarketplaceServicePorts,
@@ -25,6 +26,26 @@ export async function listMarketplaceOverview(
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
   });
+  const providerStates = await Promise.all(
+    overview.providerStates.map(async (state) => {
+      const account =
+        overview.accounts.find((item) => item.provider === state.provider) ??
+        null;
+      const preflight = await checkMarketplaceAccountPreflight({
+        account,
+        ...(ports.gatewayRegistry
+          ? { gatewayRegistry: ports.gatewayRegistry }
+          : {}),
+        provider: state.provider,
+      });
+      return {
+        ...state,
+        connectionStatus: preflight.status,
+        requirements: preflight.requirements,
+      };
+    }),
+  );
+  const enrichedOverview = { ...overview, providerStates };
 
   await context.audit.record({
     action: "marketplace.overview.read",
@@ -33,8 +54,8 @@ export async function listMarketplaceOverview(
     entityId: scope.storeId,
     entityType: "marketplace",
     metadata: {
-      accountCount: overview.accounts.length,
-      jobCount: overview.jobs.length,
+      accountCount: enrichedOverview.accounts.length,
+      jobCount: enrichedOverview.jobs.length,
       permission: "marketplace.read",
     },
     outcome: "succeeded",
@@ -44,5 +65,5 @@ export async function listMarketplaceOverview(
     summary: "Read marketplace integration overview",
   });
 
-  return overview;
+  return enrichedOverview;
 }

@@ -134,6 +134,11 @@ function createPorts(listing: MarketplaceListingProjection | null) {
     ports: {
       gatewayRegistry: {
         getGateway: () => ({
+          checkAccount: async () => ({
+            accountId: "provider_user_1",
+            requirements: [],
+            status: "connected" as const,
+          }),
           createAuthorizationUrl: async () => "https://provider.test/oauth",
           exchangeAuthorizationCode: async () => ({
             accessToken: "token_1",
@@ -149,7 +154,13 @@ function createPorts(listing: MarketplaceListingProjection | null) {
             calls.inputs.push(input);
             return {
               externalId: input.externalId ?? "provider_listing_1",
-              metadata: { accepted: true },
+              metadata: {
+                providerResult: {
+                  externalId: input.externalId ?? "provider_listing_1",
+                  providerRequestId: null,
+                  providerStatus: "active",
+                },
+              },
               providerStatus: "active",
             };
           },
@@ -167,14 +178,41 @@ function projection(
   patch: Partial<MarketplaceListingProjection> = {},
 ): MarketplaceListingProjection {
   return {
+    catalog: {
+      brandCode: "21",
+      brandName: "BMW",
+      fipeCode: "001267-0",
+      fuel: "Gasolina",
+      modelCode: "4828",
+      modelName: "M3 Competition M",
+      modelYear: 2024,
+      referenceMonth: "julho de 2026",
+      source: "fipe",
+      vehicleType: "cars",
+      yearCode: "2024-1",
+      yearName: "2024 Gasolina",
+    },
     description: "Anuncio de teste para integracao.",
+    doors: 4,
+    fuelType: "gasoline",
     isVisibleOnPublicSite: true,
     listingId: "listing_1",
     mediaUrls: ["https://cdn.local/vehicle-front.jpg"],
+    mileageKm: 12000,
     modelYear: 2024,
     priceCents: 10000000,
+    publicSlug: "veiculo-de-teste",
+    selectedMedia: [
+      {
+        altText: "Frente do veiculo",
+        url: "https://cdn.local/vehicle-front.jpg",
+      },
+    ],
+    selectedUnitId: "unit_memory_1",
     status: "published",
+    stockLabel: "LV-001",
     title: "Veiculo de teste",
+    trimName: "Competition M",
     vehicleType: "cars",
     ...patch,
   };
