@@ -5,7 +5,7 @@ import {
   FeatureRowActions,
   FeatureTableFrame,
 } from "../../components/ui/FeatureTable";
-import { MercosulPlateBadge } from "../inventory/components/InventoryListingCardGrid";
+import { MercosulPlateBadge } from "../inventory/components/InventoryListingBadges";
 import { DocumentOriginBadge } from "./DocumentBadges";
 import { documentVehicleInfo } from "./documentDisplayModel";
 import {

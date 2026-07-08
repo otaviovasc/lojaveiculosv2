@@ -78,9 +78,7 @@ export default function ImageTemplateModal({
     if (isOpen) setActiveSection("ai-studio");
   }, [isOpen, setActiveSection]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!isOpen || !containerRef.current) return;
@@ -227,7 +225,7 @@ export default function ImageTemplateModal({
           media={media}
           onClose={onClose}
           presetName={presetName}
-          primaryUnitId={primaryUnitId}
+          primaryUnitId={primaryUnitId ?? null}
           presets={presets}
           savePreset={savePreset}
           setActiveSection={setActiveSection}
