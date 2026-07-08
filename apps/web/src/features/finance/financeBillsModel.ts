@@ -1,4 +1,10 @@
 import type { CreateFinanceEntryFlowInput, FinanceApi } from "./apiClient";
+import {
+  entrySourceKey,
+  matchesFinanceDateFilter,
+  type FinanceDatePreset,
+  type FinanceSourceFilter,
+} from "./financeCashFlowModel";
 import { formatFinanceCategory } from "./financeBillsFormat";
 import type {
   CreateFinanceRecurringEntryInput,
@@ -15,9 +21,14 @@ export type FinanceListState =
   { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
 
 export type FinanceFilters = {
+  dateFrom: string;
+  datePreset: FinanceDatePreset;
+  dateTo: string;
   query: string;
+  sellerUserId: "all" | string;
+  source: FinanceSourceFilter;
   status: "all" | FinanceEntryStatus;
-  window: "all" | "overdue" | "next30";
+  window?: FinanceDatePreset;
 };
 
 export type FinanceEntryDraft = {
@@ -39,7 +50,12 @@ export type FinanceEntryDraft = {
 };
 
 export const initialFinanceFilters: FinanceFilters = {
+  dateFrom: "",
+  datePreset: "next30",
+  dateTo: "",
   query: "",
+  sellerUserId: "all",
+  source: "all",
   status: "all",
   window: "next30",
 };
@@ -151,15 +167,35 @@ export async function loadFinanceWorkspace(
   api: FinanceApi,
   activeType: FinanceEntryType,
 ) {
-  const [entries, summary, recurringEntries, commissionRules] =
-    await Promise.all([
-      api.listAllEntries(activeType),
-      api.getSummary(),
-      api.listRecurringEntries(),
-      api.listCommissionRules(),
-    ]);
+  const [
+    expenseEntries,
+    revenueEntries,
+    commissionEntries,
+    summary,
+    recurringEntries,
+    commissionRules,
+  ] = await Promise.all([
+    api.listAllEntries("expense"),
+    api.listAllEntries("revenue"),
+    api.listAllEntries("commission"),
+    api.getSummary(),
+    api.listRecurringEntries(),
+    api.listCommissionRules(),
+  ]);
+  const entriesByType = {
+    commission: commissionEntries,
+    expense: expenseEntries,
+    revenue: revenueEntries,
+  } satisfies Record<FinanceEntryType, FinanceEntry[]>;
 
-  return { commissionRules, entries, recurringEntries, summary };
+  return {
+    allEntries: [...expenseEntries, ...revenueEntries, ...commissionEntries],
+    commissionRules,
+    entries: entriesByType[activeType],
+    entriesByType,
+    recurringEntries,
+    summary,
+  };
 }
 
 export function filterEntries(
@@ -167,27 +203,29 @@ export function filterEntries(
   filters: FinanceFilters,
 ) {
   const query = filters.query.trim().toLowerCase();
-  const now = startOfDay(new Date());
-  const inThirtyDays = new Date(now);
-  inThirtyDays.setDate(inThirtyDays.getDate() + 30);
 
   return entries.filter((entry) => {
     if (filters.status !== "all" && entry.status !== filters.status)
       return false;
+    if (
+      filters.sellerUserId !== "all" &&
+      entry.sellerUserId !== filters.sellerUserId
+    ) {
+      return false;
+    }
+    if (filters.source !== "all" && entrySourceKey(entry) !== filters.source) {
+      return false;
+    }
     const searchableText =
-      `${entry.name} ${entry.category} ${formatFinanceCategory(entry.category)}`.toLowerCase();
+      `${entry.name} ${entry.category} ${formatFinanceCategory(entry.category)} ${entrySourceKey(entry)} ${metadataText(entry.metadata)}`.toLowerCase();
     if (query && !searchableText.includes(query)) {
       return false;
     }
-    if (filters.window === "all") return true;
-    if (!entry.dueAt) return false;
-
-    const dueAt = startOfDay(new Date(entry.dueAt));
-    if (filters.window === "overdue") {
-      return entry.status === "pending" && dueAt < now;
-    }
-
-    return dueAt >= now && dueAt <= inThirtyDays;
+    return matchesFinanceDateFilter(entry, {
+      dateFrom: filters.dateFrom,
+      datePreset: filters.datePreset ?? filters.window ?? "next30",
+      dateTo: filters.dateTo,
+    });
   });
 }
 
@@ -229,6 +267,13 @@ function startOfDay(value: Date) {
   const date = new Date(value);
   date.setHours(0, 0, 0, 0);
   return date;
+}
+
+function metadataText(metadata: FinanceEntry["metadata"]) {
+  if (!metadata) return "";
+  return Object.values(metadata)
+    .filter((value) => typeof value === "string")
+    .join(" ");
 }
 
 function toCents(value: string) {

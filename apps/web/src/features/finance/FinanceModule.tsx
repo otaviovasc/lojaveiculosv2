@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
 import {
@@ -10,13 +11,15 @@ import {
 } from "./financeBillsActions";
 import { FinanceBillsFilters } from "./FinanceBillsFilters";
 import { FinanceBillsHeader } from "./FinanceBillsHeader";
-import { FinanceBillsSummary } from "./FinanceBillsSummary";
+import { FinanceCashFlowInsights } from "./FinanceCashFlowInsights";
+import { FinanceCashFlowOverview } from "./FinanceCashFlowOverview";
 import { CommissionRulesPanel } from "./FinanceCorePanels";
 import { CommissionWorkspace } from "./CommissionWorkspace";
 import { FinanceEntryModal } from "./FinanceEntryModal";
 import { FinanceEntryTable } from "./FinanceEntryTable";
 import { FinanceRecurringBillsPanel } from "./FinanceRecurringBillsPanel";
 import { FinanceTypeTabs } from "./FinanceTypeTabs";
+import { FinanceUrgencyPanel } from "./FinanceUrgencyPanel";
 import { createFinanceApiOptions } from "./runtimeApi";
 import {
   filterEntries,
@@ -49,7 +52,13 @@ export function FinanceModule({
 
   const [activeType, setActiveType] =
     useState<FinanceEntryType>(defaultActiveType);
-  const [entries, setEntries] = useState<FinanceEntry[]>([]);
+  const [entriesByType, setEntriesByType] = useState<
+    Record<FinanceEntryType, FinanceEntry[]>
+  >({
+    commission: [],
+    expense: [],
+    revenue: [],
+  });
   const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
   const [recurringEntries, setRecurringEntries] = useState<
     FinanceRecurringEntry[]
@@ -62,11 +71,25 @@ export function FinanceModule({
   });
   const [refreshToken, setRefreshToken] = useState(0);
   const [modalEntry, setModalEntry] = useState<FinanceEntry | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
+  const activeEntries = entriesByType[activeType];
+  const allEntries = useMemo(
+    () => [
+      ...entriesByType.expense,
+      ...entriesByType.revenue,
+      ...entriesByType.commission,
+    ],
+    [entriesByType],
+  );
   const filteredEntries = useMemo(
-    () => filterEntries(entries, filters),
-    [entries, filters],
+    () => filterEntries(activeEntries, filters),
+    [activeEntries, filters],
+  );
+  const filteredCashEntries = useMemo(
+    () => filterEntries(allEntries, filters),
+    [allEntries, filters],
   );
 
   useEffect(() => {
@@ -85,12 +108,12 @@ export function FinanceModule({
     void loadFinanceWorkspace(runtimeApi, activeType)
       .then((payload) => {
         setCommissionRules(payload.commissionRules);
-        setEntries(payload.entries);
+        setEntriesByType(payload.entriesByType);
         setRecurringEntries(payload.recurringEntries);
         setListState({ kind: "ready" });
       })
       .catch((error) => {
-        setEntries([]);
+        setEntriesByType({ commission: [], expense: [], revenue: [] });
         setListState({
           kind: "error",
           message: formatApiErrorDisplay(
@@ -102,6 +125,8 @@ export function FinanceModule({
   }, [activeType, refreshToken, runtimeApi]);
 
   const refresh = () => setRefreshToken((current) => current + 1);
+  const scrollToTable = () =>
+    tableRef.current?.scrollIntoView({ behavior: "smooth" });
 
   const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi) return;
@@ -159,21 +184,47 @@ export function FinanceModule({
           setToast(null);
         }}
       />
-      <FinanceBillsSummary
-        entries={filteredEntries}
-        onViewAll={() =>
-          tableRef.current?.scrollIntoView({ behavior: "smooth" })
-        }
+      <FinanceBillsFilters
+        entries={allEntries}
+        filters={filters}
+        onChange={setFilters}
       />
-      <FinanceBillsFilters filters={filters} onChange={setFilters} />
+      <FinanceCashFlowOverview
+        entries={filteredCashEntries}
+        onShowOverdue={() => {
+          setFilters((current) => ({
+            ...current,
+            datePreset: "overdue",
+            status: "all",
+            window: "overdue",
+          }));
+          scrollToTable();
+        }}
+        onShowPending={() => {
+          setFilters((current) => ({
+            ...current,
+            datePreset: "all",
+            status: "pending",
+            window: "all",
+          }));
+          scrollToTable();
+        }}
+      />
+      <FinanceUrgencyPanel
+        entries={filteredCashEntries}
+        onEdit={(entry) => {
+          setActiveType(entry.type);
+          setModalEntry(entry);
+          setIsModalOpen(true);
+        }}
+        onViewAll={scrollToTable}
+      />
       {toast ? <FinanceToastMessage toast={toast} /> : null}
       <div ref={tableRef}>
         <FinanceEntryTable
           entries={filteredEntries}
           isLoading={listState.kind === "loading"}
-          onCancel={(entry) =>
-            void cancelEntry(runtimeApi, entry, refresh, setToast)
-          }
+          onCancel={setCancelTarget}
           onCreate={() => setIsModalOpen(true)}
           onEdit={(entry) => {
             setModalEntry(entry);
@@ -188,6 +239,11 @@ export function FinanceModule({
         />
       </div>
       <FinanceRecurringBillsPanel items={recurringEntries} />
+      <FinanceCashFlowInsights
+        commissionRules={commissionRules}
+        entries={filteredCashEntries}
+        recurringEntries={recurringEntries}
+      />
       {activeType === "commission" ? (
         <CommissionRulesPanel
           items={commissionRules}
@@ -210,6 +266,23 @@ export function FinanceModule({
           setModalEntry(null);
         }}
         onSubmit={submitDraft}
+      />
+      <ConfirmDialog
+        confirmLabel="Cancelar lançamento"
+        isOpen={Boolean(cancelTarget)}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={async () => {
+          if (!cancelTarget) return;
+          await cancelEntry(runtimeApi, cancelTarget, refresh, setToast);
+          setCancelTarget(null);
+        }}
+        title="Cancelar lançamento?"
+        variant="destructive"
+        {...(cancelTarget
+          ? {
+              description: `O lançamento "${cancelTarget.name}" ficará cancelado e preservado para auditoria.`,
+            }
+          : {})}
       />
     </FeaturePageShell>
   );

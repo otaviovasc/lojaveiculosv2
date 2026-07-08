@@ -1,5 +1,6 @@
 import { Paperclip, Repeat2 } from "lucide-react";
 import type { ChangeEvent } from "react";
+import { FinanceDateField } from "./FinanceDateField";
 import {
   createEntryDraft,
   expenseCategories,
@@ -154,21 +155,17 @@ export function DetailsStep({
           value={draft.status}
         />
       </FinanceField>
-      <FinanceField label="Vencimento">
-        <FinanceInput
-          onChange={setField("dueAt")}
-          type="date"
-          value={draft.dueAt}
-        />
-      </FinanceField>
-      <FinanceField label="Pagamento">
-        <FinanceInput
-          disabled={draft.status !== "paid"}
-          onChange={setField("paidAt")}
-          type="date"
-          value={draft.paidAt}
-        />
-      </FinanceField>
+      <FinanceDateField
+        label="Vencimento"
+        onChange={setField("dueAt")}
+        value={draft.dueAt}
+      />
+      <FinanceDateField
+        disabled={draft.status !== "paid"}
+        label="Pagamento"
+        onChange={setField("paidAt")}
+        value={draft.paidAt}
+      />
       <FinanceField label="Vendedor" hint="Opcional para comissões.">
         <FinanceInput
           onChange={setField("sellerUserId")}

@@ -37,7 +37,7 @@ export function FinanceBillsHeader({
             />
           </>
         }
-        description="Fluxo de caixa da loja com vencimentos, status de pagamento, recorrências e comprovantes vinculados aos lançamentos."
+        description="Controle de gastos e entradas com saldo planejado, saldo real, vencimentos, recorrências, comissões e comprovantes auditados."
         eyebrow={
           <>
             Financeiro
@@ -45,12 +45,12 @@ export function FinanceBillsHeader({
             Contas e recibos
           </>
         }
-        title="Gastos e contas"
+        title="Fluxo de caixa"
       />
       <FeatureAlert className="feature-alert">
         <ReceiptText aria-hidden="true" className="size-4" />
-        Recibos usam upload assinado e vínculo auditado ao lançamento
-        financeiro.
+        Anexos, recibos e custos de veículo permanecem vinculados ao lançamento
+        financeiro e à trilha de auditoria.
       </FeatureAlert>
     </>
   );

@@ -116,7 +116,17 @@ export function DocumentBuilderWorkspace({
           <p>{selected.description}</p>
         </div>
         <div className="documents-builder-save-status">
-          <span>{saveStatusLabel(saveState, isSaving, selected.mode)}</span>
+          <div className="documents-builder-status-wrapper">
+            <span
+              className={`documents-builder-status-dot documents-builder-status-dot--${saveState} ${
+                isSaving ? "documents-builder-status-dot--saving" : ""
+              }`}
+              aria-hidden="true"
+            />
+            <span className="documents-builder-status-text">
+              {saveStatusLabel(saveState, isSaving, selected.mode)}
+            </span>
+          </div>
           <button
             disabled={!canSave || !isDirty || isSaving}
             onClick={() => {

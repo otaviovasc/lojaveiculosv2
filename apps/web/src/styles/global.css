@@ -72,12 +72,16 @@
 @import "./documents-command-navigation.css";
 @import "./documents-command-table.css";
 @import "./documents-operations.css";
+@import "./documents-operations-versions.css";
 @import "./documents-upload.css";
 @import "./documents-upload-queue.css";
 @import "./documents-templates.css";
 @import "./documents-builder.css";
+@import "./documents-builder-sidebar.css";
+@import "./documents-builder-editor.css";
 @import "./documents-builder-blocks.css";
 @import "./documents-template-paper.css";
+@import "./documents-template-paper-elements.css";
 @import "./internal.css";
 @import "./internalLists.css";
 @import "./internalDashboard.css";

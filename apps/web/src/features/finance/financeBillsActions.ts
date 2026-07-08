@@ -81,7 +81,7 @@ export async function cancelEntry(
   refresh: () => void,
   setToast: (toast: FinanceToast) => void,
 ) {
-  if (!api || !window.confirm(`Cancelar ${entry.name}?`)) return;
+  if (!api) return;
   await api.cancelEntry(entry.id, "Cancelado pela tela de gastos.");
   setToast({
     kind: "success",

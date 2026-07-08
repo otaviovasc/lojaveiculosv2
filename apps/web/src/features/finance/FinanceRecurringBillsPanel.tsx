@@ -20,8 +20,8 @@ export function FinanceRecurringBillsPanel({
   return (
     <FinancePanel icon={<Repeat2 className="size-5" />} title="Recorrências">
       <div className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-        Recorrências podem ser criadas e listadas com auditoria. Edição, pausa e
-        exclusão de regras seguem como pendências da fase atual.
+        Regras recorrentes criadas no fluxo de caixa aparecem aqui com próximo
+        vencimento, frequência, status e valor.
       </div>
       <div className="mt-3 grid gap-3 lg:grid-cols-2">
         {items.length ? (

@@ -24,6 +24,7 @@ export type FinanceEntry = {
   createdAt?: string;
   dueAt: string | null;
   id: string;
+  links?: readonly FinanceEntryLink[];
   metadata?: Record<string, unknown>;
   name: string;
   paidAt: string | null;

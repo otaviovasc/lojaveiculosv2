@@ -1,24 +1,21 @@
+import { FilePenLine, FileText, PlusCircle } from "lucide-react";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
+import { FeatureTableFrame } from "../../components/ui/FeatureTable";
 import {
-  CheckCircle2,
-  FilePenLine,
-  FileText,
-  Pencil,
-  PlusCircle,
-  ReceiptText,
-  XCircle,
-} from "lucide-react";
+  FeatureEmptyState,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
+import { entrySourceKey, sourceLabel } from "./financeCashFlowModel";
+import { FinanceBadge, FinancePanel } from "./FinanceFormParts";
+import { formatDate } from "./financeBillsFormat";
 import {
-  FinanceBadge,
-  FinancePanel,
-  financeStatusLabels,
-} from "./FinanceFormParts";
+  EntryActions,
+  EntryTitle,
+  MobileAction,
+  StatusButton,
+  amountLabel,
+} from "./FinanceEntryTableParts";
 import type { FinanceEntry } from "./types";
-import {
-  formatCurrency,
-  formatDate,
-  formatFinanceCategory,
-} from "./financeBillsFormat";
-import type { ReactNode } from "react";
 
 export function FinanceEntryTable({
   entries,
@@ -39,140 +36,133 @@ export function FinanceEntryTable({
 }) {
   return (
     <FinancePanel
+      actions={
+        <FeatureActionButton
+          icon={PlusCircle}
+          label="Novo"
+          onClick={onCreate}
+          variant="primary"
+        />
+      }
       icon={<FileText className="size-5" />}
       title="Registro de atividades"
     >
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-widest text-muted">
-            {entries.length} lançamentos encontrados
+      <p className="mb-4 text-xs font-black uppercase tracking-wider text-muted">
+        {entries.length} lançamento(s) encontrados
+      </p>
+      {isLoading ? (
+        <FeatureLoadingState icon={FileText} title="Carregando lançamentos">
+          <p className="text-sm font-bold text-muted">
+            Buscando contas, recibos e status do caixa.
           </p>
-        </div>
-        <button
-          className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-3 text-sm font-black text-inverse"
-          onClick={onCreate}
-          type="button"
-        >
-          <PlusCircle aria-hidden="true" className="size-4" />
-          Novo
-        </button>
-      </div>
-
-      <div className="grid gap-3 md:hidden" aria-label="Lançamentos móveis">
-        {entries.map((entry) => (
-          <FinanceEntryCard
-            entry={entry}
-            key={entry.id}
+        </FeatureLoadingState>
+      ) : entries.length === 0 ? (
+        <FeatureEmptyState
+          action={
+            <FeatureActionButton
+              icon={PlusCircle}
+              label="Criar lançamento"
+              onClick={onCreate}
+              variant="primary"
+            />
+          }
+          body="Crie o primeiro gasto, receita ou recorrência para acompanhar o caixa da loja."
+          icon={FilePenLine}
+          title="Nenhum lançamento encontrado"
+        />
+      ) : (
+        <>
+          <DesktopTable
+            entries={entries}
             onCancel={onCancel}
             onEdit={onEdit}
             onMarkPending={onMarkPending}
             onPay={onPay}
           />
-        ))}
-      </div>
-
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[840px] text-left text-sm">
-          <thead className="border-b border-line text-xs font-black uppercase tracking-widest text-muted">
-            <tr>
-              <th className="py-3 pr-4">Lançamento</th>
-              <th className="py-3 pr-4">Categoria</th>
-              <th className="py-3 pr-4">Vencimento</th>
-              <th className="py-3 pr-4">Status</th>
-              <th className="py-3 text-right">Valor</th>
-              <th className="py-3 pl-4 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line">
+          <div className="grid gap-3 md:hidden" aria-label="Lançamentos móveis">
             {entries.map((entry) => (
-              <tr className="align-top" key={entry.id}>
-                <td className="py-3 pr-4">
-                  <strong className="block text-app-text">{entry.name}</strong>
-                  <span className="text-xs font-bold text-muted">
-                    {entry.sellerUserId
-                      ? "Vinculado a vendedor"
-                      : "Lançamento geral"}
-                  </span>
-                  <ReceiptMarker metadata={entry.metadata} />
-                </td>
-                <td className="py-3 pr-4">
-                  <FinanceBadge>
-                    {formatFinanceCategory(entry.category)}
-                  </FinanceBadge>
-                </td>
-                <td className="py-3 pr-4 font-bold text-muted">
-                  {formatDate(entry.dueAt)}
-                </td>
-                <td className="py-3 pr-4">
-                  <button
-                    className="rounded-full bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong disabled:opacity-60"
-                    disabled={entry.status === "cancelled"}
-                    onClick={() =>
-                      entry.status === "paid"
-                        ? onMarkPending(entry)
-                        : onPay(entry)
-                    }
-                    type="button"
-                  >
-                    {financeStatusLabels[entry.status]}
-                  </button>
-                </td>
-                <td className="py-3 text-right font-black text-app-text">
-                  {formatCurrency(entry.amountCents)}
-                </td>
-                <td className="py-3 pl-4">
-                  <div className="flex justify-end gap-2">
-                    <IconAction
-                      icon={
-                        <ReceiptText aria-hidden="true" className="size-4" />
-                      }
-                      label="Anexar recibo"
-                      onClick={() => onEdit(entry)}
-                    />
-                    <IconAction
-                      icon={<Pencil aria-hidden="true" className="size-4" />}
-                      label="Editar lançamento"
-                      onClick={() => onEdit(entry)}
-                    />
-                    <IconAction
-                      disabled={entry.status === "paid"}
-                      icon={
-                        <CheckCircle2 aria-hidden="true" className="size-4" />
-                      }
-                      label="Marcar como pago"
-                      onClick={() => onPay(entry)}
-                    />
-                    <IconAction
-                      disabled={entry.status === "cancelled"}
-                      icon={<XCircle aria-hidden="true" className="size-4" />}
-                      label="Cancelar lançamento"
-                      onClick={() => onCancel(entry)}
-                    />
-                  </div>
-                </td>
-              </tr>
+              <FinanceEntryCard
+                entry={entry}
+                key={entry.id}
+                onCancel={onCancel}
+                onEdit={onEdit}
+                onMarkPending={onMarkPending}
+                onPay={onPay}
+              />
             ))}
-          </tbody>
-        </table>
-      </div>
-
-      {!isLoading && entries.length === 0 ? (
-        <div className="mt-4 rounded-lg border border-line bg-app p-6 text-center">
-          <FilePenLine className="mx-auto size-8 text-muted" />
-          <h3 className="mt-3 text-base font-black text-app-text">
-            Nenhum lançamento encontrado
-          </h3>
-          <p className="mt-1 text-sm font-bold text-muted">
-            Crie o primeiro gasto, receita ou conta recorrente da loja.
-          </p>
-        </div>
-      ) : null}
-      {isLoading ? (
-        <p className="mt-4 rounded-lg border border-line bg-app p-4 text-sm font-black text-muted">
-          Carregando lançamentos.
-        </p>
-      ) : null}
+          </div>
+        </>
+      )}
     </FinancePanel>
+  );
+}
+
+function DesktopTable({
+  entries,
+  onCancel,
+  onEdit,
+  onMarkPending,
+  onPay,
+}: {
+  entries: FinanceEntry[];
+  onCancel: (entry: FinanceEntry) => void;
+  onEdit: (entry: FinanceEntry) => void;
+  onMarkPending: (entry: FinanceEntry) => void;
+  onPay: (entry: FinanceEntry) => void;
+}) {
+  return (
+    <FeatureTableFrame className="hidden md:block">
+      <table className="w-full min-w-[920px] text-left text-sm">
+        <thead className="border-b border-line text-xs font-black uppercase tracking-wider text-muted">
+          <tr>
+            <th className="px-4 py-3">Lançamento</th>
+            <th className="px-4 py-3">Origem</th>
+            <th className="px-4 py-3">Vencimento</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3 text-right">Valor</th>
+            <th className="px-4 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {entries.map((entry) => (
+            <tr
+              className="align-top transition-colors hover:bg-app"
+              key={entry.id}
+            >
+              <td className="px-4 py-3">
+                <EntryTitle entry={entry} />
+              </td>
+              <td className="px-4 py-3">
+                <FinanceBadge>
+                  {sourceLabel(entrySourceKey(entry))}
+                </FinanceBadge>
+              </td>
+              <td className="px-4 py-3 font-bold text-muted">
+                {formatDate(entry.dueAt)}
+              </td>
+              <td className="px-4 py-3">
+                <StatusButton
+                  entry={entry}
+                  onMarkPending={onMarkPending}
+                  onPay={onPay}
+                />
+              </td>
+              <td className="px-4 py-3 text-right font-black text-app-text">
+                {amountLabel(entry)}
+              </td>
+              <td className="px-4 py-3">
+                <EntryActions
+                  entry={entry}
+                  onCancel={onCancel}
+                  onEdit={onEdit}
+                  onPay={onPay}
+                />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </FeatureTableFrame>
   );
 }
 
@@ -195,139 +185,32 @@ function FinanceEntryCard({
       className="rounded-lg border border-line bg-app p-4 shadow-sm"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="break-words text-sm font-black text-app-text">
-            {entry.name}
-          </h3>
-          <p className="mt-1 text-xs font-bold text-muted">
-            {formatFinanceCategory(entry.category)} · {formatDate(entry.dueAt)}
-          </p>
-          <ReceiptMarker metadata={entry.metadata} />
-        </div>
+        <EntryTitle entry={entry} />
         <strong className="shrink-0 text-sm font-black text-app-text">
-          {formatCurrency(entry.amountCents)}
+          {amountLabel(entry)}
         </strong>
       </div>
-
-      <div className="mt-3 flex items-center justify-between gap-3">
-        <button
-          className="rounded-full bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong disabled:opacity-60"
-          disabled={entry.status === "cancelled"}
-          onClick={() =>
-            entry.status === "paid" ? onMarkPending(entry) : onPay(entry)
-          }
-          type="button"
-        >
-          {financeStatusLabels[entry.status]}
-        </button>
-        <span className="text-xs font-bold text-muted">
-          {entry.sellerUserId ? "Vinculado a vendedor" : "Lançamento geral"}
-        </span>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <StatusButton
+          entry={entry}
+          onMarkPending={onMarkPending}
+          onPay={onPay}
+        />
+        <FinanceBadge>{sourceLabel(entrySourceKey(entry))}</FinanceBadge>
       </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <MobileAction
-          icon={<ReceiptText aria-hidden="true" className="size-4" />}
-          label="Anexar"
-          onClick={() => onEdit(entry)}
-        />
-        <MobileAction
-          icon={<Pencil aria-hidden="true" className="size-4" />}
-          label="Editar"
-          onClick={() => onEdit(entry)}
-        />
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <MobileAction label="Editar" onClick={() => onEdit(entry)} />
         <MobileAction
           disabled={entry.status === "paid"}
-          icon={<CheckCircle2 aria-hidden="true" className="size-4" />}
           label="Pagar"
           onClick={() => onPay(entry)}
         />
         <MobileAction
           disabled={entry.status === "cancelled"}
-          icon={<XCircle aria-hidden="true" className="size-4" />}
           label="Cancelar"
           onClick={() => onCancel(entry)}
         />
       </div>
     </article>
-  );
-}
-
-function ReceiptMarker({
-  metadata,
-}: {
-  metadata: Record<string, unknown> | undefined;
-}) {
-  const label = receiptLabel(metadata);
-  if (!label) return null;
-  return (
-    <span className="mt-2 inline-flex max-w-full items-center gap-1 rounded-full border border-line bg-accent-soft px-2 py-1 text-xs font-black text-accent-strong">
-      <ReceiptText aria-hidden="true" className="size-3 shrink-0" />
-      <span className="min-w-0 truncate">Comprovante: {label}</span>
-    </span>
-  );
-}
-
-function receiptLabel(metadata?: Record<string, unknown>) {
-  const receipt = metadata?.receipt;
-  if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) {
-    return null;
-  }
-  const record = receipt as Record<string, unknown>;
-  if (typeof record.title === "string" && record.title.trim()) {
-    return record.title;
-  }
-  if (typeof record.fileName === "string" && record.fileName.trim()) {
-    return record.fileName;
-  }
-  return null;
-}
-
-function MobileAction({
-  disabled,
-  icon,
-  label,
-  onClick,
-}: {
-  disabled?: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-panel px-3 text-xs font-black text-accent-strong disabled:text-muted disabled:opacity-60"
-      disabled={disabled}
-      onClick={onClick}
-      type="button"
-    >
-      {icon}
-      {label}
-    </button>
-  );
-}
-
-function IconAction({
-  disabled,
-  icon,
-  label,
-  onClick,
-}: {
-  disabled?: boolean;
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      aria-label={label}
-      className="rounded-lg border border-line bg-app p-2 text-accent-strong disabled:text-muted disabled:opacity-60"
-      disabled={disabled}
-      onClick={onClick}
-      title={label}
-      type="button"
-    >
-      {icon}
-    </button>
   );
 }

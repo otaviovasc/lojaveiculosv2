@@ -21,16 +21,18 @@ export const financeStatusLabels: Record<FinanceEntryStatus, string> = {
 };
 
 export function FinancePanel({
+  actions,
   children,
   icon,
   title,
 }: {
+  actions?: ReactNode;
   children: ReactNode;
   icon: ReactNode;
   title: string;
 }) {
   return (
-    <FeatureSection icon={icon} title={title}>
+    <FeatureSection actions={actions} icon={icon} title={title}>
       {children}
     </FeatureSection>
   );

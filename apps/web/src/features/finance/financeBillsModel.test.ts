@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createEntryDraft,
   filterEntries,
+  initialFinanceFilters,
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
@@ -72,9 +73,9 @@ describe("finance bills model", () => {
 
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
         query: "aluguel",
         status: "pending",
-        window: "next30",
       }).map((item) => item.id),
     ).toEqual(["1"]);
   });
@@ -93,16 +94,18 @@ describe("finance bills model", () => {
 
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
+        datePreset: "all",
         query: "preparação",
         status: "all",
-        window: "all",
       }).map((item) => item.id),
     ).toEqual(["1"]);
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
+        datePreset: "all",
         query: "tráfego",
         status: "all",
-        window: "all",
       }).map((item) => item.id),
     ).toEqual(["2"]);
   });
@@ -150,23 +153,26 @@ describe("finance bills model", () => {
 
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
+        datePreset: "all",
         query: "preparação",
         status: "all",
-        window: "all",
       }).map((item) => item.id),
     ).toEqual(["1"]);
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
+        datePreset: "all",
         query: "reparo",
         status: "all",
-        window: "all",
       }).map((item) => item.id),
     ).toEqual(["2"]);
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
+        datePreset: "all",
         query: "vehicle_unknown_custom",
         status: "all",
-        window: "all",
       }).map((item) => item.id),
     ).toEqual(["3"]);
   });
@@ -188,15 +194,18 @@ describe("finance bills model", () => {
 
     expect(
       filterEntries(entries, {
+        ...initialFinanceFilters,
         query: "",
         status: "all",
-        window: "next30",
       }).map((item) => item.id),
     ).toEqual(["dated"]);
     expect(
-      filterEntries(entries, { query: "", status: "all", window: "all" }).map(
-        (item) => item.id,
-      ),
+      filterEntries(entries, {
+        ...initialFinanceFilters,
+        datePreset: "all",
+        query: "",
+        status: "all",
+      }).map((item) => item.id),
     ).toEqual(["dated", "undated"]);
   });
 });

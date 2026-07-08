@@ -1,0 +1,155 @@
+/* Paper Template interior components: fields, clauses, signatures */
+
+.documents-template-paper-intro {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  line-height: 1.6;
+  margin: 0;
+  text-align: justify;
+}
+
+.documents-template-paper-section,
+.documents-template-paper-clauses {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.documents-template-paper-section h3,
+.documents-template-paper-clauses h3 {
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin: 0;
+  padding-bottom: 0.45rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Paper Grid Fields */
+.documents-template-paper-fields {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.documents-template-paper-fields div {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.25rem;
+  min-height: 3.5rem;
+  padding: 0.65rem 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.documents-template-paper-fields div:hover {
+  background: var(--color-panel);
+  border-color: var(--color-muted);
+}
+
+.documents-template-paper-fields dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.documents-template-paper-fields dd {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Paper Clauses */
+.documents-template-paper-clauses {
+  gap: 0.85rem;
+}
+
+.documents-template-paper-clauses p {
+  border-left: 3px solid var(--color-accent);
+  padding-left: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-align: justify;
+}
+
+.documents-template-paper-clauses span {
+  color: var(--color-accent-strong);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+/* Alert visual helper */
+.documents-template-paper-check {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid rgba(225, 31, 38, 0.15);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Signature blocks */
+.documents-template-paper-signatures {
+  align-self: end;
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 2.5rem;
+}
+
+.documents-template-paper-signatures span {
+  border-top: 1px solid var(--color-line);
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding-top: 0.5rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 760px) {
+  .documents-template-paper-heading,
+  .documents-template-paper-fields,
+  .documents-template-paper-signatures {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-template-paper-heading {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .documents-template-paper-title {
+    justify-items: start;
+    text-align: left;
+  }
+
+  .documents-pdf-preview-frame {
+    height: 70dvh;
+    min-height: 26rem;
+  }
+
+  .documents-pdf-preview-empty-state {
+    min-height: 26rem;
+    padding: 1.5rem;
+  }
+}

@@ -8,6 +8,7 @@ import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
 import { cx } from "../../components/ui/featureShared";
 import { canvasToPng, renderEditedImage } from "./StorefrontImageEditorCanvas";
+import { AspectThumbnail } from "./AspectThumbnail";
 import {
   createEditedImageFileName,
   defaultImageEditorSettings,
@@ -114,23 +115,48 @@ export function StorefrontImageEditorDialog({
       onClose={onClose}
       title="Recortar e ajustar imagem"
     >
-      <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="grid min-h-[14rem] place-items-center overflow-hidden rounded-lg border border-line bg-app p-3 sm:min-h-[18rem]">
           <canvas
             aria-label="Prévia da imagem ajustada"
-            className="h-auto max-h-[min(58dvh,38rem)] max-w-full rounded-lg object-contain shadow-lg"
+            className="w-auto h-auto max-h-[min(58dvh,38rem)] max-w-full rounded-lg object-contain shadow-lg"
             ref={canvasRef}
           />
         </div>
         <div className="grid min-w-0 content-start gap-4">
-          <FeatureSegmentedControl
-            ariaLabel="Formato de corte"
-            onChange={(aspect) =>
-              setSettings((current) => ({ ...current, aspect }))
-            }
-            options={imageAspectOptions}
-            value={settings.aspect}
-          />
+          <div className="grid gap-2">
+            <span className="text-xs font-black uppercase tracking-widest text-muted">
+              Formato de corte
+            </span>
+            <div className="grid grid-cols-5 gap-1.5">
+              {imageAspectOptions.map((option) => {
+                const active = option.value === settings.aspect;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() =>
+                      setSettings((current) => ({
+                        ...current,
+                        aspect: option.value,
+                      }))
+                    }
+                    className={cx(
+                      "flex flex-col items-center justify-center gap-1 rounded-lg border p-1.5 text-center transition-all cursor-pointer",
+                      active
+                        ? "border-accent bg-accent-soft text-accent-strong"
+                        : "border-line bg-app hover:bg-app-elevated text-muted hover:text-app-text",
+                    )}
+                    type="button"
+                  >
+                    <AspectThumbnail type={option.value} active={active} />
+                    <span className="text-xs font-bold truncate w-full text-center">
+                      {option.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <ControlGroup
             icon={<SlidersHorizontal className="size-4" />}
             title="Imagem"

@@ -27,6 +27,7 @@ import type { LinkedDocument } from "../../../domains/documents/ports/documentRe
 import type {
   FinanceEntry,
   FinanceEntryBundle,
+  FinanceEntryLink,
   FinanceRecurringEntry,
   CommissionRule,
 } from "../../../domains/finance/ports/financeRepository.js";
@@ -55,11 +56,15 @@ import {
   type TransactionRunner,
 } from "../../../shared/transaction.js";
 
+export type FinanceEntryListItemDto = FinanceEntry & {
+  links: readonly FinanceEntryLink[];
+};
+
 export type FinanceEntryListResultDto = Omit<
   FinanceEntryListResult,
   "entries"
 > & {
-  entries: readonly FinanceEntry[];
+  entries: readonly FinanceEntryListItemDto[];
 };
 
 export type FinanceServices = {
@@ -169,7 +174,10 @@ export function createFinanceServices(
       const result = await listFinanceEntries(context, input, ports);
       return {
         ...result,
-        entries: result.entries.map((bundle) => bundle.entry),
+        entries: result.entries.map((bundle) => ({
+          ...bundle.entry,
+          links: bundle.links,
+        })),
       };
     },
     listCommissionRules: (context, input) =>

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 export function DatePickerField({
   align = "left",
   disabled,
+  isDisabled = false,
   label,
   maxDate,
   minDate,
@@ -15,6 +16,7 @@ export function DatePickerField({
 }: {
   align?: "left" | "right";
   disabled?: ((date: Date) => boolean) | undefined;
+  isDisabled?: boolean | undefined;
   label: string;
   maxDate?: Date | null | undefined;
   minDate?: Date | null | undefined;
@@ -37,8 +39,13 @@ export function DatePickerField({
         ref={triggerRef}
         className={cn(
           "datepicker-field-trigger group flex items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer shadow-sm hover:shadow active:scale-[0.98] select-none touch-target",
+          "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-card/60 disabled:active:scale-100",
         )}
-        onClick={() => setIsOpen((current) => !current)}
+        disabled={isDisabled}
+        onClick={() => {
+          if (isDisabled) return;
+          setIsOpen((current) => !current);
+        }}
         type="button"
       >
         <CalendarDays className="size-4 text-accent/60 shrink-0 group-hover:text-accent transition-colors duration-200" />
