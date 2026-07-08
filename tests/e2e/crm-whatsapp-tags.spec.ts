@@ -17,7 +17,7 @@ test.describe("CRM WhatsApp tags", () => {
     await installCampaignApiMocks(page);
 
     await page.goto("/crm#/crm?surface=whatsapp");
-    await page.getByRole("tab", { name: /Tags/ }).click();
+    await page.getByRole("tab", { name: /Etiquetas/ }).click();
 
     await expect(
       page.getByRole("heading", { name: "Etiquetas" }),

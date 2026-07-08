@@ -139,6 +139,9 @@ export function CrmWhatsappVisitsPage({
           <div>
             <strong>Visitas</strong>
             <h2>Visitas agendadas</h2>
+            <p>
+              Concentre as visitas do CRM em uma linha do tempo operacional.
+            </p>
           </div>
           <button
             className="crm-action crm-action-secondary"

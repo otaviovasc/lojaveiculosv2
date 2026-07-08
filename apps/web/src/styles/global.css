@@ -45,6 +45,8 @@
 @import "./crmWhatsappComposerReadonly.css";
 @import "./crmWhatsappRepassesParity.css";
 @import "./crmWhatsappRepassesChat.css";
+@import "./crmWhatsappOperationsParity.css";
+@import "./crmWhatsappOperationsParityDetail.css";
 @import "./crmWhatsappMediaDialog.css";
 @import "./crmWhatsappActionDialogBase.css";
 @import "./crmWhatsappActionDialogCatalog.css";

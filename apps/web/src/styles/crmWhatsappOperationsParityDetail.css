@@ -1,0 +1,109 @@
+.crm-whatsapp-schedule-row,
+.crm-whatsapp-visit-row,
+.crm-whatsapp-campaign-list article,
+.crm-whatsapp-campaign-csv-preview,
+.crm-whatsapp-bot-docs-grid article,
+.crm-whatsapp-bot-action-list div,
+.crm-whatsapp-bot-examples article,
+.crm-whatsapp-bot-events article,
+.crm-whatsapp-bot-note-grid article,
+.crm-whatsapp-bot-endpoint-card {
+  box-shadow: 0 0.75rem 1.75rem
+    color-mix(in srgb, var(--color-text) 3%, transparent);
+}
+
+.crm-whatsapp-schedule-row,
+.crm-whatsapp-visit-row,
+.crm-whatsapp-campaign-list article {
+  background: var(--color-panel);
+}
+
+.crm-whatsapp-schedule-row {
+  padding: 0.875rem;
+}
+
+.crm-whatsapp-visit-create-empty {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-app) 88%, var(--color-panel));
+  border: 1px dashed var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  min-height: 8.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.crm-whatsapp-visit-actions .crm-action-secondary {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-primary);
+  min-height: 2.5rem;
+  min-width: 2.5rem;
+  padding: 0;
+}
+
+.crm-whatsapp-bot-form-header,
+.crm-whatsapp-bot-docs > header {
+  align-items: start;
+}
+
+.crm-whatsapp-bot-form-status {
+  border-radius: 999px;
+}
+
+.crm-whatsapp-campaign-stats {
+  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.crm-whatsapp-campaign-stats strong {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+}
+
+.crm-whatsapp-campaign-panel h3 {
+  letter-spacing: 0.04em;
+}
+
+.crm-whatsapp-campaign-list article.crm-whatsapp-campaign-list-selected {
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 26%,
+    var(--color-line)
+  );
+  box-shadow: 0 1rem 2rem
+    color-mix(in srgb, var(--color-green-start) 6%, transparent);
+}
+
+.crm-whatsapp-campaign-list-progress {
+  background: color-mix(in srgb, var(--color-app) 84%, var(--color-panel));
+}
+
+.crm-whatsapp-campaign-list-progress span {
+  background: var(--color-primary);
+}
+
+.crm-whatsapp-connection-card h3,
+.crm-whatsapp-bot-form-header h2 {
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 860px) {
+  .crm-whatsapp-tag-manager > header,
+  .crm-whatsapp-schedules-header,
+  .crm-whatsapp-visits-header,
+  .crm-whatsapp-integrations-header,
+  .crm-whatsapp-campaigns-header,
+  .crm-whatsapp-connection-header {
+    gap: 0.625rem;
+  }
+
+  .crm-whatsapp-page-meta {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .crm-whatsapp-tag-manager-page .crm-whatsapp-tag-manager {
+    width: 100%;
+  }
+}

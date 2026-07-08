@@ -172,6 +172,7 @@ export function CrmWhatsappSchedulesPage({
         <div>
           <strong>Agendamentos</strong>
           <h2>Agendar mensagem</h2>
+          <p>Crie e acompanhe envios futuros sem abrir uma conversa.</p>
         </div>
         <dl>
           <div>

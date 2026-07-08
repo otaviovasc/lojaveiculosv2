@@ -1,5 +1,6 @@
-import { Plus, Save, Tag, X } from "lucide-react";
+import { Plus, Save } from "lucide-react";
 import { useState } from "react";
+import { TagManagerHeader } from "./CrmWhatsappTagManagerHeader";
 import type {
   CrmWhatsappCreateTagInput,
   CrmWhatsappReorderTagsInput,
@@ -129,22 +130,11 @@ export function CrmWhatsappTagManager({
 
   const panel = (
     <div className="crm-whatsapp-action-panel crm-whatsapp-tag-manager">
-      <header>
-        <span>
-          <Tag />
-        </span>
-        <h2>Etiquetas</h2>
-        {embedded ? null : (
-          <button
-            aria-label="Fechar"
-            className="crm-icon-action"
-            onClick={onClose}
-            type="button"
-          >
-            <X />
-          </button>
-        )}
-      </header>
+      <TagManagerHeader
+        embedded={embedded}
+        onClose={onClose}
+        tagCount={tags.length}
+      />
       <div className="crm-whatsapp-action-fields crm-whatsapp-tag-manager-body">
         <div className="crm-whatsapp-tag-editor-column">
           <TagDraftFields
