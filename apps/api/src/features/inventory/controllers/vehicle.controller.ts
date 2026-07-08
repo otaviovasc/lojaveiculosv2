@@ -38,6 +38,7 @@ import {
   normalizeFeatureOptions,
   type CreateInventoryFeatureOptions,
 } from "./vehicle.controller.options.js";
+import { registerInventoryAiStudioRoutes } from "./vehicle.aiStudio.controller.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
 export type {
@@ -216,6 +217,7 @@ export function createInventoryFeature(
   );
 
   registerInventoryMediaRoutes(inventoryFeature, services, createContext);
+  registerInventoryAiStudioRoutes(inventoryFeature, services, createContext);
   registerInventoryUnitRoutes(inventoryFeature, services, createContext);
   registerInventoryCatalogRoutes(inventoryFeature, services, createContext);
   registerInventoryChecklistRoutes(inventoryFeature, services, createContext);

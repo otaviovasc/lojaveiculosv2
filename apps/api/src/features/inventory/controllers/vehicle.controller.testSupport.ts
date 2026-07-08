@@ -58,6 +58,7 @@ export function createInventoryTestServices(): InventoryListingServices {
     addVehicleCost: vi.fn(async () => listingDetailResult()),
     analyzeListingResale: vi.fn(async () => listingDetailResult()),
     archiveVehicleSupplier: vi.fn(async () => supplierResult()),
+    approveAiStudioImage: vi.fn(async () => listingDetailResult()),
     attachListingUnit: vi.fn(async () => listingDetailResult()),
     attachVehicleDocument: vi.fn(async () => listingDetailResult()),
     changeListingStatus: vi.fn(async () => listingDetailResult()),
@@ -107,6 +108,22 @@ export function createInventoryTestServices(): InventoryListingServices {
       yearCode: "2024-1",
     })),
     getListing: vi.fn(async () => listingDetailResult()),
+    generateAiStudioImage: vi.fn(async () => ({
+      beforeUrl: "https://cdn.local/front.jpg",
+      credits: 4,
+      generatedStorageKey:
+        "tenants/tenant_1/stores/store_1/units/unit_1/ai-studio/output.png",
+      generatedUrl: "https://cdn.local/output.png",
+      guidance: 0.75,
+      mediaId: "media_1",
+      model: "flux_2_pro" as const,
+      providerGenerationId: "hedra_generation_1",
+      sourceStorageKey:
+        "tenants/tenant_1/stores/store_1/units/unit_1/photo/front.jpg",
+      strength: 0.75,
+      templateId: "premium_studio" as const,
+      unitId: "unit_1",
+    })),
     getVehicleUnitAcquisition: vi.fn(async () => acquisitionResult()),
     listChecklists: vi.fn(async () => [
       {
@@ -214,6 +231,7 @@ export async function createUserContext() {
     actor: { id: "user_1", kind: "user" },
     permissions: [
       "inventory.create",
+      "inventory.ai_studio_generate",
       "inventory.checklist_read",
       "inventory.checklist_update",
       "inventory.document_attach",

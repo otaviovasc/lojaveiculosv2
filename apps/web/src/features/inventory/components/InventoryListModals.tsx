@@ -1,5 +1,6 @@
 import ImageTemplateModal from "./ImageTemplateModal";
 import TestDriveWizard from "./TestDriveWizard";
+import type { InventoryApi } from "../api/apiClient";
 import type {
   InventoryListingDetail,
   InventoryListingSummary,
@@ -12,12 +13,14 @@ export type InventoryActionItem = InventoryListingSummary & {
 
 export function InventoryListModals({
   activeSummaryItem,
+  api,
   isTemplateOpen,
   isTestDriveOpen,
   onClose,
   storeSettings,
 }: {
   activeSummaryItem: InventoryActionItem | null;
+  api: InventoryApi | null;
   isTemplateOpen: boolean;
   isTestDriveOpen: boolean;
   onClose: () => void;
@@ -28,10 +31,12 @@ export function InventoryListModals({
   return (
     <>
       <ImageTemplateModal
+        api={api}
         isOpen={isTemplateOpen}
         onClose={onClose}
         listing={activeSummaryItem.listing}
         media={activeSummaryItem.media ? [...activeSummaryItem.media] : []}
+        primaryUnitId={activeSummaryItem.primaryUnit?.id ?? null}
         storeSettings={storeSettings}
       />
       <TestDriveWizard

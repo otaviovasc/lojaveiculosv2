@@ -1,10 +1,15 @@
 import type { AttachVehicleDocumentInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
 import type { AttachVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import type { AddVehicleCostInput } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
+import type { ApproveVehicleAiStudioImageInput } from "../../../domains/vehicle/services/VehicleService/approveVehicleAiStudioImage.js";
 import type { CreateVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import type { DeleteVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
+import type {
+  GenerateVehicleAiStudioImageInput,
+  VehicleAiStudioGenerationResult,
+} from "../../../domains/vehicle/services/VehicleService/generateVehicleAiStudioImage.js";
 import type { ListVehicleListingsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
 import type { ListVehicleUnitsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
 import type { CreateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
@@ -84,6 +89,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: AttachListingInput,
   ) => Promise<InventoryListingDetailResponse>;
+  approveAiStudioImage: (
+    context: ServiceContext,
+    input: ApproveVehicleAiStudioImageInput,
+  ) => Promise<InventoryListingDetailResponse>;
   attachVehicleDocument: (
     context: ServiceContext,
     input: AttachVehicleDocumentInput,
@@ -124,6 +133,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: { listingId: string },
   ) => Promise<InventoryListingDetailResponse>;
+  generateAiStudioImage: (
+    context: ServiceContext,
+    input: GenerateVehicleAiStudioImageInput,
+  ) => Promise<VehicleAiStudioGenerationResult>;
   getVehicleUnitAcquisition: (
     context: ServiceContext,
     input: { unitId: string },

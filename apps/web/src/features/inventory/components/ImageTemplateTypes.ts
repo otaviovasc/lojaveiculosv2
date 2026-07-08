@@ -38,11 +38,16 @@ export type ImageTemplateListing = {
   manufactureYear?: number | null;
   modelYear?: number | null;
   priceCents: number | null;
+  storeId?: string | null;
+  tenantId?: string | null;
   title: string;
 };
 
 export type ImageTemplateMedia = {
+  altText?: string | null;
   id: string;
+  kind?: "document_preview" | "photo" | "video";
+  unitId?: string | null;
   url: string;
 };
 

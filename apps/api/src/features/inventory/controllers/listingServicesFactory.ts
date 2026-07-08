@@ -4,11 +4,13 @@ import { listVehicleCatalogBrands } from "../../../domains/vehicle/services/Vehi
 import { listVehicleCatalogModels } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogModels.js";
 import { listVehicleCatalogVersions } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogVersions.js";
 import { listVehicleCatalogYears } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogYears.js";
+import { approveVehicleAiStudioImage } from "../../../domains/vehicle/services/VehicleService/approveVehicleAiStudioImage.js";
 import { createVehicleListing } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import { analyzeVehicleListingResale } from "../../../domains/vehicle/services/VehicleService/analyzeVehicleListingResale.js";
 import { listVehicleAuditEvents } from "../../../domains/vehicle/services/VehicleService/listVehicleAuditEvents.js";
 import { createVehicleMedia } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import { deleteVehicleMedia } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
+import { generateVehicleAiStudioImage } from "../../../domains/vehicle/services/VehicleService/generateVehicleAiStudioImage.js";
 import { listVehicleChecklists } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
 import { listVehicleListings } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
 import { listVehicleUnits } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
@@ -67,6 +69,15 @@ export function createInventoryListingServices(
     },
     archiveVehicleSupplier: (context, input) =>
       archiveVehicleSupplier(context, input, ports),
+    async approveAiStudioImage(context, input) {
+      const media = await approveVehicleAiStudioImage(context, input, ports);
+      return loadInventoryListingDetailDto(
+        context,
+        await findListingIdForUnit(context, media.unitId, ports),
+        ports,
+        "inventory.ai_studio_generate",
+      );
+    },
     async createListing(context, input) {
       const listing = await runVehicleInventoryMutation(
         transactionRunner,
@@ -111,6 +122,9 @@ export function createInventoryListingServices(
     },
     async getListing(context, input) {
       return loadInventoryListingDetailDto(context, input.listingId, ports);
+    },
+    async generateAiStudioImage(context, input) {
+      return generateVehicleAiStudioImage(context, input, ports);
     },
     getVehicleUnitAcquisition: (context, input) =>
       getVehicleUnitAcquisition(context, input, ports),

@@ -17,10 +17,12 @@ import type { VehicleStoreBrandingReader } from "../../ports/vehicleStoreBrandin
 import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 import type { VehicleAuditRepository } from "../../ports/vehicleAuditRepository.js";
 import type { VehicleResaleAnalysisProvider } from "../../ports/vehicleResaleAnalysisProvider.js";
+import type { VehicleAiStudioProvider } from "../../ports/vehicleAiStudioProvider.js";
 
 export type VehicleInventoryServicePorts = {
   acquisitionRepository?: VehicleAcquisitionRepository;
   auditRepository?: VehicleAuditRepository;
+  aiStudioProvider?: VehicleAiStudioProvider;
   catalogProvider?: VehicleCatalogProvider;
   catalogRepository?: VehicleCatalogRepository;
   checklistRepository?: VehicleChecklistRepository;

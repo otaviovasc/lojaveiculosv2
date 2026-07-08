@@ -118,6 +118,23 @@ export const createMediaSchema = z.object({
   storageKey: z.string().trim().min(1),
 });
 
+export const aiStudioTemplateSchema = z.enum([
+  "premium_studio",
+  "industrial_garage",
+  "urban_scene",
+]);
+
+export const aiStudioGenerationSchema = z.object({
+  mediaId: z.string().trim().min(1),
+  templateId: aiStudioTemplateSchema,
+});
+
+export const aiStudioApprovalSchema = z.object({
+  generatedStorageKey: z.string().trim().min(1),
+  mediaId: z.string().trim().min(1),
+  templateId: aiStudioTemplateSchema,
+});
+
 export const updateMediaSchema = z.object({
   altText: z.string().trim().min(1).max(191).nullable().optional(),
   displayOrder: z.number().int().nonnegative().optional(),

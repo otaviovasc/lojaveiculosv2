@@ -1,8 +1,12 @@
 import { Download, FileArchive, Loader2, X } from "lucide-react";
+import type { InventoryApi } from "../api/apiClient";
+import { ImageTemplateAiStudioSection } from "./ImageTemplateAiStudioSection";
 import type {
   ImageTemplatePreset,
   BgStyleType,
   FormatType,
+  ImageTemplateListing,
+  ImageTemplateMedia,
 } from "./ImageTemplateTypes";
 import { AdjustSection } from "./ImageTemplateAdjustSection";
 import { LayoutSection, PresetsSection } from "./ImageTemplateControlSections";
@@ -13,6 +17,7 @@ export function ImageTemplateControls({
   bgStyle,
   blurBrightness,
   color,
+  api,
   deletePreset,
   downloadingZip,
   format,
@@ -23,8 +28,11 @@ export function ImageTemplateControls({
   imageYOffset,
   isSavingPreset,
   loadPreset,
+  listing,
+  media,
   onClose,
   presetName,
+  primaryUnitId,
   presets,
   savePreset,
   setActiveSection,
@@ -37,9 +45,12 @@ export function ImageTemplateControls({
   setImageWidthScale,
   setImageXOffset,
   setImageYOffset,
+  selectedPhotoIndex,
   setPresetName,
+  setSelectedPhotoIndex,
 }: {
   activeSection: string | null;
+  api: InventoryApi | null;
   bgBlurAmount: number;
   bgStyle: BgStyleType;
   blurBrightness: number;
@@ -53,9 +64,12 @@ export function ImageTemplateControls({
   imageXOffset: number;
   imageYOffset: number;
   isSavingPreset: boolean;
+  listing: ImageTemplateListing;
   loadPreset: (preset: ImageTemplatePreset) => void;
+  media: readonly ImageTemplateMedia[];
   onClose: () => void;
   presetName: string;
+  primaryUnitId?: string | null | undefined;
   presets: ImageTemplatePreset[];
   savePreset: () => void;
   setActiveSection: (section: string | null) => void;
@@ -68,10 +82,12 @@ export function ImageTemplateControls({
   setImageWidthScale: (value: number) => void;
   setImageXOffset: (value: number) => void;
   setImageYOffset: (value: number) => void;
+  selectedPhotoIndex: number;
   setPresetName: (name: string) => void;
+  setSelectedPhotoIndex: (index: number) => void;
 }) {
   return (
-    <div className="w-full md:w-[420px] bg-panel flex flex-col md:border-l border-line h-full overflow-hidden">
+    <div className="w-full md:w-[460px] bg-panel flex flex-col md:border-l border-line h-full overflow-hidden">
       <div className="flex items-center justify-between px-6 py-5 border-b border-line">
         <div>
           <h2 className="text-lg font-black text-app-text">
@@ -89,6 +105,16 @@ export function ImageTemplateControls({
         </button>
       </div>
       <div className="flex-1 space-y-4 p-6 overflow-y-auto pb-8">
+        <ImageTemplateAiStudioSection
+          activeSection={activeSection}
+          api={api}
+          listing={listing}
+          media={media}
+          primaryUnitId={primaryUnitId}
+          selectedPhotoIndex={selectedPhotoIndex}
+          setActiveSection={setActiveSection}
+          setSelectedPhotoIndex={setSelectedPhotoIndex}
+        />
         <PresetsSection
           activeSection={activeSection}
           deletePreset={deletePreset}

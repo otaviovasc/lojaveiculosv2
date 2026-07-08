@@ -162,6 +162,16 @@ export const inventoryRoutes = {
       `/inventory/units/${encodeURIComponent(unitId)}/media/uploads`,
       baseUrl,
     ),
+  aiStudioGenerations: (unitId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/ai-studio/generations`,
+      baseUrl,
+    ),
+  aiStudioApprovals: (unitId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/ai-studio/approvals`,
+      baseUrl,
+    ),
   reserve: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/units/${encodeURIComponent(unitId)}/reserve`,

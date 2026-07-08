@@ -1,4 +1,4 @@
-import { CarFront, Clock, FileArchive } from "lucide-react";
+import { CarFront, Clock, FileArchive, Image as ImageIcon, Printer } from "lucide-react";
 import {
   formatInventoryPrice,
   getInventoryCatalogLine,
@@ -12,11 +12,8 @@ import {
 } from "../model/listCatalogModel";
 import type { InventoryListSortKey } from "../model/inventoryListSortModel";
 import type { InventoryListingSummary } from "../model/types";
-import {
-  EmptyCatalog,
-  StatusPill,
-  MercosulPlateBadge,
-} from "./InventoryListingCardGrid";
+import { EmptyCatalog } from "./InventoryListingCardGrid";
+import { MercosulPlateBadge, StatusPill } from "./InventoryListingBadges";
 import {
   FeatureRowAction,
   FeatureRowActions,
@@ -45,7 +42,10 @@ export function InventoryListingTable({
 }: {
   items: readonly InventoryListingSummary[];
   onSelect: (listingId: string, unitId?: string | null) => void;
-  onAction?: (action: "zip-photos", item: InventoryListingSummary) => void;
+  onAction?: (
+    action: "template" | "test-drive" | "zip-photos",
+    item: InventoryListingSummary,
+  ) => void;
   onSortChange: (value: InventoryListSortKey) => void;
   sortBy: InventoryListSortKey;
   visibleColumns?: Record<string, boolean>;
@@ -278,8 +278,23 @@ export function InventoryListingTable({
                     className="whitespace-nowrap px-4 py-3 text-right align-middle"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {onAction && item.mediaCount > 0 ? (
+                    {onAction ? (
                       <FeatureRowActions className="gap-2.5">
+                        <FeatureRowAction
+                          ariaLabel="Criar Template de Anúncio"
+                          icon={ImageIcon}
+                          iconClassName="text-violet-500"
+                          onClick={() => onAction("template", item)}
+                          tooltip="Criar Template"
+                        />
+                        <FeatureRowAction
+                          ariaLabel="Agendar Test Drive"
+                          icon={Printer}
+                          iconClassName="text-emerald-500"
+                          onClick={() => onAction("test-drive", item)}
+                          tooltip="Test Drive"
+                        />
+                        {item.mediaCount > 0 ? (
                         <FeatureRowAction
                           ariaLabel="Baixar Fotos (ZIP)"
                           icon={FileArchive}
@@ -287,6 +302,7 @@ export function InventoryListingTable({
                           onClick={() => onAction("zip-photos", item)}
                           tooltip="Baixar Fotos (ZIP)"
                         />
+                        ) : null}
                       </FeatureRowActions>
                     ) : null}
                   </td>

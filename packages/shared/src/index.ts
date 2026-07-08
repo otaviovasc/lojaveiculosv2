@@ -72,6 +72,7 @@ export type PermissionKey =
   | "inventory.cost_create"
   | "inventory.delete"
   | "inventory.document_attach"
+  | "inventory.ai_studio_generate"
   | "inventory.media_delete"
   | "inventory.media_update"
   | "inventory.read"

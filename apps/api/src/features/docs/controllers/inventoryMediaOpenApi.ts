@@ -10,6 +10,49 @@ import {
 } from "./inventoryOpenApiParts.js";
 
 export const inventoryMediaPaths = {
+  "/api/v1/inventory/units/{unitId}/ai-studio/generations": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Generate AI studio image preview",
+      description:
+        "Generates a Hedra-powered studio image from existing unit media and stores the preview object under the scoped vehicle media folder.",
+      operationId: "generateInventoryAiStudioImage",
+      security: [{ bearerAuth: ["inventory.ai_studio_generate"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("AiStudioGenerationRequest"),
+      responses: {
+        "201": {
+          description: "AI studio generation preview.",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/AiStudioGenerationResponse",
+              },
+            },
+          },
+        },
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
+  "/api/v1/inventory/units/{unitId}/ai-studio/approvals": {
+    post: {
+      tags: ["Inventory"],
+      summary: "Approve AI studio image",
+      description:
+        "Attaches a generated AI studio object to the vehicle gallery as public photo media.",
+      operationId: "approveInventoryAiStudioImage",
+      security: [{ bearerAuth: ["inventory.ai_studio_generate"] }],
+      parameters: [unitIdParameter],
+      requestBody: jsonRequest("AiStudioApprovalRequest"),
+      responses: {
+        "201": detailResponse,
+        ...validationResponse,
+        ...authResponses,
+      },
+    },
+  },
   "/api/v1/inventory/units/{unitId}/media/uploads": {
     post: {
       tags: ["Inventory"],

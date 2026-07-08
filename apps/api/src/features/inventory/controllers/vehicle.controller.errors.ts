@@ -11,6 +11,9 @@ import {
 import { VehicleWorkflowStatusError } from "../../../domains/vehicle/policies/workflowStatusPolicy.js";
 import { VehicleDocumentStorageScopeError } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
 import { VehicleMediaStorageScopeError } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
+import { VehicleAiStudioStorageScopeError } from "../../../domains/vehicle/services/VehicleService/approveVehicleAiStudioImage.js";
+import { VehicleAiStudioValidationError } from "../../../domains/vehicle/services/VehicleService/generateVehicleAiStudioImage.js";
+import { VehicleAiStudioProviderError } from "../../../domains/vehicle/ports/vehicleAiStudioProvider.js";
 import { VehicleListingDeletionStateError } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
 import { VehiclePublicationValidationError } from "../../../domains/vehicle/services/VehicleService/publishVehicleListing.js";
 import {
@@ -24,6 +27,7 @@ import {
   VehicleWorkflowValidationError,
 } from "../../../domains/vehicle/workflows/vehicleSaleWorkflowRules.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
+import { createVehicleAiStudioProviderPublicDetails } from "./vehicle.aiStudio.errors.js";
 
 export function mapInventoryWorkflowError(
   context: Context,
@@ -41,6 +45,7 @@ export function mapInventoryWorkflowError(
   if (
     error instanceof VehicleWorkflowValidationError ||
     error instanceof VehicleChecklistValidationError ||
+    error instanceof VehicleAiStudioValidationError ||
     error instanceof VehiclePublicationValidationError
   ) {
     return jsonApiError(context, {
@@ -120,7 +125,8 @@ export function mapInventoryResourceError(
 
   if (
     error instanceof VehicleDocumentStorageScopeError ||
-    error instanceof VehicleMediaStorageScopeError
+    error instanceof VehicleMediaStorageScopeError ||
+    error instanceof VehicleAiStudioStorageScopeError
   ) {
     return jsonApiError(context, {
       code: "INVENTORY_STORAGE_SCOPE_ERROR",
@@ -131,6 +137,22 @@ export function mapInventoryResourceError(
   }
 
   return null;
+}
+
+export function mapInventoryAiStudioProviderError(
+  context: Context,
+  error: unknown,
+): Response | null {
+  if (!(error instanceof VehicleAiStudioProviderError)) return null;
+
+  const details = createVehicleAiStudioProviderPublicDetails(error);
+  return jsonApiError(context, {
+    code: "VEHICLE_AI_STUDIO_PROVIDER_ERROR",
+    ...(details ? { details } : {}),
+    error,
+    message: error.message,
+    status: error.statusCode,
+  });
 }
 
 function isVehicleInventoryNotFoundError(

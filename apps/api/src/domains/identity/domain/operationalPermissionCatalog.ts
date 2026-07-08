@@ -90,6 +90,12 @@ export const operationalPermissionGroups = [
         "medium",
       ),
       permission(
+        "inventory.ai_studio_generate",
+        "Gerar fotos com IA",
+        "Usar o Estudio Digital IA para processar fotos e salvar novas imagens de galeria.",
+        "high",
+      ),
+      permission(
         "inventory.delete",
         "Excluir veículo",
         "Remover permanentemente um veículo do sistema.",

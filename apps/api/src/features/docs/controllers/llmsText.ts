@@ -1,5 +1,4 @@
 export const llmsText = `# Loja Veiculos API
-
 ## API entry points
 - OpenAPI document: /api/v1/openapi.json
 - Public API docs: GET /api/v1/external-api/docs
@@ -85,6 +84,7 @@ export const llmsText = `# Loja Veiculos API
 - inventory.update_price: reserved for price edits.
 - inventory.update_status: reserved for listing lifecycle edits.
 - inventory.update_unit: reserved for physical/unit inventory edits.
+- inventory.ai_studio_generate: required to generate AI studio images and approve gallery attachment.
 - inventory.media_update: required to reorder media or update media metadata/visibility.
 - inventory.media_delete: required to delete media records and request object cleanup.
 - inventory.cost_create: required to create vehicle costs and linked finance entries.
@@ -144,6 +144,7 @@ export const llmsText = `# Loja Veiculos API
 - PATCH /api/v1/inventory/units/{unitId}/checklists/{checklistId}: updates checklist name/items/status and returns the updated listing detail.
 - POST /api/v1/inventory/units/{unitId}/media/uploads: returns Cloudflare R2 presigned PUT upload instructions scoped to the unit folder.
 - POST /api/v1/inventory/units/{unitId}/media: records uploaded R2 object as unit media after scoped storage validation.
+- POST /api/v1/inventory/units/{unitId}/ai-studio/generations and /approvals: generate a Hedra preview from photo media and attach it to the gallery; requires inventory.ai_studio_generate.
 - PATCH /api/v1/inventory/units/{unitId}/media/reorder: reorders unit media and returns the updated listing detail; requires inventory.media_update.
 - PATCH /api/v1/inventory/units/{unitId}/media/{mediaId}: updates unit media metadata and visibility; requires inventory.media_update.
 - DELETE /api/v1/inventory/units/{unitId}/media/{mediaId}: soft-deletes one unit media record, requests backing object cleanup when storage supports it, and returns the updated listing detail; requires inventory.media_delete.

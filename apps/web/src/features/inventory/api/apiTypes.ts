@@ -23,6 +23,7 @@ import type {
   InventoryResaleAnalysisResponse,
 } from "../model/enrichmentTypes";
 import type { InventoryAcquisitionApi } from "./inventoryAcquisitionApi";
+import type { InventoryAiStudioApi } from "./inventoryAiStudioApi";
 import type { InventoryCatalogApi } from "./inventoryCatalogApi";
 import type { InventoryMediaApi } from "./inventoryMediaApi";
 import type { ListInventoryInput } from "./apiRoutes";
@@ -86,6 +87,7 @@ export type InventoryApi = {
     input: UpdateInventoryUnitInput,
   ) => Promise<InventoryListingDetail>;
 } & InventoryCatalogApi &
+  InventoryAiStudioApi &
   InventoryAcquisitionApi &
   InventoryMediaApi;
 

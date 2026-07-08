@@ -10,6 +10,7 @@ import {
   InventoryLoadMore,
 } from "../components/InventoryListToolbar";
 import { InventoryListingTable } from "../components/InventoryListingTable";
+import { InventoryListModals } from "../components/InventoryListModals";
 import { InventoryCreateMode } from "./InventoryCreateMode";
 import { InventoryDetailWorkspace } from "../components/InventoryDetailWorkspace";
 import type { InventoryDetailStoreLink } from "../components/InventoryDetailPublicRoute";
@@ -39,6 +40,13 @@ export function InventoryListPage({
     setDetail,
     selectedUnitId,
     selection,
+    isTemplateOpen,
+    setIsTemplateOpen,
+    isTestDriveOpen,
+    setIsTestDriveOpen,
+    activeSummaryItem,
+    setActiveSummaryItem,
+    storeSettings,
     viewMode,
     handleViewModeChange,
     sortBy,
@@ -167,6 +175,18 @@ export function InventoryListPage({
           ) : null}
         </section>
       </div>
+      <InventoryListModals
+        activeSummaryItem={activeSummaryItem}
+        api={runtimeApi}
+        isTemplateOpen={isTemplateOpen}
+        isTestDriveOpen={isTestDriveOpen}
+        onClose={() => {
+          setIsTemplateOpen(false);
+          setIsTestDriveOpen(false);
+          setActiveSummaryItem(null);
+        }}
+        storeSettings={storeSettings}
+      />
     </FeaturePageShell>
   );
 }

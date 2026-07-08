@@ -22,6 +22,7 @@ import type {
 import { createInventoryCatalogApi } from "./inventoryCatalogApi";
 import { createInventoryMediaApi } from "./inventoryMediaApi";
 import { createInventoryAcquisitionApi } from "./inventoryAcquisitionApi";
+import { createInventoryAiStudioApi } from "./inventoryAiStudioApi";
 import {
   createInventoryHeaders,
   inventoryRoutes,
@@ -165,6 +166,10 @@ export function createInventoryApi({
     fetch,
     ...(baseUrl !== undefined ? { baseUrl } : {}),
   });
+  const aiStudioApi = createInventoryAiStudioApi({
+    postJson,
+    ...(baseUrl !== undefined ? { baseUrl } : {}),
+  });
 
   const getListing = (listingId: string) =>
     fetch(inventoryRoutes.detail(listingId, baseUrl), {
@@ -296,6 +301,7 @@ export function createInventoryApi({
     deleteListing,
     getListing,
     lookupPlate,
+    ...aiStudioApi,
     ...acquisitionApi,
     ...catalogApi,
     listChecklists,

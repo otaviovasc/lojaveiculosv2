@@ -12,7 +12,7 @@ import type {
 } from "../model/types";
 
 type JsonBody = Record<string, unknown>;
-type SendJson = <T>(
+export type SendJson = <T>(
   route: string,
   body: JsonBody,
   method?: string,

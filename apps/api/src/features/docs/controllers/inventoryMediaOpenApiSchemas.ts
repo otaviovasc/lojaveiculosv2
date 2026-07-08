@@ -1,6 +1,51 @@
 import { objectSchema } from "./inventoryOpenApiSchemaParts.js";
 
 export const inventoryMediaSchemas = {
+  AiStudioApprovalRequest: objectSchema(
+    ["generatedStorageKey", "mediaId", "templateId"],
+    {
+      generatedStorageKey: { type: "string", minLength: 1 },
+      mediaId: { type: "string", minLength: 1 },
+      templateId: { $ref: "#/components/schemas/AiStudioTemplateId" },
+    },
+  ),
+  AiStudioGenerationRequest: objectSchema(["mediaId", "templateId"], {
+    mediaId: { type: "string", minLength: 1 },
+    templateId: { $ref: "#/components/schemas/AiStudioTemplateId" },
+  }),
+  AiStudioGenerationResponse: objectSchema(
+    [
+      "beforeUrl",
+      "credits",
+      "generatedStorageKey",
+      "generatedUrl",
+      "guidance",
+      "mediaId",
+      "model",
+      "sourceStorageKey",
+      "strength",
+      "templateId",
+      "unitId",
+    ],
+    {
+      beforeUrl: { type: "string" },
+      credits: { type: "integer", enum: [4] },
+      generatedStorageKey: { type: "string" },
+      generatedUrl: { type: "string" },
+      guidance: { type: "number", minimum: 0, maximum: 1 },
+      mediaId: { type: "string" },
+      model: { type: "string", enum: ["flux_2_pro"] },
+      providerGenerationId: { type: ["string", "null"] },
+      sourceStorageKey: { type: "string" },
+      strength: { type: "number", minimum: 0, maximum: 1 },
+      templateId: { $ref: "#/components/schemas/AiStudioTemplateId" },
+      unitId: { type: "string" },
+    },
+  ),
+  AiStudioTemplateId: {
+    type: "string",
+    enum: ["premium_studio", "industrial_garage", "urban_scene"],
+  },
   CreateVehicleMediaRequest: objectSchema(["storageKey"], {
     altText: { type: ["string", "null"], minLength: 1, maxLength: 191 },
     displayOrder: { type: "integer", minimum: 0 },

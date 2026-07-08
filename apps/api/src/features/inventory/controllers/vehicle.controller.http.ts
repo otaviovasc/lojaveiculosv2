@@ -8,6 +8,7 @@ import {
   HttpContextRequestPolicyError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import {
+  mapInventoryAiStudioProviderError,
   mapInventoryResourceError,
   mapInventoryWorkflowError,
 } from "./vehicle.controller.errors.js";
@@ -96,6 +97,12 @@ export async function handle(
         status: error.statusCode,
       });
     }
+
+    const aiStudioProviderErrorResponse = mapInventoryAiStudioProviderError(
+      context,
+      error,
+    );
+    if (aiStudioProviderErrorResponse) return aiStudioProviderErrorResponse;
 
     const providerStatusCode = readProviderStatusCode(error);
     if (providerStatusCode) {

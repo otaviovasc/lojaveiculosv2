@@ -17,6 +17,7 @@ import {
 } from "./vehicleCatalog/drizzleVehicleCatalogRepository.js";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import { createFipeVehicleCatalogProvider } from "../catalog/fipeVehicleCatalogProvider.js";
+import { createHedraVehicleAiStudioProviderFromEnv } from "../vehicleStudio/hedraVehicleAiStudioProvider.js";
 import { createClientTransactionRunner } from "../../shared/transaction.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 import { createDrizzleVehicleStoreBrandingReader } from "./vehicleInventory/drizzleVehicleStoreBrandingReader.js";
@@ -59,6 +60,7 @@ export function createRuntimeInventoryServices(
           ),
         }
       : {}),
+    aiStudioProvider: createHedraVehicleAiStudioProviderFromEnv(env),
     catalogProvider,
     catalogRepository: createDrizzleVehicleCatalogRepository(
       client as unknown as DrizzleVehicleCatalogClient,

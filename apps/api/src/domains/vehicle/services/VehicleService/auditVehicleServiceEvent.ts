@@ -4,6 +4,7 @@ import type {
   AuditFailureTier,
   AuditFieldChange,
   AuditOutcome,
+  AuditProviderReference,
   SafeAuditMetadata,
 } from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
@@ -13,7 +14,7 @@ export async function auditVehicleServiceEvent(
   context: ServiceContext,
   input: {
     action: string;
-    category: "data_access" | "data_change";
+    category: "data_access" | "data_change" | "integration";
     changes?: readonly AuditFieldChange[];
     criticality?: AuditCriticality;
     entityId: string;
@@ -31,6 +32,7 @@ export async function auditVehicleServiceEvent(
     metadata?: SafeAuditMetadata;
     outcome?: AuditOutcome;
     permission: PermissionKey;
+    provider?: AuditProviderReference;
     relatedEntities?: readonly AuditEntityReference[];
     summary: string;
   },
@@ -51,6 +53,7 @@ export async function auditVehicleServiceEvent(
     tenantId: context.tenantId,
     ...(failureTier ? { failureTier } : {}),
     ...(input.changes ? { changes: input.changes } : {}),
+    ...(input.provider ? { provider: input.provider } : {}),
     ...(input.relatedEntities
       ? { relatedEntities: input.relatedEntities }
       : {}),

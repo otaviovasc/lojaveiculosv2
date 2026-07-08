@@ -1,4 +1,11 @@
-import { CarFront, ChevronRight, Clock, FileArchive } from "lucide-react";
+import {
+  CarFront,
+  Image as ImageIcon,
+  Printer,
+  FileArchive,
+  ChevronRight,
+  Clock,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { FeatureEmptyState } from "../../../components/ui/FeatureStates";
 import {
@@ -11,17 +18,14 @@ import {
   getInventoryPlate,
   getInventoryStockDays,
   getInventoryYearLine,
-  inventoryStatusLabels,
-  inventoryUnitStatusLabels,
-  type InventoryDisplayStatus,
 } from "../model/listCatalogModel";
-import type {
-  InventoryListingSummary,
-  InventoryUnitStatus,
-} from "../model/types";
+import type { InventoryListingSummary } from "../model/types";
 import { InventoryLeadBadge } from "./InventoryLeadBadge";
+import { MercosulPlateBadge, StatusPill } from "./InventoryListingBadges";
 
-type InventoryCardAction = "zip-photos";
+export { MercosulPlateBadge } from "./InventoryListingBadges";
+
+type InventoryCardAction = "template" | "test-drive" | "zip-photos";
 
 export function InventoryListingCardGrid({
   items,
@@ -216,19 +220,47 @@ function InventoryListingCard({
             ) : null}
           </div>
 
-          {onAction && item.mediaCount > 0 ? (
-            <button
-              aria-label={`Baixar fotos de ${listing.title}`}
-              className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-accent transition-all hover:border-accent/30 hover:bg-accent-soft hover:text-accent-strong"
-              onClick={(event) => {
-                event.stopPropagation();
-                onAction("zip-photos", item);
-              }}
-              title="Baixar Fotos (ZIP)"
-              type="button"
-            >
-              <FileArchive aria-hidden="true" className="size-3.5" />
-            </button>
+          {onAction ? (
+            <div className="flex items-center gap-1">
+              <button
+                aria-label={`Criar template de anúncio para ${listing.title}`}
+                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-violet-500 transition-all hover:border-accent/30 hover:bg-accent-soft"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAction("template", item);
+                }}
+                title="Criar Template"
+                type="button"
+              >
+                <ImageIcon aria-hidden="true" className="size-3.5" />
+              </button>
+              <button
+                aria-label={`Agendar test drive para ${listing.title}`}
+                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-emerald-500 transition-all hover:border-accent/30 hover:bg-accent-soft"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAction("test-drive", item);
+                }}
+                title="Test Drive"
+                type="button"
+              >
+                <Printer aria-hidden="true" className="size-3.5" />
+              </button>
+              {item.mediaCount > 0 ? (
+                <button
+                  aria-label={`Baixar fotos de ${listing.title}`}
+                  className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-accent transition-all hover:border-accent/30 hover:bg-accent-soft hover:text-accent-strong"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onAction("zip-photos", item);
+                  }}
+                  title="Baixar Fotos (ZIP)"
+                  type="button"
+                >
+                  <FileArchive aria-hidden="true" className="size-3.5" />
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       </div>
@@ -238,72 +270,4 @@ function InventoryListingCard({
 
 export function EmptyCatalog({ body, title }: { body: string; title: string }) {
   return <FeatureEmptyState body={body} icon={CarFront} title={title} />;
-}
-
-export function StatusPill({ status }: { status: InventoryDisplayStatus }) {
-  const tone =
-    status === "published" || status === "available"
-      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
-      : status === "in_preparation" || status === "reserved"
-        ? "bg-warning/10 text-warning-strong border border-warning/20"
-        : status === "sold_out" || status === "sold" || status === "delivered"
-          ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-          : status === "acquired"
-            ? "bg-violet-500/10 text-violet-500 border border-violet-500/20"
-            : "bg-panel text-muted border border-line";
-  const dotColor =
-    status === "published" || status === "available"
-      ? "bg-emerald-500"
-      : status === "in_preparation" || status === "reserved"
-        ? "bg-warning"
-        : status === "sold_out" || status === "sold" || status === "delivered"
-          ? "bg-blue-500"
-          : status === "acquired"
-            ? "bg-violet-500"
-            : "bg-muted";
-  const label = isInventoryUnitStatus(status)
-    ? inventoryUnitStatusLabels[status]
-    : inventoryStatusLabels[status];
-
-  return (
-    <span
-      className={
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider backdrop-blur-md " +
-        tone
-      }
-    >
-      <span className={"size-1.5 rounded-full " + dotColor} />
-      {label}
-    </span>
-  );
-}
-
-function isInventoryUnitStatus(
-  status: InventoryDisplayStatus,
-): status is InventoryUnitStatus {
-  return status in inventoryUnitStatusLabels;
-}
-
-export function MercosulPlateBadge({ plate }: { plate: string }) {
-  if (!plate || plate === "-") {
-    return <span className="text-xs text-muted">-</span>;
-  }
-
-  const formatted = plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
-
-  return (
-    <span
-      aria-label={`Placa ${formatted}`}
-      className="inline-flex h-7 min-w-[70px] max-w-[80px] shrink-0 select-none flex-col overflow-hidden rounded-[3px] border border-gray-300 bg-white text-center align-middle shadow-sm dark:border-line dark:bg-white"
-    >
-      <span className="flex h-2 shrink-0 items-center justify-center bg-blue-600 px-1 text-white dark:bg-blue-600">
-        <span className="origin-center scale-50 text-xs font-black uppercase leading-none tracking-widest">
-          Brasil
-        </span>
-      </span>
-      <span className="flex h-5 items-center justify-center px-1.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
-        {formatted}
-      </span>
-    </span>
-  );
 }
