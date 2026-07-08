@@ -9,6 +9,7 @@ import {
   parseZapiConnected,
   parseZapiDisconnected,
 } from "../../whatsapp/parseZapiWebhookEvents.js";
+import { notifyWhatsappConnectionStatusChangedToBot } from "../../whatsapp/whatsappBotWebhookForwarding.js";
 import {
   auditWhatsappServiceEvent,
   auditZapiWebhook,
@@ -101,6 +102,8 @@ async function updateConnectionState(
   assertPermission(context, permission);
   const connection = await readZapiConnection(connectionId, ports);
   if (!connection) return { reason: "connection_not_found", status: "ignored" };
+  const previousPhone = connection.phone;
+  const previousStatus = connection.status;
   await getCrmConnectionRepository(ports).updateConnection({
     connectionId: connection.id,
     metadata: {
@@ -124,6 +127,20 @@ async function updateConnectionState(
     tenantId: connection.tenantId,
     type: "connection_status",
   });
+  await notifyWhatsappConnectionStatusChangedToBot(
+    context,
+    {
+      connection: {
+        ...connection,
+        phone: input.connectedPhone ?? previousPhone,
+        status: input.status,
+      },
+      previousStatus,
+      reason: input.eventType,
+      status: input.status,
+    },
+    ports,
+  );
   return { status: "accepted" };
 }
 

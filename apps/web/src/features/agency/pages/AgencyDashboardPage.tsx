@@ -4,20 +4,22 @@ import {
   type AgencySort,
   type AgencyStore,
   type AgencyStatusFilter,
-  mapBillingOverviewToStores,
+  mapAgencyOverviewToStores,
 } from "./AgencyDashboardPage.model";
 import {
   AgencyDashboardHeader,
   AgencyStatsGrid,
   AgencyStoresCard,
-  AgencyToast,
-  type AgencyToastMessage,
 } from "./AgencyDashboardControls";
+import { AgencyStoresTable } from "./AgencyDashboardStoresTable";
+import { createAgencyApi } from "../apiClient";
+import { useAccountSession } from "../../account/accountSession";
+import { persistCurrentStoreSlug } from "../../account/currentStore";
 import {
-  AgencyDeleteModal,
-  AgencyStoresTable,
-} from "./AgencyDashboardStoresTable";
-import { createRuntimeAuthHeaders } from "../../account/runtimeAuth";
+  createRuntimeActorAuth,
+  readClerkToken,
+  readRuntimeApiBaseUrl,
+} from "../../account/runtimeAuth";
 
 export function AgencyDashboardPage() {
   const [stores, setStores] = useState<AgencyStore[]>([]);
@@ -27,60 +29,48 @@ export function AgencyDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<AgencyStatusFilter>("all");
   const [planEndDateFrom, setPlanEndDateFrom] = useState("");
   const [planEndDateTo, setPlanEndDateTo] = useState("");
-  const [storeToDelete, setStoreToDelete] = useState<AgencyStore | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [toastMessage, setToastMessage] = useState<AgencyToastMessage | null>(
-    null,
+  const session = useAccountSession();
+  const agencyTenant = session.tenantMemberships.find(
+    (membership) =>
+      membership.role === "agency" && membership.status === "active",
   );
   const navigate = useNavigate();
 
-  const triggerToast = (type: "success" | "error", text: string) => {
-    setToastMessage({ type, text });
-    setTimeout(() => setToastMessage(null), 4000);
-  };
-
   const fetchData = useCallback(async () => {
+    if (!agencyTenant) {
+      setStores([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      // Fetch billing allocations / overview to load store lists
-      const headers = await createRuntimeAuthHeaders();
-      const res = await fetch("/api/v1/billing/overview", { headers });
-      if (res.ok) {
-        const mapped = mapBillingOverviewToStores(await res.json());
-        setStores(mapped ?? []);
-      } else {
-        setStores([]);
-      }
+      const token = await readClerkToken();
+      const api = createAgencyApi({
+        auth: createRuntimeActorAuth(token),
+        fetch: window.fetch.bind(window),
+        ...readRuntimeApiBaseUrl(),
+      });
+      const overview = await api.getOverview(agencyTenant.tenantId);
+      setStores(mapAgencyOverviewToStores(overview));
     } catch (error) {
       console.error("Error fetching agency stores:", error);
       setStores([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [agencyTenant]);
 
   useEffect(() => {
     void fetchData();
   }, [fetchData]);
 
-  async function handleDeleteAccess() {
-    if (!storeToDelete) return;
-    setIsDeleting(true);
-    try {
-      // Simulate revoke access success
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      triggerToast(
-        "success",
-        `Acesso à loja ${storeToDelete.nome_da_loja} revogado com sucesso`,
-      );
-      setStores((prev) => prev.filter((s) => s.id !== storeToDelete.id));
-      setStoreToDelete(null);
-    } catch {
-      triggerToast("error", "Erro ao revogar acesso");
-    } finally {
-      setIsDeleting(false);
-    }
-  }
+  const manageStore = useCallback(
+    (store: AgencyStore) => {
+      persistCurrentStoreSlug(store.subdominio, session.user.clerkUserId);
+      void navigate("/dashboard");
+    },
+    [navigate, session.user.clerkUserId],
+  );
 
   const filteredAndSortedStores = stores
     .filter((store) => {
@@ -170,7 +160,6 @@ export function AgencyDashboardPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
-      <AgencyToast message={toastMessage} />
       <AgencyDashboardHeader
         onCreate={() => void navigate("/agency/admin/create-store")}
       />
@@ -197,17 +186,10 @@ export function AgencyDashboardPage() {
             setPlanEndDateFrom("");
             setPlanEndDateTo("");
           }}
-          onDeleteStore={setStoreToDelete}
+          onManageStore={manageStore}
           stores={filteredAndSortedStores}
         />
       </AgencyStoresCard>
-
-      <AgencyDeleteModal
-        isDeleting={isDeleting}
-        onCancel={() => setStoreToDelete(null)}
-        onConfirm={() => void handleDeleteAccess()}
-        store={storeToDelete}
-      />
     </div>
   );
 }

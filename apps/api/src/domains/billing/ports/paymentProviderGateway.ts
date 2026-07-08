@@ -3,6 +3,8 @@ export type PaymentProvider = "asaas";
 export type PaymentProviderBillingType =
   "BOLETO" | "CREDIT_CARD" | "PIX" | "UNDEFINED";
 
+export type PaymentProviderCheckoutBillingType = "CREDIT_CARD" | "PIX";
+
 export type PaymentProviderStatus = {
   configured: boolean;
   missingConfiguration: readonly string[];
@@ -43,7 +45,45 @@ export type PaymentProviderSubscriptionResult = {
   status: "ACTIVE" | "EXPIRED" | "INACTIVE" | "OVERDUE" | "UNKNOWN";
 };
 
+export type PaymentProviderCheckoutLineItem = {
+  description: string | null;
+  name: string;
+  quantity: number;
+  valueCents: number;
+};
+
+export type PaymentProviderCheckoutInput = {
+  billingTypes: readonly PaymentProviderCheckoutBillingType[];
+  callback: {
+    cancelUrl: string;
+    expiredUrl: string;
+    successUrl: string;
+  };
+  customerData?: {
+    cpfCnpj: string | null;
+    email: string | null;
+    name: string;
+    phone: string | null;
+  };
+  externalReference: string;
+  items: readonly PaymentProviderCheckoutLineItem[];
+  minutesToExpire: number;
+  nextDueDate: string;
+};
+
+export type PaymentProviderCheckoutResult = {
+  checkoutUrl: string;
+  expiresAt: Date | null;
+  externalReference: string;
+  provider: PaymentProvider;
+  providerCheckoutId: string;
+  raw: Record<string, unknown>;
+};
+
 export type PaymentProviderGateway = {
+  createCheckout?: (
+    input: PaymentProviderCheckoutInput,
+  ) => Promise<PaymentProviderCheckoutResult>;
   getProviderStatus: () => Promise<PaymentProviderStatus>;
   syncCustomer?: (
     input: PaymentProviderCustomerInput,

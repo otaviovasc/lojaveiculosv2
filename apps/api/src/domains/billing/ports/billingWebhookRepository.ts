@@ -58,6 +58,16 @@ export type SyncBillingProviderSubscriptionInput = {
   status: BillingSubscription["status"];
 };
 
+export type SyncBillingProviderCheckoutInput = {
+  currentPeriodEnd: Date | null;
+  provider: BillingProvider;
+  providerCheckoutId: string;
+  providerCustomerId: string | null;
+  providerSubscriptionId: string | null;
+  raw: Record<string, unknown>;
+  status: "cancelled" | "created" | "expired" | "paid";
+};
+
 export type BillingProviderSyncResult = {
   reason?: string;
   status: "ignored" | "synced";
@@ -77,6 +87,9 @@ export type BillingWebhookRepository = {
   recordReceived: (
     input: RecordBillingProviderWebhookEventInput,
   ) => Promise<RecordBillingProviderWebhookEventResult>;
+  syncProviderCheckout: (
+    input: SyncBillingProviderCheckoutInput,
+  ) => Promise<BillingProviderSyncResult>;
   syncProviderSubscription: (
     input: SyncBillingProviderSubscriptionInput,
   ) => Promise<BillingProviderSyncResult>;

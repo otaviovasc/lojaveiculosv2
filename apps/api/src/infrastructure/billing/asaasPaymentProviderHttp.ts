@@ -1,6 +1,7 @@
 import { getAsaasProviderStatus } from "./asaasPaymentProviderConfig.js";
 
 export type AsaasClient = {
+  checkoutBaseUrl: string;
   request: (
     method: "GET" | "POST" | "PUT",
     path: string,
@@ -27,6 +28,7 @@ export function createAsaasClient(
   const apiKey = requiredEnv(env, "ASAAS_API_KEY");
 
   return {
+    checkoutBaseUrl: resolveCheckoutBaseUrl(env, baseUrl),
     async request(method, path, options = {}) {
       const url = new URL(`${baseUrl}${path}`);
       for (const [key, value] of Object.entries(options.query ?? {})) {
@@ -52,6 +54,16 @@ export function createAsaasClient(
       return payload;
     },
   };
+}
+
+function resolveCheckoutBaseUrl(
+  env: Record<string, string | undefined>,
+  apiBaseUrl: string,
+): string {
+  if (env.ASAAS_CHECKOUT_URL) return env.ASAAS_CHECKOUT_URL;
+  return apiBaseUrl.includes("sandbox.asaas.com")
+    ? "https://sandbox.asaas.com/checkoutSession/show"
+    : "https://asaas.com/checkoutSession/show";
 }
 
 export function requiredString(value: unknown, path: string): string {

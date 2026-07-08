@@ -81,6 +81,7 @@ export async function createHttpAccountContext(
       permissions: accountAuth.permissions,
       request,
       source: { component: "http", service: "api" },
+      ...(options.tenantId ? { tenantId: options.tenantId } : {}),
     }),
   };
 }
@@ -105,6 +106,7 @@ async function resolveAccountAuthorization(
     user.id,
   );
   if (isPlatformAdmin) {
+    permissions.add("billing.manage");
     permissions.add("tenant.manage");
     permissions.add("store.manage");
   }
@@ -114,7 +116,10 @@ async function resolveAccountAuthorization(
       tenantId: options.tenantId as TenantId,
       userId: user.id,
     });
-    if (isAgency) permissions.add("store.manage");
+    if (isAgency) {
+      permissions.add("billing.manage");
+      permissions.add("store.manage");
+    }
   }
   return {
     actorId: user.id,

@@ -10,6 +10,7 @@ export type BillingServicePorts = {
   billingWebhookRepository?: BillingWebhookRepository;
   environment?: string;
   paymentProviderGateway?: PaymentProviderGateway;
+  publicAppUrl?: string;
 };
 
 export class BillingScopeError extends Error {
@@ -26,6 +27,13 @@ export function requireBillingScope(context: ServiceContext): {
   if (!context.storeId) throw new BillingScopeError("storeId");
   if (!context.tenantId) throw new BillingScopeError("tenantId");
   return { storeId: context.storeId, tenantId: context.tenantId };
+}
+
+export function requireTenantBillingScope(context: ServiceContext): {
+  tenantId: string;
+} {
+  if (!context.tenantId) throw new BillingScopeError("tenantId");
+  return { tenantId: context.tenantId };
 }
 
 export function getBillingEnvironment(ports: BillingServicePorts): string {

@@ -47,62 +47,57 @@ export const actionGroups = [
   },
 ] as const;
 
-export const botActionExamples = [
+export const importantFieldNotes = [
   {
-    code: `{
-  "action": "send_text",
-  "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "text": "Ola! Posso ajudar com esse veiculo?" }
-}`,
-    description: "Envia texto em uma conversa existente.",
-    title: "Enviar texto",
-  },
-  {
-    code: `{
-  "action": "send_image",
-  "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": {
-    "base64": "data:image/jpeg;base64,...",
-    "caption": "Foto do veiculo"
-  }
-}`,
     description:
-      "Midia usa base64; use caption/fileName/mimeType quando precisar.",
-    title: "Enviar midia",
+      "true quando a mensagem saiu da loja; false quando veio do cliente.",
+    title: "message.fromMe",
   },
   {
-    code: `{
-  "action": "schedule_message",
-  "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": {
-    "text": "Passando para confirmar sua visita.",
-    "scheduledAt": "2026-07-07T13:00:00.000Z"
-  }
-}`,
-    description: "Cria um agendamento V2 auditado para a sessao.",
-    title: "Agendar mensagem",
+    description:
+      "true para envio por CRM, scheduled message ou Bot Action API.",
+    title: "message.wasSentByApi",
   },
   {
-    code: `{
-  "action": "set_visita",
-  "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "leadId": "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
-  "payload": {
-    "scheduledAt": "2026-07-08T18:00:00.000Z",
-    "notes": "Cliente pediu avaliacao presencial."
-  }
-}`,
-    description: "Cria visita ligada ao lead V2 da conversa.",
-    title: "Criar visita",
+    description: "customer, bot_api, human_crm, human_whatsapp ou system.",
+    title: "message.senderOrigin",
   },
   {
-    code: `{
-  "action": "set_intervention",
-  "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "enabled": false }
-}`,
-    description: "O bot pode devolver a conversa ao modo automatico.",
-    title: "Encerrar takeover",
+    description:
+      "false em HUMAN_TAKEOVER; o bot deve pausar respostas automaticas.",
+    title: "session.isBotActive",
+  },
+  {
+    description:
+      "Etiquetas V2 do WhatsApp. Nao representam etapas de pipeline.",
+    title: "session.tags",
+  },
+  {
+    description: "URL e metodo de autenticacao para chamar a Bot Action API.",
+    title: "actionsApi",
+  },
+] as const;
+
+export const interventionFlowNotes = [
+  {
+    description:
+      "Quando um humano envia mensagem ou assume a sessao, V2 dispara intervention_started e para de encaminhar eventos message regulares.",
+    title: "Inicio",
+  },
+  {
+    description:
+      "triggeredBy indica human, bot ou system; reason explica o motivo operacional como human_outbound_message ou bot_action.",
+    title: "Origem",
+  },
+  {
+    description:
+      "Durante takeover, send_text/send_image/send_audio/send_document retornam CRM_WHATSAPP_BOT_ACTION_BLOCKED.",
+    title: "Bloqueio",
+  },
+  {
+    description:
+      "intervention_ended inclui summary quando ha mensagens suficientes para o bot retomar com contexto.",
+    title: "Handback",
   },
 ] as const;
 
@@ -114,7 +109,7 @@ export const interventionNotes = [
   },
   {
     description:
-      "Se o bot tentar enviar durante takeover, recebe HTTP 403 com CRM_WHATSAPP_BOT_ACTION_BLOCKED.",
+      "Se o bot tentar enviar durante takeover, recebe erro estavel CRM_WHATSAPP_BOT_ACTION_BLOCKED.",
     title: "Bloqueio previsivel",
   },
   {
@@ -124,7 +119,7 @@ export const interventionNotes = [
   },
   {
     description:
-      "intervention_ended pode trazer durationSeconds, messageCount e summary para continuidade.",
+      "Nao use summary para substituir historico; ele e contexto curto para continuidade.",
     title: "Resumo de handback",
   },
 ] as const;

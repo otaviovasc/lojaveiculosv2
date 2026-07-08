@@ -6,6 +6,7 @@ import type {
 import { BillingWebhookValidationError } from "./billingWebhookErrors.js";
 
 export type ParsedAsaasWebhook = {
+  checkout?: Parameters<BillingWebhookRepository["syncProviderCheckout"]>[0];
   eventType: string;
   payment?: Parameters<BillingWebhookRepository["upsertProviderPayment"]>[0];
   providerEventId: string;
@@ -19,10 +20,24 @@ export function parseAsaasWebhook(
 ): ParsedAsaasWebhook {
   const providerEventId = requiredString(payload.id, "id");
   const eventType = requiredString(payload.event, "event");
+  const checkout = readRecord(payload.checkout);
   const payment = readRecord(payload.payment);
   const subscription = readRecord(payload.subscription);
 
   return {
+    ...(checkout
+      ? {
+          checkout: {
+            currentPeriodEnd: readCheckoutPeriodEnd(checkout),
+            provider: "asaas",
+            providerCheckoutId: requiredString(checkout.id, "checkout.id"),
+            providerCustomerId: readString(checkout.customer),
+            providerSubscriptionId: readCheckoutSubscriptionId(checkout),
+            raw: checkout,
+            status: checkoutStatus(eventType, readString(checkout.status)),
+          },
+        }
+      : {}),
     eventType,
     ...(payment
       ? {
@@ -63,6 +78,20 @@ export function parseAsaasWebhook(
   };
 }
 
+function checkoutStatus(
+  eventType: string,
+  status: string | null,
+): "cancelled" | "created" | "expired" | "paid" {
+  if (eventType === "CHECKOUT_PAID") return "paid";
+  if (eventType === "CHECKOUT_CANCELED" || status === "CANCELED") {
+    return "cancelled";
+  }
+  if (eventType === "CHECKOUT_EXPIRED" || status === "EXPIRED") {
+    return "expired";
+  }
+  return "created";
+}
+
 function paymentStatus(eventType: string): BillingPaymentWebhookStatus {
   if (eventType === "PAYMENT_RECEIVED") return "paid";
   if (eventType === "PAYMENT_OVERDUE") return "overdue";
@@ -89,6 +118,25 @@ function subscriptionStatus(
   if (status === "EXPIRED") return "expired";
   if (status === "INACTIVE" || status === "DELETED") return "cancelled";
   return "trialing";
+}
+
+function readCheckoutSubscriptionId(
+  checkout: Record<string, unknown>,
+): string | null {
+  if (typeof checkout.subscription === "string") {
+    return readString(checkout.subscription);
+  }
+  const subscription = readRecord(checkout.subscription);
+  return subscription ? readString(subscription.id) : null;
+}
+
+function readCheckoutPeriodEnd(checkout: Record<string, unknown>): Date | null {
+  const subscription = readRecord(checkout.subscription);
+  if (!subscription) return null;
+  return (
+    parseAsaasDate(readString(subscription.nextDueDate)) ??
+    parseAsaasDate(readString(subscription.endDate))
+  );
 }
 
 function paymentPaidAt(payment: Record<string, unknown>) {

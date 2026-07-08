@@ -12,6 +12,7 @@ import {
   handleBilling,
 } from "./billing.controller.errors.js";
 import {
+  createBillingProviderCheckoutSchema,
   syncBillingProviderSubscriptionSchema,
   updateEntitlementSchema,
 } from "./billing.controller.schemas.js";
@@ -82,6 +83,31 @@ export function createBillingFeature(
           ...(typeof input.updatePendingPayments === "boolean"
             ? { updatePendingPayments: input.updatePendingPayments }
             : {}),
+        }),
+      );
+    }),
+  );
+
+  feature.post("/provider/checkout", async (context) =>
+    handleBilling(context, async () => {
+      const input = await parseJson(
+        context,
+        createBillingProviderCheckoutSchema,
+      );
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.createProviderCheckout(serviceContext, {
+          ...(input.billingTypes ? { billingTypes: input.billingTypes } : {}),
+          ...(input.minutesToExpire
+            ? { minutesToExpire: input.minutesToExpire }
+            : {}),
+          ...(input.nextDueDate
+            ? { nextDueDate: new Date(`${input.nextDueDate}T00:00:00.000Z`) }
+            : {}),
+          returnPath: "/billing",
         }),
       );
     }),

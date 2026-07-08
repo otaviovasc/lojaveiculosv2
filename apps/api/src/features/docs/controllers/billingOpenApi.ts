@@ -2,6 +2,10 @@ import {
   billingProviderSyncPaths,
   billingProviderSyncSchemas,
 } from "./billingProviderSyncOpenApi.js";
+import {
+  agencyBillingPaths,
+  agencyBillingSchemas,
+} from "./agencyBillingOpenApi.js";
 
 export const billingSchemas = {
   BillingEntitlement: {
@@ -68,6 +72,7 @@ export const billingSchemas = {
       webhookConfigured: { type: "boolean" },
     },
   },
+  ...agencyBillingSchemas,
   ...billingProviderSyncSchemas,
 } as const;
 
@@ -75,7 +80,7 @@ export const billingPaths = {
   "/api/v1/billing/overview": {
     get: {
       tags: ["Billing"],
-      summary: "Read agency billing and entitlement overview",
+      summary: "Read store-scoped billing and entitlement overview",
       operationId: "getBillingOverview",
       security: [{ bearerAuth: [] }],
       responses: {
@@ -94,7 +99,7 @@ export const billingPaths = {
   "/api/v1/billing/provider/status": {
     get: {
       tags: ["Billing"],
-      summary: "Read payment provider readiness",
+      summary: "Read store-scoped payment provider readiness",
       operationId: "getBillingProviderStatus",
       security: [{ bearerAuth: [] }],
       responses: {
@@ -198,4 +203,5 @@ export const billingPaths = {
       },
     },
   },
+  ...agencyBillingPaths,
 } as const;

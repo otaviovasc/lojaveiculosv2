@@ -1,6 +1,6 @@
 # CRM V2 Integration Contracts
 
-Last updated: 2026-07-06
+Last updated: 2026-07-08
 
 This is the active worker-facing contract for the CRM migration. The older
 control dashboards remain useful context:
@@ -214,7 +214,6 @@ Missing/pending tables or fields:
 
 - Campaigns, campaign recipients, campaign metrics, campaign links on scheduled
   messages.
-- Bot action API and outbound webhook forwarding.
 
 ## Frontend Surface Contract
 
@@ -241,6 +240,33 @@ picker, catalog picker, delete/cancel confirmation.
 
 ## Bot Contract
 
-The V2 bot config foundation exists at
-`GET/PATCH /crm/whatsapp/integrations/bot`. The action API and outbound
-forwarding remain pending. Do not migrate MiniBot as the V2 bot contract.
+The V2 bot config, action API, and outbound forwarding are active:
+
+- `GET/PATCH /crm/whatsapp/integrations/bot`
+- `POST /crm/whatsapp/integrations/bot/actions`
+
+Authentication uses `X-Webhook-Secret`; the secret is write-only and never
+returned by API responses. The bot action route creates a bot-scoped
+`ServiceContext`, uses V2 UUIDs, checks permissions in services, audits
+mutations, and returns stable CRM WhatsApp bot error codes.
+
+Supported external bot events:
+
+- `message`
+- `intervention_started`
+- `intervention_ended`
+- `connection_status_changed`
+
+During `HUMAN_TAKEOVER`, regular `message` forwarding pauses and bot send
+actions are rejected with `CRM_WHATSAPP_BOT_ACTION_BLOCKED`. The bot can end
+takeover through `set_intervention` with `payload.enabled: false`.
+
+External bot media actions have a single canonical Repasses-style URL contract:
+
+- `send_image`: `payload.imageUrl`
+- `send_audio`: `payload.audioUrl`
+- `send_document`: `payload.documentUrl`
+
+Do not accept or document base64 media for the external bot API. Base64 belongs
+only to the operator/CRM media upload endpoint. Do not migrate MiniBot or
+uaZapi legacy payload compatibility as the V2 bot contract.

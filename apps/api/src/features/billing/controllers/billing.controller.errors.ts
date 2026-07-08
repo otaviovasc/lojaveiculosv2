@@ -11,6 +11,7 @@ import {
   BillingWebhookValidationError,
 } from "../../../domains/billing/readModels/billingWebhookErrors.js";
 import { BillingProviderSyncError } from "../../../domains/billing/services/BillingService/syncBillingProviderSubscription.js";
+import { BillingCheckoutError } from "../../../domains/billing/services/BillingService/createBillingProviderCheckout.js";
 
 export class BillingRequestValidationError extends Error {
   constructor(message: string) {
@@ -49,6 +50,15 @@ export async function handleBilling(
     if (error instanceof BillingProviderSyncError) {
       return jsonApiError(context, {
         code: "BILLING_PROVIDER_SYNC_FAILED",
+        details: { reason: error.reason },
+        error,
+        message: error.message,
+        status: syncErrorStatus(error.status),
+      });
+    }
+    if (error instanceof BillingCheckoutError) {
+      return jsonApiError(context, {
+        code: "BILLING_CHECKOUT_FAILED",
         details: { reason: error.reason },
         error,
         message: error.message,

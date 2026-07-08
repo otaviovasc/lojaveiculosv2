@@ -1,4 +1,10 @@
-import { Building2, CreditCard, Percent, WalletCards } from "lucide-react";
+import {
+  Building2,
+  CreditCard,
+  Info,
+  Percent,
+  WalletCards,
+} from "lucide-react";
 import type { BillingOverview } from "./types";
 import { money } from "./billingFormat";
 
@@ -14,7 +20,7 @@ export function BillingAutomaticBillingPanel({
     <section className="billing-panel billing-auto-panel">
       <header className="billing-panel-header billing-auto-header">
         <div>
-          <h3>Cobranca automatica mensal</h3>
+          <h3>Cobranca mensal</h3>
           <p>{authority.summary}</p>
         </div>
         <span className="billing-authority-pill">
@@ -55,7 +61,17 @@ export function BillingAutomaticBillingPanel({
               <th>Cobravel</th>
               <th>Unitario</th>
               <th>Qtd.</th>
-              <th>Rateio</th>
+              <th>
+                <span className="billing-table-heading">
+                  Participacao
+                  <span
+                    className="billing-table-tooltip"
+                    title="Quanto esta linha representa no total mensal."
+                  >
+                    <Info aria-hidden="true" className="size-4" />
+                  </span>
+                </span>
+              </th>
               <th>Total</th>
             </tr>
           </thead>

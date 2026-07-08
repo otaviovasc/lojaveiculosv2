@@ -12,7 +12,6 @@ import { PlatformAdminPage } from "../features/account/PlatformAdminPage";
 import { AgencyLayout } from "../features/agency/AgencyLayout";
 import { AgencyDashboardPage } from "../features/agency/pages/AgencyDashboardPage";
 import { AgencyStatsPage } from "../features/agency/pages/AgencyStatsPage";
-import { AgencyTeamAccessPage } from "../features/agency/pages/AgencyTeamAccessPage";
 import { AgencyBillingPage } from "../features/agency/pages/AgencyBillingPage";
 import { AgencyCreateStorePage } from "../features/agency/pages/AgencyCreateStorePage";
 import { LandingPage } from "../features/marketing/LandingPage";
@@ -60,7 +59,6 @@ export function App() {
       >
         <Route index element={<AgencyDashboardPage />} />
         <Route path="stats" element={<AgencyStatsPage />} />
-        <Route path="team-access" element={<AgencyTeamAccessPage />} />
         <Route path="unified-billing" element={<AgencyBillingPage />} />
         <Route path="create-store" element={<AgencyCreateStorePage />} />
       </Route>

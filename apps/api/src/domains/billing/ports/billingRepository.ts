@@ -139,6 +139,28 @@ export type BillingEntitlementEvent = {
   source: string;
 };
 
+export type AgencyTenantSummary = {
+  tenantId: TenantId;
+  tenantName: string;
+  tenantSlug: string;
+};
+
+export type AgencyManagedStoreOverview = {
+  activeEntitlementCount: number;
+  addonCount: number;
+  createdAt: Date;
+  entitlementCount: number;
+  entitlementMatrix: readonly BillingEntitlementMatrixRow[];
+  monthlyAmountCents: number;
+  planCode: string | null;
+  planName: string | null;
+  storeId: StoreId;
+  storeName: string;
+  storeSlug: string;
+  subscriptionStatus: BillingSubscription["status"] | null;
+  vehicleCount: number;
+};
+
 export type BillingOverview = {
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;
@@ -150,6 +172,19 @@ export type BillingOverview = {
   plans: readonly BillingPlan[];
   storeId: StoreId;
   subscription: BillingSubscription | null;
+  tenantId: TenantId;
+};
+
+export type AgencyTenantOverview = {
+  allocations: readonly BillingStoreAllocation[];
+  authority: BillingAuthority;
+  chargePreview: BillingChargePreview;
+  entitlementEvents: readonly BillingEntitlementEvent[];
+  financialSummary: BillingFinancialSummary;
+  plans: readonly BillingPlan[];
+  stores: readonly AgencyManagedStoreOverview[];
+  subscription: BillingSubscription | null;
+  tenant: AgencyTenantSummary;
   tenantId: TenantId;
 };
 
@@ -176,6 +211,10 @@ export type BillingRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<BillingOverview>;
+  getTenantOverview: (input: {
+    currentActorCanManage?: boolean;
+    tenantId: TenantId;
+  }) => Promise<AgencyTenantOverview>;
   updateStoreEntitlement: (
     input: UpdateStoreEntitlementInput,
   ) => Promise<BillingOverview>;

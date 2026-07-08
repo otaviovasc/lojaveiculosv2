@@ -12,9 +12,9 @@ export const llmsText = `# Loja Veiculos API
 - Public storefront lead capture: POST /api/v1/public/storefront/listings/{listingSlug}/leads
 - Role management matrix: GET /api/v1/identity/roles
 - Update member access: PATCH /api/v1/identity/memberships/{membershipId}/access
-- Billing overview: GET /api/v1/billing/overview
-- Billing provider status: GET /api/v1/billing/provider/status
-- Update store entitlement: PATCH /api/v1/billing/entitlements/{featureKey}
+- Store billing: GET /api/v1/billing/overview, GET /api/v1/billing/provider/status, POST /api/v1/billing/provider/checkout, PATCH /api/v1/billing/entitlements/{featureKey}
+- Agency tenant billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/billing/provider/checkout, POST /api/v1/agency/tenants/{tenantId}/billing/provider/subscription/sync
+- Update agency-managed store entitlement: PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}
 - Fiscal overview: GET /api/v1/fiscal/overview
 - Issue fiscal document: POST /api/v1/fiscal/documents
 - Cancel fiscal document: POST /api/v1/fiscal/documents/{documentId}/cancel
@@ -100,7 +100,7 @@ export const llmsText = `# Loja Veiculos API
 - inventory.sell: required to sell vehicle units and emit sale documents.
 - inventory.delete: reserved for vehicle deletion workflows.
 - users.manage: required to list and update store role/permission management.
-- billing.manage: required to read billing and mutate store entitlements.
+- billing.manage: required to read store billing, read agency tenant billing, sync billing providers, and mutate store entitlements.
 - analytics.read: required to read reports and commercial dashboards.
 - compliance.manage: required to read and operate LGPD/security controls.
 - fiscal.manage: required to operate SPEDY/NF-e lifecycle workflows.
@@ -165,9 +165,10 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/identity/invitations/{invitationId}/resend: resends a pending, failed, sent, or expired identity invitation.
 - PATCH /api/v1/identity/memberships/{membershipId}/access: updates one member role and exact allow/deny permission overrides. Agency actors can manage owners; owners can manage supervisors, salespeople, and investors.
 ## Current billing endpoints
-- GET /api/v1/billing/overview: returns plans, subscription status, agency allocations, financial summary, entitlement matrix, store entitlements, and entitlement change events; requires billing.manage.
-- GET /api/v1/billing/provider/status: returns Asaas provider readiness without exposing secrets; requires billing.manage.
-- PATCH /api/v1/billing/entitlements/{featureKey}: updates one entitlement status with optional reason, writes product entitlement history, and writes critical audit; requires billing.manage.
+- /api/v1/billing/*: store-scoped overview, provider status, hosted Asaas checkout, and entitlement update routes for the active store; entitlement updates write product history and critical audit; requires billing.manage.
+- GET /api/v1/agency/tenants/{tenantId}/overview: agency tenant-scoped overview for an active agency tenant membership or platform admin support access; returns tenant, managed stores, vehicle counts, persisted subscription_items charge preview, financial summary, and entitlement events.
+- GET/POST /api/v1/agency/tenants/{tenantId}/billing/provider/*: agency tenant-scoped Asaas readiness, hosted checkout, and subscription sync from persisted subscription_items; checkout and sync write critical audit.
+- PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}: updates one agency-managed store entitlement and writes critical audit.
 ## Current fiscal endpoints
 - GET /api/v1/fiscal/overview: returns SPEDY readiness, NF-e document summary, recent documents, and fiscal events; requires fiscal.manage and nfe entitlement.
 - POST /api/v1/fiscal/documents: records one fiscal issue attempt and persists provider status; live SPEDY calls require the future SPEDY HTTP gateway; requires fiscal.manage and nfe entitlement.
@@ -239,7 +240,6 @@ export const llmsText = `# Loja Veiculos API
 
 ## Vehicle document kinds
 - Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.
-
 ## External API safety limits
 - External API key requests are tenant and store scoped before services run.
 - External clients use least-privilege scopes instead of operator roles.

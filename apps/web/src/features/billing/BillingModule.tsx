@@ -11,14 +11,18 @@ import {
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createBillingApi, type BillingApi } from "./apiClient";
+import { readBillingCheckoutReturn } from "./billingCheckoutReturn";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
+import {
+  BillingCheckoutPanel,
+  type BillingCheckoutState,
+} from "./BillingCheckoutPanel";
 import {
   BillingAllocationTable,
   BillingEntitlementMatrix,
   BillingEventList,
   BillingKpiGrid,
 } from "./BillingPanels";
-import { BillingProviderPanel } from "./BillingProviderPanel";
 import { createBillingApiOptions } from "./runtimeApi";
 import type {
   BillingEntitlementStatus,
@@ -33,7 +37,12 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const [providerStatus, setProviderStatus] =
     useState<BillingProviderStatus | null>(null);
   const [status, setStatus] = useState<BillingStatus>({ kind: "loading" });
+  const [activeTab, setActiveTab] = useState<BillingTab>("overview");
+  const [checkoutState, setCheckoutState] = useState<BillingCheckoutState>({
+    kind: "idle",
+  });
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const checkoutReturn = readBillingCheckoutReturn("store");
 
   const refresh = async () => {
     setStatus({ kind: "loading" });
@@ -76,6 +85,20 @@ export function BillingModule({ api }: { api?: BillingApi }) {
     }
   };
 
+  const startCheckout: BillingApi["createCheckout"] = async (input) => {
+    setCheckoutState({ kind: "starting" });
+    try {
+      const checkout = await billingApi.createCheckout(input);
+      setCheckoutState({ kind: "started" });
+      window.location.assign(checkout.checkoutUrl);
+      return checkout;
+    } catch (error) {
+      setCheckoutState({ kind: "idle" });
+      setStatus({ kind: "error", message: errorMessage(error) });
+      throw error;
+    }
+  };
+
   return (
     <FeaturePageShell className="billing-shell" variant="content">
       <FeaturePageHeader
@@ -86,40 +109,62 @@ export function BillingModule({ api }: { api?: BillingApi }) {
             onClick={() => void refresh()}
           />
         }
-        description="Controle planos, alocacao por loja, add-ons e acesso efetivo por feature com historico auditavel."
+        description={
+          "Acompanhe seu plano, custo mensal, recursos contratados e historico."
+        }
         eyebrow={
           <>
             <CreditCard aria-hidden="true" className="size-4" />
-            Billing
+            Assinatura
           </>
         }
-        title="Console de billing e entitlements"
+        title="Assinatura e faturamento"
       />
 
       {status.kind === "error" ? (
         <FeatureAlert className="billing-alert">{status.message}</FeatureAlert>
       ) : null}
+      {checkoutReturn ? (
+        <FeatureAlert className="billing-alert" title={checkoutReturn.title}>
+          {checkoutReturn.message}
+        </FeatureAlert>
+      ) : null}
 
       {overview ? (
         <>
-          {providerStatus ? (
-            <BillingProviderPanel status={providerStatus} />
+          <BillingTabs activeTab={activeTab} onChange={setActiveTab} />
+          {activeTab === "overview" ? (
+            <>
+              <BillingCheckoutPanel
+                checkoutState={checkoutState}
+                overview={overview}
+                providerStatus={providerStatus}
+                onCheckout={startCheckout}
+              />
+              <BillingKpiGrid overview={overview} />
+            </>
           ) : null}
-          <BillingAutomaticBillingPanel overview={overview} />
-          <BillingKpiGrid overview={overview} />
-          <BillingAllocationTable allocations={overview.allocations} />
-          <BillingEntitlementMatrix
-            matrix={overview.entitlementMatrix}
-            reasons={reasons}
-            savingFeatureKey={
-              status.kind === "saving" ? status.featureKey : null
-            }
-            onReasonChange={(featureKey, reason) =>
-              setReasons((current) => ({ ...current, [featureKey]: reason }))
-            }
-            onUpdate={updateEntitlement}
-          />
-          <BillingEventList events={overview.entitlementEvents} />
+          {activeTab === "features" ? (
+            <BillingEntitlementMatrix
+              chargePreview={overview.chargePreview}
+              matrix={overview.entitlementMatrix}
+              reasons={reasons}
+              savingFeatureKey={
+                status.kind === "saving" ? status.featureKey : null
+              }
+              onReasonChange={(featureKey, reason) =>
+                setReasons((current) => ({ ...current, [featureKey]: reason }))
+              }
+              onUpdate={updateEntitlement}
+            />
+          ) : null}
+          {activeTab === "details" ? (
+            <>
+              <BillingAutomaticBillingPanel overview={overview} />
+              <BillingAllocationTable allocations={overview.allocations} />
+              <BillingEventList events={overview.entitlementEvents} />
+            </>
+          ) : null}
         </>
       ) : (
         <FeatureEmptyState
@@ -129,6 +174,39 @@ export function BillingModule({ api }: { api?: BillingApi }) {
         />
       )}
     </FeaturePageShell>
+  );
+}
+
+type BillingTab = "details" | "features" | "overview";
+
+function BillingTabs({
+  activeTab,
+  onChange,
+}: {
+  activeTab: BillingTab;
+  onChange: (tab: BillingTab) => void;
+}) {
+  const tabs: { label: string; value: BillingTab }[] = [
+    { label: "Visao geral e checkout", value: "overview" },
+    { label: "Recursos e add-ons", value: "features" },
+    { label: "Detalhes e historico", value: "details" },
+  ];
+
+  return (
+    <div className="billing-tabs" role="tablist">
+      {tabs.map((tab) => (
+        <button
+          aria-selected={activeTab === tab.value}
+          className={activeTab === tab.value ? "is-active" : ""}
+          key={tab.value}
+          onClick={() => onChange(tab.value)}
+          role="tab"
+          type="button"
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -145,6 +223,8 @@ function createRuntimeBillingApi(): BillingApi {
       createBillingApi(await createBillingApiOptions()).getOverview(),
     getProviderStatus: async () =>
       createBillingApi(await createBillingApiOptions()).getProviderStatus(),
+    createCheckout: async (input) =>
+      createBillingApi(await createBillingApiOptions()).createCheckout(input),
     updateEntitlement: async (featureKey, input) =>
       createBillingApi(await createBillingApiOptions()).updateEntitlement(
         featureKey,

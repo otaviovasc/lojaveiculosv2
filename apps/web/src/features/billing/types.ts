@@ -153,6 +153,23 @@ export type BillingProviderStatus = {
   webhookConfigured: boolean;
 };
 
+export type BillingCheckoutBillingType = "CREDIT_CARD" | "PIX";
+
+export type CreateBillingCheckoutInput = {
+  billingTypes?: readonly BillingCheckoutBillingType[];
+  minutesToExpire?: number;
+  nextDueDate?: string;
+};
+
+export type BillingCheckoutSession = {
+  checkoutUrl: string;
+  expiresAt: string | null;
+  externalReference: string;
+  provider: "asaas";
+  providerCheckoutId: string;
+  subscriptionId: string;
+};
+
 export type UpdateEntitlementInput = {
   endsAt?: string | null;
   featureKey: EntitlementKey;

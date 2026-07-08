@@ -3,6 +3,7 @@ import {
   createRuntimeAppDependencies,
   createRuntimeAppOptions,
 } from "./runtimeRepositories.js";
+import { createRuntimeBillingServicePorts } from "./runtimeAppOptions.js";
 
 const postgresState = vi.hoisted(() => ({
   clients: [] as Array<{ end: ReturnType<typeof vi.fn> }>,
@@ -57,6 +58,18 @@ describe("createRuntimeAppDependencies", () => {
     expect(runtime.resources).toEqual([]);
     expect(postgresState.clients).toEqual([]);
     await expect(runtime.close()).resolves.toBeUndefined();
+  });
+
+  it("passes PUBLIC_APP_URL into DB-backed billing checkout ports", () => {
+    const ports = createRuntimeBillingServicePorts(
+      {},
+      {
+        APP_ENV: "local",
+        PUBLIC_APP_URL: " http://localhost:5173 ",
+      },
+    );
+
+    expect(ports.publicAppUrl).toBe("http://localhost:5173");
   });
 
   it("rejects DB-backed app-options creation because the caller cannot close resources", async () => {

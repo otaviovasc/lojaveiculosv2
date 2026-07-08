@@ -10,11 +10,13 @@ import {
 } from "lucide-react";
 import {
   actionGroups,
-  botActionExamples,
   botDocCards,
   botEndpoint,
+  importantFieldNotes,
+  interventionFlowNotes,
   interventionNotes,
 } from "./CrmWhatsappBotDocsData";
+import { botActionExamples } from "./CrmWhatsappBotActionExamplesData";
 import { webhookEvents } from "./CrmWhatsappBotEventDocsData";
 
 export function CrmWhatsappBotDocs() {
@@ -69,6 +71,21 @@ export function CrmWhatsappBotDocs() {
       </DocPanel>
 
       <DocPanel
+        description="Campos que o bot deve usar para classificar origem, pausa e retomada."
+        icon={<Code2 aria-hidden="true" />}
+        title="Campos importantes"
+      >
+        <div className="crm-whatsapp-bot-note-grid">
+          {importantFieldNotes.map((note) => (
+            <article key={note.title}>
+              <strong>{note.title}</strong>
+              <p>{note.description}</p>
+            </article>
+          ))}
+        </div>
+      </DocPanel>
+
+      <DocPanel
         description="Acoes autenticadas por X-Webhook-Secret com UUIDs V2."
         icon={<Bot aria-hidden="true" />}
         title="Bot Action API"
@@ -106,6 +123,14 @@ export function CrmWhatsappBotDocs() {
         icon={<ShieldCheck aria-hidden="true" />}
         title="Intervencao humana"
       >
+        <div className="crm-whatsapp-bot-note-grid">
+          {interventionFlowNotes.map((note) => (
+            <article key={note.title}>
+              <strong>{note.title}</strong>
+              <p>{note.description}</p>
+            </article>
+          ))}
+        </div>
         <div className="crm-whatsapp-bot-note-grid">
           {interventionNotes.map((note) => (
             <article key={note.title}>

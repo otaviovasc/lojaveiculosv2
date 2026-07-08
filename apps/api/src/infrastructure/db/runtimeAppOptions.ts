@@ -2,6 +2,7 @@ import {
   createFinanceServices,
   type FinanceServices,
 } from "../../features/finance/controllers/financeServices.js";
+import type { BillingServicePorts } from "../../domains/billing/services/BillingService/serviceSupport.js";
 import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import {
   createInternalMonitoringServices,
@@ -121,19 +122,7 @@ export function createRuntimeHttpAppOptions({
       ),
     }),
     billingServices: createBillingServices({
-      ports: {
-        billingProviderRepository: createDrizzleBillingProviderRepository(
-          db as DrizzleBillingClient,
-        ),
-        billingRepository: createDrizzleBillingRepository(
-          db as DrizzleBillingClient,
-        ),
-        billingWebhookRepository: createDrizzleBillingWebhookRepository(
-          db as DrizzleBillingClient,
-        ),
-        environment: env.APP_ENV ?? env.NODE_ENV ?? "production",
-        paymentProviderGateway: createAsaasPaymentProviderGateway(env),
-      },
+      ports: createRuntimeBillingServicePorts(db, env),
     }),
     complianceServices: createRuntimeComplianceServices(),
     crmRealtimeBroker,
@@ -196,6 +185,28 @@ export function createRuntimeHttpAppOptions({
     storeAccessRepository: createDrizzleStoreAccessRepository(
       db as unknown as DrizzleStoreAccessClient,
     ),
+  };
+}
+
+export function createRuntimeBillingServicePorts(
+  db: unknown,
+  env: Record<string, string | undefined>,
+): BillingServicePorts {
+  const publicAppUrl = env.PUBLIC_APP_URL?.trim();
+
+  return {
+    billingProviderRepository: createDrizzleBillingProviderRepository(
+      db as DrizzleBillingClient,
+    ),
+    billingRepository: createDrizzleBillingRepository(
+      db as DrizzleBillingClient,
+    ),
+    billingWebhookRepository: createDrizzleBillingWebhookRepository(
+      db as DrizzleBillingClient,
+    ),
+    environment: env.APP_ENV ?? env.NODE_ENV ?? "production",
+    paymentProviderGateway: createAsaasPaymentProviderGateway(env),
+    ...(publicAppUrl ? { publicAppUrl } : {}),
   };
 }
 

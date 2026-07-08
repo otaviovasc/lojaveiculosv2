@@ -1,5 +1,6 @@
 import type {
   BillingProviderAccount,
+  BillingProviderCheckoutRecord,
   BillingProviderCustomerRecord,
   BillingProviderRepository,
   BillingProviderSubscriptionRecord,
@@ -24,19 +25,27 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
     providerSubscriptionId: "local_asaas_subscription_memory",
     status: "trialing",
   };
+  const checkouts: BillingProviderCheckoutRecord[] = [];
 
   return {
     async getProviderAccount(input): Promise<BillingProviderAccount> {
-      const overview = await billingRepository.getOverview({
-        ...(input.billingManagedBy
-          ? { billingManagedBy: input.billingManagedBy }
-          : {}),
-        ...(typeof input.currentActorCanManage === "boolean"
-          ? { currentActorCanManage: input.currentActorCanManage }
-          : {}),
-        storeId: input.storeId as never,
-        tenantId: input.tenantId as never,
-      });
+      const overview = input.storeId
+        ? await billingRepository.getOverview({
+            ...(input.billingManagedBy
+              ? { billingManagedBy: input.billingManagedBy }
+              : {}),
+            ...(typeof input.currentActorCanManage === "boolean"
+              ? { currentActorCanManage: input.currentActorCanManage }
+              : {}),
+            storeId: input.storeId as never,
+            tenantId: input.tenantId as never,
+          })
+        : await billingRepository.getTenantOverview({
+            ...(typeof input.currentActorCanManage === "boolean"
+              ? { currentActorCanManage: input.currentActorCanManage }
+              : {}),
+            tenantId: input.tenantId as never,
+          });
       return {
         billingCustomer,
         chargePreview: overview.chargePreview,
@@ -51,6 +60,22 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
         providerCustomerId: input.providerCustomerId,
       };
       return billingCustomer;
+    },
+    async saveProviderCheckout(input) {
+      const checkout: BillingProviderCheckoutRecord = {
+        checkoutUrl: input.checkoutUrl,
+        expiresAt: input.expiresAt,
+        externalReference: input.externalReference,
+        id: `checkout_${checkouts.length + 1}`,
+        provider: input.provider,
+        providerCheckoutId: input.providerCheckoutId,
+        status: input.status,
+        storeId: input.storeId,
+        subscriptionId: input.subscriptionId,
+        tenantId: input.tenantId,
+      };
+      checkouts.push(checkout);
+      return checkout;
     },
     async saveProviderSubscription(input) {
       if (input.subscriptionId !== subscription.id) return null;

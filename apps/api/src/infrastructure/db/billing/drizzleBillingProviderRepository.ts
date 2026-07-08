@@ -1,7 +1,12 @@
 import { desc, eq } from "drizzle-orm";
-import { billingCustomers, subscriptions } from "@lojaveiculosv2/db";
+import {
+  billingCheckoutSessions,
+  billingCustomers,
+  subscriptions,
+} from "@lojaveiculosv2/db";
 import type {
   BillingProviderAccount,
+  BillingProviderCheckoutRecord,
   BillingProviderCustomerRecord,
   BillingProviderRepository,
   BillingProviderSubscriptionRecord,
@@ -33,16 +38,23 @@ export function createDrizzleBillingProviderRepository(
         .limit(1);
       if (!billingCustomer) return null;
 
-      const overview = await billingRepository.getOverview({
-        ...(input.billingManagedBy
-          ? { billingManagedBy: input.billingManagedBy }
-          : {}),
-        ...(typeof input.currentActorCanManage === "boolean"
-          ? { currentActorCanManage: input.currentActorCanManage }
-          : {}),
-        storeId: input.storeId as never,
-        tenantId: input.tenantId as never,
-      });
+      const overview = input.storeId
+        ? await billingRepository.getOverview({
+            ...(input.billingManagedBy
+              ? { billingManagedBy: input.billingManagedBy }
+              : {}),
+            ...(typeof input.currentActorCanManage === "boolean"
+              ? { currentActorCanManage: input.currentActorCanManage }
+              : {}),
+            storeId: input.storeId as never,
+            tenantId: input.tenantId as never,
+          })
+        : await billingRepository.getTenantOverview({
+            ...(typeof input.currentActorCanManage === "boolean"
+              ? { currentActorCanManage: input.currentActorCanManage }
+              : {}),
+            tenantId: input.tenantId as never,
+          });
       return {
         billingCustomer: toCustomerRecord(billingCustomer),
         chargePreview: overview.chargePreview,
@@ -61,6 +73,43 @@ export function createDrizzleBillingProviderRepository(
         .returning();
       return row ? toCustomerRecord(row) : null;
     },
+    async saveProviderCheckout(input) {
+      const [row] = await db
+        .insert(billingCheckoutSessions)
+        .values({
+          callbackUrls: input.callbackUrls,
+          checkoutUrl: input.checkoutUrl,
+          expiresAt: input.expiresAt,
+          externalReference: input.externalReference,
+          provider: input.provider,
+          providerCheckoutId: input.providerCheckoutId,
+          raw: input.raw,
+          status: input.status,
+          storeId: input.storeId,
+          subscriptionId: input.subscriptionId,
+          tenantId: input.tenantId,
+        })
+        .onConflictDoUpdate({
+          set: {
+            callbackUrls: input.callbackUrls,
+            checkoutUrl: input.checkoutUrl,
+            expiresAt: input.expiresAt,
+            externalReference: input.externalReference,
+            raw: input.raw,
+            status: input.status,
+            storeId: input.storeId,
+            subscriptionId: input.subscriptionId,
+            tenantId: input.tenantId,
+            updatedAt: new Date(),
+          },
+          target: [
+            billingCheckoutSessions.provider,
+            billingCheckoutSessions.providerCheckoutId,
+          ],
+        })
+        .returning();
+      return row ? toCheckoutRecord(row) : null;
+    },
     async saveProviderSubscription(input) {
       const [row] = await db
         .update(subscriptions)
@@ -76,6 +125,23 @@ export function createDrizzleBillingProviderRepository(
         .returning();
       return row ? toSubscriptionRecord(row) : null;
     },
+  };
+}
+
+function toCheckoutRecord(
+  row: typeof billingCheckoutSessions.$inferSelect,
+): BillingProviderCheckoutRecord {
+  return {
+    checkoutUrl: row.checkoutUrl,
+    expiresAt: row.expiresAt,
+    externalReference: row.externalReference,
+    id: row.id,
+    provider: row.provider as "asaas",
+    providerCheckoutId: row.providerCheckoutId,
+    status: row.status,
+    storeId: row.storeId,
+    subscriptionId: row.subscriptionId,
+    tenantId: row.tenantId,
   };
 }
 

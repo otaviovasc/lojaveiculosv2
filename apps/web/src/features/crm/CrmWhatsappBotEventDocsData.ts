@@ -99,4 +99,22 @@ export const webhookEvents = [
       "Inclui handback summary para o bot retomar a conversa com contexto.",
     event: "intervention_ended",
   },
+  {
+    code: `{
+  "event": "connection_status_changed",
+  "timestamp": "2026-07-07T12:20:00.000Z",
+  "instanceName": "Loja Premium",
+  "connectionId": "24000000-0000-4000-8000-000000000101",
+  "connectionUuid": "24000000-0000-4000-8000-000000000101",
+  "connectionPhone": "5511999999999",
+  "connection": { "id": "24000000-0000-4000-8000-000000000101", "uuid": "24000000-0000-4000-8000-000000000101", "provider": "zapi", "status": "active", "phone": "5511999999999" },
+  "previousStatus": "disconnected",
+  "status": "active",
+  "reason": "connected",
+  "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
+}`,
+    description:
+      "Mudanca de estado da conexao ZAPI. Nao inclui chat nem session.",
+    event: "connection_status_changed",
+  },
 ] as const;

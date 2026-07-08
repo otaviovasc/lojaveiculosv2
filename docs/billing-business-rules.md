@@ -50,6 +50,11 @@ rules change.
 
 - Agencies are not charged for being agencies.
 - Agency-managed stores roll up to the agency tenant billing account.
+- Store billing routes under `/api/v1/billing/*` are store-scoped and require a
+  store context with billing authority.
+- Agency billing routes under `/api/v1/agency/tenants/:tenantId/*` are tenant
+  scoped and require an active agency tenant membership or platform admin
+  support access.
 - The agency payment method should be charged monthly for all active store
   subscription items and usage attached to the tenant.
 - A direct Asaas sync creates or updates the tenant-level provider subscription
@@ -75,10 +80,21 @@ rules change.
   - `ASAAS_RUNTIME_IMPLEMENTATION=http`;
   - `ASAAS_API_URL`;
   - `ASAAS_API_KEY`;
+  - `PUBLIC_APP_URL`;
   - `ASAAS_WEBHOOK_SECRET`;
   - `ASAAS_WEBHOOK_URL`.
 - Customer sync must search Asaas by `externalReference` before creating a
   customer because Asaas can create duplicate customers.
+- The customer-facing hire flow is hosted Asaas Checkout:
+  - store-scoped owners call `POST /api/v1/billing/provider/checkout`;
+  - agencies call
+    `POST /api/v1/agency/tenants/:tenantId/billing/provider/checkout`;
+  - checkout sessions are persisted in `billing_checkout_sessions`;
+  - checkout `externalReference` uses
+    `lojaveiculos:subscription:<subscriptionId>:checkout:<nonce>`;
+  - callback URLs are generated from `PUBLIC_APP_URL` and route back to the
+    billing UI with `?checkout=success|cancelled|expired`;
+  - browser redirects improve UX only. They must not mark payments as paid.
 - Subscription sync uses:
   - customer `externalReference = lojaveiculos:tenant:<tenantId>`;
   - subscription `externalReference = lojaveiculos:subscription:<subscriptionId>`;
@@ -89,6 +105,10 @@ rules change.
 - Seed/local smoke uses `PIX` by default. Production card-on-file still needs a
   card tokenization or hosted-checkout collection flow before `CREDIT_CARD`
   should be made the default.
+- Checkout webhooks update `billing_checkout_sessions`. `CHECKOUT_PAID` also
+  activates the local subscription linked to the checkout session; payment and
+  subscription webhooks remain the source of truth for provider payment and
+  provider subscription ids when Asaas sends them.
 - The public Asaas webhook endpoint is:
 
 ```text
@@ -136,7 +156,21 @@ curl -H "authorization: Bearer <token>" \
   "$API_BASE_URL/api/v1/billing/provider/status"
 ```
 
-4. Synchronize the seeded billing subscription with Asaas sandbox:
+4. Create a hosted checkout for the authenticated store owner:
+
+```bash
+curl -X POST -H "authorization: Bearer <token>" \
+  -H "content-type: application/json" \
+  "$API_BASE_URL/api/v1/billing/provider/checkout" \
+  -d '{"billingTypes":["CREDIT_CARD","PIX"],"minutesToExpire":90}'
+```
+
+Open the returned `checkoutUrl`, complete the sandbox payment, and return to
+the billing UI. Treat the browser return as pending until the webhook is
+processed.
+
+5. Synchronize the seeded billing subscription with Asaas sandbox when testing
+   the direct provider sync path:
 
 ```bash
 pnpm run billing:asaas:sync-smoke
@@ -146,19 +180,21 @@ This command creates or reuses the Asaas customer, creates or updates the Asaas
 subscription from the calculated chargeables, stores provider ids in Postgres,
 and prints only masked provider ids.
 
-5. Configure the Asaas webhook URL as:
+6. Configure the Asaas webhook URL as:
 
 ```text
 $PUBLIC_API_URL/api/v1/billing/webhooks/asaas
 ```
 
-6. Configure the Asaas webhook auth token equal to `ASAAS_WEBHOOK_SECRET`.
-7. Trigger a sandbox payment/subscription event.
-8. Confirm:
+7. Configure the Asaas webhook auth token equal to `ASAAS_WEBHOOK_SECRET`.
+8. Enable checkout, payment, and subscription webhook events in Asaas sandbox.
+9. Trigger a sandbox checkout/payment/subscription event.
+10. Confirm:
 
 - the endpoint returns HTTP 200;
 - `provider_events` has one row for the Asaas event id;
 - duplicate delivery does not create a second event;
+- checkout events update `billing_checkout_sessions`;
 - `payments` or `subscriptions` reflects the provider status;
 - audit records show `billing.webhook.asaas.processed`.
 

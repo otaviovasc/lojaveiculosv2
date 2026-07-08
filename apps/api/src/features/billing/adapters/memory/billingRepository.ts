@@ -1,4 +1,5 @@
 import type {
+  AgencyTenantOverview,
   BillingEntitlementEvent,
   BillingOverview,
   BillingPlan,
@@ -62,6 +63,17 @@ export function createMemoryBillingRepository(): BillingRepository {
         input.billingManagedBy,
         input.currentActorCanManage,
       );
+    },
+    async getTenantOverview(input) {
+      const overview = toOverview(
+        "store_1",
+        input.tenantId,
+        entitlements,
+        entitlementEvents,
+        "agency",
+        input.currentActorCanManage,
+      );
+      return toTenantOverview(overview);
     },
     async updateStoreEntitlement(input) {
       const before = entitlements.find(
@@ -155,4 +167,37 @@ function toOverview(
     },
     tenantId: tenantId as never,
   });
+}
+
+function toTenantOverview(overview: BillingOverview): AgencyTenantOverview {
+  return {
+    allocations: overview.allocations,
+    authority: overview.authority,
+    chargePreview: overview.chargePreview,
+    entitlementEvents: overview.entitlementEvents,
+    financialSummary: overview.financialSummary,
+    plans: overview.plans,
+    stores: overview.allocations.map((allocation) => ({
+      activeEntitlementCount: allocation.activeEntitlementCount,
+      addonCount: allocation.addonCount,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      entitlementCount: overview.entitlements.length,
+      entitlementMatrix: overview.entitlementMatrix,
+      monthlyAmountCents: allocation.monthlyAmountCents,
+      planCode: allocation.planCode,
+      planName: allocation.planName,
+      storeId: allocation.storeId,
+      storeName: allocation.storeName,
+      storeSlug: allocation.storeSlug,
+      subscriptionStatus: allocation.subscriptionStatus,
+      vehicleCount: 3,
+    })),
+    subscription: overview.subscription,
+    tenant: {
+      tenantId: overview.tenantId,
+      tenantName: "Agency One",
+      tenantSlug: "agency-one",
+    },
+    tenantId: overview.tenantId,
+  };
 }

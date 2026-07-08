@@ -11,7 +11,11 @@ import {
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SessionBootstrap } from "./apiClient";
-import { clearCurrentStoreSlug, persistCurrentStoreSlug } from "./currentStore";
+import {
+  clearCurrentStoreSlug,
+  persistCurrentStoreSlug,
+  readCurrentStoreSlug,
+} from "./currentStore";
 import { createRuntimeAccountApi } from "./runtimeApi";
 import {
   hasActiveAgencyMembership,
@@ -53,8 +57,12 @@ export function AccountAccessGate({
         const session = await api.bootstrap();
         if (session.defaultStore) {
           persistCurrentStoreSlug(session.defaultStore.storeSlug, userId);
-        } else {
+        } else if (access === "store") {
+          persistSelectedStoreForStoreAccess(session, userId);
+        } else if (!hasActiveStoreAccess(session)) {
           clearCurrentStoreSlug(userId);
+        } else {
+          keepSelectedManagedStore(session, userId);
         }
         if (!cancelled) setBootstrap(session);
       } catch (err) {
@@ -71,7 +79,7 @@ export function AccountAccessGate({
     return () => {
       cancelled = true;
     };
-  }, [attempt, userId]);
+  }, [access, attempt, userId]);
 
   useEffect(() => {
     if (!bootstrap || isAllowed(access, bootstrap)) return;
@@ -123,5 +131,47 @@ function isAllowed(access: AccountAccess, bootstrap: SessionBootstrap) {
   if (access === "agency") {
     return bootstrap.platformAdmin || hasActiveAgencyMembership(bootstrap);
   }
-  return Boolean(bootstrap.defaultStore);
+  return hasActiveStoreAccess(bootstrap);
+}
+
+function hasActiveStoreAccess(bootstrap: SessionBootstrap) {
+  return Boolean(
+    bootstrap.defaultStore ??
+    bootstrap.stores.find((store) => store.status === "active"),
+  );
+}
+
+function persistSelectedStoreForStoreAccess(
+  session: SessionBootstrap,
+  actorKey: string | null | undefined,
+) {
+  const current = readCurrentStoreSlug(actorKey);
+  const selected = session.stores.find(
+    (store) => store.status === "active" && store.storeSlug === current,
+  );
+  if (selected) return;
+  const firstActiveStore = session.stores.find(
+    (store) => store.status === "active",
+  );
+  if (firstActiveStore) {
+    persistCurrentStoreSlug(firstActiveStore.storeSlug, actorKey);
+    return;
+  }
+  clearCurrentStoreSlug(actorKey);
+}
+
+function keepSelectedManagedStore(
+  session: SessionBootstrap,
+  actorKey: string | null | undefined,
+) {
+  const current = readCurrentStoreSlug(actorKey);
+  if (
+    current &&
+    session.stores.some(
+      (store) => store.status === "active" && store.storeSlug === current,
+    )
+  ) {
+    return;
+  }
+  clearCurrentStoreSlug(actorKey);
 }

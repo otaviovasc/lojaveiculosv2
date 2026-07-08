@@ -8,9 +8,9 @@ import {
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
 import {
   hasActivePlatformAdmin,
-  listStores,
   listTenantMemberships,
 } from "./drizzleAccountProvisioningReads.js";
+import { listStores } from "./drizzleAccountProvisioningStoreReads.js";
 
 export async function findActiveStoreRole(
   db: DrizzleAccountProvisioningClient,

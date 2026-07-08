@@ -83,6 +83,53 @@ describe("processBillingProviderWebhook", () => {
       ),
     ).rejects.toBeInstanceOf(BillingWebhookAuthenticationError);
   });
+
+  it("syncs a received Asaas checkout payment event", async () => {
+    const audit = createAuditSink();
+    const context = createWebhookContext(audit);
+    const ports = {
+      billingRepository: createBillingRepository(),
+      billingWebhookRepository: createWebhookRepository(),
+      environment: "test",
+      paymentProviderGateway: createProviderGateway("secret"),
+    };
+
+    await expect(
+      processBillingProviderWebhook(
+        context,
+        {
+          payload: {
+            checkout: {
+              customer: "cus_1",
+              id: "chk_memory",
+              status: "PAID",
+              subscription: {
+                id: "sub_asaas_1",
+                nextDueDate: "2026-08-08",
+              },
+            },
+            event: "CHECKOUT_PAID",
+            id: "evt_checkout_paid_1",
+          },
+          provider: "asaas",
+          webhookToken: "secret",
+        },
+        ports,
+      ),
+    ).resolves.toMatchObject({
+      providerEventId: "evt_checkout_paid_1",
+      status: "processed",
+    });
+
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "billing.webhook.asaas.processed",
+        outcome: "succeeded",
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    );
+  });
 });
 
 function createWebhookContext(audit: AuditSink) {
@@ -103,6 +150,9 @@ function createAuditSink(): AuditSink {
 function createBillingRepository(): BillingRepository {
   return {
     getOverview: async () => {
+      throw new Error("Unused billing repository.");
+    },
+    getTenantOverview: async () => {
       throw new Error("Unused billing repository.");
     },
     updateStoreEntitlement: async () => {
@@ -127,6 +177,11 @@ function createProviderGateway(secret: string): PaymentProviderGateway {
 
 function createWebhookRepository(): BillingWebhookRepository {
   const events: BillingProviderWebhookEvent[] = [];
+  const checkoutScope: BillingProviderSyncResult = {
+    status: "synced",
+    storeId: "store_1" as never,
+    tenantId: "tenant_1" as never,
+  };
   const scope: BillingProviderSyncResult = {
     status: "synced",
     storeId: "store_1" as never,
@@ -157,6 +212,16 @@ function createWebhookRepository(): BillingWebhookRepository {
       };
       events.push(event);
       return { created: true, event };
+    },
+    async syncProviderCheckout(input) {
+      return input.providerCheckoutId === "chk_memory"
+        ? checkoutScope
+        : {
+            reason: "unknown_checkout",
+            status: "ignored",
+            storeId: null,
+            tenantId: null,
+          };
     },
     async syncProviderSubscription() {
       return scope;

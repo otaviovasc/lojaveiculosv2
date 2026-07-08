@@ -7,9 +7,15 @@ import type {
 
 export function createMemoryBillingWebhookRepository(): BillingWebhookRepository {
   const events: BillingProviderWebhookEvent[] = [];
+  const checkouts = new Map<string, BillingProviderSyncResult>();
   const payments = new Map<string, BillingProviderSyncResult>();
   const subscriptions = new Map<string, BillingProviderSyncResult>();
 
+  checkouts.set("chk_memory_asaas", {
+    status: "synced",
+    storeId: "store_1" as never,
+    tenantId: "tenant_1" as never,
+  });
   subscriptions.set("sub_memory", {
     status: "synced",
     storeId: "store_1" as never,
@@ -44,6 +50,18 @@ export function createMemoryBillingWebhookRepository(): BillingWebhookRepository
       };
       events.push(event);
       return { created: true, event };
+    },
+    async syncProviderCheckout(input) {
+      const existing = checkouts.get(input.providerCheckoutId);
+      if (!existing) {
+        return {
+          reason: "unknown_checkout",
+          status: "ignored",
+          storeId: null,
+          tenantId: null,
+        };
+      }
+      return existing;
     },
     async syncProviderSubscription(input) {
       const existing = subscriptions.get(input.providerSubscriptionId);

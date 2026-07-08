@@ -1,6 +1,6 @@
 # CRM V2 Smoke Checklist
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 Use this checklist for focused slice evidence and final CRM handoff. Store
 screenshots under `/tmp/lojaveiculosv2-qa/crm-v2/` unless a worker-specific
@@ -110,6 +110,11 @@ evidence folder is documented.
 - Trigger test webhook.
 - Call action API with `X-Webhook-Secret`.
 - Verify UUID inputs for lead/session/tag/visit.
+- Verify `send_image`, `send_audio`, and `send_document` use
+  `imageUrl`/`audioUrl`/`documentUrl`; base64 should be rejected on the
+  external bot API.
+- Verify `send_text` can start a conversation with `connectionId` plus
+  `payload.phone` and stores the message as bot-authored.
 - Start human takeover and verify regular forwarding pauses.
 - End intervention through bot action.
 - Verify `intervention_ended` includes started/ended timestamps, duration,
@@ -117,6 +122,8 @@ evidence folder is documented.
 - Verify bot send action is blocked during takeover.
 - Process a scheduled/campaign message and verify it forwards as
   `senderOrigin: system` without emitting `intervention_started`.
+- Trigger connected/disconnected callback and verify
+  `connection_status_changed` is forwarded without chat/session fields.
 - Verify bot webhook dispatch audit records contain no secret values.
 - Desktop screenshot evidence:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-integrations-ui/crm-whatsapp-integrations.png`.

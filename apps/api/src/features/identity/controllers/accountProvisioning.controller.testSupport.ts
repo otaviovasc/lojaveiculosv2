@@ -122,6 +122,7 @@ function createContext(input: {
 
 function storeRecord(role: "agency" | "owner") {
   return {
+    billingManagedBy: role === "agency" ? "agency" : "store_owner",
     role,
     storeId: "store_1" as never,
     storeName: "Auto Prime",

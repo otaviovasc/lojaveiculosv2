@@ -1,6 +1,5 @@
 import { and, eq } from "drizzle-orm";
 import {
-  membershipPermissionOverrides,
   platformAdminMemberships,
   roleTemplates,
   storeMemberships,
@@ -9,14 +8,14 @@ import {
   tenants,
   users,
 } from "@lojaveiculosv2/db";
-import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
-import { resolvePermissions } from "../../../domains/identity/domain/permissionResolver.js";
+import type { RoleKey } from "@lojaveiculosv2/shared";
 import {
   AccountProvisioningConflictError,
   type ClerkUserProfile,
   type IdentityUserSummary,
 } from "../../../domains/identity/ports/accountProvisioningRepository.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
+import { resolveMembershipPermissions } from "./drizzleAccountProvisioningPermissions.js";
 
 export async function ensureUser(
   db: DrizzleAccountProvisioningClient,
@@ -45,56 +44,6 @@ export async function ensureUser(
     .returning();
   if (!created) throw new Error("Failed to create V2 user.");
   return toUserSummary(created);
-}
-
-export async function listStores(
-  db: DrizzleAccountProvisioningClient,
-  userId: string,
-) {
-  const rows = await db
-    .select({
-      membershipId: storeMemberships.id,
-      role: roleTemplates.roleKey,
-      status: storeMemberships.status,
-      storeId: stores.id,
-      storeName: stores.tradingName,
-      storeSlug: stores.publicSlug,
-      tenantId: stores.tenantId,
-      tenantName: tenants.tradingName,
-    })
-    .from(storeMemberships)
-    .innerJoin(stores, eq(stores.id, storeMemberships.storeId))
-    .innerJoin(tenants, eq(tenants.id, stores.tenantId))
-    .innerJoin(
-      roleTemplates,
-      eq(roleTemplates.id, storeMemberships.roleTemplateId),
-    )
-    .where(
-      and(
-        eq(storeMemberships.userId, userId),
-        eq(stores.isDeleted, false),
-        eq(tenants.isDeleted, false),
-      ),
-    )
-    .limit(100);
-  return Promise.all(
-    rows.map(async (row) => {
-      const effectivePermissions = await resolveMembershipPermissions(db, {
-        membershipId: row.membershipId,
-        role: row.role,
-      });
-      return {
-        effectivePermissions,
-        role: row.role,
-        status: row.status,
-        storeId: row.storeId as never,
-        storeName: row.storeName,
-        storeSlug: row.storeSlug,
-        tenantId: row.tenantId as never,
-        tenantName: row.tenantName,
-      };
-    }),
-  );
 }
 
 export async function listTenantMemberships(
@@ -155,29 +104,6 @@ export async function hasStorePermission(
       role: membership.role,
     })
   ).includes(input.permission);
-}
-
-async function resolveMembershipPermissions(
-  db: DrizzleAccountProvisioningClient,
-  membership: { membershipId: string; role: RoleKey },
-) {
-  const overrides = await db
-    .select({
-      allowed: membershipPermissionOverrides.allowed,
-      permission: membershipPermissionOverrides.permissionKey,
-    })
-    .from(membershipPermissionOverrides)
-    .where(
-      eq(membershipPermissionOverrides.membershipId, membership.membershipId),
-    )
-    .limit(100);
-  return resolvePermissions({
-    overrides: overrides.map((override) => ({
-      allowed: override.allowed,
-      permission: override.permission as PermissionKey,
-    })),
-    role: membership.role,
-  });
 }
 
 export async function hasActivePlatformAdmin(

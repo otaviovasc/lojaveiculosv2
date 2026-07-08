@@ -1,17 +1,13 @@
 import { and, desc, eq, isNull, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
-  planFeatures,
-  plans,
   storeEntitlements,
   storeEntitlementEvents,
   subscriptionItems,
-  subscriptions,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
   BillingOverview,
-  BillingPlan,
   BillingRepository,
   BillingSubscription,
   StoreEntitlement,
@@ -20,12 +16,18 @@ import {
   createBillingAuthority,
   createBillingOverview,
 } from "../../../domains/billing/readModels/billingOverviewModel.js";
+import { getTenantOverview } from "./drizzleAgencyBillingOverviewSupport.js";
+import {
+  findPlan,
+  findTenantSubscription,
+  listPlans,
+} from "./drizzleBillingCatalogSupport.js";
 import {
   getFinancialSummary,
-  listAllocations,
   listChargeables,
   listEntitlementEvents,
 } from "./drizzleBillingOverviewSupport.js";
+import { listStoreScopedAllocations } from "./drizzleStoreBillingAllocationSupport.js";
 
 export type DrizzleBillingClient = PostgresJsDatabase<typeof schema>;
 
@@ -35,6 +37,9 @@ export function createDrizzleBillingRepository(
   return {
     async getOverview(input) {
       return getOverview(db, input);
+    },
+    async getTenantOverview(input) {
+      return getTenantOverview(db, input);
     },
     async updateStoreEntitlement(input) {
       return db.transaction(async (tx) => {
@@ -85,6 +90,7 @@ export function createDrizzleBillingRepository(
     },
   };
 }
+
 async function getOverview(
   db: DrizzleBillingClient,
   input: {
@@ -101,7 +107,7 @@ async function getOverview(
     listEntitlementEvents(db, input),
   ]);
   const [allocations, chargeables, financialSummary] = await Promise.all([
-    listAllocations(db, input, billingPlans, subscription),
+    listStoreScopedAllocations(db, input, billingPlans, subscription),
     listChargeables(db, input, billingPlans, subscription),
     getFinancialSummary(db, input, subscription),
   ]);
@@ -126,27 +132,7 @@ async function getOverview(
     tenantId: input.tenantId as never,
   });
 }
-async function listPlans(db: DrizzleBillingClient): Promise<BillingPlan[]> {
-  const [planRows, featureRows] = await Promise.all([
-    db.select().from(plans).orderBy(plans.monthlyPriceCents).limit(50),
-    db.select().from(planFeatures).limit(500),
-  ]);
 
-  return planRows.map((plan) => ({
-    code: plan.code,
-    features: featureRows
-      .filter((feature) => feature.planId === plan.id)
-      .map((feature) => ({
-        featureKey: feature.featureKey as never,
-        included: feature.included === 1,
-        limitValue: feature.limitValue,
-      })),
-    id: plan.id,
-    monthlyPriceCents: plan.monthlyPriceCents,
-    name: plan.name,
-    status: plan.status,
-  }));
-}
 async function listEntitlements(
   db: DrizzleBillingClient,
   input: { storeId: string; tenantId: string },
@@ -171,16 +157,12 @@ async function listEntitlements(
     status: row.status,
   }));
 }
+
 async function findSubscription(
   db: DrizzleBillingClient,
   input: { storeId: string; tenantId: string },
 ): Promise<BillingSubscription | null> {
-  const [subscription] = await db
-    .select()
-    .from(subscriptions)
-    .where(eq(subscriptions.tenantId, input.tenantId))
-    .orderBy(desc(subscriptions.createdAt))
-    .limit(1);
+  const subscription = await findTenantSubscription(db, input);
   if (!subscription) return null;
 
   const [item] = await db
@@ -201,43 +183,11 @@ async function findSubscription(
   const plan = item?.planId ? await findPlan(db, item.planId) : null;
 
   return {
-    currentPeriodEnd: subscription.currentPeriodEnd,
-    currentPeriodStart: subscription.currentPeriodStart,
-    id: subscription.id,
+    ...subscription,
     plan,
-    status: subscription.status,
   };
 }
-async function findPlan(
-  db: DrizzleBillingClient,
-  planId: string,
-): Promise<BillingPlan | null> {
-  const [plan] = await db
-    .select()
-    .from(plans)
-    .where(eq(plans.id, planId))
-    .limit(1);
-  if (!plan) return null;
 
-  const features = await db
-    .select()
-    .from(planFeatures)
-    .where(eq(planFeatures.planId, planId))
-    .limit(100);
-
-  return {
-    code: plan.code,
-    features: features.map((feature) => ({
-      featureKey: feature.featureKey as never,
-      included: feature.included === 1,
-      limitValue: feature.limitValue,
-    })),
-    id: plan.id,
-    monthlyPriceCents: plan.monthlyPriceCents,
-    name: plan.name,
-    status: plan.status,
-  };
-}
 function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)

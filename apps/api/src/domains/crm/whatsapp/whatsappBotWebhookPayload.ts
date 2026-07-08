@@ -20,6 +20,14 @@ export type BuildCrmBotWebhookPayloadInput = {
   triggeredBy?: "bot" | "human" | "system";
 };
 
+export type BuildCrmBotConnectionStatusPayloadInput = {
+  connection: CrmConnection;
+  previousStatus: string | null;
+  reason: string | null;
+  status: string;
+  timestamp: Date;
+};
+
 export function buildCrmBotWebhookPayload(
   actionApiBaseUrl: string,
   input: BuildCrmBotWebhookPayloadInput,
@@ -66,6 +74,34 @@ export function buildCrmBotWebhookPayload(
       })),
       uuid: input.session.id,
     },
+    timestamp: input.timestamp.toISOString(),
+  };
+}
+
+export function buildCrmBotConnectionStatusPayload(
+  actionApiBaseUrl: string,
+  input: BuildCrmBotConnectionStatusPayloadInput,
+): CrmBotWebhookPayload {
+  return {
+    actionsApi: {
+      authentication: "X-Webhook-Secret",
+      baseUrl: actionApiBaseUrl,
+    },
+    connection: {
+      id: input.connection.id,
+      phone: input.connection.phone,
+      provider: input.connection.provider,
+      status: input.status,
+      uuid: input.connection.id,
+    },
+    connectionId: input.connection.id,
+    connectionPhone: input.connection.phone,
+    connectionUuid: input.connection.id,
+    event: "connection_status_changed",
+    instanceName: input.connection.displayName,
+    previousStatus: input.previousStatus,
+    reason: input.reason,
+    status: input.status,
     timestamp: input.timestamp.toISOString(),
   };
 }

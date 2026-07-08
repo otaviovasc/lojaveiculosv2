@@ -4,6 +4,7 @@ const requiredAsaasKeys = [
   "ASAAS_RUNTIME_IMPLEMENTATION",
   "ASAAS_API_URL",
   "ASAAS_API_KEY",
+  "PUBLIC_APP_URL",
 ] as const;
 
 export function getAsaasProviderStatus(
@@ -16,12 +17,15 @@ export function getAsaasProviderStatus(
       ? ["ASAAS_RUNTIME_IMPLEMENTATION=http"]
       : []),
     ...(env.ASAAS_WEBHOOK_SECRET ? [] : ["ASAAS_WEBHOOK_SECRET"]),
+    ...(env.ASAAS_WEBHOOK_URL ? [] : ["ASAAS_WEBHOOK_URL"]),
   ];
 
   return {
     configured: missingConfiguration.length === 0,
     missingConfiguration,
     provider: "asaas",
-    webhookConfigured: Boolean(env.ASAAS_WEBHOOK_SECRET),
+    webhookConfigured: Boolean(
+      env.ASAAS_WEBHOOK_SECRET && env.ASAAS_WEBHOOK_URL,
+    ),
   };
 }

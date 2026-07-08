@@ -26,7 +26,7 @@
     "db:logs": "COMPOSE_DISABLE_ENV_FILE=1 docker compose logs -f lojaveiculosv2-postgres lojaveiculosv2-audit-postgres lojaveiculosv2-redis",
     "db:push": "pnpm --filter @lojaveiculosv2/db db:push && pnpm --filter @lojaveiculosv2/audit-db db:push",
     "db:push:local": "DATABASE_URL=postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2 AUDIT_DATABASE_URL=postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit pnpm --filter @lojaveiculosv2/db db:push:force && AUDIT_DATABASE_URL=postgresql://lojaveiculosv2_audit:lojaveiculosv2_audit_dev@localhost:54322/lojaveiculosv2_audit pnpm --filter @lojaveiculosv2/audit-db db:push:force",
-    "db:seed:local": "node tools/db/ensure-local-database-url.mjs DATABASE_URL && COMPOSE_DISABLE_ENV_FILE=1 docker compose exec -T lojaveiculosv2-postgres psql -U lojaveiculosv2 -d lojaveiculosv2 -v ON_ERROR_STOP=1 -f /seed/vehicle-catalog.sql -f /seed/product-test-user.sql && pnpm run r2:seed:documents -- --apply --skip-missing-env",
+    "db:seed:local": "node tools/db/ensure-local-database-url.mjs DATABASE_URL && COMPOSE_DISABLE_ENV_FILE=1 docker compose exec -T lojaveiculosv2-postgres psql -U lojaveiculosv2 -d lojaveiculosv2 -v ON_ERROR_STOP=1 -f /seed/vehicle-catalog.sql -f /seed/product-test-user.sql && pnpm run r2:seed:documents -- --apply --skip-missing-env && pnpm run r2:repair:seed-media -- --apply --skip-missing-env --fail-on-missing",
     "db:clean:local": "pnpm run db:up && pnpm run db:push:local && node tools/db/clean-local-databases.mjs && pnpm run db:seed:local",
     "db:reset:local": "node tools/db/reset-local-databases.mjs",
     "db:up": "COMPOSE_DISABLE_ENV_FILE=1 docker compose up -d --wait lojaveiculosv2-postgres lojaveiculosv2-audit-postgres lojaveiculosv2-redis",
@@ -45,6 +45,7 @@
     "crm:zapi:diagnose": "node tools/migration/crm-whatsapp/zapi-connection-diagnostic.mjs",
     "billing:asaas:sync-smoke": "pnpm --filter @lojaveiculosv2/api billing:asaas:sync-smoke",
     "billing:asaas:webhook-smoke": "node tools/qa/asaas-billing-webhook-smoke.mjs",
+    "qa:seed:local": "node tools/qa/local-seed-smoke.mjs",
     "test:frontend-design": "pnpm --filter @lojaveiculosv2/web exec vitest run tools/quality/frontend-design-rules.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api test -- productionSmoke",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",
@@ -71,12 +72,15 @@
     "*": "prettier --ignore-unknown --write"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1075.0",
     "@playwright/test": "^1.61.1",
     "@types/node": "24.13.2",
     "eslint": "10.6.0",
     "globals": "17.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
+    "pdf-lib": "^1.17.1",
+    "postgres": "^3.4.9",
     "prettier": "^3.9.3",
     "typescript": "6.0.3",
     "typescript-eslint": "8.62.0"

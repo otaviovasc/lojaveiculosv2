@@ -18,6 +18,7 @@ import type { InterventionEventDetails } from "./whatsappBotInterventionDetails.
 import { auditBotWebhookDispatch } from "./whatsappBotWebhookAudit.js";
 import {
   botSenderOrigin,
+  buildCrmBotConnectionStatusPayload,
   buildCrmBotWebhookPayload,
 } from "./whatsappBotWebhookPayload.js";
 
@@ -81,6 +82,38 @@ export async function notifyWhatsappInterventionChangedToBot(
   });
 }
 
+export async function notifyWhatsappConnectionStatusChangedToBot(
+  context: ServiceContext,
+  input: {
+    connection: CrmConnection;
+    previousStatus: string | null;
+    reason: string | null;
+    status: string;
+  },
+  ports: CrmServicePorts,
+) {
+  const timestamp = new Date();
+  await dispatchBotWebhook(context, ports, {
+    connection: input.connection,
+    event: "connection_status_changed",
+    idempotencyKey: [
+      input.connection.id,
+      "connection_status_changed",
+      input.status,
+      timestamp.toISOString(),
+    ].join(":"),
+    payload: (actionApiBaseUrl) =>
+      buildCrmBotConnectionStatusPayload(actionApiBaseUrl, {
+        connection: input.connection,
+        previousStatus: input.previousStatus,
+        reason: input.reason,
+        status: input.status,
+        timestamp,
+      }),
+    timestamp,
+  });
+}
+
 async function dispatchBotWebhook(
   context: ServiceContext,
   ports: CrmServicePorts,
@@ -90,7 +123,10 @@ async function dispatchBotWebhook(
     idempotencyKey: string;
     intervention?: InterventionEventDetails;
     message?: CrmWhatsappMessage;
-    session: CrmWhatsappSession;
+    payload?: (
+      actionApiBaseUrl: string,
+    ) => ReturnType<typeof buildCrmBotWebhookPayload>;
+    session?: CrmWhatsappSession;
     timestamp: Date;
     triggeredBy?: "bot" | "human" | "system";
   },
@@ -108,7 +144,9 @@ async function dispatchBotWebhook(
   try {
     await dispatcher.dispatch({
       idempotencyKey: input.idempotencyKey,
-      payload: buildCrmBotWebhookPayload(dispatcher.actionApiBaseUrl, input),
+      payload: input.payload
+        ? input.payload(dispatcher.actionApiBaseUrl)
+        : buildSessionBotPayload(dispatcher.actionApiBaseUrl, input),
       storeId: input.connection.storeId,
       tenantId: input.connection.tenantId,
       webhookSecret: config.webhookSecret,
@@ -122,11 +160,37 @@ async function dispatchBotWebhook(
         connectionId: input.connection.id,
         errorName: error instanceof Error ? error.name : "UnknownError",
         event: input.event,
-        sessionId: input.session.id,
+        sessionId: input.session?.id ?? null,
       }),
     );
     await auditBotWebhookDispatch(context, input, "failed", error);
   }
+}
+
+function buildSessionBotPayload(
+  actionApiBaseUrl: string,
+  input: {
+    connection: CrmConnection;
+    event: CrmBotWebhookEvent;
+    intervention?: InterventionEventDetails;
+    message?: CrmWhatsappMessage;
+    session?: CrmWhatsappSession;
+    timestamp: Date;
+    triggeredBy?: "bot" | "human" | "system";
+  },
+) {
+  if (!input.session) {
+    throw new Error("CRM bot session payload requires a session.");
+  }
+  return buildCrmBotWebhookPayload(actionApiBaseUrl, {
+    connection: input.connection,
+    event: input.event,
+    ...(input.intervention ? { intervention: input.intervention } : {}),
+    ...(input.message ? { message: input.message } : {}),
+    session: input.session,
+    timestamp: input.timestamp,
+    ...(input.triggeredBy ? { triggeredBy: input.triggeredBy } : {}),
+  });
 }
 
 function interventionActor(context: ServiceContext) {

@@ -10,6 +10,7 @@ import {
   type WhatsappBotActionName,
 } from "../services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { ExecuteWhatsappBotActionInput } from "../services/CrmWhatsapp/whatsappBotActions.js";
+import { normalizeWhatsappPhone } from "./startWhatsappConversationSupport.js";
 
 export async function assertBotSendAllowed(
   context: ServiceContext,
@@ -24,6 +25,31 @@ export async function assertBotSendAllowed(
       409,
     );
   }
+}
+
+export async function assertBotPhoneSendAllowed(
+  context: ServiceContext,
+  input: { connectionId: string; phone: string },
+  ports: CrmServicePorts,
+) {
+  const scope = requireCrmScope(context);
+  const phone = normalizeWhatsappPhone(input.phone);
+  const [session] = await getCrmWhatsappRepository(ports).listSessions({
+    connectionId: input.connectionId,
+    limit: 20,
+    offset: 0,
+    search: phone,
+    storeId: scope.storeId as never,
+    tenantId: scope.tenantId as never,
+  });
+  if (session?.buyerPhone === phone && session.status === "HUMAN_TAKEOVER") {
+    throw new WhatsappBotActionError(
+      "Bot sends are blocked while human takeover is active.",
+      "CRM_WHATSAPP_BOT_ACTION_BLOCKED",
+      409,
+    );
+  }
+  return phone;
 }
 
 export async function resolveBotActionLeadId(
@@ -90,10 +116,36 @@ export function requireBotActionSessionId(
   return input.sessionId ?? readRequiredText(input.payload, "sessionId");
 }
 
+export function readOptionalBotActionSessionId(
+  input: ExecuteWhatsappBotActionInput,
+) {
+  return input.sessionId ?? readOptionalText(input.payload, "sessionId");
+}
+
+export function requireBotActionConnectionId(
+  input: ExecuteWhatsappBotActionInput,
+) {
+  if (input.connectionId) return input.connectionId;
+  throw new WhatsappBotActionError(
+    "connectionId is required when sessionId is not provided.",
+    "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
+  );
+}
+
 export function mediaTypeForBotAction(action: WhatsappBotActionName) {
   if (action === "send_audio") return "audio";
   if (action === "send_document") return "document";
   return "image";
+}
+
+export function mediaUrlForBotAction(
+  payload: Record<string, unknown> | undefined,
+  action: WhatsappBotActionName,
+) {
+  if (action === "send_audio") return readRequiredUrl(payload, "audioUrl");
+  if (action === "send_document")
+    return readRequiredUrl(payload, "documentUrl");
+  return readRequiredUrl(payload, "imageUrl");
 }
 
 export function readRequiredText(
@@ -104,6 +156,23 @@ export function readRequiredText(
   if (typeof value === "string" && value.trim()) return value.trim();
   throw new WhatsappBotActionError(
     `Payload field ${key} is required.`,
+    "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
+  );
+}
+
+export function readRequiredUrl(
+  payload: Record<string, unknown> | undefined,
+  key: string,
+) {
+  const value = readRequiredText(payload, key);
+  try {
+    const url = new URL(value);
+    if (url.protocol === "http:" || url.protocol === "https:") return value;
+  } catch {
+    // Fall through to the stable validation error below.
+  }
+  throw new WhatsappBotActionError(
+    `Payload field ${key} must be an http(s) URL.`,
     "CRM_WHATSAPP_BOT_ACTION_VALIDATION_ERROR",
   );
 }

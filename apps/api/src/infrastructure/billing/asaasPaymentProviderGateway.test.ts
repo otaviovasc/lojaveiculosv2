@@ -12,7 +12,9 @@ describe("getAsaasProviderStatus", () => {
         "ASAAS_RUNTIME_IMPLEMENTATION",
         "ASAAS_API_URL",
         "ASAAS_API_KEY",
+        "PUBLIC_APP_URL",
         "ASAAS_WEBHOOK_SECRET",
+        "ASAAS_WEBHOOK_URL",
       ],
       provider: "asaas",
       webhookConfigured: false,
@@ -26,6 +28,9 @@ describe("getAsaasProviderStatus", () => {
         ASAAS_API_URL: "https://sandbox.asaas.com/api/v3",
         ASAAS_RUNTIME_IMPLEMENTATION: "http",
         ASAAS_WEBHOOK_SECRET: "secret",
+        ASAAS_WEBHOOK_URL:
+          "https://api.example.com/api/v1/billing/webhooks/asaas",
+        PUBLIC_APP_URL: "https://app.example.com",
       }),
     ).toEqual({
       configured: true,
@@ -162,6 +167,9 @@ function createConfiguredGateway(fetcher: typeof fetch) {
       ASAAS_API_URL: "https://api-sandbox.asaas.com/v3",
       ASAAS_RUNTIME_IMPLEMENTATION: "http",
       ASAAS_WEBHOOK_SECRET: "secret",
+      ASAAS_WEBHOOK_URL:
+        "https://api.example.com/api/v1/billing/webhooks/asaas",
+      PUBLIC_APP_URL: "https://app.example.com",
     },
     { fetcher },
   );

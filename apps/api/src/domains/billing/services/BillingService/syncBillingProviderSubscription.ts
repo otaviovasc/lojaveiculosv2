@@ -27,6 +27,7 @@ import {
 import {
   getBillingProviderRepository,
   requireBillingScope,
+  requireTenantBillingScope,
   type BillingServicePorts,
 } from "./serviceSupport.js";
 
@@ -44,14 +45,16 @@ export async function syncBillingProviderSubscription(
   ports: BillingServicePorts,
 ): Promise<BillingProviderSubscriptionSyncResult> {
   assertPermission(context, "billing.manage");
-  const scope = requireBillingScope(context);
+  const scope = context.storeId
+    ? requireBillingScope(context)
+    : { ...requireTenantBillingScope(context), storeId: null };
   const repository = getBillingProviderRepository(ports);
   const gateway = getPaymentProviderGateway(ports);
   const account = assertSyncableAccount(
     await repository.getProviderAccount({
       billingManagedBy: context.billingManagedBy ?? "store_owner",
       currentActorCanManage: context.permissions.includes("billing.manage"),
-      storeId: scope.storeId,
+      ...(scope.storeId ? { storeId: scope.storeId } : {}),
       tenantId: scope.tenantId,
     }),
   );

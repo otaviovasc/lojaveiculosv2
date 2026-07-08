@@ -199,6 +199,9 @@ function createProviderRepository(totalCents = 54899) {
         providerCustomerId: input.providerCustomerId,
       };
     },
+    async saveProviderCheckout() {
+      throw new Error("Unused provider checkout.");
+    },
     async saveProviderSubscription(input) {
       savedSubscription = input;
       return {
@@ -225,6 +228,9 @@ function createProviderRepository(totalCents = 54899) {
 function createBillingRepository(): BillingRepository {
   return {
     getOverview: async () => {
+      throw new Error("Unused billing repository.");
+    },
+    getTenantOverview: async () => {
       throw new Error("Unused billing repository.");
     },
     updateStoreEntitlement: async () => {

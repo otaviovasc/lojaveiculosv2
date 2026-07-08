@@ -8,6 +8,7 @@ import type {
   UpsertBillingProviderPaymentInput,
 } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { syncProviderCheckout } from "./drizzleBillingCheckoutWebhook.js";
 import {
   resolvePaymentScope,
   resolveStoreId,
@@ -52,6 +53,9 @@ export function createDrizzleBillingWebhookRepository(
         throw new Error("Billing provider webhook event was not persisted.");
       }
       return { created: false, event: toWebhookEvent(existing) };
+    },
+    async syncProviderCheckout(input) {
+      return syncProviderCheckout(db, input);
     },
     async syncProviderSubscription(input) {
       return syncProviderSubscription(db, input);

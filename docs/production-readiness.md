@@ -59,6 +59,8 @@ Billing:
 - `ASAAS_RUNTIME_IMPLEMENTATION=http`
 - `ASAAS_API_URL`
 - `ASAAS_API_KEY`
+- `ASAAS_CHECKOUT_URL` when the checkout host cannot be inferred from
+  `ASAAS_API_URL`
 - `ASAAS_WEBHOOK_SECRET`
 - `ASAAS_WEBHOOK_URL`
 

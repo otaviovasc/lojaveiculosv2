@@ -50,7 +50,16 @@ test.describe("CRM WhatsApp integrations", () => {
       page.getByText("X-Webhook-Secret: seu-segredo").first(),
     ).toBeVisible();
     await expect(page.getByText("Payload do webhook")).toBeVisible();
-    await expect(page.getByText("Bot Action API")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Bot Action API" }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("connection_status_changed").first(),
+    ).toBeVisible();
+    await expect(page.getByText("imageUrl").first()).toBeVisible();
+    await expect(page.getByText("audioUrl").first()).toBeVisible();
+    await expect(page.getByText("documentUrl").first()).toBeVisible();
+    await expect(page.getByText("message.senderOrigin")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "intervention_ended" }),
     ).toBeVisible();

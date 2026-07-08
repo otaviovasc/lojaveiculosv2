@@ -1,6 +1,7 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmLead } from "../../ports/crmRepository.js";
+import type { CrmWhatsappMessageSenderType } from "../../ports/crmWhatsappRepository.js";
 import type {
   WhatsappMessage,
   WhatsappSession,
@@ -43,6 +44,7 @@ export type StartWhatsappConversationInput = {
   connectionId: string;
   leadId?: string;
   phone?: string;
+  senderType?: CrmWhatsappMessageSenderType;
   text: string;
 };
 
@@ -117,7 +119,7 @@ export async function startWhatsappConversation(
               sendState: "PENDING_PROVIDER_SEND",
             },
             providerTimestamp: pendingAt,
-            senderType: "HUMAN",
+            senderType: input.senderType ?? "HUMAN",
             status: "PENDING",
             storeId: scope.storeId as never,
             tenantId: scope.tenantId as never,

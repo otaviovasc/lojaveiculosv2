@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+export const createBillingProviderCheckoutSchema = z.object({
+  billingTypes: z
+    .array(z.enum(["CREDIT_CARD", "PIX"]))
+    .min(1)
+    .max(2)
+    .optional(),
+  minutesToExpire: z.number().int().min(10).max(1440).optional(),
+  nextDueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+});
+
 export const syncBillingProviderSubscriptionSchema = z.object({
   billingType: z.enum(["BOLETO", "CREDIT_CARD", "PIX", "UNDEFINED"]).optional(),
   nextDueDate: z
@@ -12,6 +25,8 @@ export const syncBillingProviderSubscriptionSchema = z.object({
 export const updateEntitlementSchema = z.object({
   endsAt: z.string().datetime().nullable().optional(),
   featureKey: z.enum([
+    "analytics",
+    "compliance",
     "crm",
     "custom_domain",
     "external_api",

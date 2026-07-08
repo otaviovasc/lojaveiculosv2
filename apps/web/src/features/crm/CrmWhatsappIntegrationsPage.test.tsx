@@ -54,6 +54,12 @@ describe("CrmWhatsappIntegrationsPage", () => {
     expect(
       screen.getAllByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)[0],
     ).toBeVisible();
+    expect(screen.getAllByText("connection_status_changed")[0]).toBeVisible();
+    expect(screen.getAllByText(/imageUrl/)[0]).toBeVisible();
+    expect(screen.getAllByText(/audioUrl/)[0]).toBeVisible();
+    expect(screen.getAllByText(/documentUrl/)[0]).toBeVisible();
+    expect(screen.getByText("message.senderOrigin")).toBeVisible();
+    expect(screen.getByText(/Base64 nao e aceito aqui/)).toBeVisible();
   });
 
   it("shows a permission state without loading bot config", async () => {

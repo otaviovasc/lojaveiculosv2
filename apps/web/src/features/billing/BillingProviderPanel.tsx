@@ -1,4 +1,3 @@
-import { PlugZap } from "lucide-react";
 import type { BillingProviderStatus } from "./types";
 
 export function BillingProviderPanel({
@@ -8,14 +7,14 @@ export function BillingProviderPanel({
 }) {
   return (
     <section className="billing-panel billing-provider-panel">
-      <PlugZap aria-hidden="true" className="size-5" />
+      <span className="billing-status-dot">
+        <span aria-hidden="true" className={status.configured ? "is-on" : ""} />
+      </span>
       <div>
-        <h3>
-          {status.configured ? "Asaas runtime ativo" : "Asaas runtime pendente"}
-        </h3>
+        <h3>{status.configured ? "Asaas online" : "Asaas pendente"}</h3>
         <p>
           {status.configured
-            ? "Gateway e webhook ativos para reconciliacao de billing."
+            ? "Checkout e webhook prontos para reconciliacao."
             : `Faltam: ${status.missingConfiguration.join(", ")}`}
         </p>
       </div>

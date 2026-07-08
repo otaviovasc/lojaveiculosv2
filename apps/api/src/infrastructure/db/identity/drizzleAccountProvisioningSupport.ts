@@ -18,9 +18,9 @@ export {
   hasActivePlatformAdmin,
   hasActiveTenantRole,
   hasStorePermission,
-  listStores,
   listTenantMemberships,
 } from "./drizzleAccountProvisioningReads.js";
+export { listStores } from "./drizzleAccountProvisioningStoreReads.js";
 export {
   assertSlugsAvailable,
   assertStoreSlugAvailable,

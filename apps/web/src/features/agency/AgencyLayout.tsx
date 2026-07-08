@@ -3,7 +3,6 @@ import { Outlet, NavLink } from "react-router-dom";
 import {
   LayoutDashboard,
   BarChart3,
-  Users,
   CreditCard,
   Plus,
   Sun,
@@ -49,11 +48,6 @@ export function AgencyLayout() {
       path: "/agency/admin/stats",
       label: "Estatísticas",
       icon: BarChart3,
-    },
-    {
-      path: "/agency/admin/team-access",
-      label: "Acessos de Equipe",
-      icon: Users,
     },
     {
       path: "/agency/admin/unified-billing",

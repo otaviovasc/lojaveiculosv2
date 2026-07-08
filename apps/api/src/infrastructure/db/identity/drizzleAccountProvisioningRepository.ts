@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { stores, tenants, users } from "@lojaveiculosv2/db";
 import {
   AccountProvisioningConflictError,
@@ -11,6 +11,8 @@ import {
   type ProvisionedStoreRecord,
   type SessionBootstrapRecord,
 } from "../../../domains/identity/ports/accountProvisioningRepository.js";
+import { insertBillingDefaults } from "./drizzleAccountProvisioningBilling.js";
+import { lockUserProvisioning } from "./drizzleAccountProvisioningLocks.js";
 import {
   assertSlugsAvailable,
   assertStoreSlugAvailable,
@@ -74,7 +76,10 @@ async function findSessionBootstrap(
     ]);
 
     return {
-      defaultStore: storesList.find((item) => item.status === "active") ?? null,
+      defaultStore:
+        storesList.find(
+          (item) => item.status === "active" && item.role !== "agency",
+        ) ?? null,
       acceptedInvitations,
       needsOnboarding:
         !platformAdmin && storesList.length === 0 && tenantList.length === 0,
@@ -141,17 +146,9 @@ async function createOwnerStore(
       input.profile,
       input.entitlements,
     );
+    await insertBillingDefaults(tx, tenant, store, input.profile);
     return toProvisionedStore(tenant, store, "owner");
   });
-}
-
-async function lockUserProvisioning(
-  db: DrizzleAccountProvisioningClient,
-  userId: string,
-) {
-  await db.execute(
-    sql`select pg_advisory_xact_lock(hashtextextended(${userId}, 0))`,
-  );
 }
 
 async function createAgency(
@@ -234,6 +231,7 @@ async function createAgencyStore(
       input.profile,
       input.entitlements,
     );
+    await insertBillingDefaults(tx, tenant, store, input.profile);
     return toProvisionedStore(tenant, store, "agency");
   });
 }

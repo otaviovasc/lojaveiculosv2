@@ -3,18 +3,22 @@ import {
   Ban,
   Clock3,
   Coins,
+  Settings2,
   Store,
   WalletCards,
 } from "lucide-react";
+import { useState } from "react";
 import type {
+  BillingChargePreview,
   BillingEntitlementMatrixRow,
   BillingEntitlementStatus,
   BillingOverview,
   BillingStoreAllocation,
   EntitlementKey,
 } from "./types";
+import { BillingFeatureDialog } from "./BillingFeatureDialog";
 import { BillingSummaryCard as SummaryCard } from "./BillingSummaryCard";
-import { featureLabels, isEnabled, money } from "./billingFormat";
+import { featureLabels, isEnabled, money, statusLabels } from "./billingFormat";
 
 export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
   const activeFeatures = overview.entitlementMatrix.filter((row) =>
@@ -30,7 +34,7 @@ export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
       />
       <SummaryCard
         icon={<WalletCards aria-hidden="true" className="size-5" />}
-        label="MRR alocado"
+        label="Custo Mensal Atual"
         value={money(overview.financialSummary.monthlyRecurringCents)}
       />
       <SummaryCard
@@ -101,12 +105,14 @@ export function BillingAllocationTable({
 }
 
 export function BillingEntitlementMatrix({
+  chargePreview,
   matrix,
   onReasonChange,
   onUpdate,
   reasons,
   savingFeatureKey,
 }: {
+  chargePreview?: BillingChargePreview;
   matrix: readonly BillingEntitlementMatrixRow[];
   onReasonChange: (featureKey: EntitlementKey, reason: string) => void;
   onUpdate: (
@@ -116,27 +122,30 @@ export function BillingEntitlementMatrix({
   reasons: Record<string, string>;
   savingFeatureKey: EntitlementKey | null;
 }) {
+  const [selectedFeatureKey, setSelectedFeatureKey] =
+    useState<EntitlementKey | null>(null);
+  const selectedRow =
+    matrix.find((row) => row.featureKey === selectedFeatureKey) ?? null;
+
   return (
     <section className="billing-panel">
       <header className="billing-panel-header">
         <div>
-          <h3>Matriz de entitlements</h3>
-          <p>Billing libera a feature; permissoes definem quem opera.</p>
+          <h3>Seus Recursos e Add-ons</h3>
+          <p>Veja o que esta ativo e gerencie cada recurso com contexto.</p>
         </div>
       </header>
-      <div className="billing-entitlement-list">
+      <div className="billing-feature-grid">
         {matrix.map((row) => (
-          <article className="billing-entitlement" key={row.featureKey}>
+          <article className="billing-feature-card" key={row.featureKey}>
             <div>
-              <span
-                className={isEnabled(row.status) ? "is-enabled" : "is-disabled"}
-              >
+              <span className={featureStatusClass(row.status)}>
                 {isEnabled(row.status) ? (
                   <BadgeCheck aria-hidden="true" className="size-4" />
                 ) : (
                   <Ban aria-hidden="true" className="size-4" />
                 )}
-                {row.status}
+                {statusLabels[row.status]}
               </span>
               <h3>{featureLabels[row.featureKey]}</h3>
               <p>
@@ -146,53 +155,52 @@ export function BillingEntitlementMatrix({
                   : `limite ${row.limitValue}`}
               </p>
             </div>
-            <div className="billing-update-box">
-              <input
-                aria-label={`Motivo para ${featureLabels[row.featureKey]}`}
-                onChange={(event) =>
-                  onReasonChange(row.featureKey, event.target.value)
-                }
-                placeholder="Motivo da alteracao"
-                value={reasons[row.featureKey] ?? ""}
-              />
-              <div className="billing-actions">
-                <button
-                  disabled={
-                    savingFeatureKey === row.featureKey ||
-                    row.status === "active"
-                  }
-                  onClick={() => void onUpdate(row.featureKey, "active")}
-                  type="button"
-                >
-                  Ativar
-                </button>
-                <button
-                  disabled={
-                    savingFeatureKey === row.featureKey ||
-                    row.status === "suspended"
-                  }
-                  onClick={() => void onUpdate(row.featureKey, "suspended")}
-                  type="button"
-                >
-                  Suspender
-                </button>
-                <button
-                  disabled={
-                    savingFeatureKey === row.featureKey ||
-                    row.status === "inactive"
-                  }
-                  onClick={() => void onUpdate(row.featureKey, "inactive")}
-                  type="button"
-                >
-                  Inativar
-                </button>
-              </div>
-            </div>
+            <button
+              className="billing-feature-manage"
+              onClick={() => setSelectedFeatureKey(row.featureKey)}
+              type="button"
+            >
+              <Settings2 aria-hidden="true" className="size-4" />
+              Gerenciar
+            </button>
           </article>
         ))}
       </div>
+      <BillingFeatureDialog
+        isSaving={Boolean(
+          selectedRow && savingFeatureKey === selectedRow.featureKey,
+        )}
+        priceLabel={
+          selectedRow ? featurePriceLabel(selectedRow, chargePreview) : ""
+        }
+        reason={selectedRow ? (reasons[selectedRow.featureKey] ?? "") : ""}
+        row={selectedRow}
+        onClose={() => setSelectedFeatureKey(null)}
+        onReasonChange={onReasonChange}
+        onUpdate={onUpdate}
+      />
     </section>
   );
+}
+
+function featureStatusClass(status: BillingEntitlementStatus) {
+  return isEnabled(status)
+    ? "billing-status-badge is-enabled"
+    : "billing-status-badge is-disabled";
+}
+
+function featurePriceLabel(
+  row: BillingEntitlementMatrixRow,
+  chargePreview: BillingChargePreview | undefined,
+) {
+  if (row.includedInPlan) return "Incluido no plano atual";
+  const label = featureLabels[row.featureKey].toLowerCase();
+  const line = chargePreview?.lineItems.find((item) =>
+    item.label.toLowerCase().includes(label),
+  );
+  return line
+    ? `${money(line.unitAmountCents)}/mes`
+    : "Add-on sem cobranca neste ciclo";
 }
 
 export function BillingEventList({
@@ -204,8 +212,8 @@ export function BillingEventList({
     <section className="billing-panel">
       <header className="billing-panel-header">
         <div>
-          <h3>Historico de entitlements</h3>
-          <p>Mudancas recentes feitas pelo console de billing.</p>
+          <h3>Historico de recursos</h3>
+          <p>Mudancas recentes feitas no faturamento.</p>
         </div>
       </header>
       <div className="billing-event-list">
@@ -214,7 +222,10 @@ export function BillingEventList({
             <article className="billing-event" key={event.id}>
               <strong>{featureLabels[event.featureKey]}</strong>
               <span>
-                {event.previousStatus ?? "novo"} {"->"} {event.nextStatus}
+                {event.previousStatus
+                  ? statusLabels[event.previousStatus]
+                  : "Novo"}{" "}
+                {"->"} {statusLabels[event.nextStatus]}
               </span>
               <p>{event.reason ?? event.source}</p>
             </article>

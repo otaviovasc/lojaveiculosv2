@@ -1,4 +1,5 @@
 import { AlertOctagon, AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import type { AgencyTenantOverview } from "../apiClient";
 
 export interface AgencyStore {
   id: string;
@@ -25,15 +26,6 @@ export type AgencySort =
 
 export type AgencyStatusFilter =
   "all" | "active" | "expiring" | "expired" | "inactive";
-
-type BillingAllocation = {
-  activeEntitlementCount?: number | undefined;
-  planName?: string | undefined;
-  storeId?: string | undefined;
-  storeName?: string | undefined;
-  storeSlug?: string | undefined;
-  subscriptionStatus?: string | undefined;
-};
 
 export function getPlanStatus(store: AgencyStore) {
   const endDate = new Date(store.plan_end_date);
@@ -68,57 +60,32 @@ export function getPlanStatus(store: AgencyStore) {
   return { label: "Ativo", icon: CheckCircle2, classes: "badge-active" };
 }
 
-export function mapBillingOverviewToStores(data: unknown) {
-  if (!isRecord(data) || !Array.isArray(data.allocations)) return null;
-
-  return data.allocations.map((allocation, idx) => {
-    const item = readBillingAllocation(allocation);
-    const storeName = item.storeName ?? `Loja ${idx + 1}`;
-
+export function mapAgencyOverviewToStores(data: AgencyTenantOverview) {
+  return data.stores.map((store, idx) => {
+    const storeName = store.storeName || `Loja ${idx + 1}`;
     return {
-      id: item.storeId ?? String(idx),
+      id: store.storeId,
       nome_da_loja: storeName,
-      subdominio:
-        item.storeSlug ?? storeName.toLowerCase().replace(/[^a-z0-9]/g, ""),
-      plano: item.planName ?? "START",
-      status_assinatura:
-        item.subscriptionStatus === "active" ? "ATIVA" : "INATIVA",
-      plan_end_date: new Date(
-        Date.now() + 30 * 24 * 60 * 60 * 1000,
-      ).toISOString(),
+      subdominio: store.storeSlug,
+      plano: store.planName ?? "Sem plano",
+      status_assinatura: isActiveSubscription(store.subscriptionStatus)
+        ? "ATIVA"
+        : "INATIVA",
+      plan_end_date:
+        data.subscription?.currentPeriodEnd ??
+        new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       asaas_customer_id: null,
-      data_criacao: new Date().toISOString(),
+      data_criacao: store.createdAt,
       settings: {
         profile_name: storeName,
       },
       _count: {
-        veiculos: item.activeEntitlementCount ?? 0,
+        veiculos: store.vehicleCount,
       },
     } satisfies AgencyStore;
   });
 }
 
-function readBillingAllocation(value: unknown): BillingAllocation {
-  if (!isRecord(value)) return {};
-
-  return {
-    activeEntitlementCount: readNumber(value.activeEntitlementCount),
-    planName: readString(value.planName),
-    storeId: readString(value.storeId),
-    storeName: readString(value.storeName),
-    storeSlug: readString(value.storeSlug),
-    subscriptionStatus: readString(value.subscriptionStatus),
-  };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function readNumber(value: unknown) {
-  return typeof value === "number" ? value : undefined;
-}
-
-function readString(value: unknown) {
-  return typeof value === "string" ? value : undefined;
+function isActiveSubscription(status: string | null) {
+  return status === "active" || status === "trialing";
 }

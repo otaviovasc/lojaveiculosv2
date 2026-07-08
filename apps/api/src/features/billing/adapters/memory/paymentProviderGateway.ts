@@ -1,4 +1,6 @@
 import type {
+  PaymentProviderCheckoutInput,
+  PaymentProviderCheckoutResult,
   PaymentProviderCustomerInput,
   PaymentProviderCustomerResult,
   PaymentProviderGateway,
@@ -17,6 +19,19 @@ export function createMemoryPaymentProviderGateway(
 ): PaymentProviderGateway {
   const configured = missingConfiguration.length === 0;
   return {
+    async createCheckout(
+      input: PaymentProviderCheckoutInput,
+    ): Promise<PaymentProviderCheckoutResult> {
+      return {
+        checkoutUrl:
+          "https://sandbox.asaas.com/checkoutSession/show?id=chk_memory_asaas",
+        expiresAt: new Date(Date.now() + input.minutesToExpire * 60_000),
+        externalReference: input.externalReference,
+        provider: "asaas",
+        providerCheckoutId: "chk_memory_asaas",
+        raw: { id: "chk_memory_asaas" },
+      };
+    },
     async getProviderStatus(): Promise<PaymentProviderStatus> {
       return {
         configured,

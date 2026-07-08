@@ -34,6 +34,9 @@ describe("production smoke contracts", () => {
               ASAAS_API_URL: "https://sandbox.asaas.com/api/v3",
               ASAAS_RUNTIME_IMPLEMENTATION: "http",
               ASAAS_WEBHOOK_SECRET: "secret",
+              ASAAS_WEBHOOK_URL:
+                "https://api.example.com/api/v1/billing/webhooks/asaas",
+              PUBLIC_APP_URL: "https://app.example.com",
             }),
           },
         }),

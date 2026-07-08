@@ -6,8 +6,6 @@ import { createLeadVisit } from "../CrmService/createLeadVisit.js";
 import { type CrmServicePorts } from "../CrmService/serviceSupport.js";
 import { listWhatsappConnections } from "./listWhatsappConnections.js";
 import { listWhatsappSessions } from "./listWhatsappSessions.js";
-import { sendWhatsappMedia } from "./sendWhatsappMedia.js";
-import { sendWhatsappText } from "./sendWhatsappText.js";
 import { createWhatsappScheduledMessage } from "./whatsappScheduledMessages.js";
 import {
   addWhatsappSessionTag,
@@ -20,12 +18,14 @@ import {
   toggleWhatsappIntervention,
 } from "./updateWhatsappSession.js";
 import {
+  executeBotSendMediaAction,
+  executeBotSendTextAction,
+} from "../../whatsapp/whatsappBotSendActions.js";
+import {
   WhatsappBotActionError,
   type WhatsappBotActionName,
 } from "./whatsappBotIntegration.js";
 import {
-  assertBotSendAllowed,
-  mediaTypeForBotAction,
   readOptionalNumber,
   readOptionalText,
   readRequiredBoolean,
@@ -77,45 +77,11 @@ export async function executeWhatsappBotAction(
   });
   switch (input.action) {
     case "send_text":
-      await assertBotSendAllowed(
-        context,
-        requireBotActionSessionId(input),
-        ports,
-      );
-      return sendWhatsappText(
-        context,
-        {
-          sessionId: requireBotActionSessionId(input),
-          text: readRequiredText(input.payload, "text"),
-        },
-        ports,
-      );
+      return executeBotSendTextAction(context, input, ports);
     case "send_image":
     case "send_audio":
     case "send_document":
-      await assertBotSendAllowed(
-        context,
-        requireBotActionSessionId(input),
-        ports,
-      );
-      return sendWhatsappMedia(
-        context,
-        {
-          base64: readRequiredText(input.payload, "base64"),
-          ...(readOptionalText(input.payload, "caption")
-            ? { caption: readRequiredText(input.payload, "caption") }
-            : {}),
-          ...(readOptionalText(input.payload, "fileName")
-            ? { fileName: readRequiredText(input.payload, "fileName") }
-            : {}),
-          mediaType: mediaTypeForBotAction(input.action),
-          ...(readOptionalText(input.payload, "mimeType")
-            ? { mimeType: readRequiredText(input.payload, "mimeType") }
-            : {}),
-          sessionId: requireBotActionSessionId(input),
-        },
-        ports,
-      );
+      return executeBotSendMediaAction(context, input, ports);
     case "add_note":
       return createLeadActivity(
         context,

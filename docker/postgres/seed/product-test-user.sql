@@ -5,7 +5,10 @@ VALUES (
   'test-tenant',
   'Loja Teste'
 )
-ON CONFLICT (slug) DO NOTHING;
+ON CONFLICT (slug) DO UPDATE SET
+  legal_name = EXCLUDED.legal_name,
+  trading_name = EXCLUDED.trading_name,
+  updated_at = now();
 
 INSERT INTO stores (id, legal_name, primary_domain, public_slug, tenant_id, trading_name)
 VALUES (
@@ -16,7 +19,12 @@ VALUES (
   '77777777-7777-4777-8777-777777777777',
   'Loja Teste'
 )
-ON CONFLICT (public_slug) DO NOTHING;
+ON CONFLICT (public_slug) DO UPDATE SET
+  legal_name = EXCLUDED.legal_name,
+  primary_domain = EXCLUDED.primary_domain,
+  tenant_id = EXCLUDED.tenant_id,
+  trading_name = EXCLUDED.trading_name,
+  updated_at = now();
 
 INSERT INTO users (id, clerk_user_id, email, name, tenant_id)
 VALUES
@@ -83,7 +91,11 @@ VALUES
     'Platform Admin',
     null
   )
-ON CONFLICT (clerk_user_id) DO NOTHING;
+ON CONFLICT (clerk_user_id) DO UPDATE SET
+  email = EXCLUDED.email,
+  name = EXCLUDED.name,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO role_templates (id, description, is_system, name, role_key)
 VALUES
@@ -122,7 +134,11 @@ VALUES
     'Investor',
     'investor'
   )
-ON CONFLICT (role_key) DO NOTHING;
+ON CONFLICT (role_key) DO UPDATE SET
+  description = EXCLUDED.description,
+  is_system = EXCLUDED.is_system,
+  name = EXCLUDED.name,
+  updated_at = now();
 
 INSERT INTO platform_admin_memberships (
   id,
@@ -134,7 +150,9 @@ VALUES (
   'active',
   'aaaaaaaa-1111-4aaa-8aaa-aaaaaaaaaaaa'
 )
-ON CONFLICT (user_id) DO NOTHING;
+ON CONFLICT (user_id) DO UPDATE SET
+  status = EXCLUDED.status,
+  updated_at = now();
 
 INSERT INTO tenant_memberships (
   id,
@@ -150,7 +168,10 @@ VALUES (
   '77777777-7777-4777-8777-777777777777',
   '88888888-8888-4888-8888-888888888888'
 )
-ON CONFLICT (tenant_id, user_id) DO NOTHING;
+ON CONFLICT (tenant_id, user_id) DO UPDATE SET
+  role_template_id = EXCLUDED.role_template_id,
+  status = EXCLUDED.status,
+  updated_at = now();
 
 INSERT INTO tenant_memberships (
   id,
@@ -174,7 +195,10 @@ VALUES
     '77777777-7777-4777-8777-777777777777',
     '02020202-0202-4202-8202-020202020202'
   )
-ON CONFLICT (tenant_id, user_id) DO NOTHING;
+ON CONFLICT (tenant_id, user_id) DO UPDATE SET
+  role_template_id = EXCLUDED.role_template_id,
+  status = EXCLUDED.status,
+  updated_at = now();
 
 INSERT INTO store_memberships (
   id,
@@ -192,7 +216,11 @@ VALUES (
   '77777777-7777-4777-8777-777777777777',
   '88888888-8888-4888-8888-888888888888'
 )
-ON CONFLICT (store_id, user_id) DO NOTHING;
+ON CONFLICT (store_id, user_id) DO UPDATE SET
+  role_template_id = EXCLUDED.role_template_id,
+  status = EXCLUDED.status,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO store_memberships (
   id,
@@ -251,7 +279,11 @@ VALUES
     '77777777-7777-4777-8777-777777777777',
     '04040404-0404-4404-8404-040404040404'
   )
-ON CONFLICT (store_id, user_id) DO NOTHING;
+ON CONFLICT (store_id, user_id) DO UPDATE SET
+  role_template_id = EXCLUDED.role_template_id,
+  status = EXCLUDED.status,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO store_entitlements (feature_key, source, status, store_id, tenant_id)
 VALUES
@@ -297,7 +329,11 @@ VALUES
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
   )
-ON CONFLICT (store_id, feature_key) DO NOTHING;
+ON CONFLICT (store_id, feature_key) DO UPDATE SET
+  source = EXCLUDED.source,
+  status = EXCLUDED.status,
+  tenant_id = EXCLUDED.tenant_id,
+  updated_at = now();
 
 INSERT INTO plans (id, code, limits, monthly_price_cents, name, status)
 VALUES (
@@ -524,6 +560,14 @@ VALUES
   ('55555555-5555-4555-8555-555555555555', 'store_public_site.manage'),
   ('55555555-5555-4555-8555-555555555555', 'tenant.manage'),
   ('55555555-5555-4555-8555-555555555555', 'users.manage')
+ON CONFLICT (role_template_id, permission_key) DO NOTHING;
+
+INSERT INTO role_template_permissions (role_template_id, permission_key)
+SELECT
+  '22222222-2222-4222-8222-222222222222',
+  permission_key
+FROM role_template_permissions
+WHERE role_template_id = '55555555-5555-4555-8555-555555555555'
 ON CONFLICT (role_template_id, permission_key) DO NOTHING;
 
 INSERT INTO store_profiles (
@@ -1200,19 +1244,22 @@ INSERT INTO document_templates (
   is_enabled,
   kind,
   store_id,
+  template_key,
   tenant_id,
   title,
   updated_by_user_id
 )
 VALUES
-  ('50000000-0000-4000-8000-000000000001', '[{"title": "Entrega", "body": "Comprador declara vistoria e recebimento do veiculo."}]'::jsonb, true, 'delivery_term', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Termo de entrega padrao', '88888888-8888-4888-8888-888888888888'),
-  ('50000000-0000-4000-8000-000000000002', '[{"title": "Pagamento", "body": "Valores e condicoes constam no recibo assinado."}]'::jsonb, true, 'sale_contract', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Contrato de venda padrao', '88888888-8888-4888-8888-888888888888'),
-  ('50000000-0000-4000-8000-000000000003', '[{"title": "Quitacao", "body": "Vendedor declara recebimento conforme condicoes registradas."}]'::jsonb, true, 'sale_receipt', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de venda padrao', '88888888-8888-4888-8888-888888888888'),
-  ('50000000-0000-4000-8000-000000000004', '[{"title": "Poderes", "body": "Comprador outorga poderes para atos de transferencia veicular."}]'::jsonb, true, 'power_of_attorney', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Procuracao padrao', '88888888-8888-4888-8888-888888888888'),
-  ('50000000-0000-4000-8000-000000000005', '[{"title": "Sinal", "body": "Reserva condicionada ao recebimento do sinal e dados do comprador."}]'::jsonb, true, 'reservation_receipt', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de sinal padrao', '88888888-8888-4888-8888-888888888888')
-ON CONFLICT (store_id, kind) DO UPDATE SET
+  ('50000000-0000-4000-8000-000000000001', '[{"title": "Entrega", "body": "Comprador declara vistoria e recebimento do veiculo."}]'::jsonb, true, 'delivery_term', '66666666-6666-4666-8666-666666666666', 'delivery_term', '77777777-7777-4777-8777-777777777777', 'Termo de entrega padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000002', '[{"title": "Pagamento", "body": "Valores e condicoes constam no recibo assinado."}]'::jsonb, true, 'sale_contract', '66666666-6666-4666-8666-666666666666', 'sale_contract', '77777777-7777-4777-8777-777777777777', 'Contrato de venda padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000003', '[{"title": "Quitacao", "body": "Vendedor declara recebimento conforme condicoes registradas."}]'::jsonb, true, 'sale_receipt', '66666666-6666-4666-8666-666666666666', 'sale_receipt', '77777777-7777-4777-8777-777777777777', 'Recibo de venda padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000004', '[{"title": "Poderes", "body": "Comprador outorga poderes para atos de transferencia veicular."}]'::jsonb, true, 'power_of_attorney', '66666666-6666-4666-8666-666666666666', 'power_of_attorney', '77777777-7777-4777-8777-777777777777', 'Procuracao padrao', '88888888-8888-4888-8888-888888888888'),
+  ('50000000-0000-4000-8000-000000000005', '[{"title": "Sinal", "body": "Reserva condicionada ao recebimento do sinal e dados do comprador."}]'::jsonb, true, 'reservation_receipt', '66666666-6666-4666-8666-666666666666', 'reservation_receipt', '77777777-7777-4777-8777-777777777777', 'Recibo de sinal padrao', '88888888-8888-4888-8888-888888888888')
+ON CONFLICT (store_id, template_key) DO UPDATE SET
   clauses = EXCLUDED.clauses,
   is_enabled = EXCLUDED.is_enabled,
+  kind = EXCLUDED.kind,
+  tenant_id = EXCLUDED.tenant_id,
   title = EXCLUDED.title,
   updated_by_user_id = EXCLUDED.updated_by_user_id,
   updated_at = now();

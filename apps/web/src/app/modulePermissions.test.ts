@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from "vitest";
 import type { SessionBootstrap } from "../features/account/apiClient";
+import { persistCurrentStoreSlug } from "../features/account/currentStore";
 import {
   filterNavigationGroups,
   getModulePermission,
@@ -7,6 +9,10 @@ import {
 import { navigationGroups } from "./modules";
 
 describe("module permissions", () => {
+  afterEach(() => {
+    localStorage.clear();
+  });
+
   it("keeps settings visible for store managers", () => {
     const session = sessionForRole("owner", [
       "store_profile.manage",
@@ -76,6 +82,38 @@ describe("module permissions", () => {
         .flatMap((group) => group.items)
         .some((item) => item.id === "crm"),
     ).toBe(true);
+  });
+
+  it("uses the selected active store when an agency session has no default store", () => {
+    persistCurrentStoreSlug("agency-store", "clerk");
+    const session = {
+      ...sessionForRole("owner", []),
+      defaultStore: null,
+      stores: [
+        {
+          effectivePermissions: ["inventory.read", "users.manage"],
+          role: "agency",
+          status: "active" as const,
+          storeId: "store_agency",
+          storeName: "Loja da Agencia",
+          storeSlug: "agency-store",
+          tenantId: "tenant_agency",
+          tenantName: "Agencia",
+        },
+      ],
+      tenantMemberships: [
+        {
+          role: "agency",
+          status: "active" as const,
+          tenantId: "tenant_agency",
+          tenantName: "Agencia",
+          tenantSlug: "agencia",
+        },
+      ],
+    };
+
+    expect(getModulePermission("inventory", session).canView).toBe(true);
+    expect(getModulePermission("billing", session).canView).toBe(false);
   });
 });
 

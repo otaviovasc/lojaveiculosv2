@@ -129,6 +129,9 @@ async function syncWebhook(
   webhook: ParsedAsaasWebhook,
   repository: ReturnType<typeof getBillingWebhookRepository>,
 ): Promise<BillingProviderSyncResult> {
+  if (webhook.checkout) {
+    return repository.syncProviderCheckout(webhook.checkout);
+  }
   if (webhook.payment) {
     return repository.upsertProviderPayment(webhook.payment);
   }

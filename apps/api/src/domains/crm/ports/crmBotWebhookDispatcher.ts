@@ -1,7 +1,10 @@
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 
 export type CrmBotWebhookEvent =
-  "intervention_ended" | "intervention_started" | "message";
+  | "connection_status_changed"
+  | "intervention_ended"
+  | "intervention_started"
+  | "message";
 
 export type CrmBotSenderOrigin =
   "bot_api" | "customer" | "human_crm" | "human_whatsapp" | "system";
@@ -11,7 +14,7 @@ export type CrmBotWebhookPayload = {
     baseUrl: string;
     authentication: "X-Webhook-Secret";
   };
-  chat: {
+  chat?: {
     buyerName: string | null;
     phone: string;
     profilePhotoUrl: string | null;
@@ -53,7 +56,9 @@ export type CrmBotWebhookPayload = {
     uuid: string;
     wasSentByApi: boolean;
   };
-  session: {
+  previousStatus?: string | null;
+  reason?: string | null;
+  session?: {
     assignedUserId: string | null;
     id: string;
     isBotActive: boolean;
@@ -68,6 +73,7 @@ export type CrmBotWebhookPayload = {
     }>;
     uuid: string;
   };
+  status?: string;
   timestamp: string;
 };
 

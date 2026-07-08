@@ -9,6 +9,7 @@ import { docsFeature } from "../../features/docs/controllers/docs.controller.js"
 import { createCrmFeature } from "../../features/crm/controllers/crm.controller.js";
 import { createFinanceFeature } from "../../features/finance/controllers/finance.controller.js";
 import { createFiscalFeature } from "../../features/fiscal/controllers/fiscal.controller.js";
+import { createAgencyFeature } from "../../features/agency/controllers/agency.controller.js";
 import { createBillingFeature } from "../../features/billing/controllers/billing.controller.js";
 import { createInventoryFeature } from "../../features/inventory/controllers/vehicle.controller.js";
 import { createStorefrontFeature } from "../../features/storefront/controllers/storefront.controller.js";
@@ -19,6 +20,7 @@ import { createSettingsFeature } from "../../features/settings/controllers/setti
 import { createSalesFeature } from "../../features/sales/controllers/sales.controller.js";
 import { createRolesFeature } from "../../features/identity/controllers/roles.controller.js";
 import type { CreateAppOptions } from "./createAppOptions.js";
+import { createHttpAccountContext } from "./createHttpAccountContext.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
@@ -127,6 +129,30 @@ export function createApp(options: CreateAppOptions = {}) {
       ...(options.billingServices ? { services: options.billingServices } : {}),
     }),
   );
+  const accountProvisioningServices = options.accountProvisioningServices;
+  if (accountProvisioningServices) {
+    app.route(
+      "/api/v1/agency",
+      createAgencyFeature({
+        accountContextFactory: (context, scope) =>
+          createHttpAccountContext(context, {
+            ...(options.audit ? { audit: options.audit } : {}),
+            ...(options.identityVerifier
+              ? { identityVerifier: options.identityVerifier }
+              : {}),
+            ...(options.clerkUserProfileProvider
+              ? { profileProvider: options.clerkUserProfileProvider }
+              : {}),
+            repository:
+              accountProvisioningServices.accountProvisioningRepository,
+            tenantId: scope.tenantId,
+          }),
+        ...(options.billingServices
+          ? { services: options.billingServices }
+          : {}),
+      }),
+    );
+  }
   app.route(
     "/api/v1/fiscal",
     createFiscalFeature({

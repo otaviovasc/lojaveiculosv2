@@ -4,24 +4,33 @@ import {
   ListObjectsV2Command,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
 import postgres from "postgres";
+import { assertSafeLocalDatabaseOperation } from "../db/local-database-safety.mjs";
+import { loadLocalEnv, requireEnv } from "./storageScriptEnv.mjs";
 
 const localDatabaseUrl =
   "postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2";
-const apply = process.argv.includes("--apply");
+const args = new Set(process.argv.slice(2));
+const apply = args.has("--apply");
+const failOnMissing = args.has("--fail-on-missing");
+const skipMissingEnv = args.has("--skip-missing-env");
 
 loadLocalEnv();
+assertSafeLocalDatabaseOperation("r2:repair:seed-media", ["DATABASE_URL"]);
 
-const bucketName = requireEnv("R2_BUCKET_NAME");
-const endpoint = requireEnv("R2_ENDPOINT");
-const accessKeyId = requireEnv("R2_ACCESS_KEY_ID");
-const secretAccessKey = requireEnv("R2_SECRET_ACCESS_KEY");
+const config = readR2Config();
+if (!config) {
+  console.info("R2 env absent; skipped seeded vehicle media object repair.");
+  process.exit(0);
+}
+
 const databaseUrl = process.env.DATABASE_URL ?? localDatabaseUrl;
 const client = new S3Client({
-  credentials: { accessKeyId, secretAccessKey },
-  endpoint,
+  credentials: {
+    accessKeyId: config.accessKeyId,
+    secretAccessKey: config.secretAccessKey,
+  },
+  endpoint: config.endpoint,
   forcePathStyle: true,
   region: process.env.R2_REGION ?? "auto",
 });
@@ -38,18 +47,18 @@ try {
   };
 
   for (const row of media) {
+    if (await objectExists(row.targetKey)) {
+      result.skippedExisting += 1;
+      console.info(`exists ${row.targetKey}`);
+      continue;
+    }
+
     const sourcePrefix = legacyPrefix(row);
     const source = await findLegacyObject(row, sourcePrefix, listedKeys);
 
     if (!source) {
       result.missingSource += 1;
       console.warn(`missing source for ${row.fileName} under ${sourcePrefix}`);
-      continue;
-    }
-
-    if (await objectExists(row.targetKey)) {
-      result.skippedExisting += 1;
-      console.info(`exists ${row.targetKey}`);
       continue;
     }
 
@@ -67,6 +76,11 @@ try {
   console.info(JSON.stringify({ apply, ...result }, null, 2));
   if (!apply) {
     console.info("Dry run only. Re-run with --apply to copy missing objects.");
+  }
+  if (failOnMissing && result.missingSource > 0) {
+    throw new Error(
+      `Seeded vehicle media repair missed ${result.missingSource} source object(s).`,
+    );
   }
 } finally {
   await db.end({ timeout: 5 });
@@ -127,7 +141,7 @@ async function listObjects(prefix) {
   do {
     const response = await client.send(
       new ListObjectsV2Command({
-        Bucket: bucketName,
+        Bucket: config.bucketName,
         ContinuationToken: continuationToken,
         Prefix: prefix,
       }),
@@ -150,7 +164,9 @@ async function listObjects(prefix) {
 
 async function objectExists(key) {
   try {
-    await client.send(new HeadObjectCommand({ Bucket: bucketName, Key: key }));
+    await client.send(
+      new HeadObjectCommand({ Bucket: config.bucketName, Key: key }),
+    );
     return true;
   } catch (error) {
     if (error?.$metadata?.httpStatusCode === 404) return false;
@@ -161,7 +177,7 @@ async function objectExists(key) {
 async function copyObject(sourceKey, targetKey) {
   await client.send(
     new CopyObjectCommand({
-      Bucket: bucketName,
+      Bucket: config.bucketName,
       CopySource: copySource(sourceKey),
       Key: targetKey,
     }),
@@ -169,56 +185,25 @@ async function copyObject(sourceKey, targetKey) {
 }
 
 function copySource(sourceKey) {
-  return `${bucketName}/${sourceKey
+  return `${config.bucketName}/${sourceKey
     .split("/")
     .map((part) => encodeURIComponent(part))
     .join("/")}`;
 }
 
-function requireEnv(name) {
-  const value = process.env[name];
-  if (!value || value.startsWith("${{")) {
-    throw new Error(`${name} is required.`);
-  }
-  return value;
-}
+function readR2Config() {
+  const hasAnyConfig = [
+    "R2_BUCKET_NAME",
+    "R2_ENDPOINT",
+    "R2_ACCESS_KEY_ID",
+    "R2_SECRET_ACCESS_KEY",
+  ].some((key) => Boolean(process.env[key]));
+  if (!hasAnyConfig && skipMissingEnv) return null;
 
-function loadLocalEnv(startDirectory = process.cwd()) {
-  let current = startDirectory;
-
-  for (let depth = 0; depth < 5; depth += 1) {
-    const envPath = join(current, ".env");
-    if (existsSync(envPath)) {
-      loadEnvFile(envPath);
-      return;
-    }
-
-    const parent = dirname(current);
-    if (parent === current) return;
-    current = parent;
-  }
-}
-
-function loadEnvFile(path) {
-  for (const line of readFileSync(path, "utf8").split("\n")) {
-    const parsed = parseEnvLine(line);
-    if (!parsed || process.env[parsed.key] !== undefined) continue;
-    process.env[parsed.key] = parsed.value;
-  }
-}
-
-function parseEnvLine(line) {
-  const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith("#")) return null;
-
-  const separator = trimmed.indexOf("=");
-  if (separator === -1) return null;
-
-  const key = trimmed.slice(0, separator).trim();
-  const value = trimmed
-    .slice(separator + 1)
-    .trim()
-    .replace(/^["']|["']$/g, "");
-
-  return key ? { key, value } : null;
+  return {
+    accessKeyId: requireEnv("R2_ACCESS_KEY_ID"),
+    bucketName: requireEnv("R2_BUCKET_NAME"),
+    endpoint: requireEnv("R2_ENDPOINT"),
+    secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
+  };
 }

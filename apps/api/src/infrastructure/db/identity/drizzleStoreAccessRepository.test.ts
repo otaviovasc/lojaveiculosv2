@@ -76,6 +76,42 @@ describe("Drizzle store access repository", () => {
     expect(access?.billingManagedBy).toBe("agency");
   });
 
+  it("lets an active agency tenant member manage a tenant store without a store membership", async () => {
+    const rows = createStoreAccessRows({
+      memberships: [],
+      roleTemplates: [
+        { id: "role_salesman", roleKey: "salesman" },
+        { id: "role_agency", roleKey: "agency" },
+      ],
+      tenantMemberships: [
+        {
+          roleTemplateId: "role_agency",
+          status: "active",
+          tenantId: "tenant_1" as never,
+          userId: "user_1" as never,
+        },
+      ],
+    });
+    const repository = createDrizzleStoreAccessRepository(
+      createFakeStoreAccessDb(rows),
+    );
+
+    const access = await repository.findByClerkUserAndStoreSlug({
+      clerkUserId: "clerk_1",
+      storeSlug: "demo",
+    });
+
+    expect(access).toMatchObject({
+      billingManagedBy: "agency",
+      entitlements: ["crm", "subdomain"],
+      overrides: [],
+      role: "agency",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+      userId: "user_1",
+    });
+  });
+
   it("returns null when the membership is not active", async () => {
     const rows = createStoreAccessRows({
       memberships: [

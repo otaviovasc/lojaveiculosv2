@@ -18,7 +18,13 @@ export function createZapiMediaBody(
     return { ...common, image: input.mediaUrl };
   }
   if (input.mediaType === "audio") {
-    return { phone: input.phone, audio: input.mediaUrl };
+    return {
+      phone: input.phone,
+      ...(input.asyncProcessing === undefined
+        ? {}
+        : { async: input.asyncProcessing }),
+      audio: input.mediaUrl,
+    };
   }
   if (input.mediaType === "video") {
     return {

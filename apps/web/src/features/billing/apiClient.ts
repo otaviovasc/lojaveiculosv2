@@ -1,13 +1,18 @@
 import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingAuth,
+  BillingCheckoutSession,
   BillingOverview,
   BillingProviderStatus,
+  CreateBillingCheckoutInput,
   EntitlementKey,
   UpdateEntitlementInput,
 } from "./types";
 
 export type BillingApi = {
+  createCheckout: (
+    input: CreateBillingCheckoutInput,
+  ) => Promise<BillingCheckoutSession>;
   getOverview: () => Promise<BillingOverview>;
   getProviderStatus: () => Promise<BillingProviderStatus>;
   updateEntitlement: (
@@ -28,6 +33,12 @@ export function createBillingApi({
   fetch,
 }: CreateBillingApiOptions): BillingApi {
   return {
+    createCheckout: (input) =>
+      fetch(billingRoutes.providerCheckout(baseUrl), {
+        body: JSON.stringify(input),
+        headers: createBillingHeaders(auth),
+        method: "POST",
+      }).then(readJson<BillingCheckoutSession>),
     getOverview: () =>
       fetch(billingRoutes.overview(baseUrl), {
         headers: createBillingHeaders(auth),
@@ -53,6 +64,8 @@ export const billingRoutes = {
     ),
   overview: (baseUrl?: string) =>
     createBillingEndpoint("/billing/overview", baseUrl),
+  providerCheckout: (baseUrl?: string) =>
+    createBillingEndpoint("/billing/provider/checkout", baseUrl),
   providerStatus: (baseUrl?: string) =>
     createBillingEndpoint("/billing/provider/status", baseUrl),
 } as const;

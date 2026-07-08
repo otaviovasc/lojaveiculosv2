@@ -1,0 +1,204 @@
+.billing-checkout-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.billing-checkout-header {
+  align-items: flex-start;
+  display: flex;
+  justify-content: space-between;
+}
+
+.billing-checkout-header h2 {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  line-height: 1.1;
+  margin-top: 0.45rem;
+}
+
+.billing-checkout-header p,
+.billing-plan-card p,
+.billing-checkout-secure,
+.billing-checkout-readiness p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  margin-top: 0.3rem;
+}
+
+.billing-checkout-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.billing-plan-card,
+.billing-checkout-box {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.billing-plan-card-selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 20px 60px
+    color-mix(in srgb, var(--color-accent) 14%, transparent);
+}
+
+.billing-plan-card-top,
+.billing-checkout-total {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.billing-plan-card-top span,
+.billing-checkout-box > div > span,
+.billing-checkout-total span,
+.billing-checkout-readiness span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.billing-plan-card-top strong,
+.billing-checkout-total strong {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+}
+
+.billing-plan-card h3 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+}
+
+.billing-plan-card ul {
+  display: grid;
+  gap: 0.55rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.billing-plan-card li {
+  align-items: center;
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.5rem;
+}
+
+.billing-plan-card li svg {
+  color: var(--color-green-start);
+  flex-shrink: 0;
+}
+
+.billing-methods {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.6rem;
+}
+
+.billing-methods button {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  display: flex;
+  gap: 0.65rem;
+  min-height: 4rem;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.billing-methods button.billing-method-active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+  color: var(--color-accent-strong);
+}
+
+.billing-methods strong,
+.billing-methods small {
+  display: block;
+}
+
+.billing-methods strong {
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+}
+
+.billing-methods small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin-top: 0.1rem;
+}
+
+.billing-checkout-readiness,
+.billing-checkout-total {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  padding: 0.85rem;
+}
+
+.billing-checkout-readiness strong {
+  color: var(--color-text);
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  margin-top: 0.25rem;
+}
+
+.billing-checkout-button {
+  align-items: center;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-inverse);
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 3rem;
+  width: 100%;
+}
+
+.billing-checkout-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.billing-checkout-secure {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.45rem;
+  justify-content: center;
+  margin: 0;
+  max-width: 25rem;
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  .billing-checkout-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(22rem, 0.85fr);
+  }
+
+  .billing-plan-card,
+  .billing-checkout-box {
+    padding: 1.25rem;
+  }
+}

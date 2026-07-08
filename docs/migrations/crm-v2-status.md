@@ -1,6 +1,6 @@
 # CRM V2 Migration Status
 
-Last updated: 2026-07-07
+Last updated: 2026-07-08
 
 Branch: `main`
 
@@ -116,6 +116,18 @@ polish is Conversas parity, filtered lead campaigns, and mobile evidence.
 - Imported the Repasses-style Visitas timeline into V2: Hoje/Amanha/Proximas/
   Atrasadas/Concluidas filters now have counts, tomorrow is excluded from
   upcoming, and visit rows render as compact timeline cards.
+- Tightened external bot parity into a single public media contract:
+  `send_image` uses `imageUrl`, `send_audio` uses `audioUrl`, and
+  `send_document` uses `documentUrl`; base64 remains limited to the internal CRM
+  media upload endpoint.
+- Added Repasses-style bot outbound behavior for phone-based sends:
+  `connectionId` plus `payload.phone` starts or reuses a V2 WhatsApp session and
+  persists the message as `senderType: AI`.
+- Added bot dispatch for ZAPI `connection_status_changed` events without fake
+  `chat` or `session` fields.
+- Expanded Integracoes bot documentation with individual action examples,
+  important webhook fields, intervention guidance, and the connection-status
+  event example.
 
 ## Key Findings
 
@@ -142,6 +154,8 @@ polish is Conversas parity, filtered lead campaigns, and mobile evidence.
 - Bot config, action API, webhook forwarding, and intervention events are now
   implemented behind V2 UUID contracts, including handback summaries and
   system-origin scheduled outbound events.
+- External bot media actions have one canonical remote-URL shape; do not add
+  alternate base64 aliases to the bot API.
 - Campaign backend/metrics/detail now persist through V2 campaign and recipient
   rows.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
@@ -178,6 +192,12 @@ CI=true pnpm --filter @lojaveiculosv2/web test -- CrmWhatsappVisitsPage.test
 CI=true pnpm run check:lines
 CI=true pnpm run validate:core-guardrails
 CI=true pnpm run validate
+CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.integrations.test crm.whatsapp.botForwarding.test crm.whatsapp.botMediaParity.test crm.whatsapp.botOutboundParity.test
+CI=true pnpm --filter @lojaveiculosv2/api test -- crm.whatsapp.botOutboundParity.test crm.whatsapp.botMediaParity.test crm.whatsapp.botForwarding.test
+CI=true pnpm --filter @lojaveiculosv2/web test -- src/features/crm/CrmWhatsappIntegrationsPage.test.tsx
+CI=true pnpm --filter @lojaveiculosv2/api typecheck
+CI=true pnpm --filter @lojaveiculosv2/web typecheck
+CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-integrations-ui pnpm exec playwright test tests/e2e/crm-whatsapp-integrations.spec.ts --project=chromium
 PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-campaigns pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_FEATURE_SLUG=crm-whatsapp-campaigns-ui pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-visits-ui pnpm exec playwright test tests/e2e/crm-whatsapp-visits.spec.ts --project=chromium
@@ -189,6 +209,19 @@ scan issues were fixed by removing the local generated store cache.
 Sandbox note: first Visits typecheck/lint attempts triggered pnpm dependency
 self-heal and failed with `EEXIST`/registry `ENOTFOUND`; frozen install
 repaired `node_modules`, then focused checks passed.
+
+Current unrelated blockers:
+
+- `pnpm --filter @lojaveiculosv2/api lint` fails on unrelated
+  `apps/api/src/features/agency/controllers/agency.controller.test.ts`
+  unsafe `any` assertions at lines 101-102.
+- `pnpm run check:lines` fails on unrelated oversized files:
+  `apps/api/src/features/docs/controllers/billingOpenApi.ts` at 387 lines,
+  `apps/api/src/features/docs/controllers/llmsText.ts` at 258 lines,
+  `apps/api/src/infrastructure/db/billing/drizzleBillingRepository.ts` at
+  508 lines, and
+  `apps/api/src/infrastructure/db/identity/drizzleAccountProvisioningReads.ts`
+  at 288 lines.
 
 ## Evidence
 
@@ -213,6 +246,8 @@ repaired `node_modules`, then focused checks passed.
   `tests/e2e/crm-whatsapp-visits.spec.ts`.
 - Bot config evidence:
   `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.whatsapp.botMediaParity.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.whatsapp.botOutboundParity.test.ts`,
   `apps/web/src/features/crm/CrmWhatsappIntegrationsPage.test.tsx`.
 - Bot action/Campaign UI evidence:
   `apps/api/src/features/crm/controllers/crm.whatsapp.integrations.test.ts`,

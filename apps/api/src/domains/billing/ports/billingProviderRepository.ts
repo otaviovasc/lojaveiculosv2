@@ -22,6 +22,19 @@ export type BillingProviderSubscriptionRecord = {
   status: "active" | "cancelled" | "expired" | "past_due" | "trialing";
 };
 
+export type BillingProviderCheckoutRecord = {
+  checkoutUrl: string;
+  expiresAt: Date | null;
+  externalReference: string;
+  id: string;
+  provider: PaymentProvider;
+  providerCheckoutId: string;
+  status: "cancelled" | "created" | "expired" | "paid";
+  storeId: string | null;
+  subscriptionId: string;
+  tenantId: string;
+};
+
 export type BillingProviderAccount = {
   billingCustomer: BillingProviderCustomerRecord;
   chargePreview: BillingChargePreview;
@@ -43,19 +56,45 @@ export type SaveBillingProviderSubscriptionInput = {
   subscriptionId: string;
 };
 
+export type SaveBillingProviderCheckoutInput = {
+  callbackUrls: Record<string, string>;
+  checkoutUrl: string;
+  expiresAt: Date | null;
+  externalReference: string;
+  provider: PaymentProvider;
+  providerCheckoutId: string;
+  raw: Record<string, unknown>;
+  status: BillingProviderCheckoutRecord["status"];
+  storeId: string | null;
+  subscriptionId: string;
+  tenantId: string;
+};
+
 export type BillingProviderRepository = {
   getProviderAccount: (input: {
     billingManagedBy?: "agency" | "store_owner";
     currentActorCanManage?: boolean;
-    storeId: string;
+    storeId?: string | null;
     tenantId: string;
   }) => Promise<BillingProviderAccount | null>;
   saveProviderCustomer: (
     input: SaveBillingProviderCustomerInput,
   ) => Promise<BillingProviderCustomerRecord | null>;
+  saveProviderCheckout: (
+    input: SaveBillingProviderCheckoutInput,
+  ) => Promise<BillingProviderCheckoutRecord | null>;
   saveProviderSubscription: (
     input: SaveBillingProviderSubscriptionInput,
   ) => Promise<BillingProviderSubscriptionRecord | null>;
+};
+
+export type BillingProviderCheckoutSessionResult = {
+  checkoutUrl: string;
+  expiresAt: string | null;
+  externalReference: string;
+  provider: PaymentProvider;
+  providerCheckoutId: string;
+  subscriptionId: string;
 };
 
 export type BillingProviderSubscriptionSyncResult = {

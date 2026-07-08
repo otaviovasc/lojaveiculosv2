@@ -9,7 +9,7 @@ export async function auditBotWebhookDispatch(
     connection: CrmConnection;
     event: CrmBotWebhookEvent;
     idempotencyKey: string;
-    session: CrmWhatsappSession;
+    session?: CrmWhatsappSession;
   },
   outcome: "attempted" | "failed" | "succeeded",
   error?: unknown,
@@ -18,13 +18,16 @@ export async function auditBotWebhookDispatch(
     action: "crm.whatsapp.bot.webhook.dispatch",
     actor: context.actor,
     category: "data_change",
-    entityId: input.session.id,
-    entityType: "crm_whatsapp_session",
+    entityId: input.session?.id ?? input.connection.id,
+    entityType: input.session
+      ? "crm_whatsapp_session"
+      : "crm_whatsapp_connection",
     metadata: {
       connectionId: input.connection.id,
       errorName: error instanceof Error ? error.name : null,
       event: input.event,
       idempotencyKey: input.idempotencyKey,
+      sessionId: input.session?.id ?? null,
     },
     outcome,
     requestId: context.requestId,

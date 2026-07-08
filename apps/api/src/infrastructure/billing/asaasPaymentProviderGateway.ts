@@ -2,6 +2,7 @@ import type { PaymentProviderGateway } from "../../domains/billing/ports/payment
 import { getAsaasProviderStatus } from "./asaasPaymentProviderConfig.js";
 import { createAsaasClient } from "./asaasPaymentProviderHttp.js";
 import {
+  createAsaasCheckout,
   syncAsaasCustomer,
   syncAsaasSubscription,
 } from "./asaasPaymentProviderSync.js";
@@ -12,6 +13,9 @@ export function createAsaasPaymentProviderGateway(
 ): PaymentProviderGateway {
   const fetcher = options.fetcher ?? fetch;
   return {
+    async createCheckout(input) {
+      return createAsaasCheckout(createAsaasClient(env, fetcher), input);
+    },
     async getProviderStatus() {
       return getAsaasProviderStatus(env);
     },

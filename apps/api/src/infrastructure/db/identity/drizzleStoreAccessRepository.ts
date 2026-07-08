@@ -29,6 +29,12 @@ type AccessRow = {
   userId: UserId;
 };
 
+type AgencyTenantAccessRow = Omit<AccessRow, "membershipId">;
+
+type ResolvedAccessRow = AgencyTenantAccessRow & {
+  membershipId: string | null;
+};
+
 type OverrideRow = {
   allowed: boolean;
   permission: PermissionKey;
@@ -38,9 +44,7 @@ type EntitlementRow = {
   entitlement: EntitlementKey;
 };
 
-type TenantBillingOwnerRow = {
-  role: RoleKey;
-};
+type TenantBillingOwnerRow = { role: RoleKey };
 
 type SelectLimitBuilder<Row> = {
   limit: (count: number) => Promise<readonly Row[]>;
@@ -67,6 +71,12 @@ export type DrizzleStoreAccessClient = {
       userId: unknown;
     }): SelectFromBuilder<AccessRow>;
     (selection: {
+      role: unknown;
+      storeId: unknown;
+      tenantId: unknown;
+      userId: unknown;
+    }): SelectFromBuilder<AgencyTenantAccessRow>;
+    (selection: {
       allowed: unknown;
       permission: unknown;
     }): SelectFromBuilder<OverrideRow>;
@@ -80,56 +90,29 @@ export function createDrizzleStoreAccessRepository(
 ): StoreAccessRepository {
   return {
     async findByClerkUserAndStoreSlug(input) {
-      const [access] = await db
-        .select({
-          membershipId: storeMemberships.id,
-          role: roleTemplates.roleKey,
-          storeId: stores.id,
-          tenantId: stores.tenantId,
-          userId: users.id,
-        })
-        .from(users)
-        .innerJoin(stores, eq(stores.publicSlug, input.storeSlug))
-        .innerJoin(
-          storeMemberships,
-          and(
-            eq(storeMemberships.storeId, stores.id),
-            eq(storeMemberships.userId, users.id),
-            eq(storeMemberships.status, "active"),
-          ),
-        )
-        .innerJoin(
-          roleTemplates,
-          eq(roleTemplates.id, storeMemberships.roleTemplateId),
-        )
-        .where(
-          and(
-            eq(users.clerkUserId, input.clerkUserId),
-            eq(users.isDeleted, false),
-            eq(stores.isDeleted, false),
-            isNull(users.deletedAt),
-            isNull(stores.deletedAt),
-          ),
-        )
-        .limit(1);
+      const access =
+        (await findDirectStoreAccess(db, input)) ??
+        (await findAgencyTenantStoreAccess(db, input));
 
       if (!access) return null;
 
       const [overrides, entitlements, tenantAgencyMemberships] =
         await Promise.all([
-          db
-            .select({
-              allowed: membershipPermissionOverrides.allowed,
-              permission: membershipPermissionOverrides.permissionKey,
-            })
-            .from(membershipPermissionOverrides)
-            .where(
-              eq(
-                membershipPermissionOverrides.membershipId,
-                access.membershipId,
-              ),
-            )
-            .limit(100),
+          access.membershipId
+            ? db
+                .select({
+                  allowed: membershipPermissionOverrides.allowed,
+                  permission: membershipPermissionOverrides.permissionKey,
+                })
+                .from(membershipPermissionOverrides)
+                .where(
+                  eq(
+                    membershipPermissionOverrides.membershipId,
+                    access.membershipId,
+                  ),
+                )
+                .limit(100)
+            : Promise.resolve([]),
           db
             .select({
               entitlement: storeEntitlements.featureKey,
@@ -145,21 +128,23 @@ export function createDrizzleStoreAccessRepository(
               ),
             )
             .limit(100),
-          db
-            .select({ role: roleTemplates.roleKey })
-            .from(tenantMemberships)
-            .innerJoin(
-              roleTemplates,
-              eq(roleTemplates.id, tenantMemberships.roleTemplateId),
-            )
-            .where(
-              and(
-                eq(tenantMemberships.tenantId, access.tenantId),
-                eq(tenantMemberships.status, "active"),
-                eq(roleTemplates.roleKey, "agency"),
-              ),
-            )
-            .limit(1),
+          access.role === "agency"
+            ? Promise.resolve([{ role: "agency" as const }])
+            : db
+                .select({ role: roleTemplates.roleKey })
+                .from(tenantMemberships)
+                .innerJoin(
+                  roleTemplates,
+                  eq(roleTemplates.id, tenantMemberships.roleTemplateId),
+                )
+                .where(
+                  and(
+                    eq(tenantMemberships.tenantId, access.tenantId),
+                    eq(tenantMemberships.status, "active"),
+                    eq(roleTemplates.roleKey, "agency"),
+                  ),
+                )
+                .limit(1),
         ]);
 
       return {
@@ -175,4 +160,89 @@ export function createDrizzleStoreAccessRepository(
       } satisfies StoreAccessRecord;
     },
   };
+}
+
+async function findDirectStoreAccess(
+  db: DrizzleStoreAccessClient,
+  input: { clerkUserId: string; storeSlug: string },
+): Promise<ResolvedAccessRow | null> {
+  const [access] = await db
+    .select({
+      membershipId: storeMemberships.id,
+      role: roleTemplates.roleKey,
+      storeId: stores.id,
+      tenantId: stores.tenantId,
+      userId: users.id,
+    })
+    .from(users)
+    .innerJoin(stores, eq(stores.publicSlug, input.storeSlug))
+    .innerJoin(
+      storeMemberships,
+      and(
+        eq(storeMemberships.storeId, stores.id),
+        eq(storeMemberships.userId, users.id),
+        eq(storeMemberships.status, "active"),
+      ),
+    )
+    .innerJoin(
+      roleTemplates,
+      eq(roleTemplates.id, storeMemberships.roleTemplateId),
+    )
+    .where(
+      and(
+        eq(users.clerkUserId, input.clerkUserId),
+        eq(users.isDeleted, false),
+        eq(stores.isDeleted, false),
+        isNull(users.deletedAt),
+        isNull(stores.deletedAt),
+      ),
+    )
+    .limit(1);
+  return access ? { ...access, membershipId: access.membershipId } : null;
+}
+
+async function findAgencyTenantStoreAccess(
+  db: DrizzleStoreAccessClient,
+  input: { clerkUserId: string; storeSlug: string },
+): Promise<ResolvedAccessRow | null> {
+  const [access] = await db
+    .select({
+      role: roleTemplates.roleKey,
+      storeId: stores.id,
+      tenantId: stores.tenantId,
+      userId: users.id,
+    })
+    .from(users)
+    .innerJoin(
+      tenantMemberships,
+      and(
+        eq(tenantMemberships.userId, users.id),
+        eq(tenantMemberships.status, "active"),
+      ),
+    )
+    .innerJoin(
+      roleTemplates,
+      and(
+        eq(roleTemplates.id, tenantMemberships.roleTemplateId),
+        eq(roleTemplates.roleKey, "agency"),
+      ),
+    )
+    .innerJoin(
+      stores,
+      and(
+        eq(stores.tenantId, tenantMemberships.tenantId),
+        eq(stores.publicSlug, input.storeSlug),
+        eq(stores.isDeleted, false),
+        isNull(stores.deletedAt),
+      ),
+    )
+    .where(
+      and(
+        eq(users.clerkUserId, input.clerkUserId),
+        eq(users.isDeleted, false),
+        isNull(users.deletedAt),
+      ),
+    )
+    .limit(1);
+  return access ? { ...access, membershipId: null } : null;
 }

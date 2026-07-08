@@ -66,7 +66,7 @@ export function AgencyDashboardHeader({ onCreate }: { onCreate: () => void }) {
           variant="primary"
         />
       }
-      description="Central de monitoramento, planos, acessos e faturamento das suas concessionarias."
+      description="Central de monitoramento, planos e faturamento das suas concessionarias."
       eyebrow="Visao Geral"
       title="Rede de Lojas"
     />
