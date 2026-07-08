@@ -86,6 +86,7 @@ export type MarketplaceJobMetadata = {
   providerRequest?: {
     attributeIds?: string[];
     categoryId?: string;
+    parameterIds?: string[];
   };
   providerResult?: {
     externalId?: string | null;

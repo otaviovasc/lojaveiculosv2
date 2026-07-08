@@ -22,6 +22,7 @@ export const createMarketplaceSyncJobSchema = z.object({
         .object({
           attributeIds: z.array(z.string().min(1)).optional(),
           categoryId: z.string().min(1).optional(),
+          parameterIds: z.array(z.string().min(1)).optional(),
         })
         .strict()
         .optional(),

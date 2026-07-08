@@ -2,7 +2,7 @@ import type {
   MarketplaceProviderAccountStatus,
   MarketplaceTokenSet,
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
-import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGateway.js";
+import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
   baseUrl,
   expiresAt,
@@ -54,6 +54,9 @@ export async function checkAccount(
     options.requirementConfig?.accountCheckPath ??
     options.accountPath ??
     "/users/me";
+  if (options.provider === "olx") {
+    return checkOlxAccount(fetchImpl, options, token, path);
+  }
   const response = await fetchImpl(`${baseUrl(options)}${path}`, {
     headers: { Authorization: `Bearer ${token.accessToken}` },
     method: "GET",
@@ -66,6 +69,37 @@ export async function checkAccount(
     throw providerHttpError(options.provider, response, payload);
   return {
     accountId: readString(payload.id) ?? token.providerAccountId,
+    requirements: [...(options.requirementConfig?.requirements ?? [])],
+    status: "connected",
+  };
+}
+
+async function checkOlxAccount(
+  fetchImpl: typeof fetch,
+  options: HttpMarketplaceGatewayOptions,
+  token: MarketplaceTokenSet,
+  path: string,
+): Promise<MarketplaceProviderAccountStatus> {
+  const response = await fetchImpl(`${baseUrl(options)}${path}`, {
+    body: JSON.stringify({ access_token: token.accessToken }),
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      "User-Agent": "Mozilla/5.0",
+    },
+    method: "POST",
+  });
+  const payload = (await response.json().catch(() => ({}))) as Record<
+    string,
+    unknown
+  >;
+  if (!response.ok) {
+    throw providerHttpError(options.provider, response, payload);
+  }
+  return {
+    accountId:
+      readString(payload.user_email) ??
+      readString(payload.user_name) ??
+      token.providerAccountId,
     requirements: [...(options.requirementConfig?.requirements ?? [])],
     status: "connected",
   };

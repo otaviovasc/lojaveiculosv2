@@ -3,10 +3,8 @@ import type {
   MarketplaceProviderGatewayRegistry,
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
 import type { MarketplaceProvider } from "../../domains/marketplace/ports/marketplaceRepository.js";
-import {
-  createHttpMarketplaceProviderGateway,
-  type ProviderRequirementConfig,
-} from "./httpMarketplaceProviderGateway.js";
+import { createHttpMarketplaceProviderGateway } from "./httpMarketplaceProviderGateway.js";
+import type { ProviderRequirementConfig } from "./httpMarketplaceProviderGatewayTypes.js";
 import { MarketplaceProviderGatewayError } from "./httpMarketplaceProviderGatewaySupport.js";
 
 export function createMarketplaceGatewayRegistry(
@@ -49,17 +47,16 @@ function createMercadoLivreGateway(env: Record<string, string | undefined>) {
 
 function createOlxGateway(env: Record<string, string | undefined>) {
   const clientId = env.OLX_CLIENT_ID;
-  const authorizationUrl = env.OLX_AUTHORIZATION_URL;
-  const baseUrl = env.OLX_API_BASE_URL;
-  const listingPath = env.OLX_LISTINGS_PATH;
-  const tokenUrl = env.OLX_TOKEN_URL;
-  if (!clientId || !authorizationUrl || !baseUrl || !listingPath || !tokenUrl) {
+  const clientSecret = env.OLX_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
     return createFailClosedGateway(
       "olx",
       MarketplaceProviderGatewayError.notConfigured("olx"),
     );
   }
-  const requirementConfig = parseRequirementConfig(env.OLX_REQUIREMENT_CONFIG);
+  const requirementConfig = resolveOlxRequirementConfig(
+    env.OLX_REQUIREMENT_CONFIG,
+  );
   if (!requirementConfig) {
     return createFailClosedGateway(
       "olx",
@@ -69,14 +66,16 @@ function createOlxGateway(env: Record<string, string | undefined>) {
   return createHttpMarketplaceProviderGateway({
     auth: {
       clientId,
-      ...(env.OLX_CLIENT_SECRET ? { clientSecret: env.OLX_CLIENT_SECRET } : {}),
+      clientSecret,
     },
-    authorizationUrl,
-    baseUrl,
-    listingPath,
+    authorizationScope: "autoupload basic_user_info autoservice chat",
+    authorizationUrl:
+      env.OLX_AUTHORIZATION_URL ?? "https://auth.olx.com.br/oauth",
+    baseUrl: env.OLX_API_BASE_URL ?? "https://apps.olx.com.br",
+    listingPath: env.OLX_LISTINGS_PATH ?? "/autoupload/import",
     provider: "olx",
     requirementConfig,
-    tokenUrl,
+    tokenUrl: env.OLX_TOKEN_URL ?? "https://auth.olx.com.br/oauth/token",
   });
 }
 
@@ -110,11 +109,50 @@ function parseRequirementConfig(
   if (!value) return null;
   try {
     const parsed = JSON.parse(value) as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (!isProviderRequirementConfig(parsed)) {
       return null;
     }
-    return parsed as ProviderRequirementConfig;
+    return parsed;
   } catch {
     return null;
   }
+}
+
+function resolveOlxRequirementConfig(value: string | undefined) {
+  if (!value?.trim()) return defaultOlxRequirementConfig();
+  return parseRequirementConfig(value);
+}
+
+function isProviderRequirementConfig(
+  value: unknown,
+): value is ProviderRequirementConfig {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  if (
+    record.accountCheckPath !== undefined &&
+    typeof record.accountCheckPath !== "string"
+  ) {
+    return false;
+  }
+  if (record.requirements === undefined) return true;
+  if (!Array.isArray(record.requirements)) return false;
+  return record.requirements.every((requirement) => {
+    if (!requirement || typeof requirement !== "object") return false;
+    const item = requirement as Record<string, unknown>;
+    return (
+      typeof item.code === "string" &&
+      typeof item.message === "string" &&
+      (item.severity === "blocked" ||
+        item.severity === "ok" ||
+        item.severity === "warning") &&
+      typeof item.userAction === "string"
+    );
+  });
+}
+
+function defaultOlxRequirementConfig(): ProviderRequirementConfig {
+  return {
+    accountCheckPath: "/oauth_api/basic_user_info",
+    requirements: [],
+  };
 }

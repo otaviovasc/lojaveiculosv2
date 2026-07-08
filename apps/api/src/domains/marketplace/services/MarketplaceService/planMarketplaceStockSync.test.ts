@@ -120,6 +120,34 @@ describe("planMarketplaceStockItem", () => {
   it("does not block ready FIPE listings when provider mapping is resolved", () => {
     expect(listListingBlockers(readyListing(), resolvedMapping())).toEqual([]);
   });
+
+  it("blocks OLX listings missing store contact, CEP, or used vehicle plate", () => {
+    const blockers = listListingBlockers(
+      readyListing({
+        contactPhone: null,
+        licensePlate: null,
+        locationZipCode: "bad",
+      }),
+      resolvedMapping(),
+      "olx",
+    );
+
+    expect(blockers.map((blocker) => blocker.code)).toEqual([
+      "MARKETPLACE_LISTING_CONTACT_PHONE_MISSING",
+      "MARKETPLACE_LISTING_LOCATION_ZIPCODE_MISSING",
+      "MARKETPLACE_LISTING_LICENSE_PLATE_MISSING",
+    ]);
+  });
+
+  it("does not require a plate for new OLX listings", () => {
+    expect(
+      listListingBlockers(
+        readyListing({ condition: "new", licensePlate: null }),
+        resolvedMapping(),
+        "olx",
+      ).map((blocker) => blocker.code),
+    ).not.toContain("MARKETPLACE_LISTING_LICENSE_PLATE_MISSING");
+  });
 });
 
 function readyListing(
@@ -140,11 +168,15 @@ function readyListing(
       yearCode: "2024-1",
       yearName: "2024 Gasolina",
     },
+    condition: "used",
+    contactPhone: "5511999999999",
     description: "BMW M3 Competition M.",
     doors: 4,
     fuelType: "gasoline",
     isVisibleOnPublicSite: true,
+    licensePlate: "ABC1D23",
     listingId: "listing_1",
+    locationZipCode: "01310-100",
     mediaUrls: ["https://cdn.local/m3-front.jpg"],
     mileageKm: 12000,
     modelYear: 2024,

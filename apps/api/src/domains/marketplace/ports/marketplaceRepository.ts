@@ -69,13 +69,10 @@ export type MarketplaceCatalogSnapshot = {
   yearName: string | null;
 };
 
-export type MarketplaceSelectedMedia = {
-  altText: string | null;
-  url: string;
-};
-
 export type MarketplaceListingProjection = {
   catalog: MarketplaceCatalogSnapshot | null;
+  condition: "certified_pre_owned" | "new" | "used";
+  contactPhone: string | null;
   description: string | null;
   doors: number | null;
   fuelType:
@@ -88,13 +85,15 @@ export type MarketplaceListingProjection = {
     | "other"
     | null;
   isVisibleOnPublicSite: boolean;
+  licensePlate: string | null;
   listingId: string;
+  locationZipCode: string | null;
   mediaUrls: readonly string[];
   mileageKm: number | null;
   modelYear: number | null;
   priceCents: number | null;
   publicSlug: string | null;
-  selectedMedia: readonly MarketplaceSelectedMedia[];
+  selectedMedia: readonly { altText: string | null; url: string }[];
   selectedUnitId: string | null;
   status:
     | "archived"

@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray, isNull } from "drizzle-orm";
 import {
+  storeProfiles,
   vehicleListings,
   vehicleMedia,
   vehicleUnits,
@@ -80,6 +81,9 @@ export async function findListingProjection(
   const selectedUnitId =
     sortedUnits.find((unit) => mediaByUnitId.has(unit.id))?.id ??
     sortedUnits[0]?.id;
+  const selectedUnit = selectedUnitId
+    ? sortedUnits.find((unit) => unit.id === selectedUnitId)
+    : null;
   const mediaUrls = selectedUnitId
     ? (mediaByUnitId.get(selectedUnitId) ?? []).map((media) => media.url)
     : [];
@@ -91,14 +95,36 @@ export async function findListingProjection(
     : [];
 
   const catalog = catalogSnapshot(listing.metadata);
+  const [storeProfile] = await db
+    .select({
+      addressZipCode: storeProfiles.addressZipCode,
+      contactPhone: storeProfiles.contactPhone,
+      whatsappPhone: storeProfiles.whatsappPhone,
+    })
+    .from(storeProfiles)
+    .where(
+      and(
+        eq(storeProfiles.storeId, input.storeId),
+        eq(storeProfiles.tenantId, input.tenantId),
+      ),
+    )
+    .limit(1);
 
   return {
     catalog,
+    condition: listing.condition,
+    contactPhone:
+      storeProfile?.whatsappPhone ?? storeProfile?.contactPhone ?? null,
     description: listing.description,
     doors: listing.doors,
     fuelType: listing.fuelType,
     isVisibleOnPublicSite: listing.isVisibleOnPublicSite,
+    licensePlate:
+      selectedUnit?.plate ??
+      sortedUnits.find((unit) => Boolean(unit.plate))?.plate ??
+      null,
     listingId: listing.id,
+    locationZipCode: storeProfile?.addressZipCode ?? null,
     mediaUrls,
     mileageKm: listing.mileageKm,
     modelYear: listing.modelYear,
@@ -107,10 +133,7 @@ export async function findListingProjection(
     selectedMedia,
     selectedUnitId: selectedUnitId ?? null,
     status: listing.status,
-    stockLabel: selectedUnitId
-      ? (sortedUnits.find((unit) => unit.id === selectedUnitId)?.stockNumber ??
-        null)
-      : null,
+    stockLabel: selectedUnit?.stockNumber ?? null,
     title: listing.title,
     trimName: listing.trimName,
     vehicleType: catalog?.vehicleType ?? null,

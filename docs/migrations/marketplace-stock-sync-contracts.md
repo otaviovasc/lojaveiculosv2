@@ -12,7 +12,8 @@ Status: frozen for implementation. Date: 2026-07-08
 - Sync mirrors public V2 stock: publish, update, and unpublish when hidden, sold out, unpublished, archived, or deleted.
 - Sync is manual/operator-triggered; no background worker.
 - Tests must not make live provider calls.
-- OLX fails closed when env or contract config is missing.
+- OLX uses the known Autoupload contract defaults and fails closed when client
+  credentials are missing or an explicit contract override is invalid.
 - Never persist or return tokens, secrets, raw provider payloads, or sensitive customer data.
 
 ## Routes
@@ -41,9 +42,7 @@ type MarketplaceStockSyncRunResponse = {
   plan: MarketplaceStockPlan;
   provider: MarketplaceProvider;
 };
-type MarketplaceSyncJobRetryRequest = {
-  reason?: string;
-};
+type MarketplaceSyncJobRetryRequest = { reason?: string };
 type MarketplaceSyncJobRetryResponse = {
   job: MarketplaceJob;
   previousJobId: string;
@@ -61,7 +60,8 @@ known marketplace failures must not return `MARKETPLACE_REQUEST_ERROR`.
 
 ## Overview And Projection
 
-DB additions are `marketplace_provider_taxonomies` and `marketplace_catalog_mappings`. Mappings bridge FIPE codes to provider codes; provider taxonomy rows must not seed marketplace vehicle catalogs.
+DB additions are `marketplace_provider_taxonomies` and
+`marketplace_catalog_mappings`; neither table seeds vehicle catalogs.
 
 ```ts
 type MarketplaceAccountConnectionStatus =
@@ -103,12 +103,8 @@ type MarketplaceStockSyncSummary = {
 `MarketplaceOverview` extends the existing response with
 `providerStates: readonly MarketplaceProviderState[]`.
 
-`MarketplaceListingProjection` must include:
-
-- FIPE catalog snapshot: brand/model/year/fuel/FIPE codes, source, vehicle type.
-- listing readiness fields: status, public visibility, price, photos.
-- technical fields: doors, fuel type, mileage km, trim name, model year.
-- display fields: title, public slug, selected media, selected unit, stock label.
+`MarketplaceListingProjection` includes FIPE catalog, readiness fields, technical
+fields, store phone/CEP, selected unit plate, public slug, media/unit, and stock label.
 
 ## Stock Planner
 
@@ -122,6 +118,9 @@ type MarketplaceListingBlockerCode =
   | "MARKETPLACE_LISTING_FIPE_CATALOG_MISSING"
   | "MARKETPLACE_LISTING_CATALOG_FIELD_MISSING"
   | "MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING"
+  | "MARKETPLACE_LISTING_CONTACT_PHONE_MISSING"
+  | "MARKETPLACE_LISTING_LOCATION_ZIPCODE_MISSING"
+  | "MARKETPLACE_LISTING_LICENSE_PLATE_MISSING"
   | "MARKETPLACE_LISTING_MAPPING_REQUIRED";
 type MarketplaceListingBlocker = {
   code: MarketplaceListingBlockerCode;
@@ -182,13 +181,19 @@ type MarketplaceProviderGateway = {
 
 Mercado Livre defaults to category `MLB1744` and must send `BRAND`, `MODEL`,
 `TRIM`, `VEHICLE_YEAR`, `VEHICLE_TYPE`, `FUEL_TYPE`, `DOORS`, and
-`KILOMETERS`. It must support token refresh, account check, sanitized HTTP
-errors, duplicate/external-id reconciliation, 429 retry-after, and 5xx outage
-mapping.
+`KILOMETERS`, plus token refresh, account check, duplicate reconciliation,
+sanitized HTTP errors, 429 retry-after, and 5xx outage mapping.
 
-OLX is a strict config-driven partner adapter. Missing env returns
-`MARKETPLACE_PROVIDER_NOT_CONFIGURED`; missing contract config returns
-`MARKETPLACE_PROVIDER_CONTRACT_MISSING`.
+OLX uses the Autoupload contract: authorization URL
+`https://auth.olx.com.br/oauth`, token URL
+`https://auth.olx.com.br/oauth/token`, API base `https://apps.olx.com.br`,
+listing path `/autoupload/import`, account check path
+`/oauth_api/basic_user_info`, scope
+`autoupload basic_user_info autoservice chat`, and `access_token` inside the
+JSON body. Missing `OLX_CLIENT_ID` or `OLX_CLIENT_SECRET` returns
+`MARKETPLACE_PROVIDER_NOT_CONFIGURED`; an invalid explicit contract override
+returns `MARKETPLACE_PROVIDER_CONTRACT_MISSING`.
+OLX publish/update requires store phone, store CEP, and selected unit plate for used vehicles; missing values block before provider IO.
 
 ## Stable Errors
 
@@ -220,9 +225,9 @@ type MarketplaceServiceError = {
 };
 ```
 
-Safe details may include provider, listing id, vehicle label, field names,
-blocker codes, retry seconds, batch id, and request id. They must not include
-tokens, secrets, raw provider payloads, customer message bodies, or raw DB rows.
+Safe details may include provider, ids, vehicle label, field names, blocker
+codes, retry seconds, batch id, and request id. Never include tokens, secrets,
+raw provider payloads, customer message bodies, or raw DB rows.
 
 ## Job Metadata And Audit
 
@@ -232,7 +237,11 @@ type MarketplaceJobMetadata = {
   externalId?: string;
   listingId?: string;
   planDecision?: "publish" | "update" | "unpublish" | "no_op" | "blocked";
-  providerRequest?: { categoryId?: string; attributeIds?: string[] };
+  providerRequest?: {
+    attributeIds?: string[];
+    categoryId?: string;
+    parameterIds?: string[];
+  };
   providerResult?: {
     externalId?: string | null;
     providerRequestId?: string | null;
@@ -243,7 +252,5 @@ type MarketplaceJobMetadata = {
 };
 ```
 
-Audit events: `marketplace.stock_sync.preview`,
-`marketplace.stock_sync.queue`, `marketplace.sync_job.run`,
-`marketplace.sync_job.retry`, `marketplace.sync_job.succeeded`,
-`marketplace.sync_job.failed`, and `marketplace.stock_sync.partial_failure`.
+Audit events: preview, queue, run, retry, success, failure, and partial failure
+under the `marketplace.stock_sync.*` / `marketplace.sync_job.*` namespaces.

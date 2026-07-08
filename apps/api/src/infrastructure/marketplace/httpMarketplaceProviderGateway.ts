@@ -1,17 +1,15 @@
 import type {
-  MarketplaceGatewayAuthConfig,
   MarketplaceProviderGateway,
   MarketplacePublishInput,
   MarketplacePublishResult,
-  MarketplaceServiceErrorCode,
 } from "../../domains/marketplace/ports/marketplaceProviderGateway.js";
-import type { MarketplaceProvider } from "../../domains/marketplace/ports/marketplaceRepository.js";
 import { createProviderListingPayload } from "../../domains/marketplace/payloads/marketplaceListingPayload.js";
 import {
-  assertOlxContract,
   checkAccount,
   exchangeToken,
 } from "./httpMarketplaceProviderGatewayAuth.js";
+import { runOlxAutouploadSync } from "./httpMarketplaceProviderGatewayOlx.js";
+import type { HttpMarketplaceGatewayOptions } from "./httpMarketplaceProviderGatewayTypes.js";
 import {
   baseUrl,
   duplicateExternalId,
@@ -22,27 +20,10 @@ import {
   sanitizedResult,
 } from "./httpMarketplaceProviderGatewaySupport.js";
 
-export type HttpMarketplaceGatewayOptions = {
-  auth: MarketplaceGatewayAuthConfig;
-  authorizationUrl?: string;
-  baseUrl: string;
-  fetch?: typeof fetch;
-  accountPath?: string;
-  listingPath?: string;
-  requirementConfig?: ProviderRequirementConfig;
-  provider: MarketplaceProvider;
-  tokenUrl: string;
-};
-
-export type ProviderRequirementConfig = {
-  accountCheckPath?: string;
-  requirements?: readonly {
-    code: MarketplaceServiceErrorCode;
-    message: string;
-    severity: "blocked" | "ok" | "warning";
-    userAction: string;
-  }[];
-};
+export type {
+  HttpMarketplaceGatewayOptions,
+  ProviderRequirementConfig,
+} from "./httpMarketplaceProviderGatewayTypes.js";
 
 export function createHttpMarketplaceProviderGateway(
   options: HttpMarketplaceGatewayOptions,
@@ -61,6 +42,9 @@ export function createHttpMarketplaceProviderGateway(
       url.searchParams.set("client_id", options.auth.clientId);
       url.searchParams.set("redirect_uri", input.redirectUri);
       url.searchParams.set("state", input.state);
+      if (options.authorizationScope) {
+        url.searchParams.set("scope", options.authorizationScope);
+      }
       return url.toString();
     },
     exchangeAuthorizationCode: async (input) =>
@@ -84,7 +68,9 @@ async function runListingSync(
   options: HttpMarketplaceGatewayOptions,
   input: MarketplacePublishInput,
 ): Promise<MarketplacePublishResult> {
-  if (options.provider === "olx") assertOlxContract(options);
+  if (options.provider === "olx") {
+    return runOlxAutouploadSync(fetchImpl, options, input);
+  }
   if (input.jobType === "listing_unpublish") {
     const { method, path } = requestShape(options, input);
     const response = await fetchImpl(`${baseUrl(options)}${path}`, {

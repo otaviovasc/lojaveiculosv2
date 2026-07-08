@@ -19,17 +19,17 @@ describe("runMarketplaceSyncJob", () => {
     [
       "hidden listing",
       { isVisibleOnPublicSite: false },
-      "Listing must be published and public-visible before marketplace sync.",
+      "Anuncio nao publicado no site publico.",
     ],
     [
       "unpublished listing",
       { status: "unpublished" },
-      "Listing must be published and public-visible before marketplace sync.",
+      "Anuncio nao publicado no site publico.",
     ],
     [
       "listing without public photos",
       { mediaUrls: [] },
-      "Listing must have at least one public photo before marketplace sync.",
+      "Anuncio sem fotos publicas.",
     ],
   ] as const)("fails before provider IO for %s", async (_, patch, message) => {
     const context = createMarketplaceContext();
@@ -192,11 +192,15 @@ function projection(
       yearCode: "2024-1",
       yearName: "2024 Gasolina",
     },
+    condition: "used",
+    contactPhone: "5511999999999",
     description: "Anuncio de teste para integracao.",
     doors: 4,
     fuelType: "gasoline",
     isVisibleOnPublicSite: true,
+    licensePlate: "ABC1D23",
     listingId: "listing_1",
+    locationZipCode: "01310-100",
     mediaUrls: ["https://cdn.local/vehicle-front.jpg"],
     mileageKm: 12000,
     modelYear: 2024,

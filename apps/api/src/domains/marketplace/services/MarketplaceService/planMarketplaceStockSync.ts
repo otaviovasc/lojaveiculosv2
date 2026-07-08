@@ -153,7 +153,11 @@ export function planMarketplaceStockItem(input: {
     };
   }
 
-  const blockers = listListingBlockers(input.listing, input.catalogMapping);
+  const blockers = listListingBlockers(
+    input.listing,
+    input.catalogMapping,
+    input.provider,
+  );
   if (blockers.length) {
     return {
       blockers,

@@ -4,7 +4,11 @@ import {
   createNoopServiceLogger,
   createServiceContext,
 } from "../../../../shared/serviceContext.js";
-import { createTestMarketplaceRepository } from "../../testSupportMarketplaceRepository.js";
+import {
+  createResolvedMarketplaceCatalogMapping,
+  createTestMarketplaceRepository,
+} from "../../testSupportMarketplaceRepository.js";
+import type { MarketplaceRepository } from "../../ports/marketplaceRepository.js";
 import { createMarketplaceSyncJob } from "./createMarketplaceSyncJob.js";
 import { listMarketplaceOverview } from "./listMarketplaceOverview.js";
 import { runMarketplaceSyncJob } from "./runMarketplaceSyncJob.js";
@@ -79,7 +83,12 @@ describe("MarketplaceService", () => {
           }),
         }),
       },
-      marketplaceRepository: repository,
+      marketplaceRepository: {
+        ...repository,
+        findCatalogMapping: async (
+          input: Parameters<MarketplaceRepository["findCatalogMapping"]>[0],
+        ) => createResolvedMarketplaceCatalogMapping(input.provider),
+      },
     };
 
     await upsertMarketplaceAccount(

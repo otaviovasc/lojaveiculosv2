@@ -34,7 +34,7 @@ function createMercadoLivrePayload(
     available_quantity: 1,
     buying_mode: "classified",
     category_id: categoryId,
-    condition: "used",
+    condition: listing.condition === "new" ? "new" : "used",
     currency_id: currencyId,
     description: { plain_text: listing.description ?? listing.title },
     pictures: listing.mediaUrls.map((source) => ({ source })),
@@ -79,28 +79,115 @@ function createOlxPayload(
   listing: MarketplaceListingProjection,
   settings: Record<string, unknown>,
 ): ProviderListingPayload {
-  const categoryId = stringSetting(settings, "categoryId") ?? "autos";
+  const categoryId = olxCategory(listing.vehicleType);
+  const mapping = objectSetting(settings, "providerMapping");
+  const phone = olxPhone(listing.contactPhone);
+  const plate = olxPlate(listing.licensePlate);
+  const zipCode = olxZipCode(listing.locationZipCode);
+  const params = {
+    ...(listing.modelYear ? { regdate: String(listing.modelYear) } : {}),
+    ...(listing.mileageKm !== null ? { mileage: listing.mileageKm } : {}),
+    ...(olxFuelType(listing.fuelType)
+      ? { fuel: olxFuelType(listing.fuelType) }
+      : {}),
+    ...(listing.vehicleType === "cars" && olxDoors(listing.doors)
+      ? { doors: olxDoors(listing.doors) }
+      : {}),
+    ...(stringSetting(mapping, "providerBrandCode")
+      ? { vehicle_brand: stringSetting(mapping, "providerBrandCode") }
+      : {}),
+    ...(stringSetting(mapping, "providerModelCode")
+      ? { vehicle_model: stringSetting(mapping, "providerModelCode") }
+      : {}),
+    ...(stringSetting(mapping, "providerTrimCode")
+      ? { vehicle_version: stringSetting(mapping, "providerTrimCode") }
+      : {}),
+    ...(plate && listing.condition !== "new" ? { vehicle_tag: plate } : {}),
+    ...(listing.condition === "new" ? { zero_km: "1" } : {}),
+  };
   const body = {
-    category_id: categoryId,
-    description: listing.description ?? listing.title,
+    body: (listing.description ?? listing.title).slice(0, 6000),
+    category: categoryId,
+    id: listing.listingId,
     images: listing.mediaUrls,
-    price: listing.priceCents ? Math.round(listing.priceCents / 100) : null,
-    title: listing.title,
-    vehicle_type: listing.vehicleType,
-    year: listing.modelYear,
+    operation: "insert",
+    params,
+    ...(phone ? { phone } : {}),
+    price: listing.priceCents ? Math.round(listing.priceCents / 100) : 0,
+    subject: listing.title.slice(0, 90),
+    type: "s",
+    ...(zipCode ? { zipcode: zipCode } : {}),
   };
 
   return {
-    attributes: { categoryId },
+    attributes: {
+      categoryId: String(categoryId),
+      parameterIds: Object.keys(params),
+    },
     body,
     mediaUrls: listing.mediaUrls,
     title: listing.title,
   };
 }
 
+function olxCategory(value: MarketplaceListingProjection["vehicleType"]) {
+  if (value === "motorcycles") return 2060;
+  if (value === "trucks") return 2040;
+  return 2020;
+}
+
+function olxFuelType(value: MarketplaceListingProjection["fuelType"]) {
+  if (!value) return null;
+  const labels = {
+    diesel: "5",
+    electric: "6",
+    ethanol: "2",
+    flex: "3",
+    gasoline: "1",
+    hybrid: "7",
+    other: null,
+  } satisfies Record<NonNullable<typeof value>, string | null>;
+  return labels[value];
+}
+
+function olxDoors(value: number | null) {
+  if (value === null) return null;
+  if (value <= 2) return "1";
+  if (value === 3) return "3";
+  return "2";
+}
+
+function olxPhone(value: string | null) {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  const withoutCountryCode =
+    digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  return /^\d{10,11}$/.test(withoutCountryCode)
+    ? Number(withoutCountryCode)
+    : null;
+}
+
+function olxPlate(value: string | null) {
+  const plate = value?.replace(/[^A-Za-z0-9]/g, "").toUpperCase() ?? "";
+  return /^[A-Z]{3}\d{4}$/.test(plate) || /^[A-Z]{3}\d[A-Z]\d{2}$/.test(plate)
+    ? plate
+    : null;
+}
+
+function olxZipCode(value: string | null) {
+  const zipCode = value?.replace(/\D/g, "") ?? "";
+  return /^\d{8}$/.test(zipCode) ? zipCode : null;
+}
+
 function stringSetting(settings: Record<string, unknown>, key: string) {
   const value = settings[key];
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function objectSetting(settings: Record<string, unknown>, key: string) {
+  const value = settings[key];
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
 }
 
 function marketplaceFuelType(value: MarketplaceListingProjection["fuelType"]) {

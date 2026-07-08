@@ -4,9 +4,10 @@ import {
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
 import type {
+  MarketplaceCatalogMapping,
+  MarketplaceCatalogSnapshot,
   MarketplaceJob,
   MarketplaceListingProjection,
-  MarketplaceSyncJobType,
 } from "../../ports/marketplaceRepository.js";
 import {
   MarketplaceProviderRuntimeError,
@@ -16,6 +17,7 @@ import {
 import { MarketplaceServiceError } from "./marketplaceErrors.js";
 import { permissionForMarketplaceJob } from "./marketplaceJobPermissions.js";
 import { readMarketplaceAccountToken } from "./marketplaceAccountPreflight.js";
+import { listListingBlockers } from "./marketplaceStockPlanRules.js";
 import { recordRunAudit } from "./runMarketplaceSyncJobAudit.js";
 
 export type RunMarketplaceSyncJobInput = {
@@ -99,19 +101,26 @@ export async function runMarketplaceSyncJob(
         "externalId missing for listing unpublish.",
       );
     }
+    const catalogMapping = listing
+      ? await findCatalogMapping(ports, runningJob.provider, listing.catalog)
+      : null;
     if (runningJob.jobType !== "listing_unpublish") {
       if (!listing) {
         throw new MarketplaceProviderRuntimeError("Listing missing.");
       }
-      assertMarketplaceProjectionReady(runningJob.jobType, listing);
+      assertMarketplaceProjectionReady(runningJob, listing, catalogMapping);
     }
 
     const token = readMarketplaceAccountToken(account, runningJob.provider);
+    const providerMapping =
+      catalogMapping?.status === "resolved"
+        ? { providerMapping: catalogMappingMetadata(catalogMapping) }
+        : {};
     const result = await gateway.runListingSync({
       ...(externalId ? { externalId } : {}),
       jobType: runningJob.jobType,
       ...(listing ? { listing } : {}),
-      metadata: runningJob.metadata,
+      metadata: { ...runningJob.metadata, ...providerMapping },
       token,
     });
     const completed = await ports.marketplaceRepository.markJobCompleted({
@@ -142,20 +151,53 @@ export async function runMarketplaceSyncJob(
 }
 
 function assertMarketplaceProjectionReady(
-  jobType: MarketplaceSyncJobType,
+  job: MarketplaceJob,
   listing: MarketplaceListingProjection,
+  catalogMapping: MarketplaceCatalogMapping | null,
 ) {
-  if (jobType === "listing_unpublish") return;
-  if (listing.status !== "published" || !listing.isVisibleOnPublicSite) {
-    throw new MarketplaceProviderRuntimeError(
-      "Listing must be published and public-visible before marketplace sync.",
-    );
-  }
-  if (listing.mediaUrls.length === 0) {
-    throw new MarketplaceProviderRuntimeError(
-      "Listing must have at least one public photo before marketplace sync.",
-    );
-  }
+  if (job.jobType === "listing_unpublish") return;
+  const blockers = listListingBlockers(listing, catalogMapping, job.provider);
+  if (!blockers.length) return;
+  throw new MarketplaceServiceError({
+    code: "MARKETPLACE_LISTING_NOT_READY",
+    details: {
+      blockers: blockers.map((blockerItem) => ({
+        code: blockerItem.code,
+        field: blockerItem.field ?? null,
+      })),
+      listingId: listing.listingId,
+      provider: job.provider,
+    },
+    jobId: job.id,
+    listingId: listing.listingId,
+    message: blockers[0]?.message ?? "Marketplace listing is not ready.",
+    provider: job.provider,
+    status: 400,
+    userAction:
+      blockers[0]?.userAction ??
+      "Fix the listing blockers before running marketplace sync.",
+  });
+}
+
+async function findCatalogMapping(
+  ports: MarketplaceServicePorts,
+  provider: MarketplaceJob["provider"],
+  catalog: MarketplaceCatalogSnapshot | null,
+) {
+  if (!catalog || catalog.source !== "fipe") return null;
+  return ports.marketplaceRepository.findCatalogMapping({
+    catalog,
+    provider,
+  });
+}
+
+function catalogMappingMetadata(mapping: MarketplaceCatalogMapping) {
+  return {
+    providerBrandCode: mapping.providerBrandCode,
+    providerModelCode: mapping.providerModelCode,
+    providerTrimCode: mapping.providerTrimCode,
+    providerYearCode: mapping.providerYearCode,
+  };
 }
 
 function readString(value: unknown): string | null {

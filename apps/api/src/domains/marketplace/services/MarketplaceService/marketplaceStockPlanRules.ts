@@ -2,6 +2,7 @@ import type {
   MarketplaceCatalogMapping,
   MarketplaceCatalogSnapshot,
   MarketplaceListingProjection,
+  MarketplaceProvider,
 } from "../../ports/marketplaceRepository.js";
 import type {
   MarketplaceListingBlocker,
@@ -11,9 +12,8 @@ import type {
 export function listListingBlockers(
   listing: MarketplaceListingProjection,
   catalogMapping: MarketplaceCatalogMapping | null,
+  provider: MarketplaceProvider = "mercado_livre",
 ): MarketplaceListingBlocker[] {
-  if (!isProviderRelevant(listing)) return [];
-
   const blockers: MarketplaceListingBlocker[] = [];
   if (listing.status !== "published" || !listing.isVisibleOnPublicSite) {
     blockers.push(blocker("MARKETPLACE_LISTING_NOT_PUBLIC", "status"));
@@ -35,6 +35,7 @@ export function listListingBlockers(
   if (mappingRequired(listing.catalog, catalogMapping)) {
     blockers.push(blocker("MARKETPLACE_LISTING_MAPPING_REQUIRED", "catalog"));
   }
+  if (provider === "olx") blockers.push(...olxBlockers(listing));
   return blockers;
 }
 
@@ -113,6 +114,50 @@ function mappingRequired(
   );
 }
 
+function olxBlockers(
+  listing: MarketplaceListingProjection,
+): MarketplaceListingBlocker[] {
+  const blockers: MarketplaceListingBlocker[] = [];
+  if (!validOlxPhone(listing.contactPhone)) {
+    blockers.push(
+      blocker("MARKETPLACE_LISTING_CONTACT_PHONE_MISSING", "contactPhone"),
+    );
+  }
+  if (!validOlxZipCode(listing.locationZipCode)) {
+    blockers.push(
+      blocker(
+        "MARKETPLACE_LISTING_LOCATION_ZIPCODE_MISSING",
+        "locationZipCode",
+      ),
+    );
+  }
+  if (
+    listing.condition !== "new" &&
+    !validBrazilianPlate(listing.licensePlate)
+  ) {
+    blockers.push(
+      blocker("MARKETPLACE_LISTING_LICENSE_PLATE_MISSING", "licensePlate"),
+    );
+  }
+  return blockers;
+}
+
+function validOlxPhone(value: string | null) {
+  const digits = value?.replace(/\D/g, "") ?? "";
+  const withoutCountryCode =
+    digits.startsWith("55") && digits.length >= 12 ? digits.slice(2) : digits;
+  return /^\d{10,11}$/.test(withoutCountryCode);
+}
+
+function validOlxZipCode(value: string | null) {
+  return /^\d{8}$/.test(value?.replace(/\D/g, "") ?? "");
+}
+
+function validBrazilianPlate(value: string | null) {
+  const plate = value?.replace(/[^A-Za-z0-9]/g, "").toUpperCase() ?? "";
+  return /^[A-Z]{3}\d{4}$/.test(plate) || /^[A-Z]{3}\d[A-Z]\d{2}$/.test(plate);
+}
+
 function blocker(
   code: MarketplaceListingBlockerCode,
   field: string,
@@ -126,31 +171,40 @@ function blocker(
 }
 
 const messages: Record<MarketplaceListingBlockerCode, string> = {
-  MARKETPLACE_LISTING_CATALOG_FIELD_MISSING: "A FIPE catalog field is missing.",
-  MARKETPLACE_LISTING_FIPE_CATALOG_MISSING:
-    "The listing is not linked to the FIPE catalog.",
+  MARKETPLACE_LISTING_CATALOG_FIELD_MISSING: "Campo da FIPE ausente.",
+  MARKETPLACE_LISTING_CONTACT_PHONE_MISSING:
+    "Telefone da loja ausente ou invalido para OLX.",
+  MARKETPLACE_LISTING_FIPE_CATALOG_MISSING: "Anuncio sem catalogo FIPE.",
+  MARKETPLACE_LISTING_LICENSE_PLATE_MISSING:
+    "Placa da unidade selecionada ausente ou invalida para OLX.",
+  MARKETPLACE_LISTING_LOCATION_ZIPCODE_MISSING:
+    "CEP da loja ausente ou invalido para OLX.",
   MARKETPLACE_LISTING_MAPPING_REQUIRED:
-    "The FIPE catalog entry is not mapped to the provider taxonomy.",
-  MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS: "The listing has no public photos.",
-  MARKETPLACE_LISTING_NOT_PUBLIC:
-    "The listing is not published on the public site.",
-  MARKETPLACE_LISTING_PRICE_MISSING: "The listing price is missing.",
+    "Mapeamento do catalogo FIPE com o provedor pendente.",
+  MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS: "Anuncio sem fotos publicas.",
+  MARKETPLACE_LISTING_NOT_PUBLIC: "Anuncio nao publicado no site publico.",
+  MARKETPLACE_LISTING_PRICE_MISSING: "Preco do anuncio ausente.",
   MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING:
-    "A required technical field is missing.",
+    "Campo tecnico obrigatorio ausente.",
 };
 
 const actions: Record<MarketplaceListingBlockerCode, string> = {
   MARKETPLACE_LISTING_CATALOG_FIELD_MISSING:
-    "Complete the FIPE brand, model, version, and year fields.",
+    "Complete marca, modelo, versao e ano FIPE.",
+  MARKETPLACE_LISTING_CONTACT_PHONE_MISSING:
+    "Cadastre WhatsApp ou telefone valido no perfil da loja.",
   MARKETPLACE_LISTING_FIPE_CATALOG_MISSING:
-    "Select the FIPE catalog version for this listing.",
+    "Selecione a versao FIPE do veiculo.",
+  MARKETPLACE_LISTING_LICENSE_PLATE_MISSING:
+    "Cadastre uma placa valida na unidade selecionada antes de sincronizar com OLX.",
+  MARKETPLACE_LISTING_LOCATION_ZIPCODE_MISSING:
+    "Cadastre um CEP valido no perfil da loja.",
   MARKETPLACE_LISTING_MAPPING_REQUIRED:
-    "Resolve the provider catalog mapping before syncing.",
-  MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS:
-    "Add at least one public listing photo.",
+    "Resolva o mapeamento do catalogo do provedor.",
+  MARKETPLACE_LISTING_NO_PUBLIC_PHOTOS: "Adicione pelo menos uma foto publica.",
   MARKETPLACE_LISTING_NOT_PUBLIC:
-    "Publish the listing and enable public site visibility.",
-  MARKETPLACE_LISTING_PRICE_MISSING: "Add an asking price.",
+    "Publique o anuncio e habilite a visibilidade publica.",
+  MARKETPLACE_LISTING_PRICE_MISSING: "Informe o preco de venda.",
   MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING:
-    "Complete fuel, doors, and mileage fields.",
+    "Complete combustivel, portas e quilometragem.",
 };

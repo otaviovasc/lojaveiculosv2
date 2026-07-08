@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  storeProfiles,
   vehicleListings,
   vehicleMedia,
   vehicleUnits,
@@ -21,6 +22,12 @@ describe("drizzle marketplace reads", () => {
       "https://cdn.local/m3-black-front.jpg",
       "https://cdn.local/m3-black-side.jpg",
     ]);
+    expect(projection).toMatchObject({
+      contactPhone: "5511999999999",
+      licensePlate: "ABC1D23",
+      locationZipCode: "01310-100",
+      selectedUnitId: "unit_black",
+    });
     expect(db.orderedTables).toContain(vehicleMedia);
   });
 });
@@ -59,9 +66,13 @@ function rowsFor(table: unknown) {
     return [
       {
         askingPriceCents: 75990000,
+        condition: "used",
         description: "BMW M3 Competition M.",
+        doors: 4,
+        fuelType: "gasoline",
         id: "listing_m3",
         isVisibleOnPublicSite: true,
+        mileageKm: 12000,
         modelYear: 2025,
         status: "published",
         title: "BMW M3 Competition M 2025",
@@ -72,11 +83,13 @@ function rowsFor(table: unknown) {
     return [
       {
         id: "unit_green",
+        plate: "DEF4G56",
         status: "available",
         stockNumber: "M3-GREEN",
       },
       {
         id: "unit_black",
+        plate: "ABC1D23",
         status: "available",
         stockNumber: "M3-BLACK",
       },
@@ -101,6 +114,15 @@ function rowsFor(table: unknown) {
         kind: "photo",
         unitId: "unit_black",
         url: "https://cdn.local/m3-black-side.jpg",
+      },
+    ];
+  }
+  if (table === storeProfiles) {
+    return [
+      {
+        addressZipCode: "01310-100",
+        contactPhone: "1133334444",
+        whatsappPhone: "5511999999999",
       },
     ];
   }

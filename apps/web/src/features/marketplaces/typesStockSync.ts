@@ -30,6 +30,8 @@ export type MarketplaceCatalogSnapshot = {
 
 export type MarketplaceListingProjection = {
   catalog: MarketplaceCatalogSnapshot | null;
+  condition: "certified_pre_owned" | "new" | "used";
+  contactPhone: string | null;
   description: string | null;
   doors: number | null;
   fuelType:
@@ -42,7 +44,9 @@ export type MarketplaceListingProjection = {
     | "other"
     | null;
   isVisibleOnPublicSite: boolean;
+  licensePlate: string | null;
   listingId: string;
+  locationZipCode: string | null;
   mediaUrls: readonly string[];
   mileageKm: number | null;
   modelYear: number | null;
@@ -73,6 +77,9 @@ export type MarketplaceListingBlockerCode =
   | "MARKETPLACE_LISTING_FIPE_CATALOG_MISSING"
   | "MARKETPLACE_LISTING_CATALOG_FIELD_MISSING"
   | "MARKETPLACE_LISTING_TECHNICAL_FIELD_MISSING"
+  | "MARKETPLACE_LISTING_CONTACT_PHONE_MISSING"
+  | "MARKETPLACE_LISTING_LOCATION_ZIPCODE_MISSING"
+  | "MARKETPLACE_LISTING_LICENSE_PLATE_MISSING"
   | "MARKETPLACE_LISTING_MAPPING_REQUIRED";
 
 export type MarketplaceListingBlocker = {
