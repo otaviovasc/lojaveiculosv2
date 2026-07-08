@@ -14,12 +14,7 @@ export type DocumentKind =
   | "vehicle_registration";
 
 export type DocumentStatus =
-  | "archived"
-  | "draft"
-  | "issued"
-  | "pending_signature"
-  | "signed"
-  | "voided";
+  "archived" | "draft" | "issued" | "pending_signature" | "signed" | "voided";
 
 export type DocumentLinkTarget =
   | "finance_entry"
@@ -54,14 +49,54 @@ export type WorkspaceDocument = {
 
 export type DocumentTemplate = {
   availableVariables: readonly string[];
+  blocks: readonly DocumentTemplateBlock[];
+  category: string;
   clauses: readonly string[];
+  context: string;
+  defaultBlocks: readonly DocumentTemplateBlock[];
   defaultClauses: readonly string[];
   defaultTitle: string;
+  description: string;
   isCustomized: boolean;
   kind: DocumentKind;
+  mode: "editable" | "locked";
+  source: "store" | "system";
+  templateKey: string;
   title: string;
   updatedAt: string | null;
 };
+
+export type DocumentTemplateBlock =
+  | {
+      body: string;
+      id: string;
+      label?: string;
+      type: "clause" | "paragraph";
+    }
+  | {
+      id: string;
+      text: string;
+      type: "heading";
+    }
+  | {
+      fields: readonly { label: string; token: string }[];
+      id: string;
+      title: string;
+      type: "field_grid";
+    }
+  | {
+      columns: readonly string[];
+      id: string;
+      preset?: string;
+      title: string;
+      type: "table";
+    }
+  | {
+      id: string;
+      roles: readonly string[];
+      title?: string;
+      type: "signature";
+    };
 
 export type DocumentPreview = {
   document: WorkspaceDocument;
@@ -144,9 +179,26 @@ export type UpdateDocumentInput = {
 };
 
 export type UpdateDocumentTemplateInput = {
+  blocks?: readonly Record<string, unknown>[];
   clauses: readonly string[];
   title: string;
 };
+
+export type DocumentTemplateSuggestion = {
+  appliedBlocks: readonly DocumentTemplateBlock[];
+  appliedClauses: readonly string[];
+  appliedTitle: string;
+  diff: readonly {
+    after: string;
+    before: string;
+    label: string;
+    type: "added" | "changed" | "removed";
+  }[];
+  generatedAt: string;
+  summary: string;
+};
+
+export type DocumentTemplateSuggestionOutcome = "accepted" | "rejected";
 
 export type VoidDocumentInput = {
   reason?: string;

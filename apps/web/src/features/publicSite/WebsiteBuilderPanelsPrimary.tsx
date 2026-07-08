@@ -142,7 +142,7 @@ export function WebsiteBuilderBrandPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
         <WebsiteBuilderImageUrlField
           imageClassName="h-24 w-24 rounded-full"
           label="Sua Foto"
@@ -154,6 +154,12 @@ export function WebsiteBuilderBrandPanel({
           label="Sua Logo"
           onChange={(value) => updateConfig("logoUrl", value)}
           value={config.logoUrl ?? ""}
+        />
+        <WebsiteBuilderImageUrlField
+          imageClassName="h-16 w-16 rounded-xl bg-card p-2"
+          label="Favicon"
+          onChange={(value) => updateConfig("faviconUrl", value)}
+          value={config.faviconUrl ?? ""}
         />
       </div>
     </div>

@@ -7,6 +7,8 @@ import type {
   DocumentKind,
   DocumentPreview,
   DocumentTemplate,
+  DocumentTemplateSuggestionOutcome,
+  DocumentTemplateSuggestion,
   DocumentUpload,
   DocumentVersion,
   ListDocumentsFilters,
@@ -55,9 +57,17 @@ export type DocumentsApi = {
     input: UpdateDocumentInput,
   ) => Promise<WorkspaceDocument>;
   updateTemplate: (
-    kind: DocumentKind,
+    templateKey: string,
     input: UpdateDocumentTemplateInput,
   ) => Promise<DocumentTemplate>;
+  suggestTemplateEdit: (
+    templateKey: string,
+    input: UpdateDocumentTemplateInput & { instruction: string },
+  ) => Promise<DocumentTemplateSuggestion>;
+  recordTemplateSuggestionOutcome: (
+    templateKey: string,
+    input: { diffCount: number; outcome: DocumentTemplateSuggestionOutcome },
+  ) => Promise<{ recordedAt: string }>;
   voidDocument: (
     documentId: string,
     input: VoidDocumentInput,
@@ -144,12 +154,24 @@ export function createDocumentsApi({
         headers: createDocumentsHeaders(auth),
         method: "PATCH",
       }).then(readJson<WorkspaceDocument>),
-    updateTemplate: (kind, input) =>
-      fetch(documentsRoutes.template(kind, baseUrl), {
+    updateTemplate: (templateKey, input) =>
+      fetch(documentsRoutes.template(templateKey, baseUrl), {
         body: JSON.stringify(input),
         headers: createDocumentsHeaders(auth),
         method: "PUT",
       }).then(readJson<DocumentTemplate>),
+    suggestTemplateEdit: (templateKey, input) =>
+      fetch(documentsRoutes.templateSuggestion(templateKey, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "POST",
+      }).then(readJson<DocumentTemplateSuggestion>),
+    recordTemplateSuggestionOutcome: (templateKey, input) =>
+      fetch(documentsRoutes.templateSuggestionOutcome(templateKey, baseUrl), {
+        body: JSON.stringify(input),
+        headers: createDocumentsHeaders(auth),
+        method: "POST",
+      }).then(readJson<{ recordedAt: string }>),
     voidDocument: (documentId, input) =>
       fetch(documentsRoutes.void(documentId, baseUrl), {
         body: JSON.stringify(input),
@@ -185,8 +207,23 @@ export const documentsRoutes = {
       `/documents/${encodeURIComponent(documentId)}/regenerate`,
       baseUrl,
     ),
-  template: (kind: DocumentKind, baseUrl?: string) =>
-    createEndpoint(`/documents/templates/${encodeURIComponent(kind)}`, baseUrl),
+  template: (templateKey: string, baseUrl?: string) =>
+    createEndpoint(
+      `/documents/templates/${encodeURIComponent(templateKey)}`,
+      baseUrl,
+    ),
+  templateSuggestion: (templateKey: string, baseUrl?: string) =>
+    createEndpoint(
+      `/documents/templates/${encodeURIComponent(templateKey)}/suggestions`,
+      baseUrl,
+    ),
+  templateSuggestionOutcome: (templateKey: string, baseUrl?: string) =>
+    createEndpoint(
+      `/documents/templates/${encodeURIComponent(
+        templateKey,
+      )}/suggestions/outcome`,
+      baseUrl,
+    ),
   templates: (baseUrl?: string) =>
     createEndpoint("/documents/templates", baseUrl),
   uploads: (baseUrl?: string) => createEndpoint("/documents/uploads", baseUrl),

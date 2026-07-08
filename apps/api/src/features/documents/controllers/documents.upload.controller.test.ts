@@ -95,8 +95,12 @@ function createServices(
     listTemplates: vi.fn(async () => []),
     listWorkspace: vi.fn(async () => []),
     preview: vi.fn(async () => unexpected("preview")),
+    recordTemplateSuggestionOutcome: vi.fn(async () => ({
+      recordedAt: new Date(),
+    })),
     regenerate: vi.fn(async () => document),
     requestUpload: vi.fn(async () => unexpected("requestUpload")),
+    suggestTemplateEdit: vi.fn(async () => unexpected("suggestTemplateEdit")),
     updateDocument: vi.fn(async () => unexpected("updateDocument")),
     updateTemplate: vi.fn(async () => unexpected("updateTemplate")),
     void: vi.fn(async () => document),

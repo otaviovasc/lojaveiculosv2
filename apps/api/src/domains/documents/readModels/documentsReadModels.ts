@@ -53,11 +53,19 @@ export type DocumentDetail = {
 
 export type DocumentTemplateView = {
   availableVariables: readonly string[];
+  blocks: readonly Record<string, unknown>[];
+  category: string;
   clauses: readonly string[];
+  context: string;
+  defaultBlocks: readonly Record<string, unknown>[];
   defaultClauses: readonly string[];
   defaultTitle: string;
+  description: string;
   isCustomized: boolean;
   kind: DocumentKind;
+  mode: "editable" | "locked";
+  source: "store" | "system";
+  templateKey: string;
   title: string;
   updatedAt: Date | null;
 };
@@ -134,11 +142,19 @@ export function createDocumentTemplateView(
 ): DocumentTemplateView {
   return {
     availableVariables: template.availableVariables,
+    blocks: template.blocks,
+    category: template.category,
     clauses: template.clauses,
+    context: template.context,
+    defaultBlocks: template.defaultBlocks,
     defaultClauses: template.defaultClauses,
     defaultTitle: template.defaultTitle,
+    description: template.description,
     isCustomized: template.isCustomized,
     kind: template.kind,
+    mode: template.mode,
+    source: template.source,
+    templateKey: template.templateKey,
     title: template.title,
     updatedAt: template.updatedAt,
   };

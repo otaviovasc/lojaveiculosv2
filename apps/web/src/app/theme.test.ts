@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getNextTheme, getPreferredTheme, persistTheme } from "./theme";
+import {
+  getNextTheme,
+  getPreferredTheme,
+  persistTheme,
+  readBrowserPreferredTheme,
+} from "./theme";
 
 describe("app theme", () => {
   it("uses stored user preference before system preference", () => {
@@ -18,6 +23,10 @@ describe("app theme", () => {
   it("toggles between light and dark", () => {
     expect(getNextTheme("light")).toBe("dark");
     expect(getNextTheme("dark")).toBe("light");
+  });
+
+  it("uses light when browser media APIs are unavailable", () => {
+    expect(readBrowserPreferredTheme()).toBe("light");
   });
 
   it("persists explicit user choice", () => {

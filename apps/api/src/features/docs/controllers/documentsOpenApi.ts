@@ -3,6 +3,10 @@ import {
   documentUploadPaths,
   documentUploadSchemas,
 } from "./documentUploadOpenApi.js";
+import {
+  documentTemplatePaths,
+  documentTemplateSchemas,
+} from "./documentTemplateOpenApi.js";
 
 export const documentsSchemas = {
   DocumentWorkspaceItem: {
@@ -62,50 +66,7 @@ export const documentsSchemas = {
       },
     },
   },
-  DocumentTemplate: {
-    type: "object",
-    additionalProperties: false,
-    required: [
-      "availableVariables",
-      "clauses",
-      "defaultClauses",
-      "defaultTitle",
-      "isCustomized",
-      "kind",
-      "title",
-      "updatedAt",
-    ],
-    properties: {
-      availableVariables: { type: "array", items: { type: "string" } },
-      clauses: { type: "array", items: { type: "string" } },
-      defaultClauses: { type: "array", items: { type: "string" } },
-      defaultTitle: { type: "string" },
-      isCustomized: { type: "boolean" },
-      kind: { type: "string" },
-      title: { type: "string" },
-      updatedAt: { type: ["string", "null"], format: "date-time" },
-    },
-  },
-  DocumentTemplatesResponse: {
-    type: "object",
-    additionalProperties: false,
-    required: ["templates"],
-    properties: {
-      templates: {
-        type: "array",
-        items: { $ref: "#/components/schemas/DocumentTemplate" },
-      },
-    },
-  },
-  UpdateDocumentTemplateRequest: {
-    type: "object",
-    additionalProperties: false,
-    required: ["clauses", "title"],
-    properties: {
-      clauses: { type: "array", items: { type: "string" }, minItems: 1 },
-      title: { type: "string", minLength: 1 },
-    },
-  },
+  ...documentTemplateSchemas,
   ...documentUploadSchemas,
 } as const;
 
@@ -148,69 +109,7 @@ export const documentsPaths = {
     post: createUploadedDocumentOperation,
   },
   ...documentUploadPaths,
-  "/api/v1/documents/templates": {
-    get: {
-      tags: ["Documents"],
-      summary: "List editable store document templates",
-      operationId: "listDocumentTemplates",
-      security: [{ bearerAuth: ["documents.read"] }],
-      responses: {
-        "200": {
-          description: "Store-customizable templates with default clauses.",
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/DocumentTemplatesResponse",
-              },
-            },
-          },
-        },
-        "401": { description: "Authentication is required." },
-        "403": { description: "documents.read permission is required." },
-      },
-    },
-  },
-  "/api/v1/documents/templates/{kind}": {
-    put: {
-      tags: ["Documents"],
-      summary: "Update one store document template",
-      operationId: "updateDocumentTemplate",
-      security: [{ bearerAuth: ["documents.template_update"] }],
-      parameters: [
-        {
-          in: "path",
-          name: "kind",
-          required: true,
-          schema: { type: "string" },
-        },
-      ],
-      requestBody: {
-        required: true,
-        content: {
-          "application/json": {
-            schema: {
-              $ref: "#/components/schemas/UpdateDocumentTemplateRequest",
-            },
-          },
-        },
-      },
-      responses: {
-        "200": {
-          description: "Updated document template.",
-          content: {
-            "application/json": {
-              schema: { $ref: "#/components/schemas/DocumentTemplate" },
-            },
-          },
-        },
-        "400": { description: "Request body or kind is invalid." },
-        "401": { description: "Authentication is required." },
-        "403": {
-          description: "documents.template_update permission is required.",
-        },
-      },
-    },
-  },
+  ...documentTemplatePaths,
 } as const;
 
 function optionalQuery(name: string) {

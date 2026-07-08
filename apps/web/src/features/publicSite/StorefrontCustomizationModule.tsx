@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
+import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { SettingsApi } from "../settings/apiClient";
 import { createStoreSettingsPatch } from "../settings/settingsPatch";
@@ -100,6 +101,7 @@ export function StorefrontCustomizationModule({
       );
       setSavedSettings(saved);
       setDraftSettings(saved);
+      notifyTenantAdminBrandUpdated(saved);
       setStatus({ kind: "saved" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });

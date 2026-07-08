@@ -14,12 +14,7 @@ export type DocumentKind =
   | "vehicle_registration";
 
 export type DocumentStatus =
-  | "archived"
-  | "draft"
-  | "issued"
-  | "pending_signature"
-  | "signed"
-  | "voided";
+  "archived" | "draft" | "issued" | "pending_signature" | "signed" | "voided";
 
 export type DocumentLinkTarget =
   | "finance_entry"
@@ -103,11 +98,19 @@ export type ListDocumentsInput = {
 
 export type DocumentTemplate = {
   availableVariables: readonly string[];
+  blocks: readonly Record<string, unknown>[];
+  category: string;
   clauses: readonly string[];
+  context: string;
+  defaultBlocks: readonly Record<string, unknown>[];
   defaultClauses: readonly string[];
   defaultTitle: string;
+  description: string;
   isCustomized: boolean;
   kind: DocumentKind;
+  mode: "editable" | "locked";
+  source: "store" | "system";
+  templateKey: string;
   title: string;
   updatedAt: Date | null;
 };
@@ -118,9 +121,11 @@ export type ListDocumentTemplatesInput = {
 };
 
 export type UpsertDocumentTemplateInput = {
+  blocks?: readonly Record<string, unknown>[] | undefined;
   clauses: readonly string[];
   kind: DocumentKind;
   storeId: string;
+  templateKey: string;
   tenantId: string;
   title: string;
   updatedByUserId: string | null;
@@ -164,6 +169,7 @@ export type DocumentRepository = {
   findTemplate: (input: {
     kind: DocumentKind;
     storeId: string;
+    templateKey?: string | undefined;
     tenantId: string;
   }) => Promise<DocumentTemplate | null>;
   list: (input: ListDocumentsInput) => Promise<readonly LinkedDocument[]>;

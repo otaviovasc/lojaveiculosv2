@@ -114,21 +114,35 @@ export function createTestDocumentRepository(): TestDocumentRepository {
         .sort((left, right) => right.versionNumber - left.versionNumber);
     },
     async findTemplate(input) {
-      return templates.get(templateKey(input)) ?? defaultTemplate(input.kind);
+      return (
+        templates.get(templateKey(input)) ??
+        defaultTemplate(input.kind, input.templateKey ?? input.kind)
+      );
     },
     async listTemplates(input) {
       return listDefaultDocumentTemplates().map(
         (template) =>
-          templates.get(templateKey({ ...input, kind: template.kind })) ??
-          template,
+          templates.get(
+            templateKey({
+              ...input,
+              kind: template.kind,
+              templateKey: template.templateKey,
+            }),
+          ) ?? template,
       );
     },
     async upsertTemplate(input: UpsertDocumentTemplateInput) {
-      const template = mergeDocumentTemplate(input.kind, {
-        clauses: input.clauses,
-        title: input.title,
-        updatedAt: new Date(),
-      });
+      const template = mergeDocumentTemplate(
+        input.kind,
+        {
+          blocks: input.blocks,
+          clauses: input.clauses,
+          templateKey: input.templateKey,
+          title: input.title,
+          updatedAt: new Date(),
+        },
+        input.templateKey,
+      );
       if (!template) {
         throw new Error(`Unsupported document template: ${input.kind}`);
       }
@@ -190,7 +204,8 @@ function findDocument(
 function templateKey(input: {
   kind: DocumentKind;
   storeId: string;
+  templateKey?: string | undefined;
   tenantId: string;
 }) {
-  return `${input.tenantId}:${input.storeId}:${input.kind}`;
+  return `${input.tenantId}:${input.storeId}:${input.templateKey ?? input.kind}`;
 }

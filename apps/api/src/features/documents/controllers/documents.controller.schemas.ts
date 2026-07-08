@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { documentTemplateKeys } from "@lojaveiculosv2/documents";
 
 export const documentKinds = [
   "buyer_document",
@@ -36,13 +37,7 @@ export const documentLinkTargets = [
   "vehicle_unit",
 ] as const;
 
-export const documentTemplateKinds = [
-  "delivery_term",
-  "power_of_attorney",
-  "reservation_receipt",
-  "sale_contract",
-  "sale_receipt",
-] as const;
+export const documentTemplateKinds = documentTemplateKeys;
 
 export const listDocumentsQuerySchema = z.object({
   kind: z.enum(documentKinds).optional(),
@@ -108,8 +103,19 @@ export const updateDocumentMetadataSchema = z
   );
 
 export const updateDocumentTemplateSchema = z.object({
-  clauses: z.array(z.string().trim().min(1).max(600)).min(1).max(8),
+  blocks: z.array(z.record(z.string(), z.unknown())).min(1).max(80).optional(),
+  clauses: z.array(z.string().trim().min(1).max(1200)).min(1).max(40),
   title: z.string().trim().min(1).max(191),
+});
+
+export const suggestDocumentTemplateSchema =
+  updateDocumentTemplateSchema.extend({
+    instruction: z.string().trim().min(3).max(1000),
+  });
+
+export const documentTemplateSuggestionOutcomeSchema = z.object({
+  diffCount: z.coerce.number().int().nonnegative().max(80),
+  outcome: z.enum(["accepted", "rejected"]),
 });
 
 export const voidDocumentSchema = z.object({

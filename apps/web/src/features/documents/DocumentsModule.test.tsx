@@ -135,6 +135,12 @@ function createDocumentsApiMock(
     requestUnitDocumentUpload: vi.fn(async () => {
       throw new Error("Unexpected request unit document upload");
     }),
+    recordTemplateSuggestionOutcome: vi.fn(async () => ({
+      recordedAt: "2026-01-01T10:00:00.000Z",
+    })),
+    suggestTemplateEdit: vi.fn(async () => {
+      throw new Error("Unexpected suggest template edit");
+    }),
     updateDocument: vi.fn(async () => {
       throw new Error("Unexpected update document");
     }),

@@ -28,6 +28,26 @@ describe("DocumentGeneratedPreview", () => {
 
     expect(screen.getByText("Carregando PDF")).toBeTruthy();
   });
+
+  it("renders a signed image URL in an image tag", () => {
+    render(
+      <DocumentGeneratedPreview
+        document={imageDocument}
+        preview={imageDownload}
+      />,
+    );
+
+    const img = screen.getByAltText("Prévia de Foto do Veículo");
+    expect(img.getAttribute("src")).toBe("https://download.local/photo.jpg");
+  });
+
+  it("shows a loading state before the signed image URL is ready", () => {
+    render(
+      <DocumentGeneratedPreview document={imageDocument} preview={null} />,
+    );
+
+    expect(screen.getByText("Carregando imagem")).toBeTruthy();
+  });
 });
 
 const workspaceDocument: WorkspaceDocument = {
@@ -59,5 +79,37 @@ const pdf: DocumentDownload = {
   fileName: "contract.pdf",
   mimeType: "application/pdf",
   versionId: "version_1",
+  versionNumber: 1,
+};
+
+const imageDocument: WorkspaceDocument = {
+  context: {
+    linkRole: "other",
+    targetId: "unit_1",
+    targetType: "vehicle_unit",
+  },
+  createdAt: "2026-01-01T10:00:00.000Z",
+  file: {
+    fileName: "photo.jpg",
+    fileSizeBytes: 2048,
+    mimeType: "image/jpeg",
+  },
+  id: "document_2",
+  kind: "other",
+  metadata: {},
+  status: "issued",
+  title: "Foto do Veículo",
+  updatedAt: "2026-01-01T10:00:00.000Z",
+  uploadedAt: "2026-01-01T10:00:00.000Z",
+};
+
+const imageDownload: DocumentDownload = {
+  document: imageDocument,
+  downloadMethod: "GET",
+  downloadUrl: "https://download.local/photo.jpg",
+  expiresAt: "2026-01-01T10:05:00.000Z",
+  fileName: "photo.jpg",
+  mimeType: "image/jpeg",
+  versionId: "version_2",
   versionNumber: 1,
 };

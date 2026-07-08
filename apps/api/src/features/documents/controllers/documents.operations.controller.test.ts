@@ -171,9 +171,15 @@ function createServices(
     preview: vi.fn(async () => {
       throw new Error("Unexpected preview");
     }),
+    recordTemplateSuggestionOutcome: vi.fn(async () => ({
+      recordedAt: new Date(),
+    })),
     regenerate: vi.fn(async () => document),
     requestUpload: vi.fn(async () => {
       throw new Error("Unexpected request upload");
+    }),
+    suggestTemplateEdit: vi.fn(async () => {
+      throw new Error("Unexpected template suggestion");
     }),
     updateDocument: vi.fn(async () => {
       throw new Error("Unexpected document update");

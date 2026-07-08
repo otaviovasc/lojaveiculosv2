@@ -23,6 +23,7 @@ interface LogoProps {
   className?: string | undefined;
   fallbackText?: string | undefined;
   fallbackStyle?: CSSProperties | undefined;
+  src?: string | null | undefined;
 }
 
 const LOGO_PATHS = {
@@ -48,14 +49,21 @@ export function Logo({
   alt = "Loja Veículos",
   variant = "auto",
   className,
+  src,
 }: LogoProps) {
   const resolvedVariant = resolveLogoVariant(variant);
+  const fallbackSrc = LOGO_PATHS[resolvedVariant];
 
   return (
     <img
-      src={LOGO_PATHS[resolvedVariant]}
+      src={src ?? fallbackSrc}
       alt={alt}
       className={cn("h-8 w-auto object-contain", className)}
+      onError={(event) => {
+        if (event.currentTarget.getAttribute("src") !== fallbackSrc) {
+          event.currentTarget.src = fallbackSrc;
+        }
+      }}
     />
   );
 }

@@ -62,11 +62,31 @@ function template(
 ): DocumentTemplate {
   return {
     availableVariables: ["{{buyer.name}}"],
+    blocks: [
+      {
+        body: "Comprador {{buyer.name}}",
+        id: "clause_1",
+        type: "clause",
+      },
+    ],
+    category: "Legal",
     clauses: ["Comprador {{buyer.name}}"],
+    context: "sale",
+    defaultBlocks: [
+      {
+        body: "Comprador {{buyer.name}}",
+        id: "clause_1",
+        type: "clause",
+      },
+    ],
     defaultClauses: ["Comprador {{buyer.name}}"],
     defaultTitle: title,
+    description: "Modelo de teste",
     isCustomized: true,
     kind,
+    mode: "editable",
+    source: "store",
+    templateKey: kind,
     title,
     updatedAt: new Date("2026-01-01T00:00:00.000Z"),
   };

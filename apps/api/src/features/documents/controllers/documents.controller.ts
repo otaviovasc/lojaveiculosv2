@@ -10,22 +10,20 @@ import {
 } from "./documents.controller.http.js";
 import {
   createUploadedDocumentSchema,
-  documentTemplateKindSchema,
   listDocumentsQuerySchema,
   requestDocumentUploadSchema,
   updateDocumentMetadataSchema,
-  updateDocumentTemplateSchema,
   voidDocumentSchema,
 } from "./documents.controller.schemas.js";
 import {
   toDocumentDownloadDto,
   toDocumentPreviewDto,
-  toDocumentTemplateDto,
   toDocumentUploadDto,
   toDocumentVersionDto,
   toDocumentWorkspaceDto,
 } from "./documentResponseDtos.js";
 import { documentServices, type DocumentServices } from "./documentServices.js";
+import { mountDocumentTemplateRoutes } from "./documents.templateRoutes.js";
 
 export type DocumentsContextFactory = (
   context: Context,
@@ -83,15 +81,7 @@ export function createDocumentsFeature(
     }),
   );
 
-  documentsFeature.get("/templates", async (context) =>
-    handleDocuments(context, async () => {
-      const serviceContext = await createContext(context);
-      const templates = await services.listTemplates(serviceContext);
-      return context.json({
-        templates: templates.map(toDocumentTemplateDto),
-      });
-    }),
-  );
+  mountDocumentTemplateRoutes(documentsFeature, services, createContext);
 
   documentsFeature.get("/:documentId/preview", async (context) =>
     handleDocuments(context, async () => {
@@ -170,27 +160,6 @@ export function createDocumentsFeature(
         reason: input.reason,
       });
       return context.json(toDocumentWorkspaceDto(document));
-    }),
-  );
-
-  documentsFeature.put("/templates/:kind", async (context) =>
-    handleDocuments(context, async () => {
-      const kind = documentTemplateKindSchema.safeParse(
-        context.req.param("kind"),
-      );
-      if (!kind.success) {
-        throw new DocumentsRequestValidationError(
-          "Document template kind is invalid.",
-        );
-      }
-      const input = await parseJson(context, updateDocumentTemplateSchema);
-      const serviceContext = await createContext(context);
-      const template = await services.updateTemplate(serviceContext, {
-        clauses: input.clauses,
-        kind: kind.data,
-        title: input.title,
-      });
-      return context.json(toDocumentTemplateDto(template));
     }),
   );
 

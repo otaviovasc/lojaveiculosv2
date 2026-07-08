@@ -8,6 +8,7 @@ import {
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { StorefrontCustomizationModule } from "../publicSite/StorefrontCustomizationModule";
+import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
 import { createSettingsApi, type SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
 import { SettingsStoreProfilePanel } from "./SettingsStoreProfilePanel";
@@ -86,6 +87,7 @@ export function SettingsModule({
             },
       );
       setSettings(saved);
+      notifyTenantAdminBrandUpdated(saved);
       setStatus({ kind: "saved" });
     } catch (error) {
       setStatus({

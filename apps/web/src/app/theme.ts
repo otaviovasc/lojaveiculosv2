@@ -34,10 +34,11 @@ export function applyThemeToDocument(theme: AppTheme, documentRef = document) {
 }
 
 export function readBrowserPreferredTheme(): AppTheme {
+  const canReadMedia =
+    typeof window !== "undefined" && typeof window.matchMedia === "function";
   const input: { prefersDark: boolean; storage?: ThemeStorage } = {
     prefersDark:
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches,
+      canReadMedia && window.matchMedia("(prefers-color-scheme: dark)").matches,
   };
   if (typeof window !== "undefined") input.storage = window.localStorage;
   return getPreferredTheme(input);

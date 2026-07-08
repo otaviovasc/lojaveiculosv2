@@ -1,7 +1,5 @@
 import { DocumentDeleteDialog } from "./DocumentDeleteDialog";
-import type { DocumentKind } from "./types";
 import { DocumentManageLinksDialog } from "./DocumentManageLinksDialog";
-import { DocumentTemplatesDialog } from "./DocumentTemplatesDialog";
 import {
   DocumentUploadDialog,
   type DocumentUploadTarget,
@@ -12,12 +10,7 @@ import type {
   DocumentVehicleOption,
   DocumentsFolderKey,
 } from "./documentDisplayModel";
-import type {
-  DocumentTemplate,
-  UpdateDocumentInput,
-  UpdateDocumentTemplateInput,
-  WorkspaceDocument,
-} from "./types";
+import type { UpdateDocumentInput, WorkspaceDocument } from "./types";
 
 export type DocumentsMobileTab = "documentos" | "pastas";
 
@@ -26,8 +19,6 @@ export function DocumentsWorkspaceDialogs({
   documentToDelete,
   documents,
   isDocumentActionBusy,
-  isSavingTemplate,
-  isTemplatesDialogOpen,
   isUploadDialogOpen,
   linkDocument,
   mobileTab,
@@ -36,13 +27,10 @@ export function DocumentsWorkspaceDialogs({
   onSelectFolder,
   onUpdateDocument,
   runtimeApi,
-  saveTemplate,
   selectedKey,
   setDocumentToDelete,
-  setIsTemplatesDialogOpen,
   setIsUploadDialogOpen,
   setLinkDocument,
-  templates,
   unitFoldersStatus,
   uploadTarget,
   vehicleOptions,
@@ -51,8 +39,6 @@ export function DocumentsWorkspaceDialogs({
   documentToDelete: WorkspaceDocument | null;
   documents: readonly WorkspaceDocument[];
   isDocumentActionBusy: boolean;
-  isSavingTemplate: boolean;
-  isTemplatesDialogOpen: boolean;
   isUploadDialogOpen: boolean;
   linkDocument: WorkspaceDocument | null;
   mobileTab: DocumentsMobileTab;
@@ -64,16 +50,10 @@ export function DocumentsWorkspaceDialogs({
     input: UpdateDocumentInput,
   ) => Promise<WorkspaceDocument | null>;
   runtimeApi: DocumentsApi | null;
-  saveTemplate: (
-    kind: DocumentKind,
-    input: UpdateDocumentTemplateInput,
-  ) => Promise<void>;
   selectedKey: DocumentsFolderKey;
   setDocumentToDelete: (doc: WorkspaceDocument | null) => void;
-  setIsTemplatesDialogOpen: (open: boolean) => void;
   setIsUploadDialogOpen: (open: boolean) => void;
   setLinkDocument: (doc: WorkspaceDocument | null) => void;
-  templates: readonly DocumentTemplate[];
   unitFoldersStatus: "idle" | "loading" | "ready" | "error";
   uploadTarget: DocumentUploadTarget | null;
   vehicleOptions: readonly DocumentVehicleOption[];
@@ -121,13 +101,6 @@ export function DocumentsWorkspaceDialogs({
         onClose={() => setLinkDocument(null)}
         onSave={onUpdateDocument}
         vehicleOptions={vehicleOptions}
-      />
-      <DocumentTemplatesDialog
-        isOpen={isTemplatesDialogOpen}
-        isSaving={isSavingTemplate}
-        onClose={() => setIsTemplatesDialogOpen(false)}
-        onSave={saveTemplate}
-        templates={templates}
       />
       <DocumentDeleteDialog
         document={documentToDelete}

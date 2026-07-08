@@ -63,17 +63,19 @@ export function DocumentTemplatePreview({
           </section>
         ))}
 
-        <section className="documents-template-paper-section">
-          <h3>Condições comerciais</h3>
-          <dl className="documents-template-paper-fields">
-            {preview.finance.map((item) => (
-              <div key={item.label}>
-                <dt>{item.label}</dt>
-                <dd>{item.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
+        {preview.finance.length ? (
+          <section className="documents-template-paper-section">
+            <h3>{preview.financeSectionTitle}</h3>
+            <dl className="documents-template-paper-fields">
+              {preview.finance.map((item) => (
+                <div key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ) : null}
 
         <section className="documents-template-paper-clauses">
           <h3>Cláusulas do modelo</h3>

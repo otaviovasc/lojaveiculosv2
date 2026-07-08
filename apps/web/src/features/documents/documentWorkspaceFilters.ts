@@ -36,11 +36,7 @@ export function sortByCreatedDesc(
 }
 
 export type DocumentsSortKey =
-  | "created_asc"
-  | "created_desc"
-  | "status_asc"
-  | "title_asc"
-  | "title_desc";
+  "created_asc" | "created_desc" | "status_asc" | "title_asc" | "title_desc";
 
 export function sortDocuments(
   documents: readonly WorkspaceDocument[],

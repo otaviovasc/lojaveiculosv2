@@ -15,6 +15,7 @@ import {
   readBrowserPreferredTheme,
   type AppTheme,
 } from "../app/theme";
+import { useTenantAdminBrand } from "../app/useTenantAdminBrand";
 import { UserAccountButton } from "../features/account/UserAccountButton";
 import { useOptionalAccountSession } from "../features/account/accountSession";
 import { readRuntimeStoreSlug } from "../features/account/currentStore";
@@ -49,6 +50,10 @@ export function AppShell({
     readBrowserPreferredTheme(),
   );
   const accountSession = useOptionalAccountSession();
+  const storeLabel = readStoreLabel();
+  const tenantBrandState = useTenantAdminBrand({
+    fallbackStoreLabel: storeLabel,
+  });
   const sidebarItems = useMemo(
     () =>
       filterNavigationGroups(navigationGroups, accountSession).flatMap(
@@ -60,7 +65,8 @@ export function AppShell({
       ),
     [accountSession],
   );
-  const storeLabel = readStoreLabel();
+  const tenantBrand =
+    tenantBrandState.kind === "loading" ? null : tenantBrandState.brand;
 
   const navigate = (moduleId: ModuleId) => {
     onNavigate(moduleId);
@@ -79,6 +85,15 @@ export function AppShell({
     applyThemeToDocument(theme);
   }, [theme]);
 
+  if (!tenantBrand) {
+    return (
+      <div
+        aria-label="Carregando identidade da loja"
+        className="min-h-screen bg-app text-app-text"
+      />
+    );
+  }
+
   return (
     <div
       className={
@@ -87,6 +102,7 @@ export function AppShell({
           ? "lg:grid-cols-[72px_1fr]"
           : "lg:grid-cols-[224px_1fr]")
       }
+      style={tenantBrandState.style}
     >
       <aside
         className={
@@ -105,8 +121,10 @@ export function AppShell({
             <UserAccountButton compact={isCompact} />
           )}
           theme={theme}
-          workspaceMeta={storeLabel}
-          workspaceName="Loja Veiculos"
+          workspaceIconUrl={tenantBrand.iconUrl}
+          workspaceLogoUrl={tenantBrand.logoUrl}
+          workspaceMeta={tenantBrand.storeLabel}
+          workspaceName={tenantBrand.storeName}
         />
       </aside>
 
@@ -123,12 +141,14 @@ export function AppShell({
             <Menu className="size-5" />
           </button>
           <Logo
-            variant={theme === "dark" ? "full-white" : "full"}
+            alt={tenantBrand.storeName}
             className="h-7.5 w-auto object-contain select-none mr-1"
+            src={tenantBrand.logoUrl}
+            variant={theme === "dark" ? "full-white" : "full"}
           />
           <div className="min-w-0 border-l border-line/60 pl-2.5">
             <p className="truncate text-xs font-black uppercase tracking-widest text-primary leading-tight">
-              Loja Veículos
+              {tenantBrand.storeName}
             </p>
             <p className="truncate text-xs font-black uppercase tracking-widest text-accent mt-0.5">
               {activeModule.title}
@@ -177,8 +197,10 @@ export function AppShell({
               )}
               theme={theme}
               variant="mobile"
-              workspaceMeta={storeLabel}
-              workspaceName="Loja Veiculos"
+              workspaceIconUrl={tenantBrand.iconUrl}
+              workspaceLogoUrl={tenantBrand.logoUrl}
+              workspaceMeta={tenantBrand.storeLabel}
+              workspaceName={tenantBrand.storeName}
             />
           </aside>
         </div>
