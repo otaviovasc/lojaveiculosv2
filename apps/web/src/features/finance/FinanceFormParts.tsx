@@ -6,6 +6,7 @@ import {
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
 import type { CustomSelectOption } from "../../components/ui/CustomSelect";
+import { cx } from "../../components/ui/featureShared";
 import type { FinanceEntryStatus, FinanceEntryType } from "./types";
 
 export const financeTypeLabels: Record<FinanceEntryType, string> = {
@@ -76,9 +77,20 @@ export function FinanceSelect<Value extends string = string>({
   return <FeatureSelect {...props} className={className} />;
 }
 
-export function FinanceBadge({ children }: { children: ReactNode }) {
+export function FinanceBadge({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong">
+    <span
+      className={cx(
+        "rounded-full bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong",
+        className,
+      )}
+    >
       {children}
     </span>
   );

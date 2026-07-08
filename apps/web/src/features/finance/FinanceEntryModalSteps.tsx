@@ -273,9 +273,9 @@ type FieldSetter = (
 
 function optionClass(isActive: boolean) {
   return [
-    "rounded-lg border p-5 text-left",
+    "rounded-lg border p-5 text-left finance-option-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm cursor-pointer",
     isActive
-      ? "border-accent bg-accent-soft text-accent-strong"
-      : "border-line bg-app text-app-text",
+      ? "border-accent bg-accent-soft text-accent-strong finance-option-card--active"
+      : "border-line bg-app text-app-text hover:border-muted",
   ].join(" ");
 }

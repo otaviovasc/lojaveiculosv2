@@ -1,10 +1,16 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import type { DocumentsApi } from "./apiClient";
+import type { DocumentsModule as DocumentsModuleComponent } from "./DocumentsModule";
 import type {
   DocumentDownload,
   DocumentTemplate,
@@ -12,8 +18,10 @@ import type {
   WorkspaceDocument,
 } from "./types";
 
+let DocumentsModule: typeof DocumentsModuleComponent;
+
 describe("DocumentsModule", () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     const matchMedia = vi.fn().mockImplementation((query: string) => ({
       addEventListener: vi.fn(),
       addListener: vi.fn(),
@@ -56,20 +64,21 @@ describe("DocumentsModule", () => {
       value: IntersectionObserverMock,
       writable: true,
     });
+
+    DocumentsModule = (await import("./DocumentsModule")).DocumentsModule;
   });
 
   afterEach(cleanup);
 
   it("closes the open preview when selecting another folder", async () => {
-    const user = userEvent.setup();
     const api = createDocumentsApiMock();
 
-    await renderDocumentsModule(api);
+    renderDocumentsModule(api);
 
-    await user.click(await screen.findByText("Contrato geral"));
+    fireEvent.click(await screen.findByText("Contrato geral"));
     expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
 
-    await user.click(screen.getByRole("button", { name: /Honda Civic/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Honda Civic/i }));
 
     await waitFor(() =>
       expect(
@@ -79,16 +88,15 @@ describe("DocumentsModule", () => {
   });
 
   it("closes the detail panel when PDF preview loading fails", async () => {
-    const user = userEvent.setup();
     const api = createDocumentsApiMock({
       downloadDocument: vi.fn(async () => {
         throw new Error("Documento indisponivel.");
       }),
     });
 
-    await renderDocumentsModule(api);
+    renderDocumentsModule(api);
 
-    await user.click(await screen.findByText("Contrato geral"));
+    fireEvent.click(await screen.findByText("Contrato geral"));
 
     await waitFor(() =>
       expect(
@@ -99,8 +107,7 @@ describe("DocumentsModule", () => {
   });
 });
 
-async function renderDocumentsModule(api: DocumentsApi) {
-  const { DocumentsModule } = await import("./DocumentsModule");
+function renderDocumentsModule(api: DocumentsApi) {
   render(<DocumentsModule api={api} inventoryApi={createInventoryApiMock()} />);
 }
 

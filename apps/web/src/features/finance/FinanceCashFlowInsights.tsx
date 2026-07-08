@@ -62,7 +62,7 @@ export function FinanceCashFlowInsights({
             {sources.length ? (
               sources.map((source) => (
                 <div
-                  className="rounded-lg border border-line bg-app p-3"
+                  className="rounded-lg border border-line bg-app p-3 finance-source-card"
                   key={source.source}
                 >
                   <span className="text-xs font-black uppercase tracking-wider text-muted">
@@ -124,7 +124,7 @@ export function FinanceCashFlowInsights({
 
 function InsightRow({ amount, label }: { amount: string; label: string }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-app p-3">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-line bg-app p-3 finance-insight-row">
       <span className="min-w-0 truncate text-sm font-black text-app-text">
         {label}
       </span>

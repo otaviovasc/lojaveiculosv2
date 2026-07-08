@@ -126,14 +126,14 @@ function DesktopTable({
         <tbody className="divide-y divide-line">
           {entries.map((entry) => (
             <tr
-              className="align-top transition-colors hover:bg-app"
+              className="align-top transition-colors hover:bg-app finance-table-row"
               key={entry.id}
             >
               <td className="px-4 py-3">
                 <EntryTitle entry={entry} />
               </td>
               <td className="px-4 py-3">
-                <FinanceBadge>
+                <FinanceBadge className="finance-source-badge">
                   {sourceLabel(entrySourceKey(entry))}
                 </FinanceBadge>
               </td>
@@ -147,7 +147,10 @@ function DesktopTable({
                   onPay={onPay}
                 />
               </td>
-              <td className="px-4 py-3 text-right font-black text-app-text">
+              <td
+                className="px-4 py-3 text-right font-black text-app-text finance-cell-amount"
+                data-entry-type={entry.type}
+              >
                 {amountLabel(entry)}
               </td>
               <td className="px-4 py-3">
@@ -182,11 +185,12 @@ function FinanceEntryCard({
   return (
     <article
       aria-label={`Lançamento ${entry.name}`}
-      className="rounded-lg border border-line bg-app p-4 shadow-sm"
+      className="rounded-lg border border-line bg-app p-4 shadow-sm finance-entry-card"
+      data-entry-type={entry.type}
     >
       <div className="flex items-start justify-between gap-3">
         <EntryTitle entry={entry} />
-        <strong className="shrink-0 text-sm font-black text-app-text">
+        <strong className="shrink-0 text-sm font-black text-app-text finance-card-amount">
           {amountLabel(entry)}
         </strong>
       </div>
@@ -196,7 +200,9 @@ function FinanceEntryCard({
           onMarkPending={onMarkPending}
           onPay={onPay}
         />
-        <FinanceBadge>{sourceLabel(entrySourceKey(entry))}</FinanceBadge>
+        <FinanceBadge className="finance-source-badge">
+          {sourceLabel(entrySourceKey(entry))}
+        </FinanceBadge>
       </div>
       <div className="mt-4 grid grid-cols-3 gap-2">
         <MobileAction label="Editar" onClick={() => onEdit(entry)} />

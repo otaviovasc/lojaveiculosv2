@@ -40,8 +40,11 @@ export function FinanceUrgencyPanel({
       }
       title={hasOverdue ? "Atenção imediata" : "Próximos vencimentos"}
     >
-      <div className="grid gap-3 lg:grid-cols-[0.34fr_1fr]">
-        <div className="rounded-lg border border-line bg-app p-4">
+      <div className="grid gap-3 lg:grid-cols-[0.34fr_1fr] finance-urgency-wrapper">
+        <div
+          className="rounded-lg border border-line bg-app p-4 finance-urgency-summary-card"
+          data-has-overdue={hasOverdue}
+        >
           <FeatureStatusBadge tone={hasOverdue ? "danger" : "warning"}>
             {hasOverdue
               ? `${urgent.overdue.length} vencido(s)`
@@ -58,7 +61,7 @@ export function FinanceUrgencyPanel({
               : "Prepare pagamentos da próxima semana."}
           </p>
         </div>
-        <div className="grid gap-2">
+        <div className="grid gap-2 finance-urgency-rows">
           {urgent.top.map((entry) => (
             <UrgencyRow entry={entry} key={entry.id} onEdit={onEdit} />
           ))}
@@ -80,7 +83,7 @@ function UrgencyRow({
   const overdue = days !== null && days < 0;
 
   return (
-    <article className="flex items-center justify-between gap-3 rounded-lg border border-line bg-app p-3">
+    <article className="flex items-center justify-between gap-3 rounded-lg border border-line bg-app p-3 finance-urgency-row">
       <div className="min-w-0">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <strong className="truncate text-sm font-black text-app-text">

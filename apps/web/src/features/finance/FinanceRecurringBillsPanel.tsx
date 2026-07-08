@@ -19,15 +19,15 @@ export function FinanceRecurringBillsPanel({
 }) {
   return (
     <FinancePanel icon={<Repeat2 className="size-5" />} title="Recorrências">
-      <div className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
+      <div className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted finance-recurring-info">
         Regras recorrentes criadas no fluxo de caixa aparecem aqui com próximo
         vencimento, frequência, status e valor.
       </div>
-      <div className="mt-3 grid gap-3 lg:grid-cols-2">
+      <div className="mt-3 grid gap-3 lg:grid-cols-2 finance-recurring-grid">
         {items.length ? (
           items.map((entry) => (
             <article
-              className="rounded-lg border border-line bg-app p-3"
+              className="rounded-lg border border-line bg-app p-3 finance-recurring-card"
               key={entry.id}
             >
               <div className="flex items-start justify-between gap-3">

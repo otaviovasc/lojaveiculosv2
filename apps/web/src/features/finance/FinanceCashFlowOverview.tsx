@@ -12,6 +12,7 @@ import {
 } from "../../components/ui/FeatureKpis";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import { cx } from "../../components/ui/featureShared";
 import {
   summarizeCashFlow,
   type FinanceCashFlowSummary,
@@ -89,17 +90,19 @@ function CashFlowDetailStrip({
   summary: FinanceCashFlowSummary;
 }) {
   return (
-    <div className="mt-4 grid gap-3 md:grid-cols-4">
+    <div className="mt-4 grid gap-3 md:grid-cols-4 finance-detail-strip">
       <DetailMetric
+        className="finance-metric-received"
         label="Recebido"
         value={formatCurrency(summary.paidRevenueCents)}
       />
       <DetailMetric
+        className="finance-metric-paid"
         label="Pago"
         value={formatCurrency(summary.paidOutflowCents)}
       />
       <button
-        className="rounded-lg border border-line bg-app p-3 text-left"
+        className="rounded-lg border border-line bg-app p-3 text-left finance-btn-pending"
         onClick={onShowPending}
         type="button"
       >
@@ -111,7 +114,7 @@ function CashFlowDetailStrip({
         </strong>
       </button>
       <button
-        className="rounded-lg border border-line bg-app p-3 text-left"
+        className="rounded-lg border border-line bg-app p-3 text-left finance-btn-overdue"
         onClick={onShowOverdue}
         type="button"
       >
@@ -123,7 +126,7 @@ function CashFlowDetailStrip({
           {formatCurrency(summary.overdueCents)}
         </strong>
       </button>
-      <div className="md:col-span-4">
+      <div className="md:col-span-4 finance-status-badge-container">
         <FeatureStatusBadge tone={balanceTone}>
           {balanceTone === "success"
             ? "Saldo planejado positivo"
@@ -134,9 +137,17 @@ function CashFlowDetailStrip({
   );
 }
 
-function DetailMetric({ label, value }: { label: string; value: string }) {
+function DetailMetric({
+  className,
+  label,
+  value,
+}: {
+  className?: string;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-lg border border-line bg-app p-3">
+    <div className={cx("rounded-lg border border-line bg-app p-3", className)}>
       <span className="text-xs font-black uppercase tracking-wider text-muted">
         {label}
       </span>
