@@ -3,7 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { BillingProviderRepository } from "../../ports/billingProviderRepository.js";
 import type { BillingRepository } from "../../ports/billingRepository.js";
-import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
+import type {
+  PaymentProviderGateway,
+  PaymentProviderCheckoutInput,
+} from "../../ports/paymentProviderGateway.js";
 import {
   createChargePreview,
   createChargeableItem,
@@ -32,31 +35,28 @@ describe("createBillingProviderCheckout", () => {
       },
     );
 
-    expect(gateway.createCheckout).toHaveBeenCalledWith(
-      expect.objectContaining({
-        billingTypes: ["CREDIT_CARD"],
-        callback: {
-          cancelUrl: "https://app.lojaveiculos.test/billing?checkout=cancelled",
-          expiredUrl: "https://app.lojaveiculos.test/billing?checkout=expired",
-          successUrl: "https://app.lojaveiculos.test/billing?checkout=success",
+    const checkoutInput = getCheckoutInput(gateway.createCheckout);
+    expect(checkoutInput).toMatchObject({
+      billingTypes: ["CREDIT_CARD"],
+      callback: {
+        cancelUrl: "https://app.lojaveiculos.test/billing?checkout=cancelled",
+        expiredUrl: "https://app.lojaveiculos.test/billing?checkout=expired",
+        successUrl: "https://app.lojaveiculos.test/billing?checkout=success",
+      },
+      items: [
+        { name: "Growth", valueCents: 29900 },
+        {
+          name: "CRM WhatsApp",
+          valueCents: 24999,
         },
-        externalReference: expect.stringContaining(
-          "lojaveiculos:subscription:subscription_1:checkout:",
-        ),
-        items: [
-          expect.objectContaining({ name: "Growth", valueCents: 29900 }),
-          expect.objectContaining({
-            name: "CRM WhatsApp",
-            valueCents: 24999,
-          }),
-        ],
-        minutesToExpire: 90,
-        nextDueDate: "2026-07-10",
-      }),
+      ],
+      minutesToExpire: 90,
+      nextDueDate: "2026-07-10",
+    });
+    expect(checkoutInput.externalReference).toContain(
+      "lojaveiculos:subscription:subscription_1:checkout:",
     );
-    expect(gateway.createCheckout).toHaveBeenCalledWith(
-      expect.not.objectContaining({ customerData: expect.anything() }),
-    );
+    expect(checkoutInput).not.toHaveProperty("customerData");
     expect(providerRepository.savedCheckout).toMatchObject({
       providerCheckoutId: "chk_1",
       status: "created",
@@ -96,7 +96,9 @@ function createAuditSink(): AuditSink {
 }
 
 function createGateway() {
-  const createCheckout = vi.fn(async () => ({
+  const createCheckout = vi.fn<
+    NonNullable<PaymentProviderGateway["createCheckout"]>
+  >(async () => ({
     checkoutUrl: "https://sandbox.asaas.com/checkoutSession/show?id=chk_1",
     expiresAt: new Date("2026-07-08T13:30:00.000Z"),
     externalReference: "lojaveiculos:subscription:subscription_1:checkout:1",
@@ -116,6 +118,16 @@ function createGateway() {
     },
   };
   return { createCheckout, gateway };
+}
+
+function getCheckoutInput(
+  createCheckout: ReturnType<typeof createGateway>["createCheckout"],
+): PaymentProviderCheckoutInput {
+  const checkoutInput = createCheckout.mock.calls[0]?.[0];
+  if (!checkoutInput) {
+    throw new Error("Expected provider checkout to be created.");
+  }
+  return checkoutInput;
 }
 
 function createProviderRepository() {
