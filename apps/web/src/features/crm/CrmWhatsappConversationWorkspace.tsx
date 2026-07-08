@@ -24,8 +24,11 @@ export function CrmWhatsappConversationWorkspace({
 }) {
   const activeSession = inbox.activeSession;
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<CrmWhatsappMessage | null>(null);
+  const selectedCount = inbox.selectedSessions.length;
+  const showSelectionMode = selectionMode || selectedCount > 0;
 
   useEffect(() => {
     setReplyToMessage(null);
@@ -48,6 +51,10 @@ export function CrmWhatsappConversationWorkspace({
           onManageTags={() => onScopeChange("tags")}
           onQuickFilterChange={inbox.setQuickFilter}
           onSearch={inbox.setSearch}
+          onSelectionModeChange={(enabled) => {
+            setSelectionMode(enabled);
+            if (!enabled) inbox.clearSelectedSessions();
+          }}
           onStartConversation={onStartConversation}
           onStatusFilterChange={inbox.setStatusFilter}
           onTagFilterToggle={inbox.toggleTagFilter}
@@ -55,6 +62,8 @@ export function CrmWhatsappConversationWorkspace({
           quickFilter={inbox.quickFilter}
           search={inbox.search}
           selectedTagIds={inbox.selectedTagIds}
+          selectedCount={selectedCount}
+          selectionMode={showSelectionMode}
           sessionCounts={inbox.sessionCounts}
           sessionCount={inbox.sessions.length}
           statusFilter={inbox.statusFilter}
@@ -82,6 +91,7 @@ export function CrmWhatsappConversationWorkspace({
           }}
           onSelectAll={inbox.selectAllVisibleSessions}
           selectedCount={inbox.selectedSessions.length}
+          visible={showSelectionMode}
         />
         {inbox.isLoading ? (
           <div className="crm-whatsapp-empty crm-whatsapp-empty-list">
@@ -93,6 +103,7 @@ export function CrmWhatsappConversationWorkspace({
             onSelect={inbox.setActiveSessionId}
             onToggleSelected={inbox.toggleSelectedSession}
             selectedSessionIds={inbox.selectedSessionIds}
+            selectionMode={showSelectionMode}
             sessions={inbox.sessions}
           />
         )}

@@ -46,13 +46,18 @@ export function CrmWhatsappCampaignDetailPanel({
       <header>
         <div>
           <strong>{campaign.name}</strong>
-          <span>{campaignStatusLabel(campaign.status)}</span>
+          <span className={`crm-whatsapp-campaign-status-${campaign.status}`}>
+            {campaignStatusLabel(campaign.status)}
+          </span>
         </div>
         <small>{formatWindow(campaign)}</small>
       </header>
 
-      <div className="crm-whatsapp-campaign-progress">
-        <span style={{ inlineSize: `${progress}%` }} />
+      <div>
+        <div className="crm-whatsapp-campaign-progress">
+          <span style={{ inlineSize: `${progress}%` }} />
+        </div>
+        <p>{progress}% processado</p>
       </div>
 
       <div className="crm-whatsapp-campaign-detail-metrics">

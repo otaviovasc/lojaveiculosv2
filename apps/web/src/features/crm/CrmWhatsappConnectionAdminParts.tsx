@@ -1,11 +1,11 @@
 import {
+  AlertTriangle,
   Check,
   Copy,
-  Hash,
-  Phone,
   RefreshCw,
-  ShieldCheck,
   Webhook,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type {
@@ -49,13 +49,29 @@ export function ConnectionStatusCard({
   isRefreshing: boolean;
   onRefresh: () => void;
 }) {
+  const statusTone = readProviderStatusTone(connection);
   return (
-    <section className="crm-whatsapp-connection-status-card">
-      <ShieldCheck aria-hidden="true" />
+    <section
+      className="crm-whatsapp-connection-status-card"
+      data-status={statusTone}
+    >
+      <span className="crm-whatsapp-connection-status-icon">
+        {statusTone === "connected" ? (
+          <Wifi aria-hidden="true" />
+        ) : statusTone === "error" ? (
+          <AlertTriangle aria-hidden="true" />
+        ) : (
+          <WifiOff aria-hidden="true" />
+        )}
+      </span>
       <div>
+        <span>WhatsApp (ZAPI)</span>
         <strong>{readProviderStatus(connection)}</strong>
-        <span>{readConnectionStatusDetail(connection)}</span>
+        <small>{readConnectionStatusDetail(connection)}</small>
       </div>
+      <span className="crm-whatsapp-connection-status-badge">
+        {readProviderStatusBadge(connection)}
+      </span>
       <button
         aria-label="Atualizar status da conexao"
         className="crm-icon-action"
@@ -67,60 +83,6 @@ export function ConnectionStatusCard({
         <RefreshCw aria-hidden="true" />
       </button>
     </section>
-  );
-}
-
-export function ConnectionOperationalSummary({
-  connection,
-}: {
-  connection: CrmWhatsappProviderConnection;
-}) {
-  const rows = [
-    {
-      icon: <Phone aria-hidden="true" />,
-      label: "Numero",
-      value:
-        connection.live.connectedPhone ??
-        connection.metadata?.connectedPhone ??
-        connection.phone ??
-        "Nao informado",
-    },
-    {
-      icon: <ShieldCheck aria-hidden="true" />,
-      label: "Estado V2",
-      value: readConfiguredStatus(connection.status),
-    },
-    {
-      icon: <Hash aria-hidden="true" />,
-      label: "Conexao",
-      value: connection.displayName,
-    },
-    {
-      icon: <Webhook aria-hidden="true" />,
-      label: "Webhooks",
-      value: connection.webhookTokenRequired
-        ? "Token obrigatorio"
-        : "Sem token local",
-    },
-  ];
-  return (
-    <ConnectionSectionCard
-      className="crm-whatsapp-connection-summary-card"
-      description="Somente a instancia ZAPI e editavel. Tokens sao write-only e nunca sao exibidos depois de salvar."
-      title="Resumo"
-    >
-      <dl className="crm-whatsapp-connection-summary">
-        {rows.map((row) => (
-          <div key={row.label}>
-            <dt>
-              {row.icon}
-              {row.label}
-            </dt>
-            <dd>{row.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </ConnectionSectionCard>
   );
 }
 
@@ -147,25 +109,31 @@ export function ConnectionWebhookList({
       title="Webhooks"
     >
       <div className="crm-whatsapp-webhook-list">
-        {endpoints.map((endpoint) => (
-          <label className="crm-whatsapp-webhook-row" key={endpoint.type}>
-            <span>{endpoint.label}</span>
-            <input readOnly value={endpoint.url} />
-            <button
-              aria-label={`Copiar webhook ${endpoint.label}`}
-              className="crm-icon-action"
-              onClick={() => onCopy(endpoint)}
-              title={`Copiar ${endpoint.label}`}
-              type="button"
-            >
-              {copiedType === endpoint.type ? (
-                <Check aria-hidden="true" />
-              ) : (
-                <Copy aria-hidden="true" />
-              )}
-            </button>
-          </label>
-        ))}
+        {endpoints.length ? (
+          endpoints.map((endpoint) => (
+            <label className="crm-whatsapp-webhook-row" key={endpoint.type}>
+              <span>{endpoint.label}</span>
+              <input readOnly value={endpoint.url} />
+              <button
+                aria-label={`Copiar webhook ${endpoint.label}`}
+                className="crm-icon-action"
+                onClick={() => onCopy(endpoint)}
+                title={`Copiar ${endpoint.label}`}
+                type="button"
+              >
+                {copiedType === endpoint.type ? (
+                  <Check aria-hidden="true" />
+                ) : (
+                  <Copy aria-hidden="true" />
+                )}
+              </button>
+            </label>
+          ))
+        ) : (
+          <p className="crm-whatsapp-connection-empty">
+            Nenhum webhook gerado para esta conexao.
+          </p>
+        )}
       </div>
     </ConnectionSectionCard>
   );
@@ -178,26 +146,40 @@ export function readProviderStatus(connection: CrmWhatsappProviderConnection) {
   return "Status desconhecido";
 }
 
+function readProviderStatusBadge(connection: CrmWhatsappProviderConnection) {
+  if (connection.live.providerStatus === "connected") return "Online";
+  if (connection.live.providerStatus === "error") return "Erro";
+  if (connection.live.providerStatus === "disconnected") return "Offline";
+  return "Pendente";
+}
+
+function readProviderStatusTone(connection: CrmWhatsappProviderConnection) {
+  if (connection.live.providerStatus === "connected") return "connected";
+  if (connection.live.providerStatus === "error") return "error";
+  if (connection.live.providerStatus === "disconnected") return "disconnected";
+  return "unknown";
+}
+
 function readConnectionStatusDetail(connection: CrmWhatsappProviderConnection) {
   if (connection.live.providerStatus === "error") {
     return connection.live.errorMessage;
+  }
+  if (connection.live.providerStatus === "connected") {
+    const phone =
+      connection.live.connectedPhone ??
+      connection.metadata?.connectedPhone ??
+      connection.phone;
+    return phone ? `Conectado - ${phone}` : "Conectado sem telefone informado";
+  }
+  if (connection.live.providerStatus === "disconnected") {
+    return connection.externalInstanceId
+      ? "Instancia configurada. Conecte o WhatsApp pelo QR Code da ZAPI."
+      : "Informe o ID e o token da instancia ZAPI.";
   }
   return (
     connection.live.connectedPhone ??
     connection.metadata?.connectedPhone ??
     connection.phone ??
-    "Telefone nao informado"
+    "Status ainda nao verificado"
   );
-}
-
-function readConfiguredStatus(status: CrmWhatsappProviderConnection["status"]) {
-  const labels: Record<CrmWhatsappProviderConnection["status"], string> = {
-    active: "Ativa",
-    archived: "Arquivada",
-    disconnected: "Desconectada",
-    error: "Erro",
-    paused: "Pausada",
-    sandbox: "Sandbox",
-  };
-  return labels[status];
 }

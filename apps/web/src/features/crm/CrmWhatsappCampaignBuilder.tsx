@@ -1,6 +1,6 @@
 import { CampaignAutomationPanel } from "./CrmWhatsappCampaignAutomationPanel";
+import { CampaignCsvPanel } from "./CrmWhatsappCampaignCsvPanel";
 import {
-  CampaignCsvPanel,
   CampaignMessagePanel,
   CampaignRecipientsPanel,
 } from "./CrmWhatsappCampaignsPageParts";
@@ -92,8 +92,38 @@ export function CrmWhatsappCampaignBuilder({
   tags: CrmWhatsappTag[];
   text: string;
 }) {
+  const setupSteps = [
+    {
+      done: Boolean(campaignName.trim() && text.trim() && startAt),
+      label: "Mensagem",
+      value: startAt ? "inicio definido" : "aguardando inicio",
+    },
+    {
+      done: selectedCount > 0,
+      label: "Destinatarios",
+      value: `${selectedCount} valido(s)`,
+    },
+    {
+      done: canLaunch,
+      label: "Revisao",
+      value: canLaunch ? "pronta" : "pendente",
+    },
+  ];
+
   return (
     <div className="crm-whatsapp-campaign-layout">
+      <section className="crm-whatsapp-campaign-panel crm-whatsapp-campaign-builder-steps">
+        {setupSteps.map((step, index) => (
+          <div
+            className={step.done ? "crm-whatsapp-campaign-step-done" : ""}
+            key={step.label}
+          >
+            <span>{index + 1}</span>
+            <strong>{step.label}</strong>
+            <small>{step.value}</small>
+          </div>
+        ))}
+      </section>
       <CampaignMessagePanel
         canCreate={canCreate}
         campaignName={campaignName}

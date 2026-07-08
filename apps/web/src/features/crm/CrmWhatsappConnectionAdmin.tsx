@@ -7,7 +7,6 @@ import type {
 } from "./crmWhatsappTypes";
 import { ConnectionInstanceForm } from "./CrmWhatsappConnectionInstanceForm";
 import {
-  ConnectionOperationalSummary,
   ConnectionStatusCard,
   ConnectionWebhookList,
 } from "./CrmWhatsappConnectionAdminParts";
@@ -115,7 +114,8 @@ export function CrmWhatsappConnectionAdmin({
         </span>
         <div>
           <strong>Conexao</strong>
-          <h2>Status da ZAPI e webhooks</h2>
+          <h2>WhatsApp ZAPI</h2>
+          <p>Configure somente a instancia usada pelo CRM.</p>
         </div>
       </header>
       {isLoading ? (
@@ -157,13 +157,12 @@ export function CrmWhatsappConnectionAdmin({
               />
               <ConnectionInstanceForm
                 connection={selected}
-                disabled={disabled || isSaving}
+                disabled={disabled}
                 draft={draft}
                 isSaving={isSaving}
                 onChange={setDraft}
                 onSave={() => void saveInstance()}
               />
-              <ConnectionOperationalSummary connection={selected} />
               <ConnectionWebhookList
                 copiedType={copiedWebhook}
                 endpoints={selected.webhookEndpoints ?? []}

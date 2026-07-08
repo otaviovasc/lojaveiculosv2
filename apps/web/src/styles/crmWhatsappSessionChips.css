@@ -1,0 +1,65 @@
+.crm-whatsapp-session-main .crm-whatsapp-avatar {
+  height: 3rem;
+  overflow: hidden;
+  width: 3rem;
+}
+
+.crm-whatsapp-session-main .crm-whatsapp-avatar img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.crm-whatsapp-session-chip,
+.crm-whatsapp-session-status {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  gap: 0.25rem;
+  max-width: 7.5rem;
+  min-height: 1.25rem;
+  overflow: hidden;
+  padding: 0 0.375rem;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-session-chip svg,
+.crm-whatsapp-session-status svg {
+  flex: 0 0 auto;
+  height: 0.625rem;
+  width: 0.625rem;
+}
+
+.crm-whatsapp-session-chip-wide {
+  max-width: 10rem;
+}
+
+.crm-whatsapp-session-status {
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-line));
+  color: var(--color-accent-strong);
+}
+
+.crm-whatsapp-session-status-active,
+.crm-whatsapp-session-status-minibot_active {
+  background: var(--color-green-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 24%,
+    var(--color-line)
+  );
+  color: var(--color-green-start);
+}
+
+.crm-whatsapp-session-status-completed {
+  background: var(--color-app);
+  border-color: var(--color-line);
+  color: var(--color-muted);
+}

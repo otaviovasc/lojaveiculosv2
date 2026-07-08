@@ -12,7 +12,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
   it("saves only the write-only ZAPI instance values", async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn(async () => true);
-    render(
+    const { container } = render(
       <CrmWhatsappConnectionAdmin
         connections={[createConnection()]}
         onRefresh={vi.fn(async () => undefined)}
@@ -20,7 +20,18 @@ describe("CrmWhatsappConnectionAdmin", () => {
       />,
     );
 
+    expect(screen.getByText("WhatsApp (ZAPI)")).toBeInTheDocument();
+    expect(screen.getByText("Online")).toBeInTheDocument();
     expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+    expect(
+      container.querySelectorAll(
+        ".crm-whatsapp-connection-instance-card input:not([readonly])",
+      ),
+    ).toHaveLength(2);
+    expect(screen.getByLabelText("Token da instancia")).toHaveAttribute(
+      "type",
+      "password",
+    );
     await user.clear(screen.getByLabelText("ID da instancia"));
     await user.type(screen.getByLabelText("ID da instancia"), "zapi-new");
     await user.type(

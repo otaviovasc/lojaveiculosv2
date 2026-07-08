@@ -21,6 +21,7 @@ describe("WhatsappToolbar", () => {
       onConnectionFilterChange: vi.fn(),
       onQuickFilterChange: vi.fn(),
       onSearch: vi.fn(),
+      onSelectionModeChange: vi.fn(),
       onStartConversation: vi.fn(),
       onStatusFilterChange: vi.fn(),
       onTagFilterToggle: vi.fn(),
@@ -41,6 +42,8 @@ describe("WhatsappToolbar", () => {
         quickFilter="fresh"
         search=""
         selectedTagIds={["tag_hot"]}
+        selectedCount={0}
+        selectionMode={false}
         sessionCount={3}
         sessionCounts={createCounts()}
         statusFilter=""
@@ -51,16 +54,19 @@ describe("WhatsappToolbar", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("heading", { name: "Conversas" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("3 nesta lista")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "CRM" })).toBeInTheDocument();
+    expect(screen.getByText("3 conversas")).toBeInTheDocument();
     expect(screen.getByText("ZAPI conectado")).toBeInTheDocument();
     expect(metric("Total")).toHaveTextContent("12");
     expect(metric("Nao lidas")).toHaveTextContent("5");
 
-    await user.click(screen.getByRole("button", { name: "Nova" }));
+    await user.click(screen.getByRole("button", { name: "Nova conversa" }));
     expect(callbacks.onStartConversation).toHaveBeenCalledTimes(1);
+
+    await user.click(
+      screen.getByRole("button", { name: "Selecionar conversas" }),
+    );
+    expect(callbacks.onSelectionModeChange).toHaveBeenCalledWith(true);
 
     await user.type(
       screen.getByPlaceholderText("Buscar por contato, telefone ou mensagem"),

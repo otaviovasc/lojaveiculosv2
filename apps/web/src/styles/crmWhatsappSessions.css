@@ -67,10 +67,19 @@
   box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
+.crm-whatsapp-session-selected {
+  background: color-mix(
+    in srgb,
+    var(--color-green-soft) 60%,
+    var(--color-panel)
+  );
+}
+
 .crm-whatsapp-session-pick {
   align-items: center;
-  background: transparent;
-  border: 0;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
   color: var(--color-muted);
   display: inline-flex;
   flex: 0 0 auto;
@@ -86,6 +95,12 @@
 
 .crm-whatsapp-session-pick:hover {
   color: var(--color-accent-strong);
+}
+
+.crm-whatsapp-session-pick[aria-pressed="true"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-inverse);
 }
 
 .crm-whatsapp-session-main {
@@ -140,7 +155,21 @@
   white-space: nowrap;
 }
 
+.crm-whatsapp-session-phone {
+  color: var(--color-muted);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin-top: 0.125rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .crm-whatsapp-session-meta {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
   min-width: 0;
 }
 

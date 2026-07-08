@@ -1,4 +1,4 @@
-import { KeyRound, Save } from "lucide-react";
+import { KeyRound, Save, ShieldCheck } from "lucide-react";
 import { ConnectionSectionCard } from "./CrmWhatsappConnectionAdminParts";
 import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 
@@ -29,11 +29,23 @@ export function ConnectionInstanceForm({
       icon={<KeyRound aria-hidden="true" />}
       title="Instancia ZAPI"
     >
+      {connection.credentials?.storedInstanceConfigured ? (
+        <div className="crm-whatsapp-connection-protected-note">
+          <ShieldCheck aria-hidden="true" />
+          <div>
+            <strong>Credenciais protegidas</strong>
+            <p>
+              O token salvo nao e exibido. Informe um novo token somente para
+              substituir o atual.
+            </p>
+          </div>
+        </div>
+      ) : null}
       <div className="crm-whatsapp-connection-instance-grid">
         <label className="crm-whatsapp-connection-field">
           ID da instancia
           <input
-            disabled={disabled}
+            disabled={disabled || isSaving}
             onChange={(event) =>
               onChange({ ...draft, instanceId: event.target.value })
             }
@@ -45,7 +57,7 @@ export function ConnectionInstanceForm({
           Token da instancia
           <input
             autoComplete="new-password"
-            disabled={disabled}
+            disabled={disabled || isSaving}
             onChange={(event) =>
               onChange({ ...draft, instanceToken: event.target.value })
             }
@@ -64,6 +76,12 @@ export function ConnectionInstanceForm({
           {isSaving ? "Salvando" : "Salvar instancia"}
         </button>
       </div>
+      {disabled ? (
+        <p className="crm-whatsapp-connection-disabled">
+          Seu usuario pode visualizar a conexao, mas nao pode alterar as
+          credenciais.
+        </p>
+      ) : null}
     </ConnectionSectionCard>
   );
 }

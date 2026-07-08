@@ -17,7 +17,9 @@ test.describe("CRM WhatsApp campaigns", () => {
     await installCampaignApiMocks(page);
 
     await page.goto("/crm#/crm?surface=whatsapp");
-    await expect(page.getByRole("tab", { name: /Agendamentos/ })).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: /Agendar mensagem/ }),
+    ).toBeVisible();
     await page.getByRole("tab", { name: /Campanhas/ }).click();
 
     await expect(

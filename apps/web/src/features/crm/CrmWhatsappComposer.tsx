@@ -240,7 +240,7 @@ export function MessageComposer({
         </div>
         <button
           aria-label="Enviar mensagem"
-          className="crm-icon-action crm-icon-action-active"
+          className="crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
           disabled={effectiveDisabled || !canSend}
           title="Enviar"
           type="submit"

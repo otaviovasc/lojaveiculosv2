@@ -21,6 +21,7 @@ export function WhatsappBulkBar({
   onMarkUnread,
   onSelectAll,
   selectedCount,
+  visible,
 }: {
   assignableMembers: CrmWhatsappAssignableMember[];
   canAssign: boolean;
@@ -33,18 +34,25 @@ export function WhatsappBulkBar({
   onMarkUnread: () => void;
   onSelectAll: () => void;
   selectedCount: number;
+  visible?: boolean;
 }) {
-  if (selectedCount === 0) return null;
+  if (!visible && selectedCount === 0) return null;
+  const hasSelection = selectedCount > 0;
   return (
     <div className="crm-whatsapp-bulk-bar">
       <span className="crm-whatsapp-bulk-count">
         <CheckSquare aria-hidden="true" />
-        <strong>{selectedCountLabel(selectedCount)}</strong>
+        <strong>
+          {hasSelection
+            ? selectedCountLabel(selectedCount)
+            : "Selecione conversas"}
+        </strong>
       </span>
       {canAssign ? (
         <div className="crm-whatsapp-bulk-group">
           <select
             aria-label="Atribuir conversas selecionadas"
+            disabled={!hasSelection}
             onChange={(event) => onAssign(event.target.value || null)}
             value=""
           >
@@ -59,6 +67,7 @@ export function WhatsappBulkBar({
           </select>
           <button
             aria-label="Remover atribuicao das conversas selecionadas"
+            disabled={!hasSelection}
             onClick={() => onAssign(null)}
             type="button"
           >
@@ -72,6 +81,7 @@ export function WhatsappBulkBar({
           <>
             <button
               aria-label="Marcar conversas selecionadas como lidas"
+              disabled={!hasSelection}
               onClick={onMarkRead}
               type="button"
             >
@@ -80,6 +90,7 @@ export function WhatsappBulkBar({
             </button>
             <button
               aria-label="Marcar conversas selecionadas como nao lidas"
+              disabled={!hasSelection}
               onClick={onMarkUnread}
               type="button"
             >
@@ -91,6 +102,7 @@ export function WhatsappBulkBar({
         {canClose ? (
           <button
             aria-label="Concluir conversas selecionadas"
+            disabled={!hasSelection}
             onClick={onClose}
             type="button"
           >

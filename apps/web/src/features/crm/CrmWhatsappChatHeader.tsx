@@ -5,6 +5,7 @@ import {
   CheckCheck,
   MailCheck,
   MailOpen,
+  MessageCircleMore,
   Tag,
   X,
   UserCheck,
@@ -78,7 +79,11 @@ export function ChatHeader({
           type="button"
         >
           <span className="crm-whatsapp-avatar crm-whatsapp-avatar-lg">
-            {formatSessionName(session).slice(0, 2).toUpperCase()}
+            {session.profilePhotoUrl ? (
+              <img alt="" src={session.profilePhotoUrl} />
+            ) : (
+              formatSessionName(session).slice(0, 2).toUpperCase()
+            )}
           </span>
           <span className="min-w-0">
             <h3>{formatSessionName(session)}</h3>
@@ -87,6 +92,10 @@ export function ChatHeader({
             </p>
           </span>
         </button>
+        <span className="crm-whatsapp-chat-channel-pill">
+          <MessageCircleMore aria-hidden="true" />
+          WhatsApp
+        </span>
         <SessionTagRow
           disabled={disabled || !canTagSessions}
           onRemoveTag={onRemoveTag}

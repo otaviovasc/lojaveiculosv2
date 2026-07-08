@@ -1,0 +1,163 @@
+.crm-whatsapp-chat {
+  background: color-mix(in srgb, var(--color-app) 74%, var(--color-panel));
+}
+
+.crm-whatsapp-chat-header {
+  background: color-mix(in srgb, var(--color-panel) 94%, var(--color-app));
+  box-shadow: 0 0.75rem 1.75rem
+    color-mix(in srgb, var(--color-text) 4%, transparent);
+  min-height: 4.5rem;
+  padding: 0.75rem 1.125rem;
+  position: relative;
+  z-index: 2;
+}
+
+.crm-whatsapp-chat-channel-pill {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    var(--color-green-soft) 88%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-green-start) 18%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-green-start);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  gap: 0.3125rem;
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
+  text-transform: uppercase;
+}
+
+.crm-whatsapp-chat-channel-pill svg {
+  height: 0.8125rem;
+  width: 0.8125rem;
+}
+
+.crm-whatsapp-header-actions .crm-icon-action,
+.crm-whatsapp-composer .crm-icon-action {
+  background: var(--color-panel);
+  border-radius: 999px;
+  box-shadow: 0 0.5rem 1.25rem
+    color-mix(in srgb, var(--color-text) 4%, transparent);
+}
+
+.crm-whatsapp-header-actions .crm-action {
+  border-radius: 999px;
+  min-height: 2.625rem;
+  padding-inline: 1rem;
+}
+
+.crm-whatsapp-header-actions > .crm-action:not(:last-child) {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+.crm-whatsapp-header-actions > .crm-action:not(:last-child) svg {
+  color: var(--color-accent);
+}
+
+.crm-whatsapp-header-actions > .crm-action:last-child,
+.crm-whatsapp-send-action {
+  background: linear-gradient(
+    135deg,
+    var(--color-green-start),
+    var(--color-green-end)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 28%,
+    var(--color-line)
+  );
+  color: var(--color-inverse);
+}
+
+.crm-whatsapp-messages {
+  background:
+    radial-gradient(
+      circle at 1rem 1rem,
+      color-mix(in srgb, var(--color-line) 30%, transparent) 0.08rem,
+      transparent 0.09rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--color-app) 76%, var(--color-panel)),
+      color-mix(in srgb, var(--color-app) 88%, var(--color-panel))
+    );
+  background-size:
+    2.4rem 2.4rem,
+    100% 100%;
+  padding: 1.25rem 1.5rem;
+}
+
+.crm-whatsapp-bubble-out {
+  background: color-mix(
+    in srgb,
+    var(--color-green-start) 86%,
+    var(--color-panel)
+  );
+  border-color: color-mix(
+    in srgb,
+    var(--color-green-start) 24%,
+    var(--color-line)
+  );
+  color: var(--color-inverse);
+}
+
+.crm-whatsapp-bubble-out strong,
+.crm-whatsapp-bubble-out footer,
+.crm-whatsapp-bubble-out .crm-whatsapp-rich-card strong,
+.crm-whatsapp-bubble-out .crm-whatsapp-rich-card small,
+.crm-whatsapp-bubble-out .crm-whatsapp-attachment strong,
+.crm-whatsapp-bubble-out .crm-whatsapp-attachment small {
+  color: var(--color-inverse);
+}
+
+.crm-whatsapp-composer {
+  background: color-mix(in srgb, var(--color-panel) 92%, var(--color-app));
+  padding: 0.875rem 1.125rem 1rem;
+}
+
+.crm-whatsapp-composer-row {
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.crm-whatsapp-composer-textbox {
+  background: var(--color-panel);
+  border: 1px solid
+    color-mix(in srgb, var(--color-line) 86%, var(--color-panel));
+  border-radius: 999px;
+  box-shadow: 0 0.75rem 1.75rem
+    color-mix(in srgb, var(--color-text) 4%, transparent);
+  min-height: 3.5rem;
+}
+
+.crm-whatsapp-composer-textbox textarea {
+  min-height: 3.5rem;
+  padding: 0.9375rem 3.375rem 0.875rem 1rem;
+}
+
+.crm-whatsapp-send-action {
+  height: 3rem;
+  width: 3rem;
+}
+
+.crm-whatsapp-attach-menu {
+  border-radius: var(--radius-lg);
+  box-shadow: 0 1.25rem 2.5rem
+    color-mix(in srgb, var(--color-text) 12%, transparent);
+  min-width: 15rem;
+  padding: 0.5rem;
+}
+
+@media (max-width: 860px) {
+  .crm-whatsapp-messages,
+  .crm-whatsapp-composer {
+    padding-inline: 0.75rem;
+  }
+}

@@ -1,3 +1,12 @@
+import {
+  CalendarClock,
+  CarFront,
+  MessageSquareText,
+  Megaphone,
+  PlugZap,
+  Radio,
+  Tag,
+} from "lucide-react";
 export type CrmWhatsappScope =
   | "campaigns"
   | "connection"
@@ -11,36 +20,44 @@ export type CrmWhatsappConnectionTone =
   "error" | "loading" | "neutral" | "offline" | "online";
 
 const scopes: Array<{
+  icon: typeof MessageSquareText;
   id: CrmWhatsappScope;
   label: string;
 }> = [
   {
+    icon: MessageSquareText,
     id: "conversations",
     label: "Conversas",
   },
   {
-    id: "connection",
-    label: "Conexao",
+    icon: CalendarClock,
+    id: "schedules",
+    label: "Agendar mensagem",
   },
   {
+    icon: CarFront,
     id: "visits",
     label: "Visitas",
   },
   {
-    id: "schedules",
-    label: "Agendamentos",
-  },
-  {
+    icon: Megaphone,
     id: "campaigns",
     label: "Campanhas",
   },
   {
+    icon: Tag,
+    id: "tags",
+    label: "Etiquetas",
+  },
+  {
+    icon: PlugZap,
     id: "integrations",
     label: "Integracoes",
   },
   {
-    id: "tags",
-    label: "Tags",
+    icon: Radio,
+    id: "connection",
+    label: "Conexao",
   },
 ];
 
@@ -74,6 +91,7 @@ export function CrmWhatsappScopedNav({
       <div className="crm-whatsapp-scope-tabs" role="tablist">
         {scopes.map((scope) => {
           const badge = readBadge(scope.id, { tagCount, unreadCount });
+          const Icon = scope.icon;
           return (
             <button
               aria-selected={activeScope === scope.id}
@@ -87,6 +105,7 @@ export function CrmWhatsappScopedNav({
               role="tab"
               type="button"
             >
+              <Icon aria-hidden="true" />
               <strong>{scope.label}</strong>
               {badge ? (
                 <span className="crm-whatsapp-scope-tab-badge">{badge}</span>

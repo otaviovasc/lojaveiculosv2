@@ -1,13 +1,15 @@
-import {
-  AlertCircle,
-  CalendarClock,
-  CheckCircle2,
-  CircleSlash,
-} from "lucide-react";
+import { CalendarClock, Filter, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import type {
   CampaignRecipientReviewRow,
   CampaignRecipientReviewSummary,
 } from "./CrmWhatsappCampaignRecipientReview";
+import {
+  RecipientReviewTable,
+  ReviewStat,
+} from "./CrmWhatsappCampaignReviewPanelParts";
+
+type ReviewFilter = "all" | "blocked" | "ready" | "warning";
 
 export function CampaignReviewPanel({
   canLaunch,
@@ -36,6 +38,29 @@ export function CampaignReviewPanel({
   selectedCount: number;
   summary: CampaignRecipientReviewSummary;
 }) {
+  const [filter, setFilter] = useState<ReviewFilter>("all");
+  const [query, setQuery] = useState("");
+  const filteredRows = useMemo(
+    () =>
+      rows.filter((row) => {
+        const matchesFilter = filter === "all" || row.status === filter;
+        const haystack = [
+          row.name,
+          row.phone,
+          row.rawPhone,
+          row.source,
+          ...row.issues,
+        ]
+          .join(" ")
+          .toLowerCase();
+        return (
+          matchesFilter &&
+          (!query.trim() || haystack.includes(query.trim().toLowerCase()))
+        );
+      }),
+    [filter, query, rows],
+  );
+
   return (
     <section className="crm-whatsapp-campaign-panel crm-whatsapp-campaign-review-panel">
       <header>
@@ -54,9 +79,30 @@ export function CampaignReviewPanel({
       </header>
 
       <dl className="crm-whatsapp-campaign-review">
-        <ReviewStat label="Incluidos" value={summary.included} />
-        <ReviewStat label="Validos" value={selectedCount} />
-        <ReviewStat label="Bloqueados" value={summary.blockedIncluded} />
+        <ReviewStat
+          active={filter === "all"}
+          label="Incluidos"
+          onClick={() => setFilter("all")}
+          value={summary.included}
+        />
+        <ReviewStat
+          active={filter === "ready"}
+          label="Validos"
+          onClick={() => setFilter("ready")}
+          value={selectedCount}
+        />
+        <ReviewStat
+          active={filter === "blocked"}
+          label="Bloqueados"
+          onClick={() => setFilter("blocked")}
+          value={summary.blockedIncluded}
+        />
+        <ReviewStat
+          active={filter === "warning"}
+          label="Atencao"
+          onClick={() => setFilter("warning")}
+          value={summary.warnings}
+        />
         <ReviewStat
           label="Duracao"
           value={`${Math.max(0, selectedCount - 1) * intervalMinutes} min`}
@@ -64,10 +110,25 @@ export function CampaignReviewPanel({
       </dl>
 
       <pre>{preview}</pre>
+      <div className="crm-whatsapp-campaign-review-tools">
+        <div className="crm-whatsapp-campaign-search">
+          <Search aria-hidden="true" />
+          <input
+            aria-label="Buscar destinatario em revisao"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Buscar telefone, nome ou erro"
+            value={query}
+          />
+        </div>
+        <span>
+          <Filter aria-hidden="true" />
+          {filteredRows.length} de {rows.length}
+        </span>
+      </div>
       <RecipientReviewTable
         onNameChange={onNameChange}
         onToggleRow={onToggleRow}
-        rows={rows}
+        rows={filteredRows}
       />
 
       {localError ? (
@@ -82,100 +143,5 @@ export function CampaignReviewPanel({
         <p className="crm-whatsapp-campaign-success">{lastResult}</p>
       ) : null}
     </section>
-  );
-}
-
-function ReviewStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: number | string;
-}) {
-  return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
-  );
-}
-
-function RecipientReviewTable({
-  onNameChange,
-  onToggleRow,
-  rows,
-}: {
-  onNameChange: (rowId: string, value: string) => void;
-  onToggleRow: (rowId: string) => void;
-  rows: CampaignRecipientReviewRow[];
-}) {
-  if (!rows.length) {
-    return (
-      <div className="crm-whatsapp-campaign-review-empty">
-        Selecione conversas ou cole uma lista CSV para revisar destinatarios.
-      </div>
-    );
-  }
-  return (
-    <div className="crm-whatsapp-campaign-review-table">
-      <div role="row">
-        <span>Enviar</span>
-        <span>Nome</span>
-        <span>Telefone</span>
-        <span>Origem</span>
-        <span>Status</span>
-      </div>
-      {rows.map((row) => (
-        <RecipientReviewRow
-          key={row.id}
-          onNameChange={onNameChange}
-          onToggleRow={onToggleRow}
-          row={row}
-        />
-      ))}
-    </div>
-  );
-}
-
-function RecipientReviewRow({
-  onNameChange,
-  onToggleRow,
-  row,
-}: {
-  onNameChange: (rowId: string, value: string) => void;
-  onToggleRow: (rowId: string) => void;
-  row: CampaignRecipientReviewRow;
-}) {
-  const StatusIcon =
-    row.status === "ready"
-      ? CheckCircle2
-      : row.status === "warning"
-        ? AlertCircle
-        : CircleSlash;
-  return (
-    <div
-      className={`crm-whatsapp-campaign-review-row crm-whatsapp-campaign-review-row-${row.status}`}
-      role="row"
-    >
-      <label aria-label={`Incluir ${row.name || row.rawPhone || row.id}`}>
-        <input
-          checked={row.included}
-          onChange={() => onToggleRow(row.id)}
-          type="checkbox"
-        />
-      </label>
-      <input
-        aria-label="Nome do destinatario"
-        onChange={(event) => onNameChange(row.id, event.target.value)}
-        placeholder="cliente"
-        value={row.name}
-      />
-      <span>{row.phone || row.rawPhone || "sem telefone"}</span>
-      <span>{row.source === "csv" ? "CSV" : "Conversa"}</span>
-      <span>
-        <StatusIcon aria-hidden="true" />
-        {row.issues[0] ?? "Pronto"}
-      </span>
-    </div>
   );
 }

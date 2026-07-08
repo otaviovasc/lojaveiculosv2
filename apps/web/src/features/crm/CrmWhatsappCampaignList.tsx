@@ -36,6 +36,12 @@ export function CrmWhatsappCampaignList({
           }
           key={campaign.id}
         >
+          <div className="crm-whatsapp-campaign-list-status">
+            <span className={`crm-whatsapp-campaign-status-${campaign.status}`}>
+              {statusLabel(campaign.status)}
+            </span>
+            <small>{formatCampaignWindow(campaign)}</small>
+          </div>
           <button
             aria-pressed={selectedCampaignId === campaign.id}
             className="crm-whatsapp-campaign-list-main"
@@ -44,10 +50,13 @@ export function CrmWhatsappCampaignList({
           >
             <span>
               <strong>{campaign.name}</strong>
-              <small>{statusLabel(campaign.status)}</small>
+              <small>{campaign.totalRecipients} destinatario(s)</small>
             </span>
             <em>{Math.round(campaign.replyRate * 100)}%</em>
           </button>
+          <div className="crm-whatsapp-campaign-list-progress">
+            <span style={{ inlineSize: `${progressPercent(campaign)}%` }} />
+          </div>
           <dl>
             {metricItems(campaign).map((item) => (
               <div key={item.label}>
@@ -109,4 +118,21 @@ function statusLabel(status: CrmWhatsappCampaign["status"]) {
     scheduled: "Agendada",
   };
   return labels[status];
+}
+
+function progressPercent(campaign: CrmWhatsappCampaign) {
+  if (!campaign.totalRecipients) return 0;
+  return Math.round(
+    ((campaign.sentCount + campaign.failedCount) / campaign.totalRecipients) *
+      100,
+  );
+}
+
+function formatCampaignWindow(campaign: CrmWhatsappCampaign) {
+  const start = new Date(campaign.scheduledStartAt);
+  if (Number.isNaN(start.getTime())) return "sem data";
+  return start.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  });
 }

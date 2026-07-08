@@ -1,4 +1,4 @@
-import { Check, Megaphone, Search, Upload } from "lucide-react";
+import { Check, Megaphone, Search } from "lucide-react";
 import { formatSessionName } from "./crmWhatsappModel";
 import type { CrmWhatsappCampaign } from "./crmWhatsappCampaignTypes";
 import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
@@ -106,7 +106,8 @@ export function CampaignMessagePanel({
         </label>
       </div>
       <p>
-        Variavel disponivel: <code>{"{nome}"}</code>.
+        Variavel disponivel: <code>{"{nome}"}</code>. Ela usa o nome da conversa
+        ou "cliente" quando estiver vazio.
       </p>
     </section>
   );
@@ -131,9 +132,12 @@ export function CampaignRecipientsPanel({
   selectedTagId: string;
   tags: CrmWhatsappTag[];
 }) {
+  const selectedCount = effectiveSelectedIds.size;
+
   return (
     <section className="crm-whatsapp-campaign-panel">
       <h3>Destinatarios</h3>
+      <p>{selectedCount} conversa(s) selecionada(s)</p>
       <div className="crm-whatsapp-campaign-search">
         <Search aria-hidden="true" />
         <input
@@ -173,36 +177,6 @@ export function CampaignRecipientsPanel({
           );
         })}
       </div>
-    </section>
-  );
-}
-
-export function CampaignCsvPanel({
-  csvInput,
-  matchedCount,
-  onCsvInputChange,
-}: {
-  csvInput: string;
-  matchedCount: number;
-  onCsvInputChange: (value: string) => void;
-}) {
-  return (
-    <section className="crm-whatsapp-campaign-panel">
-      <h3>
-        <Upload aria-hidden="true" />
-        CSV / lista
-      </h3>
-      <textarea
-        onChange={(event) => onCsvInputChange(event.target.value)}
-        placeholder={"telefone,nome\n5511999999999,Ana"}
-        rows={7}
-        value={csvInput}
-      />
-      <p>
-        Telefones sao usados para localizar conversas existentes. Linhas sem
-        conversa correspondente aparecem bloqueadas na revisao.
-      </p>
-      <strong>{matchedCount} conversa(s) encontradas</strong>
     </section>
   );
 }
