@@ -26,10 +26,10 @@ describe("CrmWhatsappSchedulesPage", () => {
     expect(screen.getByText("Falha futura")).toBeInTheDocument();
     expect(screen.queryByText("Ola futuro")).not.toBeInTheDocument();
 
-    await user.selectOptions(
+    await user.click(
       screen.getByLabelText("Filtrar agendamentos por conversa"),
-      "34000000-0000-4000-8000-000000000001",
     );
+    await user.click(screen.getByRole("option", { name: /Bruno/ }));
     await waitFor(() =>
       expect(callbacks.onList).toHaveBeenLastCalledWith({
         connectionId: "24000000-0000-4000-8000-000000000101",

@@ -1,6 +1,7 @@
 import type { StoreSettingsSnapshot } from "../settings/types";
 import type {
   WebsiteBuilderConfig,
+  WebsiteBuilderHeroMediaSource,
   WebsiteBuilderSection,
   WebsiteBuilderTemplateId,
   WebsiteBuilderTestimonial,
@@ -143,7 +144,12 @@ export function createWebsiteConfigFromSettings(
       body: stringOrNull(fonts.body) ?? "Inter",
       heading: stringOrNull(fonts.heading) ?? "Bricolage Grotesque",
     },
+    heroBannerUrls: readHeroBannerUrls(
+      theme.heroBannerUrls,
+      settings.publicSite.heroImageUrl,
+    ),
     heroImageUrl: settings.publicSite.heroImageUrl,
+    heroMediaSource: readHeroMediaSource(theme.heroMediaSource),
     heroSubtitle:
       stringOrNull(theme.heroSubtitle) ?? settings.publicSite.seoDescription,
     heroTitle:
@@ -192,13 +198,29 @@ export function applyWebsiteConfigToSettings(
     },
     publicSite: {
       ...settings.publicSite,
-      heroImageUrl: config.heroImageUrl ?? null,
+      heroImageUrl: config.heroBannerUrls[0] ?? config.heroImageUrl ?? null,
       layoutKey: templateId,
       seoDescription: config.seo.metaDescription ?? config.heroSubtitle ?? null,
       seoTitle: config.seo.metaTitle ?? null,
       theme: nextTheme,
     },
   };
+}
+
+function readHeroMediaSource(value: unknown): WebsiteBuilderHeroMediaSource {
+  return value === "banners" || value === "vehicles" ? value : "auto";
+}
+
+function readHeroBannerUrls(value: unknown, fallback: string | null) {
+  const urls = readStringArray(value);
+  return urls.length || !fallback ? urls : [fallback];
+}
+
+function readStringArray(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is string => typeof item === "string" && Boolean(item.trim()),
+  );
 }
 
 function readSections(value: unknown): WebsiteBuilderSection[] {

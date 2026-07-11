@@ -26,6 +26,13 @@ function ignoredFile(relativePath) {
   return relativePath.startsWith("docs/") && relativePath.endsWith(".md");
 }
 
+function scannedFile(relativePath) {
+  if (extensions.has(extensionOf(relativePath))) return true;
+  return (
+    relativePath.startsWith("tools/quality/") && relativePath.endsWith(".mjs")
+  );
+}
+
 function walk(dir, files = []) {
   for (const entry of readdirSync(dir)) {
     if (ignored.has(entry)) continue;
@@ -35,8 +42,11 @@ function walk(dir, files = []) {
 
     if (stat.isDirectory()) {
       walk(path, files);
-    } else if (extensions.has(extensionOf(path))) {
-      if (!ignoredFile(relative(root, path))) files.push(path);
+    } else {
+      const relativePath = relative(root, path);
+      if (scannedFile(relativePath) && !ignoredFile(relativePath)) {
+        files.push(path);
+      }
     }
   }
 

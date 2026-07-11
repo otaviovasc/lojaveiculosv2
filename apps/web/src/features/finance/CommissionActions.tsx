@@ -13,9 +13,13 @@ export async function cancelCommission(
   setToast: (toast: FinanceToast) => void,
   refresh: () => void,
 ) {
-  if (!api || !window.confirm(`Cancelar ${entry.name}?`)) return;
+  if (!api) return;
   await api.cancelEntry(entry.id, "Cancelado pela tela de comissoes.");
-  setToast({ kind: "success", title: "Comissao cancelada", message: entry.name });
+  setToast({
+    kind: "success",
+    title: "Comissao cancelada",
+    message: entry.name,
+  });
   refresh();
 }
 

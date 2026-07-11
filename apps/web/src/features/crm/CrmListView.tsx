@@ -236,7 +236,7 @@ export function CrmListView({
                           {stages.map((stg) => (
                             <button
                               className={
-                                "w-full text-left px-2 py-1.5 text-xs font-bold rounded flex items-center gap-2 cursor-pointer hover:bg-line/15 " +
+                                "w-full text-left px-2 py-1.5 text-xs font-bold rounded-md flex items-center gap-2 cursor-pointer hover:bg-line/15 " +
                                 (stg.id === activeStageId ? "bg-line/10" : "")
                               }
                               key={stg.id}

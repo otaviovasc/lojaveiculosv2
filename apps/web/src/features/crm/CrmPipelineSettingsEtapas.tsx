@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { CrmSelect } from "./CrmFormControls";
 import type { Pipeline, PipelineStage } from "./crmPipelineStorage";
 
 type Props = {
@@ -24,6 +25,11 @@ const PRESET_COLORS = [
   "a855f7",
   "ec4899",
 ].map((c) => "#" + c);
+const stageStatusOptions = [
+  { label: "Aberto", value: "open" },
+  { label: "Ganho", value: "won" },
+  { label: "Perdido", value: "lost" },
+];
 
 export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
   const [stages, setStages] = useState<PipelineStage[]>(pipeline.stages);
@@ -187,10 +193,9 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
 
             {/* Status Selector */}
             <div className="shrink-0">
-              <select
-                className="min-h-8 rounded-lg border border-line bg-app px-2 text-xs font-bold text-app-text outline-none focus:border-accent"
-                onChange={(e) => {
-                  const status = e.target.value;
+              <CrmSelect
+                className="min-h-8 px-2 text-xs"
+                onChange={(status) => {
                   if (isPipelineStageStatus(status)) {
                     handleUpdateStage(stage.id, {
                       leadStatus: mapStageLeadStatus(status),
@@ -198,12 +203,9 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
                     });
                   }
                 }}
+                options={stageStatusOptions}
                 value={stage.status}
-              >
-                <option value="open">Aberto</option>
-                <option value="won">Ganho</option>
-                <option value="lost">Perdido</option>
-              </select>
+              />
             </div>
 
             {/* System label or delete action */}

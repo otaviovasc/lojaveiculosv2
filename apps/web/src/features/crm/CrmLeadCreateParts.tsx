@@ -1,9 +1,13 @@
 import type {
   InputHTMLAttributes,
   ReactNode,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from "react";
+import {
+  CrmDateField,
+  CrmSelect,
+  type CrmSelectOption,
+} from "./CrmFormControls";
 
 export function CrmCreateSection({
   children,
@@ -47,15 +51,27 @@ export function CrmCreateInput({
 }
 
 export function CrmCreateSelect({
-  children,
   className,
   ...props
-}: SelectHTMLAttributes<HTMLSelectElement>) {
-  return (
-    <select className={joinClassNames("crm-input", className)} {...props}>
-      {children}
-    </select>
-  );
+}: {
+  className?: string | undefined;
+  onChange: (value: string) => void;
+  options: readonly CrmSelectOption[];
+  value: string;
+}) {
+  return <CrmSelect {...props} className={className} />;
+}
+
+export function CrmCreateDateField({
+  className,
+  ...props
+}: {
+  className?: string | undefined;
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return <CrmDateField {...props} className={className} />;
 }
 
 export function CrmCreateTextarea({

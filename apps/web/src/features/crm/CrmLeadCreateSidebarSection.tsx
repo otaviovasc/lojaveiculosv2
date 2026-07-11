@@ -16,6 +16,23 @@ type SidebarSectionProps = {
   vehicleOptions: LeadVehicleOption[];
 };
 
+const segmentOptions = [
+  { label: "Regular", value: "Regular" },
+  { label: "VIP", value: "VIP" },
+  { label: "Bronze", value: "Bronze" },
+  { label: "Prata", value: "Prata" },
+  { label: "Ouro", value: "Ouro" },
+];
+const sourceOptions: Array<{ label: string; value: CrmLeadSource }> = [
+  { label: "Manual", value: "manual" },
+  { label: "Site", value: "public_site" },
+  { label: "CRM", value: "crm" },
+  { label: "WhatsApp", value: "whatsapp" },
+  { label: "OLX", value: "olx" },
+  { label: "API externa", value: "external_api" },
+  { label: "Outro", value: "other" },
+];
+
 export function CrmLeadCreateSidebarSection({
   onChange,
   state,
@@ -66,44 +83,32 @@ export function CrmLeadCreateSidebarSection({
         <div className="crm-client-column">
           <CrmCreateField label="Segmento do cliente">
             <CrmCreateSelect
-              onChange={(event) => onChange({ segmento: event.target.value })}
+              onChange={(segmento) => onChange({ segmento })}
+              options={segmentOptions}
               value={state.segmento}
-            >
-              <option value="Regular">Regular</option>
-              <option value="VIP">VIP</option>
-              <option value="Bronze">Bronze</option>
-              <option value="Prata">Prata</option>
-              <option value="Ouro">Ouro</option>
-            </CrmCreateSelect>
+            />
           </CrmCreateField>
           <CrmCreateField label="Origem do cliente">
             <CrmCreateSelect
-              onChange={(event) =>
-                onChange({ source: event.target.value as CrmLeadSource })
+              onChange={(source) =>
+                onChange({ source: source as CrmLeadSource })
               }
+              options={sourceOptions}
               value={state.source}
-            >
-              <option value="manual">Manual</option>
-              <option value="public_site">Site</option>
-              <option value="crm">CRM</option>
-              <option value="whatsapp">WhatsApp</option>
-              <option value="olx">OLX</option>
-              <option value="external_api">API externa</option>
-              <option value="other">Outro</option>
-            </CrmCreateSelect>
+            />
           </CrmCreateField>
           <CrmCreateField label="Veiculo de interesse">
             <CrmCreateSelect
-              onChange={(event) => onChange({ listingId: event.target.value })}
+              onChange={(listingId) => onChange({ listingId })}
+              options={[
+                { label: "Selecione um veículo", value: "" },
+                ...vehicleOptions.map((vehicle) => ({
+                  label: `${vehicle.label} (${vehicle.detail})`,
+                  value: vehicle.id,
+                })),
+              ]}
               value={state.listingId}
-            >
-              <option value="">Selecione um veículo</option>
-              {vehicleOptions.map((vehicle) => (
-                <option key={vehicle.id} value={vehicle.id}>
-                  {vehicle.label} ({vehicle.detail})
-                </option>
-              ))}
-            </CrmCreateSelect>
+            />
           </CrmCreateField>
           <CrmCreateField label="Limite de credito">
             <CrmCreateInput

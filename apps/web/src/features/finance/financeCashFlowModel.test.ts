@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  categoryBreakdown,
   entrySourceKey,
   matchesFinanceDateFilter,
+  sourceBreakdown,
   summarizeCashFlow,
   urgentFinanceEntries,
 } from "./financeCashFlowModel";
@@ -29,6 +31,60 @@ describe("finance cash flow model", () => {
     expect(summary.plannedBalanceCents).toBe(150000);
     expect(summary.realizedBalanceCents).toBe(160000);
     expect(summary.pendingCents).toBe(10000);
+  });
+
+  it("keeps cancelled entries out of cash totals and breakdowns", () => {
+    const activeExpense = entry("active", "expense", "pending", 20000);
+    const cancelledExpense = entry(
+      "cancelled-cost",
+      "expense",
+      "cancelled",
+      30000,
+    );
+    const cancelledRevenue = entry(
+      "cancelled-sale",
+      "revenue",
+      "cancelled",
+      50000,
+    );
+    const summary = summarizeCashFlow([
+      entry("received", "revenue", "paid", 100000),
+      activeExpense,
+      {
+        ...cancelledExpense,
+        category: "Cancelado",
+        links: [
+          {
+            entryId: "cancelled-cost",
+            targetId: "unit_1",
+            targetType: "vehicle_unit",
+          },
+        ],
+      },
+      {
+        ...cancelledRevenue,
+        links: [
+          {
+            entryId: "cancelled-sale",
+            targetId: "sale_1",
+            targetType: "sale",
+          },
+        ],
+      },
+    ]);
+
+    expect(summary).toMatchObject({
+      cancelledCents: 80000,
+      outflowCents: 20000,
+      plannedBalanceCents: 80000,
+      revenueCents: 100000,
+    });
+    expect(
+      categoryBreakdown([activeExpense, cancelledExpense], "outflow"),
+    ).toEqual([{ amountCents: 20000, label: "Operacional" }]);
+    expect(sourceBreakdown([activeExpense, cancelledRevenue])).toEqual([
+      { amountCents: 20000, label: "Geral", source: "general" },
+    ]);
   });
 
   it("classifies linked vehicle entries as vehicle source", () => {

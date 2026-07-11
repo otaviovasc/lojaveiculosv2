@@ -28,6 +28,7 @@ export const testPublicStorefrontListing = {
   engineAspiration: "turbo" as const,
   engineDisplacement: "2.0" as const,
   fuelType: "flex",
+  heroMedia: null,
   id: "listing_1",
   manufactureYear: 2022,
   media: [],

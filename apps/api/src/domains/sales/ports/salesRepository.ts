@@ -64,6 +64,7 @@ export type SaveSalePaymentInput = {
   amountCents: number;
   dueAt?: Date | null;
   extraCents?: number;
+  id?: string;
   installments?: number | null;
   metadata?: Record<string, unknown>;
   method: string;

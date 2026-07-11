@@ -77,6 +77,25 @@ unproxied when required.
 7. Run parity checks for stores, users, permissions, inventory, leads,
    documents, billing, integrations, and audit events.
 
+### Legacy storefront banners
+
+Rehearse banner copies with a local V2 product database and the target R2
+credentials. The command is a dry run unless `--apply` is present:
+
+```bash
+pnpm run r2:migrate:legacy-banners -- \
+  --tenant-id <v2-tenant-id> \
+  --store-id <v2-store-id> \
+  --store-slug <v1-store-slug>
+```
+
+The default source set includes the shared V1 `banners/` library. Supplying
+`--store-slug` also includes that store's `tenant-banners/<slug>/` objects. Use
+`--source-prefix <prefix[,prefix...]>` to override both defaults. Review the
+reported object and asset counts, then repeat the same command with `--apply`.
+The apply pass copies objects into the V2 tenant/store prefix and upserts local
+`storefront_media_assets` rows; it refuses non-local `DATABASE_URL` values.
+
 ## Cutover Flow
 
 1. Deploy V2 to staging and run `pnpm run validate` plus smoke checks.

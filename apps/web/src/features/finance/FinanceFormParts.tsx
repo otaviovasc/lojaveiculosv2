@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import {
+  FeatureDateField,
   FeatureInput,
   FeatureSelect,
 } from "../../components/ui/FeatureControls";
@@ -57,6 +58,36 @@ export function FinanceField({
 
 export function FinanceInput(props: ComponentProps<"input">) {
   return <FeatureInput {...props} />;
+}
+
+export function FinanceDateField({
+  disabled,
+  label,
+  max,
+  min,
+  name,
+  onChange,
+  value,
+}: {
+  disabled?: boolean | undefined;
+  label: string;
+  max?: string | undefined;
+  min?: string | undefined;
+  name?: string | undefined;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <FeatureDateField
+      disabled={disabled}
+      label={label}
+      max={max}
+      min={min}
+      name={name}
+      onChange={onChange}
+      value={value}
+    />
+  );
 }
 
 type FinanceSelectProps<Value extends string = string> = {

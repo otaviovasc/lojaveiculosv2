@@ -15,6 +15,5 @@ export { Input, type InputProps } from "./input";
 export { Label, type LabelProps } from "./label";
 export { Logo, LogoWithText, LogoWithVariant, type LogoVariant } from "./logo";
 export { PageHeader, type PageHeaderProps } from "./page-header";
-export { Select, type SelectProps } from "./select";
 export { StatCard, type StatCardProps } from "./stat-card";
 export { Textarea, type TextareaProps } from "./textarea";

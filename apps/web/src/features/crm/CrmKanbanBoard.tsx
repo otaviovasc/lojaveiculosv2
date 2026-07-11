@@ -202,7 +202,7 @@ export function CrmKanbanBoard({
                       {activeMenuStageId === stage.id && (
                         <div className="absolute right-0 top-full mt-1 z-50 w-36 bg-panel border border-line rounded-lg shadow-xl p-1">
                           <button
-                            className="w-full text-left px-2.5 py-1.5 text-xs font-bold rounded hover:bg-line/15 text-app-text cursor-pointer"
+                            className="w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-md hover:bg-line/15 text-app-text cursor-pointer"
                             onClick={() => {
                               onEditStage?.(stage);
                               setActiveMenuStageId(null);

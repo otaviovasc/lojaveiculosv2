@@ -23,10 +23,8 @@ describe("WhatsappBulkBar", () => {
     renderBulkBar({ selectedCount: 2, ...callbacks });
 
     expect(screen.getByText("2 conversas")).toBeInTheDocument();
-    await user.selectOptions(
-      screen.getByLabelText("Atribuir conversas selecionadas"),
-      "2",
-    );
+    await user.click(screen.getByLabelText("Atribuir conversas selecionadas"));
+    await user.click(screen.getByRole("option", { name: "Bruno" }));
     expect(callbacks.onAssign).toHaveBeenCalledWith("2");
 
     await user.click(

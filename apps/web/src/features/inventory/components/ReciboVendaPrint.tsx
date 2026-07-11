@@ -1,4 +1,12 @@
 import type { DriverData, StoreData, VehicleData } from "./InventoryPrintTypes";
+import {
+  formatPrintCurrency,
+  getPrintStoreName,
+  getPrintVehicleName,
+  PrintReceiptHeader,
+  PrintSignatureSection,
+  PrintVehicleDescription,
+} from "./InventoryPrintReceiptParts";
 
 export function ReciboVendaPrint({
   buyer,
@@ -17,44 +25,16 @@ export function ReciboVendaPrint({
   paymentMethod?: string | undefined;
   date: string;
 }) {
-  const storeName = store.nome || "LOJA DE VEÍCULOS";
-  const vehicleName = [vehicle.brand, vehicle.model, vehicle.version]
-    .filter(Boolean)
-    .join(" ");
-
-  const formatCurrency = (val: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(val);
-  };
+  const storeName = getPrintStoreName(store);
+  const vehicleName = getPrintVehicleName(vehicle);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col items-center border-b border-black pb-4 text-center">
-        {store.logoUrl ? (
-          <img
-            src={store.logoUrl}
-            alt={storeName}
-            className="max-h-16 object-contain mb-3"
-          />
-        ) : null}
-        <h1 className="text-xl font-bold uppercase tracking-wide">
-          Recibo de Venda de Veículo
-        </h1>
-        <div className="text-xs mt-2 space-y-0.5">
-          <p className="font-bold">{storeName}</p>
-          {store.endereco && <p>{store.endereco}</p>}
-          <p>
-            {[
-              store.cnpj && `CNPJ: ${store.cnpj}`,
-              store.telefone && `Tel: ${store.telefone}`,
-            ]
-              .filter(Boolean)
-              .join(" | ")}
-          </p>
-        </div>
-      </div>
+      <PrintReceiptHeader
+        store={store}
+        storeName={storeName}
+        title="Recibo de Venda de Veículo"
+      />
 
       <div className="text-sm space-y-4">
         <p className="text-justify leading-relaxed">
@@ -65,40 +45,16 @@ export function ReciboVendaPrint({
           {buyer.address || "______________________"}, o veículo abaixo descrito
           pela importância de{" "}
           <span className="font-bold text-base">
-            {formatCurrency(salePrice)}
+            {formatPrintCurrency(salePrice)}
           </span>
           .
         </p>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
-          <h3 className="font-bold border-b border-gray-300 pb-1 uppercase text-xs text-gray-700">
-            Dados do Veículo Vendido
-          </h3>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-            <p>
-              <span className="font-bold">Veículo:</span>{" "}
-              {vehicleName || vehicle.title}
-            </p>
-            <p>
-              <span className="font-bold">Placa:</span>{" "}
-              {vehicle.plate || "________"}
-            </p>
-            <p>
-              <span className="font-bold">Ano:</span>{" "}
-              {vehicle.yearFabrication || "----"}/{vehicle.yearModel || "----"}
-            </p>
-            <p>
-              <span className="font-bold">KM:</span> {vehicle.km || "0"}
-            </p>
-            <p>
-              <span className="font-bold">Chassi:</span>{" "}
-              {vehicle.chassi || "N/A"}
-            </p>
-            <p>
-              <span className="font-bold">Cor:</span> {vehicle.color || "N/A"}
-            </p>
-          </div>
-        </div>
+        <PrintVehicleDescription
+          heading="Dados do Veículo Vendido"
+          vehicle={vehicle}
+          vehicleName={vehicleName}
+        />
 
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2 text-xs">
           <h3 className="font-bold border-b border-gray-300 pb-1 uppercase text-xs text-gray-700">
@@ -110,7 +66,7 @@ export function ReciboVendaPrint({
           </p>
           <p>
             <span className="font-bold">Valor Total:</span>{" "}
-            {formatCurrency(salePrice)}
+            {formatPrintCurrency(salePrice)}
           </p>
         </div>
 
@@ -137,23 +93,14 @@ export function ReciboVendaPrint({
         )}
       </div>
 
-      <div className="pt-12 text-center text-xs space-y-8">
-        <p>
-          {store.cidade || "Cidade"}, {date}
-        </p>
-        <div className="flex justify-around gap-12 pt-4">
-          <div className="w-1/2 flex flex-col items-center">
-            <div className="w-full border-t border-black mb-1" />
-            <p className="font-bold">{buyer.name || "Comprador"}</p>
-            <p className="text-xs">COMPRADOR (CLIENTE)</p>
-          </div>
-          <div className="w-1/2 flex flex-col items-center">
-            <div className="w-full border-t border-black mb-1" />
-            <p className="font-bold">{storeName}</p>
-            <p className="text-xs">VENDEDOR (LOJA)</p>
-          </div>
-        </div>
-      </div>
+      <PrintSignatureSection
+        buyerLabel="COMPRADOR (CLIENTE)"
+        buyerName={buyer.name}
+        date={date}
+        store={store}
+        storeLabel="VENDEDOR (LOJA)"
+        storeName={storeName}
+      />
     </div>
   );
 }

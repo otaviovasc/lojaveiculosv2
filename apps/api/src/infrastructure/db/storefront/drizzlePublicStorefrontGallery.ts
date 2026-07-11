@@ -15,6 +15,7 @@ export async function findListingGallery(
   input: { listingId: string; storeId: string; tenantId: string },
 ): Promise<{
   defaultMedia: readonly PublicVehicleMedia[];
+  heroMedia: PublicVehicleMedia | null;
   mediaGroups: readonly PublicVehicleMediaGroup[];
   thumbnailUrl: string | null;
 }> {
@@ -30,6 +31,7 @@ export async function findListingGallery(
 
   return {
     defaultMedia,
+    heroMedia: selectHeroMedia(defaultMedia, media),
     mediaGroups,
     thumbnailUrl: firstPhotoUrl(defaultMedia) ?? firstPhotoUrl(media),
   };
@@ -109,6 +111,19 @@ async function findUnitsMedia(
 
 function firstPhotoUrl(media: readonly PublicVehicleMedia[]) {
   return media.find((item) => item.kind === "photo")?.url ?? null;
+}
+
+function selectHeroMedia(
+  defaultMedia: readonly PublicVehicleMedia[],
+  media: readonly PublicVehicleMedia[],
+) {
+  return (
+    defaultMedia.find((item) => item.kind === "video") ??
+    media.find((item) => item.kind === "video") ??
+    defaultMedia.find((item) => item.kind === "photo") ??
+    media.find((item) => item.kind === "photo") ??
+    null
+  );
 }
 
 function comparePublicUnits(left: UnitRow, right: UnitRow) {

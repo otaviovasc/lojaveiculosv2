@@ -9,17 +9,21 @@ secrets for CI-only values.
 
 ## Core Runtime
 
-| Name                 | Required | Environments               | Secret | Notes                                                                      |
-| -------------------- | -------- | -------------------------- | ------ | -------------------------------------------------------------------------- |
-| `NODE_ENV`           | Yes      | staging, production        | No     | Use `production` in deployed environments.                                 |
-| `APP_ENV`            | Yes      | local, staging, production | No     | Runtime environment classifier.                                            |
-| `PORT`               | Yes      | staging, production        | No     | Railway injects this for services.                                         |
-| `PUBLIC_APP_URL`     | Yes      | staging, production        | No     | Public web URL.                                                            |
-| `API_BASE_URL`       | Yes      | staging, production        | No     | Public API URL consumed by the web app.                                    |
-| `DATABASE_URL`       | Yes      | staging, production        | Yes    | Product database URL. Prefer `${{ Postgres.DATABASE_URL }}` on Railway.    |
-| `AUDIT_DATABASE_URL` | Yes      | staging, production        | Yes    | Audit database URL. Prefer `${{ AuditPostgres.DATABASE_URL }}` on Railway. |
-| `DB_POOL_MAX`        | Yes      | staging, production        | No     | Runtime DB pool limit.                                                     |
-| `LOG_LEVEL`          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                              |
+| Name                                 | Required | Environments               | Secret | Notes                                                                      |
+| ------------------------------------ | -------- | -------------------------- | ------ | -------------------------------------------------------------------------- |
+| `NODE_ENV`                           | Yes      | staging, production        | No     | Use `production` in deployed environments.                                 |
+| `APP_ENV`                            | Yes      | local, staging, production | No     | Runtime environment classifier.                                            |
+| `PORT`                               | Yes      | staging, production        | No     | Railway injects this for services.                                         |
+| `PUBLIC_APP_URL`                     | Yes      | staging, production        | No     | Public web URL.                                                            |
+| `API_BASE_URL`                       | Yes      | staging, production        | No     | Public API URL consumed by the web app.                                    |
+| `DATABASE_URL`                       | Yes      | staging, production        | Yes    | Product database URL. Prefer `${{ Postgres.DATABASE_URL }}` on Railway.    |
+| `AUDIT_DATABASE_URL`                 | Yes      | staging, production        | Yes    | Audit database URL. Prefer `${{ AuditPostgres.DATABASE_URL }}` on Railway. |
+| `DB_POOL_MAX`                        | Yes      | staging, production        | No     | Runtime DB pool limit.                                                     |
+| `AUDIT_DB_POOL_MAX`                  | No       | staging, production        | No     | Audit DB pool limit. Defaults to `DB_POOL_MAX`.                            |
+| `DB_CLOSE_TIMEOUT_SECONDS`           | Yes      | staging, production        | No     | Graceful database close timeout in seconds.                                |
+| `SHUTDOWN_TIMEOUT_MS`                | Yes      | staging, production        | No     | Overall graceful shutdown timeout in milliseconds.                         |
+| `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                        |
+| `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                              |
 
 ## Authentication
 
@@ -72,15 +76,19 @@ variables service-scoped: only `VITE_*` public build-time values belong on the
 web service, while Clerk secrets and database credentials belong on the API
 service.
 
-| Name                         | Required | Environments | Secret | Notes                                                                                 |
-| ---------------------------- | -------- | ------------ | ------ | ------------------------------------------------------------------------------------- |
-| `LOCAL_AUTH_BYPASS`          | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                    |
-| `DEV_CLERK_USER_ID`          | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.            |
-| `DEV_STORE_SLUG`             | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.          |
-| `VITE_LOCAL_AUTH_BYPASS`     | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production. |
-| `VITE_DEV_CLERK_USER_ID`     | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                |
-| `VITE_DEV_STORE_SLUG`        | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.              |
-| Use one auth mode at a time: |
+| Name                                 | Required | Environments | Secret | Notes                                                                                 |
+| ------------------------------------ | -------- | ------------ | ------ | ------------------------------------------------------------------------------------- |
+| `LOCAL_AUTH_BYPASS`                  | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                    |
+| `DEV_CLERK_USER_ID`                  | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.            |
+| `DEV_STORE_SLUG`                     | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.          |
+| `VITE_LOCAL_AUTH_BYPASS`             | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production. |
+| `VITE_DEV_CLERK_USER_ID`             | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                |
+| `VITE_DEV_STORE_SLUG`                | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.              |
+| `VITE_DEV_CLERK_SESSION_TOKEN`       | No       | local        | Yes    | Optional local Clerk session token override for CRM API calls.                        |
+| `VITE_DEV_API_PROXY_TARGET`          | No       | local        | No     | Vite dev proxy target for `/api/v1`.                                                  |
+| `VITE_DEV_PUBLIC_STORE_HOST`         | No       | local        | No     | Forwarded storefront host used by local public-site previews.                         |
+| `DEV_SUPERVISOR_SHUTDOWN_TIMEOUT_MS` | No       | local        | No     | Local multi-process supervisor shutdown timeout.                                      |
+| Use one auth mode at a time:         |
 
 - Real Clerk QA: configure `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,
   `CLERK_AUTHORIZED_PARTIES`, `PUBLIC_APP_URL`, and Clerk redirect URLs; leave
@@ -112,6 +120,8 @@ payloads, leads, sessions, messages, activities, and idempotency through
 | `CRM_ZAPI_TEST_INSTANCE_ID`         | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                               |
 | `CRM_ZAPI_TEST_INSTANCE_TOKEN`      | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                            |
 | `CRM_ZAPI_TEST_CLIENT_TOKEN`        | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                       |
+| `CRM_ZAPI_CLIENT_TOKEN`             | No       | staging, production        | Yes    | ZAPI client token fallback for stored CRM credentials. Prefer credentials refs per connection.                                            |
+| `ZAPI_CLIENT_TOKEN`                 | No       | staging, production        | Yes    | Legacy ZAPI client-token alias. Prefer `CRM_ZAPI_CLIENT_TOKEN` for new environments.                                                      |
 | `CRM_ZAPI_TEST_PAIR_PHONE`          | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                              |
 | `CRM_ZAPI_WEBHOOK_TOKEN`            | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                     |
 | `RUN_ZAPI_E2E`                      | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                               |
@@ -173,11 +183,18 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `ASAAS_CHECKOUT_URL`                    | No       | local, staging      | No     | Optional hosted checkout base URL override. Sandbox default is inferred from `ASAAS_API_URL`. |
 | `ASAAS_BILLING_SYNC_TYPE`               | No       | local, staging      | No     | Billing sync smoke payment type. Defaults to `PIX`.                                           |
 | `ASAAS_BILLING_SYNC_NEXT_DUE_DATE`      | No       | local, staging      | No     | Optional `YYYY-MM-DD` due date for billing sync smoke.                                        |
+| `BILLING_SYNC_STORE_ID`                 | No       | local, staging      | No     | Optional store id override for the billing sync job.                                          |
+| `BILLING_SYNC_TENANT_ID`                | No       | local, staging      | No     | Optional tenant id override for the billing sync job.                                         |
 | `ASAAS_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | Asaas webhook secret.                                                                         |
 | `ASAAS_WEBHOOK_URL`                     | Yes      | staging, production | No     | Public URL for `POST /api/v1/billing/webhooks/asaas`.                                         |
 | `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when SPEDY config is complete.                                                |
 | `SPEDY_API_URL`                         | Yes      | staging, production | No     | SPEDY API base URL.                                                                           |
 | `SPEDY_API_TOKEN`                       | Yes      | staging, production | Yes    | SPEDY API token.                                                                              |
+| `SPEDY_AUTH_HEADER`                     | No       | staging, production | No     | Header name used for SPEDY authentication. Defaults to `Authorization`.                       |
+| `SPEDY_AUTH_SCHEME`                     | No       | staging, production | No     | Authorization scheme used with `SPEDY_API_TOKEN`. Defaults to `Bearer`.                       |
+| `SPEDY_ISSUE_PATH`                      | Yes      | staging, production | No     | Provider path for issuing fiscal documents.                                                   |
+| `SPEDY_CANCEL_PATH`                     | Yes      | staging, production | No     | Provider path for canceling fiscal documents.                                                 |
+| `SPEDY_STATUS_PATH`                     | Yes      | staging, production | No     | Provider path for polling fiscal document status.                                             |
 | `SPEDY_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | SPEDY webhook secret.                                                                         |
 | `API_PLACA_KEY`                         | No       | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.                                              |
 | `API_PLACA_BASE_URL`                    | No       | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`.                                            |
@@ -221,6 +238,7 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `FIPE_CATALOG_SYNC_REFERENCE_CODE`     | No       | local, staging, production | No     | Optional FIPE reference month code. Defaults to the latest code returned by `/references`.    |
 | `FIPE_CATALOG_SYNC_REFRESH_AFTER_DAYS` | No       | local, staging, production | No     | Refresh existing version years after this age. Defaults to `30`; `0` only fills missing rows. |
 | `FIPE_CATALOG_SYNC_REFRESH_EXISTING`   | No       | local, staging, production | No     | Set `true` to force a full refresh of existing version-year lookups.                          |
+| `FIPE_CATALOG_NORMALIZE_DRY_RUN`       | No       | local, staging, production | No     | Dry-run flag for the vehicle catalog name-normalization job.                                  |
 
 Parallelum FIPE brand responses currently include `code` and `name`, but no
 logo URL. The catalog sync enriches brands from the legacy `brands.json` logo

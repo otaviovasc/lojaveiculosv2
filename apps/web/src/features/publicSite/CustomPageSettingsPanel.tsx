@@ -5,6 +5,7 @@ import type {
 } from "@lojaveiculosv2/shared";
 import { Copy } from "lucide-react";
 import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -135,24 +136,20 @@ function PageTypographyFields({
       </p>
       <div className="space-y-2">
         <Label>Fonte da página</Label>
-        <select
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          onChange={(event) =>
+        <FeatureSelect
+          className="h-10 rounded-md border-input bg-background text-foreground"
+          onChange={(fontFamily) =>
             onDraftChange({
               ...draft,
-              fontFamily:
-                event.target.value === "inherit" ? null : event.target.value,
+              fontFamily: fontFamily === "inherit" ? null : fontFamily,
             })
           }
+          options={[
+            { label: "Usar fonte do storefront", value: "inherit" },
+            ...storefrontFontOptions,
+          ]}
           value={draft.fontFamily ?? "inherit"}
-        >
-          <option value="inherit">Usar fonte do storefront</option>
-          {storefrontFontOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        />
         <p className="text-xs text-muted-foreground">
           Padrão atual: {config.fonts.body}
         </p>

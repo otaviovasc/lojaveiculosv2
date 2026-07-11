@@ -20,20 +20,3 @@ export function WebsiteBuilderImageUrlField({
     />
   );
 }
-
-export function WebsiteBuilderHeroImageField({
-  onChange,
-  value,
-}: {
-  onChange: (value: string | null) => void;
-  value: string;
-}) {
-  return (
-    <StorefrontImagePicker
-      imageClassName="h-40 w-full rounded-lg"
-      label="Imagem de Fundo"
-      onChange={onChange}
-      value={value}
-    />
-  );
-}

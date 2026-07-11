@@ -5,6 +5,7 @@ import type { SalePaymentLine } from "./types";
 
 export function PaymentRow({
   index,
+  locked = false,
   onChange,
   onRemove,
   payment,
@@ -12,10 +13,18 @@ export function PaymentRow({
   return (
     <div className="sales-payment-row">
       <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
-        Método de Pagamento
+        <span className="flex items-center justify-between gap-2">
+          Método de Pagamento
+          {locked ? (
+            <span className="text-accent normal-case tracking-normal">
+              Sinal reservado
+            </span>
+          ) : null}
+        </span>
         <FeatureSelect
           ariaLabel="Método de pagamento"
           className="sales-input"
+          disabled={locked}
           onChange={(method) => onChange({ ...payment, method })}
           options={paymentMethods.map((method) => ({
             label: formatPaymentMethod(method),
@@ -25,6 +34,7 @@ export function PaymentRow({
         />
       </label>
       <MoneyInput
+        disabled={locked}
         label="Valor Principal"
         onChange={(value) =>
           onChange({
@@ -36,6 +46,7 @@ export function PaymentRow({
         value={payment.principalCents}
       />
       <MoneyInput
+        disabled={locked}
         label="Taxas / Extras"
         onChange={(value) =>
           onChange({
@@ -49,7 +60,13 @@ export function PaymentRow({
       <button
         aria-label={`Remover pagamento ${index + 1}`}
         className="sales-secondary-button !min-h-[2.75rem] hover:!border-rose-500 hover:!text-rose-500 shrink-0"
+        disabled={locked}
         onClick={onRemove}
+        title={
+          locked
+            ? "Cancele a reserva para corrigir o sinal reservado."
+            : undefined
+        }
         type="button"
       >
         <Trash2 className="size-4" />
@@ -77,12 +94,18 @@ export function newPayment(
   };
 }
 
-function MoneyInput({ label, onChange, value }: MoneyInputProps) {
+function MoneyInput({
+  disabled = false,
+  label,
+  onChange,
+  value,
+}: MoneyInputProps) {
   return (
     <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
       {label}
       <input
         className="sales-input"
+        disabled={disabled}
         inputMode="numeric"
         onChange={(event) => onChange(parseCurrencyInput(event.target.value))}
         placeholder="R$ 0,00"
@@ -117,12 +140,14 @@ function formatPaymentMethod(method: string): string {
 
 type PaymentRowProps = {
   index: number;
+  locked?: boolean;
   onChange: (payment: SalePaymentLine) => void;
   onRemove: () => void;
   payment: SalePaymentLine;
 };
 
 type MoneyInputProps = {
+  disabled?: boolean;
   label: string;
   onChange: (value: number | null) => void;
   value: number;

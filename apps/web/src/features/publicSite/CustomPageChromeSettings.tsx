@@ -1,5 +1,6 @@
 import type { StorefrontCustomPage } from "@lojaveiculosv2/shared";
 import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -40,20 +41,20 @@ export function PageChromeFields({
       />
       <div className="space-y-2">
         <Label>Estilo do topo</Label>
-        <select
-          className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm"
-          onChange={(event) =>
+        <FeatureSelect
+          className="h-10 rounded-lg border-border bg-background text-sm"
+          onChange={(headerVariant) =>
             updateChrome({
-              headerVariant: event.target.value as
-                "glass" | "minimal" | "solid",
+              headerVariant,
             })
           }
+          options={[
+            { label: "Vidro leve", value: "minimal" },
+            { label: "Vidro forte", value: "glass" },
+            { label: "Sólido", value: "solid" },
+          ]}
           value={pageChrome.headerVariant ?? "minimal"}
-        >
-          <option value="minimal">Vidro leve</option>
-          <option value="glass">Vidro forte</option>
-          <option value="solid">Sólido</option>
-        </select>
+        />
       </div>
       {pageChrome.headerVariant === "solid" ? (
         <ColorTextField

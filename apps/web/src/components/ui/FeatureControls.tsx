@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { CustomSelect, type CustomSelectOption } from "./CustomSelect";
+import { DatePickerField } from "./DatePickerField";
 import { cx, type FeatureIcon } from "./featureShared";
 
 export function FeatureInput(props: ComponentProps<"input">) {
@@ -58,14 +59,14 @@ export function FeatureSelect<Value extends string = string>({
 }: {
   ariaLabel?: string;
   className?: string | undefined;
-  defaultValue?: Value;
+  defaultValue?: Value | undefined;
   disabled?: boolean | undefined;
   leftIcon?: ReactNode | undefined;
-  name?: string;
+  name?: string | undefined;
   onChange?: (value: Value) => void;
   options: readonly CustomSelectOption<Value>[];
-  placeholder?: string;
-  value?: Value;
+  placeholder?: string | undefined;
+  value?: Value | undefined;
 }) {
   return (
     <CustomSelect
@@ -76,6 +77,54 @@ export function FeatureSelect<Value extends string = string>({
         className,
       )}
     />
+  );
+}
+
+export function FeatureDateField({
+  align = "left",
+  className,
+  disabled,
+  label,
+  max,
+  min,
+  name,
+  onChange,
+  value,
+}: {
+  align?: "left" | "right" | undefined;
+  className?: string | undefined;
+  disabled?: boolean | undefined;
+  label: string;
+  max?: string | undefined;
+  min?: string | undefined;
+  name?: string | undefined;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  return (
+    <div className={cx("inline-flex items-center gap-1", className)}>
+      {name ? <input name={name} type="hidden" value={value} /> : null}
+      <DatePickerField
+        align={align}
+        isDisabled={disabled}
+        label={label}
+        maxDate={parseDateInputValue(max)}
+        minDate={parseDateInputValue(min)}
+        onChange={(date) => onChange(formatDateInputValue(date))}
+        value={parseDateInputValue(value)}
+      />
+      {value ? (
+        <button
+          aria-label={`Limpar ${label}`}
+          className="inline-flex size-8 items-center justify-center rounded-lg border border-line bg-app text-muted hover:text-app-text"
+          disabled={disabled}
+          onClick={() => onChange("")}
+          type="button"
+        >
+          <X aria-hidden="true" className="size-3.5" />
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -99,7 +148,7 @@ export function FeatureSegmentedControl<Value extends string>({
   return (
     <div
       aria-label={ariaLabel}
-      className="flex w-full max-w-full items-center rounded-lg border border-line/60 bg-app-elevated p-0.5 sm:gap-1"
+      className="flex w-full max-w-full items-center rounded-[10px] border border-line/60 bg-app-elevated p-0.5 sm:gap-1"
       role="group"
     >
       {options.map((option) => {
@@ -174,4 +223,27 @@ export function FeatureTabs<Value extends string>({
       })}
     </div>
   );
+}
+
+function parseDateInputValue(value: string | undefined) {
+  if (!value) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (
+    date.getFullYear() !== Number(year) ||
+    date.getMonth() !== Number(month) - 1 ||
+    date.getDate() !== Number(day)
+  ) {
+    return null;
+  }
+  return date;
+}
+
+function formatDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }

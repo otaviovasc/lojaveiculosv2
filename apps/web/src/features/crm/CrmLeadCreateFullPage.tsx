@@ -54,14 +54,18 @@ export function CrmLeadCreateFullPage({
     whatsapp: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [validationMessage, setValidationMessage] = useState<string | null>(
+    null,
+  );
 
   const handleUpdateState = (updates: Partial<LeadCreateFullState>) => {
     setState((current) => ({ ...current, ...updates }));
+    if (updates.buyerName !== undefined) setValidationMessage(null);
   };
 
   const handleCreate = async () => {
     if (!state.buyerName.trim()) {
-      window.alert("Nome completo e obrigatorio.");
+      setValidationMessage("Nome completo e obrigatorio.");
       return;
     }
 
@@ -116,6 +120,14 @@ export function CrmLeadCreateFullPage({
           </div>
         </div>
       </header>
+      {validationMessage ? (
+        <p
+          className="rounded-lg border border-line bg-app p-3 text-sm font-black text-danger"
+          role="alert"
+        >
+          {validationMessage}
+        </p>
+      ) : null}
 
       <div className="crm-client-grid">
         <div className="crm-client-column">

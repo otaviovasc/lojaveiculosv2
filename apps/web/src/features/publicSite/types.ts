@@ -13,6 +13,7 @@ export type PublicVehicleListing = {
   engineAspiration: VehicleEngineAspiration | null;
   engineDisplacement: VehicleEngineDisplacement | null;
   fuelType: string | null;
+  heroMedia: PublicVehicleMedia | null;
   manufactureYear: number | null;
   mileageKm: number | null;
   modelYear: number | null;

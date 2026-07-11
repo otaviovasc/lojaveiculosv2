@@ -1,4 +1,4 @@
-import { Banknote, Check, Coins, FileText, Plus } from "lucide-react";
+import { Banknote, FileText } from "lucide-react";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { kindLabel } from "../documents/documentLabels";
 import type { DocumentKind } from "../documents/types";
@@ -6,10 +6,9 @@ import {
   defaultRequiredDocumentKinds,
   formatCents,
   parseCurrencyInput,
-  paymentPrincipalTotal,
   requiredDocumentKinds,
+  saleSourceOptions,
 } from "./salesModel";
-import { PaymentRow, newPayment } from "./SalePaymentRow";
 import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import type { SaleRecord } from "./types";
 export { ContextSection } from "./SaleContextSection";
@@ -53,102 +52,6 @@ export function TermsSection({ sale, update }: SectionProps) {
           value={String(sale.saleSourceSnapshot.source ?? "lead")}
         />
       </SaleField>
-    </SaleFormSection>
-  );
-}
-
-export function PaymentsSection({ sale, update }: SectionProps) {
-  const addPayment = () =>
-    update((draft) => ({
-      ...draft,
-      payments: [
-        ...draft.payments,
-        newPayment(draft.salePriceCents ?? 0, draft.payments.length),
-      ],
-    }));
-
-  const totalPaid = paymentPrincipalTotal(sale);
-  const salePrice = sale.salePriceCents ?? 0;
-  const balance = salePrice - totalPaid;
-  const progressPercent =
-    salePrice > 0 ? Math.min(100, (totalPaid / salePrice) * 100) : 0;
-
-  return (
-    <SaleFormSection
-      title="Condições de Pagamento"
-      icon={<Coins className="size-4.5 text-accent" />}
-    >
-      <div className="md:col-span-2 flex flex-col gap-4">
-        {/* Payment Balance Progress Indicator */}
-        <div className="sales-glass-panel p-4 bg-app-elevated/40 border border-line flex flex-col gap-3">
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="text-muted uppercase tracking-wider">
-              Progressão de Quitação
-            </span>
-            <span className="text-app-text font-black">
-              {formatCents(totalPaid)} de {formatCents(salePrice)} (
-              {progressPercent.toFixed(0)}%)
-            </span>
-          </div>
-          <div className="sales-progress-bar-container">
-            <div
-              className={
-                "sales-progress-bar-fill " +
-                (balance <= 0 ? "bg-emerald-500" : "bg-accent")
-              }
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <div className="flex justify-between items-center text-xs font-bold">
-            <span className="text-muted">
-              Total Lançado: {sale.payments.length} parcelas
-            </span>
-            {balance <= 0 ? (
-              <span className="text-emerald-500 font-black flex items-center gap-1 uppercase tracking-wider">
-                <Check className="size-3" /> Valor Total Coberto
-              </span>
-            ) : (
-              <span className="text-rose-500 font-black uppercase tracking-wider">
-                Faltam: {formatCents(balance)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {sale.payments.map((payment, index) => (
-            <PaymentRow
-              index={index}
-              key={payment.id}
-              onChange={(next) =>
-                update((draft) => ({
-                  ...draft,
-                  payments: draft.payments.map((item, itemIndex) =>
-                    itemIndex === index ? next : item,
-                  ),
-                }))
-              }
-              onRemove={() =>
-                update((draft) => ({
-                  ...draft,
-                  payments: draft.payments.filter(
-                    (_, itemIndex) => itemIndex !== index,
-                  ),
-                }))
-              }
-              payment={payment}
-            />
-          ))}
-          <button
-            className="sales-secondary-button w-full border-dashed"
-            onClick={addPayment}
-            type="button"
-          >
-            <Plus className="size-4 text-accent" />
-            Adicionar Linha de Pagamento
-          </button>
-        </div>
-      </div>
     </SaleFormSection>
   );
 }
@@ -203,14 +106,6 @@ export function DocumentsSection({ sale, update }: SectionProps) {
 }
 
 type SectionProps = { sale: SaleRecord; update: UpdateSale };
-
-const saleSourceOptions = [
-  { label: "Lead Digital", value: "lead" },
-  { label: "Loja Física (Walk-in)", value: "walk_in" },
-  { label: "WhatsApp Comercial", value: "whatsapp" },
-  { label: "Marketplace Externo", value: "marketplace" },
-  { label: "Outro Canal", value: "custom" },
-];
 
 function formatDocumentKindLabel(kind: string): string {
   switch (kind) {

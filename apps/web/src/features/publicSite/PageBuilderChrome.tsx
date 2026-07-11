@@ -3,6 +3,10 @@ import type {
   StorefrontBuilderConfig,
   StorefrontCustomPage,
 } from "@lojaveiculosv2/shared";
+import {
+  contrastRatio as calculateContrastRatio,
+  parseHexColor,
+} from "../../lib/colors";
 
 export function createPageBackgroundStyle(
   pageBackground: StorefrontBuilderBackground,
@@ -178,8 +182,7 @@ function textColorForBackground(color: string | null | undefined) {
   if (!color?.startsWith("#")) return null;
   const rgb = parseHexColor(color);
   if (!rgb) return null;
-  const luminance =
-    (0.299 * rgb.red + 0.587 * rgb.green + 0.114 * rgb.blue) / 255;
+  const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
   return luminance > 0.55 ? "black" : "white";
 }
 
@@ -202,48 +205,5 @@ function contrastRatio(foreground: string, background: string) {
   const foregroundRgb = parseHexColor(foreground);
   const backgroundRgb = parseHexColor(background);
   if (!foregroundRgb || !backgroundRgb) return null;
-  const foregroundLuminance = relativeLuminance(foregroundRgb);
-  const backgroundLuminance = relativeLuminance(backgroundRgb);
-  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
-  const darker = Math.min(foregroundLuminance, backgroundLuminance);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function relativeLuminance({
-  blue,
-  green,
-  red,
-}: {
-  blue: number;
-  green: number;
-  red: number;
-}) {
-  const channel = (value: number) => {
-    const channel = value / 255;
-    return channel <= 0.03928
-      ? channel / 12.92
-      : ((channel + 0.055) / 1.055) ** 2.4;
-  };
-  const r = channel(red);
-  const g = channel(green);
-  const b = channel(blue);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-}
-
-function parseHexColor(color: string | null | undefined) {
-  if (!color?.startsWith("#")) return null;
-  const hex = color.slice(1);
-  const normalized =
-    hex.length === 3
-      ? hex
-          .split("")
-          .map((part) => part + part)
-          .join("")
-      : hex;
-  if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
-  return {
-    blue: Number.parseInt(normalized.slice(4, 6), 16),
-    green: Number.parseInt(normalized.slice(2, 4), 16),
-    red: Number.parseInt(normalized.slice(0, 2), 16),
-  };
+  return calculateContrastRatio(foregroundRgb, backgroundRgb);
 }

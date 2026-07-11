@@ -46,10 +46,9 @@ describe("CrmWhatsappIntegrationsPage", () => {
       }),
     );
     expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+    expect(screen.getAllByText("POST")[0]).toBeVisible();
     expect(
-      screen.getAllByText(
-        "POST /api/v1/crm/whatsapp/integrations/bot/actions",
-      )[0],
+      screen.getAllByText("/api/v1/crm/whatsapp/integrations/bot/actions")[0],
     ).toBeVisible();
     expect(
       screen.getAllByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)[0],

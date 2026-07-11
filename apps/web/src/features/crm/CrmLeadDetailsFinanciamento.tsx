@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Save } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { CrmSelect } from "./CrmFormControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import {
+  financingTermOptions,
   getPrimaryLeadVehiclePriceCents,
   type FinancingSimulationDraft,
 } from "./crmLeadData";
@@ -125,17 +127,11 @@ export function CrmLeadDetailsFinanciamento({
               <span className="text-xs font-black text-app-text">
                 Nº de Parcelas
               </span>
-              <select
-                className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none"
-                onChange={(e) => setMonths(Number(e.target.value))}
-                value={months}
-              >
-                <option value={12}>12x</option>
-                <option value={24}>24x</option>
-                <option value={36}>36x</option>
-                <option value={48}>48x</option>
-                <option value={60}>60x</option>
-              </select>
+              <CrmSelect
+                onChange={(value) => setMonths(Number(value))}
+                options={financingTermOptions}
+                value={String(months)}
+              />
             </label>
 
             <label className="flex flex-col gap-1">

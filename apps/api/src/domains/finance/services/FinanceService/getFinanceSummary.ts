@@ -69,27 +69,30 @@ function summarizeFinanceEntries(
   entries: readonly FinanceEntry[],
 ): FinanceSummary {
   const now = Date.now();
+  const activeEntries = entries.filter((entry) => entry.status !== "cancelled");
   return {
     cancelledAmountCents: sum(
       entries.filter((entry) => entry.status === "cancelled"),
     ),
     commissionAmountCents: sum(
-      entries.filter((entry) => entry.type === "commission"),
+      activeEntries.filter((entry) => entry.type === "commission"),
     ),
     expenseAmountCents: sum(
-      entries.filter((entry) => entry.type === "expense"),
+      activeEntries.filter((entry) => entry.type === "expense"),
     ),
     overdueAmountCents: sum(
-      entries.filter(
+      activeEntries.filter(
         (entry) => entry.status === "pending" && isOverdue(entry.dueAt, now),
       ),
     ),
-    paidAmountCents: sum(entries.filter((entry) => entry.status === "paid")),
+    paidAmountCents: sum(
+      activeEntries.filter((entry) => entry.status === "paid"),
+    ),
     pendingAmountCents: sum(
-      entries.filter((entry) => entry.status === "pending"),
+      activeEntries.filter((entry) => entry.status === "pending"),
     ),
     revenueAmountCents: sum(
-      entries.filter((entry) => entry.type === "revenue"),
+      activeEntries.filter((entry) => entry.type === "revenue"),
     ),
   };
 }

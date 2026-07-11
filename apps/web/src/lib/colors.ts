@@ -1,4 +1,4 @@
-type Rgb = {
+export type Rgb = {
   r: number;
   g: number;
   b: number;
@@ -36,7 +36,8 @@ function isDarkThemeActive(): boolean {
   );
 }
 
-function parseHexColor(hexColor: string): Rgb | null {
+export function parseHexColor(hexColor: string | null | undefined): Rgb | null {
+  if (!hexColor) return null;
   const trimmed = hexColor.trim();
   if (!/^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(trimmed)) return null;
 
@@ -79,7 +80,7 @@ function mixColor(rgb: Rgb, target: Rgb, weight: number): Rgb {
   };
 }
 
-function contrastRatio(foreground: Rgb, background: Rgb): number {
+export function contrastRatio(foreground: Rgb, background: Rgb): number {
   const lighter = Math.max(
     relativeLuminance(foreground),
     relativeLuminance(background),
@@ -92,7 +93,7 @@ function contrastRatio(foreground: Rgb, background: Rgb): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-function relativeLuminance(rgb: Rgb): number {
+export function relativeLuminance(rgb: Rgb): number {
   const [r, g, b] = [rgb.r, rgb.g, rgb.b].map((channel) => {
     const normalized = channel / 255;
     return normalized <= 0.03928

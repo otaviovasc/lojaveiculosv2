@@ -18,6 +18,7 @@ import {
   stockTitle,
   type VisibleStorefrontSection,
 } from "./publicStorefrontTheme";
+import { PublicStorefrontHeroMedia } from "./PublicStorefrontHeroMedia";
 import type {
   PublicStorefrontData,
   PublicStorefrontSettingsData,
@@ -49,22 +50,16 @@ export function HeroSection({
 
   const firstListing =
     data.listings && data.listings.length > 0 ? data.listings[0] : null;
-  const heroImage =
-    data.settings.site.heroImageUrl ?? firstListing?.thumbnailUrl;
 
   return (
     <section className="relative min-h-[85vh] lg:h-[90vh] flex items-center justify-center overflow-hidden bg-zinc-950 text-white">
       {/* Full-bleed background image with dark overlay */}
       <div className="absolute inset-0 z-0">
-        {heroImage ? (
-          <img
-            alt=""
-            className="size-full object-cover opacity-60 transition-transform duration-[4000ms] scale-105 hover:scale-100"
-            src={heroImage}
-          />
-        ) : (
-          <div className="size-full bg-gradient-to-br from-zinc-900 to-zinc-950" />
-        )}
+        <PublicStorefrontHeroMedia
+          heroImageUrl={data.settings.site.heroImageUrl}
+          listings={data.listings}
+          theme={rawTheme}
+        />
         {/* Flat dark overlay inside hero only */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-transparent z-1" />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent z-1" />

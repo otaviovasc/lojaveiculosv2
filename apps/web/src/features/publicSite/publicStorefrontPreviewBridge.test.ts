@@ -10,7 +10,12 @@ describe("public storefront preview bridge", () => {
     const accentColor = ["#", "C9A84C"].join("");
     const preview = mergeWebsiteBuilderPreviewPayload(null, {
       accentColor,
+      heroBannerUrls: [
+        "https://cdn.local/banner-1.jpg",
+        "https://cdn.local/banner-2.jpg",
+      ],
       heroImageUrl: "https://cdn.local/preview-hero.jpg",
+      heroMediaSource: "banners",
       heroSubtitle: "Atendimento direto",
       heroTitle: "Garagem premium",
       logoUrl: "https://cdn.local/logo.png",
@@ -30,11 +35,16 @@ describe("public storefront preview bridge", () => {
 
     expect(data.settings.site.layoutKey).toBe("aurora");
     expect(data.settings.site.heroImageUrl).toBe(
-      "https://cdn.local/preview-hero.jpg",
+      "https://cdn.local/banner-1.jpg",
     );
     expect(data.settings.site.seoDescription).toBe("Atendimento direto");
     expect(data.settings.site.theme).toMatchObject({
       accentColor,
+      heroBannerUrls: [
+        "https://cdn.local/banner-1.jpg",
+        "https://cdn.local/banner-2.jpg",
+      ],
+      heroMediaSource: "banners",
       headline: "Garagem premium",
       logoUrl: "https://cdn.local/logo.png",
     });
@@ -90,6 +100,7 @@ function createStorefrontData(): PublicStorefrontPageData {
         engineAspiration: "turbo",
         engineDisplacement: "1.0",
         fuelType: "flex",
+        heroMedia: null,
         manufactureYear: 2024,
         mileageKm: 0,
         modelYear: 2025,

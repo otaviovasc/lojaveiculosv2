@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { CrmSelect } from "./CrmFormControls";
 import type { CrmWhatsappCampaignRecipient } from "./crmWhatsappCampaignTypes";
 import { formatSessionName } from "./crmWhatsappModel";
 import type { CrmWhatsappSession } from "./crmWhatsappTypes";
@@ -64,19 +65,14 @@ export function CampaignRecipientPreview({
               value={query}
             />
           </div>
-          <select
-            aria-label="Filtrar destinatarios da campanha por status"
-            onChange={(event) =>
-              setStatusFilter(event.target.value as RecipientStatusFilter)
+          <CrmSelect
+            ariaLabel="Filtrar destinatarios da campanha por status"
+            onChange={(value) =>
+              setStatusFilter(value as RecipientStatusFilter)
             }
+            options={statusFilters}
             value={statusFilter}
-          >
-            {statusFilters.map((filter) => (
-              <option key={filter.value} value={filter.value}>
-                {filter.label}
-              </option>
-            ))}
-          </select>
+          />
         </div>
       </div>
       <div>

@@ -69,6 +69,15 @@ function createPublicContext(audit = { record: vi.fn(async () => undefined) }) {
 function createRepository(
   options: { includeStore?: boolean } = {},
 ): PublicStorefrontRepository {
+  const heroMedia = {
+    altText: "Front photo",
+    displayOrder: 0,
+    kind: "photo" as const,
+    unitColorName: "Preto",
+    unitId: "unit_1",
+    url: "https://cdn.local/front.jpg",
+  };
+
   return {
     findPublicListingDetail: vi.fn(async () => null),
     findPublicSiteBySlug: vi.fn(async () => null),
@@ -90,6 +99,7 @@ function createRepository(
         engineAspiration: "turbo" as const,
         engineDisplacement: "2.0" as const,
         fuelType: "flex",
+        heroMedia,
         id: "listing_1",
         manufactureYear: 2022,
         mileageKm: 32000,

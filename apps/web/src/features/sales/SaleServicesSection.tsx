@@ -5,6 +5,7 @@ import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import { SaleServicesPaymentsSection } from "./SaleServicesPaymentsSection";
 import { SaleServicesTabs } from "./SaleServicesTabs";
 import { formatCents, parseCurrency } from "./saleServicesFormat";
+import { saleSourceOptions } from "./salesModel";
 import { asSnapshotRecord } from "./salesSnapshot";
 import type {
   ActiveServiceTab,
@@ -104,11 +105,3 @@ export function ServicesSection({
     </div>
   );
 }
-
-const saleSourceOptions = [
-  { label: "Lead Digital", value: "lead" },
-  { label: "Loja Física (Walk-in)", value: "walk_in" },
-  { label: "WhatsApp Comercial", value: "whatsapp" },
-  { label: "Marketplace Externo", value: "marketplace" },
-  { label: "Outro Canal", value: "custom" },
-];

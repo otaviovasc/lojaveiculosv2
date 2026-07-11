@@ -9,10 +9,10 @@ import {
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { StorefrontCustomizationModule } from "../publicSite/StorefrontCustomizationModule";
 import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
-import { createSettingsApi, type SettingsApi } from "./apiClient";
+import type { SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
 import { SettingsStoreProfilePanel } from "./SettingsStoreProfilePanel";
-import { createSettingsApiOptions } from "./runtimeApi";
+import { createRuntimeSettingsApi } from "./runtimeSettingsApi";
 import { createStoreSettingsPatch } from "./settingsPatch";
 import type {
   RoleManagementView,
@@ -216,29 +216,4 @@ function errorMessage(error: unknown) {
     error,
     "Nao foi possivel carregar as configuracoes.",
   );
-}
-
-function createRuntimeSettingsApi(): SettingsApi {
-  return {
-    getStoreSettings: async () =>
-      createSettingsApi(await createSettingsApiOptions()).getStoreSettings(),
-    getRoleManagement: async () =>
-      createSettingsApi(await createSettingsApiOptions()).getRoleManagement(),
-    inviteStoreMember: async (input) =>
-      createSettingsApi(await createSettingsApiOptions()).inviteStoreMember(
-        input,
-      ),
-    resendInvitation: async (invitationId) =>
-      createSettingsApi(await createSettingsApiOptions()).resendInvitation(
-        invitationId,
-      ),
-    updateMembershipAccess: async (membershipId, input) =>
-      createSettingsApi(
-        await createSettingsApiOptions(),
-      ).updateMembershipAccess(membershipId, input),
-    updateStoreSettings: async (input) =>
-      createSettingsApi(await createSettingsApiOptions()).updateStoreSettings(
-        input,
-      ),
-  };
 }

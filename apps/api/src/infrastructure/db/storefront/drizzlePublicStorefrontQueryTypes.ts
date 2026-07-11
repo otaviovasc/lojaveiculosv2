@@ -20,6 +20,7 @@ export type ListingRow = {
   doors: number | null;
   engineAspiration: VehicleEngineAspiration | null;
   engineDisplacement: VehicleEngineDisplacement | null;
+  featuredUntil: Date | null;
   fuelType: string | null;
   listingId: string;
   manufactureYear: number | null;
@@ -80,13 +81,13 @@ type SelectOrderBuilder<Row> = {
 };
 
 type SelectWhereResultBuilder<Row> = SelectLimitBuilder<Row> & {
-  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
+  orderBy: (...columns: unknown[]) => SelectOrderBuilder<Row>;
 };
 
 type SelectWhereBuilder<Row> = {
   innerJoin: (table: unknown, condition: unknown) => SelectWhereBuilder<Row>;
   leftJoin: (table: unknown, condition: unknown) => SelectWhereBuilder<Row>;
-  orderBy: (column: unknown) => SelectOrderBuilder<Row>;
+  orderBy: (...columns: unknown[]) => SelectOrderBuilder<Row>;
   where: (condition: unknown) => SelectWhereResultBuilder<Row>;
 };
 
@@ -124,6 +125,7 @@ export type DrizzlePublicStorefrontClient = {
       doors: unknown;
       engineAspiration: unknown;
       engineDisplacement: unknown;
+      featuredUntil: unknown;
       fuelType: unknown;
       listingId: unknown;
       manufactureYear: unknown;

@@ -3,6 +3,26 @@ import { basename, join } from "node:path";
 
 const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
   .pathname;
+const nonEntrypointFiles = new Set([
+  "auditVehicleServiceEvent.ts",
+  "leadVisitSupport.ts",
+  "marketplaceAccountPreflight.ts",
+  "marketplaceAccountPreflightMessages.ts",
+  "marketplaceErrors.ts",
+  "marketplaceJobPermissions.ts",
+  "marketplaceStockPlanRules.ts",
+  "marketplaceStockPlanTypes.ts",
+  "runMarketplaceSyncJobAudit.ts",
+  "sendWhatsappVehicleSupport.ts",
+  "serviceSupport.ts",
+  "testSupport.ts",
+  "types.ts",
+  "whatsappMessageActionSupport.ts",
+  "whatsappQuickMessageMedia.ts",
+  "whatsappQuickMessageModels.ts",
+  "whatsappQuickMessageServiceSupport.ts",
+  "whatsappSessionMutationSupport.ts",
+]);
 
 function walk(dir, files = []) {
   for (const entry of readdirSync(dir)) {
@@ -21,33 +41,24 @@ function walk(dir, files = []) {
 
 function isServiceFile(file) {
   const fileName = basename(file);
-  const nonEntrypointFiles = new Set([
-    "auditVehicleServiceEvent.ts",
-    "index.ts",
-    "leadVisitSupport.ts",
-    "marketplaceAccountPreflight.ts",
-    "marketplaceAccountPreflightMessages.ts",
-    "marketplaceErrors.ts",
-    "marketplaceJobPermissions.ts",
-    "marketplaceStockPlanRules.ts",
-    "marketplaceStockPlanTypes.ts",
-    "runMarketplaceSyncJobAudit.ts",
-    "sendWhatsappVehicleSupport.ts",
-    "serviceSupport.ts",
-    "testSupport.ts",
-    "types.ts",
-    "whatsappMessageActionSupport.ts",
-    "whatsappQuickMessageMedia.ts",
-    "whatsappQuickMessageModels.ts",
-    "whatsappQuickMessageServiceSupport.ts",
-    "whatsappSessionMutationSupport.ts",
-  ]);
   return file.includes("/services/") && !nonEntrypointFiles.has(fileName);
 }
 
 const failures = [];
+const domainFiles = walk(domainsRoot);
+const serviceFileNames = new Set(
+  domainFiles
+    .filter((file) => file.includes("/services/"))
+    .map((file) => basename(file)),
+);
 
-for (const file of walk(domainsRoot).filter(isServiceFile)) {
+for (const exception of nonEntrypointFiles) {
+  if (!serviceFileNames.has(exception)) {
+    failures.push(`${exception}: stale service-contract exception`);
+  }
+}
+
+for (const file of domainFiles.filter(isServiceFile)) {
   const source = readFileSync(file, "utf8");
   const isContextResolver = source.includes("resolvePermissions(");
 

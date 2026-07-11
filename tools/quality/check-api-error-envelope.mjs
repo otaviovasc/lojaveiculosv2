@@ -22,6 +22,16 @@ for (const scanRoot of scanRoots) {
         `${repoPath}: use jsonApiError(...) instead of direct { message } JSON errors`,
       );
     }
+    if (/\.json\s*\(\s*\{\s*error\s*:/s.test(source)) {
+      failures.push(
+        `${repoPath}: use jsonApiError(...) instead of direct { error } JSON errors`,
+      );
+    }
+    if (/Response\.json\s*\(\s*\{\s*(?:error|message)\s*:/s.test(source)) {
+      failures.push(
+        `${repoPath}: use jsonApiError(...) instead of Response.json(...) JSON errors`,
+      );
+    }
     if (/\bcontext\.error\s*=/.test(source)) {
       failures.push(
         `${repoPath}: set context.error through jsonApiError(...) metadata handling`,

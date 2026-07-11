@@ -114,7 +114,7 @@ export function CustomDropdown({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="rounded-2xl border border-border bg-card shadow-2xl shadow-black/10 overflow-hidden ring-1 ring-black/5 p-1.5"
+            className="rounded-[18px] border border-border bg-card shadow-2xl shadow-black/10 overflow-hidden ring-1 ring-black/5 p-1.5"
           >
             <div className="max-h-[300px] overflow-y-auto custom-scrollbar space-y-0.5">
               {options.map((opt) => (

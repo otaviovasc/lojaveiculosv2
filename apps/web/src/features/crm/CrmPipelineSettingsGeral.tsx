@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash, Star, Save, CircleAlert } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import type { Pipeline } from "./crmPipelineStorage";
 
 type Props = {
@@ -17,6 +18,7 @@ export function CrmPipelineSettingsGeral({
   const [name, setName] = useState(pipeline.name);
   const [description, setDescription] = useState(pipeline.description || "");
   const [isDefault, setIsDefault] = useState(pipeline.isDefault);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const handleSave = () => {
     onUpdate({
@@ -124,15 +126,7 @@ export function CrmPipelineSettingsGeral({
             </div>
             <button
               className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-red-600 px-4 text-xs font-bold text-white hover:bg-red-700 cursor-pointer transition-colors shrink-0"
-              onClick={() => {
-                if (
-                  confirm(
-                    `Deseja realmente excluir o pipeline "${pipeline.name}"?`,
-                  )
-                ) {
-                  onDelete(pipeline.id);
-                }
-              }}
+              onClick={() => setIsDeleteDialogOpen(true)}
               type="button"
             >
               <Trash className="size-3.5" />
@@ -141,6 +135,18 @@ export function CrmPipelineSettingsGeral({
           </div>
         </div>
       )}
+      <ConfirmDialog
+        confirmLabel="Excluir pipeline"
+        description={`O pipeline "${pipeline.name}" e suas configurações serão removidos.`}
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={() => {
+          onDelete(pipeline.id);
+          setIsDeleteDialogOpen(false);
+        }}
+        title="Excluir pipeline?"
+        variant="destructive"
+      />
     </div>
   );
 }

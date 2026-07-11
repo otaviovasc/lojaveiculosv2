@@ -10,6 +10,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
+import { CrmSelect } from "./CrmFormControls";
 import { whatsappStatusOptions } from "./crmWhatsappQueueState";
 import {
   QueueMetric,
@@ -192,41 +193,34 @@ export function WhatsappToolbar({
         </button>
         <label className="crm-whatsapp-queue-field">
           <SlidersHorizontal aria-hidden="true" />
-          <select
-            aria-label="Filtrar por status"
+          <CrmSelect
+            ariaLabel="Filtrar por status"
             className="crm-whatsapp-select crm-whatsapp-queue-select"
-            onChange={(event) =>
-              onStatusFilterChange(event.target.value as CrmWhatsappStatus | "")
+            onChange={(value) =>
+              onStatusFilterChange(value as CrmWhatsappStatus | "")
             }
+            options={whatsappStatusOptions.map((option) => ({
+              label: `${option.label}${
+                option.value ? ` (${sessionCounts.statuses[option.value]})` : ""
+              }`,
+              value: option.value,
+            }))}
             value={statusFilter}
-          >
-            {whatsappStatusOptions.map((option) => (
-              <option key={option.value || "all"} value={option.value}>
-                {option.label}
-                {option.value
-                  ? ` (${sessionCounts.statuses[option.value]})`
-                  : ""}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         {connections.length > 1 ? (
           <label className="crm-whatsapp-queue-field">
             <Plug aria-hidden="true" />
-            <select
-              aria-label="Filtrar por conexao"
+            <CrmSelect
+              ariaLabel="Filtrar por conexao"
               className="crm-whatsapp-select crm-whatsapp-queue-select"
-              onChange={(event) =>
-                onConnectionFilterChange(event.target.value || null)
-              }
+              onChange={(value) => onConnectionFilterChange(value || null)}
+              options={connections.map((connection) => ({
+                label: connection.displayName,
+                value: String(connection.id),
+              }))}
               value={connectionValue}
-            >
-              {connections.map((connection) => (
-                <option key={connection.id} value={String(connection.id)}>
-                  {connection.displayName}
-                </option>
-              ))}
-            </select>
+            />
           </label>
         ) : null}
       </div>

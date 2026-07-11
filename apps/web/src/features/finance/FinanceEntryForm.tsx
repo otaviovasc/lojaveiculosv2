@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import type { CreateFinanceEntryFlowInput } from "./apiClient";
 import {
   FinanceField,
+  FinanceDateField,
   FinanceInput,
   FinancePanel,
   FinanceSelect,
@@ -121,17 +122,17 @@ export function FinanceEntryForm({
             />
           </FinanceField>
           <FinanceField label="Vencimento">
-            <FinanceInput
+            <FinanceDateField
+              label="Vencimento"
               onChange={setField("dueAt")}
-              type="date"
               value={form.dueAt}
             />
           </FinanceField>
           <FinanceField label="Pagamento">
-            <FinanceInput
+            <FinanceDateField
               disabled={form.status !== "paid"}
+              label="Pagamento"
               onChange={setField("paidAt")}
-              type="date"
               value={form.paidAt}
             />
           </FinanceField>

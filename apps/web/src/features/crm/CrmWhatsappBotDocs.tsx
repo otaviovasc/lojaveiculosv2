@@ -20,6 +20,8 @@ import { botActionExamples } from "./CrmWhatsappBotActionExamplesData";
 import { webhookEvents } from "./CrmWhatsappBotEventDocsData";
 
 export function CrmWhatsappBotDocs() {
+  const [method, path] = botEndpoint.split(" ");
+
   return (
     <section className="crm-whatsapp-bot-docs">
       <header>
@@ -43,7 +45,14 @@ export function CrmWhatsappBotDocs() {
               ) : null}
               {card.title}
             </h3>
-            <code>{card.code}</code>
+            {card.code === botEndpoint ? (
+              <div className="crm-whatsapp-bot-endpoint-title">
+                <span className="crm-whatsapp-bot-method post">POST</span>
+                <code className="crm-whatsapp-bot-path">{path}</code>
+              </div>
+            ) : (
+              <code>{card.code}</code>
+            )}
             <p>{card.description}</p>
           </article>
         ))}
@@ -91,7 +100,10 @@ export function CrmWhatsappBotDocs() {
         title="Bot Action API"
       >
         <div className="crm-whatsapp-bot-endpoint-card">
-          <strong>{botEndpoint}</strong>
+          <div className="crm-whatsapp-bot-endpoint-title">
+            <span className="crm-whatsapp-bot-method post">POST</span>
+            <code className="crm-whatsapp-bot-path">{path}</code>
+          </div>
           <span>X-Webhook-Secret: seu-segredo</span>
         </div>
         <div className="crm-whatsapp-bot-action-list">

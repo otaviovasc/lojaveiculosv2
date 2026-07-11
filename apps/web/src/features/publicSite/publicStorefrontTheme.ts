@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { contrastRatio, parseHexColor } from "../../lib/colors";
 import {
   DEFAULT_STOREFRONT_BODY_FONT,
   DEFAULT_STOREFRONT_HEADING_FONT,
@@ -145,8 +146,8 @@ export function readString(value: unknown) {
 export function readableTextColorForBackground(color: string | null) {
   const rgb = parseHexColor(color);
   if (!rgb) return "var(--public-accent-foreground-light)";
-  const whiteContrast = contrastRatio({ blue: 255, green: 255, red: 255 }, rgb);
-  const blackContrast = contrastRatio({ blue: 17, green: 24, red: 39 }, rgb);
+  const whiteContrast = contrastRatio({ b: 255, g: 255, r: 255 }, rgb);
+  const blackContrast = contrastRatio({ b: 39, g: 24, r: 17 }, rgb);
   return blackContrast > whiteContrast
     ? "var(--public-accent-foreground-dark)"
     : "var(--public-accent-foreground-light)";
@@ -168,51 +169,4 @@ function toRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
-}
-
-function contrastRatio(
-  foreground: { blue: number; green: number; red: number },
-  background: { blue: number; green: number; red: number },
-) {
-  const foregroundLuminance = relativeLuminance(foreground);
-  const backgroundLuminance = relativeLuminance(background);
-  const lighter = Math.max(foregroundLuminance, backgroundLuminance);
-  const darker = Math.min(foregroundLuminance, backgroundLuminance);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function relativeLuminance({
-  blue,
-  green,
-  red,
-}: {
-  blue: number;
-  green: number;
-  red: number;
-}) {
-  const channel = (value: number) => {
-    const next = value / 255;
-    return next <= 0.03928 ? next / 12.92 : ((next + 0.055) / 1.055) ** 2.4;
-  };
-  return (
-    0.2126 * channel(red) + 0.7152 * channel(green) + 0.0722 * channel(blue)
-  );
-}
-
-function parseHexColor(color: string | null | undefined) {
-  if (!color?.startsWith("#")) return null;
-  const hex = color.slice(1);
-  const normalized =
-    hex.length === 3
-      ? hex
-          .split("")
-          .map((part) => part + part)
-          .join("")
-      : hex;
-  if (!/^[0-9a-f]{6}$/i.test(normalized)) return null;
-  return {
-    blue: Number.parseInt(normalized.slice(4, 6), 16),
-    green: Number.parseInt(normalized.slice(2, 4), 16),
-    red: Number.parseInt(normalized.slice(0, 2), 16),
-  };
 }

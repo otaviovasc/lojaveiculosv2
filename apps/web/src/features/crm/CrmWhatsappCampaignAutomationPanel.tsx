@@ -1,3 +1,4 @@
+import { CrmSelect } from "./CrmFormControls";
 import type { CrmWhatsappTag } from "./crmWhatsappTypes";
 
 export function CampaignAutomationPanel({
@@ -27,31 +28,19 @@ export function CampaignAutomationPanel({
       <div className="crm-whatsapp-campaign-fields">
         <label>
           Tag inicial
-          <select
-            onChange={(event) => onInitialTagChange(event.target.value)}
+          <CrmSelect
+            onChange={onInitialTagChange}
+            options={tagOptions(tags)}
             value={initialTagId}
-          >
-            <option value="none">Sem tag</option>
-            {tags.map((tag) => (
-              <option key={tag.id} value={tag.id}>
-                {tag.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         <label>
           Tag na resposta
-          <select
-            onChange={(event) => onReplyTagChange(event.target.value)}
+          <CrmSelect
+            onChange={onReplyTagChange}
+            options={tagOptions(tags)}
             value={replyTagId}
-          >
-            <option value="none">Sem tag</option>
-            {tags.map((tag) => (
-              <option key={tag.id} value={tag.id}>
-                {tag.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
       </div>
       <label>
@@ -79,4 +68,11 @@ export function CampaignAutomationPanel({
       </label>
     </section>
   );
+}
+
+function tagOptions(tags: CrmWhatsappTag[]) {
+  return [
+    { label: "Sem tag", value: "none" },
+    ...tags.map((tag) => ({ label: tag.name, value: tag.id })),
+  ];
 }

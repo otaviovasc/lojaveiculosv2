@@ -1,4 +1,5 @@
 import { Check, Megaphone, Search } from "lucide-react";
+import { CrmSelect } from "./CrmFormControls";
 import { formatSessionName } from "./crmWhatsappModel";
 import type { CrmWhatsappCampaign } from "./crmWhatsappCampaignTypes";
 import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
@@ -146,18 +147,15 @@ export function CampaignRecipientsPanel({
           value={query}
         />
       </div>
-      <select
-        aria-label="Filtrar por tag"
-        onChange={(event) => onTagChange(event.target.value)}
+      <CrmSelect
+        ariaLabel="Filtrar por tag"
+        onChange={onTagChange}
+        options={[
+          { label: "Todas as tags", value: "all" },
+          ...tags.map((tag) => ({ label: tag.name, value: tag.id })),
+        ]}
         value={selectedTagId}
-      >
-        <option value="all">Todas as tags</option>
-        {tags.map((tag) => (
-          <option key={tag.id} value={tag.id}>
-            {tag.name}
-          </option>
-        ))}
-      </select>
+      />
       <div className="crm-whatsapp-campaign-session-list">
         {filteredSessions.map((session) => {
           const selected = effectiveSelectedIds.has(String(session.id));

@@ -1,9 +1,13 @@
 import type {
   DocumentTemplateSuggestion,
-  DocumentTemplateSuggestionDiff,
   DocumentTemplateSuggestionInput,
   DocumentTemplateSuggestionProvider,
 } from "../../domains/documents/ports/documentTemplateSuggestionProvider.js";
+import { createDocumentTemplateSuggestionDiff } from "../../domains/documents/documentTemplateSuggestionDiff.js";
+import {
+  asRecord,
+  extractOpenAiResponseOutputText,
+} from "../openAiResponses.js";
 
 const defaultModel = "gpt-5.4-mini";
 const responsesUrl = "https://api.openai.com/v1/responses";
@@ -106,7 +110,7 @@ function parseSuggestion(
     appliedBlocks: applyClausesToBlocks(input.blocks, clauses),
     appliedClauses: clauses,
     appliedTitle: parsed.title.trim() || input.title,
-    diff: diffClauses(input.clauses, clauses),
+    diff: createDocumentTemplateSuggestionDiff(input.clauses, clauses),
     generatedAt: new Date(),
     summary: parsed.summary,
   };
@@ -125,46 +129,6 @@ function applyClausesToBlocks(
   });
 }
 
-function diffClauses(
-  before: readonly string[],
-  after: readonly string[],
-): readonly DocumentTemplateSuggestionDiff[] {
-  const max = Math.max(before.length, after.length);
-  const diff: DocumentTemplateSuggestionDiff[] = [];
-  for (let index = 0; index < max; index += 1) {
-    const previous = before[index] ?? "";
-    const next = after[index] ?? "";
-    if (previous === next) continue;
-    diff.push({
-      after: next,
-      before: previous,
-      label: `Clausula ${index + 1}`,
-      type: previous ? (next ? "changed" : "removed") : "added",
-    });
-  }
-  return diff;
-}
-
 function extractOutputText(payload: unknown): string | null {
-  const record = asRecord(payload);
-  if (!record) return null;
-  if (typeof record.output_text === "string") return record.output_text;
-  const output = Array.isArray(record.output) ? record.output : [];
-  for (const item of output) {
-    const itemRecord = asRecord(item);
-    const content = Array.isArray(itemRecord?.content)
-      ? itemRecord.content
-      : [];
-    for (const part of content) {
-      const partRecord = asRecord(part);
-      if (typeof partRecord?.text === "string") return partRecord.text;
-    }
-  }
-  return null;
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
+  return extractOpenAiResponseOutputText(payload);
 }

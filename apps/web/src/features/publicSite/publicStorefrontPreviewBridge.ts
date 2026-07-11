@@ -61,6 +61,7 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
   assignString(nextTheme, "brandColor", config.brandColor);
   assignString(nextTheme, "headline", config.heroTitle);
   assignString(nextTheme, "heroSubtitle", config.heroSubtitle);
+  assignString(nextTheme, "heroMediaSource", config.heroMediaSource);
   assignString(nextTheme, "corretorName", config.corretorName);
   assignString(nextTheme, "corretorCreci", config.corretorCreci);
   assignNullableString(nextTheme, "corretorPhotoUrl", config.corretorPhotoUrl);
@@ -75,10 +76,12 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
   if (config.socialLinks) nextTheme.socialLinks = config.socialLinks;
   if (config.testimonials) nextTheme.testimonials = config.testimonials;
   if (config.sections) nextTheme.sections = config.sections;
+  if (config.heroBannerUrls) nextTheme.heroBannerUrls = config.heroBannerUrls;
 
   const hasContactEmail = hasOwn(config.contact, "email");
   const hasContactPhone = hasOwn(config.contact, "phone");
-  const hasHeroImage = hasOwn(config, "heroImageUrl");
+  const hasHeroImage =
+    hasOwn(config, "heroBannerUrls") || hasOwn(config, "heroImageUrl");
   const hasWhatsapp = hasOwn(config.socialLinks, "whatsapp");
   const whatsappPhone = hasWhatsapp
     ? (config.socialLinks?.whatsapp ?? null)
@@ -105,7 +108,7 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
       site: {
         ...data.settings.site,
         heroImageUrl: hasHeroImage
-          ? (config.heroImageUrl ?? null)
+          ? resolvePreviewHeroImageUrl(config)
           : data.settings.site.heroImageUrl,
         layoutKey: config.templateId ?? data.settings.site.layoutKey,
         seoDescription:
@@ -117,6 +120,13 @@ export function applyWebsiteBuilderPreviewToStorefrontData(
       },
     },
   };
+}
+
+function resolvePreviewHeroImageUrl(config: WebsiteBuilderPreviewConfig) {
+  if (hasOwn(config, "heroBannerUrls")) {
+    return config.heroBannerUrls?.[0] ?? null;
+  }
+  return config.heroImageUrl ?? null;
 }
 
 function assignString(

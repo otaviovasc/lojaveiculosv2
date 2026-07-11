@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, or, sql } from "drizzle-orm";
 import {
   storePublicSiteSettings,
   stores,
@@ -67,6 +67,7 @@ export function createDrizzlePublicStorefrontRepository(
           doors: vehicleListings.doors,
           engineAspiration: vehicleListings.engineAspiration,
           engineDisplacement: vehicleListings.engineDisplacement,
+          featuredUntil: vehicleListings.featuredUntil,
           fuelType: vehicleListings.fuelType,
           listingId: vehicleListings.id,
           manufactureYear: vehicleListings.manufactureYear,
@@ -102,7 +103,11 @@ export function createDrizzlePublicStorefrontRepository(
       });
 
       return {
-        ...toPublicVehicleListing(listing, gallery.thumbnailUrl),
+        ...toPublicVehicleListing(
+          listing,
+          gallery.thumbnailUrl,
+          gallery.heroMedia,
+        ),
         media: gallery.defaultMedia,
         mediaGroups: gallery.mediaGroups,
       } satisfies PublicVehicleListingDetail;
@@ -116,6 +121,7 @@ export function createDrizzlePublicStorefrontRepository(
           doors: vehicleListings.doors,
           engineAspiration: vehicleListings.engineAspiration,
           engineDisplacement: vehicleListings.engineDisplacement,
+          featuredUntil: vehicleListings.featuredUntil,
           fuelType: vehicleListings.fuelType,
           listingId: vehicleListings.id,
           manufactureYear: vehicleListings.manufactureYear,
@@ -139,6 +145,13 @@ export function createDrizzlePublicStorefrontRepository(
             isNull(vehicleListings.deletedAt),
           ),
         )
+        .orderBy(
+          desc(
+            sql`case when ${vehicleListings.featuredUntil} > now() then 1 else 0 end`,
+          ),
+          desc(vehicleListings.featuredUntil),
+          desc(vehicleListings.createdAt),
+        )
         .limit(input.limit);
 
       return Promise.all(
@@ -148,7 +161,11 @@ export function createDrizzlePublicStorefrontRepository(
             storeId: input.storeId,
             tenantId: input.tenantId,
           });
-          return toPublicVehicleListing(row, gallery.thumbnailUrl);
+          return toPublicVehicleListing(
+            row,
+            gallery.thumbnailUrl,
+            gallery.heroMedia,
+          );
         }),
       );
     },

@@ -23,7 +23,19 @@ export const paymentMethods = [
   "trade_in",
 ] as const;
 
+export const saleSourceOptions = [
+  { label: "Lead Digital", value: "lead" },
+  { label: "Loja Física (Walk-in)", value: "walk_in" },
+  { label: "WhatsApp Comercial", value: "whatsapp" },
+  { label: "Marketplace Externo", value: "marketplace" },
+  { label: "Outro Canal", value: "custom" },
+];
+
 export type SaleReadinessPurpose = "close" | "reserve";
+
+export function canPersistSaleWorkspaceEdits(sale: SaleRecord): boolean {
+  return sale.status === "draft" || sale.status === "pending";
+}
 
 export function toDraftInput(sale: SaleRecord): SaleDraftInput {
   return {

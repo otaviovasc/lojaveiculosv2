@@ -7,7 +7,7 @@ import type {
   ServiceLogger,
 } from "../../shared/serviceContext.js";
 import { createConsoleServiceLogger } from "../../shared/serviceLogger.js";
-import { readHttpRequestId } from "./requestMetadata.js";
+import { readHttpRequestHeaders } from "./requestMetadata.js";
 
 export function createHttpIntegrationServiceContext(
   context: Context,
@@ -20,7 +20,7 @@ export function createHttpIntegrationServiceContext(
   },
   options: { audit?: AuditSink; logger?: ServiceLogger } = {},
 ): ServiceContext {
-  const request = readRequestHeaders(context);
+  const request = readHttpRequestHeaders(context);
   const logger =
     options.logger ??
     createConsoleServiceLogger({
@@ -42,23 +42,4 @@ export function createHttpIntegrationServiceContext(
     storeId: input.storeId ?? null,
     tenantId: input.tenantId ?? null,
   });
-}
-
-function readRequestHeaders(context: Context) {
-  const requestId = readHttpRequestId(context) ?? crypto.randomUUID();
-  const correlationId = context.req.header("x-correlation-id") ?? requestId;
-  const idempotencyKey = context.req.header("idempotency-key");
-  const ipAddress =
-    context.req.header("x-forwarded-for") ?? context.req.header("x-real-ip");
-  const userAgent = context.req.header("user-agent");
-
-  return {
-    correlationId,
-    method: context.req.method,
-    path: context.req.path,
-    requestId,
-    ...(idempotencyKey ? { idempotencyKey } : {}),
-    ...(ipAddress ? { ipAddress } : {}),
-    ...(userAgent ? { userAgent } : {}),
-  };
 }

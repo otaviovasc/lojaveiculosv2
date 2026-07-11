@@ -37,10 +37,9 @@ describe("Drizzle public storefront repository", () => {
         status: "available",
         thumbnailUrl: "https://cdn.local/front.jpg",
         title: "Fiat Toro Volcano 2023",
-        transmission: "automatic",
-        trimName: "Volcano",
       }),
     ]);
+    expect(listings[0]?.heroMedia?.url).toBe("https://cdn.local/front.jpg");
     expect(db.queriedTables).toEqual([
       stores,
       storePublicSiteSettings,
@@ -59,6 +58,7 @@ describe("Drizzle public storefront repository", () => {
           doors: 4,
           engineAspiration: "aspirated",
           engineDisplacement: "1.8",
+          featuredUntil: null,
           fuelType: "flex",
           listingId: "listing_certified",
           manufactureYear: 2022,
@@ -161,6 +161,7 @@ describe("Drizzle public storefront repository", () => {
         slug: "fiat-toro-2023",
       }),
     );
+    expect(listing?.heroMedia?.url).toBe("https://cdn.local/front.jpg");
     expect(db.queriedTables).toEqual([
       vehicleListings,
       vehicleUnits,

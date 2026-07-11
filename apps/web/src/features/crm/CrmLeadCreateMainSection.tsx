@@ -1,6 +1,7 @@
 import type { LeadCreateFullState } from "./CrmLeadCreateTypes";
 import {
   CrmCreateField,
+  CrmCreateDateField,
   CrmCreateInput,
   CrmCreateSection,
   CrmCreateSelect,
@@ -15,6 +16,20 @@ const personTypes = [
   { label: "Pessoa Fisica", value: "PF" },
   { label: "Pessoa Juridica", value: "PJ" },
 ] as const;
+const storeOptions = [
+  { label: "Nenhuma loja", value: "" },
+  { label: "Loja principal", value: "principal" },
+];
+const genderOptions = [
+  { label: "Selecione", value: "" },
+  { label: "Masculino", value: "M" },
+  { label: "Feminino", value: "F" },
+];
+const maritalStatusOptions = [
+  { label: "Selecione", value: "" },
+  { label: "Solteiro(a)", value: "solteiro" },
+  { label: "Casado(a)", value: "casado" },
+];
 
 export function CrmLeadCreateMainSection({
   onChange,
@@ -58,12 +73,10 @@ export function CrmLeadCreateMainSection({
         </CrmCreateField>
         <CrmCreateField label="Loja">
           <CrmCreateSelect
-            onChange={(event) => onChange({ loja: event.target.value })}
+            onChange={(loja) => onChange({ loja })}
+            options={storeOptions}
             value={state.loja}
-          >
-            <option value="">Nenhuma loja</option>
-            <option value="principal">Loja principal</option>
-          </CrmCreateSelect>
+          />
         </CrmCreateField>
         <div className="crm-client-pair">
           <CrmCreateField label="CPF *">
@@ -93,11 +106,9 @@ export function CrmLeadCreateMainSection({
             />
           </CrmCreateField>
           <CrmCreateField label="Data de nascimento">
-            <CrmCreateInput
-              onChange={(event) =>
-                onChange({ dataNascimento: event.target.value })
-              }
-              type="date"
+            <CrmCreateDateField
+              label="Nascimento"
+              onChange={(dataNascimento) => onChange({ dataNascimento })}
               value={state.dataNascimento}
             />
           </CrmCreateField>
@@ -105,25 +116,17 @@ export function CrmLeadCreateMainSection({
         <div className="crm-client-pair">
           <CrmCreateField label="Genero">
             <CrmCreateSelect
-              onChange={(event) => onChange({ genero: event.target.value })}
+              onChange={(genero) => onChange({ genero })}
+              options={genderOptions}
               value={state.genero}
-            >
-              <option value="">Selecione</option>
-              <option value="M">Masculino</option>
-              <option value="F">Feminino</option>
-            </CrmCreateSelect>
+            />
           </CrmCreateField>
           <CrmCreateField label="Estado civil">
             <CrmCreateSelect
-              onChange={(event) =>
-                onChange({ estadoCivil: event.target.value })
-              }
+              onChange={(estadoCivil) => onChange({ estadoCivil })}
+              options={maritalStatusOptions}
               value={state.estadoCivil}
-            >
-              <option value="">Selecione</option>
-              <option value="solteiro">Solteiro(a)</option>
-              <option value="casado">Casado(a)</option>
-            </CrmCreateSelect>
+            />
           </CrmCreateField>
         </div>
         <CrmCreateField label="Nacionalidade">

@@ -26,7 +26,7 @@ import {
   HttpContextAuthorizationError,
 } from "./httpContextErrors.js";
 import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
-import { readHttpRequestId } from "./requestMetadata.js";
+import { readHttpRequestHeaders } from "./requestMetadata.js";
 import { resolveStoreSlugFromRequest } from "./storeScope.js";
 
 export type CreateHttpServiceContextOptions = {
@@ -47,7 +47,7 @@ export async function createHttpServiceContext(
   context: Context,
   options: CreateHttpServiceContextOptions = {},
 ): Promise<ServiceContext> {
-  const request = readRequestHeaders(context);
+  const request = readHttpRequestHeaders(context);
   const logger =
     options.logger ??
     createConsoleServiceLogger({
@@ -209,23 +209,4 @@ async function resolveContextOrThrow(
 
     throw error;
   }
-}
-
-function readRequestHeaders(context: Context) {
-  const requestId = readHttpRequestId(context) ?? crypto.randomUUID();
-  const correlationId = context.req.header("x-correlation-id") ?? requestId;
-  const idempotencyKey = context.req.header("idempotency-key");
-  const ipAddress =
-    context.req.header("x-forwarded-for") ?? context.req.header("x-real-ip");
-  const userAgent = context.req.header("user-agent");
-
-  return {
-    correlationId,
-    method: context.req.method,
-    path: context.req.path,
-    requestId,
-    ...(idempotencyKey ? { idempotencyKey } : {}),
-    ...(ipAddress ? { ipAddress } : {}),
-    ...(userAgent ? { userAgent } : {}),
-  };
 }

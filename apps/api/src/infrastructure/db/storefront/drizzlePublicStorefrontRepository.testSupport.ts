@@ -95,6 +95,7 @@ function defaultRows(): FakePublicStorefrontRows {
         doors: 4,
         engineAspiration: "turbo",
         engineDisplacement: "2.0",
+        featuredUntil: null,
         fuelType: "flex",
         listingId: "listing_1",
         manufactureYear: 2022,

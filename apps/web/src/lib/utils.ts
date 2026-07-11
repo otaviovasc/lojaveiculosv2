@@ -29,10 +29,6 @@ export function normalizePublicSlug(text: string): string {
   return slugify(text).slice(0, 80);
 }
 
-export function absoluteUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}${path}`;
-}
-
 export function getInitials(name: string | null | undefined): string {
   if (!name) return "?";
   return name

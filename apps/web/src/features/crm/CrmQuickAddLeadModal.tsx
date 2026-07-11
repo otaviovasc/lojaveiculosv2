@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, ChevronDown, Handshake } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { CrmSelect } from "./CrmFormControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
 import type { PipelineStage } from "./crmPipelineStorage";
@@ -141,23 +142,20 @@ export function CrmQuickAddLeadModal({
               <span className="text-xs font-black uppercase text-muted tracking-wider">
                 Veículos de Interesse
               </span>
-              <select
-                className="min-h-11 rounded-lg border border-line bg-app px-3 text-sm font-bold text-app-text outline-none cursor-pointer"
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setVehicleId(val);
-                }}
+              <CrmSelect
+                onChange={setVehicleId}
+                options={[
+                  {
+                    label: `Adicionar veículo (${vehicleOptions.length} ativos disponíveis)`,
+                    value: "",
+                  },
+                  ...vehicleOptions.map((option) => ({
+                    label: option.label,
+                    value: option.id,
+                  })),
+                ]}
                 value={vehicleId}
-              >
-                <option value="">
-                  Adicionar veículo ({vehicleOptions.length} ativos disponíveis)
-                </option>
-                {vehicleOptions.map((opt) => (
-                  <option key={opt.id} value={opt.id}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
           </div>
 

@@ -18,16 +18,8 @@
       "reason": "Pre-existing local media readiness helpers; remove during inventory media cleanup."
     },
     {
-      "path": "apps/web/src/features/inventory/pages/InventoryCreatePage.tsx",
-      "reason": "Pre-existing local selection type; remove during inventory create cleanup."
-    },
-    {
       "path": "apps/web/src/features/marketplaces/MarketplaceModule.tsx",
       "reason": "Pre-existing local load-state type; remove during marketplace cleanup."
-    },
-    {
-      "path": "apps/web/src/features/publicApi/PublicApiModule.tsx",
-      "reason": "Pre-existing local load-state type; remove during public API cleanup."
     },
     {
       "path": "apps/web/src/features/reports/ReportsModule.tsx",

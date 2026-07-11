@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, Trash2, Waypoints, X } from "lucide-react";
+import { CrmSelect } from "./CrmFormControls";
 import { sourceLabels } from "./crmPipelineConfig";
 import type { Pipeline, RoutingRule } from "./crmPipelineStorage";
 
@@ -11,6 +12,7 @@ type Props = {
 export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
   const [rules, setRules] = useState<RoutingRule[]>(pipeline.routingRules);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [routeError, setRouteError] = useState<string | null>(null);
   const [selectedOrigin, setSelectedOrigin] = useState("public_site");
   const [selectedStore, setSelectedStore] = useState("all");
 
@@ -21,8 +23,8 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
 
   const handleAddRule = () => {
     if (rules.some((r) => r.origin === selectedOrigin)) {
-      alert(
-        "Já existe uma regra de roteamento para esta origem neste pipeline!",
+      setRouteError(
+        "Já existe uma regra de roteamento para esta origem neste pipeline.",
       );
       return;
     }
@@ -32,6 +34,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
       storeId: selectedStore,
     };
     saveRules([...rules, newRule]);
+    setRouteError(null);
     setIsModalOpen(false);
   };
 
@@ -53,7 +56,10 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
         </div>
         <button
           className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setRouteError(null);
+            setIsModalOpen(true);
+          }}
           type="button"
         >
           <Plus className="size-3.5" />
@@ -79,7 +85,10 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
           </div>
           <button
             className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors mt-2"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => {
+              setRouteError(null);
+              setIsModalOpen(true);
+            }}
             type="button"
           >
             <Plus className="size-3.5" />
@@ -159,37 +168,43 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
                 <span className="text-xs font-black uppercase tracking-wider text-muted">
                   Origem do Lead
                 </span>
-                <select
-                  className="min-h-9 rounded-lg border border-line bg-app px-3 text-xs font-bold text-app-text outline-none focus:border-accent"
-                  onChange={(e) => setSelectedOrigin(e.target.value)}
+                <CrmSelect
+                  className="min-h-9 px-3 text-xs"
+                  onChange={(value) => {
+                    setSelectedOrigin(value);
+                    setRouteError(null);
+                  }}
+                  options={Object.entries(sourceLabels).map(
+                    ([value, label]) => ({ label, value }),
+                  )}
                   value={selectedOrigin}
-                >
-                  {Object.entries(sourceLabels).map(([key, value]) => (
-                    <option key={key} value={key}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
+                />
               </label>
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-xs font-black uppercase tracking-wider text-muted">
                   Loja (opcional)
                 </span>
-                <select
-                  className="min-h-9 rounded-lg border border-line bg-app px-3 text-xs font-bold text-app-text outline-none focus:border-accent"
-                  onChange={(e) => setSelectedStore(e.target.value)}
+                <CrmSelect
+                  className="min-h-9 px-3 text-xs"
+                  onChange={setSelectedStore}
+                  options={[
+                    { label: "Todas as lojas", value: "all" },
+                    { label: "DMS multimarcas", value: "DMS multimarcas" },
+                    { label: "Matriz", value: "matriz" },
+                    { label: "Filial Norte", value: "filial" },
+                  ]}
                   value={selectedStore}
-                >
-                  <option value="all">Todas as lojas</option>
-                  <option value="DMS multimarcas">DMS multimarcas</option>
-                  <option value="matriz">Matriz</option>
-                  <option value="filial">Filial Norte</option>
-                </select>
+                />
                 <span className="text-xs font-bold text-muted mt-0.5">
                   Restringe a regra a uma loja específica do time.
                 </span>
               </label>
+              {routeError ? (
+                <p className="rounded-lg border border-line bg-app p-3 text-xs font-black text-danger">
+                  {routeError}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex items-center justify-end gap-2.5 mt-4">

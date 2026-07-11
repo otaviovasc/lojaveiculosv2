@@ -3,6 +3,7 @@ import type {
   InventoryResaleAnalysisResponse,
   InventoryResaleTopic,
 } from "../../domains/vehicle/ports/vehicleEnrichmentTypes.js";
+import { extractOpenAiResponseOutputText } from "../openAiResponses.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
 import { createVehicleMarketContext } from "./vehicleMarketSignals.js";
 
@@ -170,21 +171,7 @@ function parseAnalysisResponse(
 }
 
 function extractOutputText(payload: unknown): string | null {
-  const record = asRecord(payload);
-  if (!record) return null;
-  if (typeof record.output_text === "string") return record.output_text;
-  const output = Array.isArray(record.output) ? record.output : [];
-  for (const item of output) {
-    const itemRecord = asRecord(item);
-    const content = Array.isArray(itemRecord?.content)
-      ? itemRecord.content
-      : [];
-    for (const part of content) {
-      const partRecord = asRecord(part);
-      if (typeof partRecord?.text === "string") return partRecord.text;
-    }
-  }
-  return null;
+  return extractOpenAiResponseOutputText(payload);
 }
 
 function isAnalysisResponse(
@@ -210,10 +197,4 @@ function isAnalysisTopic(value: InventoryResaleTopic) {
     ["L", "N", "W"].includes(value.code) &&
     ["negative", "neutral", "positive"].includes(value.type)
   );
-}
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
 }

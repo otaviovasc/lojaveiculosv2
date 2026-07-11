@@ -73,7 +73,7 @@ export function StorefrontImageEditorDialog({
     return renderEditedImage(canvas, image, nextSettings);
   };
 
-  const confirm = async () => {
+  const commitEditedImage = async () => {
     const canvas = canvasRef.current;
     const image = imageRef.current;
     if (!canvas || !image || !file) return;
@@ -108,7 +108,7 @@ export function StorefrontImageEditorDialog({
           isLoading={isSaving}
           loadingLabel="Enviando"
           onCancel={onClose}
-          onConfirm={() => void confirm()}
+          onConfirm={() => void commitEditedImage()}
         />
       }
       isOpen={isOpen}

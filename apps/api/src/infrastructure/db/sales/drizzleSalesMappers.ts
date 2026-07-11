@@ -64,6 +64,7 @@ export function toInsertPayment(
     amountCents: payment.amountCents,
     dueAt: payment.dueAt ?? null,
     extraCents: payment.extraCents ?? 0,
+    ...(payment.id ? { id: payment.id } : {}),
     installments: payment.installments ?? null,
     metadata: payment.metadata ?? {},
     method: payment.method,

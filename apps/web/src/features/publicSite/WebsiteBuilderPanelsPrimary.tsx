@@ -1,4 +1,5 @@
 import { Check } from "lucide-react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -7,10 +8,8 @@ import {
   websiteBuilderTemplateIds,
   websiteBuilderTemplateInfo,
 } from "./WebsiteBuilderModel";
-import {
-  WebsiteBuilderHeroImageField,
-  WebsiteBuilderImageUrlField,
-} from "./WebsiteBuilderImageFields";
+import { WebsiteBuilderImageUrlField } from "./WebsiteBuilderImageFields";
+import { WebsiteBuilderHeroMediaSettings } from "./WebsiteBuilderHeroMediaSettings";
 import { storefrontFontOptions } from "./storefrontFonts";
 import type {
   WebsiteBuilderConfig,
@@ -176,44 +175,32 @@ export function WebsiteBuilderTypographyPanel({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label htmlFor="headingFont">Fonte dos títulos</Label>
-        <select
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          id="headingFont"
-          onChange={(event) =>
+        <Label>Fonte dos títulos</Label>
+        <FeatureSelect
+          className="h-10 rounded-md border-input bg-background text-foreground"
+          onChange={(heading) =>
             updateConfig("fonts", {
               ...config.fonts,
-              heading: event.target.value,
+              heading,
             })
           }
-          value={config.fonts.heading}
-        >
-          {storefrontFontOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={storefrontFontOptions}
+          value={config.fonts.heading ?? storefrontFontOptions[0]?.value ?? ""}
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="bodyFont">Fonte dos textos</Label>
-        <select
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          id="bodyFont"
-          onChange={(event) =>
+        <Label>Fonte dos textos</Label>
+        <FeatureSelect
+          className="h-10 rounded-md border-input bg-background text-foreground"
+          onChange={(body) =>
             updateConfig("fonts", {
               ...config.fonts,
-              body: event.target.value,
+              body,
             })
           }
-          value={config.fonts.body}
-        >
-          {storefrontFontOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={storefrontFontOptions}
+          value={config.fonts.body ?? storefrontFontOptions[0]?.value ?? ""}
+        />
       </div>
     </div>
   );
@@ -267,9 +254,9 @@ export function WebsiteBuilderHeroPanel({
           </div>
         </div>
       </div>
-      <WebsiteBuilderHeroImageField
-        onChange={(value) => updateConfig("heroImageUrl", value)}
-        value={config.heroImageUrl ?? ""}
+      <WebsiteBuilderHeroMediaSettings
+        config={config}
+        updateConfig={updateConfig}
       />
     </div>
   );

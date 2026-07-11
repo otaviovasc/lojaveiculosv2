@@ -18,6 +18,8 @@ export type WebsiteBuilderTestimonial = {
   role: string;
 };
 
+export type WebsiteBuilderHeroMediaSource = "auto" | "banners" | "vehicles";
+
 export type WebsiteBuilderConfig = {
   aboutImageUrl?: string | null;
   aboutText?: string | null;
@@ -38,7 +40,9 @@ export type WebsiteBuilderConfig = {
     body?: string;
     heading?: string;
   };
+  heroBannerUrls: string[];
   heroImageUrl?: string | null;
+  heroMediaSource: WebsiteBuilderHeroMediaSource;
   heroSubtitle?: string | null;
   heroTitle: string;
   logoUrl?: string | null;

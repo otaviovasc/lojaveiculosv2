@@ -1,10 +1,12 @@
 import { Percent, Repeat2, Sigma } from "lucide-react";
+import { useState } from "react";
 import type {
   CommissionRule,
   FinanceRecurringEntry,
   FinanceSummary,
 } from "./types";
 import {
+  FinanceDateField,
   FinanceField,
   FinanceInput,
   FinancePanel,
@@ -50,12 +52,15 @@ export function FinanceRecurringPanel({
   items: FinanceRecurringEntry[];
   onCreate: (input: RecurringDraft) => void;
 }) {
+  const [nextDueAt, setNextDueAt] = useState("");
+
   return (
     <FinancePanel icon={<Repeat2 className="size-5" />} title="Recorrencias">
       <form
         className="grid gap-3 md:grid-cols-5"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!nextDueAt) return;
           const data = new FormData(event.currentTarget);
           onCreate({
             amountCents: Math.round(Number(data.get("amount")) * 100),
@@ -64,11 +69,10 @@ export function FinanceRecurringPanel({
               data.get("frequency"),
             ) as RecurringDraft["frequency"],
             name: String(data.get("name") || "Recorrencia"),
-            nextDueAt: new Date(
-              `${String(data.get("nextDueAt"))}T12:00:00`,
-            ).toISOString(),
+            nextDueAt: new Date(`${nextDueAt}T12:00:00`).toISOString(),
             type: String(data.get("type")) as RecurringDraft["type"],
           });
+          setNextDueAt("");
           event.currentTarget.reset();
         }}
       >
@@ -88,7 +92,12 @@ export function FinanceRecurringPanel({
           />
         </FinanceField>
         <FinanceField label="Proximo">
-          <FinanceInput name="nextDueAt" required type="date" />
+          <FinanceDateField
+            label="Proximo"
+            name="nextDueAt"
+            onChange={setNextDueAt}
+            value={nextDueAt}
+          />
         </FinanceField>
         <FinanceField label="Frequencia">
           <FinanceSelect
@@ -104,6 +113,7 @@ export function FinanceRecurringPanel({
         <input name="type" type="hidden" value="expense" />
         <button
           className="min-h-11 rounded-lg bg-accent px-4 text-sm font-black text-inverse md:col-span-5"
+          disabled={!nextDueAt}
           type="submit"
         >
           Criar recorrencia

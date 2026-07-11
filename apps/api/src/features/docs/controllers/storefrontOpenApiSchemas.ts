@@ -153,6 +153,7 @@ export const storefrontSchemas = {
       "engineAspiration",
       "engineDisplacement",
       "fuelType",
+      "heroMedia",
       "manufactureYear",
       "mileageKm",
       "modelYear",
@@ -190,6 +191,14 @@ export const storefrontSchemas = {
           "electric",
           "other",
         ],
+      },
+      heroMedia: {
+        anyOf: [
+          { $ref: "#/components/schemas/PublicVehicleMedia" },
+          { type: "null" },
+        ],
+        description:
+          "Preferred hero media from public vehicle media. Videos are selected before photos.",
       },
       manufactureYear: { type: ["integer", "null"] },
       mileageKm: { type: ["integer", "null"] },

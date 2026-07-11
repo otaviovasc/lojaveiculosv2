@@ -9,7 +9,12 @@ import {
   type CommissionFilters,
   type CommissionSellerGroup,
 } from "./commissionWorkspaceModel";
-import { FinanceField, FinanceInput, FinanceSelect } from "./FinanceFormParts";
+import {
+  FinanceDateField,
+  FinanceField,
+  FinanceInput,
+  FinanceSelect,
+} from "./FinanceFormParts";
 import { formatCurrency } from "./financeBillsFormat";
 
 export type BonusDraft = {
@@ -136,11 +141,9 @@ export function BonusCommissionDialog({
           />
         </FinanceField>
         <FinanceField label="Vencimento">
-          <FinanceInput
-            onChange={(event) =>
-              setDraft({ ...draft, dueAt: event.target.value })
-            }
-            type="date"
+          <FinanceDateField
+            label="Vencimento"
+            onChange={(dueAt) => setDraft({ ...draft, dueAt })}
             value={draft.dueAt}
           />
         </FinanceField>

@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Check,
   HelpCircle,
@@ -18,15 +11,22 @@ import { ServicesSection } from "./SaleServicesSection";
 import { DocumentsSection } from "./SaleDocumentsSection";
 import { FinalizationSection } from "./SaleFinalizationSection";
 import { ReviewSection } from "./SaleReviewSection";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { StickySaleSummary } from "./SaleSummaryPanel";
-import { toDraftInput } from "./salesModel";
+import { canPersistSaleWorkspaceEdits } from "./salesModel";
+import {
+  clearSaleAutosaveTimer,
+  createSaleSaveState,
+  isSaleDraftSaved,
+  resetSaleSaveState,
+  saleSaveErrorMessage,
+  saveSaleDraft,
+  serializeSaleDraft,
+} from "./saleWorkspacePersistence";
 import {
   emptySaleContextOptions,
   type SaleContextOptions,
 } from "./saleContextOptions";
 import type { SaleRecord } from "./types";
-
 export function SaleWorkspace({
   contextMessage = null,
   contextOptions = emptySaleContextOptions,
@@ -52,13 +52,13 @@ export function SaleWorkspace({
   const [currentStep, setCurrentStep] = useState(0);
   const autosaveTimerRef = useRef<number | undefined>(undefined);
   const draftRef = useRef<SaleRecord | null>(sale);
-  const lastSavedRef = useRef("");
+  const saveStateRef = useRef(createSaleSaveState(sale));
 
   useEffect(() => {
     const previousDraftId = draftRef.current?.id;
     setDraft(sale);
     draftRef.current = sale;
-    lastSavedRef.current = sale ? serializeSale(sale) : "";
+    resetSaleSaveState(saveStateRef.current, sale);
     if (sale?.id !== previousDraftId) {
       setCurrentStep(0);
     }
@@ -66,38 +66,47 @@ export function SaleWorkspace({
 
   const persistDraft = useCallback(
     async (saleToSave: SaleRecord | null) => {
-      if (!saleToSave || saleToSave.status !== "draft") return saleToSave;
-      const serialized = serializeSale(saleToSave);
-      if (serialized === lastSavedRef.current) return saleToSave;
-      clearAutosaveTimer(autosaveTimerRef);
-      const saved = await onSave(saleToSave);
-      lastSavedRef.current = serializeSale(saved);
-      setDraft(saved);
-      draftRef.current = saved;
-      return saved;
+      if (!saleToSave || !canPersistSaleWorkspaceEdits(saleToSave)) {
+        return saleToSave;
+      }
+      clearSaleAutosaveTimer(autosaveTimerRef);
+      const result = await saveSaleDraft(
+        saveStateRef.current,
+        saleToSave,
+        onSave,
+      );
+      if (result.submitted) {
+        const currentDraft = draftRef.current;
+        if (
+          !currentDraft ||
+          serializeSaleDraft(currentDraft) === result.submitted
+        ) {
+          setDraft(result.sale);
+          draftRef.current = result.sale;
+        }
+      }
+      return result.sale;
     },
     [onSave],
   );
 
   useEffect(() => {
-    if (!draft) return;
-    if (draft.status !== "draft") return;
-    const serialized = serializeSale(draft);
-    if (serialized === lastSavedRef.current) return;
+    if (!draft || !canPersistSaleWorkspaceEdits(draft)) return;
+    if (isSaleDraftSaved(saveStateRef.current, draft)) return;
     setIsSaving(true);
-    clearAutosaveTimer(autosaveTimerRef);
+    clearSaleAutosaveTimer(autosaveTimerRef);
     autosaveTimerRef.current = window.setTimeout(() => {
       void persistDraft(draft)
         .then(() => {
           setMessage("Rascunho salvo automaticamente");
         })
-        .catch((error) => setMessage(errorMessage(error)))
+        .catch((error) => setMessage(saleSaveErrorMessage(error)))
         .finally(() => {
           autosaveTimerRef.current = undefined;
           setIsSaving(false);
         });
     }, 650);
-    return () => clearAutosaveTimer(autosaveTimerRef);
+    return () => clearSaleAutosaveTimer(autosaveTimerRef);
   }, [draft, persistDraft]);
 
   useEffect(() => {
@@ -120,13 +129,13 @@ export function SaleWorkspace({
 
   const handleBack = async () => {
     if (!onBack) return;
-    clearAutosaveTimer(autosaveTimerRef);
+    clearSaleAutosaveTimer(autosaveTimerRef);
     setIsSaving(true);
     try {
       await persistDraft(draftRef.current);
       onBack();
     } catch (error) {
-      setMessage(errorMessage(error));
+      setMessage(saleSaveErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
@@ -171,16 +180,16 @@ export function SaleWorkspace({
   const runTransition = async (
     action: (sale: SaleRecord) => Promise<SaleRecord | void>,
   ) => {
-    clearAutosaveTimer(autosaveTimerRef);
+    clearSaleAutosaveTimer(autosaveTimerRef);
     setIsSaving(true);
     try {
       const saved = await persistDraft(draft);
       if (!saved) return;
       const transitioned = await action(saved);
-      lastSavedRef.current = serializeSale(transitioned ?? saved);
+      resetSaleSaveState(saveStateRef.current, transitioned ?? saved);
       setMessage("Status da venda atualizado");
     } catch (error) {
-      setMessage(errorMessage(error));
+      setMessage(saleSaveErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
@@ -331,19 +340,4 @@ export function SaleWorkspace({
       />
     </section>
   );
-}
-
-function serializeSale(sale: SaleRecord): string {
-  return JSON.stringify(toDraftInput(sale));
-}
-
-function errorMessage(error: unknown): string {
-  return formatApiErrorDisplay(error, "Não foi possível salvar a venda.");
-}
-
-function clearAutosaveTimer(ref: RefObject<number | undefined>) {
-  if (ref.current !== undefined) {
-    window.clearTimeout(ref.current);
-    ref.current = undefined;
-  }
 }

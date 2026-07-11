@@ -64,6 +64,112 @@ describe("SaleWorkspace", () => {
     expect(onSave).toHaveBeenCalledOnce();
   });
 
+  it("saves pending sale edits before closing the reservation", async () => {
+    const user = userEvent.setup();
+    const pending = saleRecord({ status: "pending" });
+    const saved = saleRecord({
+      buyerSnapshot: {
+        name: "Cliente QA",
+        phone: "(11) 90000-0000",
+        source: "server",
+      },
+      revision: 2,
+      status: "pending",
+    });
+    const onSave = vi.fn(async () => saved);
+    const onClose = vi.fn(async (sale: SaleRecord) => ({
+      ...sale,
+      status: "closed" as const,
+    }));
+
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={onClose}
+        onReserve={vi.fn()}
+        onSave={onSave}
+        sale={pending}
+      />,
+    );
+
+    await user.type(
+      screen.getByPlaceholderText("Ex: (11) 99999-9999"),
+      "(11) 90000-0000",
+    );
+    await user.click(
+      screen.getByRole("button", { name: /Valores, Pagos & Serviços/ }),
+    );
+    expect(screen.getByLabelText("Método de pagamento")).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Remover pagamento 1" }),
+    ).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Fechar Venda" }));
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onClose.mock.calls[0]?.[0]).toMatchObject({
+      buyerSnapshot: { source: "server" },
+      revision: 2,
+    });
+  });
+
+  it("waits for an in-flight autosave before closing a pending sale", async () => {
+    const user = userEvent.setup();
+    const pending = saleRecord({ status: "pending" });
+    let resolveSave: ((sale: SaleRecord) => void) | undefined;
+    const onSave = vi.fn(
+      () =>
+        new Promise<SaleRecord>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    const onClose = vi.fn(async (sale: SaleRecord) => ({
+      ...sale,
+      status: "closed" as const,
+    }));
+
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={onClose}
+        onReserve={vi.fn()}
+        onSave={onSave}
+        sale={pending}
+      />,
+    );
+
+    await user.type(
+      screen.getByPlaceholderText("Ex: (11) 99999-9999"),
+      "(11) 90000-0000",
+    );
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce(), {
+      timeout: 1500,
+    });
+    await user.click(screen.getByRole("button", { name: "Fechar Venda" }));
+
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onClose).not.toHaveBeenCalled();
+
+    resolveSave?.(
+      saleRecord({
+        buyerSnapshot: {
+          name: "Cliente QA",
+          phone: "(11) 90000-0000",
+          source: "server",
+        },
+        revision: 2,
+        status: "pending",
+      }),
+    );
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledOnce();
+    expect(onClose.mock.calls[0]?.[0]).toMatchObject({
+      buyerSnapshot: { source: "server" },
+      revision: 2,
+    });
+  });
+
   it("does not expose lifecycle action buttons for terminal sales", () => {
     render(
       <SaleWorkspace

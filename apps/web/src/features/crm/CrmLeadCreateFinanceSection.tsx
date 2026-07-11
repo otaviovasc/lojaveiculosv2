@@ -12,6 +12,15 @@ type FinanceSectionProps = {
   state: LeadCreateFullState;
 };
 
+const pixCategoryOptions = [
+  { label: "Nenhuma", value: "Nenhuma" },
+  { label: "CPF", value: "CPF" },
+  { label: "CNPJ", value: "CNPJ" },
+  { label: "E-mail", value: "Email" },
+  { label: "Celular", value: "Celular" },
+  { label: "Chave aleatoria", value: "Aleatoria" },
+];
+
 export function CrmLeadCreateFinanceSection({
   onChange,
   state,
@@ -46,18 +55,10 @@ export function CrmLeadCreateFinanceSection({
           </CrmCreateField>
           <CrmCreateField label="Categoria PIX">
             <CrmCreateSelect
-              onChange={(event) =>
-                onChange({ pixCategory: event.target.value })
-              }
+              onChange={(pixCategory) => onChange({ pixCategory })}
+              options={pixCategoryOptions}
               value={state.pixCategory}
-            >
-              <option value="Nenhuma">Nenhuma</option>
-              <option value="CPF">CPF</option>
-              <option value="CNPJ">CNPJ</option>
-              <option value="Email">E-mail</option>
-              <option value="Celular">Celular</option>
-              <option value="Aleatoria">Chave aleatoria</option>
-            </CrmCreateSelect>
+            />
           </CrmCreateField>
           <CrmCreateField className="crm-client-wide" label="Chave PIX">
             <CrmCreateInput

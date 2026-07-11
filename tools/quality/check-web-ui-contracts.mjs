@@ -2,16 +2,13 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
-const scopedRoots = [
-  "apps/web/src/features/inventory",
-  "apps/web/src/features/sales",
-].map((path) => join(root, path));
+const scopedRoots = ["apps/web/src"].map((path) => join(root, path));
 const violations = [
   {
     label: "native <select>",
     pattern: /<select\b/,
     suggestion:
-      "Use FeatureSelect, InventorySelect, or another CustomSelect wrapper.",
+      "Use FeatureSelect, CrmSelect, InventorySelect, or another CustomSelect wrapper.",
   },
   {
     label: "native date input",
@@ -22,6 +19,17 @@ const violations = [
     label: "native browser warning",
     pattern: /\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/,
     suggestion: "Use FeatureDialog, ConfirmDialog, or visible feature state.",
+  },
+  {
+    label: "dangerous HTML injection",
+    pattern: /\bdangerouslySetInnerHTML\s*=/,
+    suggestion:
+      "Use typed structured content or a reviewed sanitizer wrapper before rendering HTML.",
+  },
+  {
+    label: "javascript href",
+    pattern: /\bhref\s*=\s*["']javascript:/i,
+    suggestion: "Use a real route, button action, or safe event handler.",
   },
 ];
 
@@ -61,6 +69,11 @@ function runParserRegressionChecks() {
   assertViolation("<select><option /></select>", "native <select>");
   assertViolation('<input type="date" />', "native date input");
   assertViolation('window.alert("x")', "native browser warning");
+  assertViolation(
+    "<div dangerouslySetInnerHTML={{ __html: body }} />",
+    "dangerous HTML injection",
+  );
+  assertViolation('<a href="javascript:alert(1)">x</a>', "javascript href");
   assertNoViolation("<FeatureSelect />", "custom select wrappers should pass");
 }
 

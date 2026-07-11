@@ -1,4 +1,5 @@
 import { CalendarClock, Loader2, RefreshCw, Send } from "lucide-react";
+import { CrmSelect } from "./CrmFormControls";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappScheduledMessage,
@@ -68,18 +69,14 @@ export function ScheduleCreateForm({
         <>
           <label>
             Conversa
-            <select
+            <CrmSelect
+              ariaLabel="Conversa"
+              className="crm-whatsapp-select"
               disabled={isSaving}
-              onChange={(event) => onTargetSessionChange(event.target.value)}
+              onChange={onTargetSessionChange}
+              options={createSessionOptions(sessions)}
               value={targetSessionId}
-            >
-              <option value="">Selecione uma conversa</option>
-              {sessions.map((session) => (
-                <option key={String(session.id)} value={String(session.id)}>
-                  {formatScheduleSessionLabel(session)}
-                </option>
-              ))}
-            </select>
+            />
           </label>
           <label>
             Quando enviar
@@ -176,28 +173,14 @@ export function ScheduleToolbar({
         ))}
       </div>
       <div className="crm-whatsapp-schedule-toolbar-controls">
-        <select
-          aria-label="Filtrar agendamentos por conversa"
+        <CrmSelect
+          ariaLabel="Filtrar agendamentos por conversa"
+          className="crm-whatsapp-select"
           disabled={!canRead || isLoading}
-          onChange={(event) => onSessionFilterChange(event.target.value)}
+          onChange={onSessionFilterChange}
+          options={filterSessionOptions(sessions, activeSession)}
           value={sessionFilter}
-        >
-          <option value="all">Todas as conversas</option>
-          {activeSession ? (
-            <option value={String(activeSession.id)}>Conversa ativa</option>
-          ) : null}
-          {sessions
-            .filter(
-              (session) =>
-                !activeSession ||
-                String(session.id) !== String(activeSession.id),
-            )
-            .map((session) => (
-              <option key={String(session.id)} value={String(session.id)}>
-                {formatScheduleSessionLabel(session)}
-              </option>
-            ))}
-        </select>
+        />
         {canRead ? (
           <button
             className="crm-action crm-action-muted"
@@ -228,6 +211,37 @@ export function ScheduleToolbar({
 function formatScheduleSessionLabel(session: CrmWhatsappSession) {
   const lead = session.leadId ? ` - lead ${session.leadId}` : "";
   return `${formatSessionName(session)}${lead}`;
+}
+
+function createSessionOptions(sessions: CrmWhatsappSession[]) {
+  return [
+    { label: "Selecione uma conversa", value: "" },
+    ...sessions.map((session) => ({
+      label: formatScheduleSessionLabel(session),
+      value: String(session.id),
+    })),
+  ];
+}
+
+function filterSessionOptions(
+  sessions: CrmWhatsappSession[],
+  activeSession: CrmWhatsappSession | null,
+) {
+  return [
+    { label: "Todas as conversas", value: "all" },
+    ...(activeSession
+      ? [{ label: "Conversa ativa", value: String(activeSession.id) }]
+      : []),
+    ...sessions
+      .filter(
+        (session) =>
+          !activeSession || String(session.id) !== String(activeSession.id),
+      )
+      .map((session) => ({
+        label: formatScheduleSessionLabel(session),
+        value: String(session.id),
+      })),
+  ];
 }
 
 function readMinDateTimeLocal() {

@@ -6,6 +6,7 @@ import {
   UserCheck,
   X,
 } from "lucide-react";
+import { CrmSelect } from "./CrmFormControls";
 import { selectedCountLabel } from "./crmWhatsappQueueState";
 import type { CrmWhatsappAssignableMember } from "./crmWhatsappTypes";
 
@@ -50,21 +51,21 @@ export function WhatsappBulkBar({
       </span>
       {canAssign ? (
         <div className="crm-whatsapp-bulk-group">
-          <select
-            aria-label="Atribuir conversas selecionadas"
+          <CrmSelect
+            ariaLabel="Atribuir conversas selecionadas"
             disabled={!hasSelection}
-            onChange={(event) => onAssign(event.target.value || null)}
+            onChange={(value) => onAssign(value || null)}
+            options={[
+              { label: "Atribuir a...", value: "" },
+              ...assignableMembers
+                .filter((member) => member.isActive)
+                .map((member) => ({
+                  label: member.name,
+                  value: String(member.id),
+                })),
+            ]}
             value=""
-          >
-            <option value="">Atribuir a...</option>
-            {assignableMembers
-              .filter((member) => member.isActive)
-              .map((member) => (
-                <option key={member.id} value={String(member.id)}>
-                  {member.name}
-                </option>
-              ))}
-          </select>
+          />
           <button
             aria-label="Remover atribuicao das conversas selecionadas"
             disabled={!hasSelection}

@@ -84,6 +84,55 @@ describe("finance services", () => {
     expect(secondPage.entries.map((item) => item.name)).toEqual(["Terceira"]);
   });
 
+  it("keeps cancelled entries out of active finance summary totals", async () => {
+    const services = createFinanceServices();
+    const context = createContext([
+      "finance.create",
+      "finance.read",
+      "finance.update",
+    ]);
+
+    await services.createEntry(context, {
+      ...entry("Venda recebida", "paid"),
+      amountCents: 100000,
+      category: "Venda",
+      type: "revenue",
+    });
+    await services.createEntry(context, {
+      ...entry("Conta aberta", "pending"),
+      amountCents: 20000,
+      category: "Operacional",
+      type: "expense",
+    });
+    await services.createEntry(context, {
+      ...entry("Comissao aberta", "pending"),
+      amountCents: 15000,
+    });
+    const cancelledExpense = await services.createEntry(context, {
+      ...entry("Conta cancelada", "paid"),
+      amountCents: 30000,
+      category: "Cancelado",
+      type: "expense",
+    });
+    const cancelledRevenue = await services.createEntry(context, {
+      ...entry("Venda cancelada", "paid"),
+      amountCents: 50000,
+      category: "Cancelado",
+      type: "revenue",
+    });
+    await services.cancelEntry(context, { entryId: cancelledExpense.entry.id });
+    await services.cancelEntry(context, { entryId: cancelledRevenue.entry.id });
+
+    await expect(services.getSummary(context)).resolves.toMatchObject({
+      cancelledAmountCents: 80000,
+      commissionAmountCents: 15000,
+      expenseAmountCents: 20000,
+      paidAmountCents: 100000,
+      pendingAmountCents: 35000,
+      revenueAmountCents: 100000,
+    });
+  });
+
   it("replaces entry links on update", async () => {
     const services = createFinanceServices();
     const context = createContext(["finance.create", "finance.update"]);

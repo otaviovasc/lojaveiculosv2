@@ -10,6 +10,17 @@ export type FinancingSimulationDraft = {
   vehicleValueCents: number;
 };
 
+export const financingTermOptions = [12, 24, 36, 48, 60].map((months) => ({
+  label: `${months}x`,
+  value: String(months),
+}));
+
+export const crmPriorityOptions = [
+  { label: "Baixa", value: "Baixa" },
+  { label: "Média", value: "Média" },
+  { label: "Alta", value: "Alta" },
+];
+
 export function getLeadStageId(lead: ProductCrmLead) {
   return lead.pipelineStageId ?? readMetadataString(lead.metadata, "stageId");
 }

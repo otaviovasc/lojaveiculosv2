@@ -14,6 +14,15 @@ export const publicStore = {
   slug: "demo",
 };
 
+const listingHeroMedia = {
+  altText: "Front photo",
+  displayOrder: 0,
+  kind: "photo" as const,
+  unitColorName: "Preto",
+  unitId: "unit_1",
+  url: "https://cdn.local/front.jpg",
+};
+
 const listing = {
   condition: "used" as const,
   description: "Ready to sell.",
@@ -21,31 +30,14 @@ const listing = {
   engineAspiration: "turbo" as const,
   engineDisplacement: "2.0" as const,
   fuelType: "flex",
+  heroMedia: listingHeroMedia,
   id: "listing_1",
   manufactureYear: 2022,
-  media: [
-    {
-      altText: "Front photo",
-      displayOrder: 0,
-      kind: "photo" as const,
-      unitColorName: "Preto",
-      unitId: "unit_1",
-      url: "https://cdn.local/front.jpg",
-    },
-  ],
+  media: [listingHeroMedia],
   mediaGroups: [
     {
       colorName: "Preto",
-      media: [
-        {
-          altText: "Front photo",
-          displayOrder: 0,
-          kind: "photo" as const,
-          unitColorName: "Preto",
-          unitId: "unit_1",
-          url: "https://cdn.local/front.jpg",
-        },
-      ],
+      media: [listingHeroMedia],
       unitId: "unit_1",
     },
   ],

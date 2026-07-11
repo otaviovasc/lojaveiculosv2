@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
 import {
@@ -50,6 +51,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   );
   const [savingBonus, setSavingBonus] = useState(false);
   const [modalEntry, setModalEntry] = useState<FinanceEntry | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
   const workspace = useMemo(
@@ -199,9 +201,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         <CommissionSellerList
           filters={filters}
           isPayingSellerId={payingSellerId}
-          onCancel={(entry) =>
-            void cancelCommission(entry, runtimeApi, setToast, refresh)
-          }
+          onCancel={setCancelTarget}
           onEdit={(entry) => {
             setModalEntry(entry);
             setIsModalOpen(true);
@@ -255,6 +255,23 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           setModalEntry(null);
         }}
         onSubmit={submitDraft}
+      />
+      <ConfirmDialog
+        confirmLabel="Cancelar comissão"
+        isOpen={Boolean(cancelTarget)}
+        onClose={() => setCancelTarget(null)}
+        onConfirm={async () => {
+          if (!cancelTarget) return;
+          await cancelCommission(cancelTarget, runtimeApi, setToast, refresh);
+          setCancelTarget(null);
+        }}
+        title="Cancelar comissão?"
+        variant="destructive"
+        {...(cancelTarget
+          ? {
+              description: `A comissão "${cancelTarget.name}" ficará cancelada e preservada para auditoria.`,
+            }
+          : {})}
       />
     </FeaturePageShell>
   );

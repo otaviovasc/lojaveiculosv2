@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
@@ -14,10 +14,31 @@ const pushGate = commandParts(scripts["validate:push"]);
 const checkScripts = Object.keys(scripts)
   .filter((script) => script.startsWith("check:"))
   .sort();
+const qualityCheckFiles = readdirSync(join(root, "tools/quality"))
+  .filter((file) => /^check-[a-z0-9-]+\.mjs$/.test(file))
+  .map((file) => `tools/quality/${file}`)
+  .sort();
+const qualityCheckCommands = new Map();
 
 for (const script of checkScripts) {
   if (!coreGuardrails.includes(`pnpm run ${script}`)) {
     failures.push(`${script} is not included in validate:core-guardrails`);
+  }
+  const match = /^node (tools\/quality\/check-[a-z0-9-]+\.mjs)$/.exec(
+    scripts[script],
+  );
+  if (match) qualityCheckCommands.set(match[1], script);
+}
+
+for (const file of qualityCheckFiles) {
+  if (!qualityCheckCommands.has(file)) {
+    failures.push(`${file} is not exposed by a package.json check:* script`);
+  }
+}
+
+for (const [file, script] of qualityCheckCommands) {
+  if (!qualityCheckFiles.includes(file)) {
+    failures.push(`${script} points at missing quality script ${file}`);
   }
 }
 

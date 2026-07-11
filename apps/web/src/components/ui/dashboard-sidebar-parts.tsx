@@ -110,7 +110,7 @@ export function SidebarWorkspace({
                 onClick={() => setIsOpen(false)}
                 type="button"
               />
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-xl border border-line bg-panel p-1.5 shadow-xl backdrop-blur-md">
+              <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-[18px] border border-line bg-panel p-1.5 shadow-xl backdrop-blur-md">
                 <button
                   className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-black text-accent bg-accent-soft border border-accent/10 transition-colors cursor-pointer"
                   onClick={() => setIsOpen(false)}

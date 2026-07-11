@@ -145,7 +145,7 @@ function mapPayments(
     amountCents: payment.amountCents,
     dueAt: payment.dueAt ?? null,
     extraCents: payment.extraCents ?? 0,
-    id: randomId(),
+    id: payment.id ?? randomId(),
     installments: payment.installments ?? null,
     metadata: payment.metadata ?? {},
     method: payment.method,

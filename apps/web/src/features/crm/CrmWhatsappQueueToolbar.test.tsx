@@ -80,18 +80,14 @@ describe("WhatsappToolbar", () => {
     await user.click(screen.getByRole("button", { name: /^Nao lidas/ }));
     expect(callbacks.onUnreadOnlyChange).toHaveBeenCalledWith(true);
 
-    await user.selectOptions(
-      screen.getByLabelText("Filtrar por status"),
-      "HUMAN_TAKEOVER",
-    );
+    await user.click(screen.getByLabelText("Filtrar por status"));
+    await user.click(screen.getByRole("option", { name: "Intervencao (2)" }));
     expect(callbacks.onStatusFilterChange).toHaveBeenCalledWith(
       "HUMAN_TAKEOVER",
     );
 
-    await user.selectOptions(
-      screen.getByLabelText("Filtrar por conexao"),
-      "connection_2",
-    );
+    await user.click(screen.getByLabelText("Filtrar por conexao"));
+    await user.click(screen.getByRole("option", { name: "Loja Centro" }));
     expect(callbacks.onConnectionFilterChange).toHaveBeenCalledWith(
       "connection_2",
     );

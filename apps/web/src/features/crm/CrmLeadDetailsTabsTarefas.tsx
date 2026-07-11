@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Plus, X, Calendar, ClipboardList } from "lucide-react";
+import { CrmDateField, CrmSelect } from "./CrmFormControls";
+import { crmPriorityOptions } from "./crmLeadData";
 import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
@@ -158,28 +160,24 @@ export function CrmLeadDetailsTabsTarefas({
                   <span className="text-xs font-black uppercase text-muted">
                     Prioridade
                   </span>
-                  <select
-                    className="h-10 px-3.5 rounded-lg border border-line/35 bg-app text-xs font-bold text-app-text outline-none focus:border-accent cursor-pointer"
+                  <CrmSelect
+                    className="h-10 px-3.5 text-xs"
+                    onChange={setPriority}
+                    options={crmPriorityOptions}
                     value={priority}
-                    onChange={(e) => setPriority(e.target.value)}
-                  >
-                    <option value="Baixa">Baixa</option>
-                    <option value="Média">Média</option>
-                    <option value="Alta">Alta</option>
-                  </select>
+                  />
                 </label>
 
-                <label className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-black uppercase text-muted">
                     Vencimento
                   </span>
-                  <input
-                    type="date"
-                    className="h-10 px-3.5 rounded-lg border border-line/35 bg-app text-xs font-bold text-app-text outline-none focus:border-accent cursor-pointer"
+                  <CrmDateField
+                    label="Vencimento"
+                    onChange={setDate}
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
                   />
-                </label>
+                </div>
               </div>
 
               <label className="flex flex-col gap-1.5">

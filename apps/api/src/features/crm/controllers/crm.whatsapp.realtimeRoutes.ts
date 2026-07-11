@@ -5,6 +5,7 @@ import type {
   CrmRealtimeEventEnvelope,
 } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import { requireCrmScope } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { assertWhatsappRead } from "./crm.whatsapp.controller.support.js";
 import { handleWhatsapp } from "./crm.whatsapp.errors.js";
@@ -44,7 +45,13 @@ export function registerCrmWhatsappRealtimeRoutes(
     handleWhatsapp(context, async () => {
       const ticket = context.req.query("ticket");
       const scope = ticket ? await broker.resolveTicket(ticket) : null;
-      if (!scope) return context.json({ error: "Invalid SSE ticket." }, 401);
+      if (!scope) {
+        return jsonApiError(context, {
+          code: "CRM_WHATSAPP_INVALID_SSE_TICKET",
+          message: "Invalid SSE ticket.",
+          status: 401,
+        });
+      }
       return createSseResponse({
         broker,
         connectionId: scope.connectionId ?? null,

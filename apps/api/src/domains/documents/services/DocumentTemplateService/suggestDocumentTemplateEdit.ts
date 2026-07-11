@@ -3,10 +3,8 @@ import {
   createServiceLogMetadata,
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
-import type {
-  DocumentTemplateSuggestion,
-  DocumentTemplateSuggestionDiff,
-} from "../../ports/documentTemplateSuggestionProvider.js";
+import type { DocumentTemplateSuggestion } from "../../ports/documentTemplateSuggestionProvider.js";
+import { createDocumentTemplateSuggestionDiff } from "../../documentTemplateSuggestionDiff.js";
 import { defaultTemplate } from "../../templates/documentTemplateDefaults.js";
 import { DocumentOperationPolicyError } from "../DocumentOperationService/serviceSupport.js";
 import {
@@ -100,7 +98,7 @@ function deterministicSuggestion(
     appliedBlocks,
     appliedClauses,
     appliedTitle: input.title,
-    diff: diffClauses(input.clauses, appliedClauses),
+    diff: createDocumentTemplateSuggestionDiff(input.clauses, appliedClauses),
     generatedAt: new Date(),
     summary:
       "Sugestao preparada para revisao do operador. Confira o diff antes de aplicar.",
@@ -120,24 +118,4 @@ function updateLastTextBlock(
       return { ...block, body: `${block.body}${suffix}` };
     })
     .reverse();
-}
-
-function diffClauses(
-  before: readonly string[],
-  after: readonly string[],
-): readonly DocumentTemplateSuggestionDiff[] {
-  const max = Math.max(before.length, after.length);
-  const diff: DocumentTemplateSuggestionDiff[] = [];
-  for (let index = 0; index < max; index += 1) {
-    const previous = before[index] ?? "";
-    const next = after[index] ?? "";
-    if (previous === next) continue;
-    diff.push({
-      after: next,
-      before: previous,
-      label: `Clausula ${index + 1}`,
-      type: previous ? (next ? "changed" : "removed") : "added",
-    });
-  }
-  return diff;
 }

@@ -1,9 +1,13 @@
-import type { PublicVehicleListing } from "../../../domains/storefront/ports/publicStorefrontRepository.js";
+import type {
+  PublicVehicleListing,
+  PublicVehicleMedia,
+} from "../../../domains/storefront/ports/publicStorefrontRepository.js";
 import type { ListingRow } from "./drizzlePublicStorefrontQueryTypes.js";
 
 export function toPublicVehicleListing(
   row: ListingRow,
   thumbnailUrl: string | null,
+  heroMedia: PublicVehicleMedia | null,
 ): PublicVehicleListing {
   return {
     condition: row.condition,
@@ -12,6 +16,7 @@ export function toPublicVehicleListing(
     engineAspiration: row.engineAspiration,
     engineDisplacement: row.engineDisplacement,
     fuelType: row.fuelType,
+    heroMedia,
     id: row.listingId,
     manufactureYear: row.manufactureYear,
     mileageKm: row.mileageKm,

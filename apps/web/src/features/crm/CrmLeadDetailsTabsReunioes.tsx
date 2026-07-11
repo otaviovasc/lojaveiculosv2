@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, X, Calendar, Video } from "lucide-react";
+import { CrmDateField } from "./CrmFormControls";
 import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
@@ -144,17 +145,12 @@ export function CrmLeadDetailsTabsReunioes({
               </label>
 
               <div className="grid grid-cols-2 gap-4">
-                <label className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-black uppercase text-muted">
                     Data
                   </span>
-                  <input
-                    type="date"
-                    className="h-10 px-3.5 rounded-lg border border-line/35 bg-app text-xs font-bold text-app-text outline-none focus:border-accent cursor-pointer"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
-                </label>
+                  <CrmDateField label="Data" onChange={setDate} value={date} />
+                </div>
 
                 <label className="flex flex-col gap-1.5">
                   <span className="text-xs font-black uppercase text-muted">

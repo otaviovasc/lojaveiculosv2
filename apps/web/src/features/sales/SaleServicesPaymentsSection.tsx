@@ -77,6 +77,7 @@ export function SaleServicesPaymentsSection({
             <PaymentRow
               index={index}
               key={payment.id}
+              locked={sale.status === "pending" && index === 0}
               onChange={(next) =>
                 update((draft) => ({
                   ...draft,

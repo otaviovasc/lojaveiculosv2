@@ -5,7 +5,7 @@ import {
   type CommissionPeriodPreset,
   type CommissionStatusFilter,
 } from "./commissionWorkspaceModel";
-import { FinanceInput, FinanceSelect } from "./FinanceFormParts";
+import { FinanceDateField, FinanceSelect } from "./FinanceFormParts";
 
 export function CommissionFiltersPanel({
   filters,
@@ -120,13 +120,9 @@ function DateField({
   value: string;
 }) {
   return (
-    <label className="grid gap-2 text-sm font-black text-app-text">
-      {label}
-      <FinanceInput
-        onChange={(event) => onChange(event.target.value)}
-        type="date"
-        value={value}
-      />
-    </label>
+    <div className="grid gap-2 text-sm font-black text-app-text">
+      <span>{label}</span>
+      <FinanceDateField label={label} onChange={onChange} value={value} />
+    </div>
   );
 }

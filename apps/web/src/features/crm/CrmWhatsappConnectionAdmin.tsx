@@ -1,6 +1,7 @@
 import { Plug } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { CrmSelect } from "./CrmFormControls";
 import type {
   CrmWhatsappProviderConnection,
   CrmWhatsappUpdateConnectionInput,
@@ -137,17 +138,15 @@ export function CrmWhatsappConnectionAdmin({
               {connections.length > 1 ? (
                 <label className="crm-whatsapp-connection-selector">
                   Instancia
-                  <select
+                  <CrmSelect
                     className="crm-whatsapp-select"
-                    onChange={(event) => setSelectedId(event.target.value)}
+                    onChange={setSelectedId}
+                    options={connections.map((connection) => ({
+                      label: connection.displayName,
+                      value: String(connection.id),
+                    }))}
                     value={String(selected.id)}
-                  >
-                    {connections.map((connection) => (
-                      <option key={connection.id} value={String(connection.id)}>
-                        {connection.displayName}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
               ) : null}
               <ConnectionStatusCard

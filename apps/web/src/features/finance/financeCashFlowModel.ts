@@ -31,11 +31,11 @@ export function summarizeCashFlow(
 ): FinanceCashFlowSummary {
   return entries.reduce(
     (summary, entry) => {
-      const signedAmount = signedCashAmount(entry);
+      const isCancelled = entry.status === "cancelled";
+      const signedAmount = isCancelled ? 0 : signedCashAmount(entry);
       return {
         cancelledCents:
-          summary.cancelledCents +
-          (entry.status === "cancelled" ? entry.amountCents : 0),
+          summary.cancelledCents + (isCancelled ? entry.amountCents : 0),
         outflowCents:
           summary.outflowCents + (signedAmount < 0 ? entry.amountCents : 0),
         overdueCents:
@@ -100,6 +100,7 @@ export function categoryBreakdown(
 ) {
   const totals = new Map<string, number>();
   for (const entry of entries) {
+    if (entry.status === "cancelled") continue;
     const include =
       type === "outflow" ? signedCashAmount(entry) < 0 : entry.type === type;
     if (!include) continue;
@@ -120,6 +121,7 @@ export function categoryBreakdown(
 export function sourceBreakdown(entries: readonly FinanceEntry[]) {
   const totals = new Map<FinanceSourceFilter, number>();
   for (const entry of entries) {
+    if (entry.status === "cancelled") continue;
     const source = entrySourceKey(entry);
     totals.set(source, (totals.get(source) ?? 0) + entry.amountCents);
   }

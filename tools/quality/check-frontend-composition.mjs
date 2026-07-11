@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative } from "node:path";
 
 const root = new URL("../../", import.meta.url).pathname;
@@ -10,17 +10,28 @@ const exceptions = JSON.parse(
   ),
 );
 const exceptionPaths = new Set(exceptions.files.map((item) => item.path));
+const usedExceptionPaths = new Set();
 const failures = [];
 
 runParserRegressionChecks();
+validateExceptions();
 
 for (const file of walk(webRoot).filter(isCompositionFile)) {
   const rel = relative(root, file);
   const source = readFileSync(file, "utf8");
   const violations = findViolations(source, file);
   if (violations.length === 0) continue;
-  if (exceptionPaths.has(rel)) continue;
+  if (exceptionPaths.has(rel)) {
+    usedExceptionPaths.add(rel);
+    continue;
+  }
   failures.push(`${rel}: ${violations.join(", ")}`);
+}
+
+for (const path of exceptionPaths) {
+  if (!usedExceptionPaths.has(path)) {
+    failures.push(`${path}: stale frontend composition exception`);
+  }
 }
 
 if (failures.length > 0) {
@@ -100,6 +111,30 @@ function isCompositionFile(file) {
     rel.startsWith("app/") ||
     /(?:Page|Module|View|Workspace)\.tsx$/.test(basename(file))
   );
+}
+
+function validateExceptions() {
+  if (!Array.isArray(exceptions.files)) {
+    failures.push("frontend-composition-exceptions.json must expose files[]");
+    return;
+  }
+
+  for (const item of exceptions.files) {
+    if (!item.path || typeof item.path !== "string") {
+      failures.push("frontend composition exception missing path");
+      continue;
+    }
+    if (!item.reason || typeof item.reason !== "string") {
+      failures.push(
+        `${item.path}: frontend composition exception needs reason`,
+      );
+    }
+    if (!existsSync(join(root, item.path))) {
+      failures.push(
+        `${item.path}: frontend composition exception file missing`,
+      );
+    }
+  }
 }
 
 function walk(dir, files = []) {

@@ -1,5 +1,6 @@
 import { ArrowDownNarrowWide } from "lucide-react";
 import {
+  FeatureDateField,
   FeatureSearchField,
   FeatureSegmentedControl,
   FeatureSelect,
@@ -197,17 +198,16 @@ function DateInput({
   value: string;
 }) {
   return (
-    <label className="inline-flex items-center gap-1.5 rounded-lg bg-app-elevated border border-line px-2.5 h-9 text-xs font-black uppercase tracking-wider text-muted">
-      <span>{label}</span>
-      <input
-        className="bg-transparent border-0 text-app-text text-xs font-bold outline-none w-[7rem]"
+    <div className="inline-flex items-center gap-1.5 rounded-lg bg-app-elevated border border-line px-2.5 py-1 text-xs font-black uppercase tracking-wider text-muted">
+      <FeatureDateField
+        className="documents-toolbar-date"
         disabled={disabled}
         max={max}
         min={min}
-        onChange={(event) => onChange(event.target.value)}
-        type="date"
+        label={label}
+        onChange={onChange}
         value={value}
       />
-    </label>
+    </div>
   );
 }
