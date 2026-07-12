@@ -1,3 +1,4 @@
+import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { BillingProviderRepository } from "../../ports/billingProviderRepository.js";
 import type { BillingRepository } from "../../ports/billingRepository.js";
@@ -20,20 +21,30 @@ export class BillingScopeError extends Error {
   }
 }
 
+export class BillingStoreNotFoundError extends Error {
+  constructor() {
+    super("Managed store was not found.");
+    this.name = "BillingStoreNotFoundError";
+  }
+}
+
 export function requireBillingScope(context: ServiceContext): {
-  storeId: string;
-  tenantId: string;
+  storeId: StoreId;
+  tenantId: TenantId;
 } {
   if (!context.storeId) throw new BillingScopeError("storeId");
   if (!context.tenantId) throw new BillingScopeError("tenantId");
-  return { storeId: context.storeId, tenantId: context.tenantId };
+  return {
+    storeId: context.storeId as StoreId,
+    tenantId: context.tenantId as TenantId,
+  };
 }
 
 export function requireTenantBillingScope(context: ServiceContext): {
-  tenantId: string;
+  tenantId: TenantId;
 } {
   if (!context.tenantId) throw new BillingScopeError("tenantId");
-  return { tenantId: context.tenantId };
+  return { tenantId: context.tenantId as TenantId };
 }
 
 export function getBillingEnvironment(ports: BillingServicePorts): string {

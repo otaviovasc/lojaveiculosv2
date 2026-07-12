@@ -11,6 +11,7 @@ import type {
   StoreEntitlement,
 } from "../../ports/billingRepository.js";
 import {
+  BillingStoreNotFoundError,
   requireTenantBillingScope,
   type BillingServicePorts,
 } from "./serviceSupport.js";
@@ -32,11 +33,16 @@ export async function updateAgencyStoreEntitlement(
 ): Promise<AgencyTenantOverview> {
   assertPermission(context, "billing.manage");
   const scope = requireTenantBillingScope(context);
+  const storeExists = await ports.billingRepository.storeExistsInTenant({
+    storeId: input.storeId,
+    tenantId: scope.tenantId,
+  });
+  if (!storeExists) throw new BillingStoreNotFoundError();
   const before = await ports.billingRepository.getOverview({
     billingManagedBy: "agency",
     currentActorCanManage: context.permissions.includes("billing.manage"),
     storeId: input.storeId,
-    tenantId: scope.tenantId as never,
+    tenantId: scope.tenantId,
   });
   const beforeEntitlement = before.entitlements.find(
     (entitlement) => entitlement.featureKey === input.featureKey,
@@ -63,7 +69,7 @@ export async function updateAgencyStoreEntitlement(
     source: "agency_billing_console",
     status: input.status,
     storeId: input.storeId,
-    tenantId: scope.tenantId as never,
+    tenantId: scope.tenantId,
     ...(input.endsAt !== undefined ? { endsAt: input.endsAt } : {}),
     ...(input.startsAt !== undefined ? { startsAt: input.startsAt } : {}),
   });
@@ -92,7 +98,7 @@ export async function updateAgencyStoreEntitlement(
 
   return ports.billingRepository.getTenantOverview({
     currentActorCanManage: context.permissions.includes("billing.manage"),
-    tenantId: scope.tenantId as never,
+    tenantId: scope.tenantId,
   });
 }
 

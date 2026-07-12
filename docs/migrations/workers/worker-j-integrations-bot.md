@@ -20,4 +20,4 @@
   - `pnpm --filter @lojaveiculosv2/api typecheck`
   - `pnpm --filter @lojaveiculosv2/web typecheck`
   - `pnpm run validate:core-guardrails`
-  - `pnpm run test:frontend-design`
+  - `pnpm run test:quality-tools`

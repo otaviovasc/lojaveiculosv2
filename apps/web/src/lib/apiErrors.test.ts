@@ -1,13 +1,19 @@
 import { describe, expect, it } from "vitest";
-import {
-  AppApiError,
-  formatApiErrorDisplay,
-  getApiErrorDisplay,
-  readApiJson,
-  readApiVoid,
-} from "./apiErrors";
+import { AppApiError, readApiJson, readApiVoid } from "./apiErrors";
 
 describe("api error helpers", () => {
+  it("reads successful JSON and empty responses", async () => {
+    await expect(
+      readApiJson<{ id: string }>(
+        new Response(JSON.stringify({ id: "vehicle_1" }), { status: 200 }),
+      ),
+    ).resolves.toEqual({ id: "vehicle_1" });
+
+    await expect(
+      readApiVoid(new Response(null, { status: 204 })),
+    ).resolves.toBe(undefined);
+  });
+
   it("preserves backend error payloads and request ids", async () => {
     const response = new Response(
       JSON.stringify({
@@ -51,31 +57,107 @@ describe("api error helpers", () => {
     });
   });
 
-  it("returns UI display data for AppApiError instances", () => {
-    const error = new AppApiError({
-      code: "HTTP_AUTHENTICATION_REQUIRED",
-      message: "technical auth message",
-      requestId: "req_ui",
-      status: 401,
-    });
+  it("supports standard structured JSON error media types", async () => {
+    const response = new Response(
+      JSON.stringify({
+        details: { field: "storeId" },
+        message: "The selected store is not available.",
+        requestId: "req_problem",
+      }),
+      {
+        headers: { "Content-Type": "application/problem+json; charset=utf-8" },
+        status: 422,
+      },
+    );
 
-    expect(getApiErrorDisplay(error, "Fallback")).toEqual({
-      message:
-        "Sua sessao ou loja ativa nao foi identificada. Entre novamente ou selecione a loja.",
-      requestId: "req_ui",
+    await expect(
+      readApiJson(response, {
+        endpoint: "/api/v1/stores",
+        feature: "Stores",
+      }),
+    ).rejects.toMatchObject({
+      code: "HTTP_422",
+      details: { field: "storeId" },
+      endpoint: "/api/v1/stores",
+      requestId: "req_problem",
+      technicalMessage: "The selected store is not available.",
     });
   });
 
-  it("formats display text with request id for string-only error surfaces", () => {
-    const error = new AppApiError({
-      code: "AUTHORIZATION_DENIED",
-      message: "Missing permission inventory:write.",
-      requestId: "req_forbidden",
-      status: 403,
+  it("uses safe fallbacks for malformed JSON and blank metadata", async () => {
+    const malformed = new Response("{", {
+      headers: { "Content-Type": "application/json" },
+      status: 400,
+    });
+    await expect(
+      readApiJson(malformed, { feature: "Billing" }),
+    ).rejects.toMatchObject({
+      code: "REQUEST_VALIDATION_ERROR",
+      technicalMessage: "Billing request failed. HTTP 400.",
+      userMessage: "Revise os campos informados e tente novamente.",
     });
 
-    expect(formatApiErrorDisplay(error, "Fallback")).toBe(
-      "Seu usuario nao tem permissao para realizar esta acao. ID do erro: req_forbidden",
+    const blankMetadata = new Response(
+      JSON.stringify({ code: " ", message: " ", requestId: " " }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-Id": "   ",
+        },
+        status: 403,
+      },
     );
+    const error = await rejectedApiError(blankMetadata, { feature: "CRM" });
+    expect(error).toMatchObject({
+      code: "HTTP_AUTHORIZATION_DENIED",
+      technicalMessage: "CRM request failed. HTTP 403.",
+    });
+    expect(error.requestId).toBeUndefined();
+  });
+
+  it("prefers the body request id over the correlation header", async () => {
+    const response = new Response(
+      JSON.stringify({ message: "Conflict", requestId: "  req_body  " }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Request-Id": "  req_header  ",
+        },
+        status: 409,
+      },
+    );
+
+    await expect(readApiVoid(response)).rejects.toMatchObject({
+      requestId: "req_body",
+    });
+  });
+
+  it.each([
+    [400, "REQUEST_VALIDATION_ERROR"],
+    [401, "HTTP_AUTHENTICATION_REQUIRED"],
+    [403, "HTTP_AUTHORIZATION_DENIED"],
+    [404, "NOT_FOUND"],
+    [409, "CONFLICT"],
+    [429, "RATE_LIMIT"],
+    [500, "INTERNAL_SERVER_ERROR"],
+    [418, "HTTP_418"],
+  ])("derives a stable code for HTTP %i", async (status, code) => {
+    await expect(
+      readApiVoid(new Response(null, { status })),
+    ).rejects.toMatchObject({ code });
   });
 });
+
+async function rejectedApiError(
+  response: Response,
+  options?: { endpoint?: string; feature?: string },
+): Promise<AppApiError> {
+  try {
+    await readApiVoid(response, options);
+  } catch (error) {
+    expect(error).toBeInstanceOf(AppApiError);
+    return error as AppApiError;
+  }
+
+  throw new Error("Expected the API response to be rejected");
+}

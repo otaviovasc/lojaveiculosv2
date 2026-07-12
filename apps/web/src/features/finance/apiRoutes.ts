@@ -1,4 +1,8 @@
-import type { FinanceAuth, FinanceEntryStatus, FinanceEntryType } from "./types";
+import type {
+  FinanceAuth,
+  FinanceEntryStatus,
+  FinanceEntryType,
+} from "./types";
 
 export type ListFinanceEntriesInput = {
   limit?: number;

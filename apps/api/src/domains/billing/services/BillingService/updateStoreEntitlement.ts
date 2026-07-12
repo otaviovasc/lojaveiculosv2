@@ -34,8 +34,8 @@ export async function updateStoreEntitlement(
   const before = await ports.billingRepository.getOverview({
     billingManagedBy: context.billingManagedBy ?? "store_owner",
     currentActorCanManage: context.permissions.includes("billing.manage"),
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
   });
   const beforeEntitlement = before.entitlements.find(
     (entitlement) => entitlement.featureKey === input.featureKey,
@@ -60,8 +60,8 @@ export async function updateStoreEntitlement(
     reason: input.reason ?? null,
     source: "billing_console",
     status: input.status,
-    storeId: scope.storeId as never,
-    tenantId: scope.tenantId as never,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
     ...(input.endsAt !== undefined ? { endsAt: input.endsAt } : {}),
     ...(input.startsAt !== undefined ? { startsAt: input.startsAt } : {}),
   });

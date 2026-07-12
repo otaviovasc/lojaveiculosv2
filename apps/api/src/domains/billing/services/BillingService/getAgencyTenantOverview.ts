@@ -23,7 +23,7 @@ export async function getAgencyTenantOverview(
 
   const overview = await ports.billingRepository.getTenantOverview({
     currentActorCanManage: context.permissions.includes("billing.manage"),
-    tenantId: scope.tenantId as never,
+    tenantId: scope.tenantId,
   });
 
   await context.audit.record({

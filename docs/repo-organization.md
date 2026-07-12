@@ -139,7 +139,33 @@ Before adding or moving a module:
   `lint-staged`.
 - `pnpm run validate:push`: full local gate used by pre-push and by
   `pnpm run validate`.
-- `pnpm run validate:ci`: CI gate. Keep deployment smoke checks separate.
+- `pnpm run validate:ci`: CI gate. It runs the push gate and then enforces V8
+  coverage thresholds for every runtime workspace and emits both deployable
+  production bundles. Keep deployment smoke checks separate.
+- `pnpm run test:quality-tools`: regression suite for the AST/static guard
+  implementations themselves. It runs in commit and push validation.
+- `pnpm run check:format`: runs a repository-wide, non-mutating Prettier check
+  so generated and AI-authored changes cannot bypass formatting through an
+  unstaged file or a skipped editor integration.
+- `pnpm run check:test-contracts`: blocks focused or unconditionally disabled
+  tests, rejects literal tautologies, requires an assertion in every test, and
+  prevents runtime workspaces from being silently omitted from tests.
+- `pnpm run check:coverage`: requires every runtime workspace to expose the
+  canonical coverage command/config, prevents threshold regression, and keeps
+  shared web-library modules above the stricter per-file floor.
+- `pnpm run check:toolchain`: protects strict TypeScript and typed ESLint
+  settings, including exhaustive union switches, and deployable production
+  build commands from being weakened; it also blocks TypeScript/ESLint bypass
+  comments.
+- `pnpm run check:web-bundle`: validates the Vite/Rolldown bundle policy and CI
+  command ordering without reading a potentially stale `apps/web/dist`.
+  `build:deployables` performs the separate artifact-size verification directly
+  after a clean web production build.
+- `pnpm run check:style-overrides`: keeps padding and radius decisions inside
+  shared UI primitive variants instead of feature-local `className` overrides.
+- `pnpm run check:ci-security`: keeps the CI token read-only, pins every runner
+  and third-party action, disables persisted checkout credentials, requires
+  bounded job timeouts, and verifies weekly Dependabot updates for actions.
 - `pnpm run check:api-errors`: blocks direct controller `{ message }` JSON
   error responses and manual `context.error` assignment outside the shared HTTP
   error helper.
@@ -147,4 +173,5 @@ Before adding or moving a module:
   stay wired into `validate:core-guardrails`.
 
 When adding a new quality checker, name it `check:<area>` and add it to
-`validate:core-guardrails`; `check:validation` enforces this.
+`validate:core-guardrails`; `check:validation` enforces this. Checker logic must
+also have focused regression coverage picked up by `test:quality-tools`.

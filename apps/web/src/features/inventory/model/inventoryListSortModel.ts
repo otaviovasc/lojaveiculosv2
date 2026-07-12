@@ -164,8 +164,6 @@ function compareInventoryItems(
     case "year_desc":
       return inventoryYear(right) - inventoryYear(left);
   }
-
-  return 0;
 }
 
 function dateTime(value: string) {

@@ -1,0 +1,33 @@
+{
+  "outputDirectory": "apps/web/dist",
+  "manifestRelativePath": ".vite/manifest.json",
+  "limits": {
+    "javascript": 580000,
+    "stylesheet": 645000
+  },
+  "workerExceptions": [
+    {
+      "id": "pdf-worker",
+      "pattern": "^assets/pdf\\.worker\\.min-[A-Za-z0-9_-]+\\.mjs$",
+      "maxBytes": 1075000
+    }
+  ],
+  "staticExtensions": [
+    ".gif",
+    ".html",
+    ".ico",
+    ".jpeg",
+    ".jpg",
+    ".json",
+    ".pdf",
+    ".png",
+    ".svg",
+    ".ttf",
+    ".txt",
+    ".webmanifest",
+    ".webp",
+    ".woff",
+    ".woff2",
+    ".xml"
+  ]
+}

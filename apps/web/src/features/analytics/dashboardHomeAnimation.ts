@@ -10,9 +10,14 @@ export type DashboardResource = {
 };
 
 export type DashboardQuickAction = {
-  id: ModuleId;
+  id: DashboardQuickActionId;
   label: string;
 };
+
+export type DashboardQuickActionId = Extract<
+  ModuleId,
+  "customers" | "documents" | "inventory" | "reports"
+>;
 
 export type DashboardContentEntryOptions = {
   direction?: "horizontal" | "vertical";

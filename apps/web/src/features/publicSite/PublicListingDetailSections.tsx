@@ -122,7 +122,7 @@ export function VehicleLeadCard({
           <div className="grid gap-2">
             {whatsappUrl ? (
               <a
-                className="flex min-h-12 items-center justify-center gap-2 rounded bg-success-strong px-5 text-xs font-black uppercase tracking-[0.12em] text-success-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 active:scale-95"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-success-strong px-5 text-xs font-black uppercase tracking-[0.12em] text-success-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 active:scale-95"
                 href={whatsappUrl}
                 rel="noreferrer"
                 target="_blank"
@@ -133,7 +133,7 @@ export function VehicleLeadCard({
             ) : null}
             {phoneHref ? (
               <a
-                className="flex min-h-11 items-center justify-center gap-2 rounded border border-line bg-app px-5 text-xs font-black uppercase tracking-[0.12em] text-app-text transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent active:scale-95"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-app px-5 text-xs font-black uppercase tracking-[0.12em] text-app-text transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent active:scale-95"
                 href={phoneHref}
               >
                 <Phone aria-hidden="true" className="size-4" />
@@ -216,7 +216,7 @@ export function UnitMediaTabs({
       {groups.map((group, index) => (
         <button
           aria-pressed={group.unitId === selectedUnitId}
-          className="rounded border border-line bg-panel px-3 py-2 text-xs font-black text-muted shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent cursor-pointer"
+          className="rounded-xl border border-line bg-panel px-3 py-2 text-xs font-black text-muted shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent cursor-pointer"
           data-selected={group.unitId === selectedUnitId ? "true" : undefined}
           key={group.unitId}
           onClick={() => onSelect(group.unitId)}

@@ -1,4 +1,5 @@
 import { Hono, type Context } from "hono";
+import type { TenantId } from "@lojaveiculosv2/shared";
 import {
   createHttpAccountContext,
   type HttpAccountContext,
@@ -133,7 +134,7 @@ export function createAccountProvisioningFeature(
             ? { storeLegalName: input.storeLegalName }
             : {}),
           storeTradingName: input.storeTradingName,
-          tenantId: input.tenantId,
+          tenantId: input.tenantId as TenantId,
         },
         services,
       );

@@ -5,7 +5,10 @@ import {
   HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import { BillingScopeError } from "../../../domains/billing/services/BillingService/serviceSupport.js";
+import {
+  BillingScopeError,
+  BillingStoreNotFoundError,
+} from "../../../domains/billing/services/BillingService/serviceSupport.js";
 import {
   BillingWebhookAuthenticationError,
   BillingWebhookValidationError,
@@ -27,6 +30,14 @@ export async function handleBilling(
   try {
     return await action();
   } catch (error) {
+    if (error instanceof BillingStoreNotFoundError) {
+      return jsonApiError(context, {
+        code: "BILLING_STORE_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
+    }
     if (
       error instanceof BillingRequestValidationError ||
       error instanceof BillingWebhookValidationError ||

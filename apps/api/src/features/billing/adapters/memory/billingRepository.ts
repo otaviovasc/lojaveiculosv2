@@ -58,9 +58,13 @@ const defaultEntitlements: readonly StoreEntitlement[] = [
   },
 ];
 
-export function createMemoryBillingRepository(): BillingRepository {
+export function createMemoryBillingRepository(
+  options: { storeId?: string; tenantId?: string } = {},
+): BillingRepository {
   let entitlements = [...defaultEntitlements];
   let entitlementEvents: BillingEntitlementEvent[] = [];
+  const managedStoreId = options.storeId ?? "store_1";
+  const managedTenantId = options.tenantId;
 
   return {
     async getOverview(input) {
@@ -75,7 +79,7 @@ export function createMemoryBillingRepository(): BillingRepository {
     },
     async getTenantOverview(input) {
       const overview = toOverview(
-        "store_1",
+        managedStoreId,
         input.tenantId,
         entitlements,
         entitlementEvents,
@@ -83,6 +87,12 @@ export function createMemoryBillingRepository(): BillingRepository {
         input.currentActorCanManage,
       );
       return toTenantOverview(overview);
+    },
+    async storeExistsInTenant(input) {
+      return (
+        input.storeId === managedStoreId &&
+        (managedTenantId === undefined || input.tenantId === managedTenantId)
+      );
     },
     async updateStoreEntitlement(input) {
       const before = entitlements.find(

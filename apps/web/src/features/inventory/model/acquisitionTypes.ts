@@ -1,11 +1,5 @@
 export type VehicleSupplierKind =
-  | "auction"
-  | "company"
-  | "lead"
-  | "other"
-  | "partner"
-  | "person"
-  | "provider";
+  "auction" | "company" | "lead" | "other" | "partner" | "person" | "provider";
 
 export type VehicleAcquisitionChannel =
   | "auction"
@@ -19,9 +13,7 @@ export type VehicleAcquisitionChannel =
   | "trade_in_lead";
 
 export type VehicleAcquisitionCommissionTiming =
-  | "acquisition"
-  | "closed"
-  | "reserve";
+  "acquisition" | "closed" | "reserve";
 
 export type VehicleSupplier = {
   createdAt: string;

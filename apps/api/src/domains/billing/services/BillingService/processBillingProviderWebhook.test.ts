@@ -155,6 +155,9 @@ function createBillingRepository(): BillingRepository {
     getTenantOverview: async () => {
       throw new Error("Unused billing repository.");
     },
+    storeExistsInTenant: async () => {
+      throw new Error("Unused billing repository.");
+    },
     updateStoreEntitlement: async () => {
       throw new Error("Unused billing repository.");
     },

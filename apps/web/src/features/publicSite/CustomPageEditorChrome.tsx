@@ -47,9 +47,8 @@ export function CustomPageEditorTopBar({
       <div className="flex min-w-0 items-center gap-2 sm:gap-3">
         <Button
           aria-label="Voltar para páginas"
-          className="px-2 sm:px-3"
           onClick={onBack}
-          size="sm"
+          size="xs"
           title="Voltar"
           type="button"
           variant="ghost"
@@ -90,9 +89,8 @@ export function CustomPageEditorTopBar({
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
         <Button
           aria-label="Abrir configurações da página"
-          className="px-2.5 sm:px-3"
           onClick={onShowSettings}
-          size="sm"
+          size="xs"
           title="Configurações"
           type="button"
           variant="outline"
@@ -102,9 +100,8 @@ export function CustomPageEditorTopBar({
         </Button>
         <Button
           aria-label="Copiar prévia"
-          className="px-2.5 sm:px-3"
           onClick={onCopyPreview}
-          size="sm"
+          size="xs"
           title="Copiar prévia"
           type="button"
           variant="outline"
@@ -112,7 +109,7 @@ export function CustomPageEditorTopBar({
           <Copy className="h-3.5 w-3.5 sm:mr-1.5" />
           <span className="hidden sm:inline">Copiar</span>
         </Button>
-        <Button className="px-2.5 sm:px-3" size="sm" variant="outline" asChild>
+        <Button size="xs" variant="outline" asChild>
           <a
             aria-label="Visualizar página"
             href={previewUrl}
@@ -126,10 +123,9 @@ export function CustomPageEditorTopBar({
         </Button>
         <Button
           aria-label="Salvar página"
-          className="px-2.5 sm:px-3"
           disabled={isSaving}
           onClick={onSave}
-          size="sm"
+          size="xs"
           title="Salvar"
           type="button"
         >

@@ -56,7 +56,7 @@ export function HeaderBlock({ component, context }: BuilderBlockProps) {
         ) : null}
         {boolProp(props.showContactButton, true) ? (
           <a
-            className="inline-flex min-h-10 shrink-0 items-center rounded px-5 text-xs font-bold uppercase tracking-wider text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_16%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
+            className="inline-flex min-h-10 shrink-0 items-center rounded-xl px-5 text-xs font-bold uppercase tracking-wider text-inverse shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
             href={textProp(props.contactButtonLink) ?? "#contato"}
             style={{ background: context.accent }}
           >

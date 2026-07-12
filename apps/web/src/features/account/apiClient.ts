@@ -18,7 +18,7 @@ export type SessionBootstrap = {
 
 export type StoreAccessSummary = {
   billingManagedBy?: "agency" | "store_owner";
-  effectivePermissions?: readonly string[];
+  effectivePermissions: readonly string[];
   role: string;
   status: "active" | "invited" | "suspended";
   storeId: string;

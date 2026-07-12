@@ -1,5 +1,13 @@
 import type { CrmWhatsappMessageType } from "../ports/crmWhatsappRepository.js";
-import { readNumber, readRecord, readString } from "./zapiPayloadRead.js";
+import {
+  cleanRecord,
+  firstArrayString,
+  firstNumber,
+  firstString,
+  readNumber,
+  readRecord,
+  readString,
+} from "./zapiPayloadRead.js";
 
 export type ExtractedZapiInboundContent = {
   content: string;
@@ -39,20 +47,24 @@ export function extractZapiInboundContent(
   if (stickerUrl) return mediaContent("STICKER", sticker, stickerUrl);
 
   const location = readRecord(payload.location);
-  if (Object.keys(location).length) return locationContent(location);
+  const normalizedLocation = locationContent(location);
+  if (normalizedLocation) return normalizedLocation;
 
   const contact = readRecord(payload.contact);
-  if (Object.keys(contact).length) return contactContent(contact);
+  const normalizedContact = contactContent(contact);
+  if (normalizedContact) return normalizedContact;
 
   const reaction = readRecord(payload.reaction);
-  if (Object.keys(reaction).length) {
+  const reactionMessageId = readString(reaction.messageId);
+  const reactionValue = readString(reaction.value);
+  if (reactionMessageId || reactionValue) {
     return {
-      content: `Reaction${reaction.value ? `: ${String(reaction.value)}` : ""}`,
+      content: `Reaction${reactionValue ? `: ${reactionValue}` : ""}`,
       metadata: {
         interactive: cleanRecord({
           kind: "reaction",
-          messageId: readString(reaction.messageId),
-          value: readString(reaction.value),
+          messageId: reactionMessageId,
+          value: reactionValue,
         }),
       },
       type: "INTERACTIVE",
@@ -95,12 +107,21 @@ function mediaContent(
 
 function locationContent(
   location: Record<string, unknown>,
-): ExtractedZapiInboundContent {
+): ExtractedZapiInboundContent | null {
   const name = readString(location.name);
   const address = readString(location.address);
   const url = readString(location.url);
   const latitude = readNumber(location.latitude);
   const longitude = readNumber(location.longitude);
+  if (
+    !name &&
+    !address &&
+    !url &&
+    latitude === undefined &&
+    longitude === undefined
+  ) {
+    return null;
+  }
   return {
     content: name ?? address ?? url ?? `${latitude ?? ""},${longitude ?? ""}`,
     metadata: {
@@ -112,15 +133,19 @@ function locationContent(
 
 function contactContent(
   contact: Record<string, unknown>,
-): ExtractedZapiInboundContent {
+): ExtractedZapiInboundContent | null {
   const displayName =
     readString(contact.displayName) ??
     readString(contact.name) ??
     readString(contact.fullName);
-  const phone = firstString(contact, ["phone", "phoneNumber", "waId"]);
+  const phone =
+    firstString(contact, ["phone", "phoneNumber", "waId"]) ??
+    firstArrayString(contact.phones);
   const vcard = readString(contact.vcard) ?? readString(contact.vCard);
+  const content = displayName ?? phone ?? vcard;
+  if (!content) return null;
   return {
-    content: displayName ?? phone ?? vcard ?? "Contact",
+    content,
     metadata: {
       contact: cleanRecord({ displayName, phone, vcard }),
     },
@@ -130,50 +155,72 @@ function contactContent(
 
 function extractInteractiveContent(payload: Record<string, unknown>) {
   const poll = readRecord(payload.poll);
-  if (Object.keys(poll).length) {
-    const question = readString(poll.question) ?? "";
+  const question = readString(poll.question);
+  if (question) {
     return {
       content: `Poll: ${question}`,
       metadata: { interactive: cleanRecord({ kind: "poll", question }) },
       type: "INTERACTIVE" as const,
     };
   }
-  const buttons = readRecord(payload.buttonsResponseMessage);
-  if (buttons.message) {
-    return interactiveReplyContent("button", String(buttons.message));
+
+  const pollVote = readRecord(payload.pollVote);
+  const pollMessageId = readString(pollVote.pollMessageId);
+  const options = readPollVoteOptions(pollVote.options);
+  if (pollMessageId || options.length) {
+    return {
+      content: options.length
+        ? `Poll vote: ${options.join(", ")}`
+        : "Poll vote",
+      metadata: {
+        interactive: cleanRecord({
+          kind: "poll_vote",
+          options: options.length ? options : undefined,
+          pollMessageId,
+        }),
+      },
+      type: "INTERACTIVE" as const,
+    };
   }
+
+  const buttons = readRecord(payload.buttonsResponseMessage);
+  const buttonMessage = readString(buttons.message);
+  if (buttonMessage) {
+    const id = readString(buttons.buttonId);
+    return interactiveReplyContent("button", buttonMessage, {
+      ...(id ? { id } : {}),
+    });
+  }
+
   const list = readRecord(payload.listResponseMessage);
-  if (list.message)
-    return interactiveReplyContent("list", String(list.message));
+  const listMessage = readString(list.message);
+  if (listMessage) {
+    const id = readString(list.selectedRowId);
+    const title = readString(list.title);
+    return interactiveReplyContent("list", listMessage, {
+      ...(id ? { id } : {}),
+      ...(title ? { title } : {}),
+    });
+  }
   return null;
 }
 
-function interactiveReplyContent(kind: string, message: string) {
+function interactiveReplyContent(
+  kind: "button" | "list",
+  message: string,
+  details: { id?: string; title?: string },
+) {
   return {
     content: message,
-    metadata: { interactive: { kind } },
+    metadata: { interactive: cleanRecord({ ...details, kind }) },
     type: "INTERACTIVE" as const,
   };
 }
 
-function firstString(source: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = readString(source[key]);
-    if (value) return value;
-  }
-  return undefined;
-}
-
-function firstNumber(source: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = readNumber(source[key]);
-    if (value !== undefined) return value;
-  }
-  return undefined;
-}
-
-function cleanRecord(input: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(input).filter(([, value]) => value !== undefined),
-  );
+function readPollVoteOptions(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((candidate) => {
+    const name = readString(readRecord(candidate).name);
+    return name ? [name] : [];
+  });
 }

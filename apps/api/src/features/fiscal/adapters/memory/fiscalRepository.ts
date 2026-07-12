@@ -15,6 +15,16 @@ export function createMemoryFiscalRepository(): FiscalRepository {
       documents.unshift(document);
       return document;
     },
+    async findDocumentById(input) {
+      return (
+        documents.find(
+          (document) =>
+            document.id === input.documentId &&
+            document.storeId === input.storeId &&
+            document.tenantId === input.tenantId,
+        ) ?? null
+      );
+    },
     async getOverview(input) {
       const scopedDocuments = documents.filter(
         (document) =>

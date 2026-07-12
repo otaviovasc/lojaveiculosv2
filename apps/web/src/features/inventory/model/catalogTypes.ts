@@ -17,20 +17,10 @@ export type InventoryCreateListingStatus = Extract<
 >;
 
 export type InventoryFuelType =
-  | "diesel"
-  | "electric"
-  | "ethanol"
-  | "flex"
-  | "gasoline"
-  | "hybrid"
-  | "other";
+  "diesel" | "electric" | "ethanol" | "flex" | "gasoline" | "hybrid" | "other";
 
 export type InventoryTransmission =
-  | "automated"
-  | "automatic"
-  | "cvt"
-  | "manual"
-  | "other";
+  "automated" | "automatic" | "cvt" | "manual" | "other";
 
 export type InventoryEngineAspiration = VehicleEngineAspiration;
 export type InventoryEngineDisplacement = VehicleEngineDisplacement;

@@ -1,5 +1,10 @@
 import type { CrmWhatsappMessageType } from "../ports/crmWhatsappRepository.js";
-import { isTruthy, readRecord, readString } from "./zapiPayloadRead.js";
+import {
+  isTruthy,
+  readNumber,
+  readRecord,
+  readString,
+} from "./zapiPayloadRead.js";
 import { extractZapiInboundContent } from "./zapiInboundContent.js";
 
 export type ParsedZapiInboundMessage = {
@@ -136,11 +141,24 @@ function buildMetadata(
 }
 
 function readZapiTimestamp(payload: Record<string, unknown>) {
-  const momment = readString(payload.momment);
-  if (momment) return new Date(momment);
-  const timestamp =
-    typeof payload.timestamp === "number" ? payload.timestamp : null;
-  return timestamp ? new Date(timestamp * 1000) : new Date();
+  const momment = readProviderDate(payload.momment);
+  if (momment) return momment;
+  const timestamp = readNumber(payload.timestamp);
+  return timestamp === undefined
+    ? new Date()
+    : (readDate(timestamp * 1000) ?? new Date());
+}
+
+function readProviderDate(value: unknown) {
+  const milliseconds = readNumber(value);
+  if (milliseconds !== undefined) return readDate(milliseconds);
+  const text = readString(value);
+  return text ? readDate(Date.parse(text)) : null;
+}
+
+function readDate(milliseconds: number) {
+  const date = new Date(milliseconds);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function isNotification(payload: Record<string, unknown>) {

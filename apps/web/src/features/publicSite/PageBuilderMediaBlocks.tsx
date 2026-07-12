@@ -52,7 +52,7 @@ export function GalleryBlock({ component, context }: BuilderBlockProps) {
           {images.map((image, index) => (
             <button
               className={cx(
-                "group overflow-hidden rounded-xl border border-line bg-app text-left shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_24px_rgba(15,23,42,0.05)] cursor-pointer",
+                "group overflow-hidden rounded-xl border border-line bg-app text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_24px_rgba(15,23,42,0.05)] cursor-pointer",
                 layout === "carousel" &&
                   "min-w-[78%] snap-start sm:min-w-[42%] lg:min-w-[31%]",
                 layout === "mosaic" &&

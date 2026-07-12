@@ -1,16 +1,32 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ClerkAuthProvider } from "../features/account/ClerkAuthProvider";
 import { App } from "./App";
 
-vi.mock("./AdminApp", () => ({
-  AdminApp: () => <div data-testid="admin-app" />,
-}));
+vi.mock("./AppLazyRoutes", async () => {
+  const { LandingPage } = await import("../features/marketing/LandingPage");
+  const emptyRoute = () => null;
+  return {
+    AdminApp: emptyRoute,
+    AgencyBillingPage: emptyRoute,
+    AgencyCreateStorePage: emptyRoute,
+    AgencyDashboardPage: emptyRoute,
+    AgencyLayout: emptyRoute,
+    AgencyStatsPage: emptyRoute,
+    LandingPage,
+    OwnerOnboardingPage: emptyRoute,
+    PlatformAdminPage: emptyRoute,
+    PublicCustomPageRoute: emptyRoute,
+    PublicStorefrontPage: emptyRoute,
+  };
+});
 
 describe("App routes", () => {
+  afterEach(cleanup);
+
   it("serves the root path as a public landing page", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>

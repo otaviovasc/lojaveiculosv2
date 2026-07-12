@@ -78,7 +78,7 @@ export function PageCard({
           label="Duplicar"
           onClick={onDuplicate}
         />
-        <Button className="h-8 w-8 p-0" size="sm" variant="outline" asChild>
+        <Button size="icon-sm" variant="outline" asChild>
           <a
             aria-label={`Visualizar ${page.title}`}
             href={previewUrl}
@@ -121,10 +121,10 @@ export function CustomPagesDialog({
         onClick={onClose}
         type="button"
       />
-      <div className="relative z-10 w-full max-w-md rounded-lg border border-border bg-background p-6 shadow-lg">
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-border bg-background p-6 shadow-xl">
         <button
           aria-label="Fechar"
-          className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
+          className="absolute right-4 top-4 rounded-lg opacity-70 hover:opacity-100 hover:bg-muted p-1 transition-all"
           onClick={onClose}
           title="Fechar"
           type="button"
@@ -154,10 +154,10 @@ function IconButton({
   return (
     <Button
       aria-label={label}
-      className={["h-8 w-8 p-0", className].filter(Boolean).join(" ")}
+      className={className}
       disabled={disabled}
       onClick={onClick}
-      size="sm"
+      size="icon-sm"
       title={label}
       type="button"
       variant="outline"

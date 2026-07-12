@@ -42,8 +42,8 @@ export function StorefrontStateFrame({
 }) {
   return (
     <main className="mx-auto flex min-h-[32rem] w-full max-w-7xl items-center justify-center px-4 py-6 lg:px-6 lg:py-8">
-      <section className="w-full max-w-md rounded-lg border border-line bg-panel p-6 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-lg bg-accent-soft text-accent">
+      <section className="w-full max-w-md rounded-2xl border border-line bg-panel p-6 text-center shadow-md">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
           {icon}
         </div>
         <h2 className="mt-4 text-xl font-black">{title}</h2>

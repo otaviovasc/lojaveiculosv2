@@ -22,10 +22,7 @@ export type AuditCategory =
 export type AuditCriticality = "low" | "medium" | "high" | "critical";
 
 export type AuditDataClassification =
-  | "public"
-  | "internal"
-  | "confidential"
-  | "restricted";
+  "public" | "internal" | "confidential" | "restricted";
 
 export type AuditOutcome = "attempted" | "succeeded" | "failed" | "denied";
 

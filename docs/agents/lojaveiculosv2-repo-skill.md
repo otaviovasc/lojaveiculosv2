@@ -71,9 +71,13 @@ pnpm run validate
 ```
 
 Validation tiers are explicit: `validate:commit` is for pre-commit,
-`validate:push` is the full local gate, `validate:ci` is CI, and `validate`
-aliases `validate:push`. New `check:*` guardrails must be added to
-`validate:core-guardrails`; `check:validation` enforces that wiring.
+`validate:push` is the full local gate, `validate:ci` adds enforced workspace
+coverage plus production builds for both deployable apps, and `validate` aliases
+`validate:push`. New `check:*` guardrails must be added to
+`validate:core-guardrails`; `check:validation` enforces that wiring. Add checker
+regressions under `tools/quality/*.test.mjs`, which are mandatory through
+`test:quality-tools`. Typed ESLint keeps union switches exhaustive; do not add a
+default branch to hide a missing domain case.
 
 If `pnpm run validate` cannot run, report which narrower checks ran and why full
 validation was skipped.

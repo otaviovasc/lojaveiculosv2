@@ -1,51 +1,18 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join } from "node:path";
+import { readText, repoPath, repoRoot, walkFiles } from "./quality-files.mjs";
+import {
+  findWebUiContractViolations,
+  webUiContractMessages,
+} from "./web-ui-contract-rules.mjs";
 
-const root = new URL("../../", import.meta.url).pathname;
-const scopedRoots = ["apps/web/src"].map((path) => join(root, path));
-const violations = [
-  {
-    label: "native <select>",
-    pattern: /<select\b/,
-    suggestion:
-      "Use FeatureSelect, CrmSelect, InventorySelect, or another CustomSelect wrapper.",
-  },
-  {
-    label: "native date input",
-    pattern: /\btype=["']date["']/,
-    suggestion: "Use the shared DatePickerField used by DashboardHome.",
-  },
-  {
-    label: "native browser warning",
-    pattern: /\b(?:window\.)?(?:alert|confirm|prompt)\s*\(/,
-    suggestion: "Use FeatureDialog, ConfirmDialog, or visible feature state.",
-  },
-  {
-    label: "dangerous HTML injection",
-    pattern: /\bdangerouslySetInnerHTML\s*=/,
-    suggestion:
-      "Use typed structured content or a reviewed sanitizer wrapper before rendering HTML.",
-  },
-  {
-    label: "javascript href",
-    pattern: /\bhref\s*=\s*["']javascript:/i,
-    suggestion: "Use a real route, button action, or safe event handler.",
-  },
-];
-
-runParserRegressionChecks();
-
-const failures = [];
-for (const file of scopedRoots.flatMap((scopeRoot) => walk(scopeRoot))) {
-  if (!/\.(ts|tsx)$/.test(file)) continue;
-  const source = readFileSync(file, "utf8");
-  for (const violation of violations) {
-    if (!violation.pattern.test(source)) continue;
-    failures.push(
-      `${relative(root, file)}: ${violation.label}. ${violation.suggestion}`,
-    );
-  }
-}
+const webRoot = join(repoRoot, "apps/web/src");
+const extensions = new Set([".ts", ".tsx"]);
+const failures = walkFiles(webRoot, { extensions }).flatMap((file) =>
+  findWebUiContractViolations(file, readText(file)).map(({ kind, line }) => {
+    const contract = webUiContractMessages[kind];
+    return `${repoPath(file)}:${line}: ${contract.label}. ${contract.suggestion}`;
+  }),
+);
 
 if (failures.length > 0) {
   console.error("Web UI contract violations:");
@@ -54,44 +21,3 @@ if (failures.length > 0) {
 }
 
 console.log("Web UI contract guardrails passed.");
-
-function walk(dir, files = []) {
-  for (const entry of readdirSync(dir)) {
-    const path = join(dir, entry);
-    const stat = statSync(path);
-    if (stat.isDirectory()) walk(path, files);
-    else files.push(path);
-  }
-  return files;
-}
-
-function runParserRegressionChecks() {
-  assertViolation("<select><option /></select>", "native <select>");
-  assertViolation('<input type="date" />', "native date input");
-  assertViolation('window.alert("x")', "native browser warning");
-  assertViolation(
-    "<div dangerouslySetInnerHTML={{ __html: body }} />",
-    "dangerous HTML injection",
-  );
-  assertViolation('<a href="javascript:alert(1)">x</a>', "javascript href");
-  assertNoViolation("<FeatureSelect />", "custom select wrappers should pass");
-}
-
-function assertViolation(source, expected) {
-  if (
-    violations.some(
-      (violation) =>
-        violation.label === expected && violation.pattern.test(source),
-    )
-  ) {
-    return;
-  }
-  console.error(`Web UI checker self-test failed: ${expected}`);
-  process.exit(1);
-}
-
-function assertNoViolation(source, label) {
-  if (violations.every((violation) => !violation.pattern.test(source))) return;
-  console.error(`Web UI checker self-test failed: ${label}`);
-  process.exit(1);
-}

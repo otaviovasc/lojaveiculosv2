@@ -34,9 +34,7 @@ export type InsertRecord =
   | InsertVehicleUnitRow;
 
 export type UpdateRecord =
-  | Partial<VehicleChecklistRow>
-  | UpdateVehicleListingRow
-  | UpdateVehicleUnitRow;
+  Partial<VehicleChecklistRow> | UpdateVehicleListingRow | UpdateVehicleUnitRow;
 
 export type StoredRows = {
   checklists: VehicleChecklistRow[];

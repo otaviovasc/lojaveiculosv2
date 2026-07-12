@@ -12,6 +12,7 @@ import { createAgencyFeature } from "./agency.controller.js";
 
 const tenantId = "11111111-1111-4111-8111-111111111111";
 const storeId = "22222222-2222-4222-8222-222222222222";
+const otherStoreId = "33333333-3333-4333-8333-333333333333";
 
 describe("agency controller", () => {
   it("lets an agency tenant member read overview without store slug", async () => {
@@ -147,6 +148,30 @@ describe("agency controller", () => {
       }),
     );
   });
+
+  it("does not mutate an entitlement for a store outside the tenant", async () => {
+    const audit = createAudit();
+    const app = createTestApp(audit);
+    const response = await app.request(
+      `/api/v1/agency/tenants/${tenantId}/stores/${otherStoreId}/entitlements/crm`,
+      {
+        body: JSON.stringify({ featureKey: "crm", status: "suspended" }),
+        headers: { "content-type": "application/json" },
+        method: "PATCH",
+      },
+    );
+
+    expect(response.status).toBe(404);
+    const body = (await response.json()) as Record<string, unknown>;
+    expect(body).toMatchObject({
+      code: "BILLING_STORE_NOT_FOUND",
+      message: "Managed store was not found.",
+    });
+    expect(body.requestId).toEqual(expect.any(String));
+    expect(audit.record).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "agency.store_entitlement.update" }),
+    );
+  });
 });
 
 function createTestApp(audit: ReturnType<typeof createAudit>) {
@@ -177,7 +202,10 @@ function createTestApp(audit: ReturnType<typeof createAudit>) {
       services: createBillingServices({
         ports: {
           billingProviderRepository: createMemoryBillingProviderRepository(),
-          billingRepository: createMemoryBillingRepository(),
+          billingRepository: createMemoryBillingRepository({
+            storeId,
+            tenantId,
+          }),
           billingWebhookRepository: createMemoryBillingWebhookRepository(),
           environment: "test",
           paymentProviderGateway: createMemoryPaymentProviderGateway([]),

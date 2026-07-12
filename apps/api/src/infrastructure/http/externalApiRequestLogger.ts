@@ -13,8 +13,7 @@ export function createExternalApiRequestLogger(
     if (!repository) return;
 
     const metadata = context.get(externalApiContextKey) as
-      | ExternalApiHttpContextMetadata
-      | undefined;
+      ExternalApiHttpContextMetadata | undefined;
     if (!metadata) return;
 
     await repository.recordRequest({

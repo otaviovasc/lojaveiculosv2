@@ -1,7 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import userEvent from "@testing-library/user-event";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappIntegrationsPage } from "./CrmWhatsappIntegrationsPage";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
@@ -14,7 +19,6 @@ describe("CrmWhatsappIntegrationsPage", () => {
   });
 
   it("saves the external bot URL and write-only secret", async () => {
-    const user = userEvent.setup();
     const updateBotIntegration = vi.fn(async () => ({
       integration: createIntegration({
         enabled: true,
@@ -29,14 +33,14 @@ describe("CrmWhatsappIntegrationsPage", () => {
     const urlInput = await screen.findByDisplayValue(
       "https://bot.old.test/webhook",
     );
-    await user.clear(urlInput);
-    await user.type(urlInput, "https://bot.example.test/webhook");
-    await user.type(
-      screen.getByPlaceholderText("Segredo configurado"),
-      "novo-segredo",
-    );
-    await user.click(screen.getByRole("checkbox", { name: /bot habilitado/i }));
-    await user.click(screen.getByRole("button", { name: /salvar/i }));
+    fireEvent.change(urlInput, {
+      target: { value: "https://bot.example.test/webhook" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("Segredo configurado"), {
+      target: { value: "novo-segredo" },
+    });
+    fireEvent.click(screen.getByRole("checkbox", { name: /bot habilitado/i }));
+    fireEvent.click(screen.getByRole("button", { name: /salvar/i }));
 
     await waitFor(() =>
       expect(updateBotIntegration).toHaveBeenCalledWith({

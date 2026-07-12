@@ -108,7 +108,7 @@ export function HeroSection({
 
           {featuredListing && onOpenListing ? (
             <button
-              className="mt-5 inline-flex max-w-xl flex-wrap items-center gap-2 rounded border border-white/15 bg-white/5 px-3 py-2 text-left text-sm font-bold text-zinc-200 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.99]"
+              className="mt-5 inline-flex max-w-xl flex-wrap items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-left text-sm font-bold text-zinc-200 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.99]"
               onClick={() => onOpenListing(featuredListing.slug)}
               type="button"
             >
@@ -124,13 +124,13 @@ export function HeroSection({
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <a
-              className="inline-flex min-h-12 items-center justify-center rounded bg-accent px-8 text-sm font-bold text-inverse shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-95 cursor-pointer"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-8 text-sm font-bold text-inverse shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-95 cursor-pointer"
               href="#estoque"
             >
               Ver estoque
             </a>
             <a
-              className="inline-flex min-h-12 items-center justify-center rounded border border-white/20 bg-white/5 px-8 text-sm font-bold text-white backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/10 active:translate-y-0 active:scale-95 cursor-pointer"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 bg-white/5 px-8 text-sm font-bold text-white backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/10 active:translate-y-0 active:scale-95 cursor-pointer"
               href="#contato"
             >
               {theme.ctaLabel}
@@ -139,7 +139,7 @@ export function HeroSection({
 
           {/* Proof banners */}
           {visibleProofItems.length > 0 && (
-            <div className="mt-10 grid gap-0 overflow-hidden rounded border border-white/10 bg-black/35 backdrop-blur sm:grid-cols-3">
+            <div className="mt-10 grid gap-0 overflow-hidden rounded-xl border border-white/10 bg-black/35 backdrop-blur sm:grid-cols-3">
               {visibleProofItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -197,13 +197,13 @@ export function HeroSection({
 
             <button
               onClick={() => onOpenListing(featuredListing.slug)}
-              className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded bg-accent text-sm font-bold text-inverse transition-all duration-300 hover:brightness-110 cursor-pointer"
+              className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent text-sm font-bold text-inverse transition-all duration-300 hover:brightness-110 cursor-pointer"
             >
               Conhecer veículo →
             </button>
           </div>
         ) : (
-          <div className="hidden lg:block relative aspect-[4/3] w-full overflow-hidden rounded border border-white/10 bg-white/5 shadow-2xl">
+          <div className="hidden lg:block relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-2xl">
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
               <Sparkles
                 aria-hidden="true"
@@ -279,7 +279,7 @@ export function StockSection({
                 className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted"
               />
               <input
-                className="min-h-11 w-full rounded border border-line bg-panel pl-11 pr-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/50 focus:ring-2 focus:ring-accent/10"
+                className="min-h-11 w-full rounded-xl border border-line bg-panel pl-11 pr-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/50 focus:ring-2 focus:ring-accent/10"
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Buscar por modelo"
                 value={query}

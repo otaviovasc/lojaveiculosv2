@@ -43,6 +43,7 @@ describe("resolveSessionDestination", () => {
       resolveSessionDestination({
         ...baseBootstrap,
         defaultStore: {
+          effectivePermissions: [],
           role: "owner",
           status: "active",
           storeId: "store-id",

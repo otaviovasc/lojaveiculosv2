@@ -1,7 +1,4 @@
-import type {
-  StoreSettingsSnapshot,
-  UpdateStoreSettingsInput,
-} from "./types";
+import type { StoreSettingsSnapshot, UpdateStoreSettingsInput } from "./types";
 
 export function createStoreSettingsPatch(
   before: StoreSettingsSnapshot,

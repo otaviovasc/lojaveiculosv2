@@ -10,6 +10,7 @@ import type {
 } from "../../ports/accountProvisioningRepository.js";
 import {
   AccountProvisioningPolicyError,
+  AccountProvisioningScopeError,
   assertVerifiedPrimaryEmail,
   normalizePublicSlug,
   requireClerkActor,
@@ -22,7 +23,7 @@ export type CreateAgencyStoreInput = {
   publicSlug: string;
   storeLegalName?: string | null;
   storeTradingName: string;
-  tenantId: string;
+  tenantId: TenantId;
 };
 
 export async function createAgencyStore(
@@ -33,8 +34,15 @@ export async function createAgencyStore(
 ) {
   requireClerkActor(context);
   assertVerifiedPrimaryEmail(profile);
+  const tenantId = input.tenantId;
+  if (context.tenantId !== tenantId) {
+    throw new AccountProvisioningScopeError(
+      "Agency store tenant must match the service context.",
+    );
+  }
+  assertPermission(context, "store.manage");
+
   const actor = await ports.accountProvisioningRepository.ensureUser(profile);
-  const tenantId = input.tenantId as TenantId;
   const [isAgency, isPlatformAdmin] = await Promise.all([
     ports.accountProvisioningRepository.hasActiveTenantRole({
       role: "agency",
@@ -49,7 +57,6 @@ export async function createAgencyStore(
       "Only agency users or platform admins can create stores for this tenant.",
     );
   }
-  assertPermission(context, "store.manage");
 
   const publicSlug = normalizePublicSlug(input.publicSlug);
   context.logger.info(

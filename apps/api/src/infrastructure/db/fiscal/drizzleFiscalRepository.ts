@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { fiscalDocuments, fiscalEvents } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
@@ -27,6 +27,19 @@ export function createDrizzleFiscalRepository(
       });
       return toDocument(row);
     },
+    async findDocumentById(input) {
+      const [row] = await db
+        .select()
+        .from(fiscalDocuments)
+        .where(
+          and(
+            eq(fiscalDocuments.id, input.documentId),
+            scopedFiscalDocuments(input),
+          ),
+        )
+        .limit(1);
+      return row ? toDocument(row) : null;
+    },
     async getOverview(input) {
       const [documents, events] = await Promise.all([
         db
@@ -51,7 +64,11 @@ export function createDrizzleFiscalRepository(
           ...(input.accessKey !== undefined
             ? { accessKey: input.accessKey }
             : {}),
-          metadata: input.metadata ?? {},
+          ...(input.metadata !== undefined
+            ? {
+                metadata: sql`${fiscalDocuments.metadata} || ${JSON.stringify(input.metadata)}::jsonb`,
+              }
+            : {}),
           ...(input.providerDocumentId !== undefined
             ? { providerDocumentId: input.providerDocumentId }
             : {}),

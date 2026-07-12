@@ -14,6 +14,41 @@ deployment. Historical V1 migration execution is intentionally deferred.
 - Web modules exist for the production-critical workflows. Non-critical modules
   may remain as placeholders.
 
+## Web Bundle Regression Gate
+
+`pnpm run check:web-bundle` validates policy and wiring only. It deliberately
+does not inspect `apps/web/dist`, because commit and push guardrails must not
+pass or fail based on artifacts left by an older build. `pnpm run
+build:deployables` instead performs these steps in order:
+
+1. run the typed Vite production build with `emptyOutDir: true`;
+2. emit `.vite/manifest.json` with automatic Rolldown code splitting enabled;
+3. verify the fresh web artifacts against byte budgets;
+4. build the API deployable.
+
+The budgets are raw, minified artifact bytes rather than gzip estimates. Vite
+compares its chunk warning with uncompressed JavaScript because that size also
+tracks browser execution cost. The current measured production baseline and
+reviewed ceilings are:
+
+| Artifact class                    |        Measured |         Ceiling |
+| --------------------------------- | --------------: | --------------: |
+| Largest ordinary JavaScript chunk |   565,634 bytes |   580,000 bytes |
+| Largest stylesheet                |   628,100 bytes |   645,000 bytes |
+| PDF.js worker                     | 1,046,214 bytes | 1,075,000 bytes |
+
+The worker has a narrow hashed-filename exception and its own ceiling. Public
+images, fonts, SVGs, and downloadable PDFs are an explicit non-code allowlist;
+unknown extensions and unreviewed executable workers fail verification. Any
+budget increase requires a fresh measured build plus an intentional policy,
+rule-test, and documentation review. Keep automatic code splitting unless a
+measured optimization justifies a reviewed `output.codeSplitting` policy;
+Rolldown warns that manual grouping can change execution order.
+
+References: [Vite build options](https://vite.dev/config/build-options.html),
+[Vite production chunking](https://vite.dev/guide/build#chunking-strategy), and
+[Rolldown code splitting](https://rolldown.rs/reference/OutputOptions.codeSplitting).
+
 ## Required Production Variables
 
 Core runtime:
@@ -139,7 +174,7 @@ The API smoke suite covers:
 Run:
 
 ```bash
-pnpm --filter @lojaveiculosv2/api test -- productionSmoke
+pnpm run test:smoke:api
 pnpm run validate
 ```
 

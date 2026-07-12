@@ -86,7 +86,7 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
             />
           ) : null}
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded px-6 text-xs font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75 cursor-pointer"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded px-6 text-xs font-bold text-inverse shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:opacity-75 cursor-pointer"
             disabled={status.kind === "sending"}
             style={{ background: context.accent }}
             type="submit"

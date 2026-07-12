@@ -20,7 +20,7 @@ export function SupplierSummaryCard({ supplier, onEdit }: Props) {
         return "Parceiro";
       case "auction":
         return "Leilão";
-      default:
+      case "other":
         return "Outro";
     }
   };

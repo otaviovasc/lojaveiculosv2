@@ -40,7 +40,7 @@ export function AboutSection({
 
           {/* Trust points */}
           <div className="mt-8 grid gap-4 grid-cols-2">
-            <div className="p-4 rounded border border-line bg-app">
+            <div className="p-4 rounded-xl border border-line bg-app">
               <span className="block text-lg font-extrabold text-accent">
                 100%
               </span>
@@ -48,7 +48,7 @@ export function AboutSection({
                 Laudo Aprovado
               </span>
             </div>
-            <div className="p-4 rounded border border-line bg-app">
+            <div className="p-4 rounded-xl border border-line bg-app">
               <span className="block text-lg font-extrabold text-accent">
                 Garantia
               </span>
@@ -135,7 +135,7 @@ export function TestimonialsSection({
                       </span>
                     </div>
                   </div>
-                  <span className="shrink-0 rounded bg-accent-soft px-2 py-0.5 text-xs font-black uppercase tracking-widest text-accent/70">
+                  <span className="shrink-0 rounded-lg bg-accent-soft px-2 py-0.5 text-xs font-black uppercase tracking-widest text-accent/70">
                     Cliente Verificado
                   </span>
                 </div>
@@ -169,11 +169,11 @@ export function BrandMark({
   return img ? (
     <img
       alt=""
-      className="size-10 shrink-0 rounded border border-line bg-panel object-cover shadow-sm"
+      className="size-10 shrink-0 rounded-xl border border-line bg-panel object-cover shadow-sm"
       src={img}
     />
   ) : (
-    <div className="flex size-10 shrink-0 items-center justify-center rounded bg-accent/10 text-accent border border-accent/20 shadow-sm">
+    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent border border-accent/20 shadow-sm">
       <Sparkles aria-hidden="true" className="size-4" />
     </div>
   );

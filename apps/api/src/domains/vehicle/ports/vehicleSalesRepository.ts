@@ -5,10 +5,7 @@ import type {
 
 export type VehicleSaleStatus = "cancelled" | "closed" | "draft" | "pending";
 export type VehicleSalePaymentStatus =
-  | "cancelled"
-  | "paid"
-  | "pending"
-  | "refunded";
+  "cancelled" | "paid" | "pending" | "refunded";
 
 export type VehicleBuyerSnapshot = {
   address: string | null;

@@ -46,12 +46,7 @@ export type InventoryDocument = {
   metadata: Record<string, unknown>;
   mimeType: string | null;
   status:
-    | "archived"
-    | "draft"
-    | "issued"
-    | "pending_signature"
-    | "signed"
-    | "voided";
+    "archived" | "draft" | "issued" | "pending_signature" | "signed" | "voided";
   storageKey: string;
   storeId: string | null;
   targetId: string;

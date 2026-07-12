@@ -215,6 +215,10 @@ export type BillingRepository = {
     currentActorCanManage?: boolean;
     tenantId: TenantId;
   }) => Promise<AgencyTenantOverview>;
+  storeExistsInTenant: (input: {
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<boolean>;
   updateStoreEntitlement: (
     input: UpdateStoreEntitlementInput,
   ) => Promise<BillingOverview>;

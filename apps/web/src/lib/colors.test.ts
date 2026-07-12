@@ -2,12 +2,50 @@
 
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { getContrastColorForText, getTextColorForBackground } from "./colors";
+import {
+  contrastRatio as contrastRatioFromRgb,
+  getContrastColorForText,
+  getTextColorForBackground,
+  parseHexColor as parseHexColorToRgb,
+  relativeLuminance as relativeLuminanceFromRgb,
+} from "./colors";
 
 const hex = (value: string) => "#" + value;
+const cssRgb = (...channels: number[]) =>
+  ["rgb", `(${channels.join(", ")})`].join("");
 const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
 
 describe("color contrast helpers", () => {
+  it.each([
+    [hex("fff"), { r: 255, g: 255, b: 255 }],
+    ["151515", { r: 21, g: 21, b: 21 }],
+    [`  ${hex("AbC")}  `, { r: 170, g: 187, b: 204 }],
+  ])("parses supported hex color %j", (input, expected) => {
+    expect(parseHexColorToRgb(input)).toEqual(expected);
+  });
+
+  it.each([null, undefined, "", "#12", "#xyzxyz", cssRgb(0, 0, 0)])(
+    "rejects invalid color input %j",
+    (input) => {
+      expect(parseHexColorToRgb(input)).toBeNull();
+    },
+  );
+
+  it("uses the design-token fallback when color input is invalid", () => {
+    expect(getTextColorForBackground("not-a-color")).toBe("var(--color-text)");
+    expect(getContrastColorForText("not-a-color")).toBe("var(--color-text)");
+  });
+
+  it("computes WCAG luminance and contrast at both extremes", () => {
+    const black = { r: 0, g: 0, b: 0 };
+    const white = { r: 255, g: 255, b: 255 };
+
+    expect(relativeLuminanceFromRgb(black)).toBe(0);
+    expect(relativeLuminanceFromRgb(white)).toBeCloseTo(1, 10);
+    expect(contrastRatioFromRgb(black, white)).toBeCloseTo(21, 10);
+    expect(contrastRatioFromRgb(white, black)).toBeCloseTo(21, 10);
+  });
+
   it("uses dark text on bright solid stage colors", () => {
     expect(getTextColorForBackground(hex("eab308"))).toBe(hex("151515"));
   });

@@ -38,15 +38,13 @@ export function BuilderBlockLibrary({
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <div className="border-b border-border/50 p-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="h-9 pl-9"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar componentes..."
-            value={query}
-          />
-        </div>
+        <Input
+          inputSize="sm"
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Buscar componentes..."
+          startIcon={<Search />}
+          value={query}
+        />
       </div>
       <div className="grid gap-5 p-3">
         {builderBlockGroups.map((group) => {

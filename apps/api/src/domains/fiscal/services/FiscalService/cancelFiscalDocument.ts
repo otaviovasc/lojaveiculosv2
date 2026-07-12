@@ -6,12 +6,12 @@ import {
 import type { FiscalDocument } from "../../ports/fiscalRepository.js";
 import {
   requireFiscalScope,
+  requireScopedFiscalDocument,
   type FiscalServicePorts,
 } from "./serviceSupport.js";
 
 export type CancelFiscalDocumentInput = {
   documentId: string;
-  providerDocumentId: string;
   reason: string;
 };
 
@@ -27,12 +27,16 @@ export async function cancelFiscalDocument(
     "fiscal.document.cancel.started",
     createServiceLogMetadata(context, {
       documentId: input.documentId,
-      providerDocumentId: input.providerDocumentId,
     }),
   );
 
+  const persistedDocument = await requireScopedFiscalDocument(
+    scope,
+    input.documentId,
+    ports.fiscalRepository,
+  );
   const providerResult = await ports.fiscalProviderGateway.cancelDocument({
-    providerDocumentId: input.providerDocumentId,
+    providerDocumentId: persistedDocument.providerDocumentId,
     reason: input.reason,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
@@ -41,7 +45,6 @@ export async function cancelFiscalDocument(
     accessKey: providerResult.accessKey,
     documentId: input.documentId,
     metadata: { cancelReason: input.reason },
-    providerDocumentId: providerResult.providerDocumentId,
     status: mapStatus(providerResult.status),
     storeId: scope.storeId,
     tenantId: scope.tenantId,

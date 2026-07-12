@@ -1,7 +1,12 @@
 import type { FinanceEntry, FinanceEntryStatus } from "./types";
-import { entrySellerName, metadataString, originLabel } from "./commissionEntryMeta";
+import {
+  entrySellerName,
+  metadataString,
+  originLabel,
+} from "./commissionEntryMeta";
 
-export type CommissionPeriodPreset = "custom" | "lastMonth" | "thisMonth" | "thisWeek";
+export type CommissionPeriodPreset =
+  "custom" | "lastMonth" | "thisMonth" | "thisWeek";
 export type CommissionStatusFilter = "all" | FinanceEntryStatus;
 export type CommissionOriginFilter = "all" | string;
 
@@ -89,7 +94,9 @@ export function buildCommissionWorkspace(
   entries: readonly FinanceEntry[],
   filters: CommissionFilters,
 ): CommissionWorkspaceData {
-  const filteredEntries = entries.filter((entry) => entryMatches(entry, filters));
+  const filteredEntries = entries.filter((entry) =>
+    entryMatches(entry, filters),
+  );
   const sellers = groupBySeller(filteredEntries);
   const originOptions = uniqueOrigins(entries).map((origin) => ({
     label: originLabel(origin),
@@ -145,19 +152,22 @@ function sellerGroup(
 ): CommissionSellerGroup {
   const origins = Array.from(groupByOrigin(entries).entries()).map(
     ([origin, originEntries]) => ({
-    count: originEntries.length,
-    entries: originEntries,
-    label: originLabel(origin),
-    origin,
-    ...sumEntries(originEntries),
-  }));
+      count: originEntries.length,
+      entries: originEntries,
+      label: originLabel(origin),
+      origin,
+      ...sumEntries(originEntries),
+    }),
+  );
   return {
     count: entries.length,
     entries,
     origins,
     rank: 0,
     sellerId,
-    sellerName: entries[0] ? entrySellerName(entries[0]) : "Sem vendedor vinculado",
+    sellerName: entries[0]
+      ? entrySellerName(entries[0])
+      : "Sem vendedor vinculado",
     ...sumEntries(entries),
   };
 }
@@ -168,7 +178,8 @@ function summarize(
 ): CommissionSummary {
   return {
     count: entries.length,
-    sellersWithPending: sellers.filter((seller) => seller.pendingCents > 0).length,
+    sellersWithPending: sellers.filter((seller) => seller.pendingCents > 0)
+      .length,
     ...sumEntries(entries),
   };
 }
@@ -189,10 +200,14 @@ function sumEntries(entries: readonly FinanceEntry[]) {
 
 function entryMatches(entry: FinanceEntry, filters: CommissionFilters) {
   if (filters.status !== "all" && entry.status !== filters.status) return false;
-  if (filters.sellerId && (entry.sellerUserId ?? "unassigned") !== filters.sellerId) {
+  if (
+    filters.sellerId &&
+    (entry.sellerUserId ?? "unassigned") !== filters.sellerId
+  ) {
     return false;
   }
-  if (filters.origin !== "all" && originKey(entry) !== filters.origin) return false;
+  if (filters.origin !== "all" && originKey(entry) !== filters.origin)
+    return false;
   const periodAt = entry.createdAt ?? entry.dueAt;
   if (!periodAt || !isValidCommissionRange(filters)) return false;
   const periodDate = new Date(periodAt);

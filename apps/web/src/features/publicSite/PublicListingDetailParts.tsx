@@ -29,7 +29,7 @@ export function DetailBadge({
   icon?: ReactNode;
 }) {
   return (
-    <span className="inline-flex min-h-7 items-center gap-1.5 rounded bg-accent-soft px-3 text-xs font-black uppercase tracking-[0.16em] text-accent-soft-foreground">
+    <span className="inline-flex min-h-7 items-center gap-1.5 rounded-lg bg-accent-soft px-3 text-xs font-black uppercase tracking-[0.16em] text-accent-soft-foreground">
       {icon}
       {children}
     </span>
@@ -81,7 +81,7 @@ export function ColorSummary({
       <div className="mt-3 flex flex-wrap gap-2">
         {colorNames.map((colorName) => (
           <span
-            className="rounded border border-line bg-panel px-2.5 py-1 text-xs font-black text-app-text"
+            className="rounded-lg border border-line bg-panel px-2.5 py-1 text-xs font-black text-app-text"
             key={colorName}
           >
             {colorName}

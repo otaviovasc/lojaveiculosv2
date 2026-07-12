@@ -8,11 +8,10 @@ export const issueFiscalDocumentSchema = z.object({
   metadata: metadataSchema.optional(),
 });
 
-export const cancelFiscalDocumentSchema = z.object({
-  providerDocumentId: z.string().trim().min(1).max(191),
-  reason: z.string().trim().min(5).max(320),
-});
+export const cancelFiscalDocumentSchema = z
+  .object({
+    reason: z.string().trim().min(5).max(320),
+  })
+  .strict();
 
-export const syncFiscalDocumentSchema = z.object({
-  providerDocumentId: z.string().trim().min(1).max(191),
-});
+export const syncFiscalDocumentSchema = z.object({}).strict();

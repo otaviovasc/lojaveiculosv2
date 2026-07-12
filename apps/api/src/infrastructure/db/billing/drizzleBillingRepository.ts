@@ -3,6 +3,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   storeEntitlements,
   storeEntitlementEvents,
+  stores,
   subscriptionItems,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
@@ -40,6 +41,21 @@ export function createDrizzleBillingRepository(
     },
     async getTenantOverview(input) {
       return getTenantOverview(db, input);
+    },
+    async storeExistsInTenant(input) {
+      const [store] = await db
+        .select({ id: stores.id })
+        .from(stores)
+        .where(
+          and(
+            eq(stores.id, input.storeId),
+            eq(stores.tenantId, input.tenantId),
+            eq(stores.isDeleted, false),
+            isNull(stores.deletedAt),
+          ),
+        )
+        .limit(1);
+      return Boolean(store);
     },
     async updateStoreEntitlement(input) {
       return db.transaction(async (tx) => {

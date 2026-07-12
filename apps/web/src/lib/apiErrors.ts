@@ -89,7 +89,7 @@ async function createApiError(
   const payload = await readErrorPayload(response);
   const requestId =
     readString(payload?.requestId) ??
-    response.headers.get("x-request-id") ??
+    readString(response.headers.get("x-request-id")) ??
     undefined;
   const code = readString(payload?.code) ?? codeForStatus(response.status);
   const message =
@@ -107,14 +107,21 @@ async function createApiError(
 }
 
 async function readErrorPayload(response: Response) {
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) return null;
+  const contentType = (response.headers.get("content-type") ?? "")
+    .split(";", 1)[0]
+    ?.trim()
+    .toLowerCase();
+  if (contentType !== "application/json" && !contentType?.endsWith("+json")) {
+    return null;
+  }
 
   return (await response.json().catch(() => null)) as ApiErrorPayload | null;
 }
 
 function readString(value: unknown) {
-  return typeof value === "string" && value.trim() ? value : undefined;
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
 }
 
 function codeForStatus(status: number) {
@@ -154,6 +161,7 @@ function friendlyMessage(input: {
       return "Muitas tentativas em sequencia. Aguarde um instante e tente novamente.";
     case "INTERNAL_SERVER_ERROR":
       return "Erro interno do servidor. Tente novamente em instantes.";
+    case undefined:
     default:
       if (
         code.endsWith("_REQUEST_VALIDATION_ERROR") ||

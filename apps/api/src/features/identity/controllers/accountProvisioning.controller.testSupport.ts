@@ -1,5 +1,5 @@
 import { vi } from "vitest";
-import type { RoleKey } from "@lojaveiculosv2/shared";
+import type { RoleKey, TenantId } from "@lojaveiculosv2/shared";
 import type {
   AccountProvisioningRepository,
   InvitationSender,
@@ -16,6 +16,7 @@ export const profile = {
 };
 export const invitationId = "11111111-1111-4111-8111-111111111111";
 export const agencyInvitationId = "22222222-2222-4222-8222-222222222222";
+export const agencyTenantId = "33333333-3333-4333-8333-333333333333";
 
 export function createFeature(
   repository: AccountProvisioningRepository,
@@ -24,9 +25,12 @@ export function createFeature(
   },
 ) {
   return createAccountProvisioningFeature({
-    accountContextFactory: async () => ({
+    accountContextFactory: async (_context, scope) => ({
       profile,
-      serviceContext: createContext({ storeId: null, tenantId: null }),
+      serviceContext: createContext({
+        storeId: null,
+        tenantId: scope?.tenantId ?? null,
+      }),
     }),
     services: createAccountProvisioningServices({
       invitationSender,
@@ -38,10 +42,15 @@ export function createFeature(
 }
 
 export function createRepository(
-  input: { platformAdmin?: boolean; storeRole?: RoleKey | null } = {},
+  input: {
+    platformAdmin?: boolean;
+    storeRole?: RoleKey | null;
+    tenantAgency?: boolean;
+  } = {},
 ) {
   const platformAdmin = input.platformAdmin ?? true;
   const storeRole = input.storeRole ?? "owner";
+  const tenantAgency = input.tenantAgency ?? true;
   return {
     createAgency: vi.fn<AccountProvisioningRepository["createAgency"]>(
       async () => ({
@@ -52,7 +61,9 @@ export function createRepository(
         tenantSlug: "agency-one",
       }),
     ),
-    createAgencyStore: vi.fn(async () => storeRecord("agency")),
+    createAgencyStore: vi.fn<
+      AccountProvisioningRepository["createAgencyStore"]
+    >(async (creation) => storeRecord("agency", creation.tenantId)),
     createOwnerStore: vi.fn(async () => storeRecord("owner")),
     createStoreInvitation: vi.fn(async () => ({
       email: "seller@example.com",
@@ -93,7 +104,7 @@ export function createRepository(
     canCreateOwnerStore: vi.fn(async () => true),
     findActiveStoreRole: vi.fn(async () => storeRole),
     hasActivePlatformAdmin: vi.fn(async () => platformAdmin),
-    hasActiveTenantRole: vi.fn(async () => true),
+    hasActiveTenantRole: vi.fn(async () => tenantAgency),
     hasStorePermission: vi.fn(async () => true),
     markInvitationSendFailed: vi.fn(async () => true),
     markInvitationSent: vi.fn(async () => true),
@@ -120,14 +131,17 @@ function createContext(input: {
   });
 }
 
-function storeRecord(role: "agency" | "owner") {
+function storeRecord(
+  role: "agency" | "owner",
+  tenantId: TenantId = "tenant_1" as TenantId,
+) {
   return {
     billingManagedBy: role === "agency" ? "agency" : "store_owner",
     role,
     storeId: "store_1" as never,
     storeName: "Auto Prime",
     storeSlug: "auto-prime",
-    tenantId: "tenant_1" as never,
+    tenantId,
     tenantName: "Auto Prime",
   };
 }

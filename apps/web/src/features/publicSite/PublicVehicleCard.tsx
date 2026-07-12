@@ -23,7 +23,7 @@ export function PublicVehicleCard({
           <VehicleImage listing={listing} />
 
           {/* Status Badge */}
-          <span className="absolute left-3 top-3 rounded bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-xs font-black uppercase tracking-wider text-accent shadow-sm">
+          <span className="absolute left-3 top-3 rounded-lg bg-panel/95 backdrop-blur-sm border border-line px-2 py-0.5 text-xs font-black uppercase tracking-wider text-accent shadow-sm">
             Disponível
           </span>
 
@@ -80,14 +80,14 @@ export function PublicVehicleCard({
             </p>
           </div>
 
-          <button
-            className="flex min-h-11 items-center justify-center gap-1.5 rounded bg-accent px-4 text-sm font-bold text-inverse shadow-[0_4px_12px_color-mix(in_oklab,var(--color-accent)_15%,transparent)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
+          <a
+            className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-bold text-inverse shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
             onClick={onOpen}
             type="button"
           >
             <Eye aria-hidden="true" className="size-3.5" />
             Detalhes
-          </button>
+          </a>
         </div>
       </div>
     </article>

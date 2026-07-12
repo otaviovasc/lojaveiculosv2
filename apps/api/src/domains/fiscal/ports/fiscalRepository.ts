@@ -64,6 +64,11 @@ export type UpdateFiscalDocumentStatusInput = {
 
 export type FiscalRepository = {
   createDocument: (input: CreateFiscalDocumentInput) => Promise<FiscalDocument>;
+  findDocumentById: (input: {
+    documentId: string;
+    storeId: string;
+    tenantId: string;
+  }) => Promise<FiscalDocument | null>;
   getOverview: (input: {
     storeId: string;
     tenantId: string;

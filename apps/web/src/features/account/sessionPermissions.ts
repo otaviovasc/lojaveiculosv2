@@ -3,8 +3,8 @@ import { readRuntimeStoreSlug } from "./currentStore";
 
 export function readSessionEffectivePermissions(
   session: SessionBootstrap | null,
-): readonly string[] | undefined {
-  if (!session) return undefined;
+): readonly string[] {
+  if (!session) return [];
   const runtimeStoreSlug = readRuntimeStoreSlug(
     undefined,
     session.user.clerkUserId,
@@ -17,5 +17,5 @@ export function readSessionEffectivePermissions(
     (session.defaultStore?.status === "active" ? session.defaultStore : null) ??
     activeStores[0] ??
     null;
-  return store?.effectivePermissions;
+  return store?.effectivePermissions ?? [];
 }

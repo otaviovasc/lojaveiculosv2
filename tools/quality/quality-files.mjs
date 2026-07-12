@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative } from "node:path";
 
 export const repoRoot = new URL("../../", import.meta.url).pathname;
@@ -31,6 +31,19 @@ export function readText(file) {
 
 export function extensionOf(file) {
   return extname(file);
+}
+
+export function workspaceRoots() {
+  return ["apps", "packages"].flatMap((scope) => {
+    const scopeRoot = join(repoRoot, scope);
+    return readdirSync(scopeRoot, { withFileTypes: true })
+      .filter(
+        (entry) =>
+          entry.isDirectory() &&
+          existsSync(join(scopeRoot, entry.name, "package.json")),
+      )
+      .map((entry) => join(scopeRoot, entry.name));
+  });
 }
 
 function walk(dir, options, files = []) {

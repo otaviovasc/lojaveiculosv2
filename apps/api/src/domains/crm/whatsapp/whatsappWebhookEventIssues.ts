@@ -93,6 +93,7 @@ function isMessageLikeZapiReceivedPayload(payload: Record<string, unknown>) {
     "listResponseMessage",
     "location",
     "poll",
+    "pollVote",
     "reaction",
     "sticker",
     "text",

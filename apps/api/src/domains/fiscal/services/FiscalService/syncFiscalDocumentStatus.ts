@@ -6,12 +6,12 @@ import {
 import type { FiscalDocument } from "../../ports/fiscalRepository.js";
 import {
   requireFiscalScope,
+  requireScopedFiscalDocument,
   type FiscalServicePorts,
 } from "./serviceSupport.js";
 
 export type SyncFiscalDocumentStatusInput = {
   documentId: string;
-  providerDocumentId: string;
 };
 
 export async function syncFiscalDocumentStatus(
@@ -26,19 +26,22 @@ export async function syncFiscalDocumentStatus(
     "fiscal.document.status_sync.started",
     createServiceLogMetadata(context, {
       documentId: input.documentId,
-      providerDocumentId: input.providerDocumentId,
     }),
   );
 
+  const persistedDocument = await requireScopedFiscalDocument(
+    scope,
+    input.documentId,
+    ports.fiscalRepository,
+  );
   const providerResult = await ports.fiscalProviderGateway.syncDocumentStatus({
-    providerDocumentId: input.providerDocumentId,
+    providerDocumentId: persistedDocument.providerDocumentId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
   });
   const document = await ports.fiscalRepository.updateDocumentStatus({
     accessKey: providerResult.accessKey,
     documentId: input.documentId,
-    providerDocumentId: providerResult.providerDocumentId,
     status:
       providerResult.status === "processing" ? "draft" : providerResult.status,
     storeId: scope.storeId,
@@ -55,7 +58,7 @@ export async function syncFiscalDocumentStatus(
       providerDocumentId: document.providerDocumentId,
       status: document.status,
     },
-    outcome: "succeeded",
+    outcome: document.status === "failed" ? "failed" : "succeeded",
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,

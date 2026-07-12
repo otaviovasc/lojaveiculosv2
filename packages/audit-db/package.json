@@ -11,12 +11,15 @@
     "db:push:force": "node ../../tools/db/ensure-local-database-url.mjs AUDIT_DATABASE_URL && drizzle-kit push --force --config drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "drizzle-orm": "0.45.2"
   },
   "devDependencies": {
-    "drizzle-kit": "0.31.10"
+    "drizzle-kit": "0.31.10",
+    "vitest": "4.1.10"
   }
 }

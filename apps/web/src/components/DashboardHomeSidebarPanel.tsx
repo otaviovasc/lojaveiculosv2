@@ -10,7 +10,10 @@ import {
 import type { ReactNode } from "react";
 import { motion } from "motion/react";
 import type { ModuleId } from "../app/modules";
-import { dashboardQuickActions } from "../features/analytics/dashboardHomeAnimation";
+import {
+  dashboardQuickActions,
+  type DashboardQuickActionId,
+} from "../features/analytics/dashboardHomeAnimation";
 import type { AnalyticsDashboard } from "../features/analytics/types";
 import { DashboardHomeEntry } from "./DashboardHomeEntry";
 
@@ -208,7 +211,7 @@ function SidebarDivider() {
   return <div className="border-t border-line-strong/20" />;
 }
 
-function getQuickActionIcon(id: ModuleId) {
+function getQuickActionIcon(id: DashboardQuickActionId) {
   switch (id) {
     case "customers":
       return Headset;
@@ -217,7 +220,6 @@ function getQuickActionIcon(id: ModuleId) {
     case "reports":
       return BarChart3;
     case "inventory":
-    default:
       return Car;
   }
 }

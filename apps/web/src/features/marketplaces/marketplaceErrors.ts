@@ -82,6 +82,7 @@ function userActionForCode(code: string | undefined) {
       return "Aguarde o limite do provedor liberar e tente novamente.";
     case "MARKETPLACE_SYNC_JOB_NOT_RETRYABLE":
       return "Crie uma nova previa de estoque antes de tentar novamente.";
+    case undefined:
     default:
       return "Revise os bloqueios do estoque e tente novamente.";
   }

@@ -26,11 +26,19 @@ export function CommissionIconAction({
   );
 }
 
-export function SellerMetric({ label, value }: { label: string; value: number }) {
+export function SellerMetric({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
   return (
     <div className="min-w-28 rounded-lg border border-line bg-app px-3 py-2">
       <p className="text-xs font-black uppercase text-muted">{label}</p>
-      <p className="text-sm font-black text-app-text">{formatCurrency(value)}</p>
+      <p className="text-sm font-black text-app-text">
+        {formatCurrency(value)}
+      </p>
     </div>
   );
 }

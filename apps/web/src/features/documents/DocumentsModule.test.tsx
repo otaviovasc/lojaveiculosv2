@@ -10,7 +10,7 @@ import {
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import type { InventoryApi } from "../inventory/api/apiClient";
 import type { DocumentsApi } from "./apiClient";
-import type { DocumentsModule as DocumentsModuleComponent } from "./DocumentsModule";
+import { DocumentsModule } from "./DocumentsModule";
 import type {
   DocumentDownload,
   DocumentTemplate,
@@ -18,10 +18,8 @@ import type {
   WorkspaceDocument,
 } from "./types";
 
-let DocumentsModule: typeof DocumentsModuleComponent;
-
 describe("DocumentsModule", () => {
-  beforeAll(async () => {
+  beforeAll(() => {
     const matchMedia = vi.fn().mockImplementation((query: string) => ({
       addEventListener: vi.fn(),
       addListener: vi.fn(),
@@ -64,8 +62,6 @@ describe("DocumentsModule", () => {
       value: IntersectionObserverMock,
       writable: true,
     });
-
-    DocumentsModule = (await import("./DocumentsModule")).DocumentsModule;
   });
 
   afterEach(cleanup);

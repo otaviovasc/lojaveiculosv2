@@ -1,44 +1,28 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join } from "node:path";
+import { findApiErrorEnvelopeViolations } from "./api-error-envelope-rules.mjs";
+import { readText, repoPath, repoRoot, walkFiles } from "./quality-files.mjs";
 
-const root = new URL("../../", import.meta.url).pathname;
 const scanRoots = ["apps/api/src/features", "apps/api/src/infrastructure/http"];
 const allowedFiles = new Set([
   "apps/api/src/infrastructure/http/apiErrorResponse.ts",
 ]);
-const failures = [];
-
-for (const scanRoot of scanRoots) {
-  for (const file of walk(join(root, scanRoot))) {
-    const repoPath = relative(root, file);
-    if (!repoPath.endsWith(".ts")) continue;
-    if (repoPath.includes(".test.") || repoPath.includes(".testSupport"))
-      continue;
-    if (allowedFiles.has(repoPath)) continue;
-
-    const source = readFileSync(file, "utf8");
-    if (/\.json\s*\(\s*\{\s*message\s*:/s.test(source)) {
-      failures.push(
-        `${repoPath}: use jsonApiError(...) instead of direct { message } JSON errors`,
+const failures = scanRoots.flatMap((scanRoot) =>
+  walkFiles(join(repoRoot, scanRoot), { extensions: new Set([".ts"]) }).flatMap(
+    (file) => {
+      const path = repoPath(file);
+      if (
+        path.includes(".test.") ||
+        path.includes(".testSupport") ||
+        allowedFiles.has(path)
+      ) {
+        return [];
+      }
+      return findApiErrorEnvelopeViolations(file, readText(file)).map(
+        ({ line, message }) => `${path}:${line}: ${message}`,
       );
-    }
-    if (/\.json\s*\(\s*\{\s*error\s*:/s.test(source)) {
-      failures.push(
-        `${repoPath}: use jsonApiError(...) instead of direct { error } JSON errors`,
-      );
-    }
-    if (/Response\.json\s*\(\s*\{\s*(?:error|message)\s*:/s.test(source)) {
-      failures.push(
-        `${repoPath}: use jsonApiError(...) instead of Response.json(...) JSON errors`,
-      );
-    }
-    if (/\bcontext\.error\s*=/.test(source)) {
-      failures.push(
-        `${repoPath}: set context.error through jsonApiError(...) metadata handling`,
-      );
-    }
-  }
-}
+    },
+  ),
+);
 
 if (failures.length > 0) {
   console.error("API error envelope guardrail violations:");
@@ -46,13 +30,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-function* walk(dir) {
-  for (const entry of readdirSync(dir)) {
-    const path = join(dir, entry);
-    if (statSync(path).isDirectory()) {
-      yield* walk(path);
-    } else {
-      yield path;
-    }
-  }
-}
+console.log("API error envelope guardrails passed.");

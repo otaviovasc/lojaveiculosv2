@@ -7,8 +7,7 @@ export type PermissionOverride = {
 };
 
 export type PermissionDecision =
-  | { allowed: true }
-  | { allowed: false; reason: string };
+  { allowed: true } | { allowed: false; reason: string };
 
 export function resolvePermissions(input: {
   overrides?: readonly PermissionOverride[];

@@ -8,7 +8,11 @@ import {
   HttpContextAuthorizationError,
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import { FiscalScopeError } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
+import {
+  FiscalDocumentNotFoundError,
+  FiscalProviderReferenceMissingError,
+  FiscalScopeError,
+} from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
 import {
   cancelFiscalDocumentSchema,
   issueFiscalDocumentSchema,
@@ -60,7 +64,6 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
       return context.json(
         await services.cancelDocument(serviceContext, {
           documentId: context.req.param("documentId"),
-          providerDocumentId: input.providerDocumentId,
           reason: input.reason,
         }),
       );
@@ -69,12 +72,11 @@ export function createFiscalFeature(options: CreateFiscalFeatureOptions = {}) {
 
   feature.post("/documents/:documentId/status-sync", async (context) =>
     handleFiscal(context, async () => {
-      const input = await parseJson(context, syncFiscalDocumentSchema);
+      await parseJson(context, syncFiscalDocumentSchema);
       const serviceContext = await createUserContext(context, contextFactory);
       return context.json(
         await services.syncDocumentStatus(serviceContext, {
           documentId: context.req.param("documentId"),
-          providerDocumentId: input.providerDocumentId,
         }),
       );
     }),
@@ -131,6 +133,22 @@ async function handleFiscal(
         error,
         message: error.message,
         status: 401,
+      });
+    }
+    if (error instanceof FiscalDocumentNotFoundError) {
+      return jsonApiError(context, {
+        code: "FISCAL_DOCUMENT_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
+    }
+    if (error instanceof FiscalProviderReferenceMissingError) {
+      return jsonApiError(context, {
+        code: "FISCAL_PROVIDER_REFERENCE_MISSING",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
     if (
