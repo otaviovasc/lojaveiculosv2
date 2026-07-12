@@ -86,17 +86,18 @@ describe("document display model", () => {
   });
 
   it("filters by uploaded date range without leaking neighboring days", () => {
+    const localDayStart = new Date(2026, 5, 1, 0, 0, 0, 0);
     const before = createDocument({
       id: "before",
-      uploadedAt: "2026-06-01T02:59:59.000Z",
+      uploadedAt: new Date(localDayStart.getTime() - 1).toISOString(),
     });
     const inside = createDocument({
       id: "inside",
-      uploadedAt: "2026-06-01T12:00:00.000Z",
+      uploadedAt: new Date(2026, 5, 1, 12, 0, 0, 0).toISOString(),
     });
     const after = createDocument({
       id: "after",
-      uploadedAt: "2026-06-02T03:00:00.000Z",
+      uploadedAt: new Date(2026, 5, 2, 0, 0, 0, 0).toISOString(),
     });
 
     expect(

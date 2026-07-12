@@ -53,7 +53,7 @@ describe("CrmWhatsappSchedulesPage", () => {
     await user.click(screen.getByRole("button", { name: "Agendar mensagem" }));
 
     expect(callbacks.onSchedule).toHaveBeenCalledWith({
-      scheduledAt: "2099-01-01T13:00:00.000Z",
+      scheduledAt: new Date("2099-01-01T10:00").toISOString(),
       sessionId: "34000000-0000-4000-8000-000000000001",
       text: "Retorno combinado",
     });
