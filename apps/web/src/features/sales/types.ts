@@ -1,5 +1,7 @@
 export type SaleStatus = "draft" | "pending" | "closed" | "cancelled";
 export type SalePaymentStatus = "pending" | "paid" | "refunded" | "cancelled";
+export type SaleDocumentKind =
+  "delivery_term" | "power_of_attorney" | "sale_contract" | "sale_receipt";
 
 export type SalesAuth = {
   accessToken?: string | null;
@@ -36,7 +38,7 @@ export type SaleRecord = {
   revision: number;
   salePriceCents: number | null;
   saleSourceSnapshot: Record<string, unknown>;
-  selectedDocumentKinds: readonly string[];
+  selectedDocumentKinds: readonly SaleDocumentKind[];
   sellerUserId: string | null;
   status: SaleStatus;
   unitId: string | null;
@@ -52,7 +54,7 @@ export type SaleDraftInput = {
   payments?: readonly SalePaymentInput[];
   salePriceCents?: number | null;
   saleSourceSnapshot?: Record<string, unknown>;
-  selectedDocumentKinds?: readonly string[];
+  selectedDocumentKinds?: readonly SaleDocumentKind[];
   sellerUserId?: string | null;
   unitId?: string | null;
 };

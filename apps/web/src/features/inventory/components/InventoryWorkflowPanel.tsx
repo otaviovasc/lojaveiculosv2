@@ -2,7 +2,6 @@ import { Handshake } from "lucide-react";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
-import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
 import {
   InventoryField,
   InventoryInput,
@@ -29,12 +28,7 @@ import {
 } from "./InventoryWorkflowFormModel";
 import { inventoryUnitStatusLabels } from "../model/listCatalogModel";
 import type { InventoryListingDetail } from "../model/types";
-import type { InventoryStoreSettings } from "./InventoryPrintTypes";
-import {
-  InventoryWorkflowPrintActions,
-  InventoryWorkflowPrintPreview,
-  type WorkflowPrintKind,
-} from "./InventoryWorkflowDocuments";
+import { InventoryWorkflowDocumentHandoff } from "./InventoryWorkflowDocuments";
 
 export function InventoryWorkflowPanel({
   api,
@@ -57,27 +51,6 @@ export function InventoryWorkflowPanel({
   );
   const [state, setState] = useState<WorkflowState>({ kind: "idle" });
   const isSaving = state.kind === "saving";
-  const [activePrint, setActivePrint] = useState<WorkflowPrintKind | null>(
-    null,
-  );
-  const [storeSettings, setStoreSettings] =
-    useState<InventoryStoreSettings>(null);
-
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const headers = await createInventoryRuntimeHeaders();
-        const res = await fetch("/api/v1/settings/store", { headers });
-        if (res.ok) {
-          const data = (await res.json()) as InventoryStoreSettings;
-          setStoreSettings(data);
-        }
-      } catch (err) {
-        console.error("Failed to load store settings", err);
-      }
-    };
-    void fetchSettings();
-  }, []);
 
   useEffect(() => {
     setForm(createWorkflowForm(detail, initialUnitId));
@@ -298,22 +271,10 @@ export function InventoryWorkflowPanel({
           </button>
         </div>
 
-        <InventoryWorkflowPrintActions
-          onPrint={setActivePrint}
+        <InventoryWorkflowDocumentHandoff
           status={selectedUnit?.status ?? null}
         />
       </form>
-
-      {activePrint && (
-        <InventoryWorkflowPrintPreview
-          activePrint={activePrint}
-          detail={detail}
-          form={form}
-          onClose={() => setActivePrint(null)}
-          primaryUnit={primaryUnit}
-          storeSettings={storeSettings}
-        />
-      )}
     </InventoryPanel>
   );
 }

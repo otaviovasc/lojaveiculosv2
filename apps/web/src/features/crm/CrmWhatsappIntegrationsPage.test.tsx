@@ -74,7 +74,7 @@ describe("CrmWhatsappIntegrationsPage", () => {
 
     expect(
       screen.getByText(
-        "Seu usuario nao tem permissao para gerenciar integracoes.",
+        "Seu usuário não tem permissão para gerenciar integrações.",
       ),
     ).toBeVisible();
     expect(api.getBotIntegration).not.toHaveBeenCalled();

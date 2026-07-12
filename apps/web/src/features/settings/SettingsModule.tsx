@@ -4,6 +4,7 @@ import { FeatureTabs } from "../../components/ui/FeatureControls";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
+  FeatureEmptyState,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
@@ -130,32 +131,44 @@ export function SettingsModule({
   };
 
   return (
-    <FeaturePageShell variant="dashboard" mainClassName="!p-4 md:!p-6 !gap-4">
-      {status.kind === "error" ? (
+    <FeaturePageShell
+      className="settings-page-shell"
+      mainClassName="!p-4 md:!p-6 !gap-4"
+      variant="dashboard"
+    >
+      {status.kind === "error" &&
+      (settings !== null || activeTab !== "store") ? (
         <FeatureAlert className="settings-alert">{status.message}</FeatureAlert>
       ) : null}
 
-      <div className="flex items-center justify-between my-2">
+      <div className="settings-topbar my-2 flex flex-wrap items-center justify-between gap-3">
         <FeatureTabs
+          activeClassName="!bg-accent !text-inverse shadow-sm scale-[1.02]"
           ariaLabel="Áreas de configuração"
+          className="settings-primary-tabs inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line/60 bg-panel/75 p-1 shadow-sm backdrop-blur-md"
           onChange={(tab) => selectTab(tab, setActiveTab)}
+          optionClassName="inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 text-xs font-black text-muted transition-all hover:text-app-text"
           options={[
             { label: "Perfil da Loja", value: "store", icon: Store },
             { label: "Vitrine Digital", value: "storefront", icon: Wand2 },
             { label: "Papéis e Permissões", value: "roles", icon: Users },
           ]}
           value={activeTab}
-          className="inline-flex items-center gap-1 p-1 rounded-xl bg-panel/75 backdrop-blur-md border border-line/60 shadow-sm"
-          optionClassName="inline-flex h-9 items-center gap-2 rounded-lg px-4 text-xs font-black transition-all cursor-pointer text-muted hover:text-app-text"
-          activeClassName="!bg-accent !text-inverse shadow-sm scale-[1.02]"
         />
 
         <button
+          aria-label="Atualizar"
+          aria-busy={status.kind === "loading" || undefined}
+          className="settings-refresh-button inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-line bg-panel/75 px-4 text-xs font-black text-app-text shadow-sm hover:bg-app-elevated/45 disabled:cursor-wait disabled:opacity-70"
+          disabled={status.kind === "loading"}
           onClick={() => void refresh()}
+          title="Atualizar configurações"
           type="button"
-          className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel/75 px-4 text-xs font-black text-app-text hover:bg-app-elevated/45 cursor-pointer shadow-sm"
         >
-          <RefreshCcw className="size-3.5" />
+          <RefreshCcw
+            aria-hidden="true"
+            className={`size-3.5 ${status.kind === "loading" ? "animate-spin" : ""}`}
+          />
           <span>Atualizar</span>
         </button>
       </div>
@@ -165,6 +178,22 @@ export function SettingsModule({
           isSaving={status.kind === "saving"}
           onSave={save}
           settings={settings}
+        />
+      ) : activeTab === "store" && status.kind === "error" ? (
+        <FeatureEmptyState
+          action={
+            <button
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel px-4 text-xs font-black text-app-text shadow-sm hover:bg-app-elevated/45"
+              onClick={() => void refresh()}
+              type="button"
+            >
+              <RefreshCcw aria-hidden="true" className="size-3.5" />
+              Tentar carregar novamente
+            </button>
+          }
+          body="Os dados atuais não puderam ser carregados. Nenhuma alteração foi aplicada."
+          icon={Store}
+          title="Configurações indisponíveis"
         />
       ) : activeTab === "storefront" ? (
         <div className="-mx-4 -mb-6 md:-mx-6">
@@ -189,7 +218,7 @@ export function SettingsModule({
       )}
 
       {status.kind === "saved" ? (
-        <p className="settings-saved">
+        <p aria-live="polite" className="settings-saved" role="status">
           <Save aria-hidden="true" className="size-4" />
           Configurações salvas
         </p>
@@ -214,6 +243,6 @@ function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {
 function errorMessage(error: unknown) {
   return formatApiErrorDisplay(
     error,
-    "Nao foi possivel carregar as configuracoes.",
+    "Não foi possível carregar as configurações.",
   );
 }

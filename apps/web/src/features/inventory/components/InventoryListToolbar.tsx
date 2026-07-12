@@ -63,7 +63,7 @@ export function InventoryListToolbar({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onRefresh();
+    if (!loading) onRefresh();
   };
 
   const columnOptions = [
@@ -80,10 +80,12 @@ export function InventoryListToolbar({
   return (
     <FeatureToolbar className="relative z-30">
       <form
+        aria-busy={loading}
         className="grid gap-4 md:grid-cols-[1fr_240px_auto] items-center"
         onSubmit={submit}
       >
         <FeatureSearchField
+          disabled={loading}
           label="Buscar veículos"
           onChange={(event) => onSearchChange(event.target.value)}
           placeholder="Buscar por título, marca, modelo ou placa"
@@ -98,6 +100,7 @@ export function InventoryListToolbar({
           />
           <InventorySelect
             className="w-full pl-10"
+            disabled={loading}
             onChange={onStatusChange}
             options={inventoryListStatusOptions}
             value={status}
@@ -117,7 +120,6 @@ export function InventoryListToolbar({
         </div>
       </form>
 
-      {/* Row 2: Sort, Column Visibility, and View Toggle */}
       <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-between gap-4 border-t border-line/20 pt-4 mt-4 text-xs font-bold w-full">
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap w-full sm:w-auto">
           <label className="flex items-center gap-2 whitespace-nowrap w-full sm:w-auto">
@@ -140,7 +142,7 @@ export function InventoryListToolbar({
                 className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-app-elevated border border-line px-3 text-xs font-black text-app-text hover:bg-line/25 cursor-pointer"
                 type="button"
               >
-                <Columns className="size-3.5 text-muted" />
+                <Columns aria-hidden="true" className="size-3.5 text-muted" />
                 <span>Colunas</span>
               </button>
               <FeatureAnchoredPopover

@@ -83,7 +83,7 @@ export function CrmPipelineToolbar({
   };
 
   return (
-    <div className="crm-pipeline-toolbar flex flex-col gap-4 relative z-30 pb-2.5">
+    <div className="crm-pipeline-toolbar relative z-30 flex min-w-0 flex-col gap-4 pb-2.5">
       {/* Active Pipeline Selector Tabs Row */}
       <div className="flex flex-col gap-3 border-b border-line/20 pb-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex max-w-full min-w-0 flex-wrap items-center gap-1 pb-1 sm:pb-0">
@@ -123,10 +123,10 @@ export function CrmPipelineToolbar({
       </div>
 
       {/* Filters and Actions Row */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
         {/* Left Side: Search + Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative min-w-[200px]">
+        <div className="flex min-w-0 w-full flex-wrap items-center gap-2 xl:w-auto">
+          <div className="relative min-w-0 w-full sm:min-w-[200px] sm:w-auto">
             <input
               aria-label="Buscar negócios"
               className="min-h-9 w-full rounded-lg border border-line bg-app px-3 text-xs font-bold text-app-text outline-none placeholder:text-muted"
@@ -215,7 +215,7 @@ export function CrmPipelineToolbar({
         </div>
 
         {/* Right Side: Phase Count + Layout + Create Button */}
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 w-full flex-wrap items-center gap-2 sm:w-auto">
           <div className="relative">
             <button
               aria-expanded={showFasesDropdown}
@@ -293,7 +293,7 @@ export function CrmPipelineToolbar({
           </div>
 
           <button
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-black text-white hover:bg-blue-700 cursor-pointer shadow-sm"
+            className="crm-action min-h-9 flex-1 px-4 text-xs sm:flex-none"
             onClick={onCreateClick}
             type="button"
           >

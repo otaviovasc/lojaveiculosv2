@@ -2,10 +2,13 @@ import { RefreshCcw, Store } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   FeatureActionButton,
-  FeaturePageHeader,
   FeaturePageShell,
+  FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
-import { FeatureLoadingState } from "../../components/ui/FeatureStates";
+import {
+  FeatureEmptyState,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import type { MarketplaceApi } from "./apiClient";
 import { MarketplaceErrorAlert } from "./MarketplaceErrorAlert";
 import {
@@ -27,6 +30,7 @@ import type {
   MarketplaceStockPlan,
   MarketplaceStockSyncRunResponse,
 } from "./types";
+import "./marketplaceCommandBar.css";
 
 export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   const marketplaceApi = useMemo(
@@ -166,24 +170,32 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     : null;
 
   return (
-    <FeaturePageShell className="marketplace-shell" variant="content">
-      <FeaturePageHeader
-        actions={
+    <FeaturePageShell mainClassName="marketplace-shell">
+      <FeatureToolbar className="marketplace-command-bar">
+        <div className="marketplace-command-bar__identity">
+          <span className="marketplace-command-bar__mark">
+            <Store aria-hidden="true" className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="marketplace-command-bar__meta">Canais de venda</p>
+            <h1>Marketplaces da loja</h1>
+            <p className="marketplace-command-bar__description">
+              Revise conexões, pendências e lotes antes de publicar o estoque.
+            </p>
+          </div>
+        </div>
+        <div
+          aria-label="Ações dos marketplaces"
+          className="marketplace-command-bar__actions"
+          role="toolbar"
+        >
           <FeatureActionButton
             icon={RefreshCcw}
             label="Atualizar"
             onClick={() => void refresh()}
           />
-        }
-        description="Conexoes por loja, checklist operacional e publicacao manual de estoque."
-        eyebrow={
-          <>
-            <Store aria-hidden="true" className="size-4" />
-            Portal marketplaces
-          </>
-        }
-        title="OLX e Mercado Livre"
-      />
+        </div>
+      </FeatureToolbar>
       {status.kind === "error" ? (
         <MarketplaceErrorAlert {...status.display} />
       ) : null}
@@ -221,9 +233,22 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           <MarketplaceBatchProgress lastRun={lastRun} />
           <MarketplaceJobList overview={overview} onRetry={retryJob} />
         </>
+      ) : status.kind === "error" ? (
+        <FeatureEmptyState
+          action={
+            <FeatureActionButton
+              icon={RefreshCcw}
+              label="Tentar carregar novamente"
+              onClick={() => void refresh()}
+            />
+          }
+          body="As conexões e publicações não puderam ser consultadas. Nenhuma sincronização foi iniciada."
+          icon={Store}
+          title="Canais de venda indisponíveis"
+        />
       ) : (
         <FeatureLoadingState className="marketplace-empty">
-          Carregando marketplaces
+          Carregando canais de venda
         </FeatureLoadingState>
       )}
     </FeaturePageShell>
@@ -245,6 +270,6 @@ type MarketplaceStatus =
 function errorDisplay(error: unknown) {
   return formatMarketplaceError(
     error,
-    "Nao foi possivel concluir a acao de marketplace.",
+    "Não foi possível concluir a ação no marketplace.",
   );
 }

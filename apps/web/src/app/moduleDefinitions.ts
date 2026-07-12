@@ -11,11 +11,12 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     title: "Lançamentos",
   },
   autobot: {
-    action: "Preparar piloto",
-    description: "Automações comerciais isoladas por tenant e permissão.",
-    eyebrow: "Serviço",
+    action: "Criar automação",
+    description:
+      "Prévias versionadas, validação humana e trilha segura antes de qualquer execução.",
+    eyebrow: "IA operacional",
     id: "autobot",
-    title: "Autobot",
+    title: "Operador IA",
   },
   billing: {
     action: "Definir faturas",

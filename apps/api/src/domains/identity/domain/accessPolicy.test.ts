@@ -69,4 +69,27 @@ describe("access policy", () => {
       }
     }
   });
+
+  it("keeps automation approval manager-only by default", () => {
+    const salesman = resolvePermissions({ role: "salesman" });
+    const supervisor = resolvePermissions({ role: "supervisor" });
+    const automationPermissions =
+      permissionGroups.find((group) => group.key === "automation")
+        ?.permissions ?? [];
+
+    expect(automationPermissions.map((item) => item.key)).toEqual([
+      "automation.read",
+      "automation.run",
+      "automation.cancel",
+      "automation.approve",
+    ]);
+    expect(canAccess(salesman, "automation.run")).toEqual({ allowed: true });
+    expect(canAccess(salesman, "automation.approve")).toEqual({
+      allowed: false,
+      reason: "Missing permission: automation.approve",
+    });
+    expect(canAccess(supervisor, "automation.approve")).toEqual({
+      allowed: true,
+    });
+  });
 });

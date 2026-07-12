@@ -24,10 +24,13 @@ test.describe("QA harness smoke", () => {
     await expect(
       page.getByRole("navigation", { name: "Modulos" }),
     ).toBeVisible();
-    await expect(page.getByRole("button", { name: "Início" })).toBeVisible();
+    await expect(
+      page.getByRole("button", { exact: true, name: "Início" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Dashboard Gerencial" }),
     ).toBeVisible();
+    await page.waitForTimeout(1_600);
     await saveQaScreenshot(page, testInfo, "qa-harness-owner-dashboard");
     expectNoPageCrashes(diagnostics);
 

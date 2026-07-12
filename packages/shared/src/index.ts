@@ -12,6 +12,10 @@ export type Result<T, E = string> =
 export type PermissionKey =
   | "audit.read"
   | "analytics.read"
+  | "automation.approve"
+  | "automation.cancel"
+  | "automation.read"
+  | "automation.run"
   | "billing.manage"
   | "billing.webhook.ingest"
   | "compliance.manage"
@@ -100,6 +104,7 @@ export type PermissionKey =
 
 export type EntitlementKey =
   | "analytics"
+  | "automation"
   | "compliance"
   | "crm"
   | "custom_domain"
@@ -117,3 +122,4 @@ export * from "./vehicleColors.js";
 export * from "./vehicleTechnicalSpecs.js";
 export * from "./storefrontBuilder.js";
 export * from "./storefrontMedia.js";
+export * from "./externalApiContract.js";

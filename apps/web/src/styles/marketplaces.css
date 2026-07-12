@@ -116,6 +116,18 @@
   padding: 1rem;
 }
 
+.marketplace-card {
+  border-top-width: 4px;
+}
+
+.marketplace-card[data-provider="olx"] {
+  border-top-color: var(--color-violet-foreground);
+}
+
+.marketplace-card[data-provider="mercado_livre"] {
+  border-top-color: var(--color-warning-strong);
+}
+
 .marketplace-card h3,
 .marketplace-panel h3 {
   color: var(--color-text);
@@ -130,11 +142,23 @@
 }
 
 .marketplace-card span.is-enabled {
-  color: var(--color-accent-strong);
+  color: var(--color-success-strong);
 }
 
-.marketplace-card span.is-disabled {
+.marketplace-card span.is-success {
+  color: var(--color-success-strong);
+}
+
+.marketplace-card span.is-warning {
+  color: var(--color-warning-strong);
+}
+
+.marketplace-card span.is-danger {
   color: var(--color-danger);
+}
+
+.marketplace-card span.is-neutral {
+  color: var(--color-muted);
 }
 
 .marketplace-actions,
@@ -198,7 +222,7 @@
 }
 
 .marketplace-checklist li.is-warning {
-  color: var(--color-warning);
+  color: var(--color-warning-strong);
 }
 
 .marketplace-checklist li.is-blocked {

@@ -31,48 +31,42 @@ export function buildWorkflowPdfContent(
   const metadata = asRecord(record.metadata);
   const buyer = asRecord(metadata.buyer);
   const finance = asRecord(metadata.finance);
+  const store = asRecord(metadata.store);
   const vehicle = asRecord(metadata.vehicle);
   const variables = createWorkflowTemplateVariables({
     buyer,
     finance,
+    store,
     vehicle,
   });
 
   return {
     audit: {
       fields: [
-        { label: "Venda", value: text(metadata.saleId) },
-        { label: "Pagamento", value: text(metadata.salePaymentId) },
         {
-          label: "Modelo",
-          value: text(metadata.templateTitle ?? metadata.template),
+          label: "Documento",
+          value: labelForKind(record.kind),
         },
-        { label: "Vinculo", value: text(record.targetId) },
+        { label: "Versão", value: "1" },
+        { label: "Origem", value: "Fluxo operacional auditado" },
+        { label: "Integridade", value: "Registro preservado na plataforma" },
       ],
-      title: "Auditoria",
+      title: "Controle do documento",
     },
     buyer: {
       fields: [
         { label: "Comprador", value: text(buyer.name) },
         { label: "Documento", value: text(buyer.document) },
-        { label: "Telefone", value: text(buyer.phone) },
+        { label: "Telefone", value: formatPhone(buyer.phone) },
         { label: "Email", value: text(buyer.email) },
-        { label: "Endereco", value: text(buyer.address) },
+        { label: "Endereço", value: text(buyer.address) },
       ],
       title: "Dados do comprador",
     },
     clauses: declarationLines(record.kind, metadata, variables),
     finance: {
-      fields: [
-        { label: "Forma", value: text(finance.paymentMethod) },
-        { label: "Sinal", value: money(finance.signalAmountCents) },
-        { label: "Valor pago", value: money(finance.paidAmountCents) },
-        {
-          label: "Valor total",
-          value: money(finance.totalAmountCents ?? finance.salePriceCents),
-        },
-      ],
-      title: "Condicoes comerciais",
+      fields: financeFieldsForKind(record.kind, finance),
+      title: "Condições comerciais",
     },
     intro: introForKind(record.kind),
     subtitle: `${labelForKind(record.kind)} | Gerado em ${new Date().toLocaleString(
@@ -85,16 +79,15 @@ export function buildWorkflowPdfContent(
         : text(metadata.templateTitle),
     vehicle: {
       fields: [
-        { label: "Veiculo", value: text(vehicle.title) },
+        { label: "Veículo", value: text(vehicle.title) },
         { label: "Placa", value: text(vehicle.plate) },
         {
           label: "Ano",
           value: `${text(vehicle.manufactureYear)} / ${text(vehicle.modelYear)}`,
         },
         { label: "Chassi/VIN", value: text(vehicle.vin) },
-        { label: "Unidade", value: text(vehicle.unitId) },
       ],
-      title: "Dados do veiculo",
+      title: "Dados do veículo",
     },
   };
 }
@@ -138,29 +131,71 @@ function declarationLines(
 
 function introForKind(kind: string) {
   if (kind === "reservation_receipt") {
-    return "Recebemos do comprador qualificado abaixo o valor indicado como sinal para reserva do veiculo descrito.";
+    return "Recebemos do comprador qualificado abaixo o valor indicado como sinal para reserva do veículo descrito.";
   }
   if (kind === "delivery_term") {
-    return "Pelo presente termo, a loja declara a entrega do veiculo ao comprador, com responsabilidades assumidas a partir desta data.";
+    return "Pelo presente termo, a loja declara a entrega do veículo ao comprador, com responsabilidades assumidas a partir desta data.";
   }
   if (kind === "power_of_attorney") {
-    return "Instrumento preparado com os dados da venda para apoiar atos de transferencia e regularizacao do veiculo.";
+    return "Instrumento preparado com os dados da venda para apoiar atos de transferência e regularização do veículo.";
   }
   if (kind === "sale_receipt") {
-    return "A loja registra o recebimento dos valores da venda do veiculo qualificado abaixo.";
+    return "A loja registra o recebimento dos valores da venda do veículo qualificado abaixo.";
   }
-  return "Pelo presente instrumento particular, as partes qualificadas ajustam a compra e venda do veiculo descrito.";
+  return "Pelo presente instrumento particular, as partes qualificadas ajustam a compra e venda do veículo descrito.";
 }
 
 function labelForKind(kind: string) {
   const labels: Record<string, string> = {
     delivery_term: "Termo de entrega",
-    power_of_attorney: "Procuracao",
+    power_of_attorney: "Procuração",
     reservation_receipt: "Recibo de sinal",
     sale_contract: "Contrato de compra e venda",
     sale_receipt: "Recibo de venda",
   };
   return labels[kind] ?? kind;
+}
+
+function financeFieldsForKind(
+  kind: string,
+  finance: Record<string, unknown>,
+): readonly WorkflowPdfField[] {
+  const paymentMethod = {
+    label: "Forma de pagamento",
+    value: text(finance.paymentMethod),
+  };
+  if (kind === "reservation_receipt") {
+    return [
+      paymentMethod,
+      {
+        label: "Valor do recibo",
+        value: money(finance.signalAmountCents),
+      },
+      {
+        label: "Valor do veículo",
+        value: money(finance.totalAmountCents ?? finance.salePriceCents),
+      },
+    ];
+  }
+  if (kind === "sale_receipt") {
+    return [
+      paymentMethod,
+      {
+        label: "Valor do recibo",
+        value: money(finance.paidAmountCents ?? finance.salePriceCents),
+      },
+      { label: "Valor da venda", value: money(finance.salePriceCents) },
+    ];
+  }
+  return [
+    paymentMethod,
+    { label: "Sinal", value: money(finance.signalAmountCents) },
+    { label: "Valor pago", value: money(finance.paidAmountCents) },
+    {
+      label: "Valor total",
+      value: money(finance.totalAmountCents ?? finance.salePriceCents),
+    },
+  ];
 }
 
 function stringArray(value: unknown): readonly string[] {
@@ -179,6 +214,20 @@ function money(value: unknown): string {
     currency: "BRL",
     style: "currency",
   }).format(value / 100);
+}
+
+function formatPhone(value: unknown) {
+  const raw = text(value);
+  const digits = raw.replace(/\D/g, "");
+  const hasCountryCode = digits.startsWith("55") && digits.length >= 12;
+  const local = hasCountryCode ? digits.slice(2) : digits;
+  if (local.length !== 10 && local.length !== 11) return raw;
+  const prefix = hasCountryCode ? "+55 " : "";
+  const subscriber =
+    local.length === 11
+      ? `${local.slice(2, 7)}-${local.slice(7)}`
+      : `${local.slice(2, 6)}-${local.slice(6)}`;
+  return `${prefix}(${local.slice(0, 2)}) ${subscriber}`;
 }
 
 function text(value: unknown): string {

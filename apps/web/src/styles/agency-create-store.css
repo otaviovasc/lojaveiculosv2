@@ -1,0 +1,244 @@
+.agency-create-page {
+  margin-inline: auto;
+  width: min(100%, var(--layout-content-max));
+}
+
+.agency-create-grid {
+  align-items: start;
+  display: grid;
+  gap: clamp(1rem, 2vw, 1.5rem);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.agency-create-form-card,
+.agency-create-guidance {
+  min-width: 0;
+}
+
+.agency-create-form-card {
+  overflow: hidden;
+  position: relative;
+}
+
+.agency-create-card-rail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  height: 0.3rem;
+}
+
+.agency-create-card-rail > span:first-child {
+  background: var(--color-accent);
+}
+
+.agency-create-card-rail > span:nth-child(2) {
+  background: var(--color-info);
+}
+
+.agency-create-card-rail > span:last-child {
+  background: var(--color-success);
+}
+
+.agency-create-card-header {
+  padding: 1.35rem 1.4rem 0;
+}
+
+.agency-create-card-icon {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 24%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+}
+
+.agency-create-card-icon svg {
+  height: 1.15rem;
+  width: 1.15rem;
+}
+
+.agency-create-card-kicker {
+  color: var(--color-accent-strong);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+}
+
+.agency-create-card-title {
+  color: var(--color-text);
+  font-family: var(--font-display);
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.agency-create-card-description {
+  line-height: 1.5;
+  margin-top: 0.35rem;
+  max-width: 50rem;
+}
+
+.agency-create-form,
+.agency-create-state {
+  display: grid;
+  gap: 1.1rem;
+  margin-top: 1.25rem;
+  padding: 0 1.4rem 1.4rem;
+}
+
+.agency-create-state {
+  min-height: 16rem;
+}
+
+.agency-slug-control {
+  align-items: center;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  display: grid;
+  grid-template-columns: auto minmax(5rem, 1fr) auto;
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: 0.8rem;
+}
+
+.agency-slug-control:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-focus);
+}
+
+.agency-slug-control > svg {
+  color: var(--color-muted);
+  height: 1rem;
+  width: 1rem;
+}
+
+.agency-slug-control .feature-input {
+  border: 0;
+  box-shadow: none;
+  min-width: 0;
+}
+
+.agency-slug-control > span {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-date-filter {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  display: grid;
+  gap: 0.35rem;
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.35rem;
+}
+
+.agency-date-filter > svg {
+  color: var(--color-muted);
+  height: 0.9rem;
+  margin-left: 0.25rem;
+  width: 0.9rem;
+}
+
+.agency-date-filter__field,
+.agency-date-filter__field > div,
+.agency-date-filter__field button {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.agency-date-filter__field button span:last-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-date-filter__separator {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.agency-date-filter__clear {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.agency-date-filter__clear:hover {
+  background: var(--color-app-elevated);
+  color: var(--color-text);
+}
+
+.agency-date-filter__clear svg {
+  height: 0.85rem;
+  width: 0.85rem;
+}
+
+@media (min-width: 64rem) {
+  .agency-create-grid {
+    grid-template-columns: minmax(0, 1.75fr) minmax(17rem, 0.8fr);
+  }
+
+  .agency-create-guidance {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+@media (max-width: 42rem) {
+  .agency-slug-control {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .agency-slug-control > span {
+    border-top: 1px solid var(--color-line);
+    grid-column: 2;
+    padding: 0.55rem 0.75rem 0.65rem;
+  }
+
+  .agency-create-card-header {
+    padding: 1rem 1rem 0;
+  }
+
+  .agency-create-form,
+  .agency-create-state {
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 0 1rem 1rem;
+  }
+
+  .agency-date-filter {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .agency-date-filter__separator {
+    display: none;
+  }
+
+  .agency-date-filter__field:last-of-type {
+    grid-column: 2;
+  }
+}

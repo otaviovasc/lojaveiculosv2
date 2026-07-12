@@ -18,22 +18,27 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          run_install: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
-
-      - name: Setup pnpm
-        run: corepack enable
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Validate repo
         run: pnpm run validate:ci
+
+      - name: Build web production bundle
+        run: pnpm --filter @lojaveiculosv2/web build
 
       - name: API smoke contracts
         run: pnpm run test:smoke:api

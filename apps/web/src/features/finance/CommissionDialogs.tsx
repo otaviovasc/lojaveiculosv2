@@ -50,17 +50,17 @@ export function ConfirmCommissionPayDialog({
             {seller.sellerName}
           </p>
           <p className="text-xs font-bold text-muted">
-            {filters.from} ate {filters.to}
+            {filters.from} até {filters.to}
           </p>
         </div>
         <div className="rounded-lg bg-accent-soft p-4 text-accent-strong">
           <p className="text-xs font-black uppercase">Total a pagar</p>
           <p className="text-2xl font-black">{formatCurrency(totalCents)}</p>
-          <p className="text-sm font-bold">{entries.length} lancamento(s)</p>
+          <p className="text-sm font-bold">{entries.length} lançamento(s)</p>
         </div>
         <p className="rounded-lg border border-line bg-app p-3 text-xs font-bold text-muted">
-          Cada lancamento sera pago individualmente, preservando auditoria e
-          permissoes. O filtro de origem atual tambem limita este fechamento.
+          Cada lançamento será pago individualmente, preservando auditoria e
+          permissões. O filtro de origem atual também limita este fechamento.
         </p>
         <DialogActions
           confirmIcon={<HandCoins aria-hidden="true" className="size-4" />}
@@ -104,7 +104,7 @@ export function BonusCommissionDialog({
   const canSubmit = draft.name.trim() && Number.isFinite(amount) && amount > 0;
 
   return (
-    <FeatureDialog isOpen onClose={onCancel} title="Bonus manual">
+    <FeatureDialog isOpen onClose={onCancel} title="Bônus manual">
       <div className="grid gap-4 md:grid-cols-2">
         <FinanceField label="Vendedor">
           <FinanceSelect
@@ -132,7 +132,7 @@ export function BonusCommissionDialog({
             value={draft.amount}
           />
         </FinanceField>
-        <FinanceField label="Referencia">
+        <FinanceField label="Referência">
           <FinanceInput
             onChange={(event) =>
               setDraft({ ...draft, name: event.target.value })
@@ -147,7 +147,7 @@ export function BonusCommissionDialog({
             value={draft.dueAt}
           />
         </FinanceField>
-        <FinanceField label="Observacao">
+        <FinanceField label="Observação">
           <FinanceInput
             onChange={(event) =>
               setDraft({ ...draft, notes: event.target.value })
@@ -159,7 +159,7 @@ export function BonusCommissionDialog({
           <DialogActions
             confirmDisabled={!canSubmit}
             confirmIcon={<PlusCircle aria-hidden="true" className="size-4" />}
-            confirmLabel="Salvar bonus"
+            confirmLabel="Salvar bônus"
             isLoading={isLoading}
             onCancel={onCancel}
             onConfirm={() => onConfirm(draft)}

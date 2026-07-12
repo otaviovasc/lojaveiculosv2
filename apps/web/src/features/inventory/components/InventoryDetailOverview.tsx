@@ -145,7 +145,7 @@ export function InventoryDetailOverview({
               {readinessPercent}% completo
             </h3>
           </div>
-          <div className="flex size-14 items-center justify-center rounded-full border border-accent/20 bg-accent-soft text-lg font-black text-accent">
+          <div className="flex size-14 items-center justify-center rounded-full border border-accent/20 bg-accent-soft text-lg font-black text-accent-strong">
             {readyCount}/{readiness.length}
           </div>
         </div>

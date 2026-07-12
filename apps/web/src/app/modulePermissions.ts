@@ -1,5 +1,5 @@
 import type { SessionBootstrap } from "../features/account/apiClient";
-import { readRuntimeStoreSlug } from "../features/account/currentStore";
+import { readSessionEffectivePermissions } from "../features/account/sessionPermissions";
 import type { ModuleId, NavigationGroup, NavigationItem } from "./modules";
 
 type ModulePermission = {
@@ -16,6 +16,7 @@ type ModulePermissionRule = {
 
 const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   "auto-entries": gate(["finance.read"], "lançamentos financeiros"),
+  autobot: gate(["automation.read"], "automações assistidas"),
   billing: gate(["billing.manage"], "assinatura e faturamento"),
   checklists: gate(["inventory.checklist_read"], "checklists"),
   commissions: gate(["finance.read"], "comissões"),
@@ -94,27 +95,11 @@ function hasModulePermissions(
   session: SessionBootstrap,
   rule: ModulePermissionRule,
 ) {
-  const permissions = selectPermissionStore(session)?.effectivePermissions;
+  const permissions = readSessionEffectivePermissions(session);
   if (!permissions) return true;
   const granted = new Set(permissions);
   const check = (permission: string) => granted.has(permission);
   return rule.mode === "any"
     ? rule.permissions.some(check)
     : rule.permissions.every(check);
-}
-
-function selectPermissionStore(session: SessionBootstrap) {
-  const runtimeStoreSlug = readRuntimeStoreSlug(
-    undefined,
-    session.user.clerkUserId,
-  );
-  const activeStores = session.stores.filter(
-    (store) => store.status === "active",
-  );
-  return (
-    activeStores.find((store) => store.storeSlug === runtimeStoreSlug) ??
-    (session.defaultStore?.status === "active" ? session.defaultStore : null) ??
-    activeStores[0] ??
-    null
-  );
 }

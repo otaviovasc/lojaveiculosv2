@@ -12,7 +12,8 @@ import { createSalesServices } from "./salesServices.js";
 
 const storeId = "store-1";
 const tenantId = "tenant-1";
-const requiredDocumentKinds = [
+const selectedDocumentKinds = ["sale_contract", "delivery_term"];
+const allDocumentKinds = [
   "sale_contract",
   "sale_receipt",
   "delivery_term",
@@ -24,11 +25,13 @@ describe("sales controller workflow", () => {
     const { app, vehiclePorts } = createTestHarness();
     const createResponse = await requestJson(app, "/sales/drafts", {
       buyerSnapshot: { name: "Maria" },
-      documentPolicySnapshot: { requiredDocumentKinds },
+      documentPolicySnapshot: {
+        requiredDocumentKinds: selectedDocumentKinds,
+      },
       leadId: "lead-1",
       payments: [payment(100000, "pix")],
       salePriceCents: 5000000,
-      selectedDocumentKinds: requiredDocumentKinds,
+      selectedDocumentKinds: allDocumentKinds,
       sellerUserId: "seller-1",
       unitId: "unit_1",
     });
@@ -51,7 +54,7 @@ describe("sales controller workflow", () => {
       `/sales/${created.id}`,
       {
         payments: [payment(200000, "cash"), payment(4900000, "bank_transfer")],
-        selectedDocumentKinds: requiredDocumentKinds,
+        selectedDocumentKinds,
       },
       "PATCH",
     );
@@ -71,14 +74,19 @@ describe("sales controller workflow", () => {
     expect(closed.status).toBe("closed");
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
     expect([...vehiclePorts.documents.values()].map((doc) => doc.kind)).toEqual(
-      expect.arrayContaining([
-        "reservation_receipt",
-        "sale_contract",
-        "sale_receipt",
-        "delivery_term",
-        "power_of_attorney",
-      ]),
+      ["reservation_receipt", "sale_contract", "delivery_term"],
     );
+  });
+
+  it("rejects sale document kinds without a workflow renderer", async () => {
+    const { app } = createTestHarness();
+
+    const response = await requestJson(app, "/sales/drafts", {
+      buyerSnapshot: { name: "Maria" },
+      selectedDocumentKinds: ["warranty"],
+    });
+
+    expect(response.status).toBe(400);
   });
 });
 

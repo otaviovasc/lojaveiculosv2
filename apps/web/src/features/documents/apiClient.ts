@@ -19,11 +19,14 @@ import type {
   VoidDocumentInput,
   WorkspaceDocument,
 } from "./types";
+import {
+  documentsRoutes,
+  type DocumentDownloadRouteOptions,
+} from "./documentApiRoutes";
 
-export type DocumentDownloadOptions = {
-  disposition?: "attachment" | "inline";
-  versionId?: string;
-};
+export { documentsRoutes } from "./documentApiRoutes";
+
+export type DocumentDownloadOptions = DocumentDownloadRouteOptions;
 
 export type DocumentsApi = {
   createUploadedDocument: (
@@ -108,7 +111,17 @@ export function createDocumentsApi({
     downloadDocument: (documentId, options = {}) =>
       fetch(documentsRoutes.download(documentId, options, baseUrl), {
         headers: createDocumentsHeaders(auth),
-      }).then(readJson<DocumentDownload>),
+      })
+        .then(readJson<DocumentDownload>)
+        .then((download) => ({
+          ...download,
+          contentHeaders: createDocumentsContentHeaders(auth),
+          contentUrl: documentsRoutes.content(
+            documentId,
+            options.versionId ? { versionId: options.versionId } : {},
+            baseUrl,
+          ),
+        })),
     listDocuments: (filters = {}) =>
       fetch(documentsRoutes.documents(filters, baseUrl), {
         headers: createDocumentsHeaders(auth),
@@ -181,74 +194,6 @@ export function createDocumentsApi({
   };
 }
 
-export const documentsRoutes = {
-  document: (documentId: string, baseUrl?: string) =>
-    createEndpoint(`/documents/${encodeURIComponent(documentId)}`, baseUrl),
-  documents: (filters: ListDocumentsFilters = {}, baseUrl?: string) =>
-    createEndpoint(`/documents${createQuery(filters)}`, baseUrl),
-  download: (
-    documentId: string,
-    options: DocumentDownloadOptions = {},
-    baseUrl?: string,
-  ) =>
-    createEndpoint(
-      `/documents/${encodeURIComponent(documentId)}/download${createDownloadQuery(
-        options,
-      )}`,
-      baseUrl,
-    ),
-  preview: (documentId: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/${encodeURIComponent(documentId)}/preview`,
-      baseUrl,
-    ),
-  regenerate: (documentId: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/${encodeURIComponent(documentId)}/regenerate`,
-      baseUrl,
-    ),
-  template: (templateKey: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/templates/${encodeURIComponent(templateKey)}`,
-      baseUrl,
-    ),
-  templateSuggestion: (templateKey: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/templates/${encodeURIComponent(templateKey)}/suggestions`,
-      baseUrl,
-    ),
-  templateSuggestionOutcome: (templateKey: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/templates/${encodeURIComponent(
-        templateKey,
-      )}/suggestions/outcome`,
-      baseUrl,
-    ),
-  templates: (baseUrl?: string) =>
-    createEndpoint("/documents/templates", baseUrl),
-  uploads: (baseUrl?: string) => createEndpoint("/documents/uploads", baseUrl),
-  unitDocuments: (unitId: string, baseUrl?: string) =>
-    createEndpoint(
-      `/inventory/units/${encodeURIComponent(unitId)}/documents`,
-      baseUrl,
-    ),
-  unitUploads: (unitId: string, baseUrl?: string) =>
-    createEndpoint(
-      `/inventory/units/${encodeURIComponent(unitId)}/documents/uploads`,
-      baseUrl,
-    ),
-  void: (documentId: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/${encodeURIComponent(documentId)}/void`,
-      baseUrl,
-    ),
-  versions: (documentId: string, baseUrl?: string) =>
-    createEndpoint(
-      `/documents/${encodeURIComponent(documentId)}/versions`,
-      baseUrl,
-    ),
-} as const;
-
 export function createDocumentsHeaders(auth: DocumentsAuth): HeadersInit {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -259,30 +204,10 @@ export function createDocumentsHeaders(auth: DocumentsAuth): HeadersInit {
   return headers;
 }
 
-function createQuery(filters: ListDocumentsFilters): string {
-  const params = new URLSearchParams();
-  if (filters.search?.trim()) params.set("search", filters.search.trim());
-  if (filters.kind) params.set("kind", filters.kind);
-  if (filters.status) params.set("status", filters.status);
-  if (filters.targetId?.trim()) params.set("targetId", filters.targetId.trim());
-  if (filters.targetType) params.set("targetType", filters.targetType);
-  if (filters.limit) params.set("limit", String(filters.limit));
-  const query = params.toString();
-  return query ? `?${query}` : "";
-}
-
-function createDownloadQuery(options: DocumentDownloadOptions): string {
-  const params = new URLSearchParams();
-  if (options.versionId) params.set("versionId", options.versionId);
-  if (options.disposition === "inline") params.set("disposition", "inline");
-  const query = params.toString();
-  return query ? `?${query}` : "";
-}
-
-function createEndpoint(path: string, baseUrl = "/api/v1") {
-  const normalizedBase = baseUrl.replace(/\/$/, "");
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${normalizedBase}${normalizedPath}`;
+function createDocumentsContentHeaders(auth: DocumentsAuth) {
+  const headers = createDocumentsHeaders(auth) as Record<string, string>;
+  const { ["Content-Type"]: _contentType, ...contentHeaders } = headers;
+  return contentHeaders;
 }
 
 async function readJson<T>(response: Response): Promise<T> {
@@ -310,6 +235,10 @@ function mapVehicleUploadedDocument(
   document: VehicleUploadedDocumentResponse,
 ): WorkspaceDocument {
   return {
+    capabilities: {
+      canRegenerate: false,
+      regenerateBlockReason: "renderer_unavailable",
+    },
     context: {
       linkRole: document.linkRole,
       targetId: document.targetId,

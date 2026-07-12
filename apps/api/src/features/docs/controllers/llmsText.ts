@@ -211,7 +211,7 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/documents/{documentId}/preview: renders a metadata-based document preview; requires documents.preview.
 - GET /api/v1/documents/{documentId}/versions: lists immutable generated versions in newest-first order; requires documents.read.
 - PATCH /api/v1/documents/{documentId}: updates title/kind and the primary store/unit link; requires documents.update_metadata and/or documents.update_links for changed fields.
-- POST /api/v1/documents/{documentId}/regenerate: renders a new private PDF object, appends an immutable version, and points the document to the latest version; requires documents.regenerate.
+- POST /api/v1/documents/{documentId}/regenerate: regenerates only when the document reports canRegenerate=true for its registered original renderer, appends an immutable version, and points the document to the latest version; requires documents.regenerate. Specialized workflow PDFs currently report renderer_unavailable instead of being replaced by a metadata-summary PDF.
 - POST /api/v1/documents/{documentId}/void: voids a scoped document with optional reason; requires documents.void.
 
 ## Current external API endpoints
@@ -227,9 +227,9 @@ export const llmsText = `# Loja Veiculos API
 - GET /api/v1/external-api/vehicles/search: supports q/search, available, status, price, year, mileage, color, fuel, transmission, and sort aliases for V1-compatible integrations; requires inventory.read.
 - GET /api/v1/external-api/vehicles/{listingId}: returns vehicle detail with public media, safe unit refs, price history, and status history; requires inventory.read.
 - GET /api/v1/external-api/leads: lists CRM leads by q/search, phone, status, source, listingId, page, and limit; requires lead.read and CRM entitlement.
-- POST /api/v1/external-api/leads: creates a CRM lead with V2 buyer fields or V1 aliases name/email/phone/message/vehicleId; requires lead.create, CRM entitlement, and Idempotency-Key.
+- POST /api/v1/external-api/leads: creates a CRM lead with V2 buyer fields or V1 aliases name/email/phone/message/vehicleId; requires lead.create, CRM entitlement, and an Idempotency-Key deduplication key.
 - GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
-- PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and Idempotency-Key.
+- PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
 
 ## Current internal monitoring endpoints
 - GET /api/v1/internal/health: returns scoped admin observability with audit events, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; requires audit.read.
@@ -243,7 +243,7 @@ export const llmsText = `# Loja Veiculos API
 ## External API safety limits
 - External API key requests are tenant and store scoped before services run.
 - External clients use least-privilege scopes instead of operator roles.
-- Mutations require Idempotency-Key and request identifiers for audit correlation.
+- API-key mutations use Idempotency-Key to reject duplicate processing with 409; prior responses are not replayed. Request ids provide audit correlation.
 - Rate limits, payload size limits, and pagination caps are enforced on external API-key requests.
 - Destructive operations require explicit delete scopes and audit records.
 `;

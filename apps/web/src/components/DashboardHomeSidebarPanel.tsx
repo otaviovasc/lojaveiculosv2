@@ -135,11 +135,18 @@ function DashboardAddonsPanel({
           <p className="addon-row-subtitle">Alertas em tempo real</p>
         </div>
         <button
+          aria-label={
+            pushEnabled
+              ? "Desativar notificações push"
+              : "Ativar notificações push"
+          }
+          aria-pressed={pushEnabled}
           onClick={() => setPushEnabled(!pushEnabled)}
           className={
             "switch-toggle " +
             (pushEnabled ? "switch-toggle-active" : "switch-toggle-inactive")
           }
+          type="button"
         >
           <motion.div layout className="switch-knob" />
         </button>

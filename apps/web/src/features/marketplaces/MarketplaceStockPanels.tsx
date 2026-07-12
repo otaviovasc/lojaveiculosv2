@@ -7,7 +7,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { StatCard } from "../../components/ui/stat-card";
-import { providerLabels } from "./marketplaceLabels";
+import { getMarketplaceBlockerCopy, providerLabels } from "./marketplaceLabels";
 import type {
   MarketplaceProvider,
   MarketplaceStockPlan,
@@ -28,7 +28,7 @@ export function MarketplacePreviewPanel({
   return (
     <section className="marketplace-panel">
       <header>
-        <h3>Previa do estoque</h3>
+        <h3>Prévia do estoque</h3>
         <p>
           {provider ? providerLabels[provider] : "Selecione um provedor"} antes
           de enfileirar o lote.
@@ -36,7 +36,7 @@ export function MarketplacePreviewPanel({
       </header>
       {plan ? (
         <>
-          <div className="marketplace-counts" aria-label="Contagens da previa">
+          <div className="marketplace-counts" aria-label="Contagens da prévia">
             <StatCard
               icon={ListChecks}
               label="Total"
@@ -67,7 +67,7 @@ export function MarketplacePreviewPanel({
             />
             <StatCard
               icon={CheckCircle2}
-              label="Sem acao"
+              label="Sem ação"
               theme="default"
               value={plan.noOp}
               variant="cell"
@@ -83,7 +83,10 @@ export function MarketplacePreviewPanel({
           <BlockedListingList items={blockedItems ?? []} />
         </>
       ) : (
-        <p>Nenhuma previa carregada.</p>
+        <p>
+          A prévia ainda não foi gerada. Use “Prever estoque” na conta que
+          deseja revisar.
+        </p>
       )}
     </section>
   );
@@ -100,8 +103,8 @@ export function MarketplaceBatchProgress({
         <h3>Progresso do lote</h3>
         <p>
           {lastRun
-            ? `${providerLabels[lastRun.provider]} · lote ${lastRun.batchId}`
-            : "Nenhum lote enfileirado nesta sessao."}
+            ? `${providerLabels[lastRun.provider]} · último lote desta sessão`
+            : "Nenhum lote foi enviado nesta sessão."}
         </p>
       </header>
       {lastRun ? (
@@ -150,24 +153,26 @@ export function MarketplaceBatchProgress({
 function BlockedListingList({ items }: { items: MarketplaceStockPlanItem[] }) {
   return (
     <section className="marketplace-blocked">
-      <h4>Veiculos bloqueados</h4>
+      <h4>Veículos bloqueados</h4>
       {items.length ? (
         <ul>
           {items.map((item) => (
             <li key={item.listing.listingId}>
               <strong>{vehicleLabel(item)}</strong>
-              {item.blockers.map((blocker) => (
-                <span key={`${item.listing.listingId}-${blocker.code}`}>
-                  Falhou: {blocker.message}. Corrigir: {blocker.userAction}.
-                  Provedor: {providerLabels[item.provider]}. ID da listagem:{" "}
-                  {item.listing.listingId}.
-                </span>
-              ))}
+              {item.blockers.map((blocker) => {
+                const copy = getMarketplaceBlockerCopy(blocker);
+                return (
+                  <span key={`${item.listing.listingId}-${blocker.code}`}>
+                    {copy.message}. Próximo passo: {copy.action} Canal:{" "}
+                    {providerLabels[item.provider]}.
+                  </span>
+                );
+              })}
             </li>
           ))}
         </ul>
       ) : (
-        <p>Nenhum veiculo bloqueado nesta previa.</p>
+        <p>Nenhum veículo bloqueado nesta prévia.</p>
       )}
     </section>
   );

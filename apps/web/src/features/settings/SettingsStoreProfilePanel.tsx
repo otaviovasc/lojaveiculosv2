@@ -63,7 +63,7 @@ export function SettingsStoreProfilePanel({
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel consultar o CEP.",
+          "Não foi possível consultar o CEP.",
         ),
       });
     }
@@ -73,14 +73,14 @@ export function SettingsStoreProfilePanel({
     <FeatureSection
       icon={<Building2 className="size-5 text-accent-strong" />}
       title="Perfil da Loja"
-      className="glass-panel-branded p-6 md:p-8 border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none"
+      className="settings-profile-panel glass-panel-branded p-6 md:p-8 border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none"
     >
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void onSave(draft);
         }}
-        className="grid gap-6 mt-4"
+        className="settings-profile-form grid gap-6 mt-4"
       >
         <FeatureFormSection
           title="Identificação da Empresa"

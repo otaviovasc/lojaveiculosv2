@@ -49,8 +49,8 @@ export function CrmListView({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-col gap-3 md:hidden">
+    <div className="min-w-0 space-y-3 overflow-hidden md:overflow-visible">
+      <div className="flex min-w-0 flex-col gap-3 md:hidden">
         {leads.map((lead) => {
           const vehicles = getLeadVehicles(lead);
           const firstVehicle = vehicles[0];
@@ -62,11 +62,11 @@ export function CrmListView({
 
           return (
             <article
-              className="rounded-xl border border-line bg-panel p-3 shadow-sm"
+              className="min-w-0 overflow-hidden rounded-xl border border-line bg-panel p-3 shadow-sm"
               key={lead.id}
             >
               <button
-                className="flex w-full items-start gap-3 text-left"
+                className="flex min-w-0 w-full items-start gap-3 text-left"
                 onClick={() => onSelectLead(lead.id)}
                 type="button"
               >
@@ -82,7 +82,7 @@ export function CrmListView({
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-start justify-between gap-2">
                     <div className="min-w-0">
                       <h3 className="truncate text-sm font-black text-app-text">
                         {leadName}
@@ -92,7 +92,7 @@ export function CrmListView({
                       </p>
                     </div>
                     <span
-                      className="shrink-0 rounded-full border px-2 py-1 text-xs font-black uppercase"
+                      className="max-w-[45%] shrink-0 truncate rounded-full border px-2 py-1 text-xs font-black uppercase"
                       style={{
                         backgroundColor: currentStageColor
                           ? `${currentStageColor}15`
@@ -105,9 +105,15 @@ export function CrmListView({
                     </span>
                   </div>
                   <div className="mt-3 grid grid-cols-1 gap-1 text-xs font-bold text-muted">
-                    <span>{lead.buyerPhone || "Sem telefone"}</span>
-                    <span>{sourceLabels[lead.source]}</span>
-                    <span>{formatLeadTimelineLabel(lead)}</span>
+                    <span className="min-w-0 truncate">
+                      {lead.buyerPhone || "Sem telefone"}
+                    </span>
+                    <span className="min-w-0 truncate">
+                      {sourceLabels[lead.source]}
+                    </span>
+                    <span className="min-w-0 truncate">
+                      {formatLeadTimelineLabel(lead)}
+                    </span>
                   </div>
                 </div>
               </button>
@@ -246,7 +252,7 @@ export function CrmListView({
                               type="button"
                             >
                               <span
-                                className="size-2.5 rounded-full shrink-0 border border-black/10"
+                                className="size-2.5 rounded-full shrink-0 border border-line"
                                 style={{ backgroundColor: stg.color }}
                               />
                               <span className="truncate text-app-text">
@@ -261,8 +267,8 @@ export function CrmListView({
 
                   {/* Tempo Column */}
                   <td className="p-3">
-                    <div className="flex items-center gap-1 text-xs font-bold text-red-700 dark:text-red-500 bg-red-500/5 border border-red-500/10 rounded-lg px-2 py-1 w-fit">
-                      <Clock className="size-3 shrink-0" />
+                    <div className="flex items-center gap-1 rounded-lg border border-danger/10 bg-danger/5 px-2 py-1 text-xs font-bold text-danger w-fit">
+                      <Clock aria-hidden="true" className="size-3 shrink-0" />
                       <span>{formatLeadTimelineLabel(lead)}</span>
                     </div>
                   </td>
@@ -271,7 +277,7 @@ export function CrmListView({
                   <td className="p-3">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-muted">
                       {lead.source === "whatsapp" ? (
-                        <MessageSquare className="size-3.5 text-emerald-500 shrink-0" />
+                        <MessageSquare className="size-3.5 text-success-strong shrink-0" />
                       ) : (
                         <Globe className="size-3.5 shrink-0" />
                       )}

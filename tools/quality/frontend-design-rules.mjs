@@ -57,11 +57,17 @@ export const approvedBaseColors = [
   [5, 150, 105], // emerald-600 #059669
   [52, 211, 153], // emerald-400 #34d399
   [32, 199, 122], // status green #20c77a
+  [8, 122, 47], // accessible green text on light surfaces #087a2f
+  [114, 223, 145], // accessible green text on dark surfaces #72df91
 
   // Allowed Functional Blues (Info/status indicators)
   [59, 130, 246], // blue-500 #3b82f6
   [29, 78, 216], // blue-700 #1d4ed8
   [96, 165, 250], // blue-400 #60a5fa
+
+  // Accessible semantic text variants for warning states
+  [118, 91, 0], // accessible amber text on light surfaces #765b00
+  [234, 209, 110], // accessible amber text on dark surfaces #ead16e
 ];
 
 function hexToRgb(hex) {

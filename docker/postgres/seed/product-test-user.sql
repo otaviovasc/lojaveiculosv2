@@ -302,6 +302,13 @@ VALUES
     '77777777-7777-4777-8777-777777777777'
   ),
   (
+    'automation',
+    'local_seed',
+    'active',
+    '66666666-6666-4666-8666-666666666666',
+    '77777777-7777-4777-8777-777777777777'
+  ),
+  (
     'plate_lookup',
     'local_seed',
     'trialing',
@@ -350,6 +357,7 @@ INSERT INTO plan_features (feature_key, included, limit_value, plan_id)
 VALUES
   ('subdomain', 1, null, '12121212-1212-4212-8212-121212121212'),
   ('crm', 1, null, '12121212-1212-4212-8212-121212121212'),
+  ('automation', 1, null, '12121212-1212-4212-8212-121212121212'),
   ('plate_lookup', 1, 300, '12121212-1212-4212-8212-121212121212'),
   ('custom_domain', 0, null, '12121212-1212-4212-8212-121212121212'),
   ('external_api', 0, null, '12121212-1212-4212-8212-121212121212'),
@@ -512,6 +520,10 @@ WHERE subscription_id = '14141414-1414-4414-8414-141414141414'
 
 INSERT INTO role_template_permissions (role_template_id, permission_key)
 VALUES
+  ('55555555-5555-4555-8555-555555555555', 'automation.approve'),
+  ('55555555-5555-4555-8555-555555555555', 'automation.cancel'),
+  ('55555555-5555-4555-8555-555555555555', 'automation.read'),
+  ('55555555-5555-4555-8555-555555555555', 'automation.run'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.catalog_sync'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_read'),
   ('55555555-5555-4555-8555-555555555555', 'inventory.checklist_update'),
@@ -616,7 +628,7 @@ INSERT INTO store_public_site_settings (
   theme
 )
 VALUES (
-  'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000005/photo/1782407812109-dada8899-642c-410c-964d-7bca6d0b845e-bmw-m3-verde-3.jpg',
+  'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407801644-bd8dd971-8e59-418f-9e65-5cdd1c5046f1-audi-a4-preto-1.jpg',
   true,
   'showroom',
   'Estoque revisado, pronta entrega e atendimento direto pelo WhatsApp.',
@@ -642,6 +654,7 @@ ON CONFLICT (store_id) DO UPDATE SET
 
 INSERT INTO store_entitlements (feature_key, metadata, source, status, store_id, tenant_id)
 VALUES
+  ('automation', '{"mode": "preview_only", "execution_enabled": false}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('analytics', '{"dashboards": ["sales", "finance", "crm"]}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('marketplace', '{"providers": ["olx", "mercado_livre"]}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
   ('external_api', '{"rate_limit_per_minute": 120}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
@@ -730,6 +743,9 @@ ON CONFLICT (id) DO UPDATE SET
   vin = EXCLUDED.vin,
   updated_at = now();
 
+DELETE FROM vehicle_media
+WHERE id = '12000000-0000-4000-8000-000000000003';
+
 INSERT INTO vehicle_media (
   id,
   alt_text,
@@ -746,7 +762,6 @@ INSERT INTO vehicle_media (
 VALUES
   ('12000000-0000-4000-8000-000000000001', 'Audi A4 preto dianteira', 0, true, 'photo', '11000000-0000-4000-8000-000000000001', '{"contentType": "image/jpeg", "fileName": "audi-a4-preto-1.jpg", "sizeBytes": 144488, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407801644-bd8dd971-8e59-418f-9e65-5cdd1c5046f1-audi-a4-preto-1.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407801644-bd8dd971-8e59-418f-9e65-5cdd1c5046f1-audi-a4-preto-1.jpg'),
   ('12000000-0000-4000-8000-000000000002', 'Audi A4 preto lateral', 1, true, 'photo', '11000000-0000-4000-8000-000000000001', '{"contentType": "image/jpeg", "fileName": "audi-a4-preto-2.jpeg", "sizeBytes": 15701, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407803425-e5dab261-c732-4a7e-8ada-75768d00c2a9-audi-a4-preto-2.jpeg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407803425-e5dab261-c732-4a7e-8ada-75768d00c2a9-audi-a4-preto-2.jpeg'),
-  ('12000000-0000-4000-8000-000000000003', 'Audi A4 preto traseira', 2, true, 'photo', '11000000-0000-4000-8000-000000000001', '{"contentType": "image/jpeg", "fileName": "audi-a4-preto-3.jpeg", "sizeBytes": 43445, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407804841-d61696ef-372f-4701-8910-86fd8e487813-audi-a4-preto-3.jpeg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000001/photo/1782407804841-d61696ef-372f-4701-8910-86fd8e487813-audi-a4-preto-3.jpeg'),
   ('12000000-0000-4000-8000-000000000004', 'BMW M3 preto dianteira', 0, true, 'photo', '11000000-0000-4000-8000-000000000002', '{"contentType": "image/webp", "fileName": "bmw-m3-preto-1.webp", "sizeBytes": 84376, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000002/photo/1782407806409-bb4385a0-3929-4af3-a4c3-a67f6b9b4f79-bmw-m3-preto-1.webp', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000002/photo/1782407806409-bb4385a0-3929-4af3-a4c3-a67f6b9b4f79-bmw-m3-preto-1.webp'),
   ('12000000-0000-4000-8000-000000000005', 'BMW M3 preto lateral', 1, true, 'photo', '11000000-0000-4000-8000-000000000002', '{"contentType": "image/jpeg", "fileName": "bmw-m3-preto-2.jpg", "sizeBytes": 37252, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000002/photo/1782407807717-58d02b8c-b2e7-4993-ba01-14995bc1b757-bmw-m3-preto-2.jpg', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000002/photo/1782407807717-58d02b8c-b2e7-4993-ba01-14995bc1b757-bmw-m3-preto-2.jpg'),
   ('12000000-0000-4000-8000-000000000006', 'BMW M3 verde dianteira', 0, true, 'photo', '11000000-0000-4000-8000-000000000005', '{"contentType": "image/webp", "fileName": "bmw-m3-verde-1.webp", "sizeBytes": 66148, "source": "r2_seed"}'::jsonb, 'tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000005/photo/1782407809307-81ecf89e-b6b5-4184-9fa9-c8426567ba60-bmw-m3-verde-1.webp', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'https://assets-v2.lojaveiculos.com.br/tenants/77777777-7777-4777-8777-777777777777/stores/66666666-6666-4666-8666-666666666666/units/11000000-0000-4000-8000-000000000005/photo/1782407809307-81ecf89e-b6b5-4184-9fa9-c8426567ba60-bmw-m3-verde-1.webp'),
@@ -1284,7 +1299,7 @@ VALUES
   ('51000000-0000-4000-8000-000000000002', '99999999-9999-4999-8999-999999999999', 'recibo-sinal-hb20.pdf', 142000, 'reservation_receipt', '{"listingId": "10000000-0000-4000-8000-000000000003", "listingTitle": "Hyundai HB20 Comfort 2021", "unitId": "11000000-0000-4000-8000-000000000003", "vehicleTitle": "Hyundai HB20 Comfort 2021", "plate": "GHI7J89", "leadId": "20000000-0000-4000-8000-000000000002", "leadName": "Marcos Lima", "documentType": "reservation_receipt"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000003/reservation_receipt.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de reserva HB20', now() - interval '3 days'),
   ('51000000-0000-4000-8000-000000000003', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'laudo-audi-a4.pdf', 184000, 'inspection', '{"unitId": "11000000-0000-4000-8000-000000000001", "unitTitle": "Audi A4 Prestige Plus 2.0 TFSI 2022", "plate": "ABC1D23", "buyerName": "Ana Silva", "documentType": "Laudo cautelar"}'::jsonb, 'application/pdf', 'signed', 'seed/documents/laudo-audi-a4.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Laudo cautelar Audi A4', now() - interval '19 days'),
   ('51000000-0000-4000-8000-000000000004', '88888888-8888-4888-8888-888888888888', 'documento-loja.pdf', 124000, 'internal', '{"documentCategory": "Documento geral", "reference": "Documento interno de oficina", "notes": "Importado em grupo geral."}'::jsonb, 'application/pdf', 'issued', 'seed/documents/documento-loja.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Protocolo interno', now() - interval '4 days'),
-  ('51000000-0000-4000-8000-000000000005', '99999999-9999-4999-8999-999999999999', 'recibo-pagamento-hilux.pdf', 132000, 'finance_receipt', '{"paymentId": "32000000-0000-4000-8000-000000000001", "financeTitle": "Pagamento de entrada", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "method": "Pix"}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-pagamento-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Comprovante de pagamento', now() - interval '2 days'),
+  ('51000000-0000-4000-8000-000000000005', '99999999-9999-4999-8999-999999999999', 'recibo-pagamento-hilux.pdf', 132000, 'finance_receipt', '{"paymentId": "32000000-0000-4000-8000-000000000001", "financeTitle": "Pagamento de entrada", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "plate": "JKL0M12", "method": "Pix", "amountCents": 4000000}'::jsonb, 'application/pdf', 'issued', 'seed/documents/recibo-pagamento-hilux.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Comprovante de pagamento', now() - interval '2 days'),
   ('51000000-0000-4000-8000-000000000006', '99999999-9999-4999-8999-999999999999', 'recibo-venda-hilux.pdf', 132000, 'sale_receipt', '{"saleId": "30000000-0000-4000-8000-000000000001", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "sale_receipt"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/sale_receipt.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Recibo de venda Hilux', now() - interval '11 days'),
   ('51000000-0000-4000-8000-000000000007', '99999999-9999-4999-8999-999999999999', 'termo-entrega-hilux.pdf', 150000, 'delivery_term', '{"saleId": "30000000-0000-4000-8000-000000000001", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "delivery_term"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/delivery_term.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Termo de entrega Hilux', now() - interval '11 days'),
   ('51000000-0000-4000-8000-000000000008', '99999999-9999-4999-8999-999999999999', 'procuracao-hilux.pdf', 156000, 'power_of_attorney', '{"saleId": "30000000-0000-4000-8000-000000000001", "buyerName": "Carla Rocha", "vehicleTitle": "Toyota Hilux SRX 2021", "listingId": "10000000-0000-4000-8000-000000000004", "unitId": "11000000-0000-4000-8000-000000000004", "plate": "JKL0M12", "documentType": "power_of_attorney"}'::jsonb, 'application/pdf', 'issued', 'generated/vehicle-workflows/11000000-0000-4000-8000-000000000004/power_of_attorney.pdf', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777', 'Procuracao Hilux', now() - interval '11 days'),

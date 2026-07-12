@@ -157,7 +157,7 @@ function ConfiguredSessionBootstrapPage() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            formatApiErrorDisplay(err, "Nao foi possivel carregar sua sessao."),
+            formatApiErrorDisplay(err, "Não foi possível carregar sua sessão."),
           );
         }
       }
@@ -225,8 +225,8 @@ function AuthEntryShell({
     >
       <Logo className="h-11" variant="full" />
       <FeaturePageHeader
-        chip="Clerk Auth"
-        description="A sessão é validada pelo provedor de identidade antes de liberar lojas, agências e permissões."
+        chip="Acesso protegido"
+        description="Sua identidade é validada antes de liberar lojas, agências e permissões."
         eyebrow={eyebrow}
         title={title}
       />
@@ -242,9 +242,9 @@ function AuthConfigurationMissingPage() {
       variant="plain"
     >
       <FeatureEmptyState
-        body="Configure VITE_CLERK_PUBLISHABLE_KEY para carregar o projeto Clerk V2. A área operacional permanece bloqueada até a variável estar presente."
+        body="A autenticação está temporariamente indisponível. A área operacional permanece protegida; contate o administrador da plataforma."
         icon={AlertTriangle}
-        title="Clerk V2 não configurado"
+        title="Acesso temporariamente indisponível"
       />
     </FeaturePageShell>
   );

@@ -1,4 +1,4 @@
-import { Menu, Moon, Sun } from "lucide-react";
+import { Command, Menu, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { filterNavigationGroups } from "../app/modulePermissions";
@@ -24,6 +24,7 @@ import {
   type DashboardSidebarItem,
 } from "./ui/dashboard-sidebar";
 import { Logo } from "./ui/logo";
+import { WorkspaceCommandPalette } from "./ui/WorkspaceCommandPalette";
 
 type AppShellProps = {
   activeModule: ModuleDefinition;
@@ -46,6 +47,7 @@ export function AppShell({
 }: AppShellProps) {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
   const [theme, setTheme] = useState<AppTheme>(() =>
     readBrowserPreferredTheme(),
   );
@@ -89,27 +91,47 @@ export function AppShell({
     return (
       <div
         aria-label="Carregando identidade da loja"
-        className="min-h-screen bg-app text-app-text"
-      />
+        aria-live="polite"
+        className="app-shell app-shell--loading"
+        role="status"
+      >
+        <span className="sr-only">Preparando a área da loja</span>
+        <aside aria-hidden="true" className="app-shell__loading-sidebar">
+          <div className="h-12 animate-pulse rounded-lg bg-app-elevated" />
+          <div className="mt-8 grid gap-3">
+            {Array.from({ length: 7 }, (_, index) => (
+              <div
+                className="h-11 animate-pulse rounded-lg bg-app-elevated"
+                key={index}
+              />
+            ))}
+          </div>
+        </aside>
+        <div aria-hidden="true" className="app-shell__loading-content">
+          <div className="h-16 border-b border-line bg-panel lg:hidden" />
+          <main className="grid gap-5 p-4 lg:p-6">
+            <div className="h-24 animate-pulse rounded-lg bg-panel" />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }, (_, index) => (
+                <div
+                  className="h-28 animate-pulse rounded-lg bg-panel"
+                  key={index}
+                />
+              ))}
+            </div>
+            <div className="h-80 animate-pulse rounded-lg bg-panel" />
+          </main>
+        </div>
+      </div>
     );
   }
 
   return (
     <div
-      className={
-        "min-h-screen bg-app text-app-text lg:grid " +
-        (isSidebarCollapsed
-          ? "lg:grid-cols-[72px_1fr]"
-          : "lg:grid-cols-[224px_1fr]")
-      }
+      className={`app-shell${isSidebarCollapsed ? " app-shell--compact" : ""}`}
       style={tenantBrandState.style}
     >
-      <aside
-        className={
-          "fixed left-0 top-0 z-30 hidden h-screen transition-[width] duration-300 lg:block " +
-          (isSidebarCollapsed ? "w-[72px]" : "w-[224px]")
-        }
-      >
+      <aside className="app-shell__sidebar">
         <DashboardSidebar
           activeId={activeModule.id}
           collapsed={isSidebarCollapsed}
@@ -128,13 +150,13 @@ export function AppShell({
         />
       </aside>
 
-      <div className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-panel px-4 lg:hidden">
+      <div className="app-shell__mobile-header">
         <div className="flex min-w-0 items-center gap-3">
           <button
             aria-label="Abrir Menu"
             aria-controls="mobile-navigation"
             aria-expanded={isMobileNavOpen}
-            className="flex size-10 items-center justify-center rounded-md text-app-text transition-colors hover:bg-app-elevated"
+            className="app-shell__mobile-control"
             onClick={() => setIsMobileNavOpen(true)}
             type="button"
           >
@@ -146,42 +168,48 @@ export function AppShell({
             src={tenantBrand.logoUrl}
             variant={theme === "dark" ? "full-white" : "full"}
           />
-          <div className="min-w-0 border-l border-line/60 pl-2.5">
-            <p className="truncate text-xs font-black uppercase tracking-widest text-primary leading-tight">
-              {tenantBrand.storeName}
-            </p>
-            <p className="truncate text-xs font-black uppercase tracking-widest text-accent mt-0.5">
-              {activeModule.title}
-            </p>
+          <div className="app-shell__mobile-title">
+            <p>{tenantBrand.storeName}</p>
+            <strong>{activeModule.title}</strong>
           </div>
         </div>
 
-        <button
-          aria-label="Mudar Tema"
-          className="flex size-10 items-center justify-center rounded-md text-app-text transition-colors hover:bg-app-elevated"
-          onClick={toggleTheme}
-          type="button"
-        >
-          {theme === "dark" ? (
-            <Sun className="size-5 text-warning" />
-          ) : (
-            <Moon className="size-5 text-violet-start" />
-          )}
-        </button>
+        <div className="app-shell__mobile-actions">
+          <button
+            aria-label="Buscar módulos"
+            className="app-shell__mobile-control"
+            onClick={() => setIsCommandOpen(true)}
+            type="button"
+          >
+            <Search aria-hidden="true" />
+          </button>
+          <button
+            aria-label="Mudar Tema"
+            className="app-shell__mobile-control"
+            onClick={toggleTheme}
+            type="button"
+          >
+            {theme === "dark" ? (
+              <Sun aria-hidden="true" />
+            ) : (
+              <Moon aria-hidden="true" />
+            )}
+          </button>
+        </div>
       </div>
 
       {isMobileNavOpen && (
-        <div className="fixed inset-0 z-50 flex lg:hidden">
+        <div className="app-shell__mobile-overlay">
           <button
             aria-label="Fechar menu"
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            className="app-shell__mobile-backdrop"
             onClick={() => setIsMobileNavOpen(false)}
             type="button"
           />
           <aside
             aria-label="Navegação mobile"
             aria-modal="true"
-            className="mobile-nav-enter relative z-50 h-full w-[min(90vw,22rem)] max-w-sm shadow-2xl"
+            className="app-shell__mobile-panel mobile-nav-enter"
             id="mobile-navigation"
             role="dialog"
           >
@@ -206,7 +234,35 @@ export function AppShell({
         </div>
       )}
 
-      <div className="min-w-0 lg:col-start-2">{children}</div>
+      <div className="app-shell__content">
+        <div className="app-shell__desktop-bar">
+          <div className="app-shell__context">
+            <span>{tenantBrand.storeName}</span>
+            <strong>{activeModule.title}</strong>
+          </div>
+          <button
+            aria-haspopup="dialog"
+            className="app-shell__command-trigger"
+            onClick={() => setIsCommandOpen(true)}
+            type="button"
+          >
+            <Search aria-hidden="true" />
+            <span>Buscar módulos e áreas</span>
+            <kbd>
+              <Command aria-hidden="true" />K
+            </kbd>
+          </button>
+        </div>
+        {children}
+      </div>
+
+      <WorkspaceCommandPalette
+        isOpen={isCommandOpen}
+        items={sidebarItems}
+        onClose={() => setIsCommandOpen(false)}
+        onOpen={() => setIsCommandOpen(true)}
+        onSelect={navigate}
+      />
     </div>
   );
 }

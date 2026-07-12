@@ -1,13 +1,14 @@
 import type { FinanceEntry } from "./types";
+import { formatFinanceCategory } from "./financeBillsFormat";
 
 export function originLabel(origin: string) {
   const labels: Record<string, string> = {
-    consorcio: "Consorcio",
-    documentation: "Documentacao",
+    consorcio: "Consórcio",
+    documentation: "Documentação",
     financing: "Financiamento",
     insurance: "Seguro",
     manual: "Manual",
-    manual_bonus: "Bonus manual",
+    manual_bonus: "Bônus manual",
     sales_commission: "Venda",
     vehicle_sale: "Venda",
   };
@@ -18,7 +19,7 @@ export function entrySellerName(entry: FinanceEntry) {
   const metadataName = metadataString(entry.metadata, "sellerName");
   if (metadataName) return metadataName;
   if (!entry.sellerUserId) return "Sem vendedor vinculado";
-  return `Vendedor ${entry.sellerUserId.slice(0, 8)}`;
+  return "Vendedor não identificado";
 }
 
 export function entryDescription(entry: FinanceEntry) {
@@ -33,12 +34,15 @@ export function entryDescription(entry: FinanceEntry) {
 export function entryReference(entry: FinanceEntry) {
   const saleId = metadataString(entry.metadata, "saleId");
   const leadId = metadataString(entry.metadata, "leadId");
-  if (saleId) return `Venda ${saleId}`;
-  if (leadId) return `Lead ${leadId}`;
-  return entry.category;
+  if (saleId) return "Venda vinculada";
+  if (leadId) return "Lead vinculado";
+  return formatFinanceCategory(entry.category);
 }
 
-export function metadataString(metadata: FinanceEntry["metadata"], key: string) {
+export function metadataString(
+  metadata: FinanceEntry["metadata"],
+  key: string,
+) {
   const value = metadata?.[key];
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }

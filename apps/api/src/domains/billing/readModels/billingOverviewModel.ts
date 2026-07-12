@@ -18,6 +18,7 @@ export const billingFeatureOrder = [
   "subdomain",
   "custom_domain",
   "crm",
+  "automation",
   "external_api",
   "marketplace",
   "plate_lookup",

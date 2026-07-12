@@ -78,7 +78,7 @@ export function LocalDevSessionBootstrapPage() {
           setError(
             formatApiErrorDisplay(
               err,
-              "Nao foi possivel carregar sua sessao local.",
+              "Não foi possível carregar sua sessão local.",
             ),
           );
         }
@@ -143,7 +143,7 @@ export function LocalDevAuthPage() {
       <Logo className="h-11 self-start" variant="full" />
       <FeaturePageHeader
         chip="Local QA"
-        description="Contas seeded para validar permissões sem depender da sessão real do Clerk."
+        description="Contas de teste para validar permissões sem depender do provedor de identidade externo."
         eyebrow="Ambiente local"
         title="Selecionar perfil"
       />

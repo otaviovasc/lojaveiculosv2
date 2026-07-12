@@ -100,7 +100,7 @@ export function CrmWhatsappIntegrationsPage({
             <Bot className="size-5" />
           </span>
           <div>
-            <strong>Integracoes</strong>
+            <strong>Integrações</strong>
             <h2>Bot externo</h2>
             <p>Configure o webhook, segredo e a leitura operacional do bot.</p>
           </div>

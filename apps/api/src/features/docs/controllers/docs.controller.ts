@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { billingPaths, billingSchemas } from "./billingOpenApi.js";
 import { analyticsPaths, analyticsSchemas } from "./analyticsOpenApi.js";
+import { automationPaths, automationSchemas } from "./automationOpenApi.js";
 import { compliancePaths, complianceSchemas } from "./complianceOpenApi.js";
 import {
   documentOperationPaths,
@@ -34,9 +35,8 @@ import {
 } from "./storefrontLeadOpenApi.js";
 import { storefrontPaths, storefrontSchemas } from "./storefrontOpenApi.js";
 import { openApiTags } from "./openApiTags.js";
-
+import { openApiSecuritySchemes } from "./openApiSecuritySchemes.js";
 export { llmsText } from "./llmsText.js";
-
 export const openApiDocument = {
   openapi: "3.1.0",
   info: {
@@ -85,6 +85,7 @@ export const openApiDocument = {
     ...financePaths,
     ...fiscalPaths,
     ...analyticsPaths,
+    ...automationPaths,
     ...compliancePaths,
     ...documentsPaths,
     ...documentOperationPaths,
@@ -96,28 +97,14 @@ export const openApiDocument = {
     ...storefrontLeadPaths,
   },
   components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
-        description:
-          "Bearer token representing an actor with tenant and store scoped permissions.",
-      },
-      externalApiKey: {
-        type: "apiKey",
-        in: "header",
-        name: "x-api-key",
-        description:
-          "Scoped Loja Veiculos API key. Authorization: Bearer lv2_... is also accepted.",
-      },
-    },
+    securitySchemes: openApiSecuritySchemes,
     schemas: {
       ...inventorySchemas,
       ...billingSchemas,
       ...financeSchemas,
       ...fiscalSchemas,
       ...analyticsSchemas,
+      ...automationSchemas,
       ...complianceSchemas,
       ...documentsSchemas,
       ...documentOperationSchemas,
@@ -206,7 +193,7 @@ export const openApiDocument = {
   "x-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",
     "Least-privilege external client scopes required; operator roles are not exposed to integrations.",
-    "Idempotency keys required for import and mutation endpoints where possible.",
+    "API-key mutations use Idempotency-Key for duplicate rejection; reused keys return 409 and do not replay prior responses.",
     "Request identifiers required for audit correlation.",
     "Rate limits, payload size limits, and pagination caps required before launch.",
     "Destructive operations require explicit delete scopes and audit records.",

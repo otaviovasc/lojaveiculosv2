@@ -15,6 +15,22 @@ export async function createPublicApiOptions(): Promise<CreatePublicApiOptions> 
   };
 }
 
+export function readPublicApiDeploymentBaseUrl() {
+  const { baseUrl } = readRuntimeApiBaseUrl();
+  return resolvePublicApiDeploymentBaseUrl(baseUrl, window.location.origin);
+}
+
+export function resolvePublicApiDeploymentBaseUrl(
+  apiBaseUrl: string | undefined,
+  currentOrigin: string,
+) {
+  const resolved = new URL(apiBaseUrl ?? "/api/v1", currentOrigin);
+  resolved.pathname = resolved.pathname.replace(/\/api\/v1\/?$/, "");
+  resolved.search = "";
+  resolved.hash = "";
+  return resolved.toString().replace(/\/$/, "");
+}
+
 function createAuthFromEnv(accessToken?: string | null): PublicApiAuth {
   return createRuntimeActorAuth(accessToken);
 }

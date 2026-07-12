@@ -14,10 +14,10 @@ export async function cancelCommission(
   refresh: () => void,
 ) {
   if (!api) return;
-  await api.cancelEntry(entry.id, "Cancelado pela tela de comissoes.");
+  await api.cancelEntry(entry.id, "Cancelado pela tela de comissões.");
   setToast({
     kind: "success",
-    title: "Comissao cancelada",
+    title: "Comissão cancelada",
     message: entry.name,
   });
   refresh();

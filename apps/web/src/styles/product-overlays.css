@@ -1,0 +1,106 @@
+.feature-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: var(--app-space-md);
+}
+
+.feature-overlay--drawer {
+  justify-content: flex-end;
+  padding: 0;
+}
+
+.feature-overlay__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: var(--color-overlay);
+  backdrop-filter: blur(6px);
+}
+
+.feature-dialog,
+.feature-drawer {
+  position: relative;
+  display: flex;
+  max-height: calc(100dvh - 2rem);
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  background: var(--color-surface-raised);
+  box-shadow: var(--shadow-float);
+}
+
+.feature-dialog {
+  width: 100%;
+  border-radius: var(--surface-radius-xl);
+}
+
+.feature-dialog--medium {
+  max-width: 36rem;
+}
+
+.feature-dialog__header,
+.feature-drawer__header {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-space-md);
+  border-bottom: 1px solid var(--color-line);
+  padding-block: var(--app-space-md);
+  padding-inline: var(--app-space-lg);
+}
+
+.feature-dialog__title,
+.feature-drawer__title {
+  min-width: 0;
+  margin: 0;
+  color: var(--color-ink);
+  font-size: var(--font-size-lg);
+}
+
+.feature-dialog__close,
+.feature-drawer__close {
+  display: grid;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  place-items: center;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  color: var(--color-ink-muted);
+}
+
+.feature-dialog__close svg {
+  width: 1rem;
+}
+
+.feature-dialog__body,
+.feature-drawer__body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding-block: var(--app-space-lg);
+  padding-inline: var(--app-space-lg);
+}
+
+.feature-dialog__footer,
+.feature-drawer__footer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--color-line);
+  background: var(--color-surface-subtle);
+  padding-block: var(--app-space-md);
+  padding-inline: var(--app-space-lg);
+}
+
+.feature-drawer {
+  width: min(30rem, 100vw);
+  height: 100dvh;
+  max-height: none;
+  border-block: 0;
+  border-right: 0;
+}

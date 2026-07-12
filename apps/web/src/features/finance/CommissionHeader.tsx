@@ -31,21 +31,21 @@ export function CommissionHeader({
             />
             <FeatureActionButton
               icon={PlusCircle}
-              label="Bonus manual"
+              label="Bônus manual"
               onClick={onCreateBonus}
               variant="primary"
             />
           </>
         }
-        description="Fechamento por vendedor usando lancamentos financeiros do tipo comissao, com pagamento auditado por lancamento da loja."
+        description="Fechamento por vendedor usando lançamentos financeiros do tipo comissão, com pagamento auditado por lançamento da loja."
         eyebrow={
           <>
             Financeiro
             <span aria-hidden="true">·</span>
-            Comissoes por vendedor
+            Comissões por vendedor
           </>
         }
-        title="Comissoes"
+        title="Comissões"
       />
       <div className="flex flex-wrap gap-2 text-sm font-black">
         <span className="rounded-lg bg-accent-soft px-3 py-2 text-accent-strong">
@@ -55,7 +55,7 @@ export function CommissionHeader({
           Pago {formatCurrency(summary.paidCents)}
         </span>
         <span className="rounded-lg border border-line bg-app px-3 py-2 text-muted">
-          {summary.count} lancamento(s)
+          {summary.count} lançamento(s)
         </span>
       </div>
     </>
@@ -70,17 +70,17 @@ export function CommissionEmptyState({
   isLoading: boolean;
 }) {
   if (isLoading) {
-    return <FeatureLoadingState title="Carregando comissoes." />;
+    return <FeatureLoadingState title="Carregando comissões." />;
   }
 
   return (
     <FeatureEmptyState
-      body="Ajuste periodo, vendedor, origem ou status para revisar outros lancamentos."
+      body="Ajuste período, vendedor, origem ou status para revisar outros lançamentos."
       icon={HandCoins}
       title={
         hasFilters
-          ? "Nenhuma comissao corresponde aos filtros"
-          : "Nenhuma comissao encontrada"
+          ? "Nenhuma comissão corresponde aos filtros"
+          : "Nenhuma comissão encontrada"
       }
     />
   );

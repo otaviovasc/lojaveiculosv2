@@ -22,7 +22,7 @@
   border: 1px solid
     color-mix(in srgb, var(--color-green-start) 18%, var(--color-line));
   border-radius: 999px;
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-weight: 950;

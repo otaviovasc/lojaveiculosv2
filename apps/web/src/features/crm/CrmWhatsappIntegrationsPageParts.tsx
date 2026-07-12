@@ -114,7 +114,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
 export function PermissionNotice() {
   return (
     <div className="rounded-xl border border-line/35 bg-panel/10 p-4 text-sm font-bold text-muted">
-      Seu usuario nao tem permissao para gerenciar integracoes.
+      Seu usuário não tem permissão para gerenciar integrações.
     </div>
   );
 }

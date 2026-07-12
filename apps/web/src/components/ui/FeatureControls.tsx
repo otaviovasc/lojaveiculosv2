@@ -4,6 +4,8 @@ import { CustomSelect, type CustomSelectOption } from "./CustomSelect";
 import { DatePickerField } from "./DatePickerField";
 import { cx, type FeatureIcon } from "./featureShared";
 
+export { FeatureTabs } from "./FeatureTabs";
+
 export function FeatureInput(props: ComponentProps<"input">) {
   return (
     <input
@@ -172,52 +174,6 @@ export function FeatureSegmentedControl<Value extends string>({
               <OptionIcon aria-hidden="true" className="size-3.5" />
             ) : null}
             <span className="whitespace-nowrap">{option.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-export function FeatureTabs<Value extends string>({
-  activeClassName = "is-active",
-  ariaLabel,
-  className = "settings-tabs",
-  onChange,
-  optionClassName,
-  options,
-  value,
-}: {
-  activeClassName?: string;
-  ariaLabel: string;
-  className?: string;
-  onChange: (value: Value) => void;
-  optionClassName?: string;
-  options: ReadonlyArray<{
-    icon?: FeatureIcon | undefined;
-    label: ReactNode;
-    value: Value;
-  }>;
-  value: Value;
-}) {
-  return (
-    <div aria-label={ariaLabel} className={className} role="tablist">
-      {options.map((option) => {
-        const OptionIcon = option.icon;
-        const active = option.value === value;
-        return (
-          <button
-            aria-selected={active}
-            className={cx(optionClassName, active && activeClassName)}
-            key={option.value}
-            onClick={() => onChange(option.value)}
-            role="tab"
-            type="button"
-          >
-            {OptionIcon ? (
-              <OptionIcon aria-hidden="true" className="size-4" />
-            ) : null}
-            <span>{option.label}</span>
           </button>
         );
       })}

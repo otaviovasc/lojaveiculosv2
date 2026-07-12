@@ -227,9 +227,19 @@ describe("API docs routes", () => {
     );
     expect(
       openApiDocument.paths["/api/v1/external-api/vehicles"].get.security,
-    ).toEqual([{ externalApiKey: ["inventory.read"] }]);
+    ).toEqual([{ externalApiKey: [] }, { externalApiBearer: [] }]);
+    expect(
+      openApiDocument.paths["/api/v1/external-api/vehicles"].get[
+        "x-required-scopes"
+      ],
+    ).toEqual(["inventory.read"]);
     expect(
       openApiDocument.paths["/api/v1/external-api/leads"].post.security,
-    ).toEqual([{ externalApiKey: ["lead.create"] }]);
+    ).toEqual([{ externalApiKey: [] }, { externalApiBearer: [] }]);
+    expect(
+      openApiDocument.paths["/api/v1/external-api/leads"].post[
+        "x-required-scopes"
+      ],
+    ).toEqual(["lead.create"]);
   });
 });

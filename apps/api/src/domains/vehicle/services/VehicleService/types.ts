@@ -13,6 +13,7 @@ import type { VehicleMediaStorage } from "../../ports/vehicleMediaStorage.js";
 import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsRepository.js";
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
 import type { VehicleAcquisitionRepository } from "../../ports/vehicleAcquisitionRepository.js";
+import type { VehicleStoreBrandingReader } from "../../ports/vehicleStoreBrandingReader.js";
 
 export type VehicleInventoryServicePorts = {
   acquisitionRepository?: VehicleAcquisitionRepository;
@@ -28,4 +29,5 @@ export type VehicleInventoryServicePorts = {
   operationsRepository?: VehicleOperationsRepository;
   salesRepository?: VehicleSalesRepository;
   unitRepository?: VehicleUnitRepository;
+  storeBrandingReader?: VehicleStoreBrandingReader;
 };

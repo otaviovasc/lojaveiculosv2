@@ -34,12 +34,12 @@ export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
       />
       <SummaryCard
         icon={<WalletCards aria-hidden="true" className="size-5" />}
-        label="Custo Mensal Atual"
+        label="Custo mensal atual"
         value={money(overview.financialSummary.monthlyRecurringCents)}
       />
       <SummaryCard
         icon={<Coins aria-hidden="true" className="size-5" />}
-        label="Pago no periodo"
+        label="Pago no período"
         value={money(overview.financialSummary.paidThisPeriodCents)}
       />
       <SummaryCard
@@ -54,7 +54,7 @@ export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
       />
       <SummaryCard
         icon={<Store aria-hidden="true" className="size-5" />}
-        label="Features ativas"
+        label="Recursos ativos"
         value={`${activeFeatures}/${overview.entitlementMatrix.length}`}
       />
     </section>
@@ -70,11 +70,15 @@ export function BillingAllocationTable({
     <section className="billing-panel">
       <header className="billing-panel-header">
         <div>
-          <h3>Alocacao por loja</h3>
+          <h3>Alocação por loja</h3>
           <p>Plano, add-ons e custo mensal por loja.</p>
         </div>
       </header>
-      <div className="billing-table-wrap">
+      <div
+        aria-label="Tabela de alocação por loja"
+        className="billing-table-wrap"
+        tabIndex={0}
+      >
         <table className="billing-table">
           <thead>
             <tr>
@@ -132,7 +136,7 @@ export function BillingEntitlementMatrix({
       <header className="billing-panel-header">
         <div>
           <h3>Seus Recursos e Add-ons</h3>
-          <p>Veja o que esta ativo e gerencie cada recurso com contexto.</p>
+          <p>Veja o que está ativo e gerencie cada recurso com contexto.</p>
         </div>
       </header>
       <div className="billing-feature-grid">
@@ -149,7 +153,7 @@ export function BillingEntitlementMatrix({
               </span>
               <h3>{featureLabels[row.featureKey]}</h3>
               <p>
-                {row.includedInPlan ? "Incluido no plano" : "Add-on"} ·{" "}
+                {row.includedInPlan ? "Incluído no plano" : "Add-on"} ·{" "}
                 {row.limitValue === null
                   ? "sem limite"
                   : `limite ${row.limitValue}`}
@@ -193,14 +197,14 @@ function featurePriceLabel(
   row: BillingEntitlementMatrixRow,
   chargePreview: BillingChargePreview | undefined,
 ) {
-  if (row.includedInPlan) return "Incluido no plano atual";
+  if (row.includedInPlan) return "Incluído no plano atual";
   const label = featureLabels[row.featureKey].toLowerCase();
   const line = chargePreview?.lineItems.find((item) =>
     item.label.toLowerCase().includes(label),
   );
   return line
     ? `${money(line.unitAmountCents)}/mes`
-    : "Add-on sem cobranca neste ciclo";
+    : "Add-on sem cobrança neste ciclo";
 }
 
 export function BillingEventList({
@@ -212,8 +216,8 @@ export function BillingEventList({
     <section className="billing-panel">
       <header className="billing-panel-header">
         <div>
-          <h3>Historico de recursos</h3>
-          <p>Mudancas recentes feitas no faturamento.</p>
+          <h3>Histórico de recursos</h3>
+          <p>Mudanças recentes feitas no faturamento.</p>
         </div>
       </header>
       <div className="billing-event-list">
@@ -231,7 +235,7 @@ export function BillingEventList({
             </article>
           ))
         ) : (
-          <p className="billing-muted">Nenhuma alteracao registrada.</p>
+          <p className="billing-muted">Nenhuma alteração registrada.</p>
         )}
       </div>
     </section>

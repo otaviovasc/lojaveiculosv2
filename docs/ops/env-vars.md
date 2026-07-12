@@ -25,6 +25,11 @@ secrets for CI-only values.
 | `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                        |
 | `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                              |
 
+`DRIZZLE_AUTOMATION_BOOTSTRAP` is an internal, local-only schema tooling flag.
+The product DB push wrapper sets it automatically during the first phase that
+creates automation scope indexes before their composite foreign keys. Leave it
+unset in staging, production, and Railway service variables.
+
 ## Authentication
 
 Use a dedicated Clerk project for V2. Do not reuse V1 Clerk secrets or

@@ -45,6 +45,10 @@ describe("documents controller", () => {
     expect(await response.json()).toEqual({
       documents: [
         {
+          capabilities: {
+            canRegenerate: false,
+            regenerateBlockReason: "renderer_unavailable",
+          },
           context: {
             linkRole: "primary",
             targetId: "sale_1",

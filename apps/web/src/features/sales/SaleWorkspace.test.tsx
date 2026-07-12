@@ -210,6 +210,36 @@ describe("SaleWorkspace", () => {
     ).toBeInTheDocument();
     expect(screen.queryByText(/unit_sensitive/i)).not.toBeInTheDocument();
   });
+
+  it("persists only renderable document selections and does not offer warranty", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn(async (sale: SaleRecord) => sale);
+
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onSave={onSave}
+        sale={saleRecord()}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Documentos & Validação/ }),
+    );
+    expect(screen.queryByText("Garantia de Venda")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("checkbox", { name: "Recibo de Venda" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce(), {
+      timeout: 1500,
+    });
+    expect(onSave.mock.calls[0]?.[0].selectedDocumentKinds).toEqual([
+      "sale_contract",
+      "delivery_term",
+      "power_of_attorney",
+    ]);
+  });
 });
 
 function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {

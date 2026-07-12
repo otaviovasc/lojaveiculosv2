@@ -247,7 +247,7 @@ function WebsiteBuilderMobileTabs({
             className={cn(
               "flex flex-1 items-center justify-center gap-2 py-2.5 text-xs font-semibold transition-colors",
               active === value
-                ? "border-b-2 border-primary text-primary"
+                ? "border-b-2 border-accent-strong text-accent-strong"
                 : "text-muted-foreground",
             )}
             key={item.value}

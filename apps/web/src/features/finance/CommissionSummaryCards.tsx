@@ -29,7 +29,7 @@ export function CommissionSummaryCards({
     },
     {
       icon: Users,
-      label: "Vendedores com pendencia",
+      label: "Vendedores com pendência",
       tone: "violet",
       value: String(summary.sellersWithPending),
     },

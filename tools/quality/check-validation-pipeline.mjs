@@ -47,12 +47,14 @@ expectScript("validate:ci", "pnpm run validate:push");
 expectCommandParts("validate:commit", commitGate, [
   "pnpm run validate:core-guardrails",
   "pnpm run test:frontend-design",
+  "pnpm run test:seed-document-pdf",
 ]);
 expectCommandParts("validate:push", pushGate, [
   "pnpm run validate:core-guardrails",
   "pnpm run typecheck",
   "pnpm run lint",
   "pnpm run test",
+  "pnpm run test:seed-document-pdf",
 ]);
 expectIncludes(
   ".husky/pre-commit",
@@ -66,9 +68,20 @@ expectIncludes(
 );
 expectIncludes(
   ".github/workflows/ci.yml",
-  ["pnpm run validate:ci", "pnpm run test:smoke:api"],
+  [
+    "uses: actions/checkout@v7",
+    "uses: pnpm/action-setup@v6",
+    "uses: actions/setup-node@v6",
+    "pnpm run validate:ci",
+    "pnpm --filter @lojaveiculosv2/web build",
+    "pnpm run test:smoke:api",
+  ],
   [],
 );
+expectOrder(".github/workflows/ci.yml", [
+  "uses: pnpm/action-setup@v6",
+  "uses: actions/setup-node@v6",
+]);
 
 if (failures.length > 0) {
   console.error("Validation pipeline violations:");
@@ -96,6 +109,19 @@ function expectIncludes(file, required, forbidden) {
   for (const text of forbidden) {
     if (source.includes(text))
       failures.push(`${file} must not include ${text}`);
+  }
+}
+
+function expectOrder(file, orderedTexts) {
+  const source = readFileSync(join(root, file), "utf8");
+  let priorIndex = -1;
+  for (const text of orderedTexts) {
+    const index = source.indexOf(text);
+    if (index <= priorIndex) {
+      failures.push(`${file} must place ${text} after ${orderedTexts[0]}`);
+      return;
+    }
+    priorIndex = index;
   }
 }
 

@@ -86,11 +86,12 @@
   gap: 0.25rem;
 }
 
-.documents-builder-panel-heading strong {
+.documents-builder-panel-heading h2 {
   color: var(--color-text);
   font-size: var(--font-size-lg);
   font-weight: 800;
   letter-spacing: -0.01em;
+  margin: 0;
 }
 
 .documents-builder-panel-heading button {
@@ -134,7 +135,7 @@
   gap: 1.25rem;
 }
 
-.documents-builder-ai-panel .documents-builder-panel-heading strong {
+.documents-builder-ai-panel .documents-builder-panel-heading h2 {
   background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

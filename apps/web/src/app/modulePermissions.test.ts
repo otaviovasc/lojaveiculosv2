@@ -84,6 +84,19 @@ describe("module permissions", () => {
     ).toBe(true);
   });
 
+  it("shows the AI operator only with automation read access", () => {
+    const allowed = sessionForRole("manager", ["automation.read"]);
+    const denied = sessionForRole("salesman", ["inventory.read"]);
+
+    expect(getModulePermission("autobot", allowed).canView).toBe(true);
+    expect(getModulePermission("autobot", denied).canView).toBe(false);
+    expect(
+      filterNavigationGroups(navigationGroups, allowed)
+        .flatMap((group) => group.items)
+        .some((item) => item.id === "autobot"),
+    ).toBe(true);
+  });
+
   it("uses the selected active store when an agency session has no default store", () => {
     persistCurrentStoreSlug("agency-store", "clerk");
     const session = {

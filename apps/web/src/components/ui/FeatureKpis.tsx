@@ -17,7 +17,10 @@ export function FeatureKpiStrip({
   return (
     <div
       aria-label={ariaLabel}
-      className={cx("flex flex-wrap gap-3", className)}
+      className={cx(
+        "grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3",
+        className,
+      )}
       role="group"
     >
       {children}
@@ -60,7 +63,7 @@ export function FeatureKpiCard({
 
   return (
     <AnimatedContent
-      className="flex min-w-[min(100%,12rem)] flex-[1_1_12rem]"
+      className="flex min-w-0 sm:min-w-[12rem] sm:flex-[1_1_12rem]"
       distance={20}
       delay={animationIndex * 0.04}
       duration={0.6}
@@ -89,9 +92,9 @@ function KpiCardButton({
   value: number | string;
 }) {
   const className = cx(
-    "kpi-card-premium flex items-center gap-3 !p-3 !px-4 !rounded-xl",
+    "feature-kpi-card kpi-card-premium flex min-h-20 items-center gap-2 !rounded-xl !p-3 sm:min-h-0 sm:gap-3 sm:!px-4",
     gradientClass(tone),
-    "w-full min-w-[min(100%,12rem)] flex-[1_1_12rem] border border-white/10 shadow-sm text-left transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.015]",
+    "w-full min-w-0 border border-white/10 text-left shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:scale-[1.015] sm:min-w-[12rem] sm:flex-[1_1_12rem]",
     onClick && "cursor-pointer",
     active && "ring-2 ring-accent/70 ring-offset-2 ring-offset-app",
     disabled && "cursor-not-allowed opacity-70",
@@ -99,14 +102,14 @@ function KpiCardButton({
   const content = (
     <>
       <div className="gloss-overlay" />
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-black/5 dark:bg-white/15 border border-line/20 dark:border-white/10 relative z-10">
+      <div className="relative z-10 flex size-8 shrink-0 items-center justify-center rounded-lg border border-line/20 bg-black/5 sm:size-9 dark:border-white/10 dark:bg-white/15">
         <IconComponent aria-hidden="true" className="size-4.5 kpi-card-icon" />
       </div>
       <div className="min-w-0 relative z-10">
-        <span className="block text-xs font-black uppercase tracking-wider kpi-card-label leading-none">
+        <span className="kpi-card-label block text-xs font-black uppercase leading-tight tracking-wide sm:leading-none sm:tracking-wider">
           {label}
         </span>
-        <strong className="block text-lg font-black kpi-card-value mt-1.5 leading-none">
+        <strong className="feature-kpi-card__value kpi-card-value mt-1.5 block text-base font-black leading-none sm:text-lg">
           {typeof value === "number" ? (
             <AnimatedCounter value={value} />
           ) : (

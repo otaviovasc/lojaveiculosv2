@@ -263,7 +263,7 @@ export function InventoryDetailFinanceiroTab({
         }}
       />
 
-      <FinanceiroNotasFiscaisSection formatBRL={formatBRL} />
+      <FinanceiroNotasFiscaisSection />
 
       <FinanceiroCashFlowSection formatBRL={formatBRL} items={cashFlowItems} />
     </section>

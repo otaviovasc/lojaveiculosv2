@@ -19,6 +19,7 @@ import type { ObjectStorage } from "../../shared/storage/objectStorage.js";
 import { createFipeVehicleCatalogProvider } from "../catalog/fipeVehicleCatalogProvider.js";
 import { createClientTransactionRunner } from "../../shared/transaction.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
+import { createDrizzleVehicleStoreBrandingReader } from "./vehicleInventory/drizzleVehicleStoreBrandingReader.js";
 
 export function createRuntimeInventoryServices(
   db: unknown,
@@ -40,6 +41,7 @@ export function createRuntimeInventoryServices(
     documentTemplateRepository: createDrizzleDocumentRepository(
       client as unknown as DrizzleDocumentClient,
     ),
+    storeBrandingReader: createDrizzleVehicleStoreBrandingReader(client),
     ...(mediaStorage ? { mediaStorage } : {}),
   });
 

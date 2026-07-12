@@ -1,0 +1,51 @@
+.workspace-sidebar__picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  border: 0;
+  background: transparent;
+}
+
+.workspace-sidebar__picker-menu {
+  position: absolute;
+  inset: calc(100% + 0.375rem) 0 auto;
+  z-index: 50;
+  border: 1px solid var(--color-sidebar-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-sidebar-raised);
+  padding: 0.375rem;
+  box-shadow: var(--shadow-raised);
+}
+
+.workspace-sidebar__picker-option {
+  width: 100%;
+  min-height: 2.5rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-sidebar-muted);
+  padding-inline: var(--app-space-sm);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+}
+
+.workspace-sidebar__picker-option:hover,
+.workspace-sidebar__picker-option.is-active {
+  background: var(--color-sidebar);
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__picker-divider {
+  height: 1px;
+  margin-block: 0.375rem;
+  background: var(--color-sidebar-line);
+}
+
+.workspace-sidebar__close {
+  display: none;
+}
+
+.workspace-sidebar--mobile .workspace-sidebar__close {
+  display: grid;
+}

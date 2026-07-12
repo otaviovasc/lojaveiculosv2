@@ -64,6 +64,11 @@
   --color-destructive-foreground: #ffffff !important;
   --color-warning: #b89418 !important;
   --color-success: #18b841 !important;
+  --color-success-strong: color-mix(
+    in srgb,
+    var(--color-success) 62%,
+    var(--color-text)
+  ) !important;
   --color-success-foreground: #ffffff !important;
 
   /* Soft utility overrides */

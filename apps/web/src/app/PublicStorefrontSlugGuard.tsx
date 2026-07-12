@@ -1,7 +1,5 @@
 import type { ReactNode } from "react";
 import { useParams } from "react-router-dom";
-import { ProtectedRoute } from "../features/account/AuthPages";
-import { AdminApp } from "./AdminApp";
 import { adminRoutePaths } from "./adminRoutePaths";
 
 const reservedPublicStoreSlugs = new Set([
@@ -25,14 +23,12 @@ export function isReservedPublicStoreSlug(storeSlug: string | undefined) {
 
 export function PublicStorefrontSlugGuard({
   children,
+  reservedFallback,
 }: {
   children: ReactNode;
+  reservedFallback: ReactNode;
 }) {
   const { storeSlug } = useParams();
   if (!isReservedPublicStoreSlug(storeSlug)) return children;
-  return (
-    <ProtectedRoute access="store">
-      <AdminApp />
-    </ProtectedRoute>
-  );
+  return reservedFallback;
 }

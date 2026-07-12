@@ -82,7 +82,7 @@ export function DocumentBuilderWorkspace({
   if (!selected) {
     return (
       <FeaturePageShell className="documents-builder-page">
-        <FeatureAlert title="Nenhum modelo disponível">
+        <FeatureAlert title="Nenhum modelo disponível" tone="warning">
           <p>Os modelos ainda não foram carregados.</p>
         </FeatureAlert>
       </FeaturePageShell>

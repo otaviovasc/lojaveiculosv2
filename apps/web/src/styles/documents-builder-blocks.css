@@ -22,31 +22,26 @@
     var(--color-line-strong);
 }
 
-/* Color Coding Block Types */
-.documents-builder-block:has(small:contains("heading")),
-.documents-builder-block:has(small:contains("Título")) {
-  border-left-color: #3b82f6; /* Blue for headings */
+/* Color coding is driven by the block contract, not rendered copy. */
+.documents-builder-block[data-block-type="heading"] {
+  border-left-color: var(--color-blue-start);
 }
 
-.documents-builder-block:has(small:contains("clause")),
-.documents-builder-block:has(small:contains("Cláusula")),
-.documents-builder-block:has(small:contains("paragraph")) {
-  border-left-color: var(
-    --color-accent
-  ); /* Crimson red for clauses/paragraphs */
+.documents-builder-block[data-block-type="clause"],
+.documents-builder-block[data-block-type="paragraph"] {
+  border-left-color: var(--color-accent);
 }
 
-.documents-builder-block:has(small:contains("field_grid")),
-.documents-builder-block:has(small:contains("Grid")) {
-  border-left-color: #10b981; /* Green for field grids */
+.documents-builder-block[data-block-type="field_grid"] {
+  border-left-color: var(--color-green-start);
 }
 
-.documents-builder-block:has(small:contains("table")) {
-  border-left-color: #8b5cf6; /* Purple for tables */
+.documents-builder-block[data-block-type="table"] {
+  border-left-color: var(--color-violet-start);
 }
 
-.documents-builder-block:has(small:contains("signature")) {
-  border-left-color: #f59e0b; /* Amber for signatures */
+.documents-builder-block[data-block-type="signature"] {
+  border-left-color: var(--color-warning);
 }
 
 /* Drag Handle */

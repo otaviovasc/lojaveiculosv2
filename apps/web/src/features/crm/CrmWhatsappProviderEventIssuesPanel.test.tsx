@@ -20,7 +20,7 @@ describe("CrmWhatsappProviderEventIssuesPanel", () => {
 
     expect(
       await screen.findByRole("button", {
-        name: /1 evento ZAPI com atencao/i,
+        name: /1 evento ZAPI com atenção/i,
       }),
     ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /1 evento/i }));
@@ -40,7 +40,7 @@ describe("CrmWhatsappProviderEventIssuesPanel", () => {
 
     await user.click(
       await screen.findByRole("button", {
-        name: /1 evento ZAPI com atencao/i,
+        name: /1 evento ZAPI com atenção/i,
       }),
     );
 

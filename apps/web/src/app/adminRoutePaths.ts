@@ -6,6 +6,7 @@ export const adminRoutePaths = [
   "/checklists",
   "/commissions",
   "/crm",
+  "/customers",
   "/customize",
   "/custom-pages",
   "/dashboard",

@@ -19,9 +19,10 @@ const growthPlan = {
   status: "active" as const,
 };
 
-const growthFeatures = [
+export const growthPlanFeatures = [
   { featureKey: "subdomain", included: 1, limitValue: null },
   { featureKey: "crm", included: 1, limitValue: null },
+  { featureKey: "automation", included: 1, limitValue: null },
   { featureKey: "plate_lookup", included: 1, limitValue: 300 },
   { featureKey: "custom_domain", included: 0, limitValue: null },
   { featureKey: "external_api", included: 0, limitValue: null },
@@ -66,7 +67,9 @@ async function ensureGrowthPlan(db: DrizzleAccountProvisioningClient) {
   const plan = inserted ?? (await findGrowthPlan(db));
   await db
     .insert(planFeatures)
-    .values(growthFeatures.map((feature) => ({ ...feature, planId: plan.id })))
+    .values(
+      growthPlanFeatures.map((feature) => ({ ...feature, planId: plan.id })),
+    )
     .onConflictDoNothing();
   return plan;
 }

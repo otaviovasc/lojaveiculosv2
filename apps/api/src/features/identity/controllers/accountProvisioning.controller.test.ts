@@ -40,6 +40,7 @@ describe("account provisioning routes", () => {
       expect.objectContaining({
         entitlements: [
           "analytics",
+          "automation",
           "crm",
           "marketplace",
           "plate_lookup",

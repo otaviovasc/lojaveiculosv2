@@ -3,9 +3,6 @@ import {
   BookOpen,
   CarFront,
   FileJson,
-  Handshake,
-  KeyRound,
-  ListFilter,
   ShieldCheck,
   Sparkles,
   UsersRound,
@@ -27,15 +24,6 @@ export type PublicApiScopePreset = {
   label: string;
   name: string;
   scopes: PublicApiScope[];
-};
-
-export type PublicApiEndpoint = {
-  description: string;
-  method: "GET" | "PATCH" | "POST";
-  path: string;
-  samplePath: string;
-  scopes: PublicApiScope[];
-  title: string;
 };
 
 export const publicApiBasePath = "/api/v1/external-api";
@@ -105,7 +93,7 @@ export const scopeOptions: PublicApiScopeOption[] = [
     "Operacao",
     "inventory.reserve",
     "Reservas",
-    "Reservar e liberar unidades com idempotencia.",
+    "Reservar e liberar unidades com chave de deduplicacao.",
   ),
   option(
     "Operacao",
@@ -230,76 +218,6 @@ export const publicApiResources = [
   },
 ] as const;
 
-export const publicApiEndpoints: PublicApiEndpoint[] = [
-  endpoint(
-    "GET",
-    "/vehicles",
-    "Listar veiculos",
-    "Lista veiculos com DTO publico limpo.",
-    ["inventory.read"],
-    "?available=true&limit=20",
-  ),
-  endpoint(
-    "GET",
-    "/vehicles/search",
-    "Buscar veiculos",
-    "Aceita q, preco, ano, km, cor, combustivel, cambio e sort.",
-    ["inventory.read"],
-    "?q=toro&minPrice=100000&sort=price_asc",
-  ),
-  endpoint(
-    "GET",
-    "/vehicles/{listingId}",
-    "Detalhe do veiculo",
-    "Detalhe com midia publica, historico de preco e unidades seguras.",
-    ["inventory.read"],
-    "",
-  ),
-  endpoint(
-    "GET",
-    "/leads",
-    "Listar leads",
-    "Busca leads por status, origem, telefone, texto e veiculo.",
-    ["lead.read"],
-    "?status=new&limit=20",
-  ),
-  endpoint(
-    "POST",
-    "/leads",
-    "Criar lead",
-    "Cria lead por campos V2 ou aliases V1 name/email/phone/message/vehicleId.",
-    ["lead.create"],
-    "",
-  ),
-  endpoint(
-    "GET",
-    "/leads/{leadId}",
-    "Detalhe do lead",
-    "Leitura de um lead via chave escopada.",
-    ["lead.read"],
-    "",
-  ),
-  endpoint(
-    "PATCH",
-    "/leads/{leadId}",
-    "Atualizar lead",
-    "Atualiza status ou dados do comprador com Idempotency-Key.",
-    ["lead.update"],
-    "",
-  ),
-];
-
-export function createCurlExample(endpoint: PublicApiEndpoint) {
-  const url = `${publicApiBasePath}${endpoint.path.replace("{listingId}", "listing_123").replace("{leadId}", "lead_123")}${endpoint.samplePath}`;
-  const body =
-    endpoint.method === "POST"
-      ? ' \\\n  -H "Idempotency-Key: lead-import-001" \\\n  -d \'{"name":"Ana","phone":"+5511999990000","message":"Tenho interesse"}\''
-      : endpoint.method === "PATCH"
-        ? ' \\\n  -H "Idempotency-Key: lead-update-001" \\\n  -d \'{"status":"contacted"}\''
-        : "";
-  return `curl -X ${endpoint.method} \\\n  -H "x-api-key: lv2_..." \\\n  -H "content-type: application/json"${body} \\\n  "https://app.lojaveiculos.com.br${url}"`;
-}
-
 function option(
   group: PublicApiScopeOption["group"],
   scope: PublicApiScope,
@@ -307,15 +225,4 @@ function option(
   description: string,
 ): PublicApiScopeOption {
   return { description, group, label, scope };
-}
-
-function endpoint(
-  method: PublicApiEndpoint["method"],
-  path: string,
-  title: string,
-  description: string,
-  scopes: PublicApiScope[],
-  samplePath: string,
-): PublicApiEndpoint {
-  return { description, method, path, samplePath, scopes, title };
 }

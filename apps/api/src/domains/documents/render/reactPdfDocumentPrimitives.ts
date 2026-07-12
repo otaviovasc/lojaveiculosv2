@@ -49,7 +49,15 @@ export async function renderSharedDocumentPdf(
 export function createSharedPdfDocument(document: SharedPdfDocument) {
   return e(
     Document,
-    null,
+    {
+      author: document.brand.storeName,
+      creator: "Loja Veículos OS",
+      keywords: "loja veículos, documento automotivo, fluxo operacional",
+      language: "pt-BR",
+      producer: "Loja Veículos OS",
+      subject: document.subtitle,
+      title: document.title,
+    },
     e(
       Page,
       { size: "A4", style: styles.page },
@@ -58,7 +66,7 @@ export function createSharedPdfDocument(document: SharedPdfDocument) {
         subtitle: document.subtitle,
         title: document.title,
       }),
-      e(DocumentPdfFooter, null),
+      e(DocumentPdfFooter, { storeName: document.brand.storeName }),
       e(DocumentPdfBody, { document }),
     ),
   );
@@ -81,26 +89,30 @@ export function DocumentPdfHeader({
       View,
       { style: styles.brandCopy },
       e(Text, { style: styles.storeName }, brand.storeName),
-      e(Text, { style: styles.muted }, brand.storeDocument ?? ""),
-      e(Text, { style: styles.muted }, brand.contactLine ?? ""),
+      e(Text, { style: styles.headerMuted }, brand.storeDocument ?? ""),
+      e(Text, { style: styles.headerMuted }, brand.contactLine ?? ""),
     ),
     e(
       View,
       { style: styles.documentTitle },
-      e(Text, { style: styles.title }, title),
-      e(Text, { style: styles.muted }, subtitle),
+      e(Text, { style: styles.headerTitle }, title),
+      e(Text, { style: styles.headerMuted }, subtitle),
     ),
   );
 }
 
-export function DocumentPdfFooter() {
+export function DocumentPdfFooter({ storeName }: { storeName: string }) {
   return e(
     View,
     { fixed: true, style: styles.footer },
-    e(Text, { style: styles.muted }, "Documento gerado pelo Loja Veiculos"),
+    e(
+      Text,
+      { style: styles.muted },
+      `Gerado com segurança por ${storeName} · Loja Veículos OS`,
+    ),
     e(Text, {
       render: ({ pageNumber, totalPages }) =>
-        `Pagina ${pageNumber} de ${totalPages}`,
+        `Página ${pageNumber} de ${totalPages}`,
       style: styles.muted,
     }),
   );
@@ -168,18 +180,44 @@ function DocumentPdfSection({
   );
 }
 
-function DocumentPdfClauses({ clauses }: { clauses: readonly string[] }) {
+export function DocumentPdfClauses({
+  clauses,
+}: {
+  clauses: readonly string[];
+}) {
+  const [firstClause, ...remainingClauses] = clauses;
   return e(
     View,
     { style: styles.section },
-    e(Text, { style: styles.sectionTitle }, "Clausulas"),
-    ...clauses.map((clause, index) =>
-      e(
-        View,
-        { key: `${index}-${clause}`, style: styles.clause },
-        e(Text, { style: styles.clauseLabel }, `Clausula ${index + 1}`),
-        e(Text, { style: styles.clauseText }, clause),
-      ),
+    firstClause
+      ? e(
+          View,
+          { style: styles.clauseOpening, wrap: false },
+          e(Text, { style: styles.sectionTitle }, "Cláusulas"),
+          e(DocumentPdfClause, { clause: firstClause, index: 0 }),
+        )
+      : e(Text, { style: styles.sectionTitle }, "Cláusulas"),
+    ...remainingClauses.map((clause, index) =>
+      e(DocumentPdfClause, {
+        clause,
+        index: index + 1,
+        key: `${index + 1}-${clause}`,
+      }),
     ),
+  );
+}
+
+export function DocumentPdfClause({
+  clause,
+  index,
+}: {
+  clause: string;
+  index: number;
+}) {
+  return e(
+    View,
+    { style: styles.clause, wrap: false },
+    e(Text, { style: styles.clauseLabel }, `Cláusula ${index + 1}`),
+    e(Text, { style: styles.clauseText }, clause),
   );
 }

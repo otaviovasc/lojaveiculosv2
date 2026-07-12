@@ -16,13 +16,7 @@ import {
 import { NotesBlockField } from "./NotesBlockField";
 
 export type TabId =
-  | "geral"
-  | "financeiro"
-  | "anuncio"
-  | "documentos"
-  | "vendas"
-  | "historico"
-  | "vitrine";
+  "geral" | "financeiro" | "anuncio" | "documentos" | "historico" | "vitrine";
 
 export function TechnicalSpecsPanel({
   specs,

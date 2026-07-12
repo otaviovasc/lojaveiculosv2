@@ -11,6 +11,7 @@ import {
   DocumentOperationPolicyError,
   DocumentOperationStorageError,
 } from "../../../domains/documents/services/DocumentOperationService/serviceSupport.js";
+import { DocumentContentDeliveryError } from "../adapters/proxyDocumentContent.js";
 
 export async function handleDocuments(
   context: Context,
@@ -64,6 +65,15 @@ export async function handleDocuments(
         error,
         message: error.message,
         status: 503,
+      });
+    }
+
+    if (error instanceof DocumentContentDeliveryError) {
+      return jsonApiError(context, {
+        code: "DOCUMENT_CONTENT_DELIVERY_FAILED",
+        error,
+        message: error.message,
+        status: 502,
       });
     }
 

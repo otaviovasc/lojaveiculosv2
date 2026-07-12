@@ -88,7 +88,7 @@ test.describe("local seeded permission UX", () => {
           modulesNav.getByRole("button", { name: "Relatórios" }),
         ).toBeVisible();
         await expect(
-          page.getByRole("heading", { name: "Dashboard Gerencial" }),
+          page.getByRole("heading", { name: "Visão geral" }),
         ).toBeVisible();
       }
       await expect(

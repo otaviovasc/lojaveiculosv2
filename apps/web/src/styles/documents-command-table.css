@@ -9,7 +9,9 @@
   display: none !important;
 }
 
-@media (min-width: 1200px) {
+/* The app shell and document folder rail reduce the real table width. Keep
+   secondary unit/date columns hidden until a genuinely wide desktop. */
+@media (min-width: 1600px) {
   .documents-table-wide-only {
     display: table-cell !important;
   }

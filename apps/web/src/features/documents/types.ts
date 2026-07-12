@@ -27,6 +27,11 @@ export type DocumentLinkTarget =
   | "vehicle_unit";
 
 export type WorkspaceDocument = {
+  capabilities: {
+    canRegenerate: boolean;
+    regenerateBlockReason:
+      "document_state_unsupported" | "renderer_unavailable" | null;
+  };
   context: {
     linkRole: string;
     targetId: string;
@@ -108,6 +113,8 @@ export type DocumentPreview = {
 };
 
 export type DocumentDownload = {
+  contentHeaders?: Record<string, string> | undefined;
+  contentUrl?: string | undefined;
   document: WorkspaceDocument;
   downloadMethod: "GET";
   downloadUrl: string;

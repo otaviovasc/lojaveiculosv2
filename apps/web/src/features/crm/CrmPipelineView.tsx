@@ -5,10 +5,8 @@ import { CrmKanbanBoard } from "./CrmKanbanBoard";
 import { CrmLeadDetailsPage } from "./CrmLeadDetailsPage";
 import { CrmPipelineToolbar } from "./CrmPipelineToolbar";
 import { CrmPipelineSettingsLayout } from "./CrmPipelineSettingsLayout";
-import {
-  CrmSimulationModal,
-  type FinancingSimulationDraft,
-} from "./CrmSimulationModal";
+import { CrmSimulationModal } from "./CrmSimulationModal";
+import type { FinancingSimulationDraft } from "./crmLeadData";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import { type PipelineStage } from "./crmPipelineStorage";
 import {

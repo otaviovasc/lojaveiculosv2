@@ -1,0 +1,53 @@
+.app-shell--loading {
+  display: grid;
+}
+
+.app-shell__loading-sidebar {
+  display: none;
+}
+
+.app-shell__loading-content {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: var(--layout-sidebar-width) minmax(0, 1fr);
+    transition: grid-template-columns var(--motion-duration-slow)
+      var(--motion-ease-emphasized);
+  }
+
+  .app-shell--compact {
+    grid-template-columns: var(--layout-sidebar-compact-width) minmax(0, 1fr);
+  }
+
+  .app-shell--compact .app-shell__sidebar {
+    width: var(--layout-sidebar-compact-width);
+  }
+
+  .app-shell__sidebar,
+  .app-shell__desktop-bar,
+  .app-shell__loading-sidebar {
+    display: flex;
+  }
+
+  .app-shell__content,
+  .app-shell__loading-content {
+    grid-column: 2;
+  }
+
+  .app-shell__mobile-header {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .app-shell__mobile-header .logo-image {
+    max-width: 5rem;
+  }
+
+  .workspace-sidebar__logo-wrap {
+    min-height: 1.75rem;
+  }
+}

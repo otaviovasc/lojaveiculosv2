@@ -1,9 +1,39 @@
+@import "./agency-create-store.css";
+@import "./agency-create-readiness.css";
+@import "./agency-create-scene.css";
+@import "./agency-create-guidance.css";
+@import "./agency-shell.css";
+@import "./agency-stats.css";
+@import "./agency-billing.css";
+
 /* Agency Console Custom Styling */
 
 .agency-layout {
-  min-height: 100 / v-screen;
+  min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--color-app);
   color: var(--color-text);
+}
+
+.agency-skip-link {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  left: 1rem;
+  padding: 0.65rem 0.9rem;
+  position: fixed;
+  top: 1rem;
+  transform: translateY(-200%);
+  z-index: 80;
+}
+
+.agency-skip-link:focus {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+  transform: translateY(0);
 }
 
 /* Sidebar Styling */
@@ -25,6 +55,57 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-left: 4px solid transparent;
   width: 100%;
+  min-width: 0;
+}
+
+.agency-menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.collapsed-sidebar .agency-menu-label {
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    max-width 180ms ease,
+    opacity 160ms ease;
+}
+
+.collapsed-sidebar:is(:hover, :focus-within) .agency-menu-label {
+  max-width: 12rem;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.collapsed-sidebar:focus-within {
+  width: 272px !important;
+}
+
+.collapsed-sidebar:focus-within :is(.brand-text, .toggle-text) {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.agency-mobile-brand {
+  max-width: min(52vw, 13rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agency-mobile-backdrop {
+  background: var(--color-overlay);
+  border: 0;
+}
+
+.agency-user-account,
+.agency-user-account > :is(button, div) {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .agency-menu-item:hover {

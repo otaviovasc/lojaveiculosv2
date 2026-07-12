@@ -201,6 +201,10 @@ function createDocument(
 ): WorkspaceDocument {
   const { id, targetId, targetType, ...documentOverrides } = overrides;
   return {
+    capabilities: documentOverrides.capabilities ?? {
+      canRegenerate: false,
+      regenerateBlockReason: "renderer_unavailable",
+    },
     context: {
       linkRole: documentOverrides.context?.linkRole ?? "primary",
       targetId: documentOverrides.context?.targetId ?? targetId ?? "store_1",

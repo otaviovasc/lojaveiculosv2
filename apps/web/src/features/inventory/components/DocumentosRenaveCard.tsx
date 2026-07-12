@@ -46,11 +46,12 @@ export function DocumentosRenaveCard() {
                 className="min-h-9 flex-1 rounded-lg border border-line bg-app px-3 text-xs font-bold outline-none"
               />
               <button
+                aria-label="Salvar código RENAVE"
                 onClick={handleSave}
                 className="p-2 bg-accent text-inverse rounded-lg hover:bg-accent-strong cursor-pointer shrink-0"
                 type="button"
               >
-                <Check className="size-4" />
+                <Check aria-hidden="true" className="size-4" />
               </button>
             </div>
           ) : (
@@ -59,6 +60,7 @@ export function DocumentosRenaveCard() {
                 {renaveCode || "Não Informado"}
               </span>
               <button
+                aria-label="Editar código RENAVE"
                 onClick={() => {
                   setTempCode(renaveCode);
                   setIsEditing(true);
@@ -66,7 +68,7 @@ export function DocumentosRenaveCard() {
                 className="text-muted hover:text-accent cursor-pointer transition-colors"
                 type="button"
               >
-                <Edit2 className="size-3.5" />
+                <Edit2 aria-hidden="true" className="size-3.5" />
               </button>
             </div>
           )}

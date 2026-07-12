@@ -4,27 +4,9 @@ export type PublicApiAuth = {
   storeSlug?: string;
 };
 
-export type PublicApiScope =
-  | "crm.access"
-  | "finance.attach_document"
-  | "finance.create"
-  | "finance.read"
-  | "finance.update"
-  | "inventory.cost_create"
-  | "inventory.create"
-  | "inventory.document_attach"
-  | "inventory.media_update"
-  | "inventory.read"
-  | "inventory.reserve"
-  | "inventory.sell"
-  | "inventory.update_description"
-  | "inventory.update_internal_notes"
-  | "inventory.update_price"
-  | "inventory.update_status"
-  | "inventory.update_unit"
-  | "lead.create"
-  | "lead.read"
-  | "lead.update";
+import type { ExternalApiAssignableScope } from "@lojaveiculosv2/shared";
+
+export type PublicApiScope = ExternalApiAssignableScope;
 
 export type PublicApiClientStatus = "active" | "revoked" | "suspended";
 

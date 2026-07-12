@@ -24,6 +24,10 @@ import {
 } from "./documentResponseDtos.js";
 import { documentServices, type DocumentServices } from "./documentServices.js";
 import { mountDocumentTemplateRoutes } from "./documents.templateRoutes.js";
+import {
+  proxyDocumentContent,
+  type DocumentContentFetcher,
+} from "../adapters/proxyDocumentContent.js";
 
 export type DocumentsContextFactory = (
   context: Context,
@@ -31,6 +35,7 @@ export type DocumentsContextFactory = (
 
 export type CreateDocumentsFeatureOptions = {
   contextFactory?: DocumentsContextFactory;
+  contentFetcher?: DocumentContentFetcher;
   services?: DocumentServices;
 };
 
@@ -103,6 +108,18 @@ export function createDocumentsFeature(
         versionId: context.req.query("versionId") || undefined,
       });
       return context.json(toDocumentDownloadDto(download));
+    }),
+  );
+
+  documentsFeature.get("/:documentId/content", async (context) =>
+    handleDocuments(context, async () => {
+      const serviceContext = await createContext(context);
+      const download = await services.download(serviceContext, {
+        disposition: "inline",
+        documentId: context.req.param("documentId"),
+        versionId: context.req.query("versionId") || undefined,
+      });
+      return proxyDocumentContent(download, options.contentFetcher);
     }),
   );
 

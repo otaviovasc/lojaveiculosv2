@@ -7,6 +7,8 @@ const financeCategoryLabels: Record<string, string> = {
   Veiculo: "Veículo",
   preparation: "Preparação",
   rent: "Aluguel",
+  manual_bonus: "Bônus manual",
+  sales_commission: "Comissão de venda",
   traffic: "Tráfego",
   vehicle_acquisition: "Aquisição",
   vehicle_fee: "Taxas",

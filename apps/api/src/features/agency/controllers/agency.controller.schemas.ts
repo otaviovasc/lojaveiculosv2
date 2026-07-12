@@ -8,6 +8,7 @@ export const agencyStoreEntitlementParamsSchema =
   agencyTenantParamsSchema.extend({
     featureKey: z.enum([
       "analytics",
+      "automation",
       "compliance",
       "crm",
       "custom_domain",

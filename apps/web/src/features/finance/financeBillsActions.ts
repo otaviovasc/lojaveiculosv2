@@ -1,6 +1,7 @@
 import type { FinanceApi } from "./apiClient";
 import { uploadFinanceDocumentObject } from "./financeDocumentUpload";
 import { formatFinanceCategory } from "./financeBillsFormat";
+import { entryReference, entrySellerName } from "./commissionEntryMeta";
 import {
   toEntryInput,
   type FinanceEntryDraft,
@@ -95,25 +96,68 @@ export function exportFinanceCsv(
   entries: readonly FinanceEntry[],
   activeType: FinanceEntryType,
 ) {
-  const rows = [
-    ["nome", "categoria", "status", "vencimento", "valor_centavos"],
-    ...entries.map((entry) => [
-      entry.name,
-      formatFinanceCategory(entry.category),
-      entry.status,
-      entry.dueAt ?? "",
-      String(entry.amountCents),
-    ]),
-  ];
-  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\n");
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const csv = buildFinanceCsv(entries);
+  const fileType = {
+    commission: "comissoes",
+    expense: "gastos",
+    revenue: "receitas",
+  } satisfies Record<FinanceEntryType, string>;
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8" }),
+  );
   const link = document.createElement("a");
   link.href = url;
-  link.download = `financeiro-${activeType}.csv`;
+  link.download = `financeiro-${fileType[activeType]}.csv`;
   link.click();
   URL.revokeObjectURL(url);
 }
 
-function csvCell(value: string) {
-  return `"${value.replaceAll('"', '""')}"`;
+export function buildFinanceCsv(entries: readonly FinanceEntry[]) {
+  const rows = [
+    [
+      "tipo",
+      "nome",
+      "categoria",
+      "status",
+      "vencimento",
+      "valor_reais",
+      "vendedor",
+      "referencia",
+    ],
+    ...entries.map((entry) => [
+      financeTypeLabels[entry.type],
+      entry.name,
+      formatFinanceCategory(entry.category),
+      financeStatusLabels[entry.status],
+      formatCsvDate(entry.dueAt),
+      (entry.amountCents / 100).toFixed(2).replace(".", ","),
+      entrySellerName(entry),
+      entryReference(entry),
+    ]),
+  ];
+  return `\uFEFF${rows.map((row) => row.map(csvCell).join(";")).join("\r\n")}`;
 }
+
+function csvCell(value: string) {
+  const protectedValue = /^[\t\r=+\-@]/.test(value) ? `'${value}` : value;
+  return `"${protectedValue.replaceAll('"', '""')}"`;
+}
+
+function formatCsvDate(value: string | null) {
+  if (!value) return "";
+  return new Intl.DateTimeFormat("pt-BR", { timeZone: "UTC" }).format(
+    new Date(value),
+  );
+}
+
+const financeTypeLabels = {
+  commission: "Comissão",
+  expense: "Gasto",
+  revenue: "Receita",
+} satisfies Record<FinanceEntryType, string>;
+
+const financeStatusLabels = {
+  cancelled: "Cancelado",
+  paid: "Pago",
+  pending: "Pendente",
+} satisfies Record<FinanceEntry["status"], string>;

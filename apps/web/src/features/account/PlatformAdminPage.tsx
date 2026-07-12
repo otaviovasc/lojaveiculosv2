@@ -34,17 +34,21 @@ export function PlatformAdminPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (firstUserName.trim() && !firstUserEmail.trim()) {
+      setMessage("Informe o e-mail para identificar o primeiro operador.");
+      return;
+    }
     setStatus("saving");
     setFailedInvitation(null);
     setMessage(null);
     try {
       const api = await createRuntimeAccountApi();
       const agency = await api.createAgency({
-        ...(firstUserEmail
+        ...(firstUserEmail.trim()
           ? {
               firstUser: {
-                email: firstUserEmail,
-                ...(firstUserName ? { name: firstUserName } : {}),
+                email: firstUserEmail.trim(),
+                ...(firstUserName.trim() ? { name: firstUserName.trim() } : {}),
               },
             }
           : {}),
@@ -70,7 +74,7 @@ export function PlatformAdminPage() {
     } catch (err) {
       setStatus("idle");
       setMessage(
-        formatApiErrorDisplay(err, "Nao foi possivel criar a agencia."),
+        formatApiErrorDisplay(err, "Não foi possível criar a agência."),
       );
     }
   };
@@ -87,7 +91,7 @@ export function PlatformAdminPage() {
     } catch (err) {
       setStatus("idle");
       setMessage(
-        formatApiErrorDisplay(err, "Nao foi possivel reenviar o convite."),
+        formatApiErrorDisplay(err, "Não foi possível reenviar o convite."),
       );
     }
   };
@@ -116,6 +120,13 @@ export function PlatformAdminPage() {
             ) : null
           }
           className="feature-alert"
+          tone={
+            failedInvitation
+              ? "warning"
+              : status === "saved"
+                ? "success"
+                : "danger"
+          }
         >
           {message}
         </FeatureAlert>

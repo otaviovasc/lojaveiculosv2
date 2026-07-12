@@ -12,6 +12,7 @@ import {
   createDrizzleDocumentRepository,
   type DrizzleDocumentClient,
 } from "./documents/drizzleDocumentRepository.js";
+import { createDrizzleVehicleStoreBrandingReader } from "./vehicleInventory/drizzleVehicleStoreBrandingReader.js";
 
 export function createRuntimeSalesServices(
   db: unknown,
@@ -25,6 +26,9 @@ export function createRuntimeSalesServices(
       ),
       documentTemplateRepository: createDrizzleDocumentRepository(
         client as unknown as DrizzleDocumentClient,
+      ),
+      storeBrandingReader: createDrizzleVehicleStoreBrandingReader(
+        client as unknown as DrizzleVehicleInventoryClient,
       ),
       ...(mediaStorage ? { mediaStorage } : {}),
     }),

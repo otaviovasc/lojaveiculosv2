@@ -6,7 +6,6 @@ const inventoryDetailTabs = [
   { id: "financeiro", label: "Financeiro" },
   { id: "anuncio", label: "Anúncio" },
   { id: "documentos", label: "Documentos" },
-  { id: "vendas", label: "Vendas" },
   { id: "historico", label: "Histórico" },
   { id: "vitrine", label: "Vitrine" },
 ] as const;
@@ -29,7 +28,7 @@ export function InventoryDetailWorkspaceTabs({
             className={
               "pb-4 text-sm font-black transition-all border-b-2 cursor-pointer relative " +
               (activeTab === tab.id
-                ? "border-accent text-accent"
+                ? "border-accent text-accent-strong"
                 : "border-transparent text-muted hover:text-app-text")
             }
             key={tab.id}

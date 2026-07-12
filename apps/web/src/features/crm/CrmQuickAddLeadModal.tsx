@@ -6,7 +6,9 @@ import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
 import type { PipelineStage } from "./crmPipelineStorage";
 import type { CrmLeadSource } from "./productCrmTypes";
+import { CrmFormError, formatCrmSubmitError } from "./CrmFormFeedback";
 import { CrmQuickAddLeadMoreOptions } from "./CrmQuickAddLeadMoreOptions";
+import { validateQuickLeadInput } from "./crmFormValidation";
 
 type Props = {
   stageId: string;
@@ -36,11 +38,17 @@ export function CrmQuickAddLeadModal({
   const [notes, setNotes] = useState("");
   const [estimatedClosedDate, setEstimatedClosedDate] = useState("");
   const [category, setCategory] = useState("Não definida");
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    const validationError = validateQuickLeadInput({ email, name, phone });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setError(null);
     setIsSubmitting(true);
     try {
       const metadata = cleanLeadMetadata({
@@ -62,8 +70,10 @@ export function CrmQuickAddLeadModal({
         metadata,
       });
       onClose();
-    } catch (err) {
-      console.error(err);
+    } catch (caught) {
+      setError(
+        formatCrmSubmitError(caught, "Não foi possível criar o negócio."),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -73,6 +83,7 @@ export function CrmQuickAddLeadModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
       <form
         className="w-full max-w-2xl bg-panel rounded-2xl border border-line shadow-2xl flex flex-col my-8"
+        noValidate
         onSubmit={(event) => void handleSubmit(event)}
       >
         <header className="p-4 border-b border-line flex items-center justify-between bg-app-elevated/50">
@@ -104,7 +115,11 @@ export function CrmQuickAddLeadModal({
                   Nome do contato
                 </span>
                 <FeatureInput
-                  onChange={(e) => setName(e.target.value)}
+                  aria-invalid={error === "Informe o nome do contato."}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setError(null);
+                  }}
                   placeholder="Nome completo"
                   required
                   type="text"
@@ -116,7 +131,10 @@ export function CrmQuickAddLeadModal({
                   Telefone
                 </span>
                 <FeatureInput
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    setError(null);
+                  }}
                   placeholder="(11) 99999-9999"
                   type="tel"
                   value={phone}
@@ -127,7 +145,10 @@ export function CrmQuickAddLeadModal({
                   E-mail
                 </span>
                 <FeatureInput
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError(null);
+                  }}
                   placeholder="email@exemplo.com"
                   type="email"
                   value={email}
@@ -195,6 +216,7 @@ export function CrmQuickAddLeadModal({
               />
             )}
           </div>
+          {error ? <CrmFormError>{error}</CrmFormError> : null}
         </div>
 
         <footer className="p-4 border-t border-line bg-app-elevated/50 flex justify-end gap-3 shrink-0">

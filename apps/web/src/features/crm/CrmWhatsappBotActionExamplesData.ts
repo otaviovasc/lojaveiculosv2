@@ -156,7 +156,7 @@ export const botActionExamples = [
   "action": "check_connection",
   "connectionId": "24000000-0000-4000-8000-000000000101"
 }`,
-    description: "Retorna configuracao e status conhecido da conexao ZAPI.",
+    description: "Retorna configuração e status conhecido da conexão ZAPI.",
     title: "check_connection",
   },
 ] as const;

@@ -132,6 +132,7 @@ export async function auditInvitationSendFailure(
 
 export const trialEntitlements = [
   "analytics",
+  "automation",
   "crm",
   "marketplace",
   "plate_lookup",

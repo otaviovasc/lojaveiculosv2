@@ -19,6 +19,7 @@ type DocumentsActionState = {
   documentToDelete: WorkspaceDocument | null;
   documentsApi: DocumentsApi | null;
   setDocumentPreview: Dispatch<SetStateAction<DocumentDownload | null>>;
+  setDocumentPreviewError: Dispatch<SetStateAction<string | null>>;
   setDocumentToDelete: Dispatch<SetStateAction<WorkspaceDocument | null>>;
   setDocumentVersions: Dispatch<SetStateAction<DocumentVersion[]>>;
   setDocuments: Dispatch<SetStateAction<WorkspaceDocument[]>>;
@@ -33,6 +34,7 @@ export function useDocumentsModuleActions({
   documentToDelete,
   documentsApi,
   setDocumentPreview,
+  setDocumentPreviewError,
   setDocumentToDelete,
   setDocumentVersions,
   setDocuments,
@@ -50,19 +52,30 @@ export function useDocumentsModuleActions({
   const previewDocument = async (documentId: string) => {
     setIsDocumentActionBusy(true);
     setDocumentPreview(null);
+    setDocumentPreviewError(null);
     setDocumentVersions([]);
     try {
-      const [preview, versions] = await Promise.all([
-        requireApi().downloadDocument(documentId, { disposition: "inline" }),
-        requireApi().listVersions(documentId),
+      const api = requireApi();
+      const [preview, versions] = await Promise.allSettled([
+        api.downloadDocument(documentId, { disposition: "inline" }),
+        api.listVersions(documentId),
       ]);
-      setDocumentPreview(preview);
-      setDocumentVersions(versions);
-    } catch (error) {
-      setSelectedDocument(null);
+      if (preview.status === "fulfilled") {
+        setDocumentPreview(preview.value);
+      } else {
+        setDocumentPreviewError(
+          "A prévia não está disponível. Tente novamente ou gerencie os dados do documento.",
+        );
+      }
+      setDocumentVersions(
+        versions.status === "fulfilled" ? versions.value : [],
+      );
+    } catch {
       setDocumentPreview(null);
       setDocumentVersions([]);
-      setStatus({ kind: "error", message: errorMessage(error) });
+      setDocumentPreviewError(
+        "A prévia não está disponível. Tente novamente ou gerencie os dados do documento.",
+      );
     } finally {
       setIsDocumentActionBusy(false);
     }
@@ -72,6 +85,7 @@ export function useDocumentsModuleActions({
     action: () => Promise<WorkspaceDocument>,
   ) => {
     setIsDocumentActionBusy(true);
+    setDocumentPreviewError(null);
     try {
       const updated = await action();
       const [preview, versions] = await Promise.all([
@@ -81,6 +95,7 @@ export function useDocumentsModuleActions({
       setDocuments((current) => replaceDocument(current, updated));
       setSelectedDocument(updated);
       setDocumentPreview(preview);
+      setDocumentPreviewError(null);
       setDocumentVersions(versions);
       setStatus({ kind: "ready" });
       return updated;

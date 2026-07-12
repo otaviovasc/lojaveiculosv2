@@ -1,0 +1,177 @@
+.agency-layout {
+  isolation: isolate;
+  position: relative;
+}
+
+.agency-layout::before {
+  background-image: url("/icons/lv-logo-outline-dark.svg");
+  background-position: 1.5rem 1.5rem;
+  background-repeat: repeat;
+  background-size: 15rem auto;
+  content: "";
+  inset: 0;
+  opacity: 0.035;
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+}
+
+:root[data-theme="dark"] .agency-layout::before {
+  background-image: url("/icons/lv-logo-outline-light.svg");
+  opacity: 0.025;
+}
+
+.agency-layout .agency-sidebar {
+  background: var(--color-sidebar);
+  border-right: 1px solid var(--color-sidebar-line);
+  box-shadow: var(--shadow-raised);
+  color: var(--color-sidebar-text);
+}
+
+.agency-brand-lockup {
+  background: var(--color-sidebar);
+  border-bottom: 1px solid var(--color-sidebar-line);
+  color: var(--color-sidebar-text);
+}
+
+.agency-brand-mark {
+  align-items: center;
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.agency-brand-mark img {
+  display: block;
+  height: auto;
+  width: 2.75rem;
+}
+
+.agency-brand-subtitle {
+  color: var(--color-accent);
+}
+
+.agency-sidebar .agency-menu-item,
+.agency-mobile-drawer .agency-menu-item {
+  color: var(--color-sidebar-muted);
+}
+
+.agency-sidebar .agency-menu-item:hover,
+.agency-mobile-drawer .agency-menu-item:hover {
+  background: var(--color-sidebar-raised);
+  color: var(--color-sidebar-text);
+}
+
+.agency-sidebar .agency-menu-item-active,
+.agency-mobile-drawer .agency-menu-item-active {
+  background: color-mix(
+    in srgb,
+    var(--color-accent) 18%,
+    var(--color-sidebar)
+  ) !important;
+  border-left-color: var(--color-accent);
+  color: var(--color-sidebar-text) !important;
+}
+
+.agency-sidebar .agency-menu-item-active svg,
+.agency-mobile-drawer .agency-menu-item-active svg {
+  color: var(--color-accent);
+}
+
+.agency-sidebar-footer,
+.agency-mobile-drawer-footer {
+  border-top: 1px solid var(--color-sidebar-line);
+}
+
+.agency-theme-toggle {
+  background: var(--color-sidebar-raised);
+  border: 1px solid var(--color-sidebar-line);
+  color: var(--color-sidebar-text);
+  transition:
+    background var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard);
+}
+
+.agency-theme-toggle:hover {
+  background: color-mix(
+    in srgb,
+    var(--color-sidebar-raised) 76%,
+    var(--color-sidebar-text)
+  );
+  border-color: var(--color-sidebar-muted);
+}
+
+.agency-sidebar .agency-user-account :is(.text-primary, .text-muted),
+.agency-mobile-drawer .agency-user-account :is(.text-primary, .text-muted) {
+  color: var(--color-sidebar-text);
+}
+
+.agency-sidebar .agency-user-account .bg-app,
+.agency-mobile-drawer .agency-user-account .bg-app {
+  background: var(--color-sidebar-raised);
+  border-color: var(--color-sidebar-line);
+}
+
+.agency-sidebar .agency-user-account button:hover,
+.agency-mobile-drawer .agency-user-account button:hover {
+  background: var(--color-sidebar-raised);
+}
+
+.agency-mobile-header,
+.agency-mobile-drawer {
+  background: var(--color-sidebar);
+  color: var(--color-sidebar-text);
+}
+
+.agency-mobile-header {
+  border-bottom: 1px solid var(--color-sidebar-line);
+  box-shadow: var(--shadow-panel);
+}
+
+.agency-mobile-icon-button {
+  color: var(--color-sidebar-text);
+  transition: background var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.agency-mobile-icon-button:hover {
+  background: var(--color-sidebar-raised);
+}
+
+.agency-mobile-logo {
+  align-items: center;
+  display: flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2.65rem;
+}
+
+.agency-mobile-logo img {
+  display: block;
+  height: auto;
+  width: 2.65rem;
+}
+
+.agency-mobile-logo--drawer {
+  height: 2.25rem;
+  width: 3rem;
+}
+
+.agency-mobile-drawer {
+  border-right: 1px solid var(--color-sidebar-line);
+  box-shadow: var(--shadow-float);
+}
+
+.agency-mobile-drawer-brand {
+  border-bottom: 1px solid var(--color-sidebar-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agency-sidebar,
+  .agency-menu-item,
+  .agency-menu-item svg,
+  .agency-theme-toggle,
+  .agency-mobile-icon-button {
+    transition-duration: 0.01ms !important;
+  }
+}

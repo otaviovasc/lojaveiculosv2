@@ -1,3 +1,9 @@
+import {
+  externalApiContractVersion,
+  externalApiRuntimeOperations,
+  externalApiRuntimeScopes,
+} from "@lojaveiculosv2/shared";
+
 export function createExternalApiManifest(baseUrl: string) {
   return {
     aiNative: {
@@ -9,15 +15,15 @@ export function createExternalApiManifest(baseUrl: string) {
     },
     auth: {
       headers: ["x-api-key: lv2_...", "Authorization: Bearer lv2_..."],
-      idempotency:
-        "POST, PUT, PATCH, and DELETE requests require Idempotency-Key.",
+      mutationDeduplication:
+        "API-key mutations require Idempotency-Key. A reused key is rejected with 409; the earlier response is not replayed.",
       rateLimit:
         "Default 120 requests per minute per API client. The deployment can override this limit.",
     },
     baseUrl,
-    operations: externalApiOperations,
+    operations: externalApiRuntimeOperations,
     scopes: externalApiRuntimeScopes,
-    version: "2026-06-30",
+    version: externalApiContractVersion,
   } as const;
 }
 
@@ -27,79 +33,11 @@ export function createExternalApiTools(baseUrl: string) {
     tools: externalApiTools,
     usage: {
       auth: "Send x-api-key with a scoped key created in Admin > Public API.",
-      mutationHeaders:
-        "Send Idempotency-Key with every mutation. Reuse never means retry; duplicate keys are rejected after the first accepted request.",
+      mutationDeduplication:
+        "Send Idempotency-Key with every API-key mutation. Reuse is rejected with 409 and never replays the earlier response.",
     },
   } as const;
 }
-
-export const externalApiRuntimeScopes = [
-  {
-    description: "Read the clean external vehicle list and vehicle detail.",
-    key: "inventory.read",
-  },
-  {
-    description: "Create leads from forms, agents, marketplaces, or chatbots.",
-    key: "lead.create",
-  },
-  {
-    description: "Read CRM leads created by any channel.",
-    key: "lead.read",
-  },
-  {
-    description: "Update lead status or buyer contact fields.",
-    key: "lead.update",
-  },
-] as const;
-
-const externalApiOperations = [
-  {
-    method: "GET",
-    path: "/api/v1/external-api/vehicles",
-    scope: "inventory.read",
-    summary: "List vehicles with pagination and V1-compatible filters.",
-  },
-  {
-    method: "GET",
-    path: "/api/v1/external-api/vehicles/search",
-    scope: "inventory.read",
-    summary:
-      "Search vehicles by query, price, year, mileage, color, fuel, and transmission.",
-  },
-  {
-    method: "GET",
-    path: "/api/v1/external-api/vehicles/{listingId}",
-    scope: "inventory.read",
-    summary:
-      "Read one vehicle detail without tenant, store, VIN, or full plate fields.",
-  },
-  {
-    method: "GET",
-    path: "/api/v1/external-api/leads",
-    scope: "lead.read",
-    summary:
-      "List CRM leads with status, source, phone, listing, and text search filters.",
-  },
-  {
-    method: "POST",
-    path: "/api/v1/external-api/leads",
-    scope: "lead.create",
-    summary:
-      "Create a lead from an external site, agent, marketplace, or custom app.",
-  },
-  {
-    method: "GET",
-    path: "/api/v1/external-api/leads/{leadId}",
-    scope: "lead.read",
-    summary: "Read one lead detail.",
-  },
-  {
-    method: "PATCH",
-    path: "/api/v1/external-api/leads/{leadId}",
-    scope: "lead.update",
-    summary: "Update lead status and buyer contact fields.",
-  },
-] as const;
 
 const externalApiTools = [
   {

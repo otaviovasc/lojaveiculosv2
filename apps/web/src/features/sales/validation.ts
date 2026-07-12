@@ -93,13 +93,8 @@ export function getRequiredFieldsPolicy(
 ): RequiredFieldsPolicy {
   const hasContrato = selectedDocs.includes("sale_contract");
   const hasProcuracao = selectedDocs.includes("power_of_attorney");
-  const hasGarantia =
-    selectedDocs.includes("warranty") || selectedDocs.includes("garantia");
-  const hasRecibo =
-    selectedDocs.includes("sale_receipt") || selectedDocs.includes("recibo");
-  const hasTermo =
-    selectedDocs.includes("delivery_term") ||
-    selectedDocs.includes("termo_entrega");
+  const hasRecibo = selectedDocs.includes("sale_receipt");
+  const hasTermo = selectedDocs.includes("delivery_term");
 
   const hasAnyDoc = selectedDocs.length > 0;
 
@@ -111,8 +106,8 @@ export function getRequiredFieldsPolicy(
     buyerNacionalidade: hasProcuracao,
     buyerEstadoCivil: hasProcuracao,
     buyerProfissao: hasProcuracao,
-    vehicleRenavam: hasContrato || hasProcuracao || hasGarantia,
-    vehicleChassi: hasContrato || hasProcuracao || hasGarantia,
+    vehicleRenavam: hasContrato || hasProcuracao,
+    vehicleChassi: hasContrato || hasProcuracao,
     vehicleNfeDetails: emitirNFe,
   };
 }

@@ -29,7 +29,7 @@ export function DetailBadge({
   icon?: ReactNode;
 }) {
   return (
-    <span className="inline-flex min-h-7 items-center gap-1.5 rounded bg-accent-soft px-3 text-xs font-black uppercase tracking-[0.16em] text-accent">
+    <span className="inline-flex min-h-7 items-center gap-1.5 rounded bg-accent-soft px-3 text-xs font-black uppercase tracking-[0.16em] text-accent-soft-foreground">
       {icon}
       {children}
     </span>

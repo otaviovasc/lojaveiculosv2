@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { createInventoryApi, type InventoryApi } from "../api/apiClient";
-import {
-  createInventoryApiOptions,
-  createInventoryRuntimeHeaders,
-} from "../api/inventoryRuntimeApi";
+import { createInventoryApiOptions } from "../api/inventoryRuntimeApi";
 import { downloadAndZipPhotos } from "../components/zipPhotos";
 import {
   createInventoryErrorState,
@@ -26,8 +23,6 @@ import {
 } from "./inventoryRouteState";
 import { useInventoryRouteSelection } from "./useInventoryRouteSelection";
 import type { InventoryListingDetail, InventoryListingSummary } from "./types";
-import type { InventoryStoreSettings } from "../components/InventoryPrintTypes";
-import type { InventoryActionItem } from "../components/InventoryListModals";
 
 export function useInventoryList(api?: InventoryApi) {
   const routeStateRef = useRef(readCurrentInventoryRouteState());
@@ -61,13 +56,6 @@ export function useInventoryList(api?: InventoryApi) {
   const [selection, setSelection] = useState<InventoryDetailSelectionState>({
     kind: "idle",
   });
-  // V1 Migrated Actions and settings states
-  const [isTemplateOpen, setIsTemplateOpen] = useState(false);
-  const [isTestDriveOpen, setIsTestDriveOpen] = useState(false);
-  const [activeSummaryItem, setActiveSummaryItem] =
-    useState<InventoryActionItem | null>(null);
-  const [storeSettings, setStoreSettings] =
-    useState<InventoryStoreSettings>(null);
   const [unfilteredSummary, setUnfilteredSummary] = useState<{
     available: number;
     reserved: number;
@@ -80,7 +68,8 @@ export function useInventoryList(api?: InventoryApi) {
     const saved = window.localStorage?.getItem?.(
       "lojaveiculosv2:inventory_view_preference",
     );
-    return saved === "cards" || saved === "list" ? saved : "list";
+    if (saved === "cards" || saved === "list") return saved;
+    return window.matchMedia?.("(max-width: 767px)").matches ? "cards" : "list";
   });
   const [sortBy, setSortBy] = useState<InventoryListSortKey>(
     DEFAULT_INVENTORY_LIST_SORT,
@@ -109,16 +98,6 @@ export function useInventoryList(api?: InventoryApi) {
 
   const handleColumnToggle = (key: string, visible: boolean) =>
     setVisibleColumns((prev) => ({ ...prev, [key]: visible }));
-
-  useEffect(() => {
-    void createInventoryRuntimeHeaders()
-      .then((headers) => fetch("/api/v1/settings/store", { headers }))
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) setStoreSettings(data as InventoryStoreSettings);
-      })
-      .catch((err) => console.error("Failed to load store settings", err));
-  }, []);
 
   useEffect(() => {
     if (api) {
@@ -247,25 +226,10 @@ export function useInventoryList(api?: InventoryApi) {
   };
 
   const handleAction = async (
-    action: "template" | "test-drive" | "zip-photos",
+    action: "zip-photos",
     item: InventoryListingSummary,
   ) => {
-    if (action === "template") {
-      setListState({ kind: "loading" });
-      try {
-        const details = await runtimeApi?.getListing(item.listing.id);
-        setActiveSummaryItem({ ...item, media: details?.media || [] });
-      } catch (err) {
-        console.error(err);
-        setActiveSummaryItem({ ...item, media: [] });
-      } finally {
-        setIsTemplateOpen(true);
-        void loadListings(appliedQuery);
-      }
-    } else if (action === "test-drive") {
-      setActiveSummaryItem(item);
-      setIsTestDriveOpen(true);
-    } else if (action === "zip-photos") {
+    if (action === "zip-photos") {
       setLoadingMore(true);
       try {
         if (runtimeApi) await downloadAndZipPhotos(runtimeApi, item);
@@ -305,13 +269,6 @@ export function useInventoryList(api?: InventoryApi) {
     setDetail,
     selectedUnitId,
     selection,
-    isTemplateOpen,
-    setIsTemplateOpen,
-    isTestDriveOpen,
-    setIsTestDriveOpen,
-    activeSummaryItem,
-    setActiveSummaryItem,
-    storeSettings,
     viewMode,
     handleViewModeChange,
     sortBy,

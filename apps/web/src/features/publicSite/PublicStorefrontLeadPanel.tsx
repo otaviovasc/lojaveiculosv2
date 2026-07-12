@@ -16,7 +16,7 @@ export function LeadPanel({
       <div className="public-storefront-shell px-6 py-16 md:py-20">
         <div className="grid gap-8 rounded-lg border border-line bg-app p-6 shadow-sm md:grid-cols-[0.95fr_1.05fr] md:p-10">
           <div className="flex flex-col justify-center">
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
               INTERESSE RÁPIDO
             </p>
             <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">

@@ -89,7 +89,11 @@ test.describe("documents center QA flow", () => {
       0,
     );
 
-    await page.locator("tbody tr").first().click();
+    const seededDocumentRow = page
+      .locator("tbody tr", { hasText: "Comprovante de pagamento" })
+      .first();
+    await expect(seededDocumentRow).toBeVisible();
+    await seededDocumentRow.click();
     await expect(page.getByLabel("Documento aberto")).toBeVisible();
     await expect(page.getByText("Emitido").first()).toBeVisible();
     await expect(page.getByText("finance_receipt")).toHaveCount(0);
@@ -114,12 +118,13 @@ test.describe("documents center QA flow", () => {
 
     await page.getByRole("button", { name: "Fechar detalhes" }).click();
     await page.getByRole("button", { name: "Modelos" }).click();
+    await expect(page.getByText("Document builder")).toBeVisible();
     await expect(
-      page.getByRole("dialog", { name: "Modelos de documentos" }),
+      page.getByRole("heading", { name: "Blocos do documento" }),
     ).toBeVisible();
-    await expect(page.getByText("Cláusula 1").first()).toBeVisible();
     await saveQaScreenshot(page, testInfo, "document-templates-after");
-    await page.getByRole("button", { name: "Fechar modelos" }).click();
+    await page.getByRole("button", { name: "Voltar para documentos" }).click();
+    await expect(page.getByRole("heading", { name: "Geral" })).toBeVisible();
 
     const uploadTitle = `QA documento ${Date.now()}`;
     const pdfPath = testInfo.outputPath("sample-document.pdf");
@@ -157,10 +162,15 @@ test.describe("documents center QA flow", () => {
     await expect(
       page.getByRole("dialog", { name: "Anexar documentos" }),
     ).toHaveCount(0);
-    await expect(page.getByText(uploadTitle).first()).toBeVisible();
-
-    await page.locator("tbody tr", { hasText: uploadTitle }).first().click();
-    await page.getByRole("button", { name: "Excluir" }).click();
+    const uploadedRow = page
+      .locator("tbody tr", { hasText: uploadTitle })
+      .first();
+    await expect(uploadedRow).toBeVisible();
+    await uploadedRow.click();
+    await page
+      .getByLabel("Documento aberto")
+      .getByRole("button", { exact: true, name: "Excluir" })
+      .click();
     await expect(
       page.getByRole("dialog", { name: "Excluir documento" }),
     ).toBeVisible();

@@ -29,7 +29,7 @@ describe("WhatsappBulkBar", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Remover atribuicao das conversas selecionadas",
+        name: "Remover atribuição das conversas selecionadas",
       }),
     );
     expect(callbacks.onAssign).toHaveBeenCalledWith(null);
@@ -41,16 +41,16 @@ describe("WhatsappBulkBar", () => {
     );
     await user.click(
       screen.getByRole("button", {
-        name: "Marcar conversas selecionadas como nao lidas",
+        name: "Marcar conversas selecionadas como não lidas",
       }),
     );
     await user.click(
       screen.getByRole("button", { name: "Concluir conversas selecionadas" }),
     );
     await user.click(
-      screen.getByRole("button", { name: "Selecionar conversas visiveis" }),
+      screen.getByRole("button", { name: "Selecionar conversas visíveis" }),
     );
-    await user.click(screen.getByRole("button", { name: "Limpar selecao" }));
+    await user.click(screen.getByRole("button", { name: "Limpar seleção" }));
 
     expect(callbacks.onMarkRead).toHaveBeenCalledTimes(1);
     expect(callbacks.onMarkUnread).toHaveBeenCalledTimes(1);

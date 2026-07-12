@@ -54,6 +54,34 @@ describe("vehicle workflow documents", () => {
       "Comprador Ana Cliente comprou Fiat Toro Volcano 2023 por R$ 126.900,00.",
     );
   });
+
+  it("treats customer-provided token-like text as literal content", () => {
+    expect(
+      interpolateWorkflowTemplateClause(
+        "Comprador {{buyer.name}} adquiriu {{vehicle.title}}.",
+        {
+          "{{buyer.name}}": "Cliente {{vehicle.title}}",
+          "{{vehicle.title}}": "Fiat Toro",
+        },
+      ),
+    ).toBe("Comprador Cliente {{vehicle.title}} adquiriu Fiat Toro.");
+  });
+
+  it("builds only the selected sale document bundle", () => {
+    const sold = buildSoldDocuments({
+      buyer,
+      listing,
+      paymentMethod: "PIX",
+      sale,
+      selectedDocumentKinds: ["sale_contract", "delivery_term"],
+      unit,
+    });
+
+    expect(sold.map((document) => document.kind)).toEqual([
+      "sale_contract",
+      "delivery_term",
+    ]);
+  });
 });
 
 function template(

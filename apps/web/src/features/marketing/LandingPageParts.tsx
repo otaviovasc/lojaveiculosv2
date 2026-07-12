@@ -28,18 +28,18 @@ export function HeroSection() {
         <div className="max-w-4xl">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-[0.28em] text-emerald-200">
             <Sparkles className="size-3.5" />
-            SaaS para lojas de veiculos
+            SaaS para lojas de veículos
           </span>
           <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.95] tracking-normal sm:text-6xl lg:text-7xl">
-            Loja Veiculos
+            Loja Veículos
           </h1>
           <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/82 sm:text-xl">
             Venda online com site profissional, estoque organizado, leads no
-            WhatsApp, CRM, financeiro e publicacao em marketplaces no mesmo
+            WhatsApp, CRM, financeiro e publicação em marketplaces no mesmo
             painel.
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <LandingAuthActions primaryLabel="Comecar agora" />
+            <LandingAuthActions primaryLabel="Começar agora" />
             <a
               className="inline-flex h-12 items-center justify-center rounded-md border border-white/20 px-5 text-sm font-black text-white transition hover:bg-white/10"
               href="#como-funciona"
@@ -85,7 +85,7 @@ export function OutcomeStrip() {
   return (
     <section className="border-y border-line bg-panel text-app-text">
       <div className="mx-auto grid max-w-7xl gap-4 px-5 py-8 sm:grid-cols-3 sm:px-8 lg:px-10">
-        {["Sem adesao", "Site incluido", "Operacao auditada"].map((item) => (
+        {["Sem adesão", "Site incluído", "Operação auditada"].map((item) => (
           <div
             className="flex items-center gap-3 text-sm font-black"
             key={item}
@@ -106,11 +106,11 @@ export function WorkflowSection() {
       id="como-funciona"
     >
       <div className="mx-auto max-w-7xl">
-        <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+        <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
           Como funciona
         </p>
         <h2 className="mt-3 max-w-3xl text-3xl font-black sm:text-4xl">
-          Da conta Clerk ao site publicado, em um fluxo direto.
+          Da criação da conta ao site publicado, em um fluxo direto.
         </h2>
         <div className="mt-9 grid gap-4 md:grid-cols-3">
           {landingSteps.map(([label, text], index) => (
@@ -146,7 +146,7 @@ export function FeatureSection() {
               Tudo o que a loja usa no dia a dia.
             </h2>
           </div>
-          <LandingAuthActions primaryLabel="Testar com Clerk" />
+          <LandingAuthActions primaryLabel="Conhecer a plataforma" />
         </div>
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {landingFeatures.map(({ icon: Icon, label, text }) => (
@@ -170,7 +170,7 @@ export function FinalCta() {
       <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 md:flex-row md:items-center">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.26em] text-emerald-200">
-            Loja Veiculos V2
+            Loja Veículos V2
           </p>
           <h2 className="mt-3 max-w-2xl text-3xl font-black sm:text-4xl">
             Entre, crie sua loja e continue direto no painel operacional.

@@ -1,10 +1,4 @@
-import {
-  CarFront,
-  Clock,
-  FileArchive,
-  Image as ImageIcon,
-  Printer,
-} from "lucide-react";
+import { CarFront, Clock, FileArchive } from "lucide-react";
 import {
   formatInventoryPrice,
   getInventoryCatalogLine,
@@ -51,10 +45,7 @@ export function InventoryListingTable({
 }: {
   items: readonly InventoryListingSummary[];
   onSelect: (listingId: string, unitId?: string | null) => void;
-  onAction?: (
-    action: "template" | "test-drive" | "zip-photos",
-    item: InventoryListingSummary,
-  ) => void;
+  onAction?: (action: "zip-photos", item: InventoryListingSummary) => void;
   onSortChange: (value: InventoryListSortKey) => void;
   sortBy: InventoryListSortKey;
   visibleColumns?: Record<string, boolean>;
@@ -71,7 +62,7 @@ export function InventoryListingTable({
   return (
     <FeatureTableFrame>
       <table className="min-w-full border-collapse text-left text-sm">
-        <thead className="bg-app/80 text-xs font-black uppercase tracking-wider text-muted border-b border-line">
+        <thead className="border-b border-line bg-app/80 text-xs font-black uppercase tracking-wider text-muted">
           <tr>
             {visibleColumns.fotos && (
               <InventorySortableHeader
@@ -160,12 +151,11 @@ export function InventoryListingTable({
                 onClick={() =>
                   onSelect(listing.id, item.primaryUnit?.id ?? null)
                 }
-                className="group cursor-pointer hover:bg-line/20 transition-all duration-150"
+                className="group cursor-pointer transition-all duration-150 hover:bg-line/20"
               >
-                {/* Fotos */}
                 {visibleColumns.fotos && (
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="relative flex w-16 h-10 items-center justify-center overflow-hidden bg-app-elevated rounded-lg border border-line/40 shadow-inner">
+                  <td className="whitespace-nowrap px-4 py-3 align-middle">
+                    <div className="relative flex h-10 w-16 items-center justify-center overflow-hidden rounded-lg border border-line/40 bg-app-elevated shadow-inner">
                       {item.primaryMediaUrl ? (
                         <img
                           alt={listing.title}
@@ -173,24 +163,25 @@ export function InventoryListingTable({
                           src={item.primaryMediaUrl}
                         />
                       ) : (
-                        <CarFront className="size-5 text-muted/50" />
+                        <CarFront
+                          aria-hidden="true"
+                          className="size-5 text-muted/50"
+                        />
                       )}
                     </div>
                   </td>
                 )}
 
-                {/* Placa */}
                 {visibleColumns.placa && (
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
+                  <td className="whitespace-nowrap px-4 py-3 align-middle">
+                    <div className="flex h-10 items-center">
                       <MercosulPlateBadge plate={plate} />
                     </div>
                   </td>
                 )}
 
-                {/* Marca/Modelo */}
                 {visibleColumns.marcaModelo && (
-                  <td className="px-4 py-3 min-w-[220px] max-w-[280px] align-middle">
+                  <td className="min-w-[220px] max-w-[280px] px-4 py-3 align-middle">
                     <div className="whitespace-normal break-words text-sm font-black leading-snug text-app-text transition-colors group-hover:text-accent">
                       {listing.title}
                     </div>
@@ -200,19 +191,17 @@ export function InventoryListingTable({
                   </td>
                 )}
 
-                {/* Ano/KM */}
                 {visibleColumns.anoKm && (
-                  <td className="px-4 py-3 whitespace-nowrap text-xs align-middle">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs align-middle">
                     <div className="font-black text-app-text">
                       {getInventoryYearLine(listing)}
                     </div>
-                    <div className="text-muted mt-0.5 font-bold">{km}</div>
+                    <div className="mt-0.5 font-bold text-muted">{km}</div>
                   </td>
                 )}
 
-                {/* Preço */}
                 {visibleColumns.preco && (
-                  <td className="px-4 py-3 whitespace-nowrap text-xs align-middle">
+                  <td className="whitespace-nowrap px-4 py-3 text-xs align-middle">
                     <div
                       className={
                         "font-black text-sm " +
@@ -244,10 +233,9 @@ export function InventoryListingTable({
                   </td>
                 )}
 
-                {/* Dias */}
                 {visibleColumns.dias && (
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
+                  <td className="whitespace-nowrap px-4 py-3 align-middle">
+                    <div className="flex h-10 items-center">
                       <span
                         className={
                           "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-black border " +
@@ -263,19 +251,17 @@ export function InventoryListingTable({
                   </td>
                 )}
 
-                {/* Fase */}
                 {visibleColumns.fase && (
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
+                  <td className="whitespace-nowrap px-4 py-3 align-middle">
+                    <div className="flex h-10 items-center">
                       <StatusPill status={getInventoryDisplayStatus(item)} />
                     </div>
                   </td>
                 )}
 
-                {/* Leads */}
                 {visibleColumns.leads && (
-                  <td className="px-4 py-3 whitespace-nowrap align-middle">
-                    <div className="flex items-center h-10">
+                  <td className="whitespace-nowrap px-4 py-3 align-middle">
+                    <div className="flex h-10 items-center">
                       {leads > 0 ? (
                         <InventoryLeadBadge leads={leads} />
                       ) : (
@@ -287,40 +273,22 @@ export function InventoryListingTable({
                   </td>
                 )}
 
-                {/* Ações */}
                 {visibleColumns.acoes && (
                   <td
-                    className="px-4 py-3 whitespace-nowrap text-right align-middle"
+                    className="whitespace-nowrap px-4 py-3 text-right align-middle"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <FeatureRowActions className="gap-2.5">
-                      {/* Action 1: Template */}
-                      <FeatureRowAction
-                        ariaLabel="Criar Template de Anúncio"
-                        icon={ImageIcon}
-                        iconClassName="text-violet-500"
-                        onClick={() => onAction?.("template", item)}
-                        tooltip="Criar Template"
-                      />
-
-                      {/* Action 2: Test Drive */}
-                      <FeatureRowAction
-                        ariaLabel="Agendar Test Drive"
-                        icon={Printer}
-                        iconClassName="text-emerald-500"
-                        onClick={() => onAction?.("test-drive", item)}
-                        tooltip="Test Drive"
-                      />
-
-                      {/* Action 3: Baixar Fotos */}
-                      <FeatureRowAction
-                        ariaLabel="Baixar Fotos (ZIP)"
-                        icon={FileArchive}
-                        iconClassName="text-pink-500"
-                        onClick={() => onAction?.("zip-photos", item)}
-                        tooltip="Baixar Fotos (ZIP)"
-                      />
-                    </FeatureRowActions>
+                    {onAction && item.mediaCount > 0 ? (
+                      <FeatureRowActions className="gap-2.5">
+                        <FeatureRowAction
+                          ariaLabel="Baixar Fotos (ZIP)"
+                          icon={FileArchive}
+                          iconClassName="text-accent"
+                          onClick={() => onAction("zip-photos", item)}
+                          tooltip="Baixar Fotos (ZIP)"
+                        />
+                      </FeatureRowActions>
+                    ) : null}
                   </td>
                 )}
               </tr>

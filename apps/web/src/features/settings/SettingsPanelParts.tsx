@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { getDomainStatusLabel } from "./settingsLabels";
 
 export function SettingsSection({
   children,
@@ -97,8 +98,8 @@ export function SettingsTextarea({
 export function SettingsStatus({ status }: { status: string }) {
   return (
     <div className="settings-domain-status">
-      <span>Dominio</span>
-      <strong>{status.replace("_", " ")}</strong>
+      <span>Domínio</span>
+      <strong>{getDomainStatusLabel(status)}</strong>
     </div>
   );
 }

@@ -14,7 +14,7 @@ describe("builder block catalog", () => {
       pageBuilderDefaultMedia.audiSide,
     );
     expect(createDefaultPageComponent("scroll_zoom", 2).props.imageUrl).toBe(
-      pageBuilderDefaultMedia.audiRear,
+      pageBuilderDefaultMedia.bmwFront,
     );
     expect(createDefaultPageComponent("gallery", 3).props.images).toEqual(
       pageBuilderDefaultGalleryImages,

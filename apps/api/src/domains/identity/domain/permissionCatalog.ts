@@ -1,5 +1,6 @@
 import type { PermissionKey, RoleKey } from "@lojaveiculosv2/shared";
 import { defaultRolePermissions } from "./accessPolicy.js";
+import { automationPermissionGroup } from "./automationPermissionCatalog.js";
 import { documentPermissionDescriptors } from "./documentPermissionCatalog.js";
 import { marketplacePermissionGroup } from "./marketplacePermissionCatalog.js";
 import { operationalPermissionGroups } from "./operationalPermissionCatalog.js";
@@ -32,6 +33,7 @@ export const visibleRoleKeys = [
 
 export const permissionGroups: readonly PermissionGroup[] = [
   ...operationalPermissionGroups,
+  automationPermissionGroup,
   crmPermissionGroup,
   storefrontPermissionGroup,
   marketplacePermissionGroup,

@@ -1,5 +1,9 @@
 import { RotateCcw } from "lucide-react";
-import { jobLabels, providerLabels } from "./marketplaceLabels";
+import {
+  getMarketplaceJobStatusLabel,
+  getMarketplaceJobTypeLabel,
+  providerLabels,
+} from "./marketplaceLabels";
 import type { MarketplaceJob, MarketplaceOverview } from "./types";
 
 export function MarketplaceJobList({
@@ -12,8 +16,8 @@ export function MarketplaceJobList({
   return (
     <section className="marketplace-panel">
       <header>
-        <h3>Syncs recentes</h3>
-        <p>Jobs de estoque criados para a loja atual.</p>
+        <h3>Sincronizações recentes</h3>
+        <p>Publicações de estoque solicitadas para a loja atual.</p>
       </header>
       <div className="marketplace-job-list">
         {overview.jobs.length ? (
@@ -21,7 +25,8 @@ export function MarketplaceJobList({
             <article className="marketplace-job" key={job.id}>
               <strong>{providerLabels[job.provider]}</strong>
               <span>
-                {jobLabels[job.jobType] ?? job.jobType} · {job.status}
+                {getMarketplaceJobTypeLabel(job.jobType)} ·{" "}
+                {getMarketplaceJobStatusLabel(job.status)}
               </span>
               <small>{jobVehicleLabel(job)}</small>
               {job.errorMessage ? <JobFailureMessage job={job} /> : null}
@@ -36,7 +41,7 @@ export function MarketplaceJobList({
             </article>
           ))
         ) : (
-          <p>Nenhum sync solicitado.</p>
+          <p>Nenhuma sincronização de estoque foi solicitada.</p>
         )}
       </div>
     </section>
@@ -46,16 +51,14 @@ export function MarketplaceJobList({
 function JobFailureMessage({ job }: { job: MarketplaceJob }) {
   return (
     <p>
-      Falhou: {job.errorMessage}. Corrigir: tente novamente ou gere uma nova
-      previa. Provedor: {providerLabels[job.provider]}. Veiculo:{" "}
-      {job.metadata.listingId ?? "lote de estoque"}. ID do erro:{" "}
-      {job.metadata.providerResult?.providerRequestId ?? "Nao informado"}.
+      A sincronização não foi concluída. Revise os bloqueios, gere uma nova
+      prévia ou tente novamente no {providerLabels[job.provider]}.
     </p>
   );
 }
 
 function jobVehicleLabel(job: MarketplaceJob) {
   return job.metadata.listingId
-    ? `Veiculo: ${job.metadata.listingId}`
-    : "Veiculo: lote de estoque";
+    ? "Escopo: anúncio individual"
+    : "Escopo: lote de estoque";
 }

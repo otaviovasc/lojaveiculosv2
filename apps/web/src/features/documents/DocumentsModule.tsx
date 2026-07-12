@@ -147,12 +147,14 @@ export function DocumentsModule({
 
   const selectDocument = (document: WorkspaceDocument) => {
     state.setDocumentPreview(null);
+    state.setDocumentPreviewError(null);
     state.setDocumentVersions([]);
     state.setSelectedDocument(document);
   };
   const closeDetail = () => {
     state.setSelectedDocument(null);
     state.setDocumentPreview(null);
+    state.setDocumentPreviewError(null);
     state.setDocumentVersions([]);
   };
   const selectFolder = (folderKey: DocumentsFolderKey) => {

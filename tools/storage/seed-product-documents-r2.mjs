@@ -3,9 +3,13 @@ import {
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import postgres from "postgres";
 import { assertSafeLocalDatabaseOperation } from "../db/local-database-safety.mjs";
+import { createSeedDocumentArtifact } from "./seed-product-document-artifact.mjs";
+import {
+  SEED_DOCUMENT_ARTIFACT_VERSION,
+  shouldRefreshSeedDocumentArtifact,
+} from "./seed-product-document-pdf.mjs";
 import { loadLocalEnv, requireEnv } from "./storageScriptEnv.mjs";
 
 const localDatabaseUrl =
@@ -37,27 +41,45 @@ const db = postgres(process.env.DATABASE_URL ?? localDatabaseUrl, { max: 1 });
 try {
   const documents = dedupeByStorageKey(await readSeedDocumentRows());
   const result = {
+    refreshed: 0,
     skippedExisting: 0,
     uploaded: 0,
+    wouldRefresh: 0,
     wouldUpload: 0,
   };
 
   for (const document of documents) {
-    if (await objectExists(document.storageKey)) {
+    const artifact = await createSeedDocumentArtifact(document);
+    const object = await readObjectState(document.storageKey);
+    const refreshFixture = shouldRefreshSeedDocumentArtifact(object.metadata, {
+      expectedSha256: artifact.sha256,
+      storageKey: document.storageKey,
+    });
+    if (object.exists && !refreshFixture) {
       result.skippedExisting += 1;
       console.info(`exists ${document.storageKey}`);
       continue;
     }
 
     if (!apply) {
-      result.wouldUpload += 1;
-      console.info(`would upload ${document.storageKey}`);
+      if (refreshFixture) {
+        result.wouldRefresh += 1;
+        console.info(`would refresh fixture ${document.storageKey}`);
+      } else {
+        result.wouldUpload += 1;
+        console.info(`would upload ${document.storageKey}`);
+      }
       continue;
     }
 
-    await uploadDocumentFixture(document);
-    result.uploaded += 1;
-    console.info(`uploaded ${document.storageKey}`);
+    await uploadDocumentFixture(document, artifact);
+    if (refreshFixture) {
+      result.refreshed += 1;
+      console.info(`refreshed fixture ${document.storageKey}`);
+    } else {
+      result.uploaded += 1;
+      console.info(`uploaded ${document.storageKey}`);
+    }
   }
 
   console.info(
@@ -87,8 +109,16 @@ async function readSeedDocumentRows() {
         d.storage_key as "storageKey",
         d.kind::text as kind,
         d.status::text as status,
-        d.metadata
+        d.metadata,
+        s.trading_name as "storeName",
+        sp.document_number as "storeDocumentNumber",
+        sp.address_line_1 as "storeAddressLine",
+        sp.address_city as "storeCity",
+        sp.address_state as "storeState",
+        sp.contact_phone as "storePhone"
       from documents d
+      inner join stores s on s.id = d.store_id
+      left join store_profiles sp on sp.store_id = d.store_id
       where d.storage_key like 'generated/vehicle-workflows/%'
         or d.storage_key like 'seed/documents/%'
       union all
@@ -102,9 +132,17 @@ async function readSeedDocumentRows() {
         v.storage_key as "storageKey",
         d.kind::text as kind,
         d.status::text as status,
-        coalesce(v.metadata, d.metadata, '{}'::jsonb) as metadata
+        coalesce(v.metadata, d.metadata, '{}'::jsonb) as metadata,
+        s.trading_name as "storeName",
+        sp.document_number as "storeDocumentNumber",
+        sp.address_line_1 as "storeAddressLine",
+        sp.address_city as "storeCity",
+        sp.address_state as "storeState",
+        sp.contact_phone as "storePhone"
       from document_versions v
       inner join documents d on d.id = v.document_id
+      inner join stores s on s.id = d.store_id
+      left join store_profiles sp on sp.store_id = d.store_id
       where v.storage_key like 'generated/vehicle-workflows/%'
         or v.storage_key like 'seed/documents/%'
     ) seeded_documents
@@ -124,72 +162,36 @@ function dedupeByStorageKey(rows) {
   );
 }
 
-async function objectExists(storageKey) {
+async function readObjectState(storageKey) {
   try {
-    await client.send(
+    const response = await client.send(
       new HeadObjectCommand({ Bucket: config.bucketName, Key: storageKey }),
     );
-    return true;
+    return { exists: true, metadata: response.Metadata ?? {} };
   } catch (error) {
-    if (error?.$metadata?.httpStatusCode === 404) return false;
+    if (error?.$metadata?.httpStatusCode === 404) {
+      return { exists: false, metadata: {} };
+    }
     throw error;
   }
 }
 
-async function uploadDocumentFixture(document) {
-  const body = await renderDocumentFixture(document);
+async function uploadDocumentFixture(document, artifact) {
   await client.send(
     new PutObjectCommand({
-      Body: body,
+      Body: artifact.body,
       Bucket: config.bucketName,
       ContentType: "application/pdf",
       Key: document.storageKey,
-      Metadata: fixtureMetadata(document),
+      Metadata: fixtureMetadata(document, artifact.sha256),
     }),
   );
 }
 
-async function renderDocumentFixture(document) {
-  const pdf = await PDFDocument.create();
-  const page = pdf.addPage([595, 842]);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const regular = await pdf.embedFont(StandardFonts.Helvetica);
-  const title = "Loja Veiculos V2";
-  const lines = [
-    "Local seed document fixture",
-    `Title: ${asciiText(document.title)}`,
-    `File: ${asciiText(document.fileName)}`,
-    `Kind: ${asciiText(document.kind)}`,
-    `Status: ${asciiText(document.status)}`,
-    `Document ID: ${document.documentId}`,
-    `Storage key: ${document.storageKey}`,
-    "This placeholder exists only so local seeded PDF previews can load.",
-    "Real workflow documents are generated by reserve and sale services.",
-  ];
-
-  page.drawText(title, {
-    color: rgb(0.03, 0.08, 0.16),
-    font: bold,
-    size: 20,
-    x: 48,
-    y: 790,
-  });
-
-  lines.forEach((line, index) => {
-    page.drawText(line.slice(0, 110), {
-      color: rgb(0.16, 0.19, 0.25),
-      font: regular,
-      size: 10,
-      x: 48,
-      y: 750 - index * 18,
-    });
-  });
-
-  return pdf.save();
-}
-
-function fixtureMetadata(document) {
+function fixtureMetadata(document, artifactSha256) {
   return {
+    artifactSha256,
+    artifactVersion: SEED_DOCUMENT_ARTIFACT_VERSION,
     documentId: String(document.documentId),
     fixture: "local-product-seed",
     source: String(document.source),
@@ -211,10 +213,4 @@ function readR2Config() {
     endpoint: requireEnv("R2_ENDPOINT"),
     secretAccessKey: requireEnv("R2_SECRET_ACCESS_KEY"),
   };
-}
-
-function asciiText(value) {
-  return String(value ?? "")
-    .normalize("NFD")
-    .replace(/[^\x20-\x7E]/g, "");
 }

@@ -1,4 +1,6 @@
+import { externalApiContractVersion } from "@lojaveiculosv2/shared";
 import { externalApiPaths, externalApiSchemas } from "./externalApiOpenApi.js";
+import { openApiSecuritySchemes } from "./openApiSecuritySchemes.js";
 
 export const externalApiDocsPaths = {
   "/api/v1/external-api/docs": docsPath("getExternalApiDocs"),
@@ -29,7 +31,7 @@ export const externalApiOpenApiDocument = {
   openapi: "3.1.0",
   info: {
     title: "Loja Veiculos Public API",
-    version: "2026-07-01",
+    version: externalApiContractVersion,
     summary: "Scoped external API for dealership inventory and CRM leads.",
     description:
       "Clean partner and AI-agent contract for public vehicle discovery and lead workflows. Private tenant, store, VIN, and full plate fields are intentionally excluded from runtime DTOs.",
@@ -47,29 +49,18 @@ export const externalApiOpenApiDocument = {
     ...externalApiPaths,
   },
   components: {
-    securitySchemes: {
-      bearerAuth: {
-        type: "http",
-        scheme: "bearer",
-        bearerFormat: "JWT",
-        description: "Store user token for API client management routes.",
-      },
-      externalApiKey: {
-        type: "apiKey",
-        in: "header",
-        name: "x-api-key",
-        description:
-          "Scoped Public API key. Authorization: Bearer lv2_... is also accepted.",
-      },
-    },
+    securitySchemes: openApiSecuritySchemes,
     schemas: {
       ...externalApiSchemas,
       ApiError: {
         type: "object",
         additionalProperties: true,
+        required: ["code", "message", "requestId"],
         properties: {
+          code: { type: "string" },
           message: { type: "string" },
           requestId: { type: "string" },
+          details: { type: "object", additionalProperties: true },
         },
       },
     },
@@ -100,7 +91,7 @@ The Public API is tenant and store scoped by API key. Runtime DTOs intentionally
 ## Authentication
 - Send x-api-key: lv2_... or Authorization: Bearer lv2_....
 - Use least-privilege scopes. Vehicle read routes require inventory.read. Lead create/read/update routes require lead.create, lead.read, or lead.update.
-- Send Idempotency-Key with POST, PUT, PATCH, and DELETE requests.
+- API-key mutations require Idempotency-Key as a deduplication key. Reusing it returns 409; the earlier response is not replayed.
 
 ## Core Endpoints
 - GET /api/v1/external-api/vehicles: List clean external vehicle DTOs with pagination.
@@ -114,7 +105,7 @@ The Public API is tenant and store scoped by API key. Runtime DTOs intentionally
 ## Safety Notes
 - Do not expect VIN, full plate, tenant id, store id, private photos, or internal notes in public responses.
 - Public media URLs are filtered to media marked public.
-- Mutations are audited and idempotency-aware.
+- Mutations are audited. Their Idempotency-Key header prevents duplicate processing by rejecting reused keys; it does not replay prior responses.
 - Pagination caps are part of the public contract; agents should request more pages instead of assuming full inventory fits in one response.
 
 ## Optional
@@ -139,16 +130,16 @@ This is a concise Markdown map. Fetch the scoped OpenAPI document for schemas. F
 - [Search vehicles](/api/v1/external-api/vehicles/search): Requires inventory.read. Supports q/search, available/status, price, mileage, year, color/cor, fuel, transmission, and sort.
 - [Vehicle detail](/api/v1/external-api/vehicles/{listingId}): Requires inventory.read. Returns public media, safe unit refs, price history, and status history.
 - [List leads](/api/v1/external-api/leads): Requires lead.read and CRM entitlement. Supports q/search, phone, source, status, listingId, page, and limit.
-- [Create lead](/api/v1/external-api/leads): Requires lead.create and Idempotency-Key. Accepts V2 buyer fields and V1 aliases name/email/phone/message/vehicleId.
+- [Create lead](/api/v1/external-api/leads): Requires lead.create and an Idempotency-Key deduplication key. Accepts V2 buyer fields and V1 aliases name/email/phone/message/vehicleId.
 - [Lead detail](/api/v1/external-api/leads/{leadId}): Requires lead.read.
-- [Update lead](/api/v1/external-api/leads/{leadId}): Requires lead.update and Idempotency-Key.
+- [Update lead](/api/v1/external-api/leads/{leadId}): Requires lead.update and an Idempotency-Key deduplication key.
 
 ## Authentication And Safety
 - Send x-api-key: lv2_... or Authorization: Bearer lv2_....
 - Use least-privilege scopes: inventory.read, lead.create, lead.read, and lead.update.
 - Responses omit tenant ids, store ids, VIN, full plate fields, private photos, and internal inventory notes.
 - Public media URLs are filtered to media marked public.
-- Mutations require Idempotency-Key and are audit-correlated by request id.
+- API-key mutations use Idempotency-Key for duplicate rejection and request ids for audit correlation. Reuse returns 409 and does not replay the earlier response.
 
 ## Optional
 - [Global Loja Veiculos API llms.txt](/llms.txt): Full backend API index. It is larger and includes operator-only routes.

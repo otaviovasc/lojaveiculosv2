@@ -1,5 +1,5 @@
 import { Percent, Repeat2, Sigma } from "lucide-react";
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import type {
   CommissionRule,
   FinanceRecurringEntry,
@@ -22,7 +22,7 @@ export function FinanceSummaryPanel({
     ? [
         ["Receitas", summary.revenueAmountCents],
         ["Gastos", summary.expenseAmountCents],
-        ["Comissoes", summary.commissionAmountCents],
+        ["Comissões", summary.commissionAmountCents],
         ["Pendente", summary.pendingAmountCents],
         ["Pago", summary.paidAmountCents],
         ["Vencido", summary.overdueAmountCents],
@@ -55,7 +55,7 @@ export function FinanceRecurringPanel({
   const [nextDueAt, setNextDueAt] = useState("");
 
   return (
-    <FinancePanel icon={<Repeat2 className="size-5" />} title="Recorrencias">
+    <FinancePanel icon={<Repeat2 className="size-5" />} title="Recorrências">
       <form
         className="grid gap-3 md:grid-cols-5"
         onSubmit={(event) => {
@@ -68,7 +68,7 @@ export function FinanceRecurringPanel({
             frequency: String(
               data.get("frequency"),
             ) as RecurringDraft["frequency"],
-            name: String(data.get("name") || "Recorrencia"),
+            name: String(data.get("name") || "Recorrência"),
             nextDueAt: new Date(`${nextDueAt}T12:00:00`).toISOString(),
             type: String(data.get("type")) as RecurringDraft["type"],
           });
@@ -91,15 +91,15 @@ export function FinanceRecurringPanel({
             type="number"
           />
         </FinanceField>
-        <FinanceField label="Proximo">
+        <FinanceField label="Próximo">
           <FinanceDateField
-            label="Proximo"
+            label="Próximo"
             name="nextDueAt"
             onChange={setNextDueAt}
             value={nextDueAt}
           />
         </FinanceField>
-        <FinanceField label="Frequencia">
+        <FinanceField label="Frequência">
           <FinanceSelect
             defaultValue="monthly"
             name="frequency"
@@ -116,11 +116,11 @@ export function FinanceRecurringPanel({
           disabled={!nextDueAt}
           type="submit"
         >
-          Criar recorrencia
+          Criar recorrência
         </button>
       </form>
       <p className="mt-3 text-sm font-bold text-muted">
-        {items.length} recorrencias cadastradas.
+        {items.length} recorrências cadastradas.
       </p>
     </FinancePanel>
   );
@@ -131,28 +131,45 @@ export function CommissionRulesPanel({
   onCreate,
 }: {
   items: CommissionRule[];
-  onCreate: (input: CommissionDraft) => void;
+  onCreate: (input: CommissionDraft) => Promise<void> | void;
 }) {
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submitRule = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const percentage = Number(data.get("percent"));
+    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
+      setError("Informe um percentual entre 0,01% e 100%.");
+      return;
+    }
+    setIsSaving(true);
+    setError(null);
+    try {
+      await onCreate({
+        category: String(data.get("category") || "Venda"),
+        name: String(data.get("name") || "Regra"),
+        percentageBasisPoints: Math.round(percentage * 100),
+        type: "percentage",
+      });
+      form.reset();
+    } catch {
+      setError("Não foi possível criar a regra de comissão.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <FinancePanel
       icon={<Percent className="size-5" />}
-      title="Regras de comissao"
+      title="Regras de comissão"
     >
       <form
         className="grid gap-3 md:grid-cols-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          onCreate({
-            category: String(data.get("category") || "Venda"),
-            name: String(data.get("name") || "Regra"),
-            percentageBasisPoints: Math.round(
-              Number(data.get("percent")) * 100,
-            ),
-            type: "percentage",
-          });
-          event.currentTarget.reset();
-        }}
+        onSubmit={(event) => void submitRule(event)}
       >
         <FinanceField label="Nome">
           <FinanceInput name="name" required />
@@ -162,7 +179,8 @@ export function CommissionRulesPanel({
         </FinanceField>
         <FinanceField label="%">
           <FinanceInput
-            min="0"
+            max="100"
+            min="0.01"
             name="percent"
             required
             step="0.01"
@@ -171,11 +189,17 @@ export function CommissionRulesPanel({
         </FinanceField>
         <button
           className="min-h-11 self-end rounded-lg bg-accent px-4 text-sm font-black text-inverse"
+          disabled={isSaving}
           type="submit"
         >
-          Criar regra
+          {isSaving ? "Criando regra…" : "Criar regra"}
         </button>
       </form>
+      {error ? (
+        <p className="mt-3 text-sm font-bold text-danger" role="alert">
+          {error}
+        </p>
+      ) : null}
       <p className="mt-3 text-sm font-bold text-muted">
         {items.length} regras ativas.
       </p>

@@ -18,11 +18,11 @@ export function MarketplaceErrorAlert(display: MarketplaceErrorDisplay) {
           <dd>{display.provider}</dd>
         </div>
         <div>
-          <dt>Veiculo</dt>
+          <dt>Veículo</dt>
           <dd>{display.vehicleLabel}</dd>
         </div>
         <div>
-          <dt>ID do erro</dt>
+          <dt>Código para suporte</dt>
           <dd>{display.requestId}</dd>
         </div>
       </dl>

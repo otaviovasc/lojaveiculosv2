@@ -164,6 +164,33 @@
   font-weight: 900;
 }
 
+.feature-alert--success {
+  border-color: color-mix(
+    in srgb,
+    var(--color-success-strong) 35%,
+    var(--color-line)
+  );
+  color: var(--color-success-strong);
+}
+
+.feature-alert--warning {
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning-strong) 35%,
+    var(--color-line)
+  );
+  color: var(--color-warning-strong);
+}
+
+.feature-alert--info {
+  border-color: color-mix(
+    in srgb,
+    var(--color-blue-start) 35%,
+    var(--color-line)
+  );
+  color: var(--color-blue-start);
+}
+
 .feature-empty {
   color: var(--color-muted);
   font-weight: 900;

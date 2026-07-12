@@ -1,4 +1,5 @@
 import { expect } from "vitest";
+import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import {
   createInMemoryVehiclePorts,
@@ -45,6 +46,7 @@ export function completeDraft() {
     documentPolicySnapshot: {},
     leadId: "lead_1",
     salePriceCents: 5000000,
+    selectedDocumentKinds: [...vehicleSaleDocumentKinds],
     sellerUserId: "seller_1",
     unitId: "unit_1",
   };

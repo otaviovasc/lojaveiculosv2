@@ -156,7 +156,7 @@
 .crm-whatsapp-feature-card {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-xl);
+  border-radius: var(--surface-radius-xl);
   box-shadow: var(--shadow-sm);
   display: grid;
   gap: 0.375rem;

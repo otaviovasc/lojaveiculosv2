@@ -14,7 +14,6 @@ import { DocumentGeneratedPreview } from "./DocumentGeneratedPreview";
 import { DocumentOriginBadge, DocumentScopeBadge } from "./DocumentBadges";
 import {
   documentActorLabel,
-  documentOrigin,
   documentScopeLabel,
   documentVehicleInfo,
   formatFileSizeLabel,
@@ -39,6 +38,7 @@ export function DocumentDetailPanel({
   onRegenerate,
   onUpdate,
   preview,
+  previewError,
   versions,
 }: {
   document: WorkspaceDocument | null;
@@ -54,6 +54,7 @@ export function DocumentDetailPanel({
     input: { kind: DocumentKind; title: string },
   ) => Promise<WorkspaceDocument | null>;
   preview: DocumentDownload | null;
+  previewError: string | null;
   versions: DocumentVersion[];
 }) {
   const [isEditingMetadata, setIsEditingMetadata] = useState(false);
@@ -70,7 +71,6 @@ export function DocumentDetailPanel({
   if (!document) return null;
 
   const vehicle = documentVehicleInfo(document);
-  const isAutomatic = documentOrigin(document) === "automatic";
   const isVoided = document.status === "voided";
 
   return (
@@ -100,7 +100,12 @@ export function DocumentDetailPanel({
       </div>
 
       <section className="documents-preview-card">
-        <DocumentGeneratedPreview document={document} preview={preview} />
+        <DocumentGeneratedPreview
+          document={document}
+          onRefresh={() => void onPreview(document.id)}
+          preview={preview}
+          previewError={previewError}
+        />
       </section>
 
       <div className="documents-detail-actions">
@@ -116,12 +121,14 @@ export function DocumentDetailPanel({
           label="Baixar"
           onClick={() => void onDownload(document.id)}
         />
-        <ActionButton
-          disabled={isBusy || !isAutomatic || isVoided}
-          icon={<RefreshCcw aria-hidden="true" className="size-4" />}
-          label="Regenerar"
-          onClick={() => void onRegenerate(document.id)}
-        />
+        {document.capabilities.canRegenerate ? (
+          <ActionButton
+            disabled={isBusy || isVoided}
+            icon={<RefreshCcw aria-hidden="true" className="size-4" />}
+            label="Regenerar"
+            onClick={() => void onRegenerate(document.id)}
+          />
+        ) : null}
       </div>
 
       {isEditingMetadata ? (

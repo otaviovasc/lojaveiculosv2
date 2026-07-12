@@ -1,35 +1,49 @@
-import { useAuth } from "@clerk/react";
-import { useEffect, useState, type FormEvent } from "react";
+import { ArrowLeft, Building2, RefreshCcw } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { useNavigate } from "react-router-dom";
-import { Store, Globe, ArrowLeft, CheckCircle2, Loader2 } from "lucide-react";
 import {
   FeatureCard,
   FeatureCardDescription,
   FeatureCardHeader,
-  FeatureCardTitle,
 } from "../../../components/ui/FeatureCards";
 import {
-  FeatureInput,
-  FeatureSelect,
-} from "../../../components/ui/FeatureControls";
-import { FeatureField } from "../../../components/ui/FeatureForms";
-import {
   FeatureActionButton,
-  FeaturePageHeader,
+  FeaturePageShell,
 } from "../../../components/ui/FeatureLayout";
-import { FeatureAlert } from "../../../components/ui/FeatureStates";
+import {
+  FeatureAlert,
+  FeatureEmptyState,
+  FeatureLoadingState,
+} from "../../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { normalizePublicSlug } from "../../../lib/utils";
+import type { TenantAccessSummary } from "../../account/apiClient";
+import { useAccountSession } from "../../account/accountSession";
 import { persistCurrentStoreSlug } from "../../account/currentStore";
 import {
   validateAgencyStoreForm,
   type AgencyStoreFieldErrors,
 } from "../../account/onboardingValidation";
 import { createRuntimeAccountApi } from "../../account/runtimeApi";
-import type { TenantAccessSummary } from "../../account/apiClient";
+import { AgencyCreateStoreForm } from "./AgencyCreateStoreForm";
+import { AgencyCreateStoreGuidance } from "./AgencyCreateStoreGuidance";
+import { AgencyCreateStoreIntro } from "./AgencyCreateStoreIntro";
+import type {
+  AgencyCreateStorePageProps,
+  TenantLoadStatus,
+} from "./AgencyCreateStoreTypes";
+import { useAgencyCreateStoreMotion } from "./useAgencyCreateStoreMotion";
 
-export function AgencyCreateStorePage() {
-  const auth = useAuth();
+export function AgencyCreateStorePage({
+  apiFactory = createRuntimeAccountApi,
+}: AgencyCreateStorePageProps) {
+  const session = useAccountSession();
   const navigate = useNavigate();
   const [storeName, setStoreName] = useState("");
   const [subdomain, setSubdomain] = useState("");
@@ -37,8 +51,53 @@ export function AgencyCreateStorePage() {
   const [agencyTenants, setAgencyTenants] = useState<TenantAccessSummary[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState("");
   const [fieldErrors, setFieldErrors] = useState<AgencyStoreFieldErrors>({});
+  const [tenantStatus, setTenantStatus] = useState<TenantLoadStatus>({
+    kind: "loading",
+  });
+  const tenantLoadId = useRef(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const motionRootRef = useAgencyCreateStoreMotion();
+
+  const loadTenants = useCallback(async () => {
+    const loadId = ++tenantLoadId.current;
+    setTenantStatus({ kind: "loading" });
+    setSubmitError(null);
+    try {
+      const api = await apiFactory();
+      const bootstrap = await api.bootstrap();
+      if (loadId !== tenantLoadId.current) return;
+      const tenants = bootstrap.tenantMemberships.filter(
+        (membership) =>
+          membership.role === "agency" && membership.status === "active",
+      );
+      setAgencyTenants(tenants);
+      setSelectedTenantId((current) =>
+        tenants.some((tenant) => tenant.tenantId === current)
+          ? current
+          : (tenants[0]?.tenantId ?? ""),
+      );
+      setTenantStatus({ kind: "ready" });
+    } catch (error) {
+      if (loadId !== tenantLoadId.current) return;
+      setAgencyTenants([]);
+      setSelectedTenantId("");
+      setTenantStatus({
+        kind: "error",
+        message: formatApiErrorDisplay(
+          error,
+          "Não foi possível carregar as contas de agência.",
+        ),
+      });
+    }
+  }, [apiFactory]);
+
+  useEffect(() => {
+    void loadTenants();
+    return () => {
+      tenantLoadId.current += 1;
+    };
+  }, [loadTenants]);
 
   const clearFieldError = (field: keyof AgencyStoreFieldErrors) => {
     setFieldErrors((current) => {
@@ -47,57 +106,21 @@ export function AgencyCreateStorePage() {
     });
   };
 
-  useEffect(() => {
-    let mounted = true;
-    const loadTenants = async () => {
-      try {
-        const api = await createRuntimeAccountApi();
-        const bootstrap = await api.bootstrap();
-        const tenants = bootstrap.tenantMemberships.filter(
-          (membership) =>
-            membership.role === "agency" && membership.status === "active",
-        );
-        if (!mounted) return;
-        setAgencyTenants(tenants);
-        const [onlyTenant] = tenants;
-        if (tenants.length === 1 && onlyTenant) {
-          setSelectedTenantId(onlyTenant.tenantId);
-        }
-        if (tenants.length === 0) {
-          setError("Sua sessão não tem uma conta de agência ativa.");
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(
-            formatApiErrorDisplay(
-              err,
-              "Nao foi possivel carregar as agencias.",
-            ),
-          );
-        }
-      }
-    };
-    void loadTenants();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const handleNameChange = (val: string) => {
-    setStoreName(val);
+  const handleNameChange = (value: string) => {
+    setStoreName(value);
     clearFieldError("storeTradingName");
-    if (!subdomainEdited) setSubdomain(normalizePublicSlug(val));
+    if (!subdomainEdited) setSubdomain(normalizePublicSlug(value));
   };
 
-  const handleSubdomainChange = (val: string) => {
+  const handleSubdomainChange = (value: string) => {
+    const normalized = normalizePublicSlug(value);
     clearFieldError("publicSlug");
-    const normalized = normalizePublicSlug(val);
     setSubdomain(normalized);
     setSubdomainEdited(Boolean(normalized));
   };
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const validation = validateAgencyStoreForm({
       publicSlug: subdomain,
       storeTradingName: storeName,
@@ -105,154 +128,121 @@ export function AgencyCreateStorePage() {
     });
     if (!validation.ok) {
       setFieldErrors(validation.errors);
-      setError(validation.message);
+      setSubmitError(validation.message);
       return;
     }
+
     setFieldErrors({});
     setIsSubmitting(true);
-    setError(null);
+    setSubmitError(null);
     try {
-      const api = await createRuntimeAccountApi();
+      const api = await apiFactory();
       const store = await api.createAgencyStore(validation.input);
-      persistCurrentStoreSlug(store.storeSlug, auth.userId);
+      persistCurrentStoreSlug(store.storeSlug, session.user.clerkUserId);
       void navigate("/agency/admin", { replace: true });
-    } catch (err) {
-      setError(formatApiErrorDisplay(err, "Nao foi possivel criar a loja."));
+    } catch (error) {
+      setSubmitError(
+        formatApiErrorDisplay(error, "Não foi possível criar a loja."),
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
-      <FeaturePageHeader
-        actions={
-          <FeatureActionButton
-            icon={ArrowLeft}
-            label="Voltar"
-            onClick={() => void navigate("/agency/admin")}
-          />
-        }
-        description="Crie uma loja gerenciada pela conta de agência ativa da sua sessão."
-        eyebrow="Cadastro"
-        title="Adicionar nova loja"
-      />
+    <FeaturePageShell className="agency-create-page" variant="content">
+      <div
+        aria-labelledby="agency-create-title"
+        className="agency-create-composition"
+        ref={motionRootRef}
+      >
+        <AgencyCreateStoreIntro onBack={() => void navigate("/agency/admin")} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <FeatureCard className="p-6 lg:col-span-2">
-          <FeatureCardHeader
-            icon={
-              <span className="grid size-10 place-items-center rounded-lg border border-line bg-app text-accent">
-                <Store className="size-5" />
-              </span>
-            }
-          >
-            <FeatureCardTitle>Dados da concessionária</FeatureCardTitle>
-            <FeatureCardDescription>
-              A loja nasce com trial e entitlements iniciais. Escolha de plano e
-              billing entram no fluxo de cobrança.
-            </FeatureCardDescription>
-          </FeatureCardHeader>
-
-          <div className="mt-5">
-            {error ? (
-              <FeatureAlert className="mb-4">{error}</FeatureAlert>
-            ) : null}
-            <form
-              onSubmit={(event) => void handleSubmit(event)}
-              className="grid gap-5"
-            >
-              <FeatureField
-                error={fieldErrors.tenantId}
-                label="Conta de agência"
-              >
-                <FeatureSelect
-                  disabled={agencyTenants.length <= 1}
-                  onChange={(value) => {
-                    clearFieldError("tenantId");
-                    setSelectedTenantId(value);
-                  }}
-                  options={agencyTenants.map((tenant) => ({
-                    label: tenant.tenantName,
-                    value: tenant.tenantId,
-                  }))}
-                  value={selectedTenantId}
-                />
-              </FeatureField>
-
-              <FeatureField
-                error={fieldErrors.storeTradingName}
-                label="Nome da concessionária"
-              >
-                <FeatureInput
-                  aria-invalid={Boolean(fieldErrors.storeTradingName)}
-                  type="text"
-                  required
-                  placeholder="Ex: Auto Bahia Veículos"
-                  value={storeName}
-                  onChange={(e) => handleNameChange(e.target.value)}
-                />
-              </FeatureField>
-
-              <FeatureField
-                error={fieldErrors.publicSlug}
-                label="Subdomínio de acesso"
-              >
-                <div className="flex items-center bg-app border border-line focus-within:border-accent/40 rounded-xl overflow-hidden px-4 py-3 transition-all">
-                  <Globe className="size-4 text-muted shrink-0 mr-2" />
-                  <FeatureInput
-                    aria-invalid={Boolean(fieldErrors.publicSlug)}
-                    type="text"
-                    required
-                    placeholder="autobahia"
-                    value={subdomain}
-                    onChange={(e) => handleSubdomainChange(e.target.value)}
-                    className="min-h-0 flex-1 border-0 bg-transparent px-0 focus:shadow-none"
-                  />
-                  <span className="text-muted text-xs font-bold font-mono">
-                    .lojaveiculos.com.br
-                  </span>
-                </div>
-              </FeatureField>
-
-              <FeatureActionButton
-                className="w-full justify-center"
-                disabled={isSubmitting}
-                icon={isSubmitting ? Loader2 : Store}
-                isBusy={isSubmitting}
-                label={isSubmitting ? "Criando loja" : "Criar concessionária"}
-                type="submit"
-                variant="primary"
-              />
-            </form>
-          </div>
-        </FeatureCard>
-
-        <FeatureCard className="p-6 bg-panel space-y-6">
-          <FeatureCardHeader>
-            <FeatureCardTitle>Informações</FeatureCardTitle>
-          </FeatureCardHeader>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="size-4 text-accent shrink-0 mt-0.5" />
-              <p className="text-xs font-semibold text-muted leading-relaxed">
-                O subdomínio configurado será o link permanente do cliente (ex:{" "}
-                <span className="font-mono font-bold text-primary">
-                  autobahia.lojaveiculos.com.br
+        <div className="agency-create-grid">
+          <FeatureCard className="agency-create-form-card">
+            <div aria-hidden="true" className="agency-create-card-rail">
+              <span />
+              <span />
+              <span />
+            </div>
+            <FeatureCardHeader
+              className="agency-create-card-header"
+              icon={
+                <span className="agency-create-card-icon">
+                  <Building2 aria-hidden="true" />
                 </span>
-                ).
-              </p>
-            </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="size-4 text-accent shrink-0 mt-0.5" />
-              <p className="text-xs font-semibold text-muted leading-relaxed">
-                A loja fica vinculada à sua conta de agência. Configuração de
-                plano e cobrança deve acontecer no módulo de billing.
-              </p>
-            </div>
-          </div>
-        </FeatureCard>
+              }
+            >
+              <span className="agency-create-card-kicker">
+                Identidade da loja
+              </span>
+              <h2 className="agency-create-card-title">
+                Dados da concessionária
+              </h2>
+              <FeatureCardDescription className="agency-create-card-description">
+                Comece pelo nome e pelo endereço público. Plano, cobrança e
+                recursos contratados continuam na cobrança unificada.
+              </FeatureCardDescription>
+            </FeatureCardHeader>
+
+            {tenantStatus.kind === "loading" ? (
+              <FeatureLoadingState
+                className="agency-create-state"
+                icon={RefreshCcw}
+                title="Carregando contas de agência"
+              >
+                Aguarde enquanto confirmamos em qual conta a nova loja será
+                criada.
+              </FeatureLoadingState>
+            ) : tenantStatus.kind === "error" ? (
+              <FeatureAlert
+                action={
+                  <FeatureActionButton
+                    icon={RefreshCcw}
+                    label="Tentar carregar novamente"
+                    onClick={() => void loadTenants()}
+                  />
+                }
+                title="Contas de agência indisponíveis"
+              >
+                <p>{tenantStatus.message}</p>
+              </FeatureAlert>
+            ) : agencyTenants.length === 0 ? (
+              <FeatureEmptyState
+                action={
+                  <FeatureActionButton
+                    icon={ArrowLeft}
+                    label="Voltar para a rede de lojas"
+                    onClick={() => void navigate("/agency/admin")}
+                  />
+                }
+                body="Sua sessão não possui uma conta de agência ativa. Peça a um administrador para revisar seu acesso antes de criar uma loja."
+                icon={Building2}
+                title="Criação indisponível"
+              />
+            ) : (
+              <AgencyCreateStoreForm
+                agencyTenants={agencyTenants}
+                fieldErrors={fieldErrors}
+                isSubmitting={isSubmitting}
+                onNameChange={handleNameChange}
+                onSubmit={(event) => void handleSubmit(event)}
+                onSubdomainChange={handleSubdomainChange}
+                onTenantChange={(tenantId) => {
+                  clearFieldError("tenantId");
+                  setSelectedTenantId(tenantId);
+                }}
+                selectedTenantId={selectedTenantId}
+                storeName={storeName}
+                subdomain={subdomain}
+                submitError={submitError}
+              />
+            )}
+          </FeatureCard>
+
+          <AgencyCreateStoreGuidance />
+        </div>
       </div>
-    </div>
+    </FeaturePageShell>
   );
 }

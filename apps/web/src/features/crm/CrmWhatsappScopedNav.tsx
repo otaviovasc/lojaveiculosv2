@@ -52,12 +52,12 @@ const scopes: Array<{
   {
     icon: PlugZap,
     id: "integrations",
-    label: "Integracoes",
+    label: "Integrações",
   },
   {
     icon: Radio,
     id: "connection",
-    label: "Conexao",
+    label: "Conexão",
   },
 ];
 
@@ -81,7 +81,7 @@ export function CrmWhatsappScopedNav({
       <div className="crm-whatsapp-scope-title">
         <strong>WhatsApp</strong>
         <span
-          aria-label={`Status da conexao: ${connectionLabel}`}
+          aria-label={`Status da conexão: ${connectionLabel}`}
           className={`crm-whatsapp-status crm-whatsapp-scope-status crm-whatsapp-status-${connectionTone}`}
         >
           <span aria-hidden="true" />

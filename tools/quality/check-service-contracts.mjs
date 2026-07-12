@@ -46,6 +46,22 @@ function isServiceFile(file) {
 
 const failures = [];
 const domainFiles = walk(domainsRoot);
+const delegatedContractHelpers = new Map([
+  [
+    "executeAutomationStepDecision(",
+    {
+      file: join(
+        domainsRoot,
+        "automation/services/AutomationService/serviceSupport.ts",
+      ),
+      requiredContracts: [
+        "assertPermission(",
+        "input.context.audit.record(",
+        "input.context.logger.",
+      ],
+    },
+  ],
+]);
 const serviceFileNames = new Set(
   domainFiles
     .filter((file) => file.includes("/services/"))
@@ -58,15 +74,33 @@ for (const exception of nonEntrypointFiles) {
   }
 }
 
+for (const [helperName, contract] of delegatedContractHelpers) {
+  const helperSource = readFileSync(contract.file, "utf8");
+  for (const requiredContract of contract.requiredContracts) {
+    if (!helperSource.includes(requiredContract)) {
+      failures.push(
+        `${contract.file}: trusted helper ${helperName} must retain ${requiredContract}`,
+      );
+    }
+  }
+}
+
 for (const file of domainFiles.filter(isServiceFile)) {
   const source = readFileSync(file, "utf8");
   const isContextResolver = source.includes("resolvePermissions(");
+  const usesDelegatedContractHelper = [...delegatedContractHelpers.keys()].some(
+    (helperName) => source.includes(helperName),
+  );
 
   if (!source.includes("ServiceContext") && !isContextResolver) {
     failures.push(`${file}: service entrypoint must accept ServiceContext`);
   }
 
-  if (!source.includes("assertPermission(") && !isContextResolver) {
+  if (
+    !source.includes("assertPermission(") &&
+    !isContextResolver &&
+    !usesDelegatedContractHelper
+  ) {
     failures.push(`${file}: service must enforce at least one permission`);
   }
 
@@ -79,7 +113,8 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("recordWhatsappServiceMutation(") &&
     !source.includes("auditSalesServiceEvent(") &&
     !source.includes("auditVehicleServiceEvent(") &&
-    !source.includes("recordRunAudit(")
+    !source.includes("recordRunAudit(") &&
+    !usesDelegatedContractHelper
   ) {
     failures.push(`${file}: service must emit an audit event`);
   }
@@ -90,7 +125,8 @@ for (const file of domainFiles.filter(isServiceFile)) {
     !source.includes("logFinanceServiceEvent(") &&
     !source.includes("logWhatsappServiceEvent(") &&
     !source.includes("logSalesServiceEvent(") &&
-    !source.includes("logVehicleServiceEvent(")
+    !source.includes("logVehicleServiceEvent(") &&
+    !usesDelegatedContractHelper
   ) {
     failures.push(`${file}: service must write scoped structured logs`);
   }

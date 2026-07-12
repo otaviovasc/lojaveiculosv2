@@ -6,7 +6,11 @@ import {
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { entrySourceKey, sourceLabel } from "./financeCashFlowModel";
-import { FinanceBadge, FinancePanel } from "./FinanceFormParts";
+import {
+  FinanceBadge,
+  FinancePanel,
+  financeTypeLabels,
+} from "./FinanceFormParts";
 import { formatDate } from "./financeBillsFormat";
 import {
   EntryActions,
@@ -18,6 +22,7 @@ import {
 import type { FinanceEntry } from "./types";
 
 export function FinanceEntryTable({
+  activeType,
   entries,
   isLoading,
   onCancel,
@@ -25,7 +30,9 @@ export function FinanceEntryTable({
   onEdit,
   onMarkPending,
   onPay,
+  otherEntryCount,
 }: {
+  activeType: FinanceEntry["type"];
   entries: FinanceEntry[];
   isLoading: boolean;
   onCancel: (entry: FinanceEntry) => void;
@@ -33,7 +40,9 @@ export function FinanceEntryTable({
   onEdit: (entry: FinanceEntry) => void;
   onMarkPending: (entry: FinanceEntry) => void;
   onPay: (entry: FinanceEntry) => void;
+  otherEntryCount: number;
 }) {
+  const activeLabel = financeTypeLabels[activeType].toLowerCase();
   return (
     <FinancePanel
       actions={
@@ -45,8 +54,12 @@ export function FinanceEntryTable({
         />
       }
       icon={<FileText className="size-5" />}
-      title="Registro de atividades"
+      title={`Registro de ${activeLabel}`}
     >
+      <p className="mb-3 text-sm font-bold text-muted">
+        A lista mostra apenas {activeLabel}. O fluxo de caixa acima consolida
+        gastos, receitas e comissões.
+      </p>
       <p className="mb-4 text-xs font-black uppercase tracking-wider text-muted">
         {entries.length} lançamento(s) encontrados
       </p>
@@ -66,7 +79,11 @@ export function FinanceEntryTable({
               variant="primary"
             />
           }
-          body="Crie o primeiro gasto, receita ou recorrência para acompanhar o caixa da loja."
+          body={
+            otherEntryCount > 0
+              ? `Nenhum item desta aba corresponde aos filtros. Há ${otherEntryCount} lançamento(s) em outras abas do fluxo consolidado.`
+              : "Crie o primeiro gasto, receita ou recorrência para acompanhar o caixa da loja."
+          }
           icon={FilePenLine}
           title="Nenhum lançamento encontrado"
         />

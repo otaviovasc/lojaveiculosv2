@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import * as ReactRouterDom from "react-router-dom";
 import { OwnerOnboardingPage } from "./OwnerOnboardingPage";
+import { AccountSessionProvider } from "./accountSession";
 
 type OwnerStoreApi = {
   createOwnerStore: (input: unknown) => Promise<unknown>;
@@ -14,10 +15,6 @@ const mocks = vi.hoisted(() => ({
   createOwnerStore: vi.fn<(input: unknown) => Promise<unknown>>(),
   createRuntimeAccountApi: vi.fn<() => Promise<OwnerStoreApi>>(),
   navigate: vi.fn<(to: string, options?: { replace?: boolean }) => void>(),
-}));
-
-vi.mock("@clerk/react", () => ({
-  useAuth: () => ({ userId: "user_1" }),
 }));
 
 vi.mock("./runtimeApi", () => ({
@@ -57,7 +54,23 @@ describe("OwnerOnboardingPage", () => {
 
     render(
       <ReactRouterDom.MemoryRouter>
-        <OwnerOnboardingPage />
+        <AccountSessionProvider
+          session={{
+            defaultStore: null,
+            needsOnboarding: true,
+            platformAdmin: false,
+            stores: [],
+            tenantMemberships: [],
+            user: {
+              clerkUserId: "user_1",
+              email: "owner@example.com",
+              id: "user_1",
+              name: "Owner",
+            },
+          }}
+        >
+          <OwnerOnboardingPage />
+        </AccountSessionProvider>
       </ReactRouterDom.MemoryRouter>,
     );
 

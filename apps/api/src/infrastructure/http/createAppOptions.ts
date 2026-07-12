@@ -1,5 +1,6 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import type { AnalyticsServices } from "../../features/analytics/controllers/analyticsServices.js";
+import type { AutomationServices } from "../../features/automation/controllers/automationServices.js";
 import type { BillingServices } from "../../features/billing/controllers/billingServices.js";
 import type { ComplianceServices } from "../../features/compliance/controllers/complianceServices.js";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
@@ -27,6 +28,7 @@ import type { HttpIdentityVerifier } from "./httpIdentityVerifier.js";
 
 export type CreateAppOptions = {
   analyticsServices?: AnalyticsServices;
+  automationServices?: AutomationServices;
   audit?: AuditSink;
   accountProvisioningServices?: AccountProvisioningServices;
   billingServices?: BillingServices;

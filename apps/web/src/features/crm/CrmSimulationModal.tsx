@@ -1,16 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calculator, X, Save } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import { CrmSelect } from "./CrmFormControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import {
   financingTermOptions,
-  getPrimaryLeadVehiclePriceCents,
+  getPrimaryLeadVehiclePriceCents as getPriceCents,
   type FinancingSimulationDraft,
 } from "./crmLeadData";
 import type { ProductCrmLead } from "./productCrmTypes";
-
-export type { FinancingSimulationDraft } from "./crmLeadData";
+import { CrmFormError, formatCrmSubmitError } from "./CrmFormFeedback";
+import { validateFinancingInput } from "./crmFormValidation";
+import {
+  calculateFinancing,
+  createFinancingDraft,
+  formatFinancingValue,
+} from "./crmFinancingSimulation";
 
 type Props = {
   lead: ProductCrmLead;
@@ -28,52 +33,56 @@ export function CrmSimulationModal({
   onSaveSimulation,
   vehicleOptions,
 }: Props) {
-  const initialValue =
-    getPrimaryLeadVehiclePriceCents(lead, vehicleOptions) ?? 0;
+  const initialValue = getPriceCents(lead, vehicleOptions) ?? 0;
   const [vehicleValue, setVehicleValue] = useState(initialValue / 100);
   const [downpayment, setDownpayment] = useState((initialValue * 0.3) / 100);
   const [months, setMonths] = useState(48);
-  const [interestRate, setInterestRate] = useState(1.39); // % per month
-
-  const [financedAmount, setFinancedAmount] = useState(0);
-  const [monthlyPayment, setMonthlyPayment] = useState(0);
-  const [totalFinanced, setTotalFinanced] = useState(0);
-
-  useEffect(() => {
-    const principal = Math.max(0, vehicleValue - downpayment);
-    setFinancedAmount(principal);
-
-    // PMT formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
-    const r = interestRate / 100;
-    if (r === 0) {
-      setMonthlyPayment(principal / months);
-      setTotalFinanced(principal);
-    } else {
-      const pmt =
-        (principal * r * Math.pow(1 + r, months)) /
-        (Math.pow(1 + r, months) - 1);
-      setMonthlyPayment(pmt);
-      setTotalFinanced(pmt * months);
-    }
-  }, [vehicleValue, downpayment, months, interestRate]);
+  const [interestRate, setInterestRate] = useState(1.39);
+  const [hasAttemptedSave, setHasAttemptedSave] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { financedAmount, monthlyPayment, totalFinanced } = calculateFinancing(
+    vehicleValue,
+    downpayment,
+    months,
+    interestRate,
+  );
+  const validationError = validateFinancingInput({
+    downpayment,
+    interestRate,
+    months,
+    vehicleValue,
+  });
+  const visibleError =
+    submitError ??
+    (hasAttemptedSave || downpayment > vehicleValue ? validationError : null);
+  const vehicleValueInvalid = Boolean(visibleError && vehicleValue <= 0);
+  const downpaymentInvalid = Boolean(
+    visibleError && (downpayment < 0 || downpayment > vehicleValue),
+  );
 
   const handleSave = async () => {
-    const data: FinancingSimulationDraft = {
-      vehicleValueCents: Math.round(vehicleValue * 100),
-      downpaymentCents: Math.round(downpayment * 100),
+    setHasAttemptedSave(true);
+    if (validationError) return;
+    setIsSaving(true);
+    setSubmitError(null);
+    const data = createFinancingDraft({
+      downpayment,
       months,
       interestRate,
-      monthlyPaymentCents: Math.round(monthlyPayment * 100),
-    };
-    await onSaveSimulation(lead.id, data);
-    onClose();
-  };
-
-  const formatBrl = (val: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      currency: "BRL",
-      style: "currency",
-    }).format(val);
+      monthlyPayment,
+      vehicleValue,
+    });
+    try {
+      await onSaveSimulation(lead.id, data);
+      onClose();
+    } catch (caught) {
+      setSubmitError(
+        formatCrmSubmitError(caught, "Não foi possível salvar a simulação."),
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -84,7 +93,6 @@ export function CrmSimulationModal({
         className="w-full max-w-lg glass-panel-branded bg-panel rounded-2xl border border-line shadow-2xl overflow-hidden flex flex-col"
         role="dialog"
       >
-        {/* Header */}
         <header className="p-4 border-b border-line/45 flex items-center justify-between shrink-0 bg-app-elevated/45">
           <div className="flex items-center gap-2">
             <Calculator aria-hidden="true" className="size-5 text-accent" />
@@ -110,7 +118,6 @@ export function CrmSimulationModal({
           </button>
         </header>
 
-        {/* Form Body */}
         <div className="p-5 flex-1 overflow-y-auto flex flex-col gap-4">
           <div className="grid grid-cols-2 gap-4">
             <label className="flex flex-col gap-1">
@@ -118,8 +125,12 @@ export function CrmSimulationModal({
                 Valor do Veículo (R$)
               </span>
               <FeatureInput
+                aria-invalid={vehicleValueInvalid}
                 min={0}
-                onChange={(e) => setVehicleValue(Number(e.target.value))}
+                onChange={(e) => {
+                  setVehicleValue(Number(e.target.value));
+                  setSubmitError(null);
+                }}
                 type="number"
                 value={vehicleValue}
               />
@@ -130,8 +141,13 @@ export function CrmSimulationModal({
                 Valor da Entrada (R$)
               </span>
               <FeatureInput
+                aria-invalid={downpaymentInvalid}
+                max={Math.max(0, vehicleValue)}
                 min={0}
-                onChange={(e) => setDownpayment(Number(e.target.value))}
+                onChange={(e) => {
+                  setDownpayment(Number(e.target.value));
+                  setSubmitError(null);
+                }}
                 type="number"
                 value={downpayment}
               />
@@ -144,7 +160,10 @@ export function CrmSimulationModal({
                 Nº de Parcelas
               </span>
               <CrmSelect
-                onChange={(value) => setMonths(Number(value))}
+                onChange={(value) => {
+                  setMonths(Number(value));
+                  setSubmitError(null);
+                }}
                 options={financingTermOptions}
                 value={String(months)}
               />
@@ -156,8 +175,11 @@ export function CrmSimulationModal({
               </span>
               <FeatureInput
                 max={10}
-                min={0.1}
-                onChange={(e) => setInterestRate(Number(e.target.value))}
+                min={0}
+                onChange={(e) => {
+                  setInterestRate(Number(e.target.value));
+                  setSubmitError(null);
+                }}
                 step={0.01}
                 type="number"
                 value={interestRate}
@@ -165,14 +187,15 @@ export function CrmSimulationModal({
             </label>
           </div>
 
-          {/* Results Summary Box */}
+          {visibleError ? <CrmFormError>{visibleError}</CrmFormError> : null}
+
           <div className="bg-accent-soft/5 border border-accent/20 rounded-xl p-4.5 flex flex-col gap-3.5 mt-2">
             <div className="flex justify-between items-center pb-2 border-b border-accent/10">
               <span className="text-xs font-bold text-muted">
                 Valor a Financiar:
               </span>
               <span className="text-sm font-black text-app-text">
-                {formatBrl(financedAmount)}
+                {formatFinancingValue(financedAmount)}
               </span>
             </div>
 
@@ -186,7 +209,7 @@ export function CrmSimulationModal({
                 </span>
               </div>
               <span className="text-xl font-black text-accent-strong leading-none">
-                {months}x de {formatBrl(monthlyPayment)}
+                {months}x de {formatFinancingValue(monthlyPayment)}
               </span>
             </div>
 
@@ -195,13 +218,12 @@ export function CrmSimulationModal({
                 Total Pago Final:
               </span>
               <span className="text-xs font-black text-app-text">
-                {formatBrl(totalFinanced + downpayment)}
+                {formatFinancingValue(totalFinanced + downpayment)}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Footer Actions */}
         <footer className="p-4 border-t border-line/45 shrink-0 bg-app-elevated/45 flex justify-end gap-2.5">
           <button
             className="inline-flex min-h-9 items-center justify-center rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/20 cursor-pointer"
@@ -212,11 +234,12 @@ export function CrmSimulationModal({
           </button>
           <button
             className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm"
+            disabled={isSaving || downpayment > vehicleValue}
             onClick={() => void handleSave()}
             type="button"
           >
             <Save aria-hidden="true" className="size-4" />
-            Salvar no Lead
+            {isSaving ? "Salvando..." : "Salvar no Lead"}
           </button>
         </footer>
       </div>

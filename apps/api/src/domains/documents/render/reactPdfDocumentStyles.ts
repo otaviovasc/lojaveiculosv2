@@ -1,18 +1,29 @@
 import { StyleSheet } from "@react-pdf/renderer";
 
 export const styles = StyleSheet.create({
-  body: { gap: 12 },
+  body: { gap: 14 },
   brandCopy: { flex: 1, gap: 3 },
-  clause: { borderLeftColor: "#e11f26", borderLeftWidth: 2, paddingLeft: 8 },
+  clause: {
+    borderLeftColor: "#e11f26",
+    borderLeftWidth: 2,
+    paddingLeft: 10,
+  },
   clauseLabel: {
     color: "#b81820",
     fontSize: 8,
     fontWeight: 700,
     marginBottom: 3,
   },
-  clauseText: { color: "#151515", fontSize: 9.5, lineHeight: 1.45 },
+  clauseOpening: { gap: 8 },
+  clauseText: { color: "#151515", fontSize: 9.5, lineHeight: 1.5 },
   documentTitle: { alignItems: "flex-end", flex: 1.1, gap: 4 },
-  field: { borderColor: "#e8e3e2", borderWidth: 1, padding: 8, width: "48%" },
+  field: {
+    backgroundColor: "#f4efee",
+    borderColor: "#e8e3e2",
+    borderWidth: 1,
+    padding: 9,
+    width: "48%",
+  },
   fieldGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   fieldLabel: {
     color: "#4a4444",
@@ -33,7 +44,9 @@ export const styles = StyleSheet.create({
   },
   header: {
     alignItems: "center",
-    backgroundColor: "#fce8e9",
+    backgroundColor: "#151515",
+    borderBottomColor: "#e11f26",
+    borderBottomWidth: 3,
     flexDirection: "row",
     gap: 12,
     left: 42,
@@ -41,6 +54,13 @@ export const styles = StyleSheet.create({
     position: "absolute",
     right: 42,
     top: 32,
+  },
+  headerMuted: { color: "#a09898", fontSize: 7.5 },
+  headerTitle: {
+    color: "#ffffff",
+    fontSize: 14,
+    fontWeight: 700,
+    textAlign: "right",
   },
   intro: { color: "#151515", fontSize: 10, lineHeight: 1.5 },
   logoMark: {
@@ -51,7 +71,7 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
     width: 38,
   },
-  muted: { color: "#4a4444", fontSize: 8 },
+  muted: { color: "#4a4444", fontSize: 7.5 },
   page: { backgroundColor: "#ffffff", padding: "124 42 64" },
   section: { gap: 8 },
   sectionCompact: { gap: 8, marginTop: 2 },
@@ -73,11 +93,5 @@ export const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 28,
   },
-  storeName: { color: "#151515", fontSize: 10, fontWeight: 700 },
-  title: {
-    color: "#151515",
-    fontSize: 14,
-    fontWeight: 700,
-    textAlign: "right",
-  },
+  storeName: { color: "#ffffff", fontSize: 10, fontWeight: 700 },
 });

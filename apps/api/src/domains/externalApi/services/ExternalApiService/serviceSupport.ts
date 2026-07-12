@@ -1,4 +1,7 @@
-import type { PermissionKey } from "@lojaveiculosv2/shared";
+import {
+  externalApiAssignableScopes,
+  type PermissionKey,
+} from "@lojaveiculosv2/shared";
 import type { ExternalApiRepository } from "../../ports/externalApiRepository.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 
@@ -6,28 +9,7 @@ export type ExternalApiServicePorts = {
   externalApiRepository: ExternalApiRepository;
 };
 
-export const externalApiAssignableScopes = [
-  "crm.access",
-  "finance.attach_document",
-  "finance.create",
-  "finance.read",
-  "finance.update",
-  "inventory.cost_create",
-  "inventory.create",
-  "inventory.document_attach",
-  "inventory.media_update",
-  "inventory.read",
-  "inventory.reserve",
-  "inventory.sell",
-  "inventory.update_description",
-  "inventory.update_internal_notes",
-  "inventory.update_price",
-  "inventory.update_status",
-  "inventory.update_unit",
-  "lead.create",
-  "lead.read",
-  "lead.update",
-] satisfies PermissionKey[];
+export { externalApiAssignableScopes };
 
 const assignableScopeSet = new Set<string>(externalApiAssignableScopes);
 

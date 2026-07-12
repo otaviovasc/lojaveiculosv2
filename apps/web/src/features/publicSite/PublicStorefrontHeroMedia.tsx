@@ -95,6 +95,25 @@ export function resolvePublicStorefrontHeroMedia({
   return banners.length ? banners : vehicleMedia ? [vehicleMedia] : [];
 }
 
+export function resolvePublicStorefrontFeaturedListing({
+  heroImageUrl,
+  listings,
+  theme,
+}: {
+  heroImageUrl: string | null;
+  listings: readonly PublicVehicleListing[];
+  theme: Record<string, unknown>;
+}): PublicVehicleListing | null {
+  const source = readHeroMediaSource(theme.heroMediaSource);
+  const banners = readHeroBannerUrls(theme.heroBannerUrls, heroImageUrl);
+
+  if (source === "banners" || (source === "auto" && banners.length > 0)) {
+    return null;
+  }
+
+  return findVehicleHeroListing(listings);
+}
+
 function readHeroMediaSource(value: unknown): HeroMediaSource {
   return value === "banners" || value === "vehicles" ? value : "auto";
 }
@@ -112,24 +131,23 @@ function readHeroBannerUrls(value: unknown, fallback: string | null) {
 function findVehicleHeroMedia(
   listings: readonly PublicVehicleListing[],
 ): PublicHeroMedia | null {
-  const video = findListingMedia(listings, "video");
-  if (video) return toPublicHeroMedia(video);
-
-  const photo = findListingMedia(listings, "photo");
-  if (photo) return toPublicHeroMedia(photo);
-
-  const thumbnail = listings.find((listing) => listing.thumbnailUrl);
-  return thumbnail?.thumbnailUrl
-    ? { altText: thumbnail.title, kind: "image", url: thumbnail.thumbnailUrl }
+  const listing = findVehicleHeroListing(listings);
+  if (!listing) return null;
+  if (listing.heroMedia) return toPublicHeroMedia(listing.heroMedia);
+  return listing.thumbnailUrl
+    ? { altText: listing.title, kind: "image", url: listing.thumbnailUrl }
     : null;
 }
 
-function findListingMedia(
+function findVehicleHeroListing(
   listings: readonly PublicVehicleListing[],
-  kind: PublicVehicleMedia["kind"],
-) {
-  return listings.find((listing) => listing.heroMedia?.kind === kind)
-    ?.heroMedia;
+): PublicVehicleListing | null {
+  return (
+    listings.find((listing) => listing.heroMedia?.kind === "video") ??
+    listings.find((listing) => listing.heroMedia?.kind === "photo") ??
+    listings.find((listing) => listing.thumbnailUrl) ??
+    null
+  );
 }
 
 function toPublicHeroMedia(media: PublicVehicleMedia): PublicHeroMedia {

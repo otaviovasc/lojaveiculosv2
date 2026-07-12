@@ -1,16 +1,88 @@
+@import "./publicApiReference.css";
+
 .public-api-shell {
-  gap: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: var(--layout-content-max);
+  padding: 1rem;
+}
+
+.public-api-command-bar {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+}
+
+.public-api-command-bar__identity {
+  align-items: center;
+  display: flex;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.public-api-command-bar__mark {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.public-api-command-bar__meta,
+.public-api-command-bar__meta span,
+.public-api-command-bar__actions {
+  align-items: center;
+  display: flex;
+}
+
+.public-api-command-bar__meta {
+  color: var(--color-accent-strong);
+  flex-wrap: wrap;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.75rem;
+  text-transform: uppercase;
+}
+
+.public-api-command-bar__meta span {
+  gap: 0.25rem;
+}
+
+.public-api-command-bar h1 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.public-api-command-bar__description {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  margin-top: 0.25rem;
+}
+
+.public-api-command-bar__actions {
+  flex-shrink: 0;
+  gap: 0.5rem;
 }
 
 .public-api-overview {
   display: grid;
-  gap: 10px;
+  gap: 0.625rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .public-api-overview article,
 .public-api-client-list article,
-.public-api-endpoints article,
+.public-api-endpoints details,
 .public-api-resource-grid button,
 .public-api-presets button {
   background: var(--color-panel);
@@ -20,9 +92,9 @@
 
 .public-api-overview article {
   display: grid;
-  gap: 8px;
-  min-height: 122px;
-  padding: 14px;
+  gap: 0.5rem;
+  min-height: 7.625rem;
+  padding: 0.875rem;
 }
 
 .public-api-overview span,
@@ -36,9 +108,9 @@
   background: var(--color-accent-soft);
   border-radius: var(--radius-md);
   display: inline-flex;
-  height: 34px;
+  height: 2.125rem;
   justify-content: center;
-  width: 34px;
+  width: 2.125rem;
 }
 
 .public-api-overview strong,
@@ -66,13 +138,13 @@
 }
 
 .public-api-panel {
-  gap: 16px;
+  gap: 1rem;
 }
 
 .public-api-presets,
 .public-api-resource-grid {
   display: grid;
-  gap: 10px;
+  gap: 0.625rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -80,9 +152,9 @@
 .public-api-resource-grid button {
   cursor: pointer;
   display: grid;
-  gap: 6px;
-  min-height: 104px;
-  padding: 12px;
+  gap: 0.375rem;
+  min-height: 6.5rem;
+  padding: 0.75rem;
   text-align: left;
 }
 
@@ -93,11 +165,16 @@
 
 .public-api-scopes {
   display: grid;
-  gap: 8px;
+  gap: 0.5rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  max-height: 380px;
+  max-height: 23.75rem;
   overflow: auto;
-  padding-right: 4px;
+  padding-right: 0.25rem;
+}
+
+.public-api-scopes:focus-visible {
+  outline: 0.125rem solid var(--color-accent);
+  outline-offset: 0.125rem;
 }
 
 .public-api-scopes .internal-check {
@@ -106,9 +183,14 @@
   color: var(--color-text);
 }
 
-.public-api-scopes .internal-check span {
+.public-api-scopes .internal-check span,
+.public-api-client-main,
+.public-api-resource-copy {
   display: grid;
-  gap: 3px;
+}
+
+.public-api-scopes .internal-check span {
+  gap: 0.1875rem;
 }
 
 .public-api-scopes .internal-check strong {
@@ -126,45 +208,73 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
 }
 
+.public-api-secret code {
+  overflow-wrap: anywhere;
+}
+
 .public-api-client-list,
 .public-api-endpoints {
   display: grid;
-  gap: 10px;
+  gap: 0.625rem;
 }
 
 .public-api-client-list article {
   align-items: start;
   display: grid;
-  gap: 10px;
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.8fr) auto;
-  padding: 12px;
+  gap: 0.625rem;
+  grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.8fr) auto;
+  padding: 0.75rem;
 }
 
 .public-api-client-main {
-  display: grid;
-  gap: 5px;
+  gap: 0.3125rem;
   min-width: 0;
 }
 
+.public-api-client-state {
+  align-items: center;
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.5rem;
+  min-height: 5rem;
+  padding: 0.75rem;
+}
+
+.public-api-client-state svg {
+  animation: spin 1s linear infinite;
+}
+
 .public-api-client-main > span,
-.public-api-endpoints header > span {
+.public-api-endpoints summary > span:first-child {
   border: 1px solid var(--color-line);
   border-radius: 999px;
   color: var(--color-muted);
   font-size: var(--font-size-xs);
   font-weight: 900;
-  padding: 3px 8px;
+  padding: 0.1875rem 0.5rem;
   width: fit-content;
 }
 
 .public-api-client-main > span[data-status="active"],
-.public-api-endpoints header > span[data-method="GET"] {
+.public-api-endpoints summary > span[data-method="GET"] {
   background: var(--color-green-soft);
-  color: var(--color-green-end);
+  color: var(--color-success-strong);
 }
 
-.public-api-endpoints header > span[data-method="POST"],
-.public-api-endpoints header > span[data-method="PATCH"] {
+.public-api-client-main > span[data-status="suspended"] {
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  color: var(--color-warning-strong);
+}
+
+.public-api-client-main > span[data-status="revoked"] {
+  background: var(--color-accent-soft);
+  color: var(--color-danger);
+}
+
+.public-api-endpoints summary > span[data-method="POST"],
+.public-api-endpoints summary > span[data-method="PATCH"] {
   background: var(--color-blue-soft);
   color: var(--color-blue-end);
 }
@@ -173,7 +283,7 @@
   align-content: start;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
 .public-api-scope-chips code,
@@ -185,54 +295,49 @@
   font-size: var(--font-size-xs);
   font-weight: 850;
   overflow-wrap: anywhere;
-  padding: 3px 6px;
-}
-
-.public-api-resource-grid button {
-  align-items: start;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-.public-api-resource-grid span {
-  display: grid;
-  gap: 5px;
-}
-
-.public-api-endpoints article {
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-}
-
-.public-api-endpoints header {
-  align-items: center;
-  display: flex;
-  gap: 10px;
-}
-
-.public-api-endpoints header div {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
-
-.public-api-endpoints pre {
-  background: var(--color-app-elevated);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  margin: 0;
-  overflow: auto;
-  padding: 12px;
+  padding: 0.1875rem 0.375rem;
 }
 
 @media (max-width: 960px) {
-  .public-api-overview,
+  .public-api-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .public-api-client-list article {
+    grid-template-columns: 1fr auto;
+  }
+
+  .public-api-client-list article .public-api-scope-chips {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .public-api-shell {
+    padding: 0.75rem;
+  }
+
+  .public-api-command-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .public-api-command-bar__actions > * {
+    flex: 1;
+  }
+
   .public-api-presets,
   .public-api-resource-grid,
-  .public-api-scopes,
-  .public-api-client-list article {
+  .public-api-scopes {
     grid-template-columns: 1fr;
+  }
+
+  .public-api-overview article {
+    min-height: 0;
+    padding: 0.75rem;
+  }
+
+  .public-api-overview small {
+    font-size: var(--font-size-xs);
   }
 }

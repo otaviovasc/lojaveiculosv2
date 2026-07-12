@@ -14,6 +14,11 @@ export const openApiTags = [
     description: "Store commercial, inventory, finance, and funnel metrics.",
   },
   {
+    name: "Automation",
+    description:
+      "Preview-first, approval-bound automation runs with execution disabled.",
+  },
+  {
     name: "Finance",
     description: "Store-scoped finance entries, rules, and attachments.",
   },

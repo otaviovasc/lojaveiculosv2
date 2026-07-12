@@ -1,0 +1,196 @@
+.agency-layout .billing-shell {
+  padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
+}
+
+.agency-billing-state {
+  --agency-billing-tone: var(--color-info);
+  align-items: flex-start;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--agency-billing-tone) 9%, var(--color-panel)),
+    var(--color-panel) 64%
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--agency-billing-tone) 38%, var(--color-line));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  gap: 0.85rem;
+  overflow: hidden;
+  padding: 1rem;
+  position: relative;
+}
+
+.agency-billing-state::before {
+  background: var(--agency-billing-tone);
+  content: "";
+  inset: 0 auto 0 0;
+  position: absolute;
+  width: 0.22rem;
+}
+
+.agency-billing-state--success {
+  --agency-billing-tone: var(--color-success-strong);
+}
+
+.agency-billing-state--warning {
+  --agency-billing-tone: var(--color-warning-strong);
+}
+
+.agency-billing-state--danger {
+  --agency-billing-tone: var(--color-danger);
+}
+
+.agency-billing-state__icon {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    var(--agency-billing-tone) 14%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--agency-billing-tone) 26%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--agency-billing-tone);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.agency-billing-state__icon svg {
+  height: 1.25rem;
+  width: 1.25rem;
+}
+
+.agency-billing-state__content {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.agency-billing-state__label {
+  color: var(--agency-billing-tone);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agency-billing-state h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.agency-billing-state p,
+.agency-billing-requirements li {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.agency-billing-requirements {
+  background: color-mix(in srgb, var(--color-warning) 9%, var(--color-app));
+  border: 1px solid
+    color-mix(in srgb, var(--color-warning) 30%, var(--color-line));
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+  padding: 0.75rem;
+}
+
+.agency-billing-requirements strong {
+  color: var(--color-warning-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agency-billing-requirements ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.agency-billing-requirements li {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  font-size: var(--font-size-xs);
+  padding: 0.3rem 0.55rem;
+}
+
+.agency-billing-kpis {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.agency-billing-kpis .billing-summary-card {
+  min-height: 7.5rem;
+  min-width: 0;
+}
+
+.agency-billing-kpis .billing-summary-card strong {
+  font-size: var(--font-size-sm);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.agency-billing-allocation {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.agency-billing-table-hint {
+  align-items: center;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  gap: 0.4rem;
+  padding-inline: 0.25rem;
+}
+
+.agency-billing-table-hint svg {
+  color: var(--color-accent-strong);
+  height: 1rem;
+  width: 1rem;
+}
+
+.agency-billing-allocation .billing-table-wrap {
+  overscroll-behavior-inline: contain;
+  scrollbar-gutter: stable;
+}
+
+@media (min-width: 768px) {
+  .agency-billing-state {
+    gap: 1rem;
+    padding: 1.25rem;
+  }
+
+  .agency-billing-state h2 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .agency-billing-kpis {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .agency-billing-kpis .billing-summary-card strong {
+    font-size: var(--font-size-lg);
+  }
+
+  .agency-billing-table-hint {
+    display: none;
+  }
+}

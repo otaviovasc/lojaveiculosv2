@@ -13,36 +13,37 @@ export function AgencyDateFilter({
   to: string;
 }) {
   return (
-    <div className="flex items-center gap-1.5 bg-app border border-line p-1.5 rounded-xl">
-      <Calendar className="text-muted size-3.5 shrink-0 ml-1" />
+    <div className="agency-date-filter">
+      <Calendar aria-hidden="true" />
       <FeatureDateField
-        className="min-w-[7rem]"
+        className="agency-date-filter__field"
         label="De"
         max={to}
         onChange={onFromChange}
         value={from}
       />
-      <span className="text-muted text-xs font-black uppercase">até</span>
+      <span className="agency-date-filter__separator">até</span>
       <FeatureDateField
-        className="min-w-[7rem]"
+        className="agency-date-filter__field"
         label="Até"
         min={from}
         onChange={onToChange}
         value={to}
       />
-      {(from || to) && (
+      {from || to ? (
         <button
+          aria-label="Limpar período"
           onClick={() => {
             onFromChange("");
             onToChange("");
           }}
-          className="p-1 hover:bg-line text-muted hover:text-primary rounded-lg transition-all"
+          className="agency-date-filter__clear"
           title="Limpar filtro de data"
           type="button"
         >
-          <X className="size-3" />
+          <X aria-hidden="true" />
         </button>
-      )}
+      ) : null}
     </div>
   );
 }

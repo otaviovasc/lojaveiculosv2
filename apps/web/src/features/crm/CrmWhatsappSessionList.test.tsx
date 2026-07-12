@@ -56,7 +56,7 @@ describe("SessionList", () => {
     );
 
     expect(
-      screen.getByRole("button", { name: "Remover conversa da selecao" }),
+      screen.getByRole("button", { name: "Remover conversa da seleção" }),
     ).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: /Ana Premium/ }));

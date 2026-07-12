@@ -26,6 +26,7 @@ export const updateEntitlementSchema = z.object({
   endsAt: z.string().datetime().nullable().optional(),
   featureKey: z.enum([
     "analytics",
+    "automation",
     "compliance",
     "crm",
     "custom_domain",

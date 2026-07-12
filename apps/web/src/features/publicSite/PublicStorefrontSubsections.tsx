@@ -27,7 +27,7 @@ export function AboutSection({
     <section className="border-b border-line bg-panel">
       <div className="public-storefront-shell grid gap-12 px-6 py-16 md:grid-cols-2 md:py-20 lg:py-24">
         <div className="flex min-w-0 flex-col justify-center">
-          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
             Nossa História
           </p>
           <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text uppercase">

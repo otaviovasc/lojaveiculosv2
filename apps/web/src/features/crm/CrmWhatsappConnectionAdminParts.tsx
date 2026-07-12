@@ -73,7 +73,7 @@ export function ConnectionStatusCard({
         {readProviderStatusBadge(connection)}
       </span>
       <button
-        aria-label="Atualizar status da conexao"
+        aria-label="Atualizar status da conexão"
         className="crm-icon-action"
         disabled={isRefreshing}
         onClick={onRefresh}
@@ -131,7 +131,7 @@ export function ConnectionWebhookList({
           ))
         ) : (
           <p className="crm-whatsapp-connection-empty">
-            Nenhum webhook gerado para esta conexao.
+            Nenhum webhook gerado para esta conexão.
           </p>
         )}
       </div>

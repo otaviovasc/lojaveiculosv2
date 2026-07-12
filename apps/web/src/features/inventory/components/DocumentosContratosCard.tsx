@@ -1,124 +1,34 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { AlertCircle, CheckCircle2, FileText, Sparkles } from "lucide-react";
-import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
+import { useMemo } from "react";
+import { ArrowRight, FileText, ShieldCheck } from "lucide-react";
 import type { InventoryListingDetail } from "../model/types";
-import { DocumentosContratosForm } from "./DocumentosContratosForm";
 import {
-  createContractDraft,
-  createContractForm,
-  mergeContractFormStoreSettings,
-  validateContractForm,
-  type ContractDraft,
-  type ContractForm,
-} from "./DocumentosContratosModel";
-import {
-  buildContractPreviewData,
   createContractDocumentItems,
   type ContractDocumentListItem,
-  type ContractPreviewData,
 } from "./DocumentosContratosData";
-import { DocumentosContratosPreview } from "./DocumentosContratosPreview";
-import type { InventoryStoreSettings } from "./InventoryPrintTypes";
-
-type ContractState =
-  | { kind: "idle" }
-  | { kind: "error"; message: string }
-  | { kind: "ready"; message: string };
 
 export function DocumentosContratosCard({
   detail,
 }: {
   detail: InventoryListingDetail;
 }) {
-  const [form, setForm] = useState<ContractForm>(() =>
-    createContractForm(detail),
-  );
-  const [drafts, setDrafts] = useState<ContractDraft[]>([]);
-  const [storeSettings, setStoreSettings] =
-    useState<InventoryStoreSettings>(null);
-  const [state, setState] = useState<ContractState>({ kind: "idle" });
-  const [previewData, setPreviewData] = useState<ContractPreviewData | null>(
-    null,
-  );
-  const listingIdRef = useRef(detail.listing.id);
-
-  useEffect(() => {
-    if (listingIdRef.current === detail.listing.id) return;
-
-    listingIdRef.current = detail.listing.id;
-    setForm(createContractForm(detail, storeSettings));
-    setDrafts([]);
-    setPreviewData(null);
-    setState({ kind: "idle" });
-  }, [detail, storeSettings]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    async function loadStoreSettings() {
-      try {
-        const headers = await createInventoryRuntimeHeaders();
-        const response = await fetch("/api/v1/settings/store", { headers });
-        if (!response.ok) return;
-
-        const settings = (await response.json()) as InventoryStoreSettings;
-        if (!isActive) return;
-
-        setStoreSettings(settings);
-        setForm((current) => mergeContractFormStoreSettings(current, settings));
-      } catch {
-        if (!isActive) return;
-        setState({
-          kind: "error",
-          message: "Revise os dados da loja antes de gerar o documento.",
-        });
-      }
-    }
-
-    void loadStoreSettings();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
   const documents = useMemo(
-    () => createContractDocumentItems(detail.documents, drafts),
-    [detail.documents, drafts],
+    () => createContractDocumentItems(detail.documents),
+    [detail.documents],
   );
-
-  const handleChange = (field: keyof ContractForm, value: string) => {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }));
-    setState({ kind: "idle" });
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const missingFields = validateContractForm(form);
-    if (missingFields.length) {
-      setState({
-        kind: "error",
-        message: `Preencha: ${missingFields.join(", ")}.`,
-      });
-      return;
-    }
-
-    setDrafts((current) => [createContractDraft(form), ...current]);
-    setPreviewData(buildContractPreviewData(detail, form));
-    setState({ kind: "ready", message: "Previa gerada para impressao/PDF." });
-  };
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
+      <section
+        aria-labelledby="vehicle-contracts-title"
+        className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
+      >
         <div className="flex items-center justify-between border-b border-line pb-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-black uppercase tracking-wider">
-              Contratos do Veiculo
+            <h3
+              className="text-sm font-black uppercase tracking-wider"
+              id="vehicle-contracts-title"
+            >
+              Contratos do veículo
             </h3>
             <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-black text-accent-strong">
               {documents.length}
@@ -134,37 +44,51 @@ export function DocumentosContratosCard({
           </div>
         ) : (
           <div className="rounded-xl border border-line bg-app/30 p-4 text-sm font-bold text-muted">
-            Nenhum contrato ou recibo anexado a este veiculo.
+            Nenhum contrato ou recibo oficial vinculado a este veículo.
           </div>
         )}
       </section>
 
-      <section className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
-        <div className="flex items-center justify-between border-b border-line pb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles aria-hidden="true" className="size-4 text-accent" />
-            <h3 className="text-sm font-black uppercase tracking-wider">
-              Gerar Contrato
-            </h3>
+      <section
+        aria-labelledby="official-documents-title"
+        className="overflow-hidden rounded-2xl border border-success-strong/20 bg-panel"
+      >
+        <div className="flex flex-col gap-5 p-5 sm:p-6">
+          <div className="flex items-start gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-green-soft text-success-strong">
+              <ShieldCheck aria-hidden="true" className="size-5" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-success-strong">
+                Fonte oficial
+              </p>
+              <h3
+                className="mt-1 text-base font-black text-app-text"
+                id="official-documents-title"
+              >
+                Emissão vinculada à operação
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-muted">
+                Contratos e recibos oficiais são materializados no servidor ao
+                concluir a venda ou a reserva, com versão, vínculo e trilha de
+                auditoria. Este cadastro não cria minutas locais.
+              </p>
+              <p className="mt-2 max-w-2xl text-sm font-bold leading-6 text-muted">
+                Na Central de documentos, a prévia e o download usam o mesmo
+                arquivo armazenado.
+              </p>
+            </div>
           </div>
+
+          <a
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-inverse transition-colors hover:bg-accent-strong sm:w-fit"
+            href="#/documents"
+          >
+            Abrir Central de documentos
+            <ArrowRight aria-hidden="true" className="size-4" />
+          </a>
         </div>
-
-        <DocumentosContratosForm
-          form={form}
-          onChange={handleChange}
-          onSubmit={handleSubmit}
-          units={detail.units}
-        />
-
-        <ContractStatus state={state} />
       </section>
-
-      {previewData ? (
-        <DocumentosContratosPreview
-          data={previewData}
-          onClose={() => setPreviewData(null)}
-        />
-      ) : null}
     </div>
   );
 }
@@ -191,25 +115,6 @@ function ContractDocumentItem({
         {document.status}
       </span>
     </div>
-  );
-}
-
-function ContractStatus({ state }: { state: ContractState }) {
-  if (state.kind === "idle") return null;
-
-  const isError = state.kind === "error";
-  const Icon = isError ? AlertCircle : CheckCircle2;
-
-  return (
-    <p
-      className={[
-        "flex items-center gap-2 text-sm font-black",
-        isError ? "text-danger" : "text-accent-strong",
-      ].join(" ")}
-    >
-      <Icon aria-hidden="true" className="size-4" />
-      {state.message}
-    </p>
   );
 }
 

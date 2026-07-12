@@ -132,6 +132,10 @@ function createDocument(
   },
 ): WorkspaceDocument {
   return {
+    capabilities: overrides.capabilities ?? {
+      canRegenerate: false,
+      regenerateBlockReason: "renderer_unavailable",
+    },
     context: {
       linkRole: "primary",
       targetId: overrides.targetId,

@@ -101,7 +101,7 @@ export function WhatsappToolbar({
           </span>
           <button
             aria-label={
-              selectionMode ? "Cancelar selecao" : "Selecionar conversas"
+              selectionMode ? "Cancelar seleção" : "Selecionar conversas"
             }
             aria-pressed={selectionMode}
             className={
@@ -110,7 +110,7 @@ export function WhatsappToolbar({
                 : "crm-icon-action"
             }
             onClick={() => onSelectionModeChange(!selectionMode)}
-            title={selectionMode ? "Cancelar selecao" : "Selecionar conversas"}
+            title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
             type="button"
           >
             {selectionMode ? <X /> : <CheckSquare />}
@@ -141,11 +141,11 @@ export function WhatsappToolbar({
             <Tags />
           </button>
           <button
-            aria-label="Gerenciar conexao ZAPI"
+            aria-label="Gerenciar conexão ZAPI"
             className="crm-icon-action"
             disabled={!canManageConnections}
             onClick={onManageConnections}
-            title="Gerenciar conexao ZAPI"
+            title="Gerenciar conexão ZAPI"
             type="button"
           >
             <Wrench />
@@ -160,7 +160,7 @@ export function WhatsappToolbar({
         />
         <QueueMetric
           icon={<MailOpen />}
-          label="Nao lidas"
+          label="Não lidas"
           value={sessionCounts.unread}
         />
       </div>
@@ -188,7 +188,7 @@ export function WhatsappToolbar({
           onClick={() => onUnreadOnlyChange(!unreadOnly)}
           type="button"
         >
-          Nao lidas
+          Não lidas
           <span>{sessionCounts.unread}</span>
         </button>
         <label className="crm-whatsapp-queue-field">
@@ -212,7 +212,7 @@ export function WhatsappToolbar({
           <label className="crm-whatsapp-queue-field">
             <Plug aria-hidden="true" />
             <CrmSelect
-              ariaLabel="Filtrar por conexao"
+              ariaLabel="Filtrar por conexão"
               className="crm-whatsapp-select crm-whatsapp-queue-select"
               onChange={(value) => onConnectionFilterChange(value || null)}
               options={connections.map((connection) => ({

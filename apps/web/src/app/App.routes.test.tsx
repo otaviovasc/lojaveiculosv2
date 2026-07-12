@@ -11,7 +11,7 @@ vi.mock("./AdminApp", () => ({
 }));
 
 describe("App routes", () => {
-  it("serves the root path as a public landing page", () => {
+  it("serves the root path as a public landing page", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <ClerkAuthProvider>
@@ -21,7 +21,7 @@ describe("App routes", () => {
     );
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Loja Veiculos" }),
+      await screen.findByRole("heading", { level: 1, name: "Loja Veículos" }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("landing-hero-shader")).toHaveAttribute(
       "data-shader-state",

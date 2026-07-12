@@ -41,12 +41,17 @@
   --color-green-start: #18b841;
   --color-green-end: #18b841;
   --color-green-soft: rgba(24, 184, 65, 0.08);
+  --color-success-strong: #087a2f;
   --color-pink-start: #e8e3e2;
   --color-pink-end: #a09898;
-  --color-violet-start: #e8e3e2;
-  --color-violet-end: #a09898;
+  --color-violet-start: #8c1118;
+  --color-violet-end: #182ab8;
+  --color-violet-foreground: var(--color-blue-start);
+  --color-caption: var(--color-muted);
   --color-warning: #b89418;
+  --color-warning-strong: #765b00;
   --color-danger: #b81820;
+  --color-danger-hover: #8c1118;
   --color-inverse: #ffffff;
   --color-inverse-soft: rgb(255 255 255 / 0.2);
   --color-inverse-muted: rgb(255 255 255 / 0.72);
@@ -55,6 +60,26 @@
   --color-overlay: rgb(21 21 21 / 0.42);
   --color-primary: #151515;
   --color-primary-contrast: #ffffff;
+
+  /* Semantic product surfaces. Legacy aliases above stay stable while new
+     primitives use this smaller, intention-led vocabulary. */
+  --color-canvas: var(--color-app);
+  --color-surface: var(--color-panel);
+  --color-surface-subtle: color-mix(
+    in srgb,
+    var(--color-panel) 68%,
+    var(--color-app)
+  );
+  --color-surface-raised: var(--color-panel);
+  --color-ink: var(--color-text);
+  --color-ink-muted: var(--color-muted);
+  --color-sidebar: var(--color-panel);
+  --color-sidebar-raised: var(--color-app);
+  --color-sidebar-text: var(--color-text);
+  --color-sidebar-muted: var(--color-muted);
+  --color-sidebar-line: var(--color-line);
+  --color-success: #18b841;
+  --color-info: #182ab8;
 
   /* App spacing tokens. Keep names outside Tailwind's --spacing-* namespace. */
   --app-space-xs: 5px;
@@ -65,22 +90,41 @@
   --app-space-2xl: 40px;
   --app-space-3xl: 50px;
 
-  --layout-content-max: 92rem;
-  --layout-header-height: 5rem;
-  --layout-sidebar-width: 232px;
+  --layout-content-max: 96rem;
+  --layout-header-height: 4.25rem;
+  --layout-sidebar-width: 256px;
+  --layout-sidebar-compact-width: 76px;
+  --font-size-caption: 0.75rem;
+  --line-height-caption: 1rem;
+  --font-size-ui-small: 0.8125rem;
+  --line-height-ui-small: 1.125rem;
+  --font-size-body: 1rem;
+  --line-height-body: 1.5rem;
+  --control-height-sm: 2.25rem;
+  --control-height: 2.75rem;
+  --touch-target-min: 2.75rem;
+  --motion-duration-fast: 120ms;
+  --motion-duration-base: 180ms;
+  --motion-duration-slow: 260ms;
+  --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+  --surface-radius-xl: 16px;
+  --surface-radius-2xl: 20px;
   --shadow-focus: 0 0 0 3px
     color-mix(in srgb, var(--color-primary) 26%, transparent);
-  --shadow-panel: 0 20px 50px rgb(21 21 21 / 0.08);
+  --shadow-panel: 0 12px 32px rgb(21 21 21 / 0.06);
+  --shadow-raised: 0 20px 60px rgb(21 21 21 / 0.1);
+  --shadow-float: 0 24px 80px rgb(21 21 21 / 0.14);
 }
 
 :root[data-theme="dark"] {
-  --color-app: #2a2424;
+  --color-app: #151515;
   --color-text: #f4efee;
   --color-muted: #a09898;
-  --color-panel: #151515;
+  --color-panel: #2a2424;
   --color-line: #4a4444;
   --color-line-strong: #a09898;
   --color-accent: #e11f26;
@@ -93,8 +137,13 @@
   --color-blue-soft: rgba(24, 42, 184, 0.14);
   --color-green-start: #18b841;
   --color-green-soft: rgba(24, 184, 65, 0.14);
+  --color-success-strong: #72df91;
+  --color-violet-foreground: var(--color-text);
+  --color-caption: var(--color-text);
   --color-warning: #b89418;
+  --color-warning-strong: #ead16e;
   --color-danger: #b81820;
+  --color-danger-hover: #e11f26;
   --color-inverse: #ffffff;
   --color-inverse-soft: rgb(255 255 255 / 0.22);
   --color-inverse-muted: rgb(255 255 255 / 0.7);
@@ -103,7 +152,14 @@
   --color-overlay: rgb(0 0 0 / 0.65);
   --color-primary: #f4efee;
   --color-primary-contrast: #151515;
-  --shadow-panel: 0 20px 50px rgb(0 0 0 / 0.4);
+  --color-sidebar: #151515;
+  --color-sidebar-raised: #2a2424;
+  --color-sidebar-text: #f4efee;
+  --color-sidebar-muted: #a09898;
+  --color-sidebar-line: #4a4444;
+  --shadow-panel: 0 16px 48px rgb(0 0 0 / 0.32);
+  --shadow-raised: 0 24px 72px rgb(0 0 0 / 0.42);
+  --shadow-float: 0 32px 96px rgb(0 0 0 / 0.52);
 
   /* App spacing tokens. Keep names outside Tailwind's --spacing-* namespace. */
   --app-space-xs: 5px;
@@ -137,13 +193,22 @@
   --color-accent-soft-muted: var(--color-accent-soft-muted);
   --color-brand: var(--color-accent);
   --color-brand-dark: var(--color-accent-strong);
+  --color-blue-start: var(--color-blue-start);
+  --color-blue-end: var(--color-blue-end);
   --color-blue-soft: var(--color-blue-soft);
   --color-green-start: var(--color-green-start);
   --color-green-end: var(--color-green-end);
   --color-green-soft: var(--color-green-soft);
+  --color-success-strong: var(--color-success-strong);
+  --color-violet-start: var(--color-violet-start);
+  --color-violet-end: var(--color-violet-end);
+  --color-violet-foreground: var(--color-violet-foreground);
+  --color-caption: var(--color-caption);
   --color-inverse: var(--color-inverse);
   --color-warning: var(--color-warning);
+  --color-warning-strong: var(--color-warning-strong);
   --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
   --color-destructive: var(--color-danger);
   --color-destructive-foreground: var(--color-inverse);
   --color-primary: var(--color-primary);
@@ -152,6 +217,13 @@
   --color-secondary-foreground: var(--color-text);
   --color-success: var(--color-green-end);
   --color-success-foreground: var(--color-inverse);
+  /* Product-safe aliases for legacy Tailwind color utilities. These keep
+     semantic color while meeting contrast when the same token is used as text. */
+  --color-emerald-500: var(--color-success-strong);
+  --color-amber-500: var(--color-warning-strong);
+  --color-blue-500: var(--color-blue-start);
+  --color-pink-500: var(--color-danger);
+  --color-violet-500: var(--color-violet-foreground);
   --color-border: var(--color-line);
   --color-input: var(--color-line);
   --color-ring: var(--color-primary);
@@ -168,9 +240,17 @@
   --font-race: var(--font-display);
   --font-bebas: var(--font-display);
 
+  /* Semantic type utilities for legible UI copy without changing legacy text-xs. */
+  --text-caption: var(--font-size-caption);
+  --text-caption--line-height: var(--line-height-caption);
+  --text-ui-small: var(--font-size-ui-small);
+  --text-ui-small--line-height: var(--line-height-ui-small);
+  --text-body: var(--font-size-body);
+  --text-body--line-height: var(--line-height-body);
+
   /* Strict typography sizes in multiples of 5px */
-  --font-size-xs: 0.625rem; /* 10px */
-  --font-size-sm: 0.9375rem; /* 15px */
+  --font-size-xs: 0.75rem; /* 12px */
+  --font-size-sm: 0.875rem; /* 14px */
   --font-size-base: 0.9375rem; /* 15px */
   --font-size-lg: 1.25rem; /* 20px */
   --font-size-xl: 1.5625rem; /* 25px */
@@ -178,4 +258,23 @@
   --font-size-3xl: 2.1875rem; /* 35px */
   --font-size-4xl: 2.5rem; /* 40px */
   --font-size-5xl: 3.125rem; /* 50px */
+}
+
+.touch-target {
+  min-block-size: var(--touch-target-min);
+  min-inline-size: var(--touch-target-min);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(html:focus-within) {
+    scroll-behavior: auto;
+  }
+
+  :where(*, *::before, *::after) {
+    animation-delay: 0s !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

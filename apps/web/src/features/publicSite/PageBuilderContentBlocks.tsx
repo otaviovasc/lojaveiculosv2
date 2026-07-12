@@ -272,7 +272,7 @@ export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
   const props = component.props;
   const imageUrl =
     textProp(props.imageUrl) ??
-    (context.preview ? pageBuilderDefaultMedia.audiRear : null);
+    (context.preview ? pageBuilderDefaultMedia.bmwFront : null);
   return (
     <section className="bg-app">
       <div className="public-storefront-shell grid gap-10 px-4 py-16 md:grid-cols-[0.9fr_1.1fr] md:px-6 md:py-20">

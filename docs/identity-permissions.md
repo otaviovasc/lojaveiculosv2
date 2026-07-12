@@ -17,7 +17,7 @@ needed for real stores without building a full role-builder product too early.
   `supervisor`, or `salesman`.
 - Permission override: allow or deny one permission for one store membership.
 - Entitlement: whether the store has access to a feature such as `crm`, `nfe`,
-  `external_api`, `custom_domain`, `plate_lookup`, or `subdomain`.
+  `automation`, `external_api`, `custom_domain`, `plate_lookup`, or `subdomain`.
 - Permission: whether the actor may perform an action inside an entitled
   feature.
 
@@ -42,6 +42,21 @@ custom role definitions during the V1 migration.
 
 Permission and entitlement mutations are critical audit events. If the audit sink
 cannot persist those events, the mutation must fail closed.
+
+## Automation Contract
+
+The `automation` entitlement gates the preview workspace. Permissions remain
+separate so stores can let operators prepare and cancel previews without letting
+them approve a proposal:
+
+- `automation.read`: list and inspect store-scoped runs.
+- `automation.run`: create a deterministic read-only preview.
+- `automation.cancel`: cancel a preview that still awaits a decision.
+- `automation.approve`: approve or reject the exact preview digest.
+
+The initial automation slice cannot execute tools. Approval and rejection are
+terminal review decisions, and optimistic run, step, and approval versions plus
+the proposal digest must match before a decision is persisted.
 
 ## CRM WhatsApp Contract
 

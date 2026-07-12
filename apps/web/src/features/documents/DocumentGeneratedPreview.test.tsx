@@ -1,24 +1,39 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DocumentGeneratedPreview } from "./DocumentGeneratedPreview";
 import type { DocumentDownload, WorkspaceDocument } from "./types";
 
-describe("DocumentGeneratedPreview", () => {
-  afterEach(cleanup);
+vi.mock("../../components/ui/ArtifactViewer", () => ({
+  ArtifactViewer: ({ mimeType, title, url }: Record<string, string>) => (
+    <div data-mime={mimeType} data-testid="artifact-viewer">
+      {title}:{url}
+    </div>
+  ),
+}));
 
-  it("renders the signed PDF URL in a document viewer", () => {
-    const { container } = render(
+describe("DocumentGeneratedPreview", () => {
+  beforeEach(() => {
+    Object.defineProperty(globalThis, "DOMMatrix", {
+      configurable: true,
+      value: class DOMMatrix {},
+    });
+  });
+
+  afterEach(() => {
+    cleanup();
+    Reflect.deleteProperty(globalThis, "DOMMatrix");
+  });
+
+  it("delegates a signed PDF to the canonical artifact viewer", async () => {
+    render(
       <DocumentGeneratedPreview document={workspaceDocument} preview={pdf} />,
     );
 
-    const viewer = screen.getByLabelText("Prévia PDF de Contrato de venda");
-
-    expect(viewer.getAttribute("data")).toBe(
-      "https://download.local/contract.pdf#toolbar=1&navpanes=0&view=FitH",
+    expect(await screen.findByTestId("artifact-viewer")).toHaveTextContent(
+      "Contrato de venda:https://download.local/contract.pdf",
     );
-    expect(container.querySelector("dl")).toBeNull();
   });
 
   it("shows a loading state before the signed PDF URL is ready", () => {
@@ -26,10 +41,10 @@ describe("DocumentGeneratedPreview", () => {
       <DocumentGeneratedPreview document={workspaceDocument} preview={null} />,
     );
 
-    expect(screen.getByText("Carregando PDF")).toBeTruthy();
+    expect(screen.getByText("Preparando arquivo")).toBeTruthy();
   });
 
-  it("renders a signed image URL in an image tag", () => {
+  it("delegates a signed image to the same artifact viewer", async () => {
     render(
       <DocumentGeneratedPreview
         document={imageDocument}
@@ -37,8 +52,11 @@ describe("DocumentGeneratedPreview", () => {
       />,
     );
 
-    const img = screen.getByAltText("Prévia de Foto do Veículo");
-    expect(img.getAttribute("src")).toBe("https://download.local/photo.jpg");
+    const viewer = await screen.findByTestId("artifact-viewer");
+    expect(viewer).toHaveAttribute("data-mime", "image/jpeg");
+    expect(viewer).toHaveTextContent(
+      "Foto do Veículo:https://download.local/photo.jpg",
+    );
   });
 
   it("shows a loading state before the signed image URL is ready", () => {
@@ -46,11 +64,15 @@ describe("DocumentGeneratedPreview", () => {
       <DocumentGeneratedPreview document={imageDocument} preview={null} />,
     );
 
-    expect(screen.getByText("Carregando imagem")).toBeTruthy();
+    expect(screen.getByText("Preparando arquivo")).toBeTruthy();
   });
 });
 
 const workspaceDocument: WorkspaceDocument = {
+  capabilities: {
+    canRegenerate: false,
+    regenerateBlockReason: "renderer_unavailable",
+  },
   context: {
     linkRole: "sale_contract",
     targetId: "sale_1",
@@ -83,6 +105,10 @@ const pdf: DocumentDownload = {
 };
 
 const imageDocument: WorkspaceDocument = {
+  capabilities: {
+    canRegenerate: false,
+    regenerateBlockReason: "renderer_unavailable",
+  },
   context: {
     linkRole: "other",
     targetId: "unit_1",

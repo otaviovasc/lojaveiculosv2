@@ -1,18 +1,18 @@
-import { KeyRound, RefreshCcw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  FeatureActionButton,
-  FeaturePageHeader,
-  FeaturePageShell,
-} from "../../components/ui/FeatureLayout";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createPublicApi, type PublicApi } from "./apiClient";
 import { PublicApiClientList } from "./PublicApiClientList";
+import { PublicApiCommandDeck } from "./PublicApiCommandDeck";
 import { PublicApiKeyCreator } from "./PublicApiKeyCreator";
 import { PublicApiOverview } from "./PublicApiOverview";
 import { PublicApiReferencePanel } from "./PublicApiReferencePanel";
-import { createPublicApiOptions } from "./runtimeApi";
+import { PublicApiRevokeDialog } from "./PublicApiRevokeDialog";
+import {
+  createPublicApiOptions,
+  readPublicApiDeploymentBaseUrl,
+} from "./runtimeApi";
 import type { PublicApiClient, PublicApiScope, PublicApiStatus } from "./types";
 
 export function PublicApiModule({ api }: { api?: PublicApi }) {
@@ -26,12 +26,23 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
   ]);
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [copyFeedback, setCopyFeedback] = useState<{
+    kind: "error" | "success";
+    message: string;
+  } | null>(null);
+  const [hasLoadedClients, setHasLoadedClients] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<PublicApiClient | null>(
+    null,
+  );
+  const [revokeError, setRevokeError] = useState<string | null>(null);
   const [status, setStatus] = useState<PublicApiStatus>({ kind: "loading" });
+  const copyTimerRef = useRef<number | null>(null);
 
   const refresh = useCallback(async () => {
     setStatus({ kind: "loading" });
     try {
       setClients((await publicApi.listClients()).clients);
+      setHasLoadedClients(true);
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
@@ -41,6 +52,14 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current !== null) {
+        window.clearTimeout(copyTimerRef.current);
+      }
+    };
+  }, []);
 
   const createClient = useCallback(async () => {
     setStatus({ kind: "saving" });
@@ -57,6 +76,7 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
   const revokeClient = useCallback(
     async (clientId: string) => {
       setStatus({ kind: "saving" });
+      setRevokeError(null);
       try {
         const revoked = await publicApi.revokeClient(clientId);
         setClients((current) =>
@@ -64,46 +84,59 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
             client.id === revoked.id ? revoked : client,
           ),
         );
+        setRevokeTarget(null);
         setStatus({ kind: "saved" });
       } catch (error) {
-        setStatus({ kind: "error", message: errorMessage(error) });
+        const message = errorMessage(error);
+        setRevokeError(message);
+        setStatus({ kind: "error", message });
       }
     },
     [publicApi],
   );
 
-  const copyToClipboard = useCallback((value: string, id: string) => {
-    void navigator.clipboard.writeText(value);
-    setCopiedId(id);
-    window.setTimeout(() => setCopiedId(null), 1800);
+  const copyToClipboard = useCallback(async (value: string, id: string) => {
+    if (copyTimerRef.current !== null) {
+      window.clearTimeout(copyTimerRef.current);
+    }
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error("Clipboard API unavailable");
+      }
+      await navigator.clipboard.writeText(value);
+      setCopiedId(id);
+      setCopyFeedback({ kind: "success", message: copySuccessMessage(id) });
+    } catch {
+      setCopiedId(null);
+      setCopyFeedback({
+        kind: "error",
+        message: "Não foi possível copiar. Selecione o conteúdo manualmente.",
+      });
+    }
+    copyTimerRef.current = window.setTimeout(() => {
+      setCopiedId(null);
+      setCopyFeedback(null);
+    }, 2400);
   }, []);
 
   return (
-    <FeaturePageShell
-      className="internal-shell public-api-shell"
-      variant="content"
-    >
-      <FeaturePageHeader
-        actions={
-          <FeatureActionButton
-            icon={RefreshCcw}
-            isBusy={status.kind === "loading"}
-            label="Atualizar"
-            onClick={() => void refresh()}
-          />
-        }
-        description="Crie chaves escopadas, veja rotas externas seguras e entregue um contrato pronto para SDKs, agentes de IA, chatbots, CRMs e DMS."
-        eyebrow={
-          <>
-            <KeyRound aria-hidden="true" className="size-4" />
-            Public API
-          </>
-        }
-        title="Plataforma de integracoes"
+    <FeaturePageShell mainClassName="public-api-shell">
+      <PublicApiCommandDeck
+        isLoading={status.kind === "loading"}
+        onRefresh={() => void refresh()}
       />
 
       {status.kind === "error" ? (
         <FeatureAlert className="internal-alert">{status.message}</FeatureAlert>
+      ) : null}
+
+      {copyFeedback ? (
+        <FeatureAlert
+          className="public-api-copy-feedback"
+          tone={copyFeedback.kind === "success" ? "success" : "danger"}
+        >
+          {copyFeedback.message}
+        </FeatureAlert>
       ) : null}
 
       <PublicApiOverview />
@@ -122,14 +155,39 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
         />
         <PublicApiClientList
           clients={clients}
-          onRevoke={(clientId) => void revokeClient(clientId)}
+          hasLoaded={hasLoadedClients}
+          onRevoke={(client) => {
+            setRevokeError(null);
+            setRevokeTarget(client);
+          }}
           status={status}
         />
       </section>
 
-      <PublicApiReferencePanel copiedId={copiedId} onCopy={copyToClipboard} />
+      <PublicApiReferencePanel
+        copiedId={copiedId}
+        deploymentBaseUrl={readPublicApiDeploymentBaseUrl()}
+        onCopy={copyToClipboard}
+      />
+      <PublicApiRevokeDialog
+        client={revokeTarget}
+        error={revokeError}
+        isLoading={status.kind === "saving"}
+        onClose={() => {
+          if (status.kind !== "saving") setRevokeTarget(null);
+        }}
+        onConfirm={() => {
+          if (revokeTarget) void revokeClient(revokeTarget.id);
+        }}
+      />
     </FeaturePageShell>
   );
+}
+
+function copySuccessMessage(id: string) {
+  if (id === "created-key") return "Chave copiada com segurança.";
+  if (id.includes(":")) return "Exemplo curl copiado.";
+  return "Rota do artefato copiada.";
 }
 
 function createRuntimePublicApi(): PublicApi {

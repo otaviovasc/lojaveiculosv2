@@ -13,6 +13,10 @@ import {
 const allPermissions = [
   "audit.read",
   "analytics.read",
+  "automation.approve",
+  "automation.cancel",
+  "automation.read",
+  "automation.run",
   "billing.manage",
   "compliance.manage",
   "crm.access",
@@ -73,6 +77,10 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
     agency: allPermissions,
     admin: [
       "analytics.read",
+      "automation.approve",
+      "automation.cancel",
+      "automation.read",
+      "automation.run",
       "compliance.manage",
       "crm.access",
       "crm.manage",
@@ -136,6 +144,8 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       "marketplace.read",
     ],
     salesman: [
+      "automation.read",
+      "automation.run",
       "crm.access",
       ...crmWhatsappSalesPermissions,
       "documents.read",
@@ -163,6 +173,10 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
     ],
     supervisor: [
       "analytics.read",
+      "automation.approve",
+      "automation.cancel",
+      "automation.read",
+      "automation.run",
       "crm.access",
       "crm.manage",
       ...crmWhatsappAdminPermissions,

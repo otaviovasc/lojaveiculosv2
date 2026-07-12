@@ -1,0 +1,55 @@
+.sales-delete-dialog {
+  border-top: 0.25rem solid var(--color-danger);
+}
+
+.sales-delete-dialog__title {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-space-sm);
+  color: var(--color-danger);
+}
+
+.sales-delete-dialog__title svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.sales-delete-dialog__content {
+  display: grid;
+  gap: var(--app-space-lg);
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+}
+
+.sales-delete-dialog__content p {
+  margin: 0;
+}
+
+.sales-delete-dialog__warning {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--app-space-sm);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 28%, transparent);
+  border-left: 0.25rem solid var(--color-danger);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
+  color: var(--color-danger);
+  padding-block: var(--app-space-md);
+  padding-inline: var(--app-space-md);
+}
+
+.sales-delete-dialog__warning > svg {
+  width: 1.1rem;
+  margin-top: 0.15rem;
+}
+
+.sales-delete-dialog__warning strong {
+  display: block;
+  margin-bottom: var(--app-space-xs);
+  color: var(--color-danger);
+}
+
+.sales-delete-dialog__warning p {
+  color: var(--color-ink-muted);
+}

@@ -240,7 +240,7 @@ const defaultBlockProps: Record<
     title: "Veículos disponíveis",
   },
   scroll_zoom: {
-    imageUrl: pageBuilderDefaultMedia.audiRear,
+    imageUrl: pageBuilderDefaultMedia.bmwFront,
     subtitle: "Mostre uma entrega, preparação ou veículo especial da loja.",
     title: "Experiência de compra premium",
   },

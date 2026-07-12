@@ -1,0 +1,221 @@
+.agency-stats-page {
+  display: grid;
+  gap: 1.25rem;
+  margin: 0 auto;
+  max-width: var(--layout-content-max);
+  padding: 1.25rem;
+  width: 100%;
+}
+
+.agency-stats-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.agency-stats-header > span {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.agency-stats-header h1 {
+  color: var(--color-text);
+  font-size: var(--font-size-2xl);
+  font-style: italic;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.agency-stats-header p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  max-width: 44rem;
+}
+
+.agency-stats-unavailable {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-panel) 94%, var(--color-accent-soft)),
+    var(--color-panel)
+  );
+  border: 1px solid var(--color-line-strong);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 1.25rem;
+  overflow: hidden;
+  padding: 1.25rem;
+  position: relative;
+}
+
+.agency-stats-unavailable::before {
+  background: var(--color-accent);
+  content: "";
+  height: 0.2rem;
+  inset: 0 0 auto;
+  position: absolute;
+}
+
+.agency-stats-unavailable__visual {
+  align-items: end;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: 1.25rem;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  height: 9rem;
+  padding: 1rem;
+}
+
+.agency-stats-unavailable__visual svg {
+  color: var(--color-accent);
+  height: 2rem;
+  place-self: center;
+  width: 2rem;
+}
+
+.agency-stats-unavailable__visual span {
+  background: color-mix(in srgb, var(--color-accent) 24%, var(--color-panel));
+  border-radius: 0.4rem 0.4rem 0 0;
+  min-height: 32%;
+}
+
+.agency-stats-unavailable__visual span:nth-of-type(2) {
+  min-height: 56%;
+}
+
+.agency-stats-unavailable__visual span:nth-of-type(3) {
+  min-height: 78%;
+}
+
+.agency-stats-unavailable__copy {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.agency-stats-status {
+  align-items: center;
+  background: var(--color-green-soft);
+  border: 1px solid color-mix(in srgb, var(--color-success) 32%, transparent);
+  border-radius: 999px;
+  color: var(--color-success-strong);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.4rem;
+  justify-self: start;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  text-transform: uppercase;
+}
+
+.agency-stats-status svg {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.agency-stats-unavailable__copy h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  line-height: 1.05;
+}
+
+.agency-stats-unavailable__copy p,
+.agency-stats-footnote,
+.agency-stats-requirements p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.agency-stats-requirements {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.agency-stats-requirements article {
+  align-items: flex-start;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.9rem;
+}
+
+.agency-stats-requirements article > span {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.agency-stats-requirements svg {
+  height: 1.05rem;
+  width: 1.05rem;
+}
+
+.agency-stats-requirements h3 {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+}
+
+.agency-stats-requirements p {
+  font-size: var(--font-size-xs);
+  margin-top: 0.2rem;
+}
+
+.agency-stats-footnote {
+  border-top: 1px solid var(--color-line);
+  padding-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .agency-stats-page {
+    gap: 1.5rem;
+    padding: 2rem;
+  }
+
+  .agency-stats-header h1 {
+    font-size: var(--font-size-4xl);
+  }
+
+  .agency-stats-unavailable__copy h2 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .agency-stats-unavailable {
+    grid-template-columns: minmax(13rem, 0.65fr) minmax(0, 1.35fr);
+    padding: 2rem;
+  }
+
+  .agency-stats-unavailable__visual {
+    grid-row: span 2;
+    height: 100%;
+    min-height: 16rem;
+  }
+
+  .agency-stats-requirements,
+  .agency-stats-footnote {
+    grid-column: 1 / -1;
+  }
+
+  .agency-stats-requirements {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

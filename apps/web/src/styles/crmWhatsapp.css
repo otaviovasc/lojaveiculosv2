@@ -101,7 +101,7 @@
 .crm-whatsapp-status-online {
   background: var(--color-green-soft);
   border-color: color-mix(in srgb, var(--color-green-start) 28%, transparent);
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
 }
 
 .crm-whatsapp-status-online span {

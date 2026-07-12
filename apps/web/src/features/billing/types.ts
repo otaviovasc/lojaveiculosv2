@@ -6,6 +6,7 @@ export type BillingAuth = {
 
 export type EntitlementKey =
   | "analytics"
+  | "automation"
   | "compliance"
   | "crm"
   | "custom_domain"

@@ -1,34 +1,18 @@
-import {
-  CalendarDays,
-  Car,
-  CarFront,
-  CircleDollarSign,
-  Eye,
-  Image as ImageIcon,
-  KeyRound,
-  Pencil,
-  MoreVertical,
-  Printer,
-  FileArchive,
-  ChevronRight,
-  Clock,
-} from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { CarFront, ChevronRight, Clock, FileArchive } from "lucide-react";
 import { motion } from "motion/react";
 import { FeatureEmptyState } from "../../../components/ui/FeatureStates";
 import {
   formatInventoryPrice,
   getInventoryCatalogLine,
+  getInventoryDisplayStatus,
+  getInventoryFipeComparison,
+  getInventoryKm,
+  getInventoryLeadsCount,
   getInventoryPlate,
-  getInventoryStockLabel,
+  getInventoryStockDays,
   getInventoryYearLine,
   inventoryStatusLabels,
   inventoryUnitStatusLabels,
-  getInventoryDisplayStatus,
-  getInventoryKm,
-  getInventoryStockDays,
-  getInventoryFipeComparison,
-  getInventoryLeadsCount,
   type InventoryDisplayStatus,
 } from "../model/listCatalogModel";
 import type {
@@ -36,6 +20,8 @@ import type {
   InventoryUnitStatus,
 } from "../model/types";
 import { InventoryLeadBadge } from "./InventoryLeadBadge";
+
+type InventoryCardAction = "zip-photos";
 
 export function InventoryListingCardGrid({
   items,
@@ -45,10 +31,7 @@ export function InventoryListingCardGrid({
   items: readonly InventoryListingSummary[];
   onSelect: (listingId: string, unitId?: string | null) => void;
   onAction?:
-    | ((
-        action: "template" | "test-drive" | "zip-photos",
-        item: InventoryListingSummary,
-      ) => void)
+    | ((action: InventoryCardAction, item: InventoryListingSummary) => void)
     | undefined;
 }) {
   if (items.length === 0) {
@@ -66,8 +49,8 @@ export function InventoryListingCardGrid({
         <InventoryListingCard
           item={item}
           key={item.primaryUnit?.id ?? item.listing.id}
-          onSelect={onSelect}
           onAction={onAction}
+          onSelect={onSelect}
         />
       ))}
     </div>
@@ -76,7 +59,11 @@ export function InventoryListingCardGrid({
 
 export function InventoryListingLoadingGrid() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+    <div
+      aria-label="Carregando veículos"
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+      role="status"
+    >
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((item) => (
         <div
           aria-hidden="true"
@@ -105,10 +92,7 @@ function InventoryListingCard({
   item: InventoryListingSummary;
   onSelect: (listingId: string, unitId?: string | null) => void;
   onAction?:
-    | ((
-        action: "template" | "test-drive" | "zip-photos",
-        item: InventoryListingSummary,
-      ) => void)
+    | ((action: InventoryCardAction, item: InventoryListingSummary) => void)
     | undefined;
 }) {
   const listing = item.listing;
@@ -120,13 +104,12 @@ function InventoryListingCard({
 
   return (
     <motion.article
-      whileHover={{ y: -4, scale: 1.01 }}
-      transition={{ duration: 0.2 }}
-      className="glass-panel-branded hover-shift flex flex-col h-full group cursor-pointer relative overflow-hidden border border-line hover:border-accent/40 shadow-sm"
+      className="glass-panel-branded hover-shift group relative flex h-full cursor-pointer flex-col overflow-hidden border border-line shadow-sm transition-colors hover:border-accent/40"
       onClick={() => onSelect(listing.id, item.primaryUnit?.id ?? null)}
+      transition={{ duration: 0.2 }}
+      whileHover={{ y: -4, scale: 1.01 }}
     >
-      {/* Photo with Overlay on Hover */}
-      <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden bg-app-elevated border-b border-line/30">
+      <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden border-b border-line/30 bg-app-elevated">
         {item.primaryMediaUrl ? (
           <img
             alt={listing.title}
@@ -137,60 +120,56 @@ function InventoryListingCard({
           <CarFront aria-hidden="true" className="size-8 text-muted/50" />
         )}
 
-        {/* Workspace Overlay on Hover */}
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-[2px]">
-          <span className="bg-panel text-app-text font-black text-xs px-3 py-1.5 rounded-xl shadow-lg border border-line flex items-center gap-1.5">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
+          <span className="flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs font-black text-app-text shadow-lg">
             <span>Workspace</span>
-            <ChevronRight className="size-3 text-accent" />
+            <ChevronRight aria-hidden="true" className="size-3 text-accent" />
           </span>
         </div>
 
         <div className="absolute left-2 top-2">
           <StatusPill status={getInventoryDisplayStatus(item)} />
         </div>
-        <div className="absolute right-2 top-2 flex gap-1 z-10">
+        <div className="absolute right-2 top-2 z-10 flex gap-1">
           <div
             className={
-              "rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-xs font-black border border-line/30 shadow-sm flex items-center gap-1 " +
+              "flex items-center gap-1 rounded-full border border-line/30 bg-panel/90 px-2 py-0.5 text-xs font-black shadow-sm backdrop-blur-md " +
               (days > 30 ? "text-amber-500" : "text-muted")
             }
           >
-            <Clock className="size-2.5" />
+            <Clock aria-hidden="true" className="size-2.5" />
             <span>{days}d</span>
           </div>
-          <div className="rounded-full bg-panel/90 backdrop-blur-md px-2 py-0.5 text-xs font-black text-app-text border border-line/30 shadow-sm">
+          <div className="rounded-full border border-line/30 bg-panel/90 px-2 py-0.5 text-xs font-black text-app-text shadow-sm backdrop-blur-md">
             {item.mediaCount} mídias
           </div>
         </div>
       </div>
 
-      {/* Content Body */}
-      <div className="flex flex-col gap-2 p-3 flex-grow justify-between">
+      <div className="flex flex-grow flex-col justify-between gap-2 p-3">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-black text-app-text group-hover:text-accent transition-colors">
+          <h3 className="truncate text-sm font-black text-app-text transition-colors group-hover:text-accent">
             {listing.title}
           </h3>
-          <p className="truncate text-xs font-bold text-muted mt-0.5">
+          <p className="mt-0.5 truncate text-xs font-bold text-muted">
             {getInventoryCatalogLine(listing.catalog, listing)}
           </p>
         </div>
 
-        {/* Dense Specs Row */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 my-1 text-xs font-bold text-muted border-t border-line/20 pt-2">
-          {plate && plate !== "-" && <MercosulPlateBadge plate={plate} />}
+        <div className="my-1 flex flex-wrap items-center gap-x-2 gap-y-1.5 border-t border-line/20 pt-2 text-xs font-bold text-muted">
+          {plate && plate !== "-" ? <MercosulPlateBadge plate={plate} /> : null}
           <span>{getInventoryYearLine(listing)}</span>
           <span className="text-line">•</span>
           <span>{km}</span>
-          {leads > 0 && (
+          {leads > 0 ? (
             <>
               <span className="text-line">•</span>
               <InventoryLeadBadge leads={leads} variant="compact" />
             </>
-          )}
+          ) : null}
         </div>
 
-        {/* Footer Row */}
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-line/20">
+        <div className="mt-auto flex items-center justify-between border-t border-line/20 pt-2">
           <div className="flex flex-col">
             <span
               className={
@@ -206,10 +185,10 @@ function InventoryListingCard({
             >
               {formatInventoryPrice(listing.priceCents)}
             </span>
-            {fipe.percentage !== 0 && (
+            {fipe.percentage !== 0 ? (
               <span
                 className={
-                  "text-xs font-black mt-1 leading-none " +
+                  "mt-1 text-xs font-black leading-none " +
                   (fipe.isBelow || fipe.percentage <= 3
                     ? "text-emerald-500"
                     : fipe.percentage > 10
@@ -219,38 +198,23 @@ function InventoryListingCard({
               >
                 {fipe.label}
               </span>
-            )}
+            ) : null}
           </div>
 
-          <div
-            className="flex items-center gap-1"
-            onClick={(e) => e.stopPropagation()}
-          >
+          {onAction && item.mediaCount > 0 ? (
             <button
-              onClick={() => onAction?.("template", item)}
-              className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 transition-all cursor-pointer"
-              title="Criar Template"
-              type="button"
-            >
-              <ImageIcon className="size-3.5 text-violet-500" />
-            </button>
-            <button
-              onClick={() => onAction?.("test-drive", item)}
-              className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 transition-all cursor-pointer"
-              title="Test Drive"
-              type="button"
-            >
-              <Printer className="size-3.5 text-emerald-500" />
-            </button>
-            <button
-              onClick={() => onAction?.("zip-photos", item)}
-              className="p-1.5 rounded-lg bg-panel border border-line text-muted hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 transition-all cursor-pointer"
+              aria-label={`Baixar fotos de ${listing.title}`}
+              className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-accent transition-all hover:border-accent/30 hover:bg-accent-soft hover:text-accent-strong"
+              onClick={(event) => {
+                event.stopPropagation();
+                onAction("zip-photos", item);
+              }}
               title="Baixar Fotos (ZIP)"
               type="button"
             >
-              <FileArchive className="size-3.5 text-pink-500" />
+              <FileArchive aria-hidden="true" className="size-3.5" />
             </button>
-          </div>
+          ) : null}
         </div>
       </div>
     </motion.article>
@@ -272,7 +236,6 @@ export function StatusPill({ status }: { status: InventoryDisplayStatus }) {
           : status === "acquired"
             ? "bg-violet-500/10 text-violet-500 border border-violet-500/20"
             : "bg-panel text-muted border border-line";
-
   const dotColor =
     status === "published" || status === "available"
       ? "bg-emerald-500"
@@ -308,17 +271,20 @@ function isInventoryUnitStatus(
 
 export function MercosulPlateBadge({ plate }: { plate: string }) {
   if (!plate || plate === "-") {
-    return <span className="text-muted text-xs">-</span>;
+    return <span className="text-xs text-muted">-</span>;
   }
 
   const formatted = plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
   return (
-    <span className="inline-flex align-middle flex-col overflow-hidden rounded-[3px] border border-gray-300 dark:border-line bg-white dark:bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] min-w-[70px] max-w-[80px] text-center select-none shrink-0">
-      <span className="bg-blue-600 dark:bg-blue-600 px-1 py-0.5 text-xs font-black tracking-widest text-white uppercase leading-none text-center">
+    <span
+      aria-label={`Placa ${formatted}`}
+      className="inline-flex min-w-[70px] max-w-[80px] shrink-0 select-none flex-col overflow-hidden rounded-[3px] border border-gray-300 bg-white text-center align-middle shadow-sm dark:border-line dark:bg-white"
+    >
+      <span className="bg-blue-600 px-1 py-0.5 text-center text-xs font-black uppercase leading-none tracking-widest text-white dark:bg-blue-600">
         Brasil
       </span>
-      <span className="px-1.5 py-0.5 font-mono text-xs font-bold tracking-wider text-gray-900 leading-none">
+      <span className="px-1.5 py-0.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
         {formatted}
       </span>
     </span>

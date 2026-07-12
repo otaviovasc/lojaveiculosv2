@@ -1,20 +1,25 @@
+import { Suspense } from "react";
 import { DashboardHome } from "../components/DashboardHome";
 import { AppShell } from "../components/AppShell";
 import { ModulePlaceholder } from "../components/ModulePlaceholder";
-import { BillingModule } from "../features/billing/BillingModule";
-import { CrmModule } from "../features/crm/CrmModule";
-import { DocumentsModule } from "../features/documents/DocumentsModule";
-import { FinanceModule } from "../features/finance/FinanceModule";
-import { FiscalModule } from "../features/fiscal/FiscalModule";
-import { InventoryListPage } from "../features/inventory/pages/InventoryListPage";
-import { MarketplaceModule } from "../features/marketplaces/MarketplaceModule";
-import { PublicApiModule } from "../features/publicApi/PublicApiModule";
-import { StorefrontCustomizationModule } from "../features/publicSite/StorefrontCustomizationModule";
-import { ReportsModule } from "../features/reports/ReportsModule";
-import { SalesModule } from "../features/sales/SalesModule";
-import { SettingsModule } from "../features/settings/SettingsModule";
+import { FeatureLoadingState } from "../components/ui/FeatureStates";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { useOptionalAccountSession } from "../features/account/accountSession";
+import {
+  AutomationWorkspace,
+  BillingModule,
+  CrmModule,
+  DocumentsModule,
+  FinanceModule,
+  FiscalModule,
+  InventoryListPage,
+  MarketplaceModule,
+  PublicApiModule,
+  ReportsModule,
+  SalesModule,
+  SettingsModule,
+  StorefrontCustomizationModule,
+} from "./AdminAppLazyModules";
 import { moduleDefinitions } from "./moduleDefinitions";
 import { getModulePermission } from "./modulePermissions";
 import { moduleSurfaceById } from "./moduleRoutes";
@@ -31,48 +36,55 @@ export function AdminApp() {
 
   return (
     <AppShell activeModule={activeModule} onNavigate={navigate}>
-      {!modulePermission.canView ? (
-        <PermissionRestrictedPanel
-          title={modulePermission.title}
-          {...(modulePermission.description
-            ? { description: modulePermission.description }
-            : {})}
-        />
-      ) : activeSurface === "dashboard" ? (
-        <DashboardHome onNavigate={navigate} />
-      ) : activeSurface === "inventory" ? (
-        <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
-      ) : activeSurface === "crm-leads" ? (
-        <CrmModule routeSurface="leads" />
-      ) : activeSurface === "sales" ? (
-        <SalesModule />
-      ) : activeSurface === "crm-whatsapp" ? (
-        <CrmModule routeSurface="whatsapp" />
-      ) : activeSurface === "billing" ? (
-        <BillingModule />
-      ) : activeSurface === "documents" ? (
-        <DocumentsModule />
-      ) : activeSurface === "reports" ? (
-        <ReportsModule />
-      ) : activeSurface === "finance-expenses" ? (
-        <FinanceModule defaultActiveType="expense" />
-      ) : activeSurface === "finance-commissions" ? (
-        <FinanceModule defaultActiveType="commission" />
-      ) : activeSurface === "storefront-design" ? (
-        <StorefrontCustomizationModule key="customize" initialTab="design" />
-      ) : activeSurface === "storefront-pages" ? (
-        <StorefrontCustomizationModule key="custom-pages" initialTab="pages" />
-      ) : activeSurface === "public-api" ? (
-        <PublicApiModule />
-      ) : activeSurface === "marketplaces" ? (
-        <MarketplaceModule />
-      ) : activeSurface === "fiscal" ? (
-        <FiscalModule />
-      ) : activeSurface === "settings" ? (
-        <SettingsModule key="settings" />
-      ) : (
-        <ModulePlaceholder module={activeModule} />
-      )}
+      <Suspense fallback={<FeatureLoadingState title="Carregando módulo" />}>
+        {!modulePermission.canView ? (
+          <PermissionRestrictedPanel
+            title={modulePermission.title}
+            {...(modulePermission.description
+              ? { description: modulePermission.description }
+              : {})}
+          />
+        ) : activeSurface === "dashboard" ? (
+          <DashboardHome onNavigate={navigate} />
+        ) : activeSurface === "inventory" ? (
+          <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
+        ) : activeSurface === "automation" ? (
+          <AutomationWorkspace />
+        ) : activeSurface === "crm-leads" ? (
+          <CrmModule routeSurface="leads" />
+        ) : activeSurface === "sales" ? (
+          <SalesModule />
+        ) : activeSurface === "crm-whatsapp" ? (
+          <CrmModule routeSurface="whatsapp" />
+        ) : activeSurface === "billing" ? (
+          <BillingModule />
+        ) : activeSurface === "documents" ? (
+          <DocumentsModule />
+        ) : activeSurface === "reports" ? (
+          <ReportsModule />
+        ) : activeSurface === "finance-expenses" ? (
+          <FinanceModule defaultActiveType="expense" />
+        ) : activeSurface === "finance-commissions" ? (
+          <FinanceModule defaultActiveType="commission" />
+        ) : activeSurface === "storefront-design" ? (
+          <StorefrontCustomizationModule key="customize" initialTab="design" />
+        ) : activeSurface === "storefront-pages" ? (
+          <StorefrontCustomizationModule
+            key="custom-pages"
+            initialTab="pages"
+          />
+        ) : activeSurface === "public-api" ? (
+          <PublicApiModule />
+        ) : activeSurface === "marketplaces" ? (
+          <MarketplaceModule />
+        ) : activeSurface === "fiscal" ? (
+          <FiscalModule />
+        ) : activeSurface === "settings" ? (
+          <SettingsModule key="settings" />
+        ) : (
+          <ModulePlaceholder module={activeModule} />
+        )}
+      </Suspense>
     </AppShell>
   );
 }

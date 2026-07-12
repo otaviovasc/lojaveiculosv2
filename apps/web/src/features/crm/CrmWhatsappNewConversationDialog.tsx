@@ -1,6 +1,12 @@
 import { MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
 import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
+import {
+  CrmFieldError,
+  CrmFormError,
+  formatCrmSubmitError,
+} from "./CrmFormFeedback";
+import { isValidCrmPhone } from "./crmFormValidation";
 
 export type StartConversationDraft = {
   buyerName?: string;
@@ -21,7 +27,12 @@ export function CrmWhatsappNewConversationDialog({
   const [phone, setPhone] = useState("");
   const [text, setText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const canSubmit = isValidPhone(phone) && text.trim().length > 0;
+  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [textTouched, setTextTouched] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const phoneIsValid = isValidCrmPhone(phone);
+  const messageIsValid = text.trim().length > 0;
+  const canSubmit = phoneIsValid && messageIsValid;
   return (
     <ActionDialog
       disabled={disabled || isSaving || !canSubmit}
@@ -29,6 +40,7 @@ export function CrmWhatsappNewConversationDialog({
       onClose={onClose}
       onSubmit={async () => {
         if (!canSubmit) return;
+        setSubmitError(null);
         setIsSaving(true);
         try {
           const accepted = await onStart({
@@ -36,7 +48,20 @@ export function CrmWhatsappNewConversationDialog({
             phone: phone.trim(),
             text: text.trim(),
           });
-          if (accepted) onClose();
+          if (accepted) {
+            onClose();
+          } else {
+            setSubmitError(
+              "Não foi possível iniciar a conversa. Tente novamente.",
+            );
+          }
+        } catch (caught) {
+          setSubmitError(
+            formatCrmSubmitError(
+              caught,
+              "Não foi possível iniciar a conversa. Tente novamente.",
+            ),
+          );
         } finally {
           setIsSaving(false);
         }
@@ -47,7 +72,10 @@ export function CrmWhatsappNewConversationDialog({
         Nome
         <input
           disabled={disabled || isSaving}
-          onChange={(event) => setBuyerName(event.target.value)}
+          onChange={(event) => {
+            setBuyerName(event.target.value);
+            setSubmitError(null);
+          }}
           placeholder="Nome do cliente"
           value={buyerName}
         />
@@ -55,28 +83,54 @@ export function CrmWhatsappNewConversationDialog({
       <label>
         WhatsApp
         <input
+          aria-describedby={
+            !phoneIsValid && phoneTouched
+              ? "crm-new-conversation-phone-error"
+              : undefined
+          }
+          aria-invalid={!phoneIsValid && phoneTouched}
           disabled={disabled || isSaving}
           inputMode="tel"
-          onChange={(event) => setPhone(event.target.value)}
+          onBlur={() => setPhoneTouched(true)}
+          onChange={(event) => {
+            setPhone(event.target.value);
+            setSubmitError(null);
+          }}
           placeholder="(11) 99999-9999"
           value={phone}
         />
+        {!phoneIsValid && phoneTouched ? (
+          <CrmFieldError id="crm-new-conversation-phone-error">
+            Informe um WhatsApp válido com DDD.
+          </CrmFieldError>
+        ) : null}
       </label>
       <label>
         Mensagem
         <textarea
+          aria-describedby={
+            !messageIsValid && textTouched
+              ? "crm-new-conversation-message-error"
+              : undefined
+          }
+          aria-invalid={!messageIsValid && textTouched}
           disabled={disabled || isSaving}
-          onChange={(event) => setText(event.target.value)}
+          onBlur={() => setTextTouched(true)}
+          onChange={(event) => {
+            setText(event.target.value);
+            setSubmitError(null);
+          }}
           placeholder="Digite a primeira mensagem"
           rows={4}
           value={text}
         />
+        {!messageIsValid && textTouched ? (
+          <CrmFieldError id="crm-new-conversation-message-error">
+            Digite a primeira mensagem.
+          </CrmFieldError>
+        ) : null}
       </label>
+      {submitError ? <CrmFormError>{submitError}</CrmFormError> : null}
     </ActionDialog>
   );
-}
-
-function isValidPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  return digits.length >= 10 && digits.length <= 15;
 }

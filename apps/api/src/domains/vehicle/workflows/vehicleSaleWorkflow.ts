@@ -9,9 +9,17 @@ import type {
   VehicleListing,
   VehicleUnit,
 } from "../ports/vehicleInventoryRepository.js";
-import { buildReservationReceiptDocument } from "../documents/vehicleWorkflowDocuments.js";
+import {
+  buildReservationReceiptDocument,
+  buildSoldDocuments,
+  type VehicleSaleDocumentKind,
+} from "../documents/vehicleWorkflowDocuments.js";
 import { storeWorkflowDocument } from "../documents/storeWorkflowDocument.js";
-import { buildSoldDocuments } from "../documents/vehicleWorkflowDocuments.js";
+import {
+  getReservationWorkflowTemplate,
+  getSaleWorkflowTemplates,
+} from "../documents/vehicleWorkflowTemplates.js";
+import { getVehicleWorkflowStoreBranding } from "../documents/vehicleWorkflowStoreBranding.js";
 import {
   createReservationFinanceEntry,
   createSaleFinanceEntry,
@@ -19,7 +27,6 @@ import {
 import {
   actorUserId,
   getDocumentRepository,
-  getDocumentTemplateRepository,
   getFinanceRepository,
   getListingRepository,
   getMediaStorage,
@@ -56,13 +63,18 @@ export async function completeReservationWorkflow(
     signalAmountCents: input.signalAmountCents,
     unit: input.unit,
   });
+  const [template, store] = await Promise.all([
+    getReservationWorkflowTemplate(context, input.ports),
+    getVehicleWorkflowStoreBranding(context, input.ports),
+  ]);
   const document = buildReservationReceiptDocument({
     buyer: input.buyer,
     listing: input.listing,
     paymentMethod: input.paymentMethod,
     sale: input.sale,
     signalAmountCents: input.signalAmountCents,
-    template: await getWorkflowTemplate(context, input.ports),
+    ...(store ? { store } : {}),
+    template,
     unit: input.unit,
   });
   const storedDocument = await storeWorkflowDocument(
@@ -89,6 +101,7 @@ export async function completeSaleWorkflow(
     ports: VehicleInventoryServicePorts | undefined;
     reason?: string | null | undefined;
     sale: VehicleSaleBundle;
+    selectedDocumentKinds?: readonly VehicleSaleDocumentKind[];
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
@@ -100,12 +113,19 @@ export async function completeSaleWorkflow(
     sellerUserId: input.sale.sale.sellerUserId,
     unit: input.unit,
   });
-  const workflowTemplates = await getWorkflowTemplates(context, input.ports);
+  const [workflowTemplates, store] = await Promise.all([
+    getSaleWorkflowTemplates(context, input.ports),
+    getVehicleWorkflowStoreBranding(context, input.ports),
+  ]);
   const documents = buildSoldDocuments({
     buyer: input.buyer,
     listing: input.listing,
     paymentMethod: input.paymentMethod,
     sale: input.sale,
+    ...(store ? { store } : {}),
+    ...(input.selectedDocumentKinds
+      ? { selectedDocumentKinds: input.selectedDocumentKinds }
+      : {}),
     ...(workflowTemplates ? { templates: workflowTemplates } : {}),
     unit: input.unit,
   });
@@ -192,56 +212,6 @@ async function syncListingSoldOutStatus(
     unitId: null,
   });
   return updatedListing;
-}
-
-async function getWorkflowTemplate(
-  context: ServiceContext,
-  ports: VehicleInventoryServicePorts | undefined,
-) {
-  const repository = getDocumentTemplateRepository(ports);
-  if (!repository || !context.storeId || !context.tenantId) return null;
-  return repository.findTemplate({
-    kind: "reservation_receipt",
-    storeId: context.storeId,
-    tenantId: context.tenantId,
-  });
-}
-
-async function getWorkflowTemplates(
-  context: ServiceContext,
-  ports: VehicleInventoryServicePorts | undefined,
-) {
-  const repository = getDocumentTemplateRepository(ports);
-  if (!repository || !context.storeId || !context.tenantId) return undefined;
-  const kinds = [
-    "sale_contract",
-    "sale_receipt",
-    "delivery_term",
-    "power_of_attorney",
-  ] as const;
-  const entries = await Promise.all(
-    kinds.map(
-      async (kind) =>
-        [
-          kind,
-          await repository.findTemplate({
-            kind,
-            storeId: context.storeId as string,
-            tenantId: context.tenantId as string,
-          }),
-        ] as const,
-    ),
-  );
-  return new Map(
-    entries.filter(
-      (
-        entry,
-      ): entry is readonly [
-        (typeof entry)[0],
-        NonNullable<(typeof entry)[1]>,
-      ] => Boolean(entry[1]),
-    ),
-  );
 }
 
 function workflowReason(status: "reserved" | "sold") {

@@ -84,6 +84,9 @@ emit documents, manage billing, or trigger audited operational workflows.
 ## Frontend Rules
 
 - Use the design tokens from `packages/design-system` and `apps/web/src/styles`.
+- Follow `docs/ui-ux-visual-quality.md` for the automotive visual signature,
+  Anime.js motion rules, generated-artifact quality, and the required `agy`
+  before/after comparison gate for broad visual rewrites.
 - Do not hardcode hex/rgb/hsl colors in components.
 - Use icon-only controls for compact tool actions, with accessible labels and
   tooltips.
@@ -106,8 +109,10 @@ emit documents, manage billing, or trigger audited operational workflows.
 - Do not migrate business logic from reference projects during UI primitive
   work unless explicitly requested. Keep primitive extraction presentational and
   compositional.
-- Skeleton feature pages should still use shared page shell, page header,
-  empty/loading/error states, and common action patterns.
+- Skeleton feature pages should still use the shared page shell, the
+  established module toolbar or compact command pattern, empty/loading/error
+  states, and common actions. Do not add a generic oversized page header when
+  the shell already supplies the module context.
 - Before creating a new local UI implementation inside `/features`, check
   whether a primitive already exists. If it does, use it. If it almost works,
   add a small variant. If no primitive fits and the pattern is recurring, create

@@ -1,7 +1,8 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cx } from "./featureShared";
+import { useOverlayFocus } from "./useOverlayFocus";
 
 export function FeatureDialog({
   children,
@@ -18,44 +19,41 @@ export function FeatureDialog({
   onClose: () => void;
   title: ReactNode;
 }) {
-  useOverlayEffects(isOpen, onClose);
+  const titleId = useId();
+  const dialogRef = useOverlayEffects<HTMLElement>(isOpen, onClose);
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+    <div className="feature-overlay">
       <button
         aria-label="Fechar dialogo"
-        className="absolute inset-0 bg-overlay backdrop-blur-sm"
+        className="feature-overlay__backdrop"
         onClick={onClose}
         type="button"
       />
       <section
-        className={cx(
-          "relative flex max-h-[calc(100dvh-1.5rem)] w-full flex-col overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)] animate-fade-in sm:max-h-[calc(100dvh-2rem)]",
-          className ?? "max-w-xl",
-        )}
-        role="dialog"
+        aria-labelledby={titleId}
         aria-modal="true"
+        className={cx("feature-dialog", className ?? "feature-dialog--medium")}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-line p-4">
-          <h3 className="min-w-0 text-lg font-black leading-tight text-app-text">
+        <div className="feature-dialog__header">
+          <h3 className="feature-dialog__title" id={titleId}>
             {title}
           </h3>
           <button
             aria-label="Fechar"
-            className="shrink-0 rounded-lg border border-line bg-app p-2 text-muted hover:text-app-text"
+            className="feature-dialog__close"
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden="true" className="size-4" />
+            <X aria-hidden="true" />
           </button>
         </div>
-        <div className="min-h-0 flex-1 scroll-pb-6 overflow-y-auto p-4 pb-6">
-          {children}
-        </div>
-        {footer ? (
-          <div className="shrink-0 border-t border-line p-4">{footer}</div>
-        ) : null}
+        <div className="feature-dialog__body">{children}</div>
+        {footer ? <div className="feature-dialog__footer">{footer}</div> : null}
       </section>
     </div>,
     document.body,
@@ -86,9 +84,9 @@ export function FeatureDialogActions({
   variant?: "danger" | "primary";
 }) {
   return (
-    <div className="flex flex-col justify-end gap-2 sm:flex-row">
+    <div className="feature-dialog-actions">
       <button
-        className="min-h-11 rounded-lg border border-line bg-app px-4 text-sm font-black text-app-text"
+        className="feature-action feature-action--secondary"
         disabled={isLoading || cancelDisabled}
         onClick={onCancel}
         type="button"
@@ -97,10 +95,8 @@ export function FeatureDialogActions({
       </button>
       <button
         className={cx(
-          "flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 text-sm font-black text-inverse disabled:opacity-60",
-          variant === "danger"
-            ? "bg-danger hover:bg-danger-hover"
-            : "bg-accent hover:bg-accent-strong",
+          "feature-action feature-action--primary",
+          variant === "danger" ? "feature-action--danger" : undefined,
         )}
         disabled={isLoading || confirmDisabled}
         onClick={onConfirm}
@@ -128,48 +124,51 @@ export function FeatureDrawer({
   onClose: () => void;
   title: ReactNode;
 }) {
-  useOverlayEffects(isOpen, onClose);
+  const titleId = useId();
+  const drawerRef = useOverlayEffects<HTMLElement>(isOpen, onClose);
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50">
+    <div className="feature-overlay feature-overlay--drawer">
       <button
         aria-label="Fechar painel"
-        className="absolute inset-0 bg-black/60 backdrop-blur-[1px]"
+        className="feature-overlay__backdrop"
         onClick={onClose}
         type="button"
       />
       <aside
-        className={cx(
-          "absolute right-0 top-0 flex h-full w-[420px] max-w-[95vw] flex-col border-l border-line bg-panel text-app-text shadow-2xl",
-          className,
-        )}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className={cx("feature-drawer", className)}
+        ref={drawerRef}
+        role="dialog"
+        tabIndex={-1}
       >
-        <div className="flex items-center justify-between border-b border-line p-6">
-          <h3 className="text-base font-black uppercase tracking-wider">
+        <div className="feature-drawer__header">
+          <h3 className="feature-drawer__title" id={titleId}>
             {title}
           </h3>
           <button
-            className="text-sm font-black text-muted hover:text-app-text"
+            className="feature-drawer__close"
             onClick={onClose}
             type="button"
           >
             Fechar
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">{children}</div>
-        {footer ? (
-          <div className="shrink-0 border-t border-line bg-panel/95 p-6">
-            {footer}
-          </div>
-        ) : null}
+        <div className="feature-drawer__body">{children}</div>
+        {footer ? <div className="feature-drawer__footer">{footer}</div> : null}
       </aside>
     </div>,
     document.body,
   );
 }
 
-function useOverlayEffects(isOpen: boolean, onClose: () => void) {
+function useOverlayEffects<T extends HTMLElement>(
+  isOpen: boolean,
+  onClose: () => void,
+) {
+  const overlayRef = useOverlayFocus<T>(isOpen, onClose);
   useEffect(() => {
     if (!isOpen) return;
     const previous = document.body.style.overflow;
@@ -178,13 +177,5 @@ function useOverlayEffects(isOpen: boolean, onClose: () => void) {
       document.body.style.overflow = previous;
     };
   }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [isOpen, onClose]);
+  return overlayRef;
 }

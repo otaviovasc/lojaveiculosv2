@@ -46,7 +46,7 @@ export function DocumentosUploadCard() {
           <Upload className="size-3.5" />
           <span>Enviar Documento</span>
         </button>
-        <span className="text-xs text-muted/60 font-bold">
+        <span className="text-xs text-muted font-bold">
           Máximo 50MB por arquivo
         </span>
       </div>

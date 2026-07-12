@@ -128,10 +128,6 @@ export function InventoryDetailWorkspace({
   };
 
   const handleTabChange = (tab: TabId) => {
-    if (tab === "vendas") {
-      openSaleWorkspace();
-      return;
-    }
     setActiveTab(tab);
   };
 

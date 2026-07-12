@@ -47,7 +47,7 @@ export function FinanceBillsHeader({
         }
         title="Fluxo de caixa"
       />
-      <FeatureAlert className="feature-alert">
+      <FeatureAlert className="feature-alert" tone="info">
         <ReceiptText aria-hidden="true" className="size-4" />
         Anexos, recibos e custos de veículo permanecem vinculados ao lançamento
         financeiro e à trilha de auditoria.

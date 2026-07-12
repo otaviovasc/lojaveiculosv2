@@ -28,4 +28,47 @@ describe("CrmWhatsappNewConversationDialog", () => {
     });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("shows localized field validation after invalid fields are visited", async () => {
+    const user = userEvent.setup();
+    render(
+      <CrmWhatsappNewConversationDialog
+        onClose={vi.fn()}
+        onStart={vi.fn(async () => true)}
+      />,
+    );
+
+    await user.click(screen.getByLabelText("WhatsApp"));
+    await user.tab();
+    await user.click(screen.getByLabelText("Mensagem"));
+    await user.tab();
+
+    expect(
+      screen.getByText("Informe um WhatsApp válido com DDD."),
+    ).toHaveAttribute("role", "alert");
+    expect(screen.getByText("Digite a primeira mensagem.")).toHaveAttribute(
+      "role",
+      "alert",
+    );
+  });
+
+  it("keeps the dialog open and explains a rejected conversation", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    render(
+      <CrmWhatsappNewConversationDialog
+        onClose={onClose}
+        onStart={vi.fn(async () => false)}
+      />,
+    );
+
+    await user.type(screen.getByLabelText("WhatsApp"), "(11) 99999-9999");
+    await user.type(screen.getByLabelText("Mensagem"), "Olá, tudo bem?");
+    await user.click(screen.getByRole("button", { name: "Enviar" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Não foi possível iniciar a conversa. Tente novamente.",
+    );
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

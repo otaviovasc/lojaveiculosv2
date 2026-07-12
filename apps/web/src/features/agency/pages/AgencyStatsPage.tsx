@@ -1,87 +1,85 @@
-import { BarChart3, TrendingUp, Users, ArrowUpRight } from "lucide-react";
+import {
+  BarChart3,
+  CheckCircle2,
+  CircleGauge,
+  DatabaseZap,
+  ShieldCheck,
+} from "lucide-react";
+
+const metricRequirements = [
+  {
+    description: "Eventos identificados por loja, origem e campanha.",
+    icon: DatabaseZap,
+    label: "Aquisição e tráfego",
+  },
+  {
+    description: "Leads e etapas comerciais conectados ao mesmo funil.",
+    icon: CircleGauge,
+    label: "Conversão comercial",
+  },
+  {
+    description: "Indicadores publicados somente após validação da fonte.",
+    icon: ShieldCheck,
+    label: "Qualidade dos dados",
+  },
+] as const;
 
 export function AgencyStatsPage() {
   return (
-    <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
-      <div>
-        <span className="text-xs font-black uppercase tracking-widest text-accent">
-          Desempenho
-        </span>
-        <h1 className="text-3xl font-black italic uppercase tracking-tighter text-primary mt-1">
-          Estatísticas da Rede
-        </h1>
-        <p className="text-muted text-sm font-semibold mt-1">
-          Dados consolidados de conversões, tráfego e engajamento das suas
-          lojas.
+    <div className="agency-stats-page animate-fade-in">
+      <header className="agency-stats-header">
+        <span>Desempenho da rede</span>
+        <h1>Estatísticas</h1>
+        <p>
+          Métricas consolidadas serão exibidas somente quando as fontes de cada
+          loja estiverem conectadas e validadas.
         </p>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
-          <div>
-            <span className="text-xs font-black uppercase text-muted tracking-wider">
-              Visualizações Totais
-            </span>
-            <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
-              124.502
-            </h3>
-            <p className="text-xs font-black text-green-end flex items-center gap-0.5 mt-2">
-              <TrendingUp className="size-3" /> +14.2% este mês
-            </p>
-          </div>
-          <div className="size-12 rounded-2xl bg-accent-soft text-accent flex items-center justify-center font-bold">
-            <ArrowUpRight className="size-6" />
-          </div>
+      <section
+        aria-labelledby="agency-stats-unavailable-title"
+        className="agency-stats-unavailable"
+      >
+        <div className="agency-stats-unavailable__visual" aria-hidden="true">
+          <BarChart3 />
+          <span />
+          <span />
+          <span />
         </div>
 
-        <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
-          <div>
-            <span className="text-xs font-black uppercase text-muted tracking-wider">
-              Leads Gerados
-            </span>
-            <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
-              3.840
-            </h3>
-            <p className="text-xs font-black text-green-end flex items-center gap-0.5 mt-2">
-              <TrendingUp className="size-3" /> +8.7% este mês
-            </p>
-          </div>
-          <div className="size-12 rounded-2xl bg-blue-soft text-blue-start flex items-center justify-center font-bold">
-            <Users className="size-6" />
-          </div>
+        <div className="agency-stats-unavailable__copy">
+          <span className="agency-stats-status">
+            <CheckCircle2 aria-hidden="true" />
+            Sem dados estimados
+          </span>
+          <h2 id="agency-stats-unavailable-title">
+            Painel avançado em preparação
+          </h2>
+          <p>
+            Ainda não há uma fonte analítica real conectada a esta tela. Por
+            isso, nenhum total, percentual ou tendência fictícia é apresentado.
+          </p>
         </div>
 
-        <div className="agency-card p-6 bg-gradient-to-br from-panel to-app-elevated flex items-center justify-between">
-          <div>
-            <span className="text-xs font-black uppercase text-muted tracking-wider">
-              Conversão Média
-            </span>
-            <h3 className="text-3xl font-black italic tracking-tighter mt-1 text-primary">
-              3.1%
-            </h3>
-            <p className="text-xs font-black text-green-end flex items-center gap-0.5 mt-2">
-              <TrendingUp className="size-3" /> +0.4% este mês
-            </p>
-          </div>
-          <div className="size-12 rounded-2xl bg-violet-500/10 text-violet-start flex items-center justify-center font-bold">
-            <BarChart3 className="size-6" />
-          </div>
+        <div className="agency-stats-requirements">
+          {metricRequirements.map(({ description, icon: Icon, label }) => (
+            <article key={label}>
+              <span aria-hidden="true">
+                <Icon />
+              </span>
+              <div>
+                <h3>{label}</h3>
+                <p>{description}</p>
+              </div>
+            </article>
+          ))}
         </div>
-      </div>
 
-      <div className="agency-card p-10 text-center flex flex-col items-center">
-        <div className="size-16 bg-accent-soft text-accent rounded-3xl flex items-center justify-center mb-6">
-          <BarChart3 className="size-8" />
-        </div>
-        <h3 className="text-xl font-black text-primary mb-2">
-          Painel de Métricas Avançado
-        </h3>
-        <p className="text-muted text-xs font-semibold max-w-md mx-auto">
-          Estamos portando a tela de estatísticas para a versão V2. Em breve
-          você terá filtros interativos de tráfego, lead events e funis de
-          vendas consolidados.
+        <p className="agency-stats-footnote" role="status">
+          Os primeiros números aparecerão aqui depois que a coleta, a janela de
+          comparação e a validação de eventos estiverem operacionais.
         </p>
-      </div>
+      </section>
     </div>
   );
 }

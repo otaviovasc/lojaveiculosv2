@@ -1,10 +1,4 @@
-import {
-  CheckCircle2,
-  Gift,
-  HandCoins,
-  Pencil,
-  XCircle,
-} from "lucide-react";
+import { CheckCircle2, Gift, HandCoins, Pencil, XCircle } from "lucide-react";
 import {
   pendingSellerEntries,
   type CommissionFilters,
@@ -88,7 +82,7 @@ function SellerCard({
                 {seller.sellerName}
               </h3>
               <p className="text-xs font-bold text-muted">
-                {seller.count} lancamento(s) no filtro atual
+                {seller.count} lançamento(s) no filtro atual
               </p>
             </div>
           </div>
@@ -114,12 +108,12 @@ function SellerCard({
             type="button"
           >
             <Gift aria-hidden="true" className="size-4" />
-            Bonus
+            Bônus
           </button>
           {!canPay ? (
             <span className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-app px-3 text-xs font-black text-accent-strong">
               <CheckCircle2 aria-hidden="true" className="size-4" />
-              Sem pendencias
+              Sem pendências
             </span>
           ) : null}
         </div>
@@ -151,7 +145,7 @@ function OriginGroup({
         <div className="flex flex-wrap items-center gap-2">
           <FinanceBadge>{originLabel(origin.origin)}</FinanceBadge>
           <span className="text-xs font-bold text-muted">
-            {origin.count} lancamento(s)
+            {origin.count} lançamento(s)
           </span>
         </div>
         <span className="text-xs font-black text-app-text">
@@ -162,12 +156,12 @@ function OriginGroup({
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead className="border-b border-line text-xs font-black uppercase text-muted">
             <tr>
-              <th className="px-4 py-3">Lancamento</th>
-              <th className="px-4 py-3">Referencia</th>
+              <th className="px-4 py-3">Lançamento</th>
+              <th className="px-4 py-3">Referência</th>
               <th className="px-4 py-3">Vencimento</th>
               <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Valor</th>
-              <th className="px-4 py-3 text-right">Acoes</th>
+              <th className="px-4 py-3 text-right">Ações</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -205,8 +199,12 @@ function CommissionRow({
           </span>
         ) : null}
       </td>
-      <td className="px-4 py-3 font-bold text-muted">{entryReference(entry)}</td>
-      <td className="px-4 py-3 font-bold text-muted">{formatDate(entry.dueAt)}</td>
+      <td className="px-4 py-3 font-bold text-muted">
+        {entryReference(entry)}
+      </td>
+      <td className="px-4 py-3 font-bold text-muted">
+        {formatDate(entry.dueAt)}
+      </td>
       <td className="px-4 py-3">
         <FinanceBadge>{financeStatusLabels[entry.status]}</FinanceBadge>
       </td>
@@ -217,13 +215,13 @@ function CommissionRow({
         <div className="flex justify-end gap-2">
           <CommissionIconAction
             icon={<Pencil aria-hidden="true" className="size-4" />}
-            label="Editar comissao"
+            label="Editar comissão"
             onClick={() => onEdit(entry)}
           />
           <CommissionIconAction
             disabled={entry.status === "cancelled"}
             icon={<XCircle aria-hidden="true" className="size-4" />}
-            label="Cancelar comissao"
+            label="Cancelar comissão"
             onClick={() => onCancel(entry)}
           />
         </div>

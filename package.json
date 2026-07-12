@@ -43,11 +43,14 @@
     "test:e2e:local": "pnpm run db:clean:local && pnpm run test:e2e",
     "qa:flows": "pnpm run test:e2e",
     "qa:flows:local": "pnpm run test:e2e:local",
+    "qa:ui-quality": "playwright test tests/e2e/product-ui-quality.spec.ts tests/e2e/public-agency-ui-quality.spec.ts",
     "crm:zapi:diagnose": "node tools/migration/crm-whatsapp/zapi-connection-diagnostic.mjs",
     "billing:asaas:sync-smoke": "pnpm --filter @lojaveiculosv2/api billing:asaas:sync-smoke",
     "billing:asaas:webhook-smoke": "node tools/qa/asaas-billing-webhook-smoke.mjs",
     "qa:seed:local": "node tools/qa/local-seed-smoke.mjs",
+    "qa:document-artifact": "pnpm --filter @lojaveiculosv2/api exec tsx ../../tools/qa/render-workflow-pdf-evidence.ts",
     "test:frontend-design": "pnpm --filter @lojaveiculosv2/web exec vitest run tools/quality/frontend-design-rules.test.mjs --root ../..",
+    "test:seed-document-pdf": "pnpm --filter @lojaveiculosv2/web exec vitest run tools/storage/seed-product-document-pdf.test.mjs --root ../..",
     "test:smoke:api": "pnpm --filter @lojaveiculosv2/api test -- productionSmoke",
     "qa:permissions:local": "node tools/qa/local-permission-smoke.mjs",
     "check:api-errors": "node tools/quality/check-api-error-envelope.mjs",
@@ -67,8 +70,8 @@
     "check:services": "node tools/quality/check-service-contracts.mjs",
     "check:validation": "node tools/quality/check-validation-pipeline.mjs",
     "validate:core-guardrails": "pnpm run check:lines && pnpm run check:boundaries && pnpm run check:env && pnpm run check:secrets && pnpm run check:db && pnpm run check:api-errors && pnpm run check:frontend && pnpm run check:frontend-composition && pnpm run check:feature-primitives && pnpm run check:duplicates && pnpm run check:radius-padding && pnpm run check:ui-contracts && pnpm run check:tenant-branding && pnpm run check:documents && pnpm run check:services && pnpm run check:validation",
-    "validate:commit": "pnpm run validate:core-guardrails && pnpm run test:frontend-design",
-    "validate:push": "pnpm run validate:core-guardrails && pnpm run typecheck && pnpm run lint && pnpm run test",
+    "validate:commit": "pnpm run validate:core-guardrails && pnpm run test:frontend-design && pnpm run test:seed-document-pdf",
+    "validate:push": "pnpm run validate:core-guardrails && pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run test:seed-document-pdf",
     "validate:ci": "pnpm run validate:push",
     "validate": "pnpm run validate:push"
   },
@@ -76,17 +79,18 @@
     "*": "prettier --ignore-unknown --write"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.1075.0",
+    "@aws-sdk/client-s3": "^3.1085.0",
+    "@axe-core/playwright": "4.12.1",
     "@playwright/test": "^1.61.1",
     "@types/node": "24.13.2",
-    "eslint": "10.6.0",
+    "eslint": "10.7.0",
     "globals": "17.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.7",
     "pdf-lib": "^1.17.1",
     "postgres": "^3.4.9",
-    "prettier": "^3.9.3",
+    "prettier": "^3.9.5",
     "typescript": "6.0.3",
-    "typescript-eslint": "8.62.0"
+    "typescript-eslint": "8.63.0"
   }
 }

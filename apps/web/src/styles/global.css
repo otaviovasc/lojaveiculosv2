@@ -13,6 +13,7 @@
 @import "./dashboardAgenda.css";
 @import "./dashboardLeads.css";
 @import "./dashboardPromo.css";
+@import "./dashboard-mobile.css";
 @import "./dashboardAging.css";
 @import "./dashboardSidebar.css";
 @import "./dashboardSellers.css";
@@ -93,8 +94,22 @@
 @import "./featureModules.css";
 @import "./finance.css";
 @import "./sales.css";
+@import "./sales-delete-dialog.css";
 @import "./sales-summary.css";
 @import "./sales-workspace.css";
+@import "./workspace-shell.css";
+@import "./workspace-sidebar-core.css";
+@import "./workspace-sidebar-nav.css";
+@import "./workspace-sidebar-menu.css";
+@import "./workspace-command.css";
+@import "./workspace-responsive.css";
+@import "./product-foundation.css";
+@import "./product-metrics.css";
+@import "./product-data-controls.css";
+@import "./product-forms-states.css";
+@import "./product-overlays.css";
+@import "./product-legacy-responsive.css";
+@import "./artifact-viewer.css";
 
 @source "../**/*.{ts,tsx}";
 

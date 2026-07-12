@@ -74,13 +74,13 @@ export function SessionList({
               <button
                 aria-label={
                   selected
-                    ? "Remover conversa da selecao"
+                    ? "Remover conversa da seleção"
                     : "Selecionar conversa"
                 }
                 aria-pressed={selected}
                 className="crm-whatsapp-session-pick"
                 onClick={() => onToggleSelected(session.id)}
-                title={selected ? "Remover selecao" : "Selecionar conversa"}
+                title={selected ? "Remover seleção" : "Selecionar conversa"}
                 type="button"
               >
                 {selected ? <CheckSquare /> : <Square />}

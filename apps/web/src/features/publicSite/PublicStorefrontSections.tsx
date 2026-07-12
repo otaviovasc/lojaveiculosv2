@@ -18,7 +18,10 @@ import {
   stockTitle,
   type VisibleStorefrontSection,
 } from "./publicStorefrontTheme";
-import { PublicStorefrontHeroMedia } from "./PublicStorefrontHeroMedia";
+import {
+  PublicStorefrontHeroMedia,
+  resolvePublicStorefrontFeaturedListing,
+} from "./PublicStorefrontHeroMedia";
 import type {
   PublicStorefrontData,
   PublicStorefrontSettingsData,
@@ -48,8 +51,11 @@ export function HeroSection({
   const photoUrl = readString(rawTheme.corretorPhotoUrl);
   const visibleProofItems = createVisibleProofItems(sections);
 
-  const firstListing =
-    data.listings && data.listings.length > 0 ? data.listings[0] : null;
+  const featuredListing = resolvePublicStorefrontFeaturedListing({
+    heroImageUrl: data.settings.site.heroImageUrl,
+    listings: data.listings,
+    theme: rawTheme,
+  });
 
   return (
     <section className="relative min-h-[85vh] lg:h-[90vh] flex items-center justify-center overflow-hidden bg-zinc-950 text-white">
@@ -100,17 +106,17 @@ export function HeroSection({
             </p>
           )}
 
-          {firstListing && onOpenListing ? (
+          {featuredListing && onOpenListing ? (
             <button
               className="mt-5 inline-flex max-w-xl flex-wrap items-center gap-2 rounded border border-white/15 bg-white/5 px-3 py-2 text-left text-sm font-bold text-zinc-200 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:border-accent/45 hover:bg-white/10 active:translate-y-0 active:scale-[0.99]"
-              onClick={() => onOpenListing(firstListing.slug)}
+              onClick={() => onOpenListing(featuredListing.slug)}
               type="button"
             >
               <span className="rounded bg-accent/20 px-2 py-1 text-xs font-black uppercase tracking-widest text-accent">
                 Destaque
               </span>
               <span className="min-w-0 flex-1 basis-56 leading-snug">
-                {firstListing.title}
+                {featuredListing.title}
               </span>
             </button>
           ) : null}
@@ -155,14 +161,14 @@ export function HeroSection({
         </div>
 
         {/* Floating Spec Card (Desktop Only) */}
-        {firstListing && onOpenListing ? (
+        {featuredListing && onOpenListing ? (
           <div className="hidden lg:flex flex-col w-full max-w-sm ml-auto bg-black/40 backdrop-blur-md border border-white/15 rounded-lg p-6 shadow-2xl">
             <div className="mb-4">
               <span className="bg-accent text-white text-xs font-black tracking-widest uppercase px-2 py-0.5 rounded">
                 Destaque da semana
               </span>
               <h3 className="text-xl font-extrabold text-white mt-2 leading-tight">
-                {firstListing.title}
+                {featuredListing.title}
               </h3>
             </div>
 
@@ -170,27 +176,27 @@ export function HeroSection({
               <div className="flex justify-between gap-4 text-sm">
                 <span className="text-zinc-400 font-medium">Ano Modelo</span>
                 <span className="text-white font-bold">
-                  {firstListing.modelYear ??
-                    firstListing.manufactureYear ??
+                  {featuredListing.modelYear ??
+                    featuredListing.manufactureYear ??
                     "-"}
                 </span>
               </div>
               <div className="flex justify-between gap-4 text-sm">
                 <span className="text-zinc-400 font-medium">Quilometragem</span>
                 <span className="text-white font-bold">
-                  {formatPublicVehicleMileage(firstListing.mileageKm)}
+                  {formatPublicVehicleMileage(featuredListing.mileageKm)}
                 </span>
               </div>
               <div className="flex justify-between gap-4 text-sm">
                 <span className="text-zinc-400 font-medium">Preço</span>
                 <span className="text-accent font-black text-lg">
-                  {formatPublicVehiclePrice(firstListing.priceCents)}
+                  {formatPublicVehiclePrice(featuredListing.priceCents)}
                 </span>
               </div>
             </div>
 
             <button
-              onClick={() => onOpenListing(firstListing.slug)}
+              onClick={() => onOpenListing(featuredListing.slug)}
               className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded bg-accent text-sm font-bold text-inverse transition-all duration-300 hover:brightness-110 cursor-pointer"
             >
               Conhecer veículo →
@@ -252,7 +258,7 @@ export function StockSection({
       <div className="public-storefront-shell px-6 py-16 md:py-20">
         <div className="mb-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between border-b border-line/60 pb-6">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
               {stockEyebrow(sectionType)}
             </p>
             <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">

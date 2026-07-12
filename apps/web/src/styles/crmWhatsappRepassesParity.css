@@ -68,12 +68,12 @@
     var(--color-green-start) 26%,
     var(--color-line)
   );
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
 }
 
 .crm-whatsapp-scope-tab-active svg,
 .crm-whatsapp-scope-tab-active strong {
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
 }
 
 .crm-whatsapp-scope-tab-badge {
@@ -82,6 +82,11 @@
     var(--color-green-start) 88%,
     var(--color-panel)
   );
+}
+
+.crm-whatsapp-scope-tab-active .crm-whatsapp-scope-tab-badge {
+  background: var(--color-success-strong);
+  color: var(--color-panel);
 }
 
 .crm-whatsapp-list {
@@ -117,7 +122,7 @@
 .crm-whatsapp-toolbar-actions .crm-whatsapp-status {
   background: transparent;
   border-color: transparent;
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
   padding-left: 0;
 }
 
@@ -162,7 +167,7 @@
     var(--color-green-start) 24%,
     var(--color-line)
   );
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
 }
 
 .crm-whatsapp-filter-active span {
@@ -176,7 +181,7 @@
     var(--color-green-start) 18%,
     var(--color-line)
   );
-  color: var(--color-green-start);
+  color: var(--color-success-strong);
 }
 
 .crm-whatsapp-session-list {

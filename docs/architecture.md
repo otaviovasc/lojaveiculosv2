@@ -11,6 +11,12 @@ marketplace. Public storefronts expose inventory and lead capture, but inventory
 mutation, reservation, sale close, document emission, billing, and audit flows
 are executed by authenticated store actors with explicit permissions.
 
+The provider-neutral automation foundation is documented in
+`docs/automation-preview.md`; the separately reviewed target executor design is
+documented in `docs/ai-automation-runtime.md`. The first release is a durable,
+store-scoped preview and approval ledger only, with database constraints keeping
+tool execution and computer control disabled.
+
 ## Backend Shape
 
 Backend code follows a domain/service plus feature/controller split:
@@ -144,8 +150,10 @@ bounded context.
 
 Vehicle workflow document generation is domain-owned under
 `apps/api/src/domains/vehicle/documents`. Reserving a listing must emit one
-`reservation_receipt`; selling a listing must emit `sale_contract`,
-`sale_receipt`, `delivery_term`, and `power_of_attorney`.
+`reservation_receipt`; selling a listing emits the persisted selection from the
+supported `sale_contract`, `sale_receipt`, `delivery_term`, and
+`power_of_attorney` bundle. The UI selects all four by default; store policy may
+mark a supported subset as required.
 
 Vehicle cost, reserve, and sell workflows must also create tenant/store-scoped
 `finance_entries` rows. Those rows are connected through `finance_entry_links`

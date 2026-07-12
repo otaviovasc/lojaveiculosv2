@@ -25,10 +25,10 @@ import { createHttpServiceContext } from "./createHttpServiceContext.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
 import { installHttpMiddleware } from "./installHttpMiddleware.js";
+import { installAutomationRoutes } from "./installAutomationRoutes.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
 import { createCrmWebhookContextFactory } from "./crmWebhookContextFactory.js";
 import { createBillingWebhookContextFactory } from "./billingWebhookContextFactory.js";
-
 export type { CreateAppOptions } from "./createAppOptions.js";
 export function createApp(options: CreateAppOptions = {}) {
   const app = new Hono();
@@ -169,6 +169,7 @@ export function createApp(options: CreateAppOptions = {}) {
         : {}),
     }),
   );
+  installAutomationRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/compliance",
     createComplianceFeature({

@@ -17,6 +17,7 @@ const defaultPlans: readonly BillingPlan[] = [
     features: [
       { featureKey: "subdomain", included: true, limitValue: null },
       { featureKey: "crm", included: true, limitValue: null },
+      { featureKey: "automation", included: true, limitValue: null },
       { featureKey: "plate_lookup", included: true, limitValue: 300 },
       { featureKey: "external_api", included: false, limitValue: null },
       { featureKey: "marketplace", included: false, limitValue: null },
@@ -34,6 +35,14 @@ const defaultEntitlements: readonly StoreEntitlement[] = [
   {
     endsAt: null,
     featureKey: "subdomain",
+    metadata: {},
+    source: "memory_seed",
+    startsAt: null,
+    status: "active",
+  },
+  {
+    endsAt: null,
+    featureKey: "automation",
     metadata: {},
     source: "memory_seed",
     startsAt: null,

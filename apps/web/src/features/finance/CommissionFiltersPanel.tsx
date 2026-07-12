@@ -67,7 +67,7 @@ export function CommissionFiltersPanel({
           value={filters.from}
         />
         <DateField
-          label="Ate"
+          label="Até"
           onChange={(to) => onChange({ ...filters, period: "custom", to })}
           value={filters.to}
         />

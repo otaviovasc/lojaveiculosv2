@@ -96,8 +96,10 @@ The vehicle lifecycle is canonical:
 4. Emit one `reservation_receipt` PDF document for the signal payment and
    create linked finance entries for reservation accounting.
 5. Sell a listing through `sellVehicleUnit`.
-6. Emit four sale PDFs: `sale_contract`, `sale_receipt`, `delivery_term`, and
-   `power_of_attorney`.
+6. Emit the selected sale PDF bundle from the supported kinds:
+   `sale_contract`, `sale_receipt`, `delivery_term`, and `power_of_attorney`.
+   The UI selects all four by default, but the workflow must honor a valid
+   persisted subset unless store policy marks a kind as required.
 7. Create linked finance entries for sale and payment accounting.
 
 Reservation and sale are store-operated product workflows. A customer/buyer

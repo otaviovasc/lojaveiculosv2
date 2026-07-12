@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useId, useLayoutEffect, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { useOverlayFocus } from "../../../components/ui/useOverlayFocus";
 
 export function PrintWrapper({
   children,
@@ -9,36 +11,87 @@ export function PrintWrapper({
   onClose: () => void;
   title: string;
 }) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const dialogRef = useOverlayFocus<HTMLDivElement>(true, onClose);
+
+  useLayoutEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const dialog = dialogRef.current;
+    const backgroundElements = [...document.body.children]
+      .filter(
+        (element): element is HTMLElement =>
+          element instanceof HTMLElement &&
+          element !== dialog &&
+          !element.contains(dialog),
+      )
+      .map((element) => ({
+        ariaHidden: element.getAttribute("aria-hidden"),
+        element,
+        inert: element.inert,
+      }));
+
+    document.body.style.overflow = "hidden";
+    for (const { element } of backgroundElements) {
+      element.inert = true;
+      element.setAttribute("aria-hidden", "true");
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      for (const { ariaHidden, element, inert } of backgroundElements) {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      }
+    };
+  }, []);
+
   const handlePrint = () => {
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-app-elevated/95 backdrop-blur-md p-4 md:p-6 overflow-y-auto no-print">
-      <div className="mx-auto flex w-full max-w-4xl flex-shrink-0 items-center justify-between border-b border-line pb-4 mb-6">
-        <div>
-          <h2 className="text-xl font-black text-app-text">{title}</h2>
-          <p className="text-xs font-bold text-muted">
+  return createPortal(
+    <div
+      aria-describedby={descriptionId}
+      aria-labelledby={titleId}
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-app-elevated/95 p-4 backdrop-blur-md md:p-6 print:overflow-visible print:bg-transparent print:p-0 print:backdrop-blur-none"
+      ref={dialogRef}
+      role="dialog"
+      tabIndex={-1}
+    >
+      <div className="mx-auto mb-6 flex w-full max-w-4xl flex-shrink-0 flex-col gap-4 border-b border-line pb-4 sm:flex-row sm:items-center sm:justify-between no-print">
+        <div className="min-w-0">
+          <h2
+            className="break-words text-xl font-black text-app-text"
+            id={titleId}
+          >
+            {title}
+          </h2>
+          <p className="text-xs font-bold text-muted" id={descriptionId}>
             Visualize o documento antes de imprimir ou salvar como PDF
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3">
           <button
+            className="flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-center text-sm font-black text-inverse shadow-sm transition-colors hover:bg-accent-strong sm:px-5"
             onClick={handlePrint}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-inverse cursor-pointer hover:bg-accent-strong transition-colors shadow-sm"
+            type="button"
           >
             Imprimir / Salvar PDF
           </button>
           <button
+            className="flex min-h-11 items-center justify-center rounded-xl border border-line bg-panel px-4 text-sm font-black text-app-text transition-colors hover:bg-app-elevated"
             onClick={onClose}
-            className="flex min-h-11 items-center justify-center rounded-xl border border-line bg-panel px-4 text-sm font-black text-app-text cursor-pointer hover:bg-app-elevated transition-colors"
+            type="button"
           >
             Fechar
           </button>
         </div>
       </div>
 
-      <div className="mx-auto w-full max-w-3xl bg-white text-black p-8 md:p-12 shadow-2xl rounded-2xl border border-line/40 print:shadow-none print:border-none print:p-0 print:m-0 print:w-full print:rounded-none">
+      <div className="mx-auto w-full max-w-3xl rounded-2xl border border-line/40 bg-white p-5 text-black shadow-2xl sm:p-8 md:p-12 print:m-0 print:w-full print:rounded-none print:border-none print:p-0 print:shadow-none">
         <style>{`
           @media print {
             body * {
@@ -60,10 +113,11 @@ export function PrintWrapper({
             }
           }
         `}</style>
-        <div className="print-content text-black leading-relaxed text-sm select-text">
+        <div className="print-content min-w-0 select-text text-sm leading-relaxed text-black">
           {children}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

@@ -90,7 +90,7 @@ export function CrmWhatsappConnectionAdmin({
     const instanceId = draft.instanceId.trim();
     const instanceToken = draft.instanceToken.trim();
     if (!instanceId || !instanceToken) {
-      setLocalError("Informe o ID e o token da instancia ZAPI.");
+      setLocalError("Informe o ID e o token da instância ZAPI.");
       return;
     }
     setIsSaving(true);
@@ -108,20 +108,20 @@ export function CrmWhatsappConnectionAdmin({
   };
 
   return (
-    <section aria-label="Conexao" className="crm-whatsapp-connection-admin">
+    <section aria-label="Conexão" className="crm-whatsapp-connection-admin">
       <header className="crm-whatsapp-connection-header">
         <span>
           <Plug aria-hidden="true" />
         </span>
         <div>
-          <strong>Conexao</strong>
+          <strong>Conexão</strong>
           <h2>WhatsApp ZAPI</h2>
-          <p>Configure somente a instancia usada pelo CRM.</p>
+          <p>Configure somente a instância usada pelo CRM.</p>
         </div>
       </header>
       {isLoading ? (
         <p className="crm-whatsapp-connection-empty">
-          Carregando conexao WhatsApp.
+          Carregando conexão WhatsApp.
         </p>
       ) : (
         <>
@@ -129,7 +129,7 @@ export function CrmWhatsappConnectionAdmin({
             <p className="crm-whatsapp-connection-error">
               {formatApiErrorDisplay(
                 error,
-                "Nao foi possivel carregar a conexao.",
+                "Não foi possível carregar a conexão.",
               )}
             </p>
           ) : null}
@@ -137,7 +137,7 @@ export function CrmWhatsappConnectionAdmin({
             <div className="crm-whatsapp-connection-layout">
               {connections.length > 1 ? (
                 <label className="crm-whatsapp-connection-selector">
-                  Instancia
+                  Instância
                   <CrmSelect
                     className="crm-whatsapp-select"
                     onChange={setSelectedId}
@@ -174,7 +174,7 @@ export function CrmWhatsappConnectionAdmin({
             </div>
           ) : (
             <p className="crm-whatsapp-connection-empty">
-              Nenhuma conexao ZAPI configurada para esta loja.
+              Nenhuma conexão ZAPI configurada para esta loja.
             </p>
           )}
         </>

@@ -21,7 +21,7 @@ export function PublicApiKeyCreator({
   copiedId: string | null;
   createdKey: string | null;
   name: string;
-  onCopy: (value: string, id: string) => void;
+  onCopy: (value: string, id: string) => Promise<void>;
   onCreate: () => void;
   onNameChange: (value: string) => void;
   onScopesChange: (scopes: PublicApiScope[]) => void;
@@ -39,6 +39,7 @@ export function PublicApiKeyCreator({
       <div className="public-api-presets">
         {scopePresets.map((preset) => (
           <button
+            aria-pressed={scopesEqual(scopes, preset.scopes)}
             className={scopesEqual(scopes, preset.scopes) ? "is-active" : ""}
             key={preset.name}
             onClick={() => applyPreset(preset, onNameChange, onScopesChange)}
@@ -59,7 +60,11 @@ export function PublicApiKeyCreator({
         />
       </label>
 
-      <div className="public-api-scopes">
+      <div
+        aria-label="Escopos disponíveis para a nova chave"
+        className="public-api-scopes"
+        role="group"
+      >
         {scopeOptions.map((option) => (
           <label className="internal-check" key={option.scope}>
             <input
@@ -78,7 +83,10 @@ export function PublicApiKeyCreator({
       <button
         className="internal-primary"
         disabled={
-          !name.trim() || scopes.length === 0 || status.kind === "saving"
+          !name.trim() ||
+          scopes.length === 0 ||
+          status.kind === "loading" ||
+          status.kind === "saving"
         }
         onClick={onCreate}
         type="button"
@@ -97,8 +105,13 @@ export function PublicApiKeyCreator({
             <code>{createdKey}</code>
           </div>
           <button
+            aria-label={
+              copiedId === "created-key"
+                ? "Chave copiada"
+                : "Copiar nova chave da API"
+            }
             className="internal-icon-action"
-            onClick={() => onCopy(createdKey, "created-key")}
+            onClick={() => void onCopy(createdKey, "created-key")}
             title="Copiar chave"
             type="button"
           >

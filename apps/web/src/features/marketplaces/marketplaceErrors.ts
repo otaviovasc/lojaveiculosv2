@@ -23,13 +23,14 @@ export function formatMarketplaceError(
       provider: provider ? providerLabels[provider] : "Nao informado",
       requestId: error.requestId ?? details.requestId ?? "Nao informado",
       vehicleLabel:
-        details.vehicleLabel ?? details.listingId ?? "Estoque da loja",
+        details.vehicleLabel ??
+        (details.listingId ? "Anúncio do estoque" : "Estoque da loja"),
     };
   }
 
   if (error instanceof Error) {
     return {
-      failed: error.message,
+      failed: fallback,
       fix: "Revise a configuracao da conta e tente novamente.",
       provider: "Nao informado",
       requestId: "Nao informado",

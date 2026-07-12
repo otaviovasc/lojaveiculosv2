@@ -1,14 +1,13 @@
 import { CheckCircle2, FileText, ArrowRight, Sparkles } from "lucide-react";
-import type { SaleRecord } from "./types";
+import type { SaleDocumentKind, SaleRecord } from "./types";
 import BorderGlow from "../../components/ui/BorderGlow";
 
 export function FinalizationSection({ sale }: { sale: SaleRecord }) {
-  const documentLabels: Record<string, string> = {
+  const documentLabels: Record<SaleDocumentKind, string> = {
     sale_contract: "Contrato de Compra e Venda",
     sale_receipt: "Recibo de Venda",
     delivery_term: "Termo de Entrega",
     power_of_attorney: "Procuração",
-    warranty: "Garantia de Venda",
   };
 
   const selectedDocs = sale.selectedDocumentKinds;

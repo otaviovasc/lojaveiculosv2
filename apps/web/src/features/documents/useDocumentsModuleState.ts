@@ -29,6 +29,9 @@ export function useDocumentsModuleState(api: DocumentsApi | null) {
     useState<WorkspaceDocument | null>(null);
   const [documentPreview, setDocumentPreview] =
     useState<DocumentDownload | null>(null);
+  const [documentPreviewError, setDocumentPreviewError] = useState<
+    string | null
+  >(null);
   const [documentVersions, setDocumentVersions] = useState<DocumentVersion[]>(
     [],
   );
@@ -71,6 +74,7 @@ export function useDocumentsModuleState(api: DocumentsApi | null) {
     documentToDelete,
     documentsApi: api,
     setDocumentPreview,
+    setDocumentPreviewError,
     setDocumentToDelete,
     setDocumentVersions,
     setDocuments,
@@ -88,6 +92,7 @@ export function useDocumentsModuleState(api: DocumentsApi | null) {
   return {
     deleteDocument: actions.deleteDocument,
     documentPreview,
+    documentPreviewError,
     documentToDelete,
     documentVersions,
     documents,
@@ -102,6 +107,7 @@ export function useDocumentsModuleState(api: DocumentsApi | null) {
     saveTemplate: actions.saveTemplate,
     selectedDocument,
     setDocumentPreview,
+    setDocumentPreviewError,
     setDocumentToDelete,
     setDocumentVersions,
     setDocuments,

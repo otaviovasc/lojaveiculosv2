@@ -1,0 +1,138 @@
+.public-api-reference-switch {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.25rem;
+}
+
+.public-api-reference-switch button {
+  align-items: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.5rem;
+}
+
+.public-api-reference-switch button.is-active {
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
+.public-api-reference-switch span {
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+}
+
+.public-api-resource-grid button {
+  align-items: start;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.public-api-resource-copy {
+  gap: 0.3125rem;
+  min-width: 0;
+}
+
+.public-api-resource-action {
+  align-items: center;
+  color: var(--color-accent-strong);
+  display: flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.375rem;
+  grid-column: 2;
+}
+
+.public-api-endpoints details {
+  overflow: clip;
+}
+
+.public-api-endpoints summary {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  list-style: none;
+  padding: 0.875rem;
+}
+
+.public-api-endpoints summary::-webkit-details-marker {
+  display: none;
+}
+
+.public-api-endpoints summary div {
+  display: grid;
+  gap: 0.1875rem;
+  min-width: 0;
+}
+
+.public-api-endpoints summary code {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  overflow-wrap: anywhere;
+}
+
+.public-api-endpoint-chevron {
+  color: var(--color-muted);
+  transition: transform var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+.public-api-endpoints details[open] .public-api-endpoint-chevron {
+  transform: rotate(180deg);
+}
+
+.public-api-endpoint-body {
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.625rem;
+  padding: 0.875rem;
+}
+
+.public-api-endpoints pre {
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  max-width: 100%;
+  overflow: auto;
+  padding: 0.75rem;
+}
+
+.public-api-endpoints pre:focus-visible {
+  outline: 0.125rem solid var(--color-accent);
+  outline-offset: 0.125rem;
+}
+
+.public-api-copy-feedback {
+  margin: 0;
+}
+
+.public-api-revoke-dialog {
+  color: var(--color-muted);
+  display: grid;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  gap: 0.75rem;
+}
+
+.public-api-revoke-dialog strong {
+  color: var(--color-text);
+}
+
+.public-api-revoke-dialog__error {
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  color: var(--color-danger);
+  padding: 0.75rem;
+}

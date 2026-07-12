@@ -37,18 +37,25 @@ export function FeatureEmptyState({
 export function FeatureAlert({
   action,
   children,
-  className = "feature-alert",
+  className,
   icon,
   title,
+  tone = "danger",
 }: {
   action?: ReactNode;
   children: ReactNode;
   className?: string;
   icon?: ReactNode;
   title?: ReactNode;
+  tone?: "danger" | "info" | "success" | "warning";
 }) {
   return (
-    <section className={className} role="alert">
+    <section
+      aria-live={tone === "danger" ? "assertive" : "polite"}
+      className={cx("feature-alert", `feature-alert--${tone}`, className)}
+      data-tone={tone}
+      role={tone === "danger" ? "alert" : "status"}
+    >
       {icon}
       {title ? <strong>{title}</strong> : null}
       {children}
@@ -69,7 +76,12 @@ export function FeatureLoadingState({
   title?: ReactNode;
 }) {
   return (
-    <section className={className}>
+    <section
+      aria-busy="true"
+      aria-live="polite"
+      className={className}
+      role="status"
+    >
       {IconComponent ? (
         <IconComponent aria-hidden="true" className="size-5" />
       ) : null}
@@ -104,16 +116,16 @@ export function FeatureStatusBadge({
 
 function statusToneClass(tone: FeatureStatusTone) {
   if (tone === "success") {
-    return "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20";
+    return "bg-green-soft text-success-strong border border-success-strong/20";
   }
   if (tone === "warning") {
-    return "bg-warning/10 text-warning border border-warning/20";
+    return "bg-warning/10 text-warning-strong border border-warning-strong/20";
   }
   if (tone === "danger" || tone === "pink") {
-    return "bg-pink-500/10 text-pink-500 border border-pink-500/20";
+    return "bg-accent-soft text-danger border border-danger/20";
   }
   if (tone === "blue") {
-    return "bg-blue-500/10 text-blue-500 border border-blue-500/20";
+    return "bg-blue-soft text-blue-start border border-blue-start/20";
   }
   return "bg-panel text-muted border border-line";
 }

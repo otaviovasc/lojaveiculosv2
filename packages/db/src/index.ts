@@ -22,6 +22,7 @@ export * from "./schema/integrations.js";
 export * from "./schema/fiscal.js";
 export * from "./schema/externalApi.js";
 export * from "./schema/migration.js";
+export * from "./schema/automation.js";
 
 export const databaseNamingPolicy = {
   columnCase: "lower_snake_case",

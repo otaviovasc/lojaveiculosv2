@@ -1,5 +1,5 @@
 import { FilePlus2, GripVertical, Trash2 } from "lucide-react";
-import { DocumentRichTextBlockEditor } from "./DocumentRichTextBlockEditor";
+import { lazy, Suspense } from "react";
 import {
   blockTitle,
   createClauseBlock,
@@ -8,6 +8,12 @@ import {
   updateBlockBody,
 } from "./documentBuilderModel";
 import type { DocumentTemplateBlock } from "./types";
+
+const DocumentRichTextBlockEditor = lazy(() =>
+  import("./DocumentRichTextBlockEditor").then((module) => ({
+    default: module.DocumentRichTextBlockEditor,
+  })),
+);
 
 export function DocumentBuilderBlocks({
   blocks,
@@ -32,7 +38,7 @@ export function DocumentBuilderBlocks({
       <header className="documents-builder-panel-heading">
         <div>
           <span>Estrutura compartilhada</span>
-          <strong>Blocos do documento</strong>
+          <h2>Blocos do documento</h2>
         </div>
         <button
           disabled={!isEditable}
@@ -46,7 +52,11 @@ export function DocumentBuilderBlocks({
 
       <div className="documents-builder-block-list">
         {blocks.map((block, index) => (
-          <article className="documents-builder-block" key={block.id}>
+          <article
+            className="documents-builder-block"
+            data-block-type={block.type}
+            key={`${block.id}-${index}`}
+          >
             <header>
               <span className="documents-builder-block-handle">
                 <GripVertical aria-hidden="true" className="size-4" />
@@ -106,12 +116,24 @@ function renderBlock({
 
   if (block.type === "clause" || block.type === "paragraph") {
     return isEditable ? (
-      <DocumentRichTextBlockEditor
-        onChange={(value) => onChange(updateBlockBody(block, value))}
-        placeholder="Escreva usando variáveis como {{buyer.name}}"
-        value={block.body}
-        variables={variables}
-      />
+      <Suspense
+        fallback={
+          <div
+            aria-live="polite"
+            className="documents-builder-block-preview"
+            role="status"
+          >
+            Carregando editor…
+          </div>
+        }
+      >
+        <DocumentRichTextBlockEditor
+          onChange={(value) => onChange(updateBlockBody(block, value))}
+          placeholder="Escreva usando variáveis como {{buyer.name}}"
+          value={block.body}
+          variables={variables}
+        />
+      </Suspense>
     ) : (
       <p className="documents-builder-block-preview">
         {renderSampleText(block.body)}
@@ -122,8 +144,8 @@ function renderBlock({
   if (block.type === "field_grid") {
     return (
       <dl className="documents-builder-field-grid">
-        {block.fields.map((field) => (
-          <div key={`${block.id}-${field.token}`}>
+        {block.fields.map((field, index) => (
+          <div key={`${block.id}-${field.token}-${index}`}>
             <dt>{field.label}</dt>
             <dd>
               <code>{field.token}</code>
@@ -138,8 +160,8 @@ function renderBlock({
   if (block.type === "table") {
     return (
       <div className="documents-builder-table-block">
-        {block.columns.map((column) => (
-          <span key={column}>{column}</span>
+        {block.columns.map((column, index) => (
+          <span key={`${column}-${index}`}>{column}</span>
         ))}
       </div>
     );
@@ -148,8 +170,8 @@ function renderBlock({
   if (block.type === "signature") {
     return (
       <div className="documents-builder-signature-block">
-        {block.roles.map((role) => (
-          <span key={role}>{role}</span>
+        {block.roles.map((role, index) => (
+          <span key={`${role}-${index}`}>{role}</span>
         ))}
       </div>
     );

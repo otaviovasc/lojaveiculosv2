@@ -8,14 +8,14 @@ import {
 } from "lucide-react";
 
 export const landingOutcomes = [
-  ["Site profissional", "Vitrine publica com dominio, paginas e SEO."],
-  ["Estoque em ordem", "Fotos, precos, status e historico em um fluxo."],
-  ["Leads no WhatsApp", "Contato direto por veiculo, campanha e vendedor."],
+  ["Site profissional", "Vitrine pública com domínio, páginas e SEO."],
+  ["Estoque em ordem", "Fotos, preços, status e histórico em um fluxo."],
+  ["Leads no WhatsApp", "Contato direto por veículo, campanha e vendedor."],
   ["Portais integrados", "Pronto para publicar em OLX e Mercado Livre."],
 ] as const;
 
 export const landingSteps = [
-  ["Crie a conta", "Clerk valida o usuario e abre o onboarding da loja."],
+  ["Crie a conta", "Valide seu acesso e configure o perfil da loja."],
   ["Cadastre o estoque", "Inclua unidade, fotos, checklist e custo de compra."],
   [
     "Publique e acompanhe",
@@ -26,13 +26,13 @@ export const landingSteps = [
 export const landingFeatures = [
   {
     icon: Globe2,
-    label: "Site e paginas",
-    text: "Construtor visual para loja, paginas extras e dominio proprio.",
+    label: "Site e páginas",
+    text: "Construtor visual para loja, páginas extras e domínio próprio.",
   },
   {
     icon: Car,
-    label: "Inventario",
-    text: "Cadastro completo com unidades, midia, documentos e ciclo de venda.",
+    label: "Inventário",
+    text: "Cadastro completo com unidades, mídia, documentos e ciclo de venda.",
   },
   {
     icon: MessageCircle,
@@ -42,16 +42,16 @@ export const landingFeatures = [
   {
     icon: UploadCloud,
     label: "Marketplaces",
-    text: "Fila auditada para publicar, atualizar e despublicar anuncios.",
+    text: "Fila auditada para publicar, atualizar e despublicar anúncios.",
   },
   {
     icon: BarChart3,
-    label: "Gestao",
-    text: "Financeiro, cobranca, relatorios e permissoes por papel.",
+    label: "Gestão",
+    text: "Financeiro, cobrança, relatórios e permissões por papel.",
   },
   {
     icon: ShieldCheck,
     label: "Conta segura",
-    text: "Acesso por Clerk, convite real e escopo por loja/tenant.",
+    text: "Acesso protegido, convites para a equipe e permissões por loja.",
   },
 ] as const;

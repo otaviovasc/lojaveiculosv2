@@ -17,6 +17,7 @@ import {
   ScrollText,
   Settings,
   ShieldCheck,
+  Sparkles,
   Store,
   Users,
 } from "lucide-react";
@@ -88,6 +89,12 @@ export const navigationGroups: NavigationGroup[] = [
     label: "Gestão",
     items: [
       { icon: Bot, id: "auto-entries", label: "Lançamentos" },
+      {
+        entitlementKey: "automation",
+        icon: Sparkles,
+        id: "autobot",
+        label: "Operador IA",
+      },
       { icon: HandCoins, id: "commissions", label: "Comissões" },
       { icon: Receipt, id: "billing", label: "Assinatura" },
       { icon: Receipt, id: "expenses", label: "Gastos" },

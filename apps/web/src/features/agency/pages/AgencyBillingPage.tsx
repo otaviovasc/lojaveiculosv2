@@ -9,21 +9,11 @@ import {
   FeatureAlert,
   FeatureEmptyState,
 } from "../../../components/ui/FeatureStates";
-import {
-  BillingAllocationTable,
-  BillingEventList,
-  BillingKpiGrid,
-} from "../../billing/BillingPanels";
-import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
+import { BillingEventList } from "../../billing/BillingPanels";
 import { readBillingCheckoutReturn } from "../../billing/billingCheckoutReturn";
-import {
-  BillingCheckoutPanel,
-  type BillingCheckoutState,
-} from "../../billing/BillingCheckoutPanel";
-import { BillingProviderPanel } from "../../billing/BillingProviderPanel";
+import type { BillingCheckoutState } from "../../billing/BillingCheckoutPanel";
 import type {
   BillingEntitlementStatus,
-  BillingOverview,
   BillingProviderStatus,
   EntitlementKey,
 } from "../../billing/types";
@@ -37,6 +27,7 @@ import {
 } from "./AgencyBillingPage.model";
 import { createRuntimeAgencyBillingApi } from "./AgencyBillingPage.runtime";
 import { AgencyBillingStoreEntitlements } from "./AgencyBillingStoreEntitlements";
+import { AgencyBillingSummarySections } from "./AgencyBillingSummarySections";
 
 export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const session = useAccountSession();
@@ -165,43 +156,47 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
           <div className="flex flex-wrap items-center gap-2">
             <FeatureActionButton
               icon={UploadCloud}
+              isBusy={status.kind === "syncing"}
               label="Sincronizar Asaas"
               onClick={() => void syncProvider()}
             />
             <FeatureActionButton
               icon={RefreshCcw}
+              isBusy={status.kind === "loading"}
               label="Atualizar"
               onClick={() => void refresh()}
             />
           </div>
         }
-        description="Assinatura, cobranca consolidada e entitlements das lojas vinculadas ao tenant da agencia."
+        description="Assinatura, cobrança consolidada e recursos das lojas vinculadas à agência."
         eyebrow={
           <>
             <CreditCard aria-hidden="true" className="size-4" />
-            Billing da Agencia
+            Billing da Agência
           </>
         }
-        title="Cobranca unificada"
+        title="Cobrança unificada"
       />
 
       {status.kind === "error" ? (
         <FeatureAlert className="billing-alert">{status.message}</FeatureAlert>
       ) : null}
       {checkoutReturn ? (
-        <FeatureAlert className="billing-alert" title={checkoutReturn.title}>
+        <FeatureAlert
+          className="billing-alert"
+          title={checkoutReturn.title}
+          tone={checkoutReturn.tone}
+        >
           {checkoutReturn.message}
         </FeatureAlert>
       ) : null}
 
       {overview && panelOverview ? (
         <>
-          {providerStatus ? (
-            <BillingProviderPanel status={providerStatus} />
-          ) : null}
-          <BillingCheckoutPanel
+          <AgencyBillingSummarySections
             checkoutState={checkoutState}
-            overview={panelOverview}
+            overview={overview}
+            panelOverview={panelOverview}
             providerStatus={providerStatus}
             onCheckout={(input) =>
               agencyTenant
@@ -209,9 +204,6 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
                 : Promise.reject(new Error("Agency tenant not found."))
             }
           />
-          <BillingAutomaticBillingPanel overview={panelOverview} />
-          <BillingKpiGrid overview={panelOverview} />
-          <BillingAllocationTable allocations={overview.allocations} />
           <AgencyBillingStoreEntitlements
             overview={overview}
             panelOverview={panelOverview}

@@ -25,6 +25,7 @@ import {
   completeReservationWorkflow,
   completeSaleWorkflow,
 } from "../../../domains/vehicle/workflows/vehicleSaleWorkflow.js";
+import { parseVehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import {
   assertReservableVehicleState,
   assertSellableVehicleState,
@@ -123,6 +124,12 @@ async function completeWorkflowForTransition(
   }
 
   assertSellableVehicleState(listing, unit);
+  const selectedDocumentKinds = parseVehicleSaleDocumentKinds(
+    sale.selectedDocumentKinds,
+  );
+  if (!selectedDocumentKinds) {
+    throw new SaleReadinessError(["selected_document_kinds"]);
+  }
   await completeSaleWorkflow(context, {
     buyer,
     listing,
@@ -130,6 +137,7 @@ async function completeWorkflowForTransition(
     ports: ports.vehiclePorts,
     reason: input.overrideReason,
     sale: workflowSale,
+    selectedDocumentKinds,
     unit,
   });
   await registerTradeInAcquisition(context, sale, ports.vehiclePorts);

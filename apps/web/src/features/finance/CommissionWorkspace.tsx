@@ -97,7 +97,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           kind: "error",
           message: formatApiErrorDisplay(
             error,
-            "Nao foi possivel carregar as comissoes.",
+            "Não foi possível carregar as comissões.",
           ),
           title: "Erro ao carregar",
         });
@@ -119,7 +119,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           source: "commissions_slice",
         },
       });
-      setToast({ kind: "success", title: "Bonus salvo", message: draft.name });
+      setToast({ kind: "success", title: "Bônus salvo", message: draft.name });
       setBonusSeller(null);
       setShowBonus(false);
       refresh();
@@ -128,9 +128,9 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel salvar o bonus.",
+          "Não foi possível salvar o bônus.",
         ),
-        title: "Erro ao salvar bonus",
+        title: "Erro ao salvar bônus",
       });
     } finally {
       setSavingBonus(false);
@@ -147,8 +147,8 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
       );
       setToast({
         kind: "success",
-        message: `${entriesToPay.length} lancamento(s) pagos`,
-        title: "Comissoes pagas",
+        message: `${entriesToPay.length} lançamento(s) pagos`,
+        title: "Comissões pagas",
       });
       setPaySeller(null);
       refresh();
@@ -157,7 +157,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         kind: "error",
         message: formatApiErrorDisplay(
           error,
-          "Nao foi possivel pagar as comissoes.",
+          "Não foi possível pagar as comissões.",
         ),
         title: "Erro ao pagar",
       });
@@ -169,7 +169,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi || !modalEntry) return;
     await updateEntryFromDraft(runtimeApi, modalEntry, draft);
-    setToast({ kind: "success", title: "Comissao salva", message: draft.name });
+    setToast({ kind: "success", title: "Comissão salva", message: draft.name });
     setIsModalOpen(false);
     setModalEntry(null);
     refresh();
@@ -218,9 +218,11 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
       )}
       <CommissionRulesPanel
         items={rules}
-        onCreate={(input) =>
-          void runtimeApi?.createCommissionRule(input).then(refresh)
-        }
+        onCreate={async (input) => {
+          if (!runtimeApi) throw new Error("Finance API unavailable");
+          await runtimeApi.createCommissionRule(input);
+          refresh();
+        }}
       />
       {paySeller ? (
         <ConfirmCommissionPayDialog

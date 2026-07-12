@@ -99,7 +99,7 @@ export function CampaignReviewPanel({
         />
         <ReviewStat
           active={filter === "warning"}
-          label="Atencao"
+          label="Atenção"
           onClick={() => setFilter("warning")}
           value={summary.warnings}
         />

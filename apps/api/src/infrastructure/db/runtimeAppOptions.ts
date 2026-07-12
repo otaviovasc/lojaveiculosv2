@@ -77,10 +77,10 @@ import {
 } from "./externalApi/drizzleExternalApiRepository.js";
 import { createRuntimeInventoryServices } from "./runtimeInventoryServices.js";
 import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnrichmentServices.js";
+import { createRuntimeAutomationServices } from "./runtimeAutomationServices.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
-
 type RuntimeHttpAppOptionsInput = {
   auditDb: unknown | null;
   clerkAccountProviders?: {
@@ -107,11 +107,11 @@ export function createRuntimeHttpAppOptions({
     ? createDrizzleAuditSink(auditDb as unknown as DrizzleAuditSinkClient)
     : null;
   const runtimeObjectStorage = objectStorage ?? createRuntimeObjectStorage(env);
-
   return {
     analyticsServices: createRuntimeAnalyticsServices(
       db as RuntimeAnalyticsClient,
     ),
+    automationServices: createRuntimeAutomationServices(db),
     ...(audit ? { audit } : {}),
     accountProvisioningServices: createAccountProvisioningServices({
       ...(clerkAccountProviders.invitationSender

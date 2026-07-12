@@ -4,8 +4,10 @@ import {
   type ServiceContext,
 } from "../../../../shared/serviceContext.js";
 import type { LinkedDocument } from "../../ports/documentRepository.js";
-import { buildDocumentPreview } from "../../preview/documentPreview.js";
-import { renderDocumentPreviewPdf } from "../../render/documentPreviewPdf.js";
+import {
+  getDocumentRegenerationCapability,
+  getDocumentRegenerationRenderer,
+} from "../../render/documentRegeneration.js";
 import type { DocumentWorkspaceServicePorts } from "../DocumentWorkspaceService/serviceSupport.js";
 import {
   DocumentOperationPolicyError,
@@ -27,9 +29,13 @@ export async function regenerateDocument(
     ports,
     input.documentId,
   );
-  if (document.status === "voided" || document.status === "archived") {
+  const capability = getDocumentRegenerationCapability(document);
+  const renderer = getDocumentRegenerationRenderer(document);
+  if (!capability.canRegenerate || !renderer) {
     throw new DocumentOperationPolicyError(
-      "Voided or archived documents cannot be regenerated.",
+      capability.reason === "document_state_unsupported"
+        ? "Voided or archived documents cannot be regenerated."
+        : "Document regeneration is unavailable for its original renderer.",
     );
   }
   if (!ports?.objectStorage) throw new DocumentOperationStorageError();
@@ -38,18 +44,15 @@ export async function regenerateDocument(
     actorId: context.actor.id,
     at: new Date(),
   });
-  const updated = await repository.update({
-    documentId: document.id,
+  const body = await renderer({
+    ...document,
     metadata,
     status: "issued",
-    storeId: scope.storeId,
-    tenantId: scope.tenantId,
   });
-  const body = await renderDocumentPreviewPdf(buildDocumentPreview(updated));
   const object = await ports.objectStorage.putObject({
     body,
-    contentType: updated.mimeType ?? "application/pdf",
-    fileName: updated.fileName,
+    contentType: document.mimeType ?? "application/pdf",
+    fileName: document.fileName,
     scopeSegments: [
       "tenants",
       scope.tenantId,
@@ -59,6 +62,13 @@ export async function regenerateDocument(
       document.id,
       "versions",
     ],
+  });
+  const updated = await repository.update({
+    documentId: document.id,
+    metadata,
+    status: "issued",
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
   });
   await repository.createVersion({
     createdByUserId: context.actor.kind === "user" ? context.actor.id : null,

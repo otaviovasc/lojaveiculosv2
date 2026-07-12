@@ -70,12 +70,13 @@ export function DocumentosChecklistCard() {
             {completedCount}/{totalCount} Concluídos
           </span>
           <button
+            aria-label="Resetar checklist"
             onClick={handleReset}
             className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent cursor-pointer transition-all"
             title="Resetar checklist"
             type="button"
           >
-            <RotateCcw className="size-3.5" />
+            <RotateCcw aria-hidden="true" className="size-3.5" />
           </button>
         </div>
       </div>
@@ -114,12 +115,13 @@ export function DocumentosChecklistCard() {
               </span>
             </label>
             <button
+              aria-label={`Excluir ${item.label}`}
               onClick={() => handleDeleteItem(item.id)}
               className="p-1 rounded bg-transparent hover:bg-danger/15 text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
               title="Excluir item"
               type="button"
             >
-              <Trash2 className="size-3.5" />
+              <Trash2 aria-hidden="true" className="size-3.5" />
             </button>
           </div>
         ))}
@@ -138,10 +140,11 @@ export function DocumentosChecklistCard() {
           className="min-h-9 flex-1 rounded-lg border border-line bg-app px-3 text-xs font-bold outline-none"
         />
         <button
+          aria-label="Adicionar item ao checklist"
           type="submit"
           className="min-h-9 px-3.5 bg-accent text-inverse font-black text-xs hover:bg-accent-strong rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
         >
-          <Plus className="size-4" />
+          <Plus aria-hidden="true" className="size-4" />
         </button>
       </form>
     </div>

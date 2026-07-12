@@ -135,12 +135,15 @@ export function FeatureActionButton({
 }) {
   return (
     <button
+      aria-busy={isBusy || undefined}
+      aria-disabled={disabled || isBusy || undefined}
+      aria-label={label}
       className={cx(
         "documents-top-bar-action",
         variant === "primary" && "documents-top-bar-action--primary",
         className,
       )}
-      disabled={disabled}
+      disabled={disabled || isBusy}
       onClick={onClick}
       title={title}
       type={type}

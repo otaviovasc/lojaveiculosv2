@@ -42,10 +42,10 @@ export function SidebarWorkspace({
 
   if (collapsed) {
     return (
-      <div className="flex h-20 items-center justify-center border-b border-line/60 px-2 py-4">
+      <div className="workspace-sidebar__brand workspace-sidebar__brand--compact">
         <Logo
           alt={name}
-          className="h-6 w-auto max-w-[64px] object-contain select-none transition-transform duration-300 hover:scale-105"
+          className="workspace-sidebar__compact-logo"
           src={compactLogoUrl}
           variant={theme === "dark" ? "icon-white" : "icon"}
         />
@@ -54,51 +54,44 @@ export function SidebarWorkspace({
   }
 
   return (
-    <div className="relative border-b border-line/60 p-4">
-      {/* Brand logo container */}
-      <div className="mb-4.5 px-1.5 flex items-center justify-center">
+    <div className="workspace-sidebar__brand">
+      <div className="workspace-sidebar__logo-wrap">
         <Logo
           alt={name}
-          className="h-7 w-auto object-contain select-none"
+          className="workspace-sidebar__logo"
           src={logoUrl}
           variant={theme === "dark" ? "full-white" : "full"}
         />
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="relative min-w-0 flex-1">
+      <div className="workspace-sidebar__store-row">
+        <div className="workspace-sidebar__store-picker">
           <button
-            className="group flex w-full min-w-0 items-center justify-between rounded-xl px-2.5 py-2 text-left border border-line/50 bg-app-elevated/30 hover:bg-app-elevated/70 hover:border-line-strong/50 transition-all duration-300 cursor-pointer shadow-sm"
+            aria-expanded={isOpen}
+            className="workspace-sidebar__store-trigger"
             onClick={() => setIsOpen((current) => !current)}
             type="button"
           >
-            <span className="flex min-w-0 items-center gap-2.5">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-panel dark:bg-white/5 shadow-inner border border-line-strong/10 group-hover:scale-105 transition-transform duration-300 p-1.5">
+            <span className="workspace-sidebar__store-identity">
+              <span className="workspace-sidebar__store-icon">
                 <Logo
                   alt={name}
-                  className="size-full object-contain select-none"
+                  className="workspace-sidebar__store-icon-image"
                   src={compactLogoUrl}
                   variant={theme === "dark" ? "icon-white" : "icon"}
                 />
               </span>
-              <span className="flex min-w-0 flex-col">
-                <span className="truncate text-xs.5 font-black text-primary leading-tight group-hover:text-accent transition-colors">
-                  {name}
-                </span>
-                <span className="truncate text-xs font-black uppercase tracking-widest text-muted mt-0.5 flex items-center gap-1.5">
-                  <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="workspace-sidebar__store-copy">
+                <strong>{name}</strong>
+                <span>
+                  <i aria-hidden="true" />
                   {meta}
                 </span>
               </span>
             </span>
             <ChevronDown
               aria-hidden="true"
-              className={
-                "size-3.5 shrink-0 text-muted transition-transform duration-300 " +
-                (isOpen
-                  ? "rotate-180 text-accent"
-                  : "group-hover:text-app-text")
-              }
+              className={isOpen ? "is-open" : undefined}
             />
           </button>
 
@@ -106,27 +99,25 @@ export function SidebarWorkspace({
             <>
               <button
                 aria-label="Fechar seletor de loja"
-                className="fixed inset-0 z-40 cursor-default bg-transparent"
+                className="workspace-sidebar__picker-backdrop"
                 onClick={() => setIsOpen(false)}
                 type="button"
               />
-              <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-[18px] border border-line bg-panel p-1.5 shadow-xl backdrop-blur-md">
+              <div className="workspace-sidebar__picker-menu">
                 <button
-                  className="flex w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-black text-accent bg-accent-soft border border-accent/10 transition-colors cursor-pointer"
+                  className="workspace-sidebar__picker-option is-active"
                   onClick={() => setIsOpen(false)}
                   type="button"
                 >
                   {name}
                 </button>
-                <div className="mx-2 my-1.5 h-px bg-line/60" />
+                <div className="workspace-sidebar__picker-divider" />
                 <button
-                  className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-muted transition-colors hover:bg-app-elevated hover:text-app-text cursor-pointer"
+                  className="workspace-sidebar__picker-option"
                   onClick={() => setIsOpen(false)}
                   type="button"
                 >
-                  <span className="text-base leading-none font-bold text-accent">
-                    +
-                  </span>
+                  <span aria-hidden="true">+</span>
                   Criar loja
                 </button>
               </div>
@@ -137,11 +128,11 @@ export function SidebarWorkspace({
         {onClose ? (
           <button
             aria-label="Fechar menu"
-            className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted border border-transparent hover:border-line/40 transition-colors hover:bg-app-elevated hover:text-app-text lg:hidden cursor-pointer"
+            className="workspace-sidebar__close"
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden="true" className="size-5" />
+            <X aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -166,43 +157,23 @@ export function DashboardSidebarNavItem<Id extends string>({
     <button
       aria-current={active ? "page" : undefined}
       aria-label={collapsed ? item.title : undefined}
-      className={
-        "group relative flex min-h-9 items-center rounded-lg text-sm transition-all duration-200 cursor-pointer " +
-        (active
-          ? "dashboard-sidebar-nav-item-active border font-black shadow-sm"
-          : "text-muted hover:bg-app-elevated/60 hover:text-app-text border border-transparent") +
-        " " +
-        (collapsed
-          ? "justify-center px-2"
-          : "justify-between gap-2.5 px-2.5 hover:translate-x-0.5")
-      }
+      className={`workspace-sidebar__nav-item${active ? " is-active" : ""}${collapsed ? " is-compact" : ""}`}
       onClick={() => onSelect(item.id)}
       title={collapsed ? item.title : undefined}
       type="button"
     >
-      {/* Visual Accent Strip for Active Item */}
-      {active && !collapsed && (
-        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r bg-accent" />
-      )}
-
-      <span className="flex min-w-0 items-center gap-2.5 relative z-10">
-        <span className="flex size-4.5 shrink-0 items-center justify-center">
-          <Icon className="size-4 transition-transform duration-300 group-hover:scale-110" />
+      <span className="workspace-sidebar__nav-copy">
+        <span className="workspace-sidebar__nav-icon">
+          <Icon aria-hidden="true" />
         </span>
         {collapsed ? null : <span className="truncate">{item.title}</span>}
       </span>
 
       {collapsed ? null : (
-        <span className="flex shrink-0 items-center gap-2 relative z-10">
-          {item.shortcut ? (
-            <kbd className="hidden h-5 items-center rounded border border-line bg-app px-1.5 font-mono text-xs font-bold text-muted group-hover:inline-flex">
-              {item.shortcut}
-            </kbd>
-          ) : null}
+        <span className="workspace-sidebar__nav-meta">
+          {item.shortcut ? <kbd>{item.shortcut}</kbd> : null}
           {item.badge ? (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-accent border border-accent/15 px-1.5 text-xs font-black text-white shadow-sm">
-              {item.badge}
-            </span>
+            <span className="workspace-sidebar__badge">{item.badge}</span>
           ) : null}
         </span>
       )}
@@ -222,7 +193,9 @@ export function SidebarFooterActions({
   onCollapsedChange: ((collapsed: boolean) => void) | undefined;
 }) {
   return (
-    <div className={"flex gap-2 " + (isCompact ? "flex-col" : "items-center")}>
+    <div
+      className={`workspace-sidebar__footer-actions${isCompact ? " is-compact" : ""}`}
+    >
       <button
         aria-label={
           theme === "dark"
@@ -230,29 +203,18 @@ export function SidebarFooterActions({
             : "Alternar para tema escuro"
         }
         aria-pressed={theme === "dark"}
-        className={
-          "group theme-toggle-btn h-10 px-3 flex items-center " +
-          (isCompact ? "justify-center w-full" : "flex-1 justify-start gap-2.5")
-        }
+        className="workspace-sidebar__footer-button"
         onClick={onThemeToggle}
         title={theme === "dark" ? "Tema claro" : "Tema escuro"}
         type="button"
       >
         {theme === "dark" ? (
-          <Sun
-            aria-hidden="true"
-            className="size-4.5 shrink-0 text-warning theme-icon"
-          />
+          <Sun aria-hidden="true" className="workspace-sidebar__footer-icon" />
         ) : (
-          <Moon
-            aria-hidden="true"
-            className="size-4.5 shrink-0 text-violet-start theme-icon"
-          />
+          <Moon aria-hidden="true" className="workspace-sidebar__footer-icon" />
         )}
         {!isCompact && (
-          <span className="font-semibold text-sm">
-            {theme === "dark" ? "Tema Claro" : "Tema Escuro"}
-          </span>
+          <span>{theme === "dark" ? "Tema Claro" : "Tema Escuro"}</span>
         )}
         <div className="gloss-overlay" />
       </button>
@@ -260,18 +222,15 @@ export function SidebarFooterActions({
       {onCollapsedChange && (
         <button
           aria-label={isCompact ? "Expandir sidebar" : "Recolher sidebar"}
-          className={
-            "hidden h-10 items-center justify-center rounded-xl border collapse-toggle-btn cursor-pointer lg:flex shrink-0 " +
-            (isCompact ? "w-full" : "w-10")
-          }
+          className="workspace-sidebar__collapse-button"
           onClick={() => onCollapsedChange(!isCompact)}
           title={isCompact ? "Expandir" : "Recolher"}
           type="button"
         >
           {isCompact ? (
-            <PanelLeftOpen aria-hidden="true" className="size-4.5 shrink-0" />
+            <PanelLeftOpen aria-hidden="true" />
           ) : (
-            <PanelLeftClose aria-hidden="true" className="size-4.5 shrink-0" />
+            <PanelLeftClose aria-hidden="true" />
           )}
         </button>
       )}

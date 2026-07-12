@@ -13,6 +13,7 @@ export const documentsSchemas = {
     type: "object",
     additionalProperties: false,
     required: [
+      "capabilities",
       "context",
       "createdAt",
       "file",
@@ -25,6 +26,18 @@ export const documentsSchemas = {
       "uploadedAt",
     ],
     properties: {
+      capabilities: {
+        type: "object",
+        additionalProperties: false,
+        required: ["canRegenerate", "regenerateBlockReason"],
+        properties: {
+          canRegenerate: { type: "boolean" },
+          regenerateBlockReason: {
+            type: ["string", "null"],
+            enum: ["document_state_unsupported", "renderer_unavailable", null],
+          },
+        },
+      },
       context: {
         type: "object",
         additionalProperties: false,

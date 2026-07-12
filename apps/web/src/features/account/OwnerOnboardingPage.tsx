@@ -1,4 +1,3 @@
-import { useAuth } from "@clerk/react";
 import { ArrowRight, Loader2, Store } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,9 +25,10 @@ import {
   type OwnerStoreFieldErrors,
 } from "./onboardingValidation";
 import { createRuntimeAccountApi } from "./runtimeApi";
+import { useAccountSession } from "./accountSession";
 
 export function OwnerOnboardingPage() {
-  const auth = useAuth();
+  const session = useAccountSession();
   const navigate = useNavigate();
   const [storeTradingName, setStoreTradingName] = useState("");
   const [storeLegalName, setStoreLegalName] = useState("");
@@ -81,10 +81,10 @@ export function OwnerOnboardingPage() {
     try {
       const api = await createRuntimeAccountApi();
       const store = await api.createOwnerStore(validation.input);
-      persistCurrentStoreSlug(store.storeSlug, auth.userId);
+      persistCurrentStoreSlug(store.storeSlug, session.user.clerkUserId);
       void navigate("/auth/session", { replace: true });
     } catch (err) {
-      setError(formatApiErrorDisplay(err, "Nao foi possivel criar a loja."));
+      setError(formatApiErrorDisplay(err, "Não foi possível criar a loja."));
     } finally {
       setStatus("idle");
     }

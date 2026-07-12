@@ -35,6 +35,7 @@ describe("App module navigation", () => {
     expect(ids).toContain("inventory");
     expect(ids).toContain("crm");
     expect(ids).toContain("billing");
+    expect(ids).toContain("autobot");
     expect(ids).toContain("settings");
     expect(ids).toContain("public-api");
     expect(ids).toContain("custom-pages");
@@ -51,6 +52,7 @@ describe("App module navigation", () => {
     expect(sidebarIds.every((id) => moduleSurfaceById[id])).toBe(true);
     expect(isPlaceholderModule("public-site")).toBe(false);
     expect(isPlaceholderModule("custom-pages")).toBe(false);
+    expect(isPlaceholderModule("autobot")).toBe(false);
     expect(isPlaceholderModule("domain")).toBe(true);
   });
 
@@ -84,6 +86,7 @@ describe("App module navigation", () => {
   });
 
   it("reserves dedicated admin paths before public slug routing", () => {
+    expect(adminRoutePaths).toContain("/customers");
     expect(adminRoutePaths).toContain("/customize");
     expect(adminRoutePaths).not.toContain("/personalizar");
     expect(adminRoutePaths).toContain("/custom-pages");

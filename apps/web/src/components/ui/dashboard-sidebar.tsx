@@ -52,10 +52,7 @@ export function DashboardSidebar<Id extends string = string>({
 
   return (
     <div
-      className={
-        "flex h-full min-h-0 flex-col border-r border-line/60 bg-panel text-app-text font-sans transition-all duration-300 " +
-        className
-      }
+      className={`workspace-sidebar${isCompact ? " workspace-sidebar--compact" : ""}${variant === "mobile" ? " workspace-sidebar--mobile" : ""} ${className}`}
     >
       <SidebarWorkspace
         collapsed={isCompact}
@@ -69,23 +66,18 @@ export function DashboardSidebar<Id extends string = string>({
 
       <nav
         aria-label="Modulos"
-        className="custom-scrollbar flex flex-1 flex-col gap-0.5 overflow-y-auto px-2.5 py-4"
+        className="workspace-sidebar__nav custom-scrollbar"
       >
         {mainItems.map((item) => {
           const showHeader = item.group && item.group !== lastGroup;
           if (showHeader) lastGroup = item.group;
           return (
-            <div key={item.id} className="flex flex-col gap-0.5">
+            <div key={item.id} className="workspace-sidebar__group-item">
               {showHeader &&
                 (isCompact ? (
-                  <div className="h-px bg-line/60 my-2 mx-1" />
+                  <div className="workspace-sidebar__separator" />
                 ) : (
-                  <div
-                    className={
-                      "px-2.5 pb-1 text-sm font-black uppercase tracking-widest text-muted/50 dark:text-muted/40 " +
-                      (lastGroup === undefined ? "pt-1" : "pt-4")
-                    }
-                  >
+                  <div className="workspace-sidebar__group-label">
                     {item.group}
                   </div>
                 ))}
@@ -100,7 +92,7 @@ export function DashboardSidebar<Id extends string = string>({
         })}
       </nav>
 
-      <div className="mt-auto flex flex-col gap-2 border-t border-line/60 px-2.5 py-3 bg-panel/10">
+      <div className="workspace-sidebar__footer">
         {isCompact ? (
           <>
             {accountControl}
@@ -116,23 +108,18 @@ export function DashboardSidebar<Id extends string = string>({
           </>
         ) : (
           <>
-            <div className="flex items-center gap-1">
+            <div className="workspace-sidebar__account-row">
               {accountControl}
 
               {settingsItem && (
                 <button
                   aria-label={settingsItem.title}
-                  className={
-                    "group size-10 shrink-0 flex items-center justify-center rounded-xl border border-transparent transition-all duration-200 cursor-pointer " +
-                    (activeId === "settings"
-                      ? "bg-accent-soft border-accent/15 text-accent font-black shadow-sm"
-                      : "text-muted hover:bg-app-elevated/60 hover:text-app-text hover:border-line/40")
-                  }
+                  className={`workspace-sidebar__utility${activeId === "settings" ? " workspace-sidebar__utility--active" : ""}`}
                   onClick={() => onSelect(settingsItem.id)}
                   title={settingsItem.title}
                   type="button"
                 >
-                  <settingsItem.icon className="size-4.5 transition-transform duration-300 group-hover:scale-110" />
+                  <settingsItem.icon aria-hidden="true" />
                 </button>
               )}
             </div>

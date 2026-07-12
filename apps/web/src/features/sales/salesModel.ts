@@ -1,5 +1,6 @@
 import type {
   SaleDraftInput,
+  SaleDocumentKind,
   SalePaymentInput,
   SaleRecord,
   SaleStartContext,
@@ -63,7 +64,7 @@ export function createDraftFromContext(
       phone: context.buyerPhone ?? "",
     },
     documentPolicySnapshot: {
-      requiredDocumentKinds: [...defaultRequiredDocumentKinds],
+      requiredDocumentKinds: [],
     },
     leadId: context.leadId ?? null,
     listingId: context.listingId ?? null,
@@ -134,10 +135,19 @@ export function hasBuyerName(snapshot: Record<string, unknown>): boolean {
   return typeof snapshot.name === "string" && snapshot.name.trim().length > 0;
 }
 
-export function requiredDocumentKinds(sale: SaleRecord): readonly string[] {
+export function requiredDocumentKinds(
+  sale: SaleRecord,
+): readonly SaleDocumentKind[] {
   const value = sale.documentPolicySnapshot.requiredDocumentKinds;
   if (!Array.isArray(value)) return defaultRequiredDocumentKinds;
-  return value.filter((item): item is string => typeof item === "string");
+  return value.filter(
+    (item): item is SaleDocumentKind =>
+      typeof item === "string" && isSaleDocumentKind(item),
+  );
+}
+
+export function isSaleDocumentKind(value: string): value is SaleDocumentKind {
+  return (defaultRequiredDocumentKinds as readonly string[]).includes(value);
 }
 
 export function paymentPrincipalTotal(sale: SaleRecord): number {

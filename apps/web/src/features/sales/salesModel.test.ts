@@ -27,6 +27,7 @@ describe("sales model start context", () => {
       unitId: "unit_1",
     });
     expect(draft).toMatchObject({
+      documentPolicySnapshot: { requiredDocumentKinds: [] },
       leadId: "lead_1",
       listingId: "listing_1",
       listingSnapshot: {
@@ -37,6 +38,12 @@ describe("sales model start context", () => {
         unitLabel: "EST-42",
       },
       salePriceCents: 12990000,
+      selectedDocumentKinds: [
+        "sale_contract",
+        "sale_receipt",
+        "delivery_term",
+        "power_of_attorney",
+      ],
       unitId: "unit_1",
     });
   });

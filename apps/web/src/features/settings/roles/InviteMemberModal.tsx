@@ -80,7 +80,7 @@ export function InviteMemberModal({
       }
       setStatus("success");
     } catch (err) {
-      setError(formatApiErrorDisplay(err, "Nao foi possivel criar o convite."));
+      setError(formatApiErrorDisplay(err, "Não foi possível criar o convite."));
       setStatus("idle");
     }
   };
@@ -100,7 +100,7 @@ export function InviteMemberModal({
       setStatus("success");
     } catch (err) {
       setError(
-        formatApiErrorDisplay(err, "Nao foi possivel reenviar o convite."),
+        formatApiErrorDisplay(err, "Não foi possível reenviar o convite."),
       );
       setStatus("idle");
     }

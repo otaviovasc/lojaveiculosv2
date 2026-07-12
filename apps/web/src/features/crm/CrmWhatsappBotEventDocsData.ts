@@ -114,7 +114,7 @@ export const webhookEvents = [
   "actionsApi": { "baseUrl": "https://api.exemplo.com/api/v1/crm/whatsapp/integrations/bot/actions", "authentication": "X-Webhook-Secret" }
 }`,
     description:
-      "Mudanca de estado da conexao ZAPI. Nao inclui chat nem session.",
+      "Mudança de estado da conexão ZAPI. Não inclui chat nem sessão.",
     event: "connection_status_changed",
   },
 ] as const;

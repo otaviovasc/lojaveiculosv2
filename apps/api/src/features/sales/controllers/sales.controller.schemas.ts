@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 
 const optionalString = z.string().trim().min(1).nullable().optional();
 const cents = z.number().int().min(0);
@@ -25,7 +26,11 @@ export const saleDraftSchema = z.object({
   payments: z.array(salePaymentSchema).optional(),
   salePriceCents: cents.nullable().optional(),
   saleSourceSnapshot: metadata,
-  selectedDocumentKinds: z.array(z.string().trim().min(1)).optional(),
+  selectedDocumentKinds: z
+    .array(z.enum(vehicleSaleDocumentKinds))
+    .max(vehicleSaleDocumentKinds.length)
+    .refine((kinds) => new Set(kinds).size === kinds.length)
+    .optional(),
   sellerUserId: optionalString,
   unitId: optionalString,
 });

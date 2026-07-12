@@ -7,7 +7,7 @@ import {
 import { SaleFormSection } from "./SaleWorkspaceForm";
 import { SaleDocumentsValidationStatus } from "./SaleDocumentsValidationStatus";
 import { getRequiredFieldsPolicy, validateSaleRecord } from "./validation";
-import type { SaleRecord } from "./types";
+import type { SaleDocumentKind, SaleRecord } from "./types";
 
 type UpdateSale = (updater: (sale: SaleRecord) => SaleRecord) => void;
 
@@ -53,7 +53,7 @@ export function DocumentsSection({
     }));
   };
 
-  const toggleDocument = (kind: string, checked: boolean) => {
+  const toggleDocument = (kind: SaleDocumentKind, checked: boolean) => {
     update((draft) => {
       const selected = checked
         ? [...draft.selectedDocumentKinds, kind]
@@ -80,8 +80,7 @@ export function DocumentsSection({
     { id: "sale_receipt", label: "Recibo de Venda" },
     { id: "delivery_term", label: "Termo de Entrega" },
     { id: "power_of_attorney", label: "Procuração" },
-    { id: "warranty", label: "Garantia de Venda" },
-  ];
+  ] as const satisfies readonly { id: SaleDocumentKind; label: string }[];
 
   return (
     <div className="flex flex-col gap-6">

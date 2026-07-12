@@ -63,7 +63,7 @@ export function FeatureRowAction({
           className={cx("size-3.5", iconClassName)}
         />
       </button>
-      <div className="absolute right-full top-1/2 z-30 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-gray-900 px-2 py-1 text-xs font-bold leading-none text-white shadow-lg pointer-events-none peer-hover:block">
+      <div className="absolute right-full top-1/2 z-30 mr-2 hidden -translate-y-1/2 whitespace-nowrap rounded border border-white/10 bg-gray-900 px-2 py-1 text-xs font-bold leading-none text-white shadow-lg pointer-events-none peer-hover:block peer-focus-visible:block">
         {tooltip}
         <div className="absolute left-full top-1/2 -translate-y-1/2 border-[4px] border-transparent border-l-gray-900" />
       </div>

@@ -122,7 +122,7 @@ export function VehicleLeadCard({
           <div className="grid gap-2">
             {whatsappUrl ? (
               <a
-                className="flex min-h-12 items-center justify-center gap-2 rounded bg-success px-5 text-xs font-black uppercase tracking-[0.12em] text-success-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:bg-success/90 active:translate-y-0 active:scale-95"
+                className="flex min-h-12 items-center justify-center gap-2 rounded bg-success-strong px-5 text-xs font-black uppercase tracking-[0.12em] text-success-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 active:scale-95"
                 href={whatsappUrl}
                 rel="noreferrer"
                 target="_blank"

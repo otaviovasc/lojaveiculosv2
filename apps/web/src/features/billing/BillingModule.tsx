@@ -125,7 +125,11 @@ export function BillingModule({ api }: { api?: BillingApi }) {
         <FeatureAlert className="billing-alert">{status.message}</FeatureAlert>
       ) : null}
       {checkoutReturn ? (
-        <FeatureAlert className="billing-alert" title={checkoutReturn.title}>
+        <FeatureAlert
+          className="billing-alert"
+          title={checkoutReturn.title}
+          tone={checkoutReturn.tone}
+        >
           {checkoutReturn.message}
         </FeatureAlert>
       ) : null}

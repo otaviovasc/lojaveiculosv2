@@ -78,7 +78,7 @@ export function ConnectionInstanceForm({
       </div>
       {disabled ? (
         <p className="crm-whatsapp-connection-disabled">
-          Seu usuario pode visualizar a conexao, mas nao pode alterar as
+          Seu usuário pode visualizar a conexão, mas não pode alterar as
           credenciais.
         </p>
       ) : null}

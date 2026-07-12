@@ -1,0 +1,77 @@
+.workspace-command {
+  max-width: 40rem;
+}
+
+.workspace-command__results {
+  display: grid;
+  max-height: min(28rem, 60dvh);
+  gap: 0.25rem;
+  margin-top: var(--app-space-sm);
+  overflow-y: auto;
+}
+
+.workspace-command__item {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  gap: var(--app-space-sm);
+  border: 1px solid transparent;
+  border-radius: var(--radius-lg);
+  background: transparent;
+  color: var(--color-ink);
+  padding-inline: var(--app-space-sm);
+  font: inherit;
+  text-align: left;
+}
+
+.workspace-command__item:hover,
+.workspace-command__item:focus-visible {
+  border-color: var(--color-line);
+  background: var(--color-surface-subtle);
+}
+
+.workspace-command__item-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  color: var(--color-accent-strong);
+}
+
+.workspace-command__item-icon svg,
+.workspace-command__item > svg {
+  width: 1rem;
+}
+
+.workspace-command__item-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.workspace-command__item-copy strong {
+  font-size: var(--font-size-sm);
+}
+
+.workspace-command__item-copy small,
+.workspace-command__item kbd {
+  color: var(--color-ink-muted);
+  font-size: var(--font-size-xs);
+}
+
+.workspace-command__empty {
+  display: grid;
+  min-height: 12rem;
+  place-items: center;
+  align-content: center;
+  gap: var(--app-space-xs);
+  color: var(--color-ink-muted);
+  text-align: center;
+}
+
+.workspace-command__empty svg {
+  width: 1.5rem;
+}

@@ -1,0 +1,84 @@
+@media (max-width: 40rem) {
+  .dashboard-main {
+    gap: var(--app-space-md);
+    padding: var(--app-space-md) var(--app-space-xs);
+  }
+
+  .dashboard-toolbar-premium {
+    gap: var(--app-space-sm);
+    padding: var(--app-space-sm);
+  }
+
+  .dashboard-brand-section {
+    justify-content: space-between;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .dashboard-controls-section,
+  .control-group-wrapper {
+    display: grid;
+    gap: var(--app-space-xs);
+    min-width: 0;
+    width: 100%;
+  }
+
+  .control-group-label {
+    padding-inline: var(--app-space-xs);
+  }
+
+  .datepicker-range-picker,
+  .public-link-container {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .datepicker-field-trigger {
+    flex: 1 1 0;
+    justify-content: center;
+    min-width: 0;
+    padding-inline: var(--app-space-xs);
+  }
+
+  .datepicker-field-label {
+    display: none;
+  }
+
+  .public-link-container {
+    gap: var(--app-space-xs);
+  }
+
+  .public-link-url {
+    min-width: 0;
+  }
+
+  .kpi-counters-grid {
+    gap: var(--app-space-sm);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi-counters-grid .kpi-card-content {
+    min-height: 7.25rem;
+  }
+
+  .kpi-counters-grid .kpi-icon-container {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+
+  .kpi-counters-grid .kpi-card-badge {
+    max-width: 68%;
+  }
+
+  .kpi-counters-grid .kpi-card-value {
+    font-size: var(--font-size-lg);
+  }
+
+  .promo-banner {
+    min-height: 19rem;
+  }
+
+  .promo-banner-desc {
+    max-width: 78% !important;
+  }
+}

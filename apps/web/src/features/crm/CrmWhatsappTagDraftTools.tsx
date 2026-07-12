@@ -4,7 +4,7 @@ import type { TagDraft } from "./CrmWhatsappTagManagerParts";
 const colorPresets = [
   { label: "Destaque", value: "var(--color-accent)" },
   { label: "Urgente", value: "var(--color-danger)" },
-  { label: "Atencao", value: "var(--color-warning)" },
+  { label: "Atenção", value: "var(--color-warning)" },
   { label: "Sucesso", value: "var(--color-success)" },
   { label: "Primaria", value: "var(--color-primary)" },
   { label: "Neutra", value: "var(--color-muted)" },

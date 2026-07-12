@@ -9,23 +9,45 @@ import type {
   VehicleSaleBundle,
 } from "../ports/vehicleSalesRepository.js";
 import type { DocumentTemplate } from "../../documents/ports/documentRepository.js";
+import type { VehicleStoreBranding } from "../ports/vehicleStoreBrandingReader.js";
+
+export const vehicleSaleDocumentKinds = [
+  "sale_contract",
+  "sale_receipt",
+  "delivery_term",
+  "power_of_attorney",
+] as const satisfies readonly VehicleDocumentKind[];
+
+export type VehicleSaleDocumentKind = (typeof vehicleSaleDocumentKinds)[number];
 
 type WorkflowDocumentSpec = {
-  kind: VehicleDocumentKind;
+  kind: VehicleSaleDocumentKind;
   role: string;
   title: string;
 };
 
-const soldDocuments: readonly WorkflowDocumentSpec[] = [
-  {
+const soldDocuments: Record<VehicleSaleDocumentKind, WorkflowDocumentSpec> = {
+  sale_contract: {
     kind: "sale_contract",
     role: "sale_contract",
     title: "Contrato de compra e venda",
   },
-  { kind: "sale_receipt", role: "sale_receipt", title: "Recibo de venda" },
-  { kind: "delivery_term", role: "delivery_term", title: "Termo de entrega" },
-  { kind: "power_of_attorney", role: "power_of_attorney", title: "Procuração" },
-];
+  sale_receipt: {
+    kind: "sale_receipt",
+    role: "sale_receipt",
+    title: "Recibo de venda",
+  },
+  delivery_term: {
+    kind: "delivery_term",
+    role: "delivery_term",
+    title: "Termo de entrega",
+  },
+  power_of_attorney: {
+    kind: "power_of_attorney",
+    role: "power_of_attorney",
+    title: "Procuração",
+  },
+};
 
 export function buildReservationReceiptDocument(input: {
   buyer: VehicleBuyerSnapshot;
@@ -33,6 +55,7 @@ export function buildReservationReceiptDocument(input: {
   paymentMethod: string;
   sale: VehicleSaleBundle;
   signalAmountCents: number;
+  store?: VehicleStoreBranding;
   template?: DocumentTemplate | null;
   unit: VehicleUnit;
 }): CreateVehicleDocumentRecord {
@@ -49,6 +72,7 @@ export function buildReservationReceiptDocument(input: {
       },
       saleId: input.sale.sale.id,
       salePaymentId: input.sale.payment?.id ?? null,
+      store: input.store ?? null,
       template: "recibo_de_sinal_v1",
       templateClauses: input.template?.clauses ?? null,
       templateTitle: input.template?.title ?? null,
@@ -65,10 +89,15 @@ export function buildSoldDocuments(input: {
   listing: VehicleListing;
   paymentMethod: string;
   sale: VehicleSaleBundle;
+  selectedDocumentKinds?: readonly VehicleSaleDocumentKind[];
+  store?: VehicleStoreBranding;
   templates?: ReadonlyMap<string, DocumentTemplate>;
   unit: VehicleUnit;
 }): readonly CreateVehicleDocumentRecord[] {
-  return soldDocuments.map((spec) => {
+  const selectedDocumentKinds =
+    input.selectedDocumentKinds ?? vehicleSaleDocumentKinds;
+  return selectedDocumentKinds.map((kind) => {
+    const spec = soldDocuments[kind];
     const template = input.templates?.get(spec.kind);
     return buildDocumentRecord({
       kind: spec.kind,
@@ -83,6 +112,7 @@ export function buildSoldDocuments(input: {
         },
         saleId: input.sale.sale.id,
         salePaymentId: input.sale.payment?.id ?? null,
+        store: input.store ?? null,
         template: `${spec.role}_v1`,
         templateClauses: template?.clauses ?? null,
         templateTitle: template?.title ?? null,
@@ -93,6 +123,22 @@ export function buildSoldDocuments(input: {
       unit: input.unit,
     });
   });
+}
+
+export function isVehicleSaleDocumentKind(
+  value: string,
+): value is VehicleSaleDocumentKind {
+  return (vehicleSaleDocumentKinds as readonly string[]).includes(value);
+}
+
+export function parseVehicleSaleDocumentKinds(
+  values: readonly string[],
+): readonly VehicleSaleDocumentKind[] | null {
+  const selected = values.filter(isVehicleSaleDocumentKind);
+  return selected.length === values.length &&
+    new Set(selected).size === selected.length
+    ? selected
+    : null;
 }
 
 function buildDocumentRecord(input: {

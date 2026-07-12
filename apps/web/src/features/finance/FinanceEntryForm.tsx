@@ -78,7 +78,7 @@ export function FinanceEntryForm({
   return (
     <FinancePanel
       icon={<PlusCircle className="size-5" />}
-      title="Novo lancamento"
+      title="Novo lançamento"
     >
       <form
         className="grid gap-4"
@@ -136,14 +136,14 @@ export function FinanceEntryForm({
               value={form.paidAt}
             />
           </FinanceField>
-          <FinanceField label="Vendedor" hint="Opcional para comissoes.">
+          <FinanceField label="Vendedor" hint="Opcional para comissões.">
             <FinanceInput
               onChange={setField("sellerUserId")}
               placeholder="Nome ou usuario responsavel"
               value={form.sellerUserId}
             />
           </FinanceField>
-          <FinanceField label="Observacao">
+          <FinanceField label="Observação">
             <FinanceInput
               onChange={setField("notes")}
               placeholder="Origem, contrato ou referencia"
@@ -186,7 +186,7 @@ export function FinanceEntryForm({
           ) : (
             <PlusCircle aria-hidden="true" className="size-4" />
           )}
-          Salvar lancamento
+          Salvar lançamento
         </button>
 
         {state.kind === "error" ? (
@@ -221,7 +221,7 @@ type FinanceDraft = {
 function createInitialForm(type: FinanceEntryType): FinanceDraft {
   return {
     amount: "",
-    category: type === "commission" ? "Comissao" : "",
+    category: type === "commission" ? "Comissão" : "",
     documentKind: "finance_receipt",
     documentTitle: "",
     dueAt: "",

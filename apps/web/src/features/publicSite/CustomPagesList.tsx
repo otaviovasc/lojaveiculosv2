@@ -93,11 +93,8 @@ export function CustomPagesList({
 
       {statusMessage ? (
         <FeatureAlert
-          className={
-            statusMessage.type === "error"
-              ? "feature-alert text-danger"
-              : "feature-alert text-success"
-          }
+          className="feature-alert"
+          tone={statusMessage.type === "error" ? "danger" : "success"}
         >
           {statusMessage.text}
         </FeatureAlert>

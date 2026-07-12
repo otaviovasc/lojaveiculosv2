@@ -1,35 +1,22 @@
-import {
-  ArrowRight,
-  CheckCircle2,
-  Clock3,
-  DatabaseZap,
-  ShieldCheck,
-} from "lucide-react";
+import { CheckCircle2, Clock3, DatabaseZap, ShieldCheck } from "lucide-react";
 import type { ModuleDefinition } from "../app/modules";
 import {
-  FeatureActionButton,
   FeaturePageHeader,
   FeaturePageShell,
   FeatureSection,
 } from "./ui/FeatureLayout";
 
 const readinessItems = [
-  "Permissoes e modulos definidos antes da liberacao",
+  "Permissões e módulos definidos antes da liberação",
   "Estados vazios, carregando, erro e bloqueado previstos",
-  "Historico por loja, usuario e acao",
+  "Histórico por loja, usuário e ação será obrigatório",
 ];
 
 export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
   return (
-    <FeaturePageShell variant="content">
+    <FeaturePageShell>
       <FeaturePageHeader
-        actions={
-          <FeatureActionButton
-            icon={ArrowRight}
-            label={module.action}
-            variant="primary"
-          />
-        }
+        chip="Em planejamento"
         description={module.description}
         eyebrow={module.eyebrow}
         title={module.title}
@@ -42,8 +29,8 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
               <DatabaseZap aria-hidden="true" className="size-5" />
             </div>
             <div>
-              <p className="eyebrow">Modulo em preparo</p>
-              <h3 className="text-xl font-black">Fundacao pronta</h3>
+              <p className="eyebrow">Módulo em preparo</p>
+              <h3 className="text-xl font-black">Contrato visual definido</h3>
             </div>
           </div>
 
@@ -61,7 +48,7 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
         </FeatureSection>
 
         <FeatureSection className="p-5">
-          <p className="eyebrow">Proximo passo</p>
+          <p className="eyebrow">Próximo passo</p>
           <div className="mt-4 space-y-4">
             <div className="flex gap-3">
               <Clock3
@@ -78,7 +65,7 @@ export function ModulePlaceholder({ module }: { module: ModuleDefinition }) {
                 className="mt-0.5 size-5 shrink-0 text-accent"
               />
               <p className="text-sm font-semibold text-muted">
-                Manter o modulo isolado ate as regras de acesso e auditoria
+                Manter o módulo isolado até as regras de acesso e auditoria
                 passarem pelos testes.
               </p>
             </div>

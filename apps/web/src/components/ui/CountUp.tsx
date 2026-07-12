@@ -1,5 +1,5 @@
-import { useInView, useMotionValue, useSpring } from "motion/react";
-import { useCallback, useEffect, useRef } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { useEffect, type ReactNode } from "react";
 
 interface CountUpProps {
   to: number;
@@ -26,170 +26,22 @@ export default function CountUp({
   onStart,
   onEnd,
 }: CountUpProps) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const motionValue = useMotionValue(direction === "down" ? to : from);
+  const finalValue = direction === "down" ? from : to;
+  const decimals = Math.max(decimalPlaces(from), decimalPlaces(to));
+  const text = formatNumber(finalValue, decimals, separator);
 
-  const damping = 20 + 40 * (1 / duration);
-  const stiffness = 100 * (1 / duration);
+  useMetricCallbacks({ delay, duration, onEnd, onStart, startWhen });
 
-  const springValue = useSpring(motionValue, {
-    damping,
-    stiffness,
-  });
-
-  const isInView = useInView(ref, { once: true, margin: "0px" });
-
-  const getDecimalPlaces = (num: number) => {
-    const str = num.toString();
-
-    if (str.includes(".")) {
-      const decimals = str.split(".")[1];
-
-      if (decimals && parseInt(decimals, 10) !== 0) {
-        return decimals.length;
-      }
-    }
-
-    return 0;
-  };
-
-  const maxDecimals = Math.max(getDecimalPlaces(from), getDecimalPlaces(to));
-
-  const formatValue = useCallback(
-    (latest: number) => {
-      const hasDecimals = maxDecimals > 0;
-
-      const options = {
-        useGrouping: !!separator,
-        minimumFractionDigits: hasDecimals ? maxDecimals : 0,
-        maximumFractionDigits: hasDecimals ? maxDecimals : 0,
-      };
-
-      let formattedNumber = Intl.NumberFormat("en-US", options).format(latest);
-
-      if (separator === ".") {
-        formattedNumber = formattedNumber
-          .replace(/,/g, "__COMMA__")
-          .replace(/\./g, ",")
-          .replace(/__COMMA__/g, ".");
-      } else if (separator) {
-        formattedNumber = formattedNumber.replace(/,/g, separator);
-      }
-
-      return formattedNumber;
-    },
-    [maxDecimals, separator],
+  return (
+    <FinalMetric
+      className={className}
+      delay={delay}
+      duration={duration}
+      startWhen={startWhen}
+    >
+      {text}
+    </FinalMetric>
   );
-
-  useEffect(() => {
-    if (ref.current) {
-      ref.current.textContent = formatValue(direction === "down" ? to : from);
-    }
-  }, [from, to, direction, formatValue]);
-
-  useEffect(() => {
-    if (!isInView || !startWhen) return;
-
-    if (typeof onStart === "function") onStart();
-
-    const timeoutId = setTimeout(() => {
-      motionValue.set(direction === "down" ? from : to);
-    }, delay * 1000);
-
-    const durationTimeoutId = setTimeout(
-      () => {
-        if (typeof onEnd === "function") onEnd();
-      },
-      delay * 1000 + duration * 1000,
-    );
-
-    return () => {
-      clearTimeout(timeoutId);
-      clearTimeout(durationTimeoutId);
-    };
-  }, [
-    isInView,
-    startWhen,
-    motionValue,
-    direction,
-    from,
-    to,
-    delay,
-    onStart,
-    onEnd,
-    duration,
-  ]);
-
-  useEffect(() => {
-    const unsubscribe = springValue.on("change", (latest: number) => {
-      if (ref.current) {
-        ref.current.textContent = formatValue(latest);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [springValue, formatValue]);
-
-  return <span className={className} ref={ref} />;
-}
-
-function parseFormattedNumber(val: string | number) {
-  if (val === undefined || val === null || val === "") {
-    return { numericValue: 0, prefix: "", suffix: "", separator: "" };
-  }
-  if (typeof val === "number") {
-    return { numericValue: val, prefix: "", suffix: "", separator: "" };
-  }
-  const str = String(val).trim();
-
-  const firstDigitMatch = /\d/.exec(str);
-  if (!firstDigitMatch) {
-    return { numericValue: 0, prefix: str, suffix: "", separator: "" };
-  }
-  const firstDigitIndex = firstDigitMatch.index;
-  const prefix = str.slice(0, firstDigitIndex);
-
-  const lastDigitMatch = /\d(?!.*\d)/.exec(str);
-  const lastDigitIndex = lastDigitMatch ? lastDigitMatch.index + 1 : str.length;
-  const suffix = str.slice(lastDigitIndex);
-
-  const numberStr = str.slice(firstDigitIndex, lastDigitIndex);
-
-  let separator = "";
-  let cleanNumberStr = numberStr;
-
-  if (numberStr.includes(".") && numberStr.includes(",")) {
-    if (numberStr.indexOf(".") < numberStr.indexOf(",")) {
-      separator = ".";
-      cleanNumberStr = numberStr.replace(/\./g, "").replace(/,/g, ".");
-    } else {
-      separator = ",";
-      cleanNumberStr = numberStr.replace(/,/g, "");
-    }
-  } else if (numberStr.includes(",")) {
-    const parts = numberStr.split(",");
-    if (parts[1] && parts[1].length === 3) {
-      separator = ".";
-      cleanNumberStr = numberStr.replace(/,/g, "");
-    } else {
-      cleanNumberStr = numberStr.replace(/,/g, ".");
-    }
-  } else if (numberStr.includes(".")) {
-    const parts = numberStr.split(".");
-    if (parts[1] && parts[1].length === 3) {
-      separator = ".";
-      cleanNumberStr = numberStr.replace(/\./g, "");
-    }
-  }
-
-  const numericValue = parseFloat(cleanNumberStr) || 0;
-
-  return {
-    numericValue,
-    prefix,
-    suffix,
-    separator,
-  };
 }
 
 export function AnimatedCounter({
@@ -201,19 +53,97 @@ export function AnimatedCounter({
   className?: string;
   duration?: number;
 }) {
-  const { numericValue, prefix, suffix, separator } =
-    parseFormattedNumber(value);
+  return (
+    <FinalMetric className={className} duration={duration} startWhen>
+      {String(value)}
+    </FinalMetric>
+  );
+}
+
+function FinalMetric({
+  children,
+  className,
+  delay = 0,
+  duration,
+  startWhen,
+}: {
+  children: ReactNode;
+  className: string;
+  delay?: number;
+  duration: number;
+  startWhen: boolean;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+  const feedbackDuration = Math.min(Math.max(duration, 0), 0.26);
+  const shouldAnimate = startWhen && !shouldReduceMotion;
 
   return (
-    <span className={className}>
-      {prefix}
-      <CountUp
-        from={0}
-        to={numericValue}
-        separator={separator}
-        duration={duration}
-      />
-      {suffix}
-    </span>
+    <motion.span
+      animate={{ opacity: 1, y: 0 }}
+      className={className}
+      initial={shouldAnimate ? { opacity: 0.88, y: 2 } : false}
+      transition={{
+        delay: shouldAnimate ? Math.max(delay, 0) : 0,
+        duration: shouldAnimate ? feedbackDuration : 0,
+      }}
+    >
+      {children}
+    </motion.span>
   );
+}
+
+function useMetricCallbacks({
+  delay,
+  duration,
+  onEnd,
+  onStart,
+  startWhen,
+}: {
+  delay: number | undefined;
+  duration: number | undefined;
+  onEnd: (() => void) | undefined;
+  onStart: (() => void) | undefined;
+  startWhen: boolean | undefined;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!startWhen) return;
+    const safeDelay = shouldReduceMotion ? 0 : Math.max(delay ?? 0, 0) * 1000;
+    const safeDuration = shouldReduceMotion
+      ? 0
+      : Math.min(Math.max(duration ?? 0, 0), 0.26) * 1000;
+    const startTimer = window.setTimeout(() => onStart?.(), safeDelay);
+    const endTimer = window.setTimeout(
+      () => onEnd?.(),
+      safeDelay + safeDuration,
+    );
+    return () => {
+      window.clearTimeout(startTimer);
+      window.clearTimeout(endTimer);
+    };
+  }, [delay, duration, onEnd, onStart, shouldReduceMotion, startWhen]);
+}
+
+function decimalPlaces(value: number) {
+  const [, decimals = ""] = String(value).split(".");
+  return decimals.replace(/0+$/, "").length;
+}
+
+function formatNumber(value: number, decimals: number, separator: string) {
+  let formatted = new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: decimals,
+    minimumFractionDigits: decimals,
+    useGrouping: Boolean(separator),
+  }).format(value);
+
+  if (separator === ".") {
+    formatted = formatted
+      .replace(/,/g, "__GROUP__")
+      .replace(/\./g, ",")
+      .replace(/__GROUP__/g, ".");
+  } else if (separator) {
+    formatted = formatted.replace(/,/g, separator);
+  }
+  return formatted;
 }

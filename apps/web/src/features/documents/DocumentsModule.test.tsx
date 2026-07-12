@@ -75,7 +75,9 @@ describe("DocumentsModule", () => {
 
     renderDocumentsModule(api);
 
-    fireEvent.click(await screen.findByText("Contrato geral"));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Contrato geral/i }),
+    );
     expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: /Honda Civic/i }));
@@ -87,7 +89,7 @@ describe("DocumentsModule", () => {
     );
   });
 
-  it("closes the detail panel when PDF preview loading fails", async () => {
+  it("keeps document actions available when PDF preview loading fails", async () => {
     const api = createDocumentsApiMock({
       downloadDocument: vi.fn(async () => {
         throw new Error("Documento indisponivel.");
@@ -96,14 +98,60 @@ describe("DocumentsModule", () => {
 
     renderDocumentsModule(api);
 
-    fireEvent.click(await screen.findByText("Contrato geral"));
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Contrato geral/i }),
+    );
+
+    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "A prévia não está disponível. Tente novamente ou gerencie os dados do documento.",
+      ),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Excluir" })).toBeEnabled();
+    expect(
+      screen.queryByText("Não foi possível carregar os documentos"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("does not expose regeneration when the API reports no safe renderer", async () => {
+    const api = createDocumentsApiMock();
+
+    renderDocumentsModule(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Contrato geral/i }),
+    );
+
+    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Regenerar" }),
+    ).not.toBeInTheDocument();
+    expect(api.regenerateDocument).not.toHaveBeenCalled();
+  });
+
+  it("exposes regeneration when the API reports a registered renderer", async () => {
+    const regeneratable = {
+      ...documents[0]!,
+      capabilities: {
+        canRegenerate: true,
+        regenerateBlockReason: null,
+      },
+    } satisfies WorkspaceDocument;
+    const regenerateDocument = vi.fn(async () => regeneratable);
+    const api = createDocumentsApiMock({
+      listDocuments: vi.fn(async () => [regeneratable]),
+      regenerateDocument,
+    });
+
+    renderDocumentsModule(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: /Contrato geral/i }),
+    );
+    fireEvent.click(await screen.findByRole("button", { name: "Regenerar" }));
 
     await waitFor(() =>
-      expect(
-        screen.queryByLabelText("Documento aberto"),
-      ).not.toBeInTheDocument(),
+      expect(regenerateDocument).toHaveBeenCalledWith("document_general"),
     );
-    expect(screen.getByText("Documento indisponivel.")).toBeVisible();
   });
 });
 
@@ -193,6 +241,10 @@ function documentById(documentId: string) {
 
 const documents: WorkspaceDocument[] = [
   {
+    capabilities: {
+      canRegenerate: false,
+      regenerateBlockReason: "renderer_unavailable",
+    },
     context: {
       linkRole: "sale_contract",
       targetId: "sale_1",
@@ -213,6 +265,10 @@ const documents: WorkspaceDocument[] = [
     uploadedAt: "2026-01-01T10:00:00.000Z",
   },
   {
+    capabilities: {
+      canRegenerate: false,
+      regenerateBlockReason: "renderer_unavailable",
+    },
     context: {
       linkRole: "primary",
       targetId: "unit_1",

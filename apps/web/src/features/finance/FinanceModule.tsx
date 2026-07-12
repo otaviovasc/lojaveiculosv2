@@ -222,6 +222,7 @@ export function FinanceModule({
       {toast ? <FinanceToastMessage toast={toast} /> : null}
       <div ref={tableRef}>
         <FinanceEntryTable
+          activeType={activeType}
           entries={filteredEntries}
           isLoading={listState.kind === "loading"}
           onCancel={setCancelTarget}
@@ -236,6 +237,10 @@ export function FinanceModule({
               .then(refresh)
           }
           onPay={(entry) => void runtimeApi?.payEntry(entry.id).then(refresh)}
+          otherEntryCount={Math.max(
+            0,
+            filteredCashEntries.length - filteredEntries.length,
+          )}
         />
       </div>
       <FinanceRecurringBillsPanel items={recurringEntries} />
@@ -247,9 +252,11 @@ export function FinanceModule({
       {activeType === "commission" ? (
         <CommissionRulesPanel
           items={commissionRules}
-          onCreate={(input) =>
-            void runtimeApi?.createCommissionRule(input).then(refresh)
-          }
+          onCreate={async (input) => {
+            if (!runtimeApi) throw new Error("Finance API unavailable");
+            await runtimeApi.createCommissionRule(input);
+            refresh();
+          }}
         />
       ) : null}
       {listState.kind === "error" ? (

@@ -6,6 +6,11 @@ import {
   expectNoPageCrashes,
 } from "./support/diagnostics";
 import { qaPersonas } from "./support/personas";
+import {
+  expectAccessible,
+  expectViewportSafe,
+  waitForSettledWorkspace,
+} from "./support/uiQuality";
 import { setQaViewport } from "./support/viewports";
 
 const vehicleTitle = "Audi A4 Prestige Plus 2.0 TFSI 2022";
@@ -15,7 +20,6 @@ const detailTabs = [
   { artifact: "financeiro", label: "Financeiro" },
   { artifact: "anuncio", label: "Anúncio" },
   { artifact: "documentos", label: "Documentos" },
-  { artifact: "vendas", label: "Vendas" },
   { artifact: "historico", label: "Histórico" },
   { artifact: "vitrine", label: "Vitrine" },
 ] as const;
@@ -23,6 +27,27 @@ const detailTabs = [
 test.use({ baseURL });
 
 test.describe("vehicle details QA lane", () => {
+  test("contract actions hand off to the canonical Documents workspace", async ({
+    page,
+  }, testInfo) => {
+    await setQaViewport(page, "desktop");
+    await openSeedVehicleDetail(page, testInfo, "desktop");
+    await page
+      .getByRole("navigation", { name: "Abas do veículo" })
+      .getByRole("button", { name: "Documentos" })
+      .click();
+
+    await expectOfficialDocumentHandoff(page);
+    await waitForSettledWorkspace(page);
+    await expectViewportSafe(page);
+    await expectAccessible(page);
+    await saveQaScreenshot(
+      page,
+      testInfo,
+      "admin-detail-documents-canonical-handoff",
+    );
+  });
+
   test("seeded owner can inspect every admin vehicle detail tab", async ({
     page,
   }, testInfo) => {
@@ -31,6 +56,9 @@ test.describe("vehicle details QA lane", () => {
 
     await setQaViewport(page, "desktop");
     await openSeedVehicleDetail(page, testInfo, "desktop");
+    await waitForSettledWorkspace(page);
+    await expectViewportSafe(page);
+    await expectAccessible(page);
 
     const tabNav = page.getByRole("navigation", { name: "Abas do veículo" });
 
@@ -40,6 +68,9 @@ test.describe("vehicle details QA lane", () => {
       await expect(tabButton).toHaveAttribute("aria-pressed", "true");
       if (tab.label === "Financeiro") {
         await expectFinanceiroUsesSeededVehicle(page);
+      }
+      if (tab.label === "Documentos") {
+        await expectOfficialDocumentHandoff(page);
       }
       await saveQaScreenshot(
         page,
@@ -61,6 +92,9 @@ test.describe("vehicle details QA lane", () => {
     await setQaViewport(page, "mobile");
     await openSeedVehicleDetail(page, testInfo, "mobile");
     await expect(page.getByText(vehicleTitle).first()).toBeVisible();
+    await waitForSettledWorkspace(page);
+    await expectViewportSafe(page);
+    await expectAccessible(page);
     await page
       .getByRole("navigation", { name: "Abas do veículo" })
       .getByRole("button", { name: "Vitrine" })
@@ -95,6 +129,9 @@ test.describe("vehicle details QA lane", () => {
 
     await openFirstPublicVehicleDetail(page);
     await expect(page.getByText("Tenho interesse").first()).toBeVisible();
+    await waitForSettledWorkspace(page);
+    await expectViewportSafe(page);
+    await expectAccessible(page);
     await saveQaScreenshot(page, testInfo, "public-vehicle-detail-desktop");
 
     await setQaViewport(page, "mobile");
@@ -104,6 +141,9 @@ test.describe("vehicle details QA lane", () => {
     ).toBeVisible();
     await openFirstPublicVehicleDetail(page);
     await expect(page.getByText("Tenho interesse").first()).toBeVisible();
+    await waitForSettledWorkspace(page);
+    await expectViewportSafe(page);
+    await expectAccessible(page);
     await saveQaScreenshot(page, testInfo, "public-vehicle-detail-mobile");
 
     await expectNoCriticalResponses(page, criticalResponses);
@@ -157,6 +197,18 @@ async function expectFinanceiroUsesSeededVehicle(page: Page) {
   await expect(financeiro.getByText("32.500 km")).toHaveCount(0);
   await expect(financeiro.getByText("Parachoques")).toHaveCount(0);
   await expect(financeiro.getByText("Laudo Dekra")).toHaveCount(0);
+}
+
+async function expectOfficialDocumentHandoff(page: Page) {
+  await expect(
+    page.getByRole("link", { name: "Abrir Central de documentos" }),
+  ).toHaveAttribute("href", "#/documents");
+  await expect(
+    page.getByText(/Este cadastro não cria minutas locais/i),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /gerar prévia|imprimir contrato/i }),
+  ).toHaveCount(0);
 }
 
 function collectCriticalResponses(page: Page) {

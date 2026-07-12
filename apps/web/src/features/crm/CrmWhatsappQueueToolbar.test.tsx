@@ -58,7 +58,12 @@ describe("WhatsappToolbar", () => {
     expect(screen.getByText("3 conversas")).toBeInTheDocument();
     expect(screen.getByText("ZAPI conectado")).toBeInTheDocument();
     expect(metric("Total")).toHaveTextContent("12");
-    expect(metric("Nao lidas")).toHaveTextContent("5");
+    expect(metric("Não lidas")).toHaveTextContent("5");
+    expect(
+      screen
+        .getByLabelText("Filtros de fila")
+        .querySelectorAll(".crm-whatsapp-queue-field"),
+    ).toHaveLength(2);
 
     await user.click(screen.getByRole("button", { name: "Nova conversa" }));
     expect(callbacks.onStartConversation).toHaveBeenCalledTimes(1);
@@ -77,7 +82,7 @@ describe("WhatsappToolbar", () => {
     await user.click(screen.getByRole("button", { name: /Meus/ }));
     expect(callbacks.onQuickFilterChange).toHaveBeenCalledWith("mine");
 
-    await user.click(screen.getByRole("button", { name: /^Nao lidas/ }));
+    await user.click(screen.getByRole("button", { name: /^Não lidas/ }));
     expect(callbacks.onUnreadOnlyChange).toHaveBeenCalledWith(true);
 
     await user.click(screen.getByLabelText("Filtrar por status"));
@@ -86,7 +91,7 @@ describe("WhatsappToolbar", () => {
       "HUMAN_TAKEOVER",
     );
 
-    await user.click(screen.getByLabelText("Filtrar por conexao"));
+    await user.click(screen.getByLabelText("Filtrar por conexão"));
     await user.click(screen.getByRole("option", { name: "Loja Centro" }));
     expect(callbacks.onConnectionFilterChange).toHaveBeenCalledWith(
       "connection_2",

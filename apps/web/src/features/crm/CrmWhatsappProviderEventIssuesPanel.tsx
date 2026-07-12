@@ -67,7 +67,7 @@ export function CrmWhatsappProviderEventIssuesPanel({
       >
         <span>
           {events.length > 0
-            ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com atencao`
+            ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com atenção`
             : "Falha ao verificar eventos ZAPI"}
         </span>
         <RefreshCw aria-hidden="true" size={16} />
@@ -112,15 +112,15 @@ function formatAttentionReason(
     processing_failed: "Falha no processamento",
     received_message_ignored: "Mensagem recebida ignorada",
   };
-  return reason ? (labels[reason] ?? "Evento com atencao") : "Evento ZAPI";
+  return reason ? (labels[reason] ?? "Evento com atenção") : "Evento ZAPI";
 }
 
 function formatWebhookType(type: CrmWhatsappProviderEvent["webhookType"]) {
   const labels: Record<string, string> = {
     chat_presence: "Presenca",
-    connected: "Conexao",
+    connected: "Conexão",
     delivery: "Entrega",
-    disconnected: "Desconexao",
+    disconnected: "Desconexão",
     received: "Mensagem recebida",
     status: "Status",
   };

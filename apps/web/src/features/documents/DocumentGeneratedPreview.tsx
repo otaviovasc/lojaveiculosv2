@@ -1,72 +1,123 @@
-import { FileText, FileWarning, ImageIcon } from "lucide-react";
+import {
+  Download,
+  ExternalLink,
+  FileText,
+  FileWarning,
+  ImageIcon,
+} from "lucide-react";
+import { lazy, Suspense } from "react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { kindLabel, statusLabel } from "./documentLabels";
 import { documentStatusTone } from "./documentsWorkspaceModel";
 import type { DocumentDownload, WorkspaceDocument } from "./types";
 
+const ArtifactViewer = lazy(() =>
+  import("../../components/ui/ArtifactViewer").then((module) => ({
+    default: module.ArtifactViewer,
+  })),
+);
+
 export function DocumentGeneratedPreview({
   document,
+  onRefresh,
   preview,
+  previewError,
 }: {
   document: WorkspaceDocument;
+  onRefresh?: (() => void) | undefined;
   preview: DocumentDownload | null;
+  previewError?: string | null;
 }) {
-  const isPdf = isPdfDocument(preview, document);
-  const isImg = isImageDocument(preview, document);
-  const viewerUrl = preview && isPdf ? createPdfViewerUrl(preview) : null;
-  const imageUrl = preview && isImg ? preview.downloadUrl : null;
-
-  if (viewerUrl) {
+  if (preview && supportsRichArtifactViewer()) {
     return (
-      <article className="documents-pdf-preview-container">
-        <object
-          aria-label={`Prévia PDF de ${document.title}`}
-          className="documents-pdf-preview-frame"
-          data={viewerUrl}
-          type="application/pdf"
-        >
-          <iframe
-            className="documents-pdf-preview-frame"
-            src={viewerUrl}
-            title={`Prévia PDF de ${document.title}`}
-          />
-        </object>
-      </article>
+      <Suspense fallback={<DocumentPreviewState document={document} loading />}>
+        <ArtifactViewer
+          externalUrl={preview.downloadUrl}
+          expiresAt={preview.expiresAt}
+          fileName={preview.fileName}
+          mimeType={preview.mimeType ?? document.file.mimeType}
+          onRefresh={onRefresh}
+          requestHeaders={preview.contentHeaders}
+          title={document.title}
+          url={preview.contentUrl ?? preview.downloadUrl}
+        />
+      </Suspense>
     );
   }
 
-  if (imageUrl) {
+  if (preview) {
     return (
-      <article className="documents-pdf-preview-container flex items-center justify-center p-3 bg-app rounded-xl border border-line/60 overflow-hidden h-[34rem] min-h-[34rem]">
-        <img
-          alt={`Prévia de ${document.title}`}
-          className="max-h-full max-w-full object-contain rounded-lg shadow-md transition-transform hover:scale-102 duration-300"
-          src={imageUrl}
-        />
+      <article className="documents-pdf-preview-empty-state">
+        <div className="documents-pdf-preview-empty-card">
+          <div className="documents-pdf-preview-empty-icon-wrapper">
+            <FileText aria-hidden="true" />
+          </div>
+          <div className="documents-pdf-preview-empty-info">
+            <span className="documents-pdf-preview-empty-subtitle">
+              Arquivo pronto
+            </span>
+            <h3 className="documents-pdf-preview-empty-title">
+              {document.title}
+            </h3>
+          </div>
+          <div className="documents-detail-actions">
+            <a href={preview.downloadUrl} rel="noreferrer" target="_blank">
+              <ExternalLink aria-hidden="true" />
+              Abrir
+            </a>
+            <a download={preview.fileName} href={preview.downloadUrl}>
+              <Download aria-hidden="true" />
+              Baixar
+            </a>
+          </div>
+        </div>
       </article>
     );
   }
 
   return (
+    <DocumentPreviewState
+      document={document}
+      error={previewError ?? null}
+      loading={!previewError}
+      onRefresh={onRefresh}
+    />
+  );
+}
+
+function supportsRichArtifactViewer() {
+  return typeof globalThis.DOMMatrix !== "undefined";
+}
+
+function DocumentPreviewState({
+  document,
+  error,
+  loading,
+  onRefresh,
+}: {
+  document: WorkspaceDocument;
+  error?: string | null;
+  loading: boolean;
+  onRefresh?: (() => void) | undefined;
+}) {
+  const mimeType = document.file.mimeType;
+  const fileName = document.file.fileName.toLowerCase();
+  const isPdf = mimeType === "application/pdf" || fileName.endsWith(".pdf");
+  const isImage =
+    mimeType?.startsWith("image/") ||
+    [".png", ".jpg", ".jpeg", ".webp", ".gif"].some((extension) =>
+      fileName.endsWith(extension),
+    );
+  const Icon = isPdf ? FileText : isImage ? ImageIcon : FileWarning;
+
+  return (
     <article className="documents-pdf-preview-empty-state">
       <div className="documents-pdf-preview-empty-card">
         <div className="documents-pdf-preview-empty-icon-wrapper">
-          {isPdf ? (
-            <FileText
-              className="documents-pdf-preview-empty-icon size-8"
-              aria-hidden="true"
-            />
-          ) : isImg ? (
-            <ImageIcon
-              className="documents-pdf-preview-empty-icon size-8"
-              aria-hidden="true"
-            />
-          ) : (
-            <FileWarning
-              className="documents-pdf-preview-empty-icon size-8"
-              aria-hidden="true"
-            />
-          )}
+          <Icon
+            aria-hidden="true"
+            className="documents-pdf-preview-empty-icon"
+          />
         </div>
         <div className="documents-pdf-preview-empty-info">
           <span className="documents-pdf-preview-empty-subtitle">
@@ -83,53 +134,24 @@ export function DocumentGeneratedPreview({
         </div>
         <div className="documents-pdf-preview-empty-details">
           <strong>
-            {isPdf
-              ? "Carregando PDF"
-              : isImg
-                ? "Carregando imagem"
-                : "Prévia indisponível"}
+            {loading ? "Preparando arquivo" : "Prévia indisponível"}
           </strong>
           <p>
-            {isPdf
-              ? "Aguarde enquanto o arquivo emitido é assinado para visualização."
-              : isImg
-                ? "Aguarde enquanto o arquivo de imagem é assinado para visualização."
-                : "Este arquivo não está em um formato compatível para visualização direta. Faça o download para visualizar o conteúdo."}
+            {loading
+              ? "Aguarde enquanto o acesso temporário é preparado para visualização."
+              : (error ?? "Baixe o arquivo original para conferir o conteúdo.")}
           </p>
+          {!loading && onRefresh ? (
+            <button
+              className="mt-3 min-h-10 rounded-lg border border-line bg-panel px-3 text-sm font-black text-app-text"
+              onClick={onRefresh}
+              type="button"
+            >
+              Tentar prévia novamente
+            </button>
+          ) : null}
         </div>
       </div>
     </article>
   );
-}
-
-function isPdfDocument(
-  preview: DocumentDownload | null,
-  document: WorkspaceDocument,
-) {
-  const mimeType = preview?.mimeType ?? document.file.mimeType;
-  return (
-    mimeType === "application/pdf" ||
-    document.file.fileName.toLocaleLowerCase("pt-BR").endsWith(".pdf")
-  );
-}
-
-function isImageDocument(
-  preview: DocumentDownload | null,
-  document: WorkspaceDocument,
-) {
-  const mimeType = preview?.mimeType ?? document.file.mimeType;
-  if (mimeType?.startsWith("image/")) return true;
-  const name = document.file.fileName.toLowerCase();
-  return (
-    name.endsWith(".png") ||
-    name.endsWith(".jpg") ||
-    name.endsWith(".jpeg") ||
-    name.endsWith(".webp") ||
-    name.endsWith(".gif")
-  );
-}
-
-function createPdfViewerUrl(download: DocumentDownload) {
-  if (download.downloadUrl.includes("#")) return download.downloadUrl;
-  return `${download.downloadUrl}#toolbar=1&navpanes=0&view=FitH`;
 }

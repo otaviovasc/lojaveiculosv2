@@ -113,7 +113,7 @@
 
 .billing-status-badge.is-enabled {
   background: var(--color-green-soft);
-  color: var(--color-green-start);
+  color: color-mix(in srgb, var(--color-success-strong) 88%, var(--color-text));
 }
 
 .billing-status-badge {

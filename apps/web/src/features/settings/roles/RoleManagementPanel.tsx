@@ -26,6 +26,7 @@ import {
   summarizeDraft,
   type OverrideMode,
 } from "./roleDraft";
+import { getRoleLabel } from "../settingsLabels";
 
 export function RoleManagementPanel({
   isSaving,
@@ -297,5 +298,7 @@ function persistMemberPresets(mapping: Record<string, string>) {
 }
 
 function roleLabel(role: RoleKey, roles: RoleManagementView) {
-  return roles.roles.find((item) => item.role === role)?.label ?? role;
+  return (
+    roles.roles.find((item) => item.role === role)?.label ?? getRoleLabel(role)
+  );
 }

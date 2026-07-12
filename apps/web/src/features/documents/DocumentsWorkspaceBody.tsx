@@ -117,6 +117,7 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
           }}
           onUpdate={updateDocument}
           preview={state.documentPreview}
+          previewError={state.documentPreviewError}
           versions={state.documentVersions}
         />
       ) : (

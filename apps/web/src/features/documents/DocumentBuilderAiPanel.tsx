@@ -87,7 +87,7 @@ export function DocumentBuilderAiPanel({
       <header className="documents-builder-panel-heading">
         <div>
           <span>Assistente</span>
-          <strong>Sugestões com diff</strong>
+          <h2>Sugestões com diff</h2>
         </div>
         <Sparkles aria-hidden="true" className="size-5" />
       </header>

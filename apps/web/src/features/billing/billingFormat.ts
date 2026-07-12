@@ -2,6 +2,7 @@ import type { BillingEntitlementStatus, EntitlementKey } from "./types";
 
 export const featureLabels: Record<EntitlementKey, string> = {
   analytics: "Relatorios",
+  automation: "Operador IA",
   compliance: "Compliance",
   crm: "CRM",
   custom_domain: "Dominio proprio",
@@ -14,6 +15,8 @@ export const featureLabels: Record<EntitlementKey, string> = {
 
 export const featureValueCopy: Record<EntitlementKey, string> = {
   analytics: "Painel de indicadores para acompanhar vendas, funil e estoque.",
+  automation:
+    "Prévias versionadas com revisão humana antes de qualquer execução assistida.",
   compliance:
     "Controles operacionais para reduzir riscos em processos da loja.",
   crm: "Atendimento comercial integrado para organizar leads e conversas.",

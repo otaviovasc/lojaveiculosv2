@@ -4,9 +4,15 @@ import type { DocumentVersion } from "../../../domains/documents/ports/documentR
 import type { DocumentDownloadDescriptor } from "../../../domains/documents/services/DocumentOperationService/downloadDocument.js";
 import type { DocumentPreview } from "../../../domains/documents/preview/documentPreview.js";
 import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
+import { getDocumentRegenerationCapability } from "../../../domains/documents/render/documentRegeneration.js";
 
 export function toDocumentWorkspaceDto(document: LinkedDocument) {
+  const regeneration = getDocumentRegenerationCapability(document);
   return {
+    capabilities: {
+      canRegenerate: regeneration.canRegenerate,
+      regenerateBlockReason: regeneration.reason,
+    },
     context: {
       linkRole: document.linkRole,
       targetId: document.targetId,

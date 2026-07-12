@@ -125,6 +125,9 @@ describe("dashboard home animation contract", () => {
     });
     expect(dashboardHomeEntrySource).toContain("<AnimatedContent");
     expect(dashboardHomeEntrySource).toContain('trigger = "mount"');
+    expect(animatedContentSource).toContain('from "animejs"');
+    expect(animatedContentSource).toContain("createScope");
+    expect(animatedContentSource).toContain("prefers-reduced-motion: reduce");
     expect(animatedContentSource).toContain('visibility: "hidden"');
     expect(animatedContentSource).toContain("style={hiddenStyle}");
 

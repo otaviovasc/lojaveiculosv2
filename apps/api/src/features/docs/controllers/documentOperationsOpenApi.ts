@@ -166,9 +166,11 @@ export const documentOperationPaths = {
   },
   "/api/v1/documents/{documentId}/regenerate": {
     post: {
-      ...documentOperation("regenerateDocument", "Regenerate document", [
-        "documents.regenerate",
-      ]),
+      ...documentOperation(
+        "regenerateDocument",
+        "Regenerate document with its registered renderer",
+        ["documents.regenerate"],
+      ),
       responses: documentMutationResponses,
     },
   },

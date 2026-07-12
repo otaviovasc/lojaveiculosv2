@@ -65,6 +65,16 @@ describe("color contrast helpers", () => {
         foreground: "--color-accent-soft-muted",
         label: "soft accent selected metadata",
       },
+      {
+        background: "--color-sidebar",
+        foreground: "--color-sidebar-text",
+        label: "sidebar primary text",
+      },
+      {
+        background: "--color-sidebar",
+        foreground: "--color-sidebar-muted",
+        label: "sidebar secondary text",
+      },
     ] as const;
 
     for (const theme of ["light", "dark"] as const) {
@@ -84,6 +94,18 @@ describe("color contrast helpers", () => {
     expect(tokensCss).toContain(
       "--color-primary-foreground: var(--color-primary-contrast);",
     );
+  });
+
+  it("keeps the sidebar surface aligned with the selected theme", () => {
+    const light = readThemeVariables("light");
+    const dark = readThemeVariables("dark");
+
+    expect(resolveVariable(light, "--color-sidebar")).toBe(hex("ffffff"));
+    expect(resolveVariable(light, "--color-sidebar-raised")).toBe(
+      hex("f4efee"),
+    );
+    expect(resolveVariable(dark, "--color-sidebar")).toBe(hex("151515"));
+    expect(resolveVariable(dark, "--color-sidebar-raised")).toBe(hex("2a2424"));
   });
 });
 

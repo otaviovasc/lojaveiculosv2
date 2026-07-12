@@ -67,7 +67,7 @@ export function WhatsappBulkBar({
             value=""
           />
           <button
-            aria-label="Remover atribuicao das conversas selecionadas"
+            aria-label="Remover atribuição das conversas selecionadas"
             disabled={!hasSelection}
             onClick={() => onAssign(null)}
             type="button"
@@ -90,13 +90,13 @@ export function WhatsappBulkBar({
               Lidas
             </button>
             <button
-              aria-label="Marcar conversas selecionadas como nao lidas"
+              aria-label="Marcar conversas selecionadas como não lidas"
               disabled={!hasSelection}
               onClick={onMarkUnread}
               type="button"
             >
               <MailOpen />
-              Nao lidas
+              Não lidas
             </button>
           </>
         ) : null}
@@ -114,14 +114,14 @@ export function WhatsappBulkBar({
       </div>
       <div className="crm-whatsapp-bulk-group crm-whatsapp-bulk-group-tail">
         <button
-          aria-label="Selecionar conversas visiveis"
+          aria-label="Selecionar conversas visíveis"
           onClick={onSelectAll}
           type="button"
         >
           <CheckSquare />
           Lista
         </button>
-        <button aria-label="Limpar selecao" onClick={onClear} type="button">
+        <button aria-label="Limpar seleção" onClick={onClear} type="button">
           <X />
           Limpar
         </button>

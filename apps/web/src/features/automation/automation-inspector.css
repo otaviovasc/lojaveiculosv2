@@ -1,0 +1,196 @@
+.automation-inspector {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+}
+.automation-inspector-tabs,
+.automation-mobile-tabs {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.2rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0.65rem;
+  padding: 0.2rem;
+}
+.automation-inspector-tabs button,
+.automation-mobile-tabs button {
+  align-items: center;
+  border: 0;
+  border-radius: calc(var(--radius-md) - 2px);
+  color: var(--color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-caption);
+  font-weight: 800;
+  gap: 0.3rem;
+  justify-content: center;
+  min-height: var(--touch-target-min);
+  padding: 0.45rem;
+}
+.automation-inspector-tabs button.is-active,
+.automation-mobile-tabs button.is-active {
+  background: var(--color-panel);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text) 10%, transparent);
+  color: var(--color-text);
+}
+.automation-inspector-body {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+.automation-inspector-status {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.automation-inspector-status > span:last-child {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+}
+.automation-inspector-card,
+.automation-approval-card {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.8rem;
+}
+.automation-inspector-card > span,
+.automation-approval-card > span {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.automation-inspector-card strong,
+.automation-approval-card strong {
+  font-size: var(--font-size-ui-small);
+}
+.automation-inspector-card p,
+.automation-approval-card p {
+  color: var(--color-muted);
+  font-size: var(--font-size-ui-small);
+  margin: 0;
+}
+.automation-inspector-card small {
+  color: var(--color-green-start);
+  font-size: var(--font-size-caption);
+  font-weight: 750;
+}
+.automation-safety-note {
+  align-items: flex-start;
+  background: color-mix(
+    in srgb,
+    var(--color-accent-soft) 55%,
+    var(--color-panel)
+  );
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  display: flex;
+  gap: 0.55rem;
+  padding: 0.75rem;
+}
+.automation-safety-note p {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  margin: 0;
+}
+.automation-approval-card {
+  border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-line));
+}
+.automation-approval-card code {
+  background: var(--color-app);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  overflow-wrap: anywhere;
+  padding: 0.45rem;
+}
+.automation-approval-actions {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 0.3rem;
+}
+.automation-approval-actions button {
+  justify-content: center;
+  min-width: 0;
+}
+.automation-audit-list {
+  display: grid;
+  margin: 0;
+  padding: 0.75rem;
+}
+.automation-audit-list div {
+  border-bottom: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0;
+}
+.automation-audit-list dt {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.automation-audit-list dd {
+  font-size: var(--font-size-ui-small);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.automation-dialog-fields,
+.automation-decision-copy {
+  display: grid;
+  gap: 1rem;
+}
+.automation-dialog-fields > p,
+.automation-decision-copy > p {
+  color: var(--color-muted);
+  font-size: var(--font-size-ui-small);
+  margin: 0;
+}
+.automation-dialog-grid {
+  display: grid;
+  gap: 0.8rem;
+}
+.automation-decision-copy > div {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.85rem;
+}
+.automation-decision-copy span {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.automation-decision-copy div p,
+.automation-decision-copy small {
+  color: var(--color-muted);
+  font-size: var(--font-size-caption);
+  margin: 0;
+}
+
+.automation-inspector-tabs button,
+.automation-inspector-status > span:last-child,
+.automation-inspector-card > span,
+.automation-approval-card > span,
+.automation-inspector-card small,
+.automation-safety-note p,
+.automation-approval-card code,
+.automation-audit-list dt,
+.automation-decision-copy span,
+.automation-decision-copy small,
+.automation-permission-note {
+  color: var(--color-caption);
+}
+.automation-permission-note {
+  font-size: var(--font-size-caption);
+  font-weight: 700;
+}

@@ -25,8 +25,46 @@ describe("MarketplaceModule", () => {
     render(<MarketplaceModule api={createApi()} />);
 
     expect(await screen.findByText("Checklist da conta")).toBeVisible();
+    expect(
+      screen.getByRole("toolbar", { name: "Ações dos marketplaces" }),
+    ).toBeVisible();
     expect(screen.getByText("Conta conectada")).toBeVisible();
-    expect(screen.getByText("Manter credenciais ativas.")).toBeVisible();
+    expect(screen.getByText("Conta pronta para sincronizar")).toBeVisible();
+    expect(screen.getByText("Nenhuma ação necessária.")).toBeVisible();
+  });
+
+  it("lets reconnect-required override an active account", async () => {
+    render(
+      <MarketplaceModule
+        api={createApi({
+          getOverview: vi.fn(async () => reconnectRequiredOverview),
+        })}
+      />,
+    );
+
+    const heading = await screen.findByRole("heading", { name: "OLX" });
+    const card = heading.closest(".marketplace-card");
+    expect(card).not.toBeNull();
+    expect(card).toHaveAttribute("data-connection-tone", "danger");
+    expect(card?.querySelector(".marketplace-card-header span")).toHaveClass(
+      "is-danger",
+    );
+    expect(
+      within(card as HTMLElement).getByRole("button", {
+        name: "Reconectar conta",
+      }),
+    ).toBeEnabled();
+    expect(
+      within(card as HTMLElement).getByRole("button", {
+        name: /Prever estoque/i,
+      }),
+    ).toBeDisabled();
+    expect(
+      within(card as HTMLElement).queryByRole("button", { name: "Ativar" }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(card as HTMLElement).queryByRole("button", { name: "Pausar" }),
+    ).not.toBeInTheDocument();
   });
 
   it("renders preview counts and blocked reasons", async () => {
@@ -40,8 +78,10 @@ describe("MarketplaceModule", () => {
     expect(await screen.findByText("Honda Civic EXL")).toBeVisible();
     expect(screen.getByText("Publicar")).toBeVisible();
     expect(screen.getByText("Bloqueados")).toBeVisible();
-    expect(screen.getByText(/Foto publica obrigatoria/i)).toBeVisible();
-    expect(screen.getByText(/Adicionar fotos publicas/i)).toBeVisible();
+    expect(screen.getByText(/Fotos públicas obrigatórias/i)).toBeVisible();
+    expect(
+      screen.getByText(/Adicione e selecione fotos públicas/i),
+    ).toBeVisible();
   });
 
   it("runs a stock sync batch from the latest preview", async () => {
@@ -60,7 +100,8 @@ describe("MarketplaceModule", () => {
       provider: "olx",
     });
     expect(await screen.findByText("Jobs criados")).toBeVisible();
-    expect(screen.getByText(/lote batch_1/)).toBeVisible();
+    expect(screen.getByText(/último lote desta sessão/)).toBeVisible();
+    expect(screen.queryByText("batch_1")).not.toBeInTheDocument();
   });
 
   it("retries a failed job", async () => {
@@ -78,6 +119,8 @@ describe("MarketplaceModule", () => {
     expect(api.retrySyncJob).toHaveBeenCalledWith("job_failed", {
       reason: "retry_from_marketplace_stock_sync_ui",
     });
+    expect(screen.getByText(/Publicar anúncio · Falhou/)).toBeVisible();
+    expect(screen.queryByText("listing_1")).not.toBeInTheDocument();
   });
 
   it("renders friendly marketplace errors with operational context", async () => {
@@ -175,6 +218,26 @@ const overview: MarketplaceOverview = {
   providers: ["olx"],
   storeId: "store_1",
   tenantId: "tenant_1",
+};
+
+const reconnectRequiredOverview: MarketplaceOverview = {
+  ...overview,
+  providerStates: [
+    {
+      accountId: "account_1",
+      connectionStatus: "reconnect_required",
+      lastSyncSummary: null,
+      provider: "olx",
+      requirements: [
+        {
+          code: "MARKETPLACE_ACCOUNT_RECONNECT_REQUIRED",
+          message: "Expired credentials.",
+          severity: "blocked",
+          userAction: "Reconnect the provider account.",
+        },
+      ],
+    },
+  ],
 };
 
 const plan: MarketplaceStockPlan = {
