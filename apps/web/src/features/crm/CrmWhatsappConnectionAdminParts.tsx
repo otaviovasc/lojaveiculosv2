@@ -44,10 +44,12 @@ export function ConnectionStatusCard({
   connection,
   isRefreshing,
   onRefresh,
+  showRefresh = true,
 }: {
   connection: CrmWhatsappProviderConnection;
   isRefreshing: boolean;
   onRefresh: () => void;
+  showRefresh?: boolean;
 }) {
   const statusTone = readProviderStatusTone(connection);
   return (
@@ -72,42 +74,43 @@ export function ConnectionStatusCard({
       <span className="crm-whatsapp-connection-status-badge">
         {readProviderStatusBadge(connection)}
       </span>
-      <button
-        aria-label="Atualizar status da conexão"
-        className="crm-icon-action"
-        disabled={isRefreshing}
-        onClick={onRefresh}
-        title="Atualizar status"
-        type="button"
-      >
-        <RefreshCw aria-hidden="true" />
-      </button>
+      {showRefresh ? (
+        <button
+          aria-label="Atualizar status da conexão"
+          className="crm-icon-action"
+          disabled={isRefreshing}
+          onClick={onRefresh}
+          title="Atualizar status"
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" />
+        </button>
+      ) : null}
     </section>
   );
 }
 
 export function ConnectionWebhookList({
   copiedType,
+  embedded = false,
   endpoints,
   onCopy,
   tokenRequired,
 }: {
   copiedType: string | null;
+  embedded?: boolean;
   endpoints: readonly CrmWhatsappWebhookEndpoint[];
   onCopy: (endpoint: CrmWhatsappWebhookEndpoint) => void;
   tokenRequired?: boolean;
 }) {
-  return (
-    <ConnectionSectionCard
-      className="crm-whatsapp-connection-webhooks-card"
-      description={
-        tokenRequired
-          ? "Token obrigatorio via header x-crm-webhook-token ou query token."
-          : "URLs geradas pelo backend para configurar na ZAPI."
-      }
-      icon={<Webhook aria-hidden="true" />}
-      title="Webhooks"
-    >
+  const description = tokenRequired
+    ? "Token obrigatorio via header x-crm-webhook-token ou query token."
+    : "URLs geradas pelo backend para configurar na ZAPI.";
+  const content = (
+    <>
+      {embedded ? (
+        <p className="crm-whatsapp-connection-webhook-note">{description}</p>
+      ) : null}
       <div className="crm-whatsapp-webhook-list">
         {endpoints.length ? (
           endpoints.map((endpoint) => (
@@ -135,6 +138,19 @@ export function ConnectionWebhookList({
           </p>
         )}
       </div>
+    </>
+  );
+
+  if (embedded) return content;
+
+  return (
+    <ConnectionSectionCard
+      className="crm-whatsapp-connection-webhooks-card"
+      description={description}
+      icon={<Webhook aria-hidden="true" />}
+      title="Webhooks"
+    >
+      {content}
     </ConnectionSectionCard>
   );
 }

@@ -1,0 +1,113 @@
+.agency-store-billing-workspace {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.agency-store-billing-context {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-panel);
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.agency-store-billing-title {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.agency-store-billing-title > span {
+  align-items: center;
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.75rem;
+  justify-content: center;
+  width: 2.75rem;
+}
+
+.agency-store-billing-title svg {
+  height: 1.2rem;
+  width: 1.2rem;
+}
+
+.agency-store-billing-title small,
+.agency-store-billing-select > span {
+  color: var(--color-accent-strong);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.agency-store-billing-title h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 950;
+  line-height: 1.15;
+  margin-top: 0.15rem;
+}
+
+.agency-store-billing-title p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  margin-top: 0.2rem;
+}
+
+.agency-store-billing-select {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.agency-store-billing-metrics {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.agency-store-billing-metrics span,
+.agency-store-billing-metrics strong {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  gap: 0.35rem;
+  min-height: 2rem;
+  padding: 0 0.65rem;
+}
+
+.agency-store-billing-metrics span {
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  color: var(--color-muted);
+}
+
+.agency-store-billing-metrics strong {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.agency-store-billing-metrics svg {
+  height: 0.95rem;
+  width: 0.95rem;
+}
+
+@media (min-width: 900px) {
+  .agency-store-billing-context {
+    grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.7fr) auto;
+  }
+
+  .agency-store-billing-metrics {
+    justify-content: flex-end;
+  }
+}

@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import {
   apiClientKeys,
@@ -55,6 +55,7 @@ export function createDrizzleExternalApiRepository(
       if (!credential) return null;
 
       const entitlements = await listActiveEntitlements(db, {
+        now: input.now,
         storeId: credential.storeId,
         tenantId: credential.tenantId,
       });
@@ -155,7 +156,7 @@ export function createDrizzleExternalApiRepository(
 
 async function listActiveEntitlements(
   db: DrizzleExternalApiClient,
-  input: { storeId: string; tenantId: string },
+  input: { now: Date; storeId: string; tenantId: string },
 ): Promise<EntitlementKey[]> {
   const rows = await db
     .select({ featureKey: storeEntitlements.featureKey })
@@ -167,6 +168,14 @@ async function listActiveEntitlements(
         or(
           eq(storeEntitlements.status, "active"),
           eq(storeEntitlements.status, "trialing"),
+        ),
+        or(
+          isNull(storeEntitlements.startsAt),
+          lte(storeEntitlements.startsAt, input.now),
+        ),
+        or(
+          isNull(storeEntitlements.endsAt),
+          gt(storeEntitlements.endsAt, input.now),
         ),
       ),
     )

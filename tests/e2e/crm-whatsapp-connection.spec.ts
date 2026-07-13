@@ -17,22 +17,23 @@ test.describe("CRM WhatsApp connection", () => {
     await installCampaignApiMocks(page);
 
     await page.goto("/crm#/crm?surface=whatsapp");
-    await page.getByRole("tab", { name: /Conexao/ }).click();
+    await page.getByRole("tab", { name: /Conexão/ }).click();
 
     await expect(page.getByText("WhatsApp (ZAPI)")).toBeVisible();
     await expect(page.getByText("Online")).toBeVisible();
     await expect(page.getByText("ZAPI conectada")).toBeVisible();
+    await expect(page.getByText("Credenciais protegidas")).toBeVisible();
+    await expect(page.getByText("Webhooks da integracao")).toBeVisible();
+    await expect(page.getByLabel("ID da instancia")).toBeHidden();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-connection");
+
+    await page.getByText("Credenciais protegidas").click();
     await expect(page.getByLabel("ID da instancia")).toBeVisible();
     await expect(page.getByLabel("Token da instancia")).toBeVisible();
-    await expect(
-      page.locator(
-        ".crm-whatsapp-connection-instance-card input:not([readonly])",
-      ),
-    ).toHaveCount(2);
+    await page.getByText("Webhooks da integracao").click();
     await expect(page.getByRole("textbox", { name: /received/ })).toBeVisible();
     await expect(
       page.getByRole("textbox", { name: /chat-presence/ }),
     ).toBeVisible();
-    await saveQaScreenshot(page, testInfo, "crm-whatsapp-connection");
   });
 });

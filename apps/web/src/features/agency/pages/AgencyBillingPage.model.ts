@@ -53,6 +53,7 @@ export function createAgencyBillingPanelOverview(
     : null;
 
   return {
+    addons: overview.addons,
     allocations: overview.allocations,
     authority: overview.authority,
     chargePreview: overview.chargePreview,

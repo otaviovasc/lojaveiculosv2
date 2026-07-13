@@ -59,6 +59,9 @@ export type StoreProfileDraft = {
 };
 
 export type ProvisionedStoreRecord = {
+  catalogVersion: string;
+  entitlements: readonly EntitlementKey[];
+  entitlementEndsAt: string | null;
   role: RoleKey;
   storeId: StoreId;
   storeName: string;
@@ -89,7 +92,6 @@ export type IdentityInvitationTransitionStatus =
   IdentityInvitationRecord["status"];
 
 export type CreateOwnerStoreRecordInput = {
-  entitlements: readonly EntitlementKey[];
   profile?: StoreProfileDraft;
   publicSlug: string;
   storeLegalName?: string | null;
@@ -113,7 +115,6 @@ export type CreateAgencyRecordInput = {
 
 export type CreateAgencyStoreRecordInput = {
   actorUserId: UserId;
-  entitlements: readonly EntitlementKey[];
   profile?: StoreProfileDraft;
   publicSlug: string;
   storeLegalName?: string | null;

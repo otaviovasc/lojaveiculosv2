@@ -70,6 +70,31 @@ describe("createBillingOverview", () => {
     });
   });
 
+  it("shows a trial entitlement as inactive after its effective end", () => {
+    const overview = createBillingOverview({
+      entitlements: [
+        {
+          endsAt: new Date("2026-07-10T00:00:00.000Z"),
+          featureKey: "crm",
+          metadata: {},
+          source: "billing_catalog",
+          startsAt: new Date("2026-06-10T00:00:00.000Z"),
+          status: "trialing",
+        },
+      ],
+      now: new Date("2026-07-12T00:00:00.000Z"),
+      plans: [],
+      storeId: "store_1" as never,
+      subscription: null,
+      tenantId: "tenant_1" as never,
+    });
+
+    expect(
+      overview.entitlementMatrix.find((row) => row.featureKey === "crm")
+        ?.status,
+    ).toBe("inactive");
+  });
+
   it("calculates charge preview from real subscription chargeables", () => {
     const periodStart = new Date("2026-07-01T00:00:00.000Z");
     const periodEnd = new Date("2026-07-31T00:00:00.000Z");

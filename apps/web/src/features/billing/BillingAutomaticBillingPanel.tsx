@@ -20,7 +20,7 @@ export function BillingAutomaticBillingPanel({
     <section className="billing-panel billing-auto-panel">
       <header className="billing-panel-header billing-auto-header">
         <div>
-          <h3>Cobranca mensal</h3>
+          <h3>Como seu investimento se divide</h3>
           <p>{authority.summary}</p>
         </div>
         <span className="billing-authority-pill">
@@ -32,7 +32,7 @@ export function BillingAutomaticBillingPanel({
       <div className="billing-auto-summary">
         <div>
           <CreditCard aria-hidden="true" className="size-5" />
-          <span>Cobranca</span>
+          <span>Pagamento</span>
           <strong>
             {preview.collectionMethod === "card_on_file"
               ? "Assinatura Asaas"
@@ -46,9 +46,11 @@ export function BillingAutomaticBillingPanel({
         </div>
         <div>
           <Percent aria-hidden="true" className="size-5" />
-          <span>Politica</span>
+          <span>Modelo</span>
           <strong>
-            {preview.hasAgencyDiscount ? "Com desconto" : "Sem taxa de agencia"}
+            {preview.hasAgencyDiscount
+              ? "Condição do grupo"
+              : "Valor direto por loja"}
           </strong>
         </div>
       </div>

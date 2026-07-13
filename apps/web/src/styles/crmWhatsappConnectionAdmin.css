@@ -1,3 +1,5 @@
+@import "./crmWhatsappConnectionWorkflow.css";
+
 .crm-whatsapp-connection-admin {
   display: grid;
   gap: 0.875rem;
@@ -225,42 +227,4 @@
   overflow: hidden;
   padding: 0 0.625rem;
   text-overflow: ellipsis;
-}
-@media (min-width: 980px) {
-  .crm-whatsapp-connection-layout {
-    grid-template-columns: minmax(20rem, 0.82fr) minmax(28rem, 1.18fr);
-  }
-  .crm-whatsapp-connection-webhooks-card {
-    grid-column: 2;
-    grid-row: 1 / span 3;
-  }
-  .crm-whatsapp-connection-selector,
-  .crm-whatsapp-connection-status-card,
-  .crm-whatsapp-connection-instance-card {
-    grid-column: 1;
-  }
-}
-@media (max-width: 720px) {
-  .crm-whatsapp-connection-header {
-    align-items: start;
-  }
-  .crm-whatsapp-webhook-row,
-  .crm-whatsapp-connection-instance-grid {
-    grid-template-columns: 1fr;
-  }
-  .crm-whatsapp-connection-status-card {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-  }
-  .crm-whatsapp-connection-status-card .crm-icon-action {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .crm-whatsapp-connection-status-badge,
-  .crm-whatsapp-webhook-row span,
-  .crm-whatsapp-webhook-row input {
-    grid-column: 1 / -1;
-  }
-  .crm-whatsapp-connection-status-badge {
-    justify-self: start;
-  }
 }

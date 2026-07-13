@@ -36,7 +36,7 @@ export function BillingCheckoutPanel({
   const selectedPlan = currentPlan ?? activePlans[0] ?? null;
   const canCheckout =
     Boolean(selectedPlan) &&
-    Boolean(providerStatus?.configured) &&
+    Boolean(providerStatus?.configured && providerStatus.webhookConfigured) &&
     overview.chargePreview.totalCents > 0 &&
     paymentMethod === "CREDIT_CARD" &&
     checkoutState.kind !== "starting";
@@ -52,8 +52,11 @@ export function BillingCheckoutPanel({
             <span aria-hidden="true" className={providerReady ? "is-on" : ""} />
             {providerReady ? "Sistema online" : "Sistema pendente"}
           </span>
-          <h2>Plano Growth para operar sua loja</h2>
-          <p>Finalize a assinatura no checkout seguro do Asaas.</p>
+          <h2>Comece com uma operação pronta para vender</h2>
+          <p>
+            Ative o plano base e centralize estoque, atendimento e gestão desde
+            o primeiro dia.
+          </p>
         </div>
       </header>
 
@@ -61,14 +64,14 @@ export function BillingCheckoutPanel({
         {selectedPlan ? (
           <article className="billing-plan-card billing-plan-card-selected">
             <div className="billing-plan-card-top">
-              <span>Plano recomendado</span>
+              <span>Plano base</span>
               <strong>{money(selectedPlan.monthlyPriceCents)}/mes</strong>
             </div>
             <div>
               <h3>{selectedPlan.name}</h3>
               <p>
-                Inclui os recursos essenciais para vender, controlar estoque e
-                operar atendimento.
+                A estrutura essencial para sua equipe ganhar ritmo sem montar a
+                operação com ferramentas separadas.
               </p>
             </div>
             <ul>
@@ -108,12 +111,10 @@ export function BillingCheckoutPanel({
           <div className="billing-checkout-readiness">
             <span>Checkout</span>
             <strong>
-              {providerStatus?.configured
-                ? "Asaas pronto"
-                : "Configuracao pendente"}
+              {providerReady ? "Pronto para contratar" : "Disponível em breve"}
             </strong>
-            {!providerStatus?.configured ? (
-              <p>{providerStatus?.missingConfiguration.join(", ")}</p>
+            {!providerReady ? (
+              <p>Estamos finalizando a conexão segura de cobrança.</p>
             ) : null}
             {paymentMethod === "PIX" ? (
               <p>
@@ -142,11 +143,11 @@ export function BillingCheckoutPanel({
             ) : (
               <ExternalLink aria-hidden="true" className="size-4" />
             )}
-            Contratar no Asaas
+            Ativar meu plano
           </button>
           <p className="billing-checkout-secure">
             <ShieldCheck aria-hidden="true" className="size-4" />
-            Pagamento protegido, conciliado por webhook e auditado.
+            Checkout seguro pelo Asaas. Você confere o valor antes de concluir.
           </p>
         </div>
       </div>

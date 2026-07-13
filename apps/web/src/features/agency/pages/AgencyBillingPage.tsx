@@ -1,4 +1,4 @@
-import { CreditCard, RefreshCcw, Sparkles, UploadCloud } from "lucide-react";
+import { CreditCard, RefreshCcw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   FeatureActionButton,
@@ -10,6 +10,8 @@ import {
   FeatureEmptyState,
 } from "../../../components/ui/FeatureStates";
 import { BillingEventList } from "../../billing/BillingPanels";
+import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
+import { BillingTabs, type BillingTab } from "../../billing/BillingNavigation";
 import { readBillingCheckoutReturn } from "../../billing/billingCheckoutReturn";
 import type { BillingCheckoutState } from "../../billing/BillingCheckoutPanel";
 import type {
@@ -27,7 +29,10 @@ import {
 } from "./AgencyBillingPage.model";
 import { createRuntimeAgencyBillingApi } from "./AgencyBillingPage.runtime";
 import { AgencyBillingStoreEntitlements } from "./AgencyBillingStoreEntitlements";
-import { AgencyBillingSummarySections } from "./AgencyBillingSummarySections";
+import {
+  AgencyBillingAllocation,
+  AgencyBillingStatusSummary,
+} from "./AgencyBillingSummarySections";
 
 export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const session = useAccountSession();
@@ -45,6 +50,7 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const [checkoutState, setCheckoutState] = useState<BillingCheckoutState>({
     kind: "idle",
   });
+  const [activeTab, setActiveTab] = useState<BillingTab>("overview");
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const checkoutReturn = readBillingCheckoutReturn("agency");
 
@@ -82,24 +88,6 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     () => createAgencyBillingPanelOverview(overview, selectedStoreId),
     [overview, selectedStoreId],
   );
-
-  const syncProvider = async () => {
-    if (!agencyTenant) return;
-    setStatus({ kind: "syncing" });
-    try {
-      const billingApi = api ?? (await createRuntimeAgencyBillingApi());
-      await billingApi.syncProviderSubscription(agencyTenant.tenantId);
-      const [nextOverview, nextProviderStatus] = await Promise.all([
-        billingApi.getOverview(agencyTenant.tenantId),
-        billingApi.getProviderStatus(agencyTenant.tenantId),
-      ]);
-      setOverview(nextOverview);
-      setProviderStatus(nextProviderStatus);
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
-    }
-  };
 
   const startCheckout: AgencyApi["createCheckout"] = async (
     tenantId,
@@ -153,29 +141,21 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     <FeaturePageShell className="billing-shell" variant="content">
       <FeaturePageHeader
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <FeatureActionButton
-              icon={UploadCloud}
-              isBusy={status.kind === "syncing"}
-              label="Sincronizar Asaas"
-              onClick={() => void syncProvider()}
-            />
-            <FeatureActionButton
-              icon={RefreshCcw}
-              isBusy={status.kind === "loading"}
-              label="Atualizar"
-              onClick={() => void refresh()}
-            />
-          </div>
+          <FeatureActionButton
+            icon={RefreshCcw}
+            isBusy={status.kind === "loading"}
+            label="Atualizar"
+            onClick={() => void refresh()}
+          />
         }
-        description="Assinatura, cobrança consolidada e recursos das lojas vinculadas à agência."
+        description="Uma visão clara do investimento do grupo e dos pacotes que ajudam cada loja a crescer."
         eyebrow={
           <>
             <CreditCard aria-hidden="true" className="size-4" />
-            Billing da Agência
+            Plano do grupo
           </>
         }
-        title="Cobrança unificada"
+        title="Planos e crescimento das lojas"
       />
 
       {status.kind === "error" ? (
@@ -193,7 +173,7 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
 
       {overview && panelOverview ? (
         <>
-          <AgencyBillingSummarySections
+          <AgencyBillingStatusSummary
             checkoutState={checkoutState}
             overview={overview}
             panelOverview={panelOverview}
@@ -204,19 +184,33 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
                 : Promise.reject(new Error("Agency tenant not found."))
             }
           />
-          <AgencyBillingStoreEntitlements
-            overview={overview}
-            panelOverview={panelOverview}
-            reasons={reasons}
-            selectedStoreId={selectedStoreId}
-            status={status}
-            onReasonChange={(featureKey, reason) =>
-              setReasons((current) => ({ ...current, [featureKey]: reason }))
-            }
-            onStoreChange={setSelectedStoreId}
-            onUpdate={updateEntitlement}
-          />
-          <BillingEventList events={overview.entitlementEvents} />
+          <BillingTabs activeTab={activeTab} onChange={setActiveTab} />
+          {activeTab === "overview" ? (
+            <>
+              <AgencyBillingStoreEntitlements
+                overview={overview}
+                panelOverview={panelOverview}
+                reasons={reasons}
+                selectedStoreId={selectedStoreId}
+                status={status}
+                onReasonChange={(featureKey, reason) =>
+                  setReasons((current) => ({
+                    ...current,
+                    [featureKey]: reason,
+                  }))
+                }
+                onStoreChange={setSelectedStoreId}
+                onUpdate={updateEntitlement}
+              />
+              <AgencyBillingAllocation overview={overview} />
+            </>
+          ) : null}
+          {activeTab === "billing" ? (
+            <BillingAutomaticBillingPanel overview={panelOverview} />
+          ) : null}
+          {activeTab === "history" ? (
+            <BillingEventList events={overview.entitlementEvents} />
+          ) : null}
         </>
       ) : (
         <FeatureEmptyState

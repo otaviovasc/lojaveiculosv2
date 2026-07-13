@@ -14,7 +14,6 @@ import {
   assertVerifiedPrimaryEmail,
   normalizePublicSlug,
   requireClerkActor,
-  trialEntitlements,
   type AccountProvisioningPorts,
 } from "./serviceSupport.js";
 
@@ -66,7 +65,6 @@ export async function createAgencyStore(
 
   const store = await ports.accountProvisioningRepository.createAgencyStore({
     actorUserId: actor.id,
-    entitlements: trialEntitlements,
     ...(input.profile ? { profile: input.profile } : {}),
     publicSlug,
     storeLegalName: input.storeLegalName ?? null,
@@ -82,7 +80,9 @@ export async function createAgencyStore(
     entityId: store.storeId,
     entityType: "store",
     metadata: {
-      entitlements: [...trialEntitlements],
+      catalogVersion: store.catalogVersion,
+      entitlementEndsAt: store.entitlementEndsAt,
+      entitlements: store.entitlements,
       role: store.role,
       storeSlug: store.storeSlug,
     },

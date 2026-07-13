@@ -1,0 +1,232 @@
+.crm-whatsapp-mode-bar {
+  align-items: center;
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  min-height: 4rem;
+  padding: 0.65rem 0.85rem;
+}
+
+.crm-whatsapp-mode-bar-main,
+.crm-whatsapp-mode-bar-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-mode-bar-main > span {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.crm-whatsapp-mode-label {
+  align-items: center;
+  color: var(--color-text) !important;
+  display: inline-flex;
+  font-size: var(--font-size-sm) !important;
+  font-weight: 900 !important;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-mode-label svg {
+  color: var(--color-success-strong);
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-whatsapp-workflow {
+  background: var(--color-app);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: min(46rem, calc(100dvh - 12rem));
+}
+
+.crm-whatsapp-workflow-steps {
+  background: var(--color-panel);
+  border-bottom: 1px solid var(--color-line);
+  overflow-x: auto;
+  padding: 0.75rem 1rem;
+}
+
+.crm-whatsapp-workflow-steps ol {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(
+    var(--crm-workflow-step-count, 4),
+    minmax(8rem, 1fr)
+  );
+  list-style: none;
+  margin: 0 auto;
+  max-width: 68rem;
+  min-width: max-content;
+  padding: 0;
+}
+
+.crm-whatsapp-workflow-steps li {
+  position: relative;
+}
+
+.crm-whatsapp-workflow-steps li:not(:last-child)::after {
+  background: var(--color-line);
+  content: "";
+  height: 1px;
+  left: calc(100% - 0.4rem);
+  position: absolute;
+  top: 1.25rem;
+  width: 0.8rem;
+}
+
+.crm-whatsapp-workflow-steps button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-muted);
+  display: flex;
+  gap: 0.6rem;
+  min-height: 2.6rem;
+  padding: 0.25rem;
+  text-align: left;
+  width: 100%;
+}
+
+.crm-whatsapp-workflow-steps button:not(:disabled) {
+  cursor: pointer;
+}
+
+.crm-whatsapp-workflow-step-index {
+  align-items: center;
+  background: var(--color-app-elevated);
+  border: 1px solid var(--color-line);
+  border-radius: 50%;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
+}
+
+.crm-whatsapp-workflow-step-index svg {
+  height: 0.9rem;
+  width: 0.9rem;
+}
+
+.crm-whatsapp-workflow-steps strong,
+.crm-whatsapp-workflow-steps small {
+  display: block;
+}
+
+.crm-whatsapp-workflow-steps strong {
+  color: inherit;
+  font-size: var(--font-size-sm);
+}
+
+.crm-whatsapp-workflow-steps small {
+  font-size: var(--font-size-xs);
+  margin-top: 0.12rem;
+}
+
+.crm-whatsapp-workflow-steps li[data-state="active"] button {
+  color: var(--color-text);
+}
+
+.crm-whatsapp-workflow-steps
+  li[data-state="active"]
+  .crm-whatsapp-workflow-step-index {
+  background: var(--color-success-strong);
+  border-color: var(--color-success-strong);
+  color: var(--color-inverse);
+}
+
+.crm-whatsapp-workflow-steps li[data-state="complete"] button {
+  color: var(--color-success-strong);
+}
+
+.crm-whatsapp-workflow-steps
+  li[data-state="complete"]
+  .crm-whatsapp-workflow-step-index {
+  background: var(--color-green-soft);
+  border-color: var(--color-success-strong);
+}
+
+.crm-whatsapp-workflow-panel {
+  margin: 0 auto;
+  max-width: 68rem;
+  outline: none;
+  padding: 1.25rem;
+  width: 100%;
+}
+
+.crm-whatsapp-workflow-panel > header {
+  margin-bottom: 1rem;
+}
+
+.crm-whatsapp-workflow-panel h2 {
+  font-size: var(--font-size-lg);
+  margin: 0;
+}
+
+.crm-whatsapp-workflow-panel > header p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  margin: 0.3rem 0 0;
+}
+
+.crm-whatsapp-workflow-panel-body {
+  display: grid;
+  gap: 1rem;
+}
+
+.crm-whatsapp-workflow-footer {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-panel) 94%, transparent);
+  border-top: 1px solid var(--color-line);
+  bottom: 0;
+  display: grid;
+  gap: 0.55rem;
+  grid-template-columns: auto 1fr auto auto;
+  padding: 0.7rem 1rem max(0.7rem, env(safe-area-inset-bottom));
+  position: sticky;
+  z-index: 5;
+}
+
+.crm-whatsapp-workflow-footer button {
+  align-items: center;
+  border-radius: 0.45rem;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  gap: 0.4rem;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
+}
+
+.crm-whatsapp-workflow-footer button svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-workflow-cancel,
+.crm-workflow-back {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+.crm-workflow-next {
+  background: var(--color-success-strong);
+  border: 1px solid var(--color-success-strong);
+  color: var(--color-inverse);
+}
+
+.crm-whatsapp-workflow-footer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}

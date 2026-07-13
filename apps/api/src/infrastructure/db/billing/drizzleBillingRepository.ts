@@ -21,6 +21,7 @@ import { getTenantOverview } from "./drizzleAgencyBillingOverviewSupport.js";
 import {
   findPlan,
   findTenantSubscription,
+  listAddons,
   listPlans,
 } from "./drizzleBillingCatalogSupport.js";
 import {
@@ -116,12 +117,14 @@ async function getOverview(
     tenantId: string;
   },
 ): Promise<BillingOverview> {
-  const [billingPlans, entitlements, subscription, events] = await Promise.all([
-    listPlans(db),
-    listEntitlements(db, input),
-    findSubscription(db, input),
-    listEntitlementEvents(db, input),
-  ]);
+  const [addons, billingPlans, entitlements, subscription, events] =
+    await Promise.all([
+      listAddons(db),
+      listPlans(db),
+      listEntitlements(db, input),
+      findSubscription(db, input),
+      listEntitlementEvents(db, input),
+    ]);
   const [allocations, chargeables, financialSummary] = await Promise.all([
     listStoreScopedAllocations(db, input, billingPlans, subscription),
     listChargeables(db, input, billingPlans, subscription),
@@ -129,6 +132,7 @@ async function getOverview(
   ]);
 
   return createBillingOverview({
+    addons,
     allocations,
     authority: createBillingAuthority({
       ...(input.billingManagedBy

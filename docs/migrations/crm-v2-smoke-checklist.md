@@ -18,11 +18,15 @@ evidence folder is documented.
 
 - Open `/dashboard#/crm?surface=whatsapp`.
 - Verify top CRM exposes WhatsApp and Clientes.
-- Verify WhatsApp scoped nav labels:
-  Conversas, Conexao, Visitas, Agendamentos, Campanhas, Integracoes, Tags.
+- Verify desktop WhatsApp scoped nav labels: Conversas, Agendar mensagem,
+  Visitas, Campanhas, Etiquetas, Integracoes, Conexao.
+- On mobile, verify Conversas, Agendar, and Visitas remain in the bottom bar;
+  Campanhas, Etiquetas, Integracoes, and Conexao appear in Mais.
+- Verify the mobile bar hides inside a chat and returns in the conversation list.
 - Verify no scoped tab subtitle copy is visible.
 - Verify unread/tag badges appear only when useful.
 - Capture desktop and mobile screenshots.
+- Verify every workflow footer remains fully above the mobile navigation.
 
 ## Connection
 
@@ -130,8 +134,9 @@ evidence folder is documented.
 
 ## Campaigns
 
-- Current V2 UI creates from WhatsApp sessions and CSV/paste matched to
-  sessions; filtered lead source remains a polish item.
+- Current V2 UI creates from filtered leads, filtered WhatsApp sessions, and
+  CSV/paste matched to sessions. Lead sourcing pages through the full result
+  set and reports matched leads that do not yet have a WhatsApp session.
 - Create campaign from filtered leads.
 - Create campaign from filtered WhatsApp sessions.
 - Create campaign from CSV/contact paste.

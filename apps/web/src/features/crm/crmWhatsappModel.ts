@@ -24,14 +24,21 @@ export function formatMessageTime(message: CrmWhatsappMessage) {
   const value = message.providerTimestamp ?? message.createdAt;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("pt-BR", {
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+  });
 }
 
 export function formatRelativeSessionTime(value?: string | null) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleDateString([], { day: "2-digit", month: "2-digit" });
+  return date.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+  });
 }
 
 export function getSessionReadTimeMs(session?: CrmWhatsappSession | null) {

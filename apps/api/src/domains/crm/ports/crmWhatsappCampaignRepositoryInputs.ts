@@ -49,6 +49,15 @@ export type FindCrmWhatsappCampaignInput = {
   tenantId: TenantId;
 };
 
+export type IncrementCrmWhatsappCampaignCountsInput =
+  FindCrmWhatsappCampaignInput & {
+    failedDelta?: number;
+    repliedDelta?: number;
+    scheduledDelta?: number;
+    secondarySentDelta?: number;
+    sentDelta?: number;
+  };
+
 export type ListCrmWhatsappCampaignRecipientsInput = {
   campaignId?: string;
   campaignSequence?: number;
@@ -78,6 +87,7 @@ export type UpdateCrmWhatsappCampaignInput = FindCrmWhatsappCampaignInput & {
 
 export type UpdateCrmWhatsappCampaignRecipientInput = {
   errorMessage?: string | null;
+  expectedStatus?: CrmWhatsappCampaignRecipientStatus;
   initialScheduledMessageId?: string | null;
   initialSentAt?: Date | null;
   recipientId: string;

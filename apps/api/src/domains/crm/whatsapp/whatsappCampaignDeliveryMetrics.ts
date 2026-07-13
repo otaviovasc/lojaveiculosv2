@@ -92,14 +92,9 @@ export async function updateCampaignCounts(
     sentDelta?: number;
   },
 ) {
-  await repository.updateCampaign({
+  await repository.incrementCampaignCounts({
     campaignId: campaign.id,
-    failedCount: campaign.failedCount + (input.failedDelta ?? 0),
-    repliedCount: campaign.repliedCount + (input.repliedDelta ?? 0),
-    scheduledCount: campaign.scheduledCount + (input.scheduledDelta ?? 0),
-    secondarySentCount:
-      campaign.secondarySentCount + (input.secondarySentDelta ?? 0),
-    sentCount: campaign.sentCount + (input.sentDelta ?? 0),
+    ...input,
     storeId: campaign.storeId,
     tenantId: campaign.tenantId,
   });

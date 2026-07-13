@@ -4,6 +4,7 @@ import type {
   CrmWhatsappCampaign,
   ListCrmWhatsappCampaignsInput,
   FindCrmWhatsappCampaignInput,
+  IncrementCrmWhatsappCampaignCountsInput,
   UpdateCrmWhatsappCampaignInput,
 } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
 
@@ -90,6 +91,23 @@ export function updateMemoryCampaign(
   }
   if (input.sentCount !== undefined) campaign.sentCount = input.sentCount;
   if (input.status !== undefined) campaign.status = input.status;
+  campaign.replyRate =
+    campaign.sentCount > 0 ? campaign.repliedCount / campaign.sentCount : 0;
+  campaign.updatedAt = new Date();
+  return campaign;
+}
+
+export function incrementMemoryCampaignCounts(
+  campaigns: CrmWhatsappCampaign[],
+  input: IncrementCrmWhatsappCampaignCountsInput,
+) {
+  const campaign = findMemoryCampaign(campaigns, input);
+  if (!campaign) return null;
+  campaign.failedCount += input.failedDelta ?? 0;
+  campaign.repliedCount += input.repliedDelta ?? 0;
+  campaign.scheduledCount += input.scheduledDelta ?? 0;
+  campaign.secondarySentCount += input.secondarySentDelta ?? 0;
+  campaign.sentCount += input.sentDelta ?? 0;
   campaign.replyRate =
     campaign.sentCount > 0 ? campaign.repliedCount / campaign.sentCount : 0;
   campaign.updatedAt = new Date();

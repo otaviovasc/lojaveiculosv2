@@ -1,0 +1,77 @@
+.crm-whatsapp-composer {
+  background: color-mix(
+    in srgb,
+    var(--color-app-elevated) 44%,
+    var(--color-panel)
+  );
+  padding: 0.625rem 0.75rem max(0.625rem, env(safe-area-inset-bottom));
+}
+
+.crm-whatsapp-composer-row {
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.crm-whatsapp-composer-textbox {
+  background: var(--color-panel);
+  border-color: var(--color-line);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  min-height: 2.75rem;
+}
+
+.crm-whatsapp-composer-textbox textarea {
+  min-height: 2.75rem;
+  padding-block: 0.75rem;
+}
+
+.crm-whatsapp-send-action {
+  height: 2.75rem;
+  width: 2.75rem;
+}
+
+.crm-whatsapp-disconnected {
+  align-items: center;
+  align-self: center;
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+  margin: auto;
+  max-width: 32rem;
+  padding: 2rem 1.25rem;
+  text-align: center;
+}
+
+.crm-whatsapp-disconnected-icon {
+  align-items: center;
+  background: var(--color-green-soft);
+  border: 1px solid
+    color-mix(in srgb, var(--color-green-start) 28%, var(--color-line));
+  border-radius: 999px;
+  color: var(--color-success-strong);
+  display: inline-flex;
+  height: 4rem;
+  justify-content: center;
+  width: 4rem;
+}
+
+.crm-whatsapp-disconnected h2,
+.crm-whatsapp-disconnected p {
+  margin: 0.375rem 0 0;
+}
+
+.crm-whatsapp-disconnected h2 {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+}
+
+.crm-whatsapp-disconnected p {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+}
+
+.crm-whatsapp-disconnected > div > strong {
+  color: var(--color-success-strong);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+}

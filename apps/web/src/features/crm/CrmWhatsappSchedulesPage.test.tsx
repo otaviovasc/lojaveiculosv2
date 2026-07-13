@@ -21,6 +21,10 @@ describe("CrmWhatsappSchedulesPage", () => {
       connectionId: "24000000-0000-4000-8000-000000000101",
       limit: 100,
     });
+    expect(
+      screen.getByRole("button", { name: "Novo agendamento" }),
+    ).toBeEnabled();
+    expect(screen.queryByLabelText("Quando enviar")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("tab", { name: /Falhas/i }));
     expect(screen.getByText("Falha futura")).toBeInTheDocument();
@@ -48,8 +52,19 @@ describe("CrmWhatsappSchedulesPage", () => {
     const callbacks = renderPage({ activeSession, sessions: [activeSession] });
 
     await screen.findByText("Ola futuro");
+    await user.click(screen.getByRole("button", { name: "Novo agendamento" }));
+
+    expect(screen.getByLabelText("Conversa")).toHaveTextContent("Ana");
+    expect(
+      screen.getByRole("button", { current: "step", name: /Conversa/i }),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
     await user.type(screen.getByLabelText("Quando enviar"), "2099-01-01T10:00");
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
     await user.type(screen.getByLabelText("Mensagem"), "Retorno combinado");
+    expect(screen.getByLabelText("Previa do agendamento")).toHaveTextContent(
+      "Retorno combinado",
+    );
     await user.click(screen.getByRole("button", { name: "Agendar mensagem" }));
 
     expect(callbacks.onSchedule).toHaveBeenCalledWith({
@@ -57,6 +72,39 @@ describe("CrmWhatsappSchedulesPage", () => {
       sessionId: "34000000-0000-4000-8000-000000000001",
       text: "Retorno combinado",
     });
+    expect(
+      await screen.findByText("Mensagem agendada com sucesso."),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Agenda de mensagens")).toBeVisible();
+  });
+
+  it("validates each creation step and resets a cancelled draft", async () => {
+    const user = userEvent.setup();
+    renderPage({ activeSession: null });
+
+    await screen.findByText("Ola futuro");
+    await user.click(screen.getByRole("button", { name: "Novo agendamento" }));
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled();
+
+    await user.click(screen.getByLabelText("Conversa"));
+    await user.click(screen.getByRole("option", { name: /Bruno/ }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled();
+
+    await user.type(screen.getByLabelText("Quando enviar"), "2099-01-01T10:00");
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(screen.getByLabelText("Mensagem"), "Rascunho temporario");
+    await user.click(screen.getByRole("button", { name: "Voltar" }));
+    expect(screen.getByLabelText("Quando enviar")).toHaveValue(
+      "2099-01-01T10:00",
+    );
+
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.getByLabelText("Agenda de mensagens")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Novo agendamento" }));
+    expect(screen.getByLabelText("Conversa")).toHaveTextContent(
+      "Selecione uma conversa",
+    );
   });
 
   it("confirms pending cancellation and exposes process due action", async () => {
@@ -80,8 +128,8 @@ describe("CrmWhatsappSchedulesPage", () => {
     renderPage({ canCreate: false, canRead: false });
 
     expect(
-      screen.getByText("Sem permissao para criar agendamentos."),
-    ).toBeInTheDocument();
+      screen.getByRole("button", { name: "Novo agendamento" }),
+    ).toBeDisabled();
     expect(
       screen.getByText("Sem permissao para listar agendamentos."),
     ).toBeInTheDocument();

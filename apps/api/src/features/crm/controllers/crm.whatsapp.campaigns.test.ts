@@ -122,4 +122,122 @@ describe("CRM WhatsApp campaigns", () => {
     });
     expect(session?.sessionTags.map((tag) => tag.id)).toEqual([replyTag.id]);
   });
+
+  it("claims a campaign recipient once when replies arrive concurrently", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const phone = "5511999999905";
+    const seeded = await seedSession(whatsappRepository, phone);
+    const app = createCampaignTestApp(whatsappRepository);
+    const campaign = await createCampaign(app, {
+      recipients: [seeded.session.id],
+      secondaryContent: "Obrigado pela resposta, {nome}.",
+    });
+    await processDue(app);
+
+    const responses = await Promise.all([
+      postZapiReply(app, phone, {
+        content: "Primeira resposta",
+        messageId: "reply-concurrent-first",
+      }),
+      postZapiReply(app, phone, {
+        content: "Segunda resposta",
+        messageId: "reply-concurrent-second",
+      }),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([201, 201]);
+    await expectCampaign(whatsappRepository, campaign.id, {
+      repliedCount: 1,
+      scheduledCount: 2,
+    });
+    await expectScheduledCount(whatsappRepository, campaign.id, "pending", 1);
+    const [recipient] = await whatsappRepository.listCampaignRecipients({
+      campaignId: campaign.id,
+      limit: 1,
+      storeId: campaignStoreId,
+      tenantId: campaignTenantId,
+    });
+    expect(recipient?.replyContentPreview).toMatch(
+      /^(Primeira|Segunda) resposta$/,
+    );
+  });
+
+  it("increments metrics for different recipients replying concurrently", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const firstPhone = "5511999999908";
+    const secondPhone = "5511999999909";
+    const first = await seedSession(whatsappRepository, firstPhone);
+    const second = await seedSession(whatsappRepository, secondPhone);
+    const app = createCampaignTestApp(whatsappRepository);
+    const campaign = await createCampaign(app, {
+      recipients: [first.session.id, second.session.id],
+      secondaryContent: "Obrigado pela resposta, {nome}.",
+    });
+    await processDue(app);
+
+    const responses = await Promise.all([
+      postZapiReply(app, firstPhone),
+      postZapiReply(app, secondPhone),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual([201, 201]);
+    await expectCampaign(whatsappRepository, campaign.id, {
+      repliedCount: 2,
+      scheduledCount: 4,
+      sentCount: 2,
+    });
+    await expectScheduledCount(whatsappRepository, campaign.id, "pending", 2);
+  });
+
+  it("tracks replies while paused and keeps the secondary send queued", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const phone = "5511999999906";
+    const seeded = await seedSession(whatsappRepository, phone);
+    const app = createCampaignTestApp(whatsappRepository);
+    const campaign = await createCampaign(app, {
+      recipients: [seeded.session.id],
+      secondaryContent: "Retorno pausado para {nome}.",
+    });
+    await processDue(app);
+
+    const pause = await app.request(
+      `/api/v1/crm/whatsapp/campaigns/${campaign.id}/pause`,
+      { method: "POST" },
+    );
+    expect(pause.status).toBe(200);
+    expect((await postZapiReply(app, phone)).status).toBe(201);
+
+    await expectCampaign(whatsappRepository, campaign.id, {
+      repliedCount: 1,
+      scheduledCount: 2,
+      status: "paused",
+    });
+    await expectScheduledCount(whatsappRepository, campaign.id, "pending", 1);
+  });
+
+  it("ignores replies received after a campaign is cancelled", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const phone = "5511999999907";
+    const seeded = await seedSession(whatsappRepository, phone);
+    const app = createCampaignTestApp(whatsappRepository);
+    const campaign = await createCampaign(app, {
+      recipients: [seeded.session.id],
+      secondaryContent: "Nao deve ser agendado.",
+    });
+    await processDue(app);
+
+    const cancel = await app.request(
+      `/api/v1/crm/whatsapp/campaigns/${campaign.id}/cancel`,
+      { method: "POST" },
+    );
+    expect(cancel.status).toBe(200);
+    expect((await postZapiReply(app, phone)).status).toBe(201);
+
+    await expectCampaign(whatsappRepository, campaign.id, {
+      repliedCount: 0,
+      scheduledCount: 1,
+      status: "cancelled",
+    });
+    await expectScheduledCount(whatsappRepository, campaign.id, "pending", 0);
+  });
 });

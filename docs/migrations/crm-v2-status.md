@@ -1,16 +1,36 @@
 # CRM V2 Migration Status
 
-Last updated: 2026-07-08
+Last updated: 2026-07-12
 
 Branch: `main`
 
 ## Current Phase
 
-Phase 11-12: persistent campaigns and outbound bot parity landed; remaining
-polish is Conversas parity, filtered lead campaigns, and mobile evidence.
+Implementation parity is complete. The CRM is in production sign-off: deployed
+cron, live provider/storage/realtime evidence, and load/recovery checks remain.
 
 ## Completed This Pass
 
+- Closed filtered-lead campaign sourcing without coupling campaign recipients
+  to the inbox's active filter or 40-row page.
+- Added atomic campaign reply claiming and concurrent-reply regression coverage.
+- Completed Conversas desktop/mobile polish with explicit list/chat panes,
+  disconnected-first routing, compact action rails, safe-area composer spacing,
+  day separators, and an automotive messaging wallpaper.
+- Added desktop/mobile Playwright coverage for Conversas, disconnected recovery,
+  filtered campaign leads, and campaign recipient review.
+- Rebuilt the secondary WhatsApp operations UI around queue/dashboard-first
+  screens and focused steppers for schedules, campaigns, visits, and connection
+  setup; Tags uses a dedicated editor drawer and Integracoes separates config,
+  event health, and reference content.
+- Copied the Repasses mobile navigation model into V2: Conversas, Agendar, and
+  Visitas are fixed at the bottom, while the permission-visible secondary areas
+  are exposed through Mais. Browser checks cover safe-area placement, target
+  size, chat hiding, menu placement, viewport overflow, and workflow actions.
+- Captured mobile screenshots for Connection, Tags, Visits, Schedules,
+  Campaigns, Integrations, and the Mais menu.
+- Published `crm-whatsapp-completion-audit.md` with the remaining operational
+  production gates.
 - Read repo rules, HTML control docs, migration docs, current V2 CRM runtime,
   and source repos under `../repasses-*`.
 - Created active Markdown control plane:
@@ -160,6 +180,8 @@ polish is Conversas parity, filtered lead campaigns, and mobile evidence.
   rows.
 - `CrmWhatsappScopedNav.tsx` is now compact, without tab subtitles, and uses
   `Conexao`.
+- `CrmWhatsappMobileNav.tsx` adapts the Repasses 3+Mais bottom navigation to V2
+  scope state, permissions, badges, accessibility, and explicit chat panes.
 - `CrmWhatsappScopedSections.tsx` now routes Campaigns to persistent campaigns.
 - Repasses backend still contains Evolution, old agents, MiniBot, and campaign
   logic. Only behavior should be ported; runtime semantics must be V2-native.
@@ -170,7 +192,8 @@ polish is Conversas parity, filtered lead campaigns, and mobile evidence.
 
 - Parallel workers can easily invent conflicting permission or API names.
 - Campaign work depends on stable tag, schedule, visit, and recipient contracts.
-- Campaign reply tracking still needs race hardening for duplicate inbound replies.
+- Production still needs scheduled-worker cron verification and live
+  Z-API/R2/Redis load and recovery evidence.
 - The HTML dashboards include some historical/stale CRM details. Use
   `docs/migrations/crm-v2-integration-contracts.md` as the active contract.
 - Known stale HTML details: a CRM tag column flag mention and one older note
@@ -270,15 +293,21 @@ Current unrelated blockers:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-schedules-ui/crm-whatsapp-schedules.png`.
 - Current integrations screenshot:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-integrations-ui/crm-whatsapp-integrations.png`.
+- Current Conversas desktop/mobile screenshots:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-masterful/crm-whatsapp-conversations.png`,
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-masterful/crm-whatsapp-conversation-mobile.png`.
+- Current filtered-lead Campaigns screenshot:
+  `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-masterful/crm-whatsapp-campaigns.png`.
 - Live smoke: local `GET /crm/whatsapp/connections` reported the test ZAPI
   connection as connected; local `POST /crm/whatsapp/conversations/start`
   returned `201` and `SENT` for the approved phone number.
-- Final gate: `CI=true pnpm run validate` passed on 2026-07-07.
+- Final gate: `CI=true pnpm run validate` passed on 2026-07-12 with 466 web
+  tests and 634 API tests passing; the four skipped API tests are the opt-in
+  live FIPE contracts. `CI=true pnpm run test:smoke:api` and the final
+  Conversas/Campaigns Chromium flows also passed.
 
 ## Next Orchestrator Actions
 
-1. Continue Repasses-style UI parity for Conversas and mobile evidence.
-2. Harden campaign reply tracking against duplicate concurrent replies and add
-   paused-campaign reply behavior tests.
-3. Run full validation when the next stable CRM slice is merged, or record any
-   unrelated failures explicitly here.
+1. Provision and verify the Railway scheduled-message cron.
+2. Run the approved staging/live provider, media, realtime, and retry smoke.
+3. Capture secondary-page mobile evidence and complete launch monitoring.

@@ -6,6 +6,10 @@ import {
   createDrizzleVehiclePlateLookupRepository,
   type DrizzleVehiclePlateLookupClient,
 } from "./vehicleInventory/drizzleVehiclePlateLookupRepository.js";
+import {
+  createDrizzleBillingQuotaGuard,
+  type DrizzleBillingQuotaClient,
+} from "./billing/drizzleBillingQuotaGuard.js";
 
 export function createRuntimeInventoryEnrichmentServices(
   db: unknown,
@@ -16,6 +20,7 @@ export function createRuntimeInventoryEnrichmentServices(
     plateLookupRepository: createDrizzleVehiclePlateLookupRepository(
       db as DrizzleVehiclePlateLookupClient,
     ),
+    quotaGuard: createDrizzleBillingQuotaGuard(db as DrizzleBillingQuotaClient),
   });
 }
 

@@ -4,14 +4,28 @@ export function createAgencyBillingOverview(
   status: BillingSubscription["status"] | null,
 ): BillingOverview {
   const plan = {
+    catalogVersion: "2026-07-v1",
     code: "growth",
     features: [],
     id: "plan_growth",
+    limits: { sellerLimit: 8, vehicleLimit: 300 },
     monthlyPriceCents: 54899,
     name: "Growth",
     status: "active" as const,
   };
   return {
+    addons: [
+      {
+        catalogVersion: "2026-07-v1",
+        code: "crm_whatsapp_instance",
+        featureKey: "crm" as const,
+        id: "addon_crm",
+        includedInTrial: true,
+        monthlyPriceCents: 24999,
+        name: "CRM WhatsApp",
+        status: "active" as const,
+      },
+    ],
     allocations: [],
     authority: {
       currentActorCanManage: true,

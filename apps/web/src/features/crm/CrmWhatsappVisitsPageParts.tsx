@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
-import { CalendarCheck, Check, Clock, Link2, X } from "lucide-react";
-import { crmWhatsappSessionHash } from "./crmRouteState";
+import { Check, Clock, Link2, X } from "lucide-react";
 import type { CrmWhatsappSession } from "./crmWhatsappTypes";
 import type {
   CrmLeadVisit,
@@ -18,67 +17,97 @@ export type CrmWhatsappVisitsPageProps = {
   canRead: boolean;
 };
 
-export function CreateVisitPanel(props: {
-  activeSession: CrmWhatsappSession | null;
+export const visitViewLabels: Record<VisitView, string> = {
+  today: "Hoje",
+  tomorrow: "Amanha",
+  upcoming: "Proximas",
+  overdue: "Atrasadas",
+  completed: "Concluidas",
+};
+
+export const visitViewOrder = Object.keys(visitViewLabels) as VisitView[];
+
+export function VisitBoard({
+  activeView,
+  canManage,
+  error,
+  isLoading,
+  isSaving,
+  onStatus,
+  onViewChange,
+  viewCounts,
+  visits,
+}: {
+  activeView: VisitView;
   canManage: boolean;
+  error: string | null;
+  isLoading: boolean;
   isSaving: boolean;
-  linkedLeadId: string | null;
-  notes: string;
-  onCreate: () => void;
-  onNotesChange: (value: string) => void;
-  onScheduledAtChange: (value: string) => void;
-  scheduledAt: string;
+  onStatus: (visit: CrmLeadVisit, status: LeadVisitStatus) => void;
+  onViewChange: (view: VisitView) => void;
+  viewCounts: Record<VisitView, number>;
+  visits: CrmLeadVisit[];
 }) {
   return (
-    <div className="crm-whatsapp-visit-create">
-      <div className="crm-whatsapp-visit-create-heading">
-        <strong>Nova visita</strong>
-        {props.linkedLeadId ? (
-          <div>
-            <a href={`#/crm?surface=leads&leadId=${props.linkedLeadId}`}>
-              Lead
-            </a>
-            {props.activeSession ? (
-              <a href={`#${crmWhatsappSessionHash(props.activeSession.id)}`}>
-                Conversa
-              </a>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-      {props.linkedLeadId ? (
-        <div className="crm-whatsapp-visit-create-grid">
-          <input
-            aria-label="Data da visita"
-            onChange={(event) => props.onScheduledAtChange(event.target.value)}
-            type="datetime-local"
-            value={props.scheduledAt}
-          />
-          <input
-            aria-label="Observacoes da visita"
-            onChange={(event) => props.onNotesChange(event.target.value)}
-            placeholder="Observacoes"
-            value={props.notes}
-          />
+    <section className="crm-whatsapp-visits-board">
+      {error ? <p className="crm-whatsapp-visits-error">{error}</p> : null}
+      <div className="crm-whatsapp-visits-filters">
+        {visitViewOrder.map((view) => (
           <button
-            className="crm-action crm-action-primary"
-            disabled={
-              !props.canManage || props.isSaving || !props.scheduledAt.trim()
+            aria-pressed={activeView === view}
+            className={
+              activeView === view
+                ? "crm-whatsapp-visits-filter crm-whatsapp-visits-filter-active"
+                : "crm-whatsapp-visits-filter"
             }
-            onClick={props.onCreate}
+            key={view}
+            onClick={() => onViewChange(view)}
             type="button"
           >
-            <CalendarCheck aria-hidden="true" className="size-4" />
-            Criar
+            {visitViewLabels[view]}
+            <span>{viewCounts[view]}</span>
           </button>
+        ))}
+      </div>
+
+      <div className="crm-whatsapp-visits-group">
+        <header>
+          <span />
+          <h3>{visitViewLabels[activeView]}</h3>
+        </header>
+        <div className="crm-whatsapp-visits-timeline">
+          {isLoading ? (
+            <VisitEmpty label="Carregando visitas." />
+          ) : visits.length ? (
+            visits.map((visit) => (
+              <VisitRow
+                canManage={canManage}
+                isSaving={isSaving}
+                key={visit.id}
+                onStatus={onStatus}
+                visit={visit}
+              />
+            ))
+          ) : (
+            <VisitEmpty label="Nenhuma visita nesta visao." />
+          )}
         </div>
-      ) : (
-        <p className="crm-whatsapp-visit-create-empty">
-          Selecione uma conversa vinculada a um lead.
-        </p>
-      )}
-    </div>
+      </div>
+    </section>
   );
+}
+
+export function countVisitsByView(visits: CrmLeadVisit[]) {
+  return Object.fromEntries(
+    visitViewOrder.map((view) => [
+      view,
+      visits.filter((visit) => visitMatchesView(visit, view)).length,
+    ]),
+  ) as Record<VisitView, number>;
+}
+
+export function visitsForView(visits: CrmLeadVisit[], view: VisitView) {
+  return visits.filter((visit) => visitMatchesView(visit, view));
 }
 
 export function VisitRow({
@@ -182,4 +211,32 @@ function formatTime(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function visitMatchesView(visit: CrmLeadVisit, view: VisitView) {
+  const scheduled = new Date(visit.scheduledAt);
+  const now = new Date();
+  const isClosed = ["cancelled", "completed", "no_show"].includes(visit.status);
+  if (view === "completed") return isClosed;
+  if (isClosed) return false;
+  if (view === "today") return isSameDay(scheduled, now);
+  if (view === "tomorrow") return isSameDay(scheduled, startOfTomorrow(now));
+  if (view === "overdue") return scheduled < startOfDay(now);
+  return scheduled >= startOfAfterTomorrow(now);
+}
+
+function isSameDay(left: Date, right: Date) {
+  return left.toDateString() === right.toDateString();
+}
+
+function startOfDay(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+}
+
+function startOfTomorrow(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate() + 1);
+}
+
+function startOfAfterTomorrow(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate() + 2);
 }

@@ -1,7 +1,8 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { crmWhatsappCampaigns } from "@lojaveiculosv2/db";
 import type {
   CreateCrmWhatsappCampaignInput,
+  IncrementCrmWhatsappCampaignCountsInput,
   ListCrmWhatsappCampaignsInput,
   UpdateCrmWhatsappCampaignInput,
 } from "../../../domains/crm/ports/crmWhatsappRepository.js";
@@ -95,6 +96,25 @@ export async function updateWhatsappCampaign(
         : {}),
       ...(input.sentCount !== undefined ? { sentCount: input.sentCount } : {}),
       ...(input.status !== undefined ? { status: input.status } : {}),
+      updatedAt: new Date(),
+    })
+    .where(campaignScope(input))
+    .returning();
+  return row ? toWhatsappCampaign(row) : null;
+}
+
+export async function incrementWhatsappCampaignCounts(
+  db: DrizzleCrmClient,
+  input: IncrementCrmWhatsappCampaignCountsInput,
+) {
+  const [row] = await db
+    .update(crmWhatsappCampaigns)
+    .set({
+      failedCount: sql`${crmWhatsappCampaigns.failedCount} + ${input.failedDelta ?? 0}`,
+      repliedCount: sql`${crmWhatsappCampaigns.repliedCount} + ${input.repliedDelta ?? 0}`,
+      scheduledCount: sql`${crmWhatsappCampaigns.scheduledCount} + ${input.scheduledDelta ?? 0}`,
+      secondarySentCount: sql`${crmWhatsappCampaigns.secondarySentCount} + ${input.secondarySentDelta ?? 0}`,
+      sentCount: sql`${crmWhatsappCampaigns.sentCount} + ${input.sentDelta ?? 0}`,
       updatedAt: new Date(),
     })
     .where(campaignScope(input))

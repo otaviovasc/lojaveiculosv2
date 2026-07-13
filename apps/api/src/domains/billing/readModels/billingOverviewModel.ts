@@ -1,5 +1,6 @@
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import type {
+  BillingAddon,
   BillingEntitlementMatrixRow,
   BillingEntitlementStatus,
   BillingAuthority,
@@ -26,6 +27,7 @@ export const billingFeatureOrder = [
 ] satisfies EntitlementKey[];
 
 export function createBillingOverview(input: {
+  addons?: readonly BillingAddon[];
   allocations?: readonly BillingStoreAllocation[];
   authority?: BillingAuthority;
   chargeables?: readonly BillingChargeableItem[];
@@ -33,6 +35,7 @@ export function createBillingOverview(input: {
   entitlementEvents?: BillingOverview["entitlementEvents"];
   entitlements: readonly StoreEntitlement[];
   financialSummary?: BillingFinancialSummary;
+  now?: Date;
   plans: readonly BillingPlan[];
   storeId: BillingOverview["storeId"];
   subscription: BillingSubscription | null;
@@ -40,6 +43,7 @@ export function createBillingOverview(input: {
 }): BillingOverview {
   const allocations = input.allocations ?? [];
   return {
+    addons: input.addons ?? [],
     allocations,
     authority: input.authority ?? defaultBillingAuthority(),
     chargePreview:
@@ -53,6 +57,7 @@ export function createBillingOverview(input: {
     entitlementEvents: input.entitlementEvents ?? [],
     entitlementMatrix: createEntitlementMatrix({
       entitlements: input.entitlements,
+      ...(input.now ? { now: input.now } : {}),
       subscription: input.subscription,
     }),
     entitlements: input.entitlements,
@@ -84,6 +89,7 @@ export function createBillingAuthority(input: {
 
 export function createEntitlementMatrix(input: {
   entitlements: readonly StoreEntitlement[];
+  now?: Date;
   subscription: BillingSubscription | null;
 }): BillingEntitlementMatrixRow[] {
   return billingFeatureOrder.map((featureKey) => {
@@ -104,13 +110,31 @@ export function createEntitlementMatrix(input: {
       ),
       source: entitlement?.source ?? null,
       startsAt: entitlement?.startsAt ?? null,
-      status: entitlement?.status ?? "inactive",
+      status: entitlement
+        ? effectiveEntitlementStatus(entitlement, input.now ?? new Date())
+        : "inactive",
     };
   });
 }
 
 export function isUsableEntitlement(status: BillingEntitlementStatus): boolean {
   return status === "active" || status === "trialing";
+}
+
+export function isEffectiveEntitlement(
+  entitlement: Pick<StoreEntitlement, "endsAt" | "startsAt" | "status">,
+  now: Date = new Date(),
+) {
+  return isUsableEntitlement(effectiveEntitlementStatus(entitlement, now));
+}
+
+function effectiveEntitlementStatus(
+  entitlement: Pick<StoreEntitlement, "endsAt" | "startsAt" | "status">,
+  now: Date,
+): BillingEntitlementStatus {
+  if (entitlement.startsAt && entitlement.startsAt > now) return "inactive";
+  if (entitlement.endsAt && entitlement.endsAt <= now) return "inactive";
+  return entitlement.status;
 }
 
 function entitlementLimit(

@@ -20,16 +20,21 @@ test.describe("CRM WhatsApp tags", () => {
     await page.getByRole("tab", { name: /Etiquetas/ }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Etiquetas" }),
+      page.getByRole("button", { name: "Nova etiqueta" }),
     ).toBeVisible();
+    await expect(page.getByText("Ordem de exibicao")).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-tags");
+    await page
+      .getByRole("button", { name: "Editar etiqueta Oferta enviada" })
+      .click();
+    await expect(
+      page.getByRole("dialog", { name: /Editar Oferta enviada/ }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Nome")).toHaveValue("Oferta enviada");
     await expect(page.getByText("Previa")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Usar cor Urgente" }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Editar etiqueta Oferta enviada" })
-      .click();
-    await expect(page.getByLabel("Nome")).toHaveValue("Oferta enviada");
-    await saveQaScreenshot(page, testInfo, "crm-whatsapp-tags");
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-tag-editor");
   });
 });

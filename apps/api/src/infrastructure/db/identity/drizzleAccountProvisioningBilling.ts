@@ -1,33 +1,27 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, lte, sql } from "drizzle-orm";
 import {
+  addons,
   billingCustomers,
   planFeatures,
   plans,
-  subscriptionItems,
   subscriptions,
   type stores,
   type tenants,
 } from "@lojaveiculosv2/db";
+import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import type { StoreProfileDraft } from "../../../domains/identity/ports/accountProvisioningRepository.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
+import {
+  ensureStoreAddonItem,
+  ensureStorePlanItem,
+} from "./drizzleAccountProvisioningBillingItems.js";
 
-const growthPlan = {
-  code: "growth",
-  limits: { seller_limit: 8, vehicle_limit: 300 },
-  monthlyPriceCents: 29900,
-  name: "Growth",
-  status: "active" as const,
-};
-
-export const growthPlanFeatures = [
-  { featureKey: "subdomain", included: 1, limitValue: null },
-  { featureKey: "crm", included: 1, limitValue: null },
-  { featureKey: "automation", included: 1, limitValue: null },
-  { featureKey: "plate_lookup", included: 1, limitValue: 300 },
-  { featureKey: "custom_domain", included: 0, limitValue: null },
-  { featureKey: "external_api", included: 0, limitValue: null },
-  { featureKey: "nfe", included: 0, limitValue: null },
-] as const;
+export class BillingCatalogUnavailableError extends Error {
+  constructor() {
+    super("No published default billing catalog is available.");
+    this.name = "BillingCatalogUnavailableError";
+  }
+}
 
 export async function insertBillingDefaults(
   db: DrizzleAccountProvisioningClient,
@@ -38,9 +32,11 @@ export async function insertBillingDefaults(
   await db.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${tenant.id}, 11))`,
   );
-  const plan = await ensureGrowthPlan(db);
+  const { plan, planEntitlements, trialAddons } =
+    await selectPublishedCatalog(db);
   const customer = await ensureBillingCustomer(db, tenant, profile);
   const subscription = await ensureSubscription(db, tenant.id, customer.id);
+  assertProvisionableSubscription(subscription);
   await ensureStorePlanItem(db, {
     planId: plan.id,
     storeId: store.id,
@@ -48,40 +44,91 @@ export async function insertBillingDefaults(
     tenantId: tenant.id,
     unitAmountCents: plan.monthlyPriceCents,
   });
+  const selectedAddons = subscription.status === "trialing" ? trialAddons : [];
+  await Promise.all(
+    selectedAddons.map((addon) =>
+      ensureStoreAddonItem(db, {
+        addonId: addon.id,
+        storeId: store.id,
+        subscriptionId: subscription.id,
+        tenantId: tenant.id,
+        unitAmountCents: addon.monthlyPriceCents,
+      }),
+    ),
+  );
+  const startsAt = subscription.currentPeriodStart ?? new Date();
+  const trialing = subscription.status === "trialing";
+  return {
+    catalogVersion: plan.catalogVersion,
+    entitlements: [
+      ...planEntitlements,
+      ...selectedAddons.map((addon) => addon.featureKey as EntitlementKey),
+    ],
+    endsAt: trialing ? subscription.currentPeriodEnd : null,
+    startsAt,
+    status: trialing ? ("trialing" as const) : ("active" as const),
+  };
 }
 
-async function ensureGrowthPlan(db: DrizzleAccountProvisioningClient) {
-  const [inserted] = await db
-    .insert(plans)
-    .values(growthPlan)
-    .onConflictDoUpdate({
-      set: {
-        limits: growthPlan.limits,
-        monthlyPriceCents: growthPlan.monthlyPriceCents,
-        name: growthPlan.name,
-        status: growthPlan.status,
-      },
-      target: plans.code,
-    })
-    .returning();
-  const plan = inserted ?? (await findGrowthPlan(db));
-  await db
-    .insert(planFeatures)
-    .values(
-      growthPlanFeatures.map((feature) => ({ ...feature, planId: plan.id })),
-    )
-    .onConflictDoNothing();
-  return plan;
-}
-
-async function findGrowthPlan(db: DrizzleAccountProvisioningClient) {
+async function selectPublishedCatalog(db: DrizzleAccountProvisioningClient) {
+  const now = new Date();
   const [plan] = await db
     .select()
     .from(plans)
-    .where(eq(plans.code, growthPlan.code))
+    .where(
+      and(
+        eq(plans.status, "active"),
+        eq(plans.isDefault, true),
+        lte(plans.publishedAt, now),
+      ),
+    )
+    .orderBy(desc(plans.publishedAt))
     .limit(1);
-  if (!plan) throw new Error("Growth billing plan was not provisioned.");
-  return plan;
+  if (!plan) throw new BillingCatalogUnavailableError();
+  const [features, trialAddons] = await Promise.all([
+    db
+      .select()
+      .from(planFeatures)
+      .where(eq(planFeatures.planId, plan.id))
+      .limit(100),
+    db
+      .select()
+      .from(addons)
+      .where(
+        and(
+          eq(addons.status, "active"),
+          eq(addons.includedInTrial, true),
+          lte(addons.publishedAt, now),
+        ),
+      )
+      .orderBy(desc(addons.publishedAt))
+      .limit(100),
+  ]);
+  return {
+    plan,
+    planEntitlements: features
+      .filter((feature) => feature.included === 1)
+      .map((feature) => feature.featureKey as EntitlementKey),
+    trialAddons: trialAddons.filter(
+      (addon) => addon.catalogVersion === plan.catalogVersion,
+    ),
+  };
+}
+
+function assertProvisionableSubscription(
+  subscription: typeof subscriptions.$inferSelect,
+) {
+  if (subscription.status === "active") return;
+  if (
+    subscription.status === "trialing" &&
+    subscription.currentPeriodEnd &&
+    subscription.currentPeriodEnd > new Date()
+  ) {
+    return;
+  }
+  throw new Error(
+    `Cannot provision a store against a ${subscription.status} billing subscription without a future period end.`,
+  );
 }
 
 async function ensureBillingCustomer(
@@ -175,54 +222,6 @@ async function ensureSubscription(
   if (!subscription)
     throw new Error("Billing subscription was not provisioned.");
   return subscription;
-}
-
-async function ensureStorePlanItem(
-  db: DrizzleAccountProvisioningClient,
-  input: {
-    planId: string;
-    storeId: string;
-    subscriptionId: string;
-    tenantId: string;
-    unitAmountCents: number;
-  },
-) {
-  const [existing] = await db
-    .select()
-    .from(subscriptionItems)
-    .where(
-      and(
-        eq(subscriptionItems.subscriptionId, input.subscriptionId),
-        eq(subscriptionItems.itemType, "plan"),
-        eq(subscriptionItems.storeId, input.storeId),
-      ),
-    )
-    .limit(1);
-  if (existing) {
-    await db
-      .update(subscriptionItems)
-      .set({
-        endsAt: null,
-        planId: input.planId,
-        quantity: 1,
-        startsAt: new Date(),
-        unitAmountCents: input.unitAmountCents,
-        updatedAt: new Date(),
-      })
-      .where(eq(subscriptionItems.id, existing.id));
-    return;
-  }
-
-  await db.insert(subscriptionItems).values({
-    itemType: "plan",
-    planId: input.planId,
-    quantity: 1,
-    startsAt: new Date(),
-    storeId: input.storeId,
-    subscriptionId: input.subscriptionId,
-    tenantId: input.tenantId,
-    unitAmountCents: input.unitAmountCents,
-  });
 }
 
 function addDays(date: Date, days: number) {

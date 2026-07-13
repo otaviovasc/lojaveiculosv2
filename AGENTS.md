@@ -14,6 +14,32 @@ Public storefront users can view inventory and submit interest, but only
 authenticated store actors may mutate inventory, reserve vehicles, close sales,
 emit documents, manage billing, or trigger audited operational workflows.
 
+## Product And Commercial Guardrails
+
+- Read `docs/strategy/product-operating-model.md` before adding a module,
+  changing packaging/onboarding, or expanding a provider workflow.
+- Treat `docs/feature-inventory.md` as a technical inventory, not evidence that
+  a feature is commercially safe, adopted, compliant, or ready for V1 cutover.
+- Until three representative V1 stores complete rehearsed V2 migration and
+  acceptance, prioritize migration, activation, billing truth, customer health,
+  security, provider reliability, and the core acquisition-to-cash loop over
+  speculative breadth.
+- Every non-trivial product feature must name its target store segment, customer
+  outcome, leading metric, billing/entitlement treatment, support owner, and
+  failure/degraded state.
+- Product analytics and security audit are separate concerns. Do not use audit
+  retention or customer message contents as a substitute for a minimal product
+  event contract.
+- Never show synthetic success for fiscal, RENAVE, payment, marketplace, or
+  messaging operations. An unavailable integration must say that no official
+  operation occurred.
+- Loja Veiculos is a dealership-management-system provider and must integrate
+  an independent authorized RENAVE integrator; it must not represent itself as
+  the RENAVE integrator.
+- Exact pricing and ICP boundaries remain experiments until the V1 retained and
+  churned cohorts are measured. Prices must come from a versioned server-owned
+  catalog, never client input or onboarding constants.
+
 ## Architecture Rules
 
 - Follow `docs/repo-organization.md` before adding or moving files.

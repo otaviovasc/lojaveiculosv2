@@ -34,6 +34,7 @@ import {
 import {
   createWhatsappCampaign,
   findWhatsappCampaignById,
+  incrementWhatsappCampaignCounts,
   listWhatsappCampaigns,
   updateWhatsappCampaign,
 } from "./drizzleCrmWhatsappCampaigns.js";
@@ -126,6 +127,8 @@ export function createDrizzleCrmWhatsappRepository(
       if (options.disableTransactions) return execute(db);
       return db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
     },
+    incrementCampaignCounts: (input) =>
+      incrementWhatsappCampaignCounts(db, input),
     async listMessages(input) {
       return listWhatsappMessages(db, input);
     },
@@ -232,7 +235,6 @@ async function findSessionIdsByTags(
     );
   return Array.from(new Set(rows.map((row) => row.sessionId)));
 }
-
 export function crmWhatsappUnreadSessionPredicate(): SQL {
   return sql`exists (
     select 1

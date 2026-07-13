@@ -50,7 +50,9 @@ export type OverrideRow = {
 };
 
 export type EntitlementRow = {
+  endsAt: Date | null;
   featureKey: EntitlementKey;
+  startsAt: Date | null;
   status: "active" | "inactive" | "trialing" | "suspended";
   storeId: StoreId;
 };

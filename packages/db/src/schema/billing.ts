@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -10,7 +11,7 @@ import {
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
-import { entitlementStatus, stores, tenants } from "./identity.js";
+import { stores, tenants } from "./identity.js";
 import { lifecycleColumns } from "./_shared.js";
 
 export const catalogStatus = pgEnum("billing_catalog_status", [
@@ -44,13 +45,26 @@ export const plans = pgTable(
   "plans",
   {
     ...lifecycleColumns,
+    catalogVersion: varchar("catalog_version", { length: 80 })
+      .notNull()
+      .default("2026-07-v1"),
     code: varchar("code", { length: 80 }).notNull(),
+    isDefault: boolean("is_default").notNull().default(false),
     limits: jsonb("limits").notNull().default({}),
     monthlyPriceCents: integer("monthly_price_cents").notNull(),
     name: varchar("name", { length: 120 }).notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     status: catalogStatus("status").notNull().default("active"),
   },
-  (table) => [uniqueIndex("plans_code_unique").on(table.code)],
+  (table) => [
+    index("plans_status_published_idx").on(table.status, table.publishedAt),
+    uniqueIndex("plans_code_catalog_version_unique").on(
+      table.code,
+      table.catalogVersion,
+    ),
+  ],
 );
 
 export const planFeatures = pgTable(
@@ -76,13 +90,26 @@ export const addons = pgTable(
   "addons",
   {
     ...lifecycleColumns,
+    catalogVersion: varchar("catalog_version", { length: 80 })
+      .notNull()
+      .default("2026-07-v1"),
     code: varchar("code", { length: 80 }).notNull(),
     featureKey: varchar("feature_key", { length: 80 }).notNull(),
+    includedInTrial: boolean("included_in_trial").notNull().default(false),
     monthlyPriceCents: integer("monthly_price_cents").notNull(),
     name: varchar("name", { length: 120 }).notNull(),
+    publishedAt: timestamp("published_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     status: catalogStatus("status").notNull().default("active"),
   },
-  (table) => [uniqueIndex("addons_code_unique").on(table.code)],
+  (table) => [
+    index("addons_status_published_idx").on(table.status, table.publishedAt),
+    uniqueIndex("addons_code_catalog_version_unique").on(
+      table.code,
+      table.catalogVersion,
+    ),
+  ],
 );
 
 export const billingCustomers = pgTable(
@@ -191,36 +218,6 @@ export const payments = pgTable(
     uniqueIndex("payments_provider_payment_unique").on(
       table.provider,
       table.providerPaymentId,
-    ),
-  ],
-);
-
-export const storeEntitlementEvents = pgTable(
-  "store_entitlement_events",
-  {
-    ...lifecycleColumns,
-    actorId: varchar("actor_id", { length: 191 }),
-    featureKey: varchar("feature_key", { length: 80 }).notNull(),
-    metadata: jsonb("metadata").notNull().default({}),
-    nextStatus: entitlementStatus("next_status").notNull(),
-    previousStatus: entitlementStatus("previous_status"),
-    reason: text("reason"),
-    source: varchar("source", { length: 80 }).notNull(),
-    storeId: uuid("store_id")
-      .notNull()
-      .references(() => stores.id),
-    tenantId: uuid("tenant_id")
-      .notNull()
-      .references(() => tenants.id),
-  },
-  (table) => [
-    index("store_entitlement_events_store_created_idx").on(
-      table.storeId,
-      table.createdAt,
-    ),
-    index("store_entitlement_events_tenant_created_idx").on(
-      table.tenantId,
-      table.createdAt,
     ),
   ],
 );

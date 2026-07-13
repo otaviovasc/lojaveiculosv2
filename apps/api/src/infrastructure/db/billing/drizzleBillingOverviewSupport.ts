@@ -16,7 +16,7 @@ import type {
   BillingSubscription,
 } from "../../../domains/billing/ports/billingRepository.js";
 import { createChargeableItem } from "../../../domains/billing/readModels/billingChargePreviewModel.js";
-import { isUsableEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
+import { isEffectiveEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
 export async function listEntitlementEvents(
@@ -84,7 +84,7 @@ export async function listAllocations(
 
     return {
       activeEntitlementCount: entitlements.filter((item) =>
-        isUsableEntitlement(item.status),
+        isEffectiveEntitlement(item),
       ).length,
       addonCount: items.filter((item) => item.itemType === "addon").length,
       monthlyAmountCents: items.reduce(

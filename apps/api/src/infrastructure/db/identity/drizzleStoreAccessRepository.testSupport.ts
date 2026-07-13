@@ -185,7 +185,11 @@ function findEntitlementRows(rows: StoredRows) {
         entitlement.storeId === access.storeId &&
         (entitlement.status === "active" || entitlement.status === "trialing"),
     )
-    .map((entitlement) => ({ entitlement: entitlement.featureKey }));
+    .map((entitlement) => ({
+      endsAt: entitlement.endsAt,
+      entitlement: entitlement.featureKey,
+      startsAt: entitlement.startsAt,
+    }));
 }
 
 function findAnyAccessRows(rows: StoredRows) {

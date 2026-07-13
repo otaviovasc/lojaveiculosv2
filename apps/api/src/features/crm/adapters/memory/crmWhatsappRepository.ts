@@ -44,6 +44,7 @@ import {
 import {
   createMemoryCampaign,
   findMemoryCampaign,
+  incrementMemoryCampaignCounts,
   listMemoryCampaigns,
   updateMemoryCampaign,
 } from "./crmWhatsappMemoryCampaigns.js";
@@ -181,6 +182,8 @@ export function createMemoryCrmWhatsappRepository(
         ),
       };
     },
+    incrementCampaignCounts: (input) =>
+      Promise.resolve(incrementMemoryCampaignCounts(campaigns, input)),
     async listMessages(input) {
       return messages
         .filter((message) => message.storeId === input.storeId)

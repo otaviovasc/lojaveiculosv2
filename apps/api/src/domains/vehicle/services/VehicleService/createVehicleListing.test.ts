@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createVehicleListing } from "./createVehicleListing.js";
 import { createContext, createInMemoryVehiclePorts } from "./testSupport.js";
 
@@ -74,5 +74,27 @@ describe("VehicleService create listing denials", () => {
         }) as unknown as Record<string, unknown>,
       }),
     );
+  });
+
+  it("rejects before persistence when the vehicle quota is exhausted", async () => {
+    const context = createContext(["inventory.create"]);
+    const ports = Object.assign(createInMemoryVehiclePorts(), {
+      quotaGuard: {
+        assertAvailable: async () => {
+          throw new Error("quota exceeded");
+        },
+      },
+    });
+    const create = vi.spyOn(ports.listingRepository, "create");
+
+    await expect(
+      createVehicleListing(
+        context,
+        { plate: "ABC1D23", title: "Civic" },
+        ports,
+      ),
+    ).rejects.toThrow("quota exceeded");
+
+    expect(create).not.toHaveBeenCalled();
   });
 });

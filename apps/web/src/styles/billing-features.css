@@ -117,6 +117,31 @@
   color: var(--color-inverse);
 }
 
+.billing-dialog-actions button.billing-dialog-remove {
+  background: var(--color-panel);
+  border-color: color-mix(in srgb, var(--color-danger) 42%, var(--color-line));
+  color: var(--color-danger);
+}
+
+.billing-package-consultation {
+  align-items: flex-start;
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.55rem;
+  line-height: 1.45;
+  padding: 0.8rem;
+}
+
+.billing-package-consultation svg {
+  flex: 0 0 auto;
+  margin-top: 0.12rem;
+}
+
 .billing-dialog-actions button:disabled {
   cursor: not-allowed;
   opacity: 0.45;
@@ -162,9 +187,5 @@
 
   .billing-feature-card {
     min-height: 11rem;
-  }
-
-  .billing-dialog-actions {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }

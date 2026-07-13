@@ -12,6 +12,7 @@ import {
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createBillingApi, type BillingApi } from "./apiClient";
 import { readBillingCheckoutReturn } from "./billingCheckoutReturn";
+import { BillingTabs, type BillingTab } from "./BillingNavigation";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
 import {
   BillingCheckoutPanel,
@@ -19,9 +20,9 @@ import {
 } from "./BillingCheckoutPanel";
 import {
   BillingAllocationTable,
-  BillingEntitlementMatrix,
   BillingEventList,
   BillingKpiGrid,
+  BillingPlanComposition,
 } from "./BillingPanels";
 import { createBillingApiOptions } from "./runtimeApi";
 import type {
@@ -110,7 +111,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
           />
         }
         description={
-          "Acompanhe seu plano, custo mensal, recursos contratados e historico."
+          "Tenha a base certa para vender mais e adicione novas capacidades no ritmo da sua operação."
         }
         eyebrow={
           <>
@@ -118,7 +119,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
             Assinatura
           </>
         }
-        title="Assinatura e faturamento"
+        title="Seu plano Loja Veículos"
       />
 
       {status.kind === "error" ? (
@@ -139,33 +140,40 @@ export function BillingModule({ api }: { api?: BillingApi }) {
           <BillingTabs activeTab={activeTab} onChange={setActiveTab} />
           {activeTab === "overview" ? (
             <>
-              <BillingCheckoutPanel
-                checkoutState={checkoutState}
+              <BillingPlanComposition
+                canManage={overview.authority.currentActorCanManage}
                 overview={overview}
-                providerStatus={providerStatus}
-                onCheckout={startCheckout}
+                reasons={reasons}
+                savingFeatureKey={
+                  status.kind === "saving" ? status.featureKey : null
+                }
+                onReasonChange={(featureKey, reason) =>
+                  setReasons((current) => ({
+                    ...current,
+                    [featureKey]: reason,
+                  }))
+                }
+                onUpdate={updateEntitlement}
               />
               <BillingKpiGrid overview={overview} />
             </>
           ) : null}
-          {activeTab === "features" ? (
-            <BillingEntitlementMatrix
-              chargePreview={overview.chargePreview}
-              matrix={overview.entitlementMatrix}
-              reasons={reasons}
-              savingFeatureKey={
-                status.kind === "saving" ? status.featureKey : null
-              }
-              onReasonChange={(featureKey, reason) =>
-                setReasons((current) => ({ ...current, [featureKey]: reason }))
-              }
-              onUpdate={updateEntitlement}
-            />
-          ) : null}
-          {activeTab === "details" ? (
+          {activeTab === "billing" ? (
             <>
+              {canStartSubscription(overview) ? (
+                <BillingCheckoutPanel
+                  checkoutState={checkoutState}
+                  overview={overview}
+                  providerStatus={providerStatus}
+                  onCheckout={startCheckout}
+                />
+              ) : null}
               <BillingAutomaticBillingPanel overview={overview} />
               <BillingAllocationTable allocations={overview.allocations} />
+            </>
+          ) : null}
+          {activeTab === "history" ? (
+            <>
               <BillingEventList events={overview.entitlementEvents} />
             </>
           ) : null}
@@ -181,37 +189,9 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   );
 }
 
-type BillingTab = "details" | "features" | "overview";
-
-function BillingTabs({
-  activeTab,
-  onChange,
-}: {
-  activeTab: BillingTab;
-  onChange: (tab: BillingTab) => void;
-}) {
-  const tabs: { label: string; value: BillingTab }[] = [
-    { label: "Visao geral e checkout", value: "overview" },
-    { label: "Recursos e add-ons", value: "features" },
-    { label: "Detalhes e historico", value: "details" },
-  ];
-
-  return (
-    <div className="billing-tabs" role="tablist">
-      {tabs.map((tab) => (
-        <button
-          aria-selected={activeTab === tab.value}
-          className={activeTab === tab.value ? "is-active" : ""}
-          key={tab.value}
-          onClick={() => onChange(tab.value)}
-          role="tab"
-          type="button"
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  );
+function canStartSubscription(overview: BillingOverview) {
+  const status = overview.subscription?.status;
+  return !status || status === "cancelled" || status === "expired";
 }
 
 type BillingStatus =

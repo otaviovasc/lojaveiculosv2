@@ -107,6 +107,7 @@ export function createCampaignSessions() {
       buyerName: "Bruno Retorno",
       buyerPhone: "5518996469400",
       id: "5e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+      leadId: "1b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
     }),
   ];
 }
@@ -189,6 +190,7 @@ function createSession(input: {
   buyerName: string;
   buyerPhone: string;
   id: string;
+  leadId?: string;
 }) {
   return {
     buyerName: input.buyerName,
@@ -204,7 +206,7 @@ function createSession(input: {
     id: input.id,
     lastMessageContent: "Tenho interesse no Civic.",
     lastMessageAt: "2026-07-07T12:00:00.000Z",
-    leadId: "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
+    leadId: input.leadId ?? "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
     sessionTags: [{ id: warmTagId, name: "Oferta enviada" }],
     status: "ACTIVE",
     unreadCount: 0,

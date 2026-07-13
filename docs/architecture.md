@@ -101,6 +101,81 @@ Avoid holding a transaction open across external IO unless the workflow cannot
 yet be shortened without changing persisted identifiers. Do not add ad hoc
 Drizzle transactions inside domain services.
 
+## External Effect Direction
+
+Provider, object-storage, and separate-audit-database effects require durable
+intent and reconciliation; throwing after an external effect does not make that
+effect atomic.
+
+- Persist a versioned command/effect or outbox record in the same product
+  transaction as the business state that requires the effect.
+- Use a stable business idempotency key and record attempts, provider ids,
+  result, retry state, and operator recovery without storing secrets or raw
+  customer payloads.
+- HTTP requests may create or inspect work, but large marketplace batches,
+  provider retries, document materialization, and reconciliation belong in
+  durable workers.
+- Critical audit fail-closed means the product transaction durably accepts its
+  sanitized audit-outbox evidence. Delivery to the separate audit database is
+  reconciled and monitored; a later network call alone is not an atomic
+  boundary.
+- User-visible success is emitted only after the business effect reaches the
+  workflow's documented success state. Pending and indeterminate provider
+  outcomes remain explicit states.
+
+## Tenant Integrity Direction
+
+Application query scoping remains mandatory, but high-risk tables also need
+database-enforced scope consistency.
+
+- A row carrying both `tenant_id` and `store_id` must not be able to reference a
+  store owned by a different tenant.
+- Child records must not reference a parent from another tenant/store while
+  carrying local scope ids.
+- Prefer composite scoped foreign keys or safely derive redundant scope from the
+  parent. Add PostgreSQL RLS as defense-in-depth where its operational contract
+  is understood and tested.
+- Migration, support, internal, provider, and future automation paths receive
+  the same database-level isolation; privileged tooling is not an exception.
+
+## Product Telemetry Direction
+
+SaaS product telemetry is separate from security/compliance audit and from the
+dealer-facing analytics domain.
+
+- Server-side domain outcomes are canonical for activation and adoption.
+- Product events use an allowlisted, versioned envelope with tenant/store,
+  pseudonymous actor, surface, entity reference, request/session correlation,
+  and small non-sensitive properties.
+- Do not include message bodies, document contents, provider payloads, buyer
+  snapshots, secrets, or tokens.
+- Daily rollups support acquisition, activation, weekly core use, account
+  health, cohort retention, expansion, support cost, and cancellation analysis.
+- Audit retention, browser navigation, and raw logs must not be used as a proxy
+  for product-value measurement.
+
+The metric and event definitions live in
+`docs/strategy/product-operating-model.md`.
+
+## RENAVE And Fiscal Reconciliation Direction
+
+Loja Veiculos is a dealership-management-system provider. Under CONTRAN
+Resolution 1.026/2026, providers of dealership/store management systems cannot
+act as RENAVE integrators. V2 must call an independent authorized integrator
+through a domain port and anti-corruption adapter.
+
+- V2 owns its internal acquisition, stock, sale, fiscal, and reconciliation
+  state; the authorized integrator owns submission to RENAVE.
+- Every RENAVE operation has explicit intent, submitted, accepted, rejected,
+  indeterminate, and reconciled states plus provider identifiers and idempotency.
+- NF-e and RENAVE movement data must be checked for correspondence before a
+  workflow is represented as complete.
+- Fiscal contracts use typed, versioned Brazilian tax fields. Generic metadata
+  cannot be the authoritative contract for required IBS/CBS or vehicle-document
+  linkage.
+- No UI may display a RENAVE or fiscal success without provider evidence. A
+  locally saved code is not evidence of an official record.
+
 ## CRM Boundary
 
 The CRM frontend will move into `apps/web`. V2 owns leads from cutover onward:

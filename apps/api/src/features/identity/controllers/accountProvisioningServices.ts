@@ -9,6 +9,7 @@ import type {
   AccountProvisioningRepository,
   InvitationSender,
 } from "../../../domains/identity/ports/accountProvisioningRepository.js";
+import type { BillingQuotaGuard } from "../../../domains/billing/ports/billingQuotaGuard.js";
 
 export class InvitationSenderUnavailableError extends Error {
   constructor() {
@@ -28,6 +29,7 @@ export type AccountProvisioningServices = {
 
 export function createAccountProvisioningServices(input: {
   invitationSender?: InvitationSender;
+  quotaGuard?: BillingQuotaGuard;
   repository: AccountProvisioningRepository;
 }): AccountProvisioningServices {
   return {
@@ -37,6 +39,7 @@ export function createAccountProvisioningServices(input: {
     createAgencyStore,
     createOwnerStore,
     invitationSender: input.invitationSender ?? unavailableInvitationSender,
+    ...(input.quotaGuard ? { quotaGuard: input.quotaGuard } : {}),
     inviteStoreMember,
     resendInvitation,
   };

@@ -1,0 +1,134 @@
+.crm-whatsapp-connection-setup {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  min-height: min(42rem, calc(100dvh - 13rem));
+  overflow: hidden;
+}
+
+.crm-whatsapp-connection-setup .crm-whatsapp-workflow-steps ol {
+  grid-template-columns: repeat(3, minmax(10rem, 1fr));
+}
+
+.crm-whatsapp-connection-setup .crm-whatsapp-workflow-panel {
+  align-self: start;
+  max-width: 54rem;
+}
+
+.crm-whatsapp-connection-setup > .crm-whatsapp-connection-error {
+  margin: 0 1rem 1rem;
+}
+
+.crm-whatsapp-connection-dashboard,
+.crm-whatsapp-connection-disclosures {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.crm-whatsapp-connection-dashboard {
+  margin: 0 auto;
+  max-width: 64rem;
+  width: 100%;
+}
+
+.crm-whatsapp-connection-disclosures {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.crm-whatsapp-connection-disclosure {
+  align-self: start;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.crm-whatsapp-connection-disclosure > summary {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  list-style: none;
+  min-height: 4.25rem;
+  padding: 0.75rem;
+}
+
+.crm-whatsapp-connection-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.crm-whatsapp-connection-disclosure > summary > span:first-child {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent-strong);
+  display: inline-flex;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.crm-whatsapp-connection-disclosure > summary > span:first-child svg,
+.crm-whatsapp-connection-disclosure > summary > svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-whatsapp-connection-disclosure > summary > span:nth-child(2) {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-connection-disclosure summary strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.crm-whatsapp-connection-disclosure summary small,
+.crm-whatsapp-connection-webhook-note {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.crm-whatsapp-connection-disclosure > summary > svg {
+  color: var(--color-muted);
+  transition: transform 180ms ease;
+}
+
+.crm-whatsapp-connection-disclosure[open] > summary > svg {
+  transform: rotate(180deg);
+}
+
+.crm-whatsapp-connection-disclosure > div {
+  border-top: 1px solid var(--color-line);
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.875rem;
+}
+
+.crm-whatsapp-connection-webhook-note {
+  margin: 0;
+}
+
+.crm-whatsapp-connection-admin > .crm-whatsapp-connection-selector {
+  margin: 0 auto;
+  max-width: 64rem;
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .crm-whatsapp-connection-disclosures {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-whatsapp-connection-setup {
+    border-inline: 0;
+    border-radius: 0;
+    min-height: calc(100dvh - 9.5rem);
+  }
+}

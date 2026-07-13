@@ -1,6 +1,7 @@
 import type {
   AgencyTenantOverview,
   BillingEntitlementEvent,
+  BillingAddon,
   BillingOverview,
   BillingPlan,
   BillingRepository,
@@ -13,10 +14,11 @@ import {
 
 const defaultPlans: readonly BillingPlan[] = [
   {
+    catalogVersion: "2026-07-v1",
     code: "growth",
     features: [
       { featureKey: "subdomain", included: true, limitValue: null },
-      { featureKey: "crm", included: true, limitValue: null },
+      { featureKey: "crm", included: false, limitValue: null },
       { featureKey: "automation", included: true, limitValue: null },
       { featureKey: "plate_lookup", included: true, limitValue: 300 },
       { featureKey: "external_api", included: false, limitValue: null },
@@ -25,36 +27,50 @@ const defaultPlans: readonly BillingPlan[] = [
       { featureKey: "nfe", included: false, limitValue: null },
     ],
     id: "plan_growth",
+    limits: { sellerLimit: 8, vehicleLimit: 300 },
     monthlyPriceCents: 29900,
     name: "Growth",
     status: "active",
   },
 ];
 
+const defaultAddons: readonly BillingAddon[] = [
+  {
+    catalogVersion: "2026-07-v1",
+    code: "crm_whatsapp_instance",
+    featureKey: "crm",
+    id: "addon_crm",
+    includedInTrial: true,
+    monthlyPriceCents: 24999,
+    name: "CRM WhatsApp",
+    status: "active",
+  },
+];
+
 const defaultEntitlements: readonly StoreEntitlement[] = [
   {
-    endsAt: null,
+    endsAt: new Date("2099-08-01T00:00:00.000Z"),
     featureKey: "subdomain",
     metadata: {},
     source: "memory_seed",
     startsAt: null,
-    status: "active",
+    status: "trialing",
   },
   {
-    endsAt: null,
+    endsAt: new Date("2099-08-01T00:00:00.000Z"),
     featureKey: "automation",
     metadata: {},
     source: "memory_seed",
     startsAt: null,
-    status: "active",
+    status: "trialing",
   },
   {
-    endsAt: null,
+    endsAt: new Date("2099-08-01T00:00:00.000Z"),
     featureKey: "crm",
     metadata: {},
     source: "memory_seed",
     startsAt: null,
-    status: "active",
+    status: "trialing",
   },
 ];
 
@@ -147,13 +163,14 @@ function toOverview(
   currentActorCanManage = true,
 ): BillingOverview {
   return createBillingOverview({
+    addons: defaultAddons,
     allocations: [
       {
         activeEntitlementCount: entitlements.filter(
           (item) => item.status === "active" || item.status === "trialing",
         ).length,
-        addonCount: 0,
-        monthlyAmountCents: 29900,
+        addonCount: 1,
+        monthlyAmountCents: 54899,
         planCode: "growth",
         planName: "Growth",
         storeId: storeId as never,
@@ -169,7 +186,7 @@ function toOverview(
     entitlementEvents,
     entitlements,
     financialSummary: {
-      monthlyRecurringCents: 29900,
+      monthlyRecurringCents: 54899,
       nextDueAt: null,
       openInvoiceCount: 0,
       overdueInvoiceCount: 0,
@@ -178,7 +195,7 @@ function toOverview(
     plans: defaultPlans,
     storeId: storeId as never,
     subscription: {
-      currentPeriodEnd: null,
+      currentPeriodEnd: new Date("2099-08-01T00:00:00.000Z"),
       currentPeriodStart: null,
       id: "subscription_memory",
       plan: defaultPlans[0] ?? null,
@@ -190,6 +207,7 @@ function toOverview(
 
 function toTenantOverview(overview: BillingOverview): AgencyTenantOverview {
   return {
+    addons: overview.addons,
     allocations: overview.allocations,
     authority: overview.authority,
     chargePreview: overview.chargePreview,

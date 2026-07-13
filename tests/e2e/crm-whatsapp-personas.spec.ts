@@ -133,7 +133,7 @@ async function expectOperatorActions(page: Page) {
 
 async function expectReadOnlyActions(page: Page) {
   const failedSummary = page.getByRole("button", {
-    name: /1 evento ZAPI com atencao/,
+    name: /1 evento ZAPI com atenção/,
   });
   await expect(failedSummary).toBeVisible();
   await failedSummary.click();

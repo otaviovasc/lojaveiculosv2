@@ -10,6 +10,7 @@ import type { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 import type { CrmWhatsappScope } from "./CrmWhatsappScopedNav";
+import { readInitialSessionId } from "./crmWhatsappHookSupport";
 
 export function CrmWhatsappConversationWorkspace({
   inbox,
@@ -24,6 +25,9 @@ export function CrmWhatsappConversationWorkspace({
 }) {
   const activeSession = inbox.activeSession;
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [mobilePane, setMobilePane] = useState<"chat" | "list">(() =>
+    readInitialSessionId() ? "chat" : "list",
+  );
   const [selectionMode, setSelectionMode] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<CrmWhatsappMessage | null>(null);
@@ -36,7 +40,7 @@ export function CrmWhatsappConversationWorkspace({
   }, [inbox.activeSessionId]);
 
   return (
-    <section className="crm-whatsapp-shell">
+    <section className="crm-whatsapp-shell" data-mobile-pane={mobilePane}>
       <aside className="crm-whatsapp-list" aria-label="Conversas do WhatsApp">
         <WhatsappToolbar
           availableTags={inbox.availableTags}
@@ -100,7 +104,10 @@ export function CrmWhatsappConversationWorkspace({
         ) : (
           <SessionList
             activeSessionId={inbox.activeSessionId}
-            onSelect={inbox.setActiveSessionId}
+            onSelect={(sessionId) => {
+              inbox.setActiveSessionId(sessionId);
+              setMobilePane("chat");
+            }}
             onToggleSelected={inbox.toggleSelectedSession}
             selectedSessionIds={inbox.selectedSessionIds}
             selectionMode={showSelectionMode}
@@ -128,6 +135,7 @@ export function CrmWhatsappConversationWorkspace({
               canTagSessions={inbox.permissions.canTagAssign}
               canToggleIntervention={inbox.permissions.canToggleIntervention}
               currentUserId={inbox.currentUserId}
+              onBack={() => setMobilePane("list")}
               onAddTag={async (input) => {
                 const accepted = await inbox.actions.addSessionTag(
                   activeSession.id,

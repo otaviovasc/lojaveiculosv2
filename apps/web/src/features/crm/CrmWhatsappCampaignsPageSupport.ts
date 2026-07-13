@@ -5,6 +5,8 @@ import type {
   CrmWhatsappCampaignDetail,
   CrmWhatsappCreateCampaignInput,
 } from "./crmWhatsappCampaignTypes";
+import type { ProductCrmApi } from "./productCrmApi";
+import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
 
 export type CrmWhatsappCampaignsPageProps = {
@@ -17,6 +19,8 @@ export type CrmWhatsappCampaignsPageProps = {
   ) => Promise<CrmWhatsappCampaign | null>;
   onGetCampaign: (campaignId: string) => Promise<CrmWhatsappCampaignDetail>;
   onListCampaigns: () => Promise<CrmWhatsappCampaign[]>;
+  onListLeads?: ProductCrmApi["listLeads"];
+  onListRecipientSessions?: CrmWhatsappApi["listSessions"];
   onPauseCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign | null>;
   onResumeCampaign: (campaignId: string) => Promise<CrmWhatsappCampaign | null>;
   sessions: CrmWhatsappSession[];

@@ -14,6 +14,7 @@ import type { VehicleOperationsRepository } from "../../ports/vehicleOperationsR
 import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.js";
 import type { VehicleAcquisitionRepository } from "../../ports/vehicleAcquisitionRepository.js";
 import type { VehicleStoreBrandingReader } from "../../ports/vehicleStoreBrandingReader.js";
+import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 
 export type VehicleInventoryServicePorts = {
   acquisitionRepository?: VehicleAcquisitionRepository;
@@ -27,6 +28,7 @@ export type VehicleInventoryServicePorts = {
   mediaRepository?: VehicleMediaRepository;
   mediaStorage?: VehicleMediaStorage;
   operationsRepository?: VehicleOperationsRepository;
+  quotaGuard?: BillingQuotaGuard;
   salesRepository?: VehicleSalesRepository;
   unitRepository?: VehicleUnitRepository;
   storeBrandingReader?: VehicleStoreBrandingReader;

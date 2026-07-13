@@ -8,9 +8,27 @@ export function createStoreAccessRows(overrides: Partial<StoredRows> = {}) {
 
   return {
     entitlements: overrides.entitlements ?? [
-      { featureKey: "crm", status: "active", storeId },
-      { featureKey: "subdomain", status: "trialing", storeId },
-      { featureKey: "nfe", status: "inactive", storeId },
+      {
+        endsAt: null,
+        featureKey: "crm",
+        startsAt: null,
+        status: "active",
+        storeId,
+      },
+      {
+        endsAt: new Date("2099-01-01T00:00:00.000Z"),
+        featureKey: "subdomain",
+        startsAt: new Date("2026-01-01T00:00:00.000Z"),
+        status: "trialing",
+        storeId,
+      },
+      {
+        endsAt: null,
+        featureKey: "nfe",
+        startsAt: null,
+        status: "inactive",
+        storeId,
+      },
     ],
     memberships: overrides.memberships ?? [
       {

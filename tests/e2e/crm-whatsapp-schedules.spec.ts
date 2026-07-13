@@ -35,7 +35,7 @@ test.describe("CRM WhatsApp schedules", () => {
     await page.getByRole("tab", { name: /Agendar mensagem/ }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Agendar mensagem" }),
+      page.getByRole("button", { name: "Novo agendamento" }),
     ).toBeVisible();
     await expect(page.getByRole("tab", { name: /Pendentes/ })).toContainText(
       "1",
@@ -48,6 +48,30 @@ test.describe("CRM WhatsApp schedules", () => {
       page.getByText("Ola Ana, posso te ligar hoje?"),
     ).not.toBeVisible();
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-schedules");
+
+    await page.getByRole("button", { name: "Novo agendamento" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Escolha a conversa" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Etapas do fluxo" }),
+    ).toBeVisible();
+    await page.getByRole("button", { exact: true, name: "Conversa" }).click();
+    await page.getByRole("option", { name: /Ana Premium/ }).click();
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await page
+      .getByLabel("Quando enviar")
+      .fill(toDateTimeLocal(dateAtOffset(2)));
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await page
+      .getByRole("textbox", { exact: true, name: "Mensagem" })
+      .fill("Mensagem programada pela equipe.");
+    await expect(
+      page
+        .getByLabel("Previa do agendamento")
+        .getByText("Mensagem programada pela equipe."),
+    ).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-schedule-workflow");
   });
 });
 
@@ -96,4 +120,9 @@ function dateAtOffset(days: number) {
   value.setDate(value.getDate() + days);
   value.setHours(15, 0, 0, 0);
   return value;
+}
+
+function toDateTimeLocal(value: Date) {
+  const offset = value.getTimezoneOffset();
+  return new Date(value.getTime() - offset * 60_000).toISOString().slice(0, 16);
 }

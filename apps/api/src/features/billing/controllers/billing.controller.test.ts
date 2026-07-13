@@ -36,7 +36,7 @@ describe("billing controller webhooks", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
       billingType: "PIX",
-      chargeTotalCents: 29900,
+      chargeTotalCents: 54899,
       provider: "asaas",
       status: "active",
     });

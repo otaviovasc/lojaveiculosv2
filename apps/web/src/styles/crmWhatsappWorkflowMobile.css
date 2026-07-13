@@ -1,0 +1,54 @@
+@media (max-width: 720px) {
+  .crm-whatsapp-mode-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .crm-whatsapp-mode-bar-main,
+  .crm-whatsapp-mode-bar-actions {
+    overflow-x: auto;
+  }
+
+  .crm-whatsapp-workflow {
+    height: max(20rem, calc(100dvh - 14.5rem));
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .crm-whatsapp-workflow-steps {
+    padding: 0.55rem 0.7rem;
+  }
+
+  .crm-whatsapp-workflow-steps li {
+    min-width: 10rem;
+  }
+
+  .crm-whatsapp-workflow-panel {
+    overflow-y: auto;
+    padding: 1rem 0.75rem;
+  }
+
+  .crm-whatsapp-workflow-footer {
+    grid-template-columns: 1fr 1fr;
+    position: static;
+  }
+
+  .crm-whatsapp-workflow-footer > span {
+    display: none;
+  }
+
+  .crm-workflow-cancel {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .crm-workflow-back {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .crm-workflow-next {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+}

@@ -1,0 +1,106 @@
+import type {
+  CrmWhatsappCampaign,
+  CrmWhatsappCampaignDetail,
+} from "./crmWhatsappCampaignTypes";
+import type { CrmWhatsappSession } from "./crmWhatsappTypes";
+import type { ProductCrmLead } from "./productCrmTypes";
+
+export function createSession(
+  overrides: Partial<CrmWhatsappSession> = {},
+): CrmWhatsappSession {
+  return {
+    assignedUserId: null,
+    buyerName: "Ana",
+    buyerPhone: "5511999999999",
+    channel: "WHATSAPP",
+    id: "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+    lastMessageContent: "Ola",
+    leadId: "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
+    metadata: {},
+    sessionTags: [],
+    status: "ACTIVE",
+    unreadCount: 0,
+    uuid: "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+    ...overrides,
+  };
+}
+
+export function createCampaign(): CrmWhatsappCampaign {
+  return {
+    content: "Ola {nome}",
+    createdAt: "2099-01-01T10:00:00.000Z",
+    failedCount: 0,
+    id: "c3b4e6c1-a0fb-43f4-b6dc-fc0807400c15",
+    initialTagId: null,
+    intervalMinutes: 2,
+    name: "Nova campanha",
+    repliedCount: 0,
+    replyRate: 0,
+    replyTagId: null,
+    scheduledCount: 1,
+    scheduledEndAt: "2099-01-01T10:00:00.000Z",
+    scheduledStartAt: "2099-01-01T10:00:00.000Z",
+    secondaryContent: null,
+    secondaryDelayMinutes: 60,
+    secondarySentCount: 0,
+    sentCount: 0,
+    status: "scheduled",
+    totalRecipients: 1,
+    updatedAt: "2099-01-01T10:00:00.000Z",
+  };
+}
+
+export function createCampaignDetail(): CrmWhatsappCampaignDetail {
+  return {
+    campaign: createCampaign(),
+    recipients: [
+      {
+        campaignId: "c3b4e6c1-a0fb-43f4-b6dc-fc0807400c15",
+        connectionId: "24000000-0000-4000-8000-000000000101",
+        createdAt: "2099-01-01T10:00:00.000Z",
+        errorMessage: null,
+        id: "11b4e6c1-a0fb-43f4-b6dc-fc0807400c15",
+        initialScheduledMessageId: null,
+        initialSentAt: null,
+        leadId: "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
+        phone: "5511999999999",
+        replyContentPreview: null,
+        replyMessageId: null,
+        replyReceivedAt: null,
+        secondaryScheduledMessageId: null,
+        secondarySentAt: null,
+        sentMessageId: null,
+        sequence: 0,
+        sessionId: "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
+        status: "pending",
+        updatedAt: "2099-01-01T10:00:00.000Z",
+        variables: { nome: "Ana" },
+      },
+    ],
+  };
+}
+
+export function createLead(
+  overrides: Partial<ProductCrmLead> = {},
+): ProductCrmLead {
+  return {
+    assignedUserId: null,
+    buyerEmail: null,
+    buyerName: "Lead qualificado",
+    buyerPhone: "5511999999999",
+    createdAt: "2026-07-01T12:00:00.000Z",
+    id: "0b6ec94e-3bd8-4782-a8bb-7de0f0afae6f",
+    lastInteractionAt: null,
+    listingId: null,
+    metadata: {},
+    pipelineId: null,
+    pipelineStageId: null,
+    source: "whatsapp",
+    status: "new",
+    storeId: "store-1",
+    tenantId: "tenant-1",
+    updatedAt: "2026-07-01T12:00:00.000Z",
+    vehicleTitle: null,
+    ...overrides,
+  };
+}

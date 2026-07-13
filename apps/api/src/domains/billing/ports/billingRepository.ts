@@ -10,9 +10,25 @@ export type BillingPlanFeature = {
 };
 
 export type BillingPlan = {
+  catalogVersion: string;
   code: string;
   features: readonly BillingPlanFeature[];
   id: string;
+  limits: {
+    sellerLimit: number | null;
+    vehicleLimit: number | null;
+  };
+  monthlyPriceCents: number;
+  name: string;
+  status: "active" | "archived" | "inactive";
+};
+
+export type BillingAddon = {
+  catalogVersion: string;
+  code: string;
+  featureKey: EntitlementKey;
+  id: string;
+  includedInTrial: boolean;
   monthlyPriceCents: number;
   name: string;
   status: "active" | "archived" | "inactive";
@@ -162,6 +178,7 @@ export type AgencyManagedStoreOverview = {
 };
 
 export type BillingOverview = {
+  addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;
   chargePreview: BillingChargePreview;
@@ -176,6 +193,7 @@ export type BillingOverview = {
 };
 
 export type AgencyTenantOverview = {
+  addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: BillingAuthority;
   chargePreview: BillingChargePreview;

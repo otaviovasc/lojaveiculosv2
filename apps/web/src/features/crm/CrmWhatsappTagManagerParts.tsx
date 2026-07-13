@@ -16,6 +16,32 @@ export type TagDraft = { color: string; emoji: string; name: string };
 export type PendingTagAction =
   { kind: "delete"; tagId: string } | { kind: "move"; tagId: string } | null;
 
+export async function runPendingTagAction({
+  action,
+  failureMessage,
+  onAccepted,
+  operation,
+  setLocalError,
+  setPendingAction,
+}: {
+  action: Exclude<PendingTagAction, null>;
+  failureMessage: string;
+  onAccepted?: () => void;
+  operation: () => Promise<boolean>;
+  setLocalError: (message: string | null) => void;
+  setPendingAction: (action: PendingTagAction) => void;
+}) {
+  setPendingAction(action);
+  setLocalError(null);
+  try {
+    const accepted = await operation();
+    if (accepted) onAccepted?.();
+    else setLocalError(failureMessage);
+  } finally {
+    setPendingAction(null);
+  }
+}
+
 export function TagDraftFields({
   disabled,
   draft,

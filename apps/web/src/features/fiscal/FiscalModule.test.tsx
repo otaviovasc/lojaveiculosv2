@@ -29,7 +29,9 @@ describe("FiscalModule", () => {
     expect(
       await screen.findByRole("heading", { name: "Operação fiscal", level: 1 }),
     ).toBeVisible();
-    expect(screen.getByText("Integração fiscal incompleta")).toBeVisible();
+    expect(
+      await screen.findByText("Integração fiscal incompleta"),
+    ).toBeVisible();
     expect(screen.getByText("Credencial de acesso à Spedy")).toBeVisible();
     expect(screen.getByText("NF-e de venda de veículo")).toBeVisible();
     expect(screen.getByText("Emitida")).toBeVisible();

@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   Bot,
   CalendarClock,
   ExternalLink,
@@ -7,12 +8,12 @@ import {
   MailOpen,
   MessageCircleMore,
   Tag,
-  X,
   UserCheck,
   UserRound,
 } from "lucide-react";
 import { useState } from "react";
-import { CustomSelect } from "../../components/ui/CustomSelect";
+import { ChatAssignmentSelect } from "./CrmWhatsappChatHeaderAssignment";
+import { SessionTagRow } from "./CrmWhatsappChatHeaderTags";
 import { formatSessionName } from "./crmWhatsappModel";
 import { TagMenu } from "./CrmWhatsappTagMenu";
 import type {
@@ -34,6 +35,7 @@ export function ChatHeader({
   canToggleIntervention,
   currentUserId,
   onAssign,
+  onBack,
   onClose,
   onAddTag,
   onMarkRead,
@@ -56,6 +58,7 @@ export function ChatHeader({
   currentUserId?: string | null;
   onAddTag: (input: CrmWhatsappAddSessionTagInput) => Promise<boolean>;
   onAssign: (agentId: string | null) => void;
+  onBack?: () => void;
   onClose: () => void;
   onMarkRead: () => void;
   onMarkUnread: () => void;
@@ -71,36 +74,49 @@ export function ChatHeader({
     Boolean(currentUserId) && session.assignedUserId === currentUserId;
   return (
     <header className="crm-whatsapp-chat-header">
-      <div className="crm-whatsapp-chat-identity">
-        <button
-          aria-label="Abrir detalhes da conversa"
-          className="crm-whatsapp-chat-title"
-          onClick={onOpenDetails}
-          type="button"
-        >
-          <span className="crm-whatsapp-avatar crm-whatsapp-avatar-lg">
-            {session.profilePhotoUrl ? (
-              <img alt="" src={session.profilePhotoUrl} />
-            ) : (
-              formatSessionName(session).slice(0, 2).toUpperCase()
-            )}
+      <div className="crm-whatsapp-chat-header-main">
+        {onBack ? (
+          <button
+            aria-label="Voltar para conversas"
+            className="crm-icon-action crm-whatsapp-mobile-back"
+            onClick={onBack}
+            title="Voltar para conversas"
+            type="button"
+          >
+            <ArrowLeft />
+          </button>
+        ) : null}
+        <div className="crm-whatsapp-chat-identity">
+          <button
+            aria-label="Abrir detalhes da conversa"
+            className="crm-whatsapp-chat-title"
+            onClick={onOpenDetails}
+            type="button"
+          >
+            <span className="crm-whatsapp-avatar crm-whatsapp-avatar-lg">
+              {session.profilePhotoUrl ? (
+                <img alt="" src={session.profilePhotoUrl} />
+              ) : (
+                formatSessionName(session).slice(0, 2).toUpperCase()
+              )}
+            </span>
+            <span className="min-w-0">
+              <h3>{formatSessionName(session)}</h3>
+              <p>
+                {session.vehicle?.title ?? session.buyerPhone ?? "Negociacao"}
+              </p>
+            </span>
+          </button>
+          <span className="crm-whatsapp-chat-channel-pill">
+            <MessageCircleMore aria-hidden="true" />
+            WhatsApp
           </span>
-          <span className="min-w-0">
-            <h3>{formatSessionName(session)}</h3>
-            <p>
-              {session.vehicle?.title ?? session.buyerPhone ?? "Negociacao"}
-            </p>
-          </span>
-        </button>
-        <span className="crm-whatsapp-chat-channel-pill">
-          <MessageCircleMore aria-hidden="true" />
-          WhatsApp
-        </span>
-        <SessionTagRow
-          disabled={disabled || !canTagSessions}
-          onRemoveTag={onRemoveTag}
-          tags={session.sessionTags ?? []}
-        />
+          <SessionTagRow
+            disabled={disabled || !canTagSessions}
+            onRemoveTag={onRemoveTag}
+            tags={session.sessionTags ?? []}
+          />
+        </div>
       </div>
       <div className="crm-whatsapp-header-actions">
         {canMarkRead ? (
@@ -110,7 +126,7 @@ export function ChatHeader({
                 ? "Marcar conversa como lida"
                 : "Marcar conversa como nao lida"
             }
-            className="crm-icon-action"
+            className="crm-icon-action crm-whatsapp-header-action-secondary"
             disabled={disabled}
             onClick={session.unreadCount ? onMarkRead : onMarkUnread}
             title={
@@ -150,7 +166,7 @@ export function ChatHeader({
         {canScheduleMessages ? (
           <button
             aria-label="Abrir agendamentos"
-            className="crm-icon-action"
+            className="crm-icon-action crm-whatsapp-header-action-secondary"
             disabled={disabled}
             onClick={onScheduleMessage}
             title="Agendamentos"
@@ -162,7 +178,7 @@ export function ChatHeader({
         {session.leadId ? (
           <a
             aria-label="Abrir lead vinculado"
-            className="crm-icon-action"
+            className="crm-icon-action crm-whatsapp-header-action-secondary"
             href={`#/crm?surface=leads&leadId=${encodeURIComponent(session.leadId)}`}
             title="Abrir lead vinculado"
           >
@@ -186,25 +202,16 @@ export function ChatHeader({
           </button>
         ) : null}
         {canAssignSession ? (
-          <CustomSelect
-            ariaLabel="Atribuir conversa"
-            className="crm-whatsapp-select"
+          <ChatAssignmentSelect
+            assignableMembers={assignableMembers}
             disabled={disabled}
-            onChange={(agentId) => onAssign(agentId || null)}
-            options={[
-              { label: "Sem atribuicao", value: "" },
-              ...assignableMembers
-                .filter((member) => member.isActive)
-                .map((member) => ({
-                  label: member.name,
-                  value: String(member.id),
-                })),
-            ]}
-            value={session.assignedUserId ? String(session.assignedUserId) : ""}
+            onAssign={onAssign}
+            session={session}
           />
         ) : null}
         {currentUserId && canAssignSession ? (
           <button
+            aria-label={assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
             className={
               assignedToCurrentUser
                 ? "crm-action crm-action-muted"
@@ -215,63 +222,24 @@ export function ChatHeader({
             type="button"
           >
             <UserCheck aria-hidden="true" className="size-4" />
-            {assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
+            <span className="crm-whatsapp-action-label">
+              {assignedToCurrentUser ? "Meu atendimento" : "Assumir"}
+            </span>
           </button>
         ) : null}
         {canCloseSession ? (
           <button
+            aria-label="Concluir"
             className="crm-action"
             disabled={disabled}
             onClick={onClose}
             type="button"
           >
             <CheckCheck aria-hidden="true" className="size-4" />
-            Concluir
+            <span className="crm-whatsapp-action-label">Concluir</span>
           </button>
         ) : null}
       </div>
     </header>
-  );
-}
-
-function SessionTagRow({
-  disabled,
-  onRemoveTag,
-  tags,
-}: {
-  disabled?: boolean;
-  onRemoveTag: (tagId: string) => Promise<boolean>;
-  tags: CrmWhatsappTag[];
-}) {
-  if (!tags.length) return null;
-  return (
-    <div className="crm-whatsapp-tag-row" aria-label="Etiquetas da conversa">
-      {tags.slice(0, 4).map((tag) => (
-        <span className="crm-whatsapp-tag-chip" key={tag.id}>
-          <span
-            aria-hidden="true"
-            style={{ backgroundColor: tag.color ?? "var(--color-muted)" }}
-          />
-          {tag.name}
-          <button
-            aria-label={`Remover etiqueta ${tag.name}`}
-            disabled={disabled}
-            onClick={(event) => {
-              event.stopPropagation();
-              void onRemoveTag(tag.id);
-            }}
-            title="Remover etiqueta"
-            type="button"
-          >
-            <X />
-          </button>
-        </span>
-      ))}
-      {tags.length > 4 ? (
-        <span className="crm-whatsapp-tag-chip crm-whatsapp-tag-chip-muted">
-          +{tags.length - 4}
-        </span>
-      ) : null}
-    </div>
   );
 }

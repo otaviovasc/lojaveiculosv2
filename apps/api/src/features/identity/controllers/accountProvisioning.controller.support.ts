@@ -19,6 +19,10 @@ import {
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { ensureHttpRequestId } from "../../../infrastructure/http/requestMetadata.js";
 import { InvitationSenderUnavailableError } from "./accountProvisioningServices.js";
+import {
+  BillingContractUnavailableError,
+  BillingQuotaExceededError,
+} from "../../../domains/billing/ports/billingQuotaGuard.js";
 
 export async function handleProvisioning(
   context: Context,
@@ -44,6 +48,27 @@ export async function handleProvisioning(
         error,
         message: error.message,
         status: 409,
+      });
+    }
+    if (error instanceof BillingQuotaExceededError) {
+      return jsonApiError(context, {
+        code: "BILLING_QUOTA_EXCEEDED",
+        details: {
+          current: error.current,
+          limit: error.limit,
+          quotaKey: error.quotaKey,
+        },
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+    if (error instanceof BillingContractUnavailableError) {
+      return jsonApiError(context, {
+        code: "BILLING_CONTRACT_REQUIRED",
+        error,
+        message: error.message,
+        status: 402,
       });
     }
     if (

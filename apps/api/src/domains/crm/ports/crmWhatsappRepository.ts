@@ -41,6 +41,7 @@ import type {
   CreateCrmWhatsappCampaignInput,
   CreateCrmWhatsappCampaignRecipientInput,
   FindCrmWhatsappCampaignInput,
+  IncrementCrmWhatsappCampaignCountsInput,
   ListCrmWhatsappCampaignRecipientsInput,
   ListCrmWhatsappCampaignsInput,
   UpdateCrmWhatsappCampaignInput,
@@ -59,6 +60,7 @@ export type {
   CreateCrmWhatsappCampaignInput,
   CreateCrmWhatsappCampaignRecipientInput,
   FindCrmWhatsappCampaignInput,
+  IncrementCrmWhatsappCampaignCountsInput,
   ListCrmWhatsappCampaignRecipientsInput,
   ListCrmWhatsappCampaignsInput,
   UpdateCrmWhatsappCampaignInput,
@@ -156,6 +158,9 @@ export type CrmWhatsappRepository = {
   ingestMessage: (
     input: IngestCrmWhatsappMessageInput,
   ) => Promise<IngestCrmWhatsappMessageResult>;
+  incrementCampaignCounts: (
+    input: IncrementCrmWhatsappCampaignCountsInput,
+  ) => Promise<CrmWhatsappCampaign | null>;
   listMessages: (
     input: ListCrmWhatsappMessagesInput,
   ) => Promise<readonly CrmWhatsappMessage[]>;

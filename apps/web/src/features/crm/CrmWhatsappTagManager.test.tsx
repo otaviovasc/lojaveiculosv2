@@ -14,6 +14,10 @@ describe("CrmWhatsappTagManager", () => {
     const callbacks = renderManager();
 
     expect(screen.queryByText(/pipeline|coluna/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Nome")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Nova etiqueta" }));
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Nova etiqueta");
 
     await user.type(screen.getByLabelText("Nome"), "Cliente quente");
     await user.type(screen.getByLabelText("Emoji"), "🔥");
@@ -23,10 +27,12 @@ describe("CrmWhatsappTagManager", () => {
       emoji: "🔥",
       name: "Cliente quente",
     });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", { name: "Editar etiqueta Retorno" }),
     );
+    expect(screen.getByRole("dialog")).toHaveAccessibleName("Editar Retorno");
     await user.clear(screen.getByLabelText("Nome"));
     await user.type(screen.getByLabelText("Nome"), "Retorno ativo");
     await user.click(screen.getByRole("button", { name: "Atualizar" }));
@@ -36,6 +42,36 @@ describe("CrmWhatsappTagManager", () => {
       emoji: null,
       name: "Retorno ativo",
     });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("cancels the editor and starts the next draft empty", async () => {
+    const user = userEvent.setup();
+    renderManager();
+
+    await user.click(screen.getByRole("button", { name: "Nova etiqueta" }));
+    await user.type(screen.getByLabelText("Nome"), "Rascunho");
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Nova etiqueta" }));
+    expect(screen.getByLabelText("Nome")).toHaveValue("");
+  });
+
+  it("keeps a rejected draft open with actionable feedback", async () => {
+    const user = userEvent.setup();
+    const callbacks = renderManager();
+    callbacks.onCreate.mockResolvedValueOnce(false);
+
+    await user.click(screen.getByRole("button", { name: "Nova etiqueta" }));
+    await user.type(screen.getByLabelText("Nome"), "Importante");
+    await user.click(screen.getByRole("button", { name: "Criar etiqueta" }));
+
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(
+      screen.getByText("Nao foi possivel salvar a etiqueta."),
+    ).toBeVisible();
+    expect(screen.getByLabelText("Nome")).toHaveValue("Importante");
   });
 
   it("confirms delete before calling the delete handler", async () => {
@@ -84,7 +120,7 @@ describe("CrmWhatsappTagManager", () => {
 
   it("uses the shared named modal layer outside the embedded page", async () => {
     const user = userEvent.setup();
-    const callbacks = renderManager(createTags(), false);
+    const callbacks = renderManager(createTags(), { embedded: false });
 
     expect(
       screen.getByRole("dialog", { name: "Etiquetas WhatsApp" }),
@@ -92,9 +128,32 @@ describe("CrmWhatsappTagManager", () => {
     await user.keyboard("{Escape}");
     expect(callbacks.onClose).toHaveBeenCalledOnce();
   });
+
+  it("keeps the list visible but disables mutations without permission", () => {
+    renderManager(createTags(), { disabled: true });
+
+    expect(screen.getByText("Quente")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Nova etiqueta" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Editar etiqueta Quente" }),
+    ).toBeDisabled();
+    expect(
+      screen.getByText(
+        "Seu usuario pode visualizar, mas nao pode alterar etiquetas.",
+      ),
+    ).toBeVisible();
+  });
 });
 
-function renderManager(tags: CrmWhatsappTag[] = createTags(), embedded = true) {
+function renderManager(
+  tags: CrmWhatsappTag[] = createTags(),
+  {
+    disabled = false,
+    embedded = true,
+  }: { disabled?: boolean; embedded?: boolean } = {},
+) {
   const callbacks = {
     onClose: vi.fn(),
     onCreate: vi.fn(async () => true),
@@ -104,7 +163,7 @@ function renderManager(tags: CrmWhatsappTag[] = createTags(), embedded = true) {
   };
   render(
     <CrmWhatsappTagManager
-      disabled={false}
+      disabled={disabled}
       embedded={embedded}
       tags={tags}
       {...callbacks}

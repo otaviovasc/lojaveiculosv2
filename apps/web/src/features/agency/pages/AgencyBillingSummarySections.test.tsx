@@ -33,7 +33,7 @@ describe("AgencyBillingSummarySections", () => {
     expect(screen.getByText("Credencial de acesso do Asaas")).toBeVisible();
     expect(screen.queryByText("ASAAS_API_KEY")).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", { name: "Contratar no Asaas" }),
+      screen.queryByRole("button", { name: "Ativar meu plano" }),
     ).not.toBeInTheDocument();
     expect(screen.getAllByRole("article")).toHaveLength(4);
     expect(
@@ -60,7 +60,7 @@ describe("AgencyBillingSummarySections", () => {
 
     expect(screen.getByText("Assinatura pronta para contratar")).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Contratar no Asaas" }),
+      screen.getByRole("button", { name: "Ativar meu plano" }),
     ).toBeEnabled();
     expect(
       screen.getByText("Deslize para conferir todas as colunas da alocação."),

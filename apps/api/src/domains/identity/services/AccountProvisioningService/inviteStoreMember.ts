@@ -37,6 +37,11 @@ export async function inviteStoreMember(
       userId: context.actor.id as never,
     });
   assertStoreInviteRoleAllowedByActor(actorStoreRole, input.role);
+  await ports.quotaGuard?.assertAvailable({
+    quotaKey: "seller",
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
 
   context.logger.info(
     "identity.store_invitation.create.started",

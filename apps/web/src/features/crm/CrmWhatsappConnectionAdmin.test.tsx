@@ -9,25 +9,31 @@ import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 describe("CrmWhatsappConnectionAdmin", () => {
   afterEach(() => cleanup());
 
-  it("saves only the write-only ZAPI instance values", async () => {
+  it("keeps connected credentials collapsed and saves write-only values", async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn(async () => true);
     const { container } = render(
       <CrmWhatsappConnectionAdmin
-        connections={[createConnection()]}
+        connections={[createConnectedConnection()]}
         onRefresh={vi.fn(async () => undefined)}
         onUpdate={onUpdate}
       />,
     );
 
-    expect(screen.getByText("WhatsApp (ZAPI)")).toBeInTheDocument();
-    expect(screen.getByText("Online")).toBeInTheDocument();
-    expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+    expect(screen.getByText("Online")).toBeVisible();
     expect(
-      container.querySelectorAll(
-        ".crm-whatsapp-connection-instance-card input:not([readonly])",
-      ),
-    ).toHaveLength(2);
+      screen.queryByText("Configure somente a instância usada pelo CRM."),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText("ID da instancia")).not.toBeVisible();
+    expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
+
+    const credentialDetails = container.querySelector(
+      ".crm-whatsapp-connection-disclosure",
+    );
+    expect(credentialDetails).not.toBeNull();
+    await user.click(credentialDetails!.querySelector("summary")!);
+
+    expect(screen.getByLabelText("ID da instancia")).toBeVisible();
     expect(screen.getByLabelText("Token da instancia")).toHaveAttribute(
       "type",
       "password",
@@ -49,18 +55,64 @@ describe("CrmWhatsappConnectionAdmin", () => {
       }),
     );
   });
+
+  it("guides an unconfigured connection through one setup panel at a time", async () => {
+    const user = userEvent.setup();
+    const onRefresh = vi.fn(async () => undefined);
+    const onUpdate = vi.fn(async () => true);
+    render(
+      <CrmWhatsappConnectionAdmin
+        connections={[createDisconnectedConnection()]}
+        onRefresh={onRefresh}
+        onUpdate={onUpdate}
+      />,
+    );
+
+    expect(screen.getByText("Credenciais da instancia")).toBeVisible();
+    expect(screen.queryByText("Webhooks da conexao")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Continuar/i })).toBeDisabled();
+
+    await user.type(screen.getByLabelText("ID da instancia"), "zapi-first");
+    await user.type(
+      screen.getByLabelText("Token da instancia"),
+      "zapi-first-token",
+    );
+    await user.click(screen.getByRole("button", { name: /Continuar/i }));
+
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("Webhooks da conexao")).toBeVisible();
+    expect(
+      screen.queryByText("Credenciais da instancia"),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Continuar/i }));
+    expect(
+      await screen.findByRole("heading", { name: "Verificar conexao" }),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Verificar conexao" }));
+    await waitFor(() => expect(onRefresh).toHaveBeenCalledTimes(1));
+  });
+
+  it("starts configured offline connections at webhook setup", () => {
+    render(
+      <CrmWhatsappConnectionAdmin
+        connections={[
+          createDisconnectedConnection({ credentialsConfigured: true }),
+        ]}
+        onRefresh={vi.fn(async () => undefined)}
+        onUpdate={vi.fn(async () => true)}
+      />,
+    );
+
+    expect(screen.getByText("Webhooks da conexao")).toBeVisible();
+    expect(screen.getByRole("button", { name: /Credenciais/i })).toBeEnabled();
+    expect(screen.getByRole("button", { name: /Verificar/i })).toBeDisabled();
+  });
 });
 
-function createConnection(): CrmWhatsappProviderConnection {
+function createConnectedConnection(): CrmWhatsappProviderConnection {
   return {
-    credentials: {
-      apiBaseUrlEnv: null,
-      clientTokenEnv: null,
-      instanceIdEnv: null,
-      instanceTokenEnv: null,
-      mode: "stored",
-      storedInstanceConfigured: true,
-    },
+    credentials: credentials(true),
     displayName: "ZAPI Test Connection",
     externalConnectionId: null,
     externalInstanceId: "zapi-old",
@@ -72,17 +124,56 @@ function createConnection(): CrmWhatsappProviderConnection {
       providerStatus: "connected",
       smartphoneConnected: true,
     },
-    metadata: {
-      catalogPhone: null,
-      connectedPhone: null,
-      migrationUnit: null,
-      purpose: null,
-    },
+    metadata: emptyMetadata,
     phone: "5511940231407",
     provider: "zapi",
     status: "active",
-    webhookEndpoints: [],
+    webhookEndpoints: [webhookEndpoint],
     webhookTokenRequired: false,
     webhookUrl: null,
   };
 }
+
+function createDisconnectedConnection({
+  credentialsConfigured = false,
+}: {
+  credentialsConfigured?: boolean;
+} = {}): CrmWhatsappProviderConnection {
+  return {
+    ...createConnectedConnection(),
+    credentials: credentials(credentialsConfigured),
+    externalInstanceId: credentialsConfigured ? "zapi-old" : null,
+    live: {
+      checkedAt: "2026-07-06T12:00:00.000Z",
+      connected: false,
+      connectedPhone: null,
+      providerStatus: "disconnected",
+      smartphoneConnected: false,
+    },
+    status: "disconnected",
+  };
+}
+
+function credentials(storedInstanceConfigured: boolean) {
+  return {
+    apiBaseUrlEnv: null,
+    clientTokenEnv: null,
+    instanceIdEnv: null,
+    instanceTokenEnv: null,
+    mode: "stored",
+    storedInstanceConfigured,
+  };
+}
+
+const webhookEndpoint = {
+  label: "Mensagens recebidas",
+  type: "received" as const,
+  url: "https://api.example.test/webhooks/received",
+};
+
+const emptyMetadata = {
+  catalogPhone: null,
+  connectedPhone: null,
+  migrationUnit: null,
+  purpose: null,
+};

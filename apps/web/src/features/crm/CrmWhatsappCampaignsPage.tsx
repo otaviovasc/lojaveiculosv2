@@ -1,21 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CrmWhatsappCampaignBuilder } from "./CrmWhatsappCampaignBuilder";
+import { CampaignModeBar } from "./CrmWhatsappCampaignModeBar";
 import { CrmWhatsappCampaignOverview } from "./CrmWhatsappCampaignOverview";
-import { CampaignHeader, CampaignStats } from "./CrmWhatsappCampaignsPageParts";
-import {
-  buildCampaignRecipientReviewRows,
-  summarizeCampaignRecipientReview,
-} from "./CrmWhatsappCampaignRecipientReview";
-import {
-  matchCampaignCsvRows,
-  parseCampaignCsv,
-  renderCampaignMessage,
-} from "./CrmWhatsappCampaignsPageUtils";
+import { CampaignStats } from "./CrmWhatsappCampaignsPageParts";
 import {
   buildCampaignInput,
-  matchesCampaignFilters,
   type CrmWhatsappCampaignsPageProps,
 } from "./CrmWhatsappCampaignsPageSupport";
+import { useCrmWhatsappCampaignAudience } from "./useCrmWhatsappCampaignAudience";
+import { useCrmWhatsappCampaignReview } from "./useCrmWhatsappCampaignReview";
 import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignDetail,
@@ -29,24 +22,21 @@ export function CrmWhatsappCampaignsPage({
   onCreateCampaign,
   onGetCampaign,
   onListCampaigns,
+  onListLeads,
+  onListRecipientSessions,
   onPauseCampaign,
   onResumeCampaign,
   sessions,
   tags,
 }: CrmWhatsappCampaignsPageProps) {
   const [csvInput, setCsvInput] = useState("");
-  const [excludedReviewRowIds, setExcludedReviewRowIds] = useState<Set<string>>(
-    new Set(),
-  );
   const [campaigns, setCampaigns] = useState<CrmWhatsappCampaign[]>([]);
+  const [mode, setMode] = useState<"create" | "overview">("overview");
   const [campaignDetail, setCampaignDetail] =
     useState<CrmWhatsappCampaignDetail | null>(null);
-  const [query, setQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(
     null,
   );
-  const [selectedTagId, setSelectedTagId] = useState("all");
   const [campaignName, setCampaignName] = useState("Nova campanha");
   const [startAt, setStartAt] = useState("");
   const [intervalMinutes, setIntervalMinutes] = useState(2);
@@ -60,9 +50,24 @@ export function CrmWhatsappCampaignsPage({
   const [isSaving, setIsSaving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<string | null>(null);
-  const [reviewNameOverrides, setReviewNameOverrides] = useState<
-    Record<string, string>
-  >({});
+  const audience = useCrmWhatsappCampaignAudience({
+    canRead,
+    initialSessions: sessions,
+    ...(onListLeads ? { onListLeads } : {}),
+    ...(onListRecipientSessions
+      ? { onListSessions: onListRecipientSessions }
+      : {}),
+  });
+  const review = useCrmWhatsappCampaignReview({
+    campaignName,
+    canCreate,
+    csvInput,
+    filteredSessions: audience.filteredSessions,
+    isSaving,
+    sessions: audience.sessions,
+    startAt,
+    text,
+  });
 
   const loadCampaigns = useCallback(async () => {
     if (!canRead) return;
@@ -104,74 +109,8 @@ export function CrmWhatsappCampaignsPage({
     await loadCampaignDetail();
   }, [loadCampaignDetail, loadCampaigns]);
 
-  const csvRows = useMemo(() => parseCampaignCsv(csvInput), [csvInput]);
-  const matchedCsvSessionIds = useMemo(
-    () =>
-      new Set(
-        matchCampaignCsvRows(csvRows, sessions).map((item) => String(item.id)),
-      ),
-    [csvRows, sessions],
-  );
-  const effectiveSelectedIds = useMemo(() => {
-    const next = new Set(selectedIds);
-    for (const id of matchedCsvSessionIds) next.add(id);
-    return next;
-  }, [matchedCsvSessionIds, selectedIds]);
-  const reviewRows = useMemo(
-    () =>
-      buildCampaignRecipientReviewRows({
-        csvRows,
-        excludedRowIds: excludedReviewRowIds,
-        nameOverrides: reviewNameOverrides,
-        selectedSessionIds: selectedIds,
-        sessions,
-      }),
-    [csvRows, excludedReviewRowIds, reviewNameOverrides, selectedIds, sessions],
-  );
-  const reviewSummary = useMemo(
-    () => summarizeCampaignRecipientReview(reviewRows),
-    [reviewRows],
-  );
-  const validRecipients = reviewRows.filter(
-    (row) => row.included && row.status !== "blocked" && row.sessionId,
-  );
-  const filteredSessions = sessions.filter((session) =>
-    matchesCampaignFilters(session, query, selectedTagId),
-  );
-  const canLaunch = Boolean(
-    canCreate &&
-    campaignName.trim() &&
-    validRecipients.length &&
-    !reviewSummary.blockedIncluded &&
-    startAt &&
-    text.trim() &&
-    !isSaving,
-  );
-
-  const toggleSession = (sessionId: string) => {
-    setSelectedIds((current) => {
-      const next = new Set(current);
-      if (next.has(sessionId)) next.delete(sessionId);
-      else next.add(sessionId);
-      return next;
-    });
-  };
-
-  const toggleReviewRow = (rowId: string) => {
-    setExcludedReviewRowIds((current) => {
-      const next = new Set(current);
-      if (next.has(rowId)) next.delete(rowId);
-      else next.add(rowId);
-      return next;
-    });
-  };
-
-  const updateReviewRowName = (rowId: string, value: string) => {
-    setReviewNameOverrides((current) => ({ ...current, [rowId]: value }));
-  };
-
   const launch = async () => {
-    if (!canLaunch) return;
+    if (!review.canLaunch) return;
     const firstDate = new Date(startAt);
     if (Number.isNaN(firstDate.getTime()) || firstDate <= new Date()) {
       setLocalError("Escolha uma data futura para iniciar a campanha.");
@@ -190,85 +129,113 @@ export function CrmWhatsappCampaignsPage({
         secondaryContent,
         secondaryDelayMinutes,
         text,
-        validRecipients,
+        validRecipients: review.validRecipients,
       }),
     );
     setIsSaving(false);
     if (campaign) {
       setLastResult(`${campaign.totalRecipients} destinatario(s) agendado(s).`);
-      setExcludedReviewRowIds(new Set());
-      setReviewNameOverrides({});
-      setSelectedIds(new Set());
+      setCampaignName("Nova campanha");
+      setCsvInput("");
+      setInitialTagId("none");
+      setIntervalMinutes(2);
+      setReplyTagId("none");
+      review.resetReview();
+      setSecondaryContent("");
+      setSecondaryDelayMinutes(60);
       setSelectedCampaignId(campaign.id);
+      setStartAt("");
+      setText("Ola {nome}, tudo bem?");
       await loadCampaigns();
+      setMode("overview");
     }
   };
 
   return (
     <section className="crm-whatsapp-section">
       <div className="crm-whatsapp-campaigns-page">
-        <CampaignHeader />
-        <CampaignStats campaigns={campaigns} />
-        <CrmWhatsappCampaignOverview
-          campaignDetail={campaignDetail}
-          campaigns={campaigns}
-          canManage={canCancel}
-          isLoading={isLoading}
-          isLoadingDetail={isLoadingDetail}
-          onCancelCampaign={onCancelCampaign}
-          onPauseCampaign={onPauseCampaign}
-          onReload={reloadCampaignViews}
-          onResumeCampaign={onResumeCampaign}
-          onSelectCampaign={setSelectedCampaignId}
-          selectedCampaignId={selectedCampaignId}
-          sessions={sessions}
-          tags={tags}
-        />
-        <CrmWhatsappCampaignBuilder
-          campaignName={campaignName}
+        <CampaignModeBar
+          campaignCount={campaigns.length}
           canCreate={canCreate}
-          canLaunch={canLaunch}
-          csvInput={csvInput}
-          effectiveSelectedIds={effectiveSelectedIds}
-          filteredSessions={filteredSessions}
-          initialTagId={initialTagId}
-          intervalMinutes={intervalMinutes}
-          isSaving={isSaving}
           lastResult={lastResult}
-          localError={localError}
-          matchedCsvSessionCount={matchedCsvSessionIds.size}
-          onCampaignNameChange={setCampaignName}
-          onCsvInputChange={setCsvInput}
-          onInitialTagChange={setInitialTagId}
-          onIntervalMinutesChange={setIntervalMinutes}
-          onLaunch={() => void launch()}
-          onQueryChange={setQuery}
-          onReplyTagChange={setReplyTagId}
-          onReviewNameChange={updateReviewRowName}
-          onReviewRowToggle={toggleReviewRow}
-          onSecondaryContentChange={setSecondaryContent}
-          onSecondaryDelayMinutesChange={setSecondaryDelayMinutes}
-          onStartAtChange={setStartAt}
-          onTagChange={setSelectedTagId}
-          onTextChange={setText}
-          onToggleSession={toggleSession}
-          preview={
-            validRecipients[0]?.session
-              ? renderCampaignMessage(text, validRecipients[0].session)
-              : text
-          }
-          query={query}
-          replyTagId={replyTagId}
-          reviewRows={reviewRows}
-          reviewSummary={reviewSummary}
-          secondaryContent={secondaryContent}
-          secondaryDelayMinutes={secondaryDelayMinutes}
-          selectedCount={validRecipients.length}
-          selectedTagId={selectedTagId}
-          startAt={startAt}
-          tags={tags}
-          text={text}
+          mode={mode}
+          onCreate={() => {
+            setLastResult(null);
+            setLocalError(null);
+            setMode("create");
+          }}
         />
+        {mode === "overview" ? (
+          <>
+            <CampaignStats campaigns={campaigns} />
+            <CrmWhatsappCampaignOverview
+              campaignDetail={campaignDetail}
+              campaigns={campaigns}
+              canManage={canCancel}
+              isLoading={isLoading}
+              isLoadingDetail={isLoadingDetail}
+              onCancelCampaign={onCancelCampaign}
+              onPauseCampaign={onPauseCampaign}
+              onReload={reloadCampaignViews}
+              onResumeCampaign={onResumeCampaign}
+              onSelectCampaign={setSelectedCampaignId}
+              selectedCampaignId={selectedCampaignId}
+              sessions={audience.sessions}
+              tags={tags}
+            />
+          </>
+        ) : (
+          <CrmWhatsappCampaignBuilder
+            audienceSource={audience.audienceSource}
+            campaignName={campaignName}
+            canCreate={canCreate}
+            canLaunch={review.canLaunch}
+            csvInput={csvInput}
+            effectiveSelectedIds={review.effectiveSelectedIds}
+            filteredSessions={audience.filteredSessions}
+            initialTagId={initialTagId}
+            intervalMinutes={intervalMinutes}
+            isAudienceLoading={audience.isLoading}
+            isSaving={isSaving}
+            lastResult={lastResult}
+            leadFilters={audience.leadFilters}
+            localError={localError ?? audience.error}
+            matchedCsvSessionCount={review.matchedCsvSessionCount}
+            matchedLeadCount={audience.matchedLeadCount}
+            onAudienceSourceChange={audience.setAudienceSource}
+            onCancel={() => setMode("overview")}
+            onCampaignNameChange={setCampaignName}
+            onCsvInputChange={setCsvInput}
+            onInitialTagChange={setInitialTagId}
+            onIntervalMinutesChange={setIntervalMinutes}
+            onLeadFiltersChange={audience.setLeadFilters}
+            onLaunch={() => void launch()}
+            onQueryChange={audience.setQuery}
+            onReplyTagChange={setReplyTagId}
+            onReviewNameChange={review.updateReviewRowName}
+            onReviewRowToggle={review.toggleReviewRow}
+            onSecondaryContentChange={setSecondaryContent}
+            onSecondaryDelayMinutesChange={setSecondaryDelayMinutes}
+            onSelectVisible={review.selectVisibleSessions}
+            onStartAtChange={setStartAt}
+            onTagChange={audience.setSelectedTagId}
+            onTextChange={setText}
+            onToggleSession={review.toggleSession}
+            preview={review.preview}
+            query={audience.query}
+            replyTagId={replyTagId}
+            reviewRows={review.reviewRows}
+            reviewSummary={review.reviewSummary}
+            secondaryContent={secondaryContent}
+            secondaryDelayMinutes={secondaryDelayMinutes}
+            selectedCount={review.validRecipients.length}
+            selectedTagId={audience.selectedTagId}
+            startAt={startAt}
+            tags={tags}
+            text={text}
+            withoutSessionCount={audience.withoutSessionCount}
+          />
+        )}
       </div>
     </section>
   );

@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarClock } from "lucide-react";
-import { ScheduleList } from "./CrmWhatsappScheduleMessageList";
+import { CrmWhatsappScheduleWorkflow } from "./CrmWhatsappScheduleWorkflow";
 import {
   createScheduleStatusCounts,
-  ScheduleCreateForm,
-  ScheduleToolbar,
+  SchedulePageModeBar,
   type ScheduleStatusFilter,
 } from "./CrmWhatsappSchedulesPageParts";
+import { CrmWhatsappSchedulesQueue } from "./CrmWhatsappSchedulesQueue";
+import { isFutureScheduleValue } from "./crmWhatsappScheduleDates";
 import type {
   CrmWhatsappListScheduledMessagesInput,
   CrmWhatsappScheduledMessage,
-  CrmWhatsappSession,
 } from "./crmWhatsappTypes";
+import type { CrmWhatsappSchedulesPageProps } from "./crmWhatsappSchedulesPageTypes";
 
 export function CrmWhatsappSchedulesPage({
   activeSession,
@@ -26,27 +26,10 @@ export function CrmWhatsappSchedulesPage({
   onProcessDue,
   onSchedule,
   sessions,
-}: {
-  activeSession: CrmWhatsappSession | null;
-  canCancel: boolean;
-  canCreate: boolean;
-  canProcess: boolean;
-  canRead: boolean;
-  connectionId: string | null;
-  error: Error | null;
-  onCancel: (scheduledMessageId: string) => Promise<boolean>;
-  onList: (
-    input?: CrmWhatsappListScheduledMessagesInput,
-  ) => Promise<CrmWhatsappScheduledMessage[]>;
-  onProcessDue: () => Promise<boolean>;
-  onSchedule: (input: {
-    scheduledAt: string;
-    sessionId: string;
-    text: string;
-  }) => Promise<boolean>;
-  sessions: CrmWhatsappSession[];
-}) {
+}: CrmWhatsappSchedulesPageProps) {
   const [messages, setMessages] = useState<CrmWhatsappScheduledMessage[]>([]);
+  const [mode, setMode] = useState<"create" | "queue">("queue");
+  const [currentStep, setCurrentStep] = useState(0);
   const [statusFilter, setStatusFilter] = useState<ScheduleStatusFilter>("all");
   const [sessionFilter, setSessionFilter] = useState("all");
   const [targetSessionId, setTargetSessionId] = useState(
@@ -62,6 +45,7 @@ export function CrmWhatsappSchedulesPage({
     null,
   );
   const [localError, setLocalError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (activeSession) setTargetSessionId(String(activeSession.id));
@@ -103,17 +87,18 @@ export function CrmWhatsappSchedulesPage({
         : messages.filter((message) => message.status === statusFilter),
     [messages, statusFilter],
   );
-  const canSave = Boolean(
-    canCreate && targetSessionId && scheduledAt && text.trim() && !isSaving,
-  );
-
   const save = async () => {
-    if (!canSave) return;
-    const when = new Date(scheduledAt);
-    if (Number.isNaN(when.getTime()) || when <= new Date()) {
+    if (
+      !canCreate ||
+      !targetSessionId ||
+      !text.trim() ||
+      !isFutureScheduleValue(scheduledAt) ||
+      isSaving
+    ) {
       setLocalError("Escolha uma data futura.");
       return;
     }
+    const when = new Date(scheduledAt);
     setIsSaving(true);
     setLocalError(null);
     try {
@@ -126,12 +111,47 @@ export function CrmWhatsappSchedulesPage({
         setLocalError("Nao foi possivel agendar a mensagem.");
         return;
       }
-      setScheduledAt("");
-      setText("");
+      resetCreateFlow();
+      setMode("queue");
+      setSessionFilter("all");
+      setStatusFilter("pending");
+      setSuccessMessage("Mensagem agendada com sucesso.");
       await loadMessages();
+    } catch (caught) {
+      setLocalError(
+        caught instanceof Error
+          ? caught.message
+          : "Nao foi possivel agendar a mensagem.",
+      );
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const resetCreateFlow = () => {
+    setCurrentStep(0);
+    setScheduledAt("");
+    setText("");
+    setTargetSessionId(activeSession ? String(activeSession.id) : "");
+    setLocalError(null);
+  };
+
+  const openCreateFlow = () => {
+    if (!canCreate) return;
+    resetCreateFlow();
+    setSuccessMessage(null);
+    setMode("create");
+  };
+
+  const closeCreateFlow = () => {
+    resetCreateFlow();
+    setMode("queue");
+  };
+
+  const advanceCreateFlow = () => {
+    setLocalError(null);
+    if (currentStep < 2) setCurrentStep((step) => step + 1);
+    else void save();
   };
 
   const cancel = async (scheduledMessageId: string) => {
@@ -165,47 +185,51 @@ export function CrmWhatsappSchedulesPage({
 
   return (
     <section className="crm-whatsapp-section">
-      <header className="crm-whatsapp-schedules-header">
-        <span aria-hidden="true">
-          <CalendarClock className="size-5" />
-        </span>
-        <div>
-          <strong>Agendamentos</strong>
-          <h2>Agendar mensagem</h2>
-          <p>Crie e acompanhe envios futuros sem abrir uma conversa.</p>
-        </div>
-        <dl>
-          <div>
-            <dt>Pendentes</dt>
-            <dd>{pendingCount}</dd>
-          </div>
-          <div>
-            <dt>Falhas</dt>
-            <dd>{statusCounts.failed}</dd>
-          </div>
-        </dl>
-      </header>
       <div className="crm-whatsapp-schedules-page">
-        <ScheduleCreateForm
+        <SchedulePageModeBar
           canCreate={canCreate}
-          canSave={canSave}
-          isSaving={isSaving}
-          onSave={() => void save()}
-          onScheduledAtChange={setScheduledAt}
-          onTargetSessionChange={setTargetSessionId}
-          onTextChange={setText}
-          scheduledAt={scheduledAt}
-          sessions={sessions}
-          targetSessionId={targetSessionId}
-          text={text}
+          currentStep={currentStep}
+          failedCount={statusCounts.failed}
+          mode={mode}
+          onCreate={openCreateFlow}
+          pendingCount={pendingCount}
         />
-        <section className="crm-whatsapp-schedule-results" aria-label="Lista">
-          <ScheduleToolbar
+
+        {mode === "create" ? (
+          <CrmWhatsappScheduleWorkflow
+            currentStep={currentStep}
+            error={localError ?? error?.message ?? null}
+            isSaving={isSaving}
+            onBack={() => setCurrentStep((step) => Math.max(0, step - 1))}
+            onCancel={closeCreateFlow}
+            onNext={advanceCreateFlow}
+            onScheduledAtChange={setScheduledAt}
+            onStepChange={(step) => {
+              setLocalError(null);
+              setCurrentStep(step);
+            }}
+            onTargetSessionChange={setTargetSessionId}
+            onTextChange={setText}
+            scheduledAt={scheduledAt}
+            sessions={sessions}
+            targetSessionId={targetSessionId}
+            text={text}
+          />
+        ) : (
+          <CrmWhatsappSchedulesQueue
             activeSession={activeSession}
+            canCancel={canCancel}
             canProcess={canProcess}
             canRead={canRead}
+            cancellingId={cancellingId}
+            confirmingCancelId={confirmingCancelId}
+            error={localError ?? error?.message ?? null}
             isLoading={isLoading}
             isProcessing={isProcessing}
+            messages={visibleMessages}
+            onCancel={cancel}
+            onCancelRequest={setConfirmingCancelId}
+            onDismissCancel={() => setConfirmingCancelId(null)}
             onProcessDue={() => void processDue()}
             onRefresh={() => void loadMessages()}
             onSessionFilterChange={setSessionFilter}
@@ -214,32 +238,9 @@ export function CrmWhatsappSchedulesPage({
             sessions={sessions}
             statusCounts={statusCounts}
             statusFilter={statusFilter}
+            successMessage={successMessage}
           />
-          {localError ? (
-            <p className="crm-whatsapp-schedule-error">{localError}</p>
-          ) : null}
-          {error ? (
-            <p className="crm-whatsapp-schedule-error">{error.message}</p>
-          ) : null}
-          {canRead ? (
-            <ScheduleList
-              canCancel={canCancel}
-              cancellingId={cancellingId}
-              confirmingCancelId={confirmingCancelId}
-              emptyLabel="Nenhum agendamento encontrado para os filtros."
-              isLoading={isLoading}
-              messages={visibleMessages}
-              onCancel={cancel}
-              onCancelRequest={setConfirmingCancelId}
-              onDismissCancel={() => setConfirmingCancelId(null)}
-              sessions={sessions}
-            />
-          ) : (
-            <p className="crm-whatsapp-schedule-empty">
-              Sem permissao para listar agendamentos.
-            </p>
-          )}
-        </section>
+        )}
       </div>
     </section>
   );

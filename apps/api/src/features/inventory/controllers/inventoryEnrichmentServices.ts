@@ -1,11 +1,16 @@
-import { assertPermission } from "../../../shared/authorization.js";
+import {
+  assertEntitlement,
+  assertPermission,
+} from "../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
   type ServiceContext,
+  type StoreScopedServiceContext,
 } from "../../../shared/serviceContext.js";
 import { createApiBrasilVehiclePlateProvider } from "../../../infrastructure/vehicleEnrichment/apiBrasilVehiclePlateProvider.js";
 import { createOpenAiVehicleAnalysisProvider } from "../../../infrastructure/vehicleEnrichment/openAiVehicleAnalysisProvider.js";
 import type { VehiclePlateLookupRepository } from "../../../domains/vehicle/ports/vehicleEnrichmentRepository.js";
+import type { BillingQuotaGuard } from "../../../domains/billing/ports/billingQuotaGuard.js";
 import type {
   InventoryPlateLookupResponse,
   InventoryResaleAnalysisRequest,
@@ -43,11 +48,13 @@ export function createInventoryEnrichmentServices({
   plateLookupCacheTtlMs = defaultPlateLookupCacheTtlMs,
   plateLookupRepository,
   plateProvider,
+  quotaGuard,
 }: {
   analysisProvider?: VehicleAnalysisProvider;
   plateLookupCacheTtlMs?: number;
   plateLookupRepository?: VehiclePlateLookupRepository;
   plateProvider?: VehiclePlateProvider;
+  quotaGuard?: BillingQuotaGuard;
 } = {}): InventoryEnrichmentServices {
   const getAnalysisProvider = analysisProvider
     ? () => analysisProvider
@@ -74,6 +81,7 @@ export function createInventoryEnrichmentServices({
             plateLookupCacheTtlMs,
             plateLookupRepository,
             plateProvider: getPlateProvider(),
+            quotaGuard,
           }),
       ),
   };
@@ -139,12 +147,14 @@ async function lookupPlateWithCache({
   plateLookupCacheTtlMs,
   plateLookupRepository,
   plateProvider,
+  quotaGuard,
 }: {
   context: ServiceContext;
   plate: string;
   plateLookupCacheTtlMs: number;
   plateLookupRepository?: VehiclePlateLookupRepository | undefined;
   plateProvider: VehiclePlateProvider;
+  quotaGuard?: BillingQuotaGuard | undefined;
 }) {
   const normalizedPlate = normalizePlate(plate);
   if (plateLookupRepository && context.storeId && context.tenantId) {
@@ -158,6 +168,16 @@ async function lookupPlateWithCache({
     });
     if (cached) return cached.response;
   }
+
+  if (!context.storeId || !context.tenantId) {
+    throw new Error("Plate lookup requires resolved store billing scope.");
+  }
+  assertEntitlement(context as StoreScopedServiceContext, "plate_lookup");
+  await quotaGuard?.assertAvailable({
+    quotaKey: "plate_lookup",
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
 
   const result = await plateProvider.lookupPlate({ plate: normalizedPlate });
   if (plateLookupRepository && context.storeId && context.tenantId) {

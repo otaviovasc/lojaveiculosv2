@@ -86,19 +86,30 @@ async function applyCampaignReply(
 ) {
   const repliedAt = input.message.providerTimestamp ?? input.message.createdAt;
   const preview = truncateCampaignPreview(input.message.content);
-  const secondary = campaign.secondaryContent
-    ? await createSecondarySchedule(repository, campaign, recipient, repliedAt)
-    : null;
-  await repository.updateCampaignRecipient({
+  const claimed = await repository.updateCampaignRecipient({
+    expectedStatus: "sent",
     recipientId: recipient.id,
     replyContentPreview: preview,
     replyMessageId: input.message.id,
     replyReceivedAt: repliedAt,
-    ...(secondary ? { secondaryScheduledMessageId: secondary.id } : {}),
-    status: secondary ? "secondary_scheduled" : "replied",
+    status: "replied",
     storeId: recipient.storeId,
     tenantId: recipient.tenantId,
   });
+  if (!claimed) return;
+  const secondary = campaign.secondaryContent
+    ? await createSecondarySchedule(repository, campaign, recipient, repliedAt)
+    : null;
+  if (secondary) {
+    await repository.updateCampaignRecipient({
+      expectedStatus: "replied",
+      recipientId: recipient.id,
+      secondaryScheduledMessageId: secondary.id,
+      status: "secondary_scheduled",
+      storeId: recipient.storeId,
+      tenantId: recipient.tenantId,
+    });
+  }
   await updateCampaignCounts(repository, campaign, {
     repliedDelta: 1,
     scheduledDelta: secondary ? 1 : 0,

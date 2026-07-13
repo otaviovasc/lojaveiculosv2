@@ -1,0 +1,89 @@
+@media (max-width: 860px) {
+  .crm-whatsapp-page:has(.crm-whatsapp-shell[data-mobile-pane="chat"])
+    .crm-whatsapp-scope-nav {
+    display: none;
+  }
+
+  .crm-whatsapp-shell {
+    display: block;
+    height: 100%;
+  }
+
+  .crm-whatsapp-shell[data-mobile-pane="list"] .crm-whatsapp-chat,
+  .crm-whatsapp-shell[data-mobile-pane="chat"] .crm-whatsapp-list {
+    display: none;
+  }
+
+  .crm-whatsapp-list,
+  .crm-whatsapp-chat {
+    height: 100%;
+  }
+
+  .crm-whatsapp-session-list {
+    flex: 1;
+    max-height: none;
+  }
+
+  .crm-whatsapp-mobile-back {
+    display: inline-flex;
+  }
+
+  .crm-whatsapp-chat-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.375rem;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .crm-whatsapp-chat-header-main {
+    width: 100%;
+  }
+
+  .crm-whatsapp-chat-channel-pill,
+  .crm-whatsapp-chat-identity > .crm-whatsapp-tag-row {
+    display: none;
+  }
+
+  .crm-whatsapp-chat-title {
+    max-width: calc(100vw - 4rem);
+  }
+
+  .crm-whatsapp-header-actions {
+    justify-content: flex-start;
+    max-width: 100%;
+    padding-bottom: 0.125rem;
+    width: 100%;
+  }
+
+  .crm-whatsapp-header-actions .crm-whatsapp-header-action-secondary {
+    display: none;
+  }
+
+  .crm-whatsapp-header-actions .crm-action {
+    height: 2.5rem;
+    justify-content: center;
+    padding: 0;
+    width: 2.5rem;
+  }
+
+  .crm-whatsapp-header-actions .crm-whatsapp-action-label {
+    display: none;
+  }
+
+  .crm-whatsapp-header-actions .custom-select {
+    flex: 0 0 10rem;
+    min-width: 10rem;
+  }
+
+  .crm-whatsapp-messages {
+    padding: 0.75rem 0.625rem;
+  }
+
+  .crm-whatsapp-bubble {
+    max-width: 88%;
+  }
+
+  .crm-whatsapp-composer {
+    padding-inline: 0.375rem;
+  }
+}

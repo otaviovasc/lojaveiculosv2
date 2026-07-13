@@ -107,6 +107,9 @@ export async function updateWhatsappCampaignRecipient(
         eq(crmWhatsappCampaignRecipients.id, input.recipientId),
         eq(crmWhatsappCampaignRecipients.storeId, input.storeId),
         eq(crmWhatsappCampaignRecipients.tenantId, input.tenantId),
+        ...(input.expectedStatus
+          ? [eq(crmWhatsappCampaignRecipients.status, input.expectedStatus)]
+          : []),
       ),
     )
     .returning();

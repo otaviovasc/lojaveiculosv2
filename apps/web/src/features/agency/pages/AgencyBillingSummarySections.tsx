@@ -8,7 +8,6 @@ import {
   WalletCards,
   Wrench,
 } from "lucide-react";
-import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
 import {
   BillingCheckoutPanel,
   type BillingCheckoutState,
@@ -40,14 +39,31 @@ export function AgencyBillingSummarySections({
   panelOverview: BillingOverview;
   providerStatus: BillingProviderStatus | null;
 }) {
+  return (
+    <>
+      <AgencyBillingStatusSummary
+        checkoutState={checkoutState}
+        overview={overview}
+        panelOverview={panelOverview}
+        providerStatus={providerStatus}
+        onCheckout={onCheckout}
+      />
+      <AgencyBillingAllocation overview={overview} />
+    </>
+  );
+}
+
+export function AgencyBillingStatusSummary({
+  checkoutState,
+  onCheckout,
+  overview,
+  panelOverview,
+  providerStatus,
+}: Parameters<typeof AgencyBillingSummarySections>[0]) {
   const canonicalState = createAgencyBillingCanonicalState(
     panelOverview,
     providerStatus,
   );
-  const hasCurrentSubscription =
-    canonicalState.kind === "current" ||
-    canonicalState.kind === "payment_attention";
-
   return (
     <>
       <AgencyBillingStatePanel state={canonicalState} />
@@ -59,24 +75,30 @@ export function AgencyBillingSummarySections({
           onCheckout={onCheckout}
         />
       ) : null}
-      {hasCurrentSubscription ? (
-        <BillingAutomaticBillingPanel overview={panelOverview} />
-      ) : null}
       <AgencyBillingKpis
         overview={overview}
         panelOverview={panelOverview}
         state={canonicalState}
       />
-      <div className="agency-billing-allocation">
-        <p className="agency-billing-table-hint" id="agency-allocation-hint">
-          <MoveHorizontal aria-hidden="true" />
-          Deslize para conferir todas as colunas da alocação.
-        </p>
-        <div aria-describedby="agency-allocation-hint">
-          <BillingAllocationTable allocations={overview.allocations} />
-        </div>
-      </div>
     </>
+  );
+}
+
+export function AgencyBillingAllocation({
+  overview,
+}: {
+  overview: AgencyTenantOverview;
+}) {
+  return (
+    <div className="agency-billing-allocation">
+      <p className="agency-billing-table-hint" id="agency-allocation-hint">
+        <MoveHorizontal aria-hidden="true" />
+        Deslize para conferir todas as colunas da alocação.
+      </p>
+      <div aria-describedby="agency-allocation-hint">
+        <BillingAllocationTable allocations={overview.allocations} />
+      </div>
+    </div>
   );
 }
 

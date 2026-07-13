@@ -1,24 +1,4 @@
-import { Check, Megaphone, Search } from "lucide-react";
-import { CrmSelect } from "./CrmFormControls";
-import { formatSessionName } from "./crmWhatsappModel";
 import type { CrmWhatsappCampaign } from "./crmWhatsappCampaignTypes";
-import type { CrmWhatsappSession, CrmWhatsappTag } from "./crmWhatsappTypes";
-import { readMinDateTimeLocal } from "./CrmWhatsappCampaignsPageUtils";
-
-export function CampaignHeader() {
-  return (
-    <header className="crm-whatsapp-campaigns-header">
-      <span>
-        <Megaphone aria-hidden="true" />
-      </span>
-      <div>
-        <strong>Campanhas</strong>
-        <h2>Disparos agendados por conversa</h2>
-        <p>Crie campanhas a partir de conversas existentes.</p>
-      </div>
-    </header>
-  );
-}
 
 export function CampaignStats({
   campaigns,
@@ -40,24 +20,16 @@ export function CampaignStats({
 export function CampaignMessagePanel({
   canCreate,
   campaignName,
-  intervalMinutes,
   isSaving,
   onCampaignNameChange,
-  onIntervalMinutesChange,
-  onStartAtChange,
   onTextChange,
-  startAt,
   text,
 }: {
   canCreate: boolean;
   campaignName: string;
-  intervalMinutes: number;
   isSaving: boolean;
   onCampaignNameChange: (value: string) => void;
-  onIntervalMinutesChange: (value: number) => void;
-  onStartAtChange: (value: string) => void;
   onTextChange: (value: string) => void;
-  startAt: string;
   text: string;
 }) {
   return (
@@ -82,99 +54,10 @@ export function CampaignMessagePanel({
           value={text}
         />
       </label>
-      <div className="crm-whatsapp-campaign-fields">
-        <label>
-          Inicio
-          <input
-            disabled={!canCreate || isSaving}
-            min={readMinDateTimeLocal()}
-            onChange={(event) => onStartAtChange(event.target.value)}
-            type="datetime-local"
-            value={startAt}
-          />
-        </label>
-        <label>
-          Intervalo min.
-          <input
-            disabled={!canCreate || isSaving}
-            min={1}
-            onChange={(event) =>
-              onIntervalMinutesChange(Math.max(1, Number(event.target.value)))
-            }
-            type="number"
-            value={intervalMinutes}
-          />
-        </label>
-      </div>
       <p>
         Variavel disponivel: <code>{"{nome}"}</code>. Ela usa o nome da conversa
         ou "cliente" quando estiver vazio.
       </p>
-    </section>
-  );
-}
-
-export function CampaignRecipientsPanel({
-  effectiveSelectedIds,
-  filteredSessions,
-  onQueryChange,
-  onTagChange,
-  onToggleSession,
-  query,
-  selectedTagId,
-  tags,
-}: {
-  effectiveSelectedIds: Set<string>;
-  filteredSessions: CrmWhatsappSession[];
-  onQueryChange: (value: string) => void;
-  onTagChange: (value: string) => void;
-  onToggleSession: (sessionId: string) => void;
-  query: string;
-  selectedTagId: string;
-  tags: CrmWhatsappTag[];
-}) {
-  const selectedCount = effectiveSelectedIds.size;
-
-  return (
-    <section className="crm-whatsapp-campaign-panel">
-      <h3>Destinatarios</h3>
-      <p>{selectedCount} conversa(s) selecionada(s)</p>
-      <div className="crm-whatsapp-campaign-search">
-        <Search aria-hidden="true" />
-        <input
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Buscar conversa ou telefone"
-          value={query}
-        />
-      </div>
-      <CrmSelect
-        ariaLabel="Filtrar por tag"
-        onChange={onTagChange}
-        options={[
-          { label: "Todas as tags", value: "all" },
-          ...tags.map((tag) => ({ label: tag.name, value: tag.id })),
-        ]}
-        value={selectedTagId}
-      />
-      <div className="crm-whatsapp-campaign-session-list">
-        {filteredSessions.map((session) => {
-          const selected = effectiveSelectedIds.has(String(session.id));
-          return (
-            <button
-              className={
-                selected ? "crm-whatsapp-campaign-session-selected" : ""
-              }
-              key={String(session.id)}
-              onClick={() => onToggleSession(String(session.id))}
-              type="button"
-            >
-              <span>{formatSessionName(session)}</span>
-              <small>{session.buyerPhone ?? "sem telefone"}</small>
-              {selected ? <Check aria-hidden="true" /> : null}
-            </button>
-          );
-        })}
-      </div>
     </section>
   );
 }

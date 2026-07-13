@@ -23,6 +23,7 @@ export function CampaignReviewPanel({
   preview,
   rows,
   selectedCount,
+  showLaunchAction = true,
   summary,
 }: {
   canLaunch: boolean;
@@ -36,6 +37,7 @@ export function CampaignReviewPanel({
   preview: string;
   rows: CampaignRecipientReviewRow[];
   selectedCount: number;
+  showLaunchAction?: boolean;
   summary: CampaignRecipientReviewSummary;
 }) {
   const [filter, setFilter] = useState<ReviewFilter>("all");
@@ -68,14 +70,16 @@ export function CampaignReviewPanel({
           <CalendarClock aria-hidden="true" />
           Revisao de envio
         </h3>
-        <button
-          className="crm-action crm-action-primary"
-          disabled={!canLaunch}
-          onClick={onLaunch}
-          type="button"
-        >
-          {isSaving ? "Agendando" : "Criar campanha"}
-        </button>
+        {showLaunchAction ? (
+          <button
+            className="crm-action crm-action-primary"
+            disabled={!canLaunch}
+            onClick={onLaunch}
+            type="button"
+          >
+            {isSaving ? "Agendando" : "Criar campanha"}
+          </button>
+        ) : null}
       </header>
 
       <dl className="crm-whatsapp-campaign-review">

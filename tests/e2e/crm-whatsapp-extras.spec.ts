@@ -179,10 +179,10 @@ test.describe("CRM WhatsApp extras", () => {
 
     await page.goto("/crm#/crm?surface=whatsapp");
     await expect(
-      page.getByRole("button", { name: /1 evento ZAPI com atencao/ }),
+      page.getByRole("button", { name: /1 evento ZAPI com atenção/ }),
     ).toBeVisible();
     await page
-      .getByRole("button", { name: /1 evento ZAPI com atencao/ })
+      .getByRole("button", { name: /1 evento ZAPI com atenção/ })
       .click();
     await expect(page.getByText("timeout na entrega")).toBeVisible();
     await page.getByRole("button", { name: "Reprocessar" }).click();

@@ -1,4 +1,5 @@
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
+import type { ProductCrmApi } from "./productCrmApi";
 import { CrmWhatsappCampaignsPage } from "./CrmWhatsappCampaignsPage";
 import { CrmWhatsappIntegrationsPage } from "./CrmWhatsappIntegrationsPage";
 import { CrmWhatsappSchedulesPage } from "./CrmWhatsappSchedulesPage";
@@ -9,9 +10,11 @@ type InboxState = ReturnType<typeof useCrmWhatsappInbox>;
 export function WhatsappCampaignsSection({
   api,
   inbox,
+  leadApi,
 }: {
   api: CrmWhatsappApi;
   inbox: InboxState;
+  leadApi: ProductCrmApi;
 }) {
   return (
     <CrmWhatsappCampaignsPage
@@ -22,6 +25,8 @@ export function WhatsappCampaignsSection({
       onCreateCampaign={api.createCampaign}
       onGetCampaign={api.getCampaign}
       onListCampaigns={() => api.listCampaigns({ limit: 50 })}
+      onListLeads={leadApi.listLeads}
+      onListRecipientSessions={api.listSessions}
       onPauseCampaign={api.pauseCampaign}
       onResumeCampaign={api.resumeCampaign}
       sessions={inbox.sessions}

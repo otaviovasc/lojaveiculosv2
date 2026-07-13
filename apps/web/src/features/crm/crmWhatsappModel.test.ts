@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { mergeMessagesFromServer } from "./crmWhatsappModel";
+import {
+  formatMessageTime,
+  formatRelativeSessionTime,
+  mergeMessagesFromServer,
+} from "./crmWhatsappModel";
 import type { CrmWhatsappMessage } from "./crmWhatsappTypes";
 
 describe("crmWhatsappModel", () => {
+  it("formats conversation timestamps with the Brazilian 24-hour locale", () => {
+    const message = createMessage({ createdAt: "2026-07-03T12:00:00.000Z" });
+
+    expect(formatMessageTime(message)).toMatch(/^\d{2}:\d{2}$/);
+    expect(formatRelativeSessionTime(message.createdAt)).toMatch(
+      /^\d{2}\/\d{2}$/,
+    );
+  });
+
   it("preserves local sent echoes until the server returns the message", () => {
     const localEcho = createMessage({
       clientId: "local-catalog",

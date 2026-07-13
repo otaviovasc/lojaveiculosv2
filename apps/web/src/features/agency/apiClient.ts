@@ -1,6 +1,7 @@
 import { readApiJson } from "../../lib/apiErrors";
 import type {
   BillingChargePreview,
+  BillingAddon,
   BillingEntitlementEvent,
   BillingEntitlementMatrixRow,
   BillingFinancialSummary,
@@ -22,6 +23,7 @@ export type AgencyAuth = {
 };
 
 export type AgencyTenantOverview = {
+  addons: readonly BillingAddon[];
   allocations: readonly BillingStoreAllocation[];
   authority: {
     currentActorCanManage: boolean;

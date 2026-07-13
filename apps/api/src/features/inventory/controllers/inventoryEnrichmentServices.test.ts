@@ -17,6 +17,23 @@ describe("createInventoryEnrichmentServices", () => {
     vi.unstubAllGlobals();
   });
 
+  it("does not call the paid plate provider when the lookup quota is exhausted", async () => {
+    const plateProvider = {
+      lookupPlate: vi.fn(),
+    };
+    const services = createInventoryEnrichmentServices({
+      plateProvider,
+      quotaGuard: {
+        assertAvailable: vi.fn().mockRejectedValue(new Error("quota exceeded")),
+      },
+    } as never);
+
+    await expect(
+      services.lookupPlate(createContext(), { plate: "ABC1D23" }),
+    ).rejects.toThrow("quota exceeded");
+    expect(plateProvider.lookupPlate).not.toHaveBeenCalled();
+  });
+
   it("reads the plate provider token lazily after local env has loaded", async () => {
     delete process.env.API_PLACA_KEY;
     const services = createInventoryEnrichmentServices();
@@ -104,12 +121,15 @@ describe("createInventoryEnrichmentServices", () => {
 });
 
 function createContext() {
-  return createServiceContext({
-    permissions: ["inventory.read"],
-    request: { requestId: "request_1" },
-    storeId: "store_1",
-    tenantId: "tenant_1",
-  });
+  return {
+    ...createServiceContext({
+      permissions: ["inventory.read"],
+      request: { requestId: "request_1" },
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    }),
+    entitlements: ["plate_lookup" as const],
+  };
 }
 
 function createLookupRepository() {

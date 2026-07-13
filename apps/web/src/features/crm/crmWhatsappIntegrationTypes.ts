@@ -8,6 +8,9 @@ export type CrmWhatsappBotIntegration = {
   webhookUrl: string | null;
 };
 
+export type CrmWhatsappIntegrationView =
+  "configuration" | "events" | "reference";
+
 export type CrmWhatsappBotIntegrationResponse = {
   integration: CrmWhatsappBotIntegration;
 };

@@ -1,14 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
-import { Bot } from "lucide-react";
+import { BookOpen, Bot, Loader2, TriangleAlert } from "lucide-react";
+import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { CrmWhatsappBotDocs } from "./CrmWhatsappBotDocs";
 import { CrmWhatsappProviderEventIssuesPanel } from "./CrmWhatsappProviderEventIssuesPanel";
-import type { CrmWhatsappBotIntegration } from "./crmWhatsappIntegrationTypes";
+import type {
+  CrmWhatsappBotIntegration,
+  CrmWhatsappIntegrationView,
+} from "./crmWhatsappIntegrationTypes";
 import {
   BotIntegrationForm,
   type CrmWhatsappIntegrationsPageProps,
   PermissionNotice,
 } from "./CrmWhatsappIntegrationsPageParts";
+
+const integrationViews = [
+  { icon: Bot, label: "Configuracao", value: "configuration" },
+  { icon: TriangleAlert, label: "Eventos", value: "events" },
+  { icon: BookOpen, label: "Referencia", value: "reference" },
+] as const;
 
 export function CrmWhatsappIntegrationsPage({
   api,
@@ -16,6 +26,8 @@ export function CrmWhatsappIntegrationsPage({
   canRead,
   canRetry,
 }: CrmWhatsappIntegrationsPageProps) {
+  const [activeView, setActiveView] =
+    useState<CrmWhatsappIntegrationView>("configuration");
   const [enabled, setEnabled] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [integration, setIntegration] =
@@ -24,6 +36,12 @@ export function CrmWhatsappIntegrationsPage({
   const [isSaving, setIsSaving] = useState(false);
   const [secretDraft, setSecretDraft] = useState("");
   const [webhookUrl, setWebhookUrl] = useState("");
+
+  const applyIntegration = useCallback((next: CrmWhatsappBotIntegration) => {
+    setEnabled(next.enabled);
+    setIntegration(next);
+    setWebhookUrl(next.webhookUrl ?? "");
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!canManage) {
@@ -40,7 +58,7 @@ export function CrmWhatsappIntegrationsPage({
     } finally {
       setIsLoading(false);
     }
-  }, [api, canManage]);
+  }, [api, applyIntegration, canManage]);
 
   useEffect(() => {
     void refresh();
@@ -86,50 +104,73 @@ export function CrmWhatsappIntegrationsPage({
     }
   };
 
-  const applyIntegration = (next: CrmWhatsappBotIntegration) => {
-    setEnabled(next.enabled);
-    setIntegration(next);
-    setWebhookUrl(next.webhookUrl ?? "");
-  };
-
   return (
     <section className="crm-whatsapp-section">
       <div className="crm-whatsapp-integrations-page">
-        <header className="crm-whatsapp-integrations-header">
-          <span aria-hidden="true">
-            <Bot className="size-5" />
-          </span>
-          <div>
-            <strong>Integrações</strong>
-            <h2>Bot externo</h2>
-            <p>Configure o webhook, segredo e a leitura operacional do bot.</p>
-          </div>
-        </header>
-        {canManage ? (
-          <BotIntegrationForm
-            enabled={enabled}
-            integration={integration}
-            isSaving={isLoading || isSaving}
-            onClearSecret={() => void clearSecret()}
-            onEnabledChange={setEnabled}
-            onSave={() => void save()}
-            onSecretChange={setSecretDraft}
-            onWebhookUrlChange={setWebhookUrl}
-            secretDraft={secretDraft}
-            webhookUrl={webhookUrl}
+        <div className="crm-whatsapp-integrations-nav">
+          <FeatureTabs
+            activeClassName="crm-whatsapp-integrations-tab-active"
+            ariaLabel="Areas de integracao"
+            className="crm-whatsapp-integrations-tabs"
+            onChange={setActiveView}
+            optionClassName="crm-whatsapp-integrations-tab"
+            options={integrationViews}
+            value={activeView}
           />
-        ) : (
-          <PermissionNotice />
-        )}
+          <span className="crm-whatsapp-integrations-nav-status">
+            {integration?.enabled ? "Bot ativo" : "Bot inativo"}
+          </span>
+        </div>
 
-        {error ? (
-          <p className="text-sm font-black text-danger">{error}</p>
+        {activeView === "configuration" ? (
+          <div aria-label="Configuracao do bot" role="tabpanel">
+            {isLoading ? (
+              <div className="crm-whatsapp-integrations-state" role="status">
+                <Loader2 aria-hidden="true" className="animate-spin" />
+                Carregando configuracao segura.
+              </div>
+            ) : canManage ? (
+              <BotIntegrationForm
+                enabled={enabled}
+                integration={integration}
+                isSaving={isSaving}
+                onClearSecret={() => void clearSecret()}
+                onEnabledChange={setEnabled}
+                onSave={() => void save()}
+                onSecretChange={setSecretDraft}
+                onWebhookUrlChange={setWebhookUrl}
+                secretDraft={secretDraft}
+                webhookUrl={webhookUrl}
+              />
+            ) : (
+              <PermissionNotice />
+            )}
+            {error ? (
+              <p className="crm-whatsapp-integrations-error" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
         ) : null}
 
-        <CrmWhatsappBotDocs />
+        {activeView === "events" ? (
+          <div aria-label="Eventos do provedor" role="tabpanel">
+            {canRead ? (
+              <CrmWhatsappProviderEventIssuesPanel
+                api={api}
+                canRetry={canRetry}
+                showHealthyState
+              />
+            ) : (
+              <PermissionNotice message="Seu usuário não tem permissão para visualizar eventos do provedor." />
+            )}
+          </div>
+        ) : null}
 
-        {canRead ? (
-          <CrmWhatsappProviderEventIssuesPanel api={api} canRetry={canRetry} />
+        {activeView === "reference" ? (
+          <div aria-label="Referencia da integracao" role="tabpanel">
+            <CrmWhatsappBotDocs />
+          </div>
         ) : null}
       </div>
     </section>

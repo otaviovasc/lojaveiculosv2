@@ -78,6 +78,9 @@ export function updateMemoryCampaignRecipient(
       item.tenantId === input.tenantId,
   );
   if (!recipient) return null;
+  if (input.expectedStatus && recipient.status !== input.expectedStatus) {
+    return null;
+  }
   if (input.errorMessage !== undefined)
     recipient.errorMessage = input.errorMessage;
   if (input.initialScheduledMessageId !== undefined) {

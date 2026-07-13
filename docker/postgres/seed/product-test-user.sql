@@ -285,32 +285,42 @@ ON CONFLICT (store_id, user_id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
-INSERT INTO store_entitlements (feature_key, source, status, store_id, tenant_id)
+INSERT INTO store_entitlements (
+  feature_key, source, starts_at, ends_at, status, store_id, tenant_id
+)
 VALUES
   (
     'subdomain',
     'local_seed',
-    'active',
+    date_trunc('day', now()),
+    date_trunc('day', now()) + interval '30 days',
+    'trialing',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
   ),
   (
     'crm',
     'local_seed',
-    'active',
+    date_trunc('day', now()),
+    date_trunc('day', now()) + interval '30 days',
+    'trialing',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
   ),
   (
     'automation',
     'local_seed',
-    'active',
+    date_trunc('day', now()),
+    date_trunc('day', now()) + interval '30 days',
+    'trialing',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
   ),
   (
     'plate_lookup',
     'local_seed',
+    date_trunc('day', now()),
+    date_trunc('day', now()) + interval '30 days',
     'trialing',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
@@ -318,6 +328,8 @@ VALUES
   (
     'external_api',
     'local_seed',
+    null,
+    null,
     'inactive',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
@@ -325,6 +337,8 @@ VALUES
   (
     'custom_domain',
     'local_seed',
+    null,
+    null,
     'inactive',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
@@ -332,31 +346,39 @@ VALUES
   (
     'nfe',
     'local_seed',
+    null,
+    null,
     'inactive',
     '66666666-6666-4666-8666-666666666666',
     '77777777-7777-4777-8777-777777777777'
   )
 ON CONFLICT (store_id, feature_key) DO UPDATE SET
+  ends_at = EXCLUDED.ends_at,
   source = EXCLUDED.source,
+  starts_at = EXCLUDED.starts_at,
   status = EXCLUDED.status,
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
-INSERT INTO plans (id, code, limits, monthly_price_cents, name, status)
+INSERT INTO plans (
+  id, catalog_version, code, is_default, limits,
+  monthly_price_cents, name, status
+)
 VALUES (
   '12121212-1212-4212-8212-121212121212',
+  '2026-07-v1',
   'growth',
+  true,
   '{"vehicle_limit": 300, "seller_limit": 8}'::jsonb,
   29900,
   'Growth',
   'active'
 )
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (code, catalog_version) DO NOTHING;
 
 INSERT INTO plan_features (feature_key, included, limit_value, plan_id)
 VALUES
   ('subdomain', 1, null, '12121212-1212-4212-8212-121212121212'),
-  ('crm', 1, null, '12121212-1212-4212-8212-121212121212'),
   ('automation', 1, null, '12121212-1212-4212-8212-121212121212'),
   ('plate_lookup', 1, 300, '12121212-1212-4212-8212-121212121212'),
   ('custom_domain', 0, null, '12121212-1212-4212-8212-121212121212'),
@@ -364,16 +386,21 @@ VALUES
   ('nfe', 0, null, '12121212-1212-4212-8212-121212121212')
 ON CONFLICT (plan_id, feature_key) DO NOTHING;
 
-INSERT INTO addons (id, code, feature_key, monthly_price_cents, name, status)
+INSERT INTO addons (
+  id, catalog_version, code, feature_key, included_in_trial,
+  monthly_price_cents, name, status
+)
 VALUES (
   '15151515-1515-4515-8515-151515151515',
+  '2026-07-v1',
   'crm_whatsapp_instance',
   'crm',
+  true,
   24999,
   'CRM WhatsApp',
   'active'
 )
-ON CONFLICT (code) DO NOTHING;
+ON CONFLICT (code, catalog_version) DO NOTHING;
 
 INSERT INTO billing_customers (
   id,
@@ -652,17 +679,21 @@ ON CONFLICT (store_id) DO UPDATE SET
   theme = EXCLUDED.theme,
   updated_at = now();
 
-INSERT INTO store_entitlements (feature_key, metadata, source, status, store_id, tenant_id)
+INSERT INTO store_entitlements (
+  feature_key, metadata, source, starts_at, ends_at, status, store_id, tenant_id
+)
 VALUES
-  ('automation', '{"mode": "preview_only", "execution_enabled": false}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('analytics', '{"dashboards": ["sales", "finance", "crm"]}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('marketplace', '{"providers": ["olx", "mercado_livre"]}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('external_api', '{"rate_limit_per_minute": 120}'::jsonb, 'local_seed', 'active', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('custom_domain', '{"domain": "seminovos.local.test"}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
-  ('nfe', '{"provider": "spedy", "environment": "homologation"}'::jsonb, 'local_seed', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
+  ('automation', '{"mode": "preview_only", "execution_enabled": false}'::jsonb, 'local_seed', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('analytics', '{"dashboards": ["sales", "finance", "crm"]}'::jsonb, 'local_seed', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('marketplace', '{"providers": ["olx", "mercado_livre"]}'::jsonb, 'local_seed', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('external_api', '{"rate_limit_per_minute": 120}'::jsonb, 'local_seed', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('custom_domain', '{"domain": "seminovos.local.test"}'::jsonb, 'local_seed', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777'),
+  ('nfe', '{"provider": "spedy", "environment": "homologation"}'::jsonb, 'local_seed', date_trunc('day', now()), date_trunc('day', now()) + interval '30 days', 'trialing', '66666666-6666-4666-8666-666666666666', '77777777-7777-4777-8777-777777777777')
 ON CONFLICT (store_id, feature_key) DO UPDATE SET
+  ends_at = EXCLUDED.ends_at,
   metadata = EXCLUDED.metadata,
   source = EXCLUDED.source,
+  starts_at = EXCLUDED.starts_at,
   status = EXCLUDED.status,
   updated_at = now();
 

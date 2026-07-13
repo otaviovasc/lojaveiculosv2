@@ -191,6 +191,7 @@ function createTenantOverview(
 ): AgencyTenantOverview {
   const overview = createOverview(storeId, targetTenantId, status);
   return {
+    addons: [],
     allocations: [],
     authority: overview.authority,
     chargePreview: overview.chargePreview,

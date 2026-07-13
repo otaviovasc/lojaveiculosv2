@@ -32,8 +32,7 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
           <Bot />
         </span>
         <div>
-          <strong>Bot externo</strong>
-          <h2>Automacao</h2>
+          <h2>Bot externo</h2>
           <p>Encaminhe mensagens para n8n, Typebot ou seu bot proprio.</p>
         </div>
         <FeatureStatusBadge
@@ -111,10 +110,14 @@ export function BotIntegrationForm(props: BotIntegrationFormProps) {
   );
 }
 
-export function PermissionNotice() {
+export function PermissionNotice({
+  message = "Seu usuário não tem permissão para gerenciar integrações.",
+}: {
+  message?: string;
+}) {
   return (
     <div className="rounded-xl border border-line/35 bg-panel/10 p-4 text-sm font-bold text-muted">
-      Seu usuário não tem permissão para gerenciar integrações.
+      {message}
     </div>
   );
 }

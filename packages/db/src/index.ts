@@ -15,6 +15,7 @@ export * from "./schema/sales.js";
 export * from "./schema/acquisitions.js";
 export * from "./schema/finance.js";
 export * from "./schema/billing.js";
+export * from "./schema/billingEntitlementEvents.js";
 export * from "./schema/billingCheckout.js";
 export * from "./schema/bankingReserve.js";
 export * from "./schema/providerEvents.js";

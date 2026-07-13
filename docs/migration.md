@@ -5,6 +5,24 @@ The plan is intentionally tenant-wave based: V1 remains the source of truth
 until a store or agency wave has passed rehearsal, parity checks, cutover, and
 rollback review.
 
+## Current Execution Priority
+
+V1 migration is a commercialization P0, not deferred historical cleanup. The
+first learning cohort must be three representative active stores: one small
+store, one multi-user store, and one agency/multi-store case when available.
+
+Do not broaden speculative V2 modules in place of the missing execution layer.
+The immediate deliverables are rerunnable importers, deterministic maps,
+machine-readable parity, customer acceptance, and rollback for:
+
+```text
+store/users -> inventory -> leads -> sales/documents -> finance/billing
+```
+
+The migration is successful only when the store can perform the canonical
+acquisition-to-cash workflow and its activation/customer-health events are
+visible. Table counts alone are insufficient.
+
 ## Principles
 
 - No production migration without a rehearsal against a recent backup.

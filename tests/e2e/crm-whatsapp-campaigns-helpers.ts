@@ -1,4 +1,5 @@
 import type { Page, Route } from "@playwright/test";
+import { createCampaignLeads } from "./crm-whatsapp-campaign-lead-fixtures";
 import {
   campaignId,
   createCampaign,
@@ -65,6 +66,9 @@ export async function installCampaignApiMocks(page: Page) {
   );
   await page.route("**/crm/whatsapp/sessions**", (route) =>
     fulfillJson(route, createCampaignSessions()),
+  );
+  await page.route("**/crm/leads**", (route) =>
+    fulfillJson(route, { leads: createCampaignLeads() }),
   );
   await page.route("**/crm/whatsapp/campaigns**", (route) =>
     fulfillJson(route, [createCampaign()]),

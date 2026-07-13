@@ -39,6 +39,7 @@ import { toListDto, toUnitListDto } from "./listingResponseDtos.js";
 import {
   resolveVehicleInventoryPorts,
   resolveVehicleInventoryTransactionRunner,
+  runVehicleInventoryMutation,
 } from "./listingServicesFactorySupport.js";
 import { createInventoryTransactionalServices } from "./listingTransactionalServices.js";
 
@@ -56,10 +57,14 @@ export function createInventoryListingServices(
     archiveVehicleSupplier: (context, input) =>
       archiveVehicleSupplier(context, input, ports),
     async createListing(context, input) {
-      const listing = await createVehicleListing(
-        context,
-        cleanCreateInput(input),
-        ports,
+      const listing = await runVehicleInventoryMutation(
+        transactionRunner,
+        (transactionPorts) =>
+          createVehicleListing(
+            context,
+            cleanCreateInput(input),
+            transactionPorts,
+          ),
       );
       return loadInventoryListingDetailDto(
         context,

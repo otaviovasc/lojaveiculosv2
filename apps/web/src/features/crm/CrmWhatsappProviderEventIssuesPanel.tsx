@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { RefreshCw, RotateCcw } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronDown,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+} from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import type { CrmWhatsappProviderEvent } from "./crmWhatsappTypes";
@@ -7,9 +13,11 @@ import type { CrmWhatsappProviderEvent } from "./crmWhatsappTypes";
 export function CrmWhatsappProviderEventIssuesPanel({
   api,
   canRetry,
+  showHealthyState = false,
 }: {
   api: CrmWhatsappApi;
   canRetry: boolean;
+  showHealthyState?: boolean;
 }) {
   const [error, setError] = useState<Error | null>(null);
   const [events, setEvents] = useState<CrmWhatsappProviderEvent[]>([]);
@@ -56,22 +64,78 @@ export function CrmWhatsappProviderEventIssuesPanel({
     }
   };
 
-  if (!error && events.length === 0) return null;
+  if (isLoading && !error && events.length === 0) {
+    return (
+      <section
+        aria-label="Eventos ZAPI"
+        className="crm-whatsapp-events-state"
+        role="status"
+      >
+        <Loader2 aria-hidden="true" className="animate-spin" />
+        <div>
+          <strong>Verificando eventos</strong>
+          <p>Consultando falhas e mensagens que exigem atenção.</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (!error && events.length === 0) {
+    if (!showHealthyState) return null;
+    return (
+      <section
+        aria-label="Eventos ZAPI"
+        className="crm-whatsapp-events-state crm-whatsapp-events-state-success"
+        role="status"
+      >
+        <CheckCircle2 aria-hidden="true" />
+        <div>
+          <strong>Nenhum evento exige atenção</strong>
+          <p>
+            O processamento recente do provedor esta sem falhas registradas.
+          </p>
+        </div>
+        <button
+          aria-label="Atualizar eventos ZAPI"
+          className="crm-icon-action"
+          onClick={() => void refresh()}
+          title="Atualizar eventos"
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" />
+        </button>
+      </section>
+    );
+  }
 
   return (
     <section className="crm-whatsapp-reliability" aria-label="Eventos ZAPI">
-      <button
-        className="crm-whatsapp-reliability-summary"
-        onClick={() => setIsExpanded((current) => !current)}
-        type="button"
-      >
-        <span>
-          {events.length > 0
-            ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com atenção`
-            : "Falha ao verificar eventos ZAPI"}
-        </span>
-        <RefreshCw aria-hidden="true" size={16} />
-      </button>
+      <div className="crm-whatsapp-reliability-header">
+        <button
+          aria-expanded={isExpanded}
+          className="crm-whatsapp-reliability-summary"
+          disabled={events.length === 0}
+          onClick={() => setIsExpanded((current) => !current)}
+          type="button"
+        >
+          <span>
+            {events.length > 0
+              ? `${events.length} evento${events.length === 1 ? "" : "s"} ZAPI com atenção`
+              : "Falha ao verificar eventos ZAPI"}
+          </span>
+          <ChevronDown aria-hidden="true" size={16} />
+        </button>
+        <button
+          aria-label="Atualizar eventos ZAPI"
+          className="crm-icon-action"
+          disabled={isLoading}
+          onClick={() => void refresh()}
+          title="Atualizar eventos"
+          type="button"
+        >
+          <RefreshCw aria-hidden="true" />
+        </button>
+      </div>
       {error ? (
         <p>
           {formatApiErrorDisplay(error, "Nao foi possivel carregar eventos.")}

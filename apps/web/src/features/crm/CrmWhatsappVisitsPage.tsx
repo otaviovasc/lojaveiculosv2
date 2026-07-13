@@ -1,24 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarCheck, RefreshCw } from "lucide-react";
+import { CalendarCheck, Plus, RefreshCw } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmLeadVisit, LeadVisitStatus } from "./crmVisitsApi";
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
 import {
-  CreateVisitPanel,
+  isVisitScheduleValid,
+  visitCreationSteps,
+  VisitCreationStep,
+} from "./CrmWhatsappVisitCreation";
+import {
+  countVisitsByView,
   type CrmWhatsappVisitsPageProps,
   type VisitView,
-  VisitEmpty,
-  VisitRow,
+  VisitBoard,
+  visitsForView,
+  visitViewOrder,
 } from "./CrmWhatsappVisitsPageParts";
-
-const viewLabels: Record<VisitView, string> = {
-  today: "Hoje",
-  tomorrow: "Amanha",
-  upcoming: "Proximas",
-  overdue: "Atrasadas",
-  completed: "Concluidas",
-};
-const viewOrder = Object.keys(viewLabels) as VisitView[];
+import {
+  CrmWhatsappModeBar,
+  CrmWhatsappWorkflowFooter,
+  CrmWhatsappWorkflowStepper,
+} from "./CrmWhatsappWorkflow";
 
 export function CrmWhatsappVisitsPage({
   activeSession,
@@ -31,8 +33,10 @@ export function CrmWhatsappVisitsPage({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [mode, setMode] = useState<"create" | "list">("list");
   const [notes, setNotes] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
+  const [step, setStep] = useState(0);
   const [visits, setVisits] = useState<CrmLeadVisit[]>([]);
   const linkedLeadId = activeSession?.leadId ?? null;
 
@@ -58,23 +62,31 @@ export function CrmWhatsappVisitsPage({
     void refresh();
   }, [refresh]);
 
-  const viewVisits = useMemo(
-    () => visits.filter((visit) => visitMatchesView(visit, activeView)),
-    [activeView, visits],
-  );
-  const viewCounts = useMemo(
-    () =>
-      Object.fromEntries(
-        (Object.keys(viewLabels) as VisitView[]).map((view) => [
-          view,
-          visits.filter((visit) => visitMatchesView(visit, view)).length,
-        ]),
-      ) as Record<VisitView, number>,
-    [visits],
-  );
+  const resetCreation = () => {
+    setMode("list");
+    setNotes("");
+    setScheduledAt("");
+    setStep(0);
+    setError(null);
+  };
+
+  const startCreation = () => {
+    setMode("create");
+    setNotes("");
+    setScheduledAt("");
+    setStep(0);
+    setError(null);
+  };
 
   const createVisit = async () => {
-    if (!linkedLeadId || !scheduledAt || !canManage || isSaving) return;
+    if (
+      !linkedLeadId ||
+      !isVisitScheduleValid(scheduledAt) ||
+      !canManage ||
+      isSaving
+    ) {
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
@@ -87,8 +99,11 @@ export function CrmWhatsappVisitsPage({
           : {}),
       });
       setVisits((current) => [visit, ...current]);
-      setNotes("");
-      setScheduledAt("");
+      const createdView = visitViewOrder.find(
+        (view) => visitsForView([visit], view).length,
+      );
+      setActiveView(createdView ?? "upcoming");
+      resetCreation();
     } catch (caught) {
       setError(formatApiErrorDisplay(caught, "Nao foi possivel criar visita."));
     } finally {
@@ -129,124 +144,106 @@ export function CrmWhatsappVisitsPage({
     );
   }
 
+  const viewCounts = countVisitsByView(visits);
+  const viewVisits = visitsForView(visits, activeView);
+  const nextDisabled =
+    !canManage ||
+    !linkedLeadId ||
+    (step > 0 && !isVisitScheduleValid(scheduledAt));
+
   return (
     <section className="crm-whatsapp-section">
       <div className="crm-whatsapp-visits-page">
-        <header className="crm-whatsapp-visits-header">
-          <span aria-hidden="true">
-            <CalendarCheck className="size-5" />
-          </span>
-          <div>
-            <strong>Visitas</strong>
-            <h2>Visitas agendadas</h2>
-            <p>
-              Concentre as visitas do CRM em uma linha do tempo operacional.
-            </p>
-          </div>
-          <button
-            className="crm-action crm-action-secondary"
-            disabled={isLoading}
-            onClick={() => void refresh()}
-            type="button"
-          >
-            <RefreshCw aria-hidden="true" className="size-4" />
-            Atualizar
-          </button>
-        </header>
-
-        <div className="crm-whatsapp-visits-layout">
-          <CreateVisitPanel
-            activeSession={activeSession}
-            canManage={canManage}
-            isSaving={isSaving}
-            linkedLeadId={linkedLeadId}
-            notes={notes}
-            onCreate={() => void createVisit()}
-            onNotesChange={setNotes}
-            onScheduledAtChange={setScheduledAt}
-            scheduledAt={scheduledAt}
-          />
-
-          <section className="crm-whatsapp-visits-board">
-            {error ? (
-              <p className="crm-whatsapp-visits-error">{error}</p>
-            ) : null}
-
-            <div className="crm-whatsapp-visits-filters">
-              {viewOrder.map((view) => (
+        <CrmWhatsappModeBar
+          actions={
+            mode === "list" ? (
+              <>
                 <button
-                  aria-pressed={activeView === view}
-                  className={
-                    activeView === view
-                      ? "crm-whatsapp-visits-filter crm-whatsapp-visits-filter-active"
-                      : "crm-whatsapp-visits-filter"
-                  }
-                  key={view}
-                  onClick={() => setActiveView(view)}
+                  aria-label="Atualizar visitas"
+                  className="crm-icon-action"
+                  disabled={isLoading}
+                  onClick={() => void refresh()}
+                  title="Atualizar visitas"
                   type="button"
                 >
-                  {viewLabels[view]}
-                  <span>{viewCounts[view]}</span>
+                  <RefreshCw aria-hidden="true" />
                 </button>
-              ))}
-            </div>
+                <button
+                  className="crm-action"
+                  disabled={!canManage}
+                  onClick={startCreation}
+                  type="button"
+                >
+                  <Plus aria-hidden="true" />
+                  Nova visita
+                </button>
+              </>
+            ) : null
+          }
+          summary={
+            mode === "list"
+              ? `${visits.length} visitas carregadas`
+              : `Passo ${step + 1} de ${visitCreationSteps.length}`
+          }
+        >
+          <span className="crm-whatsapp-mode-label">
+            <CalendarCheck aria-hidden="true" />
+            {mode === "list" ? "Agenda operacional" : "Novo agendamento"}
+          </span>
+        </CrmWhatsappModeBar>
 
-            <div className="crm-whatsapp-visits-group">
-              <header>
-                <span />
-                <h3>{viewLabels[activeView]}</h3>
-              </header>
-              <div className="crm-whatsapp-visits-timeline">
-                {isLoading ? (
-                  <VisitEmpty label="Carregando visitas." />
-                ) : viewVisits.length ? (
-                  viewVisits.map((visit) => (
-                    <VisitRow
-                      canManage={canManage}
-                      isSaving={isSaving}
-                      key={visit.id}
-                      onStatus={(visit, status) =>
-                        void changeStatus(visit, status)
-                      }
-                      visit={visit}
-                    />
-                  ))
-                ) : (
-                  <VisitEmpty label="Nenhuma visita nesta visao." />
-                )}
-              </div>
+        {mode === "create" ? (
+          <div className="crm-whatsapp-workflow">
+            <CrmWhatsappWorkflowStepper
+              currentStep={step}
+              onStepChange={setStep}
+              steps={visitCreationSteps}
+            />
+            <div className="crm-whatsapp-visit-workflow-main">
+              {error ? (
+                <p className="crm-whatsapp-visits-error" role="alert">
+                  {error}
+                </p>
+              ) : null}
+              <VisitCreationStep
+                activeSession={activeSession}
+                notes={notes}
+                onNotesChange={setNotes}
+                onScheduledAtChange={setScheduledAt}
+                scheduledAt={scheduledAt}
+                step={step}
+              />
             </div>
-          </section>
-        </div>
+            <CrmWhatsappWorkflowFooter
+              backDisabled={step === 0}
+              confirmIcon={<CalendarCheck aria-hidden="true" />}
+              confirmLabel="Criar visita"
+              isBusy={isSaving}
+              isLastStep={step === visitCreationSteps.length - 1}
+              nextDisabled={nextDisabled}
+              onBack={() => setStep((current) => Math.max(0, current - 1))}
+              onCancel={resetCreation}
+              onNext={() =>
+                step === visitCreationSteps.length - 1
+                  ? void createVisit()
+                  : setStep((current) => current + 1)
+              }
+            />
+          </div>
+        ) : (
+          <VisitBoard
+            activeView={activeView}
+            canManage={canManage}
+            error={error}
+            isLoading={isLoading}
+            isSaving={isSaving}
+            onStatus={(visit, status) => void changeStatus(visit, status)}
+            onViewChange={setActiveView}
+            viewCounts={viewCounts}
+            visits={viewVisits}
+          />
+        )}
       </div>
     </section>
   );
-}
-
-function visitMatchesView(visit: CrmLeadVisit, view: VisitView) {
-  const scheduled = new Date(visit.scheduledAt);
-  const now = new Date();
-  const isClosed = ["cancelled", "completed", "no_show"].includes(visit.status);
-  if (view === "completed") return isClosed;
-  if (isClosed) return false;
-  if (view === "today") return isSameDay(scheduled, now);
-  if (view === "tomorrow") return isSameDay(scheduled, startOfTomorrow(now));
-  if (view === "overdue") return scheduled < startOfDay(now);
-  return scheduled >= startOfAfterTomorrow(now);
-}
-
-function isSameDay(left: Date, right: Date) {
-  return left.toDateString() === right.toDateString();
-}
-
-function startOfDay(value: Date) {
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-}
-
-function startOfTomorrow(value: Date) {
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate() + 1);
-}
-
-function startOfAfterTomorrow(value: Date) {
-  return new Date(value.getFullYear(), value.getMonth(), value.getDate() + 2);
 }

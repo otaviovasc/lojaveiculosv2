@@ -163,11 +163,13 @@ export function FeatureDrawer({
             {title}
           </h3>
           <button
+            aria-label="Fechar"
             className="feature-drawer__close"
             onClick={onClose}
+            title="Fechar"
             type="button"
           >
-            Fechar
+            <X aria-hidden="true" />
           </button>
         </div>
         <div className="feature-drawer__body">{children}</div>

@@ -3,6 +3,10 @@
   gap: 0.75rem;
 }
 
+.crm-whatsapp-visits-board > .crm-whatsapp-visits-error {
+  margin: 0;
+}
+
 .crm-whatsapp-visits-group > header {
   align-items: center;
   display: flex;

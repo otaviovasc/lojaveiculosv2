@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
-import { createRuntimeCrmWhatsappApi } from "./runtimeApi";
+import type { ProductCrmApi } from "./productCrmApi";
+import {
+  createRuntimeCrmWhatsappApi,
+  createRuntimeProductCrmApi,
+} from "./runtimeApi";
 import { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import { WhatsappNotice } from "./CrmWhatsappNotice";
 import { CrmWhatsappNewConversationDialog } from "./CrmWhatsappNewConversationDialog";
@@ -20,11 +24,22 @@ import {
   WhatsappSchedulesSection,
 } from "./CrmWhatsappScopedSections";
 import { CrmWhatsappVisitsPage } from "./CrmWhatsappVisitsPage";
+import { MessageCircle, PlugZap } from "lucide-react";
 
-export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
+export function CrmWhatsappInbox({
+  api,
+  productApi,
+}: {
+  api?: CrmWhatsappApi;
+  productApi?: ProductCrmApi;
+}) {
   const whatsappApi = useMemo(
     () => api ?? createRuntimeCrmWhatsappApi(),
     [api],
+  );
+  const leadApi = useMemo(
+    () => productApi ?? createRuntimeProductCrmApi(),
+    [productApi],
   );
   const inbox = useCrmWhatsappInbox(whatsappApi);
   const [activeScope, setActiveScope] =
@@ -56,9 +71,6 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
           )}
         />
       ) : null}
-      {inbox.hasConnection === false ? (
-        <WhatsappNotice message="Nenhuma conexão WhatsApp ativa foi encontrada para a loja." />
-      ) : null}
       {!inbox.permissions.canList ? (
         <WhatsappNotice message="Seu usuario nao tem permissao para visualizar o WhatsApp CRM." />
       ) : null}
@@ -73,12 +85,19 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             unreadCount={unreadCount}
           />
           {activeScope === "conversations" ? (
-            <CrmWhatsappConversationWorkspace
-              inbox={inbox}
-              onScopeChange={setActiveScope}
-              onStartConversation={() => setNewConversationOpen(true)}
-              status={status}
-            />
+            inbox.hasConnection === false ? (
+              <WhatsappDisconnectedState
+                canManage={inbox.permissions.canConnectionManage}
+                onConnect={() => setActiveScope("connection")}
+              />
+            ) : (
+              <CrmWhatsappConversationWorkspace
+                inbox={inbox}
+                onScopeChange={setActiveScope}
+                onStartConversation={() => setNewConversationOpen(true)}
+                status={status}
+              />
+            )
           ) : null}
           {activeScope === "connection" ? (
             <section className="crm-whatsapp-section">
@@ -93,7 +112,11 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
             </section>
           ) : null}
           {activeScope === "campaigns" ? (
-            <WhatsappCampaignsSection api={whatsappApi} inbox={inbox} />
+            <WhatsappCampaignsSection
+              api={whatsappApi}
+              inbox={inbox}
+              leadApi={leadApi}
+            />
           ) : null}
           {activeScope === "schedules" ? (
             <WhatsappSchedulesSection inbox={inbox} />
@@ -137,5 +160,37 @@ export function CrmWhatsappInbox({ api }: { api?: CrmWhatsappApi }) {
         />
       ) : null}
     </main>
+  );
+}
+
+function WhatsappDisconnectedState({
+  canManage,
+  onConnect,
+}: {
+  canManage: boolean;
+  onConnect: () => void;
+}) {
+  return (
+    <section className="crm-whatsapp-disconnected">
+      <span className="crm-whatsapp-disconnected-icon">
+        <MessageCircle aria-hidden="true" />
+      </span>
+      <div>
+        <strong>WhatsApp desconectado</strong>
+        <h2>Conecte o numero da loja para abrir o atendimento.</h2>
+        <p>
+          As conversas e ferramentas de envio aparecem assim que a conexao
+          estiver ativa.
+        </p>
+      </div>
+      {canManage ? (
+        <button className="crm-action" onClick={onConnect} type="button">
+          <PlugZap aria-hidden="true" />
+          Configurar conexao
+        </button>
+      ) : (
+        <p>Solicite a um administrador da loja para configurar a conexao.</p>
+      )}
+    </section>
   );
 }

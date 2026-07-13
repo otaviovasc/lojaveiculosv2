@@ -14,15 +14,14 @@ test.describe("billing automatic monthly charge", () => {
       persona: qaPersonas.owner,
     });
     await installBillingRoutes(page);
-
     await page.goto("/billing");
-
+    await page.getByRole("tab", { name: "Cobrança" }).click();
     await expect(
-      page.getByRole("heading", { name: "Cobranca automatica mensal" }),
+      page.getByRole("heading", { name: "Como seu investimento se divide" }),
     ).toBeVisible();
     const automaticPanel = page.locator(".billing-auto-panel");
     await expect(page.getByText("Agencia", { exact: true })).toBeVisible();
-    await expect(page.getByText("Sem taxa de agencia")).toBeVisible();
+    await expect(page.getByText("Valor direto por loja")).toBeVisible();
     await expect(
       automaticPanel.locator(".billing-auto-summary").getByText(/R\$\s*777,99/),
     ).toBeVisible();
@@ -42,11 +41,11 @@ test.describe("billing automatic monthly charge", () => {
       automaticPanel.getByRole("cell", { name: "29.43%" }),
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "billing-automatic-desktop");
-
     await setQaViewport(page, "mobile");
     await page.reload();
+    await page.getByRole("tab", { name: "Cobrança" }).click();
     await expect(
-      page.getByRole("heading", { name: "Cobranca automatica mensal" }),
+      page.getByRole("heading", { name: "Como seu investimento se divide" }),
     ).toBeVisible();
     await expect(
       page
@@ -80,8 +79,19 @@ async function installBillingRoutes(page: Page) {
     });
   });
 }
-
 const billingOverview = {
+  addons: [
+    {
+      catalogVersion: "2026-07-v1",
+      code: "crm_whatsapp_instance",
+      featureKey: "crm",
+      id: "addon_crm_whatsapp",
+      includedInTrial: true,
+      monthlyPriceCents: 24999,
+      name: "CRM WhatsApp",
+      status: "active",
+    },
+  ],
   allocations: [
     {
       activeEntitlementCount: 5,
@@ -202,7 +212,7 @@ const billingOverview = {
     {
       endsAt: null,
       featureKey: "crm",
-      includedInPlan: true,
+      includedInPlan: false,
       limitValue: null,
       source: "billing_console",
       startsAt: null,

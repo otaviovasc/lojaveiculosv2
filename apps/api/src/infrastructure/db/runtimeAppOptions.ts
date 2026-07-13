@@ -23,7 +23,6 @@ import {
   type RoleServices,
 } from "../../features/identity/controllers/roleServices.js";
 import { createAccountProvisioningServices } from "../../features/identity/controllers/accountProvisioningServices.js";
-import type { InvitationSender } from "../../domains/identity/ports/accountProvisioningRepository.js";
 import type { CreateAppOptions } from "../http/createApp.js";
 import {
   createDrizzleStoreAccessRepository,
@@ -33,7 +32,6 @@ import {
   createDrizzleAccountProvisioningRepository,
   type DrizzleAccountProvisioningClient,
 } from "./identity/drizzleAccountProvisioningRepository.js";
-import type { ClerkUserProfileProvider } from "../auth/clerkAccountProvisioning.js";
 import { createDrizzlePublicStorefrontRepository } from "./storefront/drizzlePublicStorefrontRepository.js";
 import type { DrizzlePublicStorefrontClient } from "./storefront/drizzlePublicStorefrontQueryTypes.js";
 import {
@@ -60,6 +58,10 @@ import {
 } from "./billing/drizzleBillingRepository.js";
 import { createDrizzleBillingProviderRepository } from "./billing/drizzleBillingProviderRepository.js";
 import { createDrizzleBillingWebhookRepository } from "./billing/drizzleBillingWebhookRepository.js";
+import {
+  createDrizzleBillingQuotaGuard,
+  type DrizzleBillingQuotaClient,
+} from "./billing/drizzleBillingQuotaGuard.js";
 import type { DrizzleMarketplaceClient } from "./marketplace/drizzleMarketplaceRepository.js";
 import { createMarketplaceGatewayRegistry } from "../marketplace/marketplaceGatewayRegistry.js";
 import {
@@ -80,19 +82,7 @@ import { createRuntimeInventoryEnrichmentServices } from "./runtimeInventoryEnri
 import { createRuntimeAutomationServices } from "./runtimeAutomationServices.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 import { createRuntimeSalesServices } from "./runtimeSalesServices.js";
-import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
-type RuntimeHttpAppOptionsInput = {
-  auditDb: unknown | null;
-  clerkAccountProviders?: {
-    clerkUserProfileProvider?: ClerkUserProfileProvider;
-    invitationSender?: InvitationSender;
-  };
-  db: unknown;
-  env: Record<string, string | undefined>;
-  crmRealtimeBroker: CrmRealtimeBroker;
-  identityVerifier: CreateAppOptions["identityVerifier"] | null;
-  objectStorage: ObjectStorage | null;
-};
+import type { RuntimeHttpAppOptionsInput } from "./runtimeAppOptionsTypes.js";
 
 export function createRuntimeHttpAppOptions({
   auditDb,
@@ -119,6 +109,9 @@ export function createRuntimeHttpAppOptions({
         : {}),
       repository: createDrizzleAccountProvisioningRepository(
         db as DrizzleAccountProvisioningClient,
+      ),
+      quotaGuard: createDrizzleBillingQuotaGuard(
+        db as DrizzleBillingQuotaClient,
       ),
     }),
     billingServices: createBillingServices({

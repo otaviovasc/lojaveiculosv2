@@ -2,7 +2,7 @@ import { KeyRound, Save, ShieldCheck } from "lucide-react";
 import { ConnectionSectionCard } from "./CrmWhatsappConnectionAdminParts";
 import type { CrmWhatsappProviderConnection } from "./crmWhatsappTypes";
 
-type InstanceDraft = {
+export type InstanceDraft = {
   instanceId: string;
   instanceToken: string;
 };
@@ -12,23 +12,22 @@ export function ConnectionInstanceForm({
   disabled,
   draft,
   isSaving,
+  embedded = false,
+  hideSave = false,
   onChange,
   onSave,
 }: {
   connection: CrmWhatsappProviderConnection;
   disabled: boolean;
   draft: InstanceDraft;
+  embedded?: boolean;
+  hideSave?: boolean;
   isSaving: boolean;
   onChange: (draft: InstanceDraft) => void;
   onSave: () => void;
 }) {
-  return (
-    <ConnectionSectionCard
-      className="crm-whatsapp-connection-instance-card"
-      description="Atualize somente os dados da instancia ZAPI. O token salvo nunca volta para o navegador."
-      icon={<KeyRound aria-hidden="true" />}
-      title="Instancia ZAPI"
-    >
+  const fields = (
+    <>
       {connection.credentials?.storedInstanceConfigured ? (
         <div className="crm-whatsapp-connection-protected-note">
           <ShieldCheck aria-hidden="true" />
@@ -66,15 +65,17 @@ export function ConnectionInstanceForm({
             value={draft.instanceToken}
           />
         </label>
-        <button
-          className="crm-whatsapp-connection-save"
-          disabled={disabled || isSaving}
-          onClick={onSave}
-          type="button"
-        >
-          <Save aria-hidden="true" />
-          {isSaving ? "Salvando" : "Salvar instancia"}
-        </button>
+        {hideSave ? null : (
+          <button
+            className="crm-whatsapp-connection-save"
+            disabled={disabled || isSaving}
+            onClick={onSave}
+            type="button"
+          >
+            <Save aria-hidden="true" />
+            {isSaving ? "Salvando" : "Salvar instancia"}
+          </button>
+        )}
       </div>
       {disabled ? (
         <p className="crm-whatsapp-connection-disabled">
@@ -82,6 +83,19 @@ export function ConnectionInstanceForm({
           credenciais.
         </p>
       ) : null}
+    </>
+  );
+
+  if (embedded) return fields;
+
+  return (
+    <ConnectionSectionCard
+      className="crm-whatsapp-connection-instance-card"
+      description="Atualize somente os dados da instancia ZAPI. O token salvo nunca volta para o navegador."
+      icon={<KeyRound aria-hidden="true" />}
+      title="Instancia ZAPI"
+    >
+      {fields}
     </ConnectionSectionCard>
   );
 }

@@ -11,7 +11,6 @@ import {
   assertVerifiedPrimaryEmail,
   normalizePublicSlug,
   requireClerkActor,
-  trialEntitlements,
   type AccountProvisioningPorts,
 } from "./serviceSupport.js";
 
@@ -43,7 +42,6 @@ export async function createOwnerStore(
   );
 
   const store = await ports.accountProvisioningRepository.createOwnerStore({
-    entitlements: trialEntitlements,
     ...(input.profile ? { profile: input.profile } : {}),
     publicSlug,
     storeLegalName: input.storeLegalName ?? null,
@@ -65,7 +63,9 @@ export async function createOwnerStore(
     entityId: store.storeId,
     entityType: "store",
     metadata: {
-      entitlements: [...trialEntitlements],
+      catalogVersion: store.catalogVersion,
+      entitlementEndsAt: store.entitlementEndsAt,
+      entitlements: store.entitlements,
       role: store.role,
       storeSlug: store.storeSlug,
     },

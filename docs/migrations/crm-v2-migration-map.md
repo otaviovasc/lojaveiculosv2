@@ -1,6 +1,6 @@
 # CRM V2 Migration Map
 
-Last updated: 2026-07-07
+Last updated: 2026-07-12
 
 This map coordinates vertical slices for the Loja Veiculos V2 CRM migration.
 It reconciles current V2 code, `docs/migration.md`, `v2-plan.html`,
@@ -49,12 +49,18 @@ Already V2-owned:
   events, handback summaries, dispatch audit, and system-origin scheduled sends.
 - Persistent WhatsApp campaigns with recipient rows, scheduled-message linkage,
   send/reply metrics, and reply-triggered secondary messages.
+- Filtered V2 lead campaign audiences resolved to linked WhatsApp sessions.
+- Atomic campaign reply claiming that prevents duplicate metrics and secondary
+  schedules under concurrent replies.
+- WhatsApp-style Conversas desktop/mobile UI with explicit mobile panes,
+  disconnected-first routing, safe-area composer, and message day separators.
 
-Still incomplete:
+Still incomplete for production sign-off:
 
-- Filtered lead campaign source and full mobile evidence.
-- Remaining UI parity is concentrated in Conversas and full mobile evidence.
-- Full Playwright/mobile evidence for the migrated CRM OS.
+- Railway scheduled-message cron provisioning and verification.
+- Live Z-API, R2, and Redis smoke/load/recovery evidence.
+- Historical Repasses import only if the product reverses its current
+  migration-deferred decision.
 
 ## Slice Map
 
@@ -62,7 +68,7 @@ Still incomplete:
 | ------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | Phase 0 control plane          | Active    | `docs/migrations/**`, optional CRM notes in `docs/migration.md`                                                                                      | `v2-backend-doc.html`, `v2-plan.html`                       | Keep docs current before worker edits.                                          |
 | Phase 1 permissions/foundation | Completed | `apps/api/src/domains/identity/domain/*permission*`, `apps/web/src/features/crm/crmWhatsappPermissions.ts`, focused CRM service permission constants | Existing CRM permission tests                               | Normalized names without weakening current access.                              |
-| Shell/nav                      | Completed | `CrmWhatsappScopedNav.tsx`, `CrmWhatsappInbox.tsx`, `CrmWhatsappConversationWorkspace.tsx`, CRM WhatsApp CSS                                         | `CrmNavbar.tsx`, `CrmWhatsApp.tsx`                          | Removed tab subtitles; renamed `Conexao ZAPI` to `Conexao`.                     |
+| Shell/nav                      | Completed | `CrmWhatsappScopedNav.tsx`, `CrmWhatsappMobileNav.tsx`, `CrmWhatsappInbox.tsx`, `CrmWhatsappConversationWorkspace.tsx`, CRM WhatsApp CSS             | `CrmNavbar.tsx`, `CrmWhatsApp.tsx`                          | Desktop scoped tabs plus the Repasses-derived mobile 3+Mais bottom navigation.  |
 | Connection page                | Completed | `CrmWhatsappConnectionAdmin.tsx`, `CrmWhatsappConnectionAdminParts.tsx`, `useCrmWhatsappConnections.ts`, CSS                                         | `CrmIntegracoes.tsx`, backend connection controllers        | Simple operations page: status, two write-only ZAPI values, webhooks.           |
 | Tags page                      | Completed | `CrmWhatsappTagManager.tsx`, `CrmWhatsappTagManagerParts.tsx`, `useCrmWhatsappTags.ts`, tag API tests                                                | `CrmEtiquetas.tsx`, `SortableTagItem.tsx`                   | Repasses-style preview/swatches/emoji/list rows; no column/pipeline semantics.  |
 | Pipeline persistence           | Completed | new CRM pipeline schema/service/controller/API client; replace `crmPipelineStorage.ts`                                                               | V2 lead/pipeline UI                                         | Landed before campaign/visit deep linking.                                      |
@@ -71,9 +77,9 @@ Still incomplete:
 | Schedules page                 | Completed | `CrmWhatsappSchedulesPage.tsx`, `CrmWhatsappScheduleMessageList.tsx`, scheduled routes/tests                                                         | `CrmAgendamentos.tsx`, scheduled job                        | Repasses-style status tabs, stable counts, and schedule cards.                  |
 | Integrations/bot               | Completed | bot integration schema/services/controllers, action API, dispatcher port, `CrmWhatsappIntegrationsPage.tsx`                                          | `BotEventNotificationService.ts`, `BotActionsController.ts` | Repasses-style config/docs UI; forwards message/intervention events with audit. |
 | Campaign backend               | Completed | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, campaign migrations/reply handler       | V2 campaigns persist metrics and reply tracking.                                |
-| Campaign UI                    | Active    | `CrmWhatsappCampaignsPage.tsx`, campaign overview/detail/tests/CSS                                                                                   | `CrmCampaigns.tsx`                                          | Recipient review and detail filters landed; lead-source/mobile polish remains.  |
-| Conversas parity polish        | Pending   | existing WhatsApp workspace, message actions, details panel, mobile CSS/tests                                                                        | `CrmWhatsApp.tsx`, `CrmChatSession.tsx`                     | Keep chat focused; no placeholders.                                             |
-| QA/evidence                    | Pending   | Playwright specs, evidence docs/screenshots                                                                                                          | current QA reports                                          | Must run throughout, not only at the end.                                       |
+| Campaign UI                    | Completed | `CrmWhatsappCampaignsPage.tsx`, campaign audience/review/overview/detail/tests/CSS                                                                   | `CrmCampaigns.tsx`                                          | Full-session and filtered-lead sources use V2 UUID contracts.                   |
+| Conversas parity polish        | Completed | WhatsApp workspace, message actions, mobile panes, disconnected state, chat CSS/tests                                                                | `CrmWhatsApp.tsx`, `CrmChatSession.tsx`                     | Desktop/mobile conversation evidence passes.                                    |
+| QA/evidence                    | Active    | Playwright specs, evidence docs/screenshots                                                                                                          | current QA reports                                          | Desktop/mobile UI evidence passes; live provider evidence remains.              |
 
 ## Worker Ownership Rules
 

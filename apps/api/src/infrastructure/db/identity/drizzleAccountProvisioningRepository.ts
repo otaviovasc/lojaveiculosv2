@@ -6,12 +6,11 @@ import {
   type CreateAgencyRecordInput,
   type CreateAgencyStoreRecordInput,
   type CreateOwnerStoreRecordInput,
-  type CreateStoreInvitationRecordInput,
-  type IdentityInvitationRecord,
   type ProvisionedStoreRecord,
   type SessionBootstrapRecord,
 } from "../../../domains/identity/ports/accountProvisioningRepository.js";
 import { insertBillingDefaults } from "./drizzleAccountProvisioningBilling.js";
+import { createStoreInvitation } from "./drizzleAccountProvisioningStoreInvitations.js";
 import { lockUserProvisioning } from "./drizzleAccountProvisioningLocks.js";
 import {
   assertSlugsAvailable,
@@ -139,15 +138,14 @@ async function createOwnerStore(
       user.id,
       roleTemplateId,
     );
-    await insertStoreDefaults(
+    const billing = await insertBillingDefaults(
       tx,
-      tenant.id,
-      store.id,
+      tenant,
+      store,
       input.profile,
-      input.entitlements,
     );
-    await insertBillingDefaults(tx, tenant, store, input.profile);
-    return toProvisionedStore(tenant, store, "owner");
+    await insertStoreDefaults(tx, tenant.id, store.id, input.profile, billing);
+    return toProvisionedStore(tenant, store, "owner", billing);
   });
 }
 
@@ -224,23 +222,19 @@ async function createAgencyStore(
       input.actorUserId,
       roleTemplateId,
     );
+    const billing = await insertBillingDefaults(
+      tx,
+      tenant,
+      store,
+      input.profile,
+    );
     await insertStoreDefaults(
       tx,
       input.tenantId,
       store.id,
       input.profile,
-      input.entitlements,
+      billing,
     );
-    await insertBillingDefaults(tx, tenant, store, input.profile);
-    return toProvisionedStore(tenant, store, "agency");
+    return toProvisionedStore(tenant, store, "agency", billing);
   });
-}
-
-async function createStoreInvitation(
-  db: DrizzleAccountProvisioningClient,
-  input: CreateStoreInvitationRecordInput,
-): Promise<IdentityInvitationRecord> {
-  return db.transaction(async (transaction) =>
-    insertInvitation(transaction as DrizzleAccountProvisioningClient, input),
-  );
 }

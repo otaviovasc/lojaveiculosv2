@@ -4,7 +4,7 @@ import type {
   BillingPlan,
   BillingSubscription,
 } from "../../../domains/billing/ports/billingRepository.js";
-import { isUsableEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
+import { isEffectiveEntitlement } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import { listChargeables } from "./drizzleBillingOverviewSupport.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
@@ -42,7 +42,7 @@ export async function listStoreScopedAllocations(
 
     return {
       activeEntitlementCount: entitlements.filter((item) =>
-        isUsableEntitlement(item.status),
+        isEffectiveEntitlement(item),
       ).length,
       addonCount: items.filter((item) => item.itemType === "addon").length,
       monthlyAmountCents: items.reduce(

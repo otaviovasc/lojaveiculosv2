@@ -16,10 +16,11 @@ import {
   createBillingAuthority,
   createBillingOverview,
   createEntitlementMatrix,
-  isUsableEntitlement,
+  isEffectiveEntitlement,
 } from "../../../domains/billing/readModels/billingOverviewModel.js";
 import {
   findTenantSubscription,
+  listAddons,
   listPlans,
 } from "./drizzleBillingCatalogSupport.js";
 import {
@@ -42,24 +43,31 @@ export async function getTenantOverview(
     .limit(1);
   if (!tenant) throw new Error("Tenant not found.");
 
-  const [billingPlans, storeRows, entitlementRows, subscription, events] =
-    await Promise.all([
-      listPlans(db),
-      db
-        .select()
-        .from(stores)
-        .where(
-          and(eq(stores.tenantId, input.tenantId), eq(stores.isDeleted, false)),
-        )
-        .limit(100),
-      db
-        .select()
-        .from(storeEntitlements)
-        .where(eq(storeEntitlements.tenantId, input.tenantId))
-        .limit(500),
-      findTenantSubscription(db, input),
-      listTenantEntitlementEvents(db, input),
-    ]);
+  const [
+    addons,
+    billingPlans,
+    storeRows,
+    entitlementRows,
+    subscription,
+    events,
+  ] = await Promise.all([
+    listAddons(db),
+    listPlans(db),
+    db
+      .select()
+      .from(stores)
+      .where(
+        and(eq(stores.tenantId, input.tenantId), eq(stores.isDeleted, false)),
+      )
+      .limit(100),
+    db
+      .select()
+      .from(storeEntitlements)
+      .where(eq(storeEntitlements.tenantId, input.tenantId))
+      .limit(500),
+    findTenantSubscription(db, input),
+    listTenantEntitlementEvents(db, input),
+  ]);
   const [chargeables, financialSummary, vehicleRows] = await Promise.all([
     listChargeables(db, input, billingPlans, subscription),
     getFinancialSummary(db, input, subscription),
@@ -88,12 +96,14 @@ export async function getTenantOverview(
   );
 
   return {
+    addons,
     allocations: storesOverview.map(toAllocation),
     authority: createBillingAuthority({
       billingManagedBy: "agency",
       currentActorCanManage: input.currentActorCanManage ?? true,
     }),
     chargePreview: createBillingOverview({
+      addons,
       chargeables,
       entitlements: [],
       financialSummary,
@@ -171,7 +181,7 @@ function toAgencyManagedStoreOverview(input: {
 
   return {
     activeEntitlementCount: entitlements.filter((item) =>
-      isUsableEntitlement(item.status),
+      isEffectiveEntitlement(item),
     ).length,
     addonCount: chargeables.filter((item) => item.itemType === "addon").length,
     createdAt: input.store.createdAt,

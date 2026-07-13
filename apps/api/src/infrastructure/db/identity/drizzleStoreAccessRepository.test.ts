@@ -159,4 +159,29 @@ describe("Drizzle store access repository", () => {
       }),
     ).resolves.toBeNull();
   });
+
+  it("excludes trial entitlements after their effective expiry", async () => {
+    const rows = createStoreAccessRows({
+      entitlements: [
+        {
+          endsAt: new Date("2026-01-31T00:00:00.000Z"),
+          featureKey: "crm",
+          startsAt: new Date("2026-01-01T00:00:00.000Z"),
+          status: "trialing",
+          storeId: "store_1" as never,
+        },
+      ],
+    });
+    const repository = createDrizzleStoreAccessRepository(
+      createFakeStoreAccessDb(rows),
+      () => new Date("2026-02-01T00:00:00.000Z"),
+    );
+
+    const access = await repository.findByClerkUserAndStoreSlug({
+      clerkUserId: "clerk_1",
+      storeSlug: "demo",
+    });
+
+    expect(access?.entitlements).toEqual([]);
+  });
 });

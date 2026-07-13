@@ -14,6 +14,19 @@ as the CRM backend during the transition.
 - Loja V1: read as source of truth for current behavior and production data
   migration, but do not continue its architecture.
 
+## Product Direction
+
+- Current strategic guardrail:
+  [`docs/strategy/product-operating-model.md`](docs/strategy/product-operating-model.md).
+- July 2026 business and scale audit:
+  [`docs/strategy/2026-07-business-scale-audit.md`](docs/strategy/2026-07-business-scale-audit.md).
+- `docs/feature-inventory.md` tracks technical surfaces. Commercial readiness
+  additionally requires customer evidence, billing, telemetry, support,
+  compliance, migration, and rollback.
+- The opening wedge is the independent used-vehicle retailer's controlled
+  acquisition-to-cash loop: true cost, stock turn, lead execution, closing,
+  documents, fiscal, and RENAVE reconciliation through an authorized provider.
+
 ## Workspace
 
 ```text

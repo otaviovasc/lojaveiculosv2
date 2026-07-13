@@ -105,7 +105,13 @@ export async function insertStoreDefaults(
   tenantId: string,
   storeId: string,
   profile: StoreProfileDraft | undefined,
-  entitlements: readonly EntitlementKey[],
+  billing: {
+    catalogVersion: string;
+    endsAt: Date | null;
+    entitlements: readonly EntitlementKey[];
+    startsAt: Date;
+    status: "active" | "trialing";
+  },
 ) {
   await Promise.all([
     db
@@ -119,8 +125,8 @@ export async function insertStoreDefaults(
     db
       .insert(storeEntitlements)
       .values(
-        entitlements.map((featureKey) =>
-          toEntitlement(tenantId, storeId, featureKey),
+        billing.entitlements.map((featureKey) =>
+          toEntitlement(tenantId, storeId, featureKey, billing),
         ),
       )
       .onConflictDoNothing(),
@@ -172,8 +178,16 @@ export function toProvisionedStore(
   tenant: typeof tenants.$inferSelect,
   store: typeof stores.$inferSelect,
   role: RoleKey,
+  billing: {
+    catalogVersion: string;
+    endsAt: Date | null;
+    entitlements: readonly EntitlementKey[];
+  },
 ): ProvisionedStoreRecord {
   return {
+    catalogVersion: billing.catalogVersion,
+    entitlementEndsAt: billing.endsAt?.toISOString() ?? null,
+    entitlements: billing.entitlements,
     role,
     storeId: store.id as never,
     storeName: store.tradingName,
@@ -202,13 +216,23 @@ function toEntitlement(
   tenantId: string,
   storeId: string,
   featureKey: EntitlementKey,
+  billing: {
+    catalogVersion: string;
+    endsAt: Date | null;
+    startsAt: Date;
+    status: "active" | "trialing";
+  },
 ) {
   return {
+    endsAt: billing.endsAt,
     featureKey,
-    metadata: { sourceDetail: "trial_bootstrap" },
-    source: "trial_bootstrap",
-    status:
-      featureKey === "subdomain" ? ("active" as const) : ("trialing" as const),
+    metadata: {
+      catalogVersion: billing.catalogVersion,
+      sourceDetail: "billing_catalog",
+    },
+    source: "billing_catalog",
+    startsAt: billing.startsAt,
+    status: billing.status,
     storeId,
     tenantId,
   };

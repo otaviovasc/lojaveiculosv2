@@ -1,7 +1,33 @@
 # Production Readiness
 
 This document tracks the runtime work needed to run V2 in production after code
-deployment. Historical V1 migration execution is intentionally deferred.
+deployment. Technical deployment readiness does not imply commercial launch or
+active-customer cutover readiness.
+
+## Commercial Launch Blockers
+
+Before broad customer onboarding or any V1 shutdown:
+
+- Rehearse and accept at least three representative V1 store migrations with
+  rerunnable importers, parity evidence, and rollback.
+- Fix server-owned price-book versioning, CRM packaging, trial expiry,
+  subscription-to-entitlement reconciliation, quotas, dunning, and cancellation
+  reasons.
+- Add minimal SaaS product events, activation milestones, account health, and
+  cohort retention reporting.
+- Split private documents/finance artifacts from public media storage and move
+  CRM/provider secrets behind an encrypted credential boundary.
+- Add a reviewed production schema-migration path, backup/restore evidence, and
+  real dependency readiness checks.
+- Integrate an independent authorized RENAVE provider before displaying or
+  claiming official RENAVE success.
+- Verify SPEDY's typed NF-e contract for the required 2026 IBS/CBS fields and
+  reconcile fiscal and RENAVE vehicle movements.
+- Replace long synchronous provider work with durable idempotent execution where
+  the workflow can outlive one HTTP request.
+
+The complete business and scale gate is documented in
+`docs/strategy/product-operating-model.md`.
 
 ## Current Readiness
 

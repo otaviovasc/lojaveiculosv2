@@ -4,6 +4,32 @@ This document is the source of truth for Loja Veiculos V2 billing behavior.
 Update it whenever pricing, ownership, provider integration, or entitlement
 rules change.
 
+## Commercial Readiness
+
+The base commercial contract is now enforced by the runtime:
+
+- onboarding selects the latest published default catalog and never writes plan,
+  feature, or add-on definitions;
+- Growth and CRM WhatsApp are separate chargeable products in catalog version
+  `2026-07-v1`; CRM may be granted during the trial without becoming a base-plan
+  feature;
+- trial grants inherit the subscription start and end, expired grants are
+  excluded from authenticated and external-API access, and billing reads expose
+  an elapsed trial as `expired`;
+- seller/team, vehicle-stock, and monthly plate-lookup limits are checked in the
+  business operation before the paid or persistent action runs;
+- vehicle creation and store invitations repeat their quota check inside the
+  database transaction used for persistence.
+
+The following lifecycle capabilities remain incomplete and are separate from
+the base plan/entitlement leakage repaired above:
+
+- cancellation reasons, dunning/grace policy, annual contracts, usage rating,
+  and measured provider-cost margin are incomplete.
+
+Target billing and product metrics are documented in
+`docs/strategy/product-operating-model.md`.
+
 ## Account Authority
 
 - `tenants` are billing/legal accounts.
@@ -24,6 +50,10 @@ rules change.
 - Current seed pricing:
   - Growth plan: `29900` cents monthly.
   - CRM WhatsApp add-on: `24999` cents monthly.
+- Growth limits in catalog `2026-07-v1`:
+  - 8 active/pending team seats per store;
+  - 300 non-deleted vehicle listings per store;
+  - 300 paid plate lookups per billing period.
 - CRM WhatsApp has lower gross margin because the Z-API instance cost is about
   R$100/month; keep that cost visible when changing price.
 
@@ -70,6 +100,9 @@ rules change.
 - Permissions control who may use or manage entitled features.
 - Enabling an entitlement without a matching subscription item is allowed only
   as an explicit billing-console action with audit evidence.
+- Customer-facing package cards are commercial read models. They must not call
+  the entitlement override endpoint as a substitute for adding or removing a
+  subscription item.
 - Every entitlement change must record `store_entitlement_events` and an audit
   event.
 

@@ -27,7 +27,7 @@ test.describe("CRM WhatsApp visits", () => {
     await page.getByRole("tab", { name: /Visitas/ }).click();
 
     await expect(
-      page.getByRole("heading", { name: "Visitas agendadas" }),
+      page.getByRole("button", { name: "Nova visita" }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: /Hoje/ })).toContainText("1");
     await expect(page.getByRole("button", { name: /Amanha/ })).toContainText(
@@ -39,6 +39,23 @@ test.describe("CRM WhatsApp visits", () => {
     await expect(page.getByText("Test drive com Bruno")).toBeVisible();
     await expect(page.getByText("Fechamento premium")).not.toBeVisible();
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-visits");
+
+    await page.getByRole("button", { name: "Nova visita" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Confirme o cliente" }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await page
+      .getByLabel("Data da visita")
+      .fill(toDateTimeLocal(dateAtOffset(2)));
+    await page
+      .getByLabel("Observacoes da visita")
+      .fill("Separar o veiculo antes da chegada.");
+    await page.getByRole("button", { name: "Continuar" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Revise o agendamento" }),
+    ).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-visit-workflow");
   });
 });
 
@@ -101,4 +118,9 @@ function dateAtOffset(days: number) {
   value.setDate(value.getDate() + days);
   value.setHours(15, 0, 0, 0);
   return value;
+}
+
+function toDateTimeLocal(value: Date) {
+  const offset = value.getTimezoneOffset();
+  return new Date(value.getTime() - offset * 60_000).toISOString().slice(0, 16);
 }

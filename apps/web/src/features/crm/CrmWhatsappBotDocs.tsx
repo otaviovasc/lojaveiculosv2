@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import {
   Bot,
+  ChevronDown,
   Code2,
   Copy,
   FileJson,
-  FileText,
   KeyRound,
   ShieldCheck,
 } from "lucide-react";
@@ -23,17 +23,10 @@ export function CrmWhatsappBotDocs() {
   const [method, path] = botEndpoint.split(" ");
 
   return (
-    <section className="crm-whatsapp-bot-docs">
-      <header>
-        <span>
-          <FileText aria-hidden="true" />
-        </span>
-        <div>
-          <p>Bot externo</p>
-          <h2>Documentacao operacional</h2>
-        </div>
-      </header>
-
+    <section
+      aria-label="Documentacao operacional do bot"
+      className="crm-whatsapp-bot-docs"
+    >
       <div className="crm-whatsapp-bot-docs-grid">
         {botDocCards.map((card) => (
           <article key={card.title}>
@@ -168,13 +161,17 @@ function DocPanel({
   title: string;
 }) {
   return (
-    <details className="crm-whatsapp-bot-doc-panel" open>
+    <details className="crm-whatsapp-bot-doc-panel">
       <summary>
         <span>{icon}</span>
         <div>
           <h3>{title}</h3>
           <p>{description}</p>
         </div>
+        <ChevronDown
+          aria-hidden="true"
+          className="crm-whatsapp-bot-doc-chevron"
+        />
       </summary>
       <div className="crm-whatsapp-bot-doc-panel-body">{children}</div>
     </details>

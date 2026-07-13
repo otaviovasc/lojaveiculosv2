@@ -41,28 +41,32 @@ test.describe("CRM WhatsApp integrations", () => {
     );
 
     await page.goto("/crm#/crm?surface=whatsapp");
-    await page.getByRole("tab", { name: /Integracoes/ }).click();
+    await page.getByRole("tab", { name: /Integrações/ }).click();
 
     await expect(
       page.getByRole("heading", { name: "Bot externo" }),
     ).toBeVisible();
-    await expect(
-      page.getByText("X-Webhook-Secret: seu-segredo").first(),
-    ).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-integrations");
+    await page.getByRole("tab", { name: "Eventos" }).click();
+    await expect(page.getByText("Nenhum evento exige atenção")).toBeVisible();
+    await page.getByRole("tab", { name: "Referencia" }).click();
     await expect(page.getByText("Payload do webhook")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Bot Action API" }),
     ).toBeVisible();
+    await expect(page.locator("details[open]")).toHaveCount(0);
+    await page.getByText("Payload do webhook").click();
     await expect(
       page.getByText("connection_status_changed").first(),
     ).toBeVisible();
+    await page.getByRole("heading", { name: "Bot Action API" }).click();
     await expect(page.getByText("imageUrl").first()).toBeVisible();
     await expect(page.getByText("audioUrl").first()).toBeVisible();
     await expect(page.getByText("documentUrl").first()).toBeVisible();
-    await expect(page.getByText("message.senderOrigin")).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "intervention_ended" }),
-    ).toBeVisible();
-    await saveQaScreenshot(page, testInfo, "crm-whatsapp-integrations");
+    await saveQaScreenshot(
+      page,
+      testInfo,
+      "crm-whatsapp-integration-reference",
+    );
   });
 });

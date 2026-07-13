@@ -116,6 +116,12 @@ export async function createVehicleListing(
     title: input.title,
   });
 
+  await ports?.quotaGuard?.assertAvailable({
+    quotaKey: "vehicle",
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
+
   const listing = await getListingRepository(ports).create({
     catalog: input.catalog ?? null,
     description: input.description ?? null,

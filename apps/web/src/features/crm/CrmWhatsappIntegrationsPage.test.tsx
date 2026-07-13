@@ -7,6 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CrmWhatsappIntegrationsPage } from "./CrmWhatsappIntegrationsPage";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
@@ -50,22 +51,44 @@ describe("CrmWhatsappIntegrationsPage", () => {
       }),
     );
     expect(screen.queryByDisplayValue("old-secret")).not.toBeInTheDocument();
-    expect(screen.getAllByText("POST")[0]).toBeVisible();
+  });
+
+  it("separates reference content and keeps documentation closed", async () => {
+    const user = userEvent.setup();
+    const { container } = renderPage(createApi());
+
+    expect(await screen.findByText("Bot externo")).toBeVisible();
     expect(
-      screen.getAllByText("/api/v1/crm/whatsapp/integrations/bot/actions")[0],
+      screen.queryByLabelText("Documentacao operacional do bot"),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Referencia" }));
+    expect(
+      screen.getByLabelText("Documentacao operacional do bot"),
     ).toBeVisible();
+    expect(container.querySelectorAll("details[open]")).toHaveLength(0);
+
+    await user.click(screen.getByText("Bot Action API"));
+    expect(container.querySelectorAll("details[open]")).toHaveLength(1);
     expect(
       screen.getAllByText(/CRM_WHATSAPP_BOT_ACTION_BLOCKED/)[0],
     ).toBeVisible();
-    expect(screen.getAllByText("connection_status_changed")[0]).toBeVisible();
-    expect(screen.getAllByText(/imageUrl/)[0]).toBeVisible();
-    expect(screen.getAllByText(/audioUrl/)[0]).toBeVisible();
-    expect(screen.getAllByText(/documentUrl/)[0]).toBeVisible();
-    expect(screen.getByText("message.senderOrigin")).toBeVisible();
-    expect(screen.getByText(/Base64 nao e aceito aqui/)).toBeVisible();
   });
 
-  it("shows a permission state without loading bot config", async () => {
+  it("shows a healthy provider state in the events view", async () => {
+    const user = userEvent.setup();
+    const api = createApi();
+    renderPage(api);
+
+    await user.click(screen.getByRole("tab", { name: "Eventos" }));
+    expect(
+      await screen.findByText("Nenhum evento exige atenção"),
+    ).toBeVisible();
+    expect(api.listProviderEventIssues).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows permission states without loading bot config", async () => {
+    const user = userEvent.setup();
     const api = createApi();
     render(
       <CrmWhatsappIntegrationsPage
@@ -82,11 +105,18 @@ describe("CrmWhatsappIntegrationsPage", () => {
       ),
     ).toBeVisible();
     expect(api.getBotIntegration).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("tab", { name: "Eventos" }));
+    expect(
+      screen.getByText(/não tem permissão para visualizar eventos/i),
+    ).toBeVisible();
   });
 });
 
 function renderPage(api: CrmWhatsappApi) {
-  render(<CrmWhatsappIntegrationsPage api={api} canManage canRead canRetry />);
+  return render(
+    <CrmWhatsappIntegrationsPage api={api} canManage canRead canRetry />,
+  );
 }
 
 function createApi(overrides: Partial<CrmWhatsappApi> = {}): CrmWhatsappApi {

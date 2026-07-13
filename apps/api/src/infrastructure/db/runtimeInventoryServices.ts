@@ -20,6 +20,10 @@ import { createFipeVehicleCatalogProvider } from "../catalog/fipeVehicleCatalogP
 import { createClientTransactionRunner } from "../../shared/transaction.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
 import { createDrizzleVehicleStoreBrandingReader } from "./vehicleInventory/drizzleVehicleStoreBrandingReader.js";
+import {
+  createDrizzleBillingQuotaGuard,
+  type DrizzleBillingQuotaClient,
+} from "./billing/drizzleBillingQuotaGuard.js";
 
 export function createRuntimeInventoryServices(
   db: unknown,
@@ -40,6 +44,9 @@ export function createRuntimeInventoryServices(
     ),
     documentTemplateRepository: createDrizzleDocumentRepository(
       client as unknown as DrizzleDocumentClient,
+    ),
+    quotaGuard: createDrizzleBillingQuotaGuard(
+      client as unknown as DrizzleBillingQuotaClient,
     ),
     storeBrandingReader: createDrizzleVehicleStoreBrandingReader(client),
     ...(mediaStorage ? { mediaStorage } : {}),

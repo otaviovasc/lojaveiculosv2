@@ -1,31 +1,77 @@
 .crm-whatsapp-tag-manager {
-  width: min(34rem, 100%);
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  width: 100%;
 }
 
 .crm-whatsapp-tag-manager-page {
   display: grid;
-  gap: 1rem;
+  margin: 0 auto;
+  max-width: 72rem;
   width: 100%;
 }
 
 .crm-whatsapp-tag-manager-page .crm-whatsapp-tag-manager {
   box-shadow: none;
-  max-height: none;
-  max-width: 70rem;
+  max-width: none;
   min-height: 0;
-  overflow: visible;
   width: 100%;
 }
 
-.crm-whatsapp-tag-manager-body {
-  align-items: start;
+.crm-whatsapp-tag-list-surface {
+  display: grid;
+  gap: 0.875rem;
+  padding: 1rem;
 }
 
-.crm-whatsapp-tag-editor-column,
-.crm-whatsapp-tag-list-column {
+.crm-whatsapp-tag-list-heading,
+.crm-whatsapp-tag-editor-column {
   display: grid;
   gap: 0.75rem;
   min-width: 0;
+}
+
+.crm-whatsapp-tag-list-heading strong,
+.crm-whatsapp-tag-list-heading p {
+  margin: 0;
+}
+
+.crm-whatsapp-tag-list-heading strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.crm-whatsapp-tag-list-heading p {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  margin-top: 0.2rem;
+}
+
+.crm-whatsapp-tag-editor-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.crm-whatsapp-tag-editor-actions .crm-action {
+  min-height: 2.75rem;
+}
+
+.crm-whatsapp-tag-editor-actions .crm-action-muted {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+.crm-whatsapp-tag-editor-actions .crm-action:not(.crm-action-muted) {
+  background: var(--color-success-strong);
+  border-color: var(--color-success-strong);
+  color: var(--color-inverse);
 }
 
 .crm-whatsapp-tag-manager-note,
@@ -183,8 +229,21 @@
   color: var(--color-inverse);
 }
 
-@media (min-width: 860px) {
-  .crm-whatsapp-tag-manager-page .crm-whatsapp-tag-manager-body {
-    grid-template-columns: minmax(18rem, 0.82fr) minmax(22rem, 1.18fr);
+@media (max-width: 640px) {
+  .crm-whatsapp-tag-list-surface {
+    padding: 0.75rem;
+  }
+
+  .crm-whatsapp-tag-admin-row {
+    align-items: start;
+    grid-template-columns: 1fr;
+  }
+
+  .crm-whatsapp-template-actions {
+    justify-content: flex-end;
+  }
+
+  .crm-whatsapp-tag-editor-actions .crm-action {
+    flex: 1 1 0;
   }
 }

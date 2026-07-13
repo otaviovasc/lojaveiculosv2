@@ -33,12 +33,9 @@ test.describe("CRM WhatsApp conversations", () => {
 
     await expect(page.getByRole("heading", { name: "CRM" })).toBeVisible();
     await expect(
-      page
-        .getByLabel("Conversas do WhatsApp")
-        .getByText("Civic Touring")
-        .first(),
+      page.getByText("Tenho interesse no Civic.").first(),
     ).toBeVisible();
-    await expect(page.getByText("Anuncio").first()).toBeVisible();
+    await expect(page.getByText("Quente").first()).toBeVisible();
 
     await page.getByRole("button", { name: /Ana Premium/ }).click();
     await expect(page.getByLabel("Detalhe da conversa")).toContainText(
@@ -54,6 +51,78 @@ test.describe("CRM WhatsApp conversations", () => {
       page,
       testInfo,
       "crm-whatsapp-conversations-selection",
+    );
+  });
+
+  test("uses explicit list and chat panes on mobile", async ({
+    page,
+  }, testInfo) => {
+    await setQaViewport(page, "mobile");
+    await installLocalOwnerSession(page);
+    await installNoopCampaignEventSource(page);
+    await installCampaignApiMocks(page);
+    await page.route("**/crm/whatsapp/sessions**", (route) =>
+      route.fulfill({
+        body: JSON.stringify(createRichSessions()),
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    await page.goto("/crm#/crm?surface=whatsapp");
+    await expect(
+      page.getByLabel("Conversas do WhatsApp").first(),
+    ).toBeVisible();
+    await expect(page.getByLabel("Detalhe da conversa")).toBeHidden();
+    const mobileNavigation = page.getByRole("navigation", {
+      name: "Navegação móvel do WhatsApp CRM",
+    });
+    await expect(mobileNavigation).toBeVisible();
+
+    await page.getByRole("button", { name: /Ana Premium/ }).click();
+    await expect(page.getByLabel("Detalhe da conversa")).toBeVisible();
+    await expect(mobileNavigation).toBeHidden();
+    await expect(
+      page.getByRole("button", { name: "Voltar para conversas" }),
+    ).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-conversation-mobile");
+
+    await page.getByRole("button", { name: "Voltar para conversas" }).click();
+    await expect(
+      page.getByLabel("Conversas do WhatsApp").first(),
+    ).toBeVisible();
+    await expect(page.getByLabel("Detalhe da conversa")).toBeHidden();
+    await expect(mobileNavigation).toBeVisible();
+  });
+
+  test("hides inbox tools when WhatsApp is disconnected", async ({ page }) => {
+    await setQaViewport(page, "desktop");
+    await installLocalOwnerSession(page);
+    await installNoopCampaignEventSource(page);
+    await installCampaignApiMocks(page);
+    await page.route("**/crm/whatsapp/connections", (route) =>
+      route.fulfill({
+        body: JSON.stringify({ connections: [] }),
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+
+    await page.goto("/crm#/crm?surface=whatsapp");
+
+    await expect(
+      page.getByRole("heading", {
+        name: "Conecte o numero da loja para abrir o atendimento.",
+      }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Conversas do WhatsApp")).toHaveCount(0);
+    await page.getByRole("button", { name: "Configurar conexao" }).click();
+    await expect(page.getByRole("tab", { name: "Conexão" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByLabel("Conexao")).toContainText(
+      "Nenhuma conexao ZAPI configurada para esta loja.",
     );
   });
 });

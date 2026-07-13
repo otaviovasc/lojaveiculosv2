@@ -50,14 +50,6 @@ describe("createAgencyStore", () => {
     });
     expect(repository.createAgencyStore).toHaveBeenCalledWith({
       actorUserId: actorId,
-      entitlements: [
-        "analytics",
-        "automation",
-        "crm",
-        "marketplace",
-        "plate_lookup",
-        "subdomain",
-      ],
       publicSlug: "auto-prime",
       storeLegalName: "Auto Prime Ltda",
       storeTradingName: "Auto Prime",
@@ -68,6 +60,11 @@ describe("createAgencyStore", () => {
       action: "identity.agency_store.create",
       actor: { id: actorId },
       criticality: "critical",
+      metadata: {
+        catalogVersion: "2026-07-v1",
+        entitlementEndsAt: "2026-08-11T00:00:00.000Z",
+        entitlements: ["crm", "subdomain"],
+      },
       storeId,
       tenantId,
     });
@@ -197,6 +194,9 @@ function createRepository(
     createAgencyStore: vi.fn<
       AccountProvisioningRepository["createAgencyStore"]
     >(async (creation) => ({
+      catalogVersion: "2026-07-v1",
+      entitlementEndsAt: "2026-08-11T00:00:00.000Z",
+      entitlements: ["crm", "subdomain"],
       role: "agency" as const,
       storeId,
       storeName: creation.storeTradingName,

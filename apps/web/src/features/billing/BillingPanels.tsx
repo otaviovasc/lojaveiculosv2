@@ -1,28 +1,18 @@
 import {
   BadgeCheck,
-  Ban,
-  Clock3,
-  Coins,
-  Settings2,
-  Store,
+  CalendarClock,
+  PackageCheck,
   WalletCards,
 } from "lucide-react";
-import { useState } from "react";
-import type {
-  BillingChargePreview,
-  BillingEntitlementMatrixRow,
-  BillingEntitlementStatus,
-  BillingOverview,
-  BillingStoreAllocation,
-  EntitlementKey,
-} from "./types";
-import { BillingFeatureDialog } from "./BillingFeatureDialog";
+import type { BillingOverview, BillingStoreAllocation } from "./types";
 import { BillingSummaryCard as SummaryCard } from "./BillingSummaryCard";
 import { featureLabels, isEnabled, money, statusLabels } from "./billingFormat";
 
+export { BillingPlanComposition } from "./BillingPlanComposition";
+
 export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
-  const activeFeatures = overview.entitlementMatrix.filter((row) =>
-    isEnabled(row.status),
+  const activePackages = overview.entitlementMatrix.filter(
+    (row) => !row.includedInPlan && isEnabled(row.status),
   ).length;
 
   return (
@@ -34,31 +24,29 @@ export function BillingKpiGrid({ overview }: { overview: BillingOverview }) {
       />
       <SummaryCard
         icon={<WalletCards aria-hidden="true" className="size-5" />}
-        label="Custo mensal atual"
+        label="Investimento mensal"
         value={money(overview.financialSummary.monthlyRecurringCents)}
       />
       <SummaryCard
-        icon={<Coins aria-hidden="true" className="size-5" />}
-        label="Pago no período"
-        value={money(overview.financialSummary.paidThisPeriodCents)}
+        icon={<PackageCheck aria-hidden="true" className="size-5" />}
+        label="Pacotes adicionais"
+        value={`${activePackages} ativo${activePackages === 1 ? "" : "s"}`}
       />
       <SummaryCard
-        icon={<Clock3 aria-hidden="true" className="size-5" />}
-        label="Faturas abertas"
-        value={`${overview.financialSummary.openInvoiceCount}`}
-      />
-      <SummaryCard
-        icon={<Ban aria-hidden="true" className="size-5" />}
-        label="Atrasadas"
-        value={`${overview.financialSummary.overdueInvoiceCount}`}
-      />
-      <SummaryCard
-        icon={<Store aria-hidden="true" className="size-5" />}
-        label="Recursos ativos"
-        value={`${activeFeatures}/${overview.entitlementMatrix.length}`}
+        icon={<CalendarClock aria-hidden="true" className="size-5" />}
+        label="Próxima renovação"
+        value={periodEndLabel(overview.subscription?.currentPeriodEnd)}
       />
     </section>
   );
+}
+
+function periodEndLabel(value: string | null | undefined) {
+  if (!value) return "A confirmar";
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "short",
+  }).format(new Date(value));
 }
 
 export function BillingAllocationTable({
@@ -71,7 +59,7 @@ export function BillingAllocationTable({
       <header className="billing-panel-header">
         <div>
           <h3>Alocação por loja</h3>
-          <p>Plano, add-ons e custo mensal por loja.</p>
+          <p>Composição do plano e investimento mensal de cada operação.</p>
         </div>
       </header>
       <div
@@ -85,8 +73,7 @@ export function BillingAllocationTable({
               <th>Loja</th>
               <th>Plano</th>
               <th>Status</th>
-              <th>Add-ons</th>
-              <th>Features</th>
+              <th>Pacotes</th>
               <th>Mensal</th>
             </tr>
           </thead>
@@ -95,9 +82,10 @@ export function BillingAllocationTable({
               <tr key={allocation.storeId}>
                 <td>{allocation.storeName}</td>
                 <td>{allocation.planName ?? "Sem plano"}</td>
-                <td>{allocation.subscriptionStatus ?? "sem assinatura"}</td>
+                <td>
+                  {subscriptionStatusLabel(allocation.subscriptionStatus)}
+                </td>
                 <td>{allocation.addonCount}</td>
-                <td>{allocation.activeEntitlementCount}</td>
                 <td>{money(allocation.monthlyAmountCents)}</td>
               </tr>
             ))}
@@ -108,103 +96,17 @@ export function BillingAllocationTable({
   );
 }
 
-export function BillingEntitlementMatrix({
-  chargePreview,
-  matrix,
-  onReasonChange,
-  onUpdate,
-  reasons,
-  savingFeatureKey,
-}: {
-  chargePreview?: BillingChargePreview;
-  matrix: readonly BillingEntitlementMatrixRow[];
-  onReasonChange: (featureKey: EntitlementKey, reason: string) => void;
-  onUpdate: (
-    featureKey: EntitlementKey,
-    status: BillingEntitlementStatus,
-  ) => Promise<void>;
-  reasons: Record<string, string>;
-  savingFeatureKey: EntitlementKey | null;
-}) {
-  const [selectedFeatureKey, setSelectedFeatureKey] =
-    useState<EntitlementKey | null>(null);
-  const selectedRow =
-    matrix.find((row) => row.featureKey === selectedFeatureKey) ?? null;
-
-  return (
-    <section className="billing-panel">
-      <header className="billing-panel-header">
-        <div>
-          <h3>Seus Recursos e Add-ons</h3>
-          <p>Veja o que está ativo e gerencie cada recurso com contexto.</p>
-        </div>
-      </header>
-      <div className="billing-feature-grid">
-        {matrix.map((row) => (
-          <article className="billing-feature-card" key={row.featureKey}>
-            <div>
-              <span className={featureStatusClass(row.status)}>
-                {isEnabled(row.status) ? (
-                  <BadgeCheck aria-hidden="true" className="size-4" />
-                ) : (
-                  <Ban aria-hidden="true" className="size-4" />
-                )}
-                {statusLabels[row.status]}
-              </span>
-              <h3>{featureLabels[row.featureKey]}</h3>
-              <p>
-                {row.includedInPlan ? "Incluído no plano" : "Add-on"} ·{" "}
-                {row.limitValue === null
-                  ? "sem limite"
-                  : `limite ${row.limitValue}`}
-              </p>
-            </div>
-            <button
-              className="billing-feature-manage"
-              onClick={() => setSelectedFeatureKey(row.featureKey)}
-              type="button"
-            >
-              <Settings2 aria-hidden="true" className="size-4" />
-              Gerenciar
-            </button>
-          </article>
-        ))}
-      </div>
-      <BillingFeatureDialog
-        isSaving={Boolean(
-          selectedRow && savingFeatureKey === selectedRow.featureKey,
-        )}
-        priceLabel={
-          selectedRow ? featurePriceLabel(selectedRow, chargePreview) : ""
-        }
-        reason={selectedRow ? (reasons[selectedRow.featureKey] ?? "") : ""}
-        row={selectedRow}
-        onClose={() => setSelectedFeatureKey(null)}
-        onReasonChange={onReasonChange}
-        onUpdate={onUpdate}
-      />
-    </section>
-  );
-}
-
-function featureStatusClass(status: BillingEntitlementStatus) {
-  return isEnabled(status)
-    ? "billing-status-badge is-enabled"
-    : "billing-status-badge is-disabled";
-}
-
-function featurePriceLabel(
-  row: BillingEntitlementMatrixRow,
-  chargePreview: BillingChargePreview | undefined,
+function subscriptionStatusLabel(
+  status: BillingStoreAllocation["subscriptionStatus"],
 ) {
-  if (row.includedInPlan) return "Incluído no plano atual";
-  const label = featureLabels[row.featureKey].toLowerCase();
-  const line = chargePreview?.lineItems.find((item) =>
-    item.label.toLowerCase().includes(label),
-  );
-  return line
-    ? `${money(line.unitAmountCents)}/mes`
-    : "Add-on sem cobrança neste ciclo";
+  const labels = {
+    active: "Ativa",
+    cancelled: "Encerrada",
+    expired: "Expirada",
+    past_due: "Pagamento pendente",
+    trialing: "Em teste",
+  } as const;
+  return status ? labels[status] : "Sem assinatura";
 }
 
 export function BillingEventList({

@@ -38,14 +38,6 @@ describe("account provisioning routes", () => {
     expect(response.status).toBe(201);
     expect(repository.createOwnerStore).toHaveBeenCalledWith(
       expect.objectContaining({
-        entitlements: [
-          "analytics",
-          "automation",
-          "crm",
-          "marketplace",
-          "plate_lookup",
-          "subdomain",
-        ],
         publicSlug: "auto-prime",
         storeTradingName: "Auto Prime",
         user: profile,

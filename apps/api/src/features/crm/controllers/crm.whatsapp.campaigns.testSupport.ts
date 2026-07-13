@@ -124,14 +124,15 @@ export function createTag(repository: CrmWhatsappRepository, name: string) {
 export function postZapiReply(
   app: ReturnType<typeof createTestApp>,
   phone: string,
+  input: { content?: string; messageId?: string } = {},
 ) {
   return app.request(
     `/api/v1/crm/whatsapp/webhooks/zapi/${campaignConnectionId}/received`,
     jsonPost({
-      messageId: `reply-${phone}`,
+      messageId: input.messageId ?? `reply-${phone}`,
       phone,
       senderName: "Ana",
-      text: { message: "Tenho interesse" },
+      text: { message: input.content ?? "Tenho interesse" },
       timestamp: 1893492300,
     }),
   );

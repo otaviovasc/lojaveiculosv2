@@ -32,12 +32,28 @@ describe("CrmWhatsappVisitsPage", () => {
     expect(
       await screen.findByText("Nenhuma visita nesta visao."),
     ).toBeVisible();
+    expect(screen.queryByLabelText("Data da visita")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Nova visita" }));
+    expect(
+      screen.getByRole("heading", { name: "Confirme o cliente" }),
+    ).toBeVisible();
+    expect(screen.getByText("Lead Visita")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled();
     await user.type(screen.getByLabelText("Data da visita"), scheduledAt);
     await user.type(
       screen.getByLabelText("Observacoes da visita"),
       created.notes!,
     );
-    await user.click(screen.getByRole("button", { name: /criar/i }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(
+      screen.getByRole("heading", { name: "Revise o agendamento" }),
+    ).toBeVisible();
+    expect(screen.getByText("Receber na loja")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Criar visita" }));
 
     await waitFor(() =>
       expect(createVisitMock).toHaveBeenCalledWith({
@@ -48,6 +64,51 @@ describe("CrmWhatsappVisitsPage", () => {
       }),
     );
     expect(screen.getByText("Receber na loja")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Nova visita" })).toBeVisible();
+  });
+
+  it("preserves the draft when going back and clears it on cancel", async () => {
+    const user = userEvent.setup();
+    const scheduledAt = toDatetimeLocal(new Date());
+    const api = createVisitsApi({ listVisits: vi.fn(async () => []) });
+
+    renderPage(api);
+    await screen.findByText("Nenhuma visita nesta visao.");
+    await user.click(screen.getByRole("button", { name: "Nova visita" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(screen.getByLabelText("Data da visita"), scheduledAt);
+    await user.type(
+      screen.getByLabelText("Observacoes da visita"),
+      "Separar chave",
+    );
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.click(screen.getByRole("button", { name: "Voltar" }));
+
+    expect(screen.getByLabelText("Data da visita")).toHaveValue(scheduledAt);
+    expect(screen.getByLabelText("Observacoes da visita")).toHaveValue(
+      "Separar chave",
+    );
+    await user.click(screen.getByRole("button", { name: "Cancelar" }));
+    expect(screen.queryByLabelText("Data da visita")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Nova visita" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(screen.getByLabelText("Data da visita")).toHaveValue("");
+    expect(screen.getByLabelText("Observacoes da visita")).toHaveValue("");
+  });
+
+  it("blocks creation when no selected conversation is linked to a lead", async () => {
+    const user = userEvent.setup();
+    const api = createVisitsApi({ listVisits: vi.fn(async () => []) });
+
+    renderPage(api, null);
+    await screen.findByText("Nenhuma visita nesta visao.");
+    await user.click(screen.getByRole("button", { name: "Nova visita" }));
+
+    expect(
+      screen.getByText("Nenhuma conversa com lead selecionada"),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeDisabled();
   });
 
   it("updates visit status from the operations list", async () => {
@@ -100,14 +161,32 @@ describe("CrmWhatsappVisitsPage", () => {
     expect(screen.getByText("Visita futura")).toBeVisible();
     expect(screen.queryByText("Visita de amanha")).not.toBeInTheDocument();
   });
+
+  it("keeps the timeline visible but disables mutations without permission", async () => {
+    const api = createVisitsApi({
+      listVisits: vi.fn(async () => [createVisit()]),
+    });
+
+    renderPage(api, createSession(), false);
+
+    expect(await screen.findByText("Receber cliente")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Nova visita" })).toBeDisabled();
+    expect(
+      screen.getByRole("button", { name: "Concluir visita" }),
+    ).toBeDisabled();
+  });
 });
 
-function renderPage(api: CrmVisitsApi) {
+function renderPage(
+  api: CrmVisitsApi,
+  activeSession: CrmWhatsappSession | null = createSession(),
+  canManage = true,
+) {
   render(
     <CrmWhatsappVisitsPage
-      activeSession={createSession()}
+      activeSession={activeSession}
       api={api}
-      canManage
+      canManage={canManage}
       canRead
     />,
   );

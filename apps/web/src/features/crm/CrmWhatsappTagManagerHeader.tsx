@@ -1,34 +1,51 @@
-import { Tag, X } from "lucide-react";
+import { Plus, Tag, X } from "lucide-react";
+import { CrmWhatsappModeBar } from "./CrmWhatsappWorkflow";
 
 export function TagManagerHeader({
+  disabled,
   embedded,
   onClose,
+  onCreate,
   tagCount,
 }: {
+  disabled: boolean;
   embedded: boolean;
   onClose: () => void;
+  onCreate: () => void;
   tagCount: number;
 }) {
   return (
-    <header>
-      <span>
-        <Tag />
+    <CrmWhatsappModeBar
+      actions={
+        <>
+          {embedded ? null : (
+            <button
+              aria-label="Fechar etiquetas"
+              className="crm-icon-action"
+              onClick={onClose}
+              title="Fechar etiquetas"
+              type="button"
+            >
+              <X aria-hidden="true" />
+            </button>
+          )}
+          <button
+            className="crm-action"
+            disabled={disabled}
+            onClick={onCreate}
+            type="button"
+          >
+            <Plus aria-hidden="true" />
+            Nova etiqueta
+          </button>
+        </>
+      }
+      summary={`${tagCount} ${tagCount === 1 ? "ativa" : "ativas"}`}
+    >
+      <span className="crm-whatsapp-mode-label">
+        <Tag aria-hidden="true" />
+        Ordem e identificacao da fila
       </span>
-      <div>
-        <h2>Etiquetas</h2>
-        <p>Organize origem, prioridade e proxima acao das conversas.</p>
-      </div>
-      <span className="crm-whatsapp-page-meta">{tagCount} ativas</span>
-      {embedded ? null : (
-        <button
-          aria-label="Fechar"
-          className="crm-icon-action"
-          onClick={onClose}
-          type="button"
-        >
-          <X />
-        </button>
-      )}
-    </header>
+    </CrmWhatsappModeBar>
   );
 }

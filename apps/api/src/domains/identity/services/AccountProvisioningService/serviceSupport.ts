@@ -8,10 +8,12 @@ import type {
   ClerkUserProfile,
   InvitationSender,
 } from "../../ports/accountProvisioningRepository.js";
+import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
 
 export type AccountProvisioningPorts = {
   accountProvisioningRepository: AccountProvisioningRepository;
   invitationSender: InvitationSender;
+  quotaGuard?: BillingQuotaGuard;
 };
 
 export class AccountProvisioningPolicyError extends Error {
@@ -129,12 +131,3 @@ export async function auditInvitationSendFailure(
     tenantId: input.tenantId,
   });
 }
-
-export const trialEntitlements = [
-  "analytics",
-  "automation",
-  "crm",
-  "marketplace",
-  "plate_lookup",
-  "subdomain",
-] as const;

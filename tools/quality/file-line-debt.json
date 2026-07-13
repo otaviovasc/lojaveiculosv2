@@ -51,10 +51,6 @@
       "maxLines": 256,
       "reason": "legacy-web-250-migration"
     },
-    "apps/web/src/features/billing/BillingModule.tsx": {
-      "maxLines": 252,
-      "reason": "legacy-web-250-migration"
-    },
     "apps/web/src/features/crm/CrmKanbanBoard.tsx": {
       "maxLines": 292,
       "reason": "legacy-web-250-migration"
@@ -83,14 +79,6 @@
       "maxLines": 333,
       "reason": "legacy-web-250-migration"
     },
-    "apps/web/src/features/crm/CrmWhatsappCampaignsPage.tsx": {
-      "maxLines": 276,
-      "reason": "legacy-web-250-migration"
-    },
-    "apps/web/src/features/crm/CrmWhatsappChatHeader.tsx": {
-      "maxLines": 278,
-      "reason": "legacy-web-250-migration"
-    },
     "apps/web/src/features/crm/CrmWhatsappComposer.tsx": {
       "maxLines": 254,
       "reason": "legacy-web-250-migration"
@@ -108,10 +96,6 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/features/crm/CrmWhatsappScheduleMessageDialog.tsx": {
-      "maxLines": 253,
-      "reason": "legacy-web-250-migration"
-    },
-    "apps/web/src/features/crm/CrmWhatsappVisitsPage.tsx": {
       "maxLines": 253,
       "reason": "legacy-web-250-migration"
     },
@@ -403,10 +387,6 @@
       "maxLines": 297,
       "reason": "legacy-web-250-migration"
     },
-    "apps/web/src/styles/agency.css": {
-      "maxLines": 291,
-      "reason": "legacy-web-250-migration"
-    },
     "apps/web/src/styles/artifact-viewer.css": {
       "maxLines": 315,
       "reason": "legacy-web-250-migration"
@@ -424,7 +404,7 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/crmWhatsappBotDocs.css": {
-      "maxLines": 302,
+      "maxLines": 290,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/crmWhatsappCampaignList.css": {
@@ -432,7 +412,7 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/crmWhatsappCampaigns.css": {
-      "maxLines": 340,
+      "maxLines": 304,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/crmWhatsappChat.css": {
@@ -441,10 +421,6 @@
     },
     "apps/web/src/styles/crmWhatsappComposer.css": {
       "maxLines": 342,
-      "reason": "legacy-web-250-migration"
-    },
-    "apps/web/src/styles/crmWhatsappConnectionAdmin.css": {
-      "maxLines": 267,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/crmWhatsappMessages.css": {

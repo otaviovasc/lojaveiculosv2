@@ -1,6 +1,7 @@
-import { CalendarClock, Loader2, RefreshCw, Send } from "lucide-react";
+import { CalendarClock, Loader2, Plus, RefreshCw } from "lucide-react";
+import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { CrmSelect } from "./CrmFormControls";
-import { readMinDateTimeLocal } from "./crmDateTimeLocal";
+import { CrmWhatsappModeBar } from "./CrmWhatsappWorkflow";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappScheduledMessage,
@@ -35,86 +36,49 @@ export function createScheduleStatusCounts(
   return counts;
 }
 
-export function ScheduleCreateForm({
+export function SchedulePageModeBar({
   canCreate,
-  canSave,
-  isSaving,
-  onSave,
-  onScheduledAtChange,
-  onTargetSessionChange,
-  onTextChange,
-  scheduledAt,
-  sessions,
-  targetSessionId,
-  text,
+  currentStep,
+  mode,
+  onCreate,
+  pendingCount,
+  failedCount,
 }: {
   canCreate: boolean;
-  canSave: boolean;
-  isSaving: boolean;
-  onSave: () => void;
-  onScheduledAtChange: (value: string) => void;
-  onTargetSessionChange: (value: string) => void;
-  onTextChange: (value: string) => void;
-  scheduledAt: string;
-  sessions: CrmWhatsappSession[];
-  targetSessionId: string;
-  text: string;
+  currentStep: number;
+  failedCount: number;
+  mode: "create" | "queue";
+  onCreate: () => void;
+  pendingCount: number;
 }) {
   return (
-    <section className="crm-whatsapp-schedule-form" aria-label="Criar">
-      <div className="crm-whatsapp-schedule-form-heading">
-        <CalendarClock aria-hidden="true" />
-        <strong>Novo agendamento</strong>
-      </div>
-      {canCreate ? (
-        <>
-          <label>
-            Conversa
-            <CrmSelect
-              ariaLabel="Conversa"
-              className="crm-whatsapp-select"
-              disabled={isSaving}
-              onChange={onTargetSessionChange}
-              options={createSessionOptions(sessions)}
-              value={targetSessionId}
-            />
-          </label>
-          <label>
-            Quando enviar
-            <input
-              disabled={isSaving || !targetSessionId}
-              min={readMinDateTimeLocal()}
-              onChange={(event) => onScheduledAtChange(event.target.value)}
-              type="datetime-local"
-              value={scheduledAt}
-            />
-          </label>
-          <label>
-            Mensagem
-            <textarea
-              disabled={isSaving || !targetSessionId}
-              maxLength={4000}
-              onChange={(event) => onTextChange(event.target.value)}
-              rows={5}
-              value={text}
-            />
-          </label>
+    <CrmWhatsappModeBar
+      actions={
+        mode === "queue" ? (
           <button
             className="crm-action"
-            disabled={!canSave}
-            onClick={onSave}
+            disabled={!canCreate}
+            onClick={onCreate}
             type="button"
           >
-            <Send aria-hidden="true" />
-            Agendar mensagem
+            <Plus aria-hidden="true" />
+            Novo agendamento
           </button>
-        </>
-      ) : (
-        <p className="crm-whatsapp-schedule-empty">
-          Sem permissao para criar agendamentos.
-        </p>
-      )}
-    </section>
+        ) : null
+      }
+      summary={
+        mode === "queue"
+          ? `${pendingCount} pendente(s) - ${failedCount} falha(s)`
+          : `Etapa ${currentStep + 1} de 3`
+      }
+    >
+      <span className="crm-whatsapp-schedule-mode-title">
+        <CalendarClock aria-hidden="true" />
+        <strong>
+          {mode === "queue" ? "Agenda de mensagens" : "Novo agendamento"}
+        </strong>
+      </span>
+    </CrmWhatsappModeBar>
   );
 }
 
@@ -149,30 +113,23 @@ export function ScheduleToolbar({
 }) {
   return (
     <div className="crm-whatsapp-schedule-toolbar">
-      <div
-        aria-label="Filtrar agendamentos por status"
+      <FeatureTabs
+        activeClassName="crm-whatsapp-schedule-tab-active"
+        ariaLabel="Filtrar agendamentos por status"
         className="crm-whatsapp-schedule-tabs"
-        role="tablist"
-      >
-        {statusOptions.map((option) => (
-          <button
-            aria-selected={statusFilter === option.value}
-            className={
-              statusFilter === option.value
-                ? "crm-whatsapp-schedule-tab crm-whatsapp-schedule-tab-active"
-                : "crm-whatsapp-schedule-tab"
-            }
-            disabled={!canRead || isLoading}
-            key={option.value}
-            onClick={() => onStatusFilterChange(option.value)}
-            role="tab"
-            type="button"
-          >
-            {option.label}
-            <span>{statusCounts[option.value] ?? 0}</span>
-          </button>
-        ))}
-      </div>
+        onChange={onStatusFilterChange}
+        optionClassName="crm-whatsapp-schedule-tab"
+        options={statusOptions.map((option) => ({
+          label: (
+            <>
+              {option.label}
+              <small>{statusCounts[option.value] ?? 0}</small>
+            </>
+          ),
+          value: option.value,
+        }))}
+        value={statusFilter}
+      />
       <div className="crm-whatsapp-schedule-toolbar-controls">
         <CrmSelect
           ariaLabel="Filtrar agendamentos por conversa"
@@ -184,13 +141,14 @@ export function ScheduleToolbar({
         />
         {canRead ? (
           <button
-            className="crm-action crm-action-muted"
+            aria-label="Atualizar agendamentos"
+            className="crm-icon-action"
             disabled={isLoading}
             onClick={onRefresh}
+            title="Atualizar agendamentos"
             type="button"
           >
             <RefreshCw aria-hidden="true" />
-            Atualizar
           </button>
         ) : null}
         {canProcess ? (
@@ -212,16 +170,6 @@ export function ScheduleToolbar({
 function formatScheduleSessionLabel(session: CrmWhatsappSession) {
   const lead = session.leadId ? ` - lead ${session.leadId}` : "";
   return `${formatSessionName(session)}${lead}`;
-}
-
-function createSessionOptions(sessions: CrmWhatsappSession[]) {
-  return [
-    { label: "Selecione uma conversa", value: "" },
-    ...sessions.map((session) => ({
-      label: formatScheduleSessionLabel(session),
-      value: String(session.id),
-    })),
-  ];
 }
 
 function filterSessionOptions(

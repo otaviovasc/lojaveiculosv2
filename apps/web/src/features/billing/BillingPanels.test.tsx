@@ -3,27 +3,75 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BillingEntitlementMatrix } from "./BillingPanels";
-import type { BillingEntitlementMatrixRow } from "./types";
+import { BillingPlanComposition } from "./BillingPanels";
+import type { BillingOverview } from "./types";
 
 afterEach(cleanup);
 
-describe("BillingEntitlementMatrix", () => {
-  it("renders and opens automation when it is outside the current plan", async () => {
+describe("BillingPlanComposition", () => {
+  it("separates the base plan from the priced CRM add-on", async () => {
     const user = userEvent.setup();
-    const automation = {
+    const crm = {
       endsAt: null,
-      featureKey: "automation",
+      featureKey: "crm",
       includedInPlan: false,
       limitValue: null,
       source: "trial",
       startsAt: null,
       status: "active",
-    } satisfies BillingEntitlementMatrixRow;
+    } as const;
+    const overview = {
+      addons: [
+        {
+          catalogVersion: "2026-07-v1",
+          code: "crm_whatsapp_instance",
+          featureKey: "crm",
+          id: "addon_crm",
+          includedInTrial: true,
+          monthlyPriceCents: 24999,
+          name: "CRM WhatsApp",
+          status: "active",
+        },
+      ],
+      allocations: [],
+      authority: {
+        currentActorCanManage: true,
+        managedBy: "store_owner",
+        managerLabel: "Dono da loja",
+        ownerBillingAccess: "allowed",
+        summary: "O dono gerencia a assinatura.",
+      },
+      chargePreview: {
+        cadence: "monthly",
+        collectionMethod: "card_on_file",
+        collectionTiming: "cycle_end",
+        currency: "BRL",
+        hasAgencyDiscount: false,
+        lineItems: [],
+        prorationPolicy: "store_days_active",
+        subtotalCents: 29900,
+        totalCents: 29900,
+      },
+      entitlementEvents: [],
+      entitlementMatrix: [crm],
+      entitlements: [],
+      financialSummary: {
+        monthlyRecurringCents: 29900,
+        nextDueAt: null,
+        openInvoiceCount: 0,
+        overdueInvoiceCount: 0,
+        paidThisPeriodCents: 0,
+      },
+      plans: [],
+      storeId: "store_1",
+      subscription: null,
+      tenantId: "tenant_1",
+    } satisfies BillingOverview;
 
     render(
-      <BillingEntitlementMatrix
-        matrix={[automation]}
+      <BillingPlanComposition
+        canManage
+        overview={overview}
         onReasonChange={vi.fn()}
         onUpdate={vi.fn().mockResolvedValue(undefined)}
         reasons={{}}
@@ -31,17 +79,16 @@ describe("BillingEntitlementMatrix", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Operador IA" })).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Gerenciar" }));
+    expect(screen.getByRole("heading", { name: "CRM" })).toBeVisible();
+    expect(screen.getByText(/R\$\s249,99\/mês/)).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Ver detalhes" }));
 
     expect(
-      screen.getByRole("dialog", { name: "Gerenciar Operador IA" }),
+      screen.getByRole("dialog", { name: "Seu pacote CRM" }),
     ).toBeVisible();
-    expect(screen.getByText("Add-on sem cobrança neste ciclo")).toBeVisible();
+    expect(screen.getAllByText(/R\$\s249,99\/mês/)).toHaveLength(2);
     expect(
-      screen.getByText(
-        "Prévias versionadas com revisão humana antes de qualquer execução assistida.",
-      ),
+      screen.getByText(/Nenhum recurso é liberado sem o item correspondente/),
     ).toBeVisible();
   });
 });

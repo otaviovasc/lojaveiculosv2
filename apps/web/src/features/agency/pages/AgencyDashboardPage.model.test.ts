@@ -5,6 +5,7 @@ import type { AgencyTenantOverview } from "../apiClient";
 describe("AgencyDashboardPage model", () => {
   it("maps tenant overview stores into dashboard rows", () => {
     const stores = mapAgencyOverviewToStores({
+      addons: [],
       allocations: [],
       authority: {
         currentActorCanManage: true,

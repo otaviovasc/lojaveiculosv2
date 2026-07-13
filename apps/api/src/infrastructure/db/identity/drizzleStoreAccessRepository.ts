@@ -1,4 +1,4 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import {
   membershipPermissionOverrides,
   roleTemplates,
@@ -8,85 +8,28 @@ import {
   tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
-import type {
-  EntitlementKey,
-  PermissionKey,
-  RoleKey,
-  StoreId,
-  TenantId,
-  UserId,
-} from "@lojaveiculosv2/shared";
+import type { RoleKey } from "@lojaveiculosv2/shared";
 import type {
   StoreAccessRecord,
   StoreAccessRepository,
 } from "../../../domains/identity/ports/storeAccessRepository.js";
 
-type AccessRow = {
-  membershipId: string;
-  role: RoleKey;
-  storeId: StoreId;
-  tenantId: TenantId;
-  userId: UserId;
-};
+import type {
+  AccessRow,
+  AgencyTenantAccessRow,
+  DrizzleStoreAccessClient,
+  EntitlementRow,
+} from "./drizzleStoreAccessTypes.js";
 
-type AgencyTenantAccessRow = Omit<AccessRow, "membershipId">;
+export type { DrizzleStoreAccessClient } from "./drizzleStoreAccessTypes.js";
 
 type ResolvedAccessRow = AgencyTenantAccessRow & {
   membershipId: string | null;
 };
 
-type OverrideRow = {
-  allowed: boolean;
-  permission: PermissionKey;
-};
-
-type EntitlementRow = {
-  entitlement: EntitlementKey;
-};
-
-type TenantBillingOwnerRow = { role: RoleKey };
-
-type SelectLimitBuilder<Row> = {
-  limit: (count: number) => Promise<readonly Row[]>;
-};
-
-type SelectWhereBuilder<Row> = {
-  innerJoin: (table: unknown, condition: unknown) => SelectWhereBuilder<Row>;
-  leftJoin: (table: unknown, condition: unknown) => SelectWhereBuilder<Row>;
-  limit: (count: number) => Promise<readonly Row[]>;
-  where: (condition: unknown) => SelectLimitBuilder<Row>;
-};
-
-type SelectFromBuilder<Row> = {
-  from: (table: unknown) => SelectWhereBuilder<Row>;
-};
-
-export type DrizzleStoreAccessClient = {
-  select: {
-    (selection: {
-      membershipId: unknown;
-      role: unknown;
-      storeId: unknown;
-      tenantId: unknown;
-      userId: unknown;
-    }): SelectFromBuilder<AccessRow>;
-    (selection: {
-      role: unknown;
-      storeId: unknown;
-      tenantId: unknown;
-      userId: unknown;
-    }): SelectFromBuilder<AgencyTenantAccessRow>;
-    (selection: {
-      allowed: unknown;
-      permission: unknown;
-    }): SelectFromBuilder<OverrideRow>;
-    (selection: { entitlement: unknown }): SelectFromBuilder<EntitlementRow>;
-    (selection: { role: unknown }): SelectFromBuilder<TenantBillingOwnerRow>;
-  };
-};
-
 export function createDrizzleStoreAccessRepository(
   db: DrizzleStoreAccessClient,
+  now: () => Date = () => new Date(),
 ): StoreAccessRepository {
   return {
     async findByClerkUserAndStoreSlug(input) {
@@ -96,7 +39,8 @@ export function createDrizzleStoreAccessRepository(
 
       if (!access) return null;
 
-      const [overrides, entitlements, tenantAgencyMemberships] =
+      const checkedAt = now();
+      const [overrides, entitlementRows, tenantAgencyMemberships] =
         await Promise.all([
           access.membershipId
             ? db
@@ -115,15 +59,26 @@ export function createDrizzleStoreAccessRepository(
             : Promise.resolve([]),
           db
             .select({
+              endsAt: storeEntitlements.endsAt,
               entitlement: storeEntitlements.featureKey,
+              startsAt: storeEntitlements.startsAt,
             })
             .from(storeEntitlements)
             .where(
               and(
                 eq(storeEntitlements.storeId, access.storeId),
+                eq(storeEntitlements.tenantId, access.tenantId),
                 or(
                   eq(storeEntitlements.status, "active"),
                   eq(storeEntitlements.status, "trialing"),
+                ),
+                or(
+                  isNull(storeEntitlements.startsAt),
+                  lte(storeEntitlements.startsAt, checkedAt),
+                ),
+                or(
+                  isNull(storeEntitlements.endsAt),
+                  gt(storeEntitlements.endsAt, checkedAt),
                 ),
               ),
             )
@@ -151,7 +106,9 @@ export function createDrizzleStoreAccessRepository(
         billingManagedBy: tenantAgencyMemberships.length
           ? "agency"
           : "store_owner",
-        entitlements: entitlements.map((row) => row.entitlement),
+        entitlements: entitlementRows
+          .filter((row) => isEffectiveEntitlement(row, checkedAt))
+          .map((row) => row.entitlement),
         overrides,
         role: access.role,
         storeId: access.storeId,
@@ -160,6 +117,12 @@ export function createDrizzleStoreAccessRepository(
       } satisfies StoreAccessRecord;
     },
   };
+}
+
+function isEffectiveEntitlement(row: EntitlementRow, now: Date) {
+  return (
+    (!row.startsAt || row.startsAt <= now) && (!row.endsAt || row.endsAt > now)
+  );
 }
 
 async function findDirectStoreAccess(

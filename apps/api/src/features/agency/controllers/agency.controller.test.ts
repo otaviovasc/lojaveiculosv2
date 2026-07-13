@@ -69,7 +69,7 @@ describe("agency controller", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      chargeTotalCents: 29900,
+      chargeTotalCents: 54899,
       provider: "asaas",
       status: "active",
     });

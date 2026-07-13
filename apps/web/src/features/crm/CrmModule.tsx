@@ -190,7 +190,7 @@ export function CrmModule({
   };
 
   if (activeSurface === "whatsapp") {
-    return <CrmWhatsappInbox />;
+    return <CrmWhatsappInbox productApi={crmApi} />;
   }
 
   return (
