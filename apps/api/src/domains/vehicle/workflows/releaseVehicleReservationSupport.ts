@@ -4,7 +4,10 @@ import type {
   FinanceRepository,
 } from "../../finance/ports/financeRepository.js";
 import type { VehicleUnit } from "../ports/vehicleInventoryRepository.js";
-import type { VehicleSaleBundle } from "../ports/vehicleSalesRepository.js";
+import type {
+  VehicleSaleBundle,
+  VehicleSalePayment,
+} from "../ports/vehicleSalesRepository.js";
 import { VehicleWorkflowStateError } from "./vehicleSaleWorkflowRules.js";
 
 export function assertPendingReservationSale(
@@ -23,10 +26,23 @@ export function assertPendingReservationSale(
 }
 
 export function assertPendingSignal(
-  salePaymentStatus: string,
+  salePayment: Pick<
+    VehicleSalePayment,
+    "paidAt" | "providerPaymentId" | "status"
+  >,
   financeEntry: FinanceEntryBundle,
 ) {
-  if (salePaymentStatus === "paid" || financeEntry.entry.status === "paid") {
+  if (salePayment.providerPaymentId !== null) {
+    throw new VehicleWorkflowStateError(
+      "Provider-managed reservation signal requires provider cancellation or refund.",
+    );
+  }
+  if (
+    salePayment.status === "paid" ||
+    salePayment.paidAt !== null ||
+    financeEntry.entry.status === "paid" ||
+    financeEntry.entry.paidAt !== null
+  ) {
     throw new VehicleWorkflowStateError(
       "Paid reservation signal requires a refund or correction workflow.",
     );

@@ -133,8 +133,9 @@ export function PlatformAdminPage() {
       ) : null}
 
       <FeatureSection
-        className="grid gap-4 p-5"
+        className="grid gap-4"
         icon={<Building2 className="size-5 text-accent-strong" />}
+        padding="compact"
         title="Criar agência"
       >
         <form onSubmit={(event) => void submit(event)} className="grid gap-4">

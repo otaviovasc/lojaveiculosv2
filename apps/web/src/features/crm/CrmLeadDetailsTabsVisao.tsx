@@ -62,7 +62,7 @@ export function CrmLeadDetailsTabsVisao({
                   key={s.id}
                   className={
                     "h-1 flex-1 rounded-full " +
-                    (i <= activeIndex ? "bg-blue-500" : "bg-line/25")
+                    (i <= activeIndex ? "bg-blue-start" : "bg-line/25")
                   }
                   style={
                     i <= activeIndex && s.color
@@ -89,7 +89,7 @@ export function CrmLeadDetailsTabsVisao({
               Responsável
             </span>
             <div className="flex items-center gap-1.5 mt-1 text-sm font-black text-app-text">
-              <User aria-hidden="true" className="size-3.5 text-blue-500" />
+              <User aria-hidden="true" className="size-3.5 text-blue-start" />
               <span>{formatLeadOwner(lead)}</span>
             </div>
             <div className="h-1 mt-2" />
@@ -155,7 +155,7 @@ export function CrmLeadDetailsTabsVisao({
                 key={act.id}
                 className="relative pl-5 flex items-start justify-between gap-4"
               >
-                <span className="absolute left-0 top-1.5 size-2 rounded-full bg-blue-600 border border-blue-600" />
+                <span className="absolute left-0 top-1.5 size-2 rounded-full border border-blue-start bg-blue-start" />
                 <div className="flex flex-col gap-0.5">
                   <span className="text-xs font-bold text-app-text">
                     {act.content}
@@ -171,7 +171,7 @@ export function CrmLeadDetailsTabsVisao({
             ))
           ) : (
             <div className="relative pl-5 flex items-start justify-between gap-4">
-              <span className="absolute left-0 top-1.5 size-2 rounded-full bg-blue-600 border border-blue-600" />
+              <span className="absolute left-0 top-1.5 size-2 rounded-full border border-blue-start bg-blue-start" />
               <div className="flex flex-col gap-0.5">
                 <span className="text-xs font-bold text-app-text">
                   Lead criado

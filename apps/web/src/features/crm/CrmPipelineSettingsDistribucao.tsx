@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Users } from "lucide-react";
+import { Switch } from "../../components/ui/switch";
 import type { Pipeline } from "./crmPipelineStorage";
 
 type Props = {
@@ -41,21 +42,12 @@ export function CrmPipelineSettingsDistribucao({ pipeline, onUpdate }: Props) {
               atendimento ativa.
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => handleToggle(!rotationActive)}
-            className={
-              "relative inline-flex h-5 w-9 items-center rounded-full transition-colors shrink-0 mt-0.5 " +
-              (rotationActive ? "bg-blue-600" : "bg-line/45")
-            }
-          >
-            <span
-              className={
-                "inline-block size-3.5 transform rounded-full bg-white transition-transform " +
-                (rotationActive ? "translate-x-4.5" : "translate-x-1")
-              }
-            />
-          </button>
+          <Switch
+            aria-label="Ativar fila de distribuição de vendedores"
+            checked={rotationActive}
+            className="mt-0.5"
+            onCheckedChange={handleToggle}
+          />
         </div>
 
         {rotationActive && (

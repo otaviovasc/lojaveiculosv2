@@ -128,14 +128,7 @@ export function createDrizzleVehicleUnitRepository(
       const scope = requireWriteScope(unit);
       const [row] = await db
         .update(vehicleUnits)
-        .set({
-          colorName: unit.colorName,
-          plate: unit.plate,
-          status: toDbUnitStatus(unit.status),
-          stockNumber: unit.stockNumber,
-          updatedAt: unit.updatedAt,
-          vin: unit.vin,
-        })
+        .set(toVehicleUnitUpdate(unit))
         .where(
           and(
             eq(vehicleUnits.id, unit.id),
@@ -150,5 +143,36 @@ export function createDrizzleVehicleUnitRepository(
 
       return toVehicleUnit(requireReturnedRow(row, "vehicle unit save"));
     },
+    async saveIfStatus(unit, expectedStatus) {
+      const scope = requireWriteScope(unit);
+      const [row] = await db
+        .update(vehicleUnits)
+        .set(toVehicleUnitUpdate(unit))
+        .where(
+          and(
+            eq(vehicleUnits.id, unit.id),
+            eq(vehicleUnits.listingId, unit.listingId),
+            eq(vehicleUnits.storeId, scope.storeId),
+            eq(vehicleUnits.tenantId, scope.tenantId),
+            eq(vehicleUnits.status, toDbUnitStatus(expectedStatus)),
+            eq(vehicleUnits.isDeleted, false),
+            isNull(vehicleUnits.deletedAt),
+          ),
+        )
+        .returning();
+
+      return row ? toVehicleUnit(row) : null;
+    },
+  };
+}
+
+function toVehicleUnitUpdate(unit: VehicleUnit): Partial<InsertVehicleUnitRow> {
+  return {
+    colorName: unit.colorName,
+    plate: unit.plate,
+    status: toDbUnitStatus(unit.status),
+    stockNumber: unit.stockNumber,
+    updatedAt: unit.updatedAt,
+    vin: unit.vin,
   };
 }

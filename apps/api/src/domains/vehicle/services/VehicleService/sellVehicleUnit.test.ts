@@ -96,6 +96,19 @@ describe("sellVehicleUnit payment accounting", () => {
     expect(ports.salesRepository.sales).toHaveLength(artifactCounts.sales);
     expect(ports.salesRepository.sales[0]?.status).toBe("pending");
   });
+
+  it("stops before finance and document work when the unit status changed", async () => {
+    const { context, ports } = await setup();
+    ports.unitRepository!.saveIfStatus = vi.fn(async () => null);
+
+    await expect(sellVehicleUnit(context, saleInput(), ports)).rejects.toThrow(
+      "status changed",
+    );
+
+    expect(ports.units.get("unit_1")?.status).toBe("available");
+    expect(ports.financeRepository.entries).toHaveLength(0);
+    expect(ports.documents.size).toBe(0);
+  });
 });
 
 async function setup() {

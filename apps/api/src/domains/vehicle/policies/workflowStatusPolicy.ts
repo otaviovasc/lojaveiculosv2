@@ -28,3 +28,16 @@ export function assertGenericUnitStatusAllowed(
     throw new VehicleWorkflowStatusError("unit", status);
   }
 }
+
+export function assertGenericUnitTransitionAllowed(
+  currentStatus: VehicleUnitStatus,
+  nextStatus: VehicleUnitStatus | undefined,
+) {
+  if (
+    nextStatus &&
+    nextStatus !== currentStatus &&
+    (currentStatus === "reserved" || currentStatus === "sold")
+  ) {
+    throw new VehicleWorkflowStatusError("unit", currentStatus);
+  }
+}

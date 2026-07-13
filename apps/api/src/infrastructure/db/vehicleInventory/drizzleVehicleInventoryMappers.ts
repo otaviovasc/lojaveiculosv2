@@ -151,8 +151,11 @@ export function toDbListingStatus(
 
 export function toDbUnitStatus(
   status: VehicleUnitStatus,
-): InsertVehicleUnitRow["status"] {
-  const map: Record<VehicleUnitStatus, InsertVehicleUnitRow["status"]> = {
+): NonNullable<InsertVehicleUnitRow["status"]> {
+  const map: Record<
+    VehicleUnitStatus,
+    NonNullable<InsertVehicleUnitRow["status"]>
+  > = {
     acquired: "acquired",
     available: "available",
     delivered: "delivered",

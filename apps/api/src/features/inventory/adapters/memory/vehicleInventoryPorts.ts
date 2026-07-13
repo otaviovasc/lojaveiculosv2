@@ -109,6 +109,11 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
         .filter((unit) => !status || unit.status === status)
         .slice(offset, offset + limit),
     save: async (unit) => saveMapValue(units, unit),
+    saveIfStatus: async (unit, expectedStatus) => {
+      const current = units.get(unit.id);
+      if (!current || current.status !== expectedStatus) return null;
+      return saveMapValue(units, unit);
+    },
   };
 
   const mediaRepository: VehicleMediaRepository = {

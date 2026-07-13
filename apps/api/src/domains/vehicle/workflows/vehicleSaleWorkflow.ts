@@ -35,6 +35,7 @@ import {
   getUnitRepository,
   type VehicleInventoryServicePorts,
 } from "../services/VehicleService/serviceSupport.js";
+import { VehicleWorkflowStateError } from "./vehicleSaleWorkflowRules.js";
 
 export type VehicleSaleWorkflowResult = {
   documents: readonly VehicleDocument[];
@@ -54,6 +55,7 @@ export async function completeReservationWorkflow(
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
+  await saveUnitStatus(context, input, "reserved");
   const financeEntry = await createReservationFinanceEntry({
     financeRepository: getFinanceRepository(input.ports),
     listing: input.listing,
@@ -82,7 +84,6 @@ export async function completeReservationWorkflow(
   const createdDocument = await getDocumentRepository(input.ports).create(
     storedDocument,
   );
-  await saveUnitStatus(context, input, "reserved");
   return {
     documents: [createdDocument],
     financeEntries: [financeEntry],
@@ -102,6 +103,7 @@ export async function completeSaleWorkflow(
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
+  await saveUnitStatus(context, input, "sold");
   const financeEntries = await createSaleFinanceEntries({
     financeRepository: getFinanceRepository(input.ports),
     listing: input.listing,
@@ -134,7 +136,6 @@ export async function completeSaleWorkflow(
       await getDocumentRepository(input.ports).create(storedDocument),
     );
   }
-  await saveUnitStatus(context, input, "sold");
   const updatedListing = await syncListingSoldOutStatus(context, input);
   return { documents: createdDocuments, financeEntries, updatedListing };
 }
@@ -149,11 +150,19 @@ async function saveUnitStatus(
   },
   status: "reserved" | "sold",
 ) {
-  await getUnitRepository(input.ports).save({
-    ...input.unit,
-    status,
-    updatedAt: new Date(),
-  });
+  const updated = await getUnitRepository(input.ports).saveIfStatus(
+    {
+      ...input.unit,
+      status,
+      updatedAt: new Date(),
+    },
+    input.unit.status,
+  );
+  if (!updated) {
+    throw new VehicleWorkflowStateError(
+      `Vehicle unit status changed before it could transition from ${input.unit.status} to ${status}.`,
+    );
+  }
   await getOperationsRepository(input.ports).createStatusHistory({
     actorUserId: actorUserId(context),
     fromStatus: input.unit.status,

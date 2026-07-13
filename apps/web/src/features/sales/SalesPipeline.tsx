@@ -110,7 +110,7 @@ export function SalesPipeline({
         {filteredSales.length === 0 ? (
           <FeatureEmptyState
             body="Ajuste a busca ou o filtro de status."
-            className="!p-6"
+            density="compact"
             icon={Layers}
             title="Nenhuma venda encontrada"
           />

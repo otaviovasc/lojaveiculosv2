@@ -1,3 +1,4 @@
+import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type { BillingChargePreview } from "./billingRepository.js";
 import type {
   PaymentProvider,
@@ -41,6 +42,13 @@ export type BillingProviderAccount = {
   subscription: BillingProviderSubscriptionRecord | null;
 };
 
+export type GetBillingProviderAccountInput = {
+  billingManagedBy?: "agency" | "store_owner";
+  currentActorCanManage?: boolean;
+  storeId?: StoreId | null;
+  tenantId: TenantId;
+};
+
 export type SaveBillingProviderCustomerInput = {
   billingCustomerId: string;
   provider: PaymentProvider;
@@ -71,12 +79,9 @@ export type SaveBillingProviderCheckoutInput = {
 };
 
 export type BillingProviderRepository = {
-  getProviderAccount: (input: {
-    billingManagedBy?: "agency" | "store_owner";
-    currentActorCanManage?: boolean;
-    storeId?: string | null;
-    tenantId: string;
-  }) => Promise<BillingProviderAccount | null>;
+  getProviderAccount: (
+    input: GetBillingProviderAccountInput,
+  ) => Promise<BillingProviderAccount | null>;
   saveProviderCustomer: (
     input: SaveBillingProviderCustomerInput,
   ) => Promise<BillingProviderCustomerRecord | null>;

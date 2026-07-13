@@ -11,6 +11,7 @@ import type {
   BillingProviderRepository,
   BillingProviderSubscriptionRecord,
 } from "../../../domains/billing/ports/billingProviderRepository.js";
+import { getBillingProviderOverview } from "../../../domains/billing/readModels/getBillingProviderOverview.js";
 import {
   createDrizzleBillingRepository,
   type DrizzleBillingClient,
@@ -38,23 +39,10 @@ export function createDrizzleBillingProviderRepository(
         .limit(1);
       if (!billingCustomer) return null;
 
-      const overview = input.storeId
-        ? await billingRepository.getOverview({
-            ...(input.billingManagedBy
-              ? { billingManagedBy: input.billingManagedBy }
-              : {}),
-            ...(typeof input.currentActorCanManage === "boolean"
-              ? { currentActorCanManage: input.currentActorCanManage }
-              : {}),
-            storeId: input.storeId as never,
-            tenantId: input.tenantId as never,
-          })
-        : await billingRepository.getTenantOverview({
-            ...(typeof input.currentActorCanManage === "boolean"
-              ? { currentActorCanManage: input.currentActorCanManage }
-              : {}),
-            tenantId: input.tenantId as never,
-          });
+      const overview = await getBillingProviderOverview(
+        billingRepository,
+        input,
+      );
       return {
         billingCustomer: toCustomerRecord(billingCustomer),
         chargePreview: overview.chargePreview,

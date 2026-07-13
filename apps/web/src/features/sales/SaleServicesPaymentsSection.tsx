@@ -50,7 +50,7 @@ export function SaleServicesPaymentsSection({
             <div
               className={
                 balance <= 0
-                  ? "h-full rounded-full transition-all duration-300 bg-emerald-500"
+                  ? "h-full rounded-full transition-all duration-300 bg-success"
                   : "h-full rounded-full transition-all duration-300 bg-accent"
               }
               style={{ width: `${progressPercent}%` }}
@@ -62,11 +62,11 @@ export function SaleServicesPaymentsSection({
               Total Lançado: {sale.payments.length} parcelas
             </span>
             {balance <= 0 ? (
-              <span className="text-emerald-500 font-black flex items-center gap-1 uppercase tracking-wider">
+              <span className="text-success font-black flex items-center gap-1 uppercase tracking-wider">
                 <Check className="size-3" /> Valor Total Coberto
               </span>
             ) : (
-              <span className="text-rose-500 font-black uppercase tracking-wider animate-pulse">
+              <span className="text-danger font-black uppercase tracking-wider animate-pulse">
                 Faltam: {formatCents(balance)}
               </span>
             )}

@@ -4,6 +4,7 @@ import {
   SaleDraftUpdateConflictError,
   SaleDraftUpdateStateError,
   SaleNotFoundError,
+  SalePaymentCompensationRequiredError,
   SalePaymentAmountError,
   SalePaymentIdentityError,
   SalePendingUnitChangeError,
@@ -17,6 +18,7 @@ import {
   SaleTransitionStateError,
   SaleTransitionConflictError,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
+import { SaleUnitConflictError } from "../../../domains/sales/saleUnitConflict.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 
 export function mapSalesDomainError(
@@ -36,6 +38,9 @@ export function mapSalesDomainError(
   }
   if (error instanceof SaleTransitionConflictError) {
     return conflict(context, error, "SALE_TRANSITION_CONFLICT");
+  }
+  if (error instanceof SaleUnitConflictError) {
+    return conflict(context, error, "SALE_UNIT_CONFLICT");
   }
   if (error instanceof SaleDraftDeletionStateError) {
     return conflict(context, error, "SALE_DRAFT_DELETE_STATE_ERROR", {
@@ -63,6 +68,11 @@ export function mapSalesDomainError(
       error,
       message: error.message,
       status: 400,
+    });
+  }
+  if (error instanceof SalePaymentCompensationRequiredError) {
+    return conflict(context, error, "SALE_PAYMENT_COMPENSATION_REQUIRED", {
+      compensationReason: error.compensationReason,
     });
   }
   if (error instanceof SalePendingUnitChangeError) {

@@ -21,7 +21,7 @@ export function FinalizationSection({ sale }: { sale: SaleRecord }) {
     <div className="flex flex-col gap-6">
       {/* 4.1 Welcome / Completion header */}
       <div className="bg-panel border border-line rounded-2xl p-6 shadow-sm text-center flex flex-col items-center justify-center gap-3">
-        <div className="size-14 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center">
+        <div className="size-14 rounded-full bg-success/10 text-success border border-success/20 flex items-center justify-center">
           <CheckCircle2 className="size-8" />
         </div>
         <div className="max-w-md">

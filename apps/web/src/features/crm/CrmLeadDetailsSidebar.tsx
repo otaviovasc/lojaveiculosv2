@@ -225,7 +225,7 @@ export function CrmLeadDetailsSidebar({
             <div className="flex items-center justify-between border-t border-line/10 pt-2">
               <button
                 aria-label="Enviar comentário"
-                className="size-7 rounded-full bg-blue-600 hover:bg-blue-700 flex items-center justify-center text-white transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex size-7 cursor-pointer items-center justify-center rounded-full bg-blue-start text-inverse transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!commentText.trim()}
                 onClick={() => void handlePostComment()}
                 type="button"

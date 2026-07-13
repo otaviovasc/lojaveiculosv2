@@ -6,7 +6,10 @@ import {
   Save,
 } from "lucide-react";
 import { FeatureActionButton } from "../../components/ui/FeatureLayout";
-import { FeatureEmptyState } from "../../components/ui/FeatureStates";
+import {
+  FeatureAlert,
+  FeatureEmptyState,
+} from "../../components/ui/FeatureStates";
 import type { SaleRecord } from "./types";
 
 export const saleWorkspaceSteps = [
@@ -113,15 +116,13 @@ export function SaleWorkspaceHeader({
 export function SaleWorkspaceMessage({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] rounded-2xl border border-line bg-panel p-4 shadow-xl flex items-center gap-3 max-w-sm">
-      <span className="size-2 rounded-full bg-accent animate-ping" />
-      <div className="flex flex-col gap-0.5 text-left">
-        <span className="text-xs font-black text-muted uppercase tracking-wider">
-          Formalização
-        </span>
-        <span className="text-xs font-bold text-app-text">{message}</span>
-      </div>
-    </div>
+    <FeatureAlert
+      className="fixed bottom-6 right-6 z-[9999] max-w-sm shadow-xl"
+      title="Formalização"
+      tone="info"
+    >
+      {message}
+    </FeatureAlert>
   );
 }
 
@@ -158,7 +159,7 @@ export function SaleWorkspaceNavigation({
         </button>
       ) : (
         <button
-          className="sales-secondary-button border-emerald-500/30 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40"
+          className="sales-secondary-button border-success/30 text-success bg-success/5 hover:bg-success/10 hover:border-success/40"
           onClick={onFinish}
           type="button"
         >

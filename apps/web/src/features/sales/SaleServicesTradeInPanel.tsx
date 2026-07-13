@@ -66,8 +66,8 @@ function TradeInFields({
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <div className="md:col-span-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-xs font-bold text-emerald-600 flex flex-col gap-1.5 shadow-inner">
-        <span className="uppercase tracking-wider font-black flex items-center gap-1 text-emerald-700">
+      <div className="md:col-span-2 rounded-xl border border-success/20 bg-success/10 p-4 text-xs font-bold text-success-strong flex flex-col gap-1.5 shadow-inner">
+        <span className="uppercase tracking-wider font-black flex items-center gap-1 text-success-strong">
           <Check className="size-3.5" /> Cadastro Automático Ativo
         </span>
         <span>

@@ -200,7 +200,7 @@ export function FinanceiroCustosSection({
       )}
 
       <Dialog open={isModalOpen} onOpenChange={handleCloseModal}>
-        <DialogContent className="max-w-md bg-panel border border-line text-app-text rounded-xl p-6">
+        <DialogContent className="max-w-md" radius="xl" surface="panel">
           <DialogHeader className="mb-4">
             <DialogTitle className="text-base font-black uppercase tracking-wider">
               Adicionar Novo Custo
@@ -290,7 +290,11 @@ export function FinanceiroCustosSection({
               </div>
             </InventoryField>
 
-            <DialogFooter className="flex gap-2 justify-end pt-4 border-t border-line/30">
+            <DialogFooter
+              className="flex gap-2 justify-end"
+              divider
+              paddingTop="md"
+            >
               <button
                 className="min-h-9 rounded-lg px-4 text-xs font-black border border-line text-app-text hover:bg-line/25 transition-all cursor-pointer"
                 onClick={handleCloseModal}

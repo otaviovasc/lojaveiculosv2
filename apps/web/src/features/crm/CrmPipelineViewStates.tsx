@@ -31,7 +31,8 @@ export function CrmPipelineLoading({
 }) {
   return (
     <FeatureLoadingState
-      className="glass-panel-branded flex items-center gap-3 p-6 text-sm font-bold text-muted"
+      className="glass-panel-branded flex items-center gap-3 text-sm font-bold text-muted"
+      density="compact"
       icon={LoaderCircle}
       title={title}
     >

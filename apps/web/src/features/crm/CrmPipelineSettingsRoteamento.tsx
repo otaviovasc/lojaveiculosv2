@@ -55,7 +55,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
           </p>
         </div>
         <button
-          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors"
+          className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse shadow-sm transition-opacity hover:opacity-90"
           onClick={() => {
             setRouteError(null);
             setIsModalOpen(true);
@@ -84,7 +84,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
             </p>
           </div>
           <button
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors mt-2"
+            className="mt-2 inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse shadow-sm transition-opacity hover:opacity-90"
             onClick={() => {
               setRouteError(null);
               setIsModalOpen(true);
@@ -133,7 +133,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
                   {/* Actions */}
                   <div className="flex justify-end">
                     <button
-                      className="p-1.5 text-muted hover:text-red-500 rounded hover:bg-red-500/10 cursor-pointer transition-colors"
+                      className="cursor-pointer rounded p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger"
                       onClick={() => handleDeleteRule(rule.id)}
                       type="button"
                     >
@@ -217,7 +217,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
               </button>
               <button
                 onClick={handleAddRule}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-bold text-white transition-colors"
+                className="rounded-lg bg-blue-start px-4 py-2 text-xs font-bold text-inverse transition-opacity hover:opacity-90"
                 type="button"
               >
                 Salvar

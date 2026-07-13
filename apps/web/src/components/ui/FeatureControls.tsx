@@ -6,15 +6,22 @@ import { cx, type FeatureIcon } from "./featureShared";
 
 export { FeatureTabs } from "./FeatureTabs";
 
-export function FeatureInput(props: ComponentProps<"input">) {
+export function FeatureInput({
+  className,
+  horizontalPadding = "default",
+  ...props
+}: ComponentProps<"input"> & {
+  horizontalPadding?: "default" | "none";
+}) {
   return (
     <input
       {...props}
       className={cx(
-        "w-full min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
+        "w-full min-h-11 rounded-lg border border-line bg-app text-sm",
+        horizontalPadding === "default" ? "px-3" : "px-0",
         "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
         "disabled:opacity-50 disabled:bg-app-elevated/50 disabled:cursor-not-allowed disabled:border-line/60",
-        props.className,
+        className,
       )}
     />
   );
@@ -57,24 +64,33 @@ export function FeatureSearchField({
 
 export function FeatureSelect<Value extends string = string>({
   className,
+  density = "default",
+  iconInset = false,
+  radius = "default",
   ...props
 }: {
   ariaLabel?: string;
   className?: string | undefined;
   defaultValue?: Value | undefined;
+  density?: "compact" | "default";
   disabled?: boolean | undefined;
+  iconInset?: boolean;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
   onChange?: (value: Value) => void;
   options: readonly CustomSelectOption<Value>[];
   placeholder?: string | undefined;
+  radius?: "default" | "md";
   value?: Value | undefined;
 }) {
   return (
     <CustomSelect
       {...props}
       className={cx(
-        "min-h-11 rounded-lg border border-line bg-app px-3 text-sm",
+        "border border-line bg-app px-3 text-sm",
+        density === "compact" ? "!min-h-9 !py-1 !text-xs" : "min-h-11",
+        iconInset && "!pl-8",
+        radius === "md" ? "rounded-md" : "rounded-lg",
         "font-bold text-app-text outline-none focus:shadow-[var(--shadow-focus)]",
         className,
       )}

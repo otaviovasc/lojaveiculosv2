@@ -105,8 +105,9 @@ export function OwnerOnboardingPage() {
       {error ? <FeatureAlert>{error}</FeatureAlert> : null}
 
       <FeatureSection
-        className="grid gap-4 p-5"
+        className="grid gap-4"
         icon={<Store className="size-5 text-accent-strong" />}
+        padding="compact"
         title="Dados da loja"
       >
         <form onSubmit={(event) => void submit(event)} className="grid gap-4">
@@ -141,10 +142,11 @@ export function OwnerOnboardingPage() {
             <div className="flex min-h-11 items-center rounded-lg border border-line bg-app px-3 focus-within:border-accent">
               <FeatureInput
                 aria-invalid={Boolean(fieldErrors.publicSlug)}
+                horizontalPadding="none"
                 required
                 value={publicSlug}
                 onChange={(event) => onPublicSlugChange(event.target.value)}
-                className="min-h-0 min-w-0 flex-1 border-0 bg-transparent px-0 focus:shadow-none"
+                className="min-h-0 min-w-0 flex-1 border-0 bg-transparent focus:shadow-none"
                 placeholder="auto-prime"
               />
               <span className="text-xs font-bold text-muted">

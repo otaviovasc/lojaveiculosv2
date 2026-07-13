@@ -11,7 +11,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
     <div className="flex flex-col gap-4">
       <section className="sales-glass-panel p-5 bg-panel border border-line">
         <div className="flex items-center gap-2 border-b border-line/50 pb-3 mb-4">
-          <Check className="size-4.5 text-emerald-500" />
+          <Check className="size-4.5 text-success" />
           <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
             Revisão dos Dados da Venda
           </h3>
@@ -114,7 +114,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 <span className="text-muted block text-xs uppercase">
                   Total em Pagamentos
                 </span>
-                <span className="text-emerald-500 block mt-0.5 text-sm font-black">
+                <span className="text-success block mt-0.5 text-sm font-black">
                   {formatCents(totalPaid)}
                 </span>
               </div>
@@ -123,11 +123,11 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                   Diferença
                 </span>
                 {totalPaid >= salePrice ? (
-                  <span className="text-emerald-500 block mt-0.5 font-black uppercase tracking-wider text-xs flex items-center gap-1">
+                  <span className="text-success block mt-0.5 font-black uppercase tracking-wider text-xs flex items-center gap-1">
                     <Check className="size-3" /> Quitada
                   </span>
                 ) : (
-                  <span className="text-rose-500 block mt-0.5 text-sm font-black">
+                  <span className="text-danger block mt-0.5 text-sm font-black">
                     {formatCents(balance)} restante
                   </span>
                 )}
@@ -165,7 +165,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
               <span>Documentação Anexada</span>
             </h4>
             {sale.selectedDocumentKinds.length === 0 ? (
-              <p className="text-xs font-bold text-rose-500">
+              <p className="text-xs font-bold text-danger">
                 Nenhum documento selecionado para emissão.
               </p>
             ) : (
@@ -173,7 +173,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 {sale.selectedDocumentKinds.map((k) => (
                   <span
                     key={k}
-                    className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/25 px-2.5 py-1 rounded-lg text-xs font-black"
+                    className="inline-flex items-center gap-1 bg-success/10 text-success border border-success/25 px-2.5 py-1 rounded-lg text-xs font-black"
                   >
                     <Check className="size-3" />
                     {formatDocumentKindLabel(k)}

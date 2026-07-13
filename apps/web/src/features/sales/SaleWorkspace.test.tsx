@@ -216,9 +216,9 @@ describe("SaleWorkspace", () => {
     );
     await waitFor(() => expect(onRevert).toHaveBeenCalledOnce());
     expect(onRevert.mock.calls[0]?.[1]).toBe("Corrigir comprador");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "Esta venda está em modo somente leitura",
-    );
+    expect(
+      screen.getByText(/Esta venda está em modo somente leitura/),
+    ).toBeInTheDocument();
   });
 
   it("hides reversal for a historical closed revision", () => {
@@ -236,7 +236,7 @@ describe("SaleWorkspace", () => {
     expect(
       screen.queryByRole("button", { name: "Reverter venda" }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("status")).toHaveTextContent("revisão histórica");
+    expect(screen.getByText(/revisão histórica/)).toBeInTheDocument();
   });
 
   it("uses custom pickers without exposing fallback unit ids", () => {

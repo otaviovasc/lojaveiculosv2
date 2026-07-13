@@ -137,7 +137,7 @@ function PageTypographyFields({
       <div className="space-y-2">
         <Label>Fonte da página</Label>
         <FeatureSelect
-          className="h-10 rounded-md border-input bg-background text-foreground"
+          className="h-10 border-input bg-background text-foreground"
           onChange={(fontFamily) =>
             onDraftChange({
               ...draft,
@@ -148,6 +148,7 @@ function PageTypographyFields({
             { label: "Usar fonte do storefront", value: "inherit" },
             ...storefrontFontOptions,
           ]}
+          radius="md"
           value={draft.fontFamily ?? "inherit"}
         />
         <p className="text-xs text-muted-foreground">

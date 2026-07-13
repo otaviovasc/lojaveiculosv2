@@ -177,7 +177,7 @@ export function WebsiteBuilderTypographyPanel({
       <div className="space-y-2">
         <Label>Fonte dos títulos</Label>
         <FeatureSelect
-          className="h-10 rounded-md border-input bg-background text-foreground"
+          className="h-10 border-input bg-background text-foreground"
           onChange={(heading) =>
             updateConfig("fonts", {
               ...config.fonts,
@@ -185,13 +185,14 @@ export function WebsiteBuilderTypographyPanel({
             })
           }
           options={storefrontFontOptions}
+          radius="md"
           value={config.fonts.heading ?? storefrontFontOptions[0]?.value ?? ""}
         />
       </div>
       <div className="space-y-2">
         <Label>Fonte dos textos</Label>
         <FeatureSelect
-          className="h-10 rounded-md border-input bg-background text-foreground"
+          className="h-10 border-input bg-background text-foreground"
           onChange={(body) =>
             updateConfig("fonts", {
               ...config.fonts,
@@ -199,6 +200,7 @@ export function WebsiteBuilderTypographyPanel({
             })
           }
           options={storefrontFontOptions}
+          radius="md"
           value={config.fonts.body ?? storefrontFontOptions[0]?.value ?? ""}
         />
       </div>

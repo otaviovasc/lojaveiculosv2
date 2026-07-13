@@ -26,6 +26,7 @@ import {
 } from "../../../domains/vehicle/checklists/vehicleChecklistSupport.js";
 import { VehicleWorkflowStatusError } from "../../../domains/vehicle/policies/workflowStatusPolicy.js";
 import { VehicleListingDeletionStateError } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
+import { SaleUnitConflictError } from "../../../domains/sales/saleUnitConflict.js";
 
 export async function parseJson<Schema extends z.ZodType>(
   context: Context,
@@ -96,6 +97,15 @@ export async function handle(
     if (error instanceof VehicleWorkflowStateError) {
       return jsonApiError(context, {
         code: "VEHICLE_WORKFLOW_CONFLICT",
+        error,
+        message: error.message,
+        status: 409,
+      });
+    }
+
+    if (error instanceof SaleUnitConflictError) {
+      return jsonApiError(context, {
+        code: "SALE_UNIT_CONFLICT",
         error,
         message: error.message,
         status: 409,

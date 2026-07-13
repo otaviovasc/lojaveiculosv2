@@ -35,7 +35,12 @@ export function SalesListDetailsDialog({
   const canEdit = canPersistSaleWorkspaceEdits(sale);
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-3xl flex-col overflow-hidden rounded-3xl border-line bg-panel p-0 shadow-2xl">
+      <DialogContent
+        className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-3xl flex-col overflow-hidden shadow-2xl"
+        padding="none"
+        radius="3xl"
+        surface="panel"
+      >
         <div
           className={[
             "p-6 pr-14 border-b border-line/50 flex justify-between items-start gap-4",
@@ -243,7 +248,7 @@ function SaleFinancialDetails({ sale }: { sale: SaleRecord }) {
           <span className="text-muted block text-xs uppercase font-bold">
             Total Pago (Lançado)
           </span>
-          <span className="text-emerald-500 block mt-0.5 text-sm font-black">
+          <span className="text-success block mt-0.5 text-sm font-black">
             {formatCents(totalPaid)}
           </span>
         </div>
@@ -252,11 +257,11 @@ function SaleFinancialDetails({ sale }: { sale: SaleRecord }) {
             Diferença
           </span>
           {balance <= 0 ? (
-            <span className="text-emerald-500 block mt-0.5 font-black uppercase text-xs flex items-center gap-1">
+            <span className="text-success block mt-0.5 font-black uppercase text-xs flex items-center gap-1">
               <CheckCircle2 className="size-3.5" /> Quitada
             </span>
           ) : (
-            <span className="text-rose-500 block mt-0.5 font-black">
+            <span className="text-danger block mt-0.5 font-black">
               {formatCents(balance)} restante
             </span>
           )}
@@ -290,7 +295,7 @@ function Meta({
 }
 
 function saleStatusBannerClass(status: SaleRecord["status"]) {
-  if (status === "closed") return "bg-emerald-500/10 border-emerald-500/25";
+  if (status === "closed") return "bg-success/10 border-success/25";
   if (status === "pending") return "bg-amber-500/10 border-amber-500/25";
   return "bg-blue-500/10 border-blue-500/25";
 }

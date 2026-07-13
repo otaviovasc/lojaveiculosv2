@@ -102,7 +102,7 @@ function ServiceTabButton({
     active
       ? "bg-accent-soft border-accent text-accent-strong shadow-sm"
       : "bg-panel border-line text-muted hover:bg-app-elevated/45",
-    highlighted ? "ring-2 ring-emerald-500/50" : "",
+    highlighted ? "ring-2 ring-success/50" : "",
   ]
     .filter(Boolean)
     .join(" ");

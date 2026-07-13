@@ -23,6 +23,9 @@ describe("CrmQuickAddLeadModal", () => {
       />,
     );
 
+    expect(
+      screen.getByRole("dialog", { name: "Novo negócio" }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Criar" }));
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Informe o nome do contato.",

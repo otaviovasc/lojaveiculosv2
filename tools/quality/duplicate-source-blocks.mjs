@@ -1,14 +1,48 @@
-export function findFunctionBlocks(source) {
-  return [
-    ...findBlocks(
-      source,
-      /\b(?:export\s+)?(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*(?:<[^>{}]*>)?\s*\([^)]*\)\s*(?::[^{=]+)?\{/g,
-    ),
-    ...findBlocks(
-      source,
-      /\b(?:export\s+)?const\s+([A-Za-z_$][\w$]*)\s*(?::[^=]+)?=\s*(?:async\s+)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)(?:\s*:\s*[^=]+)?\s*=>\s*\{/g,
-    ),
-  ];
+import {
+  expressionPath,
+  parseTypeScriptSource,
+  propertyNameText,
+  sourceLine,
+  ts,
+  unwrapExpression,
+  walkTypeScript,
+} from "./typescript-source.mjs";
+
+const callableWrapperNames = new Set([
+  "forwardRef",
+  "memo",
+  "React.forwardRef",
+  "React.memo",
+  "React.useCallback",
+  "useCallback",
+]);
+
+export function findFunctionBlocks(source, file = "source.ts") {
+  const sourceFile = parseTypeScriptSource(file, source);
+  const blocks = [];
+
+  walkTypeScript(sourceFile, (node) => {
+    if (ts.isFunctionDeclaration(node) && node.name && node.body) {
+      blocks.push(
+        toFunctionBlock(source, sourceFile, node.name.text, node, node.body),
+      );
+      return;
+    }
+    if (ts.isMethodDeclaration(node) && node.body) {
+      const name = propertyNameText(node.name);
+      if (name)
+        blocks.push(toFunctionBlock(source, sourceFile, name, node, node.body));
+      return;
+    }
+    if (!ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name)) return;
+    const callable = callableInitializer(node.initializer);
+    if (!callable) return;
+    blocks.push(
+      toFunctionBlock(source, sourceFile, node.name.text, node, callable.body),
+    );
+  });
+
+  return blocks;
 }
 
 export function findOptionCollections(source) {
@@ -35,21 +69,32 @@ export function lineNumberAt(source, index) {
   return source.slice(0, index).split("\n").length;
 }
 
-function findBlocks(source, pattern) {
-  const blocks = [];
-  for (const match of source.matchAll(pattern)) {
-    const openingBrace = match.index + match[0].lastIndexOf("{");
-    const closingBrace = findMatchingToken(source, openingBrace, "{", "}");
-    if (closingBrace === -1) continue;
-
-    blocks.push({
-      body: source.slice(openingBrace + 1, closingBrace),
-      line: lineNumberAt(source, match.index),
-      name: match[1],
-    });
+function callableInitializer(initializer) {
+  if (!initializer) return null;
+  const current = unwrapExpression(initializer);
+  if (ts.isArrowFunction(current) || ts.isFunctionExpression(current)) {
+    return current;
   }
+  if (!ts.isCallExpression(current)) return null;
+  const wrapperName = expressionPath(current.expression);
+  if (!wrapperName || !callableWrapperNames.has(wrapperName)) return null;
+  for (let index = current.arguments.length - 1; index >= 0; index -= 1) {
+    const callable = callableInitializer(current.arguments[index]);
+    if (callable) return callable;
+  }
+  return null;
+}
 
-  return blocks;
+function toFunctionBlock(source, sourceFile, name, node, body) {
+  const start = body.getStart(sourceFile);
+  const end = body.getEnd();
+  return {
+    body: ts.isBlock(body)
+      ? source.slice(start + 1, Math.max(start + 1, end - 1))
+      : source.slice(start, end),
+    line: sourceLine(sourceFile, node),
+    name,
+  };
 }
 
 function findMatchingToken(source, start, openToken, closeToken) {

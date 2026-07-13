@@ -20,6 +20,7 @@ import {
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   assertDocumentOwnership,
+  assertFinanceEntriesLocallyReversible,
   assertFinanceOwnership,
   isProvenPriorCompensation,
 } from "./salesReversionCompensationChecks.js";
@@ -102,6 +103,7 @@ async function prepareCompensation(
     tenantId: context.tenantId,
   });
   assertFinanceOwnership(sale, unit, financeEntries);
+  assertFinanceEntriesLocallyReversible(financeEntries);
 
   const allDocuments = await getDocumentRepository(ports).listByListing({
     listingId: listing.id,

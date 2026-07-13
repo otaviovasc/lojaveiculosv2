@@ -71,9 +71,10 @@ export function SettingsStoreProfilePanel({
 
   return (
     <FeatureSection
+      className="settings-profile-panel glass-panel-branded border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none"
       icon={<Building2 className="size-5 text-accent-strong" />}
+      padding="comfortable"
       title="Perfil da Loja"
-      className="settings-profile-panel glass-panel-branded p-6 md:p-8 border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none"
     >
       <form
         onSubmit={(e) => {

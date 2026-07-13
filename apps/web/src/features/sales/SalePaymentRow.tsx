@@ -63,7 +63,7 @@ export function PaymentRow({
       />
       <button
         aria-label={`Remover pagamento ${index + 1}`}
-        className="sales-secondary-button !min-h-[2.75rem] hover:!border-rose-500 hover:!text-rose-500 shrink-0"
+        className="sales-secondary-button !min-h-[2.75rem] hover:!border-danger hover:!text-danger shrink-0"
         disabled={locked}
         onClick={onRemove}
         title={

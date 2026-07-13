@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { Trash, Star, Save, CircleAlert } from "lucide-react";
-import { FeatureInput } from "../../components/ui/FeatureControls";
+import {
+  FeatureInput,
+  FeatureTextarea,
+} from "../../components/ui/FeatureControls";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
+import { Switch } from "../../components/ui/switch";
 import type { Pipeline } from "./crmPipelineStorage";
 
 type Props = {
@@ -52,8 +57,7 @@ export function CrmPipelineSettingsGeral({
 
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold text-app-text">Descrição</span>
-          <textarea
-            className="w-full min-h-24 rounded-lg border border-line bg-app px-3 py-2 text-xs font-bold text-app-text outline-none focus:border-accent"
+          <FeatureTextarea
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Descreva para que serve este pipeline (opcional)"
             value={description}
@@ -72,41 +76,31 @@ export function CrmPipelineSettingsGeral({
               entram aqui.
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => !pipeline.isDefault && setIsDefault(!isDefault)}
+          <Switch
+            aria-label="Definir como pipeline padrão"
+            checked={isDefault}
             disabled={pipeline.isDefault}
-            className={
-              "relative inline-flex h-5 w-9 items-center rounded-full transition-colors " +
-              (isDefault ? "bg-blue-600" : "bg-line/45")
-            }
-          >
-            <span
-              className={
-                "inline-block size-3.5 transform rounded-full bg-white transition-transform " +
-                (isDefault ? "translate-x-4.5" : "translate-x-1")
-              }
-            />
-          </button>
+            onCheckedChange={setIsDefault}
+          />
         </div>
 
         {/* Save button */}
         <div className="flex justify-end mt-2">
-          <button
+          <FeatureActionButton
+            icon={Save}
+            label="Salvar alterações"
             onClick={handleSave}
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors"
-            type="button"
+            variant="primary"
           >
-            <Save className="size-3.5" />
-            <span>Salvar alterações</span>
-          </button>
+            Salvar alterações
+          </FeatureActionButton>
         </div>
       </div>
 
       {/* Danger Zone */}
       {!pipeline.isDefault && (
         <div className="mt-4 flex flex-col gap-3">
-          <div className="flex items-center gap-1.5 text-red-500 font-bold text-sm">
+          <div className="flex items-center gap-1.5 text-sm font-bold text-danger">
             <CircleAlert className="size-4 shrink-0" />
             <span>Zona de perigo</span>
           </div>
@@ -114,7 +108,7 @@ export function CrmPipelineSettingsGeral({
             Ações irreversíveis. Tenha certeza antes de prosseguir.
           </p>
 
-          <div className="border border-red-500/20 bg-red-500/5 rounded-xl p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-danger/20 bg-danger/5 p-4">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-bold text-app-text">
                 Excluir pipeline
@@ -125,7 +119,7 @@ export function CrmPipelineSettingsGeral({
               </span>
             </div>
             <button
-              className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-red-600 px-4 text-xs font-bold text-white hover:bg-red-700 cursor-pointer transition-colors shrink-0"
+              className="inline-flex min-h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-danger px-4 text-xs font-bold text-inverse transition-opacity hover:opacity-90"
               onClick={() => setIsDeleteDialogOpen(true)}
               type="button"
             >

@@ -1,11 +1,9 @@
 import type { Context } from "hono";
+import type { ApiErrorResponseInput } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
-  HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
-  HttpContextRequestPolicyError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
-import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import { AuthorizationError } from "../../../shared/authorization.js";
+  apiErrorInput,
+  handleControllerAction,
+} from "../../../infrastructure/http/commonApiErrorResponse.js";
 import {
   CrmLeadNotFoundError,
   CrmPipelineDuplicateNameError,
@@ -21,127 +19,38 @@ export async function handleCrm(
   context: Context,
   action: () => Promise<Response>,
 ): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    if (error instanceof CrmRequestValidationError) {
-      return jsonApiError(context, {
-        code: "CRM_REQUEST_VALIDATION_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
+  return handleControllerAction(context, action, crmErrorResponse);
+}
 
-    if (error instanceof HttpContextAuthenticationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHENTICATION_REQUIRED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-
-    if (
-      error instanceof AuthorizationError ||
-      error instanceof HttpContextAuthorizationError
-    ) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-
-    if (error instanceof HttpContextRequestPolicyError) {
-      return jsonApiError(context, {
-        code: "HTTP_REQUEST_POLICY_ERROR",
-        error,
-        message: error.message,
-        status: error.statusCode,
-      });
-    }
-
-    if (error instanceof CrmLeadNotFoundError) {
-      return jsonApiError(context, {
-        code: "CRM_LEAD_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
-
-    if (error instanceof CrmPipelineNotFoundError) {
-      return jsonApiError(context, {
-        code: "CRM_PIPELINE_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
-
-    if (error instanceof CrmPipelineStageNotFoundError) {
-      return jsonApiError(context, {
-        code: "CRM_PIPELINE_STAGE_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
-
-    if (error instanceof CrmPipelineDuplicateNameError) {
-      return jsonApiError(context, {
-        code: "CRM_PIPELINE_DUPLICATE_NAME",
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-
-    if (error instanceof CrmPipelineInUseError) {
-      return jsonApiError(context, {
-        code: "CRM_PIPELINE_IN_USE",
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-
-    if (error instanceof CrmVisitNotFoundError) {
-      return jsonApiError(context, {
-        code: "CRM_VISIT_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
-
-    if (error instanceof CrmVisitSessionMismatchError) {
-      return jsonApiError(context, {
-        code: "CRM_VISIT_SESSION_MISMATCH",
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-
-    if (error instanceof CrmScopeError) {
-      return jsonApiError(context, {
-        code: "CRM_SCOPE_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
-
-    return jsonApiError(context, {
-      code: "INTERNAL_SERVER_ERROR",
-      error,
-      message: "Internal server error.",
-      status: 500,
-    });
+function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
+  if (error instanceof CrmRequestValidationError) {
+    return apiErrorInput(error, "CRM_REQUEST_VALIDATION_ERROR", 400);
   }
+  if (error instanceof CrmLeadNotFoundError) {
+    return apiErrorInput(error, "CRM_LEAD_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmPipelineNotFoundError) {
+    return apiErrorInput(error, "CRM_PIPELINE_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmPipelineStageNotFoundError) {
+    return apiErrorInput(error, "CRM_PIPELINE_STAGE_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmPipelineDuplicateNameError) {
+    return apiErrorInput(error, "CRM_PIPELINE_DUPLICATE_NAME", 409);
+  }
+  if (error instanceof CrmPipelineInUseError) {
+    return apiErrorInput(error, "CRM_PIPELINE_IN_USE", 409);
+  }
+  if (error instanceof CrmVisitNotFoundError) {
+    return apiErrorInput(error, "CRM_VISIT_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmVisitSessionMismatchError) {
+    return apiErrorInput(error, "CRM_VISIT_SESSION_MISMATCH", 409);
+  }
+  if (error instanceof CrmScopeError) {
+    return apiErrorInput(error, "CRM_SCOPE_ERROR", 400);
+  }
+  return null;
 }
 
 export class CrmRequestValidationError extends Error {

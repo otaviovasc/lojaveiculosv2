@@ -115,4 +115,85 @@ describe("releaseVehicleUnitReservation", () => {
     ).rejects.toThrow("too many linked finance entries");
     expect(ports.units.get("unit_1")?.status).toBe("reserved");
   });
+
+  it("keeps a provider-managed signal reserved until provider compensation", async () => {
+    const context = createContext(["inventory.create", "inventory.reserve"]);
+    const ports = createInMemoryVehiclePorts([
+      createListing({ status: "published", unitIds: ["unit_1"] }),
+    ]);
+    await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
+    await reserveVehicleUnit(
+      context,
+      {
+        buyer: {
+          address: null,
+          document: null,
+          email: null,
+          name: "Buyer Example",
+          phone: null,
+        },
+        paymentMethod: "pix",
+        signalAmountCents: 100000,
+        unitId: "unit_1",
+      },
+      ports,
+    );
+    const signalPayment = ports.salesRepository.payments[0];
+    if (!signalPayment) throw new Error("Expected reservation signal payment.");
+    ports.salesRepository.payments.splice(0, 1, {
+      ...signalPayment,
+      providerPaymentId: "provider-reservation-1",
+    });
+
+    await expect(
+      releaseVehicleUnitReservation(
+        context,
+        { outcome: "cancel", unitId: "unit_1" },
+        ports,
+      ),
+    ).rejects.toThrow("requires provider cancellation or refund");
+
+    expect(ports.units.get("unit_1")?.status).toBe("reserved");
+    expect(ports.salesRepository.sales[0]?.status).toBe("pending");
+    expect(ports.salesRepository.payments[0]?.status).toBe("pending");
+    expect(ports.financeRepository.entries[0]?.status).toBe("pending");
+  });
+
+  it("keeps reservation artifacts unchanged after a stale unit transition", async () => {
+    const context = createContext(["inventory.create", "inventory.reserve"]);
+    const ports = createInMemoryVehiclePorts([
+      createListing({ status: "published", unitIds: ["unit_1"] }),
+    ]);
+    await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
+    await reserveVehicleUnit(
+      context,
+      {
+        buyer: {
+          address: null,
+          document: null,
+          email: null,
+          name: "Buyer Example",
+          phone: null,
+        },
+        paymentMethod: "pix",
+        signalAmountCents: 100000,
+        unitId: "unit_1",
+      },
+      ports,
+    );
+    ports.unitRepository!.saveIfStatus = vi.fn(async () => null);
+
+    await expect(
+      releaseVehicleUnitReservation(
+        context,
+        { outcome: "cancel", unitId: "unit_1" },
+        ports,
+      ),
+    ).rejects.toThrow("reservation changed");
+
+    expect(ports.units.get("unit_1")?.status).toBe("reserved");
+    expect(ports.salesRepository.sales[0]?.status).toBe("pending");
+    expect(ports.salesRepository.payments[0]?.status).toBe("pending");
+    expect(ports.financeRepository.entries[0]?.status).toBe("pending");
+  });
 });

@@ -204,6 +204,7 @@ export function FeatureSection({
   description,
   headerClassName,
   icon,
+  padding = "default",
   title,
   titleClassName,
 }: {
@@ -213,13 +214,22 @@ export function FeatureSection({
   description?: ReactNode;
   headerClassName?: string;
   icon?: ReactNode;
+  padding?: "comfortable" | "compact" | "default" | "none";
   title?: ReactNode;
   titleClassName?: string;
 }) {
   const hasHeader = Boolean(title || description || actions || icon);
 
   return (
-    <section className={cx("panel", className)}>
+    <section
+      className={cx(
+        "panel",
+        padding === "comfortable" && "p-6 md:p-8",
+        padding === "compact" && "p-5",
+        padding === "none" && "!p-0",
+        className,
+      )}
+    >
       {hasHeader ? (
         <div
           className={cx(

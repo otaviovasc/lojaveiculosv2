@@ -45,6 +45,9 @@ describe("sales controller workflow", () => {
     expect(reserveResponse.status).toBe(200);
     const reserved = await readJson<TestSale>(reserveResponse);
     const reservationPaymentId = reserved.payments[0]?.id;
+    if (!reservationPaymentId) {
+      throw new Error("Expected persisted reservation payment id.");
+    }
     expect([...vehiclePorts.documents.values()].map((doc) => doc.kind)).toEqual(
       ["reservation_receipt"],
     );
@@ -54,7 +57,7 @@ describe("sales controller workflow", () => {
       `/sales/${created.id}`,
       {
         payments: [
-          payment(200000, "cash"),
+          { ...payment(200000, "cash"), id: reservationPaymentId },
           {
             ...payment(4900000, "transfer"),
             dueAt: "2026-08-12T12:00:00.000Z",

@@ -95,6 +95,8 @@ export {
   SaleReversionUnsupportedError,
 } from "../../saleReversionErrors.js";
 
+export { SalePaymentCompensationRequiredError } from "../../salePaymentCompensation.js";
+
 export type SaleReadinessPurpose = "close" | "reserve";
 
 function referenceMessage(reference: "lead" | "vehicle_unit" | "unknown") {

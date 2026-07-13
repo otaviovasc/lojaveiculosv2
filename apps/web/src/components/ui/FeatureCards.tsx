@@ -7,14 +7,17 @@ type FeatureCardTone =
 export function FeatureCard({
   children,
   className,
+  padding = "none",
 }: {
   children: ReactNode;
   className?: string;
+  padding?: "compact" | "none";
 }) {
   return (
     <section
       className={cx(
         "rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]",
+        padding === "compact" && "p-4",
         className,
       )}
     >
@@ -116,29 +119,44 @@ export function FeatureStatCard({
 export function FeatureList({
   children,
   className,
+  inset = "none",
 }: {
   children: ReactNode;
   className?: string;
+  inset?: "none" | "scroll";
 }) {
-  return <div className={cx("flex flex-col gap-3", className)}>{children}</div>;
+  return (
+    <div
+      className={cx(
+        "flex flex-col gap-3",
+        inset === "scroll" && "-mr-1 pr-1",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
 }
 
 export function FeatureListItemButton({
   active,
   children,
   className,
+  density = "default",
   onClick,
 }: {
   active?: boolean;
   children: ReactNode;
   className?: string;
+  density?: "comfortable" | "default";
   onClick: () => void;
 }) {
   return (
     <button
       aria-pressed={active}
       className={cx(
-        "w-full rounded-lg border border-line bg-panel p-3 text-left transition-all hover:border-accent/40 hover:bg-app-elevated",
+        "w-full rounded-lg border border-line bg-panel text-left transition-all hover:border-accent/40 hover:bg-app-elevated",
+        density === "comfortable" ? "p-3.5" : "p-3",
         active && "border-accent bg-accent-soft",
         className,
       )}

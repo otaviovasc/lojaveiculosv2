@@ -95,7 +95,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
           </p>
         </div>
         <button
-          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer shadow-sm transition-colors"
+          className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse shadow-sm transition-opacity hover:opacity-90"
           onClick={handleAddStage}
           type="button"
         >
@@ -106,7 +106,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
 
       {/* Amber/Yellow warning banner */}
       {(!hasWon || !hasLost) && (
-        <div className="border border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-500 rounded-lg p-3 text-xs font-bold flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-lg border border-warning/25 bg-warning/10 p-3 text-xs font-bold text-warning-strong">
           <CircleAlert className="size-4 shrink-0" />
           <span>
             Configure uma etapa de Venda e uma de Perda para que vendedores
@@ -127,6 +127,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
               <GripVertical className="size-4 cursor-grab" />
               <div className="flex flex-col">
                 <button
+                  aria-label={`Mover ${stage.name} para cima`}
                   onClick={() => move(idx, -1)}
                   disabled={idx === 0}
                   className="p-0.5 rounded hover:bg-line/20 disabled:opacity-20 cursor-pointer"
@@ -135,6 +136,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
                   <ChevronUp className="size-3" />
                 </button>
                 <button
+                  aria-label={`Mover ${stage.name} para baixo`}
                   onClick={() => move(idx, 1)}
                   disabled={idx === stages.length - 1}
                   className="p-0.5 rounded hover:bg-line/20 disabled:opacity-20 cursor-pointer"
@@ -172,6 +174,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
             <div className="flex items-center gap-1.5 text-xs font-bold text-muted shrink-0">
               <span>SLA</span>
               <button
+                aria-label={`Diminuir SLA de ${stage.name}`}
                 onClick={() => adjustSla(stage.id, -1)}
                 className="w-5 h-5 flex items-center justify-center rounded bg-line/20 hover:bg-line/35 text-xs text-app-text cursor-pointer transition-colors"
                 type="button"
@@ -182,6 +185,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
                 {stage.slaDays ?? "—"}
               </span>
               <button
+                aria-label={`Aumentar SLA de ${stage.name}`}
                 onClick={() => adjustSla(stage.id, 1)}
                 className="w-5 h-5 flex items-center justify-center rounded bg-line/20 hover:bg-line/35 text-xs text-app-text cursor-pointer transition-colors"
                 type="button"
@@ -216,7 +220,8 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
                 </span>
               ) : (
                 <button
-                  className="p-1.5 text-muted hover:text-red-500 rounded hover:bg-red-500/10 cursor-pointer transition-colors"
+                  aria-label={`Excluir etapa ${stage.name}`}
+                  className="cursor-pointer rounded p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger"
                   onClick={() => handleDeleteStage(stage.id)}
                   type="button"
                 >

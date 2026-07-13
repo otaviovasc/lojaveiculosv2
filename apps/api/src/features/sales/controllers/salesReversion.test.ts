@@ -72,7 +72,7 @@ describe("sale reversion workflow", () => {
     const original = await closeSale(services);
 
     await expect(
-      services.updateDraft(context(["sale.correct"]), original.id, {
+      services.updateDraft(context(["sale.draft"]), original.id, {
         buyerSnapshot: { name: "Mutated buyer" },
       }),
     ).rejects.toMatchObject({ currentStatus: "closed" });
@@ -204,7 +204,7 @@ describe("sale reversion workflow", () => {
       unsupportedReason: "trade_in_acquisition",
     });
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
-    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("paid");
+    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("pending");
   });
 
   it("does not compensate when generated document ownership is ambiguous", async () => {
@@ -224,7 +224,7 @@ describe("sale reversion workflow", () => {
       }),
     ).rejects.toMatchObject({ compensation: "documents" });
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
-    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("paid");
+    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("pending");
   });
 });
 

@@ -1,4 +1,5 @@
 import { RefreshCcw } from "lucide-react";
+import { FeatureCard } from "../../components/ui/FeatureCards";
 import {
   FeatureAlert,
   FeatureLoadingState,
@@ -15,10 +16,15 @@ export function StorefrontLoadingState({
       {status.kind === "error" ? (
         <FeatureAlert>{status.message}</FeatureAlert>
       ) : (
-        <FeatureLoadingState className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-4 text-sm font-semibold text-muted-foreground shadow-sm">
-          <RefreshCcw aria-hidden="true" className="h-4 w-4 animate-spin" />
-          <span>Carregando site</span>
-        </FeatureLoadingState>
+        <FeatureCard
+          className="text-sm font-semibold text-muted-foreground"
+          padding="compact"
+        >
+          <FeatureLoadingState className="flex items-center gap-3">
+            <RefreshCcw aria-hidden="true" className="h-4 w-4 animate-spin" />
+            <span>Carregando site</span>
+          </FeatureLoadingState>
+        </FeatureCard>
       )}
     </div>
   );

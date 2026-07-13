@@ -4,6 +4,7 @@ import {
   FeatureKpiCard,
   FeatureKpiStrip,
 } from "../../components/ui/FeatureKpis";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatCents } from "./salesModel";
 import type { SaleRecord } from "./types";
 
@@ -49,12 +50,7 @@ export function SalesModuleOverview({
         />
       </FeatureKpiStrip>
 
-      {message ? (
-        <div className="rounded-2xl border border-line bg-panel p-4 text-sm font-black text-muted shadow-sm flex items-center gap-3">
-          <span className="size-2 rounded-full bg-accent animate-ping" />
-          <span>{message}</span>
-        </div>
-      ) : null}
+      {message ? <FeatureAlert tone="info">{message}</FeatureAlert> : null}
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -7,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -69,6 +71,15 @@ export const sales = pgTable(
     index("sales_seller_user_id_idx").on(table.sellerUserId),
     index("sales_store_status_idx").on(table.storeId, table.status),
     index("sales_unit_id_idx").on(table.unitId),
+    uniqueIndex("sales_current_unit_unique")
+      .on(table.unitId)
+      .where(
+        sql`${table.unitId} is not null
+          and ${table.isCurrentRevision} = true
+          and ${table.isDeleted} = false
+          and ${table.deletedAt} is null
+          and ${table.status} <> 'cancelled'`,
+      ),
   ],
 );
 

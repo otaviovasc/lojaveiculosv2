@@ -78,7 +78,7 @@ export function VehicleAcquisitionSupplierModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md bg-panel border border-line text-app-text rounded-xl p-6">
+      <DialogContent className="max-w-md" radius="xl" surface="panel">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-base font-black uppercase tracking-wider">
             {supplier ? "Editar Fornecedor" : "Cadastrar Fornecedor"}

@@ -145,7 +145,7 @@ export function SettingsModule({
         <FeatureTabs
           activeClassName="!bg-accent !text-inverse shadow-sm scale-[1.02]"
           ariaLabel="Áreas de configuração"
-          className="settings-primary-tabs inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line/60 bg-panel/75 p-1 shadow-sm backdrop-blur-md"
+          className="settings-primary-tabs"
           onChange={(tab) => selectTab(tab, setActiveTab)}
           optionClassName="inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 text-xs font-black text-muted transition-all hover:text-app-text"
           options={[
@@ -154,6 +154,7 @@ export function SettingsModule({
             { label: "Papéis e Permissões", value: "roles", icon: Users },
           ]}
           value={activeTab}
+          variant="panel"
         />
 
         <button

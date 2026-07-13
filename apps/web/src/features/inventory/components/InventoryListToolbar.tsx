@@ -109,7 +109,7 @@ export function InventoryListToolbar({
 
         <div className="flex">
           <FeatureActionButton
-            className="min-h-11 w-full px-5 text-sm md:w-auto"
+            className="min-h-11 w-full text-sm md:w-auto"
             icon={Plus}
             label="Novo Veículo"
             onClick={onCreate}

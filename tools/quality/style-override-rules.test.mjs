@@ -87,6 +87,63 @@ describe("style override rules", () => {
     expect(findStyleOverrideViolations("Page.tsx", source)).toHaveLength(2);
   });
 
+  it("covers Feature primitives and dialog sub-primitives", () => {
+    const source = `
+      import { FeatureEmptyState } from "@/components/ui/FeatureStates";
+      import { DialogContent } from "@/components/ui/dialog";
+      export function Page() {
+        return (
+          <>
+            <FeatureEmptyState className="!p-6" body="None" title="None" />
+            <DialogContent className="rounded-none" />
+          </>
+        );
+      }
+    `;
+
+    expect(findStyleOverrideViolations("Page.tsx", source)).toEqual([
+      expect.objectContaining({ cls: "!p-6", kind: "padding" }),
+      expect.objectContaining({ cls: "rounded-none", kind: "border-radius" }),
+    ]);
+  });
+
+  it("detects inline padding and radius overrides on shared primitives", () => {
+    const source = `
+      import { FeatureCard } from "@/components/ui/FeatureCards";
+      export function Page() {
+        return (
+          <FeatureCard style={{ padding: 8, borderRadius: 0, color: "red" }}>
+            Card
+          </FeatureCard>
+        );
+      }
+    `;
+
+    expect(findStyleOverrideViolations("Page.tsx", source)).toEqual([
+      expect.objectContaining({ cls: "style.padding", kind: "padding" }),
+      expect.objectContaining({
+        cls: "style.borderRadius",
+        kind: "border-radius",
+      }),
+    ]);
+  });
+
+  it("detects default-imported primitives and typed inline styles", () => {
+    const source = `
+      import Button from "@/components/ui/button";
+      export function Page() {
+        return <Button style={{ paddingLeft: 8 } as React.CSSProperties} />;
+      }
+    `;
+
+    expect(findStyleOverrideViolations("Page.tsx", source)).toEqual([
+      expect.objectContaining({
+        cls: "style.paddingLeft",
+        kind: "padding",
+      }),
+    ]);
+  });
+
   it("ignores non-UI component tags", () => {
     const source = `
       export function Page() {

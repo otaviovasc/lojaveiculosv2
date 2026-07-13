@@ -20,12 +20,14 @@ type CustomSelectProps<Value extends string = string> = {
   ariaLabel?: string | undefined;
   className?: string | undefined;
   defaultValue?: Value | undefined;
+  density?: "compact" | "default";
   disabled?: boolean | undefined;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
   onChange?: ((value: Value) => void) | undefined;
   options: readonly CustomSelectOption<Value>[];
   placeholder?: string | undefined;
+  radius?: "default" | "xl";
   value?: Value | undefined;
 };
 
@@ -33,12 +35,14 @@ export function CustomSelect<Value extends string = string>({
   ariaLabel,
   className,
   defaultValue,
+  density = "default",
   disabled = false,
   leftIcon,
   name,
   onChange,
   options,
   placeholder = "Selecionar",
+  radius = "default",
   value,
 }: CustomSelectProps<Value>) {
   const id = useId();
@@ -189,7 +193,14 @@ export function CustomSelect<Value extends string = string>({
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={ariaLabel}
-        className={["custom-select-trigger", className]
+        className={[
+          "custom-select-trigger",
+          density === "compact"
+            ? "!min-h-[2.5rem] !h-[2.5rem] !px-3.5 !py-0"
+            : "",
+          radius === "xl" ? "rounded-xl" : "",
+          className,
+        ]
           .filter(Boolean)
           .join(" ")}
         disabled={disabled}

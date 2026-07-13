@@ -207,7 +207,7 @@ function DocumentInput({
         className={[
           "sales-input",
           className,
-          error ? "border-rose-500/50 focus:border-rose-500" : "",
+          error ? "border-danger/50 focus:border-danger" : "",
         ]
           .filter(Boolean)
           .join(" ")}
@@ -224,7 +224,7 @@ function DocumentInput({
 function FieldError({ error }: { error: string | undefined }) {
   if (!error) return null;
   return (
-    <span className="text-xs font-bold text-rose-500 mt-1 uppercase">
+    <span className="text-xs font-bold text-danger mt-1 uppercase">
       {error}
     </span>
   );

@@ -1,7 +1,12 @@
 import { useState } from "react";
-import { Plus, X, Layers } from "lucide-react";
+import { Plus, Layers } from "lucide-react";
 import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../components/ui/FeatureOverlay";
 
 type Props = {
   onClose: () => void;
@@ -24,93 +29,83 @@ export function CrmQuickAddStageModal({ onClose, onAddStage }: Props) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(defaultStageColor);
   const [slaDays, setSlaDays] = useState(2);
+  const slaIsValid =
+    Number.isInteger(slaDays) && slaDays >= 1 && slaDays <= 365;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const handleSubmit = () => {
+    if (!name.trim() || !slaIsValid) return;
     onAddStage(name.trim(), color, slaDays);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <FeatureDialog
+      className="max-w-md"
+      description="Adicionar etapa ao funil de vendas"
+      footer={
+        <FeatureDialogActions
+          confirmDisabled={!name.trim() || !slaIsValid}
+          confirmIcon={<Plus aria-hidden="true" className="size-4" />}
+          confirmLabel="Adicionar Fase"
+          onCancel={onClose}
+          onConfirm={handleSubmit}
+        />
+      }
+      isOpen
+      onClose={onClose}
+      title={
+        <span className="flex items-center gap-2">
+          <Layers aria-hidden="true" className="size-5 text-accent" />
+          <span>Criar Nova Fase</span>
+        </span>
+      }
+    >
       <form
-        className="w-full max-w-md glass-panel-branded bg-panel rounded-2xl border border-line shadow-2xl overflow-hidden flex flex-col"
-        onSubmit={handleSubmit}
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          handleSubmit();
+        }}
       >
-        <header className="p-4 border-b border-line/45 flex items-center justify-between shrink-0 bg-app-elevated/45">
-          <div className="flex items-center gap-2">
-            <Layers aria-hidden="true" className="size-5 text-accent" />
-            <div>
-              <h3 className="text-sm font-black text-app-text">
-                Criar Nova Fase
-              </h3>
-              <p className="text-xs font-bold text-muted mt-0.5">
-                Adicionar etapa ao funil de vendas
-              </p>
-            </div>
-          </div>
-          <button
-            className="p-1 rounded-lg hover:bg-line/25 text-muted hover:text-app-text cursor-pointer transition-colors"
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4.5" />
-          </button>
-        </header>
+        <FeatureField label="Nome da Fase *">
+          <FeatureInput
+            autoFocus
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: Proposta Enviada"
+            required
+            type="text"
+            value={name}
+          />
+        </FeatureField>
 
-        <div className="p-5 flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-black text-app-text">
-              Nome da Fase *
-            </span>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FeatureField
+            error={slaIsValid ? undefined : "Informe entre 1 e 365 dias."}
+            label="SLA de Atendimento (Dias)"
+          >
             <FeatureInput
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Proposta Enviada"
-              required
-              type="text"
-              value={name}
+              aria-invalid={!slaIsValid}
+              max={365}
+              min={1}
+              onChange={(e) => setSlaDays(Number(e.target.value))}
+              type="number"
+              value={slaDays}
             />
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black text-app-text">
-                SLA de Atendimento (Dias)
-              </span>
-              <FeatureInput
-                min={1}
-                onChange={(e) => setSlaDays(Number(e.target.value))}
-                type="number"
-                value={slaDays}
-              />
-            </label>
-            <FeatureColorPicker
-              label="Cor da Etapa"
-              onChange={setColor}
-              presets={stageColorPresets}
-              value={color}
-            />
-          </div>
+          </FeatureField>
+          <FeatureColorPicker
+            label="Cor da Etapa"
+            onChange={setColor}
+            presets={stageColorPresets}
+            value={color}
+          />
         </div>
-
-        <footer className="p-4 border-t border-line/45 shrink-0 bg-app-elevated/45 flex justify-end gap-2.5">
-          <button
-            className="inline-flex min-h-9 items-center justify-center rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/20 cursor-pointer"
-            onClick={onClose}
-            type="button"
-          >
-            Cancelar
-          </button>
-          <button
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm"
-            type="submit"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            Adicionar Fase
-          </button>
-        </footer>
+        <button
+          aria-hidden="true"
+          className="hidden"
+          tabIndex={-1}
+          type="submit"
+        />
       </form>
-    </div>
+    </FeatureDialog>
   );
 }

@@ -43,6 +43,10 @@ export type VehicleUnitRepository = {
   ) => Promise<readonly VehicleUnit[]>;
   list: (input: ListVehicleUnitsInput) => Promise<readonly VehicleUnit[]>;
   save: (unit: VehicleUnit) => Promise<VehicleUnit>;
+  saveIfStatus: (
+    unit: VehicleUnit,
+    expectedStatus: VehicleUnit["status"],
+  ) => Promise<VehicleUnit | null>;
 };
 
 export type VehicleMediaRepository = {

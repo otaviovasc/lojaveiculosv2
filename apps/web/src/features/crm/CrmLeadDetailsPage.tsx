@@ -103,7 +103,7 @@ export function CrmLeadDetailsPage({
         </div>
 
         <div className="flex items-center gap-3">
-          <span className="px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-xs font-black text-amber-700 dark:text-amber-500">
+          <span className="rounded-full border border-warning/20 bg-warning/10 px-3 py-1 text-xs font-black text-warning-strong">
             {formatLeadTimelineLabel(lead)}
           </span>
 

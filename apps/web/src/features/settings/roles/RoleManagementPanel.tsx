@@ -200,16 +200,17 @@ export function RoleManagementPanel({
         onInviteClick={() => setIsInviteOpen(true)}
       />
       <FeatureSection
+        actions={<RoleEditabilityBadge editable={editable} />}
+        className="glass-panel-branded border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100vh-10rem)] overflow-hidden"
+        headerClassName="p-5 border-b border-line/45 bg-panel/95 backdrop-blur-md shrink-0 w-full flex items-center justify-between gap-4"
         icon={<ShieldCheck className="size-5 text-accent-strong" />}
+        padding="none"
         title={
           <RoleManagementTitle
             activePreset={activePreset}
             selected={selected}
           />
         }
-        actions={<RoleEditabilityBadge editable={editable} />}
-        className="glass-panel-branded border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100vh-10rem)] overflow-hidden !p-0"
-        headerClassName="p-5 border-b border-line/45 bg-panel/95 backdrop-blur-md shrink-0 w-full flex items-center justify-between gap-4"
       >
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
           <RoleStatsBadges stats={stats} />

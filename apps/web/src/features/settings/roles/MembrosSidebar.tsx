@@ -31,7 +31,10 @@ export function MembrosSidebar({
   onInviteClick: () => void;
 }) {
   return (
-    <FeatureCard className="glass-panel-branded p-4 border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100vh-10rem)] overflow-hidden">
+    <FeatureCard
+      className="glass-panel-branded border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100vh-10rem)] overflow-hidden"
+      padding="compact"
+    >
       <FeatureCardHeader
         icon={<UserCog className="size-5 text-accent-strong" />}
         className="mb-4"
@@ -42,7 +45,7 @@ export function MembrosSidebar({
         </FeatureCardDescription>
       </FeatureCardHeader>
 
-      <FeatureList className="flex-1 overflow-y-auto pr-1 -mr-1 mt-2">
+      <FeatureList className="flex-1 overflow-y-auto mt-2" inset="scroll">
         {roles.memberships.map((member) => {
           const active = member.membershipId === selected.membershipId;
           const presetId = memberPresetMapping[member.membershipId];
@@ -53,9 +56,10 @@ export function MembrosSidebar({
             <FeatureListItemButton
               key={member.membershipId}
               active={active}
+              density="comfortable"
               onClick={() => onSelectId(member.membershipId)}
               className={cx(
-                "relative overflow-hidden group p-3.5 border transition-all duration-300 hover:bg-app-elevated/40 hover:border-line-strong cursor-pointer flex items-center gap-3",
+                "relative overflow-hidden group border transition-all duration-300 hover:bg-app-elevated/40 hover:border-line-strong cursor-pointer flex items-center gap-3",
                 active
                   ? "border-accent bg-accent-soft/30 border-l-[4px] border-l-accent shadow-sm"
                   : "border-line bg-panel/20",

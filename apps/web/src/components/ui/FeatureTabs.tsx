@@ -15,6 +15,7 @@ export function FeatureTabs<Value extends string>({
   optionClassName,
   options,
   value,
+  variant = "default",
 }: {
   activeClassName?: string;
   ariaLabel: string;
@@ -23,6 +24,7 @@ export function FeatureTabs<Value extends string>({
   optionClassName?: string;
   options: ReadonlyArray<FeatureTabOption<Value>>;
   value: Value;
+  variant?: "default" | "panel";
 }) {
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const activeIndex = options.findIndex((option) => option.value === value);
@@ -51,7 +53,15 @@ export function FeatureTabs<Value extends string>({
   };
 
   return (
-    <div aria-label={ariaLabel} className={className} role="tablist">
+    <div
+      aria-label={ariaLabel}
+      className={cx(
+        variant === "panel" &&
+          "inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-line/60 bg-panel/75 p-1 shadow-sm backdrop-blur-md",
+        className,
+      )}
+      role="tablist"
+    >
       {options.map((option, index) => {
         const OptionIcon = option.icon;
         const active = option.value === value;

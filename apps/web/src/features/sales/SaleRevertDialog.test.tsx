@@ -24,6 +24,9 @@ describe("SaleRevertDialog", () => {
       name: "Reverter venda fechada",
     });
     expect(dialog).toHaveTextContent("A venda original será preservada");
+    expect(dialog).toHaveAccessibleDescription(
+      /A venda original será preservada/,
+    );
     const confirm = screen.getByRole("button", { name: "Reverter venda" });
     expect(confirm).toBeDisabled();
 

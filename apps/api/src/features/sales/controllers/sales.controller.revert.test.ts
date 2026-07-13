@@ -53,6 +53,41 @@ describe("sales controller reversion", () => {
       code: "SALES_REQUEST_VALIDATION_ERROR",
     });
   });
+
+  it("returns a stable conflict for provider-managed payment compensation", async () => {
+    const { app, vehiclePorts } = createTestHarness();
+    const created = await readJson<TestSale>(
+      await requestJson(app, "/sales/drafts", {
+        ...saleDraft(),
+        payments: [
+          {
+            amountCents: 5000000,
+            method: "pix",
+            principalCents: 5000000,
+            providerPaymentId: "provider-payment-1",
+          },
+        ],
+      }),
+    );
+    expect(
+      (await requestJson(app, `/sales/${created.id}/close`, {})).status,
+    ).toBe(200);
+
+    const response = await requestJson(app, `/sales/${created.id}/revert`, {
+      reason: "Correction requested",
+    });
+
+    expect(response.status).toBe(409);
+    expect(
+      await readJson<{ code: string; details: Record<string, unknown> }>(
+        response,
+      ),
+    ).toMatchObject({
+      code: "SALE_PAYMENT_COMPENSATION_REQUIRED",
+      details: { compensationReason: "provider_managed" },
+    });
+    expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
+  });
 });
 
 function createTestHarness() {

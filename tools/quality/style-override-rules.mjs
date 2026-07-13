@@ -3,26 +3,9 @@ import {
   propertyNameText,
   sourceLine,
   ts,
+  unwrapExpression,
   walkTypeScript,
 } from "./typescript-source.mjs";
-
-const uiComponents = new Set([
-  "Button",
-  "Badge",
-  "Card",
-  "CardHeader",
-  "CardContent",
-  "CardFooter",
-  "CardTitle",
-  "CardDescription",
-  "Input",
-  "Textarea",
-  "Checkbox",
-  "Switch",
-  "Dialog",
-  "Drawer",
-  "Tooltip",
-]);
 
 export function findStyleOverrideViolations(file, source) {
   if (file.includes("apps/web/src/components/ui/")) return [];
@@ -46,20 +29,37 @@ export function findStyleOverrideViolations(file, source) {
     for (const attribute of node.attributes.properties) {
       if (!ts.isJsxAttribute(attribute)) continue;
       const name = propertyNameText(attribute.name);
-      if (name !== "className") continue;
-
-      const classNames = extractClassNames(attribute.initializer, sourceFile);
-      for (const cls of classNames) {
-        const overrideType = isStyleOverrideClass(cls);
-        if (overrideType) {
-          violations.push({
-            tagName,
-            cls,
-            kind: overrideType,
-            line: sourceLine(sourceFile, attribute),
-          });
-        }
+      if (name === "className") {
+        addClassNameViolations(attribute, tagName);
       }
+      if (name === "style") {
+        addInlineStyleViolations(attribute, tagName);
+      }
+    }
+  }
+
+  function addClassNameViolations(attribute, tagName) {
+    const classNames = extractClassNames(attribute.initializer, sourceFile);
+    for (const cls of classNames) {
+      const overrideType = isStyleOverrideClass(cls);
+      if (!overrideType) continue;
+      violations.push({
+        tagName,
+        cls,
+        kind: overrideType,
+        line: sourceLine(sourceFile, attribute),
+      });
+    }
+  }
+
+  function addInlineStyleViolations(attribute, tagName) {
+    for (const override of extractInlineStyleOverrides(attribute.initializer)) {
+      violations.push({
+        tagName,
+        cls: `style.${override.property}`,
+        kind: override.kind,
+        line: sourceLine(sourceFile, attribute),
+      });
     }
   }
 }
@@ -124,6 +124,27 @@ function isStyleOverrideClass(cls) {
   return null;
 }
 
+function extractInlineStyleOverrides(initializer) {
+  if (!initializer || !ts.isJsxExpression(initializer)) return [];
+  const expression = initializer.expression
+    ? unwrapExpression(initializer.expression)
+    : null;
+  if (!expression || !ts.isObjectLiteralExpression(expression)) return [];
+  const overrides = [];
+  for (const property of expression.properties) {
+    if (!ts.isPropertyAssignment(property)) continue;
+    const name = propertyNameText(property.name);
+    if (!name) continue;
+    if (/^padding(?:Top|Right|Bottom|Left)?$/.test(name)) {
+      overrides.push({ kind: "padding", property: name });
+    }
+    if (name === "borderRadius") {
+      overrides.push({ kind: "border-radius", property: name });
+    }
+  }
+  return overrides;
+}
+
 function collectUiPrimitiveImports(sourceFile) {
   const names = new Set();
   const namespaces = new Set();
@@ -132,11 +153,15 @@ function collectUiPrimitiveImports(sourceFile) {
     if (!ts.isImportDeclaration(statement)) continue;
     if (!ts.isStringLiteral(statement.moduleSpecifier)) continue;
     if (!isUiModule(statement.moduleSpecifier.text)) continue;
+    const defaultImport = statement.importClause?.name;
+    if (defaultImport && /^[A-Z]/.test(defaultImport.text)) {
+      names.add(defaultImport.text);
+    }
     const bindings = statement.importClause?.namedBindings;
     if (bindings && ts.isNamedImports(bindings)) {
       for (const element of bindings.elements) {
         const importedName = element.propertyName?.text ?? element.name.text;
-        if (uiComponents.has(importedName)) names.add(element.name.text);
+        if (/^[A-Z]/.test(importedName)) names.add(element.name.text);
       }
     }
     if (bindings && ts.isNamespaceImport(bindings)) {
@@ -153,7 +178,7 @@ function isImportedUiPrimitive(tagName, imports) {
   return (
     !extra &&
     Boolean(namespace && imports.namespaces.has(namespace)) &&
-    Boolean(member && uiComponents.has(member))
+    Boolean(member && /^[A-Z]/.test(member))
   );
 }
 

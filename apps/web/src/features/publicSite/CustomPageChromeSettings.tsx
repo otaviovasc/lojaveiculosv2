@@ -42,7 +42,7 @@ export function PageChromeFields({
       <div className="space-y-2">
         <Label>Estilo do topo</Label>
         <FeatureSelect
-          className="h-10 rounded-lg border-border bg-background text-sm"
+          className="h-10 border-border bg-background text-sm"
           onChange={(headerVariant) =>
             updateChrome({
               headerVariant,

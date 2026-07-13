@@ -11,6 +11,11 @@ import type {
   VehicleSalePayment,
   VehicleSalesRepository,
 } from "../../../domains/vehicle/ports/vehicleSalesRepository.js";
+import {
+  activeSaleUnitConstraintName,
+  SaleUnitConflictError,
+} from "../../../domains/sales/saleUnitConflict.js";
+import { isPostgresConstraintError } from "../postgresConstraintError.js";
 
 type SaleRow = InferSelectModel<typeof sales>;
 type InsertSaleRow = InferInsertModel<typeof sales>;
@@ -66,23 +71,35 @@ export function createDrizzleVehicleSalesRepository(
       };
     },
     async create(input) {
-      const [saleRow] = await db
-        .insert(sales)
-        .values(toInsertVehicleWorkflowSale(input))
-        .returning();
-      if (!saleRow) throw new Error("Drizzle adapter did not return sale.");
-      const paymentRows = input.payments.length
-        ? await db
-            .insert(salePayments)
-            .values(
-              input.payments.map((payment) =>
-                toInsertPayment(input, payment, saleRow.id),
-              ),
-            )
-            .returning()
-        : [];
+      try {
+        const [saleRow] = await db
+          .insert(sales)
+          .values(toInsertVehicleWorkflowSale(input))
+          .returning();
+        if (!saleRow) throw new Error("Drizzle adapter did not return sale.");
+        const paymentRows = input.payments.length
+          ? await db
+              .insert(salePayments)
+              .values(
+                input.payments.map((payment) =>
+                  toInsertPayment(input, payment, saleRow.id),
+                ),
+              )
+              .returning()
+          : [];
 
-      return { payments: paymentRows.map(toPayment), sale: toSale(saleRow) };
+        return { payments: paymentRows.map(toPayment), sale: toSale(saleRow) };
+      } catch (error) {
+        if (
+          isPostgresConstraintError(error, {
+            code: "23505",
+            constraintName: activeSaleUnitConstraintName,
+          })
+        ) {
+          throw new SaleUnitConflictError();
+        }
+        throw error;
+      }
     },
     async findPendingByUnit(input) {
       const saleRows = await db

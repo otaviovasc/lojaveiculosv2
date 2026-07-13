@@ -7,6 +7,7 @@ import { useOverlayFocus } from "./useOverlayFocus";
 export function FeatureDialog({
   children,
   className,
+  description,
   footer,
   isOpen,
   onClose,
@@ -14,11 +15,13 @@ export function FeatureDialog({
 }: {
   children: ReactNode;
   className?: string;
+  description?: ReactNode;
   footer?: ReactNode;
   isOpen: boolean;
   onClose: () => void;
   title: ReactNode;
 }) {
+  const descriptionId = useId();
   const titleId = useId();
   const dialogRef = useOverlayEffects<HTMLElement>(isOpen, onClose);
   if (!isOpen) return null;
@@ -32,6 +35,7 @@ export function FeatureDialog({
         type="button"
       />
       <section
+        aria-describedby={description ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
         className={cx("feature-dialog", className ?? "feature-dialog--medium")}
@@ -52,7 +56,17 @@ export function FeatureDialog({
             <X aria-hidden="true" />
           </button>
         </div>
-        <div className="feature-dialog__body">{children}</div>
+        <div className="feature-dialog__body">
+          {description ? (
+            <p
+              className="mb-4 text-sm font-bold leading-relaxed text-muted"
+              id={descriptionId}
+            >
+              {description}
+            </p>
+          ) : null}
+          {children}
+        </div>
         {footer ? <div className="feature-dialog__footer">{footer}</div> : null}
       </section>
     </div>,

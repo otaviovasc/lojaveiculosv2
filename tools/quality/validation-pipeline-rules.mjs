@@ -6,7 +6,13 @@ const seedDocumentTestCommand =
   "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/storage/seed-product-document-pdf.test.mjs --root ../..";
 
 export function findValidationPipelineViolations(input) {
-  const { fileSources, qualityCheckFiles, scripts } = input;
+  const {
+    fileModes = {},
+    fileSources,
+    lintStaged,
+    qualityCheckFiles,
+    scripts,
+  } = input;
   const failures = [];
   const coreGuardrails = commandParts(scripts["validate:core-guardrails"]);
   const checkScripts = Object.keys(scripts)
@@ -36,6 +42,7 @@ export function findValidationPipelineViolations(input) {
   }
 
   expectScript("validate", "pnpm run validate:push");
+  expectScript("prepare", "husky");
   expectScript(
     "validate:ci",
     "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables",
@@ -53,6 +60,7 @@ export function findValidationPipelineViolations(input) {
   expectScript("test", "pnpm -r test");
   expectScript("check:format", "prettier --check .");
   expectScript("test:quality-tools", qualityTestCommand);
+  expectScript("test:coverage", "pnpm -r test:coverage");
   expectScript("test:seed-document-pdf", seedDocumentTestCommand);
   expectScript(
     "test:dashboard-animation",
@@ -62,7 +70,6 @@ export function findValidationPipelineViolations(input) {
     "test:smoke:api",
     "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts",
   );
-  expectRunnableCoverage();
   expectCommandParts("validate:commit", [
     "pnpm run validate:core-guardrails",
     "pnpm run test:quality-tools",
@@ -76,30 +83,31 @@ export function findValidationPipelineViolations(input) {
     "pnpm run test:quality-tools",
     "pnpm run test:seed-document-pdf",
   ]);
-  expectIncludes(
+  expectLintStaged();
+  expectHook(
     ".husky/pre-commit",
     ["pnpm exec lint-staged", "pnpm run validate:commit"],
-    ["pnpm run validate\n", "pnpm run validate:push"],
+    ["pnpm run validate", "pnpm run validate:push"],
   );
-  expectIncludes(
+  expectHook(
     ".husky/pre-push",
     ["pnpm run validate:push"],
-    ["pnpm run validate\n"],
+    ["pnpm run validate"],
   );
-  expectIncludes(
+  expectWorkflowEntries(
     ".github/workflows/ci.yml",
-    [
-      ...requiredCiActions.map(({ name, ref }) => `uses: ${name}@${ref}`),
-      "pnpm run validate:ci",
-      "pnpm run test:smoke:api",
-    ],
-    [],
+    "uses",
+    requiredCiActions.map(({ name, ref }) => `${name}@${ref}`),
   );
-  expectOrder(".github/workflows/ci.yml", [
-    `uses: ${requiredCiActions[1].name}@${requiredCiActions[1].ref}`,
-    `uses: ${requiredCiActions[2].name}@${requiredCiActions[2].ref}`,
+  expectWorkflowEntries(".github/workflows/ci.yml", "run", [
+    "pnpm run validate:ci",
+    "pnpm run test:smoke:api",
   ]);
-  expectOrder(".github/workflows/ci.yml", [
+  expectWorkflowOrder(".github/workflows/ci.yml", "uses", [
+    `${requiredCiActions[1].name}@${requiredCiActions[1].ref}`,
+    `${requiredCiActions[2].name}@${requiredCiActions[2].ref}`,
+  ]);
+  expectWorkflowOrder(".github/workflows/ci.yml", "run", [
     "pnpm run validate:ci",
     "pnpm run test:smoke:api",
   ]);
@@ -112,17 +120,25 @@ export function findValidationPipelineViolations(input) {
     }
   }
 
-  function expectRunnableCoverage() {
-    const command = scripts["test:coverage"];
-    if (typeof command !== "string" || command.trim() === "") {
-      failures.push("test:coverage must expose a real command");
+  function expectLintStaged() {
+    if (
+      lintStaged === null ||
+      Array.isArray(lintStaged) ||
+      typeof lintStaged !== "object" ||
+      !Object.hasOwn(lintStaged, "*")
+    ) {
+      failures.push("lint-staged must define the catch-all * file pattern");
       return;
     }
-    if (
-      /--if-present\b|--passWithNoTests\b/.test(command) ||
-      /^\s*(?:echo\b|exit\s+0\b|true\s*$)/.test(command)
-    ) {
-      failures.push("test:coverage must not silently skip coverage");
+
+    const catchAll = lintStaged["*"];
+    const commands = (Array.isArray(catchAll) ? catchAll : [catchAll]).filter(
+      (value) => typeof value === "string",
+    );
+    if (!commands.includes("prettier --ignore-unknown --write")) {
+      failures.push(
+        "lint-staged * must run prettier --ignore-unknown --write on every staged file",
+      );
     }
   }
 
@@ -145,18 +161,73 @@ export function findValidationPipelineViolations(input) {
     }
   }
 
-  function expectOrder(file, orderedTexts) {
-    const source = fileSources[file] ?? "";
+  function expectHook(file, required, forbidden) {
+    const commands = executableHookCommands(fileSources[file]);
+    if ((fileModes[file] & 0o111) === 0) {
+      failures.push(`${file} must be executable`);
+    }
+    for (const command of required) {
+      if (!commands.includes(command)) {
+        failures.push(`${file} must execute ${command}`);
+      }
+    }
+    const commandSegments = commands.flatMap(commandParts);
+    for (const command of forbidden) {
+      if (commandSegments.includes(command)) {
+        failures.push(`${file} must not execute ${command}`);
+      }
+    }
+  }
+
+  function expectWorkflowEntries(file, key, required) {
+    const entries = workflowEntries(fileSources[file], key);
+    for (const value of required) {
+      if (!entries.includes(value)) {
+        failures.push(`${file} must execute ${key}: ${value}`);
+      }
+    }
+  }
+
+  function expectWorkflowOrder(file, key, orderedValues) {
+    const entries = workflowEntries(fileSources[file], key);
     let priorIndex = -1;
-    for (const text of orderedTexts) {
-      const index = source.indexOf(text);
+    for (const value of orderedValues) {
+      const index = entries.indexOf(value, priorIndex + 1);
       if (index <= priorIndex) {
-        failures.push(`${file} must place ${text} after ${orderedTexts[0]}`);
+        failures.push(
+          `${file} must place ${key}: ${value} after ${orderedValues[0]}`,
+        );
         return;
       }
       priorIndex = index;
     }
   }
+}
+
+function executableHookCommands(source) {
+  return String(source ?? "")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line !== "" && !line.startsWith("#"))
+    .map((line) => line.replace(/\s+#.*$/, "").trim());
+}
+
+function workflowEntries(source, key) {
+  const lines = String(source ?? "").split(/\r?\n/);
+  const matcher = new RegExp(`^\\s*(?:-\\s*)?${key}:\\s*([^#]+?)(?:\\s+#.*)?$`);
+  return lines.flatMap((line) => {
+    const match = matcher.exec(line);
+    if (!match) return [];
+    const value = unquoteYamlScalar(match[1].trim());
+    return key === "run" ? commandParts(value) : [value];
+  });
+}
+
+function unquoteYamlScalar(value) {
+  const quote = value[0];
+  return quote && quote === value.at(-1) && (quote === '"' || quote === "'")
+    ? value.slice(1, -1)
+    : value;
 }
 
 function commandParts(command) {

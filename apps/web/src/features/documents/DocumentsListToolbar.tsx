@@ -134,15 +134,15 @@ export function DocumentsListToolbar({
 
         <div className="flex items-center gap-2 shrink-0">
           <label className="relative flex items-center">
-            <ArrowDownNarrowWide
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted"
-            />
             <span className="sr-only">Ordenar por</span>
             <FeatureSelect
               ariaLabel="Ordenar por"
-              className="!min-h-9 !text-xs !py-1 !pl-8 min-w-[10rem]"
+              className="min-w-[10rem]"
+              density="compact"
               disabled={isLoading}
+              leftIcon={
+                <ArrowDownNarrowWide aria-hidden="true" className="size-4" />
+              }
               onChange={(value) => onSortChange(value as DocumentsSortKey)}
               options={DOCUMENTS_SORT_OPTIONS}
               value={sortBy}

@@ -1,13 +1,12 @@
 import type { Context } from "hono";
 import type { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { HttpContextAuthenticationError } from "../../../infrastructure/http/createHttpServiceContext.js";
+import type { ApiErrorResponseInput } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
-  HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
-  HttpContextRequestPolicyError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
-import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
+  apiErrorInput,
+  handleControllerAction,
+} from "../../../infrastructure/http/commonApiErrorResponse.js";
 import {
   CrmLeadNotFoundError,
   CrmScopeError,
@@ -58,68 +57,21 @@ export async function handleRuntime(
   context: Context,
   action: () => Promise<Response>,
 ): Promise<Response> {
-  try {
-    return await action();
-  } catch (error) {
-    if (error instanceof ExternalRuntimeValidationError) {
-      return jsonApiError(context, {
-        code: "EXTERNAL_API_RUNTIME_REQUEST_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
-    if (error instanceof HttpContextAuthenticationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHENTICATION_REQUIRED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-    if (
-      error instanceof AuthorizationError ||
-      error instanceof HttpContextAuthorizationError
-    ) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-    if (error instanceof HttpContextRequestPolicyError) {
-      return jsonApiError(context, {
-        code: "HTTP_REQUEST_POLICY_ERROR",
-        error,
-        message: error.message,
-        status: error.statusCode,
-      });
-    }
-    if (
-      error instanceof CrmLeadNotFoundError ||
-      error instanceof VehicleListingNotFoundError
-    ) {
-      return jsonApiError(context, {
-        code: "EXTERNAL_API_RUNTIME_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
-    if (error instanceof CrmScopeError) {
-      return jsonApiError(context, {
-        code: "EXTERNAL_API_RUNTIME_SCOPE_ERROR",
-        error,
-        message: error.message,
-        status: 400,
-      });
-    }
-    return jsonApiError(context, {
-      code: "INTERNAL_SERVER_ERROR",
-      error,
-      message: "Internal server error.",
-      status: 500,
-    });
+  return handleControllerAction(context, action, runtimeErrorResponse);
+}
+
+function runtimeErrorResponse(error: unknown): ApiErrorResponseInput | null {
+  if (error instanceof ExternalRuntimeValidationError) {
+    return apiErrorInput(error, "EXTERNAL_API_RUNTIME_REQUEST_ERROR", 400);
   }
+  if (
+    error instanceof CrmLeadNotFoundError ||
+    error instanceof VehicleListingNotFoundError
+  ) {
+    return apiErrorInput(error, "EXTERNAL_API_RUNTIME_NOT_FOUND", 404);
+  }
+  if (error instanceof CrmScopeError) {
+    return apiErrorInput(error, "EXTERNAL_API_RUNTIME_SCOPE_ERROR", 400);
+  }
+  return null;
 }

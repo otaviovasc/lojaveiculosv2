@@ -109,7 +109,7 @@ export function StickySaleSummary({
           value={formatCents(totalPaid)}
           valueClassName={
             totalPaid >= salePrice && salePrice > 0
-              ? "text-emerald-500 font-black"
+              ? "text-success font-black"
               : "text-app-text"
           }
         />
@@ -138,7 +138,7 @@ export function StickySaleSummary({
           {checks.map((check) => (
             <div key={check.label} className="flex items-start gap-2 text-xs">
               {check.ok ? (
-                <Check className="size-4 text-emerald-500 shrink-0 mt-0.5" />
+                <Check className="size-4 text-success shrink-0 mt-0.5" />
               ) : (
                 <AlertCircle className="size-4 text-warning shrink-0 mt-0.5" />
               )}
@@ -165,7 +165,7 @@ export function StickySaleSummary({
 
       <div className="grid gap-2 mt-1">
         {sale.status === "closed" ? (
-          <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-2 rounded-xl border border-emerald-500/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+          <div className="flex items-center gap-2 bg-success/10 text-success-strong px-3 py-2 rounded-xl border border-success/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
             <CheckCircle2 className="size-4" />
             <span>Venda fechada</span>
           </div>
@@ -180,7 +180,7 @@ export function StickySaleSummary({
             <span>Reserva ativa</span>
           </div>
         ) : isCloseReady ? (
-          <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-3 py-2 rounded-xl border border-emerald-500/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+          <div className="flex items-center gap-2 bg-success/10 text-success-strong px-3 py-2 rounded-xl border border-success/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
             <CheckCircle2 className="size-4" />
             <span>Pronta para Emitir</span>
           </div>
@@ -229,7 +229,7 @@ export function StickySaleSummary({
             </button>
 
             <button
-              className="sales-secondary-button w-full !text-muted hover:!text-rose-500 hover:!border-rose-500/40"
+              className="sales-secondary-button w-full !text-muted hover:!text-danger hover:!border-danger/40"
               disabled={!canCancel}
               onClick={onCancel}
               type="button"
@@ -240,7 +240,7 @@ export function StickySaleSummary({
         )}
         {sale.status === "closed" && sale.isCurrentRevision ? (
           <button
-            className="sales-secondary-button w-full !text-muted hover:!text-rose-500 hover:!border-rose-500/40"
+            className="sales-secondary-button w-full !text-muted hover:!text-danger hover:!border-danger/40"
             disabled={isSaving}
             onClick={onRevert}
             type="button"

@@ -65,9 +65,11 @@ export function SalesListFilters({
               Status:
             </span>
             <CustomSelect
-              className="!min-h-[2.5rem] !h-[2.5rem] !py-0 !px-3.5 text-xs font-black uppercase tracking-wider bg-app-elevated border-line rounded-xl cursor-pointer"
+              className="text-xs font-black uppercase tracking-wider bg-app-elevated border-line cursor-pointer"
+              density="compact"
               onChange={(value) => onStatusChange(value as SalesStatusFilter)}
               options={salesStatusOptions}
+              radius="xl"
               value={filter}
             />
           </div>
@@ -107,9 +109,11 @@ export function SalesListFilters({
             Ordenar:
           </span>
           <CustomSelect
-            className="!min-h-[2.5rem] !h-[2.5rem] !py-0 !px-3.5 text-xs font-black uppercase tracking-wider bg-app-elevated border-line rounded-xl cursor-pointer"
+            className="text-xs font-black uppercase tracking-wider bg-app-elevated border-line cursor-pointer"
+            density="compact"
             onChange={(value) => onSortChange(value as SalesSortOption)}
             options={salesSortOptions}
+            radius="xl"
             value={sortBy}
           />
         </div>

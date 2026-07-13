@@ -1,6 +1,11 @@
 import { useState } from "react";
-import { X, ChevronDown, Handshake } from "lucide-react";
+import { ChevronDown, Handshake } from "lucide-react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../components/ui/FeatureOverlay";
 import { CrmSelect } from "./CrmFormControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
@@ -41,8 +46,7 @@ export function CrmQuickAddLeadModal({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     const validationError = validateQuickLeadInput({ email, name, phone });
     if (validationError) {
       setError(validationError);
@@ -80,164 +84,135 @@ export function CrmQuickAddLeadModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm overflow-y-auto">
+    <FeatureDialog
+      className="max-w-2xl"
+      description="Cadastre um novo negócio."
+      footer={
+        <FeatureDialogActions
+          confirmDisabled={isSubmitting}
+          confirmIcon={<Handshake aria-hidden="true" className="size-4" />}
+          confirmLabel={isSubmitting ? "Criando..." : "Criar"}
+          onCancel={onClose}
+          onConfirm={() => void handleSubmit()}
+        />
+      }
+      isOpen
+      onClose={onClose}
+      title="Novo negócio"
+    >
       <form
-        className="w-full max-w-2xl bg-panel rounded-2xl border border-line shadow-2xl flex flex-col my-8"
+        className="flex flex-col gap-5"
         noValidate
-        onSubmit={(event) => void handleSubmit(event)}
+        onSubmit={(event) => {
+          event.preventDefault();
+          void handleSubmit();
+        }}
       >
-        <header className="p-4 border-b border-line flex items-center justify-between bg-app-elevated/50">
-          <div>
-            <h3 className="text-base font-black text-app-text">Novo negócio</h3>
-            <p className="text-xs font-bold text-muted mt-0.5">
-              Cadastre um novo negócio.
-            </p>
-          </div>
-          <button
-            aria-label="Fechar novo negócio"
-            className="p-1.5 rounded-lg hover:bg-line/25 text-muted hover:text-app-text cursor-pointer transition-colors"
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-5" />
-          </button>
-        </header>
-
-        <div className="p-6 flex flex-col gap-5 overflow-y-auto max-h-[70vh]">
-          {/* Cliente Section */}
-          <div className="flex flex-col gap-3">
-            <span className="text-xs font-black uppercase text-muted tracking-wider">
-              Cliente
-            </span>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-black uppercase text-muted">
-                  Nome do contato
-                </span>
-                <FeatureInput
-                  aria-invalid={error === "Informe o nome do contato."}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="Nome completo"
-                  required
-                  type="text"
-                  value={name}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-black uppercase text-muted">
-                  Telefone
-                </span>
-                <FeatureInput
-                  onChange={(e) => {
-                    setPhone(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="(11) 99999-9999"
-                  type="tel"
-                  value={phone}
-                />
-              </label>
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-black uppercase text-muted">
-                  E-mail
-                </span>
-                <FeatureInput
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError(null);
-                  }}
-                  placeholder="email@exemplo.com"
-                  type="email"
-                  value={email}
-                />
-              </label>
-            </div>
-          </div>
-
-          {/* Veículos Row */}
-          <div className="grid grid-cols-1 gap-4">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black uppercase text-muted tracking-wider">
-                Veículos de Interesse
-              </span>
-              <CrmSelect
-                onChange={setVehicleId}
-                options={[
-                  {
-                    label: `Adicionar veículo (${vehicleOptions.length} ativos disponíveis)`,
-                    value: "",
-                  },
-                  ...vehicleOptions.map((option) => ({
-                    label: option.label,
-                    value: option.id,
-                  })),
-                ]}
-                value={vehicleId}
+        <div className="flex flex-col gap-3">
+          <span className="text-xs font-black uppercase text-muted tracking-wider">
+            Cliente
+          </span>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <FeatureField label="Nome do contato">
+              <FeatureInput
+                aria-invalid={error === "Informe o nome do contato."}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
+                placeholder="Nome completo"
+                required
+                type="text"
+                value={name}
               />
-            </label>
-          </div>
-
-          {/* Mais Opções Toggle */}
-          <div className="flex flex-col gap-1">
-            <button
-              aria-expanded={showMore}
-              className="flex items-center gap-1 text-xs font-black uppercase text-accent hover:text-accent-strong cursor-pointer w-fit"
-              onClick={() => setShowMore(!showMore)}
-              type="button"
-            >
-              <span>Mais opções</span>
-              <ChevronDown
-                aria-hidden="true"
-                className={`size-4 transition-transform ${showMore ? "rotate-180" : ""}`}
+            </FeatureField>
+            <FeatureField label="Telefone">
+              <FeatureInput
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setError(null);
+                }}
+                placeholder="(11) 99999-9999"
+                type="tel"
+                value={phone}
               />
-            </button>
-            {showMore && (
-              <CrmQuickAddLeadMoreOptions
-                stages={stages}
-                selectedStageId={selectedStageId}
-                setSelectedStageId={setSelectedStageId}
-                notes={notes}
-                preferredContact={preferredContact}
-                priority={priority}
-                setNotes={setNotes}
-                setPreferredContact={setPreferredContact}
-                setPriority={setPriority}
-                setSource={setSource}
-                setUrgency={setUrgency}
-                source={source}
-                urgency={urgency}
-                estimatedClosedDate={estimatedClosedDate}
-                setEstimatedClosedDate={setEstimatedClosedDate}
-                category={category}
-                setCategory={setCategory}
+            </FeatureField>
+            <FeatureField label="E-mail">
+              <FeatureInput
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+                placeholder="email@exemplo.com"
+                type="email"
+                value={email}
               />
-            )}
+            </FeatureField>
           </div>
-          {error ? <CrmFormError>{error}</CrmFormError> : null}
         </div>
 
-        <footer className="p-4 border-t border-line bg-app-elevated/50 flex justify-end gap-3 shrink-0">
+        <FeatureField label="Veículos de Interesse">
+          <CrmSelect
+            onChange={setVehicleId}
+            options={[
+              {
+                label: `Adicionar veículo (${vehicleOptions.length} ativos disponíveis)`,
+                value: "",
+              },
+              ...vehicleOptions.map((option) => ({
+                label: option.label,
+                value: option.id,
+              })),
+            ]}
+            value={vehicleId}
+          />
+        </FeatureField>
+
+        <div className="flex flex-col gap-1">
           <button
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-transparent border border-line px-5 text-xs font-black text-app-text hover:bg-line/20 cursor-pointer"
-            onClick={onClose}
+            aria-expanded={showMore}
+            className="flex items-center gap-1 text-xs font-black uppercase text-accent hover:text-accent-strong cursor-pointer w-fit"
+            onClick={() => setShowMore(!showMore)}
             type="button"
           >
-            Cancelar
+            <span>Mais opções</span>
+            <ChevronDown
+              aria-hidden="true"
+              className={`size-4 transition-transform ${showMore ? "rotate-180" : ""}`}
+            />
           </button>
-          <button
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-accent px-6 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm"
-            disabled={isSubmitting}
-            type="submit"
-          >
-            <Handshake aria-hidden="true" className="size-4" />
-            {isSubmitting ? "Criando..." : "Criar"}
-          </button>
-        </footer>
+          {showMore && (
+            <CrmQuickAddLeadMoreOptions
+              stages={stages}
+              selectedStageId={selectedStageId}
+              setSelectedStageId={setSelectedStageId}
+              notes={notes}
+              preferredContact={preferredContact}
+              priority={priority}
+              setNotes={setNotes}
+              setPreferredContact={setPreferredContact}
+              setPriority={setPriority}
+              setSource={setSource}
+              setUrgency={setUrgency}
+              source={source}
+              urgency={urgency}
+              estimatedClosedDate={estimatedClosedDate}
+              setEstimatedClosedDate={setEstimatedClosedDate}
+              category={category}
+              setCategory={setCategory}
+            />
+          )}
+        </div>
+        {error ? <CrmFormError>{error}</CrmFormError> : null}
+        <button
+          aria-hidden="true"
+          className="hidden"
+          disabled={isSubmitting}
+          tabIndex={-1}
+          type="submit"
+        />
       </form>
-    </div>
+    </FeatureDialog>
   );
 }
 

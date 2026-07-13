@@ -18,6 +18,8 @@ import {
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
 import { assertGenericUnitStatusAllowed } from "../../policies/workflowStatusPolicy.js";
+import { assertGenericUnitTransitionAllowed } from "../../policies/workflowStatusPolicy.js";
+import { VehicleWorkflowStateError } from "../../workflows/vehicleSaleWorkflowRules.js";
 
 const permission = "inventory.update_unit";
 
@@ -45,6 +47,7 @@ export async function updateVehicleUnit(
     unit.listingId,
   );
   const changes = createUnitChanges(unit, input);
+  assertGenericUnitTransitionAllowed(unit.status, input.status);
 
   logVehicleServiceEvent(context, "vehicle_unit.update.started", {
     changedFields: changes.map((change) => change.path),
@@ -53,19 +56,7 @@ export async function updateVehicleUnit(
   });
 
   const updated = changes.length
-    ? await repository.save({
-        ...unit,
-        ...(input.colorName !== undefined
-          ? { colorName: input.colorName }
-          : {}),
-        ...(input.plate !== undefined ? { plate: input.plate } : {}),
-        ...(input.status !== undefined ? { status: input.status } : {}),
-        ...(input.stockNumber !== undefined
-          ? { stockNumber: input.stockNumber }
-          : {}),
-        updatedAt: new Date(),
-        ...(input.vin !== undefined ? { vin: input.vin } : {}),
-      })
+    ? await saveUnitIfCurrent(repository, unit, input)
     : unit;
   if (input.status !== undefined && input.status !== unit.status) {
     await getOperationsRepository(ports).createStatusHistory({
@@ -96,6 +87,33 @@ export async function updateVehicleUnit(
     summary: "Updated vehicle unit",
   });
 
+  return updated;
+}
+
+async function saveUnitIfCurrent(
+  repository: ReturnType<typeof getUnitRepository>,
+  unit: VehicleUnit,
+  input: UpdateVehicleUnitInput,
+): Promise<VehicleUnit> {
+  const updated = await repository.saveIfStatus(
+    {
+      ...unit,
+      ...(input.colorName !== undefined ? { colorName: input.colorName } : {}),
+      ...(input.plate !== undefined ? { plate: input.plate } : {}),
+      ...(input.status !== undefined ? { status: input.status } : {}),
+      ...(input.stockNumber !== undefined
+        ? { stockNumber: input.stockNumber }
+        : {}),
+      updatedAt: new Date(),
+      ...(input.vin !== undefined ? { vin: input.vin } : {}),
+    },
+    unit.status,
+  );
+  if (!updated) {
+    throw new VehicleWorkflowStateError(
+      "Vehicle unit changed while the update was being applied.",
+    );
+  }
   return updated;
 }
 

@@ -73,7 +73,7 @@ export function CrmLeadCard({
       </div>
 
       {/* SLA warning indicator */}
-      <div className="text-xs font-bold text-red-700 dark:text-red-500 flex items-center gap-1 leading-none">
+      <div className="flex items-center gap-1 text-xs font-bold leading-none text-danger">
         <span>{formatLeadTimelineLabel(lead)}</span>
       </div>
 
@@ -143,7 +143,7 @@ export function CrmLeadCard({
         </div>
         <div className="flex items-center gap-1.5 shrink-0 text-muted">
           {lead.source === "whatsapp" ? (
-            <MessageSquare className="size-3 text-emerald-500" />
+            <MessageSquare className="size-3 text-success-strong" />
           ) : (
             <Globe className="size-3" />
           )}
@@ -158,7 +158,7 @@ export function CrmLeadCard({
       >
         <DollarSign
           aria-hidden="true"
-          className="size-3 text-emerald-500 shrink-0"
+          className="size-3 shrink-0 text-success-strong"
         />
         <span>Simular financiamento</span>
       </button>

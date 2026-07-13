@@ -8,12 +8,14 @@ export function FeatureEmptyState({
   action,
   body,
   className,
+  density = "default",
   icon: IconComponent,
   title,
 }: {
   action?: ReactNode;
   body: ReactNode;
   className?: string;
+  density?: "compact" | "default";
   icon: FeatureIcon;
   title: ReactNode;
 }) {
@@ -21,6 +23,7 @@ export function FeatureEmptyState({
     <div
       className={cx(
         "glass-panel-branded p-12 text-center flex flex-col items-center justify-center",
+        density === "compact" && "!p-6",
         className,
       )}
     >
@@ -67,11 +70,13 @@ export function FeatureAlert({
 export function FeatureLoadingState({
   children,
   className = "feature-empty",
+  density = "default",
   icon: IconComponent,
   title,
 }: {
   children?: ReactNode;
   className?: string;
+  density?: "compact" | "default";
   icon?: FeatureIcon;
   title?: ReactNode;
 }) {
@@ -79,7 +84,7 @@ export function FeatureLoadingState({
     <section
       aria-busy="true"
       aria-live="polite"
-      className={className}
+      className={cx(density === "compact" && "p-6", className)}
       role="status"
     >
       {IconComponent ? (
@@ -94,16 +99,21 @@ export function FeatureLoadingState({
 export function FeatureStatusBadge({
   children,
   className,
+  size = "default",
   tone = "neutral",
 }: {
   children: ReactNode;
   className?: string;
+  size?: "compact" | "default" | "dense";
   tone?: FeatureStatusTone;
 }) {
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-black uppercase tracking-wider",
+        "inline-flex items-center gap-1.5 rounded-full text-xs font-black uppercase tracking-wider",
+        size === "default" && "px-2.5 py-1",
+        size === "compact" && "px-2 py-1",
+        size === "dense" && "px-2 py-0.5",
         statusToneClass(tone),
         className,
       )}

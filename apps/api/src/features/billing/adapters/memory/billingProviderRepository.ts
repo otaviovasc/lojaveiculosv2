@@ -5,6 +5,7 @@ import type {
   BillingProviderRepository,
   BillingProviderSubscriptionRecord,
 } from "../../../../domains/billing/ports/billingProviderRepository.js";
+import { getBillingProviderOverview } from "../../../../domains/billing/readModels/getBillingProviderOverview.js";
 import { createMemoryBillingRepository } from "./billingRepository.js";
 
 export function createMemoryBillingProviderRepository(): BillingProviderRepository {
@@ -29,23 +30,10 @@ export function createMemoryBillingProviderRepository(): BillingProviderReposito
 
   return {
     async getProviderAccount(input): Promise<BillingProviderAccount> {
-      const overview = input.storeId
-        ? await billingRepository.getOverview({
-            ...(input.billingManagedBy
-              ? { billingManagedBy: input.billingManagedBy }
-              : {}),
-            ...(typeof input.currentActorCanManage === "boolean"
-              ? { currentActorCanManage: input.currentActorCanManage }
-              : {}),
-            storeId: input.storeId as never,
-            tenantId: input.tenantId as never,
-          })
-        : await billingRepository.getTenantOverview({
-            ...(typeof input.currentActorCanManage === "boolean"
-              ? { currentActorCanManage: input.currentActorCanManage }
-              : {}),
-            tenantId: input.tenantId as never,
-          });
+      const overview = await getBillingProviderOverview(
+        billingRepository,
+        input,
+      );
       return {
         billingCustomer,
         chargePreview: overview.chargePreview,

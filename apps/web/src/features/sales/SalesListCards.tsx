@@ -106,7 +106,8 @@ function SaleCard({
           </div>
 
           <FeatureStatusBadge
-            className="shrink-0 uppercase text-xs px-2 py-0.5 font-black tracking-wider"
+            className="shrink-0 uppercase text-xs font-black tracking-wider"
+            size="dense"
             tone={saleStatusTone(sale.status)}
           >
             {salesStatusLabels[sale.status]}
@@ -187,7 +188,7 @@ function SaleCard({
               <span>Validação Interna</span>
               <span
                 className={
-                  score.completed === score.total ? "text-emerald-500" : ""
+                  score.completed === score.total ? "text-success" : ""
                 }
               >
                 {score.completed}/{score.total} requisitos
@@ -197,7 +198,7 @@ function SaleCard({
               <div
                 className={
                   score.completed === score.total
-                    ? "h-full rounded-full transition-all duration-500 bg-emerald-500"
+                    ? "h-full rounded-full transition-all duration-500 bg-success"
                     : "h-full rounded-full transition-all duration-500 bg-accent"
                 }
                 style={{ width: `${(score.completed / score.total) * 100}%` }}
@@ -258,7 +259,7 @@ function SaleCardAction({
 }) {
   const hoverClass =
     tone === "danger"
-      ? "hover:border-rose-500/30 hover:bg-rose-500/5 hover:text-rose-500"
+      ? "hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
       : "hover:border-accent/30 hover:bg-accent/5 hover:text-accent-strong";
   return (
     <button
@@ -276,7 +277,7 @@ function SaleCardAction({
 }
 
 function saleStatusAccentClass(status: SaleRecord["status"]) {
-  if (status === "closed") return "bg-emerald-500";
+  if (status === "closed") return "bg-success";
   if (status === "pending") return "bg-amber-500";
   if (status === "cancelled") return "bg-muted";
   return "bg-blue-500";

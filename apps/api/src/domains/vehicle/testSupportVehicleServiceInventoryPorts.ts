@@ -187,6 +187,15 @@ function createUnitRepository(
       units.set(unit.id, updated);
       return updated;
     }),
+    saveIfStatus: vi.fn(
+      async (unit: VehicleUnit, expectedStatus: VehicleUnit["status"]) => {
+        const current = units.get(unit.id);
+        if (!current || current.status !== expectedStatus) return null;
+        const updated = { ...unit, updatedAt: new Date() };
+        units.set(unit.id, updated);
+        return updated;
+      },
+    ),
   };
 }
 

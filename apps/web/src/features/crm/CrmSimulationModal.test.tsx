@@ -16,6 +16,9 @@ describe("CrmSimulationModal", () => {
     const onSaveSimulation = vi.fn(async () => undefined);
     renderModal({ onSaveSimulation });
 
+    expect(
+      screen.getByRole("dialog", { name: "Simular financiamento" }),
+    ).toBeInTheDocument();
     const downpayment = screen.getByLabelText("Valor da Entrada (R$)");
     await user.clear(downpayment);
     await user.type(downpayment, "120000");
@@ -52,6 +55,30 @@ describe("CrmSimulationModal", () => {
       }),
     );
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("does not close while the simulation is being saved", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    let resolveSave: (() => void) | undefined;
+    const onSaveSimulation = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    renderModal({ onClose, onSaveSimulation });
+
+    await user.click(screen.getByRole("button", { name: "Salvar no Lead" }));
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await user.keyboard("{Escape}");
+    expect(onClose).not.toHaveBeenCalled();
+
+    resolveSave?.();
+    expect(
+      await screen.findByRole("button", { name: "Salvar no Lead" }),
+    ).toBeEnabled();
+    expect(onClose).toHaveBeenCalledOnce();
   });
 });
 

@@ -1,7 +1,12 @@
 import { useState } from "react";
-import { X, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { FeatureInput } from "../../components/ui/FeatureControls";
+import { FeatureField } from "../../components/ui/FeatureForms";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../components/ui/FeatureOverlay";
 import type { PipelineStage } from "./crmPipelineStorage";
 
 type Props = {
@@ -25,89 +30,80 @@ export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
   const [name, setName] = useState(stage.name);
   const [slaDays, setSlaDays] = useState(stage.slaDays ?? 1);
   const [color, setColor] = useState(stage.color);
+  const slaIsValid =
+    stage.status !== "open" ||
+    (Number.isInteger(slaDays) && slaDays >= 1 && slaDays <= 365);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim()) return;
+  const handleSubmit = () => {
+    if (!name.trim() || !slaIsValid) return;
     onSave(name.trim(), color, stage.status === "open" ? slaDays : null);
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <FeatureDialog
+      className="max-w-md"
+      description="Altere o nome, cor ou SLA da etapa"
+      footer={
+        <FeatureDialogActions
+          confirmDisabled={!name.trim() || !slaIsValid}
+          confirmIcon={<Check aria-hidden="true" className="size-4" />}
+          confirmLabel="Salvar"
+          onCancel={onClose}
+          onConfirm={handleSubmit}
+        />
+      }
+      isOpen
+      onClose={onClose}
+      title="Editar Etapa"
+    >
       <form
-        className="w-full max-w-md glass-panel-branded bg-panel rounded-2xl border border-line shadow-2xl overflow-hidden flex flex-col"
-        onSubmit={handleSubmit}
+        className="flex flex-col gap-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          handleSubmit();
+        }}
       >
-        <header className="p-4 border-b border-line/45 flex items-center justify-between shrink-0 bg-app-elevated/45">
-          <div>
-            <h3 className="text-sm font-black text-app-text">Editar Etapa</h3>
-            <p className="text-xs font-bold text-muted mt-0.5">
-              Altere o nome, cor ou SLA da etapa
-            </p>
-          </div>
-          <button
-            className="p-1 rounded-lg hover:bg-line/25 text-muted hover:text-app-text cursor-pointer transition-colors"
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4.5" />
-          </button>
-        </header>
+        <FeatureField label="Nome da Etapa *">
+          <FeatureInput
+            autoFocus
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Ex: Qualificado"
+            required
+            type="text"
+            value={name}
+          />
+        </FeatureField>
 
-        <div className="p-5 flex flex-col gap-4">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs font-black text-app-text">
-              Nome da Etapa *
-            </span>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FeatureField
+            error={slaIsValid ? undefined : "Informe entre 1 e 365 dias."}
+            label="SLA de Atendimento (Dias)"
+          >
             <FeatureInput
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Qualificado"
-              required
-              type="text"
-              value={name}
+              aria-invalid={!slaIsValid}
+              disabled={stage.status !== "open"}
+              max={365}
+              min={1}
+              onChange={(e) => setSlaDays(Number(e.target.value))}
+              type="number"
+              value={slaDays}
             />
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="flex flex-col gap-1">
-              <span className="text-xs font-black text-app-text">
-                SLA de Atendimento (Dias)
-              </span>
-              <FeatureInput
-                disabled={stage.status !== "open"}
-                min={1}
-                onChange={(e) => setSlaDays(Number(e.target.value))}
-                type="number"
-                value={slaDays}
-              />
-            </label>
-            <FeatureColorPicker
-              label="Cor da Etapa"
-              onChange={setColor}
-              presets={PRESET_COLORS}
-              value={color}
-            />
-          </div>
+          </FeatureField>
+          <FeatureColorPicker
+            label="Cor da Etapa"
+            onChange={setColor}
+            presets={PRESET_COLORS}
+            value={color}
+          />
         </div>
-
-        <footer className="p-4 border-t border-line/45 shrink-0 bg-app-elevated/45 flex justify-end gap-2.5">
-          <button
-            className="inline-flex min-h-9 items-center justify-center rounded-lg bg-app-elevated border border-line px-4 text-xs font-black text-app-text hover:bg-line/20 cursor-pointer"
-            onClick={onClose}
-            type="button"
-          >
-            Cancelar
-          </button>
-          <button
-            className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent px-4 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm"
-            type="submit"
-          >
-            <Check aria-hidden="true" className="size-4" />
-            Salvar
-          </button>
-        </footer>
+        <button
+          aria-hidden="true"
+          className="hidden"
+          tabIndex={-1}
+          type="submit"
+        />
       </form>
-    </div>
+    </FeatureDialog>
   );
 }

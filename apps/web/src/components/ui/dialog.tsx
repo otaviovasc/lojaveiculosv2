@@ -97,52 +97,74 @@ const useDialogContext = () => {
   return context;
 };
 
-const DialogContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, onKeyDown, ...props }, ref) => {
-  const { descriptionId, descriptionRegistered, onOpenChange, titleId } =
-    useDialogContext();
-  const contentRef = React.useRef<HTMLDivElement>(null);
-  React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement);
+type DialogContentProps = React.HTMLAttributes<HTMLDivElement> & {
+  padding?: "default" | "none";
+  radius?: "3xl" | "default" | "xl";
+  surface?: "default" | "panel";
+};
 
-  React.useEffect(() => {
-    return focusDialogTarget(contentRef.current);
-  }, []);
+const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
+  (
+    {
+      className,
+      children,
+      onKeyDown,
+      padding = "default",
+      radius = "default",
+      surface = "default",
+      ...props
+    },
+    ref,
+  ) => {
+    const { descriptionId, descriptionRegistered, onOpenChange, titleId } =
+      useDialogContext();
+    const contentRef = React.useRef<HTMLDivElement>(null);
+    React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    onKeyDown?.(event);
-    trapDialogFocus(event, contentRef.current);
-  };
+    React.useEffect(() => {
+      return focusDialogTarget(contentRef.current);
+    }, []);
 
-  return (
-    <div
-      aria-describedby={descriptionRegistered ? descriptionId : undefined}
-      aria-labelledby={titleId}
-      aria-modal="true"
-      className={cn(
-        "relative w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
-        className,
-      )}
-      onKeyDown={handleKeyDown}
-      ref={contentRef}
-      role="dialog"
-      tabIndex={-1}
-      {...props}
-    >
-      {children}
-      <button
-        type="button"
-        className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-        onClick={() => onOpenChange?.(false)}
-        aria-label="Fechar"
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+      onKeyDown?.(event);
+      trapDialogFocus(event, contentRef.current);
+    };
+
+    return (
+      <div
+        aria-describedby={descriptionRegistered ? descriptionId : undefined}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className={cn(
+          "relative w-full max-w-lg gap-4 border shadow-lg duration-200",
+          padding === "default" ? "p-6" : "p-0",
+          radius === "default" && "sm:rounded-lg",
+          radius === "xl" && "rounded-xl",
+          radius === "3xl" && "rounded-3xl",
+          surface === "default" && "bg-background",
+          surface === "panel" && "border-line bg-panel text-app-text",
+          className,
+        )}
+        onKeyDown={handleKeyDown}
+        ref={contentRef}
+        role="dialog"
+        tabIndex={-1}
+        {...props}
       >
-        <X className="h-4 w-4" />
-        <span className="sr-only">Fechar</span>
-      </button>
-    </div>
-  );
-});
+        {children}
+        <button
+          type="button"
+          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+          onClick={() => onOpenChange?.(false)}
+          aria-label="Fechar"
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">Fechar</span>
+        </button>
+      </div>
+    );
+  },
+);
 DialogContent.displayName = "DialogContent";
 
 const DialogHeader = ({
@@ -200,11 +222,18 @@ DialogDescription.displayName = "DialogDescription";
 
 const DialogFooter = ({
   className,
+  divider = false,
+  paddingTop = "none",
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+}: React.HTMLAttributes<HTMLDivElement> & {
+  divider?: boolean;
+  paddingTop?: "md" | "none";
+}) => (
   <div
     className={cn(
       "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      divider && "border-t border-line/30",
+      paddingTop === "md" && "pt-4",
       className,
     )}
     {...props}

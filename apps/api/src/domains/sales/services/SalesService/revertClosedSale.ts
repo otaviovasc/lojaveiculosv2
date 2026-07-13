@@ -12,6 +12,7 @@ import type {
   SaleRecord,
   SaveSalePaymentInput,
 } from "../../ports/salesRepository.js";
+import { assertSalePaymentsLocallyReversible } from "../../salePaymentCompensation.js";
 import {
   auditSalesServiceEvent,
   findScopedSale,
@@ -51,6 +52,7 @@ export async function revertClosedSale(
     const current = await findScopedSale(repository, scope, input.saleId);
     assertRevertible(current);
     assertNoUncompensatedAcquisition(current);
+    assertSalePaymentsLocallyReversible(current.payments);
 
     logSalesServiceEvent(context, "sale.revert.started", {
       saleId: current.id,

@@ -14,6 +14,11 @@ import {
   SaleTransitionConflictError,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import {
+  activeSaleUnitConstraintName,
+  SaleUnitConflictError,
+} from "../../../domains/sales/saleUnitConflict.js";
+import { isPostgresConstraintError } from "../postgresConstraintError.js";
+import {
   toInsertPayment,
   toInsertSale,
   toSaleRecord,
@@ -201,6 +206,14 @@ function scopedSaleWhere(
 }
 
 function mapSalesRepositoryError(error: unknown): Error {
+  if (
+    isPostgresConstraintError(error, {
+      code: "23505",
+      constraintName: activeSaleUnitConstraintName,
+    })
+  ) {
+    return new SaleUnitConflictError();
+  }
   if (isForeignKeyViolation(error)) {
     return new SaleReferenceError(referenceFromConstraint(error));
   }

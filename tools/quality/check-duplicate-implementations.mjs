@@ -46,10 +46,12 @@ for (const file of walkFiles(sourceRoots, { extensions: sourceExtensions })) {
   const preparedSource = prepareDuplicateSource(readText(file), rel, failures);
   if (!preparedSource) continue;
 
-  const functionBlocks = findFunctionBlocks(preparedSource).map((block) => ({
-    ...block,
-    file: rel,
-  }));
+  const functionBlocks = findFunctionBlocks(preparedSource, rel).map(
+    (block) => ({
+      ...block,
+      file: rel,
+    }),
+  );
 
   implementationBlocks.push(
     ...functionBlocks

@@ -1,6 +1,7 @@
 import { isActiveSalePaymentStatus } from "@lojaveiculosv2/shared";
 import type { FinanceEntryBundle } from "../../../domains/finance/ports/financeRepository.js";
 import type { SaleRecord } from "../../../domains/sales/ports/salesRepository.js";
+import { SalePaymentCompensationRequiredError } from "../../../domains/sales/salePaymentCompensation.js";
 import { SaleReversionCompensationError } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import type {
   VehicleDocument,
@@ -21,20 +22,11 @@ export function assertFinanceOwnership(
   const activePaymentIds = sale.payments
     .filter((payment) => isActiveSalePaymentStatus(payment.status))
     .map((payment) => payment.id);
-  for (const paymentId of activePaymentIds) {
-    const isLinked = entries.some((bundle) =>
-      bundle.links.some(
-        (link) =>
-          link.targetType === "sale_payment" && link.targetId === paymentId,
-      ),
-    );
-    if (!isLinked) {
-      throw new SaleReversionCompensationError(
-        "finance",
-        "Sale payment is missing its owned finance entry.",
-      );
-    }
+  if (entries.length !== activePaymentIds.length) {
+    throwFinanceOwnershipError();
   }
+  const expectedPaymentIds = new Set(activePaymentIds);
+  const linkedPaymentIds = new Set<string>();
   for (const bundle of entries) {
     const ownsSale = bundle.links.some(
       (link) => link.targetType === "sale" && link.targetId === sale.id,
@@ -45,12 +37,42 @@ export function assertFinanceOwnership(
     const isSaleEntry =
       bundle.entry.category === "vehicle_sale" ||
       bundle.entry.metadata.source === "vehicle_sale";
-    if (!ownsSale || !ownsUnit || !isSaleEntry) {
-      throw new SaleReversionCompensationError(
-        "finance",
-        "Linked finance entry ownership could not be proven.",
-      );
+    const paymentLinks = bundle.links.filter(
+      (link) => link.targetType === "sale_payment",
+    );
+    const paymentId = paymentLinks[0]?.targetId;
+    if (
+      !ownsSale ||
+      !ownsUnit ||
+      !isSaleEntry ||
+      paymentLinks.length !== 1 ||
+      !paymentId ||
+      !expectedPaymentIds.has(paymentId) ||
+      linkedPaymentIds.has(paymentId)
+    ) {
+      throwFinanceOwnershipError();
     }
+    linkedPaymentIds.add(paymentId);
+  }
+}
+
+function throwFinanceOwnershipError(): never {
+  throw new SaleReversionCompensationError(
+    "finance",
+    "Linked finance entry ownership could not be proven one-to-one.",
+  );
+}
+
+export function assertFinanceEntriesLocallyReversible(
+  entries: readonly FinanceEntryBundle[],
+): void {
+  if (
+    entries.some(
+      (bundle) =>
+        bundle.entry.status === "paid" || bundle.entry.paidAt !== null,
+    )
+  ) {
+    throw new SalePaymentCompensationRequiredError("paid");
   }
 }
 

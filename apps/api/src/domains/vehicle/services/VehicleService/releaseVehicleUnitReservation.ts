@@ -76,7 +76,7 @@ export async function releaseVehicleUnitReservation(
     sale,
     unit,
   );
-  assertPendingSignal(signalPayment.status, financeEntry);
+  assertPendingSignal(signalPayment, financeEntry);
 
   const outcome = input.outcome ?? "release";
   const outcomeConfig = reservationOutcomeConfig[outcome];
@@ -88,6 +88,20 @@ export async function releaseVehicleUnitReservation(
     saleId: sale.sale.id,
     unitId: unit.id,
   });
+
+  const releasedUnit = await getUnitRepository(ports).saveIfStatus(
+    {
+      ...unit,
+      status: "available",
+      updatedAt: new Date(),
+    },
+    "reserved",
+  );
+  if (!releasedUnit) {
+    throw new VehicleWorkflowStateError(
+      "Vehicle unit reservation changed before it could be released.",
+    );
+  }
 
   await getFinanceRepository(ports).updateEntry({
     entryId: financeEntry.entry.id,
@@ -109,11 +123,6 @@ export async function releaseVehicleUnitReservation(
       tenantId: context.tenantId,
     });
   }
-  await getUnitRepository(ports).save({
-    ...unit,
-    status: "available",
-    updatedAt: new Date(),
-  });
   await getOperationsRepository(ports).createStatusHistory({
     actorUserId: actorUserId(context),
     fromStatus: unit.status,

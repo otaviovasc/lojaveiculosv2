@@ -77,7 +77,8 @@ export function DocumentWorkspaceMobileList({
                 </span>
               </button>
               <FeatureStatusBadge
-                className="shrink-0 whitespace-nowrap px-2 py-1 text-xs"
+                className="shrink-0 whitespace-nowrap text-xs"
+                size="compact"
                 tone={documentStatusTone(document.status)}
               >
                 {statusLabel(document.status)}
