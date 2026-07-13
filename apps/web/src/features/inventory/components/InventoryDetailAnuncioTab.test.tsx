@@ -86,4 +86,41 @@ describe("InventoryDetailAnuncioTab", () => {
       screen.getByRole("link", { name: "Visualizar anúncio" }),
     ).toHaveAttribute("href", "/test-store?listing=veiculo-teste");
   });
+
+  it("locks description editing while the saved snapshot is pending", async () => {
+    const detail = createInventoryDetailFixture();
+    let resolveUpdate: ((value: typeof detail) => void) | undefined;
+    const updateListingDetails = vi.fn(
+      () =>
+        new Promise<typeof detail>((resolve) => {
+          resolveUpdate = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+
+    render(
+      <InventoryDetailAnuncioTab
+        api={{ updateListingDetails } as unknown as InventoryApi}
+        detail={detail}
+        onUpdated={vi.fn()}
+        publicListingUrl={null}
+      />,
+    );
+
+    const description = screen.getByLabelText("Descrição do anúncio");
+    await user.clear(description);
+    await user.type(description, "Descrição enviada");
+    await user.click(screen.getByRole("button", { name: "Salvar descrição" }));
+
+    expect(description).toBeDisabled();
+    await user.type(description, " não pode sobrescrever");
+    expect(description).toHaveValue("Descrição enviada");
+
+    resolveUpdate?.({
+      ...detail,
+      listing: { ...detail.listing, description: "Descrição enviada" },
+    });
+    await waitFor(() => expect(description).toBeEnabled());
+    expect(description).toHaveValue("Descrição enviada");
+  });
 });

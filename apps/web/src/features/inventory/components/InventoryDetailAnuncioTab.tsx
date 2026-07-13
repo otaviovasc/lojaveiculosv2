@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { Info, Save, Sparkles } from "lucide-react";
 import { CurrencyInput } from "../../../components/ui/currency-input";
+import { FeatureTextarea } from "../../../components/ui/FeatureControls";
+import { FeatureField } from "../../../components/ui/FeatureForms";
+import {
+  FeatureActionButton,
+  FeatureSection,
+} from "../../../components/ui/FeatureLayout";
+import { FeatureAlert } from "../../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
@@ -82,83 +89,65 @@ export function InventoryDetailAnuncioTab({
 
   return (
     <div className="flex w-full max-w-none flex-col gap-8 text-app-text">
-      <section className="flex flex-col gap-6 rounded-2xl border border-line bg-panel p-5">
-        <div className="flex flex-col gap-2 border-b border-line pb-3">
-          <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
-            <Sparkles className="size-4 shrink-0 text-accent" />
-            <span>Configuração do anúncio</span>
-          </h3>
-          <p className="text-xs font-bold text-muted">
-            Descrição e preço abaixo são salvos no cadastro oficial do veículo.
-          </p>
-        </div>
-
-        {error ? (
-          <p role="alert" className="text-xs font-bold text-danger">
-            {error}
-          </p>
-        ) : null}
+      <FeatureSection
+        className="flex flex-col gap-6"
+        description="Descrição e preço abaixo são salvos no cadastro oficial do veículo."
+        icon={<Sparkles aria-hidden="true" className="size-4 shrink-0" />}
+        title="Configuração do anúncio"
+      >
+        {error ? <FeatureAlert>{error}</FeatureAlert> : null}
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <label className="flex flex-col gap-2 text-xs font-black uppercase tracking-wider text-muted">
-            <span>Descrição</span>
-            <textarea
-              aria-label="Descrição do anúncio"
-              className="min-h-32 w-full resize-y rounded-xl border border-line bg-app p-3 text-xs font-bold normal-case tracking-normal text-app-text outline-none focus:ring-1 focus:ring-accent"
-              onChange={(event) => setDescription(event.target.value)}
-              placeholder="Descreva os destaques comerciais do veículo..."
-              value={description}
-            />
-            <button
-              className="inline-flex min-h-9 items-center justify-center gap-2 self-end rounded-lg bg-accent px-4 text-xs font-black normal-case tracking-normal text-inverse transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+          <div className="grid gap-2">
+            <FeatureField label="Descrição">
+              <FeatureTextarea
+                aria-label="Descrição do anúncio"
+                className="min-h-32 resize-y"
+                disabled={savingField !== null}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Descreva os destaques comerciais do veículo..."
+                value={description}
+              />
+            </FeatureField>
+            <FeatureActionButton
+              className="justify-self-end"
               disabled={
                 savingField !== null ||
                 description.trim() === (listing.description ?? "")
               }
+              icon={Save}
+              isBusy={savingField === "description"}
+              label="Salvar descrição"
               onClick={() => void saveDescription()}
-              type="button"
-            >
-              <Save className="size-3.5" />
-              <span>
-                {savingField === "description"
-                  ? "Salvando..."
-                  : "Salvar descrição"}
-              </span>
-            </button>
-          </label>
-
-          <div className="flex flex-col gap-2">
-            <label
-              className="text-xs font-black uppercase tracking-wider text-muted"
-              htmlFor="inventory-ad-price"
-            >
-              Valor do anúncio
-            </label>
-            <CurrencyInput
-              aria-label="Valor do anúncio"
-              disabled={savingField !== null}
-              id="inventory-ad-price"
-              inputClassName="text-sm"
-              onChange={setPrice}
-              value={price}
+              variant="primary"
             />
-            <span className="text-xs font-bold text-muted">
-              Valor salvo: {advertisedPrice}
-            </span>
-            <button
-              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+          </div>
+
+          <div className="grid gap-2">
+            <FeatureField
+              hint={`Valor salvo: ${advertisedPrice}`}
+              label="Valor do anúncio"
+            >
+              <CurrencyInput
+                aria-label="Valor do anúncio"
+                disabled={savingField !== null}
+                id="inventory-ad-price"
+                inputClassName="text-sm"
+                onChange={setPrice}
+                value={price}
+              />
+            </FeatureField>
+            <FeatureActionButton
               disabled={
                 savingField !== null ||
                 price === toCurrencyValue(listing.priceCents)
               }
+              icon={Save}
+              isBusy={savingField === "price"}
+              label="Salvar valor"
               onClick={() => void savePrice()}
-              type="button"
-            >
-              <Save className="size-3.5" />
-              <span>
-                {savingField === "price" ? "Salvando..." : "Salvar valor"}
-              </span>
-            </button>
+              variant="primary"
+            />
           </div>
         </div>
 
@@ -170,7 +159,7 @@ export function InventoryDetailAnuncioTab({
             suporte no backend e na publicação pública.
           </p>
         </div>
-      </section>
+      </FeatureSection>
 
       <InventoryDetailPortaisSection
         advertisedPrice={advertisedPrice}
