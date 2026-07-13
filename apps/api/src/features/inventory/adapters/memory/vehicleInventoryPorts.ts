@@ -9,6 +9,7 @@ import type {
   VehicleUnitRepository,
 } from "../../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { VehicleInventoryServicePorts } from "../../../../domains/vehicle/services/VehicleService/serviceSupport.js";
+import { appendVehicleDocumentVoidHistory } from "../../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import { createMemoryFinanceRepository } from "./financeRepository.js";
 import { createMemoryVehicleCatalogProvider } from "./vehicleCatalogProvider.js";
 import { createMemoryVehicleCatalogRepository } from "./vehicleCatalogRepository.js";
@@ -159,6 +160,26 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
       [...documents.values()].filter((document) =>
         isScopedDocument(document, input),
       ),
+    voidBySale: async (input) => {
+      const matched = [...documents.values()].filter(
+        (document) =>
+          document.storeId === input.storeId &&
+          document.tenantId === input.tenantId &&
+          document.targetId === input.unitId &&
+          document.metadata.saleId === input.saleId,
+      );
+      return matched.map((document) => {
+        if (document.status === "voided") return document;
+        const updated = {
+          ...document,
+          metadata: appendVehicleDocumentVoidHistory(document.metadata, input),
+          status: "voided" as const,
+          updatedAt: input.at,
+        };
+        documents.set(document.id, updated);
+        return updated;
+      });
+    },
   };
 
   const operationsRepository = createMemoryVehicleOperationsRepository();

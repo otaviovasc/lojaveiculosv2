@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { ArrowRight, FileText, ShieldCheck } from "lucide-react";
 import type { InventoryListingDetail } from "../model/types";
+import { documentsRouteHash } from "../../documents/documentsRouteState";
 import {
   createContractDocumentItems,
   type ContractDocumentListItem,
@@ -8,13 +9,17 @@ import {
 
 export function DocumentosContratosCard({
   detail,
+  unitId: selectedUnitId,
 }: {
   detail: InventoryListingDetail;
+  unitId?: string | null;
 }) {
   const documents = useMemo(
     () => createContractDocumentItems(detail.documents),
     [detail.documents],
   );
+  const unitId =
+    selectedUnitId ?? documents[0]?.unitId ?? detail.units[0]?.id ?? null;
 
   return (
     <div className="flex w-full flex-col gap-6">
@@ -28,7 +33,7 @@ export function DocumentosContratosCard({
               className="text-sm font-black uppercase tracking-wider"
               id="vehicle-contracts-title"
             >
-              Contratos do veículo
+              Documentos da operação
             </h3>
             <span className="rounded-full bg-accent-soft px-2 py-0.5 text-xs font-black text-accent-strong">
               {documents.length}
@@ -82,7 +87,7 @@ export function DocumentosContratosCard({
 
           <a
             className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-inverse transition-colors hover:bg-accent-strong sm:w-fit"
-            href="#/documents"
+            href={documentsRouteHash({ documentId: null, unitId })}
           >
             Abrir Central de documentos
             <ArrowRight aria-hidden="true" className="size-4" />
@@ -99,7 +104,13 @@ function ContractDocumentItem({
   document: ContractDocumentListItem;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-xl border border-line bg-app/30 p-3 text-xs font-bold transition-colors hover:bg-app/50">
+    <a
+      className="flex items-center justify-between rounded-xl border border-line bg-app/30 p-3 text-xs font-bold transition-colors hover:bg-app/50"
+      href={documentsRouteHash({
+        documentId: document.id,
+        unitId: document.unitId,
+      })}
+    >
       <div className="flex min-w-0 items-center gap-2.5">
         <FileText className="size-4 shrink-0 text-accent" />
         <div className="flex min-w-0 flex-col leading-tight">
@@ -114,7 +125,7 @@ function ContractDocumentItem({
       <span className={statusClassName(document.status)}>
         {document.status}
       </span>
-    </div>
+    </a>
   );
 }
 

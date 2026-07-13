@@ -64,7 +64,25 @@ describe("DocumentsModule", () => {
     });
   });
 
-  afterEach(cleanup);
+  afterEach(() => {
+    window.location.hash = "#/";
+    cleanup();
+  });
+
+  it("opens a vehicle folder and stored document from a deep link", async () => {
+    const api = createDocumentsApiMock();
+    window.location.hash = "#/documents?unitId=unit_1&documentId=document_unit";
+
+    renderDocumentsModule(api);
+
+    expect(
+      await screen.findByRole("heading", { name: "Honda Civic" }),
+    ).toBeVisible();
+    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(api.downloadDocument).toHaveBeenCalledWith("document_unit", {
+      disposition: "inline",
+    });
+  });
 
   it("closes the open preview when selecting another folder", async () => {
     const api = createDocumentsApiMock();

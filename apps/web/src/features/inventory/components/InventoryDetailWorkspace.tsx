@@ -6,7 +6,6 @@ import type { InventoryListingDetail } from "../model/types";
 import type { TabId } from "./InventoryDetailWorkspaceParts";
 import { WorkspaceTopBar, type WorkspaceTopBarAction } from "./WorkspaceTopBar";
 import { WorkspaceKPIStrip } from "./WorkspaceKPIStrip";
-import { EditSpecsDrawer } from "./EditSpecsDrawer";
 import { InventoryDetailFinanceiroTab } from "./InventoryDetailFinanceiroTab";
 import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 import { InventoryDetailDocumentosTab } from "./InventoryDetailDocumentosTab";
@@ -55,8 +54,6 @@ export function InventoryDetailWorkspace({
   const [detail, setDetail] = useState(initialDetail);
   const [activeTab, setActiveTab] = useState<TabId>("geral");
 
-  const [isFinancingActive, setIsFinancingActive] = useState(false);
-  const [isInsuranceActive, setIsInsuranceActive] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
   const [isPrintSheetOpen, setIsPrintSheetOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -69,7 +66,10 @@ export function InventoryDetailWorkspace({
     null;
   const listing = detail.listing;
 
-  const [specs, setSpecs] = useState(buildInitialSpecs(listing, primaryUnit));
+  const specs = useMemo(
+    () => buildInitialSpecs(listing, primaryUnit),
+    [listing, primaryUnit],
+  );
 
   const [opcionais, setOpcionais] = useState(initialOpcionais);
 
@@ -78,8 +78,6 @@ export function InventoryDetailWorkspace({
   const [notasInternas, setNotasInternas] = useState(
     listing.internalNotes ?? "",
   );
-
-  const [isSpecsOpen, setIsSpecsOpen] = useState(false);
 
   const primaryUnitId = primaryUnit?.id ?? null;
   const publicListingUrl = useMemo(
@@ -189,30 +187,14 @@ export function InventoryDetailWorkspace({
 
       <WorkspaceKPIStrip
         salePrice={
-          listing.priceCents ? formatPrice(listing.priceCents) : "Sob Consulta"
+          listing.priceCents !== null
+            ? formatPrice(listing.priceCents)
+            : "Sob Consulta"
         }
         acquisitionPrice={totalCosts ? formatPrice(totalCosts) : "Sem custos"}
         margin={margin}
         stockTime={formatStockAge(listing.createdAt)}
         renaveStatus={statusLabel(listing.status)}
-        isFinancingActive={isFinancingActive}
-        isInsuranceActive={isInsuranceActive}
-        onFinancingToggle={() => {
-          setIsFinancingActive(!isFinancingActive);
-          showNotification(
-            isFinancingActive
-              ? "Financiamento desvinculado"
-              : "Financiamento simulado com sucesso!",
-          );
-        }}
-        onInsuranceToggle={() => {
-          setIsInsuranceActive(!isInsuranceActive);
-          showNotification(
-            isInsuranceActive
-              ? "Seguro desvinculado"
-              : "Cotação de seguro integrada!",
-          );
-        }}
       />
 
       <InventoryDetailOverview
@@ -239,10 +221,12 @@ export function InventoryDetailWorkspace({
             onSaveNotasInternas={(notes) => {
               void handleSaveInternalNotes(notes);
             }}
+            onEditSaved={() =>
+              showNotification("Veículo atualizado com sucesso!")
+            }
             onToggleObservacao={handleToggleObservacao}
             onToggleOpcional={handleToggleOpcional}
             opcionais={opcionais}
-            setIsSpecsOpen={setIsSpecsOpen}
             specs={specs}
           />
         )}
@@ -257,11 +241,21 @@ export function InventoryDetailWorkspace({
         )}
 
         {activeTab === "anuncio" && (
-          <InventoryDetailAnuncioTab detail={detail} />
+          <InventoryDetailAnuncioTab
+            api={api}
+            detail={detail}
+            onUpdated={handleUpdatedDetail}
+            publicListingUrl={publicListingUrl}
+          />
         )}
 
         {activeTab === "documentos" && (
-          <InventoryDetailDocumentosTab detail={detail} />
+          <InventoryDetailDocumentosTab
+            api={api}
+            detail={detail}
+            onUpdated={handleUpdatedDetail}
+            unit={primaryUnit}
+          />
         )}
 
         {activeTab === "historico" && (
@@ -278,17 +272,6 @@ export function InventoryDetailWorkspace({
 
         <InventoryDetailEmptyTab activeTab={activeTab} />
       </div>
-
-      <EditSpecsDrawer
-        isOpen={isSpecsOpen}
-        onClose={() => setIsSpecsOpen(false)}
-        specs={specs}
-        onSave={(updatedSpecs) => {
-          setSpecs(updatedSpecs);
-          setIsSpecsOpen(false);
-          showNotification("Especificações técnicas atualizadas!");
-        }}
-      />
 
       {isPrintSheetOpen ? (
         <InventoryVehiclePrintSheet

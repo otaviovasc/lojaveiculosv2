@@ -33,6 +33,7 @@ import type {
   InventoryResaleAnalysisResponse,
 } from "../model/enrichmentTypes";
 import {
+  canAutoAnalyzePlateLookup,
   createResaleAnalysisInput,
   hasEnoughDataForAnalysis,
 } from "../model/inventoryEnrichment";
@@ -174,11 +175,11 @@ export function InventoryCreatePage({
     (result: InventoryPlateLookupResponse) => {
       setLookup(result);
       setAnalysisState({ kind: "idle" });
-      if (hasEnoughDataForAnalysis(form, result)) {
+      if (canAutoAnalyzePlateLookup(result)) {
         setAutoRunAnalysis(true);
       }
     },
-    [form],
+    [],
   );
 
   const handleGenerateAnalysis = useCallback(async () => {

@@ -14,6 +14,7 @@ export type SalesApi = {
   delete: (saleId: string) => Promise<void>;
   list: (query?: SalesListQuery) => Promise<readonly SaleRecord[]>;
   reserve: (saleId: string, input: TransitionInput) => Promise<SaleRecord>;
+  revert: (saleId: string, reason: string) => Promise<SaleRecord>;
   updateDraft: (saleId: string, input: SaleDraftInput) => Promise<SaleRecord>;
 };
 
@@ -68,6 +69,8 @@ export function createSalesApi({
         .then((payload) => payload.sales),
     reserve: (saleId, input) =>
       postJson<SaleRecord>(salesRoutes.reserve(saleId, baseUrl), input),
+    revert: (saleId, reason) =>
+      postJson<SaleRecord>(salesRoutes.revert(saleId, baseUrl), { reason }),
     updateDraft: (saleId, input) =>
       patchJson<SaleRecord>(salesRoutes.draft(saleId, baseUrl), input),
   };

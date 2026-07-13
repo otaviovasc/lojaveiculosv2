@@ -7,11 +7,19 @@ import type {
   UpdateSaleDraftInput,
 } from "../../ports/salesRepository.js";
 import {
+  findReservationSignalPayment,
+  markDraftReservationSignal,
+} from "../../salePaymentSignals.js";
+import { assertSalePaymentAmounts } from "../../salePaymentAmounts.js";
+import {
   auditSalesServiceEvent,
   findScopedSale,
   getSalesRepository,
   logSalesServiceEvent,
   requireSaleScope,
+  SaleDraftUpdateStateError,
+  SalePaymentIdentityError,
+  SalePendingUnitChangeError,
   type SalesServicePorts,
 } from "./serviceSupport.js";
 
@@ -27,20 +35,26 @@ export async function updateSaleDraft(
   const permission =
     current.status === "closed" ? "sale.correct" : "sale.draft";
   assertPermission(context, permission);
+  if (current.status === "closed" || current.status === "cancelled") {
+    throw new SaleDraftUpdateStateError(current.status);
+  }
 
   logSalesServiceEvent(context, "sale.draft.update.started", {
     saleId,
     status: current.status,
   });
 
+  const updateInput = updateInputForStatus(current, input);
+  assertSalePaymentAmounts(updateInput.payments);
   const sale = await repository.updateDraft(
     scope,
     saleId,
-    updateInputForStatus(current, input),
+    updateInput,
+    current.status,
   );
 
   await auditSalesServiceEvent(context, {
-    action: current.status === "closed" ? "sale.correct" : "sale.draft.update",
+    action: "sale.draft.update",
     category: "data_change",
     entityId: sale.id,
     metadata: { status: sale.status },
@@ -55,16 +69,17 @@ function updateInputForStatus(
   current: SaleRecord,
   input: UpdateSaleDraftInput,
 ): UpdateSaleDraftInput {
-  if (current.status === "draft") return input;
+  if (current.status === "draft") {
+    if (input.payments) {
+      assertKnownUniquePaymentIds(current.payments, input.payments);
+    }
+    return markDraftReservationSignal(input);
+  }
   if (current.status === "pending") {
+    assertPendingUnitUnchanged(current, input);
     return preservePendingPaymentRows(current.payments, input);
   }
-  return omitPaymentUpdates(input);
-}
-
-function omitPaymentUpdates(input: UpdateSaleDraftInput): UpdateSaleDraftInput {
-  const { payments: _payments, ...safeInput } = input;
-  return safeInput;
+  throw new SaleDraftUpdateStateError(current.status);
 }
 
 function preservePendingPaymentRows(
@@ -72,30 +87,84 @@ function preservePendingPaymentRows(
   input: UpdateSaleDraftInput,
 ): UpdateSaleDraftInput {
   if (!input.payments) return input;
+  assertKnownUniquePaymentIds(currentPayments, input.payments);
+  const signalPayment = findReservationSignalPayment(currentPayments);
+  const signalIndex = signalPayment
+    ? currentPayments.findIndex((payment) => payment.id === signalPayment.id)
+    : -1;
   const payments = input.payments.map((payment, index) => {
-    const current = currentPayments[index];
-    if (!current) return payment;
-    return index === 0
-      ? toSavePaymentInput(current)
-      : { ...payment, id: current.id };
+    const current = payment.id
+      ? currentPayments.find((item) => item.id === payment.id)
+      : index === signalIndex
+        ? signalPayment
+        : undefined;
+    return current && current.id === signalPayment?.id
+      ? toSavePaymentInput(current, true)
+      : withoutReservationSignal(payment, current?.id);
   });
+  if (
+    signalPayment &&
+    !payments.some((payment) => payment.id === signalPayment.id)
+  ) {
+    payments.unshift(toSavePaymentInput(signalPayment, true));
+  }
   return {
     ...input,
-    payments: [
-      ...payments,
-      ...currentPayments.slice(payments.length).map(toSavePaymentInput),
-    ],
+    payments,
   };
 }
 
-function toSavePaymentInput(payment: SalePaymentLine): SaveSalePaymentInput {
+function withoutReservationSignal(
+  payment: SaveSalePaymentInput,
+  id?: string,
+): SaveSalePaymentInput {
+  return {
+    ...payment,
+    ...(id ? { id } : {}),
+    metadata: { ...(payment.metadata ?? {}), reservationSignal: false },
+  };
+}
+
+function assertKnownUniquePaymentIds(
+  currentPayments: readonly SalePaymentLine[],
+  payments: readonly SaveSalePaymentInput[],
+): void {
+  const currentIds = new Set(currentPayments.map((payment) => payment.id));
+  const seen = new Set<string>();
+  for (const payment of payments) {
+    if (!payment.id) continue;
+    if (seen.has(payment.id)) {
+      throw new SalePaymentIdentityError(payment.id, "duplicate");
+    }
+    if (!currentIds.has(payment.id)) {
+      throw new SalePaymentIdentityError(payment.id, "unknown");
+    }
+    seen.add(payment.id);
+  }
+}
+
+function assertPendingUnitUnchanged(
+  current: SaleRecord,
+  input: UpdateSaleDraftInput,
+): void {
+  if (input.unitId !== undefined && input.unitId !== current.unitId) {
+    throw new SalePendingUnitChangeError();
+  }
+}
+
+function toSavePaymentInput(
+  payment: SalePaymentLine,
+  reservationSignal = false,
+): SaveSalePaymentInput {
   return {
     amountCents: payment.amountCents,
     dueAt: payment.dueAt,
     extraCents: payment.extraCents,
     id: payment.id,
     installments: payment.installments,
-    metadata: payment.metadata,
+    metadata: reservationSignal
+      ? { ...payment.metadata, reservationSignal: true }
+      : payment.metadata,
     method: payment.method,
     paidAt: payment.paidAt,
     principalCents: payment.principalCents,

@@ -8,13 +8,6 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
-  SaleDraftDeletionStateError,
-  SaleNotFoundError,
-  SaleReadinessError,
-  SaleReferenceError,
-  SaleTransitionStateError,
-} from "../../../domains/sales/services/SalesService/serviceSupport.js";
-import {
   VehicleListingNotFoundError,
   VehicleUnitNotFoundError,
 } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
@@ -22,6 +15,7 @@ import {
   VehicleWorkflowStateError,
   VehicleWorkflowValidationError,
 } from "../../../domains/vehicle/workflows/vehicleSaleWorkflowRules.js";
+import { mapSalesDomainError } from "./sales.controller.salesErrors.js";
 
 export async function parseSalesJson<Schema extends z.ZodType>(
   context: Context,
@@ -55,53 +49,8 @@ export async function handleSales(
         status: 400,
       });
     }
-    if (error instanceof SaleReadinessError) {
-      return jsonApiError(context, {
-        code: "SALE_READINESS_ERROR",
-        details: { missingFields: error.missingFields },
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-    if (error instanceof SaleTransitionStateError) {
-      return jsonApiError(context, {
-        code: "SALE_TRANSITION_STATE_ERROR",
-        details: {
-          currentStatus: error.currentStatus,
-          nextStatus: error.nextStatus,
-        },
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-    if (error instanceof SaleDraftDeletionStateError) {
-      return jsonApiError(context, {
-        code: "SALE_DRAFT_DELETE_STATE_ERROR",
-        details: { currentStatus: error.currentStatus },
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-    if (error instanceof SaleReferenceError) {
-      return jsonApiError(context, {
-        code: "SALE_REFERENCE_ERROR",
-        details: { reference: error.reference },
-        error,
-        message: error.message,
-        status: 409,
-      });
-    }
-    if (error instanceof SaleNotFoundError) {
-      return jsonApiError(context, {
-        code: "SALE_NOT_FOUND",
-        error,
-        message: error.message,
-        status: 404,
-      });
-    }
+    const salesDomainResponse = mapSalesDomainError(context, error);
+    if (salesDomainResponse) return salesDomainResponse;
     if (
       error instanceof VehicleListingNotFoundError ||
       error instanceof VehicleUnitNotFoundError

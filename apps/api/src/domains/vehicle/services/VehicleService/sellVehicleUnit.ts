@@ -1,3 +1,4 @@
+import type { SalePaymentMethod } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
@@ -24,7 +25,7 @@ const permission = "inventory.sell";
 export type SellVehicleUnitInput = {
   buyer: VehicleBuyerSnapshot;
   paidAmountCents?: number | null | undefined;
-  paymentMethod: string;
+  paymentMethod: SalePaymentMethod;
   reason?: string | null | undefined;
   salePriceCents?: number | null | undefined;
   unitId: string;
@@ -51,19 +52,32 @@ export async function sellVehicleUnit(
   );
   assertSellableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
-  if (!salePriceCents)
+  if (!salePriceCents || salePriceCents <= 0)
     throw new VehicleWorkflowValidationError("salePriceCents");
 
   const paidAmountCents = input.paidAmountCents ?? salePriceCents;
+  if (paidAmountCents < salePriceCents) {
+    throw new VehicleWorkflowValidationError("payment principal coverage");
+  }
+  const extraCents = paidAmountCents - salePriceCents;
+  const paidAt = new Date();
   const sale = await getSalesRepository(ports).create({
     buyerSnapshot: input.buyer,
     listing,
-    payment: {
-      amountCents: paidAmountCents,
-      method: input.paymentMethod,
-      paidAt: new Date(),
-      status: "paid",
-    },
+    payments: [
+      {
+        amountCents: paidAmountCents,
+        dueAt: paidAt,
+        extraCents,
+        installments: null,
+        metadata: {},
+        method: input.paymentMethod,
+        paidAt,
+        principalCents: salePriceCents,
+        providerPaymentId: null,
+        status: "paid",
+      },
+    ],
     salePriceCents,
     sellerUserId: actorUserId(context),
     status: "closed",
@@ -72,7 +86,6 @@ export async function sellVehicleUnit(
   const workflow = await completeSaleWorkflow(context, {
     buyer: input.buyer,
     listing,
-    paymentMethod: input.paymentMethod,
     ports,
     reason: input.reason,
     sale,
@@ -88,17 +101,20 @@ export async function sellVehicleUnit(
     metadata: {
       documentCount: workflow.documents.length,
       documentIds: workflow.documents.map((document) => document.id),
-      financeEntryId: workflow.financeEntry.entry.id,
+      financeEntryIds: workflow.financeEntries.map((bundle) => bundle.entry.id),
       listingId: listing.id,
       saleId: sale.sale.id,
-      salePaymentId: sale.payment?.id ?? null,
+      salePaymentIds: sale.payments.map((payment) => payment.id),
       salePriceCents,
     },
     permission,
     relatedEntities: [
       { id: listing.id, type: "vehicle_listing" },
       { id: sale.sale.id, type: "vehicle_sale" },
-      { id: workflow.financeEntry.entry.id, type: "finance_entry" },
+      ...workflow.financeEntries.map((bundle) => ({
+        id: bundle.entry.id,
+        type: "finance_entry" as const,
+      })),
     ],
     summary: "Sold vehicle unit and emitted sale document bundle",
   });

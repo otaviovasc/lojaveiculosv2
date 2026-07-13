@@ -1,6 +1,7 @@
 import type { InferInsertModel, InferSelectModel } from "drizzle-orm";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { salePayments, sales } from "@lojaveiculosv2/db";
+import { isSalePaymentMethod } from "@lojaveiculosv2/shared";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type {
@@ -36,12 +37,15 @@ export function createDrizzleVehicleSalesRepository(
             eq(sales.storeId, input.storeId ?? ""),
             eq(sales.tenantId, input.tenantId ?? ""),
             eq(sales.status, "pending"),
+            eq(sales.isCurrentRevision, true),
+            eq(sales.isDeleted, false),
+            isNull(sales.deletedAt),
           ),
         )
         .returning();
       if (!saleRow) throw new Error(`Pending sale not found: ${input.saleId}`);
 
-      const paymentRows = await db
+      await db
         .update(salePayments)
         .set({ status: "cancelled" })
         .where(
@@ -54,8 +58,10 @@ export function createDrizzleVehicleSalesRepository(
         )
         .returning();
 
+      const paymentRows = await findSalePayments(db, input, input.saleId);
+
       return {
-        payment: paymentRows[0] ? toPayment(paymentRows[0]) : null,
+        payments: paymentRows.map(toPayment),
         sale: toSale(saleRow),
       };
     },
@@ -65,18 +71,21 @@ export function createDrizzleVehicleSalesRepository(
         .values(toInsertSale(input))
         .returning();
       if (!saleRow) throw new Error("Drizzle adapter did not return sale.");
-      if (!input.payment) return { payment: null, sale: toSale(saleRow) };
-      const [paymentRow] = await db
-        .insert(salePayments)
-        .values(toInsertPayment(input, saleRow.id))
-        .returning();
-      if (!paymentRow)
-        throw new Error("Drizzle adapter did not return payment.");
+      const paymentRows = input.payments.length
+        ? await db
+            .insert(salePayments)
+            .values(
+              input.payments.map((payment) =>
+                toInsertPayment(input, payment, saleRow.id),
+              ),
+            )
+            .returning()
+        : [];
 
-      return { payment: toPayment(paymentRow), sale: toSale(saleRow) };
+      return { payments: paymentRows.map(toPayment), sale: toSale(saleRow) };
     },
     async findPendingByUnit(input) {
-      const [saleRow] = await db
+      const saleRows = await db
         .select()
         .from(sales)
         .where(
@@ -85,21 +94,22 @@ export function createDrizzleVehicleSalesRepository(
             eq(sales.storeId, input.storeId ?? ""),
             eq(sales.tenantId, input.tenantId ?? ""),
             eq(sales.status, "pending"),
+            eq(sales.isCurrentRevision, true),
+            eq(sales.isDeleted, false),
+            isNull(sales.deletedAt),
           ),
+        )
+        .limit(2);
+      if (saleRows.length > 1) {
+        throw new Error(
+          `Multiple pending sales found for vehicle unit: ${input.unitId}`,
         );
+      }
+      const [saleRow] = saleRows;
       if (!saleRow) return null;
-      const [paymentRow] = await db
-        .select()
-        .from(salePayments)
-        .where(
-          and(
-            eq(salePayments.saleId, saleRow.id),
-            eq(salePayments.storeId, input.storeId ?? ""),
-            eq(salePayments.tenantId, input.tenantId ?? ""),
-          ),
-        );
+      const paymentRows = await findSalePayments(db, input, saleRow.id);
       return {
-        payment: paymentRow ? toPayment(paymentRow) : null,
+        payments: paymentRows.map(toPayment),
         sale: toSale(saleRow),
       };
     },
@@ -127,14 +137,19 @@ function toInsertSale(input: CreateVehicleSaleInput): InsertSaleRow {
 
 function toInsertPayment(
   input: CreateVehicleSaleInput,
+  payment: CreateVehicleSaleInput["payments"][number],
   saleId: string,
 ): InsertPaymentRow {
-  const payment = input.payment;
-  if (!payment) throw new Error("Missing payment input.");
   return {
     amountCents: payment.amountCents,
+    dueAt: payment.dueAt,
+    extraCents: payment.extraCents,
+    installments: payment.installments,
+    metadata: payment.metadata,
     method: payment.method,
     paidAt: payment.paidAt,
+    principalCents: payment.principalCents,
+    providerPaymentId: payment.providerPaymentId,
     saleId,
     status: payment.status,
     storeId: input.unit.storeId ?? "",
@@ -165,16 +180,47 @@ function toSale(row: SaleRow): VehicleSale {
 }
 
 function toPayment(row: PaymentRow): VehicleSalePayment {
+  if (!isSalePaymentMethod(row.method)) {
+    throw new Error(`Unsupported sale payment method: ${row.method}`);
+  }
   return {
     amountCents: row.amountCents,
     createdAt: row.createdAt,
+    dueAt: row.dueAt,
+    extraCents: row.extraCents,
     id: row.id,
+    installments: row.installments,
+    metadata:
+      row.metadata &&
+      typeof row.metadata === "object" &&
+      !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, unknown>)
+        : {},
     method: row.method,
     paidAt: row.paidAt,
+    principalCents: row.principalCents,
+    providerPaymentId: row.providerPaymentId,
     saleId: row.saleId,
     status: row.status,
     storeId: row.storeId,
     tenantId: row.tenantId,
     updatedAt: row.updatedAt,
   };
+}
+
+function findSalePayments(
+  db: DrizzleVehicleSalesClient,
+  scope: { storeId: string | null; tenantId: string | null },
+  saleId: string,
+) {
+  return db
+    .select()
+    .from(salePayments)
+    .where(
+      and(
+        eq(salePayments.saleId, saleId),
+        eq(salePayments.storeId, scope.storeId ?? ""),
+        eq(salePayments.tenantId, scope.tenantId ?? ""),
+      ),
+    );
 }

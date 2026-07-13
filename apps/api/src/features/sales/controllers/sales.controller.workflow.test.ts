@@ -53,7 +53,15 @@ describe("sales controller workflow", () => {
       app,
       `/sales/${created.id}`,
       {
-        payments: [payment(200000, "cash"), payment(4900000, "bank_transfer")],
+        payments: [
+          payment(200000, "cash"),
+          {
+            ...payment(4900000, "transfer"),
+            dueAt: "2026-08-12T12:00:00.000Z",
+            paidAt: "2026-07-12T12:00:00.000Z",
+            status: "paid",
+          },
+        ],
         selectedDocumentKinds,
       },
       "PATCH",
@@ -72,10 +80,44 @@ describe("sales controller workflow", () => {
     expect(closeResponse.status).toBe(200);
     const closed = await readJson<TestSale>(closeResponse);
     expect(closed.status).toBe("closed");
+    expect(closed.payments).toEqual([
+      expect.objectContaining({
+        amountCents: 100000,
+        id: reservationPaymentId,
+        method: "pix",
+        status: "pending",
+      }),
+      expect.objectContaining({
+        amountCents: 4900000,
+        method: "transfer",
+        status: "paid",
+      }),
+    ]);
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
     expect([...vehiclePorts.documents.values()].map((doc) => doc.kind)).toEqual(
       ["reservation_receipt", "sale_contract", "delivery_term"],
     );
+    expect(vehiclePorts.financeRepository.entries).toHaveLength(2);
+    const signalEntry = vehiclePorts.financeRepository.entries.find(
+      (entry) => entry.metadata.method === "pix",
+    );
+    expect(signalEntry).toMatchObject({
+      amountCents: 100000,
+      category: "vehicle_sale",
+      status: "pending",
+    });
+    expect(signalEntry?.metadata.salePaymentStatus).toBe("pending");
+    const transferEntry = vehiclePorts.financeRepository.entries.find(
+      (entry) => entry.metadata.method === "transfer",
+    );
+    expect(transferEntry).toMatchObject({
+      amountCents: 4900000,
+      category: "vehicle_sale",
+      dueAt: new Date("2026-08-12T12:00:00.000Z"),
+      paidAt: new Date("2026-07-12T12:00:00.000Z"),
+      status: "paid",
+    });
+    expect(transferEntry?.metadata.salePaymentStatus).toBe("paid");
   });
 
   it("rejects sale document kinds without a workflow renderer", async () => {
@@ -153,7 +195,13 @@ async function readJson<T>(response: Response): Promise<T> {
 
 type TestSale = {
   id: string;
-  payments: { amountCents: number; id: string; principalCents: number }[];
+  payments: {
+    amountCents: number;
+    id: string;
+    method: string;
+    principalCents: number;
+    status: string;
+  }[];
   status: string;
 };
 

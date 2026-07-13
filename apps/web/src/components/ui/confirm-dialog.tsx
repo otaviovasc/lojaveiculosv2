@@ -1,8 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  activateModalLayer,
+  focusDialogTarget,
+  trapDialogFocus,
+} from "./dialog-accessibility";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -32,25 +37,47 @@ export function ConfirmDialog({
   error,
 }: ConfirmDialogProps) {
   const [mounted, setMounted] = useState(false);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const descriptionId = useId();
+  const isLoadingRef = useRef(isLoading);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isLoading) onClose();
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
-  }, [onClose, isLoading]);
+    isLoadingRef.current = isLoading;
+    onCloseRef.current = onClose;
+  }, [isLoading, onClose]);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    }
+    if (!isOpen) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const layer = activateModalLayer();
+    const cancelFocus = focusDialogTarget(
+      () => dialogRef.current,
+      () => cancelButtonRef.current,
+    );
+    const handleEscape = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        isLoadingRef.current ||
+        !layer.isTopLayer()
+      ) {
+        return;
+      }
+      event.preventDefault();
+      onCloseRef.current();
+    };
+    window.addEventListener("keydown", handleEscape);
     return () => {
-      document.body.style.overflow = "auto";
+      cancelFocus();
+      window.removeEventListener("keydown", handleEscape);
+      layer.release();
+      if (previousFocus?.isConnected) previousFocus.focus();
     };
   }, [isOpen]);
 
@@ -72,27 +99,45 @@ export function ConfirmDialog({
             className="fixed inset-0 bg-background/60 backdrop-blur-sm cursor-pointer"
           />
           <motion.div
+            aria-describedby={description ? descriptionId : undefined}
+            aria-labelledby={titleId}
+            aria-modal="true"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className="relative w-full max-w-md rounded-2xl border border-border/50 bg-card p-6 shadow-lg"
+            onKeyDown={(event) => trapDialogFocus(event, dialogRef.current)}
+            ref={dialogRef}
+            role="dialog"
+            tabIndex={-1}
           >
-            <h2 className="text-lg font-bold font-display tracking-tight text-foreground">
+            <h2
+              className="text-lg font-bold font-display tracking-tight text-foreground"
+              id={titleId}
+            >
               {title}
             </h2>
             {description && (
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p
+                className="mt-2 text-sm text-muted-foreground"
+                id={descriptionId}
+              >
                 {description}
               </p>
             )}
             {error && (
-              <div className="mt-3 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+              <div
+                aria-live="assertive"
+                className="mt-3 rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive"
+                role="alert"
+              >
                 {error}
               </div>
             )}
             <div className="mt-6 flex gap-3 justify-end">
               <button
+                ref={cancelButtonRef}
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}

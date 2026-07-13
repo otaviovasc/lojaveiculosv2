@@ -1,6 +1,10 @@
 import { Trash2 } from "lucide-react";
+import {
+  salePaymentMethods,
+  type SalePaymentMethod,
+} from "@lojaveiculosv2/shared";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
-import { formatCents, parseCurrencyInput, paymentMethods } from "./salesModel";
+import { formatCents, parseCurrencyInput } from "./salesModel";
 import type { SalePaymentLine } from "./types";
 
 export function PaymentRow({
@@ -26,7 +30,7 @@ export function PaymentRow({
           className="sales-input"
           disabled={locked}
           onChange={(method) => onChange({ ...payment, method })}
-          options={paymentMethods.map((method) => ({
+          options={salePaymentMethods.map((method) => ({
             label: formatPaymentMethod(method),
             value: method,
           }))}
@@ -115,7 +119,7 @@ function MoneyInput({
   );
 }
 
-function formatPaymentMethod(method: string): string {
+function formatPaymentMethod(method: SalePaymentMethod): string {
   switch (method) {
     case "pix":
       return "PIX";
@@ -133,8 +137,6 @@ function formatPaymentMethod(method: string): string {
       return "Carta de Crédito (Consórcio)";
     case "trade_in":
       return "Veículo na Troca (Trade-in)";
-    default:
-      return method.toUpperCase();
   }
 }
 

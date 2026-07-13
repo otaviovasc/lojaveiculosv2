@@ -1,0 +1,38 @@
+export function plateLookupResponse(plate: string, chassis: string) {
+  return {
+    fipe: {
+      brandName: "Toyota",
+      code: "002123-4",
+      fuel: "Flex",
+      modelName: "Corolla Altis Premium Hybrid",
+      modelYear: 2024,
+      priceCents: 15_990_000,
+      priceLabel: "R$ 159.900,00",
+      referenceMonth: "julho de 2026",
+      score: 0.99,
+    },
+    metadata: [{ label: "Origem", value: "Nacional" }],
+    plate,
+    source: "apibrasil",
+    vehicle: {
+      aspiration: "turbo",
+      bodyType: "Sedan",
+      brand: "Toyota",
+      chassis,
+      city: "São Paulo",
+      color: "Prata",
+      engine: "2.0",
+      fuel: "Flex",
+      manufactureYear: 2023,
+      mileageKm: 18_450,
+      model: "Corolla",
+      modelYear: 2024,
+      origin: "Nacional",
+      power: "177 cv",
+      state: "SP",
+      transmission: "automatic",
+      vehicleType: "cars",
+      version: "Altis Premium Hybrid",
+    },
+  };
+}

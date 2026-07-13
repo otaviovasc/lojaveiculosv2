@@ -61,4 +61,58 @@ describe("releaseVehicleUnitReservation", () => {
       expect(auditEvent?.summary).toContain("vehicle unit reservation");
     },
   );
+
+  it("fails closed when signal ownership exceeds the bounded finance query", async () => {
+    const context = createContext(["inventory.create", "inventory.reserve"]);
+    const ports = createInMemoryVehiclePorts([
+      createListing({ status: "published", unitIds: ["unit_1"] }),
+    ]);
+    await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
+    await reserveVehicleUnit(
+      context,
+      {
+        buyer: {
+          address: null,
+          document: null,
+          email: null,
+          name: "Buyer Example",
+          phone: null,
+        },
+        paymentMethod: "pix",
+        signalAmountCents: 100000,
+        unitId: "unit_1",
+      },
+      ports,
+    );
+    const saleId = ports.salesRepository.sales[0]?.id;
+    if (!saleId) throw new Error("Expected pending reservation sale.");
+    for (let index = 0; index < 20; index += 1) {
+      await ports.financeRepository.createEntry({
+        amountCents: 1,
+        category: "vehicle_sale",
+        dueAt: null,
+        links: [
+          { targetId: saleId, targetType: "sale" },
+          { targetId: "unit_1", targetType: "vehicle_unit" },
+        ],
+        metadata: { source: "vehicle_sale" },
+        name: `Bounded entry ${index}`,
+        paidAt: null,
+        sellerUserId: null,
+        status: "pending",
+        storeId: context.storeId ?? "",
+        tenantId: context.tenantId ?? "",
+        type: "revenue",
+      });
+    }
+
+    await expect(
+      releaseVehicleUnitReservation(
+        context,
+        { outcome: "cancel", unitId: "unit_1" },
+        ports,
+      ),
+    ).rejects.toThrow("too many linked finance entries");
+    expect(ports.units.get("unit_1")?.status).toBe("reserved");
+  });
 });

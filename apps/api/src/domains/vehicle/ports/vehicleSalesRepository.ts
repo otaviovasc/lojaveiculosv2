@@ -1,11 +1,14 @@
 import type {
+  SalePaymentMethod,
+  SalePaymentStatus,
+} from "@lojaveiculosv2/shared";
+import type {
   VehicleListing,
   VehicleUnit,
 } from "./vehicleInventoryRepository.js";
 
 export type VehicleSaleStatus = "cancelled" | "closed" | "draft" | "pending";
-export type VehicleSalePaymentStatus =
-  "cancelled" | "paid" | "pending" | "refunded";
+export type VehicleSalePaymentStatus = SalePaymentStatus;
 
 export type VehicleBuyerSnapshot = {
   address: string | null;
@@ -32,9 +35,15 @@ export type VehicleSale = {
 export type VehicleSalePayment = {
   amountCents: number;
   createdAt: Date;
+  dueAt: Date | null;
+  extraCents: number;
   id: string;
-  method: string;
+  installments: number | null;
+  metadata: Record<string, unknown>;
+  method: SalePaymentMethod;
   paidAt: Date | null;
+  principalCents: number;
+  providerPaymentId: string | null;
   saleId: string;
   status: VehicleSalePaymentStatus;
   storeId: string;
@@ -45,12 +54,18 @@ export type VehicleSalePayment = {
 export type CreateVehicleSaleInput = {
   buyerSnapshot: VehicleBuyerSnapshot;
   listing: VehicleListing;
-  payment: {
+  payments: readonly {
     amountCents: number;
-    method: string;
+    dueAt: Date | null;
+    extraCents: number;
+    installments: number | null;
+    metadata: Record<string, unknown>;
+    method: SalePaymentMethod;
     paidAt: Date | null;
+    principalCents: number;
+    providerPaymentId: string | null;
     status: VehicleSalePaymentStatus;
-  } | null;
+  }[];
   salePriceCents: number;
   sellerUserId: string | null;
   status: VehicleSaleStatus;
@@ -58,7 +73,7 @@ export type CreateVehicleSaleInput = {
 };
 
 export type VehicleSaleBundle = {
-  payment: VehicleSalePayment | null;
+  payments: readonly VehicleSalePayment[];
   sale: VehicleSale;
 };
 

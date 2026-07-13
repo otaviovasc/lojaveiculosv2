@@ -1,7 +1,10 @@
 import { BadgeDollarSign, CarFront } from "lucide-react";
 import { listingStatusOptions, unitStatusOptions } from "../model/formModel";
 import type { InventoryApi } from "../api/apiClient";
+import type { InventoryEditState } from "../model/inventoryEditModel";
+import { inventoryUnitStatusLabels } from "../model/listCatalogModel";
 import { InventoryCatalogSelector } from "./InventoryCatalogSelector";
+import { InventoryEditTechnicalFields } from "./InventoryEditTechnicalFields";
 import {
   InventoryField,
   InventoryColorSelect,
@@ -9,23 +12,7 @@ import {
   InventorySelect,
   InventoryTextarea,
 } from "./InventoryFormParts";
-import type { InventoryListingDetail, InventoryUnit } from "../model/types";
-
-export type InventoryEditState = {
-  catalog: InventoryListingDetail["listing"]["catalog"];
-  colorName: InventoryUnit["colorName"] | "";
-  description: string;
-  manufactureYear: string;
-  modelYear: string;
-  plate: string;
-  price: string;
-  status: InventoryListingDetail["listing"]["status"];
-  stockNumber: string;
-  title: string;
-  trimName: string;
-  unitStatus: InventoryUnit["status"];
-  vin: string;
-};
+import type { InventoryUnit } from "../model/types";
 
 export function EditListingFields({
   api,
@@ -96,6 +83,7 @@ export function EditListingFields({
           onChange({ ...form, manufactureYear: value })
         }
       />
+      <InventoryEditTechnicalFields form={form} onChange={onChange} />
       <InventoryField label="Descricao">
         <InventoryTextarea
           onChange={(event) =>
@@ -131,7 +119,7 @@ export function EditUnitFields({
           Nenhuma unidade vinculada.
         </p>
       ) : (
-        <UnitFields form={form} onChange={onChange} />
+        <UnitFields form={form} onChange={onChange} unit={unit} />
       )}
     </div>
   );
@@ -140,10 +128,14 @@ export function EditUnitFields({
 function UnitFields({
   form,
   onChange,
+  unit,
 }: {
   form: InventoryEditState;
   onChange: (value: InventoryEditState) => void;
+  unit: InventoryUnit;
 }) {
+  const workflowStatus = unit.status === "reserved" || unit.status === "sold";
+
   return (
     <>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -167,16 +159,18 @@ function UnitFields({
           />
         </InventoryField>
         <InventoryField label="Status da unidade" required>
-          <InventorySelect
-            onChange={(unitStatus) =>
-              onChange({
-                ...form,
-                unitStatus,
-              })
-            }
-            options={unitStatusOptions}
-            value={form.unitStatus}
-          />
+          {workflowStatus ? (
+            <InventoryInput
+              disabled
+              value={inventoryUnitStatusLabels[unit.status]}
+            />
+          ) : (
+            <InventorySelect
+              onChange={(unitStatus) => onChange({ ...form, unitStatus })}
+              options={unitStatusOptions}
+              value={form.unitStatus}
+            />
+          )}
         </InventoryField>
       </div>
       <InventoryField label="Numero de estoque">

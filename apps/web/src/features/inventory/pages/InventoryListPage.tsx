@@ -78,6 +78,7 @@ export function InventoryListPage({
         onBack={() => {
           setScreenMode("list");
           setDetail(null);
+          void loadListings(appliedQuery);
         }}
         onUpdated={handleUpdated}
       />

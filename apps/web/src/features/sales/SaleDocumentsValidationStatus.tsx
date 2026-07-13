@@ -8,7 +8,7 @@ export function SaleDocumentsValidationStatus({
   isValid: boolean;
 }) {
   const statusClassName = isValid
-    ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-600"
+    ? "bg-panel border-success-strong/25 text-app-text"
     : "bg-amber-500/10 border-amber-500/25 text-amber-600";
 
   return (
@@ -20,12 +20,12 @@ export function SaleDocumentsValidationStatus({
     >
       {isValid ? (
         <>
-          <CheckCircle2 className="size-5 text-emerald-500 shrink-0" />
+          <CheckCircle2 className="size-5 text-success-strong shrink-0" />
           <div className="flex flex-col">
             <span className="text-xs font-black uppercase tracking-wider">
               Documentação Validada com Sucesso
             </span>
-            <span className="text-xs font-bold text-emerald-500/80">
+            <span className="text-xs font-bold text-muted">
               Todos os dados obrigatórios foram devidamente preenchidos.
             </span>
           </div>

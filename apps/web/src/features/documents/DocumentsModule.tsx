@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import type { InventoryApi } from "../inventory/api/apiClient";
@@ -33,6 +33,7 @@ import {
   type DocumentsWorkspaceFilters,
 } from "./documentWorkspaceFilters";
 import { resolveDocumentUploadTarget } from "./documentUploadTarget";
+import { readDocumentsRouteState } from "./documentsRouteState";
 import { useDocumentUnitFolders } from "./useDocumentUnitFolders";
 import { useDocumentsBulkSelection } from "./useDocumentsBulkSelection";
 import { useDocumentsModuleState } from "./useDocumentsModuleState";
@@ -45,11 +46,21 @@ export function DocumentsModule({
   api?: DocumentsApi;
   inventoryApi?: InventoryApi;
 }) {
+  const initialRouteState = useMemo(
+    () =>
+      readDocumentsRouteState(
+        typeof window === "undefined" ? "" : window.location.hash,
+      ),
+    [],
+  );
+  const initialDocumentOpenedRef = useRef(false);
   const [runtimeApi, setRuntimeApi] = useState<DocumentsApi | null>(
     api ?? null,
   );
   const [selectedFolderKey, setSelectedFolderKey] =
-    useState<DocumentsFolderKey>("general");
+    useState<DocumentsFolderKey>(() =>
+      initialRouteState.unitId ? `unit:${initialRouteState.unitId}` : "general",
+    );
   const [originFilter, setOriginFilter] = useState<DocumentOriginFilter>("all");
   const [sortBy, setSortBy] = useState<DocumentsSortKey>(
     DEFAULT_DOCUMENTS_SORT,
@@ -76,6 +87,19 @@ export function DocumentsModule({
   const state = useDocumentsModuleState(runtimeApi);
   const unitFolders = useDocumentUnitFolders(state.documents, inventoryApi);
   const vehicleOptions = unitFolders.options;
+
+  useEffect(() => {
+    if (initialDocumentOpenedRef.current || !initialRouteState.documentId) {
+      return;
+    }
+    const document = state.documents.find(
+      (item) => item.id === initialRouteState.documentId,
+    );
+    if (!document) return;
+    initialDocumentOpenedRef.current = true;
+    state.setSelectedDocument(document);
+    void state.previewDocument(document.id);
+  }, [initialRouteState.documentId, state]);
 
   const folderDocuments = useMemo(
     () => filterDocumentsForFolder(state.documents, selectedFolderKey),

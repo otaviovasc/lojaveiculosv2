@@ -1,3 +1,4 @@
+import type { SalePaymentMethod } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
@@ -23,7 +24,7 @@ const permission = "inventory.reserve";
 
 export type ReserveVehicleUnitInput = {
   buyer: VehicleBuyerSnapshot;
-  paymentMethod: string;
+  paymentMethod: SalePaymentMethod;
   reason?: string | null | undefined;
   salePriceCents?: number | null | undefined;
   signalAmountCents: number;
@@ -51,34 +52,55 @@ export async function reserveVehicleUnit(
   );
   assertReservableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
-  if (!salePriceCents)
+  if (!salePriceCents || salePriceCents <= 0)
     throw new VehicleWorkflowValidationError("salePriceCents");
+  if (
+    input.signalAmountCents <= 0 ||
+    input.signalAmountCents > salePriceCents
+  ) {
+    throw new VehicleWorkflowValidationError("signalAmountCents");
+  }
 
   const sale = await getSalesRepository(ports).create({
     buyerSnapshot: input.buyer,
     listing,
-    payment: {
-      amountCents: input.signalAmountCents,
-      method: input.paymentMethod,
-      paidAt: null,
-      status: "pending",
-    },
+    payments: [
+      {
+        amountCents: input.signalAmountCents,
+        dueAt: null,
+        extraCents: 0,
+        installments: null,
+        metadata: {},
+        method: input.paymentMethod,
+        paidAt: null,
+        principalCents: input.signalAmountCents,
+        providerPaymentId: null,
+        status: "pending",
+      },
+    ],
     salePriceCents,
     sellerUserId: actorUserId(context),
     status: "pending",
     unit,
   });
+  const [signalPayment] = sale.payments;
+  if (!signalPayment) {
+    throw new VehicleWorkflowValidationError("reservation sale payment");
+  }
   const workflow = await completeReservationWorkflow(context, {
     buyer: input.buyer,
     listing,
-    paymentMethod: input.paymentMethod,
     ports,
     reason: input.reason,
     sale,
-    signalAmountCents: input.signalAmountCents,
+    signalPayment,
     unit,
   });
   const [createdDocument] = workflow.documents;
+  const [financeEntry] = workflow.financeEntries;
+  if (!financeEntry) {
+    throw new VehicleWorkflowValidationError("reservation finance entry");
+  }
 
   await auditVehicleServiceEvent(context, {
     action: "vehicle_unit.reserve",
@@ -89,17 +111,17 @@ export async function reserveVehicleUnit(
     metadata: {
       listingId: listing.id,
       saleId: sale.sale.id,
-      salePaymentId: sale.payment?.id ?? null,
+      salePaymentId: signalPayment.id,
       documentId: createdDocument?.id ?? null,
       documentStorageKey: createdDocument?.storageKey ?? null,
-      financeEntryId: workflow.financeEntry.entry.id,
+      financeEntryId: financeEntry.entry.id,
       signalAmountCents: input.signalAmountCents,
     },
     permission,
     relatedEntities: [
       { id: listing.id, type: "vehicle_listing" },
       { id: sale.sale.id, type: "vehicle_sale" },
-      { id: workflow.financeEntry.entry.id, type: "finance_entry" },
+      { id: financeEntry.entry.id, type: "finance_entry" },
     ],
     summary: "Reserved vehicle unit and emitted signal receipt",
   });

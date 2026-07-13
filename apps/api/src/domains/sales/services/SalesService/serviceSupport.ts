@@ -1,9 +1,14 @@
 import type {
+  AuditCriticality,
   AuditEntityReference,
+  AuditFailureTier,
   AuditFieldChange,
   SafeAuditMetadata,
 } from "@lojaveiculosv2/audit";
-import type { PermissionKey } from "@lojaveiculosv2/shared";
+import {
+  isActiveSalePaymentStatus,
+  type PermissionKey,
+} from "@lojaveiculosv2/shared";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -13,6 +18,7 @@ import type {
   SalesRepository,
   SaleScope,
 } from "../../ports/salesRepository.js";
+import { findReservationSignalPayment } from "../../salePaymentSignals.js";
 
 export type SalesServicePorts = {
   salesRepository: SalesRepository;
@@ -49,6 +55,13 @@ export class SaleTransitionStateError extends Error {
   }
 }
 
+export class SaleTransitionConflictError extends Error {
+  constructor() {
+    super("Sale state changed while the lifecycle transition was running.");
+    this.name = "SaleTransitionConflictError";
+  }
+}
+
 export class SaleDraftDeletionStateError extends Error {
   constructor(readonly currentStatus: SaleRecord["status"]) {
     super(
@@ -64,6 +77,23 @@ export class SaleReferenceError extends Error {
     this.name = "SaleReferenceError";
   }
 }
+
+export { SalePaymentAmountError } from "../../salePaymentAmounts.js";
+
+export {
+  SaleDraftUpdateConflictError,
+  SaleDraftUpdateStateError,
+  SalePaymentIdentityError,
+  SalePendingUnitChangeError,
+} from "../../saleDraftErrors.js";
+
+export {
+  SaleReversionCompensationError,
+  SaleReversionConflictError,
+  SaleReversionReasonError,
+  SaleReversionStateError,
+  SaleReversionUnsupportedError,
+} from "../../saleReversionErrors.js";
 
 export type SaleReadinessPurpose = "close" | "reserve";
 
@@ -121,15 +151,17 @@ export function collectMissingSaleFields(
   }
 
   if (purpose === "reserve") {
-    const [signalPayment] = sale.payments;
-    if (!signalPayment || signalPayment.amountCents <= 0) {
+    const signalPayment = findReservationSignalPayment(sale.payments);
+    if (!signalPayment) {
       missing.push("reservation_signal_payment");
     }
     return missing;
   }
 
   const principalTotal = sale.payments.reduce(
-    (total, payment) => total + payment.principalCents,
+    (total, payment) =>
+      total +
+      (isActiveSalePaymentStatus(payment.status) ? payment.principalCents : 0),
     0,
   );
   if (sale.salePriceCents && principalTotal < sale.salePriceCents) {
@@ -163,8 +195,11 @@ export async function auditSalesServiceEvent(
     action: string;
     category: "data_access" | "data_change";
     changes?: readonly AuditFieldChange[];
+    criticality?: AuditCriticality;
     entityId: string;
+    failureTier?: AuditFailureTier;
     metadata?: SafeAuditMetadata;
+    outcome?: "denied" | "failed" | "succeeded";
     permission: PermissionKey;
     relatedEntities?: readonly AuditEntityReference[];
     summary: string;
@@ -174,10 +209,12 @@ export async function auditSalesServiceEvent(
     action: input.action,
     actor: context.actor,
     category: input.category,
+    ...(input.criticality ? { criticality: input.criticality } : {}),
     entityId: input.entityId,
     entityType: "sale",
+    ...(input.failureTier ? { failureTier: input.failureTier } : {}),
     metadata: { permission: input.permission, ...(input.metadata ?? {}) },
-    outcome: "succeeded",
+    outcome: input.outcome ?? "succeeded",
     requestId: context.requestId,
     storeId: context.storeId,
     summary: input.summary,

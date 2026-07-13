@@ -1,4 +1,4 @@
-import type { VehicleColor } from "@lojaveiculosv2/shared";
+import type { SalePaymentMethod, VehicleColor } from "@lojaveiculosv2/shared";
 import type {
   InventoryCatalogSnapshot,
   InventoryDocumentKind,
@@ -71,7 +71,7 @@ export type InventoryBuyerInput = {
 
 export type ReserveInventoryListingInput = {
   buyer: InventoryBuyerInput;
-  paymentMethod?: string;
+  paymentMethod?: SalePaymentMethod;
   reason?: string | null;
   salePriceCents?: number | null;
   signalAmountCents: number;
@@ -81,7 +81,7 @@ export type ReserveInventoryListingInput = {
 export type SellInventoryListingInput = {
   buyer: InventoryBuyerInput;
   paidAmountCents?: number | null;
-  paymentMethod?: string;
+  paymentMethod?: SalePaymentMethod;
   reason?: string | null;
   salePriceCents?: number | null;
   unitId?: string;

@@ -32,14 +32,20 @@ export function createTestVehicleSalesRepository(): TestVehicleSalesRepository {
         updatedAt: now,
       };
       sales.splice(sales.indexOf(sale), 1, updatedSale);
-      const payment = payments.find((item) => item.saleId === input.saleId);
-      const updatedPayment = payment
-        ? ({ ...payment, status: "cancelled", updatedAt: now } as const)
-        : null;
-      if (payment && updatedPayment) {
-        payments.splice(payments.indexOf(payment), 1, updatedPayment);
+      const updatedPayments = payments
+        .filter((item) => item.saleId === input.saleId)
+        .map((payment) =>
+          payment.status === "pending"
+            ? ({ ...payment, status: "cancelled", updatedAt: now } as const)
+            : payment,
+        );
+      for (const updatedPayment of updatedPayments) {
+        const index = payments.findIndex(
+          (item) => item.id === updatedPayment.id,
+        );
+        payments.splice(index, 1, updatedPayment);
       }
-      return { payment: updatedPayment, sale: updatedSale };
+      return { payments: updatedPayments, sale: updatedSale };
     },
     payments,
     sales,
@@ -47,31 +53,37 @@ export function createTestVehicleSalesRepository(): TestVehicleSalesRepository {
       const now = new Date();
       const sale = createSale(input, sales.length + 1, now);
       sales.push(sale);
-      if (!input.payment) return { payment: null, sale };
-
-      const payment: VehicleSalePayment = {
-        ...input.payment,
-        createdAt: now,
-        id: `sale_payment_${payments.length + 1}`,
-        saleId: sale.id,
-        storeId: sale.storeId,
-        tenantId: sale.tenantId,
-        updatedAt: now,
-      };
-      payments.push(payment);
-      return { payment, sale };
+      const createdPayments = input.payments.map(
+        (payment, index): VehicleSalePayment => ({
+          ...payment,
+          createdAt: now,
+          id: `sale_payment_${payments.length + index + 1}`,
+          saleId: sale.id,
+          storeId: sale.storeId,
+          tenantId: sale.tenantId,
+          updatedAt: now,
+        }),
+      );
+      payments.push(...createdPayments);
+      return { payments: createdPayments, sale };
     },
     async findPendingByUnit(input): Promise<VehicleSaleBundle | null> {
-      const sale = sales.find(
+      const matches = sales.filter(
         (item) =>
           item.unitId === input.unitId &&
           item.status === "pending" &&
           item.storeId === input.storeId &&
           item.tenantId === input.tenantId,
       );
+      if (matches.length > 1) {
+        throw new Error(
+          `Multiple pending sales found for vehicle unit: ${input.unitId}`,
+        );
+      }
+      const [sale] = matches;
       if (!sale) return null;
       return {
-        payment: payments.find((item) => item.saleId === sale.id) ?? null,
+        payments: payments.filter((item) => item.saleId === sale.id),
         sale,
       };
     },

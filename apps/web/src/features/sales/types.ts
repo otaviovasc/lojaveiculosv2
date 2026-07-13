@@ -1,5 +1,10 @@
+import type {
+  SalePaymentMethod,
+  SalePaymentStatus,
+} from "@lojaveiculosv2/shared";
+
 export type SaleStatus = "draft" | "pending" | "closed" | "cancelled";
-export type SalePaymentStatus = "pending" | "paid" | "refunded" | "cancelled";
+export type { SalePaymentStatus } from "@lojaveiculosv2/shared";
 export type SaleDocumentKind =
   "delivery_term" | "power_of_attorney" | "sale_contract" | "sale_receipt";
 
@@ -16,7 +21,7 @@ export type SalePaymentLine = {
   id: string;
   installments: number | null;
   metadata: Record<string, unknown>;
-  method: string;
+  method: SalePaymentMethod;
   paidAt: string | null;
   principalCents: number;
   providerPaymentId: string | null;
@@ -26,9 +31,11 @@ export type SalePaymentLine = {
 export type SaleRecord = {
   buyerSnapshot: Record<string, unknown>;
   closedAt: string | null;
+  correctionOfSaleId: string | null;
   createdAt: string;
   documentPolicySnapshot: Record<string, unknown>;
   id: string;
+  isCurrentRevision: boolean;
   leadId: string | null;
   listingId: string | null;
   listingSnapshot: Record<string, unknown>;
@@ -62,9 +69,10 @@ export type SaleDraftInput = {
 export type SalePaymentInput = {
   amountCents: number;
   extraCents?: number;
+  id?: string;
   installments?: number | null;
   metadata?: Record<string, unknown>;
-  method: string;
+  method: SalePaymentMethod;
   principalCents?: number;
   status?: SalePaymentStatus;
 };

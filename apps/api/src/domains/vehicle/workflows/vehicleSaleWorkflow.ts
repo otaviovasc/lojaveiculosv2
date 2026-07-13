@@ -4,6 +4,7 @@ import type { VehicleDocument } from "../ports/vehicleInventoryRepository.js";
 import type {
   VehicleBuyerSnapshot,
   VehicleSaleBundle,
+  VehicleSalePayment,
 } from "../ports/vehicleSalesRepository.js";
 import type {
   VehicleListing,
@@ -22,7 +23,7 @@ import {
 import { getVehicleWorkflowStoreBranding } from "../documents/vehicleWorkflowStoreBranding.js";
 import {
   createReservationFinanceEntry,
-  createSaleFinanceEntry,
+  createSaleFinanceEntries,
 } from "../finance/vehicleFinanceEntries.js";
 import {
   actorUserId,
@@ -37,7 +38,7 @@ import {
 
 export type VehicleSaleWorkflowResult = {
   documents: readonly VehicleDocument[];
-  financeEntry: FinanceEntryBundle;
+  financeEntries: readonly FinanceEntryBundle[];
   updatedListing: VehicleListing;
 };
 
@@ -46,21 +47,19 @@ export async function completeReservationWorkflow(
   input: {
     buyer: VehicleBuyerSnapshot;
     listing: VehicleListing;
-    paymentMethod: string;
     ports: VehicleInventoryServicePorts | undefined;
     reason?: string | null | undefined;
     sale: VehicleSaleBundle;
-    signalAmountCents: number;
+    signalPayment: VehicleSalePayment;
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
   const financeEntry = await createReservationFinanceEntry({
     financeRepository: getFinanceRepository(input.ports),
     listing: input.listing,
-    paymentMethod: input.paymentMethod,
     sale: input.sale,
     sellerUserId: input.sale.sale.sellerUserId,
-    signalAmountCents: input.signalAmountCents,
+    signalPayment: input.signalPayment,
     unit: input.unit,
   });
   const [template, store] = await Promise.all([
@@ -70,9 +69,8 @@ export async function completeReservationWorkflow(
   const document = buildReservationReceiptDocument({
     buyer: input.buyer,
     listing: input.listing,
-    paymentMethod: input.paymentMethod,
     sale: input.sale,
-    signalAmountCents: input.signalAmountCents,
+    signalPayment: input.signalPayment,
     ...(store ? { store } : {}),
     template,
     unit: input.unit,
@@ -87,7 +85,7 @@ export async function completeReservationWorkflow(
   await saveUnitStatus(context, input, "reserved");
   return {
     documents: [createdDocument],
-    financeEntry,
+    financeEntries: [financeEntry],
     updatedListing: input.listing,
   };
 }
@@ -97,7 +95,6 @@ export async function completeSaleWorkflow(
   input: {
     buyer: VehicleBuyerSnapshot;
     listing: VehicleListing;
-    paymentMethod: string;
     ports: VehicleInventoryServicePorts | undefined;
     reason?: string | null | undefined;
     sale: VehicleSaleBundle;
@@ -105,10 +102,9 @@ export async function completeSaleWorkflow(
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
-  const financeEntry = await createSaleFinanceEntry({
+  const financeEntries = await createSaleFinanceEntries({
     financeRepository: getFinanceRepository(input.ports),
     listing: input.listing,
-    paymentMethod: input.paymentMethod,
     sale: input.sale,
     sellerUserId: input.sale.sale.sellerUserId,
     unit: input.unit,
@@ -120,7 +116,6 @@ export async function completeSaleWorkflow(
   const documents = buildSoldDocuments({
     buyer: input.buyer,
     listing: input.listing,
-    paymentMethod: input.paymentMethod,
     sale: input.sale,
     ...(store ? { store } : {}),
     ...(input.selectedDocumentKinds
@@ -141,7 +136,7 @@ export async function completeSaleWorkflow(
   }
   await saveUnitStatus(context, input, "sold");
   const updatedListing = await syncListingSoldOutStatus(context, input);
-  return { documents: createdDocuments, financeEntry, updatedListing };
+  return { documents: createdDocuments, financeEntries, updatedListing };
 }
 
 async function saveUnitStatus(

@@ -16,7 +16,7 @@ export function cleanCreateSaleDraftInput(
   input: z.infer<typeof saleDraftSchema>,
 ): SaveSaleDraftInput {
   const draft: UpdateSaleDraftInput = {};
-  cleanSaleDraftFields(draft, input);
+  cleanSaleDraftFields(draft, input, false);
   return draft;
 }
 
@@ -24,19 +24,26 @@ export function cleanUpdateSaleDraftInput(
   input: z.infer<typeof saleDraftSchema>,
 ): UpdateSaleDraftInput {
   const draft: UpdateSaleDraftInput = {};
-  cleanSaleDraftFields(draft, input);
+  cleanSaleDraftFields(draft, input, true);
   return draft;
 }
 
 function cleanSaleDraftFields(
   draft: UpdateSaleDraftInput,
   input: z.infer<typeof saleDraftSchema>,
+  preservePaymentIds: boolean,
 ): void {
   assignDefined(draft, "buyerSnapshot", input.buyerSnapshot);
   assignDefined(draft, "documentPolicySnapshot", input.documentPolicySnapshot);
   assignDefined(draft, "leadId", input.leadId);
   assignDefined(draft, "listingSnapshot", input.listingSnapshot);
-  assignDefined(draft, "payments", input.payments?.map(cleanSalePaymentInput));
+  assignDefined(
+    draft,
+    "payments",
+    input.payments?.map((payment) =>
+      cleanSalePaymentInput(payment, preservePaymentIds),
+    ),
+  );
   assignDefined(draft, "salePriceCents", input.salePriceCents);
   assignDefined(draft, "saleSourceSnapshot", input.saleSourceSnapshot);
   assignDefined(draft, "selectedDocumentKinds", input.selectedDocumentKinds);
@@ -87,6 +94,7 @@ function assignDefined<T extends object, K extends keyof T>(
 
 function cleanSalePaymentInput(
   input: z.infer<typeof salePaymentSchema>,
+  preserveId: boolean,
 ): SaveSalePaymentInput {
   const payment: SaveSalePaymentInput = {
     amountCents: input.amountCents,
@@ -94,6 +102,7 @@ function cleanSalePaymentInput(
   };
   assignDefined(payment, "dueAt", input.dueAt);
   assignDefined(payment, "extraCents", input.extraCents);
+  if (preserveId) assignDefined(payment, "id", input.id);
   assignDefined(payment, "installments", input.installments);
   assignDefined(payment, "metadata", input.metadata);
   assignDefined(payment, "paidAt", input.paidAt);

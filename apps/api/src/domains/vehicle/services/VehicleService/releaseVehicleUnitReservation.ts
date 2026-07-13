@@ -6,15 +6,12 @@ import type {
   VehicleListing,
   VehicleUnit,
 } from "../../ports/vehicleInventoryRepository.js";
-import {
-  VehicleWorkflowStateError,
-  VehicleWorkflowValidationError,
-} from "../../workflows/vehicleSaleWorkflowRules.js";
+import { VehicleWorkflowStateError } from "../../workflows/vehicleSaleWorkflowRules.js";
+import { findReservationSignalFinance } from "../../workflows/reservationSignalFinance.js";
 import {
   assertPendingReservationSale,
   assertPendingSignal,
   assertReservedUnit,
-  findReservationFinanceEntry,
 } from "../../workflows/releaseVehicleReservationSupport.js";
 import {
   actorUserId,
@@ -74,16 +71,13 @@ export async function releaseVehicleUnitReservation(
   if (input.saleId && sale.sale.id !== input.saleId) {
     throw new VehicleWorkflowStateError("Pending reservation sale mismatch.");
   }
-  if (!sale.payment) {
-    throw new VehicleWorkflowValidationError("reservation sale payment");
-  }
-
-  const financeEntry = await findReservationFinanceEntry(
+  const { financeEntry, signalPayment } = await findReservationSignalFinance(
     getFinanceRepository(ports),
     context,
-    sale.payment.id,
+    sale,
+    unit,
   );
-  assertPendingSignal(sale.payment.status, financeEntry);
+  assertPendingSignal(signalPayment.status, financeEntry);
 
   const outcome = input.outcome ?? "release";
   const outcomeConfig = reservationOutcomeConfig[outcome];
@@ -160,7 +154,7 @@ export async function releaseVehicleUnitReservation(
       outcome,
       reason,
       saleId: sale.sale.id,
-      salePaymentId: sale.payment.id,
+      salePaymentId: signalPayment.id,
     },
     permission,
     relatedEntities: [

@@ -3,6 +3,8 @@ packages:
   - "packages/*"
 publicHoistPattern:
   - pdfjs-dist
+overrides:
+  pdfjs-dist: 5.4.624
 onlyBuiltDependencies:
   - esbuild
 minimumReleaseAgeExclude:

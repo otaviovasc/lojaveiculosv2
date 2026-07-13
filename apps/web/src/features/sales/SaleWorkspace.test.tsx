@@ -41,6 +41,7 @@ describe("SaleWorkspace", () => {
         onCancel={vi.fn()}
         onClose={vi.fn()}
         onReserve={onReserve}
+        onRevert={vi.fn()}
         onSave={onSave}
         sale={draft}
       />,
@@ -87,6 +88,7 @@ describe("SaleWorkspace", () => {
         onCancel={vi.fn()}
         onClose={onClose}
         onReserve={vi.fn()}
+        onRevert={vi.fn()}
         onSave={onSave}
         sale={pending}
       />,
@@ -133,6 +135,7 @@ describe("SaleWorkspace", () => {
         onCancel={vi.fn()}
         onClose={onClose}
         onReserve={vi.fn()}
+        onRevert={vi.fn()}
         onSave={onSave}
         sale={pending}
       />,
@@ -170,12 +173,21 @@ describe("SaleWorkspace", () => {
     });
   });
 
-  it("does not expose lifecycle action buttons for terminal sales", () => {
+  it("only exposes reversal for the current closed revision", async () => {
+    const user = userEvent.setup();
+    const onRevert = vi.fn(async (sale: SaleRecord, _reason: string) => ({
+      ...sale,
+      correctionOfSaleId: sale.id,
+      id: "sale_2",
+      revision: 2,
+      status: "draft" as const,
+    }));
     render(
       <SaleWorkspace
         onCancel={vi.fn()}
         onClose={vi.fn()}
         onReserve={vi.fn()}
+        onRevert={onRevert}
         onSave={vi.fn()}
         sale={saleRecord({ status: "closed" })}
       />,
@@ -191,6 +203,40 @@ describe("SaleWorkspace", () => {
     expect(
       screen.queryByRole("button", { name: /Cancelar/ }),
     ).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Reverter venda" }));
+    const dialog = screen.getByRole("dialog", {
+      name: "Reverter venda fechada",
+    });
+    await user.type(
+      screen.getByLabelText("Motivo da correção"),
+      "Corrigir comprador",
+    );
+    await user.click(
+      screen.getAllByRole("button", { name: "Reverter venda" }).at(-1)!,
+    );
+    await waitFor(() => expect(onRevert).toHaveBeenCalledOnce());
+    expect(onRevert.mock.calls[0]?.[1]).toBe("Corrigir comprador");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Esta venda está em modo somente leitura",
+    );
+  });
+
+  it("hides reversal for a historical closed revision", () => {
+    render(
+      <SaleWorkspace
+        onCancel={vi.fn()}
+        onClose={vi.fn()}
+        onReserve={vi.fn()}
+        onRevert={vi.fn()}
+        onSave={vi.fn()}
+        sale={saleRecord({ isCurrentRevision: false, status: "closed" })}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Reverter venda" }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("revisão histórica");
   });
 
   it("uses custom pickers without exposing fallback unit ids", () => {
@@ -199,6 +245,7 @@ describe("SaleWorkspace", () => {
         onCancel={vi.fn()}
         onClose={vi.fn()}
         onReserve={vi.fn()}
+        onRevert={vi.fn()}
         onSave={vi.fn()}
         sale={saleRecord({ unitId: "unit_sensitive_123456" })}
       />,
@@ -220,6 +267,7 @@ describe("SaleWorkspace", () => {
         onCancel={vi.fn()}
         onClose={vi.fn()}
         onReserve={vi.fn()}
+        onRevert={vi.fn()}
         onSave={onSave}
         sale={saleRecord()}
       />,
@@ -246,6 +294,7 @@ function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
   return {
     buyerSnapshot: { name: "Cliente QA" },
     closedAt: null,
+    correctionOfSaleId: null,
     createdAt: "2026-01-01T00:00:00.000Z",
     documentPolicySnapshot: {
       requiredDocumentKinds: [
@@ -256,6 +305,7 @@ function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
       ],
     },
     id: "sale_1",
+    isCurrentRevision: true,
     leadId: "lead_1",
     listingId: null,
     listingSnapshot: { title: "Audi A4" },

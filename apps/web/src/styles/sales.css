@@ -312,7 +312,11 @@
   color: var(--color-primary) !important;
 }
 .sales-wizard-step-completed {
-  background: rgba(32, 199, 122, 0.08);
-  border-color: rgba(32, 199, 122, 0.25);
-  color: var(--color-green-end);
+  background: var(--color-green-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-success-strong) 25%,
+    transparent
+  );
+  color: var(--color-success-strong);
 }

@@ -6,20 +6,12 @@ export function WorkspaceKPIStrip({
   margin,
   stockTime,
   renaveStatus,
-  isFinancingActive,
-  isInsuranceActive,
-  onFinancingToggle,
-  onInsuranceToggle,
 }: {
   salePrice: string;
   acquisitionPrice: string;
   margin: string;
   stockTime: string;
   renaveStatus: string;
-  isFinancingActive: boolean;
-  isInsuranceActive: boolean;
-  onFinancingToggle: () => void;
-  onInsuranceToggle: () => void;
 }) {
   return (
     <div className="flex flex-col lg:flex-row gap-4 justify-between lg:items-center bg-panel/30 border border-line/60 rounded-2xl p-4.5">
@@ -44,7 +36,7 @@ export function WorkspaceKPIStrip({
           <span className="block text-xs font-black uppercase tracking-wider text-muted">
             Margem Base
           </span>
-          <span className="block text-base font-black text-emerald-500 mt-0.5">
+          <span className="mt-0.5 block text-base font-black text-success-strong">
             {margin}
           </span>
         </div>
@@ -52,7 +44,7 @@ export function WorkspaceKPIStrip({
           <span className="block text-xs font-black uppercase tracking-wider text-muted">
             Tempo em Pátio
           </span>
-          <span className="block text-base font-black text-violet-500 mt-0.5">
+          <span className="mt-0.5 block text-base font-black text-warning-strong">
             {stockTime}
           </span>
         </div>
@@ -60,39 +52,27 @@ export function WorkspaceKPIStrip({
           <span className="block text-xs font-black uppercase tracking-wider text-muted">
             Status do Anúncio
           </span>
-          <span className="block text-base font-black text-blue-500 mt-0.5">
+          <span className="mt-0.5 block text-base font-black text-accent-strong">
             {renaveStatus}
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 border-t lg:border-t-0 lg:border-l border-line/60 pt-4 lg:pt-0 lg:pl-6 shrink-0">
-        <button
-          onClick={onFinancingToggle}
-          className={
-            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black transition-all cursor-pointer border " +
-            (isFinancingActive
-              ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
-              : "bg-app-elevated text-app-text hover:bg-line/25 border-line")
-          }
-          type="button"
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-line/60 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-app-elevated px-3.5 py-1.5 text-xs font-black text-muted"
+          title="O financiamento é configurado durante a formalização da venda"
         >
           <Briefcase className="size-3.5" />
-          <span>Financiamento</span>
-        </button>
-        <button
-          onClick={onInsuranceToggle}
-          className={
-            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-black transition-all cursor-pointer border " +
-            (isInsuranceActive
-              ? "bg-blue-500/10 text-blue-500 border-blue-500/30"
-              : "bg-app-elevated text-app-text hover:bg-line/25 border-line")
-          }
-          type="button"
+          <span>Financiamento na venda</span>
+        </span>
+        <span
+          className="inline-flex items-center gap-1.5 rounded-full border border-line bg-app-elevated px-3.5 py-1.5 text-xs font-black text-muted"
+          title="O seguro é configurado durante a formalização da venda"
         >
           <Shield className="size-3.5" />
-          <span>Seguros</span>
-        </button>
+          <span>Seguro na venda</span>
+        </span>
       </div>
     </div>
   );

@@ -1,3 +1,7 @@
+import {
+  salePaymentMethods,
+  salePaymentStatuses,
+} from "@lojaveiculosv2/shared";
 import { z } from "zod";
 import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 
@@ -9,13 +13,14 @@ export const salePaymentSchema = z.object({
   amountCents: cents,
   dueAt: z.coerce.date().nullable().optional(),
   extraCents: cents.optional(),
+  id: z.string().trim().uuid().optional(),
   installments: z.number().int().positive().nullable().optional(),
   metadata,
-  method: z.string().trim().min(1),
+  method: z.enum(salePaymentMethods),
   paidAt: z.coerce.date().nullable().optional(),
   principalCents: cents.optional(),
   providerPaymentId: optionalString,
-  status: z.enum(["pending", "paid", "refunded", "cancelled"]).optional(),
+  status: z.enum(salePaymentStatuses).optional(),
 });
 
 export const saleDraftSchema = z.object({
@@ -49,4 +54,8 @@ export const listSalesQuerySchema = z.object({
 export const transitionSaleSchema = z.object({
   overrideReason: optionalString,
   overrideRequiredFields: z.boolean().optional(),
+});
+
+export const revertSaleSchema = z.object({
+  reason: z.string().trim().min(1).max(500),
 });

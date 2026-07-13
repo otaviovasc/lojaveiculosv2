@@ -29,16 +29,18 @@ test("keeps document KPIs and rows readable across viewports", async ({
   await expect(page.getByRole("heading", { name: "Geral" })).toBeVisible();
 
   const table = page.getByRole("table");
-  const firstRow = table.locator("tbody tr").first();
-  const statusBadge = firstRow.getByText("Emitido", { exact: true });
-  const actionCell = firstRow.locator("td").last();
+  const issuedRow = table
+    .locator("tbody tr", { hasText: "Comprovante de pagamento" })
+    .first();
+  const statusBadge = issuedRow.getByText("Emitido", { exact: true });
+  const actionCell = issuedRow.locator("td").last();
   await expect(table).toBeVisible();
   await expect(statusBadge).toBeVisible();
   await expect(
-    firstRow.getByRole("button", { name: "Visualizar documento" }),
+    issuedRow.getByRole("button", { name: "Visualizar documento" }),
   ).toBeVisible();
   await expect(
-    firstRow.getByRole("button", { name: "Baixar documento" }),
+    issuedRow.getByRole("button", { name: "Baixar documento" }),
   ).toBeVisible();
   expect(await isTextClipped(statusBadge)).toBe(false);
   expect((await actionCell.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(

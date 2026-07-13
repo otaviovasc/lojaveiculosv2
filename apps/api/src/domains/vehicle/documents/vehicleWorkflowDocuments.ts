@@ -1,5 +1,7 @@
+import { isActiveSalePaymentStatus } from "@lojaveiculosv2/shared";
 import type {
   CreateVehicleDocumentRecord,
+  VoidVehicleDocumentsBySaleInput,
   VehicleDocumentKind,
   VehicleListing,
   VehicleUnit,
@@ -7,6 +9,7 @@ import type {
 import type {
   VehicleBuyerSnapshot,
   VehicleSaleBundle,
+  VehicleSalePayment,
 } from "../ports/vehicleSalesRepository.js";
 import type { DocumentTemplate } from "../../documents/ports/documentRepository.js";
 import type { VehicleStoreBranding } from "../ports/vehicleStoreBrandingReader.js";
@@ -52,9 +55,8 @@ const soldDocuments: Record<VehicleSaleDocumentKind, WorkflowDocumentSpec> = {
 export function buildReservationReceiptDocument(input: {
   buyer: VehicleBuyerSnapshot;
   listing: VehicleListing;
-  paymentMethod: string;
   sale: VehicleSaleBundle;
-  signalAmountCents: number;
+  signalPayment: VehicleSalePayment;
   store?: VehicleStoreBranding;
   template?: DocumentTemplate | null;
   unit: VehicleUnit;
@@ -66,12 +68,13 @@ export function buildReservationReceiptDocument(input: {
       buyer: input.buyer,
       documentType: "recibo_de_sinal",
       finance: {
-        paymentMethod: input.paymentMethod,
-        signalAmountCents: input.signalAmountCents,
+        paymentMethod: input.signalPayment.method,
+        signalAmountCents: input.signalPayment.amountCents,
+        status: input.signalPayment.status,
         totalAmountCents: input.sale.sale.salePriceCents,
       },
       saleId: input.sale.sale.id,
-      salePaymentId: input.sale.payment?.id ?? null,
+      salePaymentId: input.signalPayment.id,
       store: input.store ?? null,
       template: "recibo_de_sinal_v1",
       templateClauses: input.template?.clauses ?? null,
@@ -87,7 +90,6 @@ export function buildReservationReceiptDocument(input: {
 export function buildSoldDocuments(input: {
   buyer: VehicleBuyerSnapshot;
   listing: VehicleListing;
-  paymentMethod: string;
   sale: VehicleSaleBundle;
   selectedDocumentKinds?: readonly VehicleSaleDocumentKind[];
   store?: VehicleStoreBranding;
@@ -96,6 +98,12 @@ export function buildSoldDocuments(input: {
 }): readonly CreateVehicleDocumentRecord[] {
   const selectedDocumentKinds =
     input.selectedDocumentKinds ?? vehicleSaleDocumentKinds;
+  const activePayments = input.sale.payments.filter((payment) =>
+    isActiveSalePaymentStatus(payment.status),
+  );
+  const paymentMethods = [
+    ...new Set(activePayments.map((payment) => payment.method)),
+  ];
   return selectedDocumentKinds.map((kind) => {
     const spec = soldDocuments[kind];
     const template = input.templates?.get(spec.kind);
@@ -106,12 +114,16 @@ export function buildSoldDocuments(input: {
         buyer: input.buyer,
         documentType: spec.role,
         finance: {
-          paidAmountCents: input.sale.payment?.amountCents ?? null,
-          paymentMethod: input.paymentMethod,
+          allocatedAmountCents: sumPaymentAmounts(activePayments),
+          paidAmountCents: sumPaymentAmounts(
+            activePayments.filter((payment) => payment.status === "paid"),
+          ),
+          paymentMethod: paymentMethods.join(", "),
+          payments: activePayments.map(paymentSnapshot),
           salePriceCents: input.sale.sale.salePriceCents,
         },
         saleId: input.sale.sale.id,
-        salePaymentId: input.sale.payment?.id ?? null,
+        salePaymentIds: activePayments.map((payment) => payment.id),
         store: input.store ?? null,
         template: `${spec.role}_v1`,
         templateClauses: template?.clauses ?? null,
@@ -123,6 +135,55 @@ export function buildSoldDocuments(input: {
       unit: input.unit,
     });
   });
+}
+
+function sumPaymentAmounts(payments: readonly VehicleSalePayment[]): number {
+  return payments.reduce((total, payment) => total + payment.amountCents, 0);
+}
+
+function paymentSnapshot(payment: VehicleSalePayment) {
+  return {
+    amountCents: payment.amountCents,
+    dueAt: payment.dueAt,
+    extraCents: payment.extraCents,
+    id: payment.id,
+    installments: payment.installments,
+    method: payment.method,
+    paidAt: payment.paidAt,
+    principalCents: payment.principalCents,
+    providerPaymentId: payment.providerPaymentId,
+    status: payment.status,
+  };
+}
+
+export function appendVehicleDocumentVoidHistory(
+  metadata: Record<string, unknown>,
+  input: Pick<VoidVehicleDocumentsBySaleInput, "actorId" | "at" | "reason">,
+): Record<string, unknown> {
+  return {
+    ...metadata,
+    operationHistory: [
+      ...vehicleDocumentOperationHistory(metadata),
+      {
+        action: "voided",
+        actorId: input.actorId,
+        at: input.at,
+        reason: input.reason,
+      },
+    ],
+  };
+}
+
+function vehicleDocumentOperationHistory(metadata: Record<string, unknown>) {
+  const value = metadata.operationHistory;
+  if (!Array.isArray(value)) return [];
+  return value.filter(
+    (item): item is Record<string, unknown> =>
+      Boolean(item) &&
+      typeof item === "object" &&
+      typeof (item as Record<string, unknown>).action === "string" &&
+      typeof (item as Record<string, unknown>).actorId === "string",
+  );
 }
 
 export function isVehicleSaleDocumentKind(

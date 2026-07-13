@@ -25,6 +25,8 @@ export const salesRoutes = {
   },
   reserve: (saleId: string, baseUrl?: string) =>
     salesEndpoint(baseUrl, `/${saleId}/reserve`),
+  revert: (saleId: string, baseUrl?: string) =>
+    salesEndpoint(baseUrl, `/${saleId}/revert`),
 };
 
 export function createSalesHeaders(auth: SalesAuth = {}): HeadersInit {

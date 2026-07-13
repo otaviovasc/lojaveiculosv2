@@ -2,6 +2,7 @@ import {
   AlertCircle,
   Check,
   CheckCircle2,
+  RotateCcw,
   ShieldAlert,
   ShoppingBag,
   X,
@@ -10,6 +11,7 @@ import {
   formatCents,
   hasBuyerName,
   paymentPrincipalTotal,
+  reservationSignalPayment,
   saleMissingFields,
 } from "./salesModel";
 import { SummaryRow } from "./SaleSummaryPanelParts";
@@ -20,12 +22,14 @@ export function StickySaleSummary({
   onCancel,
   onClose,
   onReserve,
+  onRevert,
   sale,
 }: {
   isSaving: boolean;
   onCancel: () => void;
   onClose: () => void;
   onReserve: () => void;
+  onRevert: () => void;
   sale: SaleRecord;
 }) {
   const closeMissing = saleMissingFields(sale, "close");
@@ -34,7 +38,7 @@ export function StickySaleSummary({
   const isReserveReady = reserveMissing.length === 0;
 
   const totalPaid = paymentPrincipalTotal(sale);
-  const signalAmount = sale.payments[0]?.amountCents ?? 0;
+  const signalAmount = reservationSignalPayment(sale)?.principalCents ?? 0;
   const salePrice = sale.salePriceCents ?? 0;
   const balance = salePrice - totalPaid;
   const canClose =
@@ -113,7 +117,7 @@ export function StickySaleSummary({
           <SummaryRow
             label="Saldo devedor"
             value={formatCents(balance)}
-            valueClassName="text-rose-500 font-black"
+            valueClassName="text-danger font-black"
           />
         )}
         <SummaryRow
@@ -234,6 +238,17 @@ export function StickySaleSummary({
             </button>
           </>
         )}
+        {sale.status === "closed" && sale.isCurrentRevision ? (
+          <button
+            className="sales-secondary-button w-full !text-muted hover:!text-rose-500 hover:!border-rose-500/40"
+            disabled={isSaving}
+            onClick={onRevert}
+            type="button"
+          >
+            <RotateCcw className="size-4 shrink-0" />
+            Reverter venda
+          </button>
+        ) : null}
       </div>
     </aside>
   );

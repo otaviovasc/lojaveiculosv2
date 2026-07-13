@@ -9,12 +9,61 @@ import type {
   TransitionSaleInput,
   UpdateSaleDraftInput,
 } from "../../../../domains/sales/ports/salesRepository.js";
-import { SaleDraftDeletionStateError } from "../../../../domains/sales/services/SalesService/serviceSupport.js";
+import {
+  SaleDraftDeletionStateError,
+  SaleDraftUpdateConflictError,
+  SaleTransitionConflictError,
+} from "../../../../domains/sales/services/SalesService/serviceSupport.js";
 
 export function createMemorySalesRepository(): SalesRepository {
   const sales = new Map<string, SaleRecord>();
 
   return {
+    async createCorrectionRevision(scope, input) {
+      const current = sales.get(input.saleId);
+      if (
+        !current ||
+        !matchesScope(current, scope) ||
+        current.status !== "closed" ||
+        !current.isCurrentRevision ||
+        current.revision !== input.expectedRevision
+      ) {
+        return null;
+      }
+
+      const now = new Date();
+      const correction: SaleRecord = {
+        buyerSnapshot: input.buyerSnapshot ?? {},
+        closedAt: null,
+        correctionOfSaleId: input.correctionOfSaleId,
+        createdAt: now,
+        documentPolicySnapshot: input.documentPolicySnapshot ?? {},
+        id: randomId(),
+        isCurrentRevision: true,
+        leadId: input.leadId ?? null,
+        listingSnapshot: input.listingSnapshot ?? {},
+        overrideReason: input.reason,
+        overrideRequiredFields: false,
+        payments: mapPayments(freshCorrectionPayments(input.payments ?? [])),
+        revision: current.revision + 1,
+        salePriceCents: input.salePriceCents ?? null,
+        saleSourceSnapshot: input.saleSourceSnapshot ?? {},
+        selectedDocumentKinds: [...(input.selectedDocumentKinds ?? [])],
+        sellerUserId: input.sellerUserId ?? null,
+        status: "draft",
+        storeId: scope.storeId,
+        tenantId: scope.tenantId,
+        unitId: input.unitId ?? null,
+        updatedAt: now,
+      };
+      sales.set(current.id, {
+        ...current,
+        isCurrentRevision: false,
+        updatedAt: now,
+      });
+      sales.set(correction.id, correction);
+      return correction;
+    },
     async createDraft(scope, input) {
       const now = new Date();
       const sale: SaleRecord = {
@@ -73,6 +122,9 @@ export function createMemorySalesRepository(): SalesRepository {
       if (!current || !matchesScope(current, input)) {
         throw new Error(`Sale not found: ${input.saleId}`);
       }
+      if (current.status !== input.expectedStatus) {
+        throw new SaleTransitionConflictError();
+      }
       const next = {
         ...current,
         closedAt: input.closedAt ?? null,
@@ -88,16 +140,36 @@ export function createMemorySalesRepository(): SalesRepository {
       sales.set(input.saleId, next);
       return next;
     },
-    async updateDraft(scope, saleId, input) {
+    async updateDraft(scope, saleId, input, expectedStatus) {
       const current = sales.get(saleId);
       if (!current || !matchesScope(current, scope)) {
         throw new Error(`Sale not found: ${saleId}`);
+      }
+      if (expectedStatus && current.status !== expectedStatus) {
+        throw new SaleDraftUpdateConflictError();
       }
       const next = mergeSaleInput(current, input);
       sales.set(saleId, next);
       return next;
     },
   };
+}
+
+function freshCorrectionPayments(
+  payments: readonly SaveSalePaymentInput[],
+): readonly SaveSalePaymentInput[] {
+  return payments.map((payment) => ({
+    amountCents: payment.amountCents,
+    dueAt: payment.dueAt ?? null,
+    extraCents: payment.extraCents ?? 0,
+    installments: payment.installments ?? null,
+    metadata: payment.metadata ?? {},
+    method: payment.method,
+    paidAt: null,
+    principalCents: payment.principalCents ?? payment.amountCents,
+    providerPaymentId: null,
+    status: "pending",
+  }));
 }
 
 function cancelPendingPayments(

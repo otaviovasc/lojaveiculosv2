@@ -1,7 +1,15 @@
 import { Car, Clock, Edit, Eye, Layers, Trash2, User } from "lucide-react";
 import type { ReactNode } from "react";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
-import { formatCents, paymentPrincipalTotal } from "./salesModel";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
+import {
+  FeatureEmptyState,
+  FeatureStatusBadge,
+} from "../../components/ui/FeatureStates";
+import {
+  canPersistSaleWorkspaceEdits,
+  formatCents,
+  paymentPrincipalTotal,
+} from "./salesModel";
 import {
   getSaleRequirementsScore,
   salesStatusLabels,
@@ -43,23 +51,18 @@ export function SalesListCards({
 
 function SalesEmptyState({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="bg-panel border border-line border-dashed rounded-3xl p-16 text-center flex flex-col items-center justify-center gap-3">
-      <Layers className="size-12 text-muted/30 animate-pulse" />
-      <h3 className="text-base font-black text-app-text uppercase tracking-wider mt-2">
-        Nenhuma venda encontrada
-      </h3>
-      <p className="text-xs font-bold text-muted max-w-xs leading-relaxed">
-        Não encontramos registros para o status ou filtro pesquisado. Crie um
-        rascunho de venda para começar.
-      </p>
-      <button
-        className="sales-secondary-button mt-2 text-xs"
-        onClick={onCreate}
-        type="button"
-      >
-        Criar Primeiro Rascunho
-      </button>
-    </div>
+    <FeatureEmptyState
+      action={
+        <FeatureActionButton
+          icon={Layers}
+          label="Criar Primeiro Rascunho"
+          onClick={onCreate}
+        />
+      }
+      body="Não encontramos registros para o status ou filtro pesquisado. Crie um rascunho de venda para começar."
+      icon={Layers}
+      title="Nenhuma venda encontrada"
+    />
   );
 }
 
@@ -79,6 +82,7 @@ function SaleCard({
     (sale.selectedDocumentKinds?.length ?? 0) +
     (sale.documentPolicySnapshot?.emitirNFe ? 1 : 0);
   const canDelete = sale.status === "draft";
+  const canEdit = canPersistSaleWorkspaceEdits(sale);
 
   return (
     <div className="sales-glass-panel bg-panel border border-line rounded-2xl flex flex-col justify-between overflow-hidden shadow-sm hover:translate-y-[-2px] transition-all duration-300">
@@ -216,10 +220,16 @@ function SaleCard({
           Detalhar
         </SaleCardAction>
         <SaleCardAction
-          icon={<Edit className="size-3.5" />}
+          icon={
+            canEdit ? (
+              <Edit className="size-3.5" />
+            ) : (
+              <Eye className="size-3.5" />
+            )
+          }
           onClick={() => onEdit(sale)}
         >
-          Editar
+          {canEdit ? "Editar" : "Visualizar"}
         </SaleCardAction>
         {canDelete ? (
           <SaleCardAction

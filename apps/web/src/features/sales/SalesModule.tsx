@@ -1,22 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Banknote, Clock, FileText, TrendingUp } from "lucide-react";
-import {
-  FeaturePageHeader,
-  FeaturePageShell,
-} from "../../components/ui/FeatureLayout";
-import {
-  FeatureKpiCard,
-  FeatureKpiStrip,
-} from "../../components/ui/FeatureKpis";
-import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { useOptionalAccountSession } from "../account/accountSession";
 import { createSalesApi, type SalesApi } from "./apiClient";
 import { createSalesApiOptions } from "./runtimeApi";
 import { SalesList } from "./SalesList";
+import { SalesModuleOverview } from "./SalesModuleOverview";
 import { SaleWorkspace } from "./SaleWorkspace";
 import {
   createDraftFromContext,
-  formatCents,
   parseSaleStartContext,
   toDraftInput,
 } from "./salesModel";
@@ -25,7 +16,12 @@ import {
   loadSaleContextOptions,
   type SaleContextOptionsState,
 } from "./saleContextOptions";
-import type { SaleRecord, SaleStatus } from "./types";
+import {
+  contextMessage,
+  replaceSale,
+  salesErrorMessage,
+} from "./salesModuleSupport";
+import type { SaleRecord } from "./types";
 
 export function SalesModule({ api }: { api?: SalesApi }) {
   const accountSession = useOptionalAccountSession();
@@ -36,7 +32,6 @@ export function SalesModule({ api }: { api?: SalesApi }) {
   const [sales, setSales] = useState<readonly SaleRecord[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "workspace">("list");
-  const [filter, setFilter] = useState<SaleStatus | "all">("all");
   const [message, setMessage] = useState<string | null>(null);
   const startContextUsed = useRef(false);
 
@@ -50,19 +45,25 @@ export function SalesModule({ api }: { api?: SalesApi }) {
     );
   }, [api]);
 
+  const fetchContextOptions = useCallback(
+    () =>
+      loadSaleContextOptions(
+        accountSession
+          ? {
+              email: accountSession.user.email,
+              id: accountSession.user.id,
+              name: accountSession.user.name,
+              role: accountSession.defaultStore?.role ?? null,
+            }
+          : null,
+      ),
+    [accountSession],
+  );
+
   useEffect(() => {
     let isActive = true;
     setContextOptions({ kind: "loading", options: emptySaleContextOptions });
-    void loadSaleContextOptions(
-      accountSession
-        ? {
-            email: accountSession.user.email,
-            id: accountSession.user.id,
-            name: accountSession.user.name,
-            role: accountSession.defaultStore?.role ?? null,
-          }
-        : null,
-    )
+    void fetchContextOptions()
       .then((state) => {
         if (isActive) setContextOptions(state);
       })
@@ -77,23 +78,24 @@ export function SalesModule({ api }: { api?: SalesApi }) {
     return () => {
       isActive = false;
     };
-  }, [accountSession]);
+  }, [fetchContextOptions]);
 
   const loadSales = useCallback(async () => {
     if (!runtimeApi) return;
     try {
-      const result = await runtimeApi.list({ status: filter });
+      const result = await runtimeApi.list({ status: "all" });
       setSales(result);
     } catch (error) {
-      setMessage(errorMessage(error));
+      setMessage(salesErrorMessage(error));
     }
-  }, [filter, runtimeApi]);
+  }, [runtimeApi]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
     if (
       message === "Rascunho criado" ||
       message === "Venda atualizada" ||
+      message?.includes("Correção criada") ||
       message?.includes("excluída")
     ) {
       timer = setTimeout(() => setMessage(null), 3000);
@@ -119,7 +121,7 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         setViewMode("workspace");
         setMessage("Rascunho criado");
       } catch (error) {
-        setMessage(errorMessage(error));
+        setMessage(salesErrorMessage(error));
       }
     },
     [runtimeApi],
@@ -159,21 +161,25 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         }
         setMessage("Venda excluída com sucesso");
       } catch (error) {
-        setMessage(errorMessage(error));
+        setMessage(salesErrorMessage(error));
       }
     },
     [activeId, runtimeApi],
   );
 
   const transition = useCallback(
-    async (sale: SaleRecord, action: "cancel" | "close" | "reserve") => {
+    async (
+      sale: SaleRecord,
+      action: "cancel" | "close" | "reserve",
+      reason?: string,
+    ) => {
       if (!runtimeApi) return;
       const next =
         action === "reserve"
           ? await runtimeApi.reserve(sale.id, {})
           : action === "close"
             ? await runtimeApi.close(sale.id, {})
-            : await runtimeApi.cancel(sale.id, null);
+            : await runtimeApi.cancel(sale.id, reason ?? null);
       setSales((current) => replaceSale(current, next));
       setActiveId(next.id);
       return next;
@@ -181,49 +187,37 @@ export function SalesModule({ api }: { api?: SalesApi }) {
     [runtimeApi],
   );
 
-  const closedTotal = useMemo(() => {
-    return sales
-      .filter((s) => s.status === "closed")
-      .reduce((acc, s) => acc + (s.salePriceCents ?? 0), 0);
-  }, [sales]);
+  const revert = useCallback(
+    async (sale: SaleRecord, reason: string) => {
+      if (!runtimeApi) return;
+      const correction = await runtimeApi.revert(sale.id, reason);
+      setContextOptions({ kind: "loading", options: emptySaleContextOptions });
+      const refreshedOptions = await fetchContextOptions().catch(
+        (): SaleContextOptionsState => ({
+          kind: "error",
+          message: "Nao foi possivel recarregar os vinculos da correção.",
+          options: emptySaleContextOptions,
+        }),
+      );
+      setContextOptions(refreshedOptions);
+      setSales((current) =>
+        replaceSale(
+          current.map((item) =>
+            item.id === sale.id ? { ...item, isCurrentRevision: false } : item,
+          ),
+          correction,
+        ),
+      );
+      setActiveId(correction.id);
+      setMessage(`Correção criada na revisão ${correction.revision}`);
+      return correction;
+    },
+    [fetchContextOptions, runtimeApi],
+  );
 
   return (
     <FeaturePageShell mainClassName="flex flex-col gap-6">
-      <FeaturePageHeader eyebrow="Comercial" title="Formalização de Vendas" />
-
-      <FeatureKpiStrip ariaLabel="Resumo de vendas">
-        <FeatureKpiCard
-          icon={TrendingUp}
-          label="Total de vendas"
-          tone="blue"
-          value={sales.length}
-        />
-        <FeatureKpiCard
-          icon={FileText}
-          label="Em edição"
-          tone="violet"
-          value={sales.filter((sale) => sale.status === "draft").length}
-        />
-        <FeatureKpiCard
-          icon={Clock}
-          label="Veículos reservados"
-          tone="pink"
-          value={sales.filter((sale) => sale.status === "pending").length}
-        />
-        <FeatureKpiCard
-          icon={Banknote}
-          label="Faturamento recebido"
-          tone="green"
-          value={formatCents(closedTotal)}
-        />
-      </FeatureKpiStrip>
-
-      {message ? (
-        <div className="rounded-2xl border border-line bg-panel p-4 text-sm font-black text-muted shadow-sm flex items-center gap-3">
-          <span className="size-2 rounded-full bg-accent animate-ping" />
-          <span>{message}</span>
-        </div>
-      ) : null}
+      <SalesModuleOverview message={message} sales={sales} />
 
       {viewMode === "list" ? (
         <SalesList
@@ -241,9 +235,10 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         <SaleWorkspace
           contextMessage={contextMessage(contextOptions)}
           contextOptions={contextOptions.options}
-          onCancel={(sale) => transition(sale, "cancel")}
+          onCancel={(sale, reason) => transition(sale, "cancel", reason)}
           onClose={(sale) => transition(sale, "close")}
           onReserve={(sale) => transition(sale, "reserve")}
+          onRevert={revert}
           onSave={saveSale}
           sale={selectedSale}
           onBack={() => setViewMode("list")}
@@ -251,25 +246,4 @@ export function SalesModule({ api }: { api?: SalesApi }) {
       )}
     </FeaturePageShell>
   );
-}
-
-function contextMessage(state: SaleContextOptionsState): string | null {
-  if (state.kind === "loading") {
-    return "Carregando leads, veiculos e vendedores vinculaveis.";
-  }
-  if (state.kind === "error") return state.message;
-  return null;
-}
-
-function replaceSale(
-  current: readonly SaleRecord[],
-  next: SaleRecord,
-): readonly SaleRecord[] {
-  return current.some((sale) => sale.id === next.id)
-    ? current.map((sale) => (sale.id === next.id ? next : sale))
-    : [next, ...current];
-}
-
-function errorMessage(error: unknown): string {
-  return formatApiErrorDisplay(error, "Não foi possível carregar as vendas.");
 }

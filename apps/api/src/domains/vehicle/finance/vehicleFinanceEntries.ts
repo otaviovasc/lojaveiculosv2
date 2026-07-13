@@ -1,3 +1,4 @@
+import { isActiveSalePaymentStatus } from "@lojaveiculosv2/shared";
 import type {
   FinanceEntryBundle,
   FinanceRepository,
@@ -7,65 +8,49 @@ import type {
   VehicleListing,
   VehicleUnit,
 } from "../ports/vehicleInventoryRepository.js";
-import type { VehicleSaleBundle } from "../ports/vehicleSalesRepository.js";
+import type {
+  VehicleSaleBundle,
+  VehicleSalePayment,
+} from "../ports/vehicleSalesRepository.js";
 
 export async function createReservationFinanceEntry(input: {
   financeRepository: FinanceRepository;
   listing: VehicleListing;
-  paymentMethod: string;
   sale: VehicleSaleBundle;
   sellerUserId: string | null;
-  signalAmountCents: number;
+  signalPayment: VehicleSalePayment;
   unit: VehicleUnit;
 }): Promise<FinanceEntryBundle> {
+  const payment = input.signalPayment;
   return input.financeRepository.createEntry({
-    amountCents: input.signalAmountCents,
+    amountCents: payment.amountCents,
     category: "vehicle_reservation_signal",
-    dueAt: new Date(),
-    links: saleLinks(input.sale, input.unit),
-    metadata: {
-      method: input.paymentMethod,
-      salePaymentStatus: input.sale.payment?.status ?? null,
-      source: "vehicle_reservation",
-    },
+    dueAt: payment.dueAt,
+    links: salePaymentLinks(input.sale, payment, input.unit),
+    metadata: paymentMetadata(payment, "vehicle_reservation"),
     name: `Sinal de reserva - ${input.listing.title}`,
-    paidAt: input.sale.payment?.paidAt ?? null,
+    paidAt: payment.paidAt,
     sellerUserId: input.sellerUserId,
-    status: input.sale.payment?.status === "paid" ? "paid" : "pending",
+    status: financeStatus(payment),
     storeId: input.sale.sale.storeId,
     tenantId: input.sale.sale.tenantId,
     type: "revenue",
   });
 }
 
-export async function createSaleFinanceEntry(input: {
+export async function createSaleFinanceEntries(input: {
   financeRepository: FinanceRepository;
   listing: VehicleListing;
-  paymentMethod: string;
   sale: VehicleSaleBundle;
   sellerUserId: string | null;
   unit: VehicleUnit;
-}): Promise<FinanceEntryBundle> {
-  const paidAt = input.sale.payment?.paidAt ?? new Date();
-  return input.financeRepository.createEntry({
-    amountCents:
-      input.sale.payment?.amountCents ?? input.sale.sale.salePriceCents,
-    category: "vehicle_sale",
-    dueAt: paidAt,
-    links: saleLinks(input.sale, input.unit),
-    metadata: {
-      method: input.paymentMethod,
-      salePaymentStatus: input.sale.payment?.status ?? null,
-      source: "vehicle_sale",
-    },
-    name: `Venda de veiculo - ${input.listing.title}`,
-    paidAt,
-    sellerUserId: input.sellerUserId,
-    status: "paid",
-    storeId: input.sale.sale.storeId,
-    tenantId: input.sale.sale.tenantId,
-    type: "revenue",
-  });
+}): Promise<readonly FinanceEntryBundle[]> {
+  const activePayments = input.sale.payments.filter((payment) =>
+    isActiveSalePaymentStatus(payment.status),
+  );
+  return Promise.all(
+    activePayments.map((payment) => upsertSaleFinanceEntry(input, payment)),
+  );
 }
 
 export async function createVehicleCostFinanceEntry(input: {
@@ -96,12 +81,78 @@ export async function createVehicleCostFinanceEntry(input: {
   });
 }
 
-function saleLinks(sale: VehicleSaleBundle, unit: VehicleUnit) {
+async function upsertSaleFinanceEntry(
+  input: {
+    financeRepository: FinanceRepository;
+    listing: VehicleListing;
+    sale: VehicleSaleBundle;
+    sellerUserId: string | null;
+    unit: VehicleUnit;
+  },
+  payment: VehicleSalePayment,
+): Promise<FinanceEntryBundle> {
+  const existing = await input.financeRepository.list({
+    limit: 20,
+    offset: 0,
+    storeId: input.sale.sale.storeId,
+    targetId: payment.id,
+    targetType: "sale_payment",
+    tenantId: input.sale.sale.tenantId,
+  });
+  const reservationEntry = existing.find(
+    (bundle) =>
+      bundle.entry.category === "vehicle_reservation_signal" ||
+      bundle.entry.metadata.source === "vehicle_reservation",
+  );
+  const entry = {
+    amountCents: payment.amountCents,
+    category: "vehicle_sale",
+    dueAt: payment.dueAt,
+    links: salePaymentLinks(input.sale, payment, input.unit),
+    metadata: paymentMetadata(payment, "vehicle_sale"),
+    name: `Venda de veiculo - ${input.listing.title}`,
+    paidAt: payment.paidAt,
+    sellerUserId: input.sellerUserId,
+    status: financeStatus(payment),
+    storeId: input.sale.sale.storeId,
+    tenantId: input.sale.sale.tenantId,
+    type: "revenue" as const,
+  };
+  if (!reservationEntry) {
+    return input.financeRepository.createEntry(entry);
+  }
+  return input.financeRepository.updateEntry({
+    ...entry,
+    entryId: reservationEntry.entry.id,
+  });
+}
+
+function salePaymentLinks(
+  sale: VehicleSaleBundle,
+  payment: VehicleSalePayment,
+  unit: VehicleUnit,
+) {
   return [
     { targetId: sale.sale.id, targetType: "sale" as const },
-    ...(sale.payment
-      ? [{ targetId: sale.payment.id, targetType: "sale_payment" as const }]
-      : []),
+    { targetId: payment.id, targetType: "sale_payment" as const },
     { targetId: unit.id, targetType: "vehicle_unit" as const },
   ];
+}
+
+function financeStatus(payment: VehicleSalePayment): "paid" | "pending" {
+  return payment.status === "paid" ? "paid" : "pending";
+}
+
+function paymentMetadata(
+  payment: VehicleSalePayment,
+  source: "vehicle_reservation" | "vehicle_sale",
+) {
+  return {
+    extraCents: payment.extraCents,
+    installments: payment.installments,
+    method: payment.method,
+    principalCents: payment.principalCents,
+    salePaymentStatus: payment.status,
+    source,
+  };
 }

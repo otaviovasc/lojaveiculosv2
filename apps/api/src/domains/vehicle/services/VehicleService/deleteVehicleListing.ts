@@ -1,6 +1,10 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
-import type { VehicleListing } from "../../ports/vehicleInventoryRepository.js";
+import type {
+  VehicleListing,
+  VehicleUnit,
+} from "../../ports/vehicleInventoryRepository.js";
+import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
 import {
   auditVehicleServiceEvent,
   findScopedListing,
@@ -23,6 +27,7 @@ export async function deleteVehicleListing(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
   assertPermission(context, permission);
+  assertStoreUserActor(context);
 
   logVehicleServiceEvent(context, "vehicle_listing.delete.started", {
     listingId: input.listingId,
@@ -40,6 +45,7 @@ export async function deleteVehicleListing(
     storeId: context.storeId,
     tenantId: context.tenantId,
   });
+  assertVehicleListingCanBeDeleted(listing, units);
 
   await Promise.all(units.map((unit) => unitRepository.delete(unit)));
   const deleted = await listingRepository.delete(listing);
@@ -60,4 +66,39 @@ export async function deleteVehicleListing(
   });
 
   return deleted;
+}
+
+function assertVehicleListingCanBeDeleted(
+  listing: VehicleListing,
+  units: readonly VehicleUnit[],
+) {
+  const unitStatuses = new Set(units.map((unit) => unit.status));
+  const blockingStatuses = vehicleListingDeletionBlockingStatuses.filter(
+    (status) =>
+      unitStatuses.has(status) ||
+      (status === "sold" && listing.status === "sold_out"),
+  );
+  if (blockingStatuses.length > 0) {
+    throw new VehicleListingDeletionStateError(blockingStatuses);
+  }
+}
+
+const vehicleListingDeletionBlockingStatuses = [
+  "reserved",
+  "sold",
+  "delivered",
+] as const satisfies readonly VehicleUnit["status"][];
+
+type VehicleListingDeletionBlockingStatus =
+  (typeof vehicleListingDeletionBlockingStatuses)[number];
+
+export class VehicleListingDeletionStateError extends Error {
+  constructor(
+    readonly blockingStatuses: readonly VehicleListingDeletionBlockingStatus[],
+  ) {
+    super(
+      "Vehicle listing cannot be deleted while units are reserved, sold, or delivered.",
+    );
+    this.name = "VehicleListingDeletionStateError";
+  }
 }

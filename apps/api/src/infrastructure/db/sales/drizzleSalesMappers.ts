@@ -8,6 +8,7 @@ import type {
   SaveSalePaymentInput,
   UpdateSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
+import { isSalePaymentMethod } from "@lojaveiculosv2/shared";
 
 type SaleRow = InferSelectModel<typeof sales>;
 export type PaymentRow = InferSelectModel<typeof salePayments>;
@@ -109,6 +110,9 @@ export function toSaleRecord(
 }
 
 function toPaymentLine(row: PaymentRow): SalePaymentLine {
+  if (!isSalePaymentMethod(row.method)) {
+    throw new Error(`Unsupported sale payment method: ${row.method}`);
+  }
   return {
     amountCents: row.amountCents,
     dueAt: row.dueAt,

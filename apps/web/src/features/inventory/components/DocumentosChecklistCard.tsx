@@ -1,152 +1,184 @@
 import { useState } from "react";
-import { ClipboardCheck, RotateCcw, Plus, Trash2 } from "lucide-react";
+import { ClipboardCheck, RotateCcw } from "lucide-react";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import type { InventoryApi } from "../api/apiClient";
+import type {
+  InventoryListingDetail,
+  InventoryUnit,
+  UpsertInventoryChecklistItemInput,
+} from "../model/types";
+import { DocumentosChecklistEditor } from "./DocumentosChecklistEditor";
+import {
+  checklistInputItems,
+  checklistStatus,
+  deliveryChecklistName,
+  deliveryChecklistTemplate,
+  findDeliveryChecklist,
+} from "./DocumentosChecklistModel";
 
-interface ChecklistItem {
-  id: string;
-  label: string;
-  checked: boolean;
-}
+type Props = {
+  api: InventoryApi;
+  detail: InventoryListingDetail;
+  onUpdated: (detail: InventoryListingDetail) => void;
+  unit: InventoryUnit | null;
+};
 
-export function DocumentosChecklistCard() {
-  const [items, setItems] = useState<ChecklistItem[]>([
-    { id: "chk-1", label: "Documentação em dia", checked: true },
-    { id: "chk-2", label: "Chave reserva", checked: true },
-    { id: "chk-3", label: "Manual do proprietário", checked: true },
-    { id: "chk-4", label: "Pneus em bom estado", checked: false },
-    { id: "chk-5", label: "Higienização interna/externa", checked: false },
-    { id: "chk-6", label: "Revisão mecânica", checked: false },
-    { id: "chk-7", label: "Funilaria/pintura OK", checked: false },
-  ]);
-
+export function DocumentosChecklistCard({
+  api,
+  detail,
+  onUpdated,
+  unit,
+}: Props) {
+  const checklist = unit
+    ? findDeliveryChecklist(detail.checklists, unit.id)
+    : undefined;
   const [newItemText, setNewItemText] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleToggle = (id: string) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item,
-      ),
-    );
-  };
+  async function createChecklist() {
+    if (!unit) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      onUpdated(
+        await api.createChecklist(unit.id, {
+          items: deliveryChecklistTemplate,
+          name: deliveryChecklistName,
+          status: "pending",
+        }),
+      );
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível criar o checklist de entrega.",
+        ),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
-  const handleAddItem = (e: React.FormEvent) => {
-    e.preventDefault();
-    const text = newItemText.trim();
-    if (!text) return;
+  async function updateItems(items: UpsertInventoryChecklistItemInput[]) {
+    if (!unit || !checklist) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      onUpdated(
+        await api.updateChecklist(unit.id, checklist.id, {
+          items,
+          status: checklistStatus(items),
+        }),
+      );
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível atualizar o checklist de entrega.",
+        ),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
 
-    const newItem: ChecklistItem = {
-      id: "item-" + Date.now(),
-      label: text,
-      checked: false,
-    };
-    setItems((prev) => [...prev, newItem]);
-    setNewItemText("");
-  };
-
-  const handleDeleteItem = (id: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleReset = () => {
-    setItems((prev) => prev.map((item) => ({ ...item, checked: false })));
-  };
-
-  const completedCount = items.filter((item) => item.checked).length;
-  const totalCount = items.length;
-  const progressPercent =
-    totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+  const items = checklist ? checklistInputItems(checklist.items) : [];
+  const completedCount = checklist?.items.filter(
+    (item) => item.status === "passed" || item.status === "waived",
+  ).length;
 
   return (
-    <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-4">
-      {/* Header */}
+    <section
+      aria-busy={isSaving}
+      className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5"
+    >
       <div className="flex items-center justify-between border-b border-line pb-3">
         <div className="flex items-center gap-1.5">
-          <ClipboardCheck className="size-4.5 text-accent shrink-0" />
+          <ClipboardCheck className="size-4.5 shrink-0 text-accent" />
           <h3 className="text-sm font-black uppercase tracking-wider">
-            Checklist de Entrega
+            Checklist de entrega
           </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted font-black">
-            {completedCount}/{totalCount} Concluídos
-          </span>
-          <button
-            aria-label="Resetar checklist"
-            onClick={handleReset}
-            className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent cursor-pointer transition-all"
-            title="Resetar checklist"
-            type="button"
-          >
-            <RotateCcw aria-hidden="true" className="size-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="flex flex-col gap-1">
-        <div className="w-full bg-line rounded-full h-1.5 overflow-hidden">
-          <div
-            className="bg-accent h-1.5 rounded-full transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Checklist List */}
-      <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto mt-2">
-        {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between p-2 rounded-lg hover:bg-app/10 transition-colors group"
-          >
-            <label className="flex items-center gap-2.5 cursor-pointer text-xs select-none">
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => handleToggle(item.id)}
-                className="size-4 rounded border-line text-accent focus:ring-accent accent-accent cursor-pointer animate-none"
-              />
-              <span
-                className={
-                  "font-bold transition-all " +
-                  (item.checked ? "text-muted line-through" : "text-app-text")
-                }
-              >
-                {item.label}
-              </span>
-            </label>
+        {checklist ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-muted">
+              {completedCount}/{checklist.items.length} concluídos
+            </span>
             <button
-              aria-label={`Excluir ${item.label}`}
-              onClick={() => handleDeleteItem(item.id)}
-              className="p-1 rounded bg-transparent hover:bg-danger/15 text-muted hover:text-danger opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-              title="Excluir item"
+              aria-label="Resetar checklist"
+              className="rounded bg-transparent p-1 text-muted transition-colors hover:bg-line/25 hover:text-accent disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={isSaving}
+              onClick={() =>
+                void updateItems(
+                  items.map((item) => ({ ...item, status: "pending" })),
+                )
+              }
+              title="Resetar checklist"
               type="button"
             >
-              <Trash2 aria-hidden="true" className="size-3.5" />
+              <RotateCcw aria-hidden="true" className="size-3.5" />
             </button>
           </div>
-        ))}
+        ) : null}
       </div>
 
-      {/* Add New Item */}
-      <form
-        onSubmit={handleAddItem}
-        className="flex gap-2 items-center border-t border-line/45 pt-3.5 mt-1"
-      >
-        <input
-          type="text"
-          placeholder="Novo item..."
-          value={newItemText}
-          onChange={(e) => setNewItemText(e.target.value)}
-          className="min-h-9 flex-1 rounded-lg border border-line bg-app px-3 text-xs font-bold outline-none"
+      {error ? (
+        <p role="alert" className="text-xs font-bold text-danger">
+          {error}
+        </p>
+      ) : null}
+
+      {!unit ? (
+        <p className="text-xs font-bold text-muted">
+          Selecione uma unidade física para consultar o checklist.
+        </p>
+      ) : !checklist ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-dashed border-line bg-app/20 p-4">
+          <p className="text-xs font-bold text-muted">
+            Nenhum checklist de entrega foi registrado para esta unidade.
+          </p>
+          <button
+            className="min-h-9 rounded-lg bg-accent px-4 text-xs font-black text-inverse transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+            disabled={isSaving}
+            onClick={() => void createChecklist()}
+            type="button"
+          >
+            {isSaving ? "Criando..." : "Criar checklist de entrega"}
+          </button>
+        </div>
+      ) : (
+        <DocumentosChecklistEditor
+          checklist={checklist}
+          disabled={isSaving}
+          newItemText={newItemText}
+          onAdd={() => {
+            const label = newItemText.trim();
+            if (!label) return;
+            setNewItemText("");
+            void updateItems([...items, { label, status: "pending" }]);
+          }}
+          onChangeNewItem={setNewItemText}
+          onDelete={(itemId) =>
+            void updateItems(items.filter((item) => item.id !== itemId))
+          }
+          onToggle={(itemId) =>
+            void updateItems(
+              items.map((item) =>
+                item.id === itemId
+                  ? {
+                      ...item,
+                      status:
+                        item.status === "passed" || item.status === "waived"
+                          ? "pending"
+                          : "passed",
+                    }
+                  : item,
+              ),
+            )
+          }
         />
-        <button
-          aria-label="Adicionar item ao checklist"
-          type="submit"
-          className="min-h-9 px-3.5 bg-accent text-inverse font-black text-xs hover:bg-accent-strong rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
-        >
-          <Plus aria-hidden="true" className="size-4" />
-        </button>
-      </form>
-    </div>
+      )}
+    </section>
   );
 }

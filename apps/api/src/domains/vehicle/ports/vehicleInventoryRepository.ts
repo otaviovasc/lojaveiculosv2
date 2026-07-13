@@ -58,9 +58,22 @@ export type VehicleMediaRepository = {
   save: (media: VehicleMedia) => Promise<VehicleMedia>;
 };
 
+export type VoidVehicleDocumentsBySaleInput = {
+  actorId: string;
+  at: Date;
+  reason: string;
+  saleId: string;
+  storeId: string | null;
+  tenantId: string | null;
+  unitId: string;
+};
+
 export type VehicleDocumentRepository = {
   create: (record: CreateVehicleDocumentRecord) => Promise<VehicleDocument>;
   listByListing: (
     input: ListVehicleDocumentsInput,
+  ) => Promise<readonly VehicleDocument[]>;
+  voidBySale: (
+    input: VoidVehicleDocumentsBySaleInput,
   ) => Promise<readonly VehicleDocument[]>;
 };

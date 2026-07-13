@@ -57,6 +57,7 @@ export async function transitionSale(
   const sale = await repository.transition({
     ...scope,
     closedAt: input.status === "closed" ? new Date() : null,
+    expectedStatus: current.status,
     overrideReason: input.overrideReason ?? null,
     overrideRequiredFields: input.overrideRequiredFields ?? false,
     saleId: input.saleId,
@@ -85,7 +86,7 @@ export async function transitionSale(
 function assertTransitionAllowed(
   currentStatus: SaleStatus,
   nextStatus: Exclude<SaleStatus, "draft">,
-): void {
+): asserts currentStatus is Extract<SaleStatus, "draft" | "pending"> {
   const allowedTransitions: Record<SaleStatus, readonly SaleStatus[]> = {
     cancelled: [],
     closed: [],

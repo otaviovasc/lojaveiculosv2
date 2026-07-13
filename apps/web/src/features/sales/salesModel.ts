@@ -1,3 +1,4 @@
+import { isActiveSalePaymentStatus } from "@lojaveiculosv2/shared";
 import type {
   SaleDraftInput,
   SaleDocumentKind,
@@ -13,17 +14,6 @@ export const defaultRequiredDocumentKinds = [
   "power_of_attorney",
 ] as const;
 
-export const paymentMethods = [
-  "pix",
-  "transfer",
-  "cash",
-  "financing",
-  "credit_card",
-  "boleto",
-  "letter_of_credit",
-  "trade_in",
-] as const;
-
 export const saleSourceOptions = [
   { label: "Lead Digital", value: "lead" },
   { label: "Loja Física (Walk-in)", value: "walk_in" },
@@ -35,7 +25,10 @@ export const saleSourceOptions = [
 export type SaleReadinessPurpose = "close" | "reserve";
 
 export function canPersistSaleWorkspaceEdits(sale: SaleRecord): boolean {
-  return sale.status === "draft" || sale.status === "pending";
+  return (
+    sale.isCurrentRevision &&
+    (sale.status === "draft" || sale.status === "pending")
+  );
 }
 
 export function toDraftInput(sale: SaleRecord): SaleDraftInput {
@@ -115,8 +108,13 @@ export function saleMissingFields(
   if (!sale.salePriceCents) missing.push("Preço");
 
   if (purpose === "reserve") {
-    const [signalPayment] = sale.payments;
-    if (!signalPayment || signalPayment.amountCents <= 0) {
+    const signalPayment = sale.payments.find(
+      (payment) =>
+        isActiveSalePaymentStatus(payment.status) &&
+        payment.amountCents > 0 &&
+        payment.principalCents > 0,
+    );
+    if (!signalPayment) {
       missing.push("Sinal de reserva");
     }
     return missing;
@@ -152,8 +150,21 @@ export function isSaleDocumentKind(value: string): value is SaleDocumentKind {
 
 export function paymentPrincipalTotal(sale: SaleRecord): number {
   return sale.payments.reduce(
-    (total, payment) => total + payment.principalCents,
+    (total, payment) =>
+      total +
+      (isActiveSalePaymentStatus(payment.status) ? payment.principalCents : 0),
     0,
+  );
+}
+
+export function reservationSignalPayment(
+  sale: SaleRecord,
+): SaleRecord["payments"][number] | undefined {
+  return sale.payments.find(
+    (payment) =>
+      isActiveSalePaymentStatus(payment.status) &&
+      payment.amountCents > 0 &&
+      payment.principalCents > 0,
   );
 }
 
@@ -175,6 +186,7 @@ function toPaymentInput(
   return {
     amountCents: payment.amountCents,
     extraCents: payment.extraCents,
+    ...(payment.id.startsWith("draft-payment-") ? {} : { id: payment.id }),
     installments: payment.installments,
     metadata: payment.metadata,
     method: payment.method,

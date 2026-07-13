@@ -1,5 +1,10 @@
+import type {
+  SalePaymentMethod,
+  SalePaymentStatus,
+} from "@lojaveiculosv2/shared";
+
 export type SaleStatus = "draft" | "pending" | "closed" | "cancelled";
-export type SalePaymentStatus = "pending" | "paid" | "refunded" | "cancelled";
+export type { SalePaymentStatus } from "@lojaveiculosv2/shared";
 
 export type SalePaymentLine = {
   amountCents: number;
@@ -8,7 +13,7 @@ export type SalePaymentLine = {
   id: string;
   installments: number | null;
   metadata: Record<string, unknown>;
-  method: string;
+  method: SalePaymentMethod;
   paidAt: Date | null;
   principalCents: number;
   providerPaymentId: string | null;
@@ -60,6 +65,13 @@ export type SaveSaleDraftInput = {
 
 export type UpdateSaleDraftInput = SaveSaleDraftInput;
 
+export type CreateSaleCorrectionRevisionInput = SaveSaleDraftInput & {
+  correctionOfSaleId: string;
+  expectedRevision: number;
+  reason: string;
+  saleId: string;
+};
+
 export type SaveSalePaymentInput = {
   amountCents: number;
   dueAt?: Date | null;
@@ -67,7 +79,7 @@ export type SaveSalePaymentInput = {
   id?: string;
   installments?: number | null;
   metadata?: Record<string, unknown>;
-  method: string;
+  method: SalePaymentMethod;
   paidAt?: Date | null;
   principalCents?: number;
   providerPaymentId?: string | null;
@@ -85,6 +97,7 @@ export type ListSalesInput = SaleScope & {
 
 export type TransitionSaleInput = SaleScope & {
   closedAt?: Date | null;
+  expectedStatus: Extract<SaleStatus, "draft" | "pending">;
   overrideReason?: string | null;
   overrideRequiredFields?: boolean;
   saleId: string;
@@ -92,6 +105,10 @@ export type TransitionSaleInput = SaleScope & {
 };
 
 export type SalesRepository = {
+  createCorrectionRevision: (
+    scope: SaleScope,
+    input: CreateSaleCorrectionRevisionInput,
+  ) => Promise<SaleRecord | null>;
   createDraft: (
     scope: SaleScope,
     input: SaveSaleDraftInput,
@@ -104,5 +121,6 @@ export type SalesRepository = {
     scope: SaleScope,
     saleId: string,
     input: UpdateSaleDraftInput,
+    expectedStatus?: Extract<SaleStatus, "draft" | "pending">,
   ) => Promise<SaleRecord>;
 };

@@ -8,12 +8,16 @@ import {
 } from "../../../domains/vehicle/services/VehicleService/testSupport.js";
 import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
+import type { SalesRepository } from "../../../domains/sales/ports/salesRepository.js";
 import { createSalesServices, type SalesServices } from "./salesServices.js";
 
 const storeId = "store_1";
 const tenantId = "tenant_1";
 
-export function createHarness(status: "available" | "reserved"): {
+export function createHarness(
+  status: "available" | "reserved",
+  salesRepository: SalesRepository = createMemorySalesRepository(),
+): {
   services: SalesServices;
   vehiclePorts: TestVehicleInventoryPorts;
 } {
@@ -28,7 +32,7 @@ export function createHarness(status: "available" | "reserved"): {
   ]);
   vehiclePorts.units.set("unit_1", createUnit(status));
   const services = createSalesServices({
-    ports: { salesRepository: createMemorySalesRepository() },
+    ports: { salesRepository },
     workflowPorts: vehiclePorts,
   });
   return { services, vehiclePorts };

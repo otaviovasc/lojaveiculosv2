@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { SaleCancelDialog } from "./SaleCancelDialog";
+import { SaleRevertDialog } from "./SaleRevertDialog";
+import { SaleWorkspaceStepContent } from "./SaleWorkspaceStepContent";
+import { SaleWorkspaceReadOnlyNotice } from "./SaleWorkspaceReadOnlyNotice";
 import {
-  Check,
-  HelpCircle,
-  Save,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import { ContextSection } from "./SaleContextSection";
-import { ServicesSection } from "./SaleServicesSection";
-import { DocumentsSection } from "./SaleDocumentsSection";
-import { FinalizationSection } from "./SaleFinalizationSection";
-import { ReviewSection } from "./SaleReviewSection";
+  SaleWorkspaceHeader,
+  SaleWorkspaceEmptyState,
+  SaleWorkspaceMessage,
+  SaleWorkspaceNavigation,
+} from "./SaleWorkspaceChrome";
 import { StickySaleSummary } from "./SaleSummaryPanel";
 import { canPersistSaleWorkspaceEdits } from "./salesModel";
 import {
@@ -27,21 +25,24 @@ import {
   type SaleContextOptions,
 } from "./saleContextOptions";
 import type { SaleRecord } from "./types";
+
 export function SaleWorkspace({
   contextMessage = null,
   contextOptions = emptySaleContextOptions,
   onCancel,
   onClose,
   onReserve,
+  onRevert,
   onSave,
   sale,
   onBack,
 }: {
   contextMessage?: string | null;
   contextOptions?: SaleContextOptions;
-  onCancel: (sale: SaleRecord) => Promise<SaleRecord | void>;
+  onCancel: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onClose: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
+  onRevert: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onSave: (sale: SaleRecord) => Promise<SaleRecord>;
   sale: SaleRecord | null;
   onBack?: () => void;
@@ -50,6 +51,8 @@ export function SaleWorkspace({
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isRevertDialogOpen, setIsRevertDialogOpen] = useState(false);
   const autosaveTimerRef = useRef<number | undefined>(undefined);
   const draftRef = useRef<SaleRecord | null>(sale);
   const saveStateRef = useRef(createSaleSaveState(sale));
@@ -121,6 +124,7 @@ export function SaleWorkspace({
 
   const update = (updater: (sale: SaleRecord) => SaleRecord) => {
     setDraft((current) => {
+      if (!current || !canPersistSaleWorkspaceEdits(current)) return current;
       const next = current ? updater(current) : current;
       draftRef.current = next;
       return next;
@@ -141,39 +145,11 @@ export function SaleWorkspace({
     }
   };
 
-  const steps = useMemo(
-    () => [
-      "Veículo & Comprador",
-      "Valores, Pagos & Serviços",
-      "Documentos & Validação",
-      "Formalização & Download",
-    ],
-    [],
-  );
-
   if (!draft) {
     return (
-      <section className="sales-glass-panel p-12 text-center flex flex-col items-center justify-center border border-line shadow-sm min-h-[300px]">
-        <div className="size-16 rounded-full bg-app-elevated flex items-center justify-center text-muted mb-4 border border-line/45">
-          <HelpCircle className="size-8 text-muted/60" />
-        </div>
-        <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
-          Nenhuma venda selecionada
-        </h3>
-        <p className="mt-2 text-xs font-bold text-muted max-w-sm w-full leading-relaxed">
-          Selecione um rascunho de venda no pipeline ou inicie um novo
-          preenchimento clicando no botão.
-        </p>
-        {onBack && (
-          <button
-            onClick={() => void handleBack()}
-            className="sales-secondary-button mt-4 text-xs"
-            type="button"
-          >
-            Voltar para Lista de Vendas
-          </button>
-        )}
-      </section>
+      <SaleWorkspaceEmptyState
+        {...(onBack ? { onBack: () => void handleBack() } : {})}
+      />
     );
   }
 
@@ -195,148 +171,71 @@ export function SaleWorkspace({
     }
   };
 
+  const cancelSale = (reason: string) => {
+    void runTransition(async (saleToCancel) => {
+      const cancelled = await onCancel(saleToCancel, reason);
+      setIsCancelDialogOpen(false);
+      return cancelled;
+    });
+  };
+
+  const revertSale = (reason: string) => {
+    void runTransition(async (saleToRevert) => {
+      const correction = await onRevert(saleToRevert, reason);
+      setIsRevertDialogOpen(false);
+      return correction;
+    });
+  };
+
   return (
     <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem] items-start">
       <div className="flex flex-col gap-4">
-        <div className="sales-glass-panel p-5 bg-panel border border-line flex flex-col gap-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              {onBack && (
-                <button
-                  type="button"
-                  onClick={() => void handleBack()}
-                  className="sales-secondary-button !min-h-9 !h-9 !py-0 !px-3 text-xs flex items-center gap-1.5 hover:bg-app-elevated/80"
-                >
-                  <ChevronLeft className="size-4 text-accent" />
-                  <span>Voltar</span>
-                </button>
-              )}
-              <div>
-                <h2 className="text-base font-black text-app-text uppercase tracking-wider leading-tight">
-                  Formalização de Venda
-                </h2>
-                <p className="text-xs font-bold text-muted mt-0.5">
-                  Revisão {draft.revision}
-                </p>
-              </div>
-            </div>
+        <SaleWorkspaceHeader
+          currentStep={currentStep}
+          isSaving={isSaving}
+          onStepChange={setCurrentStep}
+          sale={draft}
+          {...(onBack ? { onBack: () => void handleBack() } : {})}
+        />
+        <SaleWorkspaceMessage message={message} />
+        <SaleWorkspaceReadOnlyNotice sale={draft} />
 
-            <div className="flex items-center gap-1.5 text-xs font-black text-muted bg-app-elevated/60 px-3 py-1.5 rounded-full border border-line">
-              <Save
-                className={
-                  "size-3.5 " +
-                  (isSaving ? "text-accent animate-pulse" : "text-muted")
-                }
-              />
-              <span>{isSaving ? "Salvando..." : "Salvo"}</span>
-            </div>
-          </div>
+        <SaleWorkspaceStepContent
+          contextMessage={contextMessage}
+          contextOptions={contextOptions}
+          currentStep={currentStep}
+          sale={draft}
+          update={update}
+        />
 
-          <div className="sales-wizard-steps">
-            {steps.map((step, index) => {
-              const isActive = index === currentStep;
-              const isCompleted = index < currentStep;
-              return (
-                <button
-                  className={`sales-wizard-step ${
-                    isActive ? "sales-wizard-step-active" : ""
-                  } ${isCompleted ? "sales-wizard-step-completed" : ""}`}
-                  key={step}
-                  onClick={() => setCurrentStep(index)}
-                  type="button"
-                >
-                  {isCompleted ? (
-                    <Check className="size-3.5" />
-                  ) : (
-                    <span className="text-xs shrink-0 size-4.5 rounded-full bg-line/65 flex items-center justify-center font-black">
-                      {index + 1}
-                    </span>
-                  )}
-                  <span>{step}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {message ? (
-          <div className="fixed bottom-6 right-6 z-[9999] rounded-2xl border border-line bg-panel p-4 shadow-xl flex items-center gap-3 max-w-sm">
-            <span className="size-2 rounded-full bg-accent animate-ping" />
-            <div className="flex flex-col gap-0.5 text-left">
-              <span className="text-xs font-black text-muted uppercase tracking-wider">
-                Formalização
-              </span>
-              <span className="text-xs font-bold text-app-text">{message}</span>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="flex flex-col gap-4">
-          {currentStep === 0 && (
-            <ContextSection
-              contextMessage={contextMessage}
-              options={contextOptions}
-              sale={draft}
-              update={update}
-            />
-          )}
-          {currentStep === 1 && (
-            <ServicesSection sale={draft} update={update} />
-          )}
-          {currentStep === 2 && (
-            <DocumentsSection sale={draft} update={update} />
-          )}
-          {currentStep === 3 && (
-            <div className="flex flex-col gap-4">
-              <ReviewSection sale={draft} />
-              <FinalizationSection sale={draft} />
-            </div>
-          )}
-        </div>
-
-        <div className="sales-glass-panel p-4 bg-panel border border-line flex justify-between items-center">
-          <button
-            className="sales-secondary-button"
-            disabled={currentStep === 0}
-            onClick={() => setCurrentStep((prev) => prev - 1)}
-            style={{
-              opacity: currentStep === 0 ? 0.5 : 1,
-              cursor: currentStep === 0 ? "not-allowed" : "pointer",
-            }}
-            type="button"
-          >
-            Voltar
-          </button>
-
-          {currentStep < steps.length - 1 ? (
-            <button
-              className="sales-primary-button flex items-center gap-1"
-              onClick={() => setCurrentStep((prev) => prev + 1)}
-              type="button"
-            >
-              <div className="gloss-overlay" />
-              <span>Avançar</span>
-              <ChevronRight className="size-4" />
-            </button>
-          ) : (
-            <button
-              className="sales-secondary-button border-emerald-500/30 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/40"
-              onClick={() => void handleBack()}
-              type="button"
-            >
-              <Check className="size-4 shrink-0" />
-              <span>Finalizar e Ver Lista</span>
-            </button>
-          )}
-        </div>
+        <SaleWorkspaceNavigation
+          currentStep={currentStep}
+          onBack={() => setCurrentStep((step) => step - 1)}
+          onFinish={() => void handleBack()}
+          onNext={() => setCurrentStep((step) => step + 1)}
+        />
       </div>
 
       <StickySaleSummary
         isSaving={isSaving}
-        onCancel={() => void runTransition(onCancel)}
+        onCancel={() => setIsCancelDialogOpen(true)}
         onClose={() => void runTransition(onClose)}
         onReserve={() => void runTransition(onReserve)}
+        onRevert={() => setIsRevertDialogOpen(true)}
         sale={draft}
+      />
+      <SaleCancelDialog
+        isOpen={isCancelDialogOpen}
+        isSaving={isSaving}
+        onClose={() => setIsCancelDialogOpen(false)}
+        onConfirm={cancelSale}
+        status={draft.status}
+      />
+      <SaleRevertDialog
+        isOpen={isRevertDialogOpen}
+        isSaving={isSaving}
+        onClose={() => setIsRevertDialogOpen(false)}
+        onConfirm={revertSale}
       />
     </section>
   );

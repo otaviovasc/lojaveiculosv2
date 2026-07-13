@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createInitialInventoryForm } from "./formModel";
 import {
   applyPlateLookupToForm,
+  canAutoAnalyzePlateLookup,
   createResaleAnalysisInput,
   hasEnoughDataForAnalysis,
 } from "./inventoryEnrichment";
@@ -60,6 +61,34 @@ describe("inventory enrichment form helpers", () => {
     });
     expect(hasEnoughDataForAnalysis(form, lookupPayload())).toBe(true);
   });
+
+  it("recognizes a plate lookup that can trigger AI before form state settles", () => {
+    expect(canAutoAnalyzePlateLookup(lookupPayload())).toBe(true);
+    expect(
+      canAutoAnalyzePlateLookup({
+        ...lookupPayload(),
+        fipe: null,
+        vehicle: { ...lookupPayload().vehicle, modelYear: null },
+      }),
+    ).toBe(false);
+  });
+
+  it.each([
+    ["motorcycles", "motorcycles"],
+    ["Moto", "motorcycles"],
+    ["trucks", "trucks"],
+    ["Caminhão", "trucks"],
+  ] as const)(
+    "preserves %s plate lookup catalog types",
+    (vehicleType, expected) => {
+      const result = applyPlateLookupToForm(createInitialInventoryForm(), {
+        ...lookupPayload(),
+        vehicle: { ...lookupPayload().vehicle, vehicleType },
+      });
+
+      expect(result.catalog?.vehicleType).toBe(expected);
+    },
+  );
 });
 
 function lookupPayload(): InventoryPlateLookupResponse {

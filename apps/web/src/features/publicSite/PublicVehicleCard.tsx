@@ -16,8 +16,13 @@ export function PublicVehicleCard({
   const { brand, restTitle } = splitVehicleTitle(listing.title);
 
   return (
-    <article className="group flex flex-col justify-between overflow-hidden rounded-xl border border-line bg-panel shadow-[0_4px_20px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-1.5 hover:border-accent/40 hover:shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
-      <div className="cursor-pointer" onClick={onOpen}>
+    <article className="group flex flex-col justify-between overflow-hidden rounded-xl border border-line bg-panel shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:border-accent/40 hover:shadow-lg">
+      <button
+        aria-label={`Abrir detalhes de ${listing.title}`}
+        className="w-full cursor-pointer text-left"
+        onClick={onOpen}
+        type="button"
+      >
         {/* Image Container with 16:10 aspect ratio and zoom effect */}
         <div className="relative aspect-[16/10] w-full overflow-hidden bg-app border-b border-line/60">
           <VehicleImage listing={listing} />
@@ -66,7 +71,7 @@ export function PublicVehicleCard({
             </span>
           </div>
         </div>
-      </div>
+      </button>
 
       {/* Pricing & CTA Action Area */}
       <div className="px-5 pb-5 pt-0">
@@ -80,14 +85,14 @@ export function PublicVehicleCard({
             </p>
           </div>
 
-          <a
+          <button
             className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-accent px-4 text-sm font-bold text-inverse shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 cursor-pointer"
             onClick={onOpen}
             type="button"
           >
             <Eye aria-hidden="true" className="size-3.5" />
             Detalhes
-          </a>
+          </button>
         </div>
       </div>
     </article>

@@ -24,9 +24,11 @@ export function createMemoryVehicleSalesRepository(): VehicleSalesRepository {
       }
       const now = new Date();
       const bundle: VehicleSaleBundle = {
-        payment: current.payment
-          ? { ...current.payment, status: "cancelled", updatedAt: now }
-          : null,
+        payments: current.payments.map((payment) =>
+          payment.status === "pending"
+            ? { ...payment, status: "cancelled", updatedAt: now }
+            : payment,
+        ),
         sale: { ...current.sale, status: "cancelled", updatedAt: now },
       };
       sales.set(bundle.sale.id, bundle);
@@ -48,36 +50,38 @@ export function createMemoryVehicleSalesRepository(): VehicleSalesRepository {
         updatedAt: now,
       };
       saleSequence += 1;
-      if (!input.payment) {
-        const bundle = { payment: null, sale };
-        sales.set(sale.id, bundle);
-        return bundle;
-      }
-      const payment: VehicleSalePayment = {
-        ...input.payment,
-        createdAt: now,
-        id: `sale_payment_${paymentSequence}`,
-        saleId: sale.id,
-        storeId: sale.storeId,
-        tenantId: sale.tenantId,
-        updatedAt: now,
-      };
-      paymentSequence += 1;
+      const payments = input.payments.map((payment): VehicleSalePayment => {
+        const saved = {
+          ...payment,
+          createdAt: now,
+          id: `sale_payment_${paymentSequence}`,
+          saleId: sale.id,
+          storeId: sale.storeId,
+          tenantId: sale.tenantId,
+          updatedAt: now,
+        };
+        paymentSequence += 1;
+        return saved;
+      });
 
-      const bundle = { payment, sale };
+      const bundle = { payments, sale };
       sales.set(sale.id, bundle);
       return bundle;
     },
     async findPendingByUnit(input): Promise<VehicleSaleBundle | null> {
-      return (
-        [...sales.values()].find(
-          (bundle) =>
-            bundle.sale.unitId === input.unitId &&
-            bundle.sale.storeId === input.storeId &&
-            bundle.sale.tenantId === input.tenantId &&
-            bundle.sale.status === "pending",
-        ) ?? null
+      const matches = [...sales.values()].filter(
+        (bundle) =>
+          bundle.sale.unitId === input.unitId &&
+          bundle.sale.storeId === input.storeId &&
+          bundle.sale.tenantId === input.tenantId &&
+          bundle.sale.status === "pending",
       );
+      if (matches.length > 1) {
+        throw new Error(
+          `Multiple pending sales found for vehicle unit: ${input.unitId}`,
+        );
+      }
+      return matches[0] ?? null;
     },
   };
 }

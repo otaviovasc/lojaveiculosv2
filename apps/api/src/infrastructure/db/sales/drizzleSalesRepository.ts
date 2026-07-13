@@ -8,7 +8,11 @@ import type {
   SaleScope,
   SaveSalePaymentInput,
 } from "../../../domains/sales/ports/salesRepository.js";
-import { SaleReferenceError } from "../../../domains/sales/services/SalesService/serviceSupport.js";
+import {
+  SaleDraftUpdateConflictError,
+  SaleReferenceError,
+  SaleTransitionConflictError,
+} from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import {
   toInsertPayment,
   toInsertSale,
@@ -17,6 +21,8 @@ import {
   type PaymentRow,
 } from "./drizzleSalesMappers.js";
 import { deleteSalesDraft } from "./drizzleSalesDelete.js";
+import { createDrizzleSaleCorrection } from "./drizzleSalesCorrection.js";
+import { findPaymentsForSales } from "./drizzleSalesQueries.js";
 
 export type DrizzleSalesClient = PostgresJsDatabase<typeof schema>;
 
@@ -24,6 +30,13 @@ export function createDrizzleSalesRepository(
   db: DrizzleSalesClient,
 ): SalesRepository {
   return {
+    async createCorrectionRevision(scope, input) {
+      try {
+        return await createDrizzleSaleCorrection(db, scope, input);
+      } catch (error) {
+        throw mapSalesRepositoryError(error);
+      }
+    },
     async createDraft(scope, input) {
       try {
         const [row] = await db
@@ -94,9 +107,9 @@ export function createDrizzleSalesRepository(
             overrideRequiredFields: input.overrideRequiredFields ?? false,
             status: input.status,
           })
-          .where(scopedSaleWhere(input, input.saleId))
+          .where(scopedSaleWhere(input, input.saleId, input.expectedStatus))
           .returning();
-        if (!row) throw new Error(`Sale not found: ${input.saleId}`);
+        if (!row) throw new SaleTransitionConflictError();
         if (input.status === "cancelled") {
           await db
             .update(salePayments)
@@ -115,13 +128,14 @@ export function createDrizzleSalesRepository(
         throw mapSalesRepositoryError(error);
       }
     },
-    async updateDraft(scope, saleId, input) {
+    async updateDraft(scope, saleId, input, expectedStatus) {
       try {
         const [row] = await db
           .update(sales)
           .set(toUpdateSale(input))
-          .where(scopedSaleWhere(scope, saleId))
+          .where(scopedSaleWhere(scope, saleId, expectedStatus))
           .returning();
+        if (!row && expectedStatus) throw new SaleDraftUpdateConflictError();
         if (!row) throw new Error(`Sale not found: ${saleId}`);
         const payments = input.payments
           ? await replacePayments(db, scope, saleId, input.payments)
@@ -173,31 +187,16 @@ async function findPayments(
     );
 }
 
-async function findPaymentsForSales(
-  db: DrizzleSalesClient,
+function scopedSaleWhere(
   scope: SaleScope,
-  saleIds: readonly string[],
-): Promise<Map<string, PaymentRow[]>> {
-  const result = new Map<string, PaymentRow[]>();
-  if (!saleIds.length) return result;
-  const rows = await db.select().from(salePayments);
-  for (const row of rows) {
-    if (
-      saleIds.includes(row.saleId) &&
-      row.storeId === scope.storeId &&
-      row.tenantId === scope.tenantId
-    ) {
-      result.set(row.saleId, [...(result.get(row.saleId) ?? []), row]);
-    }
-  }
-  return result;
-}
-
-function scopedSaleWhere(scope: SaleScope, saleId: string) {
+  saleId: string,
+  status?: "draft" | "pending",
+) {
   return and(
     eq(sales.id, saleId),
     eq(sales.storeId, scope.storeId),
     eq(sales.tenantId, scope.tenantId),
+    ...(status ? [eq(sales.status, status)] : []),
   );
 }
 

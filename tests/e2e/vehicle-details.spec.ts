@@ -5,12 +5,17 @@ import {
   collectPageDiagnostics,
   expectNoPageCrashes,
 } from "./support/diagnostics";
+import {
+  collectCriticalResponses,
+  expectNoCriticalResponses,
+} from "./support/httpDiagnostics";
 import { qaPersonas } from "./support/personas";
 import {
   expectAccessible,
   expectViewportSafe,
   waitForSettledWorkspace,
 } from "./support/uiQuality";
+import { verifyPersistedVehicleEdit } from "./support/vehicleEdit";
 import { setQaViewport } from "./support/viewports";
 
 const vehicleTitle = "Audi A4 Prestige Plus 2.0 TFSI 2022";
@@ -45,6 +50,24 @@ test.describe("vehicle details QA lane", () => {
       page,
       testInfo,
       "admin-detail-documents-canonical-handoff",
+    );
+
+    await page
+      .getByRole("link", { name: "Abrir Central de documentos" })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: vehicleTitle }).last(),
+    ).toBeVisible();
+    const inspectionDocument = page
+      .locator("tbody tr", { hasText: "Laudo cautelar Audi A4" })
+      .first();
+    await expect(inspectionDocument).toBeVisible();
+    await inspectionDocument.click();
+    await expect(page.getByLabel("Documento aberto")).toBeVisible();
+    await saveQaScreenshot(
+      page,
+      testInfo,
+      "admin-detail-document-stored-preview",
     );
   });
 
@@ -81,6 +104,13 @@ test.describe("vehicle details QA lane", () => {
 
     await expectNoCriticalResponses(page, criticalResponses);
     expectNoPageCrashes(diagnostics);
+  });
+
+  test("persists vehicle edits after reopening the detail", async ({
+    page,
+  }, testInfo) => {
+    await setQaViewport(page, "desktop");
+    await verifyPersistedVehicleEdit(page, testInfo);
   });
 
   test("admin vehicle detail remains usable on mobile", async ({
@@ -202,29 +232,14 @@ async function expectFinanceiroUsesSeededVehicle(page: Page) {
 async function expectOfficialDocumentHandoff(page: Page) {
   await expect(
     page.getByRole("link", { name: "Abrir Central de documentos" }),
-  ).toHaveAttribute("href", "#/documents");
+  ).toHaveAttribute(
+    "href",
+    "#/documents?unitId=11000000-0000-4000-8000-000000000001",
+  );
   await expect(
     page.getByText(/Este cadastro não cria minutas locais/i),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /gerar prévia|imprimir contrato/i }),
   ).toHaveCount(0);
-}
-
-function collectCriticalResponses(page: Page) {
-  const criticalResponses: string[] = [];
-  page.on("response", (response) => {
-    if (response.status() >= 500) {
-      criticalResponses.push(`${response.status()} ${response.url()}`);
-    }
-  });
-  return criticalResponses;
-}
-
-async function expectNoCriticalResponses(
-  page: Page,
-  criticalResponses: string[],
-) {
-  await page.waitForLoadState("networkidle");
-  expect(criticalResponses).toEqual([]);
 }

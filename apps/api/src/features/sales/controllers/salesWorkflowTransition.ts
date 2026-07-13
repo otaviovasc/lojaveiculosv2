@@ -1,9 +1,11 @@
+import { isSalePaymentMethod } from "@lojaveiculosv2/shared";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import { assertPermission } from "../../../shared/authorization.js";
 import type {
   SalePaymentLine,
   SaleRecord,
 } from "../../../domains/sales/ports/salesRepository.js";
+import { findReservationSignalPayment } from "../../../domains/sales/salePaymentSignals.js";
 import { transitionSale } from "../../../domains/sales/services/SalesService/transitionSale.js";
 import {
   SaleReadinessError,
@@ -62,11 +64,11 @@ export async function transitionSaleWithWorkflow(
     );
     if (current.status === "pending" && current.unitId) {
       assertPermission(context, "sale.cancel");
-      const payment = requireWorkflowPayment(current);
       await releaseVehicleUnitReservation(
         context,
         {
-          pendingSale: toVehicleSaleBundle(current, "pending", payment),
+          outcome: "cancel",
+          pendingSale: toVehicleSaleBundle(current, "pending"),
           reason: input.overrideReason,
           saleId: current.id,
           unitId: current.unitId,
@@ -105,19 +107,18 @@ async function completeWorkflowForTransition(
     unit.listingId,
   );
   const buyer = readBuyerSnapshot(sale.buyerSnapshot);
-  const payment = requireWorkflowPayment(sale);
-  const workflowSale = toVehicleSaleBundle(sale, input.status, payment);
+  const workflowSale = toVehicleSaleBundle(sale, input.status);
 
   if (input.status === "pending") {
+    const signalPayment = requireReservationSignalPayment(workflowSale);
     assertReservableVehicleState(listing, unit);
     await completeReservationWorkflow(context, {
       buyer,
       listing,
-      paymentMethod: payment.method,
       ports: ports.vehiclePorts,
       reason: input.overrideReason,
       sale: workflowSale,
-      signalAmountCents: payment.amountCents,
+      signalPayment,
       unit,
     });
     return;
@@ -133,7 +134,6 @@ async function completeWorkflowForTransition(
   await completeSaleWorkflow(context, {
     buyer,
     listing,
-    paymentMethod: payment.method,
     ports: ports.vehiclePorts,
     reason: input.overrideReason,
     sale: workflowSale,
@@ -146,19 +146,16 @@ async function completeWorkflowForTransition(
 function toVehicleSaleBundle(
   sale: SaleRecord,
   status: Extract<VehicleSaleStatus, "pending" | "closed">,
-  paymentLine: SalePaymentLine,
 ): VehicleSaleBundle {
   const salePriceCents = requirePositiveCents(
     sale.salePriceCents,
     "sale_price",
   );
-  const payment = toVehicleSalePayment(sale, paymentLine, {
-    amountCents: status === "closed" ? salePriceCents : paymentLine.amountCents,
-    status,
-  });
 
   return {
-    payment,
+    payments: sale.payments.map((payment) =>
+      toVehicleSalePayment(sale, payment),
+    ),
     sale: {
       buyerSnapshot: readBuyerSnapshot(sale.buyerSnapshot),
       closedAt: sale.closedAt,
@@ -178,24 +175,25 @@ function toVehicleSaleBundle(
 function toVehicleSalePayment(
   sale: SaleRecord,
   payment: SalePaymentLine,
-  input: {
-    amountCents: number;
-    status: Extract<VehicleSaleStatus, "pending" | "closed">;
-  },
 ): VehicleSalePayment {
-  const paidAt =
-    input.status === "closed"
-      ? (payment.paidAt ?? sale.closedAt ?? new Date())
-      : payment.paidAt;
+  if (!isSalePaymentMethod(payment.method)) {
+    throw new SaleReadinessError([`payment_method:${payment.id}`]);
+  }
 
   return {
-    amountCents: input.amountCents,
+    amountCents: payment.amountCents,
     createdAt: sale.createdAt,
+    dueAt: payment.dueAt,
+    extraCents: payment.extraCents,
     id: payment.id,
+    installments: payment.installments,
+    metadata: payment.metadata,
     method: payment.method,
-    paidAt,
+    paidAt: payment.paidAt,
+    principalCents: payment.principalCents,
+    providerPaymentId: payment.providerPaymentId,
     saleId: sale.id,
-    status: input.status === "closed" ? "paid" : payment.status,
+    status: payment.status,
     storeId: sale.storeId,
     tenantId: sale.tenantId,
     updatedAt: sale.updatedAt,
@@ -215,10 +213,12 @@ function readBuyerSnapshot(
   };
 }
 
-function requireWorkflowPayment(sale: SaleRecord): SalePaymentLine {
-  const [payment] = sale.payments;
-  if (!payment) throw new SaleReadinessError(["payment"]);
-  return payment;
+function requireReservationSignalPayment(
+  sale: VehicleSaleBundle,
+): VehicleSalePayment {
+  const signal = findReservationSignalPayment(sale.payments);
+  if (!signal) throw new SaleReadinessError(["reservation_signal_payment"]);
+  return signal;
 }
 
 function requireWorkflowString(value: string | null, field: string): string {

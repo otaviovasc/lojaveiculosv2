@@ -5,6 +5,7 @@ export type ContractDocumentListItem = {
   id: string;
   status: "Arquivado" | "Assinado" | "Emitido" | "Minuta" | "Pendente";
   title: string;
+  unitId: string;
 };
 
 export function createContractDocumentItems(
@@ -19,6 +20,7 @@ export function createContractDocumentItems(
         id: document.id,
         status: statusLabel(document.status),
         title: document.title || document.fileName,
+        unitId: document.targetId,
       },
     ];
   });
@@ -30,7 +32,9 @@ function isContractDocument(document: InventoryDocument) {
   return (
     document.kind === "sale_contract" ||
     document.kind === "sale_receipt" ||
-    document.kind === "reservation_receipt"
+    document.kind === "reservation_receipt" ||
+    document.kind === "delivery_term" ||
+    document.kind === "power_of_attorney"
   );
 }
 

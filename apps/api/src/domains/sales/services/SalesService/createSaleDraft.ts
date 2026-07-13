@@ -1,6 +1,8 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { SaveSaleDraftInput } from "../../ports/salesRepository.js";
+import { assertSalePaymentAmounts } from "../../salePaymentAmounts.js";
+import { markDraftReservationSignal } from "../../salePaymentSignals.js";
 import {
   auditSalesServiceEvent,
   getSalesRepository,
@@ -23,7 +25,11 @@ export async function createSaleDraft(
     unitId: input.unitId ?? null,
   });
 
-  const sale = await getSalesRepository(ports).createDraft(scope, input);
+  assertSalePaymentAmounts(input.payments);
+  const sale = await getSalesRepository(ports).createDraft(
+    scope,
+    markDraftReservationSignal(input),
+  );
 
   await auditSalesServiceEvent(context, {
     action: "sale.draft.create",

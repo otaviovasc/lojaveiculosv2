@@ -22,7 +22,7 @@ export async function createAndDeleteDraft(page: Page) {
       response.request().method() === "DELETE",
   );
   await draftCard.getByRole("button", { name: "Deletar" }).click();
-  await page.getByRole("button", { name: "Excluir Venda" }).click();
+  await page.getByRole("button", { name: "Excluir rascunho" }).click();
   await expect((await deleteResponse).status()).toBe(204);
   await expect(page.getByText("Venda excluída com sucesso")).toBeVisible();
 }
@@ -79,7 +79,7 @@ export async function fillTradeIn(page: Page, plate: string) {
   await fillSaleInput(page, "Ano Fabricação", "2021");
   await fillSaleInput(page, "Ano Modelo", "2022");
   await fillSaleInput(page, "Renavam", "12345678901");
-  await fillSaleInput(page, "Chassi", "9BWZZZ377VT004251");
+  await fillSaleInput(page, "Chassi", `9BW${plate}0000000`);
   await fillSaleInput(page, "Valor de Avaliação / Entrada", "8800000");
 }
 

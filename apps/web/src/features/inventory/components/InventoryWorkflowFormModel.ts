@@ -3,6 +3,10 @@ import {
   type WorkflowMode,
   type WorkflowState,
 } from "./InventoryWorkflowPanelParts";
+import {
+  salePaymentMethods,
+  type SalePaymentMethod,
+} from "@lojaveiculosv2/shared";
 import type { InventoryListingDetail } from "../model/types";
 
 type BuyerForm = {
@@ -15,20 +19,26 @@ type BuyerForm = {
 
 export type WorkflowForm = BuyerForm & {
   paidAmount: string;
-  paymentMethod: string;
+  paymentMethod: SalePaymentMethod;
   reason: string;
   salePrice: string;
   signalAmount: string;
   unitId: string;
 };
 
-export const paymentMethods = [
-  ["pix", "Pix"],
-  ["bank_transfer", "Transferencia"],
-  ["cash", "Dinheiro"],
-  ["card", "Cartao"],
-  ["financing", "Financiamento"],
-] as const;
+const paymentMethodLabels: Record<SalePaymentMethod, string> = {
+  boleto: "Boleto bancário",
+  cash: "Dinheiro",
+  credit_card: "Cartão de crédito",
+  financing: "Financiamento",
+  letter_of_credit: "Carta de crédito",
+  pix: "Pix",
+  trade_in: "Veículo na troca",
+  transfer: "Transferência",
+};
+
+export const paymentMethods: readonly (readonly [SalePaymentMethod, string])[] =
+  salePaymentMethods.map((method) => [method, paymentMethodLabels[method]]);
 
 export function createWorkflowForm(
   detail: InventoryListingDetail,

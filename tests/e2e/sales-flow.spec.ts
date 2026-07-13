@@ -42,7 +42,16 @@ test.describe("Sales QA flow", () => {
     ).toHaveCount(0);
     await createAndDeleteDraft(page);
     await expect(closedSaleCard).toBeVisible();
-    await closedSaleCard.getByRole("button", { name: "Editar" }).click();
+    await closedSaleCard.getByRole("button", { name: "Detalhar" }).click();
+    const saleDetails = page.getByRole("dialog", {
+      name: "Toyota Hilux SRX 2021",
+    });
+    await expect(saleDetails).toContainText("Status: Fechada");
+    await saleDetails
+      .getByRole("button", { exact: true, name: "Fechar" })
+      .click();
+    await closedSaleCard.getByRole("button", { name: "Visualizar" }).click();
+    await expect(page.getByRole("status")).toContainText("somente leitura");
     await page.getByRole("button", { name: /Formalização & Download/ }).click();
     const closedSaleReview = page
       .locator("div.sales-glass-panel")

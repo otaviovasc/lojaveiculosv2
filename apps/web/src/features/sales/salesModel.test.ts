@@ -1,6 +1,14 @@
 /* @vitest-environment jsdom */
 import { afterEach, describe, expect, it } from "vitest";
-import { createDraftFromContext, parseSaleStartContext } from "./salesModel";
+import {
+  canPersistSaleWorkspaceEdits,
+  createDraftFromContext,
+  parseSaleStartContext,
+  paymentPrincipalTotal,
+  reservationSignalPayment,
+  saleMissingFields,
+} from "./salesModel";
+import type { SaleRecord } from "./types";
 
 describe("sales model start context", () => {
   afterEach(() => {
@@ -47,4 +55,81 @@ describe("sales model start context", () => {
       unitId: "unit_1",
     });
   });
+
+  it("uses only active allocations for coverage and the reservation signal", () => {
+    const sale = saleRecord({
+      payments: [
+        payment("cancelled", "cancelled", 7000000),
+        payment("signal", "pending", 125000),
+        payment("refunded", "refunded", 8000000),
+      ],
+    });
+
+    expect(paymentPrincipalTotal(sale)).toBe(125000);
+    expect(reservationSignalPayment(sale)?.id).toBe("signal");
+    expect(saleMissingFields(sale, "reserve")).not.toContain(
+      "Sinal de reserva",
+    );
+    expect(saleMissingFields(sale, "close")).toContain("Pagamentos");
+  });
+
+  it("never exposes a historical revision as editable", () => {
+    expect(
+      canPersistSaleWorkspaceEdits(
+        saleRecord({ isCurrentRevision: false, status: "draft" }),
+      ),
+    ).toBe(false);
+    expect(
+      canPersistSaleWorkspaceEdits(
+        saleRecord({ isCurrentRevision: true, status: "draft" }),
+      ),
+    ).toBe(true);
+  });
 });
+
+function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
+  return {
+    buyerSnapshot: { name: "Cliente QA" },
+    closedAt: null,
+    correctionOfSaleId: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    documentPolicySnapshot: { requiredDocumentKinds: [] },
+    id: "sale_1",
+    isCurrentRevision: true,
+    leadId: "lead_1",
+    listingId: "listing_1",
+    listingSnapshot: {},
+    overrideReason: null,
+    overrideRequiredFields: false,
+    payments: [],
+    revision: 1,
+    salePriceCents: 5000000,
+    saleSourceSnapshot: {},
+    selectedDocumentKinds: [],
+    sellerUserId: "seller_1",
+    status: "draft",
+    unitId: "unit_1",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function payment(
+  id: string,
+  status: SaleRecord["payments"][number]["status"],
+  principalCents: number,
+): SaleRecord["payments"][number] {
+  return {
+    amountCents: principalCents,
+    dueAt: null,
+    extraCents: 0,
+    id,
+    installments: null,
+    metadata: {},
+    method: "pix",
+    paidAt: null,
+    principalCents,
+    providerPaymentId: null,
+    status,
+  };
+}

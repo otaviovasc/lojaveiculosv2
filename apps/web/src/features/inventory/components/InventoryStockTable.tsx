@@ -190,11 +190,7 @@ function StockRows({
 }
 
 function InventoryTableEmptyState({ text }: { text: string }) {
-  return (
-    <p className="rounded-lg border border-line bg-app p-3 text-sm font-bold text-muted">
-      {text}
-    </p>
-  );
+  return <FeatureAlert tone="info">{text}</FeatureAlert>;
 }
 
 function formatPrice(value: number | null): string {

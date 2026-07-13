@@ -23,6 +23,6 @@ export async function uploadInventoryFile(
   upload: InventoryMediaUpload,
 ) {
   await uploadObjectToStorage(upload, file, {
-    failureMessage: "Falha no upload da imagem para o armazenamento.",
+    failureMessage: "Falha no upload do arquivo para o armazenamento.",
   });
 }

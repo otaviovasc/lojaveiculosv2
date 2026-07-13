@@ -9,6 +9,7 @@ import { createSaleDraft } from "../../../domains/sales/services/SalesService/cr
 import { deleteSaleDraft } from "../../../domains/sales/services/SalesService/deleteSaleDraft.js";
 import { listSales } from "../../../domains/sales/services/SalesService/listSales.js";
 import { updateSaleDraft } from "../../../domains/sales/services/SalesService/updateSaleDraft.js";
+import { revertClosedSale } from "../../../domains/sales/services/SalesService/revertClosedSale.js";
 import type {
   ListSalesInput,
   SaleRecord,
@@ -28,6 +29,7 @@ import {
   transitionSaleWithWorkflow,
   type SalesWorkflowPorts,
 } from "./salesWorkflowTransition.js";
+import { compensateClosedSale } from "../adapters/salesReversionCompensation.js";
 
 export type SalesServices = {
   createDraft: (
@@ -39,6 +41,10 @@ export type SalesServices = {
     context: ServiceContext,
     input: Omit<ListSalesInput, "storeId" | "tenantId">,
   ) => Promise<readonly SaleRecord[]>;
+  revert: (
+    context: ServiceContext,
+    input: { reason: string; saleId: string },
+  ) => Promise<SaleRecord>;
   transition: (
     context: ServiceContext,
     input: {
@@ -92,6 +98,13 @@ export function createSalesServices(
         deleteSaleDraft(context, saleId, txPorts),
       ),
     list: (context, input) => listSales(context, input, ports),
+    revert: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        revertClosedSale(context, input, txPorts, {
+          compensate: (sale, reason) =>
+            compensateClosedSale(context, sale, reason, txPorts.vehiclePorts),
+        }),
+      ),
     transition: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         transitionSaleWithWorkflow(context, input, txPorts),

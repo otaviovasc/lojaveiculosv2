@@ -6,6 +6,7 @@ import {
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   listSalesQuerySchema,
+  revertSaleSchema,
   saleDraftSchema,
   transitionSaleSchema,
 } from "./sales.controller.schemas.js";
@@ -85,6 +86,20 @@ export function createSalesFeature(options: CreateSalesFeatureOptions = {}) {
       const serviceContext = await createContext(context);
       await services.delete(serviceContext, context.req.param("saleId"));
       return new Response(null, { status: 204 });
+    }),
+  );
+
+  feature.post("/:saleId/revert", async (context) =>
+    handleSales(context, async () => {
+      const input = await parseSalesJson(context, revertSaleSchema);
+      const serviceContext = await createContext(context);
+      return context.json(
+        await services.revert(serviceContext, {
+          reason: input.reason,
+          saleId: context.req.param("saleId"),
+        }),
+        201,
+      );
     }),
   );
 

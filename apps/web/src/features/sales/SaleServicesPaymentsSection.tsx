@@ -1,7 +1,7 @@
 import { Check, Coins, Plus } from "lucide-react";
 import { SaleFormSection } from "./SaleWorkspaceForm";
 import { PaymentRow, newPayment } from "./SalePaymentRow";
-import { paymentPrincipalTotal } from "./salesModel";
+import { paymentPrincipalTotal, reservationSignalPayment } from "./salesModel";
 import { formatCents } from "./saleServicesFormat";
 import type { UpdateSale } from "./SaleServicesTypes";
 import type { SaleRecord } from "./types";
@@ -18,6 +18,7 @@ export function SaleServicesPaymentsSection({
   const balance = salePrice - totalPaid;
   const progressPercent =
     salePrice > 0 ? Math.min(100, (totalPaid / salePrice) * 100) : 0;
+  const signalPaymentId = reservationSignalPayment(sale)?.id;
 
   const addPayment = () =>
     update((draft) => ({
@@ -77,7 +78,9 @@ export function SaleServicesPaymentsSection({
             <PaymentRow
               index={index}
               key={payment.id}
-              locked={sale.status === "pending" && index === 0}
+              locked={
+                sale.status === "pending" && payment.id === signalPaymentId
+              }
               onChange={(next) =>
                 update((draft) => ({
                   ...draft,

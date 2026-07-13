@@ -1,7 +1,8 @@
-import type { Dispatch, SetStateAction } from "react";
+import { useState } from "react";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
 import { InventoryMediaWorkspace } from "./InventoryMediaWorkspace";
+import { InventoryEditPanel } from "./InventoryEditPanel";
 import { TechnicalSpecsPanel } from "./InventoryDetailWorkspaceParts";
 import type {
   initialObservacoes,
@@ -32,10 +33,10 @@ export function InventoryDetailGeneralTab({
   observacoes,
   onUpdated,
   onSaveNotasInternas,
+  onEditSaved,
   onToggleObservacao,
   onToggleOpcional,
   opcionais,
-  setIsSpecsOpen,
   specs,
 }: {
   api: InventoryApi;
@@ -45,12 +46,30 @@ export function InventoryDetailGeneralTab({
   observacoes: ToggleObservation[];
   onUpdated: (detail: InventoryListingDetail) => void;
   onSaveNotasInternas: (notes: string) => void;
+  onEditSaved?: () => void;
   onToggleObservacao: (id: string) => void;
   onToggleOpcional: (id: string) => void;
   opcionais: ToggleOption[];
-  setIsSpecsOpen: Dispatch<SetStateAction<boolean>>;
   specs: Specs;
 }) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (isEditing) {
+    return (
+      <InventoryEditPanel
+        api={api}
+        detail={detail}
+        onCancel={() => setIsEditing(false)}
+        onSaved={() => {
+          setIsEditing(false);
+          onEditSaved?.();
+        }}
+        onUpdated={onUpdated}
+        unitId={initialUnitId ?? null}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-8 w-full max-w-none">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px] w-full">
@@ -66,7 +85,7 @@ export function InventoryDetailGeneralTab({
         <div className="flex flex-col gap-4">
           <TechnicalSpecsPanel
             specs={specs}
-            onEditSpecs={() => setIsSpecsOpen(true)}
+            onEditSpecs={() => setIsEditing(true)}
             opcionais={opcionais}
             onToggleOpcional={onToggleOpcional}
             observacoes={observacoes}

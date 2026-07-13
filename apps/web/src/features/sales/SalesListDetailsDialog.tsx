@@ -4,10 +4,20 @@ import {
   CheckCircle2,
   Coins,
   Edit,
+  Eye,
   User,
-  X,
 } from "lucide-react";
-import { formatCents, paymentPrincipalTotal } from "./salesModel";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "../../components/ui/dialog";
+import {
+  canPersistSaleWorkspaceEdits,
+  formatCents,
+  paymentPrincipalTotal,
+} from "./salesModel";
 import { asSnapshotRecord, snapshotNumber } from "./salesSnapshot";
 import { salesStatusLabels } from "./SalesListModel";
 import { SaleServicesDetails } from "./SalesListServiceDetails";
@@ -22,12 +32,13 @@ export function SalesListDetailsDialog({
   onEdit: (sale: SaleRecord) => void;
   sale: SaleRecord;
 }) {
+  const canEdit = canPersistSaleWorkspaceEdits(sale);
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-panel border border-line rounded-3xl w-full max-w-3xl max-h-[85vh] overflow-y-auto shadow-2xl relative flex flex-col">
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-3xl flex-col overflow-hidden rounded-3xl border-line bg-panel p-0 shadow-2xl">
         <div
           className={[
-            "p-6 border-b border-line/50 flex justify-between items-start gap-4",
+            "p-6 pr-14 border-b border-line/50 flex justify-between items-start gap-4",
             saleStatusBannerClass(sale.status),
           ].join(" ")}
         >
@@ -35,11 +46,11 @@ export function SalesListDetailsDialog({
             <span className="text-xs font-black text-muted uppercase tracking-widest block mb-1">
               Detalhes do Rascunho de Formalização
             </span>
-            <h3 className="text-lg font-black text-app-text uppercase tracking-wider">
+            <DialogTitle className="text-lg font-black text-app-text uppercase tracking-wider">
               {String(sale.listingSnapshot?.title || "") ||
                 "Formalização de Venda"}
-            </h3>
-            <div className="flex flex-wrap gap-2.5 items-center mt-2.5">
+            </DialogTitle>
+            <DialogDescription className="flex flex-wrap gap-2.5 items-center mt-2.5 text-muted">
               <span className="text-xs font-bold text-muted">
                 Atualizada em{" "}
                 {new Date(sale.updatedAt).toLocaleDateString("pt-BR")}
@@ -48,16 +59,8 @@ export function SalesListDetailsDialog({
               <span className="text-xs font-bold text-muted">
                 Status: {salesStatusLabels[sale.status]}
               </span>
-            </div>
+            </DialogDescription>
           </div>
-
-          <button
-            className="p-2 hover:bg-app-elevated rounded-xl border border-line/55 transition-colors cursor-pointer shrink-0"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="size-5 text-muted" />
-          </button>
         </div>
 
         <div className="p-6 overflow-y-auto flex flex-col gap-6">
@@ -74,8 +77,12 @@ export function SalesListDetailsDialog({
             type="button"
           >
             <div className="gloss-overlay" />
-            <Edit className="size-4" />
-            <span>Formalizar / Editar Venda</span>
+            {canEdit ? <Edit className="size-4" /> : <Eye className="size-4" />}
+            <span>
+              {canEdit
+                ? "Formalizar / Editar Venda"
+                : "Visualizar formalização"}
+            </span>
           </button>
 
           <button
@@ -86,8 +93,8 @@ export function SalesListDetailsDialog({
             Fechar Painel
           </button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

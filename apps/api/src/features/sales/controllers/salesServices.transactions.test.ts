@@ -14,6 +14,14 @@ describe("sales transaction composition", () => {
     ["createDraft", (services) => services.createDraft(context(), draft())],
     ["delete", (services) => services.delete(context(), "sale_1")],
     [
+      "revert",
+      (services) =>
+        services.revert(context(), {
+          reason: "Buyer requested an audited correction",
+          saleId: "sale_1",
+        }),
+    ],
+    [
       "transition",
       (services) =>
         services.transition(context(), {

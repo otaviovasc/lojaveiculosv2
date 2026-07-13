@@ -1,4 +1,4 @@
-import { vehicleColorValues } from "@lojaveiculosv2/shared";
+import { salePaymentMethods, vehicleColorValues } from "@lojaveiculosv2/shared";
 import { z } from "zod";
 import { allowedCreateStatuses } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import {
@@ -206,7 +206,7 @@ const buyerSchema = z.object({
 
 export const reserveUnitSchema = z.object({
   buyer: buyerSchema,
-  paymentMethod: z.string().trim().min(1).default("pix"),
+  paymentMethod: z.enum(salePaymentMethods).default("pix"),
   reason: z.string().trim().min(1).nullable().optional(),
   salePriceCents: z.number().int().positive().nullable().optional(),
   signalAmountCents: z.number().int().positive(),
@@ -215,7 +215,7 @@ export const reserveUnitSchema = z.object({
 export const sellUnitSchema = z.object({
   buyer: buyerSchema,
   paidAmountCents: z.number().int().positive().nullable().optional(),
-  paymentMethod: z.string().trim().min(1).default("pix"),
+  paymentMethod: z.enum(salePaymentMethods).default("pix"),
   reason: z.string().trim().min(1).nullable().optional(),
   salePriceCents: z.number().int().positive().nullable().optional(),
 });

@@ -123,3 +123,4 @@ export * from "./vehicleTechnicalSpecs.js";
 export * from "./storefrontBuilder.js";
 export * from "./storefrontMedia.js";
 export * from "./externalApiContract.js";
+export * from "./salePayments.js";

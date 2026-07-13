@@ -4,7 +4,10 @@ import {
   normalizeVehicleEngineDisplacement,
   normalizeVehicleColor,
 } from "@lojaveiculosv2/shared";
-import type { InventoryCatalogSnapshot } from "./catalogTypes";
+import type {
+  InventoryCatalogSnapshot,
+  InventoryCatalogVehicleType,
+} from "./catalogTypes";
 import type { InventoryFormState } from "./formModel";
 import { parsePriceCents } from "./formModel";
 import {
@@ -94,6 +97,16 @@ export function hasEnoughDataForAnalysis(
   return Boolean(input.brand && input.model && input.modelYear);
 }
 
+export function canAutoAnalyzePlateLookup(
+  lookup: InventoryPlateLookupResponse,
+) {
+  return Boolean(
+    (lookup.vehicle.brand || lookup.fipe?.brandName) &&
+    (lookup.vehicle.model || lookup.fipe?.modelName) &&
+    (lookup.vehicle.modelYear || lookup.fipe?.modelYear),
+  );
+}
+
 function createCatalogFromLookup(
   lookup: InventoryPlateLookupResponse,
 ): InventoryCatalogSnapshot | null {
@@ -110,7 +123,7 @@ function createCatalogFromLookup(
     priceCents: fipe.priceCents,
     referenceMonth: fipe.referenceMonth,
     source: "fipe",
-    vehicleType: "cars",
+    vehicleType: normalizeCatalogVehicleType(lookup.vehicle.vehicleType),
     yearCode: null,
     yearName:
       fipe.modelYear !== null
@@ -119,6 +132,23 @@ function createCatalogFromLookup(
           ? String(lookup.vehicle.modelYear)
           : null,
   };
+}
+
+function normalizeCatalogVehicleType(
+  value: string | null,
+): InventoryCatalogVehicleType {
+  const normalized = normalize(value);
+  if (normalized?.includes("moto") || normalized?.includes("cycle")) {
+    return "motorcycles";
+  }
+  if (
+    normalized?.includes("truck") ||
+    normalized?.includes("caminhao") ||
+    normalized?.includes("camion")
+  ) {
+    return "trucks";
+  }
+  return "cars";
 }
 
 function createTitleFromLookup(lookup: InventoryPlateLookupResponse) {

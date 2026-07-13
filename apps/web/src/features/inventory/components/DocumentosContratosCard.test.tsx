@@ -14,6 +14,8 @@ describe("DocumentosContratosCard", () => {
       <DocumentosContratosCard
         detail={createDetail([
           createDocument("sale_contract", "signed", "Contrato assinado"),
+          createDocument("delivery_term", "issued", "Termo de entrega"),
+          createDocument("power_of_attorney", "issued", "Procuração"),
           createDocument("invoice", "issued", "Nota fiscal"),
         ])}
       />,
@@ -21,10 +23,18 @@ describe("DocumentosContratosCard", () => {
 
     expect(screen.getByText("Contrato assinado")).toBeVisible();
     expect(screen.getByText("Assinado")).toBeVisible();
+    expect(screen.getByText("Termo de entrega")).toBeVisible();
+    expect(screen.getByText("Procuração")).toBeVisible();
+    expect(
+      screen.getByRole("link", { name: /Contrato assinado/ }),
+    ).toHaveAttribute(
+      "href",
+      "#/documents?unitId=unit_1&documentId=doc-sale_contract",
+    );
     expect(screen.queryByText("Nota fiscal")).not.toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Abrir Central de documentos" }),
-    ).toHaveAttribute("href", "#/documents");
+    ).toHaveAttribute("href", "#/documents?unitId=unit_1");
     expect(
       screen.getByText(/prévia e o download usam o mesmo arquivo armazenado/i),
     ).toBeVisible();

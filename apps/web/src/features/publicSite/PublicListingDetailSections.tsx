@@ -216,7 +216,7 @@ export function UnitMediaTabs({
       {groups.map((group, index) => (
         <button
           aria-pressed={group.unitId === selectedUnitId}
-          className="rounded-xl border border-line bg-panel px-3 py-2 text-xs font-black text-muted shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent cursor-pointer"
+          className="rounded-xl border border-line bg-panel px-3 py-2 text-xs font-black text-muted shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent-strong data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent-strong cursor-pointer"
           data-selected={group.unitId === selectedUnitId ? "true" : undefined}
           key={group.unitId}
           onClick={() => onSelect(group.unitId)}

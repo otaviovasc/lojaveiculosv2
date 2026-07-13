@@ -56,17 +56,18 @@ export function TechnicalSpecsPanel({
   const activeObservacoesCount = observacoes.filter((o) => o.checked).length;
 
   return (
-    <div
-      onClick={onEditSpecs}
-      className="glass-panel-branded rounded-2xl p-5 border border-line flex flex-col gap-4 cursor-pointer hover:border-accent/40 hover:shadow-md transition-all group"
-    >
-      <div className="flex justify-between items-center border-b border-line pb-2">
+    <div className="glass-panel-branded rounded-2xl p-5 border border-line flex flex-col gap-4 hover:border-accent/40 hover:shadow-md transition-all group">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
         <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
           Especificações Técnicas
         </h3>
-        <span className="text-xs font-bold text-accent opacity-0 group-hover:opacity-100 transition-opacity">
-          Clique para Editar
-        </span>
+        <button
+          className="text-xs font-black text-accent-strong hover:underline"
+          onClick={onEditSpecs}
+          type="button"
+        >
+          Editar especificações
+        </button>
       </div>
 
       <div className="flex flex-col gap-2.5">
@@ -81,9 +82,9 @@ export function TechnicalSpecsPanel({
           { label: "Portas", value: specs.doors },
           { label: "Modalidade", value: specs.modality },
           { label: "Chassi", value: specs.vin },
-        ].map((row, idx) => (
+        ].map((row) => (
           <div
-            key={idx}
+            key={row.label}
             className="flex justify-between items-center text-xs font-bold border-b border-line/30 pb-2"
           >
             <span className="text-muted">{row.label}</span>

@@ -133,6 +133,7 @@ export function DocumentsSection({
             </div>
             <label className="relative inline-flex items-center cursor-pointer select-none">
               <input
+                aria-label="Emitir Nota Fiscal Eletrônica (NF-e)"
                 type="checkbox"
                 checked={emitirNFe}
                 onChange={(e) => setEmitirNFe(e.target.checked)}

@@ -1,265 +1,186 @@
-import { useState } from "react";
-import {
-  Sparkles,
-  Play,
-  Plus,
-  ExternalLink,
-  HelpCircle,
-  Info,
-  X,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Info, Save, Sparkles } from "lucide-react";
+import { CurrencyInput } from "../../../components/ui/currency-input";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
 import { formatPrice } from "./InventoryDetailWorkspaceMocks";
 import { InventoryDetailPortaisSection } from "./InventoryDetailPortaisSection";
 
-interface TagItem {
-  id: string;
-  label: string;
-  checked: boolean;
-}
+type Props = {
+  api: InventoryApi;
+  detail: InventoryListingDetail;
+  onUpdated: (detail: InventoryListingDetail) => void;
+  publicListingUrl: string | null;
+};
 
 export function InventoryDetailAnuncioTab({
+  api,
   detail,
-}: {
-  detail: InventoryListingDetail;
-}) {
+  onUpdated,
+  publicListingUrl,
+}: Props) {
   const listing = detail.listing;
-  const advertisedPrice = listing.priceCents
-    ? formatPrice(listing.priceCents)
-    : "Sob consulta";
-  const portalSlug = listing.publicSlug ?? listing.id;
-  const portalPath = `/veiculo/${portalSlug}`;
-  const [description, setDescription] = useState<string | null>(null);
-  const [isEditingDesc, setIsEditingDesc] = useState(false);
-  const [tempDesc, setTempDesc] = useState("");
+  const advertisedPrice =
+    listing.priceCents !== null
+      ? formatPrice(listing.priceCents)
+      : "Sob consulta";
+  const [description, setDescription] = useState(listing.description ?? "");
+  const [price, setPrice] = useState(toCurrencyValue(listing.priceCents));
+  const [savingField, setSavingField] = useState<
+    "description" | "price" | null
+  >(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [tags, setTags] = useState<TagItem[]>([
-    { id: "unico_dono", label: "Único dono", checked: true },
-    { id: "revisado", label: "Revisado", checked: false },
-    { id: "ipva_pago", label: "IPVA pago", checked: true },
-    { id: "aceita_troca", label: "Aceita troca", checked: false },
-    { id: "licenciado", label: "Licenciado", checked: false },
-    { id: "garantia", label: "Garantia de fábrica", checked: false },
-    { id: "baixa_km", label: "Baixa quilometragem", checked: true },
-    { id: "sem_sinistro", label: "Sem sinistro", checked: true },
-  ]);
+  useEffect(() => {
+    setDescription(listing.description ?? "");
+    setPrice(toCurrencyValue(listing.priceCents));
+  }, [listing.description, listing.priceCents]);
 
-  const [customTags, setCustomTags] = useState<string[]>([]);
-  const [customTagInput, setCustomTagInput] = useState("");
-  const [anuncioPrice, setAnuncioPrice] = useState(advertisedPrice);
-  const [videoLink, setVideoLink] = useState("");
-
-  const handleToggleTag = (id: string) => {
-    setTags((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, checked: !t.checked } : t)),
-    );
-  };
-
-  const handleAddCustomTag = (e: React.FormEvent) => {
-    e.preventDefault();
-    const tag = customTagInput.trim();
-    if (tag && !customTags.includes(tag)) {
-      setCustomTags((prev) => [...prev, tag]);
-      setCustomTagInput("");
+  async function saveDescription() {
+    const normalized = description.trim() || null;
+    setSavingField("description");
+    setError(null);
+    try {
+      const updated = await api.updateListingDetails(listing.id, {
+        description: normalized,
+      });
+      onUpdated(updated);
+      setDescription(updated.listing.description ?? "");
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível salvar a descrição do anúncio.",
+        ),
+      );
+    } finally {
+      setSavingField(null);
     }
-  };
+  }
+
+  async function savePrice() {
+    setSavingField("price");
+    setError(null);
+    try {
+      const updated = await api.updateListingDetails(listing.id, {
+        priceCents: price ? Math.round(Number(price) * 100) : null,
+      });
+      onUpdated(updated);
+      setPrice(toCurrencyValue(updated.listing.priceCents));
+    } catch (caught) {
+      setError(
+        formatApiErrorDisplay(
+          caught,
+          "Não foi possível salvar o valor do anúncio.",
+        ),
+      );
+    } finally {
+      setSavingField(null);
+    }
+  }
 
   return (
-    <div className="flex flex-col gap-8 w-full max-w-none text-app-text">
-      {/* Card 1: Anúncio */}
-      <div className="bg-panel border border-line rounded-2xl p-5 flex flex-col gap-6">
-        <h3 className="text-sm font-black uppercase tracking-wider border-b border-line pb-3 flex items-center gap-2">
-          <Sparkles className="size-4 text-accent shrink-0 animate-none" />
-          <span>Configuração do Anúncio</span>
-        </h3>
+    <div className="flex w-full max-w-none flex-col gap-8 text-app-text">
+      <section className="flex flex-col gap-6 rounded-2xl border border-line bg-panel p-5">
+        <div className="flex flex-col gap-2 border-b border-line pb-3">
+          <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider">
+            <Sparkles className="size-4 shrink-0 text-accent" />
+            <span>Configuração do anúncio</span>
+          </h3>
+          <p className="text-xs font-bold text-muted">
+            Descrição e preço abaixo são salvos no cadastro oficial do veículo.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-          <div className="lg:col-span-8 flex flex-col gap-5">
-            {/* Descrição */}
-            <div className="flex flex-col gap-2">
-              <span className="text-xs font-black uppercase tracking-wider text-muted">
-                Descrição
+        {error ? (
+          <p role="alert" className="text-xs font-bold text-danger">
+            {error}
+          </p>
+        ) : null}
+
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <label className="flex flex-col gap-2 text-xs font-black uppercase tracking-wider text-muted">
+            <span>Descrição</span>
+            <textarea
+              aria-label="Descrição do anúncio"
+              className="min-h-32 w-full resize-y rounded-xl border border-line bg-app p-3 text-xs font-bold normal-case tracking-normal text-app-text outline-none focus:ring-1 focus:ring-accent"
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Descreva os destaques comerciais do veículo..."
+              value={description}
+            />
+            <button
+              className="inline-flex min-h-9 items-center justify-center gap-2 self-end rounded-lg bg-accent px-4 text-xs font-black normal-case tracking-normal text-inverse transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={
+                savingField !== null ||
+                description.trim() === (listing.description ?? "")
+              }
+              onClick={() => void saveDescription()}
+              type="button"
+            >
+              <Save className="size-3.5" />
+              <span>
+                {savingField === "description"
+                  ? "Salvando..."
+                  : "Salvar descrição"}
               </span>
-              {isEditingDesc ? (
-                <div className="flex flex-col gap-2">
-                  <textarea
-                    className="w-full text-xs font-bold text-app-text bg-app border border-line p-3 rounded-xl resize-none outline-none focus:ring-1 focus:ring-accent"
-                    rows={4}
-                    placeholder="Descreva os destaques comerciais do veículo..."
-                    value={tempDesc}
-                    onChange={(e) => setTempDesc(e.target.value)}
-                  />
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setIsEditingDesc(false)}
-                      className="min-h-8 px-3 rounded-lg border border-line text-xs font-black hover:bg-line/25 transition-all cursor-pointer"
-                      type="button"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={() => {
-                        setDescription(tempDesc.trim() || null);
-                        setIsEditingDesc(false);
-                      }}
-                      className="min-h-8 px-4 rounded-lg bg-accent text-inverse text-xs font-black hover:bg-accent-strong transition-all cursor-pointer"
-                      type="button"
-                    >
-                      Salvar
-                    </button>
-                  </div>
-                </div>
-              ) : description ? (
-                <div className="p-3 border border-line bg-app-elevated/40 rounded-xl flex flex-col gap-2">
-                  <p className="text-xs font-bold leading-relaxed whitespace-pre-wrap">
-                    {description}
-                  </p>
-                  <button
-                    onClick={() => {
-                      setTempDesc(description);
-                      setIsEditingDesc(true);
-                    }}
-                    className="self-start text-xs font-black text-accent hover:underline cursor-pointer"
-                    type="button"
-                  >
-                    Editar Descrição
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setTempDesc("");
-                    setIsEditingDesc(true);
-                  }}
-                  className="py-8 border-2 border-dashed border-line hover:border-accent-soft/80 rounded-xl bg-app/20 text-center flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all hover:bg-app/40"
-                  type="button"
-                >
-                  <Plus className="size-4 text-muted animate-pulse" />
-                  <span className="text-xs font-black text-app-text">
-                    Adicionar Descrição
-                  </span>
-                </button>
-              )}
-            </div>
+            </button>
+          </label>
 
-            {/* Tags */}
-            <div className="flex flex-col gap-2.5">
-              <span className="text-xs font-black uppercase tracking-wider text-muted">
-                Tags Recomendadas
+          <div className="flex flex-col gap-2">
+            <label
+              className="text-xs font-black uppercase tracking-wider text-muted"
+              htmlFor="inventory-ad-price"
+            >
+              Valor do anúncio
+            </label>
+            <CurrencyInput
+              aria-label="Valor do anúncio"
+              disabled={savingField !== null}
+              id="inventory-ad-price"
+              inputClassName="text-sm"
+              onChange={setPrice}
+              value={price}
+            />
+            <span className="text-xs font-bold text-muted">
+              Valor salvo: {advertisedPrice}
+            </span>
+            <button
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+              disabled={
+                savingField !== null ||
+                price === toCurrencyValue(listing.priceCents)
+              }
+              onClick={() => void savePrice()}
+              type="button"
+            >
+              <Save className="size-3.5" />
+              <span>
+                {savingField === "price" ? "Salvando..." : "Salvar valor"}
               </span>
-              <div className="flex flex-wrap gap-1.5">
-                {tags.map((tag) => (
-                  <button
-                    key={tag.id}
-                    onClick={() => handleToggleTag(tag.id)}
-                    className={
-                      "text-xs font-black px-2.5 py-1 rounded-full border transition-all cursor-pointer select-none " +
-                      (tag.checked
-                        ? "bg-accent text-inverse border-accent"
-                        : "bg-app-elevated text-muted border-line hover:border-line-strong hover:text-app-text")
-                    }
-                    type="button"
-                  >
-                    {tag.label}
-                  </button>
-                ))}
-                {customTags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 bg-accent-soft text-accent-strong text-xs font-black px-2.5 py-1 rounded-full border border-accent-soft/20"
-                  >
-                    <span>{tag}</span>
-                    <button
-                      onClick={() =>
-                        setCustomTags((prev) => prev.filter((t) => t !== tag))
-                      }
-                      className="hover:text-danger cursor-pointer transition-colors"
-                      type="button"
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </span>
-                ))}
-              </div>
-
-              <form
-                onSubmit={handleAddCustomTag}
-                className="flex gap-2 items-center max-w-xs mt-1.5"
-              >
-                <input
-                  type="text"
-                  placeholder="Tag personalizada..."
-                  value={customTagInput}
-                  onChange={(e) => setCustomTagInput(e.target.value)}
-                  className="min-h-8 flex-1 rounded-lg border border-line bg-app px-2 text-xs font-bold outline-none"
-                />
-                <button
-                  type="submit"
-                  className="min-h-8 px-3 bg-accent text-inverse font-black text-xs hover:bg-accent-strong rounded-lg flex items-center justify-center shrink-0 cursor-pointer"
-                >
-                  <Plus className="size-3.5" />
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="hidden lg:block w-px bg-line self-stretch shrink-0" />
-
-          {/* Listing metadata */}
-          <div className="lg:col-span-3 flex flex-col gap-4 justify-between">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-black uppercase tracking-wider text-muted flex items-center gap-1">
-                  <span>Valor do anúncio</span>
-                  <HelpCircle className="size-3 text-muted" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Sob Consulta"
-                  value={anuncioPrice}
-                  onChange={(e) => setAnuncioPrice(e.target.value)}
-                  className="min-h-9 w-full rounded-lg border border-line bg-app px-2.5 text-xs font-bold outline-none"
-                />
-                <span className="text-xs font-bold text-muted mt-0.5">
-                  Referência venda: {advertisedPrice}
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <span className="text-xs font-black uppercase tracking-wider text-muted">
-                  Link do Vídeo
-                </span>
-                <div className="relative">
-                  <input
-                    type="url"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={videoLink}
-                    onChange={(e) => setVideoLink(e.target.value)}
-                    className="min-h-9 w-full rounded-lg border border-line bg-app pl-8 pr-2.5 text-xs font-bold outline-none"
-                  />
-                  <Play className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted pointer-events-none" />
-                </div>
-              </div>
-            </div>
-
-            <div className="p-3 bg-accent-soft/30 border border-accent-soft/20 rounded-xl flex gap-2 items-start">
-              <Info className="size-3.5 text-accent shrink-0 mt-0.5 animate-none" />
-              <p className="text-xs text-muted font-bold leading-normal">
-                Anúncios completos com fotos, descrição e tags têm melhor
-                posicionamento nas buscas dos portais parceiros.
-              </p>
-            </div>
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Card 2: Portais */}
+        <div className="flex gap-2 rounded-xl border border-line bg-app-elevated/40 p-3 text-xs font-bold text-muted">
+          <Info className="mt-0.5 size-3.5 shrink-0 text-accent" />
+          <p>
+            Tags comerciais e vídeo ainda não fazem parte do contrato persistido
+            do anúncio. Esses campos permanecem indisponíveis até existir
+            suporte no backend e na publicação pública.
+          </p>
+        </div>
+      </section>
+
       <InventoryDetailPortaisSection
-        title={listing.title}
-        portalSlug={portalSlug}
         advertisedPrice={advertisedPrice}
+        publicListingUrl={publicListingUrl}
+        title={listing.title}
       />
     </div>
   );
+}
+
+function toCurrencyValue(priceCents: number | null) {
+  return priceCents === null ? "" : (priceCents / 100).toFixed(2);
 }

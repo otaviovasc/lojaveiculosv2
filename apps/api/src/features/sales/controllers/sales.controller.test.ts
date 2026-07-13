@@ -115,6 +115,9 @@ describe("sales controller", () => {
         throw new Error("Unexpected delete call.");
       },
       list: async () => [],
+      revert: async () => {
+        throw new Error("Unexpected revert call.");
+      },
       transition: async () => {
         throw new Error("Unexpected transition call.");
       },

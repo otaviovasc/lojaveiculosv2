@@ -4,9 +4,18 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import * as React from "react";
 import { createPortal } from "react-dom";
+import {
+  activateModalLayer,
+  focusDialogTarget,
+  trapDialogFocus,
+} from "./dialog-accessibility";
 
 interface DialogContextValue {
+  descriptionId: string;
+  descriptionRegistered: boolean;
   onOpenChange: ((open: boolean) => void) | undefined;
+  setDescriptionRegistered: (registered: boolean) => void;
+  titleId: string;
 }
 
 const DialogContext = React.createContext<DialogContextValue | null>(null);
@@ -21,16 +30,51 @@ const Dialog = ({
   onOpenChange?: (open: boolean) => void;
 }) => {
   const [mounted, setMounted] = React.useState(false);
+  const [descriptionRegistered, setDescriptionRegistered] =
+    React.useState(false);
+  const descriptionId = React.useId();
+  const titleId = React.useId();
+  const onOpenChangeRef = React.useRef(onOpenChange);
+
+  React.useEffect(() => {
+    onOpenChangeRef.current = onOpenChange;
+  }, [onOpenChange]);
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
+  React.useEffect(() => {
+    if (!open) return;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const layer = activateModalLayer();
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || !layer.isTopLayer()) return;
+      event.preventDefault();
+      onOpenChangeRef.current?.(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+      layer.release();
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [open]);
+
   const content = (
-    <DialogContext.Provider value={{ onOpenChange }}>
+    <DialogContext.Provider
+      value={{
+        descriptionId,
+        descriptionRegistered,
+        onOpenChange,
+        setDescriptionRegistered,
+        titleId,
+      }}
+    >
       {!open ? null : (
         <div className="fixed inset-0 z-[200] flex items-center justify-center">
           <div
+            aria-hidden="true"
             className="fixed inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => onOpenChange?.(false)}
           />
@@ -48,7 +92,7 @@ const Dialog = ({
 const useDialogContext = () => {
   const context = React.use(DialogContext);
   if (!context) {
-    throw new Error("DialogContent must be used within a Dialog");
+    throw new Error("Dialog components must be used within a Dialog");
   }
   return context;
 };
@@ -56,15 +100,34 @@ const useDialogContext = () => {
 const DialogContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => {
-  const { onOpenChange } = useDialogContext();
+>(({ className, children, onKeyDown, ...props }, ref) => {
+  const { descriptionId, descriptionRegistered, onOpenChange, titleId } =
+    useDialogContext();
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  React.useImperativeHandle(ref, () => contentRef.current as HTMLDivElement);
+
+  React.useEffect(() => {
+    return focusDialogTarget(contentRef.current);
+  }, []);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    onKeyDown?.(event);
+    trapDialogFocus(event, contentRef.current);
+  };
+
   return (
     <div
-      ref={ref}
+      aria-describedby={descriptionRegistered ? descriptionId : undefined}
+      aria-labelledby={titleId}
+      aria-modal="true"
       className={cn(
         "relative w-full max-w-lg gap-4 border bg-background p-6 shadow-lg duration-200 sm:rounded-lg",
         className,
       )}
+      onKeyDown={handleKeyDown}
+      ref={contentRef}
+      role="dialog"
+      tabIndex={-1}
       {...props}
     >
       {children}
@@ -72,9 +135,10 @@ const DialogContent = React.forwardRef<
         type="button"
         className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
         onClick={() => onOpenChange?.(false)}
+        aria-label="Fechar"
       >
         <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">Fechar</span>
       </button>
     </div>
   );
@@ -98,28 +162,40 @@ DialogHeader.displayName = "DialogHeader";
 const DialogTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
->(({ className, ...props }, ref) => (
-  <h2
-    ref={ref}
-    className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const { titleId } = useDialogContext();
+  return (
+    <h2
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight",
+        className,
+      )}
+      {...props}
+      id={titleId}
+      ref={ref}
+    />
+  );
+});
 DialogTitle.displayName = "DialogTitle";
 
 const DialogDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
->(({ className, ...props }, ref) => (
-  <p
-    ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
-    {...props}
-  />
-));
+>(({ className, ...props }, ref) => {
+  const { descriptionId, setDescriptionRegistered } = useDialogContext();
+  React.useEffect(() => {
+    setDescriptionRegistered(true);
+    return () => setDescriptionRegistered(false);
+  }, [setDescriptionRegistered]);
+  return (
+    <p
+      className={cn("text-sm text-muted-foreground", className)}
+      {...props}
+      id={descriptionId}
+      ref={ref}
+    />
+  );
+});
 DialogDescription.displayName = "DialogDescription";
 
 const DialogFooter = ({

@@ -10,6 +10,10 @@ import {
 } from "lucide-react";
 import type { ModuleId } from "../../app/modules";
 import { StatCard } from "../../components/StatCard";
+import {
+  FeatureAlert,
+  FeatureLoadingState,
+} from "../../components/ui/FeatureStates";
 import type { AnalyticsDashboard, DashboardStatViewModel } from "./types";
 import {
   inventoryRotationLabel,
@@ -201,17 +205,18 @@ export function DashboardOperationsPanel({
 
 export function DashboardLoadingState() {
   return (
-    <section className="panel dashboard-state-panel">
-      <RefreshCcw aria-hidden="true" className="size-5" />
-      <strong>Carregando analytics</strong>
-    </section>
+    <FeatureLoadingState
+      className="panel dashboard-state-panel"
+      icon={RefreshCcw}
+      title="Carregando analytics"
+    />
   );
 }
 
 export function DashboardErrorState({ message }: { message: string }) {
   return (
-    <section className="panel dashboard-state-panel dashboard-state-error">
-      <strong>{message}</strong>
-    </section>
+    <FeatureAlert className="panel dashboard-state-panel dashboard-state-error">
+      {message}
+    </FeatureAlert>
   );
 }

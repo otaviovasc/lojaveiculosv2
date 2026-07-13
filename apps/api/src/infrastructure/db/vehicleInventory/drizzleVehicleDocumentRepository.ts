@@ -16,6 +16,7 @@ import {
   type VehicleDocumentRow,
 } from "./drizzleVehicleInventoryMappers.js";
 import { VehicleInventoryDrizzleScopeError } from "./drizzleVehicleInventoryScope.js";
+import { voidVehicleSaleDocuments } from "./voidVehicleSaleDocuments.js";
 
 type VehicleDocumentVersionRow = InferSelectModel<typeof documentVersions>;
 type InsertDocumentVersionRow = InferInsertModel<typeof documentVersions>;
@@ -142,6 +143,13 @@ export function createDrizzleVehicleDocumentRepository(
 
       return rows.flatMap((row) => {
         const link = linkRows.find((item) => item.documentId === row.id);
+        return link ? [toVehicleDocument(row, link)] : [];
+      });
+    },
+    async voidBySale(input) {
+      const result = await voidVehicleSaleDocuments(db, input);
+      return result.rows.flatMap((row) => {
+        const link = result.linkRows.find((item) => item.documentId === row.id);
         return link ? [toVehicleDocument(row, link)] : [];
       });
     },

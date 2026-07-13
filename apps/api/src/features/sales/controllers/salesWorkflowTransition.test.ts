@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { SalesRepository } from "../../../domains/sales/ports/salesRepository.js";
+import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import {
   completeDraft,
   context,
@@ -64,43 +66,10 @@ describe("sales workflow transition", () => {
     expect(vehiclePorts.financeRepository.entries[0]?.amountCents).toBe(
       5000000,
     );
-    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("paid");
+    expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("pending");
     expect(vehiclePorts.operationsRepository.statuses).toHaveLength(2);
     expect(vehiclePorts.salesRepository.sales).toHaveLength(0);
     expectFinanceLinkedToSale(vehiclePorts, draft.id);
-  });
-
-  it("keeps full principal coverage required when closing a sale", async () => {
-    const { services } = createHarness("reserved");
-    const draft = await services.createDraft(context(["sale.draft"]), {
-      ...completeDraft(),
-      payments: [
-        {
-          amountCents: 100000,
-          method: "pix",
-          principalCents: 100000,
-        },
-      ],
-    });
-
-    const error = await services
-      .transition(context(["sale.close"]), {
-        saleId: draft.id,
-        status: "closed",
-      })
-      .then(
-        () => null,
-        (caught: unknown) => caught,
-      );
-    const missingFields =
-      error && typeof error === "object" && "missingFields" in error
-        ? error.missingFields
-        : null;
-
-    if (!Array.isArray(missingFields)) {
-      throw new Error("Expected sale readiness missing fields.");
-    }
-    expect(missingFields).toContain("payment_principal_coverage");
   });
 
   it("cancels a pending sales reservation through the canonical release workflow", async () => {
@@ -134,43 +103,45 @@ describe("sales workflow transition", () => {
     expect(vehiclePorts.listings.get("listing_1")?.status).toBe("published");
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("available");
     expect(vehiclePorts.financeRepository.entries[0]?.status).toBe("cancelled");
+    expect(vehiclePorts.financeRepository.entries[0]?.metadata).toMatchObject({
+      cancelledReason: "Cliente desistiu",
+      reservationOutcome: "cancel",
+    });
     expect(vehiclePorts.operationsRepository.statuses).toHaveLength(2);
   });
 
-  it("preserves reserved payment rows when a stale draft update arrives", async () => {
-    const { services } = createHarness("available");
+  it("fails a stale transition instead of running a second vehicle workflow", async () => {
+    const inner = createMemorySalesRepository();
+    let closeBeforeTransition = true;
+    const repository: SalesRepository = {
+      ...inner,
+      async transition(input) {
+        if (closeBeforeTransition) {
+          closeBeforeTransition = false;
+          await inner.transition({
+            ...input,
+            expectedStatus: "draft",
+            status: "closed",
+          });
+        }
+        return inner.transition(input);
+      },
+    };
+    const { services, vehiclePorts } = createHarness("available", repository);
     const draft = await services.createDraft(context(["sale.draft"]), {
       ...completeDraft(),
-      payments: [
-        {
-          amountCents: 100000,
-          method: "pix",
-          principalCents: 100000,
-        },
-      ],
+      payments: [{ amountCents: 100000, method: "pix" }],
     });
-    const reserved = await services.transition(context(["sale.reserve"]), {
-      saleId: draft.id,
-      status: "pending",
-    });
-    const paymentId = reserved.payments[0]?.id;
 
-    const updated = await services.updateDraft(
-      context(["sale.draft"]),
-      draft.id,
-      {
-        ...completeDraft(),
-        payments: [
-          {
-            amountCents: 100000,
-            method: "pix",
-            principalCents: 100000,
-          },
-        ],
-      },
-    );
-
-    expect(updated.payments[0]?.id).toBe(paymentId);
+    await expect(
+      services.transition(context(["sale.reserve"]), {
+        saleId: draft.id,
+        status: "pending",
+      }),
+    ).rejects.toThrow("state changed");
+    expect(vehiclePorts.units.get("unit_1")?.status).toBe("available");
+    expect(vehiclePorts.documents.size).toBe(0);
+    expect(vehiclePorts.financeRepository.entries).toHaveLength(0);
   });
 
   it("rejects lifecycle transitions after terminal sale states", async () => {

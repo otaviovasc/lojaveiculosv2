@@ -34,7 +34,7 @@ describe("createInventoryApi workflow methods", () => {
     await api.sellUnit("unit_1", {
       buyer: { email: "buyer@example.com", name: "Buyer" },
       paidAmountCents: 12000000,
-      paymentMethod: "bank_transfer",
+      paymentMethod: "transfer",
       salePriceCents: 12000000,
     });
     await api.releaseReservation("unit_1", {
@@ -54,7 +54,7 @@ describe("createInventoryApi workflow methods", () => {
     expect(bodyOf(fake.calls[1] as FetchCall)).toEqual({
       buyer: { email: "buyer@example.com", name: "Buyer" },
       paidAmountCents: 12000000,
-      paymentMethod: "bank_transfer",
+      paymentMethod: "transfer",
       salePriceCents: 12000000,
     });
     expect(fake.calls[2]?.input).toBe(
