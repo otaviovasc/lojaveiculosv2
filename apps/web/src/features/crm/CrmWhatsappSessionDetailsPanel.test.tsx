@@ -37,6 +37,39 @@ describe("CrmWhatsappSessionDetailsPanel", () => {
     await user.click(screen.getByRole("button", { name: "Fechar detalhes" }));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it("shows the originating ad context when attribution is available", () => {
+    render(
+      <CrmWhatsappSessionDetailsPanel
+        assignableMembers={[]}
+        onClose={vi.fn()}
+        session={{
+          ...session(),
+          metadata: {
+            adBody: "Civic Touring com baixa quilometragem",
+            adSourceApp: "facebook",
+            adSourceUrl: "https://facebook.example.test/ads/civic-123",
+            adThumbnailUrl: "https://cdn.example.test/civic-123.jpg",
+            adTitle: "Civic Touring 2024",
+            isAdInitiated: true,
+          },
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Origem do anuncio")).toBeVisible();
+    expect(screen.getByText("Civic Touring 2024")).toBeVisible();
+    expect(
+      screen.getByText("Civic Touring com baixa quilometragem"),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("img", { name: "Civic Touring 2024" }),
+    ).toHaveAttribute("src", "https://cdn.example.test/civic-123.jpg");
+    expect(screen.getByRole("link", { name: "Abrir anuncio" })).toHaveAttribute(
+      "href",
+      "https://facebook.example.test/ads/civic-123",
+    );
+  });
 });
 
 function session(): CrmWhatsappSession {

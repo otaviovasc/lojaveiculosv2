@@ -1,4 +1,5 @@
 import type { CrmLead, CrmRepository } from "../ports/crmRepository.js";
+import { shouldBackfillWhatsappPhone } from "./whatsappContactIdentity.js";
 import {
   getCrmRepository,
   type CrmServicePorts,
@@ -10,6 +11,7 @@ export type FindOrCreateWhatsappLeadInput = {
   connectionId: string;
   direction: "INBOUND" | "OUTBOUND";
   externalId: string;
+  preferredLeadId?: string | null;
   storeId: CrmLead["storeId"];
   tenantId: CrmLead["tenantId"];
 };
@@ -19,6 +21,16 @@ export async function findOrCreateWhatsappLead(
   input: FindOrCreateWhatsappLeadInput,
 ) {
   const repository = getCrmRepository(ports);
+  const preferred = input.preferredLeadId
+    ? await repository.findLeadById({
+        leadId: input.preferredLeadId,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+      })
+    : null;
+  if (preferred) {
+    return enrichExistingWhatsappLead(repository, preferred, input);
+  }
   const existing = await repository.findLeadByPhone({
     buyerPhone: input.buyerPhone,
     storeId: input.storeId,
@@ -42,11 +54,25 @@ async function enrichExistingWhatsappLead(
   input: FindOrCreateWhatsappLeadInput,
 ) {
   const buyerName = readEnrichedBuyerName(lead, input.buyerName);
+  const buyerPhone = shouldBackfillWhatsappPhone(
+    lead.buyerPhone,
+    input.buyerPhone,
+    true,
+  )
+    ? input.buyerPhone
+    : undefined;
   const metadata = readEnrichedMetadata(lead.metadata, input);
-  if (buyerName === undefined && metadata === undefined) return lead;
+  if (
+    buyerName === undefined &&
+    buyerPhone === undefined &&
+    metadata === undefined
+  ) {
+    return lead;
+  }
 
   return repository.updateLead({
     ...(buyerName !== undefined ? { buyerName } : {}),
+    ...(buyerPhone !== undefined ? { buyerPhone } : {}),
     leadId: lead.id,
     ...(metadata !== undefined ? { metadata } : {}),
     storeId: input.storeId,

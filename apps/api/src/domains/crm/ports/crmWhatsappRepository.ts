@@ -36,6 +36,7 @@ import type {
   UpdateCrmWhatsappSessionInput,
   UpdateCrmWhatsappSessionTagInput,
   UpdateCrmWhatsappTagInput,
+  UpsertCrmWhatsappSessionContextInput,
 } from "./crmWhatsappRepositoryInputs.js";
 import type {
   CreateCrmWhatsappCampaignInput,
@@ -108,6 +109,7 @@ export type {
   UpdateCrmWhatsappSessionInput,
   UpdateCrmWhatsappSessionTagInput,
   UpdateCrmWhatsappTagInput,
+  UpsertCrmWhatsappSessionContextInput,
 } from "./crmWhatsappRepositoryInputs.js";
 
 export type CrmWhatsappRepository = {
@@ -209,4 +211,7 @@ export type CrmWhatsappRepository = {
   updateTag: (
     input: UpdateCrmWhatsappTagInput,
   ) => Promise<CrmWhatsappTag | null>;
+  upsertSessionContext: (
+    input: UpsertCrmWhatsappSessionContextInput,
+  ) => Promise<CrmWhatsappSession>;
 };

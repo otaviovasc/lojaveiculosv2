@@ -21,6 +21,11 @@ export type ParsedZapiInboundMessage = {
   type: CrmWhatsappMessageType;
 };
 
+export type ParsedZapiContactIdentity = Pick<
+  ParsedZapiInboundMessage,
+  "buyerName" | "chatLid" | "fromMe" | "phone"
+>;
+
 export function parseZapiInboundMessage(
   payload: Record<string, unknown>,
 ): ParsedZapiInboundMessage | null {
@@ -34,28 +39,41 @@ export function parseZapiInboundMessage(
   const externalId = readString(payload.messageId);
   if (!externalId) return null;
 
-  const chatLid = readString(payload.chatLid) ?? readString(payload.senderLid);
-  const phone = resolvePhone(payload, chatLid);
-  if (!phone) return null;
+  const identity = parseZapiContactIdentity(payload);
+  if (!identity) return null;
 
   const content = extractZapiInboundContent(payload);
   if (!content) return null;
-  const buyerName = isTruthy(payload.fromMe)
+  return {
+    ...(identity.buyerName ? { buyerName: identity.buyerName } : {}),
+    ...(identity.chatLid ? { chatLid: identity.chatLid } : {}),
+    content: content.content,
+    externalId,
+    fromMe: identity.fromMe,
+    ...(content.mediaType ? { mediaType: content.mediaType } : {}),
+    ...(content.mediaUrl ? { mediaUrl: content.mediaUrl } : {}),
+    metadata: buildMetadata(payload, identity.chatLid, content.metadata),
+    phone: identity.phone,
+    providerTimestamp: readZapiTimestamp(payload),
+    type: content.type,
+  };
+}
+
+export function parseZapiContactIdentity(
+  payload: Record<string, unknown>,
+): ParsedZapiContactIdentity | null {
+  const chatLid = readString(payload.chatLid) ?? readString(payload.senderLid);
+  const phone = resolvePhone(payload, chatLid);
+  if (!phone) return null;
+  const fromMe = isTruthy(payload.fromMe);
+  const buyerName = fromMe
     ? readString(payload.chatName)
     : readString(payload.senderName);
-
   return {
     ...(buyerName ? { buyerName } : {}),
     ...(chatLid ? { chatLid } : {}),
-    content: content.content,
-    externalId,
-    fromMe: isTruthy(payload.fromMe),
-    ...(content.mediaType ? { mediaType: content.mediaType } : {}),
-    ...(content.mediaUrl ? { mediaUrl: content.mediaUrl } : {}),
-    metadata: buildMetadata(payload, chatLid, content.metadata),
+    fromMe,
     phone,
-    providerTimestamp: readZapiTimestamp(payload),
-    type: content.type,
   };
 }
 
@@ -82,6 +100,7 @@ function resolvePhone(
         chatNamePhone ??
         ctwaPhone ??
         connectedPhone ??
+        chatLid ??
         null;
     }
   }
@@ -130,8 +149,6 @@ function buildMetadata(
   return {
     ...contentMetadata,
     chatLid: chatLid ?? null,
-    ctwaContext: payload.ctwaContext ?? null,
-    externalAdReply: payload.externalAdReply ?? null,
     isEdit: payload.isEdit ?? null,
     payloadKeys: Object.keys(payload).sort(),
     participantLid: payload.participantLid ?? null,

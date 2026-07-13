@@ -55,6 +55,7 @@ export async function notifyWhatsappInterventionChangedToBot(
     active: boolean;
     connection: CrmConnection;
     endedAt?: Date | null;
+    excludedMessageId?: string;
     reason?: string | null;
     session: CrmWhatsappSession;
     startedAt?: Date | null;

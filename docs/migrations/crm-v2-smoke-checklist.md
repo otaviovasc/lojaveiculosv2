@@ -1,6 +1,6 @@
 # CRM V2 Smoke Checklist
 
-Last updated: 2026-07-08
+Last updated: 2026-07-13
 
 Use this checklist for focused slice evidence and final CRM handoff. Store
 screenshots under `/tmp/lojaveiculosv2-qa/crm-v2/` unless a worker-specific
@@ -164,6 +164,17 @@ evidence folder is documented.
 - Verify realtime updates.
 - Verify mobile layout.
 - Verify empty/loading/error states.
+- Send an `externalAdReply`/CTWA buyer message into a session in human takeover.
+- Verify the session returns to bot-active state, stores sanitized ad
+  attribution, and dispatches `intervention_ended` before the buyer `message`.
+- Verify both bot events carry the same allowlisted `session.adAttribution`.
+- Send a notification-only ad callback and verify attribution is captured
+  without storing a synthetic buyer message or lead activity.
+- Send a LID-keyed message followed by the real phone with the same `chatLid`;
+  verify one session/lead is safely backfilled and an unrelated phone is not
+  merged.
+- Verify the conversation details surface shows the ad title/source/link when
+  those fields are available.
 
 ## Final Gate
 

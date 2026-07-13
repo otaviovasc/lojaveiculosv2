@@ -1,6 +1,9 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { crmWhatsappMessages, crmWhatsappSessions } from "@lojaveiculosv2/db";
-import type { IngestCrmWhatsappMessageInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type {
+  IngestCrmWhatsappMessageInput,
+  UpsertCrmWhatsappSessionContextInput,
+} from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   toWhatsappMessage,
@@ -9,6 +12,10 @@ import {
 import { countUnreadMessages } from "./drizzleCrmWhatsappQueries.js";
 import { findWhatsappMessageBySessionExternalId } from "./drizzleCrmWhatsappMessages.js";
 import { updateSessionPreview } from "./drizzleCrmWhatsappSessionPreview.js";
+import {
+  findWhatsappSessionByIdentity,
+  updateWhatsappSessionIdentity,
+} from "./drizzleCrmWhatsappSessionIdentity.js";
 
 export async function ingestMessageInDatabase(
   db: DrizzleCrmClient,
@@ -42,11 +49,46 @@ export async function ingestMessageInDatabase(
   };
 }
 
+export function ingestMessageWithTransaction(
+  db: DrizzleCrmClient,
+  input: IngestCrmWhatsappMessageInput,
+  disableTransactions: boolean,
+) {
+  const execute = (client: DrizzleCrmClient) =>
+    ingestMessageInDatabase(client, input);
+  return disableTransactions
+    ? execute(db)
+    : db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
+}
+
+export async function upsertSessionContextInDatabase(
+  db: DrizzleCrmClient,
+  input: UpsertCrmWhatsappSessionContextInput,
+) {
+  const existing = await findWhatsappSessionByIdentity(db, input);
+  const row = existing
+    ? await updateWhatsappSessionIdentity(db, existing, input)
+    : await insertSessionContext(db, input);
+  return toWhatsappSession(row, await countUnreadMessages(db, row));
+}
+
+export function upsertSessionContextWithTransaction(
+  db: DrizzleCrmClient,
+  input: UpsertCrmWhatsappSessionContextInput,
+  disableTransactions: boolean,
+) {
+  const execute = (client: DrizzleCrmClient) =>
+    upsertSessionContextInDatabase(client, input);
+  return disableTransactions
+    ? execute(db)
+    : db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
+}
+
 async function findOrCreateSession(
   db: DrizzleCrmClient,
   input: IngestCrmWhatsappMessageInput,
 ) {
-  const existing = await findSessionForInbound(db, input);
+  const existing = await findWhatsappSessionByIdentity(db, input);
   if (existing) return { ...existing, created: false };
 
   const [inserted] = await db
@@ -74,35 +116,33 @@ async function findOrCreateSession(
     .returning();
 
   if (inserted) return { ...inserted, created: true };
-  const raced = await findSessionForInbound(db, input);
+  const raced = await findWhatsappSessionByIdentity(db, input);
   if (!raced) throw new Error("CRM WhatsApp session was not persisted.");
   return { ...raced, created: false };
 }
 
-async function findSessionForInbound(
+async function insertSessionContext(
   db: DrizzleCrmClient,
-  input: IngestCrmWhatsappMessageInput,
+  input: UpsertCrmWhatsappSessionContextInput,
 ) {
-  const identityFilter = input.buyerChatLid
-    ? or(
-        eq(crmWhatsappSessions.buyerPhone, input.buyerPhone),
-        eq(crmWhatsappSessions.buyerChatLid, input.buyerChatLid),
-      )
-    : eq(crmWhatsappSessions.buyerPhone, input.buyerPhone);
-  const [row] = await db
-    .select()
-    .from(crmWhatsappSessions)
-    .where(
-      and(
-        eq(crmWhatsappSessions.connectionId, input.connectionId),
-        eq(crmWhatsappSessions.storeId, input.storeId),
-        eq(crmWhatsappSessions.tenantId, input.tenantId),
-        identityFilter,
-      ),
-    )
-    .orderBy(desc(crmWhatsappSessions.updatedAt))
-    .limit(1);
-  return row;
+  const [inserted] = await db
+    .insert(crmWhatsappSessions)
+    .values({
+      buyerChatLid: input.buyerChatLid ?? null,
+      buyerName: input.buyerName ?? null,
+      buyerPhone: input.buyerPhone,
+      channel: input.channel,
+      connectionId: input.connectionId,
+      storeId: input.storeId,
+      tenantId: input.tenantId,
+    })
+    .onConflictDoNothing()
+    .returning();
+  if (inserted) return inserted;
+  const raced = await findWhatsappSessionByIdentity(db, input);
+  if (!raced)
+    throw new Error("CRM WhatsApp session context was not persisted.");
+  return updateWhatsappSessionIdentity(db, raced, input);
 }
 
 async function insertMessage(

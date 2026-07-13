@@ -1,6 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 import { crmWhatsappSessions } from "@lojaveiculosv2/db";
 import type { IngestCrmWhatsappMessageInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import { shouldBackfillWhatsappPhone } from "../../../domains/crm/whatsapp/whatsappContactIdentity.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
 type WhatsappSessionRow = typeof crmWhatsappSessions.$inferSelect & {
@@ -15,6 +16,15 @@ export async function updateSessionPreview(
   await db
     .update(crmWhatsappSessions)
     .set({
+      ...(shouldBackfillWhatsappPhone(
+        session.buyerPhone,
+        input.buyerPhone,
+        Boolean(
+          input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
+        ),
+      )
+        ? { buyerPhone: input.buyerPhone }
+        : {}),
       ...(input.buyerChatLid ? { buyerChatLid: input.buyerChatLid } : {}),
       ...(input.buyerName ? { buyerName: input.buyerName } : {}),
       ...sessionStatusPreview(input, session),

@@ -3,24 +3,51 @@ import type {
   CrmWhatsappMessage,
   CrmWhatsappSession,
   IngestCrmWhatsappMessageInput,
+  UpsertCrmWhatsappSessionContextInput,
 } from "../../../../domains/crm/ports/crmWhatsappRepository.js";
+import { shouldBackfillWhatsappPhone } from "../../../../domains/crm/whatsapp/whatsappContactIdentity.js";
+import { withUnreadCount } from "./crmWhatsappMemoryQueries.js";
+import {
+  requireHydratedSession,
+  type MemoryWhatsappTagState,
+} from "./crmWhatsappMemoryTags.js";
+
+type WhatsappSessionIdentityInput =
+  IngestCrmWhatsappMessageInput | UpsertCrmWhatsappSessionContextInput;
 
 export function findMemorySession(
   sessions: readonly CrmWhatsappSession[],
-  input: IngestCrmWhatsappMessageInput,
+  input: WhatsappSessionIdentityInput,
 ) {
-  return sessions.find(
-    (session) =>
-      session.connectionId === input.connectionId &&
-      (session.buyerPhone === input.buyerPhone ||
-        Boolean(
-          input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
-        )),
+  const scoped = sessions.filter(
+    (session) => session.connectionId === input.connectionId,
+  );
+  return (
+    scoped.find((session) => session.buyerPhone === input.buyerPhone) ??
+    scoped.find(
+      (session) =>
+        Boolean(input.buyerChatLid) &&
+        session.buyerChatLid === input.buyerChatLid,
+    )
   );
 }
 
 export function createMemorySession(
   input: IngestCrmWhatsappMessageInput,
+  now: Date,
+): CrmWhatsappSession {
+  return {
+    ...createMemorySessionContext(input, now),
+    firstHandledAt: input.firstHandledAt ?? null,
+    freshLeadAt: input.freshLeadAt ?? null,
+    lastMessageAt: input.providerTimestamp,
+    lastMessageContent: input.content,
+    leadId: input.leadId ?? null,
+  };
+}
+
+export function createMemorySessionContext(
+  input: UpsertCrmWhatsappSessionContextInput,
   now: Date,
 ): CrmWhatsappSession {
   return {
@@ -34,16 +61,16 @@ export function createMemorySession(
     connectionId: input.connectionId,
     createdAt: now,
     externalSessionId: null,
-    firstHandledAt: input.firstHandledAt ?? null,
-    freshLeadAt: input.freshLeadAt ?? null,
+    firstHandledAt: null,
+    freshLeadAt: null,
     humanTakeoverAt: null,
     id: randomUUID(),
     lastAssignedAt: null,
     lastCustomerReadAt: null,
-    lastMessageAt: input.providerTimestamp,
-    lastMessageContent: input.content,
+    lastMessageAt: null,
+    lastMessageContent: null,
     lastReadAt: null,
-    leadId: input.leadId ?? null,
+    leadId: null,
     messageCount: 0,
     metadata: {},
     profilePhotoUrl: null,
@@ -86,10 +113,104 @@ export function createMemoryMessage(
   };
 }
 
+export function upsertMemorySessionContext(
+  sessions: CrmWhatsappSession[],
+  input: UpsertCrmWhatsappSessionContextInput,
+) {
+  let session = findMemorySession(sessions, input);
+  if (!session) {
+    session = createMemorySessionContext(input, new Date());
+    sessions.push(session);
+  } else {
+    const matchedByChatLid = Boolean(
+      input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
+    );
+    if (
+      shouldBackfillWhatsappPhone(
+        session.buyerPhone,
+        input.buyerPhone,
+        matchedByChatLid,
+      )
+    ) {
+      session.buyerPhone = input.buyerPhone;
+    }
+    session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
+    session.buyerName = session.buyerName ?? input.buyerName ?? null;
+    session.updatedAt = new Date();
+  }
+  return session;
+}
+
+export async function ingestMemoryWhatsappMessage(input: {
+  message: IngestCrmWhatsappMessageInput;
+  messages: CrmWhatsappMessage[];
+  sessions: CrmWhatsappSession[];
+  tagState: MemoryWhatsappTagState;
+}) {
+  const now = new Date();
+  let createdSession = false;
+  let session = findMemorySession(input.sessions, input.message);
+  if (!session) {
+    createdSession = true;
+    session = createMemorySession(input.message, now);
+    input.sessions.push(session);
+  } else if (
+    input.message.direction === "INBOUND" &&
+    session.status === "COMPLETED"
+  ) {
+    session.status = "ACTIVE";
+    session.humanTakeoverAt = null;
+  }
+
+  const existing = input.messages.find(
+    (message) =>
+      message.sessionId === session.id &&
+      message.externalId === input.message.externalId,
+  );
+  if (existing) {
+    return {
+      createdMessage: false,
+      createdSession,
+      message: existing,
+      session: hydrate(session, input.messages, input.tagState),
+    };
+  }
+
+  const message = createMemoryMessage(input.message, session.id, now);
+  input.messages.push(message);
+  updateMemorySessionPreview(session, input.message);
+  return {
+    createdMessage: true,
+    createdSession,
+    message,
+    session: hydrate(session, input.messages, input.tagState),
+  };
+}
+
+function hydrate(
+  session: CrmWhatsappSession,
+  messages: CrmWhatsappMessage[],
+  tagState: MemoryWhatsappTagState,
+) {
+  return requireHydratedSession(withUnreadCount(session, messages), tagState);
+}
+
 export function updateMemorySessionPreview(
   session: CrmWhatsappSession,
   input: IngestCrmWhatsappMessageInput,
 ) {
+  const matchedByChatLid = Boolean(
+    input.buyerChatLid && session.buyerChatLid === input.buyerChatLid,
+  );
+  if (
+    shouldBackfillWhatsappPhone(
+      session.buyerPhone,
+      input.buyerPhone,
+      matchedByChatLid,
+    )
+  ) {
+    session.buyerPhone = input.buyerPhone;
+  }
   session.buyerChatLid = session.buyerChatLid ?? input.buyerChatLid ?? null;
   session.buyerName = session.buyerName ?? input.buyerName ?? null;
   if (input.direction === "INBOUND") {

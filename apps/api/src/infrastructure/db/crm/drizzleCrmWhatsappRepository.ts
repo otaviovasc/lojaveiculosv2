@@ -43,8 +43,11 @@ import {
   listWhatsappCampaignRecipients,
   updateWhatsappCampaignRecipient,
 } from "./drizzleCrmWhatsappCampaignRecipients.js";
-import { ingestMessageInDatabase } from "./drizzleCrmWhatsappIngest.js";
-import { cleanSessionUpdate } from "./drizzleCrmWhatsappUpdates.js";
+import {
+  ingestMessageWithTransaction,
+  upsertSessionContextWithTransaction,
+} from "./drizzleCrmWhatsappIngest.js";
+import { updateWhatsappSession } from "./drizzleCrmWhatsappUpdates.js";
 import {
   addWhatsappSessionTag,
   createWhatsappTag,
@@ -121,12 +124,8 @@ export function createDrizzleCrmWhatsappRepository(
     async findCampaignById(input) {
       return findWhatsappCampaignById(db, input);
     },
-    async ingestMessage(input) {
-      const execute = (client: DrizzleCrmClient) =>
-        ingestMessageInDatabase(client, input);
-      if (options.disableTransactions) return execute(db);
-      return db.transaction(async (tx) => execute(tx as DrizzleCrmClient));
-    },
+    ingestMessage: (input) =>
+      ingestMessageWithTransaction(db, input, !!options.disableTransactions),
     incrementCampaignCounts: (input) =>
       incrementWhatsappCampaignCounts(db, input),
     async listMessages(input) {
@@ -182,24 +181,13 @@ export function createDrizzleCrmWhatsappRepository(
     async deleteQuickMessage(input) {
       return deleteWhatsappQuickMessage(db, input);
     },
-    async updateSession(input) {
-      const [row] = await db
-        .update(crmWhatsappSessions)
-        .set(cleanSessionUpdate(input))
-        .where(
-          and(
-            eq(crmWhatsappSessions.id, input.sessionId),
-            eq(crmWhatsappSessions.storeId, input.storeId),
-            eq(crmWhatsappSessions.tenantId, input.tenantId),
-          ),
-        )
-        .returning();
-      if (!row) return null;
-      return hydrateWhatsappSession(
+    updateSession: (input) => updateWhatsappSession(db, input),
+    upsertSessionContext: (input) =>
+      upsertSessionContextWithTransaction(
         db,
-        toWhatsappSession(row, await countUnreadMessages(db, row)),
-      );
-    },
+        input,
+        !!options.disableTransactions,
+      ),
     async updateMessage(input) {
       return updateWhatsappMessage(db, input);
     },

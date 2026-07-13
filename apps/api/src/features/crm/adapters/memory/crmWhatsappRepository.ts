@@ -22,10 +22,8 @@ import {
   updateMemoryWhatsappSession,
 } from "./crmWhatsappMemoryMutations.js";
 import {
-  createMemoryMessage,
-  createMemorySession,
-  findMemorySession,
-  updateMemorySessionPreview,
+  ingestMemoryWhatsappMessage,
+  upsertMemorySessionContext,
 } from "./crmWhatsappMemoryIngest.js";
 import {
   createMemoryQuickMessage,
@@ -134,54 +132,13 @@ export function createMemoryCrmWhatsappRepository(
     async findCampaignById(input) {
       return findMemoryCampaign(campaigns, input);
     },
-    async ingestMessage(input) {
-      const now = new Date();
-      let createdSession = false;
-      let session = findMemorySession(sessions, input);
-
-      if (!session) {
-        createdSession = true;
-        session = createMemorySession(input, now);
-        sessions.push(session);
-      } else if (
-        input.direction === "INBOUND" &&
-        session.status === "COMPLETED"
-      ) {
-        session.status = "ACTIVE";
-        session.humanTakeoverAt = null;
-      }
-
-      const existing = messages.find(
-        (message) =>
-          message.sessionId === session.id &&
-          message.externalId === input.externalId,
-      );
-      if (existing) {
-        return {
-          createdMessage: false,
-          createdSession,
-          message: existing,
-          session: requireHydratedSession(
-            withUnreadCount(session, messages),
-            tagState,
-          ),
-        };
-      }
-
-      const message = createMemoryMessage(input, session.id, now);
-      messages.push(message);
-      updateMemorySessionPreview(session, input);
-
-      return {
-        createdMessage: true,
-        createdSession,
-        message,
-        session: requireHydratedSession(
-          withUnreadCount(session, messages),
-          tagState,
-        ),
-      };
-    },
+    ingestMessage: (input) =>
+      ingestMemoryWhatsappMessage({
+        message: input,
+        messages,
+        sessions,
+        tagState,
+      }),
     incrementCampaignCounts: (input) =>
       Promise.resolve(incrementMemoryCampaignCounts(campaigns, input)),
     async listMessages(input) {
@@ -227,6 +184,12 @@ export function createMemoryCrmWhatsappRepository(
     async updateSession(input) {
       return hydrateSessionTags(
         updateMemoryWhatsappSession(sessions, messages, input),
+        tagState,
+      );
+    },
+    async upsertSessionContext(input) {
+      return requireHydratedSession(
+        withUnreadCount(upsertMemorySessionContext(sessions, input), messages),
         tagState,
       );
     },

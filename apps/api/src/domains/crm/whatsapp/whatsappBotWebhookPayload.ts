@@ -60,6 +60,7 @@ export function buildCrmBotWebhookPayload(
       : {}),
     ...(input.message ? { message: botMessage(input.message) } : {}),
     session: {
+      ...adAttribution(input.session.metadata),
       assignedUserId: input.session.assignedUserId,
       id: input.session.id,
       isBotActive: isBotActive(input.session.status),
@@ -76,6 +77,27 @@ export function buildCrmBotWebhookPayload(
     },
     timestamp: input.timestamp.toISOString(),
   };
+}
+
+function adAttribution(metadata: Record<string, unknown>) {
+  if (metadata.isAdInitiated !== true) return {};
+  return {
+    adAttribution: {
+      body: readText(metadata.adBody),
+      conversationType: readText(metadata.adConversationType),
+      detectedAt: readText(metadata.adDetectedAt),
+      detectionMethod: readText(metadata.adDetectionMethod),
+      sourceApp: readText(metadata.adSourceApp),
+      sourceId: readText(metadata.adSourceId),
+      sourceUrl: readText(metadata.adSourceUrl),
+      thumbnailUrl: readText(metadata.adThumbnailUrl),
+      title: readText(metadata.adTitle),
+    },
+  };
+}
+
+function readText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 export function buildCrmBotConnectionStatusPayload(

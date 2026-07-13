@@ -1,6 +1,6 @@
 # CRM V2 Integration Contracts
 
-Last updated: 2026-07-08
+Last updated: 2026-07-13
 
 This is the active worker-facing contract for the CRM migration. The older
 control dashboards remain useful context:
@@ -146,6 +146,40 @@ old Repasses session JSON fields.
 
 Outside local/test, callbacks require `CRM_ZAPI_WEBHOOK_TOKEN` via
 `x-crm-webhook-token` or `?token=...`.
+
+### Ad-Initiated Conversations
+
+V2 must preserve the Repasses click-to-WhatsApp behavior without copying raw
+provider ad objects into session/message metadata or creating synthetic buyer
+messages:
+
+- `externalAdReply` and CTWA referral/context fields are normalized into
+  allowlisted session attribution metadata.
+- Meta/ZAPI notification callbacks may create or enrich a session with ad
+  attribution, but the auto-generated notification is not persisted as a buyer
+  message and does not create a false lead activity.
+- A buyer message that carries ad context, including the documented LID ad
+  fallback, ends an active human takeover before regular bot message delivery.
+  Bot integrations receive `intervention_ended` before the buyer `message`
+  event so AI continuity includes the handback context. Both events expose the
+  same allowlisted `session.adAttribution`; notification-first conversations
+  therefore retain the ad identity even when the buyer's next message does not
+  repeat provider attribution fields.
+- A real phone may replace a LID placeholder only when the same `chatLid`
+  proves identity. An unrelated real-phone message must never steal a legacy
+  LID session or linked lead.
+- The attribution write and intervention transition are tenant/store scoped,
+  audited through `crm.whatsapp.ingest`, and idempotent under webhook retries.
+
+This parity slice targets independent used-vehicle stores running paid Meta
+acquisition. The customer outcome is that an ad lead retains campaign context
+and reaches the automated response flow instead of remaining silently paused.
+Leading measures are attributed-ad-session coverage, ad-lead first-response
+time, and failed bot-dispatch rate. It remains part of the existing `crm`
+entitlement and message allowance; it is not a separate SKU. Provider and
+reliability support own failures. In degraded state V2 keeps the truthful stored
+session/message state and surfaces dispatch failure through logs/audit; it must
+not claim that the bot responded.
 
 ## Permission Contract
 

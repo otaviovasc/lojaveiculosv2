@@ -1,6 +1,6 @@
 # CRM V2 Migration Status
 
-Last updated: 2026-07-12
+Last updated: 2026-07-13
 
 Branch: `main`
 
@@ -11,6 +11,16 @@ cron, live provider/storage/realtime evidence, and load/recovery checks remain.
 
 ## Completed This Pass
 
+- Closed Repasses ad-originated conversation parity across the ZAPI ingress,
+  session/lead identity, external bot handback, and operator details UI:
+  - `externalAdReply`, CTWA, notification-first, and documented LID fallback
+    paths normalize allowlisted attribution without synthetic buyer messages.
+  - Ad buyer turns resume automation and dispatch `intervention_ended` before
+    `message`; both events expose the same sanitized `session.adAttribution`.
+  - A real phone backfills the session and linked lead only when the same
+    `chatLid` proves identity; unrelated legacy LID sessions remain isolated.
+  - Conversas details show available ad source, title, body, thumbnail, and a
+    safe external link.
 - Closed filtered-lead campaign sourcing without coupling campaign recipients
   to the inbox's active filter or 40-row page.
 - Added atomic campaign reply claiming and concurrent-reply regression coverage.
@@ -225,6 +235,12 @@ PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_BAS
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5174 QA_FEATURE_SLUG=crm-whatsapp-campaigns-ui pnpm exec playwright test tests/e2e/crm-whatsapp-campaigns.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-visits-ui pnpm exec playwright test tests/e2e/crm-whatsapp-visits.spec.ts --project=chromium
 CI=true PLAYWRIGHT_SKIP_WEB_SERVER=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:5176 QA_FEATURE_SLUG=crm-whatsapp-schedules-ui pnpm exec playwright test tests/e2e/crm-whatsapp-schedules.spec.ts --project=chromium
+CI=true pnpm --filter @lojaveiculosv2/api exec vitest run src/domains/crm/whatsapp/zapiAdAttribution.test.ts src/domains/crm/whatsapp/whatsappContactIdentity.test.ts src/domains/crm/whatsapp/parseZapiInboundMessage.test.ts src/domains/crm/whatsapp/parseZapiInboundMessage.boundaries.test.ts src/features/crm/controllers/crm.whatsapp.adInitiated.test.ts src/features/crm/controllers/crm.whatsapp.lidIdentity.test.ts src/features/crm/controllers/crm.whatsapp.botForwarding.test.ts
+CI=true pnpm --filter @lojaveiculosv2/web exec vitest run src/features/crm/CrmWhatsappSessionDetailsPanel.test.tsx
+CI=true pnpm --filter @lojaveiculosv2/api typecheck
+CI=true pnpm --filter @lojaveiculosv2/web typecheck
+CI=true pnpm run check:lines
+CI=true pnpm run validate
 ```
 
 Phase 1 permission validation passed. Earlier `.pnpm-store` cache-only line
@@ -232,19 +248,9 @@ scan issues were fixed by removing the local generated store cache.
 Sandbox note: first Visits typecheck/lint attempts triggered pnpm dependency
 self-heal and failed with `EEXIST`/registry `ENOTFOUND`; frozen install
 repaired `node_modules`, then focused checks passed.
-
-Current unrelated blockers:
-
-- `pnpm --filter @lojaveiculosv2/api lint` fails on unrelated
-  `apps/api/src/features/agency/controllers/agency.controller.test.ts`
-  unsafe `any` assertions at lines 101-102.
-- `pnpm run check:lines` fails on unrelated oversized files:
-  `apps/api/src/features/docs/controllers/billingOpenApi.ts` at 387 lines,
-  `apps/api/src/features/docs/controllers/llmsText.ts` at 258 lines,
-  `apps/api/src/infrastructure/db/billing/drizzleBillingRepository.ts` at
-  508 lines, and
-  `apps/api/src/infrastructure/db/identity/drizzleAccountProvisioningReads.ts`
-  at 288 lines.
+The ad-parity check batch also triggered pnpm self-heal under sandboxed DNS;
+`CI=true pnpm install --frozen-lockfile` restored the workspace before all
+focused and full checks passed.
 
 ## Evidence
 
@@ -279,6 +285,12 @@ Current unrelated blockers:
   `apps/web/src/features/crm/CrmWhatsappCampaignsPage.test.tsx`,
   `apps/web/src/features/crm/CrmWhatsappConnectionAdmin.test.tsx`,
   `tests/e2e/crm-whatsapp-campaigns.spec.ts`.
+- Ad-originated conversation evidence:
+  `apps/api/src/domains/crm/whatsapp/zapiAdAttribution.test.ts`,
+  `apps/api/src/domains/crm/whatsapp/whatsappContactIdentity.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.whatsapp.adInitiated.test.ts`,
+  `apps/api/src/features/crm/controllers/crm.whatsapp.lidIdentity.test.ts`, and
+  `apps/web/src/features/crm/CrmWhatsappSessionDetailsPanel.test.tsx`.
 - Current campaign screenshots:
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns.png`,
   `/tmp/lojaveiculosv2-qa/main/crm-whatsapp-campaigns-ui/crm-whatsapp-campaigns-review.png`,
@@ -301,10 +313,11 @@ Current unrelated blockers:
 - Live smoke: local `GET /crm/whatsapp/connections` reported the test ZAPI
   connection as connected; local `POST /crm/whatsapp/conversations/start`
   returned `201` and `SENT` for the approved phone number.
-- Final gate: `CI=true pnpm run validate` passed on 2026-07-12 with 466 web
-  tests and 634 API tests passing; the four skipped API tests are the opt-in
-  live FIPE contracts. `CI=true pnpm run test:smoke:api` and the final
-  Conversas/Campaigns Chromium flows also passed.
+- Final gate: `CI=true pnpm run validate` passed on 2026-07-13 with 649 web
+  tests, 839 API tests, 192 quality-tool tests, and 12 document-PDF tests
+  passing; the four skipped API tests are the opt-in live FIPE contracts. The
+  earlier `CI=true pnpm run test:smoke:api` and final Conversas/Campaigns
+  Chromium flows remain green.
 
 ## Next Orchestrator Actions
 

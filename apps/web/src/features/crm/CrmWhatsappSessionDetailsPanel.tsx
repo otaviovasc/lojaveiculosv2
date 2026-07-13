@@ -7,6 +7,7 @@ import {
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import { CrmWhatsappAdAttribution } from "./CrmWhatsappAdAttribution";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappAssignableMember,
@@ -73,6 +74,7 @@ export function CrmWhatsappSessionDetailsPanel({
           value={statusLabel(session.status)}
         />
       </div>
+      <CrmWhatsappAdAttribution metadata={session.metadata} />
       {session.leadId ? (
         <a
           className="crm-whatsapp-details-lead"

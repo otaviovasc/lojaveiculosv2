@@ -59,6 +59,16 @@ export type IngestCrmWhatsappMessageInput = {
   type: CrmWhatsappMessageType;
 };
 
+export type UpsertCrmWhatsappSessionContextInput = {
+  buyerChatLid?: string;
+  buyerName?: string;
+  buyerPhone: string;
+  channel: CrmWhatsappChannel;
+  connectionId: string;
+  storeId: StoreId;
+  tenantId: TenantId;
+};
+
 export type UpdateCrmWhatsappSessionInput = {
   assignedUserId?: UserId | null;
   firstHandledAt?: Date | null;

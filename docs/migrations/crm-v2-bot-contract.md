@@ -1,6 +1,6 @@
 # CRM V2 Bot Contract
 
-Last updated: 2026-07-08
+Last updated: 2026-07-13
 
 The V2 bot contract is implemented through:
 
@@ -58,7 +58,10 @@ Forwarded events:
 
 During `HUMAN_TAKEOVER`, V2 does not forward regular `message` events to the
 bot. When intervention ends, the payload may include duration, message count,
-and a compact summary for handback context.
+and a compact summary for handback context. Ad-originated sessions also include
+an allowlisted `session.adAttribution` object on intervention and message events
+so the bot can resume with the originating ad context; raw ZAPI ad objects are
+not part of the bot contract.
 
 Do not migrate MiniBot or uaZapi legacy payload compatibility as the V2 bot
 contract. They remain behavior evidence only unless a later product decision

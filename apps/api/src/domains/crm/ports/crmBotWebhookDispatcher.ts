@@ -59,6 +59,17 @@ export type CrmBotWebhookPayload = {
   previousStatus?: string | null;
   reason?: string | null;
   session?: {
+    adAttribution?: {
+      body: string | null;
+      conversationType: string | null;
+      detectedAt: string | null;
+      detectionMethod: string | null;
+      sourceApp: string | null;
+      sourceId: string | null;
+      sourceUrl: string | null;
+      thumbnailUrl: string | null;
+      title: string | null;
+    };
     assignedUserId: string | null;
     id: string;
     isBotActive: boolean;

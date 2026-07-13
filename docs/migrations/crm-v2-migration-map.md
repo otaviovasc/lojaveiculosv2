@@ -54,6 +54,10 @@ Already V2-owned:
   schedules under concurrent replies.
 - WhatsApp-style Conversas desktop/mobile UI with explicit mobile panes,
   disconnected-first routing, safe-area composer, and message day separators.
+- Repasses ad-originated conversation parity is complete: sanitized ad
+  attribution, notification-only context capture, scoped LID-to-phone
+  backfill, automatic bot handback, and bot-visible ad context have regression
+  evidence.
 
 Still incomplete for production sign-off:
 
@@ -79,6 +83,7 @@ Still incomplete for production sign-off:
 | Campaign backend               | Completed | campaign schema, domain services under `CrmWhatsapp`, controllers, scheduled linkage                                                                 | `CrmCampaigns.tsx`, campaign migrations/reply handler       | V2 campaigns persist metrics and reply tracking.                                |
 | Campaign UI                    | Completed | `CrmWhatsappCampaignsPage.tsx`, campaign audience/review/overview/detail/tests/CSS                                                                   | `CrmCampaigns.tsx`                                          | Full-session and filtered-lead sources use V2 UUID contracts.                   |
 | Conversas parity polish        | Completed | WhatsApp workspace, message actions, mobile panes, disconnected state, chat CSS/tests                                                                | `CrmWhatsApp.tsx`, `CrmChatSession.tsx`                     | Desktop/mobile conversation evidence passes.                                    |
+| Ad-originated conversations    | Completed | ZAPI inbound parsing/ingest, session persistence, bot handback events, ad context UI/tests                                                           | `zapiWebhookController.ts`, Repasses ad-defense QA          | Preserve attribution and resume automation before the buyer message.            |
 | QA/evidence                    | Active    | Playwright specs, evidence docs/screenshots                                                                                                          | current QA reports                                          | Desktop/mobile UI evidence passes; live provider evidence remains.              |
 
 ## Worker Ownership Rules

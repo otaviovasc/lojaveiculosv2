@@ -21,6 +21,7 @@ export async function buildInterventionDetails(
   input: {
     active: boolean;
     endedAt?: Date | null;
+    excludedMessageId?: string;
     reason?: string | null;
     session: CrmWhatsappSession;
     startedAt?: Date | null;
@@ -51,6 +52,7 @@ export async function buildInterventionDetails(
     input.session,
     startedAt,
     endedAt,
+    input.excludedMessageId,
     ports,
   );
   return {
@@ -67,6 +69,7 @@ async function buildInterventionTranscript(
   session: CrmWhatsappSession,
   startedAt: Date,
   endedAt: Date,
+  excludedMessageId: string | undefined,
   ports: CrmServicePorts,
 ) {
   const messages = await getCrmWhatsappRepository(ports).listMessages({
@@ -80,6 +83,7 @@ async function buildInterventionTranscript(
     startedAt.getTime() - interventionTranscriptLookbackMs,
   );
   const transcript = messages
+    .filter((message) => message.id !== excludedMessageId)
     .filter((message) => {
       const occurredAt = message.providerTimestamp ?? message.createdAt;
       if (occurredAt > endedAt) return false;
