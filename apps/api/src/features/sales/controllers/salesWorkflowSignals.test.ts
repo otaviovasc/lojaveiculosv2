@@ -175,4 +175,51 @@ describe("sales workflow reservation signals", () => {
       method: "transfer",
     });
   });
+
+  it("keeps an id-less allocation added at the former signal position", async () => {
+    const { services } = createHarness("available");
+    const draft = await services.createDraft(context(["sale.draft"]), {
+      ...completeDraft(),
+      payments: [
+        { amountCents: 125000, method: "pix", principalCents: 125000 },
+        { amountCents: 200000, method: "cash", principalCents: 200000 },
+      ],
+    });
+    const reserved = await services.transition(context(["sale.reserve"]), {
+      saleId: draft.id,
+      status: "pending",
+    });
+    const signalPaymentId = reserved.payments[0]?.id;
+    if (!signalPaymentId) {
+      throw new Error("Expected persisted reservation signal id.");
+    }
+
+    const updated = await services.updateDraft(
+      context(["sale.draft"]),
+      draft.id,
+      {
+        payments: [
+          {
+            amountCents: 350000,
+            method: "transfer",
+            principalCents: 350000,
+          },
+        ],
+      },
+    );
+
+    expect(updated.payments).toHaveLength(2);
+    expect(updated.payments[0]).toMatchObject({
+      amountCents: 125000,
+      id: signalPaymentId,
+      metadata: { reservationSignal: true },
+      method: "pix",
+    });
+    expect(updated.payments[1]).toMatchObject({
+      amountCents: 350000,
+      metadata: { reservationSignal: false },
+      method: "transfer",
+    });
+    expect(updated.payments[1]?.id).not.toBe(signalPaymentId);
+  });
 });

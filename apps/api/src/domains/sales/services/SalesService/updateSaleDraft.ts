@@ -89,15 +89,10 @@ function preservePendingPaymentRows(
   if (!input.payments) return input;
   assertKnownUniquePaymentIds(currentPayments, input.payments);
   const signalPayment = findReservationSignalPayment(currentPayments);
-  const signalIndex = signalPayment
-    ? currentPayments.findIndex((payment) => payment.id === signalPayment.id)
-    : -1;
-  const payments = input.payments.map((payment, index) => {
+  const payments = input.payments.map((payment) => {
     const current = payment.id
       ? currentPayments.find((item) => item.id === payment.id)
-      : index === signalIndex
-        ? signalPayment
-        : undefined;
+      : undefined;
     return current && current.id === signalPayment?.id
       ? toSavePaymentInput(current, true)
       : withoutReservationSignal(payment, current?.id);
