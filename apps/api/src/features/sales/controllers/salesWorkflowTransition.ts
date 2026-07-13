@@ -1,6 +1,7 @@
 import { isSalePaymentMethod } from "@lojaveiculosv2/shared";
-import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { assertStoreSalesActor } from "../../../domains/sales/authorization/storeSalesActor.js";
 import { assertPermission } from "../../../shared/authorization.js";
+import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type {
   SalePaymentLine,
   SaleRecord,
@@ -15,7 +16,6 @@ import {
   type SalesServicePorts,
 } from "../../../domains/sales/services/SalesService/serviceSupport.js";
 import { releaseVehicleUnitReservation } from "../../../domains/vehicle/services/VehicleService/releaseVehicleUnitReservation.js";
-import { assertStoreUserActor } from "../../../domains/vehicle/authorization/storeWorkflowActor.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import {
   findScopedListing,
@@ -56,31 +56,36 @@ export async function transitionSaleWithWorkflow(
   input: SalesWorkflowTransitionInput,
   ports: SalesWorkflowPorts,
 ): Promise<SaleRecord> {
+  assertStoreSalesActor(context);
   if (input.status === "cancelled") {
+    assertPermission(context, "sale.cancel");
     const current = await findScopedSale(
       getSalesRepository(ports),
       requireSaleScope(context),
       input.saleId,
     );
     if (current.status === "pending" && current.unitId) {
-      assertPermission(context, "sale.cancel");
-      await releaseVehicleUnitReservation(
-        context,
-        {
-          outcome: "cancel",
-          pendingSale: toVehicleSaleBundle(current, "pending"),
-          reason: input.overrideReason,
-          saleId: current.id,
-          unitId: current.unitId,
+      const pendingSale = toVehicleSaleBundle(current, "pending");
+      const unitId = current.unitId;
+      return transitionSale(context, input, ports, {
+        afterTransition: async () => {
+          await releaseVehicleUnitReservation(
+            context,
+            {
+              outcome: "cancel",
+              pendingSale,
+              reason: input.overrideReason,
+              saleId: current.id,
+              unitId,
+            },
+            ports.vehiclePorts,
+          );
         },
-        ports.vehiclePorts,
-      );
-      return transitionSale(context, input, ports);
+      });
     }
     return transitionSale(context, input, ports);
   }
 
-  assertStoreUserActor(context);
   return transitionSale(context, input, ports, {
     afterTransition: (sale) =>
       completeWorkflowForTransition(context, input, sale, ports),

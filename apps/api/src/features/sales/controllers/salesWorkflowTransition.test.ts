@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { SalesRepository } from "../../../domains/sales/ports/salesRepository.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import {
@@ -9,6 +9,20 @@ import {
 } from "./salesWorkflowTransition.testSupport.js";
 
 describe("sales workflow transition", () => {
+  it("authorizes cancellation before looking up the sale", async () => {
+    const repository = createMemorySalesRepository();
+    const findById = vi.spyOn(repository, "findById");
+    const { services } = createHarness("available", repository);
+
+    await expect(
+      services.transition(context([]), {
+        saleId: "sale_missing",
+        status: "cancelled",
+      }),
+    ).rejects.toThrow("Missing permission: sale.cancel");
+    expect(findById).not.toHaveBeenCalled();
+  });
+
   it("reserves a sales draft through the canonical vehicle workflow", async () => {
     const { services, vehiclePorts } = createHarness("available");
     const draft = await services.createDraft(context(["sale.draft"]), {
@@ -89,14 +103,11 @@ describe("sales workflow transition", () => {
       status: "pending",
     });
 
-    const sale = await services.transition(
-      context(["inventory.reserve", "sale.cancel"]),
-      {
-        overrideReason: "Cliente desistiu",
-        saleId: draft.id,
-        status: "cancelled",
-      },
-    );
+    const sale = await services.transition(context(["sale.cancel"]), {
+      overrideReason: "Cliente desistiu",
+      saleId: draft.id,
+      status: "cancelled",
+    });
 
     expect(sale.status).toBe("cancelled");
     expect(sale.payments[0]?.status).toBe("cancelled");
@@ -108,6 +119,30 @@ describe("sales workflow transition", () => {
       reservationOutcome: "cancel",
     });
     expect(vehiclePorts.operationsRepository.statuses).toHaveLength(2);
+  });
+
+  it("fails closed when a required sale lifecycle audit cannot be stored", async () => {
+    const { services } = createHarness("available");
+    const draft = await services.createDraft(context(["sale.draft"]), {
+      ...completeDraft(),
+      payments: [{ amountCents: 100000, method: "pix" }],
+    });
+    const auditError = new Error("audit database unavailable");
+    const audit = { record: vi.fn(async () => Promise.reject(auditError)) };
+
+    await expect(
+      services.transition(context(["sale.reserve"], audit), {
+        saleId: draft.id,
+        status: "pending",
+      }),
+    ).rejects.toThrow(auditError);
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "sale.pending",
+        criticality: "critical",
+        failureTier: "required",
+      }),
+    );
   });
 
   it("fails a stale transition instead of running a second vehicle workflow", async () => {

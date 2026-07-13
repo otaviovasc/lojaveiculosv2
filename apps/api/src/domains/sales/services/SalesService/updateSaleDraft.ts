@@ -1,5 +1,6 @@
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import { assertStoreSalesActor } from "../../authorization/storeSalesActor.js";
 import type {
   SalePaymentLine,
   SaleRecord,
@@ -29,12 +30,12 @@ export async function updateSaleDraft(
   input: UpdateSaleDraftInput,
   ports?: SalesServicePorts,
 ) {
+  const permission = "sale.draft" as const;
+  assertPermission(context, permission);
+  assertStoreSalesActor(context);
   const repository = getSalesRepository(ports);
   const scope = requireSaleScope(context);
   const current = await findScopedSale(repository, scope, saleId);
-  const permission =
-    current.status === "closed" ? "sale.correct" : "sale.draft";
-  assertPermission(context, permission);
   if (current.status === "closed" || current.status === "cancelled") {
     throw new SaleDraftUpdateStateError(current.status);
   }

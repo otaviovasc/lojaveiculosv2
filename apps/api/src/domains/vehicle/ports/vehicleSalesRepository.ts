@@ -67,6 +67,7 @@ export type CreateVehicleSaleInput = {
     status: VehicleSalePaymentStatus;
   }[];
   salePriceCents: number;
+  selectedDocumentKinds: readonly string[];
   sellerUserId: string | null;
   status: VehicleSaleStatus;
   unit: VehicleUnit;

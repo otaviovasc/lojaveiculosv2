@@ -1,4 +1,5 @@
 import type {
+  AuditCriticality,
   AuditEntityReference,
   AuditFailureTier,
   AuditFieldChange,
@@ -14,6 +15,7 @@ export async function auditVehicleServiceEvent(
     action: string;
     category: "data_access" | "data_change";
     changes?: readonly AuditFieldChange[];
+    criticality?: AuditCriticality;
     entityId: string;
     entityType?:
       | "vehicle_acquisition"
@@ -38,6 +40,7 @@ export async function auditVehicleServiceEvent(
     action: input.action,
     actor: context.actor,
     category: input.category,
+    ...(input.criticality ? { criticality: input.criticality } : {}),
     entityId: input.entityId,
     entityType: input.entityType ?? "vehicle_listing",
     metadata: { permission: input.permission, ...(input.metadata ?? {}) },

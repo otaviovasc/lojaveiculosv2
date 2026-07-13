@@ -35,6 +35,18 @@ export function assertSellableVehicleState(
   }
 }
 
+export function assertDirectSellableVehicleState(
+  listing: VehicleListing,
+  unit: VehicleUnit,
+): void {
+  assertSellableVehicleState(listing, unit);
+  if (unit.status === "reserved") {
+    throw new VehicleWorkflowStateError(
+      "Reserved vehicle units must be closed through the existing pending sale.",
+    );
+  }
+}
+
 export class VehicleWorkflowValidationError extends Error {
   constructor(fieldName: string) {
     super(`Vehicle workflow requires ${fieldName}`);

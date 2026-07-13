@@ -68,7 +68,7 @@ export function createDrizzleVehicleSalesRepository(
     async create(input) {
       const [saleRow] = await db
         .insert(sales)
-        .values(toInsertSale(input))
+        .values(toInsertVehicleWorkflowSale(input))
         .returning();
       if (!saleRow) throw new Error("Drizzle adapter did not return sale.");
       const paymentRows = input.payments.length
@@ -116,7 +116,9 @@ export function createDrizzleVehicleSalesRepository(
   };
 }
 
-function toInsertSale(input: CreateVehicleSaleInput): InsertSaleRow {
+export function toInsertVehicleWorkflowSale(
+  input: CreateVehicleSaleInput,
+): InsertSaleRow {
   return {
     buyerSnapshot: input.buyerSnapshot,
     closedAt: input.status === "closed" ? new Date() : null,
@@ -127,6 +129,7 @@ function toInsertSale(input: CreateVehicleSaleInput): InsertSaleRow {
       trimName: input.listing.trimName,
     },
     salePriceCents: input.salePriceCents,
+    selectedDocumentKinds: [...input.selectedDocumentKinds],
     sellerUserId: input.sellerUserId,
     status: input.status,
     storeId: input.unit.storeId ?? "",

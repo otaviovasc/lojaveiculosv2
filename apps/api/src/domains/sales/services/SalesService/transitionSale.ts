@@ -71,7 +71,9 @@ export async function transitionSale(
   await auditSalesServiceEvent(context, {
     action: `sale.${input.status}`,
     category: "data_change",
+    criticality: "critical",
     entityId: sale.id,
+    failureTier: "required",
     metadata: {
       overrideRequiredFields: sale.overrideRequiredFields,
       status: sale.status,

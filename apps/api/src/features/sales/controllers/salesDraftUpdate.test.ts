@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { SalesRepository } from "../../../domains/sales/ports/salesRepository.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import {
@@ -8,6 +8,19 @@ import {
 } from "./salesWorkflowTransition.testSupport.js";
 
 describe("sale draft update invariants", () => {
+  it("authorizes before looking up a sale draft", async () => {
+    const repository = createMemorySalesRepository();
+    const findById = vi.spyOn(repository, "findById");
+    const { services } = createHarness("available", repository);
+
+    await expect(
+      services.updateDraft(context([]), "sale_missing", {
+        buyerSnapshot: { name: "Denied" },
+      }),
+    ).rejects.toThrow("Missing permission: sale.draft");
+    expect(findById).not.toHaveBeenCalled();
+  });
+
   it("rejects incoherent payment principal and extra amounts", async () => {
     const { services } = createHarness("available");
     const invalidPayment = {

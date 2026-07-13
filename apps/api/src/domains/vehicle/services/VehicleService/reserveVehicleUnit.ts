@@ -2,6 +2,7 @@ import type { SalePaymentMethod } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
+import { vehicleSaleDocumentKinds } from "../../documents/vehicleWorkflowDocuments.js";
 import type { VehicleBuyerSnapshot } from "../../ports/vehicleSalesRepository.js";
 import { completeReservationWorkflow } from "../../workflows/vehicleSaleWorkflow.js";
 import {
@@ -79,6 +80,7 @@ export async function reserveVehicleUnit(
       },
     ],
     salePriceCents,
+    selectedDocumentKinds: vehicleSaleDocumentKinds,
     sellerUserId: actorUserId(context),
     status: "pending",
     unit,
@@ -106,8 +108,10 @@ export async function reserveVehicleUnit(
     action: "vehicle_unit.reserve",
     category: "data_change",
     changes: [{ after: "reserved", before: unit.status, path: "unit.status" }],
+    criticality: "critical",
     entityId: unit.id,
     entityType: "vehicle_unit",
+    failureTier: "required",
     metadata: {
       listingId: listing.id,
       saleId: sale.sale.id,

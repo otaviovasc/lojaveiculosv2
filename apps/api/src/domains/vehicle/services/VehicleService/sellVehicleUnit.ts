@@ -2,10 +2,11 @@ import type { SalePaymentMethod } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { assertStoreUserActor } from "../../authorization/storeWorkflowActor.js";
+import { vehicleSaleDocumentKinds } from "../../documents/vehicleWorkflowDocuments.js";
 import type { VehicleBuyerSnapshot } from "../../ports/vehicleSalesRepository.js";
 import { completeSaleWorkflow } from "../../workflows/vehicleSaleWorkflow.js";
 import {
-  assertSellableVehicleState,
+  assertDirectSellableVehicleState,
   VehicleWorkflowValidationError,
 } from "../../workflows/vehicleSaleWorkflowRules.js";
 import {
@@ -50,7 +51,7 @@ export async function sellVehicleUnit(
     listingRepository,
     unit.listingId,
   );
-  assertSellableVehicleState(listing, unit);
+  assertDirectSellableVehicleState(listing, unit);
   const salePriceCents = input.salePriceCents ?? listing.priceCents;
   if (!salePriceCents || salePriceCents <= 0)
     throw new VehicleWorkflowValidationError("salePriceCents");
@@ -79,6 +80,7 @@ export async function sellVehicleUnit(
       },
     ],
     salePriceCents,
+    selectedDocumentKinds: vehicleSaleDocumentKinds,
     sellerUserId: actorUserId(context),
     status: "closed",
     unit,
@@ -96,8 +98,10 @@ export async function sellVehicleUnit(
     action: "vehicle_unit.sell",
     category: "data_change",
     changes: [{ after: "sold", before: unit.status, path: "unit.status" }],
+    criticality: "critical",
     entityId: unit.id,
     entityType: "vehicle_unit",
+    failureTier: "required",
     metadata: {
       documentCount: workflow.documents.length,
       documentIds: workflow.documents.map((document) => document.id),

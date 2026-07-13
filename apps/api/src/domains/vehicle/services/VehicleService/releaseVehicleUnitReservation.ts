@@ -27,8 +27,6 @@ import {
   type VehicleInventoryServicePorts,
 } from "./serviceSupport.js";
 
-const permission = "inventory.reserve";
-
 export type ReleaseVehicleReservationOutcome = "cancel" | "expire" | "release";
 
 export type ReleaseVehicleUnitReservationInput = {
@@ -44,6 +42,7 @@ export async function releaseVehicleUnitReservation(
   input: ReleaseVehicleUnitReservationInput,
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
+  const permission = input.pendingSale ? "sale.cancel" : "inventory.reserve";
   assertPermission(context, permission);
   assertStoreUserActor(context);
 
@@ -146,8 +145,10 @@ export async function releaseVehicleUnitReservation(
       },
       { after: "cancelled", before: sale.sale.status, path: "sale.status" },
     ],
+    criticality: "critical",
     entityId: unit.id,
     entityType: "vehicle_unit",
+    failureTier: "required",
     metadata: {
       financeEntryId: financeEntry.entry.id,
       listingId: listing.id,

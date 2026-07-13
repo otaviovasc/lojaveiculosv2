@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { attachVehicleUnit } from "./attachVehicleUnit.js";
+import { reserveVehicleUnit } from "./reserveVehicleUnit.js";
 import { sellVehicleUnit } from "./sellVehicleUnit.js";
 import {
   createContext,
@@ -56,6 +57,44 @@ describe("sellVehicleUnit payment accounting", () => {
       amountCents: 9600000,
       metadata: { extraCents: 100000, principalCents: 9500000 },
     });
+    expect(vi.mocked(context.audit.record)).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "vehicle_unit.sell",
+        criticality: "critical",
+        failureTier: "required",
+      }),
+    );
+  });
+
+  it("rejects direct sale when a pending reservation owns the unit", async () => {
+    const { context, ports } = await setup();
+    await reserveVehicleUnit(
+      createContext(["inventory.reserve"]),
+      {
+        buyer: saleInput().buyer,
+        paymentMethod: "pix",
+        signalAmountCents: 100000,
+        unitId: "unit_1",
+      },
+      ports,
+    );
+    const artifactCounts = {
+      documents: ports.documents.size,
+      financeEntries: ports.financeRepository.entries.length,
+      sales: ports.salesRepository.sales.length,
+    };
+
+    await expect(sellVehicleUnit(context, saleInput(), ports)).rejects.toThrow(
+      "existing pending sale",
+    );
+
+    expect(ports.units.get("unit_1")?.status).toBe("reserved");
+    expect(ports.documents.size).toBe(artifactCounts.documents);
+    expect(ports.financeRepository.entries).toHaveLength(
+      artifactCounts.financeEntries,
+    );
+    expect(ports.salesRepository.sales).toHaveLength(artifactCounts.sales);
+    expect(ports.salesRepository.sales[0]?.status).toBe("pending");
   });
 });
 

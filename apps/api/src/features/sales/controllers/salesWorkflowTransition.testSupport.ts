@@ -1,3 +1,4 @@
+import type { AuditSink } from "@lojaveiculosv2/audit";
 import { expect } from "vitest";
 import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
 import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
@@ -56,9 +57,10 @@ export function completeDraft() {
   };
 }
 
-export function context(permissions: string[]) {
+export function context(permissions: string[], audit?: AuditSink) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
+    ...(audit ? { audit } : {}),
     permissions,
     request: { requestId: "req_1" },
     storeId,
