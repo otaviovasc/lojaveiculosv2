@@ -14,6 +14,7 @@ import {
   DialogDescription,
   DialogTitle,
 } from "./dialog";
+import { activateModalLayer } from "./dialog-accessibility";
 
 afterEach(cleanup);
 
@@ -78,4 +79,40 @@ describe("Dialog", () => {
     expect(closeSecond).toHaveBeenCalledWith(false);
     expect(closeFirst).not.toHaveBeenCalled();
   });
+
+  it("does not steal focus after the user moves inside the dialog", async () => {
+    render(
+      <Dialog open>
+        <DialogContent>
+          <DialogTitle>Fast input</DialogTitle>
+          <input aria-label="First field" />
+          <input aria-label="Second field" />
+        </DialogContent>
+      </Dialog>,
+    );
+
+    const secondField = screen.getByRole("textbox", { name: "Second field" });
+    secondField.focus();
+    await nextAnimationFrame();
+
+    expect(document.activeElement).toBe(secondField);
+  });
+
+  it("releases each modal layer only once", () => {
+    document.body.style.overflow = "clip";
+    const first = activateModalLayer();
+    const second = activateModalLayer();
+
+    first.release();
+    first.release();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    second.release();
+    expect(document.body.style.overflow).toBe("clip");
+    document.body.style.overflow = "";
+  });
 });
+
+function nextAnimationFrame() {
+  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}

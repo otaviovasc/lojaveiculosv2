@@ -15,14 +15,18 @@ let originalBodyOverflow = "";
 
 export function activateModalLayer() {
   const token = Symbol("modal-layer");
+  let released = false;
   modalStack.push(token);
   lockBodyScroll();
 
   return {
     isTopLayer: () => modalStack.at(-1) === token,
     release: () => {
+      if (released) return;
+      released = true;
       const index = modalStack.lastIndexOf(token);
-      if (index >= 0) modalStack.splice(index, 1);
+      if (index < 0) return;
+      modalStack.splice(index, 1);
       unlockBodyScroll();
     },
   };
@@ -34,6 +38,7 @@ export function focusDialogTarget(
 ) {
   const frame = requestAnimationFrame(() => {
     const resolvedContainer = resolveElementTarget(container);
+    if (resolvedContainer?.contains(document.activeElement)) return;
     const target =
       resolveElementTarget(preferredTarget) ??
       resolvedContainer?.querySelector<HTMLElement>(focusableSelector) ??

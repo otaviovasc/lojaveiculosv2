@@ -66,9 +66,10 @@ describe("CrmWhatsappNewConversationDialog", () => {
     await user.type(screen.getByLabelText("Mensagem"), "Olá, tudo bem?");
     await user.click(screen.getByRole("button", { name: "Enviar" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    const submitError = await screen.findByText(
       "Não foi possível iniciar a conversa. Tente novamente.",
     );
+    expect(submitError.closest('[role="alert"]')).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });
 });
