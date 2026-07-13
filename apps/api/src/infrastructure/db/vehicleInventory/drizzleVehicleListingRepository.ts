@@ -29,6 +29,16 @@ type DrizzleVehicleListingWriteClient = DrizzleRepositoryClient<
   UpdateVehicleListingRow
 >;
 
+type DrizzleVehicleListingLockClient = {
+  select: () => {
+    from: (table: unknown) => {
+      where: (condition: unknown) => {
+        for: (strength: "update") => Promise<readonly VehicleListingRow[]>;
+      };
+    };
+  };
+};
+
 export type DrizzleVehicleListingClient = DrizzleVehicleListingWriteClient &
   DrizzleVehicleInventoryReadClient;
 
@@ -154,6 +164,29 @@ export function createDrizzleVehicleListingRepository(
           (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
         )
         .slice(input.offset, input.offset + input.limit);
+    },
+
+    async lockForStockTransition(input) {
+      const scope = requireDbScope(input);
+      if (!isVehicleInventoryUuid(input.listingId)) return null;
+      const lockingDb = db as unknown as DrizzleVehicleListingLockClient;
+      const [row] = await lockingDb
+        .select()
+        .from(vehicleListings)
+        .where(
+          and(
+            eq(vehicleListings.id, input.listingId),
+            eq(vehicleListings.storeId, scope.storeId),
+            eq(vehicleListings.tenantId, scope.tenantId),
+            eq(vehicleListings.isDeleted, false),
+            isNull(vehicleListings.deletedAt),
+          ),
+        )
+        .for("update");
+
+      return row
+        ? toVehicleListing(row, await findListingUnits(db, row.id))
+        : null;
     },
 
     async save(listing) {

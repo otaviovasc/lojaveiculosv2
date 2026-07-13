@@ -16,7 +16,6 @@ export function PrintWrapper({
   const dialogRef = useOverlayFocus<HTMLDivElement>(true, onClose);
 
   useLayoutEffect(() => {
-    const previousOverflow = document.body.style.overflow;
     const dialog = dialogRef.current;
     const backgroundElements = [...document.body.children]
       .filter(
@@ -31,14 +30,12 @@ export function PrintWrapper({
         inert: element.inert,
       }));
 
-    document.body.style.overflow = "hidden";
     for (const { element } of backgroundElements) {
       element.inert = true;
       element.setAttribute("aria-hidden", "true");
     }
 
     return () => {
-      document.body.style.overflow = previousOverflow;
       for (const { ariaHidden, element, inert } of backgroundElements) {
         element.inert = inert;
         if (ariaHidden === null) element.removeAttribute("aria-hidden");

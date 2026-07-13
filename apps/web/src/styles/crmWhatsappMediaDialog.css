@@ -231,7 +231,6 @@
 .crm-whatsapp-media-send:disabled {
   opacity: 0.65;
 }
-
 @media (max-width: 640px) {
   .crm-whatsapp-media-dialog {
     padding: 0;

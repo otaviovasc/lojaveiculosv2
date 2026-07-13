@@ -1,5 +1,6 @@
 import { Plus, Save } from "lucide-react";
 import { useState } from "react";
+import { CrmWhatsappActionDialogShell } from "./CrmWhatsappActionDialogFrame";
 import { TagManagerHeader } from "./CrmWhatsappTagManagerHeader";
 import type {
   CrmWhatsappCreateTagInput,
@@ -128,8 +129,8 @@ export function CrmWhatsappTagManager({
     }
   };
 
-  const panel = (
-    <div className="crm-whatsapp-action-panel crm-whatsapp-tag-manager">
+  const panelContent = (
+    <>
       <TagManagerHeader
         embedded={embedded}
         onClose={onClose}
@@ -210,40 +211,39 @@ export function CrmWhatsappTagManager({
           {editing ? "Atualizar" : "Criar etiqueta"}
         </button>
       </footer>
-    </div>
+    </>
   );
+  const deleteConfirm = tagToDelete ? (
+    <TagDeleteConfirm
+      disabled={Boolean(disabled) || Boolean(pendingAction)}
+      onCancel={() => setTagToDelete(null)}
+      onConfirm={() => void deleteTag()}
+      tag={tagToDelete}
+    />
+  ) : null;
 
-  return embedded ? (
+  if (!embedded) {
+    return (
+      <CrmWhatsappActionDialogShell
+        onClose={onClose}
+        panelClassName="crm-whatsapp-tag-manager"
+        title="Etiquetas WhatsApp"
+      >
+        {panelContent}
+        {deleteConfirm}
+      </CrmWhatsappActionDialogShell>
+    );
+  }
+
+  return (
     <section
       aria-label="Etiquetas WhatsApp"
       className="crm-whatsapp-tag-manager-page"
     >
-      {panel}
-      {tagToDelete ? (
-        <TagDeleteConfirm
-          disabled={Boolean(disabled) || Boolean(pendingAction)}
-          onCancel={() => setTagToDelete(null)}
-          onConfirm={() => void deleteTag()}
-          tag={tagToDelete}
-        />
-      ) : null}
+      <div className="crm-whatsapp-action-panel crm-whatsapp-tag-manager">
+        {panelContent}
+      </div>
+      {deleteConfirm}
     </section>
-  ) : (
-    <div
-      aria-label="Etiquetas WhatsApp"
-      aria-modal="true"
-      className="crm-whatsapp-action-dialog"
-      role="dialog"
-    >
-      {panel}
-      {tagToDelete ? (
-        <TagDeleteConfirm
-          disabled={Boolean(disabled) || Boolean(pendingAction)}
-          onCancel={() => setTagToDelete(null)}
-          onConfirm={() => void deleteTag()}
-          tag={tagToDelete}
-        />
-      ) : null}
-    </div>
   );
 }

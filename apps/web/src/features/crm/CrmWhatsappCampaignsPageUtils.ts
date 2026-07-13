@@ -2,6 +2,7 @@ import type {
   CrmWhatsappScheduledMessage,
   CrmWhatsappSession,
 } from "./crmWhatsappTypes";
+export { readMinDateTimeLocal } from "./crmDateTimeLocal";
 
 export type CampaignCsvRow = {
   name: string;
@@ -49,16 +50,6 @@ export function summarizeCampaignSchedules(
     { label: "Falhas", value: countStatus(messages, "failed") },
     { label: "Canceladas", value: countStatus(messages, "cancelled") },
   ];
-}
-
-export function readMinDateTimeLocal() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() + 1);
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
-    `${pad(now.getHours())}:${pad(now.getMinutes())}`,
-  ].join("T");
 }
 
 function countStatus(

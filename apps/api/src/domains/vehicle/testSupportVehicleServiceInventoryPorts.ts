@@ -136,6 +136,14 @@ function createListingRepository(
         .filter((listing) => matchesSearch(listing, search))
         .slice(offset, offset + limit),
     ),
+    lockForStockTransition: vi.fn(async ({ listingId, storeId, tenantId }) => {
+      const listing = listings.get(listingId);
+      if (!listing) return null;
+      if (listing.storeId !== storeId || listing.tenantId !== tenantId) {
+        return null;
+      }
+      return listing;
+    }),
     save: vi.fn(async (listing: VehicleListing) => {
       listings.set(listing.id, listing);
       return listing;

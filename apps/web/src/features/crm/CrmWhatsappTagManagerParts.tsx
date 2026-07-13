@@ -1,10 +1,5 @@
-import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowUp,
-  Pencil,
-  Trash2,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, Pencil, Trash2 } from "lucide-react";
+import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import {
   TagColorPicker,
   TagDraftPreview,
@@ -162,43 +157,17 @@ export function TagDeleteConfirm({
   tag: CrmWhatsappTag;
 }) {
   return (
-    <div className="crm-whatsapp-tag-confirm" role="presentation">
-      <section
-        aria-label={`Excluir etiqueta ${tag.name}`}
-        aria-modal="true"
-        className="crm-whatsapp-tag-confirm-panel"
-        role="dialog"
-      >
-        <span className="crm-whatsapp-tag-confirm-icon">
-          <AlertTriangle aria-hidden="true" />
-        </span>
-        <div>
-          <strong>Excluir etiqueta?</strong>
-          <p>
-            A etiqueta {tag.emoji ? `${tag.emoji} ` : ""}
-            {tag.name} sera removida das conversas.
-          </p>
-        </div>
-        <footer>
-          <button
-            className="crm-action crm-action-muted"
-            disabled={disabled}
-            onClick={onCancel}
-            type="button"
-          >
-            Cancelar
-          </button>
-          <button
-            className="crm-action crm-action-danger"
-            disabled={disabled}
-            onClick={onConfirm}
-            type="button"
-          >
-            Excluir
-          </button>
-        </footer>
-      </section>
-    </div>
+    <ConfirmDialog
+      confirmLabel="Excluir"
+      description={`A etiqueta ${tag.emoji ? `${tag.emoji} ` : ""}${tag.name} sera removida das conversas.`}
+      isLoading={Boolean(disabled)}
+      isOpen
+      loadingLabel="Excluindo..."
+      onClose={onCancel}
+      onConfirm={onConfirm}
+      title={`Excluir etiqueta ${tag.name}`}
+      variant="destructive"
+    />
   );
 }
 

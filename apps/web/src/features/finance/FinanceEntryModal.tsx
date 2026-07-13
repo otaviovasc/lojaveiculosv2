@@ -1,6 +1,8 @@
-import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import type { ChangeEvent, FormEvent } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FeatureDialog } from "../../components/ui/FeatureOverlay";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import {
   createEntryDraft,
@@ -33,6 +35,7 @@ export function FinanceEntryModal({
   const [draft, setDraft] = useState(() => createEntryDraft(activeType));
   const [saveError, setSaveError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -72,97 +75,69 @@ export function FinanceEntryModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-overlay)] p-3">
-      <form
-        aria-labelledby="finance-entry-modal-title"
-        aria-modal="true"
-        className="flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]"
-        onSubmit={(event) => void submit(event)}
-        role="dialog"
-      >
-        <header className="flex items-center justify-between border-b border-line p-5">
-          <div>
-            <h2
-              className="text-xl font-black text-app-text"
-              id="finance-entry-modal-title"
-            >
-              {entry ? "Editar lançamento" : "Novo lançamento"}
-            </h2>
-            <p className="text-sm font-bold text-muted">
-              {financeTypeLabels[draft.type]} com vencimento, status e recibo.
-            </p>
-          </div>
-          <button
-            aria-label="Fechar"
-            className="rounded-lg border border-line bg-app p-2 text-muted"
-            onClick={onClose}
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto p-5">
-          <StepHeader step={step} />
-          {step === 1 ? (
-            <TypeStep draft={draft} onChange={setDraft} />
-          ) : step === 2 ? (
-            <RecurrenceStep draft={draft} onChange={setDraft} />
-          ) : (
-            <DetailsStep
-              draft={draft}
-              setField={setField}
-              setDraft={setDraft}
-            />
-          )}
-        </div>
-
-        <footer className="flex flex-col gap-3 border-t border-line bg-app p-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          {saveError ? (
-            <p className="rounded-lg border border-line bg-panel p-3 text-sm font-black text-danger sm:order-first sm:w-full">
-              {saveError}
-            </p>
-          ) : null}
-          <div className="flex gap-2">
-            {step > 1 && !entry ? (
+    <FeatureDialog
+      className="max-w-3xl"
+      description={`${financeTypeLabels[draft.type]} com vencimento, status e recibo.`}
+      footer={
+        <div className="grid gap-3">
+          {saveError ? <FeatureAlert>{saveError}</FeatureAlert> : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="flex gap-2">
+              {step > 1 && !entry ? (
+                <button
+                  className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-panel px-4 text-sm font-black text-app-text"
+                  onClick={() => setStep((current) => (current - 1) as 1 | 2)}
+                  type="button"
+                >
+                  <ChevronLeft aria-hidden="true" className="size-4" />
+                  Voltar
+                </button>
+              ) : null}
               <button
-                className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-panel px-4 text-sm font-black text-app-text"
-                onClick={() => setStep((current) => (current - 1) as 1 | 2)}
+                className="min-h-11 rounded-lg px-4 text-sm font-black text-muted"
+                onClick={onClose}
                 type="button"
               >
-                <ChevronLeft aria-hidden="true" className="size-4" />
-                Voltar
+                Cancelar
               </button>
-            ) : null}
-            <button
-              className="min-h-11 rounded-lg px-4 text-sm font-black text-muted"
-              onClick={onClose}
-              type="button"
-            >
-              Cancelar
-            </button>
+            </div>
+            {step < 3 && !entry ? (
+              <button
+                className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse"
+                onClick={() => setStep((current) => (current + 1) as 2 | 3)}
+                type="button"
+              >
+                Próximo
+                <ChevronRight aria-hidden="true" className="size-4" />
+              </button>
+            ) : (
+              <button
+                className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse disabled:opacity-70"
+                disabled={isSaving || !canProceed}
+                onClick={() => formRef.current?.requestSubmit()}
+                type="button"
+              >
+                <Check aria-hidden="true" className="size-4" />
+                {isSaving ? "Salvando..." : "Salvar lançamento"}
+              </button>
+            )}
           </div>
-          {step < 3 && !entry ? (
-            <button
-              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse"
-              onClick={() => setStep((current) => (current + 1) as 2 | 3)}
-              type="button"
-            >
-              Próximo
-              <ChevronRight aria-hidden="true" className="size-4" />
-            </button>
-          ) : (
-            <button
-              className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse disabled:opacity-70"
-              disabled={isSaving || !canProceed}
-              type="submit"
-            >
-              <Check aria-hidden="true" className="size-4" />
-              {isSaving ? "Salvando..." : "Salvar lançamento"}
-            </button>
-          )}
-        </footer>
+        </div>
+      }
+      isOpen={isOpen}
+      onClose={onClose}
+      title={entry ? "Editar lançamento" : "Novo lançamento"}
+    >
+      <form onSubmit={(event) => void submit(event)} ref={formRef}>
+        <StepHeader step={step} />
+        {step === 1 ? (
+          <TypeStep draft={draft} onChange={setDraft} />
+        ) : step === 2 ? (
+          <RecurrenceStep draft={draft} onChange={setDraft} />
+        ) : (
+          <DetailsStep draft={draft} setField={setField} setDraft={setDraft} />
+        )}
       </form>
-    </div>
+    </FeatureDialog>
   );
 }

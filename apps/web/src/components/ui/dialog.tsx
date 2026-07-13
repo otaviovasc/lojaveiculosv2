@@ -1,7 +1,6 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
 import * as React from "react";
 import { createPortal } from "react-dom";
 import {
@@ -9,23 +8,19 @@ import {
   focusDialogTarget,
   trapDialogFocus,
 } from "./dialog-accessibility";
-
-interface DialogContextValue {
-  descriptionId: string;
-  descriptionRegistered: boolean;
-  onOpenChange: ((open: boolean) => void) | undefined;
-  setDescriptionRegistered: (registered: boolean) => void;
-  titleId: string;
-}
-
-const DialogContext = React.createContext<DialogContextValue | null>(null);
+import { DialogCloseButton } from "./dialog-close-button";
+import { DialogContext, useDialogContext } from "./dialog-context";
+const dialogRootClassName =
+  "fixed inset-0 z-[200] flex items-center justify-center";
 
 const Dialog = ({
   children,
+  containerClassName,
   open,
   onOpenChange,
 }: {
   children: React.ReactNode;
+  containerClassName?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) => {
@@ -72,7 +67,7 @@ const Dialog = ({
       }}
     >
       {!open ? null : (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center">
+        <div className={cn(dialogRootClassName, containerClassName)}>
           <div
             aria-hidden="true"
             className="fixed inset-0 bg-black/50 backdrop-blur-sm"
@@ -89,17 +84,10 @@ const Dialog = ({
   return createPortal(content, document.body);
 };
 
-const useDialogContext = () => {
-  const context = React.use(DialogContext);
-  if (!context) {
-    throw new Error("Dialog components must be used within a Dialog");
-  }
-  return context;
-};
-
 type DialogContentProps = React.HTMLAttributes<HTMLDivElement> & {
   padding?: "default" | "none";
   radius?: "3xl" | "default" | "xl";
+  showCloseButton?: boolean;
   surface?: "default" | "panel";
 };
 
@@ -111,6 +99,7 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
       onKeyDown,
       padding = "default",
       radius = "default",
+      showCloseButton = true,
       surface = "default",
       ...props
     },
@@ -152,15 +141,9 @@ const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps>(
         {...props}
       >
         {children}
-        <button
-          type="button"
-          className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
-          onClick={() => onOpenChange?.(false)}
-          aria-label="Fechar"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">Fechar</span>
-        </button>
+        {showCloseButton ? (
+          <DialogCloseButton onClose={() => onOpenChange?.(false)} />
+        ) : null}
       </div>
     );
   },

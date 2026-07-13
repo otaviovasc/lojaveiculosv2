@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { DocumentTemplatesPanel } from "./DocumentTemplatesPanel";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 import type {
   DocumentKind,
   DocumentTemplate,
@@ -25,35 +26,31 @@ export function DocumentTemplatesDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="documents-modal-backdrop" onClick={onClose}>
-      <section
-        aria-label="Modelos de documentos"
-        aria-modal="true"
-        className="documents-templates-dialog"
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-      >
-        <header className="documents-upload-header">
-          <div>
-            <strong>Modelos de documentos</strong>
-            <span>Revise e edite os modelos de documentos gerados.</span>
-          </div>
-          <button
-            aria-label="Fechar modelos"
-            className="documents-icon-button"
-            onClick={onClose}
-            title="Fechar modelos"
-            type="button"
-          >
-            <X aria-hidden="true" className="size-4" />
-          </button>
-        </header>
-        <DocumentTemplatesPanel
-          isSaving={isSaving}
-          onSave={onSave}
-          templates={templates}
-        />
-      </section>
-    </div>
+    <DocumentsDialogShell
+      className="documents-templates-dialog"
+      onClose={onClose}
+      title="Modelos de documentos"
+    >
+      <header className="documents-upload-header">
+        <div>
+          <strong>Modelos de documentos</strong>
+          <span>Revise e edite os modelos de documentos gerados.</span>
+        </div>
+        <button
+          aria-label="Fechar modelos"
+          className="documents-icon-button"
+          onClick={onClose}
+          title="Fechar modelos"
+          type="button"
+        >
+          <X aria-hidden="true" className="size-4" />
+        </button>
+      </header>
+      <DocumentTemplatesPanel
+        isSaving={isSaving}
+        onSave={onSave}
+        templates={templates}
+      />
+    </DocumentsDialogShell>
   );
 }

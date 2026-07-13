@@ -109,6 +109,48 @@ describe("sellVehicleUnit payment accounting", () => {
     expect(ports.financeRepository.entries).toHaveLength(0);
     expect(ports.documents.size).toBe(0);
   });
+
+  it("serializes listing stock before unit sales and recomputes sold-out state", async () => {
+    const { context, ports } = await setup();
+    await attachVehicleUnit(context, { listingId: "listing_1" }, ports);
+    const unitRepository = ports.unitRepository;
+    if (!unitRepository) throw new Error("Expected unit repository fake.");
+    const calls: string[] = [];
+    const lockListing = vi
+      .mocked(ports.listingRepository.lockForStockTransition)
+      .getMockImplementation();
+    const saveUnit = vi
+      .mocked(unitRepository.saveIfStatus)
+      .getMockImplementation();
+    if (!lockListing || !saveUnit)
+      throw new Error("Expected repository fakes.");
+    vi.mocked(
+      ports.listingRepository.lockForStockTransition,
+    ).mockImplementation(async (input) => {
+      calls.push("lock-listing");
+      return lockListing(input);
+    });
+    vi.mocked(unitRepository.saveIfStatus).mockImplementation(
+      async (unit, expectedStatus) => {
+        calls.push(`save-unit:${unit.id}`);
+        return saveUnit(unit, expectedStatus);
+      },
+    );
+
+    await expect(
+      sellVehicleUnit(context, saleInput(), ports),
+    ).resolves.toMatchObject({ status: "published" });
+    await expect(
+      sellVehicleUnit(context, { ...saleInput(), unitId: "unit_2" }, ports),
+    ).resolves.toMatchObject({ status: "sold_out" });
+
+    expect(calls).toEqual([
+      "lock-listing",
+      "save-unit:unit_1",
+      "lock-listing",
+      "save-unit:unit_2",
+    ]);
+  });
 });
 
 async function setup() {

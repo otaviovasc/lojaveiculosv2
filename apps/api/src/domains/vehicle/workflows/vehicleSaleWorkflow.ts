@@ -103,10 +103,12 @@ export async function completeSaleWorkflow(
     unit: VehicleUnit;
   },
 ): Promise<VehicleSaleWorkflowResult> {
-  await saveUnitStatus(context, input, "sold");
+  const listing = await lockListingForSale(context, input);
+  const lockedInput = { ...input, listing };
+  await saveUnitStatus(context, lockedInput, "sold");
   const financeEntries = await createSaleFinanceEntries({
     financeRepository: getFinanceRepository(input.ports),
-    listing: input.listing,
+    listing,
     sale: input.sale,
     sellerUserId: input.sale.sale.sellerUserId,
     unit: input.unit,
@@ -117,7 +119,7 @@ export async function completeSaleWorkflow(
   ]);
   const documents = buildSoldDocuments({
     buyer: input.buyer,
-    listing: input.listing,
+    listing,
     sale: input.sale,
     ...(store ? { store } : {}),
     ...(input.selectedDocumentKinds
@@ -136,8 +138,30 @@ export async function completeSaleWorkflow(
       await getDocumentRepository(input.ports).create(storedDocument),
     );
   }
-  const updatedListing = await syncListingSoldOutStatus(context, input);
+  const updatedListing = await syncListingSoldOutStatus(context, lockedInput);
   return { documents: createdDocuments, financeEntries, updatedListing };
+}
+
+async function lockListingForSale(
+  context: ServiceContext,
+  input: {
+    listing: VehicleListing;
+    ports: VehicleInventoryServicePorts | undefined;
+  },
+): Promise<VehicleListing> {
+  const listing = await getListingRepository(
+    input.ports,
+  ).lockForStockTransition({
+    listingId: input.listing.id,
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
+  if (!listing || listing.status !== "published") {
+    throw new VehicleWorkflowStateError(
+      "Vehicle listing changed before the sale stock transition could be locked.",
+    );
+  }
+  return listing;
 }
 
 async function saveUnitStatus(

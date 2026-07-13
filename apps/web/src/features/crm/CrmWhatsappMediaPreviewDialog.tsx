@@ -7,8 +7,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { useEffect, useId } from "react";
-import { createPortal } from "react-dom";
+import { Dialog, DialogContent, DialogTitle } from "../../components/ui/dialog";
 import {
   fallbackFileLabel,
   formatFileSize,
@@ -44,31 +43,23 @@ export function CrmWhatsappMediaPreviewDialog({
   onSend: () => void;
   previewUrls: Map<File, string>;
 }) {
-  const titleId = useId();
   const activeFile = files[activeIndex] ?? files[0];
-  useEffect(() => {
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handleEscape);
-    return () => {
-      document.body.style.overflow = previous;
-      window.removeEventListener("keydown", handleEscape);
-    };
-  }, [onClose]);
-
   if (!activeFile) return null;
 
-  return createPortal(
-    <div className="crm-whatsapp-media-dialog">
-      <section
-        aria-labelledby={titleId}
-        aria-modal="true"
-        className="crm-whatsapp-media-dialog-panel"
-        role="dialog"
+  return (
+    <Dialog
+      containerClassName="p-3 sm:p-6"
+      onOpenChange={(open) => !open && onClose()}
+      open
+    >
+      <DialogContent
+        className="max-w-none crm-whatsapp-media-dialog-panel"
+        padding="none"
+        showCloseButton={false}
       >
+        <DialogTitle className="sr-only">
+          {activeFile.name || "Anexo"}
+        </DialogTitle>
         <header className="crm-whatsapp-media-dialog-header">
           <button
             aria-label="Fechar pre-visualizacao"
@@ -80,7 +71,7 @@ export function CrmWhatsappMediaPreviewDialog({
             <X />
           </button>
           <div>
-            <h2 id={titleId}>{activeFile.name || "Anexo"}</h2>
+            <h2>{activeFile.name || "Anexo"}</h2>
             <span>
               {activeIndex + 1} de {files.length} -{" "}
               {formatFileSize(activeFile.size)}
@@ -179,9 +170,8 @@ export function CrmWhatsappMediaPreviewDialog({
             </button>
           </div>
         </footer>
-      </section>
-    </div>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }
 

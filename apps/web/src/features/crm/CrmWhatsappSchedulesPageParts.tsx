@@ -1,5 +1,6 @@
 import { CalendarClock, Loader2, RefreshCw, Send } from "lucide-react";
 import { CrmSelect } from "./CrmFormControls";
+import { readMinDateTimeLocal } from "./crmDateTimeLocal";
 import { formatSessionName } from "./crmWhatsappModel";
 import type {
   CrmWhatsappScheduledMessage,
@@ -242,18 +243,4 @@ function filterSessionOptions(
         value: String(session.id),
       })),
   ];
-}
-
-function readMinDateTimeLocal() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() + 1);
-  return toDateTimeLocalValue(now);
-}
-
-function toDateTimeLocalValue(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
-    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-  ].join("T");
 }

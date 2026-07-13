@@ -60,4 +60,30 @@ describe("FeatureDialog", () => {
       screen.getByRole("button", { name: "Abrir automação" }),
     ).toHaveFocus();
   });
+
+  it("keeps nested overlays locked and only closes the top layer", async () => {
+    const closeFirst = vi.fn();
+    const closeSecond = vi.fn();
+    document.body.style.overflow = "clip";
+    const { unmount } = render(
+      <>
+        <FeatureDialog isOpen onClose={closeFirst} title="Primeiro">
+          Conteudo
+        </FeatureDialog>
+        <FeatureDialog isOpen onClose={closeSecond} title="Segundo">
+          Conteudo
+        </FeatureDialog>
+      </>,
+    );
+
+    await waitFor(() => expect(document.body.style.overflow).toBe("hidden"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(closeSecond).toHaveBeenCalledOnce();
+    expect(closeFirst).not.toHaveBeenCalled();
+    expect(document.body.style.overflow).toBe("hidden");
+
+    unmount();
+    expect(document.body.style.overflow).toBe("clip");
+    document.body.style.overflow = "";
+  });
 });

@@ -1,6 +1,5 @@
 import { FolderOpen, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import AnimatedContent from "../../components/ui/AnimatedContent";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { DocumentsApi } from "./apiClient";
 import {
@@ -8,6 +7,7 @@ import {
   type UploadQueueItem,
 } from "./DocumentUploadQueue";
 import type { DocumentUpload, WorkspaceDocument } from "./types";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 
 export type DocumentUploadTarget =
   | { label: string; mode: "general" }
@@ -180,130 +180,121 @@ export function DocumentUploadDialog({
   };
 
   return (
-    <div
-      className="documents-modal-backdrop"
-      onClick={isUploading ? undefined : onClose}
+    <DocumentsDialogShell
+      animated
+      canDismiss={!isUploading}
+      className="glass-panel-branded documents-upload-dialog !p-6 relative overflow-hidden"
+      onClose={onClose}
+      title="Anexar documentos"
     >
-      <AnimatedContent distance={30} duration={0.4} ease="power2.out">
-        <section
-          aria-label="Anexar documentos"
-          aria-modal="true"
-          className="glass-panel-branded documents-upload-dialog !p-6 relative overflow-hidden"
-          onClick={(event) => event.stopPropagation()}
-          role="dialog"
+      <header className="documents-upload-header">
+        <div>
+          <strong>Enviar documentos</strong>
+          <span>Inclua arquivos, revise metadados e salve na pasta certa.</span>
+        </div>
+        <button
+          aria-label="Fechar"
+          className="inline-flex size-7 items-center justify-center rounded-full border border-line bg-app-elevated text-muted hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+          disabled={isUploading}
+          onClick={onClose}
+          title="Fechar"
+          type="button"
         >
-          <header className="documents-upload-header">
-            <div>
-              <strong>Enviar documentos</strong>
-              <span>
-                Inclua arquivos, revise metadados e salve na pasta certa.
-              </span>
-            </div>
-            <button
-              aria-label="Fechar"
-              className="inline-flex size-7 items-center justify-center rounded-full border border-line bg-app-elevated text-muted hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
-              disabled={isUploading}
-              onClick={onClose}
-              title="Fechar"
-              type="button"
-            >
-              <X aria-hidden="true" className="size-3.5" />
-            </button>
-          </header>
+          <X aria-hidden="true" className="size-3.5" />
+        </button>
+      </header>
 
-          <section
-            aria-label="Destino selecionado"
-            className="documents-upload-destination"
-          >
-            <FolderOpen aria-hidden="true" className="size-5" />
-            <div>
-              <span>Pasta de destino</span>
-              <strong>{target.label}</strong>
-            </div>
-            <small>
-              {target.mode === "vehicle_unit"
-                ? "Vinculado à unidade do veículo"
-                : "Documentos gerais da loja"}
-            </small>
-          </section>
+      <section
+        aria-label="Destino selecionado"
+        className="documents-upload-destination"
+      >
+        <FolderOpen aria-hidden="true" className="size-5" />
+        <div>
+          <span>Pasta de destino</span>
+          <strong>{target.label}</strong>
+        </div>
+        <small>
+          {target.mode === "vehicle_unit"
+            ? "Vinculado à unidade do veículo"
+            : "Documentos gerais da loja"}
+        </small>
+      </section>
 
-          <label
-            className="documents-upload-dropzone"
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              event.preventDefault();
-              if (isUploading) return;
-              addFiles(Array.from(event.dataTransfer.files));
-            }}
-          >
-            <input
-              accept="application/pdf,image/*"
-              disabled={isUploading}
-              multiple
-              aria-label="Selecionar documentos para envio"
-              onChange={(event) => {
-                addFiles(Array.from(event.currentTarget.files ?? []));
-                event.currentTarget.value = "";
-              }}
-              type="file"
-            ></input>
-            <Upload aria-hidden="true" className="size-7" />
-            <strong>Selecione ou arraste arquivos</strong>
-            <span>PDFs ou imagens. Pode enviar vários de uma vez.</span>
-          </label>
+      <label
+        className="documents-upload-dropzone"
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault();
+          if (isUploading) return;
+          addFiles(Array.from(event.dataTransfer.files));
+        }}
+      >
+        <input
+          accept="application/pdf,image/*"
+          disabled={isUploading}
+          multiple
+          aria-label="Selecionar documentos para envio"
+          onChange={(event) => {
+            addFiles(Array.from(event.currentTarget.files ?? []));
+            event.currentTarget.value = "";
+          }}
+          type="file"
+        ></input>
+        <Upload aria-hidden="true" className="size-7" />
+        <strong>Selecione ou arraste arquivos</strong>
+        <span>PDFs ou imagens. Pode enviar vários de uma vez.</span>
+      </label>
 
-          <DocumentUploadQueue
-            isUploading={isUploading}
-            items={items}
-            onRemove={(id) =>
-              setItems((current) => current.filter((entry) => entry.id !== id))
-            }
-            onUpdate={updateItem}
+      <DocumentUploadQueue
+        isUploading={isUploading}
+        items={items}
+        onRemove={(id) =>
+          setItems((current) => current.filter((entry) => entry.id !== id))
+        }
+        onUpdate={updateItem}
+      />
+
+      {status ? <p className="documents-upload-status">{status}</p> : null}
+      {isUploading ? (
+        <div className="documents-upload-progress-block">
+          <div>
+            <span>Progresso do envio</span>
+            <strong>{progress}%</strong>
+          </div>
+          <progress
+            aria-label="Progresso do envio"
+            className="documents-upload-progress"
+            value={progress}
+            max={100}
           />
+        </div>
+      ) : null}
 
-          {status ? <p className="documents-upload-status">{status}</p> : null}
-          {isUploading ? (
-            <div className="documents-upload-progress-block">
-              <div>
-                <span>Progresso do envio</span>
-                <strong>{progress}%</strong>
-              </div>
-              <progress
-                aria-label="Progresso do envio"
-                className="documents-upload-progress"
-                value={progress}
-                max={100}
-              />
-            </div>
-          ) : null}
-
-          <footer className="documents-upload-actions flex justify-end gap-3 mt-4">
-            <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-app px-4 text-sm font-bold text-app-text hover:bg-app-elevated transition-all duration-200 hover:scale-102 active:scale-98 cursor-pointer disabled:opacity-50"
-              disabled={isUploading}
-              onClick={onClose}
-              type="button"
-            >
-              Cancelar
-            </button>
-            <button
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-70"
-              disabled={!canUpload}
-              onClick={() => {
-                void uploadDocuments();
-              }}
-              type="button"
-            >
-              {isUploading
-                ? "Anexando..."
-                : items.length <= 1
-                  ? "Salvar documento"
-                  : `Salvar ${items.length} documentos`}
-            </button>
-          </footer>
-        </section>
-      </AnimatedContent>
-    </div>
+      <footer className="documents-upload-actions flex justify-end gap-3 mt-4">
+        <button
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-app px-4 text-sm font-bold text-app-text hover:bg-app-elevated transition-all duration-200 hover:scale-102 active:scale-98 cursor-pointer disabled:opacity-50"
+          disabled={isUploading}
+          onClick={onClose}
+          type="button"
+        >
+          Cancelar
+        </button>
+        <button
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-70"
+          disabled={!canUpload}
+          onClick={() => {
+            void uploadDocuments();
+          }}
+          type="button"
+        >
+          {isUploading
+            ? "Anexando..."
+            : items.length <= 1
+              ? "Salvar documento"
+              : `Salvar ${items.length} documentos`}
+        </button>
+      </footer>
+    </DocumentsDialogShell>
   );
 }
 

@@ -18,6 +18,9 @@ describe("CrmWhatsappQuickMessageManager", () => {
     });
     const callbacks = renderManager([message]);
 
+    expect(
+      screen.getByRole("dialog", { name: "Mensagens rapidas" }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Editar Oferta" }));
     await user.clear(screen.getByLabelText("Nome"));
     await user.type(screen.getByLabelText("Nome"), "Oferta editada");

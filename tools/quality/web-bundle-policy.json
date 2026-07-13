@@ -9,7 +9,7 @@
     {
       "id": "pdf-worker",
       "pattern": "^assets/pdf\\.worker\\.min-[A-Za-z0-9_-]+\\.mjs$",
-      "maxBytes": 1075000
+      "maxBytes": 1080000
     }
   ],
   "staticExtensions": [

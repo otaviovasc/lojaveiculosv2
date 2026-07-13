@@ -28,6 +28,7 @@ import {
   runVehicleInventoryMutation,
 } from "./listingServicesFactorySupport.js";
 import { createInventoryPublicationTransactionalServices } from "./listingPublicationServices.js";
+import { runInventoryWorkflowTransaction } from "./listingWorkflowStorageCompensation.js";
 
 type InventoryTransactionalServices = Pick<
   InventoryListingServices,
@@ -127,7 +128,8 @@ export function createInventoryTransactionalServices(input: {
       );
     },
     async reserveUnit(context, reserveInput) {
-      const listing = await runVehicleInventoryMutation(
+      const listing = await runInventoryWorkflowTransaction(
+        context,
         transactionRunner,
         (transactionPorts) =>
           reserveVehicleUnit(context, reserveInput, transactionPorts),
@@ -157,7 +159,8 @@ export function createInventoryTransactionalServices(input: {
       );
     },
     async sellUnit(context, sellInput) {
-      const listing = await runVehicleInventoryMutation(
+      const listing = await runInventoryWorkflowTransaction(
+        context,
         transactionRunner,
         (transactionPorts) =>
           sellVehicleUnit(context, sellInput, transactionPorts),

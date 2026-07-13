@@ -11,6 +11,7 @@ import type {
   UpdateDocumentInput,
   WorkspaceDocument,
 } from "./types";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 
 type LinkOption = {
   description: string;
@@ -66,101 +67,95 @@ export function DocumentManageLinksDialog({
   };
 
   return (
-    <div
-      className="documents-modal-backdrop"
-      onClick={isBusy ? undefined : onClose}
+    <DocumentsDialogShell
+      canDismiss={!isBusy}
+      className="documents-links-dialog"
+      onClose={onClose}
+      title="Gerenciar vínculos do documento"
     >
-      <section
-        aria-label="Gerenciar vínculos do documento"
-        aria-modal="true"
-        className="documents-links-dialog"
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-      >
-        <header className="documents-upload-header">
+      <header className="documents-upload-header">
+        <div>
+          <strong>Gerenciar vínculos</strong>
+          <span>{document.title}</span>
+        </div>
+        <button
+          aria-label="Fechar"
+          className="documents-icon-button"
+          disabled={isBusy}
+          onClick={onClose}
+          title="Fechar"
+          type="button"
+        >
+          <X aria-hidden="true" className="size-4" />
+        </button>
+      </header>
+
+      <section className="documents-current-links">
+        <strong>Escopo atual</strong>
+        <article>
+          {vehicle ? (
+            <CarFront aria-hidden="true" className="size-4" />
+          ) : (
+            <FolderArchive aria-hidden="true" className="size-4" />
+          )}
           <div>
-            <strong>Gerenciar vínculos</strong>
-            <span>{document.title}</span>
+            <span>{documentScopeLabel(document)}</span>
+            <p>
+              {vehicle
+                ? [vehicle.plate, vehicle.label, vehicle.vin]
+                    .filter(Boolean)
+                    .join(" · ")
+                : "Geral"}
+            </p>
           </div>
           <button
-            aria-label="Fechar"
+            aria-label="Mover documento para Geral"
             className="documents-icon-button"
-            disabled={isBusy}
-            onClick={onClose}
-            title="Fechar"
+            disabled={!vehicle || isBusy || isVoided}
+            onClick={() => setSelectedValue("store")}
+            title="Mover documento para Geral"
             type="button"
           >
-            <X aria-hidden="true" className="size-4" />
+            <Minus aria-hidden="true" className="size-4" />
           </button>
-        </header>
-
-        <section className="documents-current-links">
-          <strong>Escopo atual</strong>
-          <article>
-            {vehicle ? (
-              <CarFront aria-hidden="true" className="size-4" />
-            ) : (
-              <FolderArchive aria-hidden="true" className="size-4" />
-            )}
-            <div>
-              <span>{documentScopeLabel(document)}</span>
-              <p>
-                {vehicle
-                  ? [vehicle.plate, vehicle.label, vehicle.vin]
-                      .filter(Boolean)
-                      .join(" · ")
-                  : "Geral"}
-              </p>
-            </div>
-            <button
-              aria-label="Mover documento para Geral"
-              className="documents-icon-button"
-              disabled={!vehicle || isBusy || isVoided}
-              onClick={() => setSelectedValue("store")}
-              title="Mover documento para Geral"
-              type="button"
-            >
-              <Minus aria-hidden="true" className="size-4" />
-            </button>
-          </article>
-        </section>
-
-        <label className="documents-filter-field documents-link-target-field">
-          <span>Novo vínculo principal</span>
-          <InventorySelect
-            ariaLabel="Novo vínculo principal"
-            disabled={isBusy || isVoided}
-            onChange={setSelectedValue}
-            options={options.map((option) => ({
-              label: option.label,
-              value: option.value,
-            }))}
-            value={selectedValue}
-          />
-        </label>
-
-        {selectedOption ? <LinkPreview option={selectedOption} /> : null}
-        {isVoided ? (
-          <p className="documents-upload-status">
-            Documentos cancelados mantêm o vínculo histórico original.
-          </p>
-        ) : null}
-
-        <footer className="documents-upload-actions">
-          <button onClick={onClose} type="button">
-            Cancelar
-          </button>
-          <button
-            disabled={isBusy || isVoided || !hasChanged}
-            onClick={() => void submit()}
-            type="button"
-          >
-            <Link2 aria-hidden="true" className="size-4" />
-            {isBusy ? "Salvando..." : "Salvar vínculos"}
-          </button>
-        </footer>
+        </article>
       </section>
-    </div>
+
+      <label className="documents-filter-field documents-link-target-field">
+        <span>Novo vínculo principal</span>
+        <InventorySelect
+          ariaLabel="Novo vínculo principal"
+          disabled={isBusy || isVoided}
+          onChange={setSelectedValue}
+          options={options.map((option) => ({
+            label: option.label,
+            value: option.value,
+          }))}
+          value={selectedValue}
+        />
+      </label>
+
+      {selectedOption ? <LinkPreview option={selectedOption} /> : null}
+      {isVoided ? (
+        <p className="documents-upload-status">
+          Documentos cancelados mantêm o vínculo histórico original.
+        </p>
+      ) : null}
+
+      <footer className="documents-upload-actions">
+        <button onClick={onClose} type="button">
+          Cancelar
+        </button>
+        <button
+          disabled={isBusy || isVoided || !hasChanged}
+          onClick={() => void submit()}
+          type="button"
+        >
+          <Link2 aria-hidden="true" className="size-4" />
+          {isBusy ? "Salvando..." : "Salvar vínculos"}
+        </button>
+      </footer>
+    </DocumentsDialogShell>
   );
 }
 

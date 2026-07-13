@@ -1,4 +1,4 @@
-import { useEffect, useId, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cx } from "./featureShared";
@@ -182,14 +182,5 @@ function useOverlayEffects<T extends HTMLElement>(
   isOpen: boolean,
   onClose: () => void,
 ) {
-  const overlayRef = useOverlayFocus<T>(isOpen, onClose);
-  useEffect(() => {
-    if (!isOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [isOpen]);
-  return overlayRef;
+  return useOverlayFocus<T>(isOpen, onClose);
 }

@@ -155,6 +155,28 @@ describe("Drizzle vehicle inventory repositories", () => {
     });
   });
 
+  it("locks a listing row for serialized stock transitions", async () => {
+    const rows = createRows();
+    const db = createFakeDb({
+      listings: [rows.listing({ id: listingId, status: "published" })],
+      units: [rows.unit({ id: unitId, listingId, status: "available" })],
+    });
+    const { listingRepository } = createDrizzleVehicleInventoryRepositories(db);
+
+    const listing = await listingRepository.lockForStockTransition({
+      listingId,
+      storeId: "store_1",
+      tenantId: "tenant_1",
+    });
+
+    expect(db.locks).toEqual(["update"]);
+    expect(listing).toMatchObject({
+      id: listingId,
+      status: "published",
+      unitIds: [unitId],
+    });
+  });
+
   it("returns null before querying when listing id is not a UUID", async () => {
     const db = createFakeDb();
     const { listingRepository } = createDrizzleVehicleInventoryRepositories(db);

@@ -5,6 +5,7 @@ import {
   type DocumentUploadTarget,
 } from "./DocumentUploadDialog";
 import { DocumentsFolderSidebar } from "./DocumentsFolderSidebar";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 import type { DocumentsApi } from "./apiClient";
 import type {
   DocumentVehicleOption,
@@ -61,26 +62,20 @@ export function DocumentsWorkspaceDialogs({
   return (
     <>
       {mobileTab === "pastas" ? (
-        <div
-          className="documents-modal-backdrop md:hidden"
-          onClick={() => onMobileTabChange("documentos")}
+        <DocumentsDialogShell
+          backdropClassName="md:hidden"
+          className="documents-mobile-folders"
+          onClose={() => onMobileTabChange("documentos")}
+          title="Pastas de documentos"
         >
-          <div
-            aria-label="Pastas de documentos"
-            aria-modal="true"
-            className="documents-mobile-folders"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-          >
-            <DocumentsFolderSidebar
-              documents={documents}
-              isLoading={unitFoldersStatus === "loading"}
-              onSelect={onSelectFolder}
-              selectedKey={selectedKey}
-              vehicleOptions={vehicleOptions}
-            />
-          </div>
-        </div>
+          <DocumentsFolderSidebar
+            documents={documents}
+            isLoading={unitFoldersStatus === "loading"}
+            onSelect={onSelectFolder}
+            selectedKey={selectedKey}
+            vehicleOptions={vehicleOptions}
+          />
+        </DocumentsDialogShell>
       ) : null}
 
       {runtimeApi && uploadTarget ? (

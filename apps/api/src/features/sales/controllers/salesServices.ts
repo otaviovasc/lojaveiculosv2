@@ -23,6 +23,7 @@ import {
   createPassthroughTransactionRunner,
   type TransactionRunner,
 } from "../../../shared/transaction.js";
+import { runWithObjectStorageTransactionCompensation } from "../../../shared/storage/objectStorageTransactionCompensation.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
 import { createMemoryVehicleInventoryPorts } from "../../inventory/adapters/memory/vehicleInventoryPorts.js";
 import {
@@ -106,8 +107,11 @@ export function createSalesServices(
         }),
       ),
     transition: (context, input) =>
-      transactionRunner.runInTransaction((txPorts) =>
-        transitionSaleWithWorkflow(context, input, txPorts),
+      runWithObjectStorageTransactionCompensation(
+        context,
+        transactionRunner,
+        (txPorts) => transitionSaleWithWorkflow(context, input, txPorts),
+        salesWorkflowStorageAdapter,
       ),
     updateDraft: (context, saleId, input) =>
       transactionRunner.runInTransaction((txPorts) =>
@@ -179,5 +183,18 @@ const createDefaultWorkflowAdapter: SalesWorkflowAdapter = (client) =>
   createDrizzleVehicleInventoryRepositories(
     client as unknown as DrizzleVehicleInventoryClient,
   );
+
+const salesWorkflowStorageAdapter = {
+  getStorage: (ports: SalesWorkflowPorts) => ports.vehiclePorts.mediaStorage,
+  withStorage: (
+    ports: SalesWorkflowPorts,
+    mediaStorage: NonNullable<
+      SalesWorkflowPorts["vehiclePorts"]["mediaStorage"]
+    >,
+  ): SalesWorkflowPorts => ({
+    ...ports,
+    vehiclePorts: { ...ports.vehiclePorts, mediaStorage },
+  }),
+};
 
 export const salesServices = createSalesServices();

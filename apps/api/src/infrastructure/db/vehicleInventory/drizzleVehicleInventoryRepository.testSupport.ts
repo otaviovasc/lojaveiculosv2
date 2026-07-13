@@ -43,11 +43,13 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
     units: initialRows.units ?? [],
   };
   const inserted: InsertRecord[] = [];
+  const locks: string[] = [];
   const updated: UpdateRecord[] = [];
   const rowFactory = createRows();
 
   const db = {
     inserted,
+    locks,
     updated,
     insert(table: unknown) {
       return {
@@ -131,16 +133,28 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
       return {
         from(table: unknown) {
           return {
-            async where(predicate?: SqlPredicate) {
-              if (table === vehicleListings) return rows.listings;
-              if (table === vehicleMedia) return rows.media;
-              if (table === documents) return rows.documents;
-              if (table === documentLinks) return rows.documentLinks;
-              if (table === documentVersions) return rows.documentVersions;
-              if (table === vehicleChecklists) {
-                return filterChecklistRows(rows.checklists, predicate);
+            where(predicate?: SqlPredicate) {
+              if (table === vehicleListings) {
+                return lockableRows(rows.listings, locks);
               }
-              return rows.units;
+              if (table === vehicleMedia)
+                return lockableRows(rows.media, locks);
+              if (table === documents) {
+                return lockableRows(rows.documents, locks);
+              }
+              if (table === documentLinks) {
+                return lockableRows(rows.documentLinks, locks);
+              }
+              if (table === documentVersions) {
+                return lockableRows(rows.documentVersions, locks);
+              }
+              if (table === vehicleChecklists) {
+                return lockableRows(
+                  filterChecklistRows(rows.checklists, predicate),
+                  locks,
+                );
+              }
+              return lockableRows(rows.units, locks);
             },
           };
         },
@@ -183,6 +197,15 @@ export function createFakeDb(initialRows: Partial<StoredRows> = {}) {
   };
 
   return db as typeof db & DrizzleVehicleInventoryClient;
+}
+
+function lockableRows<Row>(rows: readonly Row[], locks: string[]) {
+  return Object.assign(Promise.resolve(rows), {
+    async for(strength: string) {
+      locks.push(strength);
+      return rows;
+    },
+  });
 }
 
 function updateFirst<Row>(rows: Row[], record: Partial<Row>): readonly Row[] {

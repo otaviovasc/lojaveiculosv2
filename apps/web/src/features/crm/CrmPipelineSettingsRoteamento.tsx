@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Plus, Trash2, Waypoints, X } from "lucide-react";
+import { Plus, Trash2, Waypoints } from "lucide-react";
+import { FeatureField } from "../../components/ui/FeatureForms";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../components/ui/FeatureOverlay";
+import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { CrmSelect } from "./CrmFormControls";
 import { sourceLabels } from "./crmPipelineConfig";
 import type { Pipeline, RoutingRule } from "./crmPipelineStorage";
@@ -147,85 +153,54 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
         </div>
       )}
 
-      {/* Modal - Nova regra de roteamento */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-panel border border-line rounded-xl shadow-2xl w-full max-w-md p-6 flex flex-col gap-4 text-left relative">
-            <button
-              onClick={() => setIsModalOpen(false)}
-              className="absolute right-4 top-4 p-1 rounded hover:bg-line/20 text-muted hover:text-app-text transition-colors"
-              type="button"
-            >
-              <X className="size-4" />
-            </button>
+      <FeatureDialog
+        className="max-w-md"
+        footer={
+          <FeatureDialogActions
+            confirmLabel="Salvar"
+            onCancel={() => setIsModalOpen(false)}
+            onConfirm={handleAddRule}
+          />
+        }
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Nova regra de roteamento"
+      >
+        <div className="flex flex-col gap-4">
+          <FeatureField label="Origem do Lead">
+            <CrmSelect
+              onChange={(value) => {
+                setSelectedOrigin(value);
+                setRouteError(null);
+              }}
+              options={Object.entries(sourceLabels).map(([value, label]) => ({
+                label,
+                value,
+              }))}
+              value={selectedOrigin}
+            />
+          </FeatureField>
 
-            <h3 className="text-base font-black text-app-text">
-              Nova regra de roteamento
-            </h3>
-
-            <div className="flex flex-col gap-4 mt-2">
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-black uppercase tracking-wider text-muted">
-                  Origem do Lead
-                </span>
-                <CrmSelect
-                  className="min-h-9 px-3 text-xs"
-                  onChange={(value) => {
-                    setSelectedOrigin(value);
-                    setRouteError(null);
-                  }}
-                  options={Object.entries(sourceLabels).map(
-                    ([value, label]) => ({ label, value }),
-                  )}
-                  value={selectedOrigin}
-                />
-              </label>
-
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-black uppercase tracking-wider text-muted">
-                  Loja (opcional)
-                </span>
-                <CrmSelect
-                  className="min-h-9 px-3 text-xs"
-                  onChange={setSelectedStore}
-                  options={[
-                    { label: "Todas as lojas", value: "all" },
-                    { label: "DMS multimarcas", value: "DMS multimarcas" },
-                    { label: "Matriz", value: "matriz" },
-                    { label: "Filial Norte", value: "filial" },
-                  ]}
-                  value={selectedStore}
-                />
-                <span className="text-xs font-bold text-muted mt-0.5">
-                  Restringe a regra a uma loja específica do time.
-                </span>
-              </label>
-              {routeError ? (
-                <p className="rounded-lg border border-line bg-app p-3 text-xs font-black text-danger">
-                  {routeError}
-                </p>
-              ) : null}
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 mt-4">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 border border-line rounded-lg text-xs font-bold text-app-text hover:bg-line/15 transition-colors"
-                type="button"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleAddRule}
-                className="rounded-lg bg-blue-start px-4 py-2 text-xs font-bold text-inverse transition-opacity hover:opacity-90"
-                type="button"
-              >
-                Salvar
-              </button>
-            </div>
-          </div>
+          <FeatureField
+            hint="Restringe a regra a uma loja específica do time."
+            label="Loja (opcional)"
+          >
+            <CrmSelect
+              onChange={setSelectedStore}
+              options={[
+                { label: "Todas as lojas", value: "all" },
+                { label: "DMS multimarcas", value: "DMS multimarcas" },
+                { label: "Matriz", value: "matriz" },
+                { label: "Filial Norte", value: "filial" },
+              ]}
+              value={selectedStore}
+            />
+          </FeatureField>
+          {routeError ? (
+            <FeatureAlert tone="danger">{routeError}</FeatureAlert>
+          ) : null}
         </div>
-      )}
+      </FeatureDialog>
     </div>
   );
 }

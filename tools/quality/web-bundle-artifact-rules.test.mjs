@@ -17,13 +17,13 @@ describe("web bundle artifact rules", () => {
     input.files.find(({ path }) => path.endsWith("index.css")).sizeBytes =
       645_001;
     input.files.find(({ path }) => path.includes("pdf.worker")).sizeBytes =
-      1_075_001;
+      1_080_001;
 
     expect(findWebBundleArtifactViolations(input)).toEqual(
       expect.arrayContaining([
         "assets/index.js: javascript artifact is 580001 bytes; budget is 580000 bytes",
         "assets/index.css: stylesheet artifact is 645001 bytes; budget is 645000 bytes",
-        "assets/pdf.worker.min-12345678.mjs: worker:pdf-worker artifact is 1075001 bytes; budget is 1075000 bytes",
+        "assets/pdf.worker.min-12345678.mjs: worker:pdf-worker artifact is 1080001 bytes; budget is 1080000 bytes",
       ]),
     );
   });

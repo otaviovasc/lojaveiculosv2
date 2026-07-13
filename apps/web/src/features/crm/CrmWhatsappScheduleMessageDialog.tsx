@@ -1,6 +1,8 @@
 import { CalendarClock, Loader2, RefreshCw, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { CrmWhatsappActionDialogShell } from "./CrmWhatsappActionDialogFrame";
 import { ScheduleList } from "./CrmWhatsappScheduleMessageList";
+import { readMinDateTimeLocal } from "./crmDateTimeLocal";
 import type { CrmWhatsappScheduledMessage } from "./crmWhatsappTypes";
 
 export function CrmWhatsappScheduleMessageDialog({
@@ -115,137 +117,136 @@ export function CrmWhatsappScheduleMessageDialog({
     }
   };
 
+  const panelContent = (
+    <>
+      <header>
+        <span>
+          <CalendarClock />
+        </span>
+        <h2>Agendamentos</h2>
+        {embedded ? null : (
+          <button
+            aria-label="Fechar"
+            className="crm-icon-action"
+            onClick={onClose}
+            type="button"
+          >
+            <X />
+          </button>
+        )}
+      </header>
+      <div className="crm-whatsapp-action-fields">
+        {canCreate ? (
+          <div className="crm-whatsapp-schedule-form">
+            <label>
+              Quando enviar
+              <input
+                disabled={disabled || isSaving}
+                min={readMinDateTimeLocal()}
+                onChange={(event) => setScheduledAt(event.target.value)}
+                type="datetime-local"
+                value={scheduledAt}
+              />
+            </label>
+            <label>
+              Mensagem
+              <textarea
+                disabled={disabled || isSaving}
+                maxLength={4000}
+                onChange={(event) => setText(event.target.value)}
+                rows={4}
+                value={text}
+              />
+            </label>
+            <button
+              className="crm-action"
+              disabled={!canSave}
+              onClick={() => void save()}
+              type="button"
+            >
+              Agendar mensagem
+            </button>
+          </div>
+        ) : null}
+        <div className="crm-whatsapp-schedule-toolbar">
+          <strong>{pendingCount} pendente(s)</strong>
+          {canRead ? (
+            <button
+              className="crm-action crm-action-muted"
+              disabled={isLoading}
+              onClick={() => void loadMessages()}
+              type="button"
+            >
+              <RefreshCw aria-hidden="true" className="size-4" />
+              Atualizar
+            </button>
+          ) : null}
+          {canProcess ? (
+            <button
+              className="crm-action crm-action-muted"
+              disabled={isProcessing}
+              onClick={() => void processDue()}
+              type="button"
+            >
+              {isProcessing ? (
+                <Loader2 aria-hidden="true" className="size-4" />
+              ) : null}
+              Processar vencidas
+            </button>
+          ) : null}
+        </div>
+        {localError ? (
+          <p className="crm-whatsapp-schedule-error">{localError}</p>
+        ) : null}
+        {canRead ? (
+          <ScheduleList
+            canCancel={canCancel}
+            cancellingId={cancellingId}
+            isLoading={isLoading}
+            messages={messages}
+            onCancel={cancel}
+          />
+        ) : (
+          <p className="crm-whatsapp-schedule-empty">
+            Sem permissao para listar agendamentos.
+          </p>
+        )}
+      </div>
+      {embedded ? null : (
+        <footer>
+          <button
+            className="crm-action crm-action-muted"
+            onClick={onClose}
+            type="button"
+          >
+            Fechar
+          </button>
+        </footer>
+      )}
+    </>
+  );
+
+  if (!embedded) {
+    return (
+      <CrmWhatsappActionDialogShell
+        onClose={onClose}
+        panelClassName="crm-whatsapp-schedule-dialog"
+        title="Agendamentos WhatsApp"
+      >
+        {panelContent}
+      </CrmWhatsappActionDialogShell>
+    );
+  }
+
   return (
     <div
       aria-label="Agendamentos WhatsApp"
-      aria-modal={embedded ? undefined : true}
-      className={
-        embedded
-          ? "crm-whatsapp-action-dialog crm-whatsapp-action-embedded"
-          : "crm-whatsapp-action-dialog"
-      }
-      role={embedded ? "region" : "dialog"}
+      className="crm-whatsapp-action-dialog crm-whatsapp-action-embedded"
+      role="region"
     >
       <div className="crm-whatsapp-action-panel crm-whatsapp-schedule-dialog">
-        <header>
-          <span>
-            <CalendarClock />
-          </span>
-          <h2>Agendamentos</h2>
-          {embedded ? null : (
-            <button
-              aria-label="Fechar"
-              className="crm-icon-action"
-              onClick={onClose}
-              type="button"
-            >
-              <X />
-            </button>
-          )}
-        </header>
-        <div className="crm-whatsapp-action-fields">
-          {canCreate ? (
-            <div className="crm-whatsapp-schedule-form">
-              <label>
-                Quando enviar
-                <input
-                  disabled={disabled || isSaving}
-                  min={readMinDateTimeLocal()}
-                  onChange={(event) => setScheduledAt(event.target.value)}
-                  type="datetime-local"
-                  value={scheduledAt}
-                />
-              </label>
-              <label>
-                Mensagem
-                <textarea
-                  disabled={disabled || isSaving}
-                  maxLength={4000}
-                  onChange={(event) => setText(event.target.value)}
-                  rows={4}
-                  value={text}
-                />
-              </label>
-              <button
-                className="crm-action"
-                disabled={!canSave}
-                onClick={() => void save()}
-                type="button"
-              >
-                Agendar mensagem
-              </button>
-            </div>
-          ) : null}
-          <div className="crm-whatsapp-schedule-toolbar">
-            <strong>{pendingCount} pendente(s)</strong>
-            {canRead ? (
-              <button
-                className="crm-action crm-action-muted"
-                disabled={isLoading}
-                onClick={() => void loadMessages()}
-                type="button"
-              >
-                <RefreshCw aria-hidden="true" className="size-4" />
-                Atualizar
-              </button>
-            ) : null}
-            {canProcess ? (
-              <button
-                className="crm-action crm-action-muted"
-                disabled={isProcessing}
-                onClick={() => void processDue()}
-                type="button"
-              >
-                {isProcessing ? (
-                  <Loader2 aria-hidden="true" className="size-4" />
-                ) : null}
-                Processar vencidas
-              </button>
-            ) : null}
-          </div>
-          {localError ? (
-            <p className="crm-whatsapp-schedule-error">{localError}</p>
-          ) : null}
-          {canRead ? (
-            <ScheduleList
-              canCancel={canCancel}
-              cancellingId={cancellingId}
-              isLoading={isLoading}
-              messages={messages}
-              onCancel={cancel}
-            />
-          ) : (
-            <p className="crm-whatsapp-schedule-empty">
-              Sem permissao para listar agendamentos.
-            </p>
-          )}
-        </div>
-        {embedded ? null : (
-          <footer>
-            <button
-              className="crm-action crm-action-muted"
-              onClick={onClose}
-              type="button"
-            >
-              Fechar
-            </button>
-          </footer>
-        )}
+        {panelContent}
       </div>
     </div>
   );
-}
-
-function readMinDateTimeLocal() {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() + 1);
-  return toDateTimeLocalValue(now);
-}
-
-function toDateTimeLocalValue(date: Date) {
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`,
-    `${pad(date.getHours())}:${pad(date.getMinutes())}`,
-  ].join("T");
 }

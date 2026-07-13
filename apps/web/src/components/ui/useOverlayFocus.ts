@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { activateModalLayer } from "./dialog-accessibility";
 
 const focusableSelector = [
   "a[href]",
@@ -14,6 +15,11 @@ export function useOverlayFocus<T extends HTMLElement>(
   onClose: () => void,
 ) {
   const containerRef = useRef<T>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -21,15 +27,17 @@ export function useOverlayFocus<T extends HTMLElement>(
     if (!container) return;
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const firstFocusable = focusableElements(container)[0];
+    const layer = activateModalLayer();
 
     if (!container.contains(document.activeElement)) {
       (firstFocusable ?? container).focus();
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (!layer.isTopLayer()) return;
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (event.key !== "Tab") return;
@@ -54,9 +62,10 @@ export function useOverlayFocus<T extends HTMLElement>(
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
+      layer.release();
       if (previouslyFocused?.isConnected) previouslyFocused.focus();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   return containerRef;
 }

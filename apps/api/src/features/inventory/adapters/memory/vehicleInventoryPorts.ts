@@ -71,6 +71,14 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
         .filter((listing) => !status || listing.status === status)
         .filter((listing) => matchesSearch(listing, search))
         .slice(offset, offset + limit),
+    lockForStockTransition: async ({ listingId, storeId, tenantId }) => {
+      const listing = listings.get(listingId);
+      if (!listing) return null;
+      if (listing.storeId !== storeId || listing.tenantId !== tenantId) {
+        return null;
+      }
+      return listing;
+    },
     save: async (listing) => {
       listings.set(listing.id, listing);
       return listing;

@@ -81,9 +81,20 @@ describe("CrmWhatsappTagManager", () => {
       tagIds: ["tag_return", "tag_hot"],
     });
   });
+
+  it("uses the shared named modal layer outside the embedded page", async () => {
+    const user = userEvent.setup();
+    const callbacks = renderManager(createTags(), false);
+
+    expect(
+      screen.getByRole("dialog", { name: "Etiquetas WhatsApp" }),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(callbacks.onClose).toHaveBeenCalledOnce();
+  });
 });
 
-function renderManager(tags: CrmWhatsappTag[] = createTags()) {
+function renderManager(tags: CrmWhatsappTag[] = createTags(), embedded = true) {
   const callbacks = {
     onClose: vi.fn(),
     onCreate: vi.fn(async () => true),
@@ -94,7 +105,7 @@ function renderManager(tags: CrmWhatsappTag[] = createTags()) {
   render(
     <CrmWhatsappTagManager
       disabled={false}
-      embedded
+      embedded={embedded}
       tags={tags}
       {...callbacks}
     />,

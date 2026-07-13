@@ -49,6 +49,55 @@ describe("inventory reserve/sell rollback", () => {
 
     expectNoWorkflowWrites(ports, "published");
   });
+
+  it.each([
+    {
+      name: "reserve",
+      objectCount: 1,
+      run: (services: ReturnType<typeof createInventoryListingServices>) =>
+        services.reserveUnit(workflowContext("inventory.reserve"), {
+          buyer: buyer(),
+          paymentMethod: "pix",
+          signalAmountCents: 100000,
+          unitId: "unit_1",
+        }),
+    },
+    {
+      name: "sell",
+      objectCount: 4,
+      run: (services: ReturnType<typeof createInventoryListingServices>) =>
+        services.sellUnit(workflowContext("inventory.sell"), {
+          buyer: buyer(),
+          paymentMethod: "pix",
+          unitId: "unit_1",
+        }),
+    },
+  ])(
+    "deletes $objectCount stored document objects when $name commit fails",
+    async ({ objectCount, run }) => {
+      const ports = await createWorkflowPorts();
+      const error = new Error("transaction commit failed");
+      const services = createInventoryListingServices({
+        ports,
+        transactionRunner: commitFailingRunner(ports, error),
+      });
+
+      await expect(run(services)).rejects.toThrow(error);
+
+      if (!ports.mediaStorage?.deleteObject) {
+        throw new Error("Expected compensating storage delete support.");
+      }
+      expect(ports.mediaStorage.putObject).toHaveBeenCalledTimes(objectCount);
+      expect(ports.mediaStorage.deleteObject).toHaveBeenCalledTimes(
+        objectCount,
+      );
+      for (const [input] of vi.mocked(ports.mediaStorage.deleteObject).mock
+        .calls) {
+        expect(input.storageKey).toContain("/documents/");
+      }
+      expectNoWorkflowWrites(ports, "published");
+    },
+  );
 });
 
 async function createWorkflowPorts() {
@@ -76,6 +125,23 @@ function statusHistoryFailingRunner(
       const result = await operation(stagedPorts);
       commitPorts(rootPorts, stagedPorts);
       return result;
+    },
+  };
+}
+
+function commitFailingRunner(
+  rootPorts: TestVehicleInventoryPorts,
+  error: Error,
+): TransactionRunner<VehicleInventoryServicePorts> {
+  return {
+    async runInTransaction(operation) {
+      const stagedPorts = clonePorts(rootPorts);
+      if (!rootPorts.mediaStorage) {
+        throw new Error("Expected workflow media storage.");
+      }
+      stagedPorts.mediaStorage = rootPorts.mediaStorage;
+      await operation(stagedPorts);
+      throw error;
     },
   };
 }

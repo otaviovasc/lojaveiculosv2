@@ -31,6 +31,9 @@ export type VehicleListingRepository = {
     input: FindVehicleListingByPublicSlugInput,
   ) => Promise<VehicleListing | null>;
   list: (input: ListVehicleListingsInput) => Promise<readonly VehicleListing[]>;
+  lockForStockTransition: (
+    input: FindVehicleListingInput,
+  ) => Promise<VehicleListing | null>;
   save: (listing: VehicleListing) => Promise<VehicleListing>;
 };
 

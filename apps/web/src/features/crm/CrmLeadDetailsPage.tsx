@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ChevronDown } from "lucide-react";
+import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { formatLeadName } from "./crmPipelineModels";
 import {
   formatLeadTimelineLabel,
@@ -33,6 +34,7 @@ export function CrmLeadDetailsPage({
   const [linkedRecords, setLinkedRecords] = useState<CrmLeadLinkedRecordsState>(
     emptyCrmLeadLinkedRecords,
   );
+  const stageButtonRef = useRef<HTMLButtonElement>(null);
 
   const leadName = formatLeadName(lead);
   const activeStageId = getLeadStageId(lead);
@@ -109,9 +111,12 @@ export function CrmLeadDetailsPage({
 
           <div className="relative">
             <button
+              aria-controls="crm-lead-stage-menu"
               aria-expanded={isStageDropdownOpen}
+              aria-haspopup="menu"
               aria-label={`Alterar fase de ${leadName}`}
               onClick={() => setIsStageDropdownOpen(!isStageDropdownOpen)}
+              ref={stageButtonRef}
               className="inline-flex h-9 items-center justify-between gap-2.5 rounded-lg border border-line/35 bg-panel/40 pl-4 pr-3 text-xs font-bold text-app-text outline-none hover:bg-line/10 cursor-pointer transition-colors min-w-[140px]"
               type="button"
             >
@@ -130,38 +135,38 @@ export function CrmLeadDetailsPage({
               />
             </button>
 
-            {isStageDropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setIsStageDropdownOpen(false)}
-                />
-                <div className="absolute right-0 top-10 z-50 w-48 bg-panel border border-line/30 rounded-xl shadow-2xl py-1.5 flex flex-col gap-0.5 animate-in fade-in slide-in-from-top-1 duration-150">
-                  {stages.map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => {
-                        void handleStageChange(s.id);
-                        setIsStageDropdownOpen(false);
-                      }}
-                      className={
-                        "w-full text-left px-3.5 py-2 text-xs font-bold transition-colors hover:bg-line/15 flex items-center gap-2 cursor-pointer " +
-                        (activeStageId === s.id
-                          ? "bg-line/10 text-app-text"
-                          : "text-muted hover:text-app-text")
-                      }
-                      type="button"
-                    >
-                      <span
-                        className="inline-block size-2 rounded-full shrink-0"
-                        style={{ backgroundColor: s.color || "transparent" }}
-                      />
-                      <span>{s.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
+            <FeatureAnchoredPopover
+              align="end"
+              anchorRef={stageButtonRef}
+              className="flex w-48 flex-col gap-0.5"
+              id="crm-lead-stage-menu"
+              isOpen={isStageDropdownOpen}
+              offset={4}
+              onClose={() => setIsStageDropdownOpen(false)}
+            >
+              {stages.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => {
+                    void handleStageChange(s.id);
+                    setIsStageDropdownOpen(false);
+                  }}
+                  className={
+                    "w-full text-left px-3.5 py-2 text-xs font-bold transition-colors hover:bg-line/15 flex items-center gap-2 cursor-pointer " +
+                    (activeStageId === s.id
+                      ? "bg-line/10 text-app-text"
+                      : "text-muted hover:text-app-text")
+                  }
+                  type="button"
+                >
+                  <span
+                    className="inline-block size-2 rounded-full shrink-0"
+                    style={{ backgroundColor: s.color || "transparent" }}
+                  />
+                  <span>{s.name}</span>
+                </button>
+              ))}
+            </FeatureAnchoredPopover>
           </div>
         </div>
       </header>
