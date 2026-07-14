@@ -112,7 +112,7 @@ export function Drawer({
                 </div>
                 <button
                   onClick={onClose}
-                  className="rounded-full p-2.5 text-muted-foreground/60 hover:bg-muted hover:text-foreground transition-all active:scale-90"
+                  className="rounded-full p-2.5 text-muted-foreground/60 transition-all hover:bg-secondary hover:text-foreground active:scale-90"
                 >
                   <X className="size-6" />
                 </button>

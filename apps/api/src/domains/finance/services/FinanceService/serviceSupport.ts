@@ -14,6 +14,7 @@ import type {
   FinanceEntryBundle,
   FinanceRepository,
 } from "../../ports/financeRepository.js";
+import type { FinanceAutoEntryRepository } from "../../ports/financeAutoEntryRepository.js";
 import type { FinanceServicePorts } from "./types.js";
 export type { FinanceServicePorts } from "./types.js";
 
@@ -31,10 +32,26 @@ export class FinanceEntryNotFoundError extends Error {
   }
 }
 
+export class FinanceAutoEntryRuleNotFoundError extends Error {
+  constructor(ruleId: string) {
+    super(`Finance auto-entry rule not found: ${ruleId}`);
+    this.name = "FinanceAutoEntryRuleNotFoundError";
+  }
+}
+
 export function getFinanceRepository(
-  ports: FinanceServicePorts | undefined,
+  ports: Pick<FinanceServicePorts, "financeRepository"> | undefined,
 ): FinanceRepository {
   return requirePort(ports?.financeRepository, "financeRepository");
+}
+
+export function getFinanceAutoEntryRepository(
+  ports: Pick<FinanceServicePorts, "financeAutoEntryRepository"> | undefined,
+): FinanceAutoEntryRepository {
+  return requirePort(
+    ports?.financeAutoEntryRepository,
+    "financeAutoEntryRepository",
+  );
 }
 
 export function getDocumentRepository(
@@ -112,9 +129,13 @@ export async function auditFinanceServiceEvent(
     category: "data_access" | "data_change";
     changes?: readonly AuditFieldChange[];
     entityId: string;
-    entityType?: "finance_entry" | "finance_document";
+    entityType?:
+      | "finance_auto_entry_execution"
+      | "finance_auto_entry_rule"
+      | "finance_document"
+      | "finance_entry";
     metadata?: SafeAuditMetadata;
-    permission: PermissionKey;
+    permission?: PermissionKey;
     relatedEntities?: readonly AuditEntityReference[];
     summary: string;
   },
@@ -126,7 +147,7 @@ export async function auditFinanceServiceEvent(
     entityId: input.entityId,
     entityType: input.entityType ?? "finance_entry",
     metadata: {
-      permission: input.permission,
+      ...(input.permission ? { permission: input.permission } : {}),
       ...(input.metadata ?? {}),
     },
     outcome: "succeeded",

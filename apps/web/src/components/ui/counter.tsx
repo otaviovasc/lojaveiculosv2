@@ -14,7 +14,7 @@ export function Counter({ value, onChange }: CounterProps) {
       <button
         type="button"
         onClick={() => onChange(Math.max(0, value - 1))}
-        className="flex h-11 w-16 items-center justify-center rounded-xl bg-secondary text-foreground transition-all hover:bg-muted active:scale-95 disabled:opacity-30"
+        className="flex h-11 w-16 items-center justify-center rounded-xl bg-secondary text-foreground transition-all hover:bg-secondary/80 active:scale-95 disabled:opacity-30"
         disabled={value <= 0}
       >
         <Minus className="size-4" />

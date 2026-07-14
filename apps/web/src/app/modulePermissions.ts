@@ -15,7 +15,7 @@ type ModulePermissionRule = {
 };
 
 const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
-  "auto-entries": gate(["finance.read"], "lançamentos financeiros"),
+  "auto-entries": gate(["finance.read"], "regras de lançamentos automáticos"),
   autobot: gate(["automation.read"], "automações assistidas"),
   billing: gate(["billing.manage"], "assinatura e faturamento"),
   checklists: gate(["inventory.checklist_read"], "checklists"),

@@ -33,7 +33,7 @@
   --color-accent-strong: #b81820;
   --color-accent-soft: #fce8e9;
   --color-accent-soft-foreground: #151515;
-  --color-accent-soft-muted: #4a4444;
+  --color-accent-soft-muted: #151515;
   --color-app-elevated: #e8e3e2;
   --color-blue-start: #182ab8;
   --color-blue-end: #182ab8;
@@ -123,7 +123,7 @@
 :root[data-theme="dark"] {
   --color-app: #151515;
   --color-text: #f4efee;
-  --color-muted: #a09898;
+  --color-muted: #e8e3e2;
   --color-panel: #2a2424;
   --color-line: #4a4444;
   --color-line-strong: #a09898;
@@ -131,7 +131,7 @@
   --color-accent-strong: #b81820;
   --color-accent-soft: #fce8e9;
   --color-accent-soft-foreground: #151515;
-  --color-accent-soft-muted: #4a4444;
+  --color-accent-soft-muted: #151515;
   --color-app-elevated: #4a4444;
   --color-blue-start: #182ab8;
   --color-blue-soft: rgba(24, 42, 184, 0.14);
@@ -216,7 +216,6 @@
   --color-secondary: var(--color-app-elevated);
   --color-secondary-foreground: var(--color-text);
   --color-success: var(--color-green-end);
-  --color-success-foreground: var(--color-inverse);
   /* Product-safe aliases for legacy Tailwind color utilities. These keep
      semantic color while meeting contrast when the same token is used as text. */
   --color-emerald-500: var(--color-success-strong);

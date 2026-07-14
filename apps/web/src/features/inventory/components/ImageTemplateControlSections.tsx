@@ -51,7 +51,7 @@ export function PresetsSection({
             disabled={
               isSavingPreset || !presetName.trim() || presets.length >= 10
             }
-            className="px-3 min-h-9 bg-accent text-inverse rounded-lg text-xs font-black hover:bg-accent-strong disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+            className="px-3 min-h-9 bg-accent text-accent-foreground rounded-lg text-xs font-black hover:bg-accent-strong hover:text-accent-strong-foreground disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
           >
             <Save className="w-3.5 h-3.5" />
             Salvar

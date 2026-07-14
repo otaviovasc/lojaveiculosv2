@@ -1,6 +1,11 @@
 import type { AuditSink } from "@lojaveiculosv2/audit";
 import { expect } from "vitest";
+import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
 import { vehicleSaleDocumentKinds } from "../../../domains/vehicle/documents/vehicleWorkflowDocuments.js";
+import {
+  createTestFinanceAutoEntryRepository,
+  type TestFinanceAutoEntryRepository,
+} from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
 import type { VehicleUnit } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import {
   createInMemoryVehiclePorts,
@@ -18,7 +23,9 @@ const tenantId = "tenant_1";
 export function createHarness(
   status: "available" | "reserved",
   salesRepository: SalesRepository = createMemorySalesRepository(),
+  crmRepository?: Pick<CrmRepository, "listActivities">,
 ): {
+  financeAutoEntryRepository: TestFinanceAutoEntryRepository;
   services: SalesServices;
   vehiclePorts: TestVehicleInventoryPorts;
 } {
@@ -32,11 +39,14 @@ export function createHarness(
     }),
   ]);
   vehiclePorts.units.set("unit_1", createUnit(status));
+  const financeAutoEntryRepository = createTestFinanceAutoEntryRepository();
   const services = createSalesServices({
+    ...(crmRepository ? { crmRepository } : {}),
+    financeAutoEntryRepository,
     ports: { salesRepository },
     workflowPorts: vehiclePorts,
   });
-  return { services, vehiclePorts };
+  return { financeAutoEntryRepository, services, vehiclePorts };
 }
 
 export function completeDraft() {

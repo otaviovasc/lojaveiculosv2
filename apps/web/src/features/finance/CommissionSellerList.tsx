@@ -1,20 +1,19 @@
-import { CheckCircle2, Gift, HandCoins, Pencil, XCircle } from "lucide-react";
+import { CheckCircle2, Gift, HandCoins } from "lucide-react";
 import {
   pendingSellerEntries,
   type CommissionFilters,
   type CommissionSellerGroup,
 } from "./commissionWorkspaceModel";
-import {
-  entryDescription,
-  entryReference,
-  originLabel,
-} from "./commissionEntryMeta";
-import { FinanceBadge, financeStatusLabels } from "./FinanceFormParts";
+import { originLabel } from "./commissionEntryMeta";
+import { CommissionMobileCard, CommissionRow } from "./CommissionEntryViews";
+import { FinanceBadge } from "./FinanceFormParts";
 import type { FinanceEntry } from "./types";
-import { formatCurrency, formatDate } from "./financeBillsFormat";
-import { CommissionIconAction, SellerMetric } from "./CommissionSellerParts";
+import { formatCurrency } from "./financeBillsFormat";
+import { SellerMetric } from "./CommissionSellerParts";
 
 export function CommissionSellerList({
+  canCreate = true,
+  canUpdate = true,
   filters,
   isPayingSellerId,
   onCancel,
@@ -23,6 +22,8 @@ export function CommissionSellerList({
   onOpenPay,
   sellers,
 }: {
+  canCreate?: boolean;
+  canUpdate?: boolean;
   filters: CommissionFilters;
   isPayingSellerId: string | null;
   onCancel: (entry: FinanceEntry) => void;
@@ -35,6 +36,8 @@ export function CommissionSellerList({
     <section className="grid gap-4">
       {sellers.map((seller) => (
         <SellerCard
+          canCreate={canCreate}
+          canUpdate={canUpdate}
           filters={filters}
           isPaying={isPayingSellerId === seller.sellerId}
           key={seller.sellerId}
@@ -50,6 +53,8 @@ export function CommissionSellerList({
 }
 
 function SellerCard({
+  canCreate,
+  canUpdate,
   filters,
   isPaying,
   onCancel,
@@ -58,6 +63,8 @@ function SellerCard({
   onOpenPay,
   seller,
 }: {
+  canCreate: boolean;
+  canUpdate: boolean;
   filters: CommissionFilters;
   isPaying: boolean;
   onCancel: (entry: FinanceEntry) => void;
@@ -67,7 +74,8 @@ function SellerCard({
   seller: CommissionSellerGroup;
 }) {
   const payableEntries = pendingSellerEntries(seller, filters);
-  const canPay = seller.sellerId !== "unassigned" && payableEntries.length > 0;
+  const canPay =
+    canUpdate && seller.sellerId !== "unassigned" && payableEntries.length > 0;
 
   return (
     <article className="overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]">
@@ -93,24 +101,28 @@ function SellerCard({
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            className="flex min-h-10 items-center gap-2 rounded-lg bg-accent px-3 text-xs font-black text-inverse disabled:opacity-60"
-            disabled={!canPay || isPaying}
-            onClick={() => onOpenPay(seller)}
-            type="button"
-          >
-            <HandCoins aria-hidden="true" className="size-4" />
-            Pagar vendedor
-          </button>
-          <button
-            className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-app px-3 text-xs font-black text-app-text"
-            onClick={() => onOpenBonus(seller)}
-            type="button"
-          >
-            <Gift aria-hidden="true" className="size-4" />
-            Bônus
-          </button>
-          {!canPay ? (
+          {canUpdate ? (
+            <button
+              className="flex min-h-10 items-center gap-2 rounded-lg bg-accent px-3 text-xs font-black text-accent-foreground disabled:opacity-60"
+              disabled={!canPay || isPaying}
+              onClick={() => onOpenPay(seller)}
+              type="button"
+            >
+              <HandCoins aria-hidden="true" className="size-4" />
+              Pagar vendedor
+            </button>
+          ) : null}
+          {canCreate ? (
+            <button
+              className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-app px-3 text-xs font-black text-app-text"
+              onClick={() => onOpenBonus(seller)}
+              type="button"
+            >
+              <Gift aria-hidden="true" className="size-4" />
+              Bônus
+            </button>
+          ) : null}
+          {canUpdate && !canPay ? (
             <span className="flex min-h-10 items-center gap-2 rounded-lg border border-line bg-app px-3 text-xs font-black text-accent-strong">
               <CheckCircle2 aria-hidden="true" className="size-4" />
               Sem pendências
@@ -120,6 +132,7 @@ function SellerCard({
       </div>
       {seller.origins.map((origin) => (
         <OriginGroup
+          canUpdate={canUpdate}
           key={origin.origin}
           onCancel={onCancel}
           onEdit={onEdit}
@@ -131,10 +144,12 @@ function SellerCard({
 }
 
 function OriginGroup({
+  canUpdate,
   onCancel,
   onEdit,
   origin,
 }: {
+  canUpdate: boolean;
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
   origin: CommissionSellerGroup["origins"][number];
@@ -152,7 +167,7 @@ function OriginGroup({
           {formatCurrency(origin.pendingCents)} a pagar
         </span>
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead className="border-b border-line text-xs font-black uppercase text-muted">
             <tr>
@@ -167,6 +182,7 @@ function OriginGroup({
           <tbody className="divide-y divide-line">
             {origin.entries.map((entry) => (
               <CommissionRow
+                canUpdate={canUpdate}
                 entry={entry}
                 key={entry.id}
                 onCancel={onCancel}
@@ -176,56 +192,17 @@ function OriginGroup({
           </tbody>
         </table>
       </div>
+      <div className="grid gap-3 p-3 md:hidden">
+        {origin.entries.map((entry) => (
+          <CommissionMobileCard
+            canUpdate={canUpdate}
+            entry={entry}
+            key={entry.id}
+            onCancel={onCancel}
+            onEdit={onEdit}
+          />
+        ))}
+      </div>
     </div>
-  );
-}
-
-function CommissionRow({
-  entry,
-  onCancel,
-  onEdit,
-}: {
-  entry: FinanceEntry;
-  onCancel: (entry: FinanceEntry) => void;
-  onEdit: (entry: FinanceEntry) => void;
-}) {
-  return (
-    <tr className="align-top">
-      <td className="px-4 py-3">
-        <strong className="block text-app-text">{entry.name}</strong>
-        {entryDescription(entry) ? (
-          <span className="text-xs font-bold text-muted">
-            {entryDescription(entry)}
-          </span>
-        ) : null}
-      </td>
-      <td className="px-4 py-3 font-bold text-muted">
-        {entryReference(entry)}
-      </td>
-      <td className="px-4 py-3 font-bold text-muted">
-        {formatDate(entry.dueAt)}
-      </td>
-      <td className="px-4 py-3">
-        <FinanceBadge>{financeStatusLabels[entry.status]}</FinanceBadge>
-      </td>
-      <td className="px-4 py-3 text-right font-black text-app-text">
-        {formatCurrency(entry.amountCents)}
-      </td>
-      <td className="px-4 py-3">
-        <div className="flex justify-end gap-2">
-          <CommissionIconAction
-            icon={<Pencil aria-hidden="true" className="size-4" />}
-            label="Editar comissão"
-            onClick={() => onEdit(entry)}
-          />
-          <CommissionIconAction
-            disabled={entry.status === "cancelled"}
-            icon={<XCircle aria-hidden="true" className="size-4" />}
-            label="Cancelar comissão"
-            onClick={() => onCancel(entry)}
-          />
-        </div>
-      </td>
-    </tr>
   );
 }

@@ -1,32 +1,35 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
-import { FeatureAlert } from "../../components/ui/FeatureStates";
-import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
-import {
-  cancelEntry,
-  exportFinanceCsv,
-  updateEntryFromDraft,
-} from "./financeBillsActions";
+import { cancelEntry, exportFinanceCsv } from "./financeBillsActions";
 import { FinanceBillsFilters } from "./FinanceBillsFilters";
 import { FinanceBillsHeader } from "./FinanceBillsHeader";
 import { FinanceCashFlowInsights } from "./FinanceCashFlowInsights";
 import { FinanceCashFlowOverview } from "./FinanceCashFlowOverview";
 import { CommissionRulesPanel } from "./FinanceCorePanels";
 import { CommissionWorkspace } from "./CommissionWorkspace";
-import { FinanceEntryModal } from "./FinanceEntryModal";
+import { hydrateEntrySellerNames } from "./commissionEntryMeta";
+import { FinanceEntryDialogs } from "./FinanceEntryDialogs";
 import { FinanceEntryTable } from "./FinanceEntryTable";
+import {
+  FinanceAccessNotice,
+  FinanceLoadError,
+  FinanceToastMessage,
+} from "./FinanceModuleFeedback";
 import { FinanceRecurringBillsPanel } from "./FinanceRecurringBillsPanel";
 import { FinanceTypeTabs } from "./FinanceTypeTabs";
 import { FinanceUrgencyPanel } from "./FinanceUrgencyPanel";
 import { createFinanceApiOptions } from "./runtimeApi";
 import {
+  submitFinanceDraft,
+  updateFinanceEntryStatus,
+} from "./financeModuleActions";
+import { useFinanceAccess } from "./useFinanceAccess";
+import {
   filterEntries,
   initialFinanceFilters,
   loadFinanceWorkspace,
-  toEntryInput,
-  toRecurringInput,
   type FinanceEntryDraft,
   type FinanceFilters,
   type FinanceListState,
@@ -42,10 +45,17 @@ import type {
 export function FinanceModule({
   api,
   defaultActiveType = "expense",
+  onNavigate,
 }: {
   api?: FinanceApi;
   defaultActiveType?: FinanceEntryType;
+  onNavigate?: (moduleId: "reports") => void;
 }) {
+  const { canAttach, canCreate, canUpdate, sellerOptions } = useFinanceAccess(
+    Boolean(api),
+    defaultActiveType !== "commission",
+  );
+
   if (defaultActiveType === "commission") {
     return api ? <CommissionWorkspace api={api} /> : <CommissionWorkspace />;
   }
@@ -74,14 +84,25 @@ export function FinanceModule({
   const [cancelTarget, setCancelTarget] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
-  const activeEntries = entriesByType[activeType];
+  const visibleEntriesByType = useMemo(
+    () => ({
+      commission: hydrateEntrySellerNames(
+        entriesByType.commission,
+        sellerOptions,
+      ),
+      expense: hydrateEntrySellerNames(entriesByType.expense, sellerOptions),
+      revenue: hydrateEntrySellerNames(entriesByType.revenue, sellerOptions),
+    }),
+    [entriesByType, sellerOptions],
+  );
+  const activeEntries = visibleEntriesByType[activeType];
   const allEntries = useMemo(
     () => [
-      ...entriesByType.expense,
-      ...entriesByType.revenue,
-      ...entriesByType.commission,
+      ...visibleEntriesByType.expense,
+      ...visibleEntriesByType.revenue,
+      ...visibleEntriesByType.commission,
     ],
-    [entriesByType],
+    [visibleEntriesByType],
   );
   const filteredEntries = useMemo(
     () => filterEntries(activeEntries, filters),
@@ -89,6 +110,17 @@ export function FinanceModule({
   );
   const filteredCashEntries = useMemo(
     () => filterEntries(allEntries, filters),
+    [allEntries, filters],
+  );
+  const operationalCashEntries = useMemo(
+    () =>
+      filterEntries(allEntries, {
+        ...filters,
+        dateFrom: "",
+        datePreset: "all",
+        dateTo: "",
+        window: "all",
+      }),
     [allEntries, filters],
   );
 
@@ -105,7 +137,7 @@ export function FinanceModule({
   useEffect(() => {
     if (!runtimeApi) return;
     setListState({ kind: "loading" });
-    void loadFinanceWorkspace(runtimeApi, activeType)
+    void loadFinanceWorkspace(runtimeApi)
       .then((payload) => {
         setCommissionRules(payload.commissionRules);
         setEntriesByType(payload.entriesByType);
@@ -122,7 +154,7 @@ export function FinanceModule({
           ),
         });
       });
-  }, [activeType, refreshToken, runtimeApi]);
+  }, [refreshToken, runtimeApi]);
 
   const refresh = () => setRefreshToken((current) => current + 1);
   const scrollToTable = () =>
@@ -130,53 +162,40 @@ export function FinanceModule({
 
   const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi) return;
-    try {
-      if (modalEntry) {
-        await updateEntryFromDraft(runtimeApi, modalEntry, draft);
-        setToast({
-          kind: "success",
-          title: "Lançamento salvo",
-          message: draft.name,
-        });
-      } else if (draft.recurrence === "recurring") {
-        await runtimeApi.createRecurringEntry(toRecurringInput(draft));
-        setToast({
-          kind: "success",
-          title: "Recorrência criada",
-          message: draft.name,
-        });
-      } else {
-        await runtimeApi.createEntryFlow(toEntryInput(draft));
-        setToast({
-          kind: "success",
-          title: "Lançamento criado",
-          message: draft.name,
-        });
-      }
-      refresh();
-    } catch (error) {
-      setToast({
-        kind: "error",
-        message: formatApiErrorDisplay(
-          error,
-          "Não foi possível salvar o lançamento.",
-        ),
-        title: "Erro ao salvar",
-      });
-      throw error;
-    }
+    await submitFinanceDraft(
+      { api: runtimeApi, modalEntry, refresh, setToast },
+      draft,
+    );
+  };
+
+  const updateStatus = async (
+    entry: FinanceEntry,
+    action: "pay" | "pending",
+  ) => {
+    if (!runtimeApi) return;
+    await updateFinanceEntryStatus(
+      { api: runtimeApi, refresh, setToast },
+      entry,
+      action,
+    );
   };
 
   return (
     <FeaturePageShell variant="plain">
       <FinanceBillsHeader
+        canCreate={canCreate}
         onCreate={() => {
           setModalEntry(null);
           setIsModalOpen(true);
         }}
         onExport={() => exportFinanceCsv(filteredEntries, activeType)}
-        onReports={() => (window.location.hash = "#/reports")}
+        onReports={() =>
+          onNavigate
+            ? onNavigate("reports")
+            : (window.location.hash = "#/reports")
+        }
       />
+      <FinanceAccessNotice canManage={canCreate || canUpdate} />
       <FinanceTypeTabs
         activeType={activeType}
         onTypeChange={(type) => {
@@ -190,7 +209,7 @@ export function FinanceModule({
         onChange={setFilters}
       />
       <FinanceCashFlowOverview
-        entries={filteredCashEntries}
+        entries={operationalCashEntries}
         onShowOverdue={() => {
           setFilters((current) => ({
             ...current,
@@ -211,8 +230,9 @@ export function FinanceModule({
         }}
       />
       <FinanceUrgencyPanel
-        entries={filteredCashEntries}
+        entries={operationalCashEntries}
         onEdit={(entry) => {
+          if (!canUpdate) return;
           setActiveType(entry.type);
           setModalEntry(entry);
           setIsModalOpen(true);
@@ -223,6 +243,9 @@ export function FinanceModule({
       <div ref={tableRef}>
         <FinanceEntryTable
           activeType={activeType}
+          canAttach={canAttach}
+          canCreate={canCreate}
+          canUpdate={canUpdate}
           entries={filteredEntries}
           isLoading={listState.kind === "loading"}
           onCancel={setCancelTarget}
@@ -231,12 +254,8 @@ export function FinanceModule({
             setModalEntry(entry);
             setIsModalOpen(true);
           }}
-          onMarkPending={(entry) =>
-            void runtimeApi
-              ?.updateEntry(entry.id, { paidAt: null, status: "pending" })
-              .then(refresh)
-          }
-          onPay={(entry) => void runtimeApi?.payEntry(entry.id).then(refresh)}
+          onMarkPending={(entry) => void updateStatus(entry, "pending")}
+          onPay={(entry) => void updateStatus(entry, "pay")}
           otherEntryCount={Math.max(
             0,
             filteredCashEntries.length - filteredEntries.length,
@@ -249,7 +268,7 @@ export function FinanceModule({
         entries={filteredCashEntries}
         recurringEntries={recurringEntries}
       />
-      {activeType === "commission" ? (
+      {activeType === "commission" && canCreate ? (
         <CommissionRulesPanel
           items={commissionRules}
           onCreate={async (input) => {
@@ -259,46 +278,25 @@ export function FinanceModule({
           }}
         />
       ) : null}
-      {listState.kind === "error" ? (
-        <FeatureAlert className="feature-alert text-danger">
-          {listState.message}
-        </FeatureAlert>
-      ) : null}
-      <FinanceEntryModal
+      <FinanceLoadError listState={listState} />
+      <FinanceEntryDialogs
         activeType={activeType}
-        entry={modalEntry}
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setModalEntry(null);
-        }}
-        onSubmit={submitDraft}
-      />
-      <ConfirmDialog
-        confirmLabel="Cancelar lançamento"
-        isOpen={Boolean(cancelTarget)}
-        onClose={() => setCancelTarget(null)}
-        onConfirm={async () => {
+        cancelTarget={cancelTarget}
+        isModalOpen={isModalOpen}
+        modalEntry={modalEntry}
+        onCancelClose={() => setCancelTarget(null)}
+        onCancelConfirm={async () => {
           if (!cancelTarget) return;
           await cancelEntry(runtimeApi, cancelTarget, refresh, setToast);
           setCancelTarget(null);
         }}
-        title="Cancelar lançamento?"
-        variant="destructive"
-        {...(cancelTarget
-          ? {
-              description: `O lançamento "${cancelTarget.name}" ficará cancelado e preservado para auditoria.`,
-            }
-          : {})}
+        onModalClose={() => {
+          setIsModalOpen(false);
+          setModalEntry(null);
+        }}
+        onSubmit={submitDraft}
+        sellerOptions={sellerOptions}
       />
     </FeaturePageShell>
-  );
-}
-
-function FinanceToastMessage({ toast }: { toast: FinanceToast }) {
-  return (
-    <div className="rounded-lg border border-line bg-accent-soft p-3 text-sm font-black text-accent-strong">
-      {toast.title}: {toast.message}
-    </div>
   );
 }

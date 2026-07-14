@@ -1,4 +1,13 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import type { CrmRepository } from "../../../domains/crm/ports/crmRepository.js";
+import type { FinanceAutoEntryRepository } from "../../../domains/finance/ports/financeAutoEntryRepository.js";
+import { createTestFinanceAutoEntryRepository } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
+import { createDrizzleFinanceAutoEntryRepository } from "../../../infrastructure/db/finance/drizzleFinanceAutoEntryRepository.js";
+import {
+  createDrizzleCrmRepository,
+  type DrizzleCrmClient,
+} from "../../../infrastructure/db/crm/drizzleCrmRepository.js";
+import type { DrizzleFinanceClient } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
 import type { DrizzleSalesClient } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
 import { createDrizzleSalesRepository } from "../../../infrastructure/db/sales/drizzleSalesRepository.js";
 import {
@@ -64,7 +73,9 @@ export type SalesServices = {
 
 export type CreateSalesServicesOptions =
   | {
+      crmRepository?: never;
       drizzleClient: DrizzleSalesClient;
+      financeAutoEntryRepository?: never;
       ports?: never;
       transactionRunner?: TransactionRunner<SalesWorkflowPorts>;
       workflowAdapter?: SalesWorkflowAdapter;
@@ -72,6 +83,8 @@ export type CreateSalesServicesOptions =
     }
   | {
       drizzleClient?: never;
+      crmRepository?: Pick<CrmRepository, "listActivities">;
+      financeAutoEntryRepository?: FinanceAutoEntryRepository;
       ports?: SalesServicePorts;
       transactionRunner?: TransactionRunner<SalesWorkflowPorts>;
       workflowAdapter?: never;
@@ -137,13 +150,23 @@ function resolveWorkflowPorts(
   salesPorts: SalesServicePorts,
 ): SalesWorkflowPorts {
   if ("workflowPorts" in options && options.workflowPorts) {
-    return { ...salesPorts, vehiclePorts: options.workflowPorts };
+    return {
+      ...salesPorts,
+      ...(options.crmRepository
+        ? { crmRepository: options.crmRepository }
+        : {}),
+      financeAutoEntryRepository:
+        options.financeAutoEntryRepository ??
+        createTestFinanceAutoEntryRepository(),
+      vehiclePorts: options.workflowPorts,
+    };
   }
   if ("drizzleClient" in options) {
     return createDrizzleWorkflowPorts(options, options.drizzleClient);
   }
   return {
     ...salesPorts,
+    financeAutoEntryRepository: createTestFinanceAutoEntryRepository(),
     vehiclePorts: createMemoryVehicleInventoryPorts(),
   };
 }
@@ -174,6 +197,12 @@ function createDrizzleWorkflowPorts(
       : createDefaultWorkflowAdapter;
 
   return {
+    crmRepository: createDrizzleCrmRepository(
+      client as unknown as DrizzleCrmClient,
+    ),
+    financeAutoEntryRepository: createDrizzleFinanceAutoEntryRepository(
+      client as unknown as DrizzleFinanceClient,
+    ),
     salesRepository: createDrizzleSalesRepository(client),
     vehiclePorts: workflowAdapter(client),
   };

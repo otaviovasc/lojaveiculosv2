@@ -92,7 +92,7 @@ export function WorkspaceTopBar({
         </button>
         <button
           onClick={() => onAction("sell")}
-          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse hover:bg-accent-strong transition-all cursor-pointer"
+          className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer"
           type="button"
         >
           <DollarSign className="size-3.5" />

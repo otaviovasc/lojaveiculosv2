@@ -119,7 +119,7 @@
 
 .feature-action--primary {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   box-shadow: 0 8px 20px
     color-mix(in srgb, var(--color-accent) 18%, transparent);
 }

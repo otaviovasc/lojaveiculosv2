@@ -108,6 +108,7 @@
 .documents-builder-template-row[data-selected="true"] {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
+  color: var(--color-accent-soft-foreground);
 }
 
 .documents-builder-template-row[data-selected="true"]::before {
@@ -130,7 +131,7 @@
 .documents-builder-template-row[data-selected="true"]
   .documents-builder-template-icon {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   border-color: var(--color-accent);
 }
 

@@ -4,8 +4,10 @@ import {
   financeEntryInputProperties,
 } from "./financeOpenApiParts.js";
 import { objectSchema } from "./inventoryOpenApiSchemaParts.js";
+import { financeAutoEntrySchemas } from "./financeAutoEntryOpenApi.js";
 
 export const financeSchemas = {
+  ...financeAutoEntrySchemas,
   AttachFinanceDocumentRequest: objectSchema(
     ["fileName", "storageKey", "title"],
     {

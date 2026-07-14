@@ -170,7 +170,7 @@ export function WebsiteBuilderTestimonialsPanel({
                 </span>
                 <button
                   aria-label="Remover depoimento"
-                  className="rounded-lg p-1.5 text-destructive transition-colors hover:bg-destructive/10"
+                  className="rounded-lg p-1.5 text-danger-soft-foreground transition-colors hover:bg-destructive/10"
                   onClick={() =>
                     updateConfig(
                       "testimonials",

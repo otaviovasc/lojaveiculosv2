@@ -13,7 +13,9 @@ import {
 const hex = (value: string) => "#" + value;
 const cssRgb = (...channels: number[]) =>
   ["rgb", `(${channels.join(", ")})`].join("");
-const tokensCss = readFileSync("src/styles/tokens.css", "utf8");
+const tokensCss = ["tokens.css", "contrast-tokens.css"]
+  .map((file) => readFileSync(`src/styles/${file}`, "utf8"))
+  .join("\n");
 
 describe("color contrast helpers", () => {
   it.each([
@@ -54,6 +56,10 @@ describe("color contrast helpers", () => {
     expect(getTextColorForBackground(hex("182ab8"))).toBe(hex("ffffff"));
   });
 
+  it("uses WCAG contrast instead of a brightness shortcut", () => {
+    expect(getTextColorForBackground(hex("18b841"))).toBe(hex("151515"));
+  });
+
   it("darkens light-mode status text until it reaches readable contrast", () => {
     document.documentElement.dataset.theme = "light";
 
@@ -85,7 +91,7 @@ describe("color contrast helpers", () => {
       },
       {
         background: "--color-accent",
-        foreground: "--color-inverse",
+        foreground: "--color-accent-contrast",
         label: "accent selected controls",
       },
       {
@@ -158,13 +164,16 @@ function readThemeVariables(theme: "dark" | "light"): Record<string, string> {
 
 function readVariablesFromBlock(selector: string): Record<string, string> {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = tokensCss.match(new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`));
-  if (!match?.[1]) return {};
   const variables: Record<string, string> = {};
-  for (const line of match[1].split("\n")) {
-    const declaration = line.trim().match(/^(--[\w-]+):\s*([^;]+);/);
-    if (declaration?.[1] && declaration[2]) {
-      variables[declaration[1]] = declaration[2].trim();
+  const matches = tokensCss.matchAll(
+    new RegExp(`${escaped}\\s*\\{([\\s\\S]*?)\\}`, "g"),
+  );
+  for (const match of matches) {
+    for (const line of (match[1] ?? "").split("\n")) {
+      const declaration = line.trim().match(/^(--[\w-]+):\s*([^;]+);/);
+      if (declaration?.[1] && declaration[2]) {
+        variables[declaration[1]] = declaration[2].trim();
+      }
     }
   }
   return variables;

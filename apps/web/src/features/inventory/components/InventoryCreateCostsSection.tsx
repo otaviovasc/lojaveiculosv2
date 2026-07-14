@@ -39,7 +39,7 @@ export function InventoryCreateCostsSection({
         </div>
         <button
           aria-pressed={showSuggestions}
-          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-accent-soft/30 bg-accent-soft px-3 text-xs font-black text-accent-strong transition-colors hover:bg-accent-soft/70 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
+          className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg border border-accent-soft/30 bg-accent-soft px-3 text-xs font-black text-accent-soft-foreground transition-colors hover:bg-accent-soft/70 disabled:cursor-not-allowed disabled:opacity-50 sm:self-auto"
           disabled={!hasFipeReference}
           onClick={() => setShowSuggestions((current) => !current)}
           type="button"
@@ -131,7 +131,7 @@ function SuggestionCard({
         </strong>
       </div>
       <button
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-accent-soft/40 bg-accent px-3 text-xs font-black text-inverse transition-colors hover:bg-accent-strong"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-accent-soft/40 bg-accent px-3 text-xs font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground"
         onClick={onApply}
         type="button"
       >

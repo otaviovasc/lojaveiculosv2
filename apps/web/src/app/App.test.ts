@@ -53,6 +53,7 @@ describe("App module navigation", () => {
     expect(isPlaceholderModule("public-site")).toBe(false);
     expect(isPlaceholderModule("custom-pages")).toBe(false);
     expect(isPlaceholderModule("autobot")).toBe(false);
+    expect(isPlaceholderModule("auto-entries")).toBe(false);
     expect(isPlaceholderModule("domain")).toBe(true);
   });
 

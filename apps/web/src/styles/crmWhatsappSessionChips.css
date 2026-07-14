@@ -55,7 +55,7 @@
     var(--color-green-start) 24%,
     var(--color-line)
   );
-  color: var(--color-success-strong);
+  color: var(--color-success-soft-foreground);
 }
 
 .crm-whatsapp-session-status-completed {

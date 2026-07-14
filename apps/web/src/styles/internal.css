@@ -77,7 +77,7 @@
 
 .internal-primary {
   background: var(--color-accent);
-  color: #ffffff;
+  color: var(--color-accent-foreground);
   width: fit-content;
 }
 

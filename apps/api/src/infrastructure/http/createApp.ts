@@ -214,9 +214,10 @@ export function createApp(options: CreateAppOptions = {}) {
     "/api/v1/crm",
     createCrmFeature({
       contextFactory,
-      ...(options.crmRealtimeBroker
-        ? { realtimeBroker: options.crmRealtimeBroker }
-        : {}),
+      financialProductTransactionRunner:
+        options.crmFinancialProductTransactionRunner,
+      financeServices: options.financeServices,
+      realtimeBroker: options.crmRealtimeBroker,
       webhookContextFactory: createCrmWebhookContextFactory(options.audit),
       ...(options.crmServices ? { services: options.crmServices } : {}),
     }),
@@ -244,6 +245,5 @@ export function createApp(options: CreateAppOptions = {}) {
       ...(options.roleServices ? { services: options.roleServices } : {}),
     }),
   );
-
   return app;
 }

@@ -280,7 +280,7 @@ export function DocumentUploadDialog({
           Cancelar
         </button>
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-70"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer shadow-sm transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-70"
           disabled={!canUpload}
           onClick={() => {
             void uploadDocuments();

@@ -22,6 +22,23 @@ export function entrySellerName(entry: FinanceEntry) {
   return "Vendedor não identificado";
 }
 
+export function hydrateEntrySellerNames(
+  entries: readonly FinanceEntry[],
+  sellers: readonly { id: string; label: string }[],
+) {
+  if (!sellers.length) return [...entries];
+  const names = new Map(sellers.map((seller) => [seller.id, seller.label]));
+  return entries.map((entry) => {
+    if (!entry.sellerUserId || metadataString(entry.metadata, "sellerName")) {
+      return entry;
+    }
+    const sellerName = names.get(entry.sellerUserId);
+    return sellerName
+      ? { ...entry, metadata: { ...entry.metadata, sellerName } }
+      : entry;
+  });
+}
+
 export function entryDescription(entry: FinanceEntry) {
   return (
     metadataString(entry.metadata, "notes") ??

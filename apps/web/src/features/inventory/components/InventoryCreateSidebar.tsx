@@ -242,7 +242,7 @@ function ProgressCardContent({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent hover:bg-accent-strong text-inverse font-black text-sm transition-all shadow-lg disabled:opacity-75 cursor-pointer"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent hover:bg-accent-strong hover:text-accent-strong-foreground text-accent-foreground font-black text-sm transition-all shadow-lg disabled:opacity-75 cursor-pointer"
       >
         {isSubmitting ? (
           <LoaderCircle className="size-4 animate-spin" />
@@ -295,7 +295,7 @@ function SubmitStatusPanel({
         <button
           type="button"
           onClick={onRetryMedia}
-          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong hover:bg-accent-soft/80"
+          className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-soft-foreground hover:bg-accent-soft/80"
         >
           Reenviar midias pendentes
         </button>

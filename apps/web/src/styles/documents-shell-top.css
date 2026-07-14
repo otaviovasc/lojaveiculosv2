@@ -112,7 +112,7 @@
 .documents-top-bar-action--primary {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   box-shadow: 0 4px 12px rgba(225, 31, 38, 0.2);
 }
 

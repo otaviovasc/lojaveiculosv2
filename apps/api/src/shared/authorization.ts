@@ -28,6 +28,28 @@ export function assertPermission(
   throw new AuthorizationError(`Missing permission: ${permission}`);
 }
 
+export function assertAnyPermission(
+  context: ServiceContext,
+  permissions: readonly PermissionKey[],
+): PermissionKey {
+  const granted = permissions.find((permission) =>
+    context.permissions.includes(permission),
+  );
+  if (granted) return granted;
+
+  context.logger.warn("authorization.permission.denied", {
+    actorId: context.actor.id,
+    permissions,
+    requestId: context.requestId,
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
+
+  throw new AuthorizationError(
+    `Missing one of required permissions: ${permissions.join(", ")}`,
+  );
+}
+
 export function assertEntitlement(
   context: StoreScopedServiceContext,
   entitlement: EntitlementKey,

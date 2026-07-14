@@ -19,6 +19,7 @@ import {
 } from "./drizzleCrmLeadReferenceCounts.js";
 import { findLeadIdsByVehicleTitle } from "./drizzleCrmLeadSearch.js";
 import { toActivity, toLead } from "./drizzleCrmMappers.js";
+import { createIdempotentCrmActivity } from "./drizzleCrmActivityWrites.js";
 import {
   findLeadVehicleReference,
   findLeadVehicleReferences,
@@ -50,6 +51,8 @@ export function createDrizzleCrmRepository(
       if (!row) throw new Error("Drizzle adapter did not return activity.");
       return toActivity(row);
     },
+    createActivityIdempotently: (input) =>
+      createIdempotentCrmActivity(db, input),
     async createLead(input) {
       const vehicleTitle = await findVehicleTitle(db, {
         listingId: input.listingId,

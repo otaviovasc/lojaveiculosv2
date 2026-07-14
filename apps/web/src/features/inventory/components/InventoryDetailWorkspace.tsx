@@ -168,7 +168,7 @@ export function InventoryDetailWorkspace({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed top-6 right-6 z-50 bg-accent text-inverse font-black px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-accent-strong/20"
+            className="fixed top-6 right-6 z-50 bg-accent text-accent-foreground font-black px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 border border-accent-strong/20"
           >
             <Info className="size-4 shrink-0" />
             <span>{notification}</span>

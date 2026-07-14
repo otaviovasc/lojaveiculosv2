@@ -5,6 +5,11 @@ export const AutomationWorkspace = lazy(() =>
     default: module.AutomationWorkspace,
   })),
 );
+export const AutoEntriesWorkspace = lazy(() =>
+  import("../features/autoEntries/AutoEntriesWorkspace").then((module) => ({
+    default: module.AutoEntriesWorkspace,
+  })),
+);
 export const BillingModule = lazy(() =>
   import("../features/billing/BillingModule").then((module) => ({
     default: module.BillingModule,

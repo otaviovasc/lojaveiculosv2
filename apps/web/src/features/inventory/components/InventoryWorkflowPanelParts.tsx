@@ -19,7 +19,7 @@ export function ModeButton({
   onClick: () => void;
 }) {
   const className = active
-    ? "min-h-10 rounded-lg bg-accent px-4 text-sm font-black text-inverse"
+    ? "min-h-10 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground"
     : "min-h-10 rounded-lg bg-app px-4 text-sm font-black text-app-text";
 
   return (
@@ -79,7 +79,7 @@ export function WorkflowSubmitButton({
 }) {
   return (
     <button
-      className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-accent px-4 text-sm font-black text-inverse disabled:cursor-not-allowed disabled:border-line disabled:bg-app-elevated disabled:text-muted disabled:opacity-100"
+      className="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-transparent bg-accent px-4 text-sm font-black text-accent-foreground disabled:cursor-not-allowed disabled:border-line disabled:bg-app-elevated disabled:text-muted disabled:opacity-100"
       disabled={isDisabled}
       type="submit"
     >

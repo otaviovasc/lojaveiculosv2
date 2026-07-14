@@ -90,7 +90,7 @@
 
 .documents-upload-action {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .documents-mode-toggle button.is-active {

@@ -3,11 +3,7 @@ import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { ConfirmDialog } from "../../components/ui/confirm-dialog";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createFinanceApi, type FinanceApi } from "./apiClient";
-import {
-  cancelCommission,
-  CommissionToast,
-  toBonusEntryDraft,
-} from "./CommissionActions";
+import { cancelCommission, CommissionToast } from "./CommissionActions";
 import {
   BonusCommissionDialog,
   ConfirmCommissionPayDialog,
@@ -17,24 +13,33 @@ import { CommissionEmptyState, CommissionHeader } from "./CommissionHeader";
 import { CommissionFiltersPanel } from "./CommissionFiltersPanel";
 import { CommissionSellerList } from "./CommissionSellerList";
 import { CommissionSummaryCards } from "./CommissionSummaryCards";
+import { hydrateEntrySellerNames } from "./commissionEntryMeta";
 import { FinanceEntryModal } from "./FinanceEntryModal";
 import { CommissionRulesPanel } from "./FinanceCorePanels";
 import { createFinanceApiOptions } from "./runtimeApi";
 import {
   buildCommissionWorkspace,
   initialCommissionFilters,
-  pendingSellerEntries,
   type CommissionSellerGroup,
 } from "./commissionWorkspaceModel";
-import { exportFinanceCsv, updateEntryFromDraft } from "./financeBillsActions";
 import {
-  toEntryInput,
-  type FinanceEntryDraft,
-  type FinanceToast,
-} from "./financeBillsModel";
+  createCommissionBonus,
+  payCommissionSeller,
+  selectedCommissionBonusSellerId,
+  updateCommissionDraft,
+} from "./commissionWorkspaceActions";
+import { CommissionAccessNotice } from "./FinanceModuleFeedback";
+import { exportFinanceCsv } from "./financeBillsActions";
+import { type FinanceEntryDraft, type FinanceToast } from "./financeBillsModel";
 import type { CommissionRule, FinanceEntry } from "./types";
+import { useFinanceAccess } from "./useFinanceAccess";
 
 export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
+  const {
+    canCreate,
+    canUpdate,
+    sellerOptions: teamSellers,
+  } = useFinanceAccess(Boolean(api));
   const [runtimeApi, setRuntimeApi] = useState<FinanceApi | null>(api ?? null);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [rules, setRules] = useState<CommissionRule[]>([]);
@@ -54,20 +59,29 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   const [cancelTarget, setCancelTarget] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
-  const workspace = useMemo(
-    () => buildCommissionWorkspace(entries, filters),
-    [entries, filters],
+  const visibleEntries = useMemo(
+    () => hydrateEntrySellerNames(entries, teamSellers),
+    [entries, teamSellers],
   );
+  const workspace = useMemo(
+    () => buildCommissionWorkspace(visibleEntries, filters),
+    [filters, visibleEntries],
+  );
+  const sellerOptions = useMemo(() => {
+    const options = new Map(
+      workspace.sellerOptions.map((seller) => [seller.value, seller]),
+    );
+    for (const seller of teamSellers) {
+      options.set(seller.id, { label: seller.label, value: seller.id });
+    }
+    return [...options.values()];
+  }, [teamSellers, workspace.sellerOptions]);
   const hasFilters =
     filters.period !== "thisMonth" ||
     filters.origin !== "all" ||
     Boolean(filters.sellerId) ||
     filters.status !== "all";
-  const selectedBonusSellerId = bonusSeller
-    ? bonusSeller.sellerId === "unassigned"
-      ? ""
-      : bonusSeller.sellerId
-    : null;
+  const selectedBonusSellerId = selectedCommissionBonusSellerId(bonusSeller);
 
   useEffect(() => {
     if (api) {
@@ -109,75 +123,55 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
 
   const createBonus = async (draft: BonusDraft) => {
     if (!runtimeApi) return;
-    setSavingBonus(true);
-    try {
-      await runtimeApi.createEntryFlow({
-        ...toEntryInput(toBonusEntryDraft(draft)),
-        metadata: {
-          notes: draft.notes.trim(),
-          origin: "manual_bonus",
-          source: "commissions_slice",
+    await createCommissionBonus(
+      {
+        api: runtimeApi,
+        onSaved: () => {
+          setBonusSeller(null);
+          setShowBonus(false);
         },
-      });
-      setToast({ kind: "success", title: "Bônus salvo", message: draft.name });
-      setBonusSeller(null);
-      setShowBonus(false);
-      refresh();
-    } catch (error) {
-      setToast({
-        kind: "error",
-        message: formatApiErrorDisplay(
-          error,
-          "Não foi possível salvar o bônus.",
-        ),
-        title: "Erro ao salvar bônus",
-      });
-    } finally {
-      setSavingBonus(false);
-    }
+        refresh,
+        setSaving: setSavingBonus,
+        setToast,
+      },
+      draft,
+    );
   };
 
   const paySellerEntries = async () => {
     if (!runtimeApi || !paySeller) return;
-    const entriesToPay = pendingSellerEntries(paySeller, filters);
-    setPayingSellerId(paySeller.sellerId);
-    try {
-      await Promise.all(
-        entriesToPay.map((entry) => runtimeApi.payEntry(entry.id)),
-      );
-      setToast({
-        kind: "success",
-        message: `${entriesToPay.length} lançamento(s) pagos`,
-        title: "Comissões pagas",
-      });
-      setPaySeller(null);
-      refresh();
-    } catch (error) {
-      setToast({
-        kind: "error",
-        message: formatApiErrorDisplay(
-          error,
-          "Não foi possível pagar as comissões.",
-        ),
-        title: "Erro ao pagar",
-      });
-    } finally {
-      setPayingSellerId(null);
-    }
+    await payCommissionSeller({
+      api: runtimeApi,
+      filters,
+      onPaid: () => setPaySeller(null),
+      refresh,
+      seller: paySeller,
+      setPayingSellerId,
+      setToast,
+    });
   };
 
   const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi || !modalEntry) return;
-    await updateEntryFromDraft(runtimeApi, modalEntry, draft);
-    setToast({ kind: "success", title: "Comissão salva", message: draft.name });
-    setIsModalOpen(false);
-    setModalEntry(null);
-    refresh();
+    await updateCommissionDraft(
+      {
+        api: runtimeApi,
+        entry: modalEntry,
+        onSaved: () => {
+          setIsModalOpen(false);
+          setModalEntry(null);
+        },
+        refresh,
+        setToast,
+      },
+      draft,
+    );
   };
 
   return (
     <FeaturePageShell variant="plain">
       <CommissionHeader
+        canCreate={canCreate}
         onCreateBonus={() => {
           setBonusSeller(null);
           setShowBonus(true);
@@ -187,6 +181,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         }
         summary={workspace.summary}
       />
+      <CommissionAccessNotice canManage={canCreate || canUpdate} />
       <CommissionSummaryCards summary={workspace.summary} />
       <CommissionFiltersPanel
         filters={filters}
@@ -194,11 +189,13 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         onChange={setFilters}
         onClear={() => setFilters(initialCommissionFilters())}
         originOptions={workspace.originOptions}
-        sellerOptions={workspace.sellerOptions}
+        sellerOptions={sellerOptions}
       />
       {toast ? <CommissionToast toast={toast} /> : null}
       {workspace.sellers.length ? (
         <CommissionSellerList
+          canCreate={canCreate}
+          canUpdate={canUpdate}
           filters={filters}
           isPayingSellerId={payingSellerId}
           onCancel={setCancelTarget}
@@ -217,6 +214,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         <CommissionEmptyState hasFilters={hasFilters} isLoading={isLoading} />
       )}
       <CommissionRulesPanel
+        canCreate={canCreate}
         items={rules}
         onCreate={async (input) => {
           if (!runtimeApi) throw new Error("Finance API unavailable");
@@ -233,7 +231,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           seller={paySeller}
         />
       ) : null}
-      {showBonus ? (
+      {showBonus && canCreate ? (
         <BonusCommissionDialog
           defaultDueAt={filters.to}
           isLoading={savingBonus}
@@ -245,7 +243,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           {...(selectedBonusSellerId !== null
             ? { selectedSellerId: selectedBonusSellerId }
             : {})}
-          sellerOptions={workspace.sellerOptions}
+          sellerOptions={sellerOptions}
         />
       ) : null}
       <FinanceEntryModal
@@ -257,6 +255,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           setModalEntry(null);
         }}
         onSubmit={submitDraft}
+        sellerOptions={teamSellers}
       />
       <ConfirmDialog
         confirmLabel="Cancelar comissão"

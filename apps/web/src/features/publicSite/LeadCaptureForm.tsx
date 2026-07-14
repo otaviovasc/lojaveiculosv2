@@ -79,7 +79,7 @@ export function LeadCaptureForm({
         placeholder="Olá, tenho interesse neste veículo. Aguardo o contato."
       />
       <button
-        className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-xs font-bold text-inverse shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
+        className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-xs font-bold text-accent-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
         disabled={state.kind === "submitting"}
         type="submit"
       >

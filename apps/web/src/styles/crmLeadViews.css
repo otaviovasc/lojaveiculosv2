@@ -24,6 +24,7 @@
 
 .crm-lead-row-active {
   background: var(--color-accent-soft);
+  color: var(--color-accent-soft-foreground);
 }
 
 .crm-lead-row strong,

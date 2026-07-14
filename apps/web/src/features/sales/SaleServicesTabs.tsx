@@ -1,10 +1,14 @@
-import { Landmark, Percent, RefreshCw, ShieldCheck } from "lucide-react";
-import type { ReactNode } from "react";
 import {
-  CommissionPanel,
-  FinancingPanel,
-  InsurancePanel,
-} from "./SaleServicesPolicyPanels";
+  FileText,
+  Landmark,
+  Percent,
+  RefreshCw,
+  ShieldCheck,
+} from "lucide-react";
+import type { ReactNode } from "react";
+import { CommissionPanel } from "./SaleServicesCommissionPanel";
+import { DocumentationPanel } from "./SaleServicesDocumentationPanel";
+import { FinancingPanel, InsurancePanel } from "./SaleServicesPolicyPanels";
 import { TradeInPanel } from "./SaleServicesTradeInPanel";
 import type {
   ActiveServiceTab,
@@ -16,6 +20,7 @@ import type { SaleRecord } from "./types";
 export function SaleServicesTabs({
   activeTab,
   commission,
+  documentation,
   financing,
   insurance,
   onChange,
@@ -25,6 +30,7 @@ export function SaleServicesTabs({
 }: {
   activeTab: ActiveServiceTab;
   commission: SnapshotRecord;
+  documentation: SnapshotRecord;
   financing: SnapshotRecord;
   insurance: SnapshotRecord;
   onChange: ServiceChangeHandler;
@@ -35,10 +41,10 @@ export function SaleServicesTabs({
   return (
     <div className="flex flex-col gap-3">
       <h3 className="text-xs font-black text-muted uppercase tracking-wider block">
-        3. Outros Serviços e Trocas (Seguro, Financiamento, Comissão, Troca)
+        3. Serviços da Venda
       </h3>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <ServiceTabButton
           active={activeTab === "financing"}
           icon={<Landmark className="size-4" />}
@@ -50,6 +56,12 @@ export function SaleServicesTabs({
           icon={<ShieldCheck className="size-4" />}
           label="Seguro"
           onClick={() => onTabChange("insurance")}
+        />
+        <ServiceTabButton
+          active={activeTab === "documentation"}
+          icon={<FileText className="size-4" />}
+          label="Documentação"
+          onClick={() => onTabChange("documentation")}
         />
         <ServiceTabButton
           active={activeTab === "commission"}
@@ -72,6 +84,12 @@ export function SaleServicesTabs({
         )}
         {activeTab === "insurance" && (
           <InsurancePanel insurance={insurance} onChange={onChange} />
+        )}
+        {activeTab === "documentation" && (
+          <DocumentationPanel
+            documentation={documentation}
+            onChange={onChange}
+          />
         )}
         {activeTab === "commission" && (
           <CommissionPanel commission={commission} onChange={onChange} />

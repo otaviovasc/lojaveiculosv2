@@ -5,6 +5,7 @@ import type { BillingServices } from "../../features/billing/controllers/billing
 import type { ComplianceServices } from "../../features/compliance/controllers/complianceServices.js";
 import type { CrmRealtimeBroker } from "../../domains/crm/ports/crmRealtimePublisher.js";
 import type { CrmServices } from "../../features/crm/controllers/crmServices.js";
+import type { CrmFinancialProductTransactionRunner } from "../../features/crm/controllers/crmFinancialProducts.js";
 import type { DocumentServices } from "../../features/documents/controllers/documentServices.js";
 import type { ExternalApiServices } from "../../features/externalApi/controllers/externalApiServices.js";
 import type { FinanceServices } from "../../features/finance/controllers/financeServices.js";
@@ -34,6 +35,7 @@ export type CreateAppOptions = {
   billingServices?: BillingServices;
   complianceServices?: ComplianceServices;
   crmRealtimeBroker?: CrmRealtimeBroker;
+  crmFinancialProductTransactionRunner?: CrmFinancialProductTransactionRunner;
   crmServices?: CrmServices;
   documentServices?: DocumentServices;
   externalApiRepository?: ExternalApiRepository;

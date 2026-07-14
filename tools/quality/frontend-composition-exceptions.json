@@ -6,10 +6,6 @@
       "reason": "Pre-existing local load-state type; remove during billing cleanup."
     },
     {
-      "path": "apps/web/src/features/finance/FinanceModule.tsx",
-      "reason": "Pre-existing local list-state type; remove during finance cleanup."
-    },
-    {
       "path": "apps/web/src/features/fiscal/FiscalModule.tsx",
       "reason": "Pre-existing local provider/metric helpers; remove during fiscal cleanup."
     },

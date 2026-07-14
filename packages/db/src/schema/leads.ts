@@ -93,6 +93,8 @@ export const leadActivities = pgTable(
     content: text("content").notNull(),
     createdByUserId: uuid("created_by_user_id").references(() => users.id),
     direction: leadActivityDirection("direction").notNull().default("internal"),
+    idempotencyFingerprint: varchar("idempotency_fingerprint", { length: 64 }),
+    idempotencyKey: varchar("idempotency_key", { length: 191 }),
     leadId: uuid("lead_id")
       .notNull()
       .references(() => leads.id),
@@ -115,6 +117,10 @@ export const leadActivities = pgTable(
       table.occurredAt,
     ),
     index("lead_activities_tenant_id_idx").on(table.tenantId),
+    uniqueIndex("lead_activities_store_idempotency_key_unique").on(
+      table.storeId,
+      table.idempotencyKey,
+    ),
   ],
 );
 

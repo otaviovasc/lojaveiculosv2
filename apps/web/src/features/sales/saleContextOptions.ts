@@ -5,7 +5,7 @@ import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi"
 import type { InventoryListingSummary } from "../inventory/model/types";
 import { createSettingsApi } from "../settings/apiClient";
 import { createSettingsApiOptions } from "../settings/runtimeApi";
-import type { RoleKey, RoleMemberView } from "../settings/types";
+import type { RoleKey, StoreMemberOptionView } from "../settings/types";
 import type { ProductCrmLead } from "../crm/productCrmTypes";
 
 export type SaleLeadOption = {
@@ -107,17 +107,12 @@ async function loadUnitOptions() {
   return result.items.flatMap(toUnitOptions);
 }
 
-async function loadSellerOptions(seed: SaleSellerOption | null) {
+export async function loadSellerOptions(seed: SaleSellerOption | null = null) {
   const seeded = seed ? [seed] : [];
   const api = createSettingsApi(await createSettingsApiOptions());
   try {
-    const roles = await api.getRoleManagement();
-    return mergeSellerOptions(
-      seeded,
-      roles.memberships
-        .filter((member) => member.status === "active")
-        .map(toSellerOption),
-    );
+    const result = await api.getStoreMemberOptions();
+    return mergeSellerOptions(seeded, result.members.map(toSellerOption));
   } catch (error) {
     if (seeded.length > 0) return seeded;
     throw error;
@@ -189,11 +184,11 @@ function toUnitOptions(item: InventoryListingSummary): SaleUnitOption[] {
     });
 }
 
-function toSellerOption(member: RoleMemberView): SaleSellerOption {
+function toSellerOption(member: StoreMemberOptionView): SaleSellerOption {
   return {
-    detail: `${roleLabel(member.role)} · ${member.user.email}`,
-    id: member.user.id,
-    label: member.user.name || member.user.email,
+    detail: `${roleLabel(member.role)} · ${member.email}`,
+    id: member.userId,
+    label: member.name || member.email,
     role: member.role,
   };
 }

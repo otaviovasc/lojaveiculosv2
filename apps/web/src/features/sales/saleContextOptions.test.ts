@@ -6,7 +6,7 @@ import { loadSaleContextOptions } from "./saleContextOptions";
 
 const listLeads = vi.fn();
 const listListings = vi.fn();
-const getRoleManagement = vi.fn();
+const getStoreMemberOptions = vi.fn();
 
 vi.mock("../crm/productCrmApi", () => ({
   createProductCrmApi: vi.fn(),
@@ -41,15 +41,15 @@ describe("sale context options", () => {
       listListings,
     } as unknown as ReturnType<typeof createInventoryApi>);
     vi.mocked(createSettingsApi).mockReturnValue({
-      getRoleManagement,
+      getStoreMemberOptions,
     } as unknown as ReturnType<typeof createSettingsApi>);
     listLeads.mockResolvedValue([]);
     listListings.mockResolvedValue({ items: [] });
-    getRoleManagement.mockReset();
+    getStoreMemberOptions.mockReset();
   });
 
-  it("keeps the current seller available when role management is forbidden", async () => {
-    getRoleManagement.mockRejectedValue(new Error("forbidden"));
+  it("keeps the current seller available when member options cannot load", async () => {
+    getStoreMemberOptions.mockRejectedValue(new Error("forbidden"));
 
     const state = await loadSaleContextOptions({
       email: "seller@example.test",
@@ -69,8 +69,33 @@ describe("sale context options", () => {
     ]);
   });
 
+  it("loads sellers from the workflow-scoped member options endpoint", async () => {
+    getStoreMemberOptions.mockResolvedValue({
+      members: [
+        {
+          email: "seller@example.test",
+          name: "Seller One",
+          role: "salesman",
+          userId: "user_1",
+        },
+      ],
+    });
+
+    const state = await loadSaleContextOptions();
+
+    expect(getStoreMemberOptions).toHaveBeenCalledOnce();
+    expect(state.options.sellers).toEqual([
+      {
+        detail: "Vendedor · seller@example.test",
+        id: "user_1",
+        label: "Seller One",
+        role: "salesman",
+      },
+    ]);
+  });
+
   it("loads only available inventory units for sale selection", async () => {
-    getRoleManagement.mockResolvedValue({ memberships: [] });
+    getStoreMemberOptions.mockResolvedValue({ members: [] });
     listListings.mockResolvedValue({
       items: [
         {

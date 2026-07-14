@@ -1,13 +1,15 @@
-import { Landmark, Percent, ShieldCheck } from "lucide-react";
+import { Landmark, ShieldCheck } from "lucide-react";
 import type { ReactNode } from "react";
 import { DatePickerField } from "../../components/ui/DatePickerField";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { SaleField } from "./SaleWorkspaceForm";
 import { formatCurrency, parseCurrency } from "./saleServicesFormat";
 import { formatIsoDate, parseIsoDate } from "./salesDateFormat";
+import { SalePercentageInput } from "./SalePercentageInput";
 import { snapshotNumber } from "./salesSnapshot";
 import type { ServiceChangeHandler } from "./SaleServicesTypes";
 import type { SnapshotRecord } from "./salesSnapshot";
+import { saleFinancingRanks } from "./types";
 
 export function FinancingPanel({
   financing,
@@ -41,6 +43,19 @@ export function FinancingPanel({
         value={snapshotNumber(financing.financedAmountCents)}
       />
 
+      <SaleField label="Classificação do Financiamento">
+        <FeatureSelect
+          ariaLabel="Classificação do financiamento"
+          className="!min-h-[2.5rem] !h-[2.5rem] !text-xs"
+          onChange={(value) => onChange("financing", "rank", value)}
+          options={saleFinancingRanks.map((rank) => ({
+            label: rank,
+            value: rank,
+          }))}
+          value={String(financing.rank ?? "R1")}
+        />
+      </SaleField>
+
       <SaleField label="Número de Parcelas">
         <input
           className="sales-input"
@@ -48,9 +63,10 @@ export function FinancingPanel({
             onChange(
               "financing",
               "installmentsCount",
-              event.target.value ? parseInt(event.target.value, 10) : "",
+              event.target.value ? parseInt(event.target.value, 10) : null,
             )
           }
+          min={1}
           placeholder="Ex: 48, 60"
           type="number"
           value={
@@ -70,13 +86,13 @@ export function FinancingPanel({
       />
 
       <SaleField label="Taxa de Juros A.M. (%)">
-        <input
+        <SalePercentageInput
           className="sales-input"
-          onChange={(event) =>
-            onChange("financing", "interestRate", event.target.value)
+          onValueChange={(value) =>
+            onChange("financing", "interestRatePercentage", value)
           }
           placeholder="Ex: 1.49"
-          value={String(financing.interestRate ?? "")}
+          value={snapshotNumber(financing.interestRatePercentage)}
         />
       </SaleField>
 
@@ -137,6 +153,17 @@ export function InsurancePanel({
         value={snapshotNumber(insurance.premiumCents)}
       />
 
+      <SaleField label="Comissão Aplicada sobre o Prêmio (%)">
+        <SalePercentageInput
+          className="sales-input"
+          onValueChange={(value) =>
+            onChange("insurance", "appliedCommissionPercentage", value)
+          }
+          placeholder="Entre 10 e 20"
+          value={snapshotNumber(insurance.appliedCommissionPercentage) ?? 10}
+        />
+      </SaleField>
+
       <SaleField label="Vigência Apólice (Até)">
         <DatePickerField
           label="Até"
@@ -158,69 +185,6 @@ export function InsurancePanel({
               { value: "cancelled", label: "Cancelado" },
             ]}
             value={String(insurance.status ?? "pending")}
-          />
-        </SaleField>
-      </div>
-    </div>
-  );
-}
-
-export function CommissionPanel({
-  commission,
-  onChange,
-}: {
-  commission: SnapshotRecord;
-  onChange: ServiceChangeHandler;
-}) {
-  return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <PanelHeader icon={<Percent className="size-4.5 text-accent" />}>
-        Configuração de Comissões
-      </PanelHeader>
-
-      <SaleField label="Regra / Tipo de Comissão">
-        <FeatureSelect
-          className="!min-h-[2.5rem] !h-[2.5rem] !text-xs"
-          onChange={(value) => onChange("commission", "ruleType", value)}
-          options={[
-            { value: "percentage", label: "Porcentagem da Venda (%)" },
-            { value: "fixed", label: "Valor Fixo (R$)" },
-            { value: "margin", label: "Percentual sobre Margem líquida" },
-          ]}
-          value={String(commission.ruleType ?? "percentage")}
-        />
-      </SaleField>
-
-      <SaleField label="Valor da Comissão (R$ / %)">
-        <input
-          className="sales-input"
-          onChange={(event) =>
-            commission.ruleType === "fixed"
-              ? onChange(
-                  "commission",
-                  "amountValueCents",
-                  parseCurrency(event.target.value),
-                )
-              : onChange("commission", "percentageRate", event.target.value)
-          }
-          placeholder={commission.ruleType === "fixed" ? "R$ 0,00" : "Ex: 1.5"}
-          value={
-            commission.ruleType === "fixed"
-              ? formatCurrency(snapshotNumber(commission.amountValueCents))
-              : String(commission.percentageRate ?? "")
-          }
-        />
-      </SaleField>
-
-      <div className="md:col-span-2">
-        <SaleField label="Observações de Pagamento da Comissão">
-          <textarea
-            className="sales-input !py-2 min-h-16 resize-y"
-            onChange={(event) =>
-              onChange("commission", "notes", event.target.value)
-            }
-            placeholder="Instruções para liberação do pagamento da comissão no financeiro..."
-            value={String(commission.notes ?? "")}
           />
         </SaleField>
       </div>

@@ -103,7 +103,7 @@
 .documents-builder-panel-heading button:hover:not(:disabled) {
   background: var(--color-panel);
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-accent-readable);
 }
 
 /* Inspector pane styling overrides */

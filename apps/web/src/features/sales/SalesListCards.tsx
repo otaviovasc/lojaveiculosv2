@@ -259,8 +259,8 @@ function SaleCardAction({
 }) {
   const hoverClass =
     tone === "danger"
-      ? "hover:border-danger/30 hover:bg-danger/5 hover:text-danger"
-      : "hover:border-accent/30 hover:bg-accent/5 hover:text-accent-strong";
+      ? "hover:border-danger/30 hover:bg-danger/5 hover:text-danger-soft-foreground"
+      : "hover:border-accent/30 hover:bg-accent/5 hover:text-accent-text";
   return (
     <button
       className={[

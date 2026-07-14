@@ -108,6 +108,9 @@ describe("API docs routes", () => {
       ].post.security,
     ).toEqual([{ bearerAuth: ["finance.attach_document"] }]);
     expect(
+      openApiDocument.paths["/api/v1/finance/auto-entry-rules"].post.security,
+    ).toEqual([{ bearerAuth: ["finance.auto_entries.manage"] }]);
+    expect(
       openApiDocument.paths["/api/v1/inventory/units/{unitId}/reserve"].post
         .security,
     ).toEqual([{ bearerAuth: ["inventory.reserve"] }]);

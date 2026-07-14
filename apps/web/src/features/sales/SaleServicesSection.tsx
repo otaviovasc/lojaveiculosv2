@@ -26,6 +26,7 @@ export function ServicesSection({
   const insurance = asSnapshotRecord(sale.saleSourceSnapshot.insurance);
   const financing = asSnapshotRecord(sale.saleSourceSnapshot.financing);
   const commission = asSnapshotRecord(sale.saleSourceSnapshot.commission);
+  const documentation = asSnapshotRecord(sale.saleSourceSnapshot.documentation);
   const tradeIn = asSnapshotRecord(sale.saleSourceSnapshot.tradeIn);
 
   const handleServiceChange: ServiceChangeHandler = (
@@ -95,6 +96,7 @@ export function ServicesSection({
       <SaleServicesTabs
         activeTab={activeTab}
         commission={commission}
+        documentation={documentation}
         financing={financing}
         insurance={insurance}
         onChange={handleServiceChange}

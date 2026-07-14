@@ -51,7 +51,7 @@ export function PublicListingDetailPanel({
               </h3>
             </div>
             <button
-              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-line bg-panel px-3 text-xs font-black uppercase tracking-[0.12em] text-muted shadow-sm transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent active:scale-95 cursor-pointer"
+              className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-line bg-panel px-3 text-xs font-black uppercase tracking-[0.12em] text-muted shadow-sm transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent-soft-foreground active:scale-95 cursor-pointer"
               onClick={onClose}
               type="button"
             >
@@ -76,7 +76,7 @@ export function PublicListingDetailPanel({
             <DetailState
               action={
                 <button
-                  className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-bold text-inverse shadow-sm cursor-pointer"
+                  className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-bold text-accent-foreground shadow-sm cursor-pointer"
                   onClick={onRetry}
                   type="button"
                 >

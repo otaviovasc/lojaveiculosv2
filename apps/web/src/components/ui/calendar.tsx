@@ -286,21 +286,21 @@ function Calendar({
           ),
           day_button: cn(
             buttonVariants({ variant: "ghost" }),
-            "h-9 w-9 p-0 font-medium rounded-lg text-xs flex items-center justify-center transition-all duration-150 hover:bg-accent/10 hover:text-accent active:scale-95",
+            "h-9 w-9 p-0 font-medium rounded-lg text-xs flex items-center justify-center transition-all duration-150 hover:bg-accent/10 hover:text-accent-text active:scale-95",
           ),
           range_start:
-            "day-range-start [&>button]:bg-accent [&>button]:text-inverse [&>button]:font-bold [&>button]:rounded-l-lg [&>button]:shadow-md",
+            "day-range-start [&>button]:bg-accent [&>button]:text-accent-foreground [&>button]:font-bold [&>button]:rounded-l-lg [&>button]:shadow-md",
           range_end:
-            "day-range-end [&>button]:bg-accent [&>button]:text-inverse [&>button]:font-bold [&>button]:rounded-r-lg [&>button]:shadow-md",
+            "day-range-end [&>button]:bg-accent [&>button]:text-accent-foreground [&>button]:font-bold [&>button]:rounded-r-lg [&>button]:shadow-md",
           selected:
-            "[&:not(.day-outside)>button]:bg-accent [&:not(.day-outside)>button]:text-inverse [&:not(.day-outside)>button]:font-bold [&:not(.day-outside)>button]:shadow-md [&:not(.day-outside)>button:hover]:bg-accent-strong [&:not(.day-outside)>button:hover]:text-inverse [&:not(.day-outside)>button:focus]:bg-accent [&:not(.day-outside)>button:focus]:text-inverse",
+            "[&:not(.day-outside)>button]:bg-accent [&:not(.day-outside)>button]:text-accent-foreground [&:not(.day-outside)>button]:font-bold [&:not(.day-outside)>button]:shadow-md [&:not(.day-outside)>button:hover]:bg-accent-strong [&:not(.day-outside)>button:hover]:text-accent-strong-foreground [&:not(.day-outside)>button:focus]:bg-accent [&:not(.day-outside)>button:focus]:text-accent-foreground",
           today:
-            "[&:not(.day-outside)>button]:bg-accent/12 [&:not(.day-outside)>button]:text-accent [&:not(.day-outside)>button]:font-black [&:not(.day-outside)>button]:ring-1 [&:not(.day-outside)>button]:ring-accent/30",
+            "[&:not(.day-outside)>button]:bg-accent/12 [&:not(.day-outside)>button]:text-accent-text [&:not(.day-outside)>button]:font-black [&:not(.day-outside)>button]:ring-1 [&:not(.day-outside)>button]:ring-accent/30",
           outside:
             "day-outside [&>button]:text-muted/20 opacity-30 pointer-events-none",
           disabled: "[&>button]:text-muted/30 opacity-30 pointer-events-none",
           range_middle:
-            "[&>button]:bg-accent/8 [&>button]:text-accent [&>button]:font-medium",
+            "[&>button]:bg-accent/8 [&>button]:text-accent-text [&>button]:font-medium",
           hidden: "invisible",
           ...classNames,
         }}

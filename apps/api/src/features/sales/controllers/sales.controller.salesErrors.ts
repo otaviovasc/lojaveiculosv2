@@ -1,4 +1,5 @@
 import type { Context } from "hono";
+import { FinanceAutoEntryEvaluationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryEvaluator.js";
 import {
   SaleDraftDeletionStateError,
   SaleDraftUpdateConflictError,
@@ -28,6 +29,14 @@ export function mapSalesDomainError(
   if (error instanceof SaleReadinessError) {
     return conflict(context, error, "SALE_READINESS_ERROR", {
       missingFields: error.missingFields,
+    });
+  }
+  if (error instanceof FinanceAutoEntryEvaluationError) {
+    return jsonApiError(context, {
+      code: "SALE_FINANCE_AUTO_ENTRY_VALIDATION_ERROR",
+      error,
+      message: error.message,
+      status: 400,
     });
   }
   if (error instanceof SaleTransitionStateError) {

@@ -89,3 +89,33 @@ export type CreateProductCrmActivityInput = {
   occurredAt?: string;
   priority?: number;
 };
+
+type LeadFinancialProductCommonInput = {
+  idempotencyKey: string;
+  occurredAt?: string;
+  sellerUserId: string;
+};
+
+export type CreateLeadFinancialProductInput =
+  | (LeadFinancialProductCommonInput & {
+      appliedCommissionBasisPoints?: number;
+      premiumCents: number;
+      type: "insurance";
+    })
+  | (LeadFinancialProductCommonInput & {
+      creditLetterAmountCents: number;
+      type: "consortium";
+    });
+
+export type LeadFinancialProductResult = {
+  activity: ProductCrmLeadActivity;
+  entries: Array<{
+    created: boolean;
+    entry: {
+      amountCents: number;
+      id: string;
+      name: string;
+      type: "commission" | "expense" | "revenue";
+    };
+  }>;
+};

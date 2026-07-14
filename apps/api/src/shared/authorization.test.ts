@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { assertEntitlement, assertPermission } from "./authorization.js";
+import {
+  assertAnyPermission,
+  assertEntitlement,
+  assertPermission,
+} from "./authorization.js";
 import type { StoreScopedServiceContext } from "./serviceContext.js";
 
 function createContext(
@@ -23,6 +27,29 @@ function createContext(
 }
 
 describe("authorization helpers", () => {
+  it("returns the first granted permission from an alternative set", () => {
+    const context = createContext({ permissions: ["lead.update"] });
+
+    expect(assertAnyPermission(context, ["sale.draft", "lead.update"])).toBe(
+      "lead.update",
+    );
+  });
+
+  it("throws and logs when every alternative permission is missing", () => {
+    const context = createContext();
+
+    expect(() =>
+      assertAnyPermission(context, ["sale.draft", "lead.update"]),
+    ).toThrow("Missing one of required permissions: sale.draft, lead.update");
+    expect(context.logger.warn).toHaveBeenCalledWith(
+      "authorization.permission.denied",
+      expect.objectContaining({
+        permissions: ["sale.draft", "lead.update"],
+        requestId: "req_1",
+      }),
+    );
+  });
+
   it("throws and logs when a permission is missing", () => {
     const context = createContext();
 

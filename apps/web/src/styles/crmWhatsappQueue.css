@@ -77,13 +77,13 @@
 .crm-whatsapp-filter-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .crm-whatsapp-filter-active span {
-  background: color-mix(in srgb, var(--color-inverse) 18%, transparent);
-  border-color: color-mix(in srgb, var(--color-inverse) 36%, transparent);
-  color: var(--color-inverse);
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
+  color: var(--color-accent-strong-foreground);
 }
 
 .crm-whatsapp-queue-select {
@@ -215,7 +215,7 @@
   background: var(--color-accent-strong);
   border: 1px solid var(--color-panel);
   border-radius: 999px;
-  color: var(--color-inverse);
+  color: var(--color-accent-strong-foreground);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-weight: 950;

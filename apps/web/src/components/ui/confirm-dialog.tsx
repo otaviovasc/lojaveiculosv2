@@ -90,7 +90,7 @@ export function ConfirmDialog({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -141,7 +141,7 @@ export function ConfirmDialog({
                 type="button"
                 onClick={onClose}
                 disabled={isLoading}
-                className="rounded-xl px-4 py-2.5 text-sm font-medium text-foreground bg-muted hover:bg-muted/80 transition-colors disabled:opacity-50"
+                className="rounded-xl bg-secondary px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 disabled:opacity-50"
               >
                 {cancelLabel}
               </button>

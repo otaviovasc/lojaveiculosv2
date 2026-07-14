@@ -7,15 +7,47 @@ export async function waitForSettledWorkspace(page: Page) {
 }
 
 export async function expectViewportSafe(page: Page) {
-  const overflow = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
+  const overflow = await page.evaluate(() => {
+    const clientWidth = document.documentElement.clientWidth;
+    const offenders = [...document.querySelectorAll<HTMLElement>("body *")]
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        return {
+          className: element.className.toString().slice(0, 120),
+          id: element.id,
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          tagName: element.tagName.toLowerCase(),
+          text: (element.textContent ?? "")
+            .trim()
+            .replace(/\s+/g, " ")
+            .slice(0, 80),
+          width: Math.round(rect.width),
+        };
+      })
+      .filter(
+        ({ left, right, width }) =>
+          width > 0 && (left < -1 || right > clientWidth + 1),
+      )
+      .slice(0, 16);
+
+    return {
+      clientWidth,
+      offenders,
+      scrollWidth: document.documentElement.scrollWidth,
+    };
+  });
 
   expect
     .soft(
       overflow.scrollWidth,
-      `page width ${overflow.scrollWidth}px exceeds viewport ${overflow.clientWidth}px`,
+      [
+        `page width ${overflow.scrollWidth}px exceeds viewport ${overflow.clientWidth}px`,
+        ...overflow.offenders.map(
+          ({ className, id, left, right, tagName, text, width }) =>
+            `${tagName}${id ? `#${id}` : ""}${className ? `.${className.replace(/\s+/g, ".")}` : ""} left=${left} right=${right} width=${width} text=${JSON.stringify(text)}`,
+        ),
+      ].join("\n"),
     )
     .toBeLessThanOrEqual(overflow.clientWidth + 1);
 }

@@ -1,4 +1,25 @@
 export const identityPaths = {
+  "/api/v1/identity/member-options": {
+    get: {
+      tags: ["Identity"],
+      summary: "List active store members for workflow selectors",
+      description:
+        "Returns only the identity fields required by seller and responsible-member selectors. It does not expose the role-management matrix or permission overrides.",
+      operationId: "listStoreMemberOptions",
+      security: [{ bearerAuth: [] }],
+      responses: {
+        "200": {
+          description: "Active store member options.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/StoreMemberOptionsView" },
+            },
+          },
+        },
+        "403": { description: "Missing a supported workflow permission." },
+      },
+    },
+  },
   "/api/v1/identity/roles": {
     get: {
       tags: ["Identity"],
@@ -54,6 +75,27 @@ export const identityPaths = {
 } as const;
 
 export const identitySchemas = {
+  StoreMemberOptionsView: {
+    type: "object",
+    additionalProperties: false,
+    required: ["members"],
+    properties: {
+      members: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["email", "name", "role", "userId"],
+          properties: {
+            email: { type: "string" },
+            name: { type: ["string", "null"] },
+            role: { type: "string" },
+            userId: { type: "string" },
+          },
+        },
+      },
+    },
+  },
   RoleManagementView: {
     type: "object",
     additionalProperties: true,

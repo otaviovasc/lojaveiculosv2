@@ -235,7 +235,7 @@ function BlockListRow({
 function BlockRowIcon({ type }: { type: string }) {
   const Icon = blockIcon(type);
   return (
-    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[selected=true]:bg-primary-foreground/15 group-data-[selected=true]:text-primary-foreground">
+    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground group-data-[selected=true]:bg-primary-foreground group-data-[selected=true]:text-primary">
       <Icon aria-hidden="true" className="size-3.5" />
     </span>
   );

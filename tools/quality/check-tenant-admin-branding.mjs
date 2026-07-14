@@ -70,6 +70,15 @@ if (!brandingSource.includes("normalizeHexColor")) {
 if (!brandingSource.includes("createTenantAdminBrandStyle")) {
   failures.push("tenantAdminBranding.ts must expose the dynamic CSS variables");
 }
+for (const marker of [
+  "--color-accent-foreground",
+  "--color-accent-soft-foreground",
+  "--color-accent-strong-foreground",
+  "createReadableTextColor",
+]) {
+  if (brandingSource.includes(marker)) continue;
+  failures.push(`tenantAdminBranding.ts must include ${marker}`);
+}
 
 if (failures.length > 0) {
   console.error("Tenant admin branding guardrail violations:");

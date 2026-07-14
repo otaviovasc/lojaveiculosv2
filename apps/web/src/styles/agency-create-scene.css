@@ -191,7 +191,7 @@
 .agency-create-intro__art-label {
   background: var(--color-accent);
   border-radius: 999px;
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   font-size: var(--font-size-xs);
   font-weight: 850;
   letter-spacing: 0.06em;

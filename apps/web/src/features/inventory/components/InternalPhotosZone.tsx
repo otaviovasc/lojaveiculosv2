@@ -58,7 +58,7 @@ export function InternalPhotosZone({
           <p className="text-xs font-bold text-muted">
             Nenhum arquivo interno anexado.
           </p>
-          <label className="mt-3 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent-soft px-4 text-xs font-black text-accent-strong hover:bg-accent-soft/85 cursor-pointer border border-accent-soft/20 shadow-sm">
+          <label className="mt-3 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg bg-accent-soft px-4 text-xs font-black text-accent-soft-foreground hover:bg-accent-soft/85 cursor-pointer border border-accent-soft/20 shadow-sm">
             <UploadCloud className="size-4" />
             <span>Adicionar registro interno</span>
             <input

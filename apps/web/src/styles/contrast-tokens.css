@@ -1,0 +1,43 @@
+:root {
+  --color-accent-contrast: #ffffff;
+  --color-accent-strong-contrast: #ffffff;
+  --color-accent-readable: #b81820;
+  --color-success-strong-foreground: #ffffff;
+  --color-success-contrast: #151515;
+  --color-success-soft-foreground: #066525;
+  --color-warning-contrast: #151515;
+  --color-warning-soft-foreground: #765b00;
+  --color-danger-readable: #b81820;
+  --color-danger-soft-foreground: #8c1118;
+  --color-info-soft-foreground: #182ab8;
+  --color-dark-control-surface: #27272a;
+  --color-dark-control-surface-hover: #4a4444;
+}
+
+:root[data-theme="dark"] {
+  --color-accent-contrast: #ffffff;
+  --color-accent-strong-contrast: #ffffff;
+  --color-accent-readable: #fce8e9;
+  --color-success-strong-foreground: #151515;
+  --color-success-contrast: #151515;
+  --color-success-soft-foreground: #f4efee;
+  --color-warning-contrast: #151515;
+  --color-warning-soft-foreground: #f4efee;
+  --color-danger-readable: #fce8e9;
+  --color-danger-soft-foreground: #f4efee;
+  --color-info-soft-foreground: #f4efee;
+}
+
+@theme {
+  --color-accent-foreground: var(--color-accent-contrast);
+  --color-accent-strong-foreground: var(--color-accent-strong-contrast);
+  --color-accent-text: var(--color-accent-readable);
+  --color-success-strong-foreground: var(--color-success-strong-foreground);
+  --color-success-soft-foreground: var(--color-success-soft-foreground);
+  --color-warning-soft-foreground: var(--color-warning-soft-foreground);
+  --color-danger-text: var(--color-danger-readable);
+  --color-danger-soft-foreground: var(--color-danger-soft-foreground);
+  --color-info-soft-foreground: var(--color-info-soft-foreground);
+  --color-success-foreground: var(--color-success-contrast);
+  --color-warning-foreground: var(--color-warning-contrast);
+}

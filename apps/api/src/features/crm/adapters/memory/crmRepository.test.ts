@@ -69,4 +69,28 @@ describe("createMemoryCrmRepository", () => {
       repository.listLeads({ ...scope, limit: 1, search: "corolla" }),
     ).resolves.toEqual([matchedLead]);
   });
+
+  it("atomically reuses a store-scoped idempotent activity", async () => {
+    const repository = createMemoryCrmRepository();
+    const input = {
+      ...scope,
+      activityType: "note" as const,
+      content: "Consórcio vendido",
+      idempotencyFingerprint: "a".repeat(64),
+      idempotencyKey: "11111111-1111-4111-8111-111111111111",
+      leadId: "22222222-2222-4222-8222-222222222222",
+    };
+
+    const [first, second] = await Promise.all([
+      repository.createActivityIdempotently(input),
+      repository.createActivityIdempotently(input),
+    ]);
+
+    expect(first.created).toBe(true);
+    expect(second.created).toBe(false);
+    expect(second.activity.id).toBe(first.activity.id);
+    expect(second.activity.idempotencyFingerprint).toBe(
+      input.idempotencyFingerprint,
+    );
+  });
 });

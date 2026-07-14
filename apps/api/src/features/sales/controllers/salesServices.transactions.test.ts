@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../shared/serviceContext.js";
+import { createTestFinanceAutoEntryRepository } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
 import type { TransactionRunner } from "../../../shared/transaction.js";
 import { createMemoryVehicleInventoryPorts } from "../../inventory/adapters/memory/vehicleInventoryPorts.js";
 import { createMemorySalesRepository } from "../adapters/memory/salesRepository.js";
@@ -68,6 +69,7 @@ describe("sales transaction composition", () => {
     ]);
     vehiclePorts.units.set("unit_1", unit());
     const workflowPorts: SalesWorkflowPorts = {
+      financeAutoEntryRepository: createTestFinanceAutoEntryRepository(),
       salesRepository,
       vehiclePorts,
     };

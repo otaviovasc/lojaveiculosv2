@@ -23,6 +23,7 @@ test("keeps document KPIs and rows readable across viewports", async ({
     permissions: documentPermissions,
     persona: qaPersonas.owner,
   });
+  await installAutomaticDocumentsOnly(page);
 
   await setQaViewport(page, "desktop");
   await page.goto("/documents");
@@ -42,6 +43,8 @@ test("keeps document KPIs and rows readable across viewports", async ({
   await expect(
     issuedRow.getByRole("button", { name: "Baixar documento" }),
   ).toBeVisible();
+  await expectStableFolderCountBadge(page);
+  await expectStableOriginFilter(page);
   expect(await isTextClipped(statusBadge)).toBe(false);
   expect((await actionCell.boundingBox())?.width ?? 0).toBeGreaterThanOrEqual(
     150,
@@ -58,6 +61,7 @@ test("keeps document KPIs and rows readable across viewports", async ({
   const mobileList = page.getByTestId("documents-mobile-list");
   await expect(kpiStrip).toBeVisible();
   await expect(mobileList).toBeVisible();
+  await expectStableOriginFilter(page);
   await expect(table).toBeHidden();
   await expect(
     mobileList.getByRole("button", { name: "Visualizar documento" }).first(),
@@ -117,6 +121,112 @@ async function isTextClipped(locator: ReturnType<Page["locator"]>) {
   );
 }
 
+async function expectStableFolderCountBadge(page: Page) {
+  const folderRow = page.locator(".documents-folder-sidebar-row").first();
+  await expect(folderRow).toBeVisible();
+  const [initial, changed] = await folderRow.evaluate((row) => {
+    const title = row.querySelector("strong");
+    const badge = row.querySelector<HTMLElement>(
+      ".documents-folder-sidebar-count",
+    );
+    if (!title || !badge) throw new Error("Pasta sem titulo ou contador.");
+
+    const originalTitle = title.textContent;
+    const originalCount = badge.textContent;
+    const read = () => {
+      const rowRect = row.getBoundingClientRect();
+      const badgeRect = badge.getBoundingClientRect();
+      return [
+        badgeRect.height,
+        badgeRect.width,
+        rowRect.right - badgeRect.right,
+      ] as const;
+    };
+    const before = read();
+    title.textContent = "Unidade com um titulo muito mais longo";
+    badge.textContent = "888";
+    const after = read();
+    title.textContent = originalTitle;
+    badge.textContent = originalCount;
+    return [before, after] as const;
+  });
+
+  changed.forEach((measurement, index) => {
+    expect(measurement).toBeCloseTo(initial[index], 1);
+  });
+}
+
+async function expectStableOriginFilter(page: Page) {
+  const originFilter = page.getByRole("group", {
+    name: "Origem dos documentos",
+  });
+  const options = ["Todos", "Automáticos", "Manuais"] as const;
+  await expect(originFilter).toBeVisible();
+  const initialWidth = (await originFilter.boundingBox())?.width ?? 0;
+  expect(initialWidth).toBeGreaterThan(0);
+
+  for (const label of options) {
+    const option = originFilter.getByRole("button", {
+      exact: true,
+      name: label,
+    });
+    await option.click();
+    await expect(option).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      originFilter.locator('button[aria-pressed="true"]'),
+    ).toHaveCount(1);
+    await expect(
+      originFilter.locator('button[aria-pressed="false"]'),
+    ).toHaveCount(2);
+    await page.waitForTimeout(400);
+    const currentWidth = (await originFilter.boundingBox())?.width ?? 0;
+    expect(Math.abs(currentWidth - initialWidth)).toBeLessThanOrEqual(1);
+
+    const optionWidths = await originFilter
+      .getByRole("button")
+      .evaluateAll((buttons) =>
+        buttons.map((button) => button.getBoundingClientRect().width),
+      );
+    expect(
+      Math.max(...optionWidths) - Math.min(...optionWidths),
+    ).toBeLessThanOrEqual(1);
+    expect(await isTextClipped(option)).toBe(false);
+  }
+
+  await originFilter
+    .getByRole("button", { exact: true, name: "Todos" })
+    .click();
+}
+
+async function installAutomaticDocumentsOnly(page: Page) {
+  await page.route("**/api/v1/documents*", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.method() !== "GET" || url.pathname !== "/api/v1/documents") {
+      await route.continue();
+      return;
+    }
+
+    const response = await route.fetch();
+    const payload = (await response.json()) as {
+      documents: Array<{
+        metadata?: Record<string, unknown>;
+        [key: string]: unknown;
+      }>;
+      [key: string]: unknown;
+    };
+    await route.fulfill({
+      json: {
+        ...payload,
+        documents: payload.documents.map((document) => ({
+          ...document,
+          metadata: { ...document.metadata, manualUpload: false },
+        })),
+      },
+      response,
+    });
+  });
+}
 async function expectViewportSafe(page: Page) {
   const viewport = await page.evaluate(() => ({
     clientWidth: document.documentElement.clientWidth,

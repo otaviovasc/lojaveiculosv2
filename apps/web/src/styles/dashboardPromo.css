@@ -70,7 +70,7 @@
   width: 2.25rem; /* size-9 */
   height: 2.25rem;
   border-radius: 0.75rem; /* rounded-xl */
-  background-color: rgba(255, 255, 255, 0.1); /* bg-white/10 */
+  background-color: var(--color-dark-control-surface);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -120,7 +120,7 @@
 }
 
 .promo-banner-btn:hover {
-  background-color: rgba(255, 255, 255, 0.2); /* hover:bg-white/20 */
+  background-color: var(--color-dark-control-surface-hover);
   gap: 0.625rem; /* hover:gap-2.5 */
 }
 

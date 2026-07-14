@@ -2,6 +2,7 @@ import type {
   SalePaymentMethod,
   SalePaymentStatus,
 } from "@lojaveiculosv2/shared";
+import type { SaleSourceSnapshot } from "../saleSourceSnapshot.js";
 
 export type SaleStatus = "draft" | "pending" | "closed" | "cancelled";
 export type { SalePaymentStatus } from "@lojaveiculosv2/shared";
@@ -35,7 +36,7 @@ export type SaleRecord = {
   payments: readonly SalePaymentLine[];
   revision: number;
   salePriceCents: number | null;
-  saleSourceSnapshot: Record<string, unknown>;
+  saleSourceSnapshot: SaleSourceSnapshot;
   selectedDocumentKinds: readonly string[];
   sellerUserId: string | null;
   status: SaleStatus;
@@ -57,7 +58,7 @@ export type SaveSaleDraftInput = {
   listingSnapshot?: Record<string, unknown>;
   payments?: readonly SaveSalePaymentInput[];
   salePriceCents?: number | null;
-  saleSourceSnapshot?: Record<string, unknown>;
+  saleSourceSnapshot?: SaleSourceSnapshot;
   selectedDocumentKinds?: readonly string[];
   sellerUserId?: string | null;
   unitId?: string | null;

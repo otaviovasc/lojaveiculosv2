@@ -221,7 +221,7 @@ export function CrmPipelineSettingsEtapas({ pipeline, onUpdate }: Props) {
               ) : (
                 <button
                   aria-label={`Excluir etapa ${stage.name}`}
-                  className="cursor-pointer rounded p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger"
+                  className="cursor-pointer rounded p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger-soft-foreground"
                   onClick={() => handleDeleteStage(stage.id)}
                   type="button"
                 >

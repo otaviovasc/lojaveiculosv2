@@ -68,7 +68,7 @@
 }
 
 .documents-table-sheet-header-label {
-  color: var(--color-accent-strong);
+  color: var(--color-accent-readable);
   font-size: var(--font-size-xs);
   font-weight: 800;
   letter-spacing: 0.05em;
@@ -95,7 +95,7 @@
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   border-radius: 9999px;
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   display: inline-flex;
   font-size: var(--font-size-xs);
   font-weight: 800;
@@ -122,7 +122,7 @@
 
 .documents-table-sheet-header-icon-button:hover {
   background: var(--color-app);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-readable);
   border-color: var(--color-accent);
   transform: translateY(-1px);
 }
@@ -132,7 +132,7 @@
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   cursor: pointer;
   display: inline-flex;
   font-size: var(--font-size-xs);

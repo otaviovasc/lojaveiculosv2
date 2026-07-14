@@ -89,13 +89,9 @@
 }
 
 .dashboard-sidebar-nav-item-active:hover {
-  background: color-mix(
-    in srgb,
-    var(--color-accent-soft) 85%,
-    var(--color-accent) 15%
-  );
+  background: var(--color-accent-soft);
   border-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-soft-foreground);
 }
 
 .sidebar-btn-secondary {

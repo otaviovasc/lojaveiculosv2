@@ -40,7 +40,7 @@ export function DocumentosChecklistEditor({
             </label>
             <button
               aria-label={`Excluir ${item.label}`}
-              className="rounded bg-transparent p-1 text-muted transition-colors hover:bg-danger/15 hover:text-danger disabled:cursor-not-allowed disabled:opacity-55"
+              className="rounded bg-transparent p-1 text-muted transition-colors hover:bg-danger/15 hover:text-danger-soft-foreground disabled:cursor-not-allowed disabled:opacity-55"
               disabled={disabled || checklist.items.length === 1}
               onClick={() => onDelete(item.id)}
               title="Excluir item"
@@ -70,7 +70,7 @@ export function DocumentosChecklistEditor({
         />
         <button
           aria-label="Adicionar item ao checklist"
-          className="flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-accent px-3.5 text-xs font-black text-inverse hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+          className="flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-accent px-3.5 text-xs font-black text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground disabled:cursor-not-allowed disabled:opacity-55"
           disabled={disabled || !newItemText.trim()}
           title="Adicionar item"
           type="submit"

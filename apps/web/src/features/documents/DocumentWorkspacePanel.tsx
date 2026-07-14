@@ -64,7 +64,7 @@ export function DocumentWorkspacePanel({
           </div>
           <div className="documents-workspace-actions">
             <button
-              className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse cursor-pointer shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-75"
+              className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground cursor-pointer shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-75"
               disabled={isBusy}
               onClick={onOpenUpload}
               type="button"

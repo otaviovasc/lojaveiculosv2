@@ -11,10 +11,12 @@ import { formatCurrency } from "./financeBillsFormat";
 import type { CommissionSummary } from "./commissionWorkspaceModel";
 
 export function CommissionHeader({
+  canCreate = true,
   onCreateBonus,
   onExport,
   summary,
 }: {
+  canCreate?: boolean;
   onCreateBonus: () => void;
   onExport: () => void;
   summary: CommissionSummary;
@@ -29,12 +31,14 @@ export function CommissionHeader({
               label="Exportar CSV"
               onClick={onExport}
             />
-            <FeatureActionButton
-              icon={PlusCircle}
-              label="Bônus manual"
-              onClick={onCreateBonus}
-              variant="primary"
-            />
+            {canCreate ? (
+              <FeatureActionButton
+                icon={PlusCircle}
+                label="Bônus manual"
+                onClick={onCreateBonus}
+                variant="primary"
+              />
+            ) : null}
           </>
         }
         description="Fechamento por vendedor usando lançamentos financeiros do tipo comissão, com pagamento auditado por lançamento da loja."

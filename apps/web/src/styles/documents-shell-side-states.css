@@ -1,0 +1,57 @@
+.documents-folder-sidebar-row:hover {
+  background: var(--color-app-elevated);
+  transform: translateY(-1px);
+}
+
+.documents-folder-sidebar-row--active,
+.documents-folder-sidebar-row--active:hover {
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  color: var(--color-accent-soft-foreground);
+}
+
+.documents-folder-sidebar-row--active::before {
+  opacity: 1;
+}
+
+.documents-folder-sidebar-row--active .documents-folder-sidebar-fallback {
+  color: var(--color-accent-strong);
+}
+
+.documents-folder-sidebar-row--active .documents-folder-sidebar-thumb {
+  border-color: var(--color-accent);
+}
+
+.documents-folder-sidebar-row-text strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documents-folder-sidebar-row-text small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.documents-folder-sidebar-row--active
+  .documents-folder-sidebar-row-text
+  strong {
+  color: var(--color-accent-soft-foreground);
+}
+
+.documents-folder-sidebar-row--active .documents-folder-sidebar-row-text small {
+  color: var(--color-accent-soft-muted);
+}
+
+.documents-folder-sidebar-row--active .documents-folder-sidebar-count {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}

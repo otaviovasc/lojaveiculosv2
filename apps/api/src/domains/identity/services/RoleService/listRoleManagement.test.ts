@@ -42,6 +42,7 @@ function createContext() {
 
 function createRepository(): RoleManagementRepository {
   return {
+    listActiveMembersByStore: vi.fn(async () => []),
     listByStore: vi.fn(async () => ({
       memberships: [
         {

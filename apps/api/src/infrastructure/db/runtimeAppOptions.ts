@@ -73,6 +73,7 @@ import { createRuntimeDocumentServices } from "../documents/runtimeDocumentServi
 import { createRuntimeFiscalServices } from "../fiscal/runtimeFiscalServices.js";
 import { createAsaasPaymentProviderGateway } from "../billing/asaasPaymentProviderGateway.js";
 import { createRuntimeCrmServices } from "./runtimeCrmServices.js";
+import { createRuntimeCrmFinancialProductTransactionRunner } from "./runtimeCrmFinancialProductTransaction.js";
 import {
   createDrizzleExternalApiRepository,
   type DrizzleExternalApiClient,
@@ -118,6 +119,13 @@ export function createRuntimeHttpAppOptions({
       ports: createRuntimeBillingServicePorts(db, env),
     }),
     complianceServices: createRuntimeComplianceServices(),
+    crmFinancialProductTransactionRunner:
+      createRuntimeCrmFinancialProductTransactionRunner(
+        db,
+        env,
+        crmRealtimeBroker,
+        runtimeObjectStorage,
+      ),
     crmRealtimeBroker,
     crmServices: createRuntimeCrmServices(
       db,
@@ -180,7 +188,6 @@ export function createRuntimeHttpAppOptions({
     ),
   };
 }
-
 export function createRuntimeBillingServicePorts(
   db: unknown,
   env: Record<string, string | undefined>,

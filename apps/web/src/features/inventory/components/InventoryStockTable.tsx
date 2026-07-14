@@ -83,7 +83,7 @@ export function InventoryStockTable({
           value={status}
         />
         <button
-          className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse disabled:opacity-70"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground disabled:opacity-70"
           disabled={state.kind === "loading"}
           type="submit"
         >

@@ -20,7 +20,7 @@
 }
 
 .crm-whatsapp-schedule-mode-title svg {
-  color: var(--color-success-strong);
+  color: var(--color-success-soft-foreground);
   flex: 0 0 auto;
   height: 1.1rem;
   width: 1.1rem;
@@ -88,7 +88,7 @@
 .crm-whatsapp-schedule-tabs .crm-whatsapp-schedule-tab-active {
   background: var(--color-green-soft);
   border-color: var(--color-success-strong);
-  color: var(--color-success-strong);
+  color: var(--color-success-soft-foreground);
 }
 
 .crm-whatsapp-schedule-toolbar-controls .crm-whatsapp-select {

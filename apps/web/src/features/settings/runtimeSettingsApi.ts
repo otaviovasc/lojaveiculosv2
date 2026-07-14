@@ -3,6 +3,10 @@ import { createSettingsApiOptions } from "./runtimeApi";
 
 export function createRuntimeSettingsApi(): SettingsApi {
   return {
+    getStoreMemberOptions: async () =>
+      createSettingsApi(
+        await createSettingsApiOptions(),
+      ).getStoreMemberOptions(),
     getStoreSettings: async () =>
       createSettingsApi(await createSettingsApiOptions()).getStoreSettings(),
     getRoleManagement: async () =>

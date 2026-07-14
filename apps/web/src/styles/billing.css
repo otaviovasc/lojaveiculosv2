@@ -39,7 +39,7 @@
 
 .billing-tabs button.is-active {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .billing-summary-grid,

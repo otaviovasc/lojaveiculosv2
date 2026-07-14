@@ -4,6 +4,7 @@ import type {
   IdentityInvitationView,
   InviteStoreMemberInput,
   RoleManagementView,
+  StoreMemberOptionsView,
   StoreSettingsSnapshot,
   UpdateMembershipAccessInput,
   UpdateStoreSettingsInput,
@@ -11,6 +12,7 @@ import type {
 
 export type SettingsApi = {
   getStoreSettings: () => Promise<StoreSettingsSnapshot>;
+  getStoreMemberOptions: () => Promise<StoreMemberOptionsView>;
   updateStoreSettings: (
     input: UpdateStoreSettingsInput,
   ) => Promise<StoreSettingsSnapshot>;
@@ -37,6 +39,10 @@ export function createSettingsApi({
   fetch,
 }: CreateSettingsApiOptions): SettingsApi {
   return {
+    getStoreMemberOptions: () =>
+      fetch(settingsRoutes.memberOptions(baseUrl), {
+        headers: createSettingsHeaders(auth),
+      }).then(readJson<StoreMemberOptionsView>),
     getStoreSettings: () =>
       fetch(settingsRoutes.store(baseUrl), {
         headers: createSettingsHeaders(auth),
@@ -72,6 +78,8 @@ export function createSettingsApi({
 }
 
 export const settingsRoutes = {
+  memberOptions: (baseUrl?: string) =>
+    createSettingsEndpoint("/identity/member-options", baseUrl),
   membershipAccess: (membershipId: string, baseUrl?: string) =>
     createSettingsEndpoint(
       `/identity/memberships/${encodeURIComponent(membershipId)}/access`,

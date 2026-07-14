@@ -236,7 +236,7 @@ export const llmsText = `# Loja Veiculos API
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.
-- Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_unit, sale, and sale_payment.
+- Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_listing, vehicle_unit, sale, and sale_payment.
 
 ## Vehicle document kinds
 - Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.

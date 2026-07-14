@@ -92,7 +92,7 @@ export function CreateSubmitPanel({
         <InventoryBadge tone="blue">{media.length} midias</InventoryBadge>
       </div>
       <button
-        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse disabled:opacity-70"
+        className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground disabled:opacity-70"
         disabled={submitLocked}
         type="submit"
       >
@@ -136,7 +136,7 @@ export function CreateNavigation({
       </button>
       {!isLast ? (
         <button
-          className="flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-inverse disabled:opacity-50"
+          className="flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground disabled:opacity-50"
           disabled={!canAdvance || submitting}
           onClick={onNext}
           type="button"
@@ -172,7 +172,7 @@ function ModeButton({
     <button
       className={[
         "min-h-14 rounded-lg border border-line px-4 text-sm font-black",
-        active ? "bg-accent text-inverse" : "bg-app text-app-text",
+        active ? "bg-accent text-accent-foreground" : "bg-app text-app-text",
       ].join(" ")}
       onClick={onClick}
       type="button"

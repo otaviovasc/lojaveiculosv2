@@ -185,6 +185,9 @@ function createCrmRepository(): CrmRepository {
   const leads: CrmLead[] = [];
   return {
     createActivity: vi.fn(async () => unexpected("activity creation")),
+    createActivityIdempotently: vi.fn(async () =>
+      unexpected("idempotent activity creation"),
+    ),
     createLead: vi.fn<CrmRepository["createLead"]>(async (input) => {
       const now = new Date();
       const lead: CrmLead = {

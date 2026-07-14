@@ -44,6 +44,9 @@ function createProductCrmApi(): ProductCrmApi {
     createActivity: vi.fn(async () => {
       throw new Error("createActivity should not be called");
     }),
+    createFinancialProduct: vi.fn(async () => {
+      throw new Error("createFinancialProduct should not be called");
+    }),
     createLead: vi.fn(async () => {
       throw new Error("createLead should not be called");
     }),

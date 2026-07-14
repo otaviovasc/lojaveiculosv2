@@ -215,7 +215,7 @@ function ViewportSwitcher({
               "flex size-9 items-center justify-center rounded-lg transition-colors",
               active
                 ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground",
             )}
             key={option.value}
             onClick={() => onChange(option.value)}

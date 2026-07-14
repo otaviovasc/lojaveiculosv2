@@ -111,6 +111,17 @@ export type RoleManagementView = {
   roles: readonly RoleTemplateView[];
 };
 
+export type StoreMemberOptionView = {
+  email: string;
+  name: string | null;
+  role: RoleKey;
+  userId: string;
+};
+
+export type StoreMemberOptionsView = {
+  members: readonly StoreMemberOptionView[];
+};
+
 export type UpdateMembershipAccessInput = {
   overrides: readonly {
     allowed: boolean;

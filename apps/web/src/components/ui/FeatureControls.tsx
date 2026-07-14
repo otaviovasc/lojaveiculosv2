@@ -178,7 +178,7 @@ export function FeatureSegmentedControl<Value extends string>({
             className={cx(
               "inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-0 text-xs font-bold transition-all cursor-pointer sm:px-2.5 sm:font-black",
               active
-                ? "bg-accent text-inverse shadow-sm"
+                ? "bg-accent text-accent-foreground shadow-sm"
                 : "text-muted hover:text-app-text",
             )}
             disabled={disabled}

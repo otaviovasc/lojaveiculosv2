@@ -139,7 +139,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
                   {/* Actions */}
                   <div className="flex justify-end">
                     <button
-                      className="cursor-pointer rounded p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger"
+                      className="cursor-pointer rounded p-1.5 text-muted transition-colors hover:bg-danger/10 hover:text-danger-soft-foreground"
                       onClick={() => handleDeleteRule(rule.id)}
                       type="button"
                     >

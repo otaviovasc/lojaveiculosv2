@@ -54,6 +54,7 @@ export type PermissionKey =
   | "documents.void"
   | "external_api.manage"
   | "finance.attach_document"
+  | "finance.auto_entries.manage"
   | "finance.create"
   | "finance.read"
   | "finance.update"
@@ -123,4 +124,5 @@ export * from "./vehicleTechnicalSpecs.js";
 export * from "./storefrontBuilder.js";
 export * from "./storefrontMedia.js";
 export * from "./externalApiContract.js";
+export * from "./financeAutoEntries.js";
 export * from "./salePayments.js";

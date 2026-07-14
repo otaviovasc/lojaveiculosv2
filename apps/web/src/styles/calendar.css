@@ -31,7 +31,7 @@
 .calendar-nav-btn:hover {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   transform: scale(1.06);
 }
 .calendar-nav-btn:active {
@@ -60,18 +60,18 @@
 }
 .calendar-caption-btn:hover {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-soft-foreground);
   border-color: var(--color-accent-soft);
 }
 .calendar-caption-btn--active {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   border-color: var(--color-accent);
 }
 .calendar-caption-btn--active:hover {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);
-  color: var(--color-inverse);
+  color: var(--color-accent-strong-foreground);
 }
 
 /* ── Picker panel (month grid / year grid) ──────────────────────── */
@@ -111,7 +111,7 @@
 }
 .calendar-picker-cell:hover {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-soft-foreground);
   border-color: var(--color-accent-soft);
   transform: scale(1.04);
 }
@@ -120,14 +120,14 @@
 }
 .calendar-picker-cell--selected {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   border-color: var(--color-accent);
   font-weight: 900;
 }
 .calendar-picker-cell--selected:hover {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);
-  color: var(--color-inverse);
+  color: var(--color-accent-strong-foreground);
 }
 
 /* ── Day grid spacing ───────────────────────────────────────────── */

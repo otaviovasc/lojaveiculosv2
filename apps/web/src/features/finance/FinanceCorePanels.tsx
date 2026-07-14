@@ -112,7 +112,7 @@ export function FinanceRecurringPanel({
         </FinanceField>
         <input name="type" type="hidden" value="expense" />
         <button
-          className="min-h-11 rounded-lg bg-accent px-4 text-sm font-black text-inverse md:col-span-5"
+          className="min-h-11 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground md:col-span-5"
           disabled={!nextDueAt}
           type="submit"
         >
@@ -127,9 +127,11 @@ export function FinanceRecurringPanel({
 }
 
 export function CommissionRulesPanel({
+  canCreate = true,
   items,
   onCreate,
 }: {
+  canCreate?: boolean;
   items: CommissionRule[];
   onCreate: (input: CommissionDraft) => Promise<void> | void;
 }) {
@@ -167,34 +169,40 @@ export function CommissionRulesPanel({
       icon={<Percent className="size-5" />}
       title="Regras de comissão"
     >
-      <form
-        className="grid gap-3 md:grid-cols-4"
-        onSubmit={(event) => void submitRule(event)}
-      >
-        <FinanceField label="Nome">
-          <FinanceInput name="name" required />
-        </FinanceField>
-        <FinanceField label="Categoria">
-          <FinanceInput name="category" required />
-        </FinanceField>
-        <FinanceField label="%">
-          <FinanceInput
-            max="100"
-            min="0.01"
-            name="percent"
-            required
-            step="0.01"
-            type="number"
-          />
-        </FinanceField>
-        <button
-          className="min-h-11 self-end rounded-lg bg-accent px-4 text-sm font-black text-inverse"
-          disabled={isSaving}
-          type="submit"
+      {canCreate ? (
+        <form
+          className="grid gap-3 md:grid-cols-4"
+          onSubmit={(event) => void submitRule(event)}
         >
-          {isSaving ? "Criando regra…" : "Criar regra"}
-        </button>
-      </form>
+          <FinanceField label="Nome">
+            <FinanceInput name="name" required />
+          </FinanceField>
+          <FinanceField label="Categoria">
+            <FinanceInput name="category" required />
+          </FinanceField>
+          <FinanceField label="%">
+            <FinanceInput
+              max="100"
+              min="0.01"
+              name="percent"
+              required
+              step="0.01"
+              type="number"
+            />
+          </FinanceField>
+          <button
+            className="min-h-11 self-end rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground"
+            disabled={isSaving}
+            type="submit"
+          >
+            {isSaving ? "Criando regra…" : "Criar regra"}
+          </button>
+        </form>
+      ) : (
+        <p className="text-sm font-bold text-muted">
+          Consulte as regras existentes. A criação exige permissão financeira.
+        </p>
+      )}
       {error ? (
         <p className="mt-3 text-sm font-bold text-danger" role="alert">
           {error}

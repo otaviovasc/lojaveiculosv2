@@ -50,6 +50,8 @@ export type CrmLeadActivity = {
   createdByUserId: UserId | null;
   direction: LeadActivityDirection;
   id: string;
+  idempotencyFingerprint: string | null;
+  idempotencyKey: string | null;
   leadId: string;
   metadata: Record<string, unknown>;
   occurredAt: Date;
@@ -98,6 +100,16 @@ export type CreateLeadActivityInput = {
   tenantId: TenantId;
 };
 
+export type CreateIdempotentLeadActivityInput = CreateLeadActivityInput & {
+  idempotencyFingerprint: string;
+  idempotencyKey: string;
+};
+
+export type CreateIdempotentLeadActivityResult = {
+  activity: CrmLeadActivity;
+  created: boolean;
+};
+
 export type ListCrmLeadsInput = {
   listingId?: string;
   limit: number;
@@ -118,6 +130,9 @@ export type ListLeadActivitiesInput = {
 
 export type CrmRepository = {
   createActivity: (input: CreateLeadActivityInput) => Promise<CrmLeadActivity>;
+  createActivityIdempotently: (
+    input: CreateIdempotentLeadActivityInput,
+  ) => Promise<CreateIdempotentLeadActivityResult>;
   createLead: (input: CreateCrmLeadInput) => Promise<CrmLead>;
   findLeadById: (input: {
     leadId: string;

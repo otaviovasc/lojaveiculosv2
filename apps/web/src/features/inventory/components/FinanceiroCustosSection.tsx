@@ -120,7 +120,7 @@ export function FinanceiroCustosSection({
           <button
             onClick={handleOpenModal}
             type="button"
-            className="min-h-8 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-3.5 flex items-center gap-1"
+            className="min-h-8 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-3.5 flex items-center gap-1"
           >
             <Plus className="size-3.5" />
             <span>Novo Custo</span>
@@ -153,7 +153,7 @@ export function FinanceiroCustosSection({
                           <button
                             onClick={() => onDownloadReceipt?.(c.receipt!.id)}
                             type="button"
-                            className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent cursor-pointer transition-all flex items-center justify-center"
+                            className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent-text cursor-pointer transition-all flex items-center justify-center"
                             title={`Visualizar comprovante: ${c.receipt.fileName}`}
                           >
                             <Paperclip className="size-3.5 text-accent" />
@@ -306,7 +306,7 @@ export function FinanceiroCustosSection({
               <button
                 disabled={isAdding}
                 type="submit"
-                className="min-h-9 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-4 flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-70"
+                className="min-h-9 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-4 flex items-center gap-1.5 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Plus className="size-3.5" />
                 <span>{isAdding ? "Salvando..." : "Confirmar"}</span>

@@ -32,7 +32,7 @@ export function InventoryWorkflowDocumentHandoff({
       </div>
 
       <a
-        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line bg-app-elevated px-4 text-sm font-black text-app-text transition-colors hover:border-accent/40 hover:text-accent-strong sm:w-fit"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-line bg-app-elevated px-4 text-sm font-black text-app-text transition-colors hover:border-accent/40 hover:text-accent-text sm:w-fit"
         href="#/documents"
       >
         Abrir documentos oficiais

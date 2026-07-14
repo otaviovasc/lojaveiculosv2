@@ -12,6 +12,7 @@ import type {
   CreateProductCrmActivityInput,
   ProductCrmLead,
 } from "./productCrmTypes";
+import { CrmLeadFinancialProducts } from "./CrmLeadFinancialProducts";
 
 type Props = {
   lead: ProductCrmLead;
@@ -183,7 +184,7 @@ export function CrmLeadDetailsFinanciamento({
           </div>
 
           <button
-            className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-inverse cursor-pointer hover:opacity-90 shadow-sm transition-opacity"
+            className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-accent-foreground cursor-pointer hover:opacity-90 shadow-sm transition-opacity"
             onClick={() => void handleSave()}
             type="button"
           >
@@ -192,6 +193,10 @@ export function CrmLeadDetailsFinanciamento({
           </button>
         </div>
       </div>
+      <CrmLeadFinancialProducts
+        defaultSellerUserId={lead.assignedUserId}
+        leadId={lead.id}
+      />
     </div>
   );
 }

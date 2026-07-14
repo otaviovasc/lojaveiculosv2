@@ -106,7 +106,7 @@ export function AnalysisPanel({
           </span>
         </div>
         <button
-          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-accent-soft/30 bg-accent-soft px-3 text-xs font-black text-accent-strong transition-all hover:bg-accent-soft/75 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-accent-soft/30 bg-accent-soft px-3 text-xs font-black text-accent-soft-foreground transition-all hover:bg-accent-soft/75 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           disabled={!canAnalyze || isLoading}
           onClick={onGenerate}
           type="button"

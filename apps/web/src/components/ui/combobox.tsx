@@ -157,7 +157,7 @@ export function Combobox({
                     setSearch("");
                     inputRef.current?.focus();
                   }}
-                  className="p-1.5 hover:bg-muted rounded-full transition-colors"
+                  className="p-1.5 hover:bg-secondary rounded-full transition-colors"
                   type="button"
                 >
                   <X className="h-3.5 w-3.5 text-muted-foreground" />
@@ -193,7 +193,7 @@ export function Combobox({
                         "relative flex w-full cursor-pointer select-none items-center rounded-xl px-3 py-2.5 text-sm transition-colors text-left",
                         value === option.value
                           ? "bg-primary/10 text-primary font-bold"
-                          : "hover:bg-muted text-foreground",
+                          : "hover:bg-secondary text-foreground",
                       )}
                       onClick={() => {
                         onChange(option.value);

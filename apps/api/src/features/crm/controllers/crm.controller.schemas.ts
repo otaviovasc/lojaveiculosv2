@@ -1,3 +1,4 @@
+import { financeAutoEntryMaxAmountCents } from "@lojaveiculosv2/shared";
 import { z } from "zod";
 
 export {
@@ -111,3 +112,36 @@ export const createActivitySchema = z.object({
   occurredAt: z.string().datetime().optional(),
   priority: z.number().int().min(0).max(5).optional(),
 });
+
+const financialProductCommonFields = {
+  idempotencyKey: z.string().uuid(),
+  occurredAt: z.string().datetime().optional(),
+  sellerUserId: z.string().uuid(),
+} as const;
+
+export const createLeadFinancialProductSchema = z.discriminatedUnion("type", [
+  z.object({
+    ...financialProductCommonFields,
+    appliedCommissionBasisPoints: z
+      .number()
+      .int()
+      .min(1_000)
+      .max(2_000)
+      .default(1_000),
+    premiumCents: z
+      .number()
+      .int()
+      .positive()
+      .max(financeAutoEntryMaxAmountCents),
+    type: z.literal("insurance"),
+  }),
+  z.object({
+    ...financialProductCommonFields,
+    creditLetterAmountCents: z
+      .number()
+      .int()
+      .positive()
+      .max(financeAutoEntryMaxAmountCents),
+    type: z.literal("consortium"),
+  }),
+]);

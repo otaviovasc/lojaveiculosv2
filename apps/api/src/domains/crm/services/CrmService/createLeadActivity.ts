@@ -7,6 +7,7 @@ import type {
   LeadActivityType,
 } from "../../ports/crmRepository.js";
 import {
+  CrmActivityIdempotencyConflictError,
   CrmLeadNotFoundError,
   getCrmRepository,
   requireCrmScope,
@@ -19,6 +20,8 @@ export type CreateLeadActivityInput = {
   activityType: LeadActivityType;
   content: string;
   direction?: LeadActivityDirection;
+  idempotencyFingerprint?: string;
+  idempotencyKey?: string;
   leadId: string;
   metadata?: Record<string, unknown>;
   occurredAt?: Date;
@@ -50,7 +53,7 @@ export async function createLeadActivity(
     }),
   );
 
-  const activity = await repository.createActivity({
+  const createInput = {
     activityType: input.activityType,
     content: input.content,
     createdByUserId:
@@ -62,7 +65,35 @@ export async function createLeadActivity(
     priority: input.priority ?? 0,
     storeId: scope.storeId as never,
     tenantId: scope.tenantId as never,
-  });
+  };
+  const hasIdempotency = Boolean(
+    input.idempotencyFingerprint && input.idempotencyKey,
+  );
+  if (Boolean(input.idempotencyFingerprint) !== Boolean(input.idempotencyKey)) {
+    throw new Error(
+      "CRM activity idempotency requires both key and fingerprint.",
+    );
+  }
+  const result = hasIdempotency
+    ? await repository.createActivityIdempotently({
+        ...createInput,
+        idempotencyFingerprint: input.idempotencyFingerprint!,
+        idempotencyKey: input.idempotencyKey!,
+      })
+    : {
+        activity: await repository.createActivity(createInput),
+        created: true,
+      };
+  const activity = result.activity;
+  if (
+    hasIdempotency &&
+    (activity.idempotencyFingerprint !== input.idempotencyFingerprint ||
+      activity.leadId !== input.leadId ||
+      activity.storeId !== scope.storeId ||
+      activity.tenantId !== scope.tenantId)
+  ) {
+    throw new CrmActivityIdempotencyConflictError();
+  }
 
   await context.audit.record({
     action: "crm.lead.activity.create",
@@ -73,6 +104,7 @@ export async function createLeadActivity(
     metadata: {
       activityType: activity.activityType,
       direction: activity.direction,
+      idempotencyReused: !result.created,
       leadId: activity.leadId,
       permission,
     },
@@ -80,7 +112,9 @@ export async function createLeadActivity(
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
-    summary: "Created CRM lead activity",
+    summary: result.created
+      ? "Created CRM lead activity"
+      : "Reused idempotent CRM lead activity",
   });
 
   return activity;

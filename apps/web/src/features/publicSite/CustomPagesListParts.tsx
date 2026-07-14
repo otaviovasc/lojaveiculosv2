@@ -90,7 +90,7 @@ export function PageCard({
           </a>
         </Button>
         <IconButton
-          className="hover:border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+          className="hover:border-destructive/30 hover:bg-destructive/10 hover:text-danger-soft-foreground"
           disabled={isBusy}
           icon={<Trash2 className="h-4 w-4" />}
           label="Excluir"

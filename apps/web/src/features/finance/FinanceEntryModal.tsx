@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import type { SaleSellerOption } from "../sales/saleContextOptions";
 import {
   createEntryDraft,
   entryToDraft,
@@ -24,12 +25,14 @@ export function FinanceEntryModal({
   isOpen,
   onClose,
   onSubmit,
+  sellerOptions = [],
 }: {
   activeType: FinanceEntryType;
   entry: FinanceEntry | null;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (draft: FinanceEntryDraft) => Promise<void>;
+  sellerOptions?: readonly SaleSellerOption[];
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [draft, setDraft] = useState(() => createEntryDraft(activeType));
@@ -54,8 +57,15 @@ export function FinanceEntryModal({
         [field]: typeof value === "string" ? value : value.target.value,
       }));
     };
+  const amount = Number(draft.amount.replace(",", "."));
   const canProceed =
-    step < 3 || Boolean(draft.name.trim() && draft.amount && draft.category);
+    step < 3 ||
+    Boolean(
+      draft.name.trim() &&
+      draft.category &&
+      Number.isFinite(amount) &&
+      amount > 0,
+    );
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -103,7 +113,7 @@ export function FinanceEntryModal({
             </div>
             {step < 3 && !entry ? (
               <button
-                className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-accent-foreground"
                 onClick={() => setStep((current) => (current + 1) as 2 | 3)}
                 type="button"
               >
@@ -112,7 +122,7 @@ export function FinanceEntryModal({
               </button>
             ) : (
               <button
-                className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-inverse disabled:opacity-70"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-accent-foreground disabled:opacity-70"
                 disabled={isSaving || !canProceed}
                 onClick={() => formRef.current?.requestSubmit()}
                 type="button"
@@ -135,7 +145,12 @@ export function FinanceEntryModal({
         ) : step === 2 ? (
           <RecurrenceStep draft={draft} onChange={setDraft} />
         ) : (
-          <DetailsStep draft={draft} setField={setField} setDraft={setDraft} />
+          <DetailsStep
+            draft={draft}
+            sellerOptions={sellerOptions}
+            setField={setField}
+            setDraft={setDraft}
+          />
         )}
       </form>
     </FeatureDialog>

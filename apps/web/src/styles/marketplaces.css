@@ -170,7 +170,7 @@
 
 .marketplace-actions button:first-child {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .marketplace-actions button:disabled,

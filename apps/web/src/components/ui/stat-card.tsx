@@ -13,7 +13,7 @@ const THEMES = {
   success: {
     bgGradient: "from-success/10 via-card to-background",
     iconBg:
-      "bg-success/10 text-success border-success/20 group-hover:bg-success/15",
+      "bg-success/10 text-success-soft-foreground border-success/20 group-hover:bg-success/10",
     glow: "bg-success/10",
     bottomBorder: "from-success via-success/70 to-success",
     hoverBorder: "group-hover:border-success/30",
@@ -29,7 +29,7 @@ const THEMES = {
   emerald: {
     bgGradient: "from-emerald-500/10 via-card to-background",
     iconBg:
-      "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 group-hover:bg-emerald-500/15",
+      "bg-emerald-500/10 text-success-soft-foreground border-emerald-500/20 group-hover:bg-emerald-500/10",
     glow: "bg-emerald-500/10",
     bottomBorder: "from-emerald-500 via-emerald-400 to-emerald-500",
     hoverBorder: "group-hover:border-emerald-500/30",
@@ -37,7 +37,7 @@ const THEMES = {
   amber: {
     bgGradient: "from-amber-500/10 via-card to-background",
     iconBg:
-      "bg-amber-500/10 text-amber-500 border-amber-500/20 group-hover:bg-amber-500/15",
+      "bg-amber-500/10 text-warning-soft-foreground border-amber-500/20 group-hover:bg-amber-500/10",
     glow: "bg-amber-500/10",
     bottomBorder: "from-amber-500 via-amber-400 to-amber-500",
     hoverBorder: "group-hover:border-amber-500/30",
@@ -45,7 +45,7 @@ const THEMES = {
   blue: {
     bgGradient: "from-blue-500/10 via-card to-background",
     iconBg:
-      "bg-blue-500/10 text-blue-500 border-blue-500/20 group-hover:bg-blue-500/15",
+      "bg-blue-500/10 text-info-soft-foreground border-blue-500/20 group-hover:bg-blue-500/10",
     glow: "bg-blue-500/10",
     bottomBorder: "from-blue-500 via-blue-400 to-blue-500",
     hoverBorder: "group-hover:border-blue-500/30",

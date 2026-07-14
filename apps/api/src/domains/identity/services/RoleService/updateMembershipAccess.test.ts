@@ -231,6 +231,7 @@ function createRepository(): RoleManagementRepository {
   };
 
   return {
+    listActiveMembersByStore: vi.fn(async () => []),
     listByStore: vi.fn(async () => state),
     updateMembershipAccess: vi.fn(async () => state),
   };

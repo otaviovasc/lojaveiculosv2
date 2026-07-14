@@ -6,6 +6,7 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import type { CrmRealtimeBroker } from "../../../domains/crm/ports/crmRealtimePublisher.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { createPassthroughTransactionRunner } from "../../../shared/transaction.js";
 import {
   cleanCreateActivityInput,
   cleanCreateLeadInput,
@@ -14,11 +15,18 @@ import {
 } from "./crm.controller.cleaners.js";
 import {
   createActivitySchema,
+  createLeadFinancialProductSchema,
   createLeadSchema,
   listActivitiesQuerySchema,
   listLeadsQuerySchema,
   updateLeadSchema,
 } from "./crm.controller.schemas.js";
+import type { FinanceServices } from "../../finance/controllers/financeServices.js";
+import { financeServices as defaultFinanceServices } from "../../finance/controllers/financeServices.js";
+import {
+  createCrmLeadFinancialProduct,
+  type CrmFinancialProductTransactionRunner,
+} from "./crmFinancialProducts.js";
 import { registerCrmPipelineRoutes } from "./crm.pipeline.routes.js";
 import { registerCrmVisitRoutes } from "./crm.visits.routes.js";
 import {
@@ -32,7 +40,10 @@ export type CrmContextFactory = (context: Context) => Promise<ServiceContext>;
 
 export type CreateCrmFeatureOptions = {
   contextFactory?: CrmContextFactory;
-  realtimeBroker?: CrmRealtimeBroker;
+  financialProductTransactionRunner?:
+    CrmFinancialProductTransactionRunner | undefined;
+  financeServices?: Pick<FinanceServices, "materializeAutoEntries"> | undefined;
+  realtimeBroker?: CrmRealtimeBroker | undefined;
   services?: CrmServices;
   webhookContextFactory?: CrmContextFactory;
 };
@@ -40,6 +51,13 @@ export type CreateCrmFeatureOptions = {
 export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
   const crmFeature = new Hono();
   const services = options.services ?? crmServices;
+  const financeServices = options.financeServices ?? defaultFinanceServices;
+  const financialProductTransactionRunner =
+    options.financialProductTransactionRunner ??
+    createPassthroughTransactionRunner({
+      createActivity: services.createActivity,
+      materializeAutoEntries: financeServices.materializeAutoEntries,
+    });
   const contextFactory =
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
   const createContext = (context: Context) =>
@@ -122,6 +140,22 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
         cleanCreateActivityInput(context.req.param("leadId"), input),
       );
       return context.json(activity, 201);
+    }),
+  );
+
+  crmFeature.post("/leads/:leadId/financial-products", async (context) =>
+    handleCrm(context, async () => {
+      const input = await parseJson(context, createLeadFinancialProductSchema);
+      const serviceContext = await createContext(context);
+      const result = await createCrmLeadFinancialProduct(
+        serviceContext,
+        context.req.param("leadId"),
+        input,
+        services,
+        financeServices,
+        financialProductTransactionRunner,
+      );
+      return context.json(result, 201);
     }),
   );
 

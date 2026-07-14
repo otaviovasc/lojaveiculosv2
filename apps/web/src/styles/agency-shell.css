@@ -76,7 +76,7 @@
 
 .agency-sidebar .agency-menu-item-active svg,
 .agency-mobile-drawer .agency-menu-item-active svg {
-  color: var(--color-accent);
+  color: var(--color-accent-readable);
 }
 
 .agency-sidebar-footer,

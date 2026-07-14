@@ -2,6 +2,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { SaleRecord, SaleStatus } from "../../ports/salesRepository.js";
 import { assertSalePaymentsLocallyReversible } from "../../salePaymentCompensation.js";
+import { requireSaleAccountingFacts } from "../../saleAccountingFacts.js";
 import {
   auditSalesServiceEvent,
   collectMissingSaleFields,
@@ -47,6 +48,7 @@ export async function transitionSale(
   if (input.status === "cancelled") {
     assertSalePaymentsLocallyReversible(current.payments);
   } else {
+    if (input.status === "closed") requireSaleAccountingFacts(current);
     const readinessPurpose = input.status === "pending" ? "reserve" : "close";
     const missingFields = collectMissingSaleFields(current, readinessPurpose);
     if (missingFields.length && !input.overrideRequiredFields) {

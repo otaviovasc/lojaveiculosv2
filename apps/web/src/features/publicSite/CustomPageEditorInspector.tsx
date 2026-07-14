@@ -46,7 +46,7 @@ export function BuilderInspector({
           </p>
           <button
             aria-label="Fechar ajustes"
-            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             onClick={onClose}
             type="button"
           >
@@ -82,7 +82,7 @@ export function BuilderInspector({
         <div className="flex shrink-0 items-center gap-1">
           <button
             aria-label="Remover bloco"
-            className="flex size-9 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10"
+            className="flex size-9 items-center justify-center rounded-lg text-danger-soft-foreground transition-colors hover:bg-destructive/10"
             onClick={() => onRemove(component.id)}
             type="button"
           >
@@ -90,7 +90,7 @@ export function BuilderInspector({
           </button>
           <button
             aria-label="Fechar ajustes"
-            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
             onClick={onClose}
             type="button"
           >

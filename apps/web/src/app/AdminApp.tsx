@@ -6,6 +6,7 @@ import { FeatureLoadingState } from "../components/ui/FeatureStates";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { useOptionalAccountSession } from "../features/account/accountSession";
 import {
+  AutoEntriesWorkspace,
   AutomationWorkspace,
   BillingModule,
   CrmModule,
@@ -50,6 +51,8 @@ export function AdminApp() {
           <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
         ) : activeSurface === "automation" ? (
           <AutomationWorkspace />
+        ) : activeSurface === "finance-auto-entries" ? (
+          <AutoEntriesWorkspace />
         ) : activeSurface === "crm-leads" ? (
           <CrmModule routeSurface="leads" />
         ) : activeSurface === "sales" ? (
@@ -63,9 +66,9 @@ export function AdminApp() {
         ) : activeSurface === "reports" ? (
           <ReportsModule />
         ) : activeSurface === "finance-expenses" ? (
-          <FinanceModule defaultActiveType="expense" />
+          <FinanceModule defaultActiveType="expense" onNavigate={navigate} />
         ) : activeSurface === "finance-commissions" ? (
-          <FinanceModule defaultActiveType="commission" />
+          <FinanceModule defaultActiveType="commission" onNavigate={navigate} />
         ) : activeSurface === "storefront-design" ? (
           <StorefrontCustomizationModule key="customize" initialTab="design" />
         ) : activeSurface === "storefront-pages" ? (

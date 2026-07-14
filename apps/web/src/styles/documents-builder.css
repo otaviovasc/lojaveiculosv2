@@ -101,7 +101,7 @@
 .documents-builder-back:hover {
   background: var(--color-panel);
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-accent-readable);
   transform: translateX(-2px);
   box-shadow: 0 4px 12px rgb(0 0 0 / 0.06);
 }
@@ -220,7 +220,7 @@
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 700;

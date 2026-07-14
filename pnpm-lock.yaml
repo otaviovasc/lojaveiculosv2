@@ -40,6 +40,9 @@ importers:
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
+      postcss:
+        specifier: 8.5.16
+        version: 8.5.16
       postgres:
         specifier: ^3.4.9
         version: 3.4.9

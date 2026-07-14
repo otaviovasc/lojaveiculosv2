@@ -15,8 +15,10 @@ export function getTextColorForBackground(hexColor: string): string {
   const rgb = parseHexColor(hexColor);
   if (!rgb) return "var(--color-text)";
 
-  const yiq = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000;
-  return yiq >= 128 ? DARK_READABLE_TEXT : LIGHT_READABLE_TEXT;
+  return contrastRatio(parseHexColor(DARK_READABLE_TEXT)!, rgb) >=
+    contrastRatio(parseHexColor(LIGHT_READABLE_TEXT)!, rgb)
+    ? DARK_READABLE_TEXT
+    : LIGHT_READABLE_TEXT;
 }
 
 export function getContrastColorForText(hexColor: string): string {

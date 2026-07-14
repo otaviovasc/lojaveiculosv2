@@ -93,7 +93,7 @@
   align-items: center;
   background: var(--color-accent);
   border-radius: 999px;
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   display: inline-flex;
   flex: 0 0 auto;
   font-size: var(--font-size-xs);
@@ -112,7 +112,7 @@
 
 .crm-whatsapp-scope-tab-active .crm-whatsapp-scope-tab-badge {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .crm-whatsapp-section {

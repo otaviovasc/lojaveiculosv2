@@ -47,6 +47,16 @@ const state: RoleManagementState = {
 
 export function createMemoryRoleManagementRepository(): RoleManagementRepository {
   return {
+    async listActiveMembersByStore() {
+      return state.memberships
+        .filter((member) => member.status === "active")
+        .map((member) => ({
+          email: member.user.email,
+          name: member.user.name,
+          role: member.role,
+          userId: member.user.id,
+        }));
+    },
     async listByStore(input) {
       return {
         ...state,

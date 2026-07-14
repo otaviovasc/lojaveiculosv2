@@ -53,7 +53,7 @@ export function FinanceiroPessoasCard({
                 setTempPessoas(pessoas);
                 setIsEditing(true);
               }}
-              className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent cursor-pointer transition-all"
+              className="p-1 rounded bg-transparent hover:bg-line/25 text-muted hover:text-accent-text cursor-pointer transition-all"
               title="Editar pessoas"
               type="button"
             >
@@ -118,7 +118,7 @@ export function FinanceiroPessoasCard({
                   }
                 />
                 <button
-                  className="p-2 bg-app-elevated border border-line rounded-lg text-muted hover:text-accent cursor-pointer"
+                  className="p-2 bg-app-elevated border border-line rounded-lg text-muted hover:text-accent-text cursor-pointer"
                   type="button"
                 >
                   <UserPlus className="size-4" />
@@ -141,7 +141,7 @@ export function FinanceiroPessoasCard({
                   }
                 />
                 <button
-                  className="p-2 bg-app-elevated border border-line rounded-lg text-muted hover:text-accent cursor-pointer"
+                  className="p-2 bg-app-elevated border border-line rounded-lg text-muted hover:text-accent-text cursor-pointer"
                   type="button"
                 >
                   <UserPlus className="size-4" />
@@ -164,7 +164,7 @@ export function FinanceiroPessoasCard({
                   }
                 />
                 <button
-                  className="p-2 bg-app-elevated border border-line rounded-lg text-muted hover:text-accent cursor-pointer"
+                  className="p-2 bg-app-elevated border border-line rounded-lg text-muted hover:text-accent-text cursor-pointer"
                   type="button"
                 >
                   <UserPlus className="size-4" />
@@ -237,7 +237,7 @@ export function FinanceiroPessoasCard({
           </button>
           <button
             onClick={handleSave}
-            className="min-h-9 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-4 flex items-center justify-center"
+            className="min-h-9 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-4 flex items-center justify-center"
             type="button"
           >
             Salvar

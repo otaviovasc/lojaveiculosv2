@@ -159,7 +159,7 @@ export function SaleWorkspaceNavigation({
         </button>
       ) : (
         <button
-          className="sales-secondary-button border-success/30 text-success bg-success/5 hover:bg-success/10 hover:border-success/40"
+          className="sales-secondary-button border-success/30 text-success-soft-foreground bg-success/5 hover:bg-success/10 hover:border-success/40"
           onClick={onFinish}
           type="button"
         >

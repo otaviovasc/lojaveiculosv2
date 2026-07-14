@@ -31,9 +31,20 @@ describe("tenant admin branding", () => {
     expect(brand.iconUrl).toBe("https://cdn.example.com/favicon.png");
     expect(brand.storeName).toBe("MB Auto Store");
     expect(style["--color-accent"]).toBe(accent);
+    expect(style["--color-accent-foreground"]).toBe(hex("ffffff"));
     expect(style["--color-accent-soft-foreground"]).toBe(hex("151515"));
     expect(style["--color-accent-strong"]).toMatch(/^#/);
     expect(style["--color-accent-soft"]).toMatch(/^#/);
+  });
+
+  it("chooses readable foregrounds for light tenant accent colors", () => {
+    const brand = createTenantAdminBrand(
+      createSettings({ theme: { accentColor: hex("ffffff") } }),
+    );
+    const style = createTenantAdminBrandStyle(brand);
+
+    expect(style["--color-accent-foreground"]).toBe(hex("151515"));
+    expect(style["--color-accent-strong-foreground"]).toBe(hex("151515"));
   });
 
   it("does not override accent tokens when the stored color is invalid", () => {

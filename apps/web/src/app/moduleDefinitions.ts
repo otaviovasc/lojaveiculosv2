@@ -4,11 +4,12 @@ export const defaultModuleId: ModuleId = "dashboard";
 
 export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
   "auto-entries": {
-    action: "Mapear regras",
-    description: "Lançamentos automáticos aguardando regras operacionais.",
-    eyebrow: "Gestão",
+    action: "Configurar regras",
+    description:
+      "Regras auditáveis para comissões, receitas e despesas geradas por eventos da operação.",
+    eyebrow: "Financeiro",
     id: "auto-entries",
-    title: "Lançamentos",
+    title: "Lançamentos automáticos",
   },
   autobot: {
     action: "Criar automação",

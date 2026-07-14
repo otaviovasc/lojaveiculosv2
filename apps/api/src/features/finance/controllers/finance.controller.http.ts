@@ -8,6 +8,9 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { FinanceEntryNotFoundError } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
+import { FinanceAutoEntryRuleNotFoundError } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
+import { FinanceAutoEntryRuleValidationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryRuleValidation.js";
+import { FinanceAutoEntryEvaluationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryEvaluator.js";
 import { FinanceDocumentStorageScopeError } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import { FinanceLinkTargetNotFoundError } from "../../../infrastructure/db/finance/drizzleFinanceLinkTargets.js";
 
@@ -47,6 +50,18 @@ export async function handleFinance(
       });
     }
 
+    if (
+      error instanceof FinanceAutoEntryRuleValidationError ||
+      error instanceof FinanceAutoEntryEvaluationError
+    ) {
+      return jsonApiError(context, {
+        code: "FINANCE_AUTO_ENTRY_VALIDATION_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
+    }
+
     if (error instanceof AuthorizationError) {
       return jsonApiError(context, {
         code: "AUTHORIZATION_DENIED",
@@ -77,6 +92,15 @@ export async function handleFinance(
     if (error instanceof FinanceEntryNotFoundError) {
       return jsonApiError(context, {
         code: "FINANCE_ENTRY_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
+    }
+
+    if (error instanceof FinanceAutoEntryRuleNotFoundError) {
+      return jsonApiError(context, {
+        code: "FINANCE_AUTO_ENTRY_RULE_NOT_FOUND",
         error,
         message: error.message,
         status: 404,

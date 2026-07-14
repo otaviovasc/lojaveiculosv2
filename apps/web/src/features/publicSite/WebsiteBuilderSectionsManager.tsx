@@ -91,7 +91,7 @@ export function WebsiteBuilderSectionsManager({
                   "rounded-lg p-2 transition-colors",
                   section.visible
                     ? "text-primary hover:bg-primary/10"
-                    : "text-muted-foreground hover:bg-muted",
+                    : "text-muted-foreground hover:bg-secondary",
                 )}
                 onClick={() => toggleVisibility(section.id)}
                 title={section.visible ? "Ocultar seção" : "Mostrar seção"}
@@ -105,7 +105,7 @@ export function WebsiteBuilderSectionsManager({
               </button>
               <button
                 aria-label={`Mover seção ${sectionLabels[section.type] ?? section.type} para cima`}
-                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-30"
                 disabled={index === 0}
                 onClick={() => moveSection(index, -1)}
                 title="Mover para cima"
@@ -115,7 +115,7 @@ export function WebsiteBuilderSectionsManager({
               </button>
               <button
                 aria-label={`Mover seção ${sectionLabels[section.type] ?? section.type} para baixo`}
-                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-30"
+                className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-30"
                 disabled={index === sorted.length - 1}
                 onClick={() => moveSection(index, 1)}
                 title="Mover para baixo"

@@ -189,7 +189,7 @@
 .documents-upload-actions button:last-child,
 .documents-delete-dialog footer button:last-child {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .documents-delete-dialog {

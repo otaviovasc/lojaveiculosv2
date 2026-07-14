@@ -124,7 +124,7 @@ export function HeroSection({
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <a
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-8 text-sm font-bold text-inverse shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-95 cursor-pointer"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-8 text-sm font-bold text-accent-foreground shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-95 cursor-pointer"
               href="#estoque"
             >
               Ver estoque
@@ -164,7 +164,7 @@ export function HeroSection({
         {featuredListing && onOpenListing ? (
           <div className="hidden lg:flex flex-col w-full max-w-sm ml-auto bg-black/40 backdrop-blur-md border border-white/15 rounded-lg p-6 shadow-2xl">
             <div className="mb-4">
-              <span className="bg-accent text-white text-xs font-black tracking-widest uppercase px-2 py-0.5 rounded">
+              <span className="bg-accent text-accent-foreground text-xs font-black tracking-widest uppercase px-2 py-0.5 rounded">
                 Destaque da semana
               </span>
               <h3 className="text-xl font-extrabold text-white mt-2 leading-tight">
@@ -197,7 +197,7 @@ export function HeroSection({
 
             <button
               onClick={() => onOpenListing(featuredListing.slug)}
-              className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent text-sm font-bold text-inverse transition-all duration-300 hover:brightness-110 cursor-pointer"
+              className="mt-6 w-full flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent text-sm font-bold text-accent-foreground transition-all duration-300 hover:brightness-110 cursor-pointer"
             >
               Conhecer veículo →
             </button>

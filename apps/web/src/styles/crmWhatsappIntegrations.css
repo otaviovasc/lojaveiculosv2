@@ -43,7 +43,7 @@
 .crm-whatsapp-integrations-tab-active {
   background: var(--color-green-soft);
   border-color: var(--color-success-strong);
-  color: var(--color-success-strong);
+  color: var(--color-success-soft-foreground);
 }
 
 .crm-whatsapp-integrations-nav-status {

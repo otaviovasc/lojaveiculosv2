@@ -183,7 +183,7 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
       <StorefrontStateFrame
         action={
           <button
-            className="mt-5 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-inverse"
+            className="mt-5 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-accent-foreground"
             onClick={() => setRetryKey((current) => current + 1)}
             type="button"
           >

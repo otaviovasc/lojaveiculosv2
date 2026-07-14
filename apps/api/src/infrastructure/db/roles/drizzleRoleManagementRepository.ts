@@ -16,6 +16,7 @@ import type {
   RolePermissionOverride,
   UpdateMembershipAccessInput,
 } from "../../../domains/identity/ports/roleManagementRepository.js";
+import { listActiveStoreMembers } from "./drizzleStoreMemberOptions.js";
 
 export type DrizzleRoleManagementClient = PostgresJsDatabase<typeof schema>;
 
@@ -42,6 +43,9 @@ export function createDrizzleRoleManagementRepository(
   db: DrizzleRoleManagementClient,
 ): RoleManagementRepository {
   return {
+    async listActiveMembersByStore(input) {
+      return listActiveStoreMembers(db, input);
+    },
     async listByStore(input) {
       return listByStore(db, input);
     },

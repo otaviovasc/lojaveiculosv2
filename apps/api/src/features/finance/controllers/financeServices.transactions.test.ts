@@ -5,6 +5,7 @@ import { createServiceContext } from "../../../shared/serviceContext.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import type { TransactionRunner } from "../../../shared/transaction.js";
 import { createMemoryFinanceRepository } from "../../inventory/adapters/memory/financeRepository.js";
+import { createTestFinanceAutoEntryRepository } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
 import { createFinanceServices } from "./financeServices.js";
 
 describe("finance transaction composition", () => {
@@ -28,6 +29,16 @@ describe("finance transaction composition", () => {
       (services) => services.cancelEntry(context(), { entryId: "entry_1" }),
     ],
     [
+      "createAutoEntryRule",
+      (services) =>
+        services.createAutoEntryRule(context(), {
+          calculation: { amountCents: 1000, kind: "fixed" },
+          event: "vehicle_sale_closed",
+          outputType: "expense",
+          timing: { kind: "same_day" },
+        }),
+    ],
+    [
       "createCommissionRule",
       (services) =>
         services.createCommissionRule(context(), {
@@ -40,6 +51,11 @@ describe("finance transaction composition", () => {
         }),
     ],
     ["createEntry", (services) => services.createEntry(context(), entry())],
+    [
+      "deactivateAutoEntryRule",
+      (services) =>
+        services.deactivateAutoEntryRule(context(), { ruleId: "rule_1" }),
+    ],
     [
       "deleteEntry",
       (services) => services.deleteEntry(context(), { entryId: "entry_1" }),
@@ -59,8 +75,27 @@ describe("finance transaction composition", () => {
         }),
     ],
     [
+      "materializeAutoEntries",
+      (services) =>
+        services.materializeAutoEntries(context(), {
+          basisCents: { sale: 100_000 },
+          event: "vehicle_sale_closed",
+          occurredAt: new Date("2026-07-13T12:00:00.000Z"),
+          sourceId: "source_1",
+          sourceRevision: 1,
+        }),
+    ],
+    [
       "payEntry",
       (services) => services.payEntry(context(), { entryId: "entry_1" }),
+    ],
+    [
+      "updateAutoEntryRule",
+      (services) =>
+        services.updateAutoEntryRule(context(), {
+          priority: 50,
+          ruleId: "rule_1",
+        }),
     ],
     [
       "updateEntry",
@@ -82,6 +117,7 @@ describe("finance transaction composition", () => {
     const services = createFinanceServices({
       ports: {
         documentRepository: createTestDocumentRepository(),
+        financeAutoEntryRepository: createTestFinanceAutoEntryRepository(),
         financeRepository: createMemoryFinanceRepository(),
         objectStorage: createMemoryObjectStorage(),
       },
@@ -98,6 +134,7 @@ function context() {
     actor: { id: "user_1", kind: "user" },
     permissions: [
       "finance.attach_document",
+      "finance.auto_entries.manage",
       "finance.create",
       "finance.read",
       "finance.update",

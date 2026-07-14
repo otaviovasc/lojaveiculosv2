@@ -58,6 +58,7 @@ export const approvedBaseColors = [
   [52, 211, 153], // emerald-400 #34d399
   [32, 199, 122], // status green #20c77a
   [8, 122, 47], // accessible green text on light surfaces #087a2f
+  [6, 101, 37], // accessible green text on translucent light surfaces #066525
   [114, 223, 145], // accessible green text on dark surfaces #72df91
 
   // Allowed Functional Blues (Info/status indicators)

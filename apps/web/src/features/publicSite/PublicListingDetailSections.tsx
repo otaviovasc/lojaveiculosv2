@@ -133,7 +133,7 @@ export function VehicleLeadCard({
             ) : null}
             {phoneHref ? (
               <a
-                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-app px-5 text-xs font-black uppercase tracking-[0.12em] text-app-text transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent active:scale-95"
+                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-line bg-app px-5 text-xs font-black uppercase tracking-[0.12em] text-app-text transition-all hover:border-accent/40 hover:bg-accent-soft hover:text-accent-soft-foreground active:scale-95"
                 href={phoneHref}
               >
                 <Phone aria-hidden="true" className="size-4" />

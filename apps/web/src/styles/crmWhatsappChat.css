@@ -189,7 +189,7 @@
 .crm-whatsapp-tag-check-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .crm-whatsapp-tag-check svg {
@@ -276,7 +276,7 @@
 
 .crm-icon-action-active {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .crm-icon-action:disabled {

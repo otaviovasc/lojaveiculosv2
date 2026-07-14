@@ -6,6 +6,7 @@ import type {
   SaleRecord,
   SaleStartContext,
 } from "./types";
+import { saleAccountingMissingFields } from "./saleAccountingReadiness";
 
 export const defaultRequiredDocumentKinds = [
   "sale_contract",
@@ -70,7 +71,16 @@ export function createDraftFromContext(
     },
     payments: [],
     salePriceCents: context.priceCents ?? null,
-    saleSourceSnapshot: { source: "lead_or_vehicle_workspace" },
+    saleSourceSnapshot: {
+      commission: { enabled: false, ruleType: "percentage" },
+      documentation: { hasLien: null, status: "pending" },
+      financing: { rank: "R1", status: "pending" },
+      insurance: {
+        appliedCommissionPercentage: 10,
+        status: "pending",
+      },
+      source: "lead_or_vehicle_workspace",
+    },
     selectedDocumentKinds: [...defaultRequiredDocumentKinds],
     unitId: context.unitId ?? null,
   };
@@ -126,6 +136,7 @@ export function saleMissingFields(
   for (const kind of requiredDocumentKinds(sale)) {
     if (!sale.selectedDocumentKinds.includes(kind)) missing.push(kind);
   }
+  missing.push(...saleAccountingMissingFields(sale));
   return missing;
 }
 

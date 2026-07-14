@@ -63,7 +63,7 @@
 }
 
 .crm-whatsapp-media-icon {
-  background: rgb(255 255 255 / 0.08);
+  background: var(--color-dark-control-surface);
   color: white;
   height: 2.375rem;
   width: 2.375rem;
@@ -71,7 +71,7 @@
 
 .crm-whatsapp-media-icon:hover,
 .crm-whatsapp-media-dialog-add button:hover {
-  background: rgb(255 255 255 / 0.16);
+  background: var(--color-dark-control-surface-hover);
 }
 
 .crm-whatsapp-media-icon svg,

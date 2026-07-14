@@ -141,7 +141,7 @@
   .crm-whatsapp-workflow-step-index {
   background: var(--color-success-strong);
   border-color: var(--color-success-strong);
-  color: var(--color-inverse);
+  color: var(--color-success-strong-foreground);
 }
 
 .crm-whatsapp-workflow-steps li[data-state="complete"] button {

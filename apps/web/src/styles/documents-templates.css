@@ -179,7 +179,7 @@
 
 .documents-template-actions button:last-child {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .documents-template-vars {

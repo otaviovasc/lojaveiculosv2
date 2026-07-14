@@ -108,7 +108,7 @@
 .billing-package-card:not(.is-active) .billing-package-card-footer button {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .billing-package-card-footer button:disabled {

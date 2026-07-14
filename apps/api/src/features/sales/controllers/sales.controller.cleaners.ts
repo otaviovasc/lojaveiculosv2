@@ -5,6 +5,7 @@ import type {
   SaveSalePaymentInput,
   UpdateSaleDraftInput,
 } from "../../../domains/sales/ports/salesRepository.js";
+import type { SaleSourceSnapshot } from "../../../domains/sales/saleSourceSnapshot.js";
 import type {
   listSalesQuerySchema,
   saleDraftSchema,
@@ -45,7 +46,13 @@ function cleanSaleDraftFields(
     ),
   );
   assignDefined(draft, "salePriceCents", input.salePriceCents);
-  assignDefined(draft, "saleSourceSnapshot", input.saleSourceSnapshot);
+  assignDefined(
+    draft,
+    "saleSourceSnapshot",
+    input.saleSourceSnapshot
+      ? cleanSaleSourceSnapshot(input.saleSourceSnapshot)
+      : undefined,
+  );
   assignDefined(draft, "selectedDocumentKinds", input.selectedDocumentKinds);
   assignDefined(draft, "sellerUserId", input.sellerUserId);
   assignDefined(draft, "unitId", input.unitId);
@@ -110,4 +117,37 @@ function cleanSalePaymentInput(
   assignDefined(payment, "providerPaymentId", input.providerPaymentId);
   assignDefined(payment, "status", input.status);
   return payment;
+}
+
+function cleanSaleSourceSnapshot(
+  input: NonNullable<z.infer<typeof saleDraftSchema>["saleSourceSnapshot"]>,
+): SaleSourceSnapshot {
+  const clean: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input)) {
+    if (value === undefined) continue;
+    clean[key] =
+      knownSaleSourceRecordKeys.has(key) && isSnapshotRecord(value)
+        ? withoutUndefinedProperties(value)
+        : value;
+  }
+  return clean as SaleSourceSnapshot;
+}
+
+const knownSaleSourceRecordKeys = new Set([
+  "commission",
+  "documentation",
+  "financing",
+  "insurance",
+]);
+
+function withoutUndefinedProperties(
+  input: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => value !== undefined),
+  );
+}
+
+function isSnapshotRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }

@@ -46,6 +46,16 @@ describe("sales model start context", () => {
         unitLabel: "EST-42",
       },
       salePriceCents: 12990000,
+      saleSourceSnapshot: {
+        commission: { enabled: false, ruleType: "percentage" },
+        documentation: { hasLien: null, status: "pending" },
+        financing: { rank: "R1", status: "pending" },
+        insurance: {
+          appliedCommissionPercentage: 10,
+          status: "pending",
+        },
+        source: "lead_or_vehicle_workspace",
+      },
       selectedDocumentKinds: [
         "sale_contract",
         "sale_receipt",
@@ -85,6 +95,62 @@ describe("sales model start context", () => {
       ),
     ).toBe(true);
   });
+
+  it("blocks close when terminal service states lack accounting facts", () => {
+    const sale = saleRecord({
+      payments: [payment("cash", "paid", 5000000)],
+      saleSourceSnapshot: {
+        documentation: { status: "charged" },
+        financing: { status: "approved" },
+        insurance: { status: "issued" },
+      },
+    });
+
+    expect(saleMissingFields(sale, "close")).toEqual(
+      expect.arrayContaining([
+        "Pagamento de financiamento",
+        "Valor da documentação",
+        "Gravame da documentação",
+        "Prêmio do seguro",
+        "Percentual de comissão do seguro",
+      ]),
+    );
+  });
+
+  it("accepts close when terminal service states include accounting facts", () => {
+    const sale = saleRecord({
+      payments: [
+        payment("financing", "pending", 5000000, { method: "financing" }),
+      ],
+      saleSourceSnapshot: {
+        documentation: {
+          chargedAmountCents: 150000,
+          hasLien: false,
+          status: "charged",
+        },
+        financing: { status: "approved" },
+        insurance: {
+          appliedCommissionPercentage: 10,
+          premiumCents: 100000,
+          status: "issued",
+        },
+      },
+    });
+
+    expect(saleMissingFields(sale, "close")).toEqual([]);
+  });
+
+  it("requires a positive accounting amount on active financing lines", () => {
+    const sale = saleRecord({
+      payments: [
+        payment("cash", "paid", 5000000),
+        payment("financing", "pending", 0, { method: "financing" }),
+      ],
+      saleSourceSnapshot: { financing: { status: "approved" } },
+    });
+
+    expect(saleMissingFields(sale, "close")).toContain("Valor financiado");
+  });
 });
 
 function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
@@ -118,6 +184,7 @@ function payment(
   id: string,
   status: SaleRecord["payments"][number]["status"],
   principalCents: number,
+  overrides: Partial<SaleRecord["payments"][number]> = {},
 ): SaleRecord["payments"][number] {
   return {
     amountCents: principalCents,
@@ -131,5 +198,6 @@ function payment(
     principalCents,
     providerPaymentId: null,
     status,
+    ...overrides,
   };
 }

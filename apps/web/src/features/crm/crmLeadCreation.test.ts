@@ -39,6 +39,7 @@ function createApi(input: {
 }): ProductCrmApi {
   return {
     createActivity: vi.fn(),
+    createFinancialProduct: vi.fn(),
     createLead: vi.fn(async () => input.lead),
     createPipeline: vi.fn(),
     deletePipeline: vi.fn(),

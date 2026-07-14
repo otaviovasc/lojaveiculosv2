@@ -113,6 +113,9 @@ export function createCrmRepository(): CrmRepository {
     createActivity: vi.fn(async () => {
       throw new Error("Unexpected activity creation");
     }),
+    createActivityIdempotently: vi.fn(async () => {
+      throw new Error("Unexpected idempotent activity creation");
+    }),
     createLead: vi.fn<CrmRepository["createLead"]>(async (input) => ({
       assignedUserId: input.assignedUserId ?? null,
       buyerEmail: input.buyerEmail ?? null,

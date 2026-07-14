@@ -48,8 +48,8 @@ export function NotesBlockField({
           className={
             "size-6 rounded-full flex items-center justify-center transition-all duration-300 cursor-pointer " +
             (isEditing
-              ? "bg-accent text-white hover:bg-accent-strong"
-              : "text-muted hover:text-accent bg-transparent hover:bg-accent-soft")
+              ? "bg-accent text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground"
+              : "text-muted hover:text-accent-soft-foreground bg-transparent hover:bg-accent-soft")
           }
           title={isEditing ? "Salvar" : "Editar"}
         >

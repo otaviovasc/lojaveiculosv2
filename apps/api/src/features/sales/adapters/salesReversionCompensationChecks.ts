@@ -22,18 +22,20 @@ export function assertFinanceOwnership(
   const activePaymentIds = sale.payments
     .filter((payment) => isActiveSalePaymentStatus(payment.status))
     .map((payment) => payment.id);
-  if (entries.length !== activePaymentIds.length) {
-    throwFinanceOwnershipError();
-  }
   const expectedPaymentIds = new Set(activePaymentIds);
+  const activeFinancingPaymentIds = new Set(
+    sale.payments
+      .filter(
+        (payment) =>
+          payment.method === "financing" &&
+          isActiveSalePaymentStatus(payment.status),
+      )
+      .map((payment) => payment.id),
+  );
   const linkedPaymentIds = new Set<string>();
   for (const bundle of entries) {
-    const ownsSale = bundle.links.some(
-      (link) => link.targetType === "sale" && link.targetId === sale.id,
-    );
-    const ownsUnit = bundle.links.some(
-      (link) => link.targetType === "vehicle_unit" && link.targetId === unit.id,
-    );
+    const ownsSale = ownsTarget(bundle, "sale", sale.id);
+    const ownsUnit = ownsTarget(bundle, "vehicle_unit", unit.id);
     const isSaleEntry =
       bundle.entry.category === "vehicle_sale" ||
       bundle.entry.metadata.source === "vehicle_sale";
@@ -41,9 +43,12 @@ export function assertFinanceOwnership(
       (link) => link.targetType === "sale_payment",
     );
     const paymentId = paymentLinks[0]?.targetId;
+    if (!ownsSale || !ownsUnit) throwFinanceOwnershipError();
+    if (isProvenAutomaticEntry(bundle, sale, activeFinancingPaymentIds)) {
+      if (paymentLinks.length !== 0) throwFinanceOwnershipError();
+      continue;
+    }
     if (
-      !ownsSale ||
-      !ownsUnit ||
       !isSaleEntry ||
       paymentLinks.length !== 1 ||
       !paymentId ||
@@ -54,12 +59,53 @@ export function assertFinanceOwnership(
     }
     linkedPaymentIds.add(paymentId);
   }
+  if (linkedPaymentIds.size !== expectedPaymentIds.size) {
+    throwFinanceOwnershipError();
+  }
+}
+
+function ownsTarget(
+  bundle: FinanceEntryBundle,
+  targetType: "sale" | "vehicle_unit",
+  targetId: string,
+): boolean {
+  return bundle.links.some(
+    (link) => link.targetType === targetType && link.targetId === targetId,
+  );
+}
+
+function isProvenAutomaticEntry(
+  bundle: FinanceEntryBundle,
+  sale: SaleRecord,
+  activeFinancingPaymentIds: ReadonlySet<string>,
+): boolean {
+  const value = bundle.entry.metadata.automaticFinanceEntry;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const provenance = value as Record<string, unknown>;
+  const event = String(provenance.event);
+  const sourceId = provenance.sourceId;
+  const ownsExpectedSource =
+    event === "financing_approved"
+      ? typeof sourceId === "string" && activeFinancingPaymentIds.has(sourceId)
+      : sourceId === sale.id;
+  return (
+    typeof provenance.ruleId === "string" &&
+    provenance.ruleId.length > 0 &&
+    ownsExpectedSource &&
+    provenance.sourceRevision === sale.revision &&
+    [
+      "financing_approved",
+      "insurance_issued",
+      "transfer_documentation_charged",
+      "vehicle_sale_closed",
+    ].includes(event)
+  );
 }
 
 function throwFinanceOwnershipError(): never {
   throw new SaleReversionCompensationError(
     "finance",
-    "Linked finance entry ownership could not be proven one-to-one.",
+    "Linked finance entry ownership could not be proven for this sale.",
   );
 }
 

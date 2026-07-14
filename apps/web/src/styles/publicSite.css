@@ -18,17 +18,16 @@
   --color-destructive: var(--color-danger);
   --color-destructive-foreground: var(--color-inverse);
   --color-success: var(--color-green-end);
-  --color-success-foreground: var(--color-inverse);
+  --color-success-foreground: var(--color-success-contrast);
   --color-warning: var(--color-warning);
+  --color-warning-foreground: var(--color-warning-contrast);
   background: var(--color-background);
 }
-
 /* Force light theme on all public-facing tenant interfaces and page builders */
 .public-light-surface,
 .public-storefront,
 .page-builder-renderer {
   color-scheme: light !important;
-
   /* Basic light theme variables - override dark theme root */
   --color-app: #f4efee !important; /* Brand Off-white */
   --color-app-elevated: #e8e3e2 !important; /* Brand Cinza Quente */
@@ -69,7 +68,8 @@
     var(--color-success) 62%,
     var(--color-text)
   ) !important;
-  --color-success-foreground: #ffffff !important;
+  --color-success-foreground: #151515 !important;
+  --color-warning-foreground: #151515 !important;
 
   /* Soft utility overrides */
   --color-accent-soft: color-mix(

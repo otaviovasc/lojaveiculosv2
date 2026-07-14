@@ -107,6 +107,12 @@ export const operationalPermissionGroups = [
         "Adicionar recibos, comprovantes ou notas fiscais a um lançamento financeiro.",
         "medium",
       ),
+      permission(
+        "finance.auto_entries.manage",
+        "Gerenciar lançamentos automáticos",
+        "Criar, editar e desativar regras que geram movimentações financeiras automaticamente.",
+        "high",
+      ),
     ],
   },
   {

@@ -1,12 +1,14 @@
 import { readApiJson } from "../../lib/apiErrors";
 import type {
   CreateProductCrmActivityInput,
+  CreateLeadFinancialProductInput,
   CreateProductCrmLeadInput,
   CrmLeadSource,
   CrmLeadStatus,
   ProductCrmAuth,
   ProductCrmLead,
   ProductCrmLeadActivity,
+  LeadFinancialProductResult,
   UpdateProductCrmLeadInput,
 } from "./productCrmTypes";
 import type {
@@ -22,6 +24,10 @@ export type ProductCrmApi = {
     input: CreateProductCrmActivityInput,
   ) => Promise<ProductCrmLeadActivity>;
   createLead: (input: CreateProductCrmLeadInput) => Promise<ProductCrmLead>;
+  createFinancialProduct: (
+    leadId: string,
+    input: CreateLeadFinancialProductInput,
+  ) => Promise<LeadFinancialProductResult>;
   createPipeline: (input: CreateProductCrmPipelineInput) => Promise<Pipeline>;
   deletePipeline: (pipelineId: string) => Promise<{ deleted: true }>;
   listActivities: (leadId: string) => Promise<ProductCrmLeadActivity[]>;
@@ -100,6 +106,8 @@ export function createProductCrmApi({
     createActivity: (leadId, input) =>
       postJson(productCrmRoutes.activities(leadId, baseUrl), input),
     createLead: (input) => postJson(productCrmRoutes.leads(baseUrl), input),
+    createFinancialProduct: (leadId, input) =>
+      postJson(productCrmRoutes.financialProducts(leadId, baseUrl), input),
     createPipeline: (input) =>
       postJson(productCrmRoutes.pipelines(baseUrl), input),
     deletePipeline: (pipelineId) =>
@@ -146,6 +154,11 @@ export const productCrmRoutes = {
   activities: (leadId: string, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/leads/${encodeURIComponent(leadId)}/activities`,
+      baseUrl,
+    ),
+  financialProducts: (leadId: string, baseUrl?: string) =>
+    createCrmEndpoint(
+      `/crm/leads/${encodeURIComponent(leadId)}/financial-products`,
       baseUrl,
     ),
   lead: (leadId: string, baseUrl?: string) =>

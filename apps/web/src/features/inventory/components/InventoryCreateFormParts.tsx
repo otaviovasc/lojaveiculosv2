@@ -54,8 +54,8 @@ export function statusButtonClassName(
     return [
       base,
       selected
-        ? "border-warning bg-warning/20 text-warning ring-2 ring-warning/25"
-        : "border-warning/20 bg-app text-warning hover:bg-warning/10",
+        ? "border-warning bg-warning/20 text-warning-soft-foreground ring-2 ring-warning/25"
+        : "border-warning/20 bg-app text-warning-soft-foreground hover:bg-warning/10",
     ].join(" ");
   }
 
@@ -63,8 +63,8 @@ export function statusButtonClassName(
     return [
       base,
       selected
-        ? "border-emerald-500 bg-emerald-500/15 text-emerald-500 ring-2 ring-emerald-500/25"
-        : "border-emerald-500/20 bg-app text-emerald-500 hover:bg-emerald-500/10",
+        ? "border-emerald-500 bg-emerald-500/15 text-success-soft-foreground ring-2 ring-emerald-500/25"
+        : "border-emerald-500/20 bg-app text-success-soft-foreground hover:bg-emerald-500/10",
     ].join(" ");
   }
 
@@ -72,8 +72,8 @@ export function statusButtonClassName(
     return [
       base,
       selected
-        ? "border-blue-500 bg-blue-soft text-blue-500 ring-2 ring-blue-500/25"
-        : "border-blue-500/20 bg-app text-blue-500 hover:bg-blue-soft",
+        ? "border-blue-500 bg-blue-soft text-info-soft-foreground ring-2 ring-blue-500/25"
+        : "border-blue-500/20 bg-app text-info-soft-foreground hover:bg-blue-soft",
     ].join(" ");
   }
 
@@ -81,8 +81,8 @@ export function statusButtonClassName(
     return [
       base,
       selected
-        ? "border-danger bg-danger/15 text-danger ring-2 ring-danger/25"
-        : "border-danger/20 bg-app text-danger hover:bg-danger/10",
+        ? "border-danger bg-danger/15 text-danger-soft-foreground ring-2 ring-danger/25"
+        : "border-danger/20 bg-app text-danger-soft-foreground hover:bg-danger/10",
     ].join(" ");
   }
 

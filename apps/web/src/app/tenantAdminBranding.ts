@@ -6,9 +6,11 @@ export const tenantAdminBrandUpdatedEvent =
 
 export type TenantAdminBrand = {
   accentColor: string | null;
+  accentColorForeground: string | null;
   accentColorSoft: string | null;
   accentColorSoftForeground: string | null;
   accentColorStrong: string | null;
+  accentColorStrongForeground: string | null;
   faviconUrl: string | null;
   iconUrl: string | null;
   logoUrl: string | null;
@@ -37,14 +39,21 @@ export function createTenantAdminBrand(
     readString(theme.logo_icon_url) ??
     null;
   const accentColorSoft = accentColor ? createSoftColor(accentColor) : null;
+  const accentColorStrong = accentColor ? createStrongColor(accentColor) : null;
 
   return {
     accentColor,
+    accentColorForeground: accentColor
+      ? createReadableTextColor(accentColor)
+      : null,
     accentColorSoft,
     accentColorSoftForeground: accentColorSoft
       ? createReadableTextColor(accentColorSoft)
       : null,
-    accentColorStrong: accentColor ? createStrongColor(accentColor) : null,
+    accentColorStrong,
+    accentColorStrongForeground: accentColorStrong
+      ? createReadableTextColor(accentColorStrong)
+      : null,
     faviconUrl,
     iconUrl: faviconUrl ?? logoUrl,
     logoUrl,
@@ -70,10 +79,15 @@ export function createTenantAdminBrandStyle(
   return {
     "--background-image-gradient-brand": `linear-gradient(135deg, ${brand.accentColor}, ${brand.accentColorStrong})`,
     "--color-accent": brand.accentColor,
+    "--color-accent-foreground":
+      brand.accentColorForeground ?? "var(--color-accent-foreground)",
     "--color-accent-soft": brand.accentColorSoft,
     "--color-accent-soft-foreground":
       brand.accentColorSoftForeground ?? "var(--color-accent-soft-foreground)",
     "--color-accent-strong": brand.accentColorStrong,
+    "--color-accent-strong-foreground":
+      brand.accentColorStrongForeground ??
+      "var(--color-accent-strong-foreground)",
     "--color-brand": brand.accentColor,
     "--color-brand-dark": brand.accentColorStrong,
   };
@@ -142,7 +156,10 @@ function createSoftColor(color: string) {
 }
 
 function createReadableTextColor(color: string) {
-  return relativeLuminance(hexToRgb(color)) > 0.56
+  const luminance = relativeLuminance(hexToRgb(color));
+  const darkContrast = (luminance + 0.05) / 0.05;
+  const lightContrast = 1.05 / (luminance + 0.05);
+  return darkContrast >= lightContrast
     ? rgbToHex([21, 21, 21])
     : rgbToHex([255, 255, 255]);
 }

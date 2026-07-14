@@ -1,8 +1,5 @@
 import { Hono, type Context } from "hono";
-import {
-  createHttpServiceContext,
-  HttpContextAuthenticationError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
+import { createHttpServiceContext } from "../../../infrastructure/http/createHttpServiceContext.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import {
   attachFinanceDocumentSchema,
@@ -33,6 +30,8 @@ import {
   parseJson,
 } from "./finance.controller.http.js";
 import { financeServices, type FinanceServices } from "./financeServices.js";
+import { registerFinanceAutoEntryRuleRoutes } from "./financeAutoEntryRules.controller.js";
+import { createProtectedFinanceServiceContext } from "./finance.controller.context.js";
 
 export type FinanceContextFactory = (
   context: Context,
@@ -51,7 +50,8 @@ export function createFinanceFeature(
   const contextFactory =
     options.contextFactory ?? ((context) => createHttpServiceContext(context));
   const createContext = (context: Context) =>
-    createProtectedServiceContext(context, contextFactory);
+    createProtectedFinanceServiceContext(context, contextFactory);
+  registerFinanceAutoEntryRuleRoutes(financeFeature, services, createContext);
 
   financeFeature.get("/summary", async (context) =>
     handleFinance(context, async () => {
@@ -229,19 +229,4 @@ export function createFinanceFeature(
   );
 
   return financeFeature;
-}
-
-async function createProtectedServiceContext(
-  context: Context,
-  contextFactory: FinanceContextFactory,
-): Promise<ServiceContext> {
-  const serviceContext = await contextFactory(context);
-
-  if (!["integration", "user"].includes(serviceContext.actor.kind)) {
-    throw new HttpContextAuthenticationError(
-      "Finance routes require authenticated user or integration context.",
-    );
-  }
-
-  return serviceContext;
 }

@@ -267,7 +267,7 @@ function PreviewLinkField({ previewUrl }: { previewUrl: string }) {
         <Input readOnly value={previewUrl} />
         <button
           aria-label="Copiar link de preview"
-          className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           onClick={() => void navigator.clipboard?.writeText(previewUrl)}
           type="button"
         >

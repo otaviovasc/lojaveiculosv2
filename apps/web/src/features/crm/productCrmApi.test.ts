@@ -69,6 +69,36 @@ describe("createProductCrmApi", () => {
     });
   });
 
+  it("posts a lead financial product with an idempotency key", async () => {
+    const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
+    const fakeFetch: typeof fetch = async (input, init) => {
+      calls.push({ init, input: String(input) });
+      return new Response(JSON.stringify({ activity: {}, entries: [] }), {
+        headers: { "Content-Type": "application/json" },
+        status: 201,
+      });
+    };
+    const api = createProductCrmApi({ baseUrl: "/api/v1", fetch: fakeFetch });
+
+    await api.createFinancialProduct("lead-1", {
+      creditLetterAmountCents: 10_000_000,
+      idempotencyKey: "11111111-1111-4111-8111-111111111111",
+      sellerUserId: "22222222-2222-4222-8222-222222222222",
+      type: "consortium",
+    });
+
+    expect(calls[0]).toMatchObject({
+      input: "/api/v1/crm/leads/lead-1/financial-products",
+      init: { method: "POST" },
+    });
+    expect(JSON.parse(String(calls[0]?.init?.body))).toEqual({
+      creditLetterAmountCents: 10_000_000,
+      idempotencyKey: "11111111-1111-4111-8111-111111111111",
+      sellerUserId: "22222222-2222-4222-8222-222222222222",
+      type: "consortium",
+    });
+  });
+
   it("uses V2 pipeline routes for pipeline config and lead moves", async () => {
     const calls: Array<{ init: RequestInit | undefined; input: string }> = [];
     const fakeFetch: typeof fetch = async (input, init) => {

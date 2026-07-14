@@ -130,7 +130,7 @@
 .feature-form-row button {
   background: var(--color-accent);
   border-radius: var(--radius-md);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   font-size: var(--font-size-sm);
   font-weight: 900;
   min-height: 2.75rem;

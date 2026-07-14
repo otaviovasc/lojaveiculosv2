@@ -5,8 +5,10 @@ import {
   operation,
   query,
 } from "./financeOpenApiParts.js";
+import { financeAutoEntryPaths } from "./financeAutoEntryOpenApi.js";
 
 export const financePaths = {
+  ...financeAutoEntryPaths,
   "/api/v1/finance/summary": {
     get: operation(
       "finance.read",

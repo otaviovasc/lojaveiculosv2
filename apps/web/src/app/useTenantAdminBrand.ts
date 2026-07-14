@@ -100,9 +100,11 @@ function createFallbackTenantAdminBrand(
 ): TenantAdminBrand {
   return {
     accentColor: null,
+    accentColorForeground: null,
     accentColorSoft: null,
     accentColorSoftForeground: null,
     accentColorStrong: null,
+    accentColorStrongForeground: null,
     faviconUrl: null,
     iconUrl: null,
     logoUrl: null,

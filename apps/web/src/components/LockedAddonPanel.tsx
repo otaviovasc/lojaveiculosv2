@@ -68,7 +68,7 @@ export function LockedAddonPanel({ kind }: LockedAddonPanelProps) {
             </p>
             <h3 className="text-2xl font-black">{copy.title}</h3>
           </div>
-          <div className="flex size-11 items-center justify-center rounded-lg bg-accent text-white">
+          <div className="flex size-11 items-center justify-center rounded-lg bg-accent text-accent-foreground">
             <Crown aria-hidden="true" className="size-5" />
           </div>
         </div>

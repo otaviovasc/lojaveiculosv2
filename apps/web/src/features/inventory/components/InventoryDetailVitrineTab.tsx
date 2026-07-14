@@ -280,7 +280,7 @@ export function InventoryDetailVitrineTab({
               <button
                 onClick={handleEdit}
                 disabled={isBusy}
-                className="min-h-9 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-4 flex items-center gap-1.5"
+                className="min-h-9 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-4 flex items-center gap-1.5"
                 type="button"
               >
                 <Pencil className="size-3.5" />
@@ -321,7 +321,7 @@ export function InventoryDetailVitrineTab({
             <button
               onClick={() => void handleCreate()}
               disabled={isBusy}
-              className="mt-2 self-center lg:self-start min-h-10 rounded-lg bg-accent text-inverse font-black text-xs hover:bg-accent-strong transition-all cursor-pointer px-6 flex items-center justify-center gap-1.5 disabled:opacity-50"
+              className="mt-2 self-center lg:self-start min-h-10 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-6 flex items-center justify-center gap-1.5 disabled:opacity-50"
               type="button"
             >
               <Sparkles className="size-4" />

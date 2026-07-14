@@ -107,7 +107,7 @@ export function DocumentosChecklistCard({
             </span>
             <button
               aria-label="Resetar checklist"
-              className="rounded bg-transparent p-1 text-muted transition-colors hover:bg-line/25 hover:text-accent disabled:cursor-not-allowed disabled:opacity-55"
+              className="rounded bg-transparent p-1 text-muted transition-colors hover:bg-line/25 hover:text-accent-text disabled:cursor-not-allowed disabled:opacity-55"
               disabled={isSaving}
               onClick={() =>
                 void updateItems(
@@ -139,7 +139,7 @@ export function DocumentosChecklistCard({
             Nenhum checklist de entrega foi registrado para esta unidade.
           </p>
           <button
-            className="min-h-9 rounded-lg bg-accent px-4 text-xs font-black text-inverse transition-colors hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-55"
+            className="min-h-9 rounded-lg bg-accent px-4 text-xs font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground disabled:cursor-not-allowed disabled:opacity-55"
             disabled={isSaving}
             onClick={() => void createChecklist()}
             type="button"

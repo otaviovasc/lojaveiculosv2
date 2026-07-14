@@ -86,7 +86,7 @@ export function CustomRoleCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-lg border border-line bg-panel hover:border-danger hover:text-danger text-muted opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm z-10"
+          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-lg border border-line bg-panel hover:border-danger hover:text-danger-text text-muted opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm z-10"
           title="Excluir cargo customizado"
         >
           <X className="size-3.5" />

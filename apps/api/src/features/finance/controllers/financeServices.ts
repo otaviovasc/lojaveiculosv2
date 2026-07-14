@@ -1,141 +1,46 @@
-import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { DrizzleFinanceClient } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
 import type { FinanceServicePorts } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
-import type { AttachFinanceEntryDocumentInput } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import type {
-  CreateFinanceEntryInput,
-  CreateFinanceEntryResult,
-} from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
-import type {
-  FinanceEntryDetail,
-  GetFinanceEntryDetailInput,
-} from "../../../domains/finance/services/FinanceService/getFinanceEntryDetail.js";
-import type {
-  FinanceEntryListResult,
-  ListFinanceEntriesInput,
-} from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
-import type { RequestFinanceEntryDocumentUploadInput } from "../../../domains/finance/services/FinanceService/requestFinanceEntryDocumentUpload.js";
-import type { UpdateFinanceEntryInput } from "../../../domains/finance/services/FinanceService/updateFinanceEntry.js";
-import type { PayFinanceEntryInput } from "../../../domains/finance/services/FinanceService/payFinanceEntry.js";
-import type { CancelFinanceEntryInput } from "../../../domains/finance/services/FinanceService/cancelFinanceEntry.js";
-import type { CreateFinanceRecurringEntryInput } from "../../../domains/finance/services/FinanceService/createFinanceRecurringEntry.js";
-import type { ListFinanceRecurringEntriesInput } from "../../../domains/finance/services/FinanceService/listFinanceRecurringEntries.js";
-import type { CreateCommissionRuleInput } from "../../../domains/finance/services/FinanceService/createCommissionRule.js";
-import type { ListCommissionRulesInput } from "../../../domains/finance/services/FinanceService/listCommissionRules.js";
-import type { ObjectUpload } from "../../../shared/storage/objectStorage.js";
-import type { LinkedDocument } from "../../../domains/documents/ports/documentRepository.js";
-import type {
-  FinanceEntry,
-  FinanceEntryBundle,
-  FinanceEntryLink,
-  FinanceRecurringEntry,
-  CommissionRule,
-} from "../../../domains/finance/ports/financeRepository.js";
-import type { FinanceSummary } from "../../../domains/finance/services/FinanceService/getFinanceSummary.js";
+  CreateFinanceServicesOptions,
+  FinanceServices,
+} from "./financeServiceContracts.js";
 import { attachFinanceEntryDocument } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import { cancelFinanceEntry } from "../../../domains/finance/services/FinanceService/cancelFinanceEntry.js";
 import { createCommissionRule } from "../../../domains/finance/services/FinanceService/createCommissionRule.js";
+import { createFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/createFinanceAutoEntryRule.js";
+import { deactivateFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/deactivateFinanceAutoEntryRule.js";
 import { createFinanceEntry } from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
 import { createFinanceRecurringEntry } from "../../../domains/finance/services/FinanceService/createFinanceRecurringEntry.js";
 import { getFinanceEntryDetail } from "../../../domains/finance/services/FinanceService/getFinanceEntryDetail.js";
 import { getFinanceSummary } from "../../../domains/finance/services/FinanceService/getFinanceSummary.js";
 import { listCommissionRules } from "../../../domains/finance/services/FinanceService/listCommissionRules.js";
+import { listFinanceAutoEntryRules } from "../../../domains/finance/services/FinanceService/listFinanceAutoEntryRules.js";
 import { listFinanceEntries } from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
 import { listFinanceRecurringEntries } from "../../../domains/finance/services/FinanceService/listFinanceRecurringEntries.js";
 import { payFinanceEntry } from "../../../domains/finance/services/FinanceService/payFinanceEntry.js";
 import { requestFinanceEntryDocumentUpload } from "../../../domains/finance/services/FinanceService/requestFinanceEntryDocumentUpload.js";
 import { updateFinanceEntry } from "../../../domains/finance/services/FinanceService/updateFinanceEntry.js";
+import { updateFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/updateFinanceAutoEntryRule.js";
+import { materializeFinanceAutoEntries } from "../../../domains/finance/services/FinanceService/materializeFinanceAutoEntries.js";
 import { createDrizzleFinanceRepository } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
+import { createDrizzleFinanceAutoEntryRepository } from "../../../infrastructure/db/finance/drizzleFinanceAutoEntryRepository.js";
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryFinanceRepository } from "../../inventory/adapters/memory/financeRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
 import { createTestDocumentRepository } from "../../../domains/documents/testSupportDocumentRepository.js";
+import { createTestFinanceAutoEntryRepository } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
 import {
   createClientTransactionRunner,
   createPassthroughTransactionRunner,
   type TransactionRunner,
 } from "../../../shared/transaction.js";
 
-export type FinanceEntryListItemDto = FinanceEntry & {
-  links: readonly FinanceEntryLink[];
-};
-
-export type FinanceEntryListResultDto = Omit<
-  FinanceEntryListResult,
-  "entries"
-> & {
-  entries: readonly FinanceEntryListItemDto[];
-};
-
-export type FinanceServices = {
-  attachDocument: (
-    context: ServiceContext,
-    input: AttachFinanceEntryDocumentInput,
-  ) => Promise<LinkedDocument>;
-  createEntry: (
-    context: ServiceContext,
-    input: CreateFinanceEntryInput,
-  ) => Promise<CreateFinanceEntryResult>;
-  createCommissionRule: (
-    context: ServiceContext,
-    input: CreateCommissionRuleInput,
-  ) => Promise<CommissionRule>;
-  createRecurringEntry: (
-    context: ServiceContext,
-    input: CreateFinanceRecurringEntryInput,
-  ) => Promise<FinanceRecurringEntry>;
-  cancelEntry: (
-    context: ServiceContext,
-    input: CancelFinanceEntryInput,
-  ) => Promise<FinanceEntryBundle>;
-  deleteEntry: (
-    context: ServiceContext,
-    input: CancelFinanceEntryInput,
-  ) => Promise<FinanceEntryBundle>;
-  getEntry: (
-    context: ServiceContext,
-    input: GetFinanceEntryDetailInput,
-  ) => Promise<FinanceEntryDetail>;
-  getSummary: (context: ServiceContext) => Promise<FinanceSummary>;
-  listEntries: (
-    context: ServiceContext,
-    input: ListFinanceEntriesInput,
-  ) => Promise<FinanceEntryListResultDto>;
-  listCommissionRules: (
-    context: ServiceContext,
-    input: ListCommissionRulesInput,
-  ) => Promise<readonly CommissionRule[]>;
-  listRecurringEntries: (
-    context: ServiceContext,
-    input: ListFinanceRecurringEntriesInput,
-  ) => Promise<readonly FinanceRecurringEntry[]>;
-  payEntry: (
-    context: ServiceContext,
-    input: PayFinanceEntryInput,
-  ) => Promise<FinanceEntryBundle>;
-  requestDocumentUpload: (
-    context: ServiceContext,
-    input: RequestFinanceEntryDocumentUploadInput,
-  ) => Promise<ObjectUpload>;
-  updateEntry: (
-    context: ServiceContext,
-    input: UpdateFinanceEntryInput,
-  ) => Promise<FinanceEntryBundle>;
-};
-
-export type CreateFinanceServicesOptions =
-  | {
-      drizzleClient?: never;
-      objectStorage?: never;
-      ports?: FinanceServicePorts;
-      transactionRunner?: TransactionRunner<FinanceServicePorts>;
-    }
-  | {
-      drizzleClient: DrizzleFinanceClient;
-      objectStorage?: FinanceServicePorts["objectStorage"];
-      ports?: never;
-      transactionRunner?: TransactionRunner<FinanceServicePorts>;
-    };
+export type {
+  CreateFinanceServicesOptions,
+  FinanceEntryListItemDto,
+  FinanceEntryListResultDto,
+  FinanceServices,
+} from "./financeServiceContracts.js";
 
 export function createFinanceServices(
   options: CreateFinanceServicesOptions = {},
@@ -151,6 +56,10 @@ export function createFinanceServices(
     cancelEntry: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         cancelFinanceEntry(context, input, txPorts),
+      ),
+    createAutoEntryRule: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        createFinanceAutoEntryRule(context, input, txPorts),
       ),
     createCommissionRule: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
@@ -168,6 +77,10 @@ export function createFinanceServices(
       transactionRunner.runInTransaction((txPorts) =>
         cancelFinanceEntry(context, input, txPorts),
       ),
+    deactivateAutoEntryRule: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        deactivateFinanceAutoEntryRule(context, input, txPorts),
+      ),
     getEntry: (context, input) => getFinanceEntryDetail(context, input, ports),
     getSummary: (context) => getFinanceSummary(context, ports),
     async listEntries(context, input) {
@@ -182,17 +95,27 @@ export function createFinanceServices(
     },
     listCommissionRules: (context, input) =>
       listCommissionRules(context, input, ports),
+    listAutoEntryRules: (context, input) =>
+      listFinanceAutoEntryRules(context, input, ports),
     listRecurringEntries: (context, input) =>
       listFinanceRecurringEntries(context, input, ports),
     payEntry: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         payFinanceEntry(context, input, txPorts),
       ),
+    materializeAutoEntries: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        materializeFinanceAutoEntries(context, input, txPorts),
+      ),
     requestDocumentUpload: (context, input) =>
       requestFinanceEntryDocumentUpload(context, input, ports),
     updateEntry: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         updateFinanceEntry(context, input, txPorts),
+      ),
+    updateAutoEntryRule: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        updateFinanceAutoEntryRule(context, input, txPorts),
       ),
   };
 }
@@ -211,6 +134,7 @@ function resolveFinancePorts(
 
   return {
     documentRepository: createTestDocumentRepository(),
+    financeAutoEntryRepository: createTestFinanceAutoEntryRepository(),
     financeRepository: createMemoryFinanceRepository(),
     objectStorage: createMemoryObjectStorage(),
   };
@@ -232,12 +156,14 @@ function resolveFinanceTransactionRunner(
   return createPassthroughTransactionRunner(ports);
 }
 
-function createDrizzleFinancePorts(
+export function createDrizzleFinancePorts(
   drizzleClient: DrizzleFinanceClient,
   objectStorage: FinanceServicePorts["objectStorage"] | undefined,
 ): FinanceServicePorts {
   return {
     documentRepository: createDrizzleDocumentRepository(drizzleClient),
+    financeAutoEntryRepository:
+      createDrizzleFinanceAutoEntryRepository(drizzleClient),
     financeRepository: createDrizzleFinanceRepository(drizzleClient),
     ...(objectStorage ? { objectStorage } : {}),
   };

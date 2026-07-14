@@ -97,6 +97,17 @@ describe("module permissions", () => {
     ).toBe(true);
   });
 
+  it("keeps automatic entries readable without granting management", () => {
+    const readOnly = sessionForRole("investor", ["finance.read"]);
+
+    expect(getModulePermission("auto-entries", readOnly).canView).toBe(true);
+    expect(
+      filterNavigationGroups(navigationGroups, readOnly)
+        .flatMap((group) => group.items)
+        .some((item) => item.id === "auto-entries"),
+    ).toBe(true);
+  });
+
   it("uses the selected active store when an agency session has no default store", () => {
     persistCurrentStoreSlug("agency-store", "clerk");
     const session = {

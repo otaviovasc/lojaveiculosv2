@@ -39,7 +39,7 @@
 
 .documents-primary-action {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .documents-secondary-action,
@@ -119,6 +119,7 @@
   box-shadow: var(--shadow-panel);
   display: grid;
   gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr);
   min-width: 0;
   padding: 0.9rem;
 }

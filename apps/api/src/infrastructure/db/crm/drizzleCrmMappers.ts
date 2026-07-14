@@ -46,6 +46,8 @@ export function toActivity(row: ActivityRow): CrmLeadActivity {
     createdByUserId: row.createdByUserId as UserId | null,
     direction: row.direction,
     id: row.id,
+    idempotencyFingerprint: row.idempotencyFingerprint,
+    idempotencyKey: row.idempotencyKey,
     leadId: row.leadId,
     metadata: toRecord(row.metadata),
     occurredAt: row.occurredAt,

@@ -100,7 +100,7 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/features/crm/runtimeApi.ts": {
-      "maxLines": 301,
+      "maxLines": 300,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/features/crm/useCrmWhatsappInbox.ts": {
@@ -140,19 +140,11 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/features/finance/CommissionWorkspace.tsx": {
-      "maxLines": 281,
-      "reason": "legacy-web-250-migration"
-    },
-    "apps/web/src/features/finance/financeBillsModel.ts": {
-      "maxLines": 286,
-      "reason": "legacy-web-250-migration"
-    },
-    "apps/web/src/features/finance/FinanceEntryModalSteps.tsx": {
-      "maxLines": 282,
+      "maxLines": 280,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/features/finance/FinanceModule.tsx": {
-      "maxLines": 305,
+      "maxLines": 303,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/features/fiscal/FiscalModule.tsx": {
@@ -351,10 +343,6 @@
       "maxLines": 344,
       "reason": "legacy-web-250-migration"
     },
-    "apps/web/src/features/sales/SaleServicesPolicyPanels.tsx": {
-      "maxLines": 268,
-      "reason": "legacy-web-250-migration"
-    },
     "apps/web/src/features/sales/SalesListCards.tsx": {
       "maxLines": 285,
       "reason": "legacy-web-250-migration"
@@ -444,7 +432,7 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/dashboardSidebar.css": {
-      "maxLines": 279,
+      "maxLines": 275,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/dashboardToolbar.css": {
@@ -468,7 +456,7 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/documents-shell-side.css": {
-      "maxLines": 347,
+      "maxLines": 308,
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/documents-templates.css": {
@@ -500,7 +488,7 @@
       "reason": "legacy-web-250-migration"
     },
     "apps/web/src/styles/tokens.css": {
-      "maxLines": 281,
+      "maxLines": 280,
       "reason": "legacy-web-250-migration"
     }
   }

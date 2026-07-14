@@ -127,7 +127,7 @@
 
 .agency-menu-item-active {
   background: var(--color-accent-soft) !important;
-  color: var(--color-accent) !important;
+  color: var(--color-accent-soft-foreground) !important;
   border-left-color: var(--color-accent);
   box-shadow: inset 4px 0 12px -6px rgba(225, 31, 38, 0.15);
 }

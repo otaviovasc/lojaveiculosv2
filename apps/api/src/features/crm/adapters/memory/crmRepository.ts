@@ -24,6 +24,8 @@ export function createMemoryCrmRepository(): CrmRepository {
         createdByUserId: input.createdByUserId ?? null,
         direction: input.direction ?? "internal",
         id: crypto.randomUUID(),
+        idempotencyFingerprint: null,
+        idempotencyKey: null,
         leadId: input.leadId,
         metadata: input.metadata ?? {},
         occurredAt: input.occurredAt ?? now,
@@ -34,6 +36,35 @@ export function createMemoryCrmRepository(): CrmRepository {
       };
       activities.push(activity);
       return activity;
+    },
+    async createActivityIdempotently(input) {
+      const existing = activities.find(
+        (activity) =>
+          activity.storeId === input.storeId &&
+          activity.idempotencyKey === input.idempotencyKey,
+      );
+      if (existing) return { activity: existing, created: false };
+
+      const now = new Date();
+      const activity: CrmLeadActivity = {
+        activityType: input.activityType,
+        content: input.content,
+        createdAt: now,
+        createdByUserId: input.createdByUserId ?? null,
+        direction: input.direction ?? "internal",
+        id: crypto.randomUUID(),
+        idempotencyFingerprint: input.idempotencyFingerprint,
+        idempotencyKey: input.idempotencyKey,
+        leadId: input.leadId,
+        metadata: input.metadata ?? {},
+        occurredAt: input.occurredAt ?? now,
+        priority: input.priority ?? 0,
+        storeId: input.storeId,
+        tenantId: input.tenantId,
+        updatedAt: now,
+      };
+      activities.push(activity);
+      return { activity, created: true };
     },
     async createLead(input) {
       const now = new Date();

@@ -1,10 +1,12 @@
 import type { Context } from "hono";
 import type { ApiErrorResponseInput } from "../../../infrastructure/http/apiErrorResponse.js";
+import { FinanceAutoEntryEvaluationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryEvaluator.js";
 import {
   apiErrorInput,
   handleControllerAction,
 } from "../../../infrastructure/http/commonApiErrorResponse.js";
 import {
+  CrmActivityIdempotencyConflictError,
   CrmLeadNotFoundError,
   CrmPipelineDuplicateNameError,
   CrmPipelineInUseError,
@@ -25,6 +27,12 @@ export async function handleCrm(
 function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   if (error instanceof CrmRequestValidationError) {
     return apiErrorInput(error, "CRM_REQUEST_VALIDATION_ERROR", 400);
+  }
+  if (error instanceof FinanceAutoEntryEvaluationError) {
+    return apiErrorInput(error, "CRM_FINANCIAL_PRODUCT_VALIDATION_ERROR", 400);
+  }
+  if (error instanceof CrmActivityIdempotencyConflictError) {
+    return apiErrorInput(error, "CRM_ACTIVITY_IDEMPOTENCY_CONFLICT", 409);
   }
   if (error instanceof CrmLeadNotFoundError) {
     return apiErrorInput(error, "CRM_LEAD_NOT_FOUND", 404);

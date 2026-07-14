@@ -7,6 +7,7 @@ export type ModuleSurface =
   | "crm-whatsapp"
   | "dashboard"
   | "documents"
+  | "finance-auto-entries"
   | "finance-commissions"
   | "finance-expenses"
   | "fiscal"
@@ -21,7 +22,7 @@ export type ModuleSurface =
   | "storefront-pages";
 
 export const moduleSurfaceById = {
-  "auto-entries": "placeholder",
+  "auto-entries": "finance-auto-entries",
   autobot: "automation",
   billing: "billing",
   checklists: "placeholder",

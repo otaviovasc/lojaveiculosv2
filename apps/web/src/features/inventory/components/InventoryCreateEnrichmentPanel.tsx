@@ -76,7 +76,7 @@ export function InventoryCreateEnrichmentPanel({
             value={scanPlate}
           />
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-xs font-black text-inverse transition-all hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-75 whitespace-nowrap shrink-0"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-xs font-black text-accent-foreground transition-all hover:bg-accent-strong hover:text-accent-strong-foreground disabled:cursor-not-allowed disabled:opacity-75 whitespace-nowrap shrink-0"
             disabled={plateState.kind === "loading"}
             onClick={() => void handleLookup()}
             type="button"

@@ -44,6 +44,13 @@ export type RoleManagementState = {
   tenantId: TenantId;
 };
 
+export type ActiveStoreMember = {
+  email: string;
+  name: string | null;
+  role: RoleKey;
+  userId: UserId;
+};
+
 export type UpdateMembershipAccessInput = {
   membershipId: StoreMembershipId;
   overrides: readonly RolePermissionOverride[];
@@ -53,6 +60,10 @@ export type UpdateMembershipAccessInput = {
 };
 
 export type RoleManagementRepository = {
+  listActiveMembersByStore: (input: {
+    storeId: StoreId;
+    tenantId: TenantId;
+  }) => Promise<readonly ActiveStoreMember[]>;
   listByStore: (input: {
     storeId: StoreId;
     tenantId: TenantId;

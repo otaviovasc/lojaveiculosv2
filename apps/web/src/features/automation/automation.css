@@ -189,6 +189,7 @@
   );
   border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
   box-shadow: inset 3px 0 var(--color-accent);
+  color: var(--color-accent-soft-foreground);
 }
 .automation-run-item > strong {
   display: -webkit-box;
@@ -230,7 +231,6 @@
   font-size: var(--font-size-ui-small);
   margin: 0;
 }
-
 .automation-queue-footer {
   align-items: center;
   border-top: 1px solid var(--color-line);

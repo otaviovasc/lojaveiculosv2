@@ -1,4 +1,10 @@
-import { CheckCircle2, Pencil, ReceiptText, XCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  Pencil,
+  ReceiptText,
+  RotateCcw,
+  XCircle,
+} from "lucide-react";
 import {
   FeatureRowAction,
   FeatureRowActions,
@@ -19,7 +25,7 @@ export function EntryTitle({ entry }: { entry: FinanceEntry }) {
       <strong className="block break-words text-sm font-black text-app-text">
         {entry.name}
       </strong>
-      <span className="mt-1 block text-xs font-bold text-muted">
+      <span className="mt-1 block break-words text-xs font-bold text-muted">
         {formatFinanceCategory(entry.category)} · {entrySellerName(entry)}
       </span>
       {description ? (
@@ -32,69 +38,72 @@ export function EntryTitle({ entry }: { entry: FinanceEntry }) {
   );
 }
 
-export function StatusButton({
-  entry,
-  onMarkPending,
-  onPay,
-}: {
-  entry: FinanceEntry;
-  onMarkPending: (entry: FinanceEntry) => void;
-  onPay: (entry: FinanceEntry) => void;
-}) {
+export function StatusButton({ entry }: { entry: FinanceEntry }) {
   return (
-    <button
-      disabled={entry.status === "cancelled"}
-      onClick={() =>
-        entry.status === "paid" ? onMarkPending(entry) : onPay(entry)
-      }
-      type="button"
-    >
-      <FeatureStatusBadge tone={statusTone(entry.status)}>
-        {financeStatusLabels[entry.status]}
-      </FeatureStatusBadge>
-    </button>
+    <FeatureStatusBadge tone={statusTone(entry.status)}>
+      {financeStatusLabels[entry.status]}
+    </FeatureStatusBadge>
   );
 }
 
 export function EntryActions({
+  canAttach = true,
+  canUpdate = true,
   entry,
   onCancel,
   onEdit,
+  onMarkPending,
   onPay,
 }: {
+  canAttach?: boolean;
+  canUpdate?: boolean;
   entry: FinanceEntry;
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
+  onMarkPending: (entry: FinanceEntry) => void;
   onPay: (entry: FinanceEntry) => void;
 }) {
+  if (!canAttach && !canUpdate) return null;
   return (
     <FeatureRowActions>
-      <FeatureRowAction
-        ariaLabel="Anexar recibo"
-        icon={ReceiptText}
-        onClick={() => onEdit(entry)}
-        tooltip="Recibo"
-      />
-      <FeatureRowAction
-        ariaLabel="Editar lançamento"
-        icon={Pencil}
-        onClick={() => onEdit(entry)}
-        tooltip="Editar"
-      />
-      <FeatureRowAction
-        ariaLabel="Marcar como pago"
-        disabled={entry.status === "paid"}
-        icon={CheckCircle2}
-        onClick={() => onPay(entry)}
-        tooltip="Pagar"
-      />
-      <FeatureRowAction
-        ariaLabel="Cancelar lançamento"
-        disabled={entry.status === "cancelled"}
-        icon={XCircle}
-        onClick={() => onCancel(entry)}
-        tooltip="Cancelar"
-      />
+      {canAttach ? (
+        <FeatureRowAction
+          ariaLabel="Anexar recibo"
+          icon={ReceiptText}
+          onClick={() => onEdit(entry)}
+          tooltip="Recibo"
+        />
+      ) : null}
+      {canUpdate ? (
+        <>
+          <FeatureRowAction
+            ariaLabel="Editar lançamento"
+            icon={Pencil}
+            onClick={() => onEdit(entry)}
+            tooltip="Editar"
+          />
+          <FeatureRowAction
+            ariaLabel={
+              entry.status === "paid"
+                ? "Marcar como pendente"
+                : "Marcar como pago"
+            }
+            disabled={entry.status === "cancelled"}
+            icon={entry.status === "paid" ? RotateCcw : CheckCircle2}
+            onClick={() =>
+              entry.status === "paid" ? onMarkPending(entry) : onPay(entry)
+            }
+            tooltip={entry.status === "paid" ? "Marcar pendente" : "Pagar"}
+          />
+          <FeatureRowAction
+            ariaLabel="Cancelar lançamento"
+            disabled={entry.status === "cancelled"}
+            icon={XCircle}
+            onClick={() => onCancel(entry)}
+            tooltip="Cancelar"
+          />
+        </>
+      ) : null}
     </FeatureRowActions>
   );
 }

@@ -124,7 +124,7 @@ export function CustomDropdown({
                     "flex w-full items-center justify-between gap-2 rounded-xl px-3 py-2 text-sm transition-colors text-left",
                     value === opt.value
                       ? "bg-primary/10 text-primary font-semibold"
-                      : "hover:bg-muted text-foreground",
+                      : "hover:bg-secondary text-foreground",
                   )}
                   onClick={() => {
                     onChange(opt.value);

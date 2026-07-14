@@ -1,4 +1,5 @@
 import {
+  FileText,
   Landmark,
   Percent,
   RefreshCw,
@@ -15,7 +16,8 @@ import {
 import type { SnapshotRecord } from "./salesSnapshot";
 import type { SaleRecord } from "./types";
 
-type ServiceType = "commission" | "financing" | "insurance" | "tradeIn";
+type ServiceType =
+  "commission" | "documentation" | "financing" | "insurance" | "tradeIn";
 
 export function SaleServicesDetails({ sale }: { sale: SaleRecord }) {
   return (
@@ -25,7 +27,7 @@ export function SaleServicesDetails({ sale }: { sale: SaleRecord }) {
         <span>Serviços Contratados e Comissão</span>
       </h4>
 
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 text-xs font-bold">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 text-xs font-bold">
         <ServiceSummary
           icon={<Landmark className="size-3.5 text-accent" />}
           sale={sale}
@@ -35,6 +37,11 @@ export function SaleServicesDetails({ sale }: { sale: SaleRecord }) {
           icon={<ShieldCheck className="size-3.5 text-accent" />}
           sale={sale}
           type="insurance"
+        />
+        <ServiceSummary
+          icon={<FileText className="size-3.5 text-accent" />}
+          sale={sale}
+          type="documentation"
         />
         <ServiceSummary
           icon={<Percent className="size-3.5 text-accent" />}
@@ -93,10 +100,44 @@ function ServiceContent({
       <span className="text-xs text-muted block italic">Não contratado</span>
     );
   }
+  if (
+    type === "documentation" &&
+    (!snapshotNumber(value.chargedAmountCents) || value.status !== "charged")
+  ) {
+    return (
+      <span className="text-xs text-muted block italic">Não contratado</span>
+    );
+  }
+  if (type === "commission" && !snapshotBoolean(value.enabled)) {
+    return (
+      <span className="text-xs text-muted block italic">Não contratado</span>
+    );
+  }
 
   if (type === "commission") return <CommissionSummary value={value} />;
+  if (type === "documentation") {
+    return <DocumentationSummary value={value} />;
+  }
   if (type === "tradeIn") return <TradeInSummary value={value} />;
   return <PolicySummary type={type} value={value} />;
+}
+
+function DocumentationSummary({ value }: { value: SnapshotRecord }) {
+  const chargedAmountCents = snapshotNumber(value.chargedAmountCents);
+  return (
+    <div className="flex flex-col gap-1 text-xs">
+      <span className="text-accent-strong">
+        {formatCents(chargedAmountCents ?? 0)}
+      </span>
+      <span className="text-muted">
+        {value.hasLien === true
+          ? "Com alienação"
+          : value.hasLien === false
+            ? "Sem alienação"
+            : "Alienação não informada"}
+      </span>
+    </div>
+  );
 }
 
 function CommissionSummary({ value }: { value: SnapshotRecord }) {
@@ -166,6 +207,7 @@ function PolicySummary({
 function serviceLabel(type: ServiceType) {
   if (type === "financing") return "Financiamento";
   if (type === "insurance") return "Seguro";
+  if (type === "documentation") return "Documentação";
   if (type === "commission") return "Comissão";
   return "Veículo na Troca";
 }

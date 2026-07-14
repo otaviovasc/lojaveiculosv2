@@ -26,14 +26,14 @@ test.describe("expenses flow", () => {
     await page.goto("/expenses");
 
     await expect(
-      page.getByRole("heading", { name: "Gastos e contas" }),
+      page.getByRole("heading", { name: "Fluxo de caixa", level: 1 }),
     ).toBeVisible();
     await expect(
       page.getByText(/Carregando lançamentos|Carregando lancamentos/),
     ).toHaveCount(0);
     await saveQaScreenshot(page, testInfo, "expenses-desktop-default");
 
-    await selectFilter(page, "Janela", "Todos");
+    await selectFilter(page, "Período", "Todos");
     const audiRow = page.getByRole("row", { name: /Revis[aã]o Audi A4/ });
     await expect(audiRow).toBeVisible();
     await expect(audiRow).toContainText("Preparação");
@@ -109,20 +109,26 @@ test.describe("expenses flow", () => {
     const editedRow = page.getByRole("row").filter({ hasText: editedName });
     await expect(editedRow).toBeVisible();
     await editedRow.getByRole("button", { name: /Marcar como pago/i }).click();
-    await expect(editedRow.getByRole("button", { name: "Pago" })).toBeVisible();
+    await expect(editedRow.getByText("Pago", { exact: true })).toBeVisible();
 
-    page.once("dialog", (dialog) => dialog.accept());
     await editedRow.getByRole("button", { name: /Cancelar/i }).click();
+    const cancelDialog = page.getByRole("dialog", {
+      name: /Cancelar lan[cç]amento/i,
+    });
+    await expect(cancelDialog).toBeVisible();
+    await cancelDialog
+      .getByRole("button", { name: /Cancelar lan[cç]amento/i })
+      .click();
     await expect(page.getByText(/Lan[cç]amento cancelado/i)).toBeVisible();
     await expect(
-      editedRow.getByRole("button", { name: "Cancelado" }),
+      editedRow.getByText("Cancelado", { exact: true }),
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-cancelled");
 
     await setQaViewport(page, "mobile");
     await page.goto("/expenses");
     await expect(
-      page.getByRole("heading", { name: "Gastos e contas" }),
+      page.getByRole("heading", { name: "Fluxo de caixa", level: 1 }),
     ).toBeVisible();
     await expect(
       page
@@ -148,6 +154,31 @@ test.describe("expenses flow", () => {
     await expect(page.getByText("Acesso restrito")).toBeVisible();
     await expect(page.getByText(/não tem acesso a gastos/i)).toBeVisible();
     await saveQaScreenshot(page, testInfo, "expenses-restricted");
+  });
+
+  test("finance readers see data without misleading mutation controls", async ({
+    page,
+  }, testInfo) => {
+    await installLocalSession(page, {
+      permissions: ["finance.read"],
+      persona: qaPersonas.owner,
+    });
+
+    await page.goto("/expenses");
+    await expect(
+      page.getByRole("heading", { name: "Fluxo de caixa", level: 1 }),
+    ).toBeVisible();
+    await expect(page.getByText(/modo somente leitura/i)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Novo lan[cç]amento/i }),
+    ).toHaveCount(0);
+    await selectFilter(page, "Período", "Todos");
+    const audiRow = page.getByRole("row", { name: /Revis[aã]o Audi A4/ });
+    await expect(audiRow).toBeVisible();
+    await expect(
+      audiRow.getByRole("button", { name: /Editar|Pagar|Cancelar|recibo/i }),
+    ).toHaveCount(0);
+    await saveQaScreenshot(page, testInfo, "expenses-read-only");
   });
 });
 

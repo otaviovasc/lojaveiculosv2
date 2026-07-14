@@ -143,7 +143,7 @@ export function SettingsModule({
 
       <div className="settings-topbar my-2 flex flex-wrap items-center justify-between gap-3">
         <FeatureTabs
-          activeClassName="!bg-accent !text-inverse shadow-sm scale-[1.02]"
+          activeClassName="!bg-accent !text-accent-foreground shadow-sm scale-[1.02]"
           ariaLabel="Áreas de configuração"
           className="settings-primary-tabs"
           onChange={(tab) => selectTab(tab, setActiveTab)}

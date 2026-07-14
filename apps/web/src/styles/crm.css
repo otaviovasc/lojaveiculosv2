@@ -112,7 +112,7 @@
   align-items: center;
   background: var(--color-accent);
   border-radius: var(--radius-md);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 900;

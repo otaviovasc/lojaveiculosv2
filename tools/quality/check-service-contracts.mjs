@@ -5,6 +5,9 @@ const domainsRoot = new URL("../../apps/api/src/domains", import.meta.url)
   .pathname;
 const nonEntrypointFiles = new Set([
   "auditVehicleServiceEvent.ts",
+  "financeAutoEntryEvaluator.ts",
+  "financeAutoEntryLabels.ts",
+  "financeAutoEntryRuleValidation.ts",
   "leadVisitSupport.ts",
   "marketplaceAccountPreflight.ts",
   "marketplaceAccountPreflightMessages.ts",
@@ -12,6 +15,7 @@ const nonEntrypointFiles = new Set([
   "marketplaceJobPermissions.ts",
   "marketplaceStockPlanRules.ts",
   "marketplaceStockPlanTypes.ts",
+  "materializeFinanceAutoEntries.ts",
   "runMarketplaceSyncJobAudit.ts",
   "sendWhatsappVehicleSupport.ts",
   "serviceSupport.ts",
@@ -98,6 +102,7 @@ for (const file of domainFiles.filter(isServiceFile)) {
 
   if (
     !source.includes("assertPermission(") &&
+    !source.includes("assertAnyPermission(") &&
     !isContextResolver &&
     !usesDelegatedContractHelper
   ) {

@@ -33,6 +33,7 @@ describe("SettingsModule", () => {
 
 function createUnavailableApi(): SettingsApi {
   return {
+    getStoreMemberOptions: vi.fn(async () => ({ members: [] })),
     getRoleManagement: vi.fn(async () => {
       throw new Error("roles unavailable");
     }),

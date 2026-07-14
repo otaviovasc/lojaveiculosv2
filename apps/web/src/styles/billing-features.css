@@ -114,7 +114,7 @@
 .billing-dialog-actions button:first-child {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
 }
 
 .billing-dialog-actions button.billing-dialog-remove {

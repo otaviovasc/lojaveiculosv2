@@ -130,7 +130,7 @@ export function ImageTemplateControls({
       <div className="p-6 border-t border-line space-y-3 bg-panel sticky bottom-0 z-10">
         <button
           onClick={handleDownload}
-          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-inverse cursor-pointer hover:bg-accent-strong transition-colors"
+          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground transition-colors"
         >
           <Download aria-hidden="true" className="size-4" />
           Baixar Foto Atual

@@ -41,7 +41,7 @@ export function TestDriveWizardFooter({
       {step === "lead" && (
         <button
           onClick={onNext}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-inverse cursor-pointer hover:bg-accent-strong"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground"
         >
           Continuar
           <ArrowRight className="size-4" />
@@ -52,7 +52,7 @@ export function TestDriveWizardFooter({
         <button
           onClick={onSubmit}
           disabled={submitting}
-          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-inverse cursor-pointer hover:bg-accent-strong disabled:opacity-50"
+          className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground disabled:opacity-50"
         >
           {submitting ? (
             <Loader2 className="size-4 animate-spin" />
@@ -67,7 +67,7 @@ export function TestDriveWizardFooter({
         <div className="flex gap-2 w-full justify-center">
           <button
             onClick={onPrint}
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-inverse cursor-pointer hover:bg-accent-strong flex-1"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer hover:bg-accent-strong hover:text-accent-strong-foreground flex-1"
           >
             <Printer className="size-4" />
             Visualizar Termo

@@ -29,7 +29,7 @@ export function InventoryCreateDraftPanel({
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-3 text-xs font-black text-inverse"
+            className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-accent px-3 text-xs font-black text-accent-foreground"
             onClick={onContinue}
             type="button"
           >

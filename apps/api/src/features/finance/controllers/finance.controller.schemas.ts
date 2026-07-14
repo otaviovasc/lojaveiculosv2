@@ -1,4 +1,9 @@
 import { z } from "zod";
+export {
+  createFinanceAutoEntryRuleSchema,
+  listFinanceAutoEntryRulesQuerySchema,
+  updateFinanceAutoEntryRuleSchema,
+} from "./finance.controller.autoEntrySchemas.js";
 
 export const financeEntryTypes = ["commission", "expense", "revenue"] as const;
 export const financeEntryStatuses = ["cancelled", "paid", "pending"] as const;
@@ -19,6 +24,7 @@ export const financeLinkTargets = [
   "sale",
   "sale_payment",
   "vehicle_cost",
+  "vehicle_listing",
   "vehicle_unit",
 ] as const;
 export const financeDocumentKinds = [
@@ -136,7 +142,7 @@ export const createCommissionRuleSchema = z.object({
 
 export const listCommissionRulesQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(200).optional(),
-  sellerUserId: z.string().trim().min(1).optional(),
+  sellerUserId: z.string().trim().uuid().optional(),
   status: z.enum(commissionRuleStatuses).optional(),
 });
 

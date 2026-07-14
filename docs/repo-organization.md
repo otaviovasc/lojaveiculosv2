@@ -169,6 +169,10 @@ Before adding or moving a module:
 - `pnpm run check:api-errors`: blocks direct controller `{ message }` JSON
   error responses and manual `context.error` assignment outside the shared HTTP
   error helper.
+- `pnpm run check:contrast`: resolves semantic foreground/background tokens in
+  light and dark themes, checks inherited hover/active/selected state colors,
+  composites translucent surfaces, and requires tenant accent foreground
+  tokens anywhere the dynamic accent is used as a background.
 - `pnpm run check:validation`: verifies hooks, CI, and every `check:*` script
   stay wired into `validate:core-guardrails`.
 

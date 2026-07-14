@@ -61,7 +61,7 @@
 
 .documents-builder-block:hover .documents-builder-block-handle {
   opacity: 1;
-  color: var(--color-accent);
+  color: var(--color-accent-soft-foreground);
 }
 
 .documents-builder-block-preview {
@@ -115,7 +115,7 @@
 .documents-builder-rich-toolbar button:hover:not(:disabled) {
   background: var(--color-accent-soft);
   border-color: var(--color-accent);
-  color: var(--color-accent);
+  color: var(--color-accent-soft-foreground);
 }
 
 .documents-builder-rich-separator {
@@ -155,7 +155,7 @@
 
 .documents-builder-variable-strip button:hover {
   background: var(--color-accent);
-  color: var(--color-inverse);
+  color: var(--color-accent-foreground);
   transform: translateY(-1px);
   box-shadow: 0 4px 10px rgba(225, 31, 38, 0.15);
 }

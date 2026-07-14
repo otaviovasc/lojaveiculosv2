@@ -53,7 +53,7 @@ export function ToggleButton({
     compact ? "min-h-9 capitalize" : "min-h-11",
     "rounded-lg border text-xs font-black transition-all cursor-pointer",
     active
-      ? "bg-accent text-inverse border-accent"
+      ? "bg-accent text-accent-foreground border-accent"
       : "bg-app text-app-text border-line hover:bg-line/20",
   ].join(" ");
 

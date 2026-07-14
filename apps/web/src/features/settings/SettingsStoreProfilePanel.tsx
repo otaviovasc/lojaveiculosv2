@@ -302,7 +302,7 @@ export function SettingsStoreProfilePanel({
 
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-line/45">
           <button
-            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-black text-inverse disabled:opacity-70 transition-all hover:bg-accent-strong active:scale-98 shadow-md cursor-pointer"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-black text-accent-foreground disabled:opacity-70 transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98 shadow-md cursor-pointer"
             disabled={isSaving}
             type="submit"
           >

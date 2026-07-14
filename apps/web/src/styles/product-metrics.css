@@ -172,6 +172,7 @@
 .feature-list-item--active {
   border-color: var(--color-accent);
   background: var(--color-accent-soft);
+  color: var(--color-accent-soft-foreground);
 }
 
 .feature-preview {

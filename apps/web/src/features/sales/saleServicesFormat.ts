@@ -16,3 +16,15 @@ export function formatCents(cents: number) {
     style: "currency",
   });
 }
+
+export function parsePercentage(value: string) {
+  const normalized = value.trim().replace(",", ".");
+  if (!normalized) return null;
+  const percentage = Number(normalized);
+  return Number.isFinite(percentage) ? percentage : null;
+}
+
+export function formatPercentage(value: number | null | undefined) {
+  if (value === null || value === undefined) return "";
+  return String(value).replace(".", ",");
+}

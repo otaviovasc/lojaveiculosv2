@@ -73,7 +73,7 @@
 .crm-segmented .crm-segmented-active {
   background: var(--color-panel);
   box-shadow: var(--shadow-panel);
-  color: var(--color-accent-strong);
+  color: var(--color-accent-readable);
 }
 
 .crm-workspace-grid {

@@ -84,7 +84,7 @@ export function DocumentosUploadCard({ api, detail, onUpdated, unit }: Props) {
           />
           <label
             className={
-              "inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-3.5 text-xs font-black text-inverse transition-colors sm:w-auto " +
+              "inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-lg bg-accent px-3.5 text-xs font-black text-accent-foreground transition-colors sm:w-auto " +
               (!unit || isUploading
                 ? "cursor-not-allowed opacity-55"
                 : "cursor-pointer hover:bg-accent-strong")

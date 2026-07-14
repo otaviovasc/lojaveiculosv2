@@ -15,20 +15,15 @@ import {
 export function createRuntimeProductCrmApi(): ProductCrmApi {
   return {
     createActivity: async (leadId, input) =>
-      createProductCrmApi(await createProductCrmApiOptions()).createActivity(
-        leadId,
-        input,
-      ),
+      (await createRuntimeProductApi()).createActivity(leadId, input),
+    createFinancialProduct: async (leadId, input) =>
+      (await createRuntimeProductApi()).createFinancialProduct(leadId, input),
     createLead: async (input) =>
       createProductCrmApi(await createProductCrmApiOptions()).createLead(input),
     createPipeline: async (input) =>
-      createProductCrmApi(await createProductCrmApiOptions()).createPipeline(
-        input,
-      ),
+      (await createRuntimeProductApi()).createPipeline(input),
     deletePipeline: async (pipelineId) =>
-      createProductCrmApi(await createProductCrmApiOptions()).deletePipeline(
-        pipelineId,
-      ),
+      (await createRuntimeProductApi()).deletePipeline(pipelineId),
     listActivities: async (leadId) =>
       createProductCrmApi(await createProductCrmApiOptions()).listActivities(
         leadId,
@@ -52,6 +47,10 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
         input,
       ),
   };
+}
+
+async function createRuntimeProductApi() {
+  return createProductCrmApi(await createProductCrmApiOptions());
 }
 
 export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {

@@ -56,7 +56,7 @@ export function IconButton({
 }) {
   const classes =
     variant === "primary"
-      ? "bg-accent text-inverse hover:bg-accent-strong"
+      ? "bg-accent text-accent-foreground hover:bg-accent-strong hover:text-accent-strong-foreground"
       : "border border-line text-app-text hover:bg-line/25";
   return (
     <button

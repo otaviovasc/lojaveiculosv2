@@ -13,7 +13,7 @@ export function LandingAuthActions({
 }) {
   const config = useClerkAuthConfiguration();
   const primaryClass =
-    "inline-flex h-12 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-black text-white shadow-lg transition hover:bg-accent-strong";
+    "inline-flex h-12 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-black text-accent-foreground shadow-lg transition hover:bg-accent-strong hover:text-accent-strong-foreground";
   const secondaryClass =
     "inline-flex h-12 items-center justify-center rounded-md border border-white/18 px-4 text-sm font-black text-white transition hover:bg-white/10";
 

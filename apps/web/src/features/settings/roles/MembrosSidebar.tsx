@@ -137,7 +137,7 @@ export function MembrosSidebar({
               : "Sem permissão para convidar membros"
           }
           className={cx(
-            "w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-inverse transition-all hover:bg-accent-strong active:scale-98 shadow-sm",
+            "w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-accent-foreground transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98 shadow-sm",
             canInvite
               ? "cursor-pointer"
               : "cursor-not-allowed opacity-50 hover:bg-accent",

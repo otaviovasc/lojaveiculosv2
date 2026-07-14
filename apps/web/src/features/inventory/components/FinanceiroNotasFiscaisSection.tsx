@@ -38,7 +38,7 @@ export function FinanceiroNotasFiscaisSection() {
           </div>
         </div>
         <a
-          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-inverse transition-colors hover:bg-accent-strong"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground"
           href="#/fiscal"
         >
           Abrir Fiscal

@@ -42,6 +42,18 @@ export function createRolesFeature(options: CreateRolesFeatureOptions = {}) {
     }),
   );
 
+  feature.get("/member-options", async (context) =>
+    handleRoles(context, async () => {
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.listStoreMemberOptions(serviceContext, services),
+      );
+    }),
+  );
+
   feature.patch("/memberships/:membershipId/access", async (context) =>
     handleRoles(context, async () => {
       const input = await parseJson(context, updateMembershipAccessSchema);

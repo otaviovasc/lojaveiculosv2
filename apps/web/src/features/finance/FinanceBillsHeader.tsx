@@ -6,10 +6,12 @@ import {
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 
 export function FinanceBillsHeader({
+  canCreate = true,
   onCreate,
   onExport,
   onReports,
 }: {
+  canCreate?: boolean;
   onCreate: () => void;
   onExport: () => void;
   onReports: () => void;
@@ -29,12 +31,14 @@ export function FinanceBillsHeader({
               label="Relatórios"
               onClick={onReports}
             />
-            <FeatureActionButton
-              icon={PlusCircle}
-              label="Novo lançamento"
-              onClick={onCreate}
-              variant="primary"
-            />
+            {canCreate ? (
+              <FeatureActionButton
+                icon={PlusCircle}
+                label="Novo lançamento"
+                onClick={onCreate}
+                variant="primary"
+              />
+            ) : null}
           </>
         }
         description="Controle de gastos e entradas com saldo planejado, saldo real, vencimentos, recorrências, comissões e comprovantes auditados."

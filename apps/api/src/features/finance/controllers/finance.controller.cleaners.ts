@@ -1,13 +1,17 @@
 import type { z } from "zod";
+import type { FinanceAutoEntryRuleConditions } from "@lojaveiculosv2/shared";
 import type {
   attachFinanceDocumentSchema,
   createCommissionRuleSchema,
+  createFinanceAutoEntryRuleSchema,
   createFinanceEntrySchema,
   createRecurringEntrySchema,
   listCommissionRulesQuerySchema,
+  listFinanceAutoEntryRulesQuerySchema,
   listFinanceEntriesQuerySchema,
   listRecurringEntriesQuerySchema,
   updateFinanceEntrySchema,
+  updateFinanceAutoEntryRuleSchema,
 } from "./finance.controller.schemas.js";
 
 export function cleanListQuery(
@@ -147,4 +151,96 @@ export function cleanCreateCommissionRuleInput(
     status: input.status,
     type: input.type,
   };
+}
+
+export function cleanListFinanceAutoEntryRulesQuery(
+  input: z.infer<typeof listFinanceAutoEntryRulesQuerySchema>,
+) {
+  return {
+    ...(input.event !== undefined ? { event: input.event } : {}),
+    ...(input.limit !== undefined ? { limit: input.limit } : {}),
+    ...(input.sellerUserId !== undefined
+      ? { sellerUserId: input.sellerUserId }
+      : {}),
+    ...(input.status !== undefined ? { status: input.status } : {}),
+  };
+}
+
+export function cleanCreateFinanceAutoEntryRuleInput(
+  input: z.infer<typeof createFinanceAutoEntryRuleSchema>,
+) {
+  return {
+    calculation: input.calculation,
+    category: input.category,
+    conditions: cleanAutoEntryConditions(input.conditions),
+    event: input.event,
+    family: input.family,
+    metadata: input.metadata,
+    name: input.name,
+    outputType: input.outputType,
+    priority: input.priority,
+    recipient: input.recipient,
+    resolution: input.resolution,
+    ruleKey: input.ruleKey,
+    sellerUserId: input.sellerUserId,
+    status: input.status,
+    timing: input.timing,
+  };
+}
+
+export function cleanUpdateFinanceAutoEntryRuleInput(
+  ruleId: string,
+  input: z.infer<typeof updateFinanceAutoEntryRuleSchema>,
+) {
+  return {
+    ruleId,
+    ...(input.calculation !== undefined
+      ? { calculation: input.calculation }
+      : {}),
+    ...(input.category !== undefined ? { category: input.category } : {}),
+    ...(input.conditions !== undefined
+      ? { conditions: cleanAutoEntryConditions(input.conditions) }
+      : {}),
+    ...(input.event !== undefined ? { event: input.event } : {}),
+    ...(input.family !== undefined ? { family: input.family } : {}),
+    ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.outputType !== undefined ? { outputType: input.outputType } : {}),
+    ...(input.priority !== undefined ? { priority: input.priority } : {}),
+    ...(input.recipient !== undefined ? { recipient: input.recipient } : {}),
+    ...(input.resolution !== undefined ? { resolution: input.resolution } : {}),
+    ...(input.ruleKey !== undefined ? { ruleKey: input.ruleKey } : {}),
+    ...(input.sellerUserId !== undefined
+      ? { sellerUserId: input.sellerUserId }
+      : {}),
+    ...(input.status !== undefined ? { status: input.status } : {}),
+    ...(input.timing !== undefined ? { timing: input.timing } : {}),
+  };
+}
+
+function cleanAutoEntryConditions(
+  input: z.infer<typeof createFinanceAutoEntryRuleSchema>["conditions"],
+): FinanceAutoEntryRuleConditions {
+  const conditions: FinanceAutoEntryRuleConditions = {};
+  if (input.financingRank !== undefined) {
+    conditions.financingRank = input.financingRank;
+  }
+  if (input.standardCommissionEnabled !== undefined) {
+    conditions.standardCommissionEnabled = input.standardCommissionEnabled;
+  }
+  if (input.transferHasLien !== undefined) {
+    conditions.transferHasLien = input.transferHasLien;
+  }
+  if (input.basisRange !== undefined) {
+    conditions.basisRange = {
+      basis: input.basisRange.basis,
+      ...(input.basisRange.maxCents !== undefined
+        ? { maxCents: input.basisRange.maxCents }
+        : {}),
+      ...(input.basisRange.minCents !== undefined
+        ? { minCents: input.basisRange.minCents }
+        : {}),
+    };
+  }
+  return conditions;
 }

@@ -141,7 +141,7 @@ export function MediaCard({
         />
         <button
           aria-label="Salvar texto"
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-panel transition-colors hover:bg-line-strong hover:text-app-text"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-line bg-panel transition-colors hover:bg-secondary hover:text-secondary-foreground"
           onClick={() => void saveAlt()}
           title="Salvar legenda"
           type="button"

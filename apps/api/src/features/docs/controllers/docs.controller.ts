@@ -145,6 +145,8 @@ export const openApiDocument = {
     "finance.update": "Update, pay, cancel, and void finance entries.",
     "finance.attach_document":
       "Request uploads and attach documents to finance entries.",
+    "finance.auto_entries.manage":
+      "Create, update, pause, and archive automatic finance entry rules.",
     "inventory.read": "Read vehicle inventory.",
     "inventory.create": "Create vehicle inventory records.",
     "inventory.update_description": "Edit descriptive vehicle fields.",
@@ -188,7 +190,13 @@ export const openApiDocument = {
     expire:
       "POST /api/v1/inventory/units/{unitId}/reservation/expire cancels pending reservation finance_entries linked to sale_payment context.",
     sell: "POST /api/v1/inventory/units/{unitId}/sell creates finance_entries linked to sale and sale_payment context.",
-    linkTargets: ["sale", "sale_payment", "vehicle_cost", "vehicle_unit"],
+    linkTargets: [
+      "sale",
+      "sale_payment",
+      "vehicle_cost",
+      "vehicle_listing",
+      "vehicle_unit",
+    ],
   },
   "x-external-api-safety-limits": [
     "Tenant and store scoping required for every external request.",

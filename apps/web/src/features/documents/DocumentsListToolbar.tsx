@@ -99,7 +99,7 @@ export function DocumentsListToolbar({
       </form>
 
       <div className="flex flex-row flex-wrap sm:flex-nowrap items-center justify-between gap-3 border-t border-line/20 pt-4 mt-4">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex w-full min-w-0 items-center gap-2 flex-wrap sm:flex-1">
           <OriginChip
             activeOrigin={activeOrigin}
             isLoading={isLoading}
@@ -169,16 +169,18 @@ function OriginChip({
     { filter: "manual", label: "Manuais" },
   ];
   return (
-    <FeatureSegmentedControl
-      ariaLabel="Origem dos documentos"
-      disabled={isLoading}
-      onChange={onOriginSelect}
-      options={chips.map((chip) => ({
-        label: chip.label,
-        value: chip.filter,
-      }))}
-      value={activeOrigin}
-    />
+    <div className="w-full min-w-0 shrink-0 sm:w-80">
+      <FeatureSegmentedControl
+        ariaLabel="Origem dos documentos"
+        disabled={isLoading}
+        onChange={onOriginSelect}
+        options={chips.map((chip) => ({
+          label: chip.label,
+          value: chip.filter,
+        }))}
+        value={activeOrigin}
+      />
+    </div>
   );
 }
 

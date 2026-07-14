@@ -92,4 +92,27 @@ describe("access policy", () => {
       allowed: true,
     });
   });
+
+  it("keeps automatic finance rules manager-only by default", () => {
+    const financePermissions =
+      permissionGroups.find((group) => group.key === "finance")?.permissions ??
+      [];
+
+    expect(financePermissions.map((item) => item.key)).toContain(
+      "finance.auto_entries.manage",
+    );
+    for (const role of ["agency", "owner", "admin", "supervisor"] as const) {
+      expect(
+        canAccess(resolvePermissions({ role }), "finance.auto_entries.manage"),
+      ).toEqual({ allowed: true });
+    }
+    for (const role of ["investor", "salesman"] as const) {
+      expect(
+        canAccess(resolvePermissions({ role }), "finance.auto_entries.manage"),
+      ).toEqual({
+        allowed: false,
+        reason: "Missing permission: finance.auto_entries.manage",
+      });
+    }
+  });
 });

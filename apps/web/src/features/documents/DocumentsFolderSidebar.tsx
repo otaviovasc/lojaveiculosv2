@@ -141,7 +141,7 @@ function FolderRowView({
           <strong>{folder.label}</strong>
           <small>{folder.subtitle}</small>
         </span>
-        <em>{folder.count}</em>
+        <em className="documents-folder-sidebar-count">{folder.count}</em>
       </button>
     </li>
   );

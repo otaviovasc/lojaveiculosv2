@@ -86,7 +86,7 @@ export function DocumentosContratosCard({
           </div>
 
           <a
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-inverse transition-colors hover:bg-accent-strong sm:w-fit"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground sm:w-fit"
             href={documentsRouteHash({ documentId: null, unitId })}
           >
             Abrir Central de documentos
