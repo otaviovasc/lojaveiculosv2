@@ -1,5 +1,20 @@
-import { and, asc, desc, eq, lte } from "drizzle-orm";
-import { crmWhatsappScheduledMessages } from "@lojaveiculosv2/db";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  getTableColumns,
+  gt,
+  isNull,
+  lte,
+  or,
+} from "drizzle-orm";
+import {
+  crmWhatsappScheduledMessages,
+  storeEntitlements,
+  stores,
+  tenants,
+} from "@lojaveiculosv2/db";
 import type {
   CreateCrmWhatsappScheduledMessageInput,
   FindDueCrmWhatsappScheduledMessageScopesInput,
@@ -70,9 +85,13 @@ export async function findDueWhatsappScheduledMessages(
   db: DrizzleCrmClient,
   input: FindDueCrmWhatsappScheduledMessagesInput,
 ) {
+  const now = new Date();
   const rows = await db
-    .select()
+    .select(getTableColumns(crmWhatsappScheduledMessages))
     .from(crmWhatsappScheduledMessages)
+    .innerJoin(storeEntitlements, activeCrmEntitlementJoin(now))
+    .innerJoin(stores, activeStoreJoin())
+    .innerJoin(tenants, activeTenantJoin())
     .where(
       and(
         eq(crmWhatsappScheduledMessages.storeId, input.storeId),
@@ -90,12 +109,16 @@ export async function findDueWhatsappScheduledMessageScopes(
   db: DrizzleCrmClient,
   input: FindDueCrmWhatsappScheduledMessageScopesInput,
 ) {
+  const now = new Date();
   const rows = await db
     .selectDistinct({
       storeId: crmWhatsappScheduledMessages.storeId,
       tenantId: crmWhatsappScheduledMessages.tenantId,
     })
     .from(crmWhatsappScheduledMessages)
+    .innerJoin(storeEntitlements, activeCrmEntitlementJoin(now))
+    .innerJoin(stores, activeStoreJoin())
+    .innerJoin(tenants, activeTenantJoin())
     .where(
       and(
         eq(crmWhatsappScheduledMessages.status, "pending"),
@@ -107,6 +130,40 @@ export async function findDueWhatsappScheduledMessageScopes(
     storeId: row.storeId as never,
     tenantId: row.tenantId as never,
   }));
+}
+
+function activeCrmEntitlementJoin(now: Date) {
+  return and(
+    eq(storeEntitlements.storeId, crmWhatsappScheduledMessages.storeId),
+    eq(storeEntitlements.tenantId, crmWhatsappScheduledMessages.tenantId),
+    eq(storeEntitlements.featureKey, "crm"),
+    or(
+      eq(storeEntitlements.status, "active"),
+      eq(storeEntitlements.status, "trialing"),
+    ),
+    or(
+      isNull(storeEntitlements.startsAt),
+      lte(storeEntitlements.startsAt, now),
+    ),
+    or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
+  );
+}
+
+function activeStoreJoin() {
+  return and(
+    eq(stores.id, crmWhatsappScheduledMessages.storeId),
+    eq(stores.tenantId, crmWhatsappScheduledMessages.tenantId),
+    eq(stores.isDeleted, false),
+    isNull(stores.deletedAt),
+  );
+}
+
+function activeTenantJoin() {
+  return and(
+    eq(tenants.id, crmWhatsappScheduledMessages.tenantId),
+    eq(tenants.isDeleted, false),
+    isNull(tenants.deletedAt),
+  );
 }
 
 export async function updateWhatsappScheduledMessage(

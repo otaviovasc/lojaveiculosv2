@@ -82,6 +82,7 @@ describe("CRM WhatsApp API routes", () => {
   it("serializes inbox session queries", () => {
     expect(
       createCrmWhatsappSessionQuery({
+        assigneeId: "03030303-0303-4303-8303-030303030303",
         connectionId: "connection_1",
         filter: "fresh",
         limit: 40,
@@ -96,7 +97,7 @@ describe("CRM WhatsApp API routes", () => {
         unreadOnly: true,
       }).toString(),
     ).toBe(
-      "connectionId=connection_1&filter=fresh&limit=40&offset=80&search=maria&sessionId=session_1&status=ACTIVE&tagIds=550e8400-e29b-41d4-a716-446655440000%2C550e8400-e29b-41d4-a716-446655440001&unreadOnly=true",
+      "assigneeId=03030303-0303-4303-8303-030303030303&connectionId=connection_1&filter=fresh&limit=40&offset=80&search=maria&sessionId=session_1&status=ACTIVE&tagIds=550e8400-e29b-41d4-a716-446655440000%2C550e8400-e29b-41d4-a716-446655440001&unreadOnly=true",
     );
   });
 });

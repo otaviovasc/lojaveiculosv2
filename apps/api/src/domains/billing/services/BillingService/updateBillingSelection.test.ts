@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { BillingRepository } from "../../ports/billingRepository.js";
+import type {
+  BillingAddon,
+  BillingPlanFeature,
+  BillingRepository,
+} from "../../ports/billingRepository.js";
 import { createBillingOverview } from "../../readModels/billingOverviewModel.js";
 import {
   BillingSelectionError,
@@ -54,28 +58,74 @@ describe("updateBillingSelection", () => {
       ),
     ).rejects.toBeInstanceOf(BillingSelectionError);
   });
+
+  it("rejects two add-ons that grant the same feature", async () => {
+    const repository = createRepository({
+      addons: [
+        crmAddon,
+        { ...crmAddon, code: "crm_second", id: "addon_crm_second" },
+      ],
+    });
+
+    await expect(
+      updateBillingSelection(
+        billingContext(),
+        {
+          addonIds: ["addon_crm", "addon_crm_second"],
+          planId: "plan_growth",
+        },
+        { billingRepository: repository },
+      ),
+    ).rejects.toThrow("More than one add-on grants the same feature.");
+  });
+
+  it("rejects an add-on already included in the selected plan", async () => {
+    const repository = createRepository({
+      features: [
+        {
+          featureKey: "crm",
+          included: true,
+          includedInTrial: false,
+          limitValue: null,
+        },
+      ],
+    });
+
+    await expect(
+      updateBillingSelection(
+        billingContext(),
+        { addonIds: ["addon_crm"], planId: "plan_growth" },
+        { billingRepository: repository },
+      ),
+    ).rejects.toThrow("Selected add-on is already included in the plan.");
+  });
 });
 
-function createRepository(): BillingRepository {
+const crmAddon: BillingAddon = {
+  catalogVersion: "2026-07-v1",
+  code: "crm_whatsapp_instance",
+  featureKey: "crm",
+  id: "addon_crm",
+  includedInTrial: false,
+  monthlyPriceCents: 24999,
+  name: "CRM WhatsApp",
+  status: "active",
+};
+
+function createRepository(
+  options: {
+    addons?: readonly BillingAddon[];
+    features?: readonly BillingPlanFeature[];
+  } = {},
+): BillingRepository {
   const overview = createBillingOverview({
-    addons: [
-      {
-        catalogVersion: "2026-07-v1",
-        code: "crm_whatsapp_instance",
-        featureKey: "crm",
-        id: "addon_crm",
-        includedInTrial: false,
-        monthlyPriceCents: 24999,
-        name: "CRM WhatsApp",
-        status: "active",
-      },
-    ],
+    addons: options.addons ?? [crmAddon],
     entitlements: [],
     plans: [
       {
         catalogVersion: "2026-07-v1",
         code: "growth",
-        features: [],
+        features: options.features ?? [],
         id: "plan_growth",
         limits: { sellerLimit: 8, vehicleLimit: 300 },
         monthlyPriceCents: 29900,
@@ -103,4 +153,15 @@ function createRepository(): BillingRepository {
     updateStoreEntitlement: async () => overview,
     updateSubscriptionSelection: async () => overview,
   };
+}
+
+function billingContext() {
+  return createServiceContext({
+    actor: { id: "user_1", kind: "user" },
+    billingManagedBy: "store_owner",
+    permissions: ["billing.manage"],
+    request: { requestId: "request_1" },
+    storeId: "store_1",
+    tenantId: "tenant_1",
+  });
 }

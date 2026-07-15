@@ -2,22 +2,24 @@ import {
   CheckSquare,
   Inbox,
   MailOpen,
-  MessageSquarePlus,
   Plug,
+  Plus,
   Search,
   SlidersHorizontal,
   Tags,
   Wrench,
   X,
 } from "lucide-react";
+import type { ReactNode } from "react";
 import { CrmSelect } from "./CrmFormControls";
 import { whatsappStatusOptions } from "./crmWhatsappQueueState";
 import {
   QueueMetric,
   QueueQuickFilterRow,
-  QueueTagFilterRow,
+  QueueTagFilterMenu,
 } from "./CrmWhatsappQueueToolbarParts";
 import type {
+  CrmWhatsappAssignableMember,
   CrmWhatsappProviderConnection,
   CrmWhatsappSessionCounts,
   CrmWhatsappSessionFilter,
@@ -26,15 +28,19 @@ import type {
 } from "./crmWhatsappTypes";
 
 export function WhatsappToolbar({
+  assignableMembers,
   availableTags,
+  children,
   canManageConnections,
   canManageTags,
   connectionId,
   connectionFilterId,
   connections,
+  currentUserId,
   onConnectionFilterChange,
   onManageConnections,
   onManageTags,
+  onOtherAssigneeChange,
   onQuickFilterChange,
   onSearch,
   onSelectionModeChange,
@@ -42,6 +48,7 @@ export function WhatsappToolbar({
   onStatusFilterChange,
   onTagFilterToggle,
   onUnreadOnlyChange,
+  otherAssigneeId,
   quickFilter,
   search,
   selectedTagIds,
@@ -55,16 +62,20 @@ export function WhatsappToolbar({
   unreadOnly,
   canStartConversation,
 }: {
+  assignableMembers: CrmWhatsappAssignableMember[];
   availableTags: CrmWhatsappTag[];
+  children?: ReactNode;
   canManageConnections: boolean;
   canManageTags: boolean;
   canStartConversation: boolean;
   connectionId: string | number | null;
   connectionFilterId: string | null;
   connections: CrmWhatsappProviderConnection[];
+  currentUserId: string | null;
   onConnectionFilterChange: (connectionId: string | null) => void;
   onManageConnections: () => void;
   onManageTags: () => void;
+  onOtherAssigneeChange: (assigneeId: string | null) => void;
   onQuickFilterChange: (filter: CrmWhatsappSessionFilter) => void;
   onSearch: (value: string) => void;
   onSelectionModeChange: (enabled: boolean) => void;
@@ -72,6 +83,7 @@ export function WhatsappToolbar({
   onStatusFilterChange: (status: CrmWhatsappStatus | "") => void;
   onTagFilterToggle: (tagId: string) => void;
   onUnreadOnlyChange: (unreadOnly: boolean) => void;
+  otherAssigneeId: string | null;
   quickFilter: CrmWhatsappSessionFilter;
   search: string;
   selectedTagIds: string[];
@@ -99,37 +111,6 @@ export function WhatsappToolbar({
             <span aria-hidden="true" />
             {statusLabel}
           </span>
-          <button
-            aria-label={
-              selectionMode ? "Cancelar seleção" : "Selecionar conversas"
-            }
-            aria-pressed={selectionMode}
-            className={
-              selectionMode
-                ? "crm-icon-action crm-icon-action-active"
-                : "crm-icon-action"
-            }
-            onClick={() => onSelectionModeChange(!selectionMode)}
-            title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
-            type="button"
-          >
-            {selectionMode ? <X /> : <CheckSquare />}
-            {selectedCount > 0 ? (
-              <span className="crm-whatsapp-selection-badge">
-                {selectedCount}
-              </span>
-            ) : null}
-          </button>
-          <button
-            aria-label="Nova conversa"
-            className="crm-icon-action crm-whatsapp-new-session-action"
-            disabled={!canStartConversation}
-            onClick={onStartConversation}
-            title="Nova conversa"
-            type="button"
-          >
-            <MessageSquarePlus aria-hidden="true" className="size-4" />
-          </button>
           <button
             aria-label="Gerenciar etiquetas"
             className="crm-icon-action"
@@ -164,16 +145,54 @@ export function WhatsappToolbar({
           value={sessionCounts.unread}
         />
       </div>
-      <label className="crm-whatsapp-search">
-        <Search aria-hidden="true" className="size-4" />
-        <input
-          onChange={(event) => onSearch(event.target.value)}
-          placeholder="Buscar por contato, telefone ou mensagem"
-          value={search}
-        />
-      </label>
+      <div className="crm-whatsapp-search-row">
+        <label className="crm-whatsapp-search">
+          <Search aria-hidden="true" className="size-4" />
+          <input
+            onChange={(event) => onSearch(event.target.value)}
+            placeholder="Buscar por contato, telefone ou mensagem"
+            value={search}
+          />
+        </label>
+        <button
+          aria-label={
+            selectionMode ? "Cancelar seleção" : "Selecionar conversas"
+          }
+          aria-pressed={selectionMode}
+          className={
+            selectionMode
+              ? "crm-icon-action crm-icon-action-active"
+              : "crm-icon-action"
+          }
+          onClick={() => onSelectionModeChange(!selectionMode)}
+          title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
+          type="button"
+        >
+          {selectionMode ? <X /> : <CheckSquare />}
+          {selectedCount > 0 ? (
+            <span className="crm-whatsapp-selection-badge">
+              {selectedCount}
+            </span>
+          ) : null}
+        </button>
+        <button
+          aria-label="Nova conversa"
+          className="crm-icon-action crm-whatsapp-new-session-action"
+          disabled={!canStartConversation}
+          onClick={onStartConversation}
+          title="Nova conversa"
+          type="button"
+        >
+          <Plus aria-hidden="true" />
+        </button>
+      </div>
+      {children}
       <QueueQuickFilterRow
+        assignableMembers={assignableMembers}
+        currentUserId={currentUserId}
+        onOtherAssigneeChange={onOtherAssigneeChange}
         onQuickFilterChange={onQuickFilterChange}
+        otherAssigneeId={otherAssigneeId}
         quickFilter={quickFilter}
         sessionCounts={sessionCounts}
       />
@@ -191,6 +210,11 @@ export function WhatsappToolbar({
           Não lidas
           <span>{sessionCounts.unread}</span>
         </button>
+        <QueueTagFilterMenu
+          availableTags={availableTags}
+          onTagFilterToggle={onTagFilterToggle}
+          selectedTagIds={selectedTagIds}
+        />
         <label className="crm-whatsapp-queue-field">
           <SlidersHorizontal aria-hidden="true" />
           <CrmSelect
@@ -224,11 +248,6 @@ export function WhatsappToolbar({
           </label>
         ) : null}
       </div>
-      <QueueTagFilterRow
-        availableTags={availableTags}
-        onTagFilterToggle={onTagFilterToggle}
-        selectedTagIds={selectedTagIds}
-      />
     </header>
   );
 }

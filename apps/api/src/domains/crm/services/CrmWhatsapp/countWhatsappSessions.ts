@@ -34,7 +34,7 @@ const whatsappSessionCountStatuses = [
 
 export type CountWhatsappSessionsInput = Omit<
   CountCrmWhatsappSessionsInput,
-  "assignedUserId" | "storeId" | "tenantId"
+  "assignedUserId" | "selectedAssigneeId" | "storeId" | "tenantId"
 >;
 
 export type WhatsappSessionCounts = {

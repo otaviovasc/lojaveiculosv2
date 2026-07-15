@@ -8,7 +8,6 @@ import {
 } from "./runtimeApi";
 import { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
 import { WhatsappNotice } from "./CrmWhatsappNotice";
-import { CrmWhatsappNewConversationDialog } from "./CrmWhatsappNewConversationDialog";
 import { CrmWhatsappConnectionAdmin } from "./CrmWhatsappConnectionAdmin";
 import { CrmWhatsappTagManager } from "./CrmWhatsappTagManager";
 import { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
@@ -44,7 +43,6 @@ export function CrmWhatsappInbox({
   const inbox = useCrmWhatsappInbox(whatsappApi);
   const [activeScope, setActiveScope] =
     useState<CrmWhatsappScope>("conversations");
-  const [newConversationOpen, setNewConversationOpen] = useState(false);
   const originalTitleRef = useRef(
     typeof document === "undefined" ? "CRM" : document.title,
   );
@@ -94,7 +92,6 @@ export function CrmWhatsappInbox({
               <CrmWhatsappConversationWorkspace
                 inbox={inbox}
                 onScopeChange={setActiveScope}
-                onStartConversation={() => setNewConversationOpen(true)}
                 status={status}
               />
             )
@@ -151,13 +148,6 @@ export function CrmWhatsappInbox({
             />
           ) : null}
         </>
-      ) : null}
-      {newConversationOpen ? (
-        <CrmWhatsappNewConversationDialog
-          disabled={inbox.isStartingConversation || !inbox.canSendText}
-          onClose={() => setNewConversationOpen(false)}
-          onStart={inbox.startConversation}
-        />
       ) : null}
     </main>
   );

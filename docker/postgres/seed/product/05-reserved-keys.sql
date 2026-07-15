@@ -69,12 +69,19 @@ BEGIN
 
   IF EXISTS (
     SELECT 1
-    FROM addons
-    WHERE code = 'crm_whatsapp_instance'
-      AND catalog_version = '2026-07-v1'
-      AND id <> '15151515-1515-4515-8515-151515151515'
+    FROM addons existing_addon
+    INNER JOIN (VALUES
+      ('15151515-1515-4515-8515-151515151515'::uuid, 'crm_whatsapp_instance'),
+      ('15151515-1515-4515-8515-151515151516'::uuid, 'marketplace_connectors'),
+      ('15151515-1515-4515-8515-151515151517'::uuid, 'nfe_spedy'),
+      ('15151515-1515-4515-8515-151515151518'::uuid, 'public_api_access'),
+      ('15151515-1515-4515-8515-151515151519'::uuid, 'simulations_pro')
+    ) AS seed_addon(id, code)
+      ON seed_addon.code = existing_addon.code
+    WHERE existing_addon.catalog_version = '2026-07-v1'
+      AND existing_addon.id <> seed_addon.id
   ) THEN
-    RAISE EXCEPTION 'seed preflight: CRM add-on key is owned by another id';
+    RAISE EXCEPTION 'seed preflight: billing add-on key is owned by another id';
   END IF;
 
   IF EXISTS (

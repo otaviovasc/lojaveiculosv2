@@ -64,6 +64,13 @@ export function createStoreAccessRows(overrides: Partial<StoredRows> = {}) {
         tenantId,
       },
     ],
+    tenants: overrides.tenants ?? [
+      {
+        deletedAt: null,
+        id: tenantId,
+        isDeleted: false,
+      },
+    ],
     tenantMemberships: overrides.tenantMemberships ?? [
       {
         roleTemplateId: "role_owner",

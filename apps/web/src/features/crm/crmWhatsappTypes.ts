@@ -186,6 +186,7 @@ export type CrmWhatsappMessage = {
 };
 
 export type CrmWhatsappSessionQuery = {
+  assigneeId?: string;
   connectionId?: CrmWhatsappConnectionId;
   filter?: CrmWhatsappSessionFilter;
   leadId?: string;
@@ -200,7 +201,7 @@ export type CrmWhatsappSessionQuery = {
 
 export type CrmWhatsappSessionCountsQuery = Omit<
   CrmWhatsappSessionQuery,
-  "limit" | "offset" | "sessionId"
+  "assigneeId" | "limit" | "offset" | "sessionId"
 >;
 
 export type CrmWhatsappSessionCounts = {

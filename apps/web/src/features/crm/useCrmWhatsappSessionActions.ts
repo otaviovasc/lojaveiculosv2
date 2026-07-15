@@ -6,6 +6,7 @@ import type {
   CrmWhatsappSession,
   CrmWhatsappSessionId,
 } from "./crmWhatsappTypes";
+import type { CrmWhatsappBulkActionDraft } from "./crmWhatsappQueueState";
 
 type UseCrmWhatsappSessionActionsOptions = {
   api: CrmWhatsappApi;
@@ -217,11 +218,36 @@ export function useCrmWhatsappSessionActions({
     [api, runBulkSessionAction],
   );
 
+  const bulkApplySessions = useCallback(
+    (sessionIds: CrmWhatsappSessionId[], draft: CrmWhatsappBulkActionDraft) =>
+      runBulkSessionAction(async () => {
+        const requests = sessionIds.flatMap((sessionId) => [
+          ...(draft.assignedUserId !== undefined
+            ? [
+                api.assignSession(sessionId, {
+                  assignedUserId: draft.assignedUserId,
+                }),
+              ]
+            : []),
+          ...(draft.tag ? [api.addSessionTag(sessionId, draft.tag)] : []),
+          ...(draft.readState === "read"
+            ? [api.markSessionRead(sessionId)]
+            : draft.readState === "unread"
+              ? [api.markSessionUnread(sessionId)]
+              : []),
+          ...(draft.close ? [api.closeSession(sessionId)] : []),
+        ]);
+        await Promise.all(requests);
+      }),
+    [api, runBulkSessionAction],
+  );
+
   return {
     actions: {
       addSessionTag,
       assignSession,
       bulkAssignSessions,
+      bulkApplySessions,
       bulkCloseSessions,
       bulkMarkSessionsRead,
       bulkMarkSessionsUnread,

@@ -41,6 +41,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
   const [isLoadingSessions, setIsLoadingSessions] = useState(true);
   const [quickFilter, setQuickFilter] =
     useState<CrmWhatsappSessionFilter>("fresh");
+  const [otherAssigneeId, setOtherAssigneeId] = useState<string | null>(null);
   const [connectionFilterId, setConnectionFilterId] = useState<string | null>(
     null,
   );
@@ -122,6 +123,9 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       const connectionQuery = createConnectionQuery(connectionId);
       const nextSessions = await api.listSessions({
         ...connectionQuery,
+        ...(quickFilter === "others" && otherAssigneeId
+          ? { assigneeId: otherAssigneeId }
+          : {}),
         filter: quickFilter,
         limit: 40,
         offset: 0,
@@ -161,6 +165,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
       mergeSessions,
       connectionId,
       permissions.canList,
+      otherAssigneeId,
       quickFilter,
       refreshSessionCounts,
       selectedTagIds,
@@ -226,6 +231,11 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
 
   const scheduledMessages = useCrmWhatsappScheduledMessages(api, setError);
 
+  const changeQuickFilter = useCallback((filter: CrmWhatsappSessionFilter) => {
+    setQuickFilter(filter);
+    if (filter !== "others") setOtherAssigneeId(null);
+  }, []);
+
   useCrmWhatsappRealtime({
     activeSessionId,
     api,
@@ -289,6 +299,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     listScheduledMessages: scheduledMessages.listScheduledMessages,
     listVehicles,
     messages: messageState.messages,
+    otherAssigneeId,
     permissions,
     processDueScheduledMessages: scheduledMessages.processDueScheduledMessages,
     quickFilter,
@@ -315,7 +326,8 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     sessions,
     setActiveSessionId: selectSession,
     setConnectionFilterId,
-    setQuickFilter,
+    setOtherAssigneeId,
+    setQuickFilter: changeQuickFilter,
     setSearch,
     setStatusFilter,
     setUnreadOnly,

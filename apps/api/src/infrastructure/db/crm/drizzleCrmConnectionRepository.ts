@@ -1,5 +1,19 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { crmConnections } from "@lojaveiculosv2/db";
+import {
+  and,
+  eq,
+  getTableColumns,
+  gt,
+  inArray,
+  isNull,
+  lte,
+  or,
+} from "drizzle-orm";
+import {
+  crmConnections,
+  storeEntitlements,
+  stores,
+  tenants,
+} from "@lojaveiculosv2/db";
 import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import type {
   CrmConnection,
@@ -12,9 +26,47 @@ export function createDrizzleCrmConnectionRepository(
 ): CrmConnectionRepository {
   return {
     async findConnectionById(connectionId) {
+      const now = new Date();
       const [row] = await db
-        .select()
+        .select(getTableColumns(crmConnections))
         .from(crmConnections)
+        .innerJoin(
+          stores,
+          and(
+            eq(stores.id, crmConnections.storeId),
+            eq(stores.tenantId, crmConnections.tenantId),
+            eq(stores.isDeleted, false),
+            isNull(stores.deletedAt),
+          ),
+        )
+        .innerJoin(
+          tenants,
+          and(
+            eq(tenants.id, crmConnections.tenantId),
+            eq(tenants.isDeleted, false),
+            isNull(tenants.deletedAt),
+          ),
+        )
+        .innerJoin(
+          storeEntitlements,
+          and(
+            eq(storeEntitlements.storeId, crmConnections.storeId),
+            eq(storeEntitlements.tenantId, crmConnections.tenantId),
+            eq(storeEntitlements.featureKey, "crm"),
+            or(
+              eq(storeEntitlements.status, "active"),
+              eq(storeEntitlements.status, "trialing"),
+            ),
+            or(
+              isNull(storeEntitlements.startsAt),
+              lte(storeEntitlements.startsAt, now),
+            ),
+            or(
+              isNull(storeEntitlements.endsAt),
+              gt(storeEntitlements.endsAt, now),
+            ),
+          ),
+        )
         .where(eq(crmConnections.id, connectionId))
         .limit(1);
 

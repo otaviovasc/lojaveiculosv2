@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("account provisioning billing defaults", () => {
@@ -33,5 +33,38 @@ describe("account provisioning billing defaults", () => {
     expect(source).toContain("catalogVersion");
     expect(source).toContain("includedInTrial");
     expect(source).toContain("addDays(new Date(), 14)");
+    expect(
+      existsSync(
+        new URL("./drizzleAccountProvisioningBillingItems.ts", import.meta.url),
+      ),
+    ).toBe(false);
+  });
+
+  it("marks newly provisioned trial entitlements as safe trial catalog rows", () => {
+    const source = readFileSync(
+      new URL("./drizzleAccountProvisioningWrites.ts", import.meta.url),
+      "utf8",
+    );
+
+    expect(source).toContain('"safe_trial_catalog"');
+  });
+
+  it("publishes the paid expansion catalog with server-owned prices", () => {
+    const migration = readFileSync(
+      new URL(
+        "../../../../../../packages/db/drizzle/0011_billing_addon_catalog.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    );
+
+    expect(migration).toContain("'crm_whatsapp_instance'");
+    expect(migration).toContain("'marketplace_connectors'");
+    expect(migration).toContain("'nfe_spedy'");
+    expect(migration).toContain("'public_api_access'");
+    expect(migration).toContain("'simulations_pro'");
+    expect(migration).toContain("24999, 'CRM WhatsApp'");
+    expect(migration).toContain("19990, 'NF-e integrada'");
+    expect(migration).not.toContain("true,");
   });
 });

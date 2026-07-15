@@ -4,6 +4,7 @@ import type { SessionBootstrap } from "../features/account/apiClient";
 import { persistCurrentStoreSlug } from "../features/account/currentStore";
 import {
   filterNavigationGroups,
+  getModuleEntitlement,
   getModulePermission,
 } from "./modulePermissions";
 import { navigationGroups } from "./modules";
@@ -140,23 +141,74 @@ describe("module permissions", () => {
     expect(getModulePermission("billing", session).canView).toBe(false);
   });
 
-  it("hides entitlement-gated fiscal navigation without nfe access", () => {
-    const session = sessionForRole("owner", ["fiscal.manage"], []);
+  it("keeps every product module visible for owners without entitlements", () => {
+    const session = sessionForRole("owner", [], []);
     const visibleIds = filterNavigationGroups(navigationGroups, session)
       .flatMap((group) => group.items)
       .map((item) => item.id);
 
-    expect(getModulePermission("fiscal", session).canView).toBe(true);
-    expect(visibleIds).not.toContain("fiscal");
+    expect(visibleIds).toContain("billing");
+    expect(visibleIds).toContain("crm");
+    expect(visibleIds).toContain("domain");
+    expect(visibleIds).toContain("fiscal");
+    expect(visibleIds).toContain("marketplaces");
+    expect(visibleIds).toContain("public-api");
+    expect(visibleIds).toContain("simulations");
   });
 
-  it("shows entitlement-gated fiscal navigation with nfe access", () => {
-    const session = sessionForRole("owner", ["fiscal.manage"], ["nfe"]);
+  it("hides only billing from agency-managed store owners", () => {
+    const session = sessionForRole("owner", [], []);
+    session.defaultStore = {
+      ...session.defaultStore!,
+      billingManagedBy: "agency",
+    };
     const visibleIds = filterNavigationGroups(navigationGroups, session)
       .flatMap((group) => group.items)
       .map((item) => item.id);
 
+    expect(visibleIds).not.toContain("billing");
     expect(visibleIds).toContain("fiscal");
+    expect(visibleIds).toContain("marketplaces");
+  });
+
+  it("keeps entitlement filtering for operational roles", () => {
+    const withoutNfe = sessionForRole("manager", ["fiscal.manage"], []);
+    const withNfe = sessionForRole("manager", ["fiscal.manage"], ["nfe"]);
+
+    expect(
+      filterNavigationGroups(navigationGroups, withoutNfe)
+        .flatMap((group) => group.items)
+        .some((item) => item.id === "fiscal"),
+    ).toBe(false);
+    expect(
+      filterNavigationGroups(navigationGroups, withNfe)
+        .flatMap((group) => group.items)
+        .some((item) => item.id === "fiscal"),
+    ).toBe(true);
+  });
+
+  it("maps commercial modules to their effective entitlement", () => {
+    const locked = sessionForRole("owner", [], []);
+    const unlocked = sessionForRole("owner", [], ["custom_domain"]);
+
+    expect(getModuleEntitlement("crm", locked).featureKey).toBe("crm");
+    expect(getModuleEntitlement("fiscal", locked).featureKey).toBe("nfe");
+    expect(getModuleEntitlement("marketplaces", locked).featureKey).toBe(
+      "marketplace",
+    );
+    expect(getModuleEntitlement("public-api", locked).featureKey).toBe(
+      "external_api",
+    );
+    expect(getModuleEntitlement("simulations", locked).featureKey).toBe(
+      "simulations",
+    );
+    expect(getModuleEntitlement("domain", locked)).toEqual({
+      canUse: false,
+      featureKey: "custom_domain",
+    });
+    expect(getModuleEntitlement("domain", unlocked).canUse).toBe(true);
+    expect(getModuleEntitlement("checklists", locked).canUse).toBe(true);
+    expect(getModuleEntitlement("expenses", locked).canUse).toBe(true);
   });
 });
 

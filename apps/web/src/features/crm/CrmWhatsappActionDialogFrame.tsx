@@ -39,6 +39,7 @@ export function ActionDialog({
   icon,
   onClose,
   onSubmit,
+  submitLabel = "Enviar",
   title,
 }: {
   children: ReactNode;
@@ -46,6 +47,7 @@ export function ActionDialog({
   icon: ReactNode;
   onClose: () => void;
   onSubmit: () => Promise<void>;
+  submitLabel?: string;
   title: string;
 }) {
   return (
@@ -79,7 +81,7 @@ export function ActionDialog({
           }}
           type="button"
         >
-          Enviar
+          {submitLabel}
         </button>
       </footer>
     </CrmWhatsappActionDialogShell>

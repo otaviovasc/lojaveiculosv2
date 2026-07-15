@@ -1,9 +1,17 @@
 import type {
+  CrmWhatsappAddSessionTagInput,
   CrmWhatsappSession,
   CrmWhatsappSessionCounts,
   CrmWhatsappSessionFilter,
   CrmWhatsappStatus,
 } from "./crmWhatsappTypes";
+
+export type CrmWhatsappBulkActionDraft = {
+  assignedUserId?: string | null;
+  close?: boolean;
+  readState?: "read" | "unread";
+  tag?: CrmWhatsappAddSessionTagInput;
+};
 
 export const whatsappStatusOptions: Array<{
   label: string;

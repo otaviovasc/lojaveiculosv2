@@ -139,7 +139,12 @@ function storeRecord(
     billingManagedBy: role === "agency" ? "agency" : "store_owner",
     catalogVersion: "2026-07-v1",
     entitlementEndsAt: "2026-08-11T00:00:00.000Z",
-    entitlements: ["subdomain", "automation", "plate_lookup", "crm"] as const,
+    entitlements: [
+      "subdomain",
+      "automation",
+      "analytics",
+      "compliance",
+    ] as const,
     role,
     storeId: "store_1" as never,
     storeName: "Auto Prime",

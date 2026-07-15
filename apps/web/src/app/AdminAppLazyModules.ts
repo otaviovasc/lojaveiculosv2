@@ -15,6 +15,11 @@ export const BillingModule = lazy(() =>
     default: module.BillingModule,
   })),
 );
+export const BillingUpgradePanel = lazy(() =>
+  import("../features/billing/BillingUpgradePanel").then((module) => ({
+    default: module.BillingUpgradePanel,
+  })),
+);
 export const CrmModule = lazy(() =>
   import("../features/crm/CrmModule").then((module) => ({
     default: module.CrmModule,

@@ -5,6 +5,7 @@ import {
   storeEntitlements,
   storeMemberships,
   stores,
+  tenants,
   tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
@@ -140,6 +141,14 @@ async function findDirectStoreAccess(
     .from(users)
     .innerJoin(stores, eq(stores.publicSlug, input.storeSlug))
     .innerJoin(
+      tenants,
+      and(
+        eq(tenants.id, stores.tenantId),
+        eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
+      ),
+    )
+    .innerJoin(
       storeMemberships,
       and(
         eq(storeMemberships.storeId, stores.id),
@@ -181,6 +190,14 @@ async function findAgencyTenantStoreAccess(
       and(
         eq(tenantMemberships.userId, users.id),
         eq(tenantMemberships.status, "active"),
+      ),
+    )
+    .innerJoin(
+      tenants,
+      and(
+        eq(tenants.id, tenantMemberships.tenantId),
+        eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
       ),
     )
     .innerJoin(

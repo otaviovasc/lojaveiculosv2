@@ -1,7 +1,11 @@
 import { Command, Menu, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { filterNavigationGroups } from "../app/modulePermissions";
+import {
+  filterNavigationGroups,
+  getModuleEntitlement,
+  isActiveStoreOwner,
+} from "../app/modulePermissions";
 import { navigationGroups } from "../app/modules";
 import type {
   ModuleDefinition,
@@ -33,8 +37,12 @@ type AppShellProps = {
   onNavigate: (moduleId: ModuleId) => void;
 };
 
-function toSidebarItem(item: NavigationItem): DashboardSidebarItem<ModuleId> {
+function toSidebarItem(
+  item: NavigationItem,
+  badge?: string,
+): DashboardSidebarItem<ModuleId> {
   return {
+    ...(badge ? { badge } : {}),
     icon: item.icon,
     id: item.id,
     title: item.label,
@@ -62,7 +70,13 @@ export function AppShell({
       filterNavigationGroups(navigationGroups, accountSession).flatMap(
         (group) =>
           group.items.map((item) => ({
-            ...toSidebarItem(item),
+            ...toSidebarItem(
+              item,
+              isActiveStoreOwner(accountSession) &&
+                !getModuleEntitlement(item.id, accountSession).canUse
+                ? "PRO"
+                : undefined,
+            ),
             group: group.label,
           })),
       ),

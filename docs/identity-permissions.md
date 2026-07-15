@@ -14,10 +14,11 @@ needed for real stores without building a full role-builder product too early.
 ## Concepts
 
 - Role template: default permission set for `owner`, `agency`, `admin`,
-  `supervisor`, or `salesman`.
+  `supervisor`, `salesman`, or read-only `investor`.
 - Permission override: allow or deny one permission for one store membership.
-- Entitlement: whether the store has access to a feature such as `crm`, `nfe`,
-  `automation`, `external_api`, `custom_domain`, `plate_lookup`, or `subdomain`.
+- Entitlement: whether the store has access to a feature such as `analytics`,
+  `automation`, `compliance`, `crm`, `nfe`, `marketplace`, `simulations`,
+  `external_api`, `custom_domain`, `plate_lookup`, or `subdomain`.
 - Permission: whether the actor may perform an action inside an entitled
   feature.
 
@@ -42,6 +43,47 @@ custom role definitions during the V1 migration.
 
 Permission and entitlement mutations are critical audit events. If the audit sink
 cannot persist those events, the mutation must fail closed.
+
+Soft-deleted users, stores, and tenants must never resolve an authenticated
+store context. Long-lived credentials and background/provider flows must
+revalidate the current entitlement instead of trusting the entitlement that was
+active when a key, webhook secret, connection, or scheduled action was created.
+
+## Default Role Contract
+
+- `owner` and `agency` receive every store-manageable permission by default.
+- `admin` manages the store operation but does not inherit owner billing or
+  tenant authority.
+- `supervisor` manages the daily commercial operation without billing, tenant,
+  user, fiscal, compliance, or public API administration by default.
+- `salesman` receives operational inventory, lead, CRM, document, finance-entry,
+  and seller sale permissions, but cannot change prices, manage billing, or
+  administer integrations by default.
+- `investor` is read-only for the financial, inventory, document, lead,
+  marketplace, and CRM views explicitly assigned to that role.
+
+An agency-managed store strips `billing.manage` from store memberships even
+when the user is the store owner. The agency actor remains the billing authority.
+The generated SQL role projection is regression-tested against this runtime
+contract so seeds cannot silently drift from authorization behavior.
+
+## Commercial Feature Contract
+
+Permissions and entitlements are both mandatory for paid add-on operations:
+
+- CRM WhatsApp: `crm` plus the relevant `crm.*`, `crm.whatsapp.*`, or `lead.*`
+  permission.
+- NF-e: `nfe` plus the relevant `fiscal.*` permission.
+- Marketplaces: `marketplace` plus the relevant `marketplace.*` permission.
+- Public API management and key authentication: `external_api` plus
+  `external_api.manage` or the key's explicit scopes.
+- Simulations: `simulations` plus
+  `inventory.resale_analysis_generate`.
+
+Vehicle checklists are a core operational permission surface, not the
+`compliance` entitlement. The 14-day trial grants only `subdomain`,
+`automation`, `analytics`, and `compliance`; custom domain and cost-bearing or
+critical add-ons remain locked until paid activation.
 
 ## Automation Contract
 

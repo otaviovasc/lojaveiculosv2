@@ -17,46 +17,35 @@ describe("WhatsappBulkBar", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("runs bulk assignment, read state, close, and selection actions", async () => {
+  it("stages assignment, label, read state, and close before confirming", async () => {
     const user = userEvent.setup();
     const callbacks = createCallbacks();
     renderBulkBar({ selectedCount: 2, ...callbacks });
 
     expect(screen.getByText("2 conversas")).toBeInTheDocument();
-    await user.click(screen.getByLabelText("Atribuir conversas selecionadas"));
+    await user.click(
+      screen.getByLabelText("Alterar atendente das conversas selecionadas"),
+    );
     await user.click(screen.getByRole("option", { name: "Bruno" }));
-    expect(callbacks.onAssign).toHaveBeenCalledWith("2");
+    await user.click(
+      screen.getByLabelText("Adicionar etiqueta às conversas selecionadas"),
+    );
+    await user.click(screen.getByRole("option", { name: "Quente" }));
+    await user.click(screen.getByRole("button", { name: "Não lidas" }));
+    await user.click(screen.getByRole("button", { name: "Concluir" }));
+    await user.click(
+      screen.getByRole("button", { name: "Confirmar em 2 conversas" }),
+    );
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Remover atribuição das conversas selecionadas",
-      }),
-    );
-    expect(callbacks.onAssign).toHaveBeenCalledWith(null);
+    expect(callbacks.onApply).toHaveBeenCalledWith({
+      assignedUserId: "2",
+      close: true,
+      readState: "unread",
+      tag: { color: "var(--color-accent)", name: "Quente" },
+    });
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Marcar conversas selecionadas como lidas",
-      }),
-    );
-    await user.click(
-      screen.getByRole("button", {
-        name: "Marcar conversas selecionadas como não lidas",
-      }),
-    );
-    await user.click(
-      screen.getByRole("button", { name: "Concluir conversas selecionadas" }),
-    );
-    await user.click(
-      screen.getByRole("button", { name: "Selecionar conversas visíveis" }),
-    );
-    await user.click(screen.getByRole("button", { name: "Limpar seleção" }));
-
-    expect(callbacks.onMarkRead).toHaveBeenCalledTimes(1);
-    expect(callbacks.onMarkUnread).toHaveBeenCalledTimes(1);
-    expect(callbacks.onClose).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Selecionar página" }));
     expect(callbacks.onSelectAll).toHaveBeenCalledTimes(1);
-    expect(callbacks.onClear).toHaveBeenCalledTimes(1);
   });
 
   it("keeps read-only operators away from assignment and close actions", () => {
@@ -69,16 +58,14 @@ describe("WhatsappBulkBar", () => {
 
     expect(screen.getByText("1 conversa")).toBeInTheDocument();
     expect(
-      screen.queryByLabelText("Atribuir conversas selecionadas"),
+      screen.queryByLabelText("Alterar atendente das conversas selecionadas"),
     ).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("button", {
-        name: "Concluir conversas selecionadas",
-      }),
+      screen.queryByRole("button", { name: "Concluir" }),
     ).not.toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: "Marcar conversas selecionadas como lidas",
+        name: "Lidas",
       }),
     ).toBeInTheDocument();
   });
@@ -90,9 +77,13 @@ function renderBulkBar(
   return render(
     <WhatsappBulkBar
       assignableMembers={createAssignableMembers()}
+      availableTags={[
+        { color: "var(--color-accent)", id: "tag-hot", name: "Quente" },
+      ]}
       canAssign={true}
       canClose={true}
       canRead={true}
+      canTag={true}
       selectedCount={2}
       {...createCallbacks()}
       {...overrides}
@@ -102,11 +93,8 @@ function renderBulkBar(
 
 function createCallbacks() {
   return {
-    onAssign: vi.fn(),
+    onApply: vi.fn(async () => true),
     onClear: vi.fn(),
-    onClose: vi.fn(),
-    onMarkRead: vi.fn(),
-    onMarkUnread: vi.fn(),
     onSelectAll: vi.fn(),
   };
 }

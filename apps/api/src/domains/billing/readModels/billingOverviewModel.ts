@@ -20,6 +20,8 @@ export const billingFeatureOrder = [
   "custom_domain",
   "crm",
   "automation",
+  "analytics",
+  "compliance",
   "external_api",
   "marketplace",
   "plate_lookup",

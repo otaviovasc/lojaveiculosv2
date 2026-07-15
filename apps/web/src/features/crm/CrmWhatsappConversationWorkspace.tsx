@@ -5,6 +5,7 @@ import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
 import { SessionList } from "./CrmWhatsappSessionList";
 import { WhatsappBulkBar } from "./CrmWhatsappBulkBar";
 import { CrmWhatsappReadOnlyComposer } from "./CrmWhatsappReadOnlyComposer";
+import { CrmWhatsappNewConversationDialog } from "./CrmWhatsappNewConversationDialog";
 import { CrmWhatsappSessionDetailsPanel } from "./CrmWhatsappSessionDetailsPanel";
 import type { readWhatsappStatus } from "./crmWhatsappConnectionStatus";
 import type { useCrmWhatsappInbox } from "./useCrmWhatsappInbox";
@@ -15,12 +16,10 @@ import { readInitialSessionId } from "./crmWhatsappHookSupport";
 export function CrmWhatsappConversationWorkspace({
   inbox,
   onScopeChange,
-  onStartConversation,
   status,
 }: {
   inbox: ReturnType<typeof useCrmWhatsappInbox>;
   onScopeChange: (scope: CrmWhatsappScope) => void;
-  onStartConversation: () => void;
   status: ReturnType<typeof readWhatsappStatus>;
 }) {
   const activeSession = inbox.activeSession;
@@ -29,6 +28,7 @@ export function CrmWhatsappConversationWorkspace({
     readInitialSessionId() ? "chat" : "list",
   );
   const [selectionMode, setSelectionMode] = useState(false);
+  const [newConversationOpen, setNewConversationOpen] = useState(false);
   const [replyToMessage, setReplyToMessage] =
     useState<CrmWhatsappMessage | null>(null);
   const selectedCount = inbox.selectedSessions.length;
@@ -43,6 +43,7 @@ export function CrmWhatsappConversationWorkspace({
     <section className="crm-whatsapp-shell" data-mobile-pane={mobilePane}>
       <aside className="crm-whatsapp-list" aria-label="Conversas do WhatsApp">
         <WhatsappToolbar
+          assignableMembers={inbox.assignableMembers}
           availableTags={inbox.availableTags}
           canManageConnections={inbox.permissions.canConnectionManage}
           canManageTags={inbox.permissions.canTagManage}
@@ -50,19 +51,22 @@ export function CrmWhatsappConversationWorkspace({
           connectionId={inbox.connectionId}
           connectionFilterId={inbox.connectionFilterId}
           connections={inbox.connections}
+          currentUserId={inbox.currentUserId}
           onConnectionFilterChange={inbox.setConnectionFilterId}
           onManageConnections={() => onScopeChange("connection")}
           onManageTags={() => onScopeChange("tags")}
+          onOtherAssigneeChange={inbox.setOtherAssigneeId}
           onQuickFilterChange={inbox.setQuickFilter}
           onSearch={inbox.setSearch}
           onSelectionModeChange={(enabled) => {
             setSelectionMode(enabled);
             if (!enabled) inbox.clearSelectedSessions();
           }}
-          onStartConversation={onStartConversation}
+          onStartConversation={() => setNewConversationOpen(true)}
           onStatusFilterChange={inbox.setStatusFilter}
           onTagFilterToggle={inbox.toggleTagFilter}
           onUnreadOnlyChange={inbox.setUnreadOnly}
+          otherAssigneeId={inbox.otherAssigneeId}
           quickFilter={inbox.quickFilter}
           search={inbox.search}
           selectedTagIds={inbox.selectedTagIds}
@@ -74,29 +78,21 @@ export function CrmWhatsappConversationWorkspace({
           statusLabel={status.label}
           statusTone={status.tone}
           unreadOnly={inbox.unreadOnly}
-        />
-        <WhatsappBulkBar
-          assignableMembers={inbox.assignableMembers}
-          canAssign={inbox.permissions.canAssign && inbox.canAssignSessions}
-          canClose={inbox.permissions.canClose}
-          canRead={inbox.permissions.canRead}
-          onAssign={(assignedUserId) => {
-            void inbox.actions.bulkAssignSessions(assignedUserId);
-          }}
-          onClear={inbox.clearSelectedSessions}
-          onClose={() => {
-            void inbox.actions.bulkCloseSessions();
-          }}
-          onMarkRead={() => {
-            void inbox.actions.bulkMarkSessionsRead();
-          }}
-          onMarkUnread={() => {
-            void inbox.actions.bulkMarkSessionsUnread();
-          }}
-          onSelectAll={inbox.selectAllVisibleSessions}
-          selectedCount={inbox.selectedSessions.length}
-          visible={showSelectionMode}
-        />
+        >
+          <WhatsappBulkBar
+            assignableMembers={inbox.assignableMembers}
+            availableTags={inbox.availableTags}
+            canAssign={inbox.permissions.canAssign && inbox.canAssignSessions}
+            canClose={inbox.permissions.canClose}
+            canRead={inbox.permissions.canRead}
+            canTag={inbox.permissions.canTagAssign}
+            onApply={inbox.actions.bulkApplySessions}
+            onClear={inbox.clearSelectedSessions}
+            onSelectAll={inbox.selectAllVisibleSessions}
+            selectedCount={inbox.selectedSessions.length}
+            visible={showSelectionMode}
+          />
+        </WhatsappToolbar>
         {inbox.isLoading ? (
           <div className="crm-whatsapp-empty crm-whatsapp-empty-list">
             Carregando conversas...
@@ -233,6 +229,17 @@ export function CrmWhatsappConversationWorkspace({
           </div>
         )}
       </section>
+      {newConversationOpen ? (
+        <CrmWhatsappNewConversationDialog
+          disabled={inbox.isStartingConversation || !inbox.canSendText}
+          onClose={() => setNewConversationOpen(false)}
+          onStart={async (input) => {
+            const accepted = await inbox.startConversation(input);
+            if (accepted) setMobilePane("chat");
+            return accepted;
+          }}
+        />
+      ) : null}
     </section>
   );
 }

@@ -1,6 +1,14 @@
 import type { SessionBootstrap } from "../features/account/apiClient";
-import { readSessionEffectivePermissions } from "../features/account/sessionPermissions";
-import type { ModuleId, NavigationGroup, NavigationItem } from "./modules";
+import {
+  readSessionActiveStore,
+  readSessionEffectivePermissions,
+} from "../features/account/sessionPermissions";
+import {
+  navigationGroups,
+  type ModuleId,
+  type NavigationGroup,
+  type NavigationItem,
+} from "./modules";
 
 type ModulePermission = {
   canView: boolean;
@@ -76,14 +84,46 @@ export function filterNavigationGroups(
     .filter((group) => group.items.length > 0);
 }
 
+export function getModuleEntitlement(
+  moduleId: ModuleId,
+  session: SessionBootstrap | null,
+) {
+  const item = navigationItem(moduleId);
+  const featureKey = item?.entitlementKey ?? null;
+  if (!featureKey || !session) return { canUse: true, featureKey };
+  const entitlements = readSessionActiveStore(session)?.entitlements;
+  return {
+    canUse: !entitlements || entitlements.includes(featureKey),
+    featureKey,
+  };
+}
+
+export function isActiveStoreOwner(session: SessionBootstrap | null) {
+  return readSessionActiveStore(session)?.role === "owner";
+}
+
+export function isActiveStoreAgencyManaged(session: SessionBootstrap | null) {
+  return readSessionActiveStore(session)?.billingManagedBy === "agency";
+}
+
 function canShowNavigationItem(
   item: NavigationItem,
   session: SessionBootstrap,
 ) {
+  const store = readSessionActiveStore(session);
+  if (store?.role === "owner") {
+    return item.id !== "billing" || store.billingManagedBy !== "agency";
+  }
   return (
     getModulePermission(item.id, session).canView &&
     hasModuleEntitlement(item, session)
   );
+}
+
+function navigationItem(moduleId: ModuleId) {
+  return navigationGroups
+    .flatMap((group) => group.items)
+    .find((item) => item.id === moduleId);
 }
 
 function gate(
@@ -109,7 +149,7 @@ function hasModulePermissions(
 
 function hasModuleEntitlement(item: NavigationItem, session: SessionBootstrap) {
   if (!item.entitlementKey) return true;
-  const entitlements = session.defaultStore?.entitlements;
+  const entitlements = readSessionActiveStore(session)?.entitlements;
   if (!entitlements) return true;
   return entitlements.includes(item.entitlementKey);
 }

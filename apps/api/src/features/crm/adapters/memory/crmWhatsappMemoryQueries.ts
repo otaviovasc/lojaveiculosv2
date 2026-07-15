@@ -5,7 +5,11 @@ import type {
 
 export function matchesFilter(
   session: CrmWhatsappSession,
-  input: { assignedUserId?: string; filter?: string },
+  input: {
+    assignedUserId?: string;
+    filter?: string;
+    selectedAssigneeId?: string;
+  },
 ) {
   if (input.filter === "fresh") {
     return (
@@ -24,7 +28,9 @@ export function matchesFilter(
     return Boolean(
       input.assignedUserId &&
       session.assignedUserId &&
-      session.assignedUserId !== input.assignedUserId,
+      session.assignedUserId !== input.assignedUserId &&
+      (!input.selectedAssigneeId ||
+        session.assignedUserId === input.selectedAssigneeId),
     );
   }
   if (input.filter === "unassigned") {

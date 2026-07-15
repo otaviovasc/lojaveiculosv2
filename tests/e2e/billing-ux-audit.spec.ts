@@ -33,8 +33,22 @@ test.describe("billing plan and packages UX", () => {
       );
       await page.getByLabel("Plano após o teste").click();
       await page.getByRole("option", { name: /Growth/ }).click();
-      await expect(page.getByText("Fora do teste gratuito")).toBeVisible();
+      const paidPackageLabels = page.getByText("Fora do teste gratuito");
+      await expect(paidPackageLabels).toHaveCount(5);
+      await expect(paidPackageLabels.first()).toBeVisible();
       await expectCommercialPlan(page);
+      await expect(
+        page.getByRole("heading", { name: "Marketplaces" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "NF-e integrada" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "API Pública" }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Simulações Pro" }),
+      ).toBeVisible();
       await page.getByRole("tab", { name: "Cobrança" }).click();
       await expect(
         page.getByRole("button", { name: "Ativar meu plano" }),

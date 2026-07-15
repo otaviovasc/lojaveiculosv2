@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
 import type {
+  CrmWhatsappAssignableMember,
   CrmWhatsappProviderConnection,
   CrmWhatsappSessionCounts,
   CrmWhatsappTag,
@@ -39,6 +40,10 @@ describe("WhatsappToolbar", () => {
         connections={createConnections()}
         onManageConnections={vi.fn()}
         onManageTags={vi.fn()}
+        assignableMembers={createAssignableMembers()}
+        currentUserId="user_current"
+        onOtherAssigneeChange={vi.fn()}
+        otherAssigneeId={null}
         quickFilter="fresh"
         search=""
         selectedTagIds={["tag_hot"]}
@@ -97,12 +102,17 @@ describe("WhatsappToolbar", () => {
       "connection_2",
     );
 
+    await user.click(screen.getByRole("button", { name: /Etiquetas/ }));
     await user.click(screen.getByRole("button", { name: "Quente" }));
     expect(callbacks.onTagFilterToggle).toHaveBeenCalledWith("tag_hot");
     expect(screen.getByRole("button", { name: "Quente" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
+
+    await user.click(screen.getByRole("button", { name: /Outros/ }));
+    await user.click(screen.getByRole("button", { name: "Bruno" }));
+    expect(callbacks.onQuickFilterChange).toHaveBeenCalledWith("others");
   });
 });
 
@@ -174,6 +184,27 @@ function createTags(): CrmWhatsappTag[] {
       color: "var(--color-accent)",
       id: "tag_financing",
       name: "Financiamento",
+    },
+  ];
+}
+
+function createAssignableMembers(): CrmWhatsappAssignableMember[] {
+  return [
+    {
+      email: "atual@loja.local",
+      id: "user_current" as never,
+      isActive: true,
+      name: "Atual",
+      role: "OWNER",
+      seeUnassignedChats: true,
+    },
+    {
+      email: "bruno@loja.local",
+      id: "user_bruno" as never,
+      isActive: true,
+      name: "Bruno",
+      role: "MEMBER",
+      seeUnassignedChats: true,
     },
   ];
 }

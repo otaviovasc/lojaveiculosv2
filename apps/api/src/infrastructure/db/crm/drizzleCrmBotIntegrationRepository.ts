@@ -1,6 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, getTableColumns, gt, isNull, lte, or } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { integrationAccounts } from "@lojaveiculosv2/db";
+import {
+  integrationAccounts,
+  storeEntitlements,
+  stores,
+  tenants,
+} from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type {
   CrmBotIntegration,
@@ -46,9 +51,44 @@ async function findBotIntegrationBySecretHash(
   db: DrizzleCrmBotIntegrationClient,
   input: FindCrmBotIntegrationBySecretHashInput,
 ) {
+  const now = new Date();
   const rows = await db
-    .select()
+    .select(getTableColumns(integrationAccounts))
     .from(integrationAccounts)
+    .innerJoin(
+      stores,
+      and(
+        eq(stores.id, integrationAccounts.storeId),
+        eq(stores.tenantId, integrationAccounts.tenantId),
+        eq(stores.isDeleted, false),
+        isNull(stores.deletedAt),
+      ),
+    )
+    .innerJoin(
+      tenants,
+      and(
+        eq(tenants.id, integrationAccounts.tenantId),
+        eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
+      ),
+    )
+    .innerJoin(
+      storeEntitlements,
+      and(
+        eq(storeEntitlements.storeId, integrationAccounts.storeId),
+        eq(storeEntitlements.tenantId, integrationAccounts.tenantId),
+        eq(storeEntitlements.featureKey, "crm"),
+        or(
+          eq(storeEntitlements.status, "active"),
+          eq(storeEntitlements.status, "trialing"),
+        ),
+        or(
+          isNull(storeEntitlements.startsAt),
+          lte(storeEntitlements.startsAt, now),
+        ),
+        or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
+      ),
+    )
     .where(eq(integrationAccounts.provider, crmBotIntegrationProvider));
   const row = rows.find((item) => {
     const config = readConfig(item.config);

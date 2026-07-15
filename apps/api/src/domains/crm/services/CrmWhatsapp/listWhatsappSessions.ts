@@ -17,6 +17,7 @@ import {
 const permission = "crm.whatsapp.list";
 
 export type ListWhatsappSessionsInput = {
+  assigneeId?: string;
   connectionId?: string;
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
   leadId?: string;
@@ -39,14 +40,17 @@ export async function listWhatsappSessions(
   const whatsappRepository = getCrmWhatsappRepository(ports);
   const connectionRepository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.sessions.list.started", {
+    assigneeId: input.assigneeId ?? null,
     filter: input.filter ?? null,
     leadId: input.leadId ?? null,
     search: input.search ?? null,
     status: input.status ?? null,
   });
+  const { assigneeId, ...query } = input;
   const [sessions, connections] = await Promise.all([
     whatsappRepository.listSessions({
-      ...input,
+      ...query,
+      ...(assigneeId ? { selectedAssigneeId: assigneeId as never } : {}),
       ...(context.actor.kind === "user"
         ? { assignedUserId: context.actor.id as never }
         : {}),
@@ -70,6 +74,7 @@ export async function listWhatsappSessions(
     category: "data_access",
     metadata: {
       filter: input.filter ?? "all",
+      assigneeId: input.assigneeId ?? null,
       leadId: input.leadId ?? null,
       sessionCount: result.length,
     },

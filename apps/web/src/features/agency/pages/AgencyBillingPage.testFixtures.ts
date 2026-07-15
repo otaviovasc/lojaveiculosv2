@@ -20,7 +20,7 @@ export function createAgencyBillingOverview(
         code: "crm_whatsapp_instance",
         featureKey: "crm" as const,
         id: "addon_crm",
-        includedInTrial: true,
+        includedInTrial: false,
         monthlyPriceCents: 24999,
         name: "CRM WhatsApp",
         status: "active" as const,

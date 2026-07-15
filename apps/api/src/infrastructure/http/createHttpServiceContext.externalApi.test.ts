@@ -4,6 +4,7 @@ import type { ExternalApiRepository } from "../../domains/externalApi/ports/exte
 import { hashExternalApiKey } from "../../domains/externalApi/crypto/apiKeyCrypto.js";
 import {
   createHttpServiceContext,
+  HttpContextAuthorizationError,
   HttpContextRequestPolicyError,
 } from "./createHttpServiceContext.js";
 
@@ -51,6 +52,23 @@ describe("createHttpServiceContext external API auth", () => {
     ).rejects.toThrow(HttpContextRequestPolicyError);
   });
 
+  it("rejects an otherwise valid API key after its add-on is unavailable", async () => {
+    const apiKey = "lv2_testprefix_secret";
+    const context = await captureContext(
+      new Request("https://api.local/api/v1/inventory/listings", {
+        headers: { "x-api-key": apiKey },
+      }),
+    );
+
+    await expect(
+      createHttpServiceContext(context, {
+        externalApiRepository: createExternalApiRepository(apiKey, {
+          entitlements: [],
+        }),
+      }),
+    ).rejects.toThrow(HttpContextAuthorizationError);
+  });
+
   it("rejects external API requests above the per-minute rate limit", async () => {
     const apiKey = "lv2_testprefix_secret";
     const context = await captureContext(
@@ -93,6 +111,7 @@ describe("createHttpServiceContext external API auth", () => {
 function createExternalApiRepository(
   apiKey: string,
   options: {
+    entitlements?: readonly "external_api"[];
     recentRequests?: number;
     reserveKind?: "created" | "duplicate";
   } = {},
@@ -103,7 +122,7 @@ function createExternalApiRepository(
         ? {
             clientId: "api_client_1",
             clientName: "DMS integration",
-            entitlements: ["external_api" as const],
+            entitlements: options.entitlements ?? ["external_api" as const],
             keyId: "api_key_1",
             keyPrefix: "lv2_testprefix",
             scopes: ["inventory.read" as const],

@@ -5,6 +5,10 @@ import {
 } from "./crm-whatsapp-campaigns-helpers";
 import { installLocalOwnerSession } from "./crm-whatsapp-test-helpers";
 import { saveQaScreenshot } from "./support/artifacts";
+import {
+  expectNoBlockingAxeViolations,
+  expectViewportSafe,
+} from "./support/pageChecks";
 import { setQaViewport } from "./support/viewports";
 
 const avatarSvg =
@@ -28,6 +32,13 @@ test.describe("CRM WhatsApp conversations", () => {
         status: 200,
       }),
     );
+    await page.route("**/crm/whatsapp/sessions/*/unread", (route) =>
+      route.fulfill({
+        body: JSON.stringify({}),
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
 
     await page.goto("/crm#/crm?surface=whatsapp");
 
@@ -36,6 +47,38 @@ test.describe("CRM WhatsApp conversations", () => {
       page.getByText("Tenho interesse no Civic.").first(),
     ).toBeVisible();
     await expect(page.getByText("Quente").first()).toBeVisible();
+    const filterRail = page.getByLabel("Filtro rápido");
+    await expect
+      .poll(() =>
+        filterRail.evaluate(
+          (element) => element.scrollWidth > element.clientWidth,
+        ),
+      )
+      .toBe(true);
+
+    await page.getByRole("button", { name: /Etiquetas/ }).click();
+    await expect(page.getByRole("button", { name: "Respondeu" })).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    await page.getByRole("button", { name: /Outros/ }).click();
+    const assigneeRequest = page.waitForRequest((request) =>
+      request.url().includes("assigneeId=70000000-0000-4000-8000-000000000002"),
+    );
+    await page.getByRole("button", { name: "Bruno Santos" }).click();
+    await assigneeRequest;
+    await expect(page.getByRole("button", { name: /Outros/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await page.getByRole("button", { name: "Nova conversa" }).click();
+    await expect(
+      page.locator(".crm-whatsapp-action-panel header h2"),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Inicie o atendimento pelo número do cliente."),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Fechar" }).click();
 
     await page.getByRole("button", { name: /Ana Premium/ }).click();
     await expect(page.getByLabel("Detalhe da conversa")).toContainText(
@@ -46,12 +89,21 @@ test.describe("CRM WhatsApp conversations", () => {
     await page.getByRole("button", { name: "Selecionar conversas" }).click();
     await expect(page.getByText("Selecione conversas")).toBeVisible();
     await page.getByRole("button", { name: /Ana Premium/ }).click();
-    await expect(page.getByText("1 conversa")).toBeVisible();
+    await expect(page.getByText("1 conversa", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Não lidas", exact: true }).click();
     await saveQaScreenshot(
       page,
       testInfo,
       "crm-whatsapp-conversations-selection",
     );
+    const unreadRequest = page.waitForRequest((request) =>
+      request.url().endsWith("/unread"),
+    );
+    await page.getByRole("button", { name: "Confirmar em 1 conversa" }).click();
+    await unreadRequest;
+    await expect(page.getByText("Selecione conversas")).toBeVisible();
+    await expectViewportSafe(page);
+    await expectNoBlockingAxeViolations(page);
   });
 
   test("uses explicit list and chat panes on mobile", async ({
@@ -86,6 +138,8 @@ test.describe("CRM WhatsApp conversations", () => {
       page.getByRole("button", { name: "Voltar para conversas" }),
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-conversation-mobile");
+    await expectViewportSafe(page);
+    await expectNoBlockingAxeViolations(page);
 
     await page.getByRole("button", { name: "Voltar para conversas" }).click();
     await expect(

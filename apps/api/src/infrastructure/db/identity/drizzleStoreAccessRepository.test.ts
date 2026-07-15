@@ -5,6 +5,7 @@ import {
   storeEntitlements,
   storeMemberships,
   stores,
+  tenants,
   tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
@@ -40,6 +41,7 @@ describe("Drizzle store access repository", () => {
       expect.arrayContaining([
         users,
         stores,
+        tenants,
         storeMemberships,
         roleTemplates,
         membershipPermissionOverrides,
@@ -147,6 +149,27 @@ describe("Drizzle store access repository", () => {
             isDeleted: true,
             publicSlug: "demo",
             tenantId: "tenant_1" as never,
+          },
+        ],
+      }),
+    );
+
+    await expect(
+      repository.findByClerkUserAndStoreSlug({
+        clerkUserId: "clerk_1",
+        storeSlug: "demo",
+      }),
+    ).resolves.toBeNull();
+  });
+
+  it("returns null when the store tenant is soft-deleted", async () => {
+    const repository = createDrizzleStoreAccessRepository(
+      createFakeStoreAccessDb({
+        tenants: [
+          {
+            deletedAt: new Date("2026-01-01T00:00:00.000Z"),
+            id: "tenant_1" as never,
+            isDeleted: true,
           },
         ],
       }),

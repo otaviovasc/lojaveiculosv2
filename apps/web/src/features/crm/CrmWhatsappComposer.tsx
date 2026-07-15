@@ -52,6 +52,7 @@ export function MessageComposer({
     imageInputRef,
     audioInputRef,
     documentInputRef,
+    isSubmitting,
     menuOpen,
     onTextChange,
     onTextKeyDown,
@@ -233,20 +234,24 @@ export function MessageComposer({
             rows={1}
             value={text}
           />
+        </div>
+        {isSubmitting || canSend ? (
+          <button
+            aria-label="Enviar mensagem"
+            className="crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
+            disabled={effectiveDisabled || !canSend}
+            title="Enviar"
+            type="submit"
+          >
+            {isSubmitting ? <Loader2 className="crm-spin" /> : <Send />}
+          </button>
+        ) : (
           <CrmWhatsappAudioRecorderButton
             disabled={effectiveDisabled}
+            primary
             onRecorded={(file) => setFiles((current) => [...current, file])}
           />
-        </div>
-        <button
-          aria-label="Enviar mensagem"
-          className="crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
-          disabled={effectiveDisabled || !canSend}
-          title="Enviar"
-          type="submit"
-        >
-          {effectiveDisabled ? <Loader2 className="crm-spin" /> : <Send />}
-        </button>
+        )}
       </div>
     </form>
   );

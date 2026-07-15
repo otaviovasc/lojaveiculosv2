@@ -13,6 +13,7 @@ import {
 } from "../../shared/serviceContext.js";
 import {
   HttpContextAuthenticationError,
+  HttpContextAuthorizationError,
   HttpContextRequestPolicyError,
 } from "./httpContextErrors.js";
 
@@ -50,6 +51,11 @@ export async function createExternalApiServiceContext(input: {
 
   if (!credential) {
     throw new HttpContextAuthenticationError("Invalid external API key.");
+  }
+  if (!credential.entitlements.includes("external_api")) {
+    throw new HttpContextAuthorizationError(
+      "External API entitlement is not active.",
+    );
   }
 
   await enforceExternalApiGovernance({

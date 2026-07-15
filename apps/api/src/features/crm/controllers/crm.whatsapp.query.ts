@@ -11,6 +11,7 @@ type WhatsappSessionCountsQuery = z.infer<
 
 export function cleanWhatsappSessionsQuery(input: WhatsappSessionsQuery) {
   return {
+    ...(input.assigneeId ? { assigneeId: input.assigneeId } : {}),
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     filter: input.filter,
     ...(input.leadId ? { leadId: input.leadId } : {}),

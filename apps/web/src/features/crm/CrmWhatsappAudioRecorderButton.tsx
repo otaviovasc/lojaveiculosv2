@@ -4,9 +4,11 @@ import { useEffect, useRef, useState } from "react";
 export function CrmWhatsappAudioRecorderButton({
   disabled,
   onRecorded,
+  primary = false,
 }: {
   disabled?: boolean;
   onRecorded: (file: File) => void;
+  primary?: boolean;
 }) {
   const [error, setError] = useState("");
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -106,7 +108,11 @@ export function CrmWhatsappAudioRecorderButton({
     <>
       <button
         aria-label="Gravar audio"
-        className="crm-icon-action"
+        className={
+          primary
+            ? "crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
+            : "crm-icon-action"
+        }
         disabled={disabled || !supported}
         onClick={() => void startRecording()}
         title={supported ? "Gravar audio" : "Gravacao indisponivel"}

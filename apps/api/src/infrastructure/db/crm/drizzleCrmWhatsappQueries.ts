@@ -65,6 +65,11 @@ export function sessionFilters(input: CountCrmWhatsappSessionsInput): SQL[] {
   if (input.filter === "others" && input.assignedUserId) {
     filters.push(isNotNull(crmWhatsappSessions.assignedUserId));
     filters.push(ne(crmWhatsappSessions.assignedUserId, input.assignedUserId));
+    if (input.selectedAssigneeId) {
+      filters.push(
+        eq(crmWhatsappSessions.assignedUserId, input.selectedAssigneeId),
+      );
+    }
   }
   if (input.search) {
     const search = `%${input.search}%`;

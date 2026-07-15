@@ -7,6 +7,18 @@
   padding: 0.75rem 0.875rem;
 }
 
+.crm-whatsapp-action-panel footer .crm-action-muted {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  color: var(--color-text);
+}
+
+.crm-whatsapp-action-panel footer .crm-action:not(.crm-action-muted) {
+  background: var(--color-green-start);
+  border-color: var(--color-green-start);
+  color: var(--color-inverse);
+}
+
 @media (max-width: 640px) {
   .crm-whatsapp-action-dialog {
     align-items: flex-end;

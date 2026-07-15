@@ -8,6 +8,28 @@ import { cleanupTest, renderComposer } from "./CrmWhatsappComposer.testSupport";
 describe("CrmWhatsappComposer", () => {
   afterEach(cleanupTest);
 
+  it("uses one adaptive audio or send action beside the message field", async () => {
+    const user = userEvent.setup();
+    renderComposer();
+
+    expect(screen.getByRole("button", { name: "Gravar audio" })).toBeVisible();
+    expect(
+      screen.queryByRole("button", { name: "Enviar mensagem" }),
+    ).not.toBeInTheDocument();
+
+    await user.type(
+      screen.getByPlaceholderText("Digite uma mensagem..."),
+      "Ola",
+    );
+
+    expect(
+      screen.queryByRole("button", { name: "Gravar audio" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Enviar mensagem" }),
+    ).toBeVisible();
+  });
+
   it("previews selected image media and sends it with a caption", async () => {
     vi.stubGlobal("URL", {
       createObjectURL: vi.fn(() => "blob:crm-preview"),

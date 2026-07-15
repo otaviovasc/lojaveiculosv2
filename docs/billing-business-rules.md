@@ -10,8 +10,8 @@ The base commercial contract is now enforced by the runtime:
 
 - onboarding selects the latest published default catalog and never writes plan,
   feature, or add-on definitions;
-- Growth and CRM WhatsApp are separate chargeable products in catalog version
-  `2026-07-v1`; CRM is not included in the trial or base plan;
+- Growth and the expansion add-ons are separate chargeable products in catalog
+  version `2026-07-v1`; add-ons are not included in the trial or base plan;
 - a fresh store receives a 14-day trial with only the catalog features explicitly
   marked `included_in_trial`; custom domain and cost-bearing or critical
   integrations are excluded;
@@ -52,6 +52,10 @@ Target billing and product metrics are documented in
 - Current seed pricing:
   - Growth plan: `29900` cents monthly.
   - CRM WhatsApp add-on: `24999` cents monthly.
+  - NF-e integrated with Spedy add-on: `19990` cents monthly.
+  - Marketplace connectors add-on: `14990` cents monthly.
+  - Public API access add-on: `9990` cents monthly.
+  - Simulations Pro add-on: `4990` cents monthly.
 - A store owner may select products and complete the first Asaas checkout at any
   point during the 14-day trial. Successful provider evidence activates the paid
   subscription; the trial end is not a purchase lock.
@@ -61,6 +65,24 @@ Target billing and product metrics are documented in
   - 300 paid plate lookups per billing period.
 - CRM WhatsApp has lower gross margin because the Z-API instance cost is about
   R$100/month; keep that cost visible when changing price.
+
+## Expansion Package Contract
+
+The first expansion catalog targets independent used-vehicle stores already
+operating the Growth plan. Prices are initial commercial hypotheses and must be
+changed only through a new catalog version.
+
+| Package         | Customer outcome                                          | Leading metric                        | Entitlement    | Support owner             | Degraded state                                                      |
+| --------------- | --------------------------------------------------------- | ------------------------------------- | -------------- | ------------------------- | ------------------------------------------------------------------- |
+| CRM WhatsApp    | Centralize conversations and lead continuity              | Median first-response time            | `crm`          | Messaging/provider owner  | Connection unavailable; no message is represented as sent           |
+| NF-e integrated | Emit and reconcile fiscal documents in the sale flow      | Accepted emission rate                | `nfe`          | Fiscal/provider owner     | Provider unavailable; no official document is represented as issued |
+| Marketplaces    | Publish and reconcile inventory across supported channels | Listings synchronized without error   | `marketplace`  | Channel integration owner | Channel unavailable; no listing is represented as published         |
+| Public API      | Connect approved external inventory and lead workflows    | Successful scoped API requests        | `external_api` | Platform/API owner        | Access denied or unavailable with an explicit error contract        |
+| Simulations Pro | Compare commercial scenarios before closing               | Simulations completed before proposal | `simulations`  | Sales workflow owner      | Simulation unavailable; no financing approval is implied            |
+
+Custom domain is excluded from the trial but included in the paid Growth plan.
+Plate lookup is also excluded from the trial and included in Growth with its
+catalog allowance. Neither is duplicated as an add-on.
 
 ## Charge Calculation
 

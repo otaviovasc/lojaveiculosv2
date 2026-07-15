@@ -22,6 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import type { EntitlementKey } from "../features/billing/types";
 
 export type NavigationGroup = {
   items: NavigationItem[];
@@ -53,7 +54,7 @@ export type ModuleId =
   | "settings";
 
 export type NavigationItem = {
-  entitlementKey?: string;
+  entitlementKey?: EntitlementKey;
   icon: ComponentType<{ className?: string }>;
   id: ModuleId;
   label: string;
@@ -109,7 +110,11 @@ export const navigationGroups: NavigationGroup[] = [
         id: "reports",
         label: "Relatórios",
       },
-      { icon: ShieldCheck, id: "checklists", label: "Checklists" },
+      {
+        icon: ShieldCheck,
+        id: "checklists",
+        label: "Checklists",
+      },
     ],
   },
   {
@@ -126,16 +131,36 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: "Canais",
     items: [
-      { icon: Palette, id: "public-site", label: "Personalizar" },
-      { icon: FileText, id: "custom-pages", label: "Páginas" },
-      { icon: Globe, id: "domain", label: "Domínio" },
+      {
+        entitlementKey: "subdomain",
+        icon: Palette,
+        id: "public-site",
+        label: "Personalizar",
+      },
+      {
+        entitlementKey: "subdomain",
+        icon: FileText,
+        id: "custom-pages",
+        label: "Páginas",
+      },
+      {
+        entitlementKey: "custom_domain",
+        icon: Globe,
+        id: "domain",
+        label: "Domínio",
+      },
       {
         entitlementKey: "marketplace",
         icon: Store,
         id: "marketplaces",
         label: "Marketplaces",
       },
-      { icon: KeyRound, id: "public-api", label: "Public API" },
+      {
+        entitlementKey: "external_api",
+        icon: KeyRound,
+        id: "public-api",
+        label: "Public API",
+      },
     ],
   },
   {

@@ -25,16 +25,24 @@ ON CONFLICT (code, catalog_version) DO UPDATE SET
   status = EXCLUDED.status,
   updated_at = now();
 
-INSERT INTO plan_features (feature_key, included, limit_value, plan_id)
+INSERT INTO plan_features (
+  feature_key, included, included_in_trial, limit_value, plan_id
+)
 VALUES
-  ('subdomain', 1, null, '12121212-1212-4212-8212-121212121212'),
-  ('automation', 1, null, '12121212-1212-4212-8212-121212121212'),
-  ('plate_lookup', 1, 300, '12121212-1212-4212-8212-121212121212'),
-  ('custom_domain', 0, null, '12121212-1212-4212-8212-121212121212'),
-  ('external_api', 0, null, '12121212-1212-4212-8212-121212121212'),
-  ('nfe', 0, null, '12121212-1212-4212-8212-121212121212')
+  ('analytics', 1, true, null, '12121212-1212-4212-8212-121212121212'),
+  ('automation', 1, true, null, '12121212-1212-4212-8212-121212121212'),
+  ('compliance', 1, true, null, '12121212-1212-4212-8212-121212121212'),
+  ('crm', 0, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('custom_domain', 1, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('external_api', 0, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('marketplace', 0, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('nfe', 0, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('plate_lookup', 1, false, 300, '12121212-1212-4212-8212-121212121212'),
+  ('simulations', 0, false, null, '12121212-1212-4212-8212-121212121212'),
+  ('subdomain', 1, true, null, '12121212-1212-4212-8212-121212121212')
 ON CONFLICT (plan_id, feature_key) DO UPDATE SET
   included = EXCLUDED.included,
+  included_in_trial = EXCLUDED.included_in_trial,
   limit_value = EXCLUDED.limit_value,
   updated_at = now();
 
@@ -42,16 +50,28 @@ INSERT INTO addons (
   id, catalog_version, code, feature_key, included_in_trial,
   monthly_price_cents, name, status
 )
-VALUES (
-  '15151515-1515-4515-8515-151515151515',
-  '2026-07-v1',
-  'crm_whatsapp_instance',
-  'crm',
-  true,
-  24999,
-  'CRM WhatsApp',
-  'active'
-)
+VALUES
+  (
+    '15151515-1515-4515-8515-151515151515', '2026-07-v1',
+    'crm_whatsapp_instance', 'crm', false, 24999, 'CRM WhatsApp', 'active'
+  ),
+  (
+    '15151515-1515-4515-8515-151515151516', '2026-07-v1',
+    'marketplace_connectors', 'marketplace', false, 14990,
+    'Marketplaces', 'active'
+  ),
+  (
+    '15151515-1515-4515-8515-151515151517', '2026-07-v1',
+    'nfe_spedy', 'nfe', false, 19990, 'NF-e integrada', 'active'
+  ),
+  (
+    '15151515-1515-4515-8515-151515151518', '2026-07-v1',
+    'public_api_access', 'external_api', false, 9990, 'API Pública', 'active'
+  ),
+  (
+    '15151515-1515-4515-8515-151515151519', '2026-07-v1',
+    'simulations_pro', 'simulations', false, 4990, 'Simulações Pro', 'active'
+  )
 ON CONFLICT (code, catalog_version) DO UPDATE SET
   feature_key = EXCLUDED.feature_key,
   included_in_trial = EXCLUDED.included_in_trial,

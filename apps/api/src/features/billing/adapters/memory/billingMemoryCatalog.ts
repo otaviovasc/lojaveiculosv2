@@ -40,6 +40,28 @@ export const memoryBillingAddons: readonly BillingAddon[] = [
     name: "CRM WhatsApp",
     status: "active",
   },
+  addon(
+    "addon_marketplaces",
+    "marketplace_connectors",
+    "marketplace",
+    14990,
+    "Marketplaces",
+  ),
+  addon("addon_nfe", "nfe_spedy", "nfe", 19990, "NF-e integrada"),
+  addon(
+    "addon_public_api",
+    "public_api_access",
+    "external_api",
+    9990,
+    "API Pública",
+  ),
+  addon(
+    "addon_simulations",
+    "simulations_pro",
+    "simulations",
+    4990,
+    "Simulações Pro",
+  ),
 ];
 
 export const memoryTrialEntitlements: readonly StoreEntitlement[] = [
@@ -56,6 +78,25 @@ function feature(
   limitValue: number | null = null,
 ) {
   return { featureKey, included, includedInTrial, limitValue };
+}
+
+function addon(
+  id: string,
+  code: string,
+  featureKey: BillingAddon["featureKey"],
+  monthlyPriceCents: number,
+  name: string,
+): BillingAddon {
+  return {
+    catalogVersion: "2026-07-v1",
+    code,
+    featureKey,
+    id,
+    includedInTrial: false,
+    monthlyPriceCents,
+    name,
+    status: "active",
+  };
 }
 
 function trial(featureKey: StoreEntitlement["featureKey"]): StoreEntitlement {

@@ -2,8 +2,12 @@ import {
   externalApiAssignableScopes,
   type PermissionKey,
 } from "@lojaveiculosv2/shared";
+import { assertEntitlement } from "../../../../shared/authorization.js";
 import type { ExternalApiRepository } from "../../ports/externalApiRepository.js";
-import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import type {
+  ServiceContext,
+  StoreScopedServiceContext,
+} from "../../../../shared/serviceContext.js";
 
 export type ExternalApiServicePorts = {
   externalApiRepository: ExternalApiRepository;
@@ -17,6 +21,7 @@ export function requireExternalApiScope(context: ServiceContext) {
   if (!context.storeId || !context.tenantId) {
     throw new ExternalApiScopeError();
   }
+  assertEntitlement(context as StoreScopedServiceContext, "external_api");
 
   return {
     storeId: context.storeId as never,

@@ -13,7 +13,7 @@ describe("BillingTrialStatus", () => {
     expect(
       screen.getByText(/Nenhum plano ou pacote foi contratado/),
     ).toBeVisible();
-    expect(screen.getByText("Relatorios")).toBeVisible();
+    expect(screen.getByText("Relatórios")).toBeVisible();
     expect(screen.queryByText("CRM")).not.toBeInTheDocument();
   });
 

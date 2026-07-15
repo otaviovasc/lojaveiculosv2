@@ -9,6 +9,7 @@ import {
   AutoEntriesWorkspace,
   AutomationWorkspace,
   BillingModule,
+  BillingUpgradePanel,
   CrmModule,
   DocumentsModule,
   FinanceModule,
@@ -22,7 +23,12 @@ import {
   StorefrontCustomizationModule,
 } from "./AdminAppLazyModules";
 import { moduleDefinitions } from "./moduleDefinitions";
-import { getModulePermission } from "./modulePermissions";
+import {
+  getModuleEntitlement,
+  getModulePermission,
+  isActiveStoreAgencyManaged,
+  isActiveStoreOwner,
+} from "./modulePermissions";
 import { moduleSurfaceById } from "./moduleRoutes";
 import { useModuleState } from "./moduleState";
 
@@ -34,11 +40,24 @@ export function AdminApp() {
   const modulePermission = accountSession
     ? getModulePermission(activeModuleId, accountSession)
     : { canView: true, title: "Acesso liberado" };
+  const moduleEntitlement = getModuleEntitlement(
+    activeModuleId,
+    accountSession,
+  );
+  const owner = isActiveStoreOwner(accountSession);
+  const managedByAgency = isActiveStoreAgencyManaged(accountSession);
 
   return (
     <AppShell activeModule={activeModule} onNavigate={navigate}>
       <Suspense fallback={<FeatureLoadingState title="Carregando módulo" />}>
-        {!modulePermission.canView ? (
+        {owner && !moduleEntitlement.canUse && moduleEntitlement.featureKey ? (
+          <BillingUpgradePanel
+            featureKey={moduleEntitlement.featureKey}
+            managedByAgency={managedByAgency}
+            module={activeModule}
+            onOpenBilling={() => navigate("billing")}
+          />
+        ) : !modulePermission.canView ? (
           <PermissionRestrictedPanel
             title={modulePermission.title}
             {...(modulePermission.description

@@ -4,6 +4,7 @@ import {
   storeEntitlements,
   storeMemberships,
   stores,
+  tenants,
   tenantMemberships,
   users,
 } from "@lojaveiculosv2/db";
@@ -70,8 +71,8 @@ function selectRows(
   if (table === users) {
     return joinedTables.includes(tenantMemberships) &&
       !("membershipId" in selection)
-      ? findAgencyTenantAccessRows(rows)
-      : findAccessRows(rows);
+      ? findAgencyTenantAccessRows(rows, joinedTables.includes(tenants))
+      : findAccessRows(rows, joinedTables.includes(tenants));
   }
   if (table === membershipPermissionOverrides) return findOverrideRows(rows);
   if (table === storeEntitlements) return findEntitlementRows(rows);
@@ -100,7 +101,7 @@ function findTenantBillingOwnerRows(rows: StoredRows) {
   });
 }
 
-function findAccessRows(rows: StoredRows) {
+function findAccessRows(rows: StoredRows, enforceActiveTenant = false) {
   return rows.memberships.flatMap((membership) => {
     if (membership.status !== "active") return [];
 
@@ -119,8 +120,14 @@ function findAccessRows(rows: StoredRows) {
     const role = rows.roleTemplates.find(
       (candidate) => candidate.id === membership.roleTemplateId,
     );
+    const tenant = rows.tenants.find(
+      (candidate) =>
+        candidate.id === store?.tenantId &&
+        !candidate.isDeleted &&
+        candidate.deletedAt === null,
+    );
 
-    if (!user || !store || !role) return [];
+    if (!user || !store || !role || (enforceActiveTenant && !tenant)) return [];
 
     return {
       membershipId: membership.id,
@@ -132,7 +139,10 @@ function findAccessRows(rows: StoredRows) {
   });
 }
 
-function findAgencyTenantAccessRows(rows: StoredRows) {
+function findAgencyTenantAccessRows(
+  rows: StoredRows,
+  enforceActiveTenant = false,
+) {
   return rows.tenantMemberships.flatMap((membership) => {
     if (membership.status !== "active") return [];
 
@@ -151,8 +161,21 @@ function findAgencyTenantAccessRows(rows: StoredRows) {
     const role = rows.roleTemplates.find(
       (candidate) => candidate.id === membership.roleTemplateId,
     );
+    const tenant = rows.tenants.find(
+      (candidate) =>
+        candidate.id === store?.tenantId &&
+        !candidate.isDeleted &&
+        candidate.deletedAt === null,
+    );
 
-    if (!user || !store || role?.roleKey !== "agency") return [];
+    if (
+      !user ||
+      !store ||
+      (enforceActiveTenant && !tenant) ||
+      role?.roleKey !== "agency"
+    ) {
+      return [];
+    }
 
     return {
       role: role.roleKey,

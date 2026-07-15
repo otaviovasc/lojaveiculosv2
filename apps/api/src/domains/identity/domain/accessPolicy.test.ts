@@ -1,8 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { canAccess, resolvePermissions } from "./accessPolicy.js";
+import {
+  canAccess,
+  defaultRolePermissions,
+  resolvePermissions,
+} from "./accessPolicy.js";
 import { permissionGroups } from "./permissionCatalog.js";
 
 describe("access policy", () => {
+  it("keeps owner and agency defaults aligned with every assignable permission", () => {
+    const assignablePermissions = permissionGroups.flatMap((group) =>
+      group.permissions.map((permission) => permission.key),
+    );
+
+    for (const role of ["agency", "owner"] as const) {
+      expect(defaultRolePermissions[role]).toEqual(
+        expect.arrayContaining(assignablePermissions),
+      );
+    }
+  });
+
+  it("does not duplicate permissions inside default role projections", () => {
+    for (const permissions of Object.values(defaultRolePermissions)) {
+      expect(new Set(permissions).size).toBe(permissions.length);
+    }
+  });
+
   it("keeps salesman away from price changes by default", () => {
     const permissions = resolvePermissions({ role: "salesman" });
 

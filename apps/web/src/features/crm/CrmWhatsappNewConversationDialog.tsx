@@ -66,8 +66,16 @@ export function CrmWhatsappNewConversationDialog({
           setIsSaving(false);
         }
       }}
+      submitLabel={isSaving ? "Iniciando..." : "Iniciar conversa"}
       title="Nova conversa"
     >
+      <div className="crm-whatsapp-new-conversation-intro">
+        <strong>Inicie o atendimento pelo número do cliente.</strong>
+        <p>
+          A conversa será criada na conexão ativa e a primeira mensagem será
+          enviada pelo WhatsApp da loja.
+        </p>
+      </div>
       <label>
         Nome
         <input

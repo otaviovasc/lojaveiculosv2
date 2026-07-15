@@ -34,7 +34,7 @@ export async function updateBillingSelection(
   );
   if (!plan) throw new BillingSelectionError("Selected plan is unavailable.");
   const uniqueAddonIds = [...new Set(input.addonIds)];
-  const addons = uniqueAddonIds.map((addonId) =>
+  const selectedAddons = uniqueAddonIds.map((addonId) =>
     before.addons.find(
       (candidate) =>
         candidate.id === addonId &&
@@ -42,8 +42,28 @@ export async function updateBillingSelection(
         candidate.catalogVersion === plan.catalogVersion,
     ),
   );
-  if (addons.some((addon) => !addon)) {
+  if (selectedAddons.some((addon) => !addon)) {
     throw new BillingSelectionError("Selected add-on is unavailable.");
+  }
+  const featureKeys = new Set<string>();
+  for (const addon of selectedAddons) {
+    if (!addon) continue;
+    if (
+      plan.features.some(
+        (feature) =>
+          feature.included && feature.featureKey === addon.featureKey,
+      )
+    ) {
+      throw new BillingSelectionError(
+        "Selected add-on is already included in the plan.",
+      );
+    }
+    if (featureKeys.has(addon.featureKey)) {
+      throw new BillingSelectionError(
+        "More than one add-on grants the same feature.",
+      );
+    }
+    featureKeys.add(addon.featureKey);
   }
 
   context.logger.info(

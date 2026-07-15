@@ -33,6 +33,9 @@ export async function installCampaignApiMocks(page: Page) {
   await page.route("**/api/v1/session/bootstrap", (route) =>
     fulfillJson(route, createCampaignBootstrap()),
   );
+  await page.route("**/api/v1/identity/roles", (route) =>
+    fulfillJson(route, createWhatsappRoleManagement()),
+  );
   await page.route("**/crm/whatsapp/events/ticket", (route) =>
     fulfillJson(route, { ticket: "campaigns-e2e-ticket" }),
   );
@@ -79,6 +82,50 @@ export async function installCampaignApiMocks(page: Page) {
       recipients: createCampaignRecipients(),
     }),
   );
+}
+
+function createWhatsappRoleManagement() {
+  const permissions = ["crm.whatsapp.assign", "crm.whatsapp.list"];
+  return {
+    actor: {
+      canManageRoles: true,
+      membershipId: "membership-owner",
+      role: "owner",
+    },
+    memberships: [
+      {
+        basePermissions: permissions,
+        effectivePermissions: permissions,
+        manageable: false,
+        membershipId: "membership-owner",
+        overrides: [],
+        role: "owner",
+        status: "active",
+        user: {
+          email: "owner@example.com",
+          id: "70000000-0000-4000-8000-000000000001",
+          name: "Seed Owner",
+        },
+      },
+      {
+        basePermissions: permissions,
+        effectivePermissions: permissions,
+        manageable: true,
+        membershipId: "membership-bruno",
+        overrides: [],
+        role: "salesman",
+        status: "active",
+        user: {
+          email: "bruno@example.com",
+          id: "70000000-0000-4000-8000-000000000002",
+          name: "Bruno Santos",
+        },
+      },
+    ],
+    pendingInvitations: [],
+    permissionGroups: [],
+    roles: [],
+  };
 }
 
 async function fulfillJson(route: Route, body: unknown) {

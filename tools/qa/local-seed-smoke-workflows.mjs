@@ -26,7 +26,6 @@ async function assertBilling(db) {
   const expected = new Map([
     [seedIds.primaryStore, [2, 54899]],
     [seedIds.branchStore, [2, 54899]],
-    [seedIds.foreignStore, [2, 54899]],
   ]);
   for (const row of rows) {
     const values = expected.get(row.storeId);
@@ -36,7 +35,7 @@ async function assertBilling(db) {
       `Billing allocation mismatch for ${row.storeId}.`,
     );
   }
-  assertCount({ count: rows.length }, "count", 3, "Billing allocations");
+  assertCount({ count: rows.length }, "count", 2, "Billing allocations");
 
   const [states] = await db`
     select
@@ -55,8 +54,8 @@ async function assertBilling(db) {
     "Past-due branch must exercise suspended entitlements.",
   );
   assert(
-    states.foreignTrialing >= 3,
-    "Isolation store must exercise a minimal trial.",
+    states.foreignTrialing === 4,
+    "Isolation store must exercise the four-feature safe trial.",
   );
   assert(
     states.sharedStatus === "past_due" && states.isolationStatus === "trialing",

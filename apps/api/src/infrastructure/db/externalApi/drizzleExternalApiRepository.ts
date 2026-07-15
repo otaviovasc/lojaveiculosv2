@@ -4,6 +4,8 @@ import {
   apiClientKeys,
   apiClients,
   storeEntitlements,
+  stores,
+  tenants,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
@@ -161,6 +163,23 @@ async function listActiveEntitlements(
   const rows = await db
     .select({ featureKey: storeEntitlements.featureKey })
     .from(storeEntitlements)
+    .innerJoin(
+      stores,
+      and(
+        eq(stores.id, storeEntitlements.storeId),
+        eq(stores.tenantId, storeEntitlements.tenantId),
+        eq(stores.isDeleted, false),
+        isNull(stores.deletedAt),
+      ),
+    )
+    .innerJoin(
+      tenants,
+      and(
+        eq(tenants.id, storeEntitlements.tenantId),
+        eq(tenants.isDeleted, false),
+        isNull(tenants.deletedAt),
+      ),
+    )
     .where(
       and(
         eq(storeEntitlements.storeId, input.storeId),

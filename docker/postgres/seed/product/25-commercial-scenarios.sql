@@ -61,6 +61,15 @@ ON CONFLICT (id) DO UPDATE SET
   tenant_id = EXCLUDED.tenant_id,
   updated_at = now();
 
+DELETE FROM payments
+WHERE id = '25000000-0000-4000-8000-000000000022';
+
+DELETE FROM subscription_items
+WHERE id IN (
+  '25000000-0000-4000-8000-000000000013',
+  '25000000-0000-4000-8000-000000000014'
+);
+
 INSERT INTO subscription_items (
   id,
   addon_id,
@@ -99,32 +108,6 @@ VALUES
     '66666666-6666-4666-8666-666666666667',
     '14141414-1414-4414-8414-141414141414',
     '77777777-7777-4777-8777-777777777777',
-    24999
-  ),
-  (
-    '25000000-0000-4000-8000-000000000013',
-    null,
-    null,
-    'plan',
-    '12121212-1212-4212-8212-121212121212',
-    1,
-    date_trunc('day', now()),
-    '66666666-6666-4666-8666-666666666668',
-    '25000000-0000-4000-8000-000000000003',
-    '77777777-7777-4777-8777-777777777778',
-    29900
-  ),
-  (
-    '25000000-0000-4000-8000-000000000014',
-    '15151515-1515-4515-8515-151515151515',
-    null,
-    'addon',
-    null,
-    1,
-    date_trunc('day', now()),
-    '66666666-6666-4666-8666-666666666668',
-    '25000000-0000-4000-8000-000000000003',
-    '77777777-7777-4777-8777-777777777778',
     24999
   )
 ON CONFLICT (id) DO UPDATE SET
@@ -203,7 +186,7 @@ VALUES
   ),
   (
     'subdomain',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1"}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","sourceDetail":"safe_trial_catalog"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -213,7 +196,7 @@ VALUES
   ),
   (
     'automation',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","mode":"preview_only","execution_enabled":false}'::jsonb,
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","sourceDetail":"safe_trial_catalog","mode":"preview_only","execution_enabled":false}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -222,8 +205,8 @@ VALUES
     '77777777-7777-4777-8777-777777777778'
   ),
   (
-    'plate_lookup',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","limitValue":300}'::jsonb,
+    'analytics',
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","sourceDetail":"safe_trial_catalog"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -232,8 +215,8 @@ VALUES
     '77777777-7777-4777-8777-777777777778'
   ),
   (
-    'crm',
-    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","addonCode":"crm_whatsapp_instance","includedInTrial":true}'::jsonb,
+    'compliance',
+    '{"fixture":"local_seed","scenario":"growth_trial","catalogVersion":"2026-07-v1","sourceDetail":"safe_trial_catalog"}'::jsonb,
     'billing_catalog',
     date_trunc('day', now()),
     date_trunc('day', now()) + interval '14 days',
@@ -290,21 +273,6 @@ VALUES
     null,
     '14141414-1414-4414-8414-141414141414',
     '77777777-7777-4777-8777-777777777777'
-  ),
-  (
-    '25000000-0000-4000-8000-000000000022',
-    54899,
-    date_trunc('day', now()) + interval '14 days',
-    'local-seed-isolation-trial-pending',
-    'https://billing.example.test/invoices/isolation-trial-pending',
-    null,
-    'asaas',
-    'local_seed_asaas_payment_isolation_pending',
-    '{"fixture":"local_seed","billing_type":"PIX","official_provider_operation":false}'::jsonb,
-    'pending',
-    '66666666-6666-4666-8666-666666666668',
-    '25000000-0000-4000-8000-000000000003',
-    '77777777-7777-4777-8777-777777777778'
   )
 ON CONFLICT (id) DO UPDATE SET
   amount_cents = EXCLUDED.amount_cents,

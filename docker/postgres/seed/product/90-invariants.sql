@@ -58,12 +58,12 @@ BEGIN
   IF EXISTS (
     WITH expected(role_key, expected_count) AS (
       VALUES
-        ('agency'::role_template_key, 86),
-        ('admin'::role_template_key, 80),
-        ('owner'::role_template_key, 86),
+        ('agency'::role_template_key, 94),
+        ('admin'::role_template_key, 88),
+        ('owner'::role_template_key, 94),
         ('investor'::role_template_key, 13),
-        ('salesman'::role_template_key, 41),
-        ('supervisor'::role_template_key, 68)
+        ('salesman'::role_template_key, 44),
+        ('supervisor'::role_template_key, 72)
     )
     SELECT 1
     FROM expected
@@ -145,8 +145,8 @@ BEGIN
     FROM subscription_items
     WHERE subscription_id = '25000000-0000-4000-8000-000000000003'
       AND ends_at IS NULL
-  ) <> 2 THEN
-    RAISE EXCEPTION 'seed invariant: trial plan/add-on allocations are incomplete';
+  ) <> 0 THEN
+    RAISE EXCEPTION 'seed invariant: trial must not contain contracted items';
   END IF;
 
   IF EXISTS (
@@ -189,6 +189,10 @@ BEGIN
       '77777777-7777-4777-8777-777777777778'
     )
       AND entitlement.source = 'billing_catalog'
+      AND NOT (
+        entitlement.status = 'trialing'
+        AND entitlement.metadata->>'sourceDetail' = 'safe_trial_catalog'
+      )
       AND NOT EXISTS (
         SELECT 1
         FROM subscription_items item
@@ -269,10 +273,7 @@ BEGIN
   IF EXISTS (
     SELECT 1
     FROM payments payment
-    WHERE payment.id IN (
-      '25000000-0000-4000-8000-000000000021',
-      '25000000-0000-4000-8000-000000000022'
-    )
+    WHERE payment.id = '25000000-0000-4000-8000-000000000021'
       AND payment.amount_cents <> (
         SELECT sum(item.quantity * item.unit_amount_cents)::integer
         FROM subscription_items item

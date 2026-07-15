@@ -228,7 +228,10 @@ function toEntitlement(
     featureKey,
     metadata: {
       catalogVersion: billing.catalogVersion,
-      sourceDetail: "billing_catalog",
+      sourceDetail:
+        billing.status === "trialing"
+          ? "safe_trial_catalog"
+          : "billing_catalog",
     },
     source: "billing_catalog",
     startsAt: billing.startsAt,

@@ -136,6 +136,7 @@ export function createCrmWhatsappSessionQuery(
   query: CrmWhatsappSessionQuery = {},
 ) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "assigneeId", query.assigneeId);
   addOptionalParam(params, "connectionId", query.connectionId);
   addOptionalParam(params, "filter", query.filter);
   addOptionalParam(params, "leadId", query.leadId);

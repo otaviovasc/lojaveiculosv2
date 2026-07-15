@@ -15,6 +15,7 @@ export type CountCrmWhatsappSessionsInput = {
   filter?: "all" | "fresh" | "mine" | "others" | "unassigned";
   leadId?: string;
   search?: string;
+  selectedAssigneeId?: UserId;
   sessionId?: string;
   status?: CrmWhatsappSessionStatus;
   tagIds?: string[];

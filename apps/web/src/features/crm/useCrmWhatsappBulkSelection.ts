@@ -1,11 +1,16 @@
 import { useCallback, useMemo, useState } from "react";
 import { selectedWhatsappSessions } from "./crmWhatsappQueueState";
+import type { CrmWhatsappBulkActionDraft } from "./crmWhatsappQueueState";
 import type {
   CrmWhatsappSession,
   CrmWhatsappSessionId,
 } from "./crmWhatsappTypes";
 
 type BulkActions = {
+  bulkApplySessions: (
+    sessionIds: CrmWhatsappSessionId[],
+    draft: CrmWhatsappBulkActionDraft,
+  ) => Promise<boolean>;
   bulkAssignSessions: (
     sessionIds: CrmWhatsappSessionId[],
     assignedUserId: string | null,
@@ -60,6 +65,8 @@ export function useCrmWhatsappBulkSelection(
       );
     },
     actions: {
+      bulkApplySessions: (draft: CrmWhatsappBulkActionDraft) =>
+        runBulkAction(() => actions.bulkApplySessions(selectedIds, draft)),
       bulkAssignSessions: (assignedUserId: string | null) =>
         runBulkAction(() =>
           actions.bulkAssignSessions(selectedIds, assignedUserId),

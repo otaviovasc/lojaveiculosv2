@@ -21,6 +21,7 @@ export const whatsappSessionFilterSchema = z.enum([
 ]);
 
 export const whatsappSessionsQuerySchema = z.object({
+  assigneeId: z.string().uuid().optional(),
   connectionId: z.string().uuid().optional(),
   filter: whatsappSessionFilterSchema.default("all"),
   leadId: z.string().uuid().optional(),
@@ -35,6 +36,7 @@ export const whatsappSessionsQuerySchema = z.object({
 
 export const whatsappSessionCountsQuerySchema =
   whatsappSessionsQuerySchema.omit({
+    assigneeId: true,
     limit: true,
     offset: true,
     sessionId: true,

@@ -22,6 +22,12 @@ export type StoreRow = {
   tenantId: TenantId;
 };
 
+export type TenantRow = {
+  deletedAt: Date | null;
+  id: TenantId;
+  isDeleted: boolean;
+};
+
 export type MembershipRow = {
   id: string;
   roleTemplateId: string;
@@ -63,6 +69,7 @@ export type StoredRows = {
   overrides: OverrideRow[];
   roleTemplates: RoleTemplateRow[];
   stores: StoreRow[];
+  tenants: TenantRow[];
   tenantMemberships: TenantMembershipRow[];
   users: UserRow[];
 };
