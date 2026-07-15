@@ -70,10 +70,17 @@ export async function cancelFiscalDocument(
     tenantId: scope.tenantId,
   });
 
-  await auditCancel(context, scope, document.id, "cancel", {
-    providerDocumentId: document.providerDocumentId,
-    status: document.status,
-  });
+  await auditCancel(
+    context,
+    scope,
+    document.id,
+    "cancel",
+    {
+      providerDocumentId: document.providerDocumentId,
+      status: document.status,
+    },
+    isFailureStatus(document.status) ? "failed" : "succeeded",
+  );
   return document;
 }
 
@@ -93,6 +100,7 @@ async function auditCancel(
   documentId: string,
   suffix: "cancel" | "cancel_attempt",
   metadata: SafeAuditMetadata,
+  outcome: "failed" | "succeeded" = "succeeded",
 ) {
   await context.audit.record({
     action: `fiscal.document.${suffix}`,
@@ -102,10 +110,14 @@ async function auditCancel(
     entityId: documentId,
     entityType: "fiscal_document",
     metadata,
-    outcome: "succeeded",
+    outcome,
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
     summary: "Cancelled fiscal document through provider",
   });
+}
+
+function isFailureStatus(status: FiscalDocumentStatus) {
+  return status === "error" || status === "failed" || status === "rejected";
 }

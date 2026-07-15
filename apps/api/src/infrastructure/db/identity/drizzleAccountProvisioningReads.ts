@@ -17,7 +17,6 @@ import {
   type IdentityUserSummary,
 } from "../../../domains/identity/ports/accountProvisioningRepository.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
-import { resolveMembershipPermissions } from "./drizzleAccountProvisioningPermissions.js";
 import { toUserSummary } from "./drizzleIdentityMappers.js";
 import { resolveStoreEntitlements } from "./drizzleStoreEntitlementReads.js";
 

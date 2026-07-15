@@ -17,7 +17,7 @@ describe("syncFiscalDocumentStatus", () => {
     ["cancelled", "cancelled", "succeeded"],
     ["failed", "failed", "failed"],
     ["issued", "issued", "succeeded"],
-    ["processing", "draft", "succeeded"],
+    ["processing", "processing", "succeeded"],
   ] as const)(
     "maps provider status %s to %s with %s audit outcome",
     async (providerStatus, expectedStatus, outcome) => {
@@ -42,6 +42,8 @@ describe("syncFiscalDocumentStatus", () => {
       expect(harness.updateDocumentStatus).toHaveBeenCalledWith({
         accessKey: "new_access_key",
         documentId: "document_1",
+        metadata: { providerStatus },
+        providerDocumentId: "persisted_provider_document",
         status: expectedStatus,
         storeId: "store_1",
         tenantId: "tenant_1",
@@ -106,14 +108,18 @@ describe("syncFiscalDocumentStatus", () => {
 const documentRecord: FiscalDocument = {
   accessKey: "old_access_key",
   createdAt: new Date("2026-07-12T12:00:00.000Z"),
+  documentKind: "nfe",
   documentType: "nfe",
   id: "document_1",
   issuedAt: new Date("2026-07-12T12:00:00.000Z"),
   metadata: { saleId: "sale_1" },
   provider: "spedy",
   providerDocumentId: "persisted_provider_document",
+  recipientId: null,
   status: "issued",
   storeId: "store_1",
+  templateId: null,
+  templateVersion: null,
   tenantId: "tenant_1",
 };
 
@@ -169,9 +175,19 @@ function createHarness(
     },
     fiscalRepository: {
       createDocument: unused("createDocument"),
+      createDocumentSnapshot: async () => undefined,
+      createRecipient: unused("createRecipient"),
+      createTemplate: unused("createTemplate"),
       findDocumentById,
+      getDocument: unused("getDocument"),
       getOverview: unused("getOverview"),
+      getRecipient: unused("getRecipient"),
+      getTemplate: unused("getTemplate"),
+      listRecipients: unused("listRecipients"),
+      listTemplates: unused("listTemplates"),
       updateDocumentStatus,
+      updateRecipient: unused("updateRecipient"),
+      updateTemplate: unused("updateTemplate"),
     },
   };
   return {

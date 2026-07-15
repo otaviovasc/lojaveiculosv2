@@ -7,10 +7,15 @@ const documentTypeLabels: Record<string, string> = {
 };
 
 const documentStatusLabels: Record<FiscalDocument["status"], string> = {
+  authorized: "Autorizada",
   cancelled: "Cancelada",
   draft: "Aguardando emissão",
+  error: "Erro na emissão",
   failed: "Falha na emissão",
   issued: "Emitida",
+  processing: "Em processamento",
+  queued: "Na fila de emissão",
+  rejected: "Rejeitada",
 };
 
 const configurationLabels: Record<string, string> = {

@@ -7,6 +7,7 @@ import type {
   FiscalRepository,
 } from "../../ports/fiscalRepository.js";
 import { cancelFiscalDocument } from "./cancelFiscalDocument.js";
+import { unexpectedCall } from "../../testSupport.js";
 import {
   FiscalDocumentNotFoundError,
   FiscalProviderReferenceMissingError,
@@ -19,7 +20,7 @@ describe("cancelFiscalDocument", () => {
     ["cancelled", "cancelled", "succeeded"],
     ["failed", "failed", "failed"],
     ["issued", "issued", "succeeded"],
-    ["processing", "draft", "succeeded"],
+    ["processing", "processing", "succeeded"],
   ] as const)(
     "maps provider status %s to %s with %s audit outcome",
     async (providerStatus, expectedStatus, outcome) => {
@@ -47,13 +48,16 @@ describe("cancelFiscalDocument", () => {
           documentId: "document_1",
           metadata: {
             cancelReason: "Customer requested cancellation",
+            providerStatus,
           },
+          providerDocumentId: "persisted_provider_document",
           status: expectedStatus,
         }),
       );
-      expect(
-        harness.updateDocumentStatus.mock.calls[0]?.[0],
-      ).not.toHaveProperty("providerDocumentId");
+      expect(harness.updateDocumentStatus.mock.calls[0]?.[0]).toHaveProperty(
+        "providerDocumentId",
+        "persisted_provider_document",
+      );
       expect(harness.record).toHaveBeenCalledWith(
         expect.objectContaining({
           action: "fiscal.document.cancel",
@@ -141,14 +145,18 @@ describe("cancelFiscalDocument", () => {
 const documentRecord: FiscalDocument = {
   accessKey: "old_access_key",
   createdAt: new Date("2026-07-12T12:00:00.000Z"),
+  documentKind: "nfe",
   documentType: "nfe",
   id: "document_1",
   issuedAt: new Date("2026-07-12T12:00:00.000Z"),
   metadata: { saleId: "sale_1" },
   provider: "spedy",
   providerDocumentId: "persisted_provider_document",
+  recipientId: null,
   status: "issued",
   storeId: "store_1",
+  templateId: null,
+  templateVersion: null,
   tenantId: "tenant_1",
 };
 
@@ -163,7 +171,7 @@ function createContext(
     createServiceContext({
       actor: { id: "user_1", kind: "user" },
       audit: { record },
-      permissions: ["fiscal.manage"],
+      permissions: ["fiscal.document.cancel", "fiscal.manage"],
       request: { requestId: "request_1" },
       storeId: overrides.storeId === undefined ? "store_1" : overrides.storeId,
       tenantId: "tenant_1",
@@ -197,15 +205,25 @@ function createHarness(
   const ports: FiscalServicePorts = {
     fiscalProviderGateway: {
       cancelDocument,
-      getProviderStatus: unused("getProviderStatus"),
-      issueDocument: unused("issueDocument"),
-      syncDocumentStatus: unused("syncDocumentStatus"),
+      getProviderStatus: unexpectedCall("getProviderStatus"),
+      issueDocument: unexpectedCall("issueDocument"),
+      syncDocumentStatus: unexpectedCall("syncDocumentStatus"),
     },
     fiscalRepository: {
-      createDocument: unused("createDocument"),
+      createDocument: unexpectedCall("createDocument"),
+      createDocumentSnapshot: async () => undefined,
+      createRecipient: unexpectedCall("createRecipient"),
+      createTemplate: unexpectedCall("createTemplate"),
       findDocumentById,
-      getOverview: unused("getOverview"),
+      getDocument: unexpectedCall("getDocument"),
+      getOverview: unexpectedCall("getOverview"),
+      getRecipient: unexpectedCall("getRecipient"),
+      getTemplate: unexpectedCall("getTemplate"),
+      listRecipients: unexpectedCall("listRecipients"),
+      listTemplates: unexpectedCall("listTemplates"),
       updateDocumentStatus,
+      updateRecipient: unexpectedCall("updateRecipient"),
+      updateTemplate: unexpectedCall("updateTemplate"),
     },
   };
   return {
@@ -227,10 +245,4 @@ function updatedDocument(
     metadata: input.metadata ?? document.metadata,
     status: input.status as FiscalDocumentStatus,
   };
-}
-
-function unused(name: string): never {
-  return (async () => {
-    throw new Error(`Unexpected ${name} call.`);
-  }) as never;
 }

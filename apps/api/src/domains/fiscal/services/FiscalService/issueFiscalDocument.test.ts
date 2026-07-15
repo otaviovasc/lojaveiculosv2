@@ -23,18 +23,23 @@ describe("issueFiscalDocument", () => {
       harness.ports,
     );
 
-    expect(harness.issueDocument).toHaveBeenCalledWith({
-      documentType: "nfe",
-      externalReference: "sale_1",
-      metadata: { saleId: "sale_1" },
-      storeId: "store_1",
-      tenantId: "tenant_1",
-    });
+    expect(harness.issueDocument).toHaveBeenCalledWith(
+      expect.objectContaining({
+        documentKind: "nfe",
+        documentType: "nfe",
+        externalReference: "sale_1",
+        metadata: { saleId: "sale_1" },
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+    );
     expect(harness.createDocument).toHaveBeenCalledWith(
       expect.objectContaining({
-        metadata: { externalReference: "sale_1", saleId: "sale_1" },
-        providerDocumentId: "provider_document_1",
-        status: "issued",
+        metadata: expect.objectContaining({
+          externalReference: "sale_1",
+          saleId: "sale_1",
+        }),
+        status: "queued",
       }),
     );
     expect(harness.record).toHaveBeenCalledWith(
@@ -62,7 +67,9 @@ describe("issueFiscalDocument", () => {
       expect.objectContaining({ metadata: {} }),
     );
     expect(harness.createDocument).toHaveBeenCalledWith(
-      expect.objectContaining({ metadata: { externalReference: "sale_2" } }),
+      expect.objectContaining({
+        metadata: expect.objectContaining({ externalReference: "sale_2" }),
+      }),
     );
     expect(harness.record).toHaveBeenCalledWith(
       expect.objectContaining({ outcome: "failed" }),
@@ -106,7 +113,10 @@ function createContext(
     createServiceContext({
       actor: { id: "user_1", kind: "user" },
       audit: { record },
-      permissions: overrides.permissions ?? ["fiscal.manage"],
+      permissions: overrides.permissions ?? [
+        "fiscal.document.issue",
+        "fiscal.manage",
+      ],
       request: { requestId: "request_1" },
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -127,6 +137,19 @@ function createHarness(status: "failed" | "issued" = "issued") {
   const createDocument = vi.fn<FiscalRepository["createDocument"]>(
     async (input) => createDocumentRecord(input),
   );
+  const updateDocumentStatus = vi.fn<FiscalRepository["updateDocumentStatus"]>(
+    async (input) => ({
+      ...createDocumentRecord({
+        documentType: "nfe",
+        status: input.status,
+        storeId: "store_1",
+        tenantId: "tenant_1",
+      }),
+      accessKey: input.accessKey ?? null,
+      metadata: input.metadata ?? {},
+      providerDocumentId: input.providerDocumentId ?? null,
+    }),
+  );
   const ports: FiscalServicePorts = {
     fiscalProviderGateway: {
       cancelDocument: unused("cancelDocument"),
@@ -136,9 +159,19 @@ function createHarness(status: "failed" | "issued" = "issued") {
     },
     fiscalRepository: {
       createDocument,
+      createDocumentSnapshot: async () => undefined,
+      createRecipient: unused("createRecipient"),
+      createTemplate: unused("createTemplate"),
       findDocumentById: unused("findDocumentById"),
+      getDocument: unused("getDocument"),
       getOverview: unused("getOverview"),
-      updateDocumentStatus: unused("updateDocumentStatus"),
+      getRecipient: unused("getRecipient"),
+      getTemplate: unused("getTemplate"),
+      listRecipients: unused("listRecipients"),
+      listTemplates: unused("listTemplates"),
+      updateDocumentStatus,
+      updateRecipient: unused("updateRecipient"),
+      updateTemplate: unused("updateTemplate"),
     },
   };
   return { createDocument, issueDocument, ports, record };
@@ -150,6 +183,7 @@ function createDocumentRecord(
   return {
     accessKey: input.accessKey ?? null,
     createdAt: new Date("2026-07-12T12:00:00.000Z"),
+    documentKind: input.documentKind ?? "nfe",
     documentType: input.documentType,
     id: "fiscal_document_1",
     issuedAt:
@@ -157,8 +191,11 @@ function createDocumentRecord(
     metadata: input.metadata ?? {},
     provider: "spedy",
     providerDocumentId: input.providerDocumentId ?? null,
+    recipientId: input.recipientId ?? null,
     status: input.status,
     storeId: input.storeId,
+    templateId: input.templateId ?? null,
+    templateVersion: input.templateVersion ?? null,
     tenantId: input.tenantId,
   };
 }

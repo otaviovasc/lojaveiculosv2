@@ -8,6 +8,7 @@ import {
 } from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import {
+  FiscalDocumentNotFoundError as ScopedFiscalDocumentNotFoundError,
   FiscalProviderReferenceMissingError,
   FiscalScopeError,
 } from "../../../domains/fiscal/services/FiscalService/serviceSupport.js";
@@ -91,6 +92,14 @@ function handleFiscalError(context: Context, error: unknown) {
       error,
       message: error.message,
       status: 400,
+    });
+  }
+  if (error instanceof ScopedFiscalDocumentNotFoundError) {
+    return jsonApiError(context, {
+      code: "FISCAL_DOCUMENT_NOT_FOUND",
+      error,
+      message: error.message,
+      status: 404,
     });
   }
   if (

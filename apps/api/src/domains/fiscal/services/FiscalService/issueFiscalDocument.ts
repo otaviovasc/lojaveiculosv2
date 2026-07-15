@@ -141,11 +141,17 @@ export async function issueFiscalDocument(
       storeId: scope.storeId,
       tenantId: scope.tenantId,
     });
-    await auditIssue(context, scope, "fiscal.document.issue", "succeeded", {
-      documentId: updated.id,
-      providerDocumentId: updated.providerDocumentId,
-      status: updated.status,
-    });
+    await auditIssue(
+      context,
+      scope,
+      "fiscal.document.issue",
+      isFailureStatus(updated.status) ? "failed" : "succeeded",
+      {
+        documentId: updated.id,
+        providerDocumentId: updated.providerDocumentId,
+        status: updated.status,
+      },
+    );
     return updated;
   } catch (error) {
     await ports.fiscalRepository.updateDocumentStatus({
@@ -174,6 +180,10 @@ export async function issueFiscalDocument(
     });
     throw error;
   }
+}
+
+function isFailureStatus(status: FiscalDocument["status"]) {
+  return status === "error" || status === "failed" || status === "rejected";
 }
 
 async function readTemplateIfPresent(

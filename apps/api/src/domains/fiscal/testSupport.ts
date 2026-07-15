@@ -69,6 +69,16 @@ function createFiscalTestRepository(): FiscalRepository {
       templates.unshift(template);
       return template;
     },
+    async findDocumentById(input) {
+      return (
+        documents.find(
+          (item) =>
+            item.id === input.documentId &&
+            item.storeId === input.storeId &&
+            item.tenantId === input.tenantId,
+        ) ?? null
+      );
+    },
     async getOverview() {
       throw new Error("Test repository overview is not implemented.");
     },
@@ -194,4 +204,10 @@ function toTemplate(
     useCase: input.useCase,
     version: input.version ?? 1,
   };
+}
+
+export function unexpectedCall(name: string): never {
+  return (async () => {
+    throw new Error(`Unexpected ${name} call.`);
+  }) as never;
 }

@@ -75,7 +75,9 @@ export function FiscalModule({ api }: { api?: FiscalApi }) {
             <FiscalProviderPanel overview={overview} />
             <FiscalIssueComposer
               api={fiscalApi}
-              disabled={status.kind === "saving" || !overview.provider.configured}
+              disabled={
+                status.kind === "saving" || !overview.provider.configured
+              }
               onError={(message) => setStatus({ kind: "error", message })}
               onIssued={refresh}
             />

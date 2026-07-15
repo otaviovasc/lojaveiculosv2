@@ -70,7 +70,7 @@ export async function syncFiscalDocumentStatus(
       providerDocumentId: document.providerDocumentId,
       status: document.status,
     },
-    outcome: "succeeded",
+    outcome: isFailureStatus(document.status) ? "failed" : "succeeded",
     requestId: context.requestId,
     storeId: scope.storeId,
     tenantId: scope.tenantId,
@@ -78,6 +78,10 @@ export async function syncFiscalDocumentStatus(
   });
 
   return document;
+}
+
+function isFailureStatus(status: FiscalDocumentStatus) {
+  return status === "error" || status === "failed" || status === "rejected";
 }
 
 function mapStatus(status: string): FiscalDocumentStatus {

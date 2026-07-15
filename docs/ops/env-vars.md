@@ -181,53 +181,53 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 
 ## Integrations
 
-| Name                                    | Required | Environments        | Secret | Notes                                                                                         |
-| --------------------------------------- | -------- | ------------------- | ------ | --------------------------------------------------------------------------------------------- |
-| `ASAAS_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when Asaas config is complete.                                                |
-| `ASAAS_API_URL`                         | Yes      | staging, production | No     | Asaas API base URL. Sandbox default is `https://api-sandbox.asaas.com/v3`.                    |
-| `ASAAS_API_KEY`                         | Yes      | staging, production | Yes    | Asaas API key.                                                                                |
-| `ASAAS_CHECKOUT_URL`                    | No       | local, staging      | No     | Optional hosted checkout base URL override. Sandbox default is inferred from `ASAAS_API_URL`. |
-| `ASAAS_BILLING_SYNC_TYPE`               | No       | local, staging      | No     | Billing sync smoke payment type. Defaults to `PIX`.                                           |
-| `ASAAS_BILLING_SYNC_NEXT_DUE_DATE`      | No       | local, staging      | No     | Optional `YYYY-MM-DD` due date for billing sync smoke.                                        |
-| `BILLING_SYNC_STORE_ID`                 | No       | local, staging      | No     | Optional store id override for the billing sync job.                                          |
-| `BILLING_SYNC_TENANT_ID`                | No       | local, staging      | No     | Optional tenant id override for the billing sync job.                                         |
-| `ASAAS_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | Asaas webhook secret.                                                                         |
-| `ASAAS_WEBHOOK_URL`                     | Yes      | staging, production | No     | Public URL for `POST /api/v1/billing/webhooks/asaas`.                                         |
-| `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes      | staging, production | No     | Use `http` only when SPEDY config is complete.                                                |
-| `SPEDY_API_URL`                         | Yes      | staging, production | No     | SPEDY API base URL.                                                                           |
-| `SPEDY_API_TOKEN`                       | Yes      | staging, production | Yes    | SPEDY API token.                                                                              |
-| `SPEDY_AUTH_HEADER`                     | No       | staging, production | No     | Header name used for SPEDY authentication. Defaults to `Authorization`.                       |
-| `SPEDY_AUTH_SCHEME`                     | No       | staging, production | No     | Authorization scheme used with `SPEDY_API_TOKEN`. Defaults to `Bearer`.                       |
+| Name                                    | Required    | Environments        | Secret | Notes                                                                                         |
+| --------------------------------------- | ----------- | ------------------- | ------ | --------------------------------------------------------------------------------------------- |
+| `ASAAS_RUNTIME_IMPLEMENTATION`          | Yes         | staging, production | No     | Use `http` only when Asaas config is complete.                                                |
+| `ASAAS_API_URL`                         | Yes         | staging, production | No     | Asaas API base URL. Sandbox default is `https://api-sandbox.asaas.com/v3`.                    |
+| `ASAAS_API_KEY`                         | Yes         | staging, production | Yes    | Asaas API key.                                                                                |
+| `ASAAS_CHECKOUT_URL`                    | No          | local, staging      | No     | Optional hosted checkout base URL override. Sandbox default is inferred from `ASAAS_API_URL`. |
+| `ASAAS_BILLING_SYNC_TYPE`               | No          | local, staging      | No     | Billing sync smoke payment type. Defaults to `PIX`.                                           |
+| `ASAAS_BILLING_SYNC_NEXT_DUE_DATE`      | No          | local, staging      | No     | Optional `YYYY-MM-DD` due date for billing sync smoke.                                        |
+| `BILLING_SYNC_STORE_ID`                 | No          | local, staging      | No     | Optional store id override for the billing sync job.                                          |
+| `BILLING_SYNC_TENANT_ID`                | No          | local, staging      | No     | Optional tenant id override for the billing sync job.                                         |
+| `ASAAS_WEBHOOK_SECRET`                  | Yes         | staging, production | Yes    | Asaas webhook secret.                                                                         |
+| `ASAAS_WEBHOOK_URL`                     | Yes         | staging, production | No     | Public URL for `POST /api/v1/billing/webhooks/asaas`.                                         |
+| `SPEDY_RUNTIME_IMPLEMENTATION`          | Yes         | staging, production | No     | Use `http` only when SPEDY config is complete.                                                |
+| `SPEDY_API_URL`                         | Yes         | staging, production | No     | SPEDY API base URL.                                                                           |
+| `SPEDY_API_TOKEN`                       | Yes         | staging, production | Yes    | SPEDY API token.                                                                              |
+| `SPEDY_AUTH_HEADER`                     | No          | staging, production | No     | Header name used for SPEDY authentication. Defaults to `Authorization`.                       |
+| `SPEDY_AUTH_SCHEME`                     | No          | staging, production | No     | Authorization scheme used with `SPEDY_API_TOKEN`. Defaults to `Bearer`.                       |
 | `SPEDY_ISSUE_PATH`                      | Conditional | staging, production | No     | Generic issue path. Required unless both kind-specific paths are configured.                  |
-| `SPEDY_NFE_ISSUE_PATH`                  | Conditional | staging, production | No     | NF-e issue path; overrides `SPEDY_ISSUE_PATH` when configured.                               |
-| `SPEDY_NFSE_ISSUE_PATH`                 | Conditional | staging, production | No     | NFS-e issue path; overrides `SPEDY_ISSUE_PATH` when configured.                              |
-| `SPEDY_CANCEL_PATH`                     | Yes      | staging, production | No     | Provider path for canceling fiscal documents.                                                 |
-| `SPEDY_STATUS_PATH`                     | Yes      | staging, production | No     | Provider path for polling fiscal document status.                                             |
-| `SPEDY_WEBHOOK_SECRET`                  | Yes      | staging, production | Yes    | SPEDY webhook secret.                                                                         |
-| `API_PLACA_KEY`                         | No       | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.                                              |
-| `API_PLACA_BASE_URL`                    | No       | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`.                                            |
-| `API_PLACA_DADOS_PATH`                  | No       | staging, production | No     | Defaults to `/vehicles/base/000/dados`.                                                       |
-| `API_PLACA_CACHE_TTL_DAYS`              | No       | staging, production | No     | Plate lookup reuse window. Defaults to `30`.                                                  |
-| `API_OPENAI_KEY`                        | No       | staging, production | Yes    | OpenAI API key for inventory resale analysis.                                                 |
-| `API_OPENAI_DEFAULT_MODEL`              | No       | staging, production | No     | Defaults AI tasks to `gpt-5.4-mini`.                                                          |
-| `API_OPENAI_DOCUMENTS_MODEL`            | No       | staging, production | No     | Optional override for document-builder template suggestions.                                  |
-| `API_OPENAI_INVENTORY_RESALE_MODEL`     | No       | staging, production | No     | Optional override for inventory resale analysis.                                              |
-| `API_OPENAI_MODEL`                      | No       | staging, production | No     | Legacy fallback after task-specific model vars.                                               |
-| `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes      | staging, production | Yes    | Encrypts marketplace credentials.                                                             |
-| `MERCADO_LIVRE_CLIENT_ID`               | Yes      | staging, production | Yes    | Enables Mercado Livre OAuth and stock sync.                                                   |
-| `MERCADO_LIVRE_CLIENT_SECRET`           | No       | staging, production | Yes    | OAuth client secret when required by the provider app.                                        |
-| `MERCADO_LIVRE_AUTHORIZATION_URL`       | No       | staging, production | No     | Defaults to `https://auth.mercadolivre.com.br/authorization`.                                 |
-| `MERCADO_LIVRE_API_BASE_URL`            | No       | staging, production | No     | Defaults to `https://api.mercadolibre.com`.                                                   |
-| `MERCADO_LIVRE_TOKEN_URL`               | No       | staging, production | No     | Defaults to `https://api.mercadolibre.com/oauth/token`.                                       |
-| `MERCADO_LIVRE_ACCOUNT_PATH`            | No       | staging, production | No     | Defaults to `/users/me`.                                                                      |
-| `OLX_CLIENT_ID`                         | Yes      | staging, production | Yes    | Required with the OLX client secret to enable OLX stock sync.                                 |
-| `OLX_CLIENT_SECRET`                     | Yes      | staging, production | Yes    | Required OLX OAuth client secret.                                                             |
-| `OLX_AUTHORIZATION_URL`                 | No       | staging, production | No     | Defaults to `https://auth.olx.com.br/oauth`.                                                  |
-| `OLX_API_BASE_URL`                      | No       | staging, production | No     | Defaults to `https://apps.olx.com.br`.                                                        |
-| `OLX_TOKEN_URL`                         | No       | staging, production | No     | Defaults to `https://auth.olx.com.br/oauth/token`.                                            |
-| `OLX_LISTINGS_PATH`                     | No       | staging, production | No     | Defaults to `/autoupload/import`.                                                             |
-| `OLX_REQUIREMENT_CONFIG`                | No       | staging, production | No     | Optional JSON account-check and requirement override. Invalid JSON fails closed.              |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`           | No       | staging, production | Yes    | OpenTelemetry collector endpoint.                                                             |
+| `SPEDY_NFE_ISSUE_PATH`                  | Conditional | staging, production | No     | NF-e issue path; overrides `SPEDY_ISSUE_PATH` when configured.                                |
+| `SPEDY_NFSE_ISSUE_PATH`                 | Conditional | staging, production | No     | NFS-e issue path; overrides `SPEDY_ISSUE_PATH` when configured.                               |
+| `SPEDY_CANCEL_PATH`                     | Yes         | staging, production | No     | Provider path for canceling fiscal documents.                                                 |
+| `SPEDY_STATUS_PATH`                     | Yes         | staging, production | No     | Provider path for polling fiscal document status.                                             |
+| `SPEDY_WEBHOOK_SECRET`                  | Yes         | staging, production | Yes    | SPEDY webhook secret.                                                                         |
+| `API_PLACA_KEY`                         | No          | staging, production | Yes    | APIBrasil bearer token for vehicle plate lookup.                                              |
+| `API_PLACA_BASE_URL`                    | No          | staging, production | No     | Defaults to `https://gateway.apibrasil.io/api/v2`.                                            |
+| `API_PLACA_DADOS_PATH`                  | No          | staging, production | No     | Defaults to `/vehicles/base/000/dados`.                                                       |
+| `API_PLACA_CACHE_TTL_DAYS`              | No          | staging, production | No     | Plate lookup reuse window. Defaults to `30`.                                                  |
+| `API_OPENAI_KEY`                        | No          | staging, production | Yes    | OpenAI API key for inventory resale analysis.                                                 |
+| `API_OPENAI_DEFAULT_MODEL`              | No          | staging, production | No     | Defaults AI tasks to `gpt-5.4-mini`.                                                          |
+| `API_OPENAI_DOCUMENTS_MODEL`            | No          | staging, production | No     | Optional override for document-builder template suggestions.                                  |
+| `API_OPENAI_INVENTORY_RESALE_MODEL`     | No          | staging, production | No     | Optional override for inventory resale analysis.                                              |
+| `API_OPENAI_MODEL`                      | No          | staging, production | No     | Legacy fallback after task-specific model vars.                                               |
+| `MARKETPLACE_CREDENTIAL_ENCRYPTION_KEY` | Yes         | staging, production | Yes    | Encrypts marketplace credentials.                                                             |
+| `MERCADO_LIVRE_CLIENT_ID`               | Yes         | staging, production | Yes    | Enables Mercado Livre OAuth and stock sync.                                                   |
+| `MERCADO_LIVRE_CLIENT_SECRET`           | No          | staging, production | Yes    | OAuth client secret when required by the provider app.                                        |
+| `MERCADO_LIVRE_AUTHORIZATION_URL`       | No          | staging, production | No     | Defaults to `https://auth.mercadolivre.com.br/authorization`.                                 |
+| `MERCADO_LIVRE_API_BASE_URL`            | No          | staging, production | No     | Defaults to `https://api.mercadolibre.com`.                                                   |
+| `MERCADO_LIVRE_TOKEN_URL`               | No          | staging, production | No     | Defaults to `https://api.mercadolibre.com/oauth/token`.                                       |
+| `MERCADO_LIVRE_ACCOUNT_PATH`            | No          | staging, production | No     | Defaults to `/users/me`.                                                                      |
+| `OLX_CLIENT_ID`                         | Yes         | staging, production | Yes    | Required with the OLX client secret to enable OLX stock sync.                                 |
+| `OLX_CLIENT_SECRET`                     | Yes         | staging, production | Yes    | Required OLX OAuth client secret.                                                             |
+| `OLX_AUTHORIZATION_URL`                 | No          | staging, production | No     | Defaults to `https://auth.olx.com.br/oauth`.                                                  |
+| `OLX_API_BASE_URL`                      | No          | staging, production | No     | Defaults to `https://apps.olx.com.br`.                                                        |
+| `OLX_TOKEN_URL`                         | No          | staging, production | No     | Defaults to `https://auth.olx.com.br/oauth/token`.                                            |
+| `OLX_LISTINGS_PATH`                     | No          | staging, production | No     | Defaults to `/autoupload/import`.                                                             |
+| `OLX_REQUIREMENT_CONFIG`                | No          | staging, production | No     | Optional JSON account-check and requirement override. Invalid JSON fails closed.              |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`           | No          | staging, production | Yes    | OpenTelemetry collector endpoint.                                                             |
 
 ## Vehicle Catalog Sync
 

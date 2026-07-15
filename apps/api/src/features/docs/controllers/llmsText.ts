@@ -15,34 +15,20 @@ export const llmsText = `# Loja Veiculos API
 - Store billing: GET /api/v1/billing/overview, GET /api/v1/billing/provider/status, POST /api/v1/billing/provider/checkout, PATCH /api/v1/billing/entitlements/{featureKey}
 - Agency tenant billing: GET /api/v1/agency/tenants/{tenantId}/overview, GET /api/v1/agency/tenants/{tenantId}/billing/provider/status, POST /api/v1/agency/tenants/{tenantId}/billing/provider/checkout, POST /api/v1/agency/tenants/{tenantId}/billing/provider/subscription/sync
 - Update agency-managed store entitlement: PATCH /api/v1/agency/tenants/{tenantId}/stores/{storeId}/entitlements/{featureKey}
-- Fiscal overview: GET /api/v1/fiscal/overview
-- List fiscal service recipients: GET /api/v1/fiscal/recipients
-- Create fiscal service recipient: POST /api/v1/fiscal/recipients
-- List fiscal NFS-e templates: GET /api/v1/fiscal/templates
-- Create fiscal NFS-e template: POST /api/v1/fiscal/templates
-- Preview fiscal NFS-e template: POST /api/v1/fiscal/templates/preview
-- Issue fiscal document: POST /api/v1/fiscal/documents
-- Cancel fiscal document: POST /api/v1/fiscal/documents/{documentId}/cancel
-- Repeat fiscal document: POST /api/v1/fiscal/documents/{documentId}/repeat
-- Sync fiscal status: POST /api/v1/fiscal/documents/{documentId}/status-sync
-- Finance summary: GET /api/v1/finance/summary
-- List finance entries: GET /api/v1/finance/entries
-- Create finance entry: POST /api/v1/finance/entries
-- Get finance entry: GET /api/v1/finance/entries/{entryId}
-- Update finance entry: PATCH /api/v1/finance/entries/{entryId}
-- Delete finance entry: DELETE /api/v1/finance/entries/{entryId}
-- Request finance document upload: POST /api/v1/finance/entries/{entryId}/documents/uploads
-- Attach finance document: POST /api/v1/finance/entries/{entryId}/documents
-- Analytics dashboard: GET /api/v1/analytics/dashboard
-- Compliance snapshot: GET /api/v1/compliance/snapshot
-- Marketplace overview: GET /api/v1/marketplaces/overview
-- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
-- Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete
-- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
-- Queue marketplace sync: POST /api/v1/marketplaces/integrations/{provider}/sync-jobs
-- Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
-- Documents workspace: GET /api/v1/documents
-- Document versions: GET /api/v1/documents/{documentId}/versions
+- Fiscal overview: GET /api/v1/fiscal/overview\n- List fiscal service recipients: GET /api/v1/fiscal/recipients
+- Create fiscal service recipient: POST /api/v1/fiscal/recipients\n- List fiscal NFS-e templates: GET /api/v1/fiscal/templates
+- Create fiscal NFS-e template: POST /api/v1/fiscal/templates\n- Preview fiscal NFS-e template: POST /api/v1/fiscal/templates/preview
+- Issue fiscal document: POST /api/v1/fiscal/documents\n- Cancel fiscal document: POST /api/v1/fiscal/documents/{documentId}/cancel
+- Repeat fiscal document: POST /api/v1/fiscal/documents/{documentId}/repeat\n- Sync fiscal status: POST /api/v1/fiscal/documents/{documentId}/status-sync
+- Finance summary: GET /api/v1/finance/summary\n- List finance entries: GET /api/v1/finance/entries
+- Create finance entry: POST /api/v1/finance/entries\n- Get finance entry: GET /api/v1/finance/entries/{entryId}
+- Update finance entry: PATCH /api/v1/finance/entries/{entryId}\n- Delete finance entry: DELETE /api/v1/finance/entries/{entryId}
+- Request finance document upload: POST /api/v1/finance/entries/{entryId}/documents/uploads\n- Attach finance document: POST /api/v1/finance/entries/{entryId}/documents
+- Analytics dashboard: GET /api/v1/analytics/dashboard\n- Compliance snapshot: GET /api/v1/compliance/snapshot
+- Marketplace overview: GET /api/v1/marketplaces/overview\n- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
+- Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete\n- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
+- Queue marketplace sync: POST /api/v1/marketplaces/integrations/{provider}/sync-jobs\n- Run marketplace sync: POST /api/v1/marketplaces/sync-jobs/{jobId}/run
+- Documents workspace: GET /api/v1/documents\n- Document versions: GET /api/v1/documents/{documentId}/versions
 - External API manifest: GET /api/v1/external-api/manifest
 - External API AI tools: GET /api/v1/external-api/ai-tools
 - List external API clients: GET /api/v1/external-api/clients

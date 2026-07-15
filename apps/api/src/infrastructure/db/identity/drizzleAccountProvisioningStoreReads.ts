@@ -12,6 +12,7 @@ import {
   resolveRolePermissions,
 } from "./drizzleAccountProvisioningPermissions.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
+import { resolveStoreEntitlements } from "./drizzleStoreEntitlementReads.js";
 
 export async function listStores(
   db: DrizzleAccountProvisioningClient,
@@ -83,9 +84,11 @@ export async function listStores(
         membershipId: row.membershipId,
         role: row.role,
       });
+      const entitlements = await resolveStoreEntitlements(db, row.storeId);
       return {
         billingManagedBy,
         effectivePermissions,
+        entitlements,
         role: row.role,
         status: row.status,
         storeId: row.storeId as never,
@@ -107,6 +110,7 @@ export async function listStores(
         billingManagedBy: "agency",
         role: "agency",
       }),
+      entitlements: await resolveStoreEntitlements(db, row.storeId),
       role: "agency",
       status: "active",
       storeId: row.storeId as never,

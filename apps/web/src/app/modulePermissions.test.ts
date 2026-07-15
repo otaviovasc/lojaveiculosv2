@@ -141,7 +141,7 @@ describe("module permissions", () => {
   });
 
   it("hides entitlement-gated fiscal navigation without nfe access", () => {
-    const session = sessionForRole("owner", ["fiscal.manage"]);
+    const session = sessionForRole("owner", ["fiscal.manage"], []);
     const visibleIds = filterNavigationGroups(navigationGroups, session)
       .flatMap((group) => group.items)
       .map((item) => item.id);
@@ -163,12 +163,12 @@ describe("module permissions", () => {
 function sessionForRole(
   role: string,
   effectivePermissions: readonly string[],
-  entitlements: readonly string[] = [],
+  entitlements?: readonly string[],
 ): SessionBootstrap {
   return {
     defaultStore: {
       effectivePermissions,
-      entitlements,
+      ...(entitlements === undefined ? {} : { entitlements }),
       role,
       status: "active",
       storeId: "store_1",

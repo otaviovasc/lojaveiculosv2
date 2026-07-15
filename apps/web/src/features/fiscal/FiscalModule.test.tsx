@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { FiscalApi } from "./apiClient";
 import { FiscalModule } from "./FiscalModule";
@@ -43,49 +42,39 @@ describe("FiscalModule", () => {
     expect(api.issueDocument).not.toHaveBeenCalled();
   });
 
-  it("reviews an explicit operation reference before issuing", async () => {
+  it("shows the expanded fiscal composer when the provider is configured", async () => {
     const api = createApi(true);
-    const user = userEvent.setup();
     render(<FiscalModule api={api} />);
 
-    const reference = await screen.findByRole("textbox", {
-      name: "Operação de origem",
-    });
-    const issueButton = screen.getByRole("button", { name: "Emitir NF-e" });
-    expect(issueButton).toBeDisabled();
-
-    await user.type(reference, "venda 1042");
-    await user.click(issueButton);
-
-    expect(api.issueDocument).not.toHaveBeenCalled();
-    expect(
-      screen.getByRole("dialog", { name: "Revisar antes de emitir" }),
-    ).toBeVisible();
-    expect(screen.getByText("venda 1042")).toBeVisible();
-
-    await user.click(screen.getByRole("button", { name: "Confirmar emissão" }));
-
-    expect(api.issueDocument).toHaveBeenCalledWith({
-      documentType: "nfe_vehicle_sale",
-      externalReference: "venda 1042",
-    });
+    expect(await screen.findByLabelText("Tipo de nota")).toBeVisible();
+    expect(screen.getByLabelText("Referencia externa")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Emitir" })).toBeVisible();
   });
 });
 
 function createApi(configured = false): FiscalApi {
   return {
+    archiveRecipient: vi.fn(),
+    archiveTemplate: vi.fn(),
+    cancelDocument: vi.fn(),
+    createRecipient: vi.fn(),
+    createTemplate: vi.fn(),
     getOverview: vi.fn(async () => ({
       documents: [
         {
           accessKey: null,
           createdAt: "2026-07-11T12:00:00.000Z",
+          documentKind: "nfe" as const,
           documentType: "nfe_vehicle_sale",
           id: "fiscal_1",
           issuedAt: "2026-07-11T12:00:00.000Z",
           metadata: {},
           provider: "spedy" as const,
           providerDocumentId: "spedy_private_123",
+          recipientId: null,
           status: "issued" as const,
+          templateId: null,
+          templateVersion: null,
         },
       ],
       provider: {
@@ -99,13 +88,22 @@ function createApi(configured = false): FiscalApi {
     issueDocument: vi.fn(async () => ({
       accessKey: null,
       createdAt: "2026-07-11T12:00:00.000Z",
+      documentKind: "nfe" as const,
       documentType: "nfe_vehicle_sale",
       id: "fiscal_new",
       issuedAt: null,
       metadata: {},
       provider: "spedy" as const,
       providerDocumentId: null,
+      recipientId: null,
       status: "draft" as const,
+      templateId: null,
+      templateVersion: null,
     })),
+    listRecipients: vi.fn(async () => []),
+    listTemplates: vi.fn(async () => []),
+    previewTemplate: vi.fn(),
+    repeatDocument: vi.fn(),
+    syncDocumentStatus: vi.fn(),
   };
 }

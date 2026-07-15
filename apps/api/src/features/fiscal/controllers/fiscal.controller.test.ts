@@ -141,10 +141,20 @@ function createServices() {
     async () => documentRecord,
   );
   const value: FiscalServices = {
+    archiveRecipient: unused("archiveRecipient"),
+    archiveTemplate: unused("archiveTemplate"),
     cancelDocument,
+    createRecipient: unused("createRecipient"),
+    createTemplate: unused("createTemplate"),
     getOverview: unused("getOverview"),
     issueDocument: unused("issueDocument"),
+    listRecipients: unused("listRecipients"),
+    listTemplates: unused("listTemplates"),
+    previewTemplate: unused("previewTemplate"),
+    repeatDocument: unused("repeatDocument"),
     syncDocumentStatus,
+    updateRecipient: unused("updateRecipient"),
+    updateTemplate: unused("updateTemplate"),
   };
   return { cancelDocument, syncDocumentStatus, value };
 }
@@ -152,14 +162,18 @@ function createServices() {
 const documentRecord: FiscalDocument = {
   accessKey: "access_key_1",
   createdAt: new Date("2026-07-12T12:00:00.000Z"),
+  documentKind: "nfe",
   documentType: "nfe",
   id: "document_1",
   issuedAt: new Date("2026-07-12T12:00:00.000Z"),
   metadata: {},
   provider: "spedy",
   providerDocumentId: "persisted_provider_document",
+  recipientId: null,
   status: "issued",
   storeId: "store_1",
+  templateId: null,
+  templateVersion: null,
   tenantId: "tenant_1",
 };
 

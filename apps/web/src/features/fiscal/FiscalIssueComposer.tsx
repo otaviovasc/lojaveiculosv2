@@ -1,5 +1,6 @@
 import { Eye, Send } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
@@ -113,16 +114,15 @@ export function FiscalIssueComposer({
   return (
     <FeatureSection className="feature-panel" title="Emitir documento">
       <div className="feature-form-row">
-        <select
-          aria-label="Tipo de nota"
-          onChange={(event) =>
-            setKind(event.target.value === "nfe" ? "nfe" : "nfse")
-          }
+        <FeatureSelect
+          ariaLabel="Tipo de nota"
+          onChange={setKind}
+          options={[
+            { label: "Nova NFS-e", value: "nfse" },
+            { label: "Nova NF-e", value: "nfe" },
+          ]}
           value={kind}
-        >
-          <option value="nfse">Nova NFS-e</option>
-          <option value="nfe">Nova NF-e</option>
-        </select>
+        />
         <input
           aria-label="Referencia externa"
           onChange={(event) => setReference(event.target.value)}
@@ -145,30 +145,30 @@ export function FiscalIssueComposer({
       </div>
       {kind === "nfse" ? (
         <div className="feature-form-row">
-          <select
-            aria-label="Financeira / Tomador"
-            onChange={(event) => setRecipientId(event.target.value)}
+          <FeatureSelect
+            ariaLabel="Financeira / Tomador"
+            onChange={setRecipientId}
+            options={[
+              { label: "Financeira / Tomador", value: "" },
+              ...recipients.map((recipient) => ({
+                label: recipient.legalName,
+                value: recipient.id,
+              })),
+            ]}
             value={recipientId}
-          >
-            <option value="">Financeira / Tomador</option>
-            {recipients.map((recipient) => (
-              <option key={recipient.id} value={recipient.id}>
-                {recipient.legalName}
-              </option>
-            ))}
-          </select>
-          <select
-            aria-label="Tipo de comissão"
-            onChange={(event) => setTemplateId(event.target.value)}
+          />
+          <FeatureSelect
+            ariaLabel="Tipo de comissão"
+            onChange={setTemplateId}
+            options={[
+              { label: "Tipo de comissão", value: "" },
+              ...visibleTemplates.map((template) => ({
+                label: `${template.name} v${template.version}`,
+                value: template.id,
+              })),
+            ]}
             value={templateId}
-          >
-            <option value="">Tipo de comissão</option>
-            {visibleTemplates.map((template) => (
-              <option key={template.id} value={template.id}>
-                {template.name} v{template.version}
-              </option>
-            ))}
-          </select>
+          />
           <button
             disabled={!templateId || disabled || busy}
             onClick={() => void previewTemplate()}
