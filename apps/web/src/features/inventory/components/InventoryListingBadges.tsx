@@ -52,7 +52,10 @@ export function MercosulPlateBadge({ plate }: { plate: string }) {
   const formatted = plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
   return (
-    <span className="inline-flex align-middle flex-col overflow-hidden rounded-[3px] border border-gray-300 dark:border-line bg-white dark:bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] min-w-[70px] max-w-[80px] text-center select-none shrink-0">
+    <span
+      aria-label={`Placa ${formatted}`}
+      className="inline-flex align-middle flex-col overflow-hidden rounded-[3px] border border-gray-300 dark:border-line bg-white dark:bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] min-w-[70px] max-w-[80px] text-center select-none shrink-0"
+    >
       <span className="bg-blue-600 px-1 py-0.5 text-xs font-black uppercase leading-none tracking-widest text-center text-white dark:bg-blue-600">
         Brasil
       </span>
