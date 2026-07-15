@@ -13,6 +13,7 @@ import {
 } from "./crmWhatsappMemoryQueries.js";
 import {
   countMemorySessions,
+  countMemorySessionsByAssignee,
   listMemorySessions,
 } from "./crmWhatsappMemorySessionViews.js";
 import {
@@ -120,6 +121,14 @@ export function createMemoryCrmWhatsappRepository(
     },
     async countSessions(input) {
       return countMemorySessions({
+        messages,
+        query: input,
+        sessions,
+        tagState,
+      });
+    },
+    async countSessionsByAssignee(input) {
+      return countMemorySessionsByAssignee({
         messages,
         query: input,
         sessions,

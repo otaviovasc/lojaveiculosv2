@@ -1,5 +1,5 @@
-import { Check, ChevronDown, Tags, UserRound } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { Check, ChevronDown, Tags, UsersRound } from "lucide-react";
+import { useRef, useState } from "react";
 import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { countForFilter } from "./crmWhatsappQueueState";
 import type {
@@ -18,24 +18,6 @@ const quickFilterOptions: Array<{
   { label: "Meus", value: "mine" },
   { label: "Todos", value: "all" },
 ];
-
-export function QueueMetric({
-  icon,
-  label,
-  value,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: number;
-}) {
-  return (
-    <span className="crm-whatsapp-queue-metric">
-      {icon}
-      <strong>{value}</strong>
-      <small>{label}</small>
-    </span>
-  );
-}
 
 export function QueueQuickFilterRow({
   assignableMembers,
@@ -56,10 +38,23 @@ export function QueueQuickFilterRow({
 }) {
   const othersButtonRef = useRef<HTMLButtonElement>(null);
   const [othersOpen, setOthersOpen] = useState(false);
-  const otherMembers = assignableMembers.filter(
-    (member) =>
-      member.isActive && String(member.id) !== String(currentUserId ?? ""),
+  const countsByAssignee = new Map(
+    sessionCounts.assignees.map((item) => [item.assigneeId, item.count]),
   );
+  const otherMembers = assignableMembers
+    .filter(
+      (member) =>
+        member.isActive && String(member.id) !== String(currentUserId ?? ""),
+    )
+    .map((member) => ({
+      ...member,
+      activeChatCount: countsByAssignee.get(String(member.id)) ?? 0,
+    }))
+    .sort(
+      (left, right) =>
+        (right.activeChatCount ?? 0) - (left.activeChatCount ?? 0) ||
+        left.name.localeCompare(right.name, "pt-BR"),
+    );
   return (
     <div className="crm-whatsapp-filter-row" aria-label="Filtro rápido">
       {quickFilterOptions.slice(0, 3).map((option) => (
@@ -98,24 +93,28 @@ export function QueueQuickFilterRow({
           isOpen={othersOpen}
           onClose={() => setOthersOpen(false)}
         >
-          <div aria-label="Atendentes da loja" role="group">
-            <FilterMenuOption
+          <div aria-label="Atendentes da loja" role="listbox">
+            <AssigneeFilterOption
               active={!otherAssigneeId}
+              count={countForFilter(sessionCounts, "others")}
               label="Todos os atendentes"
               onClick={() => {
                 onOtherAssigneeChange(null);
                 setOthersOpen(false);
               }}
+              subtitle="Outros responsáveis"
             />
             {otherMembers.map((member) => (
-              <FilterMenuOption
+              <AssigneeFilterOption
                 active={String(member.id) === otherAssigneeId}
+                count={member.activeChatCount ?? 0}
                 key={member.id}
                 label={member.name}
                 onClick={() => {
                   onOtherAssigneeChange(String(member.id));
                   setOthersOpen(false);
                 }}
+                subtitle={formatWhatsappMemberRole(member.role)}
               />
             ))}
           </div>
@@ -230,27 +229,57 @@ function QuickFilterButton({
   );
 }
 
-function FilterMenuOption({
+function AssigneeFilterOption({
   active,
+  count,
   label,
   onClick,
+  subtitle,
 }: {
   active: boolean;
+  count: number;
   label: string;
   onClick: () => void;
+  subtitle: string;
 }) {
   return (
     <button
-      aria-pressed={active}
-      className="crm-whatsapp-filter-menu-option"
+      aria-selected={active}
+      className="crm-whatsapp-assignee-option"
       onClick={onClick}
+      role="option"
       type="button"
     >
-      <span className="crm-whatsapp-filter-menu-avatar">
-        <UserRound aria-hidden="true" />
+      <span className="crm-whatsapp-assignee-check">
+        {active ? <Check aria-hidden="true" /> : null}
       </span>
-      <span>{label}</span>
-      {active ? <Check aria-hidden="true" /> : null}
+      <span aria-hidden="true" className="crm-whatsapp-assignee-avatar">
+        {label === "Todos os atendentes" ? (
+          <UsersRound aria-hidden="true" />
+        ) : (
+          label.slice(0, 1).toLocaleUpperCase("pt-BR")
+        )}
+      </span>
+      <span className="crm-whatsapp-assignee-copy">
+        <strong>{label}</strong>
+        <small>{subtitle}</small>
+      </span>
+      <span className="crm-whatsapp-assignee-count">
+        {count > 999 ? "999+" : count}
+      </span>
     </button>
   );
+}
+
+export function formatWhatsappMemberRole(role: string) {
+  const labels: Record<string, string> = {
+    ADMIN: "Administrador",
+    AGENCY: "Gestor da agência",
+    INVESTOR: "Investidor",
+    MEMBER: "Vendedor",
+    OWNER: "Dono",
+    SALESMAN: "Vendedor",
+    SUPERVISOR: "Supervisor",
+  };
+  return labels[role.toLocaleUpperCase("pt-BR")] ?? "Membro da equipe";
 }

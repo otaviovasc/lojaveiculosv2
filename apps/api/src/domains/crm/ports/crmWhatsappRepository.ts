@@ -8,6 +8,7 @@ import type {
 import type {
   CrmWhatsappCampaign,
   CrmWhatsappCampaignRecipient,
+  CrmWhatsappAssigneeSessionCount,
   CrmWhatsappMessage,
   CrmWhatsappScheduledMessage,
   CrmWhatsappScheduledMessageScope,
@@ -80,6 +81,7 @@ export type {
   CrmWhatsappCampaignRecipient,
   CrmWhatsappCampaignRecipientStatus,
   CrmWhatsappCampaignStatus,
+  CrmWhatsappAssigneeSessionCount,
   CrmWhatsappMessage,
   CrmWhatsappScheduledMessage,
   CrmWhatsappScheduledMessageScope,
@@ -117,6 +119,9 @@ export type CrmWhatsappRepository = {
     input: UpdateCrmWhatsappSessionTagInput,
   ) => Promise<CrmWhatsappSession | null>;
   countSessions: (input: CountCrmWhatsappSessionsInput) => Promise<number>;
+  countSessionsByAssignee: (
+    input: CountCrmWhatsappSessionsInput,
+  ) => Promise<readonly CrmWhatsappAssigneeSessionCount[]>;
   createQuickMessage: (
     input: CreateCrmWhatsappQuickMessageInput,
   ) => Promise<CrmWhatsappQuickMessage>;

@@ -64,14 +64,13 @@ describe("CRM WhatsApp queue", () => {
     );
 
     expect(response.status).toBe(200);
-    await expect(response.json()).resolves.toMatchObject({
-      filters: {
-        all: 3,
-        fresh: 1,
-        mine: 1,
-        others: 1,
-        unassigned: 0,
-      },
+    const body: unknown = await response.json();
+    expect(body).toMatchObject({
+      assignees: [
+        { assigneeId: actorUserId, count: 1 },
+        { assigneeId: otherUserId, count: 1 },
+      ],
+      filters: { all: 3, fresh: 1, mine: 1, others: 1, unassigned: 0 },
       statuses: { ACTIVE: 3 },
       total: 3,
       unread: 2,

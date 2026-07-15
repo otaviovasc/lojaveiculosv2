@@ -110,7 +110,7 @@ export function CrmWhatsappAudioRecorderButton({
         aria-label="Gravar audio"
         className={
           primary
-            ? "crm-icon-action crm-icon-action-active crm-whatsapp-send-action"
+            ? "crm-icon-action crm-whatsapp-send-action crm-whatsapp-audio-action"
             : "crm-icon-action"
         }
         disabled={disabled || !supported}

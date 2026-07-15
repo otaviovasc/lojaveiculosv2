@@ -25,9 +25,11 @@ test.describe("CRM WhatsApp conversations", () => {
     await installLocalOwnerSession(page);
     await installNoopCampaignEventSource(page);
     await installCampaignApiMocks(page);
+    const richSessions = createRichSessions();
+    const primarySession = richSessions[0]!;
     await page.route("**/crm/whatsapp/sessions**", (route) =>
       route.fulfill({
-        body: JSON.stringify(createRichSessions()),
+        body: JSON.stringify(richSessions),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
@@ -35,6 +37,23 @@ test.describe("CRM WhatsApp conversations", () => {
     await page.route("**/crm/whatsapp/sessions/*/unread", (route) =>
       route.fulfill({
         body: JSON.stringify({}),
+        headers: { "content-type": "application/json" },
+        status: 200,
+      }),
+    );
+    await page.route("**/crm/whatsapp/sessions/*/tags", (route) =>
+      route.fulfill({
+        body: JSON.stringify({
+          ...primarySession,
+          sessionTags: [
+            ...primarySession.sessionTags,
+            {
+              color: "var(--color-blue-start)",
+              id: "tag_replied",
+              name: "Respondeu",
+            },
+          ],
+        }),
         headers: { "content-type": "application/json" },
         status: 200,
       }),
@@ -57,19 +76,35 @@ test.describe("CRM WhatsApp conversations", () => {
       .toBe(true);
 
     await page.getByRole("button", { name: /Etiquetas/ }).click();
-    await expect(page.getByRole("button", { name: "Respondeu" })).toBeVisible();
+    const repliedTagOption = page.getByRole("button", { name: "Respondeu" });
+    await expect(repliedTagOption).toBeVisible();
+    const optionBox = await repliedTagOption.boundingBox();
+    const labelBox = await repliedTagOption
+      .locator("span")
+      .last()
+      .boundingBox();
+    expect(optionBox).not.toBeNull();
+    expect(labelBox).not.toBeNull();
+    expect(labelBox!.x - optionBox!.x).toBeLessThan(80);
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-tag-filter");
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: /Outros/ }).click();
+    const brunoOption = page.getByRole("option", {
+      name: /Bruno Santos.*Vendedor.*2/,
+    });
+    await expect(brunoOption).toBeVisible();
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-assignees");
     const assigneeRequest = page.waitForRequest((request) =>
       request.url().includes("assigneeId=70000000-0000-4000-8000-000000000002"),
     );
-    await page.getByRole("button", { name: "Bruno Santos" }).click();
+    await brunoOption.click();
     await assigneeRequest;
     await expect(page.getByRole("button", { name: /Outros/ })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
+    await expect(page.getByText("Todos os status")).toHaveCount(0);
 
     await page.getByRole("button", { name: "Nova conversa" }).click();
     await expect(
@@ -84,13 +119,40 @@ test.describe("CRM WhatsApp conversations", () => {
     await expect(page.getByLabel("Detalhe da conversa")).toContainText(
       "Tenho interesse no Civic.",
     );
+    await page.getByRole("button", { name: "Adicionar etiqueta" }).click();
+    await expect(page.getByPlaceholder("Buscar etiqueta")).toBeVisible();
+    const headerTagMenu = page.locator(".crm-whatsapp-tag-menu");
+    await expect
+      .poll(() =>
+        headerTagMenu.evaluate((element) => {
+          const rect = element.getBoundingClientRect();
+          const hitTarget = document.elementFromPoint(
+            rect.left + rect.width / 2,
+            rect.top + Math.min(20, rect.height / 2),
+          );
+          return Boolean(hitTarget && element.contains(hitTarget));
+        }),
+      )
+      .toBe(true);
+    await saveQaScreenshot(page, testInfo, "crm-whatsapp-header-tags");
+    const tagRequest = page.waitForRequest(
+      (request) =>
+        request.method() === "POST" &&
+        request.url().includes(`/sessions/${primarySession.id}/tags`),
+    );
+    await page.getByRole("button", { name: "Respondeu" }).click();
+    await tagRequest;
+    await expect(page.getByPlaceholder("Buscar etiqueta")).toHaveCount(0);
     await saveQaScreenshot(page, testInfo, "crm-whatsapp-conversations");
 
     await page.getByRole("button", { name: "Selecionar conversas" }).click();
     await expect(page.getByText("Selecione conversas")).toBeVisible();
     await page.getByRole("button", { name: /Ana Premium/ }).click();
     await expect(page.getByText("1 conversa", { exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Não lidas", exact: true }).click();
+    await page
+      .getByLabel("Ações em massa")
+      .getByRole("button", { name: "Não lidas", exact: true })
+      .click();
     await saveQaScreenshot(
       page,
       testInfo,

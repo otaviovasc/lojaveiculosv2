@@ -102,6 +102,19 @@
   z-index: 12;
 }
 
+.crm-whatsapp-tag-popover {
+  padding: 0.5rem;
+  width: min(20rem, calc(100vw - 1.5rem));
+}
+
+.crm-whatsapp-tag-popover .crm-whatsapp-tag-menu {
+  border: 0;
+  box-shadow: none;
+  min-width: 0;
+  padding: 0;
+  position: static;
+}
+
 .crm-whatsapp-tag-search {
   align-items: center;
   background: var(--color-app);

@@ -38,6 +38,7 @@ export type CountWhatsappSessionsInput = Omit<
 >;
 
 export type WhatsappSessionCounts = {
+  assignees: ReadonlyArray<{ assigneeId: string; count: number }>;
   filters: Record<(typeof whatsappSessionCountFilters)[number], number>;
   statuses: Record<CrmWhatsappSessionStatus, number>;
   total: number;
@@ -82,6 +83,10 @@ export async function countWhatsappSessions(
   );
 
   const result = {
+    assignees: await repository.countSessionsByAssignee({
+      ...base,
+      filter: "all",
+    }),
     filters: Object.fromEntries(
       filterCounts,
     ) as WhatsappSessionCounts["filters"],
@@ -97,6 +102,7 @@ export async function countWhatsappSessions(
     metadata: {
       filter: input.filter ?? "all",
       status: input.status ?? null,
+      assignees: result.assignees.length,
       total: result.total,
       unread: result.unread,
     },

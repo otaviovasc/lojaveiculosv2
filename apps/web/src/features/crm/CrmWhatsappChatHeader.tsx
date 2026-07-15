@@ -11,7 +11,8 @@ import {
   UserCheck,
   UserRound,
 } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { FeatureAnchoredPopover } from "../../components/ui/FeaturePopover";
 import { ChatAssignmentSelect } from "./CrmWhatsappChatHeaderAssignment";
 import { SessionTagRow } from "./CrmWhatsappChatHeaderTags";
 import { formatSessionName } from "./crmWhatsappModel";
@@ -68,6 +69,7 @@ export function ChatHeader({
   onToggleIntervention: () => void;
   session: CrmWhatsappSession;
 }) {
+  const tagButtonRef = useRef<HTMLButtonElement>(null);
   const [tagMenuOpen, setTagMenuOpen] = useState(false);
   const disabled = Boolean(actionsDisabled);
   const assignedToCurrentUser =
@@ -144,12 +146,19 @@ export function ChatHeader({
               className="crm-icon-action"
               disabled={disabled}
               onClick={() => setTagMenuOpen((open) => !open)}
+              ref={tagButtonRef}
               title="Adicionar etiqueta"
               type="button"
             >
               <Tag />
             </button>
-            {tagMenuOpen ? (
+            <FeatureAnchoredPopover
+              align="end"
+              anchorRef={tagButtonRef}
+              className="crm-whatsapp-tag-popover"
+              isOpen={tagMenuOpen}
+              onClose={() => setTagMenuOpen(false)}
+            >
               <TagMenu
                 activeTags={session.sessionTags ?? []}
                 availableTags={availableTags ?? []}
@@ -160,7 +169,7 @@ export function ChatHeader({
                   return accepted;
                 }}
               />
-            ) : null}
+            </FeatureAnchoredPopover>
           </div>
         ) : null}
         {canScheduleMessages ? (

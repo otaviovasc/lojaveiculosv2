@@ -24,6 +24,30 @@ export function countMemorySessions(input: {
   return filterMemorySessions(input).length;
 }
 
+export function countMemorySessionsByAssignee(input: {
+  messages: readonly CrmWhatsappMessage[];
+  query: CountCrmWhatsappSessionsInput;
+  sessions: readonly CrmWhatsappSession[];
+  tagState: MemoryWhatsappTagState;
+}) {
+  const counts = new Map<
+    NonNullable<CrmWhatsappSession["assignedUserId"]>,
+    number
+  >();
+  const sessions = filterMemorySessions({
+    ...input,
+    query: { ...input.query, filter: "all" },
+  });
+  sessions.forEach((session) => {
+    if (!session.assignedUserId) return;
+    counts.set(
+      session.assignedUserId,
+      (counts.get(session.assignedUserId) ?? 0) + 1,
+    );
+  });
+  return Array.from(counts, ([assigneeId, count]) => ({ assigneeId, count }));
+}
+
 export function listMemorySessions(input: {
   messages: readonly CrmWhatsappMessage[];
   query: ListCrmWhatsappSessionsInput;

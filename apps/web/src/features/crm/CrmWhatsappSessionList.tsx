@@ -1,14 +1,14 @@
 import {
   Bot,
   Car,
-  CheckSquare,
+  Check,
   Circle,
   Megaphone,
   MessageCircle,
   Phone,
   Radio,
-  Square,
   UserPlus,
+  UsersRound,
 } from "lucide-react";
 import {
   formatRelativeSessionTime,
@@ -83,7 +83,7 @@ export function SessionList({
                 title={selected ? "Remover seleção" : "Selecionar conversa"}
                 type="button"
               >
-                {selected ? <CheckSquare /> : <Square />}
+                {selected ? <Check /> : null}
               </button>
             ) : null}
             <button
@@ -97,46 +97,49 @@ export function SessionList({
             >
               <span className="crm-whatsapp-avatar">
                 {avatarUrl ? (
-                  <img alt="" src={avatarUrl} />
+                  <img alt={formatSessionName(session)} src={avatarUrl} />
                 ) : (
-                  formatSessionName(session).slice(0, 2).toUpperCase()
+                  <UsersRound aria-hidden="true" />
                 )}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="crm-whatsapp-session-top">
-                  <strong>{formatSessionName(session)}</strong>
-                  <small>
+                  <span className="crm-whatsapp-session-heading">
+                    <strong>{formatSessionName(session)}</strong>
+                    {session.buyerPhone ? (
+                      <small className="crm-whatsapp-session-phone">
+                        {session.buyerPhone}
+                      </small>
+                    ) : null}
+                  </span>
+                  <small className="crm-whatsapp-session-time">
                     {formatRelativeSessionTime(session.lastMessageAt)}
                   </small>
                 </span>
                 <span className="crm-whatsapp-session-preview">
                   {formatSessionPreview(session)}
                 </span>
-                {session.buyerPhone ? (
-                  <span className="crm-whatsapp-session-phone">
-                    {session.buyerPhone}
-                  </span>
-                ) : null}
-                {session.sessionTags?.length ? (
-                  <span className="crm-whatsapp-session-tags">
-                    {session.sessionTags.slice(0, 2).map((tag) => (
-                      <span key={tag.id}>
-                        <i
-                          aria-hidden="true"
-                          style={{
-                            backgroundColor: tag.color ?? "var(--color-muted)",
-                          }}
-                        />
-                        {tag.name}
-                      </span>
-                    ))}
-                    {session.sessionTags.length > 2 ? (
-                      <span>+{session.sessionTags.length - 2}</span>
-                    ) : null}
-                  </span>
-                ) : null}
-                <span className="crm-whatsapp-session-meta">
+                <span className="crm-whatsapp-session-tags">
                   <SessionStatusBadge status={session.status} />
+                  {session.sessionTags?.length
+                    ? session.sessionTags.slice(0, 2).map((tag) => (
+                        <span key={tag.id}>
+                          <i
+                            aria-hidden="true"
+                            style={{
+                              backgroundColor:
+                                tag.color ?? "var(--color-muted)",
+                            }}
+                          />
+                          {tag.name}
+                        </span>
+                      ))
+                    : null}
+                  {(session.sessionTags?.length ?? 0) > 2 ? (
+                    <span>+{(session.sessionTags?.length ?? 0) - 2}</span>
+                  ) : null}
+                </span>
+                <span className="crm-whatsapp-session-meta">
                   <ChannelBadge channel={session.channel} />
                   {connectionName ? (
                     <span className="crm-whatsapp-session-chip">
@@ -187,11 +190,11 @@ function SessionStatusBadge({
   status: CrmWhatsappSession["status"];
 }) {
   const labels: Record<CrmWhatsappSession["status"], string> = {
-    ACTIVE: "Atendimento",
-    COMPLETED: "Concluida",
+    ACTIVE: "Ativo",
+    COMPLETED: "Concluída",
     EXPIRED: "Expirada",
-    HUMAN_TAKEOVER: "Humano",
-    MINIBOT_ACTIVE: "Bot",
+    HUMAN_TAKEOVER: "Intervenção humana",
+    MINIBOT_ACTIVE: "Bot ativo",
   };
   return (
     <span

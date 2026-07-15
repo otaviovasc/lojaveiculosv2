@@ -47,4 +47,57 @@ describe("CrmWhatsappChatHeader", () => {
     );
     expect(onBack).toHaveBeenCalledTimes(1);
   });
+
+  it("opens the header tag selector and assigns an available tag", async () => {
+    const user = userEvent.setup();
+    const onAddTag = vi.fn(async () => true);
+    render(
+      <ChatHeader
+        assignableMembers={[]}
+        availableTags={[
+          {
+            color: "var(--color-blue-start)",
+            id: "tag-replied",
+            name: "Respondeu",
+          },
+        ]}
+        canAssignSession={false}
+        canCloseSession={false}
+        canMarkRead={false}
+        canScheduleMessages={false}
+        canTagSessions
+        canToggleIntervention={false}
+        onAddTag={onAddTag}
+        onAssign={vi.fn()}
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkUnread={vi.fn()}
+        onOpenDetails={vi.fn()}
+        onRemoveTag={vi.fn(async () => false)}
+        onScheduleMessage={vi.fn()}
+        onToggleIntervention={vi.fn()}
+        session={{
+          buyerName: "Ana Premium",
+          buyerPhone: "5511999999999",
+          channel: "WHATSAPP",
+          id: "session-1",
+          sessionTags: [],
+          status: "ACTIVE",
+          uuid: "session-1",
+        }}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: "Adicionar etiqueta" }),
+    );
+    expect(await screen.findByPlaceholderText("Buscar etiqueta")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Respondeu" }));
+
+    expect(onAddTag).toHaveBeenCalledWith({
+      color: "var(--color-blue-start)",
+      id: "tag-replied",
+      name: "Respondeu",
+    });
+  });
 });

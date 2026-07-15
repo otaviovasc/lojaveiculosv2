@@ -94,6 +94,13 @@ export function useMessageComposerState({
     }
   }, [quickIndex, quickMatches.length]);
 
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, 52), 120)}px`;
+  }, [text]);
+
   const submit = async () => {
     if (effectiveDisabled || !canSend) return;
     const caption = text.trim();

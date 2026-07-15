@@ -63,7 +63,12 @@ export function CrmWhatsappConversationWorkspace({
             if (!enabled) inbox.clearSelectedSessions();
           }}
           onStartConversation={() => setNewConversationOpen(true)}
-          onStatusFilterChange={inbox.setStatusFilter}
+          onStatusFilterChange={(nextStatus) => {
+            inbox.setStatusFilter(nextStatus);
+            if (nextStatus === "COMPLETED" && inbox.quickFilter === "fresh") {
+              inbox.setQuickFilter("all");
+            }
+          }}
           onTagFilterToggle={inbox.toggleTagFilter}
           onUnreadOnlyChange={inbox.setUnreadOnly}
           otherAssigneeId={inbox.otherAssigneeId}

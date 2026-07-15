@@ -3,7 +3,6 @@ import type {
   CrmWhatsappSession,
   CrmWhatsappSessionCounts,
   CrmWhatsappSessionFilter,
-  CrmWhatsappStatus,
 } from "./crmWhatsappTypes";
 
 export type CrmWhatsappBulkActionDraft = {
@@ -13,19 +12,8 @@ export type CrmWhatsappBulkActionDraft = {
   tag?: CrmWhatsappAddSessionTagInput;
 };
 
-export const whatsappStatusOptions: Array<{
-  label: string;
-  value: CrmWhatsappStatus | "";
-}> = [
-  { label: "Todos os status", value: "" },
-  { label: "Ativas", value: "ACTIVE" },
-  { label: "Intervencao", value: "HUMAN_TAKEOVER" },
-  { label: "Minibot", value: "MINIBOT_ACTIVE" },
-  { label: "Concluidas", value: "COMPLETED" },
-  { label: "Expiradas", value: "EXPIRED" },
-];
-
 export const defaultWhatsappSessionCounts: CrmWhatsappSessionCounts = {
+  assignees: [],
   filters: {
     all: 0,
     fresh: 0,

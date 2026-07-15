@@ -1,20 +1,16 @@
 import {
+  Check,
   CheckSquare,
-  Inbox,
-  MailOpen,
   Plug,
   Plus,
   Search,
-  SlidersHorizontal,
   Tags,
   Wrench,
   X,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { CrmSelect } from "./CrmFormControls";
-import { whatsappStatusOptions } from "./crmWhatsappQueueState";
 import {
-  QueueMetric,
   QueueQuickFilterRow,
   QueueTagFilterMenu,
 } from "./CrmWhatsappQueueToolbarParts";
@@ -133,24 +129,73 @@ export function WhatsappToolbar({
           </button>
         </div>
       </div>
-      <div className="crm-whatsapp-queue-summary">
-        <QueueMetric
-          icon={<Inbox />}
-          label="Total"
-          value={sessionCounts.total}
+      <div
+        className="crm-whatsapp-smart-filters"
+        aria-label="Filtros da conversa"
+      >
+        <button
+          aria-pressed={unreadOnly}
+          className={
+            unreadOnly
+              ? "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-unread crm-whatsapp-smart-filter-active"
+              : "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-unread"
+          }
+          onClick={() => onUnreadOnlyChange(!unreadOnly)}
+          type="button"
+        >
+          <i aria-hidden="true" />
+          Não lidas
+          {sessionCounts.unread > 0 ? (
+            <span>{sessionCounts.unread}</span>
+          ) : null}
+        </button>
+        <QueueTagFilterMenu
+          availableTags={availableTags}
+          onTagFilterToggle={onTagFilterToggle}
+          selectedTagIds={selectedTagIds}
         />
-        <QueueMetric
-          icon={<MailOpen />}
-          label="Não lidas"
-          value={sessionCounts.unread}
-        />
+        <button
+          aria-pressed={statusFilter === "COMPLETED"}
+          className={
+            statusFilter === "COMPLETED"
+              ? "crm-whatsapp-smart-filter crm-whatsapp-smart-filter-active"
+              : "crm-whatsapp-smart-filter"
+          }
+          onClick={() =>
+            onStatusFilterChange(
+              statusFilter === "COMPLETED" ? "" : "COMPLETED",
+            )
+          }
+          type="button"
+        >
+          <Check aria-hidden="true" />
+          Concluídos
+          {sessionCounts.statuses.COMPLETED > 0 ? (
+            <span>{sessionCounts.statuses.COMPLETED}</span>
+          ) : null}
+        </button>
+        {connections.length > 1 ? (
+          <label className="crm-whatsapp-queue-field">
+            <Plug aria-hidden="true" />
+            <CrmSelect
+              ariaLabel="Filtrar por conexão"
+              className="crm-whatsapp-select crm-whatsapp-queue-select"
+              onChange={(value) => onConnectionFilterChange(value || null)}
+              options={connections.map((connection) => ({
+                label: connection.displayName,
+                value: String(connection.id),
+              }))}
+              value={connectionValue}
+            />
+          </label>
+        ) : null}
       </div>
       <div className="crm-whatsapp-search-row">
         <label className="crm-whatsapp-search">
           <Search aria-hidden="true" className="size-4" />
           <input
             onChange={(event) => onSearch(event.target.value)}
-            placeholder="Buscar por contato, telefone ou mensagem"
+            placeholder="Pesquisar por nome ou telefone..."
             value={search}
           />
         </label>
@@ -161,8 +206,8 @@ export function WhatsappToolbar({
           aria-pressed={selectionMode}
           className={
             selectionMode
-              ? "crm-icon-action crm-icon-action-active"
-              : "crm-icon-action"
+              ? "crm-icon-action crm-whatsapp-selection-action crm-whatsapp-selection-action-active"
+              : "crm-icon-action crm-whatsapp-selection-action"
           }
           onClick={() => onSelectionModeChange(!selectionMode)}
           title={selectionMode ? "Cancelar seleção" : "Selecionar conversas"}
@@ -196,58 +241,6 @@ export function WhatsappToolbar({
         quickFilter={quickFilter}
         sessionCounts={sessionCounts}
       />
-      <div className="crm-whatsapp-queue-controls" aria-label="Filtros de fila">
-        <button
-          aria-pressed={unreadOnly}
-          className={
-            unreadOnly
-              ? "crm-whatsapp-filter crm-whatsapp-filter-active"
-              : "crm-whatsapp-filter"
-          }
-          onClick={() => onUnreadOnlyChange(!unreadOnly)}
-          type="button"
-        >
-          Não lidas
-          <span>{sessionCounts.unread}</span>
-        </button>
-        <QueueTagFilterMenu
-          availableTags={availableTags}
-          onTagFilterToggle={onTagFilterToggle}
-          selectedTagIds={selectedTagIds}
-        />
-        <label className="crm-whatsapp-queue-field">
-          <SlidersHorizontal aria-hidden="true" />
-          <CrmSelect
-            ariaLabel="Filtrar por status"
-            className="crm-whatsapp-select crm-whatsapp-queue-select"
-            onChange={(value) =>
-              onStatusFilterChange(value as CrmWhatsappStatus | "")
-            }
-            options={whatsappStatusOptions.map((option) => ({
-              label: `${option.label}${
-                option.value ? ` (${sessionCounts.statuses[option.value]})` : ""
-              }`,
-              value: option.value,
-            }))}
-            value={statusFilter}
-          />
-        </label>
-        {connections.length > 1 ? (
-          <label className="crm-whatsapp-queue-field">
-            <Plug aria-hidden="true" />
-            <CrmSelect
-              ariaLabel="Filtrar por conexão"
-              className="crm-whatsapp-select crm-whatsapp-queue-select"
-              onChange={(value) => onConnectionFilterChange(value || null)}
-              options={connections.map((connection) => ({
-                label: connection.displayName,
-                value: String(connection.id),
-              }))}
-              value={connectionValue}
-            />
-          </label>
-        ) : null}
-      </div>
     </header>
   );
 }

@@ -11,6 +11,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { crmWhatsappMessages, crmWhatsappSessions } from "@lojaveiculosv2/db";
+import type { UserId } from "@lojaveiculosv2/shared";
 import type { CountCrmWhatsappSessionsInput } from "../../../domains/crm/ports/crmWhatsappRepository.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 
@@ -30,6 +31,30 @@ export async function countUnreadMessages(
       ),
     );
   return Number(row?.unreadCount ?? 0);
+}
+
+export async function countSessionsByAssignee(
+  db: DrizzleCrmClient,
+  filters: SQL[],
+) {
+  const rows = await db
+    .select({
+      assigneeId: crmWhatsappSessions.assignedUserId,
+      sessionCount: count(),
+    })
+    .from(crmWhatsappSessions)
+    .where(and(...filters, isNotNull(crmWhatsappSessions.assignedUserId)))
+    .groupBy(crmWhatsappSessions.assignedUserId);
+  return rows.flatMap((row) =>
+    row.assigneeId
+      ? [
+          {
+            assigneeId: row.assigneeId as UserId,
+            count: Number(row.sessionCount),
+          },
+        ]
+      : [],
+  );
 }
 
 export function sessionFilters(input: CountCrmWhatsappSessionsInput): SQL[] {

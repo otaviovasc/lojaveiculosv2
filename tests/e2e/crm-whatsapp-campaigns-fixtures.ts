@@ -83,7 +83,13 @@ export function createCampaignConnection() {
 
 export function createCampaignSessionCounts() {
   return {
-    filters: { all: 2, fresh: 2, mine: 0, others: 0, unassigned: 2 },
+    assignees: [
+      {
+        assigneeId: "70000000-0000-4000-8000-000000000002",
+        count: 2,
+      },
+    ],
+    filters: { all: 2, fresh: 2, mine: 0, others: 2, unassigned: 2 },
     statuses: {
       ACTIVE: 2,
       COMPLETED: 0,

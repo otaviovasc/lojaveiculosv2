@@ -205,6 +205,7 @@ export type CrmWhatsappSessionCountsQuery = Omit<
 >;
 
 export type CrmWhatsappSessionCounts = {
+  assignees: Array<{ assigneeId: string; count: number }>;
   filters: Record<CrmWhatsappSessionFilter, number>;
   statuses: Record<CrmWhatsappStatus, number>;
   total: number;

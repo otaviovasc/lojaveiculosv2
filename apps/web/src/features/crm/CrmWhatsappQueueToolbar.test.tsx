@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WhatsappToolbar } from "./CrmWhatsappQueueToolbar";
+import { formatWhatsappMemberRole } from "./CrmWhatsappQueueToolbarParts";
 import type {
   CrmWhatsappAssignableMember,
   CrmWhatsappProviderConnection,
@@ -16,10 +17,11 @@ describe("WhatsappToolbar", () => {
     cleanup();
   });
 
-  it("renders queue metrics and applies every queue filter control", async () => {
+  it("renders the Repasses filter hierarchy and applies queue filters", async () => {
     const user = userEvent.setup();
     const callbacks = {
       onConnectionFilterChange: vi.fn(),
+      onOtherAssigneeChange: vi.fn(),
       onQuickFilterChange: vi.fn(),
       onSearch: vi.fn(),
       onSelectionModeChange: vi.fn(),
@@ -42,7 +44,6 @@ describe("WhatsappToolbar", () => {
         onManageTags={vi.fn()}
         assignableMembers={createAssignableMembers()}
         currentUserId="user_current"
-        onOtherAssigneeChange={vi.fn()}
         otherAssigneeId={null}
         quickFilter="fresh"
         search=""
@@ -62,13 +63,10 @@ describe("WhatsappToolbar", () => {
     expect(screen.getByRole("heading", { name: "CRM" })).toBeInTheDocument();
     expect(screen.getByText("3 conversas")).toBeInTheDocument();
     expect(screen.getByText("ZAPI conectado")).toBeInTheDocument();
-    expect(metric("Total")).toHaveTextContent("12");
-    expect(metric("Não lidas")).toHaveTextContent("5");
     expect(
-      screen
-        .getByLabelText("Filtros de fila")
-        .querySelectorAll(".crm-whatsapp-queue-field"),
-    ).toHaveLength(2);
+      screen.queryByLabelText("Filtrar por status"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Todos os status")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Nova conversa" }));
     expect(callbacks.onStartConversation).toHaveBeenCalledTimes(1);
@@ -79,7 +77,7 @@ describe("WhatsappToolbar", () => {
     expect(callbacks.onSelectionModeChange).toHaveBeenCalledWith(true);
 
     await user.type(
-      screen.getByPlaceholderText("Buscar por contato, telefone ou mensagem"),
+      screen.getByPlaceholderText("Pesquisar por nome ou telefone..."),
       "j",
     );
     expect(callbacks.onSearch).toHaveBeenLastCalledWith("j");
@@ -90,11 +88,8 @@ describe("WhatsappToolbar", () => {
     await user.click(screen.getByRole("button", { name: /^Não lidas/ }));
     expect(callbacks.onUnreadOnlyChange).toHaveBeenCalledWith(true);
 
-    await user.click(screen.getByLabelText("Filtrar por status"));
-    await user.click(screen.getByRole("option", { name: "Intervencao (2)" }));
-    expect(callbacks.onStatusFilterChange).toHaveBeenCalledWith(
-      "HUMAN_TAKEOVER",
-    );
+    await user.click(screen.getByRole("button", { name: /Concluídos/ }));
+    expect(callbacks.onStatusFilterChange).toHaveBeenCalledWith("COMPLETED");
 
     await user.click(screen.getByLabelText("Filtrar por conexão"));
     await user.click(screen.getByRole("option", { name: "Loja Centro" }));
@@ -111,23 +106,28 @@ describe("WhatsappToolbar", () => {
     );
 
     await user.click(screen.getByRole("button", { name: /Outros/ }));
-    await user.click(screen.getByRole("button", { name: "Bruno" }));
+    const bruno = screen.getByRole("option", {
+      name: /Bruno.*Vendedor.*4/,
+    });
+    expect(bruno).toBeInTheDocument();
+    await user.click(bruno);
     expect(callbacks.onQuickFilterChange).toHaveBeenCalledWith("others");
+    expect(callbacks.onOtherAssigneeChange).toHaveBeenCalledWith("user_bruno");
+  });
+
+  it("uses dealership role labels in the assignee hierarchy", () => {
+    expect(formatWhatsappMemberRole("owner")).toBe("Dono");
+    expect(formatWhatsappMemberRole("salesman")).toBe("Vendedor");
+    expect(formatWhatsappMemberRole("supervisor")).toBe("Supervisor");
   });
 });
 
-function metric(label: string) {
-  const labelElement = screen
-    .getAllByText(label)
-    .find((element) => element.tagName.toLowerCase() === "small");
-  if (!labelElement?.parentElement) {
-    throw new Error(`Metric not found: ${label}`);
-  }
-  return labelElement.parentElement;
-}
-
 function createCounts(): CrmWhatsappSessionCounts {
   return {
+    assignees: [
+      { assigneeId: "user_current", count: 2 },
+      { assigneeId: "user_bruno", count: 4 },
+    ],
     filters: {
       all: 12,
       fresh: 3,

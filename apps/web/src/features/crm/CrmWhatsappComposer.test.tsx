@@ -12,7 +12,9 @@ describe("CrmWhatsappComposer", () => {
     const user = userEvent.setup();
     renderComposer();
 
-    expect(screen.getByRole("button", { name: "Gravar audio" })).toBeVisible();
+    const audioAction = screen.getByRole("button", { name: "Gravar audio" });
+    expect(audioAction).toBeVisible();
+    expect(audioAction).not.toHaveClass("crm-icon-action-active");
     expect(
       screen.queryByRole("button", { name: "Enviar mensagem" }),
     ).not.toBeInTheDocument();

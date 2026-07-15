@@ -8,6 +8,11 @@ import type {
   CrmWhatsappSessionStatus,
 } from "./crmWhatsappRepositoryTypes.js";
 
+export type CrmWhatsappAssigneeSessionCount = {
+  assigneeId: UserId;
+  count: number;
+};
+
 export type CrmWhatsappSession = {
   assignedUserId: UserId | null;
   buyerChatLid: string | null;

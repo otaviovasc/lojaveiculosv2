@@ -1,0 +1,101 @@
+.crm-whatsapp-assignee-option {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  display: grid;
+  gap: 0.625rem;
+  grid-template-columns: 1.5rem 2.25rem minmax(0, 1fr) auto;
+  min-height: 3.5rem;
+  padding: 0.375rem 0.5rem;
+  text-align: left;
+  width: 100%;
+}
+
+.crm-whatsapp-assignee-option:hover,
+.crm-whatsapp-assignee-option[aria-selected="true"] {
+  background: var(--color-app);
+}
+
+.crm-whatsapp-assignee-check {
+  align-items: center;
+  background: var(--color-panel);
+  border: 2px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  color: transparent;
+  display: inline-flex;
+  height: 1.25rem;
+  justify-content: center;
+  width: 1.25rem;
+}
+
+.crm-whatsapp-assignee-option[aria-selected="true"]
+  .crm-whatsapp-assignee-check {
+  background: var(--color-blue-soft);
+  border-color: var(--color-blue-start);
+  color: var(--color-info-soft-foreground);
+}
+
+.crm-whatsapp-assignee-check svg {
+  height: 0.75rem;
+  width: 0.75rem;
+}
+
+.crm-whatsapp-assignee-avatar {
+  align-items: center;
+  background: var(--color-blue-soft);
+  border-radius: 999px;
+  color: var(--color-info-soft-foreground);
+  display: inline-flex;
+  font-size: calc(var(--font-size-xs) * 1.25);
+  font-weight: 950;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.crm-whatsapp-assignee-avatar svg {
+  height: 1rem;
+  width: 1rem;
+}
+
+.crm-whatsapp-assignee-copy {
+  display: grid;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.crm-whatsapp-assignee-copy strong,
+.crm-whatsapp-assignee-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crm-whatsapp-assignee-copy strong {
+  color: var(--color-text);
+  font-size: calc(var(--font-size-xs) * 1.25);
+  font-weight: 900;
+}
+
+.crm-whatsapp-assignee-copy small {
+  color: var(--color-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.crm-whatsapp-assignee-count {
+  align-items: center;
+  background: var(--color-app);
+  border-radius: 999px;
+  color: var(--color-muted);
+  display: inline-flex;
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  font-weight: 950;
+  height: 1.5rem;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0 0.375rem;
+}

@@ -8,6 +8,7 @@ import type { CrmWhatsappRepository } from "../../../domains/crm/ports/crmWhatsa
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import { toWhatsappSession } from "./drizzleCrmWhatsappMappers.js";
 import {
+  countSessionsByAssignee as countWhatsappSessionsByAssignee,
   countUnreadMessages,
   sessionFilters,
 } from "./drizzleCrmWhatsappQueries.js";
@@ -117,6 +118,15 @@ export function createDrizzleCrmWhatsappRepository(
         .from(crmWhatsappSessions)
         .where(and(...filters));
       return Number(row?.sessionCount ?? 0);
+    },
+    async countSessionsByAssignee(input) {
+      const tagSessionIds = await findSessionIdsByTags(db, input);
+      if (tagSessionIds && tagSessionIds.length === 0) return [];
+      const filters = sessionFilters({ ...input, filter: "all" });
+      if (tagSessionIds)
+        filters.push(inArray(crmWhatsappSessions.id, tagSessionIds));
+      if (input.unreadOnly) filters.push(crmWhatsappUnreadSessionPredicate());
+      return countWhatsappSessionsByAssignee(db, filters);
     },
     async findQuickMessageById(input) {
       return findWhatsappQuickMessageById(db, input);
