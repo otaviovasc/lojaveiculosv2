@@ -8,7 +8,7 @@ import type {
 import { WhatsappMessageActionError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -41,7 +41,7 @@ export async function listWhatsappCampaigns(
   ports: CrmServicePorts,
 ): Promise<readonly CrmWhatsappCampaign[]> {
   assertPermission(context, campaignReadPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   return getCrmWhatsappRepository(ports).listCampaigns({
     limit: input.limit ?? 50,
     ...(input.status ? { status: input.status } : {}),
@@ -116,7 +116,7 @@ async function createCampaignRecords(
   input: NormalizedWhatsappCampaignInput,
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   await requireCampaignTags(repository, scope, [
     input.initialTagId,

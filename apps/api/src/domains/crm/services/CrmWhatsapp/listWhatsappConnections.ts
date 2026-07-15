@@ -8,7 +8,7 @@ import { WhatsappConnectionNotFoundError } from "../../whatsapp/whatsappSendErro
 import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -55,7 +55,7 @@ export async function listWhatsappConnections(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappConnection[]> {
   assertPermission(context, readPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.connections.list.started");
   const connections = await repository.listConnections({
@@ -88,7 +88,7 @@ export async function updateWhatsappConnection(
   ports: CrmServicePorts,
 ): Promise<WhatsappConnection> {
   assertPermission(context, updatePermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.connection.update.started", {
     connectionId: input.connectionId,
   });

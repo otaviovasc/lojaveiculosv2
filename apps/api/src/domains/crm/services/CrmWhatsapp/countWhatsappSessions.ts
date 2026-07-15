@@ -6,7 +6,7 @@ import type {
 } from "../../ports/crmWhatsappRepository.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -51,7 +51,7 @@ export async function countWhatsappSessions(
   ports: CrmServicePorts,
 ): Promise<WhatsappSessionCounts> {
   assertPermission(context, permission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.sessions.count.started", {
     filter: input.filter ?? null,

@@ -1,6 +1,8 @@
 import { and, asc, eq } from "drizzle-orm";
 import { crmPipelineStages, crmPipelines } from "@lojaveiculosv2/db";
 import type { CrmPipelineRepository } from "../../../domains/crm/ports/crmPipelineRepository.js";
+import { CrmPipelineDuplicateNameError } from "../../../domains/crm/services/CrmService/serviceSupport.js";
+import { isPostgresConstraintError } from "../postgresConstraintError.js";
 import type { DrizzleCrmClient } from "./drizzleCrmRepository.js";
 import {
   toCrmPipeline,
@@ -11,31 +13,38 @@ import {
   replaceStages,
 } from "./drizzleCrmPipelineStageWrites.js";
 
+export const activeCrmPipelineNameConstraint =
+  "crm_pipelines_store_name_active_unique";
+
 export function createDrizzleCrmPipelineRepository(
   db: DrizzleCrmClient,
 ): CrmPipelineRepository {
   return {
     async createPipeline(input) {
-      if (input.isDefault) await unsetDefaultPipelines(db, input.storeId);
-      const [pipeline] = await db
-        .insert(crmPipelines)
-        .values({
-          description: input.description ?? "",
-          isDefault: input.isDefault ?? false,
-          name: input.name,
-          rotationActive: input.rotationActive ?? false,
+      try {
+        if (input.isDefault) await unsetDefaultPipelines(db, input.storeId);
+        const [pipeline] = await db
+          .insert(crmPipelines)
+          .values({
+            description: input.description ?? "",
+            isDefault: input.isDefault ?? false,
+            name: input.name,
+            rotationActive: input.rotationActive ?? false,
+            storeId: input.storeId,
+            tenantId: input.tenantId,
+          })
+          .returning();
+        if (!pipeline)
+          throw new Error("Drizzle adapter did not return pipeline.");
+        await insertStages(db, pipeline.id, input);
+        return readPipeline(db, {
+          pipelineId: pipeline.id,
           storeId: input.storeId,
           tenantId: input.tenantId,
-        })
-        .returning();
-      if (!pipeline)
-        throw new Error("Drizzle adapter did not return pipeline.");
-      await insertStages(db, pipeline.id, input);
-      return readPipeline(db, {
-        pipelineId: pipeline.id,
-        storeId: input.storeId,
-        tenantId: input.tenantId,
-      }).then(requirePipeline);
+        }).then(requirePipeline);
+      } catch (error) {
+        throw mapPipelineWriteError(error, input.name);
+      }
     },
     async deletePipeline(input) {
       const [pipeline] = await db
@@ -84,29 +93,33 @@ export function createDrizzleCrmPipelineRepository(
     async updatePipeline(input) {
       const current = await readPipeline(db, input);
       if (!current) return null;
-      if (input.isDefault) await unsetDefaultPipelines(db, input.storeId);
-      const [row] = await db
-        .update(crmPipelines)
-        .set({
-          ...(input.description !== undefined
-            ? { description: input.description }
-            : {}),
-          ...(input.isDefault !== undefined
-            ? { isDefault: input.isDefault }
-            : {}),
-          ...(input.name !== undefined ? { name: input.name } : {}),
-          ...(input.rotationActive !== undefined
-            ? { rotationActive: input.rotationActive }
-            : {}),
-          updatedAt: new Date(),
-        })
-        .where(scopedPipeline(input))
-        .returning();
-      if (!row) return null;
-      if (input.stages) {
-        await replaceStages(db, { ...input, stages: input.stages });
+      try {
+        if (input.isDefault) await unsetDefaultPipelines(db, input.storeId);
+        const [row] = await db
+          .update(crmPipelines)
+          .set({
+            ...(input.description !== undefined
+              ? { description: input.description }
+              : {}),
+            ...(input.isDefault !== undefined
+              ? { isDefault: input.isDefault }
+              : {}),
+            ...(input.name !== undefined ? { name: input.name } : {}),
+            ...(input.rotationActive !== undefined
+              ? { rotationActive: input.rotationActive }
+              : {}),
+            updatedAt: new Date(),
+          })
+          .where(scopedPipeline(input))
+          .returning();
+        if (!row) return null;
+        if (input.stages) {
+          await replaceStages(db, { ...input, stages: input.stages });
+        }
+        return readPipeline(db, input);
+      } catch (error) {
+        throw mapPipelineWriteError(error, input.name ?? current.name);
       }
-      return readPipeline(db, input);
     },
   };
 }
@@ -182,4 +195,16 @@ async function unsetDefaultPipelines(db: DrizzleCrmClient, storeId: string) {
 function requirePipeline<T>(pipeline: T | null): T {
   if (!pipeline) throw new Error("Drizzle adapter did not return pipeline.");
   return pipeline;
+}
+
+function mapPipelineWriteError(error: unknown, pipelineName: string) {
+  if (
+    isPostgresConstraintError(error, {
+      code: "23505",
+      constraintName: activeCrmPipelineNameConstraint,
+    })
+  ) {
+    return new CrmPipelineDuplicateNameError(pipelineName);
+  }
+  return error;
 }

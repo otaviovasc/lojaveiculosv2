@@ -4,7 +4,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmBotIntegration } from "../../ports/crmBotIntegrationRepository.js";
 import {
   getCrmBotIntegrationRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -49,7 +49,7 @@ export async function getWhatsappBotIntegration(
   ports: CrmServicePorts,
 ): Promise<CrmBotIntegration> {
   assertPermission(context, permission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.integrations.bot.read.start");
   const integration = await getCrmBotIntegrationRepository(
     ports,
@@ -73,7 +73,7 @@ export async function updateWhatsappBotIntegration(
   ports: CrmServicePorts,
 ): Promise<CrmBotIntegration> {
   assertPermission(context, permission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmBotIntegrationRepository(ports);
   const current =
     (await repository.findBotIntegration({

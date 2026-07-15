@@ -9,7 +9,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmConnectionRepository,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 
@@ -18,7 +18,7 @@ export async function findScopedWhatsappSession(
   input: { sessionId: string },
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const [session] = await getCrmWhatsappRepository(ports).listSessions({
     limit: 1,
     offset: 0,

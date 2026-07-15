@@ -4,7 +4,7 @@ import type { CrmWhatsappSessionStatus } from "../../ports/crmWhatsappRepository
 import {
   getCrmConnectionRepository,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type { WhatsappSession } from "../../whatsapp/whatsappModels.js";
@@ -36,7 +36,7 @@ export async function listWhatsappSessions(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappSession[]> {
   assertPermission(context, permission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const whatsappRepository = getCrmWhatsappRepository(ports);
   const connectionRepository = getCrmConnectionRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.sessions.list.started", {

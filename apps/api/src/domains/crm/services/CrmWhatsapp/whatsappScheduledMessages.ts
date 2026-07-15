@@ -11,7 +11,7 @@ import {
 } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -56,7 +56,7 @@ export async function listWhatsappScheduledMessages(
   ports: CrmServicePorts,
 ): Promise<readonly CrmWhatsappScheduledMessage[]> {
   assertPermission(context, readPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   return getCrmWhatsappRepository(ports).listScheduledMessages({
     ...(input.connectionId ? { connectionId: input.connectionId } : {}),
     limit: input.limit ?? 50,
@@ -98,7 +98,7 @@ export async function createWhatsappScheduledMessage(
       summary: "Scheduled CRM WhatsApp message",
     },
     async () => {
-      const scope = requireCrmScope(context);
+      const scope = requireCrmWhatsappScope(context);
       const session = await findScopedSession(input.sessionId, scope, ports);
       return getCrmWhatsappRepository(ports).createScheduledMessage({
         connectionId: session.connectionId,
@@ -120,7 +120,7 @@ export async function cancelWhatsappScheduledMessage(
   ports: CrmServicePorts,
 ): Promise<CrmWhatsappScheduledMessage> {
   assertPermission(context, cancelPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   return recordWhatsappServiceMutation(
     context,
     {

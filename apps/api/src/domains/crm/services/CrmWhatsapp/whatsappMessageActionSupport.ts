@@ -14,7 +14,7 @@ import {
   getCrmConnectionRepository,
   getCrmRealtimePublisher,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type { WhatsappServiceAuditInput } from "./serviceSupport.js";
@@ -26,7 +26,7 @@ export async function loadMessageActionTarget(
   input: { messageId: string },
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   const message = await repository.findMessageById({
     messageId: input.messageId,
@@ -77,7 +77,7 @@ export async function updateTargetMessage(
     metadata: Record<string, unknown>;
   },
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   const updated = await repository.updateMessage({
     ...(input.deletedAt ? { deletedAt: input.deletedAt } : {}),

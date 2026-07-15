@@ -2,7 +2,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type { WhatsappMessage } from "../../whatsapp/whatsappModels.js";
@@ -26,7 +26,7 @@ export async function listWhatsappMessages(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappMessage[]> {
   assertPermission(context, permission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.messages.list.started", {
     sessionId: input.sessionId,
   });

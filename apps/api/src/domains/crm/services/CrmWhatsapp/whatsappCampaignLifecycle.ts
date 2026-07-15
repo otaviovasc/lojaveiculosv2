@@ -7,7 +7,7 @@ import type {
 import { WhatsappCampaignNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -56,7 +56,7 @@ async function updateCampaignLifecycle(
   >,
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, `crm.whatsapp.campaign.${status}.started`, {
     campaignId: input.campaignId,
   });

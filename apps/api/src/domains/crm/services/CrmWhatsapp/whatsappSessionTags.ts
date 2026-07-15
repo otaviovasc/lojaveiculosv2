@@ -13,7 +13,7 @@ import {
 import {
   getCrmConnectionRepository,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -62,7 +62,7 @@ export async function listWhatsappTags(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappSessionTag[]> {
   assertPermission(context, "crm.whatsapp.read");
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   return getCrmWhatsappRepository(ports).listTags({
     ...(input.connectionId !== undefined
       ? { connectionId: input.connectionId }
@@ -130,7 +130,7 @@ async function addSessionTag(
   input: AddWhatsappSessionTagInput,
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const updated = await runCrmTransaction(ports, async (transactionPorts) => {
     const session = await findScopedSession(
       input.sessionId,
@@ -167,7 +167,7 @@ async function removeSessionTag(
   input: RemoveWhatsappSessionTagInput,
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const updated = await runCrmTransaction(ports, async (transactionPorts) =>
     getCrmWhatsappRepository(transactionPorts).removeSessionTag({
       sessionId: input.sessionId,

@@ -2,7 +2,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -23,7 +23,7 @@ export async function updateBotSession(
   input: ExecuteWhatsappBotActionInput,
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   assertPermission(context, "crm.whatsapp.integrations.manage");
   logWhatsappServiceEvent(context, "crm.whatsapp.bot.update_session.started", {
     sessionId: input.sessionId ?? null,

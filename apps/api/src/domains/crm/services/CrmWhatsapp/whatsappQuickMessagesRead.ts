@@ -2,7 +2,7 @@ import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -22,7 +22,7 @@ export async function listWhatsappQuickMessages(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappQuickMessage[]> {
   assertPermission(context, readPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   const persisted = await repository.listQuickMessages({
     storeId: scope.storeId as never,

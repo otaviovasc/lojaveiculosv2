@@ -71,8 +71,7 @@ contract so seeds cannot silently drift from authorization behavior.
 
 Permissions and entitlements are both mandatory for paid add-on operations:
 
-- CRM WhatsApp: `crm` plus the relevant `crm.*`, `crm.whatsapp.*`, or `lead.*`
-  permission.
+- CRM WhatsApp: `crm` plus the relevant `crm.whatsapp.*` permission.
 - NF-e: `nfe` plus the relevant `fiscal.*` permission.
 - Marketplaces: `marketplace` plus the relevant `marketplace.*` permission.
 - Public API management and key authentication: `external_api` plus
@@ -84,6 +83,13 @@ Vehicle checklists are a core operational permission surface, not the
 `compliance` entitlement. The 14-day trial grants only `subdomain`,
 `automation`, `analytics`, and `compliance`; custom domain and cost-bearing or
 critical add-ons remain locked until paid activation.
+
+## Core CRM Contract
+
+Customers, leads, pipelines, activities, and visits are part of the core store
+operation. They require tenant/store scope and the relevant `lead.*`,
+`crm.pipeline.*`, or `crm.visits.*` permission, but do not require the paid
+WhatsApp entitlement.
 
 ## Automation Contract
 
@@ -124,11 +130,6 @@ manage these explicit permissions in the CRM group:
   campaigns.
 - `crm.whatsapp.integrations.manage`: configure external bot integrations and
   write-only webhook secrets.
-- `crm.pipeline.read`: view CRM pipeline stages and settings.
-- `crm.pipeline.move`: move leads through persisted CRM pipeline stages.
-- `crm.pipeline.manage`: configure CRM pipeline stages and rules.
-- `crm.visits.read`: view lead visits.
-- `crm.visits.manage`: create, update, complete, and cancel lead visits.
 
 V2 asserts these permissions, tenant/store scope, CRM entitlement context, and
 audit metadata before every WhatsApp operation. Pre-launch WhatsApp code should

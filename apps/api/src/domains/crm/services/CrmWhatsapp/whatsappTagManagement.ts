@@ -4,7 +4,7 @@ import type { WhatsappSessionTag } from "../../whatsapp/whatsappModels.js";
 import { WhatsappTagNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -59,7 +59,7 @@ export async function createWhatsappTag(
       summary: "Created CRM WhatsApp tag",
     },
     async () => {
-      const scope = requireCrmScope(context);
+      const scope = requireCrmWhatsappScope(context);
       return getCrmWhatsappRepository(ports).createTag({
         color: input.color ?? "#64748b",
         connectionId: input.connectionId ?? null,
@@ -93,7 +93,7 @@ export async function updateWhatsappTag(
       summary: "Updated CRM WhatsApp tag",
     },
     async () => {
-      const scope = requireCrmScope(context);
+      const scope = requireCrmWhatsappScope(context);
       const tag = await getCrmWhatsappRepository(ports).updateTag({
         ...(input.color !== undefined ? { color: input.color } : {}),
         ...(input.emoji !== undefined ? { emoji: input.emoji } : {}),
@@ -132,7 +132,7 @@ export async function deleteWhatsappTag(
       summary: "Deleted CRM WhatsApp tag",
     },
     async () => {
-      const scope = requireCrmScope(context);
+      const scope = requireCrmWhatsappScope(context);
       const tag = await getCrmWhatsappRepository(ports).deleteTag({
         id: input.tagId,
         storeId: scope.storeId as never,
@@ -164,7 +164,7 @@ export async function reorderWhatsappTags(
       summary: "Reordered CRM WhatsApp tags",
     },
     async () => {
-      const scope = requireCrmScope(context);
+      const scope = requireCrmWhatsappScope(context);
       return getCrmWhatsappRepository(ports).reorderTags({
         storeId: scope.storeId as never,
         tagIds: input.tagIds,

@@ -10,7 +10,7 @@ import { findOrCreateWhatsappLead } from "../../whatsapp/whatsappLeadLinking.js"
 import {
   getCrmWhatsappGateway,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -76,7 +76,7 @@ export async function sendWhatsappBotMediaByUrl(
           phone: target.phone,
         },
       );
-      const scope = requireCrmScope(context);
+      const scope = requireCrmWhatsappScope(context);
       const leadId =
         target.session?.leadId ??
         (

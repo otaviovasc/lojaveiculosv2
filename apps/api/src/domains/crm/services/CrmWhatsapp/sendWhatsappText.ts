@@ -5,7 +5,7 @@ import { sendWhatsappOutboundMessage } from "../../whatsapp/sendWhatsappOutbound
 import type { CrmServicePorts } from "../CrmService/serviceSupport.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
 } from "../CrmService/serviceSupport.js";
 import {
   logWhatsappServiceEvent,
@@ -102,7 +102,7 @@ async function resolveReplyTarget(
     sessionId: string;
   },
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const message = await getCrmWhatsappRepository(input.ports).findMessageById({
     messageId: input.messageId,
     storeId: scope.storeId as never,

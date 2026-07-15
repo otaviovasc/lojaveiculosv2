@@ -8,6 +8,11 @@ import {
   type PipelineStageDraft,
 } from "./crmPipelineStorage";
 
+const pipelineLoads = new WeakMap<
+  ProductCrmApi,
+  Map<string, Promise<Pipeline[]>>
+>();
+
 export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
   const [pipelines, setPipelines] = useState<Pipeline[]>([]);
   const [activePipelineId, setActivePipelineIdState] = useState<string>(() =>
@@ -37,7 +42,7 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
     setIsLoading(true);
     setError(null);
     try {
-      const loaded = await loadOrCreateDefaultPipeline(api);
+      const loaded = await loadOrCreateDefaultPipeline(storeId, api);
       setPipelines(loaded);
       const current = getActivePipelineId(storeId);
       const nextActive =
@@ -132,19 +137,45 @@ export function useCrmPipelines(storeId: string, api: ProductCrmApi) {
   };
 }
 
-async function loadOrCreateDefaultPipeline(api: ProductCrmApi) {
+function loadOrCreateDefaultPipeline(
+  storeId: string,
+  api: ProductCrmApi,
+): Promise<Pipeline[]> {
+  const apiLoads =
+    pipelineLoads.get(api) ?? new Map<string, Promise<Pipeline[]>>();
+  pipelineLoads.set(api, apiLoads);
+  const currentLoad = apiLoads.get(storeId);
+  if (currentLoad) return currentLoad;
+
+  const load = performDefaultPipelineLoad(api);
+  apiLoads.set(storeId, load);
+  const clearLoad = () => {
+    if (apiLoads.get(storeId) === load) apiLoads.delete(storeId);
+    if (apiLoads.size === 0) pipelineLoads.delete(api);
+  };
+  void load.then(clearLoad, clearLoad);
+  return load;
+}
+
+async function performDefaultPipelineLoad(api: ProductCrmApi) {
   const loaded = await api.listPipelines();
   if (loaded.length) return loaded;
   const seed = DEFAULT_PIPELINES[0]!;
-  return [
-    await api.createPipeline({
-      description: seed.description,
-      isDefault: true,
-      name: seed.name,
-      rotationActive: seed.rotationActive,
-      stages: seed.stages.map(({ id: _id, ...stage }) => stage),
-    }),
-  ];
+  try {
+    return [
+      await api.createPipeline({
+        description: seed.description,
+        isDefault: true,
+        name: seed.name,
+        rotationActive: seed.rotationActive,
+        stages: seed.stages.map(({ id: _id, ...stage }) => stage),
+      }),
+    ];
+  } catch (creationError) {
+    const concurrentlyCreated = await api.listPipelines().catch(() => []);
+    if (concurrentlyCreated.length) return concurrentlyCreated;
+    throw creationError;
+  }
 }
 
 function createStageDraftsFromDefault(): PipelineStageDraft[] {

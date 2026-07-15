@@ -3,7 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmWhatsappMediaStorage,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -41,7 +41,7 @@ export async function createWhatsappQuickMessage(
   ports: CrmServicePorts,
 ): Promise<WhatsappQuickMessage> {
   assertPermission(context, writePermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   const shortcut = normalizeRequiredShortcut(input.shortcut);
   const kind = input.kind ?? "TEXT";
@@ -98,7 +98,7 @@ export async function deleteWhatsappQuickMessage(
   ports: CrmServicePorts,
 ) {
   assertPermission(context, writePermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.quick_message.delete", {
     quickMessageId: input.quickMessageId,
   });
@@ -133,7 +133,7 @@ export async function updateWhatsappQuickMessage(
   ports: CrmServicePorts,
 ): Promise<WhatsappQuickMessage> {
   assertPermission(context, writePermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   const current = await repository.findQuickMessageById({
     quickMessageId: input.quickMessageId,

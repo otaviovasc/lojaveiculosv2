@@ -12,7 +12,7 @@ import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -149,7 +149,7 @@ async function readSessionConnection(
   sessionId: string,
   ports: CrmServicePorts,
 ): Promise<CrmConnection> {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const [session] = await getCrmWhatsappRepository(ports).listSessions({
     limit: 1,
     offset: 0,

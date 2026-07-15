@@ -5,7 +5,7 @@ import type { ZapiWebhookType } from "../../whatsapp/zapiWebhookEventKey.js";
 import {
   getCrmConnectionRepository,
   getCrmWebhookEventRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import { ingestZapiWhatsappWebhook } from "./ingestZapiWhatsappWebhook.js";
@@ -61,7 +61,7 @@ export async function listWhatsappWebhookEventIssues(
   ports: CrmServicePorts,
 ): Promise<readonly WhatsappWebhookEventSummary[]> {
   assertPermission(context, readPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   logWhatsappServiceEvent(context, "crm.whatsapp.webhook.events.issues.list", {
     connectionId: input.connectionId ?? null,
   });
@@ -99,7 +99,7 @@ export async function retryWhatsappWebhookEvent(
   ports: CrmServicePorts,
 ): Promise<RetryWhatsappWebhookEventResult> {
   assertPermission(context, retryPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWebhookEventRepository(ports);
   const event = await repository.findById({
     eventId: input.eventId,

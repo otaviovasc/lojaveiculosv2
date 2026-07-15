@@ -5,7 +5,7 @@ import type {
 } from "../../../vehicle/ports/vehicleInventoryRepository.js";
 import {
   getCrmVehicleInventory,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
@@ -74,7 +74,7 @@ export async function resolveVehiclePackage(
   input: SendWhatsappVehicleInput,
   ports: CrmServicePorts,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const inventory = getCrmVehicleInventory(ports);
   const unit = input.unitId
     ? await inventory.unitRepository.findById({
@@ -125,7 +125,7 @@ async function resolvePrimaryUnit(
   inventory: NonNullable<CrmServicePorts["vehicleInventory"]>,
   listing: VehicleListing,
 ) {
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const units = await inventory.unitRepository.listByListingIds({
     listingIds: [listing.id],
     storeId: scope.storeId as never,

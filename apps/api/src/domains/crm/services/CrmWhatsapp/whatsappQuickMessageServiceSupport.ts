@@ -1,7 +1,7 @@
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import type { CrmWhatsappQuickMessageKind } from "../../ports/crmWhatsappRepository.js";
@@ -73,7 +73,7 @@ export async function findQuickMessage(
     );
     if (system) return system;
   }
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const message = await getCrmWhatsappRepository(ports).findQuickMessageById({
     quickMessageId,
     storeId: scope.storeId as never,

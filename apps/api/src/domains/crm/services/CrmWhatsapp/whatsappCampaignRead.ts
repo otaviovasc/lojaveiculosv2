@@ -3,7 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import { WhatsappCampaignNotFoundError } from "../../whatsapp/whatsappSendErrors.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import {
@@ -22,7 +22,7 @@ export async function getWhatsappCampaignDetail(
   ports: CrmServicePorts,
 ): Promise<WhatsappCampaignDetail> {
   assertPermission(context, campaignReadPermission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const repository = getCrmWhatsappRepository(ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.campaign.detail.started", {
     campaignId: input.campaignId,

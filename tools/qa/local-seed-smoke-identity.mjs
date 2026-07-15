@@ -7,12 +7,12 @@ import {
 } from "./local-seed-smoke-support.mjs";
 
 const expectedPermissionCounts = Object.freeze({
-  admin: 80,
-  agency: 86,
+  admin: 88,
+  agency: 94,
   investor: 13,
-  owner: 86,
-  salesman: 41,
-  supervisor: 68,
+  owner: 94,
+  salesman: 44,
+  supervisor: 72,
 });
 
 export async function assertSeedIdentity(db) {

@@ -3,7 +3,7 @@ import type { ServiceContext } from "../../../../shared/serviceContext.js";
 import type { CrmWhatsappScheduledMessageScope } from "../../ports/crmWhatsappRepository.js";
 import {
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
 import { sendWhatsappText } from "./sendWhatsappText.js";
@@ -70,7 +70,7 @@ export async function processDueWhatsappScheduledMessages(
 ): Promise<ProcessDueWhatsappScheduledMessagesResult> {
   assertPermission(context, processPermission);
   assertPermission(context, "crm.whatsapp.send");
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const dueAt = input.dueAt ?? new Date();
   const limit = input.limit ?? 25;
   logWhatsappServiceEvent(

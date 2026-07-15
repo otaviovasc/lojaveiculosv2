@@ -117,10 +117,17 @@ export function requireCrmScope(context: ServiceContext): {
   storeId: string;
   tenantId: string;
 } {
-  assertEntitlement(context as StoreScopedServiceContext, "crm");
   if (!context.storeId) throw new CrmScopeError("storeId");
   if (!context.tenantId) throw new CrmScopeError("tenantId");
   return { storeId: context.storeId, tenantId: context.tenantId };
+}
+
+export function requireCrmWhatsappScope(context: ServiceContext): {
+  storeId: string;
+  tenantId: string;
+} {
+  assertEntitlement(context as StoreScopedServiceContext, "crm");
+  return requireCrmScope(context);
 }
 
 export function getCrmRepository(ports: CrmServicePorts): CrmRepository {

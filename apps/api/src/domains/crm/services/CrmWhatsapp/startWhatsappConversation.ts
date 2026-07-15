@@ -15,7 +15,7 @@ import {
   getCrmConnectionRepository,
   getCrmWhatsappGateway,
   getCrmWhatsappRepository,
-  requireCrmScope,
+  requireCrmWhatsappScope,
   runCrmTransaction,
   type CrmServicePorts,
 } from "../CrmService/serviceSupport.js";
@@ -60,7 +60,7 @@ export async function startWhatsappConversation(
   ports: CrmServicePorts,
 ): Promise<StartWhatsappConversationResult> {
   assertPermission(context, permission);
-  const scope = requireCrmScope(context);
+  const scope = requireCrmWhatsappScope(context);
   const target = await resolveStartConversationTarget(context, input, ports);
   logWhatsappServiceEvent(context, "crm.whatsapp.conversation.start.started", {
     connectionId: input.connectionId,
