@@ -35,10 +35,15 @@ describe("issueFiscalDocument", () => {
     );
     expect(harness.createDocument).toHaveBeenCalledWith(
       expect.objectContaining({
-        metadata: expect.objectContaining({
+        metadata: {
+          documentKind: "nfe",
           externalReference: "sale_1",
+          renderedDescription: null,
           saleId: "sale_1",
-        }),
+          templateId: null,
+          templateVersion: null,
+          vehicleNfePayload: null,
+        },
         status: "queued",
       }),
     );
@@ -68,7 +73,14 @@ describe("issueFiscalDocument", () => {
     );
     expect(harness.createDocument).toHaveBeenCalledWith(
       expect.objectContaining({
-        metadata: expect.objectContaining({ externalReference: "sale_2" }),
+        metadata: {
+          documentKind: "nfe",
+          externalReference: "sale_2",
+          renderedDescription: null,
+          templateId: null,
+          templateVersion: null,
+          vehicleNfePayload: null,
+        },
       }),
     );
     expect(harness.record).toHaveBeenCalledWith(
