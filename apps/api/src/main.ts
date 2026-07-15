@@ -1,14 +1,18 @@
 import { serve } from "@hono/node-server";
-import { createApp } from "./infrastructure/http/createApp.js";
-import { loadLocalEnv } from "./infrastructure/config/loadLocalEnv.js";
-import { createRuntimeAppDependencies } from "./infrastructure/db/runtimeRepositories.js";
+import { loadLocalEnvBefore } from "./infrastructure/config/loadLocalEnv.js";
 import {
   installGracefulShutdown,
   installServerErrorHandler,
   readShutdownTimeoutMs,
 } from "./infrastructure/runtime/gracefulShutdown.js";
 
-loadLocalEnv();
+const [{ createApp }, { createRuntimeAppDependencies }] =
+  await loadLocalEnvBefore(() =>
+    Promise.all([
+      import("./infrastructure/http/createApp.js"),
+      import("./infrastructure/db/runtimeRepositories.js"),
+    ]),
+  );
 const port = Number(process.env.PORT ?? 8787);
 const runtime = createRuntimeAppDependencies();
 const app = createApp(runtime.appOptions);

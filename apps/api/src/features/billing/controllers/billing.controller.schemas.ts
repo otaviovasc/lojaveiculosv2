@@ -22,6 +22,11 @@ export const syncBillingProviderSubscriptionSchema = z.object({
   updatePendingPayments: z.boolean().optional(),
 });
 
+export const updateBillingSelectionSchema = z.object({
+  addonIds: z.array(z.string().uuid()).max(20).default([]),
+  planId: z.string().uuid(),
+});
+
 export const updateEntitlementSchema = z.object({
   endsAt: z.string().datetime().nullable().optional(),
   featureKey: z.enum([
@@ -34,6 +39,7 @@ export const updateEntitlementSchema = z.object({
     "marketplace",
     "nfe",
     "plate_lookup",
+    "simulations",
     "subdomain",
   ]),
   metadata: z.record(z.string(), z.unknown()).optional(),

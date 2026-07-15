@@ -14,6 +14,7 @@ import type { SyncBillingProviderSubscriptionInput } from "../../../domains/bill
 import { updateAgencyStoreEntitlement } from "../../../domains/billing/services/BillingService/updateAgencyStoreEntitlement.js";
 import type { UpdateAgencyStoreEntitlementServiceInput } from "../../../domains/billing/services/BillingService/updateAgencyStoreEntitlement.js";
 import { updateStoreEntitlement } from "../../../domains/billing/services/BillingService/updateStoreEntitlement.js";
+import { updateBillingSelection } from "../../../domains/billing/services/BillingService/updateBillingSelection.js";
 import type { UpdateStoreEntitlementServiceInput } from "../../../domains/billing/services/BillingService/updateStoreEntitlement.js";
 import type {
   AgencyTenantOverview,
@@ -62,6 +63,10 @@ export type BillingServices = {
     context: ServiceContext,
     input: UpdateStoreEntitlementServiceInput,
   ) => Promise<BillingOverview>;
+  updateSelection: (
+    context: ServiceContext,
+    input: { addonIds: readonly string[]; planId: string },
+  ) => Promise<BillingOverview>;
 };
 
 export type CreateBillingServicesOptions =
@@ -89,6 +94,8 @@ export function createBillingServices(
       updateAgencyStoreEntitlement(context, input, ports),
     updateEntitlement: (context, input) =>
       updateStoreEntitlement(context, input, ports),
+    updateSelection: (context, input) =>
+      updateBillingSelection(context, input, ports),
   };
 }
 

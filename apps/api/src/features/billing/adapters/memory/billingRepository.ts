@@ -1,9 +1,7 @@
 import type {
   AgencyTenantOverview,
   BillingEntitlementEvent,
-  BillingAddon,
   BillingOverview,
-  BillingPlan,
   BillingRepository,
   StoreEntitlement,
 } from "../../../../domains/billing/ports/billingRepository.js";
@@ -11,78 +9,22 @@ import {
   createBillingAuthority,
   createBillingOverview,
 } from "../../../../domains/billing/readModels/billingOverviewModel.js";
-
-const defaultPlans: readonly BillingPlan[] = [
-  {
-    catalogVersion: "2026-07-v1",
-    code: "growth",
-    features: [
-      { featureKey: "subdomain", included: true, limitValue: null },
-      { featureKey: "crm", included: false, limitValue: null },
-      { featureKey: "automation", included: true, limitValue: null },
-      { featureKey: "plate_lookup", included: true, limitValue: 300 },
-      { featureKey: "external_api", included: false, limitValue: null },
-      { featureKey: "marketplace", included: false, limitValue: null },
-      { featureKey: "custom_domain", included: false, limitValue: null },
-      { featureKey: "nfe", included: false, limitValue: null },
-    ],
-    id: "plan_growth",
-    limits: { sellerLimit: 8, vehicleLimit: 300 },
-    monthlyPriceCents: 29900,
-    name: "Growth",
-    status: "active",
-  },
-];
-
-const defaultAddons: readonly BillingAddon[] = [
-  {
-    catalogVersion: "2026-07-v1",
-    code: "crm_whatsapp_instance",
-    featureKey: "crm",
-    id: "addon_crm",
-    includedInTrial: true,
-    monthlyPriceCents: 24999,
-    name: "CRM WhatsApp",
-    status: "active",
-  },
-];
-
-const defaultEntitlements: readonly StoreEntitlement[] = [
-  {
-    endsAt: new Date("2099-08-01T00:00:00.000Z"),
-    featureKey: "subdomain",
-    metadata: {},
-    source: "memory_seed",
-    startsAt: null,
-    status: "trialing",
-  },
-  {
-    endsAt: new Date("2099-08-01T00:00:00.000Z"),
-    featureKey: "automation",
-    metadata: {},
-    source: "memory_seed",
-    startsAt: null,
-    status: "trialing",
-  },
-  {
-    endsAt: new Date("2099-08-01T00:00:00.000Z"),
-    featureKey: "crm",
-    metadata: {},
-    source: "memory_seed",
-    startsAt: null,
-    status: "trialing",
-  },
-];
+import {
+  memoryBillingAddons,
+  memoryBillingPlans,
+  memoryTrialEntitlements,
+} from "./billingMemoryCatalog.js";
 
 export function createMemoryBillingRepository(
   options: { storeId?: string; tenantId?: string } = {},
 ): BillingRepository {
-  let entitlements = [...defaultEntitlements];
+  let entitlements = [...memoryTrialEntitlements];
   let entitlementEvents: BillingEntitlementEvent[] = [];
   const managedStoreId = options.storeId ?? "store_1";
   const managedTenantId = options.tenantId;
 
   return {
+    async activateSubscriptionSelection() {},
     async getOverview(input) {
       return toOverview(
         input.storeId,
@@ -108,6 +50,16 @@ export function createMemoryBillingRepository(
       return (
         input.storeId === managedStoreId &&
         (managedTenantId === undefined || input.tenantId === managedTenantId)
+      );
+    },
+    async updateSubscriptionSelection(input) {
+      return toOverview(
+        input.storeId,
+        input.tenantId,
+        entitlements,
+        entitlementEvents,
+        input.billingManagedBy,
+        input.currentActorCanManage,
       );
     },
     async updateStoreEntitlement(input) {
@@ -163,7 +115,7 @@ function toOverview(
   currentActorCanManage = true,
 ): BillingOverview {
   return createBillingOverview({
-    addons: defaultAddons,
+    addons: memoryBillingAddons,
     allocations: [
       {
         activeEntitlementCount: entitlements.filter(
@@ -192,13 +144,13 @@ function toOverview(
       overdueInvoiceCount: 0,
       paidThisPeriodCents: 0,
     },
-    plans: defaultPlans,
+    plans: memoryBillingPlans,
     storeId: storeId as never,
     subscription: {
       currentPeriodEnd: new Date("2099-08-01T00:00:00.000Z"),
       currentPeriodStart: null,
       id: "subscription_memory",
-      plan: defaultPlans[0] ?? null,
+      plan: memoryBillingPlans[0] ?? null,
       status: "trialing",
     },
     tenantId: tenantId as never,

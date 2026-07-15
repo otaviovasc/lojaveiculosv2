@@ -107,7 +107,7 @@ Onboarding, however:
 
 - hardcodes and upserts the global Growth catalog price and features;
 - includes `crm` in Growth;
-- creates a 30-day trial subscription;
+- created a 30-day trial subscription instead of the current 14-day contract;
 - inserts trial entitlements without `endsAt`.
 
 Evidence:

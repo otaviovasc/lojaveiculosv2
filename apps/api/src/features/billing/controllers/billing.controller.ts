@@ -14,6 +14,7 @@ import {
 import {
   createBillingProviderCheckoutSchema,
   syncBillingProviderSubscriptionSchema,
+  updateBillingSelectionSchema,
   updateEntitlementSchema,
 } from "./billing.controller.schemas.js";
 import { billingServices, type BillingServices } from "./billingServices.js";
@@ -61,6 +62,19 @@ export function createBillingFeature(
         contextFactory,
       );
       return context.json(await services.getProviderStatus(serviceContext));
+    }),
+  );
+
+  feature.put("/selection", async (context) =>
+    handleBilling(context, async () => {
+      const input = await parseJson(context, updateBillingSelectionSchema);
+      const serviceContext = await createProtectedContext(
+        context,
+        contextFactory,
+      );
+      return context.json(
+        await services.updateSelection(serviceContext, input),
+      );
     }),
   );
 

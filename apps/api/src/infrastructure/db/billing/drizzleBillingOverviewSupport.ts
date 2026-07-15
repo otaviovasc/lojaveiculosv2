@@ -156,6 +156,8 @@ export async function listChargeables(
   const storesById = new Map(storeRows.map((store) => [store.id, store]));
   const plansById = new Map(billingPlans.map((plan) => [plan.id, plan]));
   const addonsById = new Map(addonRows.map((addon) => [addon.id, addon]));
+  const isFirstBilling =
+    subscription.status === "trialing" || subscription.status === "expired";
 
   return itemRows.map((item) => {
     const itemType = item.itemType;
@@ -168,8 +170,8 @@ export async function listChargeables(
       id: item.id,
       itemType,
       label: chargeableLabel(itemType, plan?.name, addon?.name),
-      periodEnd: subscription.currentPeriodEnd,
-      periodStart: subscription.currentPeriodStart,
+      periodEnd: isFirstBilling ? null : subscription.currentPeriodEnd,
+      periodStart: isFirstBilling ? null : subscription.currentPeriodStart,
       quantity: item.quantity,
       sourceId: item.planId ?? item.addonId ?? null,
       startsAt: item.startsAt,

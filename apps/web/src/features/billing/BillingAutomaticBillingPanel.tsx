@@ -15,6 +15,10 @@ export function BillingAutomaticBillingPanel({
 }) {
   const preview = overview.chargePreview;
   const authority = overview.authority;
+  const recurringTotalCents = preview.lineItems
+    .filter(isCurrentRecurringLine)
+    .reduce((total, item) => total + item.fullAmountCents, 0);
+  const hasProration = preview.lineItems.some((item) => item.prorationApplied);
 
   return (
     <section className="billing-panel billing-auto-panel">
@@ -41,8 +45,8 @@ export function BillingAutomaticBillingPanel({
         </div>
         <div>
           <WalletCards aria-hidden="true" className="size-5" />
-          <span>Total mensal</span>
-          <strong>{money(preview.totalCents)}</strong>
+          <span>Total recorrente</span>
+          <strong>{money(recurringTotalCents)}</strong>
         </div>
         <div>
           <Percent aria-hidden="true" className="size-5" />
@@ -54,6 +58,17 @@ export function BillingAutomaticBillingPanel({
           </strong>
         </div>
       </div>
+
+      {hasProration ? (
+        <div className="billing-proration-note">
+          <Info aria-hidden="true" className="size-4" />
+          <span>
+            Alteração no meio do ciclo: a referência proporcional deste período
+            é <strong>{money(preview.totalCents)}</strong>. Nos próximos ciclos,
+            o total recorrente é <strong>{money(recurringTotalCents)}</strong>.
+          </span>
+        </div>
+      ) : null}
 
       <div className="billing-table-wrap">
         <table className="billing-table billing-charge-table">
@@ -139,6 +154,12 @@ export function BillingAutomaticBillingPanel({
       </div>
     </section>
   );
+}
+
+function isCurrentRecurringLine(
+  item: BillingOverview["chargePreview"]["lineItems"][number],
+) {
+  return !item.endsAt || new Date(item.endsAt).getTime() > Date.now();
 }
 
 function itemTypeLabel(itemType: "addon" | "plan") {

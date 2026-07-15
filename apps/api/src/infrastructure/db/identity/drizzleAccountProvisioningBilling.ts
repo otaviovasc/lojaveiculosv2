@@ -11,10 +11,6 @@ import {
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import type { StoreProfileDraft } from "../../../domains/identity/ports/accountProvisioningRepository.js";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
-import {
-  ensureStoreAddonItem,
-  ensureStorePlanItem,
-} from "./drizzleAccountProvisioningBillingItems.js";
 
 export class BillingCatalogUnavailableError extends Error {
   constructor() {
@@ -32,38 +28,15 @@ export async function insertBillingDefaults(
   await db.execute(
     sql`select pg_advisory_xact_lock(hashtextextended(${tenant.id}, 11))`,
   );
-  const { plan, planEntitlements, trialAddons } =
-    await selectPublishedCatalog(db);
+  const { plan, trialEntitlements } = await selectPublishedCatalog(db);
   const customer = await ensureBillingCustomer(db, tenant, profile);
   const subscription = await ensureSubscription(db, tenant.id, customer.id);
   assertProvisionableSubscription(subscription);
-  await ensureStorePlanItem(db, {
-    planId: plan.id,
-    storeId: store.id,
-    subscriptionId: subscription.id,
-    tenantId: tenant.id,
-    unitAmountCents: plan.monthlyPriceCents,
-  });
-  const selectedAddons = subscription.status === "trialing" ? trialAddons : [];
-  await Promise.all(
-    selectedAddons.map((addon) =>
-      ensureStoreAddonItem(db, {
-        addonId: addon.id,
-        storeId: store.id,
-        subscriptionId: subscription.id,
-        tenantId: tenant.id,
-        unitAmountCents: addon.monthlyPriceCents,
-      }),
-    ),
-  );
   const startsAt = subscription.currentPeriodStart ?? new Date();
   const trialing = subscription.status === "trialing";
   return {
     catalogVersion: plan.catalogVersion,
-    entitlements: [
-      ...planEntitlements,
-      ...selectedAddons.map((addon) => addon.featureKey as EntitlementKey),
-    ],
+    entitlements: trialing ? trialEntitlements : [],
     endsAt: trialing ? subscription.currentPeriodEnd : null,
     startsAt,
     status: trialing ? ("trialing" as const) : ("active" as const),
@@ -106,12 +79,14 @@ async function selectPublishedCatalog(db: DrizzleAccountProvisioningClient) {
   ]);
   return {
     plan,
-    planEntitlements: features
-      .filter((feature) => feature.included === 1)
-      .map((feature) => feature.featureKey as EntitlementKey),
-    trialAddons: trialAddons.filter(
-      (addon) => addon.catalogVersion === plan.catalogVersion,
-    ),
+    trialEntitlements: [
+      ...features
+        .filter((feature) => feature.includedInTrial)
+        .map((feature) => feature.featureKey as EntitlementKey),
+      ...trialAddons
+        .filter((addon) => addon.catalogVersion === plan.catalogVersion)
+        .map((addon) => addon.featureKey as EntitlementKey),
+    ],
   };
 }
 
@@ -211,7 +186,7 @@ async function ensureSubscription(
     .insert(subscriptions)
     .values({
       billingCustomerId,
-      currentPeriodEnd: addDays(new Date(), 30),
+      currentPeriodEnd: addDays(new Date(), 14),
       currentPeriodStart: new Date(),
       provider: "asaas",
       providerSubscriptionId: `local_asaas_subscription_${tenantId}`,

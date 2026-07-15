@@ -30,6 +30,8 @@ import {
   listEntitlementEvents,
 } from "./drizzleBillingOverviewSupport.js";
 import { listStoreScopedAllocations } from "./drizzleStoreBillingAllocationSupport.js";
+import { updateStoreSubscriptionSelection } from "./drizzleBillingSelection.js";
+import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
 
 export type DrizzleBillingClient = PostgresJsDatabase<typeof schema>;
 
@@ -37,6 +39,11 @@ export function createDrizzleBillingRepository(
   db: DrizzleBillingClient,
 ): BillingRepository {
   return {
+    async activateSubscriptionSelection(input) {
+      await db.transaction((tx) =>
+        projectSelectedEntitlements(tx as DrizzleBillingClient, input),
+      );
+    },
     async getOverview(input) {
       return getOverview(db, input);
     },
@@ -57,6 +64,13 @@ export function createDrizzleBillingRepository(
         )
         .limit(1);
       return Boolean(store);
+    },
+    async updateSubscriptionSelection(input) {
+      return db.transaction(async (tx) => {
+        const txDb = tx as DrizzleBillingClient;
+        await updateStoreSubscriptionSelection(txDb, input);
+        return getOverview(txDb, input);
+      });
     },
     async updateStoreEntitlement(input) {
       return db.transaction(async (tx) => {

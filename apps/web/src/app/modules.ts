@@ -82,7 +82,12 @@ export const navigationGroups: NavigationGroup[] = [
         label: "WhatsApp",
       },
       { icon: FileText, id: "documents", label: "Documentos" },
-      { icon: Calculator, id: "simulations", label: "Simulações" },
+      {
+        entitlementKey: "simulations",
+        icon: Calculator,
+        id: "simulations",
+        label: "Simulações",
+      },
     ],
   },
   {

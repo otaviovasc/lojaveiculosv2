@@ -149,6 +149,7 @@ function createAuditSink(): AuditSink {
 
 function createBillingRepository(): BillingRepository {
   return {
+    activateSubscriptionSelection: async () => undefined,
     getOverview: async () => {
       throw new Error("Unused billing repository.");
     },
@@ -156,6 +157,9 @@ function createBillingRepository(): BillingRepository {
       throw new Error("Unused billing repository.");
     },
     storeExistsInTenant: async () => {
+      throw new Error("Unused billing repository.");
+    },
+    updateSubscriptionSelection: async () => {
       throw new Error("Unused billing repository.");
     },
     updateStoreEntitlement: async () => {

@@ -9,8 +9,18 @@ import type {
   SyncBillingProviderCheckoutInput,
 } from "../../../domains/billing/ports/billingWebhookRepository.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
+import { projectSelectedEntitlements } from "./drizzleBillingEntitlementProjection.js";
 
 export async function syncProviderCheckout(
+  db: DrizzleBillingClient,
+  input: SyncBillingProviderCheckoutInput,
+): Promise<BillingProviderSyncResult> {
+  return db.transaction((tx) =>
+    syncProviderCheckoutTransaction(tx as DrizzleBillingClient, input),
+  );
+}
+
+async function syncProviderCheckoutTransaction(
   db: DrizzleBillingClient,
   input: SyncBillingProviderCheckoutInput,
 ): Promise<BillingProviderSyncResult> {
@@ -73,6 +83,14 @@ export async function syncProviderCheckout(
         updatedAt: new Date(),
       })
       .where(eq(subscriptions.id, checkout.subscriptionId));
+    if (checkout.storeId) {
+      await projectSelectedEntitlements(db, {
+        source: "billing_checkout",
+        storeId: checkout.storeId,
+        subscriptionId: checkout.subscriptionId,
+        tenantId: checkout.tenantId,
+      });
+    }
   }
 
   return {

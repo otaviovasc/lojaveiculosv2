@@ -1,13 +1,16 @@
 import { vi } from "vitest";
-import type { ServiceContext } from "../../shared/serviceContext.js";
+import type { StoreScopedServiceContext } from "../../shared/serviceContext.js";
 import type { VehicleListing } from "./ports/vehicleInventoryRepository.js";
 
 export const testNow = new Date("2026-01-01T00:00:00.000Z");
 
-export function createContext(permissions: string[]): ServiceContext {
+export function createContext(
+  permissions: string[],
+): StoreScopedServiceContext {
   return {
     actor: { id: "user_1", kind: "user" },
     audit: { record: vi.fn(async () => undefined) },
+    entitlements: ["simulations"],
     logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
     permissions: [...permissions],
     requestId: "req_1",

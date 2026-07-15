@@ -10,6 +10,7 @@ export const featureLabels: Record<EntitlementKey, string> = {
   marketplace: "Marketplaces",
   nfe: "NF-e",
   plate_lookup: "Consulta placa",
+  simulations: "Simulacoes",
   subdomain: "Subdominio",
 };
 
@@ -25,6 +26,7 @@ export const featureValueCopy: Record<EntitlementKey, string> = {
   marketplace: "Publicacao e sincronizacao com canais de venda externos.",
   nfe: "Emissao fiscal integrada aos fluxos comerciais da loja.",
   plate_lookup: "Consulta de placa para acelerar cadastro e conferencia.",
+  simulations: "Cenarios comerciais assistidos antes de fechar a proposta.",
   subdomain: "Endereco publico padrao para colocar a loja online rapidamente.",
 };
 

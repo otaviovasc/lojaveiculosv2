@@ -11,8 +11,10 @@ The base commercial contract is now enforced by the runtime:
 - onboarding selects the latest published default catalog and never writes plan,
   feature, or add-on definitions;
 - Growth and CRM WhatsApp are separate chargeable products in catalog version
-  `2026-07-v1`; CRM may be granted during the trial without becoming a base-plan
-  feature;
+  `2026-07-v1`; CRM is not included in the trial or base plan;
+- a fresh store receives a 14-day trial with only the catalog features explicitly
+  marked `included_in_trial`; custom domain and cost-bearing or critical
+  integrations are excluded;
 - trial grants inherit the subscription start and end, expired grants are
   excluded from authenticated and external-API access, and billing reads expose
   an elapsed trial as `expired`;
@@ -50,6 +52,9 @@ Target billing and product metrics are documented in
 - Current seed pricing:
   - Growth plan: `29900` cents monthly.
   - CRM WhatsApp add-on: `24999` cents monthly.
+- A store owner may select products and complete the first Asaas checkout at any
+  point during the 14-day trial. Successful provider evidence activates the paid
+  subscription; the trial end is not a purchase lock.
 - Growth limits in catalog `2026-07-v1`:
   - 8 active/pending team seats per store;
   - 300 non-deleted vehicle listings per store;

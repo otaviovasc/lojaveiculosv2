@@ -1,4 +1,4 @@
-import { and, eq, or } from "drizzle-orm";
+import { and, eq, gt, isNull, lte, or } from "drizzle-orm";
 import { storeEntitlements } from "@lojaveiculosv2/db";
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
 import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvisioningSupport.js";
@@ -6,6 +6,7 @@ import type { DrizzleAccountProvisioningClient } from "./drizzleAccountProvision
 export async function resolveStoreEntitlements(
   db: DrizzleAccountProvisioningClient,
   storeId: string,
+  now: Date = new Date(),
 ) {
   const rows = await db
     .select({ entitlement: storeEntitlements.featureKey })
@@ -17,6 +18,11 @@ export async function resolveStoreEntitlements(
           eq(storeEntitlements.status, "active"),
           eq(storeEntitlements.status, "trialing"),
         ),
+        or(
+          isNull(storeEntitlements.startsAt),
+          lte(storeEntitlements.startsAt, now),
+        ),
+        or(isNull(storeEntitlements.endsAt), gt(storeEntitlements.endsAt, now)),
       ),
     )
     .limit(100);

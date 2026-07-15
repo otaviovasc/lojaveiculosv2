@@ -7,6 +7,7 @@ import type {
   BillingProviderSubscriptionRecord,
   BillingProviderSubscriptionSyncResult,
 } from "../../ports/billingProviderRepository.js";
+import type { BillingChargePreviewLineItem } from "../../ports/billingRepository.js";
 import type {
   PaymentProviderBillingType,
   PaymentProviderGateway,
@@ -61,7 +62,7 @@ export async function syncBillingProviderSubscription(
   const subscription = account.subscription;
   const billingType = input.billingType ?? "PIX";
   const nextDueDate = formatDate(input.nextDueDate ?? tomorrow());
-  const chargeTotalCents = account.chargePreview.totalCents;
+  const chargeTotalCents = recurringTotalCents(account.chargePreview.lineItems);
 
   context.logger.info(
     "billing.provider_subscription.sync.started",
@@ -113,6 +114,14 @@ export async function syncBillingProviderSubscription(
       status: localStatus,
       subscriptionId: subscription.id,
     });
+    if (scope.storeId) {
+      await ports.billingRepository.activateSubscriptionSelection({
+        source: "billing_selection",
+        storeId: scope.storeId,
+        subscriptionId: subscription.id,
+        tenantId: scope.tenantId,
+      });
+    }
 
     await auditSync(context, {
       chargeTotalCents,
@@ -151,6 +160,15 @@ export async function syncBillingProviderSubscription(
     });
     throw syncError;
   }
+}
+
+function recurringTotalCents(
+  lineItems: readonly BillingChargePreviewLineItem[],
+) {
+  const now = Date.now();
+  return lineItems
+    .filter((item) => !item.endsAt || item.endsAt.getTime() > now)
+    .reduce((total, item) => total + item.fullAmountCents, 0);
 }
 
 function getPaymentProviderGateway(

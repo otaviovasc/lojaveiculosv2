@@ -10,6 +10,14 @@ export function loadLocalEnv(startDirectory = process.cwd()): void {
   }
 }
 
+export async function loadLocalEnvBefore<T>(
+  importRuntime: () => Promise<T>,
+  startDirectory = process.cwd(),
+): Promise<T> {
+  loadLocalEnv(startDirectory);
+  return importRuntime();
+}
+
 function findEnvCandidates(startDirectory: string): string[] {
   const candidates: string[] = [];
   let current = startDirectory;

@@ -23,6 +23,7 @@ export const billingFeatureOrder = [
   "external_api",
   "marketplace",
   "plate_lookup",
+  "simulations",
   "nfe",
 ] satisfies EntitlementKey[];
 

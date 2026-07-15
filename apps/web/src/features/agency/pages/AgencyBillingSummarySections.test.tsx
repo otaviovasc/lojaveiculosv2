@@ -60,7 +60,7 @@ describe("AgencyBillingSummarySections", () => {
 
     expect(screen.getByText("Assinatura pronta para contratar")).toBeVisible();
     expect(
-      screen.getByRole("button", { name: "Ativar meu plano" }),
+      screen.getByRole("button", { name: "Ir para pagamento Asaas" }),
     ).toBeEnabled();
     expect(
       screen.getByText("Deslize para conferir todas as colunas da alocação."),

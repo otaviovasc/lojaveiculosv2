@@ -93,4 +93,21 @@ describe("analyzeVehicleListingResale", () => {
     ).rejects.toThrow("Missing permission: inventory.resale_analysis_generate");
     expect(analyze).not.toHaveBeenCalled();
   });
+
+  it("rejects stores without simulations before invoking the provider", async () => {
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const analyze = vi.fn();
+    ports.resaleAnalysisProvider = {
+      analyze,
+      model: "gpt-5.4-mini",
+      name: "openai",
+    };
+    const context = createContext(["inventory.resale_analysis_generate"]);
+    context.entitlements = [];
+
+    await expect(
+      analyzeVehicleListingResale(context, { listingId: "listing_1" }, ports),
+    ).rejects.toThrow("Missing entitlement: simulations");
+    expect(analyze).not.toHaveBeenCalled();
+  });
 });

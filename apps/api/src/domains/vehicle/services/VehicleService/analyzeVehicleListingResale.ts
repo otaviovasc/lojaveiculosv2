@@ -1,5 +1,11 @@
-import { assertPermission } from "../../../../shared/authorization.js";
-import type { ServiceContext } from "../../../../shared/serviceContext.js";
+import {
+  assertEntitlement,
+  assertPermission,
+} from "../../../../shared/authorization.js";
+import type {
+  ServiceContext,
+  StoreScopedServiceContext,
+} from "../../../../shared/serviceContext.js";
 import type { InventoryResaleAnalysisRequest } from "../../ports/vehicleEnrichmentTypes.js";
 import type { VehicleListing } from "../../ports/vehicleInventoryRepository.js";
 import {
@@ -19,6 +25,7 @@ export async function analyzeVehicleListingResale(
   ports?: VehicleInventoryServicePorts,
 ): Promise<VehicleListing> {
   assertPermission(context, permission);
+  assertEntitlement(context as StoreScopedServiceContext, "simulations");
   const repository = getListingRepository(ports);
   const listing = await findScopedListing(context, repository, input.listingId);
   const provider = ports?.resaleAnalysisProvider;

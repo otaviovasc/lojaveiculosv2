@@ -41,7 +41,7 @@ describe("billing entitlement security contracts", () => {
     const repository = createRepository();
 
     await updateStoreEntitlement(
-      createContext({ audit }),
+      createContext({ audit, billingManagedBy: "agency" }),
       { featureKey: "crm", reason: "past_due", status: "suspended" },
       { billingRepository: repository },
     );
@@ -107,23 +107,42 @@ describe("billing entitlement security contracts", () => {
 
     await expect(
       updateStoreEntitlement(
-        createContext({ audit }),
+        createContext({ audit, billingManagedBy: "agency" }),
         { featureKey: "crm", status: "suspended" },
         { billingRepository: createRepository() },
       ),
     ).rejects.toThrow("audit unavailable");
+  });
+
+  it("does not let a store owner bypass catalog billing with a direct entitlement update", async () => {
+    const repository = createRepository();
+
+    await expect(
+      updateStoreEntitlement(
+        createContext({ billingManagedBy: "store_owner" }),
+        { featureKey: "crm", status: "active" },
+        { billingRepository: repository },
+      ),
+    ).rejects.toBeInstanceOf(AuthorizationError);
+
+    expect(repository.getOverview).not.toHaveBeenCalled();
+    expect(repository.updateStoreEntitlement).not.toHaveBeenCalled();
   });
 });
 
 function createContext(
   options: {
     audit?: AuditSink;
+    billingManagedBy?: ServiceContext["billingManagedBy"];
     permissions?: ServiceContext["permissions"];
   } = {},
 ) {
   return createServiceContext({
     actor: { id: "user_1", kind: "user" },
     audit: options.audit ?? createAudit(),
+    ...(options.billingManagedBy
+      ? { billingManagedBy: options.billingManagedBy }
+      : {}),
     permissions: options.permissions ?? ["billing.manage"],
     request: { requestId: "request_1" },
     source: { component: "test", service: "api" },
@@ -155,9 +174,13 @@ function createRepository(): BillingRepository {
     },
   );
   return {
+    activateSubscriptionSelection: async () => undefined,
     getOverview,
     getTenantOverview,
     storeExistsInTenant,
+    updateSubscriptionSelection: async () => {
+      throw new Error("Unused billing repository.");
+    },
     updateStoreEntitlement: update,
   };
 }

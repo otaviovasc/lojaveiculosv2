@@ -27,7 +27,7 @@ describe("BillingPlanComposition", () => {
           code: "crm_whatsapp_instance",
           featureKey: "crm",
           id: "addon_crm",
-          includedInTrial: true,
+          includedInTrial: false,
           monthlyPriceCents: 24999,
           name: "CRM WhatsApp",
           status: "active",
@@ -79,7 +79,7 @@ describe("BillingPlanComposition", () => {
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "CRM" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "CRM WhatsApp" })).toBeVisible();
     expect(screen.getByText(/R\$\s249,99\/mês/)).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Ver detalhes" }));
 

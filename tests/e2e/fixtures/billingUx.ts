@@ -2,11 +2,60 @@ const plan = {
   catalogVersion: "2026-07-v1",
   code: "growth",
   features: [
-    { featureKey: "subdomain", included: true, limitValue: null },
-    { featureKey: "crm", included: false, limitValue: null },
-    { featureKey: "plate_lookup", included: true, limitValue: 300 },
-    { featureKey: "automation", included: true, limitValue: null },
-    { featureKey: "nfe", included: false, limitValue: null },
+    {
+      featureKey: "subdomain",
+      included: true,
+      includedInTrial: true,
+      limitValue: null,
+    },
+    {
+      featureKey: "crm",
+      included: false,
+      includedInTrial: false,
+      limitValue: null,
+    },
+    {
+      featureKey: "plate_lookup",
+      included: true,
+      includedInTrial: false,
+      limitValue: 300,
+    },
+    {
+      featureKey: "automation",
+      included: true,
+      includedInTrial: true,
+      limitValue: null,
+    },
+    {
+      featureKey: "analytics",
+      included: true,
+      includedInTrial: true,
+      limitValue: null,
+    },
+    {
+      featureKey: "compliance",
+      included: true,
+      includedInTrial: true,
+      limitValue: null,
+    },
+    {
+      featureKey: "custom_domain",
+      included: true,
+      includedInTrial: false,
+      limitValue: null,
+    },
+    {
+      featureKey: "nfe",
+      included: false,
+      includedInTrial: false,
+      limitValue: null,
+    },
+    {
+      featureKey: "simulations",
+      included: false,
+      includedInTrial: false,
+      limitValue: null,
+    },
   ],
   id: "plan_growth",
   limits: { sellerLimit: 8, vehicleLimit: 300 },
@@ -29,7 +78,7 @@ const catalogAddons = [
     code: "crm_whatsapp_instance",
     featureKey: "crm",
     id: "addon_crm_whatsapp",
-    includedInTrial: true,
+    includedInTrial: false,
     monthlyPriceCents: 24999,
     name: "CRM WhatsApp",
     status: "active",
@@ -62,7 +111,7 @@ const lineItems = [
   line("plan_2", "plan", "Growth", "store_2", "Auto Prime Norte", 29900),
 ] as const;
 
-export const ownerBillingOverview = overviewForStore(stores[0]);
+export const ownerBillingOverview = trialOverviewForStore(stores[0]);
 
 export const agencyBillingOverview = {
   addons: catalogAddons,
@@ -96,6 +145,78 @@ function overviewForStore(selectedStore: (typeof stores)[number]) {
     storeId: selectedStore.storeId,
     subscription: subscription(),
     tenantId: "tenant_1",
+  } as const;
+}
+
+function trialOverviewForStore(selectedStore: (typeof stores)[number]) {
+  const trialEndsAt = "2026-08-14T00:00:00.000Z";
+  const safeTrialKeys = [
+    "analytics",
+    "automation",
+    "compliance",
+    "subdomain",
+  ] as const;
+  const trialMatrix = plan.features.map((feature) =>
+    entitlement(
+      feature.featureKey,
+      feature.included,
+      safeTrialKeys.includes(
+        feature.featureKey as (typeof safeTrialKeys)[number],
+      )
+        ? "trialing"
+        : "inactive",
+      feature.limitValue,
+    ),
+  );
+  return {
+    addons: catalogAddons,
+    allocations: [
+      {
+        ...toAllocation(selectedStore),
+        addonCount: 0,
+        monthlyAmountCents: 0,
+        planCode: null,
+        planName: null,
+        subscriptionStatus: "trialing",
+      },
+    ],
+    authority: authority("store_owner"),
+    chargePreview: emptyChargePreview(),
+    entitlementEvents: [],
+    entitlementMatrix: trialMatrix,
+    entitlements: safeTrialKeys.map((featureKey) => ({
+      endsAt: trialEndsAt,
+      featureKey,
+      metadata: { sourceDetail: "safe_trial_catalog" },
+      source: "billing_catalog",
+      startsAt: "2026-07-15T00:00:00.000Z",
+      status: "trialing",
+    })),
+    financialSummary: financialSummary(0),
+    plans: [plan],
+    storeId: selectedStore.storeId,
+    subscription: {
+      currentPeriodEnd: trialEndsAt,
+      currentPeriodStart: "2026-07-15T00:00:00.000Z",
+      id: "subscription_trial",
+      plan: null,
+      status: "trialing",
+    },
+    tenantId: "tenant_1",
+  } as const;
+}
+
+function emptyChargePreview() {
+  return {
+    cadence: "monthly",
+    collectionMethod: "card_on_file",
+    collectionTiming: "cycle_end",
+    currency: "BRL",
+    hasAgencyDiscount: false,
+    lineItems: [],
+    prorationPolicy: "store_days_active",
+    subtotalCents: 0,
+    totalCents: 0,
   } as const;
 }
 

@@ -2,7 +2,6 @@ import type { AuditEvent, AuditSink } from "@lojaveiculosv2/audit";
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
 import type { BillingProviderRepository } from "../../ports/billingProviderRepository.js";
-import type { BillingRepository } from "../../ports/billingRepository.js";
 import type { PaymentProviderGateway } from "../../ports/paymentProviderGateway.js";
 import {
   createChargePreview,
@@ -10,12 +9,14 @@ import {
 } from "../../readModels/billingChargePreviewModel.js";
 import type { BillingProviderSyncError } from "./syncBillingProviderSubscription.js";
 import { syncBillingProviderSubscription } from "./syncBillingProviderSubscription.js";
+import { createUnusedBillingRepository } from "../../testSupportBillingRepository.js";
 
 describe("syncBillingProviderSubscription", () => {
   it("creates provider customer and subscription from calculated chargeables", async () => {
     const audit = createAuditSink();
     const providerRepository = createProviderRepository();
     const gateway = createGateway();
+    const billingRepository = createUnusedBillingRepository();
 
     const result = await syncBillingProviderSubscription(
       createContext(audit),
@@ -25,7 +26,7 @@ describe("syncBillingProviderSubscription", () => {
       },
       {
         billingProviderRepository: providerRepository.repository,
-        billingRepository: createBillingRepository(),
+        billingRepository,
         paymentProviderGateway: gateway.gateway,
       },
     );
@@ -50,6 +51,14 @@ describe("syncBillingProviderSubscription", () => {
     expect(providerRepository.savedSubscription?.providerSubscriptionId).toBe(
       "sub_1",
     );
+    expect(
+      billingRepository.activateSubscriptionSelection,
+    ).toHaveBeenCalledWith({
+      source: "billing_selection",
+      storeId: "store_1",
+      subscriptionId: "subscription_1",
+      tenantId: "tenant_1",
+    });
     expect(result).toMatchObject({
       chargeTotalCents: 54899,
       providerCustomerId: "cus_1",
@@ -76,7 +85,7 @@ describe("syncBillingProviderSubscription", () => {
         {},
         {
           billingProviderRepository: providerRepository.repository,
-          billingRepository: createBillingRepository(),
+          billingRepository: createUnusedBillingRepository(),
           paymentProviderGateway: gateway.gateway,
         },
       ),
@@ -161,7 +170,10 @@ function createProviderRepository(totalCents = 54899) {
                     id: "subscription_item_1",
                     itemType: "plan",
                     label: "Growth",
+                    periodEnd: new Date("2026-07-31T00:00:00.000Z"),
+                    periodStart: new Date("2026-07-01T00:00:00.000Z"),
                     quantity: 1,
+                    startsAt: new Date("2026-07-01T00:00:00.000Z"),
                     storeId: "store_1" as never,
                     storeName: "Loja Teste",
                     unitAmountCents: 29900,
@@ -170,7 +182,10 @@ function createProviderRepository(totalCents = 54899) {
                     id: "subscription_item_2",
                     itemType: "addon",
                     label: "CRM WhatsApp",
+                    periodEnd: new Date("2026-07-31T00:00:00.000Z"),
+                    periodStart: new Date("2026-07-01T00:00:00.000Z"),
                     quantity: 1,
+                    startsAt: new Date("2026-07-16T00:00:00.000Z"),
                     storeId: "store_1" as never,
                     storeName: "Loja Teste",
                     unitAmountCents: 24999,
@@ -221,23 +236,6 @@ function createProviderRepository(totalCents = 54899) {
     },
     get savedSubscription() {
       return savedSubscription;
-    },
-  };
-}
-
-function createBillingRepository(): BillingRepository {
-  return {
-    getOverview: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    getTenantOverview: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    storeExistsInTenant: async () => {
-      throw new Error("Unused billing repository.");
-    },
-    updateStoreEntitlement: async () => {
-      throw new Error("Unused billing repository.");
     },
   };
 }

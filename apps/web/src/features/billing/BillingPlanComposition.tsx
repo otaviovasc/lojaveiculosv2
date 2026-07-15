@@ -1,5 +1,6 @@
 import { Boxes, Check, PackagePlus, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { BillingFeatureDialog } from "./BillingFeatureDialog";
 import { featureLabels, isEnabled, money } from "./billingFormat";
 import {
@@ -24,6 +25,12 @@ export function BillingPlanComposition({
   overview,
   reasons,
   savingFeatureKey,
+  selectedAddonIds,
+  selectedPlanId,
+  onAddonToggle,
+  onPlanSelect,
+  onSaveSelection,
+  selectionSaving = false,
 }: {
   canManage: boolean;
   contextLabel?: string;
@@ -35,6 +42,12 @@ export function BillingPlanComposition({
   overview: BillingOverview;
   reasons: Record<string, string>;
   savingFeatureKey: EntitlementKey | null;
+  selectedAddonIds?: readonly string[];
+  selectedPlanId?: string | null;
+  onAddonToggle?: (addonId: string) => void;
+  onPlanSelect?: (planId: string) => void;
+  onSaveSelection?: () => Promise<void>;
+  selectionSaving?: boolean;
 }) {
   const [selectedFeatureKey, setSelectedFeatureKey] =
     useState<EntitlementKey | null>(null);
@@ -42,20 +55,63 @@ export function BillingPlanComposition({
     overview.entitlementMatrix.find(
       (row) => row.featureKey === selectedFeatureKey,
     ) ?? null;
-  const included = overview.entitlementMatrix.filter(
-    (row) => row.includedInPlan,
+  const selectionMode = Boolean(onPlanSelect && onAddonToggle);
+  const plan =
+    overview.plans.find((candidate) => candidate.id === selectedPlanId) ??
+    overview.subscription?.plan ??
+    (!selectionMode
+      ? overview.plans.find((candidate) => candidate.status === "active")
+      : undefined);
+  const included = (plan?.features ?? [])
+    .filter((feature) => feature.included)
+    .map(
+      (feature) =>
+        overview.entitlementMatrix.find(
+          (row) => row.featureKey === feature.featureKey,
+        ) ?? {
+          endsAt: null,
+          featureKey: feature.featureKey,
+          includedInPlan: true,
+          limitValue: feature.limitValue,
+          source: null,
+          startsAt: null,
+          status: "inactive" as const,
+        },
+    );
+  const activeAddons = overview.addons.filter(
+    (addon) =>
+      addon.status === "active" &&
+      (!plan || addon.catalogVersion === plan.catalogVersion),
   );
-  const publishedAddonFeatures = new Set(
-    overview.addons
-      .filter((addon) => addon.status === "active")
-      .map((addon) => addon.featureKey),
-  );
-  const packages = overview.entitlementMatrix.filter(
-    (row) => !row.includedInPlan && publishedAddonFeatures.has(row.featureKey),
-  );
-  const pricing = billingStorePricing(overview);
-  const plan = overview.subscription?.plan;
-  const planLimits = billingPlanLimitHighlights(overview);
+  const packages = activeAddons.map((addon) => ({
+    addon,
+    row: overview.entitlementMatrix.find(
+      (row) => row.featureKey === addon.featureKey,
+    ) ?? {
+      endsAt: null,
+      featureKey: addon.featureKey,
+      includedInPlan: false,
+      limitValue: null,
+      source: null,
+      startsAt: null,
+      status: "inactive" as const,
+    },
+  }));
+  const storedPricing = billingStorePricing(overview);
+  const selectedAddonTotal = activeAddons
+    .filter((addon) => selectedAddonIds?.includes(addon.id))
+    .reduce((sum, addon) => sum + addon.monthlyPriceCents, 0);
+  const pricing = selectionMode
+    ? {
+        addonCents: selectedAddonTotal,
+        planCents: plan?.monthlyPriceCents ?? 0,
+        totalCents: (plan?.monthlyPriceCents ?? 0) + selectedAddonTotal,
+      }
+    : storedPricing;
+  const planLimits = billingPlanLimitHighlights(plan);
+  const paidSubscription =
+    overview.subscription?.status === "active" ||
+    overview.subscription?.status === "past_due";
 
   return (
     <section className="billing-composition">
@@ -70,6 +126,30 @@ export function BillingPlanComposition({
               ? `${contextLabel}: veja o que já está incluído e escolha apenas os pacotes que fazem sentido.`
               : "Veja o que já está incluído e amplie sua operação apenas quando fizer sentido."}
           </p>
+          {selectionMode && overview.plans.length ? (
+            <div className="billing-plan-selector">
+              <span>Plano após o teste</span>
+              <FeatureSelect
+                ariaLabel="Plano após o teste"
+                className="w-full"
+                value={plan?.id ?? ""}
+                onChange={(value) => onPlanSelect?.(value)}
+                options={[
+                  {
+                    disabled: true,
+                    label: "Escolha um plano",
+                    value: "",
+                  },
+                  ...overview.plans
+                    .filter((candidate) => candidate.status === "active")
+                    .map((candidate) => ({
+                      label: `${candidate.name} — ${money(candidate.monthlyPriceCents)}/mês`,
+                      value: candidate.id,
+                    })),
+                ]}
+              />
+            </div>
+          ) : null}
         </div>
       </header>
 
@@ -124,9 +204,23 @@ export function BillingPlanComposition({
             <small>por mês</small>
           </div>
           <p>
-            Você mantém a base da operação e adiciona novas capacidades sem
-            trocar de plano.
+            Durante o teste nada é cobrado. Esta é a composição escolhida para a
+            primeira cobrança ou para o próximo ciclo.
           </p>
+          {onSaveSelection ? (
+            <button
+              className="billing-selection-save"
+              disabled={!plan || selectionSaving}
+              onClick={() => void onSaveSelection()}
+              type="button"
+            >
+              {selectionSaving
+                ? "Salvando…"
+                : paidSubscription
+                  ? "Salvar e atualizar no Asaas"
+                  : "Salvar escolha"}
+            </button>
+          ) : null}
         </aside>
       </div>
 
@@ -144,37 +238,57 @@ export function BillingPlanComposition({
           </div>
           <span className="billing-package-count">
             {activePackageLabel(
-              packages.filter((row) => isEnabled(row.status)).length,
+              selectionMode
+                ? (selectedAddonIds?.length ?? 0)
+                : packages.filter(({ row }) => isEnabled(row.status)).length,
             )}
           </span>
         </div>
 
         <div className="billing-package-grid">
-          {packages.map((row) => (
+          {packages.map(({ addon, row }) => (
             <BillingPackageCard
               canManage={canManage}
-              key={row.featureKey}
+              {...(selectionMode
+                ? {
+                    detail: addon.includedInTrial
+                      ? "Incluído no teste gratuito"
+                      : "Fora do teste gratuito",
+                  }
+                : {})}
+              key={addon.id}
+              label={addon.name}
               priceLabel={billingPackagePriceLabel(row, overview)}
               row={row}
-              onSelect={() => setSelectedFeatureKey(row.featureKey)}
+              selected={
+                selectionMode ? selectedAddonIds?.includes(addon.id) : undefined
+              }
+              selectionMode={selectionMode}
+              onSelect={() =>
+                selectionMode
+                  ? onAddonToggle?.(addon.id)
+                  : setSelectedFeatureKey(row.featureKey)
+              }
             />
           ))}
         </div>
       </div>
 
-      <BillingFeatureDialog
-        isSaving={Boolean(
-          selectedRow && savingFeatureKey === selectedRow.featureKey,
-        )}
-        priceLabel={
-          selectedRow ? billingPackagePriceLabel(selectedRow, overview) : ""
-        }
-        reason={selectedRow ? (reasons[selectedRow.featureKey] ?? "") : ""}
-        row={selectedRow}
-        onClose={() => setSelectedFeatureKey(null)}
-        onReasonChange={onReasonChange}
-        onUpdate={onUpdate}
-      />
+      {!selectionMode ? (
+        <BillingFeatureDialog
+          isSaving={Boolean(
+            selectedRow && savingFeatureKey === selectedRow.featureKey,
+          )}
+          priceLabel={
+            selectedRow ? billingPackagePriceLabel(selectedRow, overview) : ""
+          }
+          reason={selectedRow ? (reasons[selectedRow.featureKey] ?? "") : ""}
+          row={selectedRow}
+          onClose={() => setSelectedFeatureKey(null)}
+          onReasonChange={onReasonChange}
+          onUpdate={onUpdate}
+        />
+      ) : null}
     </section>
   );
 }

@@ -9,7 +9,7 @@ import { expectAccessible, expectViewportSafe } from "./support/uiQuality";
 import { setQaViewport } from "./support/viewports";
 
 test.describe("billing plan and packages UX", () => {
-  test("individual owner understands the active plan composition", async ({
+  test("individual owner understands trial, selection and first billing", async ({
     page,
   }) => {
     await installLocalSession(page, {
@@ -24,11 +24,29 @@ test.describe("billing plan and packages UX", () => {
     await page.goto("/billing");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     if (!isBaselineCapture()) {
+      await expect(
+        page.getByText("Nenhum plano ou pacote foi contratado"),
+      ).toBeVisible();
+      await expect(page.getByLabel("Plano após o teste")).toBeVisible();
+      await expect(page.getByLabel("Plano após o teste")).toHaveText(
+        "Escolha um plano",
+      );
+      await page.getByLabel("Plano após o teste").click();
+      await page.getByRole("option", { name: /Growth/ }).click();
+      await expect(page.getByText("Fora do teste gratuito")).toBeVisible();
       await expectCommercialPlan(page);
       await page.getByRole("tab", { name: "Cobrança" }).click();
       await expect(
         page.getByRole("button", { name: "Ativar meu plano" }),
       ).not.toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Ir para pagamento Asaas" }),
+      ).toBeVisible();
+      await expect(page.getByText("Primeira cobrança mensal")).toBeVisible();
+      await page.screenshot({
+        fullPage: true,
+        path: "/tmp/billing-owner-checkout-candidate-desktop.png",
+      });
       await page.getByRole("tab", { name: "Plano e pacotes" }).click();
     }
     await expectViewportSafe(page);
@@ -39,7 +57,7 @@ test.describe("billing plan and packages UX", () => {
     });
     await setQaViewport(page, "mobile");
     await page.reload();
-    await waitForBillingContent(page);
+    await waitForBillingContent(page, false);
     await expectViewportSafe(page);
     await expectAccessible(page);
     await page.screenshot({
@@ -96,9 +114,18 @@ async function expectCommercialPlan(page: Page) {
   await expect(page.getByRole("heading", { name: "Growth" })).toBeVisible();
 }
 
-async function waitForBillingContent(page: Page) {
+async function waitForBillingContent(page: Page, expectPlan = true) {
   if (isBaselineCapture()) {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    return;
+  }
+  if (!expectPlan) {
+    await expect(
+      page.getByText("Nenhum plano ou pacote foi contratado"),
+    ).toBeVisible();
+    await expect(page.getByLabel("Plano após o teste")).toHaveText(
+      "Escolha um plano",
+    );
     return;
   }
   await expectCommercialPlan(page);

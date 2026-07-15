@@ -5,20 +5,32 @@ import {
   isEnabled,
   money,
 } from "./billingFormat";
-import type { BillingEntitlementMatrixRow, BillingOverview } from "./types";
+import type {
+  BillingEntitlementMatrixRow,
+  BillingOverview,
+  BillingPlan,
+} from "./types";
 
 export function BillingPackageCard({
   canManage,
+  detail,
+  label,
   onSelect,
   priceLabel,
   row,
+  selected,
+  selectionMode = false,
 }: {
   canManage: boolean;
+  detail?: string;
+  label?: string;
   onSelect: () => void;
   priceLabel: string;
   row: BillingEntitlementMatrixRow;
+  selected?: boolean | undefined;
+  selectionMode?: boolean;
 }) {
-  const enabled = isEnabled(row.status);
+  const enabled = selected ?? isEnabled(row.status);
   return (
     <article className={`billing-package-card ${enabled ? "is-active" : ""}`}>
       <div className="billing-package-card-top">
@@ -28,16 +40,20 @@ export function BillingPackageCard({
           ) : (
             <Sparkles aria-hidden="true" />
           )}
-          {enabled ? "Na sua assinatura" : "Disponível"}
+          {enabled
+            ? selectionMode
+              ? "Na sua escolha"
+              : "Na sua assinatura"
+            : "Disponível"}
         </span>
         <strong>{priceLabel}</strong>
       </div>
       <div>
-        <h4>{featureLabels[row.featureKey]}</h4>
+        <h4>{label ?? featureLabels[row.featureKey]}</h4>
         <p>{featureValueCopy[row.featureKey]}</p>
       </div>
       <div className="billing-package-card-footer">
-        <small>{billingLimitCopy(row)}</small>
+        <small>{detail ?? billingLimitCopy(row)}</small>
         <button
           disabled={!canManage}
           onClick={onSelect}
@@ -49,9 +65,11 @@ export function BillingPackageCard({
           )}
           {!canManage
             ? "Gerenciado pela agência"
-            : enabled
+            : !selectionMode
               ? "Ver detalhes"
-              : "Conhecer pacote"}
+              : enabled
+                ? "Remover da escolha"
+                : "Adicionar à escolha"}
         </button>
       </div>
     </article>
@@ -82,6 +100,8 @@ export function billingStorePricing(overview: BillingOverview) {
       .filter((item) => item.itemType === "plan")
       .reduce((sum, item) => sum + item.fullAmountCents, 0) ||
     overview.subscription?.plan?.monthlyPriceCents ||
+    overview.plans.find((plan) => plan.status === "active")
+      ?.monthlyPriceCents ||
     0;
   const addonCents = lines
     .filter((item) => item.itemType === "addon")
@@ -118,8 +138,10 @@ export function billingPackagePriceLabel(
   return line ? `${money(line.unitAmountCents)}/mês` : "Condição sob consulta";
 }
 
-export function billingPlanLimitHighlights(overview: BillingOverview) {
-  const limits = overview.subscription?.plan?.limits;
+export function billingPlanLimitHighlights(
+  plan: BillingPlan | null | undefined,
+) {
+  const limits = plan?.limits;
   return [
     limits?.vehicleLimit
       ? `Até ${limits.vehicleLimit.toLocaleString("pt-BR")} veículos em estoque`

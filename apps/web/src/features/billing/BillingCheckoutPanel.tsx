@@ -22,22 +22,36 @@ export function BillingCheckoutPanel({
   onCheckout,
   overview,
   providerStatus,
+  selectedAddonIds = [],
+  selectedPlanId,
 }: {
   checkoutState: BillingCheckoutState;
   onCheckout: (input: CreateBillingCheckoutInput) => Promise<unknown>;
   overview: BillingOverview;
   providerStatus: BillingProviderStatus | null;
+  selectedAddonIds?: readonly string[];
+  selectedPlanId?: string | null;
 }) {
   const [paymentMethod, setPaymentMethod] = useState<"CREDIT_CARD" | "PIX">(
     "CREDIT_CARD",
   );
   const activePlans = overview.plans.filter((plan) => plan.status === "active");
-  const currentPlan = overview.subscription?.plan ?? activePlans[0] ?? null;
-  const selectedPlan = currentPlan ?? activePlans[0] ?? null;
+  const controlledSelection = selectedPlanId !== undefined;
+  const selectedPlan =
+    activePlans.find((plan) => plan.id === selectedPlanId) ??
+    overview.subscription?.plan ??
+    (!controlledSelection ? activePlans[0] : null) ??
+    null;
+  const selectedAddons = overview.addons.filter((addon) =>
+    selectedAddonIds.includes(addon.id),
+  );
+  const selectedTotalCents =
+    (selectedPlan?.monthlyPriceCents ?? 0) +
+    selectedAddons.reduce((sum, addon) => sum + addon.monthlyPriceCents, 0);
   const canCheckout =
     Boolean(selectedPlan) &&
     Boolean(providerStatus?.configured && providerStatus.webhookConfigured) &&
-    overview.chargePreview.totalCents > 0 &&
+    selectedTotalCents > 0 &&
     paymentMethod === "CREDIT_CARD" &&
     checkoutState.kind !== "starting";
   const providerReady = Boolean(
@@ -124,8 +138,8 @@ export function BillingCheckoutPanel({
             ) : null}
           </div>
           <div className="billing-checkout-total">
-            <span>Total mensal</span>
-            <strong>{money(overview.chargePreview.totalCents)}/mes</strong>
+            <span>Primeira cobrança mensal</span>
+            <strong>{money(selectedTotalCents)}/mes</strong>
           </div>
           <button
             className="billing-checkout-button"
@@ -143,7 +157,7 @@ export function BillingCheckoutPanel({
             ) : (
               <ExternalLink aria-hidden="true" className="size-4" />
             )}
-            Ativar meu plano
+            Ir para pagamento Asaas
           </button>
           <p className="billing-checkout-secure">
             <ShieldCheck aria-hidden="true" className="size-4" />

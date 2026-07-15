@@ -30,6 +30,7 @@ export async function listPlans(
       .map((feature) => ({
         featureKey: feature.featureKey as never,
         included: feature.included === 1,
+        includedInTrial: feature.includedInTrial,
         limitValue: feature.limitValue,
       })),
     id: plan.id,
@@ -114,6 +115,7 @@ export async function findPlan(
     features: features.map((feature) => ({
       featureKey: feature.featureKey as never,
       included: feature.included === 1,
+      includedInTrial: feature.includedInTrial,
       limitValue: feature.limitValue,
     })),
     id: plan.id,

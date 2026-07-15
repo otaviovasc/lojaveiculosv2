@@ -1,11 +1,23 @@
 import type { EntitlementKey, StoreId, TenantId } from "@lojaveiculosv2/shared";
+import type {
+  ActivateBillingSelectionInput,
+  UpdateBillingSelectionInput,
+} from "./billingSelection.js";
+import type {
+  BillingEntitlementStatus,
+  UpdateStoreEntitlementInput,
+} from "./billingEntitlement.js";
 
-export type BillingEntitlementStatus =
-  "active" | "inactive" | "suspended" | "trialing";
+export type { UpdateBillingSelectionInput } from "./billingSelection.js";
+export type {
+  BillingEntitlementStatus,
+  UpdateStoreEntitlementInput,
+} from "./billingEntitlement.js";
 
 export type BillingPlanFeature = {
   featureKey: EntitlementKey;
   included: boolean;
+  includedInTrial: boolean;
   limitValue: number | null;
 };
 
@@ -206,23 +218,10 @@ export type AgencyTenantOverview = {
   tenantId: TenantId;
 };
 
-export type UpdateStoreEntitlementInput = {
-  billingManagedBy?: "agency" | "store_owner";
-  endsAt?: Date | null;
-  featureKey: EntitlementKey;
-  metadata?: Record<string, unknown>;
-  actorId?: string | null;
-  currentActorCanManage?: boolean;
-  previousStatus?: BillingEntitlementStatus | null;
-  reason?: string | null;
-  source: string;
-  startsAt?: Date | null;
-  status: BillingEntitlementStatus;
-  storeId: StoreId;
-  tenantId: TenantId;
-};
-
 export type BillingRepository = {
+  activateSubscriptionSelection: (
+    input: ActivateBillingSelectionInput,
+  ) => Promise<void>;
   getOverview: (input: {
     billingManagedBy?: "agency" | "store_owner";
     currentActorCanManage?: boolean;
@@ -237,6 +236,9 @@ export type BillingRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<boolean>;
+  updateSubscriptionSelection: (
+    input: UpdateBillingSelectionInput,
+  ) => Promise<BillingOverview>;
   updateStoreEntitlement: (
     input: UpdateStoreEntitlementInput,
   ) => Promise<BillingOverview>;

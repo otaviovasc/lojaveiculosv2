@@ -120,6 +120,7 @@ export type EntitlementKey =
   | "marketplace"
   | "nfe"
   | "plate_lookup"
+  | "simulations"
   | "subdomain";
 
 export type RoleKey =

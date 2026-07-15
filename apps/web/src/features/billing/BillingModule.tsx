@@ -14,6 +14,7 @@ import { createBillingApi, type BillingApi } from "./apiClient";
 import { readBillingCheckoutReturn } from "./billingCheckoutReturn";
 import { BillingTabs, type BillingTab } from "./BillingNavigation";
 import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
+import { BillingTrialStatus } from "./BillingTrialStatus";
 import {
   BillingCheckoutPanel,
   type BillingCheckoutState,
@@ -43,6 +44,9 @@ export function BillingModule({ api }: { api?: BillingApi }) {
     kind: "idle",
   });
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+  const [selectionSaving, setSelectionSaving] = useState(false);
   const checkoutReturn = readBillingCheckoutReturn("store");
 
   const refresh = async () => {
@@ -53,10 +57,50 @@ export function BillingModule({ api }: { api?: BillingApi }) {
         billingApi.getProviderStatus(),
       ]);
       setOverview(nextOverview);
+      setSelectedPlanId(nextOverview.subscription?.plan?.id ?? null);
+      setSelectedAddonIds(
+        nextOverview.chargePreview.lineItems.flatMap((item) =>
+          item.itemType === "addon" && item.sourceId ? [item.sourceId] : [],
+        ),
+      );
       setProviderStatus(nextProviderStatus);
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", message: errorMessage(error) });
+    }
+  };
+
+  const saveSelection = async () => {
+    if (!selectedPlanId) throw new Error("Selecione um plano.");
+    setSelectionSaving(true);
+    try {
+      const paidSubscription = overview ? isPaidSubscription(overview) : false;
+      const nextOverview = await billingApi.updateSelection({
+        addonIds: selectedAddonIds,
+        planId: selectedPlanId,
+      });
+      if (paidSubscription) {
+        await billingApi.syncProviderSubscription({
+          billingType: "CREDIT_CARD",
+          ...(overview?.subscription?.currentPeriodEnd
+            ? {
+                nextDueDate: overview.subscription.currentPeriodEnd.slice(
+                  0,
+                  10,
+                ),
+              }
+            : {}),
+          updatePendingPayments: false,
+        });
+        setOverview(await billingApi.getOverview());
+      } else {
+        setOverview(nextOverview);
+      }
+    } catch (error) {
+      setStatus({ kind: "error", message: errorMessage(error) });
+      throw error;
+    } finally {
+      setSelectionSaving(false);
     }
   };
 
@@ -89,6 +133,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const startCheckout: BillingApi["createCheckout"] = async (input) => {
     setCheckoutState({ kind: "starting" });
     try {
+      await saveSelection();
       const checkout = await billingApi.createCheckout(input);
       setCheckoutState({ kind: "started" });
       window.location.assign(checkout.checkoutUrl);
@@ -137,6 +182,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
 
       {overview ? (
         <>
+          <BillingTrialStatus overview={overview} />
           <BillingTabs activeTab={activeTab} onChange={setActiveTab} />
           {activeTab === "overview" ? (
             <>
@@ -154,6 +200,18 @@ export function BillingModule({ api }: { api?: BillingApi }) {
                   }))
                 }
                 onUpdate={updateEntitlement}
+                selectedAddonIds={selectedAddonIds}
+                selectedPlanId={selectedPlanId}
+                selectionSaving={selectionSaving}
+                onAddonToggle={(addonId) =>
+                  setSelectedAddonIds((current) =>
+                    current.includes(addonId)
+                      ? current.filter((id) => id !== addonId)
+                      : [...current, addonId],
+                  )
+                }
+                onPlanSelect={setSelectedPlanId}
+                onSaveSelection={saveSelection}
               />
               <BillingKpiGrid overview={overview} />
             </>
@@ -165,10 +223,14 @@ export function BillingModule({ api }: { api?: BillingApi }) {
                   checkoutState={checkoutState}
                   overview={overview}
                   providerStatus={providerStatus}
+                  selectedAddonIds={selectedAddonIds}
+                  selectedPlanId={selectedPlanId}
                   onCheckout={startCheckout}
                 />
               ) : null}
-              <BillingAutomaticBillingPanel overview={overview} />
+              {isPaidSubscription(overview) ? (
+                <BillingAutomaticBillingPanel overview={overview} />
+              ) : null}
               <BillingAllocationTable allocations={overview.allocations} />
             </>
           ) : null}
@@ -191,7 +253,19 @@ export function BillingModule({ api }: { api?: BillingApi }) {
 
 function canStartSubscription(overview: BillingOverview) {
   const status = overview.subscription?.status;
-  return !status || status === "cancelled" || status === "expired";
+  return (
+    !status ||
+    status === "cancelled" ||
+    status === "expired" ||
+    status === "trialing"
+  );
+}
+
+function isPaidSubscription(overview: BillingOverview) {
+  return (
+    overview.subscription?.status === "active" ||
+    overview.subscription?.status === "past_due"
+  );
 }
 
 type BillingStatus =
@@ -214,6 +288,12 @@ function createRuntimeBillingApi(): BillingApi {
         featureKey,
         input,
       ),
+    updateSelection: async (input) =>
+      createBillingApi(await createBillingApiOptions()).updateSelection(input),
+    syncProviderSubscription: async (input) =>
+      createBillingApi(
+        await createBillingApiOptions(),
+      ).syncProviderSubscription(input),
   };
 }
 

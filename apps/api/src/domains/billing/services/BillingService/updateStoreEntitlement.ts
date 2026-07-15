@@ -1,6 +1,9 @@
 import type { AuditFieldChange } from "@lojaveiculosv2/audit";
 import type { EntitlementKey } from "@lojaveiculosv2/shared";
-import { assertPermission } from "../../../../shared/authorization.js";
+import {
+  assertPermission,
+  AuthorizationError,
+} from "../../../../shared/authorization.js";
 import {
   createServiceLogMetadata,
   type ServiceContext,
@@ -30,6 +33,11 @@ export async function updateStoreEntitlement(
   ports: BillingServicePorts,
 ): Promise<BillingOverview> {
   assertPermission(context, "billing.manage");
+  if (context.billingManagedBy !== "agency") {
+    throw new AuthorizationError(
+      "Store owners must change features through the subscription selection flow.",
+    );
+  }
   const scope = requireBillingScope(context);
   const before = await ports.billingRepository.getOverview({
     billingManagedBy: context.billingManagedBy ?? "store_owner",

@@ -73,6 +73,7 @@ export const planFeatures = pgTable(
     ...lifecycleColumns,
     featureKey: varchar("feature_key", { length: 80 }).notNull(),
     included: integer("included").notNull().default(1),
+    includedInTrial: boolean("included_in_trial").notNull().default(false),
     limitValue: integer("limit_value"),
     planId: uuid("plan_id")
       .notNull()

@@ -14,6 +14,7 @@ export type EntitlementKey =
   | "marketplace"
   | "nfe"
   | "plate_lookup"
+  | "simulations"
   | "subdomain";
 
 export type BillingEntitlementStatus =
@@ -25,6 +26,7 @@ export type BillingPlan = {
   features: readonly {
     featureKey: EntitlementKey;
     included: boolean;
+    includedInTrial: boolean;
     limitValue: number | null;
   }[];
   id: string;
@@ -177,6 +179,17 @@ export type CreateBillingCheckoutInput = {
   billingTypes?: readonly BillingCheckoutBillingType[];
   minutesToExpire?: number;
   nextDueDate?: string;
+};
+
+export type UpdateBillingSelectionInput = {
+  addonIds: readonly string[];
+  planId: string;
+};
+
+export type SyncBillingProviderSubscriptionInput = {
+  billingType?: "BOLETO" | "CREDIT_CARD" | "PIX" | "UNDEFINED";
+  nextDueDate?: string;
+  updatePendingPayments?: boolean;
 };
 
 export type BillingCheckoutSession = {
