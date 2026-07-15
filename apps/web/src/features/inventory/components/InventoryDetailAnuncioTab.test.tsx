@@ -17,7 +17,7 @@ import { InventoryDetailAnuncioTab } from "./InventoryDetailAnuncioTab";
 afterEach(cleanup);
 
 describe("InventoryDetailAnuncioTab", () => {
-  it("persists description and price through the inventory API", async () => {
+  it("persists description, price, tags, and video through the inventory API", async () => {
     let persisted = createInventoryDetailFixture();
     const updateListingDetails = vi.fn(
       async (_listingId: string, input: UpdateInventoryListingInput) => {
@@ -43,28 +43,32 @@ describe("InventoryDetailAnuncioTab", () => {
     const description = screen.getByLabelText("Descrição do anúncio");
     await user.clear(description);
     await user.type(description, "Descrição salva no backend");
-    await user.click(screen.getByRole("button", { name: "Salvar descrição" }));
-
-    await waitFor(() =>
-      expect(updateListingDetails).toHaveBeenCalledWith("listing_1", {
-        description: "Descrição salva no backend",
-      }),
-    );
-
     fireEvent.change(screen.getByLabelText("Valor do anúncio"), {
       target: { value: "210.000,00" },
     });
-    await user.click(screen.getByRole("button", { name: "Salvar valor" }));
+    await user.type(
+      screen.getByLabelText("Tags comerciais"),
+      "Baixa quilometragem, Revisado",
+    );
+    await user.type(
+      screen.getByLabelText("URL do vídeo do anúncio"),
+      "https://youtube.com/watch?v=abc1234",
+    );
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
 
     await waitFor(() =>
-      expect(updateListingDetails).toHaveBeenLastCalledWith("listing_1", {
+      expect(updateListingDetails).toHaveBeenCalledWith("listing_1", {
+        commercialTags: ["Baixa quilometragem", "Revisado"],
+        description: "Descrição salva no backend",
         priceCents: 21000000,
+        videoUrl: "https://youtube.com/watch?v=abc1234",
       }),
     );
-    expect(onUpdated).toHaveBeenCalledTimes(2);
+    expect(updateListingDetails).toHaveBeenCalledTimes(1);
+    expect(onUpdated).toHaveBeenCalledTimes(1);
   });
 
-  it("does not expose local-only tag, video, or partner mutations", () => {
+  it("exposes persisted listing tags and video without the placeholder warning", () => {
     render(
       <InventoryDetailAnuncioTab
         api={{} as InventoryApi}
@@ -74,10 +78,11 @@ describe("InventoryDetailAnuncioTab", () => {
       />,
     );
 
+    expect(screen.getByLabelText("Tags comerciais")).toBeVisible();
+    expect(screen.getByLabelText("URL do vídeo do anúncio")).toBeVisible();
     expect(
-      screen.getByText(/tags comerciais e vídeo ainda não fazem parte/i),
-    ).toBeVisible();
-    expect(screen.queryByPlaceholderText("Tag personalizada...")).toBeNull();
+      screen.queryByText(/tags comerciais e vídeo ainda não fazem parte/i),
+    ).toBeNull();
     expect(screen.queryByText("Configurar integração")).toBeNull();
     expect(
       screen.getAllByText("Integração não disponível nesta tela."),
@@ -110,9 +115,12 @@ describe("InventoryDetailAnuncioTab", () => {
     const description = screen.getByLabelText("Descrição do anúncio");
     await user.clear(description);
     await user.type(description, "Descrição enviada");
-    await user.click(screen.getByRole("button", { name: "Salvar descrição" }));
+    await user.click(screen.getByRole("button", { name: "Salvar alterações" }));
 
     expect(description).toBeDisabled();
+    expect(updateListingDetails).toHaveBeenCalledWith("listing_1", {
+      description: "Descrição enviada",
+    });
     await user.type(description, " não pode sobrescrever");
     expect(description).toHaveValue("Descrição enviada");
 

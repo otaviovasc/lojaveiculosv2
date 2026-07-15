@@ -1,12 +1,4 @@
-import {
-  Building,
-  Car,
-  CheckCircle2,
-  Coins,
-  Edit,
-  Eye,
-  User,
-} from "lucide-react";
+import { Building, CheckCircle2, Coins, Edit, Eye, User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +14,7 @@ import { asSnapshotRecord, snapshotNumber } from "./salesSnapshot";
 import { salesStatusLabels } from "./SalesListModel";
 import { SaleServicesDetails } from "./SalesListServiceDetails";
 import type { SaleRecord } from "./types";
+import { SaleVehicleSnapshotCard } from "./SaleVehicleSnapshotCard";
 
 export function SalesListDetailsDialog({
   onClose,
@@ -134,62 +127,7 @@ function SaleBuyerVehicleDetails({ sale }: { sale: SaleRecord }) {
         </dl>
       </div>
 
-      <div className="bg-app-elevated/10 border border-line/40 rounded-2xl p-4 flex flex-col gap-3">
-        <h4 className="text-xs font-black text-app-text uppercase tracking-wider border-b border-line/35 pb-2 flex items-center gap-1.5">
-          <Car className="size-4.5 text-accent" />
-          <span>Dados do Veículo</span>
-        </h4>
-
-        <div className="flex items-center gap-3 bg-app-elevated/30 p-2 rounded-xl border border-line/40">
-          <div className="size-14 rounded-lg bg-app-elevated border border-line/50 overflow-hidden flex items-center justify-center shrink-0">
-            {sale.listingSnapshot?.primaryMediaUrl ? (
-              <img
-                alt={String(sale.listingSnapshot.title || "Veículo")}
-                className="w-full h-full object-cover"
-                src={String(sale.listingSnapshot.primaryMediaUrl)}
-              />
-            ) : (
-              <Car className="size-6 text-muted/40" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <h5 className="text-xs font-black text-app-text uppercase tracking-wider block truncate">
-              {String(
-                sale.listingSnapshot?.title || "Veículo não especificado",
-              )}
-            </h5>
-            {!!sale.listingSnapshot?.colorName && (
-              <span className="text-xs font-bold text-muted uppercase mt-0.5 block">
-                Cor: {String(sale.listingSnapshot.colorName)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <dl className="grid grid-cols-2 gap-y-3 gap-x-2 text-xs font-bold mt-1">
-          <Meta
-            label="Placa / Estoque"
-            value={
-              sale.listingSnapshot.plate
-                ? `PLACA: ${String(sale.listingSnapshot.plate)}`
-                : sale.listingSnapshot.unitLabel
-                  ? `ESTOQUE: ${String(sale.listingSnapshot.unitLabel)}`
-                  : null
-            }
-          />
-          <Meta
-            label="Ano Fabricação/Modelo"
-            value={
-              sale.listingSnapshot.manufactureYear ||
-              sale.listingSnapshot.modelYear
-                ? `${sale.listingSnapshot.manufactureYear ?? "N/A"} / ${sale.listingSnapshot.modelYear ?? "N/A"}`
-                : null
-            }
-          />
-          <Meta label="Chassi" value={sale.listingSnapshot.chassi} truncate />
-          <Meta label="Renavam" value={sale.listingSnapshot.renavam} truncate />
-        </dl>
-      </div>
+      <SaleVehicleSnapshotCard listingSnapshot={sale.listingSnapshot} />
     </div>
   );
 }
@@ -248,7 +186,7 @@ function SaleFinancialDetails({ sale }: { sale: SaleRecord }) {
           <span className="text-muted block text-xs uppercase font-bold">
             Total Pago (Lançado)
           </span>
-          <span className="text-success block mt-0.5 text-sm font-black">
+          <span className="text-success-strong block mt-0.5 text-sm font-black">
             {formatCents(totalPaid)}
           </span>
         </div>
@@ -257,7 +195,7 @@ function SaleFinancialDetails({ sale }: { sale: SaleRecord }) {
             Diferença
           </span>
           {balance <= 0 ? (
-            <span className="text-success block mt-0.5 font-black uppercase text-xs flex items-center gap-1">
+            <span className="text-success-strong block mt-0.5 font-black uppercase text-xs flex items-center gap-1">
               <CheckCircle2 className="size-3.5" /> Quitada
             </span>
           ) : (

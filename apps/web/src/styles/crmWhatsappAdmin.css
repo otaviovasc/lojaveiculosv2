@@ -129,7 +129,7 @@
 .crm-whatsapp-schedule-list {
   border: 1px solid var(--color-line);
   border-radius: var(--radius-sm);
-  max-height: min(34rem, calc(100vh - 20rem));
+  max-height: min(34rem, calc(100dvh - 20rem));
   overflow: auto;
 }
 

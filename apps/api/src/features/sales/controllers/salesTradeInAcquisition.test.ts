@@ -13,19 +13,36 @@ describe("sales trade-in acquisition", () => {
       payments: [
         {
           amountCents: 5000000,
+          dueAt: new Date("2026-07-14T12:00:00.000Z"),
           method: "pix",
           principalCents: 5000000,
         },
       ],
       saleSourceSnapshot: {
         tradeIn: {
-          brand: "Honda",
+          catalog: {
+            brandCode: "21",
+            brandName: "Honda",
+            fipeCode: "014102-8",
+            modelCode: "10234",
+            modelName: "Civic Touring 1.5 Turbo",
+            modelYear: 2022,
+            source: "fipe",
+            vehicleType: "cars",
+            yearCode: "2022-1",
+            yearName: "2022 Gasolina",
+          },
           chassi: "9BWZZZ377VT004251",
           color: "Preto",
+          doors: 4,
           enabled: true,
-          model: "Civic Touring",
+          engineAspiration: "turbo",
+          engineDisplacement: "1.5",
+          fuelType: "gasoline",
+          mileageKm: 32500,
           plate: "TRD1E23",
           renavam: "12345678901",
+          transmission: "automatic",
           valuationCents: 8800000,
           yearFabrication: "2021",
           yearModel: 2022,
@@ -39,13 +56,26 @@ describe("sales trade-in acquisition", () => {
     );
 
     const tradeInListing = [...vehiclePorts.listings.values()].find(
-      (listing) => listing.title === "Honda Civic Touring",
+      (listing) => listing.title === "Honda Civic Touring 1.5 Turbo",
     );
     expect(tradeInListing).toMatchObject({
+      catalog: {
+        brandCode: "21",
+        brandName: "Honda",
+        modelCode: "10234",
+        modelName: "Civic Touring 1.5 Turbo",
+        source: "fipe",
+      },
+      doors: 4,
+      engineAspiration: "turbo",
+      engineDisplacement: "1.5",
+      fuelType: "gasoline",
       manufactureYear: 2021,
+      mileageKm: 32500,
       modelYear: 2022,
       plate: "TRD1E23",
       status: "in_preparation",
+      transmission: "automatic",
     });
     if (!tradeInListing) throw new Error("Expected trade-in listing.");
     const tradeInUnit = [...vehiclePorts.units.values()].find(

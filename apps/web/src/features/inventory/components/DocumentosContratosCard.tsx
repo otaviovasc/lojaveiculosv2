@@ -137,7 +137,7 @@ function statusClassName(status: ContractDocumentListItem["status"]) {
   }
 
   if (status === "Pendente") {
-    return base + " border-warning/40 bg-warning/10 text-warning";
+    return base + " border-warning/40 bg-warning/10 text-warning-strong";
   }
 
   return base + " border-line bg-app-elevated text-muted";

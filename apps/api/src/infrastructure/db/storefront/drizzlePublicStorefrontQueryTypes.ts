@@ -15,6 +15,7 @@ export type StoreRow = {
 };
 
 export type ListingRow = {
+  listingMetadata: unknown;
   condition: "certified_pre_owned" | "new" | "used";
   description: string | null;
   doors: number | null;
@@ -120,6 +121,7 @@ export type DrizzlePublicStorefrontClient = {
       tenantId: unknown;
     }): SelectFromBuilder<StoreRow>;
     (selection: {
+      listingMetadata: unknown;
       condition: unknown;
       description: unknown;
       doors: unknown;

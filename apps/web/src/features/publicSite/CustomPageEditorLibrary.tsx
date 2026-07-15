@@ -80,7 +80,7 @@ function LibraryBlockButton({
   const Icon = blockIcon(type);
   return (
     <button
-      className="group grid w-full gap-2 rounded-xl border border-border/60 bg-card p-2 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card hover:shadow-md active:translate-y-0 active:scale-[0.99]"
+      className="group grid w-full gap-2 rounded-xl border border-border/60 bg-card p-2 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:bg-card active:translate-y-0 active:scale-[0.99]"
       onClick={() => onAdd(type)}
       type="button"
     >
@@ -181,7 +181,7 @@ function BlockListRow({
         "group grid w-full min-w-0 gap-2 overflow-hidden rounded-lg border px-3 py-2 text-left transition-all",
         selected
           ? "border-primary bg-primary text-primary-foreground shadow-[0_10px_26px_color-mix(in_oklab,var(--primary)_24%,transparent)]"
-          : "border-border/50 bg-card text-muted-foreground hover:border-muted-foreground/40 hover:text-foreground",
+          : "border-border/50 bg-card text-muted-foreground hover:border-line-strong hover:text-foreground",
       )}
       data-selected={selected ? "true" : undefined}
     >

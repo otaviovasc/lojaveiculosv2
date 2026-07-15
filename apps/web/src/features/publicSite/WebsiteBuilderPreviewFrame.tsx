@@ -148,7 +148,7 @@ export const WebsiteBuilderPreviewFrame = forwardRef<
                 className={cn(
                   "flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all",
                   viewportMode === id
-                    ? "bg-card text-foreground shadow-sm ring-1 ring-border/50"
+                    ? "bg-card text-foreground ring-1 ring-border/50"
                     : "text-muted-foreground hover:text-foreground",
                 )}
                 key={item.id}

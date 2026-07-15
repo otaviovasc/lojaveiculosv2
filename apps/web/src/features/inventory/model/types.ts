@@ -13,6 +13,7 @@ import type {
 } from "./catalogTypes";
 import type {
   InventoryDocument,
+  InventoryDocumentAccess,
   InventoryMedia,
   InventoryMediaRecord,
   InventoryMediaUpload,
@@ -22,6 +23,7 @@ import type {
   InventoryPriceHistoryEntry,
   InventoryStatusHistoryEntry,
 } from "./operationTypes";
+import type { InventoryResaleAnalysisSnapshot } from "./enrichmentTypes";
 
 export type {
   InventoryCatalogOption,
@@ -41,6 +43,7 @@ export type {
 } from "./catalogTypes";
 export type {
   InventoryDocument,
+  InventoryDocumentAccess,
   InventoryMedia,
   InventoryMediaRecord,
   InventoryMediaUpload,
@@ -94,6 +97,7 @@ export type ReleaseInventoryReservationInput = {
 
 export type InventoryListing = {
   catalog: InventoryCatalogSnapshot | null;
+  commercialTags: readonly string[];
   createdAt: string;
   description: string | null;
   doors: number | null;
@@ -108,6 +112,7 @@ export type InventoryListing = {
   plate: string | null;
   priceCents: number | null;
   publicSlug: string | null;
+  resaleAnalysis: InventoryResaleAnalysisSnapshot | null;
   status: InventoryListingStatus;
   storeId: string | null;
   tenantId: string | null;
@@ -116,6 +121,31 @@ export type InventoryListing = {
   trimName: string | null;
   unitIds: readonly string[];
   updatedAt: string;
+  videoUrl: string | null;
+};
+
+export type InventoryAuditEvent = {
+  action: string;
+  actorId: string;
+  actorKind: "integration" | "public" | "system" | "user";
+  category:
+    | "authentication"
+    | "authorization"
+    | "data_access"
+    | "data_change"
+    | "integration"
+    | "system"
+    | null;
+  changes: readonly {
+    after?: unknown;
+    before?: unknown;
+    path: string;
+  }[];
+  id: string;
+  occurredAt: string;
+  outcome: "attempted" | "denied" | "failed" | "succeeded";
+  providerName: string | null;
+  summary: string | null;
 };
 
 export type InventoryUnit = {
@@ -257,6 +287,7 @@ export type CreateInventoryFlowInput = {
 
 export type UpdateInventoryListingInput = {
   catalog?: InventoryCatalogSnapshot | null;
+  commercialTags?: readonly string[];
   description?: string | null;
   doors?: number | null;
   engineAspiration?: InventoryEngineAspiration | null;
@@ -271,6 +302,7 @@ export type UpdateInventoryListingInput = {
   title?: string;
   transmission?: InventoryTransmission | null;
   trimName?: string | null;
+  videoUrl?: string | null;
 };
 
 export type UpdateInventoryUnitInput = {

@@ -16,7 +16,9 @@ describe("CustomSelect", () => {
 
     await user.click(screen.getByRole("button", { name: "Rascunho" }));
     expect(container.querySelector('[role="listbox"]')).toBeNull();
-    expect(screen.getByRole("listbox").parentElement).toBe(document.body);
+    expect(
+      screen.getByRole("listbox", { name: "Seleção: opções" }).parentElement,
+    ).toBe(document.body);
 
     await user.click(screen.getByRole("option", { name: "Disponivel" }));
 

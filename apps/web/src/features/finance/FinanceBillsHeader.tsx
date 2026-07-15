@@ -1,9 +1,8 @@
-import { Download, FileBarChart2, PlusCircle, ReceiptText } from "lucide-react";
+import { Download, FileBarChart2, PlusCircle } from "lucide-react";
 import {
   FeatureActionButton,
   FeaturePageHeader,
 } from "../../components/ui/FeatureLayout";
-import { FeatureAlert } from "../../components/ui/FeatureStates";
 
 export function FinanceBillsHeader({
   canCreate = true,
@@ -41,21 +40,16 @@ export function FinanceBillsHeader({
             ) : null}
           </>
         }
-        description="Controle de gastos e entradas com saldo planejado, saldo real, vencimentos, recorrências, comissões e comprovantes auditados."
+        description="Visão única de entradas, saídas, vencimentos, recorrências e comprovantes, com saldo planejado e realizado por período."
         eyebrow={
           <>
             Financeiro
             <span aria-hidden="true">·</span>
-            Contas e recibos
+            Controle de gastos
           </>
         }
         title="Fluxo de caixa"
       />
-      <FeatureAlert className="feature-alert" tone="info">
-        <ReceiptText aria-hidden="true" className="size-4" />
-        Anexos, recibos e custos de veículo permanecem vinculados ao lançamento
-        financeiro e à trilha de auditoria.
-      </FeatureAlert>
     </>
   );
 }

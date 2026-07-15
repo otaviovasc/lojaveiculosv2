@@ -83,11 +83,14 @@ export function DocumentBuilderAiPanel({
   };
 
   return (
-    <aside className="documents-builder-ai-panel">
+    <section
+      aria-label="Revisão assistida do modelo"
+      className="documents-builder-ai-panel"
+    >
       <header className="documents-builder-panel-heading">
         <div>
-          <span>Assistente</span>
-          <h2>Sugestões com diff</h2>
+          <span>Revisão assistida</span>
+          <h2>Compare antes de aplicar</h2>
         </div>
         <Sparkles aria-hidden="true" className="size-5" />
       </header>
@@ -97,7 +100,7 @@ export function DocumentBuilderAiPanel({
         <textarea
           disabled={!api || selected.mode !== "editable"}
           onChange={(event) => setInstruction(event.target.value)}
-          placeholder="Ex.: torne a cláusula de garantia mais clara e objetiva"
+          placeholder="Ex.: deixe a cláusula de garantia mais clara e objetiva"
           value={instruction}
         />
       </label>
@@ -151,6 +154,6 @@ export function DocumentBuilderAiPanel({
           </footer>
         </section>
       ) : null}
-    </aside>
+    </section>
   );
 }

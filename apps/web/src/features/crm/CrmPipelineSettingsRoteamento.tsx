@@ -61,7 +61,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
           </p>
         </div>
         <button
-          className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse shadow-sm transition-opacity hover:opacity-90"
+          className="inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse transition-opacity hover:opacity-90"
           onClick={() => {
             setRouteError(null);
             setIsModalOpen(true);
@@ -90,7 +90,7 @@ export function CrmPipelineSettingsRoteamento({ pipeline, onUpdate }: Props) {
             </p>
           </div>
           <button
-            className="mt-2 inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse shadow-sm transition-opacity hover:opacity-90"
+            className="mt-2 inline-flex min-h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-blue-start px-4 text-xs font-bold text-inverse transition-opacity hover:opacity-90"
             onClick={() => {
               setRouteError(null);
               setIsModalOpen(true);

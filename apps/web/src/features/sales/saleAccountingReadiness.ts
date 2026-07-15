@@ -1,8 +1,27 @@
-import { isActiveSalePaymentStatus } from "@lojaveiculosv2/shared";
+import {
+  isActiveSalePaymentStatus,
+  salePaymentMethodUsesInstallments,
+} from "@lojaveiculosv2/shared";
 import type { SaleRecord } from "./types";
 
 export function saleAccountingMissingFields(sale: SaleRecord): string[] {
   const missing: string[] = [];
+  const activePayments = sale.payments.filter((payment) =>
+    isActiveSalePaymentStatus(payment.status),
+  );
+  if (activePayments.some((payment) => !payment.dueAt)) {
+    missing.push("Data dos pagamentos");
+  }
+  if (
+    activePayments.some(
+      (payment) =>
+        salePaymentMethodUsesInstallments(payment.method) &&
+        (!payment.installments || payment.installments < 1),
+    )
+  ) {
+    missing.push("Quantidade de parcelas");
+  }
+
   const financing = sale.saleSourceSnapshot.financing;
   if (financing?.status === "approved") {
     const payments = sale.payments.filter(

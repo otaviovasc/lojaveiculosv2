@@ -1,10 +1,14 @@
-import { Trash2 } from "lucide-react";
+import { Banknote, Trash2 } from "lucide-react";
 import {
   salePaymentMethods,
   type SalePaymentMethod,
 } from "@lojaveiculosv2/shared";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
 import { formatCents, parseCurrencyInput } from "./salesModel";
+import {
+  changePaymentMethod,
+  SalePaymentMethodFields,
+} from "./SalePaymentMethodFields";
 import type { SalePaymentLine } from "./types";
 
 export function PaymentRow({
@@ -16,65 +20,84 @@ export function PaymentRow({
 }: PaymentRowProps) {
   return (
     <div className="sales-payment-row">
-      <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
-        <span className="flex items-center justify-between gap-2">
-          Método de Pagamento
+      <div className="flex items-center justify-between gap-3 border-b border-line/50 pb-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent-strong">
+            <Banknote aria-hidden="true" className="size-4" />
+          </span>
+          <span className="text-xs font-black uppercase tracking-wider text-app-text">
+            Pagamento {index + 1}
+          </span>
           {locked ? (
-            <span className="text-accent normal-case tracking-normal">
+            <span className="text-xs font-bold normal-case tracking-normal text-accent">
               Sinal reservado
             </span>
           ) : null}
-        </span>
-        <FeatureSelect
-          ariaLabel="Método de pagamento"
-          className="sales-input"
+        </div>
+        <button
+          aria-label={`Remover pagamento ${index + 1}`}
+          className="grid size-9 shrink-0 place-items-center rounded-lg border border-line bg-app text-muted transition-colors hover:border-danger hover:text-danger-text"
           disabled={locked}
-          onChange={(method) => onChange({ ...payment, method })}
-          options={salePaymentMethods.map((method) => ({
-            label: formatPaymentMethod(method),
-            value: method,
-          }))}
-          value={payment.method}
+          onClick={onRemove}
+          title={
+            locked
+              ? "Cancele a reserva para corrigir o sinal reservado."
+              : "Remover pagamento"
+          }
+          type="button"
+        >
+          <Trash2 aria-hidden="true" className="size-4" />
+        </button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <label className="grid gap-1.5 text-xs font-black text-muted uppercase tracking-wider">
+          Método de pagamento
+          <FeatureSelect
+            ariaLabel="Método de pagamento"
+            className="sales-input"
+            disabled={locked}
+            onChange={(method) =>
+              onChange(changePaymentMethod(payment, method))
+            }
+            options={salePaymentMethods.map((method) => ({
+              label: formatPaymentMethod(method),
+              value: method,
+            }))}
+            value={payment.method}
+          />
+        </label>
+        <MoneyInput
+          disabled={locked}
+          label="Valor principal"
+          onChange={(value) =>
+            onChange({
+              ...payment,
+              amountCents: (value ?? 0) + payment.extraCents,
+              principalCents: value ?? 0,
+            })
+          }
+          value={payment.principalCents}
         />
-      </label>
-      <MoneyInput
+        <MoneyInput
+          disabled={locked}
+          label="Taxas / extras"
+          onChange={(value) =>
+            onChange({
+              ...payment,
+              amountCents: payment.principalCents + (value ?? 0),
+              extraCents: value ?? 0,
+            })
+          }
+          value={payment.extraCents}
+        />
+      </div>
+
+      <SalePaymentMethodFields
         disabled={locked}
-        label="Valor Principal"
-        onChange={(value) =>
-          onChange({
-            ...payment,
-            amountCents: (value ?? 0) + payment.extraCents,
-            principalCents: value ?? 0,
-          })
-        }
-        value={payment.principalCents}
+        onChange={onChange}
+        payment={payment}
       />
-      <MoneyInput
-        disabled={locked}
-        label="Taxas / Extras"
-        onChange={(value) =>
-          onChange({
-            ...payment,
-            amountCents: payment.principalCents + (value ?? 0),
-            extraCents: value ?? 0,
-          })
-        }
-        value={payment.extraCents}
-      />
-      <button
-        aria-label={`Remover pagamento ${index + 1}`}
-        className="sales-secondary-button !min-h-[2.75rem] hover:!border-danger hover:!text-danger shrink-0"
-        disabled={locked}
-        onClick={onRemove}
-        title={
-          locked
-            ? "Cancele a reserva para corrigir o sinal reservado."
-            : undefined
-        }
-        type="button"
-      >
-        <Trash2 className="size-4" />
-      </button>
     </div>
   );
 }
@@ -85,7 +108,7 @@ export function newPayment(
 ): SalePaymentLine {
   return {
     amountCents,
-    dueAt: null,
+    dueAt: localDateInputValue(),
     extraCents: 0,
     id: `draft-payment-${Date.now()}-${index}`,
     installments: null,
@@ -96,6 +119,14 @@ export function newPayment(
     providerPaymentId: null,
     status: "pending",
   };
+}
+
+function localDateInputValue(): string {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function MoneyInput({

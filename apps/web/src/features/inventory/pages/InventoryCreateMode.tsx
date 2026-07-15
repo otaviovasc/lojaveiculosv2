@@ -13,7 +13,6 @@ export function InventoryCreateMode({
 }) {
   return (
     <div className="relative min-h-screen store-dashboard">
-      <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
       <div className="dashboard-main relative z-10">
         <InventoryCreatePage
           api={api}

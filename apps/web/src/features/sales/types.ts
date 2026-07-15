@@ -112,6 +112,7 @@ export type SaleDraftInput = {
 
 export type SalePaymentInput = {
   amountCents: number;
+  dueAt?: string | null;
   extraCents?: number;
   id?: string;
   installments?: number | null;

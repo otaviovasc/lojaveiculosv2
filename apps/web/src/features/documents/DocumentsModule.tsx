@@ -10,6 +10,7 @@ import {
   DocumentsKpiSummary,
   type DocumentOriginFilter,
 } from "./DocumentsKpiSummary";
+import { DocumentsSectionNavigation } from "./DocumentsSectionNavigation";
 import { DocumentsWorkspaceBody } from "./DocumentsWorkspaceBody";
 import {
   DocumentsWorkspaceDialogs,
@@ -215,13 +216,19 @@ export function DocumentsModule({
         isRefreshing={isLoading}
         isUploading={!runtimeApi || !uploadTarget}
         onOpenFolders={openMobileFolders}
-        onOpenTemplates={() => setIsBuilderOpen(true)}
         onRefresh={() => void state.resetAndReload()}
         onUpload={() => state.setIsUploadDialogOpen(true)}
         selectedKey={selectedFolderKey}
         showUpload={showUpload}
         unitLabel={selectedUnit ? selectedUnit.label : null}
         uploadTitle={uploadTitle}
+      />
+
+      <DocumentsSectionNavigation
+        activeSection="documents"
+        onOpenDocuments={() => undefined}
+        onOpenTemplates={() => setIsBuilderOpen(true)}
+        templateCount={state.templates.length}
       />
 
       <DocumentsKpiSummary

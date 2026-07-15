@@ -62,6 +62,7 @@ export function createDrizzlePublicStorefrontRepository(
     async findPublicListingDetail(input) {
       const [listing] = await db
         .select({
+          listingMetadata: vehicleListings.metadata,
           condition: vehicleListings.condition,
           description: vehicleListings.description,
           doors: vehicleListings.doors,
@@ -116,6 +117,7 @@ export function createDrizzlePublicStorefrontRepository(
     async listPublicListings(input) {
       const rows = await db
         .select({
+          listingMetadata: vehicleListings.metadata,
           condition: vehicleListings.condition,
           description: vehicleListings.description,
           doors: vehicleListings.doors,

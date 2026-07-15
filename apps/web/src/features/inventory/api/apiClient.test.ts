@@ -161,10 +161,12 @@ describe("createInventoryApi", () => {
     const api = createInventoryApi({ fetch: fake.fetch });
 
     await api.updateListingDetails("listing_1", {
+      commercialTags: ["Único dono", "Revisado"],
       description: "Updated",
       priceCents: 13000000,
       status: "published",
       title: "Updated title",
+      videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
     });
     await api.updateUnit("unit_1", {
       plate: "DEF4G56",
@@ -178,10 +180,12 @@ describe("createInventoryApi", () => {
     );
     expect(callAt(fake.calls, 0).init?.method).toBe("PATCH");
     expect(bodyOf(callAt(fake.calls, 0))).toEqual({
+      commercialTags: ["Único dono", "Revisado"],
       description: "Updated",
       priceCents: 13000000,
       status: "published",
       title: "Updated title",
+      videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
     });
     expect(callAt(fake.calls, 1).input).toBe("/api/v1/inventory/units/unit_1");
     expect(callAt(fake.calls, 1).init?.method).toBe("PATCH");
@@ -313,5 +317,49 @@ describe("createInventoryApi", () => {
       brand: "Fiat",
       model: "Strada",
     });
+  });
+
+  it("loads vehicle audit events and generates a persisted listing analysis", async () => {
+    const fake = createFakeFetch([{ events: [] }, listingDetailPayload()]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await api.listListingAuditEvents("listing_1");
+    await api.analyzeListingResale("listing_1");
+
+    expect(callAt(fake.calls, 0).input).toBe(
+      "/api/v1/inventory/listings/listing_1/audit-events",
+    );
+    expect(callAt(fake.calls, 1).input).toBe(
+      "/api/v1/inventory/listings/listing_1/resale-analysis",
+    );
+    expect(callAt(fake.calls, 1).init?.method).toBe("POST");
+  });
+
+  it("requests secure inline and attachment access for inventory documents", async () => {
+    const fake = createFakeFetch([
+      {
+        downloadUrl: "https://storage.example/preview.pdf",
+        expiresAt: "2026-07-14T12:15:00.000Z",
+        fileName: "documento.pdf",
+        mimeType: "application/pdf",
+      },
+      {
+        downloadUrl: "https://storage.example/download.pdf",
+        expiresAt: "2026-07-14T12:15:00.000Z",
+        fileName: "documento.pdf",
+        mimeType: "application/pdf",
+      },
+    ]);
+    const api = createInventoryApi({ fetch: fake.fetch });
+
+    await api.getDocumentAccess("document_1", "inline");
+    await api.getDocumentAccess("document_1", "attachment");
+
+    expect(callAt(fake.calls, 0).input).toBe(
+      "/api/v1/documents/document_1/download?disposition=inline",
+    );
+    expect(callAt(fake.calls, 1).input).toBe(
+      "/api/v1/documents/document_1/download?disposition=attachment",
+    );
   });
 });

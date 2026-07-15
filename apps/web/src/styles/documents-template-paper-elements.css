@@ -48,7 +48,7 @@
 
 .documents-template-paper-fields div:hover {
   background: var(--color-panel);
-  border-color: var(--color-muted);
+  border-color: var(--color-line-strong);
 }
 
 .documents-template-paper-fields dt {

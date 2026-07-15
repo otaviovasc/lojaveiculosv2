@@ -101,10 +101,11 @@ export function InsuranceRulesPanel({
 
   const preview = previewInsurance(values);
   return (
-    <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+    <div className="grid items-start gap-4 xl:grid-cols-[2fr_1fr]">
       <AutoEntryDomainCard
         description="A loja recebe uma parcela da comissão aplicada pela seguradora; o vendedor recebe uma taxa do prêmio."
         title="Divisão do seguro"
+        tone="warning"
       >
         <AutoEntryValueOrigin active={Boolean(store && seller)} />
         <section aria-labelledby="insurance-applied-rate-title">
@@ -150,6 +151,7 @@ export function InsuranceRulesPanel({
       <AutoEntryDomainCard
         description="Simulação com prêmio de R$ 5.000 e taxa padrão fixa de 10%."
         title="Prévia"
+        tone="neutral"
       >
         <Preview label="Receita da loja" value={preview.store} />
         <Preview label="Comissão do vendedor" value={preview.seller} />

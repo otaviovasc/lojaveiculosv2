@@ -29,6 +29,9 @@ export function cleanCreateInput(
   };
 
   if (input.catalog !== undefined) result.catalog = input.catalog;
+  if (input.commercialTags !== undefined) {
+    result.commercialTags = input.commercialTags;
+  }
   if (input.description !== undefined) result.description = input.description;
   if (input.doors !== undefined) result.doors = input.doors;
   if (input.engineAspiration !== undefined) {
@@ -52,6 +55,7 @@ export function cleanCreateInput(
     result.transmission = input.transmission;
   }
   if (input.trimName !== undefined) result.trimName = input.trimName;
+  if (input.videoUrl !== undefined) result.videoUrl = input.videoUrl;
 
   return result;
 }

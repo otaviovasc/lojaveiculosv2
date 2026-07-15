@@ -94,6 +94,7 @@ function createStorefrontData(): PublicStorefrontPageData {
   return {
     listings: [
       {
+        commercialTags: [],
         condition: "new",
         description: null,
         doors: 4,
@@ -111,6 +112,7 @@ function createStorefrontData(): PublicStorefrontPageData {
         title: "Carro",
         transmission: "automatic",
         trimName: "Turbo",
+        videoUrl: null,
       },
     ],
     settings: {

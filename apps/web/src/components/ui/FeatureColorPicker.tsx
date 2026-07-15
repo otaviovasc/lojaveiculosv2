@@ -55,19 +55,19 @@ export function FeatureColorPicker({
     <div className={cx("grid gap-2", className)}>
       <div className="flex items-center justify-between gap-2">
         <label
-          className="text-xs font-black uppercase tracking-widest text-muted"
+          className="text-xs font-semibold uppercase tracking-widest text-muted"
           htmlFor={inputId}
         >
           {label}
         </label>
-        <span className="font-mono text-xs font-bold uppercase text-muted">
+        <span className="font-mono text-xs font-semibold uppercase text-muted">
           {normalizedValue ?? (allowEmpty ? "Tema" : pickerValue)}
         </span>
       </div>
       <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
         <button
           aria-label={`Selecionar ${label}`}
-          className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-app shadow-sm outline-none transition-colors hover:border-accent focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50"
+          className="relative grid size-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-line bg-app outline-none transition-colors hover:border-accent focus:shadow-[var(--shadow-focus)] disabled:cursor-not-allowed disabled:opacity-50"
           disabled={disabled}
           onClick={() => nativeInputRef.current?.click()}
           type="button"
@@ -142,7 +142,7 @@ export function FeatureColorPicker({
         </div>
       ) : null}
       {isInvalid ? (
-        <p className="text-xs font-black text-danger">Use HEX válido.</p>
+        <p className="text-xs font-semibold text-danger">Use HEX válido.</p>
       ) : null}
     </div>
   );

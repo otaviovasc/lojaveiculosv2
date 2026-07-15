@@ -114,6 +114,19 @@ export function filterEntries(
   });
 }
 
+export function filterOperationalCashEntries(
+  entries: readonly FinanceEntry[],
+  filters: FinanceFilters,
+) {
+  return filterEntries(entries, {
+    ...filters,
+    dateFrom: "",
+    datePreset: "all",
+    dateTo: "",
+    window: "all",
+  });
+}
+
 export function summarizeEntries(entries: readonly FinanceEntry[]) {
   return entries.reduce(
     (summary, entry) => ({

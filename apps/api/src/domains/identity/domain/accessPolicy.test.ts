@@ -15,6 +15,24 @@ describe("access policy", () => {
     });
   });
 
+  it("keeps resale analysis generation unavailable to read-only investors", () => {
+    expect(
+      canAccess(
+        resolvePermissions({ role: "investor" }),
+        "inventory.resale_analysis_generate",
+      ),
+    ).toEqual({
+      allowed: false,
+      reason: "Missing permission: inventory.resale_analysis_generate",
+    });
+    expect(
+      canAccess(
+        resolvePermissions({ role: "salesman" }),
+        "inventory.resale_analysis_generate",
+      ),
+    ).toEqual({ allowed: true });
+  });
+
   it("allows explicit store-level permission overrides", () => {
     const permissions = resolvePermissions({
       overrides: [{ allowed: true, permission: "inventory.update_price" }],

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { CommissionPanel } from "./SaleServicesCommissionPanel";
+import type { InventoryApi } from "../inventory/api/apiClient";
 import { DocumentationPanel } from "./SaleServicesDocumentationPanel";
 import { FinancingPanel, InsurancePanel } from "./SaleServicesPolicyPanels";
 import { TradeInPanel } from "./SaleServicesTradeInPanel";
@@ -23,6 +24,7 @@ export function SaleServicesTabs({
   documentation,
   financing,
   insurance,
+  inventoryApi,
   onChange,
   onTabChange,
   sale,
@@ -33,6 +35,7 @@ export function SaleServicesTabs({
   documentation: SnapshotRecord;
   financing: SnapshotRecord;
   insurance: SnapshotRecord;
+  inventoryApi: InventoryApi | null;
   onChange: ServiceChangeHandler;
   onTabChange: (tab: ActiveServiceTab) => void;
   sale: SaleRecord;
@@ -95,7 +98,12 @@ export function SaleServicesTabs({
           <CommissionPanel commission={commission} onChange={onChange} />
         )}
         {activeTab === "tradeIn" && (
-          <TradeInPanel onChange={onChange} sale={sale} tradeIn={tradeIn} />
+          <TradeInPanel
+            inventoryApi={inventoryApi}
+            onChange={onChange}
+            sale={sale}
+            tradeIn={tradeIn}
+          />
         )}
       </div>
     </div>

@@ -146,7 +146,7 @@ export function RoleAssignmentSection({
           <button
             type="button"
             onClick={onCreateCustomRoleClick}
-            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer shadow-sm"
+            className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong transition-all hover:bg-accent hover:text-accent-foreground cursor-pointer"
           >
             <Plus className="size-3.5" />
             <span>Salvar como Cargo Customizado</span>
@@ -284,7 +284,7 @@ export function RoleManagementFooter({
   return (
     <div className="shrink-0 p-4 border-t border-line/40 bg-panel/95 backdrop-blur-md flex items-center justify-end gap-3 rounded-b-xl shadow-md-up">
       <button
-        className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-black text-accent-foreground disabled:opacity-70 transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98 shadow-md cursor-pointer"
+        className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-black text-accent-foreground disabled:opacity-70 transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98 cursor-pointer"
         disabled={!editable || isSaving}
         onClick={onSave}
         type="button"

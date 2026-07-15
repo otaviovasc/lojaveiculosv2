@@ -6,6 +6,7 @@ import type {
   CreateInventoryListingInput,
   CreateInventoryUnitInput,
   InventoryAuth,
+  InventoryAuditEvent,
   InventoryChecklist,
   InventoryListingDetail,
   InventoryListingList,
@@ -53,7 +54,11 @@ export type InventoryApi = {
   analyzeResale: (
     input: InventoryResaleAnalysisRequest,
   ) => Promise<InventoryResaleAnalysisResponse>;
+  analyzeListingResale: (listingId: string) => Promise<InventoryListingDetail>;
   listListings: (input?: ListInventoryInput) => Promise<InventoryListingList>;
+  listListingAuditEvents: (
+    listingId: string,
+  ) => Promise<readonly InventoryAuditEvent[]>;
   listChecklists: (unitId: string) => Promise<readonly InventoryChecklist[]>;
   releaseReservation: (
     unitId: string,

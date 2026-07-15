@@ -187,7 +187,7 @@ export function CrmLeadDetailsPage({
                 className={
                   "px-4 py-1.5 text-xs font-bold rounded-lg transition-colors cursor-pointer shrink-0 " +
                   (activeTab === tab.id
-                    ? "bg-panel/80 text-app-text border border-line/20 shadow-sm"
+                    ? "bg-panel/80 text-app-text border border-line/20"
                     : "text-muted hover:text-app-text")
                 }
                 key={tab.id}

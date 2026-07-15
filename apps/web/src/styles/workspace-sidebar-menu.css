@@ -1,3 +1,7 @@
+.workspace-sidebar__brand.is-store-picker-open {
+  z-index: 2;
+}
+
 .workspace-sidebar__picker-backdrop {
   position: fixed;
   inset: 0;
@@ -28,12 +32,42 @@
   font: inherit;
   font-size: var(--font-size-sm);
   text-align: left;
+  transition:
+    background-color var(--motion-duration-fast),
+    color var(--motion-duration-fast);
 }
 
-.workspace-sidebar__picker-option:hover,
-.workspace-sidebar__picker-option.is-active {
-  background: var(--color-sidebar);
+.workspace-sidebar__picker-option:hover {
+  background: var(--color-sidebar-hover);
   color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__picker-option.is-active {
+  background: var(--color-sidebar-selected);
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__picker-option.is-active:hover {
+  background: var(--color-sidebar-selected-hover);
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__picker-option:active {
+  background: var(--color-sidebar-pressed);
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__picker-option:focus-visible {
+  outline: 2px solid var(--color-accent-readable);
+  outline-offset: -2px;
+}
+
+.workspace-sidebar__picker-option:disabled,
+.workspace-sidebar__picker-option[aria-disabled="true"] {
+  background: transparent;
+  color: var(--color-sidebar-muted);
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 .workspace-sidebar__picker-divider {

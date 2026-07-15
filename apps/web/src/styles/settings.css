@@ -30,11 +30,11 @@
 .settings-tabs {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: 0.375rem;
 }
 
-.settings-tabs button {
+.settings-tabs > button {
   border-radius: var(--radius-sm);
   color: var(--color-muted);
   font-size: var(--font-size-sm);
@@ -43,7 +43,7 @@
   padding: 0 1rem;
 }
 
-.settings-tabs button.is-active {
+.settings-tabs > button.is-active {
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
 }

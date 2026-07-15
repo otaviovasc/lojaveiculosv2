@@ -119,7 +119,7 @@ export function MobileAction({
 }) {
   return (
     <button
-      className="inline-flex min-h-10 items-center justify-center rounded-lg border border-line bg-panel px-3 text-xs font-black text-accent-strong disabled:text-muted disabled:opacity-60"
+      className="finance-mobile-action inline-flex min-h-11 items-center justify-center rounded-lg border border-line bg-panel px-3 text-xs font-black text-accent-strong disabled:text-muted disabled:opacity-60"
       disabled={disabled}
       onClick={onClick}
       type="button"

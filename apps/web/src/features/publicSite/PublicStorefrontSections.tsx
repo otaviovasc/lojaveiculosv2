@@ -124,7 +124,7 @@ export function HeroSection({
           {/* CTA Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <a
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-8 text-sm font-bold text-accent-foreground shadow-lg transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl active:translate-y-0 active:scale-95 cursor-pointer"
+              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-accent px-8 text-sm font-bold text-accent-foreground transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
               href="#estoque"
             >
               Ver estoque

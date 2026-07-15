@@ -105,10 +105,11 @@ export function ConsortiumRulesPanel({
 
   const preview = consortiumPreview(values);
   return (
-    <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
+    <div className="grid items-start gap-4 xl:grid-cols-[2fr_1fr]">
       <AutoEntryDomainCard
         description="A receita da loja é taxa total × participação da loja; a comissão do vendedor usa a carta de crédito."
         title="Divisão do consórcio"
+        tone="blue"
       >
         <AutoEntryValueOrigin active={Boolean(store && seller)} />
         <FeatureFieldGroup className="lg:grid-cols-3">
@@ -143,6 +144,7 @@ export function ConsortiumRulesPanel({
       <AutoEntryDomainCard
         description="Simulação com carta de crédito de R$ 100.000."
         title="Prévia"
+        tone="neutral"
       >
         <Preview label="Receita da loja" value={preview.store} />
         <Preview label="Comissão do vendedor" value={preview.seller} />

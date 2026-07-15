@@ -12,6 +12,8 @@ import {
   CommissionRulesPanel,
   FinanceRecurringPanel,
 } from "./FinanceCorePanels";
+import { commissionRuleValue } from "./CommissionRulesPanel";
+import type { CommissionRule } from "./types";
 
 describe("FinanceRecurringPanel", () => {
   afterEach(() => cleanup());
@@ -64,6 +66,43 @@ describe("CommissionRulesPanel", () => {
       expect(screen.getByRole("button", { name: "Criar regra" })).toBeEnabled(),
     );
   });
+
+  it("collapses the onboarding form when persisted rules finish loading", () => {
+    const { rerender } = render(
+      <CommissionRulesPanel items={[]} onCreate={vi.fn()} />,
+    );
+
+    expect(screen.getByLabelText("Nome")).toBeVisible();
+    rerender(
+      <CommissionRulesPanel items={[commissionRule()]} onCreate={vi.fn()} />,
+    );
+
+    expect(screen.queryByLabelText("Nome")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Gerenciar (1)" }),
+    ).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("formats every supported rule type without inventing a percentage", () => {
+    expect(commissionRuleValue(commissionRule())).toBe("1,25%");
+    expect(
+      commissionRuleValue(
+        commissionRule({
+          fixedAmountCents: 50_000,
+          percentageBasisPoints: null,
+          type: "fixed_amount",
+        }),
+      ),
+    ).toContain("500,00");
+    expect(
+      commissionRuleValue(
+        commissionRule({
+          percentageBasisPoints: null,
+          type: "manual",
+        }),
+      ),
+    ).toBe("Manual");
+  });
 });
 
 function fillRuleForm(container: HTMLElement, percentage: string) {
@@ -76,4 +115,20 @@ function fillRuleForm(container: HTMLElement, percentage: string) {
   fireEvent.change(container.querySelector('input[name="percent"]')!, {
     target: { value: percentage },
   });
+}
+
+function commissionRule(
+  overrides: Partial<CommissionRule> = {},
+): CommissionRule {
+  return {
+    category: "Venda",
+    fixedAmountCents: null,
+    id: "rule-1",
+    name: "Comissão padrão",
+    percentageBasisPoints: 125,
+    sellerUserId: null,
+    status: "active",
+    type: "percentage",
+    ...overrides,
+  };
 }

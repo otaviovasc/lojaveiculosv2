@@ -159,6 +159,7 @@ export function createRuntimeHttpAppOptions({
       db,
       env,
       runtimeObjectStorage,
+      auditDb,
     ),
     internalMonitoringServices: auditDb
       ? createRuntimeInternalMonitoringServices(auditDb)
@@ -193,7 +194,6 @@ export function createRuntimeBillingServicePorts(
   env: Record<string, string | undefined>,
 ): BillingServicePorts {
   const publicAppUrl = env.PUBLIC_APP_URL?.trim();
-
   return {
     billingProviderRepository: createDrizzleBillingProviderRepository(
       db as DrizzleBillingClient,

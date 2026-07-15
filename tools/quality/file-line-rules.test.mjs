@@ -1,29 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { findFileLineViolations } from "./file-line-rules.mjs";
+import {
+  defaultMaxLines,
+  findFileLineViolations,
+  frontendAdditionalLines,
+  frontendMaxLines,
+} from "./file-line-rules.mjs";
 
-const reason = "legacy-web-250-migration";
+const reason = "legacy-web-550-migration";
 
 describe("file line rules", () => {
-  it("blocks new oversized files and growth above a debt ceiling", () => {
+  it("adds 300 lines for frontend files while keeping the repo default at 250", () => {
     const failures = findFileLineViolations(
       [
-        { lines: 251, path: "apps/web/src/New.tsx" },
-        { lines: 301, path: "apps/web/src/Legacy.tsx" },
+        { lines: 550, path: "apps/web/src/Allowed.tsx" },
+        { lines: 551, path: "apps/web/src/Oversized.tsx" },
+        { lines: 250, path: "apps/api/src/Allowed.ts" },
+        { lines: 251, path: "apps/api/src/Oversized.ts" },
       ],
-      debt({ "apps/web/src/Legacy.tsx": entry(300) }),
+      debt({}),
     );
 
-    expect(failures).toContain("apps/web/src/New.tsx: 251 > 250.");
-    expect(failures).toContain(
-      "apps/web/src/Legacy.tsx: 301 exceeds debt ceiling 300.",
-    );
+    expect(defaultMaxLines).toBe(250);
+    expect(frontendAdditionalLines).toBe(300);
+    expect(frontendMaxLines).toBe(550);
+    expect(failures).toEqual([
+      "apps/web/src/Oversized.tsx: 551 > 550.",
+      "apps/api/src/Oversized.ts: 251 > 250.",
+    ]);
   });
 
   it("allows existing debt only at its exact ceiling", () => {
     expect(
       findFileLineViolations(
-        [{ lines: 300, path: "apps/web/src/Legacy.tsx" }],
-        debt({ "apps/web/src/Legacy.tsx": entry(300) }),
+        [{ lines: 600, path: "apps/web/src/Legacy.tsx" }],
+        debt({ "apps/web/src/Legacy.tsx": entry(600) }),
       ),
     ).toEqual([]);
   });
@@ -31,26 +41,26 @@ describe("file line rules", () => {
   it("requires the debt ceiling to shrink with the file", () => {
     expect(
       findFileLineViolations(
-        [{ lines: 299, path: "apps/web/src/Legacy.tsx" }],
-        debt({ "apps/web/src/Legacy.tsx": entry(300) }),
+        [{ lines: 599, path: "apps/web/src/Legacy.tsx" }],
+        debt({ "apps/web/src/Legacy.tsx": entry(600) }),
       ),
     ).toContain(
-      "apps/web/src/Legacy.tsx: debt ceiling 300 exceeds current line count 299; lower the ceiling to prevent regrowth.",
+      "apps/web/src/Legacy.tsx: debt ceiling 600 exceeds current line count 599; lower the ceiling to prevent regrowth.",
     );
   });
 
   it("rejects stale, missing, and undocumented exceptions", () => {
     const policy = debt({
-      "apps/web/src/Reduced.tsx": entry(300),
-      "apps/web/src/Removed.tsx": { maxLines: 300, reason: "missing" },
+      "apps/web/src/Reduced.tsx": entry(600),
+      "apps/web/src/Removed.tsx": { maxLines: 600, reason: "missing" },
     });
     const failures = findFileLineViolations(
-      [{ lines: 240, path: "apps/web/src/Reduced.tsx" }],
+      [{ lines: 540, path: "apps/web/src/Reduced.tsx" }],
       policy,
     );
 
     expect(failures).toContain(
-      "apps/web/src/Reduced.tsx: stale debt exception; file is now 240 lines.",
+      "apps/web/src/Reduced.tsx: stale debt exception; file is now 540 lines.",
     );
     expect(failures).toContain(
       "apps/web/src/Removed.tsx: debt exception must reference a documented reason.",
@@ -63,14 +73,14 @@ describe("file line rules", () => {
   it("limits migration debt to frontend files and rejects unused reasons", () => {
     const policy = debt({
       "apps/api/src/Legacy.ts": entry(300),
-      "apps/web/src/Legacy.tsx": entry(300),
+      "apps/web/src/Legacy.tsx": entry(600),
     });
     policy.reasons.unused = "No exception references this reason.";
 
     const failures = findFileLineViolations(
       [
         { lines: 300, path: "apps/api/src/Legacy.ts" },
-        { lines: 300, path: "apps/web/src/Legacy.tsx" },
+        { lines: 600, path: "apps/web/src/Legacy.tsx" },
       ],
       policy,
     );
@@ -83,12 +93,12 @@ describe("file line rules", () => {
 
   it("reports malformed exceptions instead of throwing", () => {
     const failures = findFileLineViolations(
-      [{ lines: 300, path: "apps/web/src/Legacy.tsx" }],
+      [{ lines: 600, path: "apps/web/src/Legacy.tsx" }],
       debt({ "apps/web/src/Legacy.tsx": null }),
     );
 
     expect(failures).toContain(
-      "apps/web/src/Legacy.tsx: debt ceiling must be an integer greater than 250.",
+      "apps/web/src/Legacy.tsx: debt ceiling must be an integer greater than 550.",
     );
     expect(failures).toContain(
       "apps/web/src/Legacy.tsx: debt exception must reference a documented reason.",
@@ -99,10 +109,13 @@ describe("file line rules", () => {
 function debt(files) {
   return {
     files,
-    reasons: {
-      [reason]:
-        "Pre-existing frontend file over 250 lines; split into cohesive modules.",
-    },
+    reasons:
+      Object.keys(files).length === 0
+        ? {}
+        : {
+            [reason]:
+              "Pre-existing frontend file over 550 lines; split into cohesive modules.",
+          },
   };
 }
 

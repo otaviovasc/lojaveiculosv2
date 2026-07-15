@@ -30,11 +30,7 @@ export function toDetailDto(detail: VehicleListingDetail) {
       updatedAt: document.updatedAt.toISOString(),
       uploadedAt: document.uploadedAt.toISOString(),
     })),
-    listing: {
-      ...detail.listing,
-      createdAt: detail.listing.createdAt.toISOString(),
-      updatedAt: detail.listing.updatedAt.toISOString(),
-    },
+    listing: toListingDto(detail.listing),
     media: detail.media.map((item) => ({
       ...item,
       createdAt: item.createdAt.toISOString(),
@@ -81,11 +77,7 @@ export function toUnitListDto(result: VehicleUnitListResult) {
 
 function toSummaryDto(summary: VehicleListingSummary) {
   return {
-    listing: {
-      ...summary.listing,
-      createdAt: summary.listing.createdAt.toISOString(),
-      updatedAt: summary.listing.updatedAt.toISOString(),
-    },
+    listing: toListingDto(summary.listing),
     mediaCount: summary.mediaCount,
     primaryPublicMediaUrl: summary.primaryPublicMediaUrl,
     primaryMediaUrl: summary.primaryMediaUrl,
@@ -107,11 +99,7 @@ function toSummaryDto(summary: VehicleListingSummary) {
 
 function toUnitSummaryDto(summary: VehicleUnitSummary) {
   return {
-    listing: {
-      ...summary.listing,
-      createdAt: summary.listing.createdAt.toISOString(),
-      updatedAt: summary.listing.updatedAt.toISOString(),
-    },
+    listing: toListingDto(summary.listing),
     mediaCount: summary.mediaCount,
     primaryMediaUrl: summary.primaryMediaUrl,
     primaryUnit: {
@@ -131,5 +119,19 @@ function toUnitSummaryDto(summary: VehicleUnitSummary) {
         updatedAt: summary.unit.updatedAt.toISOString(),
       },
     ],
+  };
+}
+
+function toListingDto(listing: VehicleListingDetail["listing"]) {
+  return {
+    ...listing,
+    createdAt: listing.createdAt.toISOString(),
+    resaleAnalysis: listing.resaleAnalysis
+      ? {
+          ...listing.resaleAnalysis,
+          generatedAt: listing.resaleAnalysis.generatedAt.toISOString(),
+        }
+      : null,
+    updatedAt: listing.updatedAt.toISOString(),
   };
 }

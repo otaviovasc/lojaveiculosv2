@@ -53,7 +53,7 @@ export function FeatureRowAction({
     <div className="relative flex items-center">
       <button
         aria-label={ariaLabel}
-        className="peer flex cursor-pointer items-center justify-center rounded-lg border border-line bg-panel p-1.5 text-muted shadow-sm transition-all hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
+        className="peer flex cursor-pointer items-center justify-center rounded-lg border border-line bg-panel p-1.5 text-muted transition-all hover:bg-accent-soft hover:text-accent-strong hover:border-accent/30 disabled:cursor-not-allowed disabled:opacity-50"
         disabled={disabled}
         onClick={onClick}
         type="button"

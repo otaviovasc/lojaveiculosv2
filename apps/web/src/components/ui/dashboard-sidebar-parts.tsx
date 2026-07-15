@@ -54,7 +54,9 @@ export function SidebarWorkspace({
   }
 
   return (
-    <div className="workspace-sidebar__brand">
+    <div
+      className={`workspace-sidebar__brand${isOpen ? " is-store-picker-open" : ""}`}
+    >
       <div className="workspace-sidebar__logo-wrap">
         <Logo
           alt={name}
@@ -161,6 +163,7 @@ export function DashboardSidebarNavItem<Id extends string>({
       onClick={() => onSelect(item.id)}
       title={collapsed ? item.title : undefined}
       type="button"
+      data-module-id={item.id}
     >
       <span className="workspace-sidebar__nav-copy">
         <span className="workspace-sidebar__nav-icon">
@@ -216,7 +219,6 @@ export function SidebarFooterActions({
         {!isCompact && (
           <span>{theme === "dark" ? "Tema Claro" : "Tema Escuro"}</span>
         )}
-        <div className="gloss-overlay" />
       </button>
 
       {onCollapsedChange && (

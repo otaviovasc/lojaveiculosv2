@@ -109,7 +109,7 @@ export function StickySaleSummary({
           value={formatCents(totalPaid)}
           valueClassName={
             totalPaid >= salePrice && salePrice > 0
-              ? "text-success font-black"
+              ? "text-success-strong font-black"
               : "text-app-text"
           }
         />
@@ -175,7 +175,7 @@ export function StickySaleSummary({
             <span>Venda cancelada</span>
           </div>
         ) : sale.status === "pending" ? (
-          <div className="flex items-center gap-2 bg-warning/10 text-warning px-3 py-2 rounded-xl border border-warning/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
+          <div className="flex items-center gap-2 bg-warning/10 text-warning-strong px-3 py-2 rounded-xl border border-warning/20 text-xs font-black mb-1 uppercase tracking-wider justify-center">
             <ShieldAlert className="size-4" />
             <span>Reserva ativa</span>
           </div>
@@ -190,7 +190,7 @@ export function StickySaleSummary({
             <span>Pronta para Reservar</span>
           </div>
         ) : (
-          <div className="flex items-center gap-2 bg-warning/5 text-warning px-3 py-2 rounded-xl border border-warning/10 text-xs font-bold mb-1 justify-center">
+          <div className="flex items-center gap-2 bg-warning/5 text-warning-strong px-3 py-2 rounded-xl border border-warning/10 text-xs font-bold mb-1 justify-center">
             <ShieldAlert className="size-4 shrink-0" />
             <span className="text-xs font-black uppercase tracking-wider">
               Aguardando Pendências
@@ -207,7 +207,6 @@ export function StickySaleSummary({
               style={{
                 opacity: canClose ? 1 : 0.5,
                 cursor: canClose ? "pointer" : "not-allowed",
-                boxShadow: canClose ? undefined : "none",
               }}
               type="button"
             >

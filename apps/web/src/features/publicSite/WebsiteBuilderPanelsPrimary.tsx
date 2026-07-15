@@ -42,8 +42,8 @@ export function WebsiteBuilderTemplatePanel({
               className={cn(
                 "group relative overflow-hidden rounded-2xl border-2 p-5 text-left transition-all duration-300",
                 selected
-                  ? "border-primary shadow-lg ring-2 ring-primary/20"
-                  : "border-border/50 hover:border-muted-foreground/30 hover:shadow-md",
+                  ? "border-primary ring-2 ring-primary/20"
+                  : "border-border/50 hover:border-line-strong",
               )}
               key={id}
               onClick={() => onChange(id)}

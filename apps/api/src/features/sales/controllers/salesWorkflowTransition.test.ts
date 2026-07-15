@@ -60,6 +60,7 @@ describe("sales workflow transition", () => {
       payments: [
         {
           amountCents: 5000000,
+          dueAt: new Date("2026-07-14T12:00:00.000Z"),
           method: "pix",
           principalCents: 5000000,
         },
@@ -188,6 +189,7 @@ describe("sales workflow transition", () => {
         payments: [
           {
             amountCents: 5000000,
+            dueAt: new Date("2026-07-14T12:00:00.000Z"),
             method: "pix",
             principalCents: 5000000,
           },

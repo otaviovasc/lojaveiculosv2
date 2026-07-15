@@ -1,7 +1,10 @@
-import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { saveQaScreenshot } from "./support/artifacts";
 import { installLocalSession } from "./support/auth";
+import {
+  expectNoBlockingAxeViolations,
+  expectViewportSafe,
+} from "./support/pageChecks";
 import { qaPersonas } from "./support/personas";
 import { setQaViewport } from "./support/viewports";
 
@@ -226,22 +229,4 @@ async function installAutomaticDocumentsOnly(page: Page) {
       response,
     });
   });
-}
-async function expectViewportSafe(page: Page) {
-  const viewport = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(viewport.scrollWidth).toBeLessThanOrEqual(viewport.clientWidth + 1);
-}
-
-async function expectNoBlockingAxeViolations(page: Page) {
-  const result = await new AxeBuilder({ page })
-    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
-    .analyze();
-  expect(
-    result.violations.filter(({ impact }) =>
-      ["critical", "serious"].includes(impact ?? ""),
-    ),
-  ).toEqual([]);
 }

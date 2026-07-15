@@ -1,4 +1,4 @@
-import { ArrowLeft, RotateCcw, Save } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
@@ -6,7 +6,13 @@ import type { DocumentsApi } from "./apiClient";
 import { DocumentBuilderAiPanel } from "./DocumentBuilderAiPanel";
 import { DocumentBuilderBlocks } from "./DocumentBuilderBlocks";
 import { DocumentBuilderSidebar } from "./DocumentBuilderSidebar";
+import {
+  DocumentBuilderHeader,
+  DocumentBuilderInspector,
+  type DocumentBuilderInspectorView,
+} from "./DocumentBuilderWorkspaceChrome";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
+import { DocumentsSectionNavigation } from "./DocumentsSectionNavigation";
 import { kindLabel } from "./documentLabels";
 import {
   createDefaultDocumentBuilderDraft,
@@ -49,6 +55,8 @@ export function DocumentBuilderWorkspace({
     createDocumentBuilderDraft(selected),
   );
   const [saveState, setSaveState] = useState<DocumentBuilderSaveState>("idle");
+  const [inspectorView, setInspectorView] =
+    useState<DocumentBuilderInspectorView>("assistant");
   const onSaveRef = useRef(onSave);
 
   useEffect(() => {
@@ -100,48 +108,23 @@ export function DocumentBuilderWorkspace({
       className="documents-builder-page"
       mainClassName="documents-builder-main"
     >
-      <header className="documents-builder-topbar">
-        <button
-          aria-label="Voltar para documentos"
-          className="documents-builder-back"
-          onClick={onClose}
-          title="Voltar para documentos"
-          type="button"
-        >
-          <ArrowLeft aria-hidden="true" className="size-4" />
-        </button>
-        <div>
-          <span>Document builder</span>
-          <h1>{selected.title}</h1>
-          <p>{selected.description}</p>
-        </div>
-        <div className="documents-builder-save-status">
-          <div className="documents-builder-status-wrapper">
-            <span
-              className={`documents-builder-status-dot documents-builder-status-dot--${saveState} ${
-                isSaving ? "documents-builder-status-dot--saving" : ""
-              }`}
-              aria-hidden="true"
-            />
-            <span className="documents-builder-status-text">
-              {saveStatusLabel(saveState, isSaving, selected.mode)}
-            </span>
-          </div>
-          <button
-            disabled={!canSave || !isDirty || isSaving}
-            onClick={() => {
-              setSaveState("saving");
-              void saveSelectedTemplate(selected, draft, onSave)
-                .then(() => setSaveState("saved"))
-                .catch(() => setSaveState("error"));
-            }}
-            type="button"
-          >
-            <Save aria-hidden="true" className="size-4" />
-            Salvar
-          </button>
-        </div>
-      </header>
+      <DocumentsSectionNavigation
+        activeSection="templates"
+        onOpenDocuments={onClose}
+        onOpenTemplates={() => undefined}
+        templateCount={templates.length}
+      />
+
+      <DocumentBuilderHeader
+        isSaveDisabled={!canSave || !isDirty || isSaving}
+        onSave={() => {
+          setSaveState("saving");
+          void saveSelectedTemplate(selected, draft, onSave)
+            .then(() => setSaveState("saved"))
+            .catch(() => setSaveState("error"));
+        }}
+        saveStatus={saveStatusLabel(saveState, isSaving, selected.mode)}
+      />
 
       <section className="documents-builder-layout">
         <DocumentBuilderSidebar
@@ -154,18 +137,25 @@ export function DocumentBuilderWorkspace({
           <section className="documents-builder-title-panel">
             <div>
               <span>{kindLabel(selected.kind)}</span>
-              <strong>{selected.templateKey}</strong>
+              <strong>
+                {isEditable
+                  ? "Personalize o texto usado nas próximas emissões."
+                  : "Este modelo segue a estrutura oficial do sistema."}
+              </strong>
             </div>
-            <input
-              disabled={!isEditable}
-              onChange={(event) =>
-                setDraft((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
-              value={draft.title}
-            />
+            <label className="documents-builder-title-field">
+              <span>Nome do modelo</span>
+              <input
+                disabled={!isEditable}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+                value={draft.title}
+              />
+            </label>
             <button
               disabled={!isEditable}
               onClick={() =>
@@ -188,19 +178,25 @@ export function DocumentBuilderWorkspace({
           />
         </main>
 
-        <aside className="documents-builder-inspector">
-          <DocumentBuilderAiPanel
-            api={api}
-            draft={draft}
-            onApply={setDraft}
-            selected={selected}
-          />
-          <DocumentTemplatePreview
-            isCustomized={selected.isCustomized || isDirty}
-            kind={selected.kind}
-            preview={preview}
-          />
-        </aside>
+        <DocumentBuilderInspector
+          assistant={
+            <DocumentBuilderAiPanel
+              api={api}
+              draft={draft}
+              onApply={setDraft}
+              selected={selected}
+            />
+          }
+          onViewChange={setInspectorView}
+          preview={
+            <DocumentTemplatePreview
+              isCustomized={selected.isCustomized || isDirty}
+              kind={selected.kind}
+              preview={preview}
+            />
+          }
+          view={inspectorView}
+        />
       </section>
     </FeaturePageShell>
   );

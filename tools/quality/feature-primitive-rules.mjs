@@ -1,10 +1,16 @@
 import {
   parseTypeScriptSource,
   sourceLine,
-  ts,
-  unwrapExpression,
   walkTypeScript,
 } from "./typescript-source.mjs";
+import {
+  collectUiImports,
+  componentDeclaration,
+  hasExplicitPadding,
+  importedFeatureCardName,
+  isJsxOpening,
+  renderedUiPrimitives,
+} from "./feature-primitive-source.mjs";
 
 const genericPrimitiveSuggestions = new Map([
   [
@@ -55,12 +61,39 @@ const composedStateRules = [
   },
 ];
 
+const composedCardRules = [
+  {
+    allowed: new Set([
+      "FeatureCard",
+      "FeatureKpiCard",
+      "FeatureMetricCard",
+      "FeatureStatCard",
+    ]),
+    suffix: "KpiCard",
+    suggestion:
+      "compose a shared FeatureKpiCard, FeatureMetricCard, or FeatureStatCard instead of feature-local KPI markup",
+  },
+];
+
 export function findFeaturePrimitiveViolations(file, source) {
   const sourceFile = parseTypeScriptSource(file, source);
   const imports = collectUiImports(sourceFile);
   const violations = [];
 
   walkTypeScript(sourceFile, (node) => {
+    if (isJsxOpening(node)) {
+      const tagName = importedFeatureCardName(node, sourceFile, imports);
+      if (tagName && !hasExplicitPadding(node, sourceFile)) {
+        violations.push({
+          line: sourceLine(sourceFile, node),
+          name: `${tagName} without an explicit padding prop`,
+          suggestion:
+            'set padding="none", padding="compact", or padding="comfortable" explicitly',
+          verb: "renders",
+        });
+      }
+    }
+
     const component = componentDeclaration(node);
     if (!component) return;
 
@@ -71,6 +104,25 @@ export function findFeaturePrimitiveViolations(file, source) {
         name: `local generic UI ${component.name}`,
         suggestion: genericSuggestion,
       });
+      return;
+    }
+
+    const cardRule = composedCardRules.find(({ suffix }) =>
+      component.name.endsWith(suffix),
+    );
+    if (cardRule) {
+      const renderedPrimitives = renderedUiPrimitives(
+        component.body,
+        sourceFile,
+        imports,
+      );
+      if (![...cardRule.allowed].some((name) => renderedPrimitives.has(name))) {
+        violations.push({
+          line: sourceLine(sourceFile, component.node),
+          name: `feature KPI card ${component.name}`,
+          suggestion: cardRule.suggestion,
+        });
+      }
       return;
     }
 
@@ -98,78 +150,18 @@ export function findFeaturePrimitiveViolations(file, source) {
   return violations;
 }
 
-function componentDeclaration(node) {
-  if (ts.isFunctionDeclaration(node) && node.name && node.body) {
-    return uppercaseComponent(node.name.text, node, node.body);
-  }
-  if (!ts.isVariableDeclaration(node) || !ts.isIdentifier(node.name)) {
-    return null;
-  }
-  if (!node.initializer) return null;
-  const initializer = componentFunction(node.initializer);
-  return initializer
-    ? uppercaseComponent(node.name.text, node, initializer.body)
-    : null;
-}
-
-function componentFunction(expression) {
-  const candidate = unwrapExpression(expression);
-  if (ts.isArrowFunction(candidate) || ts.isFunctionExpression(candidate)) {
-    return candidate;
-  }
-  if (!ts.isCallExpression(candidate)) return null;
-  const callback = candidate.arguments[0];
-  return callback ? componentFunction(callback) : null;
-}
-
-function uppercaseComponent(name, node, body) {
-  return /^[A-Z]/.test(name) ? { body, name, node } : null;
-}
-
-function collectUiImports(sourceFile) {
-  const names = new Map();
-  const namespaces = new Set();
-  for (const statement of sourceFile.statements) {
-    if (!ts.isImportDeclaration(statement)) continue;
-    if (!ts.isStringLiteral(statement.moduleSpecifier)) continue;
-    if (!isUiModule(statement.moduleSpecifier.text)) continue;
-    const bindings = statement.importClause?.namedBindings;
-    if (bindings && ts.isNamedImports(bindings)) {
-      for (const element of bindings.elements) {
-        names.set(
-          element.name.text,
-          element.propertyName?.text ?? element.name.text,
-        );
-      }
-    }
-    if (bindings && ts.isNamespaceImport(bindings)) {
-      namespaces.add(bindings.name.text);
-    }
-  }
-  return { names, namespaces };
-}
-
-function renderedUiPrimitives(body, sourceFile, imports) {
-  const rendered = new Set();
-  walkTypeScript(body, (node) => {
-    if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) {
-      return;
-    }
-    const tagName = node.tagName.getText(sourceFile);
-    const importedName = imports.names.get(tagName);
-    if (importedName) rendered.add(importedName);
-    const [namespace, member, extra] = tagName.split(".");
-    if (!extra && namespace && imports.namespaces.has(namespace) && member) {
-      rendered.add(member);
-    }
-  });
-  return rendered;
-}
-
-function isUiModule(specifier) {
-  return (
-    specifier === "@/components/ui" ||
-    specifier.startsWith("@/components/ui/") ||
-    /(?:^|\/)components\/ui(?:\/|$)/.test(specifier)
-  );
+export function findFeatureSectionContractViolations(source) {
+  const hasSafeDefault =
+    /padding\s*===\s*["']default["']\s*&&\s*["'][^"']*\bp(?:[xy]?)-/.test(
+      source,
+    );
+  return hasSafeDefault
+    ? []
+    : [
+        {
+          name: "FeatureSection without default inner padding",
+          suggestion:
+            "map the default padding variant to an explicit padding utility",
+        },
+      ];
 }

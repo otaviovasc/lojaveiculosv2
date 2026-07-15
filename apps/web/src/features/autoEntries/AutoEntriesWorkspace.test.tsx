@@ -38,6 +38,17 @@ describe("AutoEntriesWorkspace", () => {
         name: "Lançamentos automáticos",
       }),
     ).toBeVisible();
+    expect(
+      await screen.findByRole("region", {
+        name: "Cobertura das regras automáticas",
+      }),
+    ).toBeVisible();
+    expect(
+      await screen.findByRole("heading", {
+        level: 2,
+        name: "Automação financeira",
+      }),
+    ).toBeVisible();
     expect(screen.getByText("Receita da venda preservada")).toBeVisible();
     expect(screen.getByText("Comissão padrão da venda")).toBeVisible();
     expect(
@@ -140,6 +151,38 @@ describe("AutoEntriesWorkspace", () => {
       screen.getByRole("heading", { name: "Descartar alterações?" }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole("dialog")).toHaveLength(2);
+  });
+
+  it("does not show readiness data while rules are loading or unavailable", async () => {
+    let rejectLoad: ((reason?: unknown) => void) | undefined;
+    const api = autoEntryApi([]);
+    vi.mocked(api.listRules).mockImplementation(
+      () =>
+        new Promise((_, reject) => {
+          rejectLoad = reject;
+        }),
+    );
+
+    render(
+      <AutoEntriesWorkspace api={api} grantedPermissions={["finance.read"]} />,
+    );
+
+    expect(
+      screen.queryByRole("region", {
+        name: "Cobertura das regras automáticas",
+      }),
+    ).not.toBeInTheDocument();
+    rejectLoad?.(new Error("offline"));
+    expect(
+      await screen.findByRole("heading", {
+        name: "Lançamentos indisponíveis",
+      }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("region", {
+        name: "Cobertura das regras automáticas",
+      }),
+    ).not.toBeInTheDocument();
   });
 });
 

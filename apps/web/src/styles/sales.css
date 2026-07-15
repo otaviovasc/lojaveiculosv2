@@ -9,11 +9,17 @@
 
 /* Glass Panels and Cards */
 .sales-glass-panel {
-  background: rgba(255, 255, 255, 0.85);
+  background: color-mix(
+    in srgb,
+    var(--color-panel) 86%,
+    var(--color-transparent)
+  );
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(160, 152, 152, 0.7);
-  box-shadow: 0 8px 30px rgba(21, 21, 21, 0.02);
+  border: 1px solid
+    color-mix(in srgb, var(--color-line) 82%, var(--color-accent-soft));
+  box-shadow: 0 8px 30px
+    color-mix(in srgb, var(--color-accent) 4%, var(--color-transparent));
   border-radius: 1.5rem;
   overflow: hidden;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -32,6 +38,12 @@
   box-shadow: 0 16px 40px rgba(225, 31, 38, 0.06);
 }
 
+:root:not([data-theme="dark"]) .sales-vehicle-card-glow {
+  border-color: var(--color-line);
+  box-shadow: 0 8px 24px
+    color-mix(in srgb, var(--color-muted) 8%, var(--color-transparent));
+}
+
 /* Pipeline Sidebar */
 .sales-pipeline-card {
   display: flex;
@@ -44,7 +56,7 @@
   .sales-pipeline-card {
     position: sticky;
     top: 1.5rem;
-    max-height: calc(100vh - 3rem);
+    max-height: calc(100dvh - 3rem);
   }
 }
 .sales-filter-btn {
@@ -120,13 +132,11 @@
 .sales-card-item:hover {
   transform: translateY(-2px);
   border-color: rgba(225, 31, 38, 0.3);
-  box-shadow: 0 4px 12px rgba(21, 21, 21, 0.04);
 }
 .sales-card-item-active {
   border-color: var(--color-accent) !important;
   background: var(--color-accent-soft) !important;
   color: var(--color-accent-soft-foreground);
-  box-shadow: 0 4px 16px rgba(225, 31, 38, 0.06);
 }
 .sales-card-item-active .text-app-text {
   color: var(--color-accent-soft-foreground);
@@ -204,7 +214,6 @@
   background: var(--color-accent);
   color: var(--color-accent-foreground);
   border: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
   position: relative;
@@ -214,7 +223,6 @@
   background: var(--color-accent-strong);
   color: var(--color-accent-strong-foreground);
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 .sales-primary-button:hover .gloss-overlay {
   left: 130%;
@@ -238,7 +246,6 @@
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   color: var(--color-text);
-  box-shadow: 0 2px 6px rgba(21, 21, 21, 0.02);
   transition: all 0.2s ease;
   cursor: pointer;
 }
@@ -249,8 +256,8 @@
 
 /* Payment dynamic list row styling */
 .sales-payment-row {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   border-radius: 1.25rem;
   border: 1px solid var(--color-line);
@@ -259,16 +266,6 @@
   position: relative;
   transition: all 0.2s ease;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.01);
-}
-@media (min-width: 768px) {
-  .sales-payment-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: end;
-  }
-
-  .sales-payment-row > button {
-    justify-self: stretch;
-  }
 }
 .sales-payment-row:hover {
   border-color: var(--color-line-strong);
@@ -304,8 +301,6 @@
   background: var(--color-primary) !important;
   color: var(--color-primary-contrast) !important;
   border-color: var(--color-primary) !important;
-  box-shadow: 0 4px 12px rgba(21, 21, 21, 0.12);
-  transition: box-shadow 0.18s ease !important;
 }
 .sales-wizard-step.sales-wizard-step-active > span:first-child {
   background: var(--color-primary-contrast) !important;

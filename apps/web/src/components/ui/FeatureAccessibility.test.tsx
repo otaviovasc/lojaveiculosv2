@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FeatureTabs } from "./FeatureControls";
-import { FeatureActionButton } from "./FeatureLayout";
+import { FeatureActionButton, FeaturePageShell } from "./FeatureLayout";
 import { FeatureAlert, FeatureLoadingState } from "./FeatureStates";
 
 afterEach(cleanup);
@@ -26,6 +26,42 @@ describe("shared feature accessibility", () => {
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(status).toHaveAttribute("data-tone", "success");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  });
+
+  it("keeps alert icons aligned with a grouped title and message", () => {
+    render(
+      <FeatureAlert
+        icon={<span data-testid="notice-icon" />}
+        title="Somente leitura"
+        tone="info"
+      >
+        Permissão necessária.
+      </FeatureAlert>,
+    );
+
+    expect(screen.getByRole("status")).toHaveClass("flex", "items-start");
+    expect(screen.getByTestId("notice-icon").parentElement).toHaveClass(
+      "feature-alert__icon",
+    );
+    expect(screen.getByText("Somente leitura").parentElement).toHaveClass(
+      "feature-alert__content",
+    );
+  });
+
+  it("keeps regular page variants on the shared content boundary", () => {
+    const { rerender } = render(
+      <FeaturePageShell variant="content">Conteúdo</FeaturePageShell>,
+    );
+
+    expect(screen.getByRole("main")).toHaveClass("content-frame");
+
+    rerender(<FeaturePageShell variant="plain">Conteúdo</FeaturePageShell>);
+
+    expect(screen.getByRole("main")).toHaveClass("content-frame");
+
+    rerender(<FeaturePageShell>Conteúdo</FeaturePageShell>);
+
+    expect(screen.getByRole("main")).toHaveClass("dashboard-main");
   });
 
   it("disables busy action buttons and exposes their state", async () => {

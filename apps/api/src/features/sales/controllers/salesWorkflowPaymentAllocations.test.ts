@@ -1,4 +1,7 @@
-import { salePaymentMethods } from "@lojaveiculosv2/shared";
+import {
+  salePaymentMethods,
+  salePaymentMethodUsesInstallments,
+} from "@lojaveiculosv2/shared";
 import { describe, expect, it } from "vitest";
 import {
   completeDraft,
@@ -19,6 +22,9 @@ describe("sales workflow payment allocations", () => {
           {
             amountCents: 5000000,
             dueAt,
+            ...(salePaymentMethodUsesInstallments(method)
+              ? { installments: 1 }
+              : {}),
             method,
             paidAt,
             principalCents: 5000000,
@@ -55,6 +61,7 @@ describe("sales workflow payment allocations", () => {
       payments: [
         {
           amountCents: 1000000,
+          dueAt,
           method: "cash",
           paidAt,
           principalCents: 1000000,

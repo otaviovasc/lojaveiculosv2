@@ -66,6 +66,7 @@ export function createInventoryListingSummary(
         yearCode: "2025-1",
         yearName: "2025 Flex",
       },
+      commercialTags: [],
       createdAt,
       description: null,
       doors: null,
@@ -81,6 +82,7 @@ export function createInventoryListingSummary(
       priceCents:
         overrides.priceCents === undefined ? 12_345_678 : overrides.priceCents,
       publicSlug: null,
+      resaleAnalysis: null,
       status: listingStatus,
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -89,6 +91,7 @@ export function createInventoryListingSummary(
       trimName: "XEI",
       unitIds: [unit.id],
       updatedAt: "2026-01-01T00:00:00.000Z",
+      videoUrl: null,
     },
     mediaCount: overrides.mediaCount ?? 2,
     primaryMediaUrl: "https://cdn.local/corolla.jpg",

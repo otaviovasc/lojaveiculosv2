@@ -54,7 +54,10 @@ export function SalesPipeline({
   });
 
   return (
-    <FeatureCard className="sales-glass-panel sales-pipeline-card">
+    <FeatureCard
+      className="sales-glass-panel sales-pipeline-card"
+      padding="none"
+    >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 rounded-lg bg-accent-soft text-accent-strong">

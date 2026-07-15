@@ -104,23 +104,38 @@ function InventoryListingCard({
 
   return (
     <motion.article
-      className="glass-panel-branded hover-shift group relative flex h-full cursor-pointer flex-col overflow-hidden border border-line shadow-sm transition-colors hover:border-accent/40"
+      className="glass-panel-branded hover-shift group relative flex h-full cursor-pointer flex-col overflow-hidden border border-line !p-0 shadow-sm transition-colors hover:border-accent/40"
       onClick={() => onSelect(listing.id, item.primaryUnit?.id ?? null)}
       transition={{ duration: 0.2 }}
       whileHover={{ y: -4, scale: 1.01 }}
     >
-      <div className="relative flex aspect-[16/10] items-center justify-center overflow-hidden border-b border-line/30 bg-app-elevated">
+      <div className="relative flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden border-b border-line/30 bg-app-elevated">
         {item.primaryMediaUrl ? (
-          <img
-            alt={listing.title}
-            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-            src={item.primaryMediaUrl}
-          />
+          <>
+            <img
+              alt={listing.title}
+              className="block h-full w-full object-cover transition-[filter,transform] duration-500 group-hover:scale-105 group-hover:blur-[2px]"
+              src={item.primaryMediaUrl}
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-white/10 opacity-70 transition-opacity duration-500 group-hover:opacity-50"
+              data-photo-gradient="depth"
+            />
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/20 via-transparent to-black/20 opacity-50 mix-blend-soft-light transition-opacity duration-500 group-hover:opacity-70"
+              data-photo-gradient="brand"
+            />
+          </>
         ) : (
           <CarFront aria-hidden="true" className="size-8 text-muted/50" />
         )}
 
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-[2px] transition-opacity duration-200 group-hover:opacity-100">
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+          data-card-hover-overlay
+        >
           <span className="flex items-center gap-1.5 rounded-xl border border-line bg-panel px-3 py-1.5 text-xs font-black text-app-text shadow-lg">
             <span>Workspace</span>
             <ChevronRight aria-hidden="true" className="size-3 text-accent" />
@@ -230,7 +245,7 @@ export function StatusPill({ status }: { status: InventoryDisplayStatus }) {
     status === "published" || status === "available"
       ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
       : status === "in_preparation" || status === "reserved"
-        ? "bg-warning/10 text-warning border border-warning/20"
+        ? "bg-warning/10 text-warning-strong border border-warning/20"
         : status === "sold_out" || status === "sold" || status === "delivered"
           ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
           : status === "acquired"
@@ -279,12 +294,14 @@ export function MercosulPlateBadge({ plate }: { plate: string }) {
   return (
     <span
       aria-label={`Placa ${formatted}`}
-      className="inline-flex min-w-[70px] max-w-[80px] shrink-0 select-none flex-col overflow-hidden rounded-[3px] border border-gray-300 bg-white text-center align-middle shadow-sm dark:border-line dark:bg-white"
+      className="inline-flex h-7 min-w-[70px] max-w-[80px] shrink-0 select-none flex-col overflow-hidden rounded-[3px] border border-gray-300 bg-white text-center align-middle shadow-sm dark:border-line dark:bg-white"
     >
-      <span className="bg-blue-600 px-1 py-0.5 text-center text-xs font-black uppercase leading-none tracking-widest text-white dark:bg-blue-600">
-        Brasil
+      <span className="flex h-2 shrink-0 items-center justify-center bg-blue-600 px-1 text-white dark:bg-blue-600">
+        <span className="origin-center scale-50 text-xs font-black uppercase leading-none tracking-widest">
+          Brasil
+        </span>
       </span>
-      <span className="px-1.5 py-0.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
+      <span className="flex h-5 items-center justify-center px-1.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
         {formatted}
       </span>
     </span>

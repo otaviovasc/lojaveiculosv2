@@ -5,10 +5,18 @@ import { findFrontendDesignViolations } from "./frontend-design-rules.mjs";
 const root = new URL("../../", import.meta.url).pathname;
 const checkedRoots = [
   join(root, "apps/web/src"),
+  join(root, "apps/web/public"),
   join(root, "packages/design-system/src"),
 ];
 const ignoredPathParts = ["/node_modules/", "/dist/"];
-const checkedExtensions = new Set([".ts", ".tsx", ".js", ".jsx", ".css"]);
+const checkedExtensions = new Set([
+  ".ts",
+  ".tsx",
+  ".js",
+  ".jsx",
+  ".css",
+  ".svg",
+]);
 
 function extensionOf(path) {
   const index = path.lastIndexOf(".");

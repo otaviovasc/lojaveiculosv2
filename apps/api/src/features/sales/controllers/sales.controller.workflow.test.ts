@@ -189,7 +189,12 @@ function requestJson(app: Hono, path: string, body: unknown, method = "POST") {
 }
 
 function payment(amountCents: number, method: string) {
-  return { amountCents, method, principalCents: amountCents };
+  return {
+    amountCents,
+    dueAt: "2026-07-14T12:00:00.000Z",
+    method,
+    principalCents: amountCents,
+  };
 }
 
 async function readJson<T>(response: Response): Promise<T> {

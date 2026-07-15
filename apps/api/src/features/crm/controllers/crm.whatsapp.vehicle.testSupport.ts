@@ -71,6 +71,7 @@ export function createZapiConnection(
 function createVehicleListing(): VehicleListing {
   return {
     catalog: null,
+    commercialTags: [],
     createdAt: testNow,
     description: "Sedan preto com revisoes em dia.",
     doors: 4,
@@ -86,6 +87,7 @@ function createVehicleListing(): VehicleListing {
     plate: "ABC1D23",
     priceCents: 18990000,
     publicSlug: "audi-a4-prestige-plus-2022",
+    resaleAnalysis: null,
     status: "published",
     storeId,
     tenantId,
@@ -94,6 +96,7 @@ function createVehicleListing(): VehicleListing {
     trimName: "Prestige Plus",
     unitIds: [vehicleUnitId],
     updatedAt: testNow,
+    videoUrl: null,
   };
 }
 

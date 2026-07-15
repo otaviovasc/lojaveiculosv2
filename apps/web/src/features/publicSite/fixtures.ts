@@ -28,6 +28,7 @@ export const publicStorefrontPreview = {
   },
   listings: [
     {
+      commercialTags: [],
       condition: "used",
       description: "Unico dono, revisoes em dia e pronta entrega.",
       doors: 4,
@@ -45,8 +46,10 @@ export const publicStorefrontPreview = {
       title: "Fiat Toro Volcano 2023",
       transmission: "automatic",
       trimName: "Volcano",
+      videoUrl: null,
     },
     {
+      commercialTags: [],
       condition: "used",
       description: "SUV completo com multimidia, camera e garantia.",
       doors: 4,
@@ -64,8 +67,10 @@ export const publicStorefrontPreview = {
       title: "Jeep Renegade Longitude 2022",
       transmission: "automatic",
       trimName: "Longitude",
+      videoUrl: null,
     },
     {
+      commercialTags: [],
       condition: "used",
       description: "Hatch econômico para giro rápido de estoque.",
       doors: 4,
@@ -83,6 +88,7 @@ export const publicStorefrontPreview = {
       title: "Hyundai HB20 Comfort 2021",
       transmission: "manual",
       trimName: "Comfort",
+      videoUrl: null,
     },
   ],
 } satisfies PublicStorefrontPageData;

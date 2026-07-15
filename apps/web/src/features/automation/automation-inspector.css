@@ -32,7 +32,6 @@
 .automation-inspector-tabs button.is-active,
 .automation-mobile-tabs button.is-active {
   background: var(--color-panel);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text) 10%, transparent);
   color: var(--color-text);
 }
 .automation-inspector-body {

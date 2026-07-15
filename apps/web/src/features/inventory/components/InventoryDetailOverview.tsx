@@ -75,7 +75,7 @@ export function InventoryDetailOverview({
               <span className="rounded bg-white/15 px-2 py-1 text-xs font-black uppercase tracking-[0.16em] backdrop-blur-sm">
                 {statusLabel(listing.status)}
               </span>
-              <h2 className="mt-3 text-2xl font-black leading-tight">
+              <h2 className="mt-3 text-2xl font-black leading-tight text-white">
                 {listing.title}
               </h2>
               <p className="mt-1 text-sm font-bold text-white/80">

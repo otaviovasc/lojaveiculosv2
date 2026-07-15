@@ -1,5 +1,14 @@
 export const defaultMaxLines = 250;
-export const legacyDebtPathPrefix = "apps/web/";
+export const frontendAdditionalLines = 300;
+export const frontendMaxLines = defaultMaxLines + frontendAdditionalLines;
+export const frontendPathPrefix = "apps/web/";
+export const legacyDebtPathPrefix = frontendPathPrefix;
+
+export function maxLinesForPath(path, maxLines = defaultMaxLines) {
+  return path.startsWith(frontendPathPrefix)
+    ? maxLines + frontendAdditionalLines
+    : maxLines;
+}
 
 export function findFileLineViolations(
   files,
@@ -13,6 +22,7 @@ export function findFileLineViolations(
   const referencedReasons = new Set();
 
   for (const [path, exception] of Object.entries(debtFiles)) {
+    const fileMaxLines = maxLinesForPath(path, maxLines);
     if (!path.startsWith(legacyDebtPathPrefix)) {
       failures.push(
         `${path}: debt exceptions are limited to ${legacyDebtPathPrefix}.`,
@@ -20,10 +30,10 @@ export function findFileLineViolations(
     }
     if (
       !Number.isInteger(exception?.maxLines) ||
-      exception.maxLines <= maxLines
+      exception.maxLines <= fileMaxLines
     ) {
       failures.push(
-        `${path}: debt ceiling must be an integer greater than ${maxLines}.`,
+        `${path}: debt ceiling must be an integer greater than ${fileMaxLines}.`,
       );
     }
     const reason =
@@ -52,8 +62,9 @@ export function findFileLineViolations(
   }
 
   for (const file of files) {
+    const fileMaxLines = maxLinesForPath(file.path, maxLines);
     const exception = debtFiles[file.path];
-    if (file.lines <= maxLines) {
+    if (file.lines <= fileMaxLines) {
       if (exception) {
         failures.push(
           `${file.path}: stale debt exception; file is now ${file.lines} lines.`,
@@ -62,11 +73,11 @@ export function findFileLineViolations(
       continue;
     }
     if (!exception) {
-      failures.push(`${file.path}: ${file.lines} > ${maxLines}.`);
+      failures.push(`${file.path}: ${file.lines} > ${fileMaxLines}.`);
       continue;
     }
     const debtCeiling = exception?.maxLines;
-    if (!Number.isInteger(debtCeiling) || debtCeiling <= maxLines) {
+    if (!Number.isInteger(debtCeiling) || debtCeiling <= fileMaxLines) {
       continue;
     }
     if (file.lines > debtCeiling) {

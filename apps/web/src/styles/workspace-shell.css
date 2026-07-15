@@ -26,10 +26,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--app-space-lg);
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-header-surface);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--color-header-surface) 85%, transparent);
   padding-inline: clamp(1.25rem, 2vw, 2rem);
-  backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
 }
 
 .app-shell__context {
@@ -82,7 +82,6 @@
 .app-shell__command-trigger:hover {
   border-color: var(--color-line-strong);
   color: var(--color-ink);
-  box-shadow: var(--shadow-panel);
 }
 
 .app-shell__command-trigger > svg {
@@ -116,10 +115,10 @@
   min-height: 4rem;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--color-line);
-  background: var(--color-header-surface);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--color-header-surface) 85%, transparent);
   padding-inline: var(--app-space-sm);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px) saturate(140%);
 }
 
 .app-shell__mobile-header > div,

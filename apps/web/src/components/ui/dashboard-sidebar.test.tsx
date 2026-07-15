@@ -27,5 +27,8 @@ describe("DashboardSidebar theme", () => {
     expect(
       screen.getAllByRole("img", { name: "Loja Teste" })[0],
     ).toHaveAttribute("src", expectedLogo);
+    expect(
+      document.querySelector(".workspace-sidebar__texture"),
+    ).toBeInTheDocument();
   });
 });

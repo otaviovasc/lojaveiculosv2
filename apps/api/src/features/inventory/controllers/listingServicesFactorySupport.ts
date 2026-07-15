@@ -53,6 +53,10 @@ export function runVehicleInventoryMutation<TResult>(
 export function detailPermissionForListingEdit(
   input: UpdateVehicleListingDetailsInput,
 ): PermissionKey {
+  if (input.commercialTags !== undefined) {
+    return "inventory.update_commercial_tags";
+  }
+  if (input.videoUrl !== undefined) return "inventory.update_video";
   if (input.title !== undefined || input.description !== undefined) {
     return "inventory.update_description";
   }

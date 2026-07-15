@@ -12,14 +12,16 @@ import {
 import { CommissionEmptyState, CommissionHeader } from "./CommissionHeader";
 import { CommissionFiltersPanel } from "./CommissionFiltersPanel";
 import { CommissionSellerList } from "./CommissionSellerList";
+import { CommissionSaleDetailsDialog } from "./CommissionSaleDetailsDialog";
+import { CommissionReconciliationPanel } from "./CommissionReconciliationPanel";
 import { CommissionSummaryCards } from "./CommissionSummaryCards";
-import { hydrateEntrySellerNames } from "./commissionEntryMeta";
 import { FinanceEntryModal } from "./FinanceEntryModal";
 import { CommissionRulesPanel } from "./FinanceCorePanels";
 import { createFinanceApiOptions } from "./runtimeApi";
 import {
   buildCommissionWorkspace,
   initialCommissionFilters,
+  type CommissionSaleGroup,
   type CommissionSellerGroup,
 } from "./commissionWorkspaceModel";
 import {
@@ -31,7 +33,11 @@ import {
 import { CommissionAccessNotice } from "./FinanceModuleFeedback";
 import { exportFinanceCsv } from "./financeBillsActions";
 import { type FinanceEntryDraft, type FinanceToast } from "./financeBillsModel";
-import type { CommissionRule, FinanceEntry } from "./types";
+import type {
+  CommissionRule,
+  CommissionWorkspaceSnapshot,
+  FinanceEntry,
+} from "./types";
 import { useFinanceAccess } from "./useFinanceAccess";
 
 export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
@@ -41,7 +47,9 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     sellerOptions: teamSellers,
   } = useFinanceAccess(Boolean(api));
   const [runtimeApi, setRuntimeApi] = useState<FinanceApi | null>(api ?? null);
-  const [entries, setEntries] = useState<FinanceEntry[]>([]);
+  const [snapshot, setSnapshot] = useState<CommissionWorkspaceSnapshot>(
+    emptyCommissionSnapshot,
+  );
   const [rules, setRules] = useState<CommissionRule[]>([]);
   const [filters, setFilters] = useState(initialCommissionFilters);
   const [toast, setToast] = useState<FinanceToast | null>(null);
@@ -59,13 +67,21 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   const [cancelTarget, setCancelTarget] = useState<FinanceEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
-  const visibleEntries = useMemo(
-    () => hydrateEntrySellerNames(entries, teamSellers),
-    [entries, teamSellers],
+  const [saleDetails, setSaleDetails] = useState<{
+    sale: CommissionSaleGroup;
+    sellerName: string;
+  } | null>(null);
+  const sellerLabels = useMemo(
+    () => new Map(teamSellers.map((seller) => [seller.id, seller.label])),
+    [teamSellers],
+  );
+  const workspaceRange = useMemo(
+    () => toWorkspaceRange(filters.from, filters.to),
+    [filters.from, filters.to],
   );
   const workspace = useMemo(
-    () => buildCommissionWorkspace(visibleEntries, filters),
-    [filters, visibleEntries],
+    () => buildCommissionWorkspace(snapshot, filters, sellerLabels),
+    [filters, sellerLabels, snapshot],
   );
   const sellerOptions = useMemo(() => {
     const options = new Map(
@@ -95,18 +111,26 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
 
   useEffect(() => {
     if (!runtimeApi) return;
+    if (!workspaceRange) {
+      setIsLoading(false);
+      setSnapshot(emptyCommissionSnapshot());
+      return;
+    }
+    let isCurrentRequest = true;
     setIsLoading(true);
     void Promise.all([
-      runtimeApi.listAllEntries("commission"),
+      runtimeApi.getCommissionWorkspace(workspaceRange),
       runtimeApi.listCommissionRules(),
     ])
-      .then(([nextEntries, nextRules]) => {
-        setEntries(nextEntries);
+      .then(([nextSnapshot, nextRules]) => {
+        if (!isCurrentRequest) return;
+        setSnapshot(nextSnapshot);
         setRules(nextRules);
         setToast(null);
       })
       .catch((error) => {
-        setEntries([]);
+        if (!isCurrentRequest) return;
+        setSnapshot(emptyCommissionSnapshot());
         setToast({
           kind: "error",
           message: formatApiErrorDisplay(
@@ -116,8 +140,13 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           title: "Erro ao carregar",
         });
       })
-      .finally(() => setIsLoading(false));
-  }, [refreshToken, runtimeApi]);
+      .finally(() => {
+        if (isCurrentRequest) setIsLoading(false);
+      });
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [refreshToken, runtimeApi, workspaceRange]);
 
   const refresh = () => setRefreshToken((current) => current + 1);
 
@@ -138,17 +167,20 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
     );
   };
 
-  const paySellerEntries = async () => {
+  const paySellerEntries = async (paidAt: string) => {
     if (!runtimeApi || !paySeller) return;
-    await payCommissionSeller({
-      api: runtimeApi,
-      filters,
-      onPaid: () => setPaySeller(null),
-      refresh,
-      seller: paySeller,
-      setPayingSellerId,
-      setToast,
-    });
+    await payCommissionSeller(
+      {
+        api: runtimeApi,
+        filters,
+        onPaid: () => setPaySeller(null),
+        refresh,
+        seller: paySeller,
+        setPayingSellerId,
+        setToast,
+      },
+      paidAt,
+    );
   };
 
   const submitDraft = async (draft: FinanceEntryDraft) => {
@@ -169,7 +201,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
   };
 
   return (
-    <FeaturePageShell variant="plain">
+    <FeaturePageShell className="commission-workspace bg-app" variant="plain">
       <CommissionHeader
         canCreate={canCreate}
         onCreateBonus={() => {
@@ -179,7 +211,6 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         onExport={() =>
           exportFinanceCsv(workspace.filteredEntries, "commission")
         }
-        summary={workspace.summary}
       />
       <CommissionAccessNotice canManage={canCreate || canUpdate} />
       <CommissionSummaryCards summary={workspace.summary} />
@@ -192,6 +223,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
         sellerOptions={sellerOptions}
       />
       {toast ? <CommissionToast toast={toast} /> : null}
+      <CommissionReconciliationPanel issues={workspace.reconciliation} />
       {workspace.sellers.length ? (
         <CommissionSellerList
           canCreate={canCreate}
@@ -208,6 +240,9 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
             setShowBonus(true);
           }}
           onOpenPay={setPaySeller}
+          onViewSale={(sale, sellerName) =>
+            setSaleDetails({ sale, sellerName })
+          }
           sellers={workspace.sellers}
         />
       ) : (
@@ -227,7 +262,7 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
           filters={filters}
           isLoading={payingSellerId === paySeller.sellerId}
           onCancel={() => setPaySeller(null)}
-          onConfirm={() => void paySellerEntries()}
+          onConfirm={(paidAt) => void paySellerEntries(paidAt)}
           seller={paySeller}
         />
       ) : null}
@@ -274,6 +309,41 @@ export function CommissionWorkspace({ api }: { api?: FinanceApi }) {
             }
           : {})}
       />
+      {saleDetails ? (
+        <CommissionSaleDetailsDialog
+          onClose={() => setSaleDetails(null)}
+          saleGroup={saleDetails.sale}
+          sellerName={saleDetails.sellerName}
+        />
+      ) : null}
     </FeaturePageShell>
   );
+}
+
+function emptyCommissionSnapshot(): CommissionWorkspaceSnapshot {
+  return {
+    adjustments: [],
+    generatedAt: new Date(0).toISOString(),
+    reconciliation: [],
+    sales: [],
+    sellerNames: {},
+  };
+}
+
+function toWorkspaceRange(from: string, to: string) {
+  const fromDate = new Date(`${from}T00:00:00`);
+  const toDate = new Date(`${to}T23:59:59.999`);
+  if (
+    !from ||
+    !to ||
+    Number.isNaN(fromDate.getTime()) ||
+    Number.isNaN(toDate.getTime()) ||
+    fromDate > toDate
+  ) {
+    return null;
+  }
+  return {
+    from: fromDate.toISOString(),
+    to: toDate.toISOString(),
+  };
 }

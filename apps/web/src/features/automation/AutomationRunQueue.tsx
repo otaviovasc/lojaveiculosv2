@@ -32,7 +32,7 @@ export function AutomationRunQueue({
   totalCount: number;
 }) {
   return (
-    <FeatureCard className="automation-rail">
+    <FeatureCard className="automation-rail" padding="none">
       <header className="automation-panel-heading">
         <div>
           <span>Fila operacional</span>

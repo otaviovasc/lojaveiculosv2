@@ -199,6 +199,7 @@ export function createMemoryVehicleInventoryPorts(): VehicleInventoryServicePort
 
   return {
     acquisitionRepository: createMemoryVehicleAcquisitionRepository(),
+    auditRepository: { listByEntityIds: async () => [] },
     catalogProvider: createMemoryVehicleCatalogProvider(),
     catalogRepository: createMemoryVehicleCatalogRepository(),
     checklistRepository: createMemoryVehicleChecklistRepository(),

@@ -21,11 +21,11 @@ test("admin sidebar follows light and dark themes", async ({
 
   const sidebar = page.locator(".workspace-sidebar");
   await expect(sidebar).toBeVisible();
-  await expect(sidebar).toHaveCSS("background-color", "rgb(255, 255, 255)");
+  await expect(sidebar).toHaveCSS("background-color", "rgb(255, 250, 248)");
   await expect(sidebar).toHaveCSS("color", "rgb(21, 21, 21)");
   await expect(
     page.locator(".workspace-sidebar__nav-item.is-active"),
-  ).toHaveCSS("background-color", "rgb(244, 239, 238)");
+  ).toHaveCSS("background-color", "rgb(252, 232, 233)");
   await expectViewportSafe(page);
   await expectAccessible(page);
   await saveQaScreenshot(page, testInfo, "admin-sidebar-light");

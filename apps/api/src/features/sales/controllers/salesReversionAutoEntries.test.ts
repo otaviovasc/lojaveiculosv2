@@ -14,6 +14,8 @@ describe("sale automatic finance entry reversion provenance", () => {
       payments: [
         {
           amountCents: 5_000_000,
+          dueAt: new Date("2026-07-14T12:00:00.000Z"),
+          installments: 12,
           method: "financing",
           principalCents: 5_000_000,
         },

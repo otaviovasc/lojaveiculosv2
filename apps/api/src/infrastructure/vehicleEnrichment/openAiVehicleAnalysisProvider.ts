@@ -6,15 +6,12 @@ import type {
 import { extractOpenAiResponseOutputText } from "../openAiResponses.js";
 import { InventoryEnrichmentProviderError } from "./inventoryEnrichmentProviderError.js";
 import { createVehicleMarketContext } from "./vehicleMarketSignals.js";
+import type { VehicleResaleAnalysisProvider } from "../../domains/vehicle/ports/vehicleResaleAnalysisProvider.js";
 
 const defaultModel = "gpt-5.4-mini";
 const responsesUrl = "https://api.openai.com/v1/responses";
 
-export type OpenAiVehicleAnalysisProvider = {
-  analyze: (
-    input: InventoryResaleAnalysisRequest,
-  ) => Promise<InventoryResaleAnalysisResponse>;
-};
+export type OpenAiVehicleAnalysisProvider = VehicleResaleAnalysisProvider;
 
 export function createOpenAiVehicleAnalysisProvider({
   apiKey,
@@ -26,6 +23,8 @@ export function createOpenAiVehicleAnalysisProvider({
   model?: string;
 } = {}): OpenAiVehicleAnalysisProvider {
   return {
+    model,
+    name: "openai",
     async analyze(input) {
       if (!apiKey) {
         throw new InventoryEnrichmentProviderError(

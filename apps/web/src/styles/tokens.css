@@ -23,43 +23,45 @@
 }
 
 :root {
-  --color-app: #f4efee;
+  --color-warm-white: #fff4ee;
+  --color-app: #f7ece7;
   --color-text: #151515;
   --color-muted: #4a4444;
-  --color-panel: #ffffff;
-  --color-line: #e8e3e2;
-  --color-line-strong: #4a4444;
+  --color-panel: var(--color-warm-white);
+  --color-line: #eadbd5;
+  --color-line-strong: #aa938a;
   --color-accent: #e11f26;
   --color-accent-strong: #b81820;
   --color-accent-soft: #fce8e9;
   --color-accent-soft-foreground: #151515;
   --color-accent-soft-muted: #151515;
-  --color-app-elevated: #e8e3e2;
-  --color-blue-start: #182ab8;
-  --color-blue-end: #182ab8;
-  --color-blue-soft: rgba(24, 42, 184, 0.08);
+  --color-app-elevated: #ecddd6;
+  --color-blue-start: #2563eb;
+  --color-blue-end: #1d4ed8;
+  --color-blue-soft: rgba(37, 99, 235, 0.08);
   --color-green-start: #18b841;
   --color-green-end: #18b841;
   --color-green-soft: rgba(24, 184, 65, 0.08);
-  --color-success-strong: #087a2f;
+  --color-success-strong: #066525;
   --color-pink-start: #e8e3e2;
   --color-pink-end: #a09898;
   --color-violet-start: #8c1118;
-  --color-violet-end: #182ab8;
+  --color-violet-end: #2563eb;
   --color-violet-foreground: var(--color-blue-start);
   --color-caption: var(--color-muted);
   --color-warning: #b89418;
   --color-warning-strong: #765b00;
   --color-danger: #b81820;
   --color-danger-hover: #8c1118;
-  --color-inverse: #ffffff;
+  --color-inverse: var(--color-warm-white);
+  --color-transparent: rgba(0, 0, 0, 0);
   --color-inverse-soft: rgb(255 255 255 / 0.2);
   --color-inverse-muted: rgb(255 255 255 / 0.72);
   --color-inverse-ghost: rgb(255 255 255 / 0.14);
-  --color-header-surface: rgb(244 239 238 / 0.88);
+  --color-header-surface: rgb(247 236 231 / 0.88);
   --color-overlay: rgb(21 21 21 / 0.42);
   --color-primary: #151515;
-  --color-primary-contrast: #ffffff;
+  --color-primary-contrast: var(--color-warm-white);
 
   /* Semantic product surfaces. Legacy aliases above stay stable while new
      primitives use this smaller, intention-led vocabulary. */
@@ -78,8 +80,17 @@
   --color-sidebar-text: var(--color-text);
   --color-sidebar-muted: var(--color-muted);
   --color-sidebar-line: var(--color-line);
+  --color-sidebar-hover: var(--color-app);
+  --color-sidebar-selected: var(--color-accent-soft);
+  --color-sidebar-selected-hover: color-mix(
+    in srgb,
+    var(--color-accent) 10%,
+    var(--color-accent-soft)
+  );
+  --color-sidebar-pressed: var(--color-app-elevated);
+  --color-sidebar-disabled: var(--color-app-elevated);
   --color-success: #18b841;
-  --color-info: #182ab8;
+  --color-info: #2563eb;
 
   /* App spacing tokens. Keep names outside Tailwind's --spacing-* namespace. */
   --app-space-xs: 5px;
@@ -89,8 +100,12 @@
   --app-space-xl: 30px;
   --app-space-2xl: 40px;
   --app-space-3xl: 50px;
+  --app-space-4xl: 60px;
 
-  --layout-content-max: 96rem;
+  --layout-content-max: 100%;
+  --layout-content-gutter: var(--app-space-4xl);
+  --layout-content-block-padding: var(--app-space-xl);
+  --layout-content-gap: var(--app-space-lg);
   --layout-header-height: 4.25rem;
   --layout-sidebar-width: 256px;
   --layout-sidebar-compact-width: 76px;
@@ -118,6 +133,42 @@
   --shadow-panel: 0 12px 32px rgb(21 21 21 / 0.06);
   --shadow-raised: 0 20px 60px rgb(21 21 21 / 0.1);
   --shadow-float: 0 24px 80px rgb(21 21 21 / 0.14);
+  --z-index-sticky: 100;
+  --z-index-fixed: 200;
+  --z-index-modal: 500;
+  --z-index-popover: 600;
+  --z-index-tooltip: 700;
+  --z-index-dropdown: 1000;
+
+  /* Sales Module Accent Colors */
+  --color-sales: #d97706;
+  --color-sales-strong: #b45309;
+  --color-sales-soft: #fef3c7;
+
+  /* Inventory Module Accent Colors */
+  --color-inventory: #059669;
+  --color-inventory-strong: #047857;
+  --color-inventory-soft: #d1fae5;
+
+  /* CRM Module Accent Colors */
+  --color-crm: #16a34a;
+  --color-crm-strong: #15803d;
+  --color-crm-soft: #dcfce7;
+
+  /* Finance Module Accent Colors */
+  --color-finance: #7c3aed;
+  --color-finance-strong: #6d28d9;
+  --color-finance-soft: #ede9fe;
+
+  /* Documents Module Accent Colors */
+  --color-documents: #2563eb;
+  --color-documents-strong: #1d4ed8;
+  --color-documents-soft: #dbeafe;
+
+  /* Settings Module Accent Colors */
+  --color-settings: #78716c;
+  --color-settings-strong: #57534e;
+  --color-settings-soft: #f5f5f4;
 }
 
 :root[data-theme="dark"] {
@@ -133,8 +184,8 @@
   --color-accent-soft-foreground: #151515;
   --color-accent-soft-muted: #151515;
   --color-app-elevated: #4a4444;
-  --color-blue-start: #182ab8;
-  --color-blue-soft: rgba(24, 42, 184, 0.14);
+  --color-blue-start: #60a5fa;
+  --color-blue-soft: rgba(96, 165, 250, 0.14);
   --color-green-start: #18b841;
   --color-green-soft: rgba(24, 184, 65, 0.14);
   --color-success-strong: #72df91;
@@ -144,7 +195,7 @@
   --color-warning-strong: #ead16e;
   --color-danger: #b81820;
   --color-danger-hover: #e11f26;
-  --color-inverse: #ffffff;
+  --color-inverse: var(--color-warm-white);
   --color-inverse-soft: rgb(255 255 255 / 0.22);
   --color-inverse-muted: rgb(255 255 255 / 0.7);
   --color-inverse-ghost: rgb(255 255 255 / 0.16);
@@ -157,6 +208,11 @@
   --color-sidebar-text: #f4efee;
   --color-sidebar-muted: #a09898;
   --color-sidebar-line: #4a4444;
+  --color-sidebar-hover: #2a2424;
+  --color-sidebar-selected: rgba(225, 31, 38, 0.16);
+  --color-sidebar-selected-hover: rgba(225, 31, 38, 0.24);
+  --color-sidebar-pressed: #4a4444;
+  --color-sidebar-disabled: #2a2424;
   --shadow-panel: 0 16px 48px rgb(0 0 0 / 0.32);
   --shadow-raised: 0 24px 72px rgb(0 0 0 / 0.42);
   --shadow-float: 0 32px 96px rgb(0 0 0 / 0.52);
@@ -169,6 +225,36 @@
   --app-space-xl: 30px;
   --app-space-2xl: 40px;
   --app-space-3xl: 50px;
+
+  /* Sales Module Accent Colors (Dark) */
+  --color-sales: #f59e0b;
+  --color-sales-strong: #d97706;
+  --color-sales-soft: rgba(245, 158, 11, 0.15);
+
+  /* Inventory Module Accent Colors (Dark) */
+  --color-inventory: #10b981;
+  --color-inventory-strong: #059669;
+  --color-inventory-soft: rgba(16, 185, 129, 0.15);
+
+  /* CRM Module Accent Colors (Dark) */
+  --color-crm: #22c55e;
+  --color-crm-strong: #16a34a;
+  --color-crm-soft: rgba(34, 197, 94, 0.15);
+
+  /* Finance Module Accent Colors (Dark) */
+  --color-finance: #8b5cf6;
+  --color-finance-strong: #7c3aed;
+  --color-finance-soft: rgba(139, 92, 246, 0.15);
+
+  /* Documents Module Accent Colors (Dark) */
+  --color-documents: #3b82f6;
+  --color-documents-strong: #2563eb;
+  --color-documents-soft: rgba(59, 130, 246, 0.15);
+
+  /* Settings Module Accent Colors (Dark) */
+  --color-settings: #a8a29e;
+  --color-settings-strong: #78716c;
+  --color-settings-soft: rgba(168, 162, 158, 0.15);
 }
 
 @theme {
@@ -226,6 +312,31 @@
   --color-border: var(--color-line);
   --color-input: var(--color-line);
   --color-ring: var(--color-primary);
+
+  /* Map feature accents to Tailwind theme variables */
+  --color-sales: var(--color-sales);
+  --color-sales-strong: var(--color-sales-strong);
+  --color-sales-soft: var(--color-sales-soft);
+
+  --color-inventory: var(--color-inventory);
+  --color-inventory-strong: var(--color-inventory-strong);
+  --color-inventory-soft: var(--color-inventory-soft);
+
+  --color-crm: var(--color-crm);
+  --color-crm-strong: var(--color-crm-strong);
+  --color-crm-soft: var(--color-crm-soft);
+
+  --color-finance: var(--color-finance);
+  --color-finance-strong: var(--color-finance-strong);
+  --color-finance-soft: var(--color-finance-soft);
+
+  --color-documents: var(--color-documents);
+  --color-documents-strong: var(--color-documents-strong);
+  --color-documents-soft: var(--color-documents-soft);
+
+  --color-settings: var(--color-settings);
+  --color-settings-strong: var(--color-settings-strong);
+  --color-settings-soft: var(--color-settings-soft);
   --background-image-gradient-brand: linear-gradient(
     135deg,
     var(--color-accent),

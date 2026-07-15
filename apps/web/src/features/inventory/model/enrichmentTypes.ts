@@ -105,4 +105,13 @@ export type InventoryResaleAnalysisResponse = {
   topics: readonly InventoryResaleTopic[];
 };
 
+export type InventoryResaleAnalysisSnapshot =
+  InventoryResaleAnalysisResponse & {
+    generatedAt: string;
+    provider: {
+      model: string;
+      name: string;
+    };
+  };
+
 export type EnrichedCatalogVehicleType = InventoryCatalogVehicleType;

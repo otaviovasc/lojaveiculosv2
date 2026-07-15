@@ -82,6 +82,7 @@ function summary(): InventoryListingSummary {
   return {
     listing: {
       catalog: null,
+      commercialTags: [],
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
       doors: null,
@@ -96,6 +97,7 @@ function summary(): InventoryListingSummary {
       plate: null,
       priceCents: null,
       publicSlug: null,
+      resaleAnalysis: null,
       status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -104,6 +106,7 @@ function summary(): InventoryListingSummary {
       trimName: null,
       unitIds: ["unit_1"],
       updatedAt: "2026-01-01T00:00:00.000Z",
+      videoUrl: null,
     },
     mediaCount: 0,
     primaryMediaUrl: null,

@@ -1,6 +1,8 @@
 import type {
   AttachFinanceDocumentInput,
   CommissionRule,
+  CommissionSettlementResult,
+  CommissionWorkspaceSnapshot,
   CreateCommissionRuleInput,
   CreateFinanceEntryInput,
   CreateFinanceRecurringEntryInput,
@@ -45,6 +47,10 @@ export type FinanceApi = {
     input: CreateFinanceRecurringEntryInput,
   ) => Promise<FinanceRecurringEntry>;
   getSummary: () => Promise<FinanceSummary>;
+  getCommissionWorkspace: (input: {
+    from: string;
+    to: string;
+  }) => Promise<CommissionWorkspaceSnapshot>;
   listAllEntries: (type: FinanceEntryType) => Promise<FinanceEntry[]>;
   listEntries: (input: ListFinanceEntriesInput) => Promise<FinanceEntryList>;
   listCommissionRules: () => Promise<CommissionRule[]>;
@@ -58,6 +64,11 @@ export type FinanceApi = {
     entryId: string,
     file: File,
   ) => Promise<FinanceDocumentUpload>;
+  settleCommissionEntries: (input: {
+    entryIds: readonly string[];
+    paidAt: string;
+    sellerUserId: string;
+  }) => Promise<CommissionSettlementResult>;
   updateEntry: (
     entryId: string,
     input: UpdateFinanceEntryInput,
@@ -181,6 +192,10 @@ export function createFinanceApi({
       fetch(financeRoutes.summary(baseUrl), {
         headers: createFinanceHeaders(auth),
       }).then(readJson<FinanceSummary>),
+    getCommissionWorkspace: (input) =>
+      fetch(financeRoutes.commissionWorkspace(baseUrl, input), {
+        headers: createFinanceHeaders(auth),
+      }).then(readJson<CommissionWorkspaceSnapshot>),
     listAllEntries: (type) => listAllFinanceEntries(fetch, auth, baseUrl, type),
     listEntries: (input) =>
       fetch(financeRoutes.entries(baseUrl, input), {
@@ -206,6 +221,11 @@ export function createFinanceApi({
         {},
       ),
     requestDocumentUpload,
+    settleCommissionEntries: (input) =>
+      postJson<CommissionSettlementResult>(
+        financeRoutes.commissionSettlement(baseUrl),
+        input,
+      ),
     updateEntry: (entryId, input) =>
       patchJson<FinanceEntryBundle>(
         financeRoutes.entry(entryId, baseUrl),

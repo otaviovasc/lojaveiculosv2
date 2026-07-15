@@ -37,6 +37,7 @@ import type {
   VehicleUnitAcquisition,
 } from "../../../domains/vehicle/ports/vehicleAcquisitionRepository.js";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import type { VehicleAuditEvent } from "../../../domains/vehicle/ports/vehicleAuditRepository.js";
 import type { GetVehicleCatalogSnapshotInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogSnapshot.js";
 import type { GetVehicleCatalogPriceHistoryInput } from "../../../domains/vehicle/services/VehicleCatalogService/getVehicleCatalogPriceHistory.js";
 import type { ListVehicleCatalogBrandsInput } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogBrands.js";
@@ -71,6 +72,10 @@ export type VehicleMediaResult = {
 };
 
 export type InventoryListingServices = {
+  analyzeListingResale: (
+    context: ServiceContext,
+    input: { listingId: string },
+  ) => Promise<InventoryListingDetailResponse>;
   archiveVehicleSupplier: (
     context: ServiceContext,
     input: { supplierId: string },
@@ -135,6 +140,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: ListVehicleListingsInput,
   ) => Promise<InventoryListingListResponse>;
+  listListingAuditEvents: (
+    context: ServiceContext,
+    input: { listingId: string; limit?: number },
+  ) => Promise<readonly VehicleAuditEvent[]>;
   listUnits: (
     context: ServiceContext,
     input: ListVehicleUnitsInput,
@@ -228,7 +237,6 @@ export type InventoryListingServices = {
     input: SellVehicleUnitInput,
   ) => Promise<InventoryListingDetailResponse>;
 };
-
 type ExplicitOptionalUndefined<T> = {
   [Key in keyof T]: Record<string, never> extends Pick<T, Key>
     ? T[Key] | undefined

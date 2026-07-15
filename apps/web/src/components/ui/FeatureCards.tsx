@@ -2,21 +2,28 @@ import type { ReactNode } from "react";
 import { cx, type FeatureIcon } from "./featureShared";
 
 type FeatureCardTone =
-  "accent" | "blue" | "danger" | "green" | "neutral" | "violet";
+  "accent" | "blue" | "danger" | "green" | "neutral" | "violet" | "warning";
 
 export function FeatureCard({
+  ariaLabel,
   children,
   className,
-  padding = "none",
+  padding,
+  surface = "panel",
 }: {
+  ariaLabel?: string;
   children: ReactNode;
   className?: string;
-  padding?: "compact" | "none";
+  padding: "comfortable" | "compact" | "none";
+  surface?: "custom" | "panel";
 }) {
   return (
     <section
+      aria-label={ariaLabel}
       className={cx(
-        "rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]",
+        "rounded-lg border shadow-[var(--shadow-panel)]",
+        surface === "panel" && "border-line bg-panel",
+        padding === "comfortable" && "p-5 md:p-6",
         padding === "compact" && "p-4",
         className,
       )}
@@ -56,7 +63,7 @@ export function FeatureCardTitle({
   className?: string;
 }) {
   return (
-    <h3 className={cx("text-base font-black text-app-text", className)}>
+    <h3 className={cx("text-base font-bold text-app-text", className)}>
       {children}
     </h3>
   );
@@ -70,48 +77,118 @@ export function FeatureCardDescription({
   className?: string;
 }) {
   return (
-    <p className={cx("text-sm font-bold text-muted", className)}>{children}</p>
+    <p className={cx("text-sm font-medium text-muted", className)}>
+      {children}
+    </p>
   );
 }
 
 export function FeatureStatCard({
+  appearance = "default",
+  ariaLabel,
   className,
+  density = "default",
+  hint,
   icon: IconComponent,
   label,
+  onClick,
   tone = "neutral",
   value,
 }: {
+  appearance?: "default" | "tinted";
+  ariaLabel?: string;
   className?: string;
+  density?: "compact" | "default";
+  hint?: ReactNode;
   icon?: FeatureIcon;
   label: ReactNode;
+  onClick?: () => void;
   tone?: FeatureCardTone;
   value: ReactNode;
 }) {
-  return (
-    <FeatureCard
-      className={cx(
-        "flex items-center justify-between gap-4 p-4 transition-all hover:border-line-strong",
-        className,
-      )}
-    >
-      <div className="min-w-0">
-        <span className="block text-xs font-black uppercase tracking-wider text-muted">
+  const cardClassName = cx(
+    "feature-stat-card relative min-w-0 transition-colors hover:border-line-strong",
+    density === "default" &&
+      "block p-3 sm:flex sm:items-center sm:justify-between sm:gap-4 sm:p-4",
+    density === "compact" &&
+      "feature-stat-card--compact flex items-center justify-between gap-2 p-2 sm:p-3",
+    appearance === "tinted" && "feature-stat-card--tinted",
+    appearance === "tinted" && statToneTintedSurfaceClass(tone),
+    onClick &&
+      "cursor-pointer text-left focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]",
+    className,
+  );
+  const content = (
+    <>
+      <div className={cx("min-w-0", density === "default" && "pr-10 sm:pr-0")}>
+        <span className="feature-stat-card__label block text-xs font-semibold uppercase tracking-wider text-muted">
           {label}
         </span>
-        <strong className="mt-1 block text-2xl font-black text-app-text tabular-nums">
-          {value}
-        </strong>
-      </div>
-      {IconComponent ? (
-        <div
+        <strong
           className={cx(
-            "flex size-11 shrink-0 items-center justify-center rounded-lg border",
-            statToneClass(tone),
+            "feature-stat-card__value mt-1 block whitespace-nowrap font-black leading-tight tracking-tight text-app-text tabular-nums",
+            density === "default" && "text-base sm:text-2xl",
+            density === "compact" && "text-sm sm:text-base",
           )}
         >
-          <IconComponent aria-hidden="true" className="size-5" />
-        </div>
+          {value}
+        </strong>
+        {hint ? (
+          <span className="feature-stat-card__hint mt-1 block text-xs font-medium text-muted">
+            {hint}
+          </span>
+        ) : null}
+      </div>
+      {IconComponent ? (
+        appearance === "tinted" ? (
+          <IconComponent
+            aria-hidden="true"
+            className={cx(
+              "feature-stat-card__icon shrink-0",
+              density === "default" &&
+                "absolute right-3 top-3 size-5 sm:static sm:size-6",
+              density === "compact" && "size-4 sm:size-5",
+            )}
+          />
+        ) : (
+          <div
+            className={cx(
+              "absolute right-3 top-3 flex size-9 shrink-0 items-center justify-center rounded-lg border sm:static sm:size-11",
+              statToneSurfaceClass(tone),
+              statToneIconClass(tone),
+            )}
+          >
+            <IconComponent aria-hidden="true" className="size-4 sm:size-5" />
+          </div>
+        )
       ) : null}
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        aria-label={ariaLabel}
+        className={cx(
+          "rounded-lg border",
+          appearance === "default" && "border-line bg-panel",
+          cardClassName,
+        )}
+        onClick={onClick}
+        type="button"
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <FeatureCard
+      className={cardClassName}
+      padding="none"
+      surface={appearance === "tinted" ? "custom" : "panel"}
+    >
+      {content}
     </FeatureCard>
   );
 }
@@ -192,7 +269,7 @@ export function FeaturePreviewPanel({
   title?: ReactNode;
 }) {
   return (
-    <FeatureCard className={cx("min-h-[36rem] p-5", className)}>
+    <FeatureCard className={cx("min-h-[36rem] p-5", className)} padding="none">
       <FeatureCardHeader className="mb-4">
         <FeatureCardTitle>{title}</FeatureCardTitle>
       </FeatureCardHeader>
@@ -208,21 +285,44 @@ export function FeaturePreviewPanel({
   );
 }
 
-function statToneClass(tone: FeatureCardTone) {
+function statToneSurfaceClass(tone: FeatureCardTone) {
   if (tone === "accent") {
-    return "border-accent/20 bg-accent-soft text-accent-strong";
+    return "border-accent/20 bg-accent-soft";
   }
   if (tone === "blue") {
-    return "border-blue-start/20 bg-blue-soft text-blue-start";
+    return "border-blue-start/20 bg-blue-soft";
   }
   if (tone === "danger") {
-    return "border-danger/20 bg-danger/10 text-danger";
+    return "border-danger/20 bg-danger/10";
   }
   if (tone === "green") {
-    return "border-emerald-500/20 bg-emerald-500/10 text-emerald-500";
+    return "border-emerald-500/20 bg-emerald-500/10";
   }
   if (tone === "violet") {
-    return "border-violet-500/20 bg-violet-500/10 text-violet-start";
+    return "border-violet-500/20 bg-violet-500/10";
   }
-  return "border-line bg-app-elevated text-muted";
+  if (tone === "warning") {
+    return "border-warning/30 bg-warning/10";
+  }
+  return "border-line bg-app-elevated";
+}
+
+function statToneTintedSurfaceClass(tone: FeatureCardTone) {
+  if (tone === "accent") return "feature-stat-card--accent";
+  if (tone === "blue") return "feature-stat-card--blue";
+  if (tone === "danger") return "feature-stat-card--danger";
+  if (tone === "green") return "feature-stat-card--green";
+  if (tone === "violet") return "feature-stat-card--violet";
+  if (tone === "warning") return "feature-stat-card--warning";
+  return "feature-stat-card--neutral";
+}
+
+function statToneIconClass(tone: FeatureCardTone) {
+  if (tone === "accent") return "text-accent-strong";
+  if (tone === "blue") return "text-blue-start";
+  if (tone === "danger") return "text-danger";
+  if (tone === "green") return "text-emerald-500";
+  if (tone === "violet") return "text-violet-start";
+  if (tone === "warning") return "text-warning-strong";
+  return "text-muted";
 }

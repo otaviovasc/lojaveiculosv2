@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Info } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { FeaturePageShell } from "../../../components/ui/FeatureLayout";
 import type { InventoryApi } from "../api/apiClient";
 import type { InventoryListingDetail } from "../model/types";
 import type { TabId } from "./InventoryDetailWorkspaceParts";
@@ -160,7 +161,7 @@ export function InventoryDetailWorkspace({
   const margin = calculateMargin(listing.priceCents, acquisitionCost);
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto px-4 py-6 text-app-text">
+    <FeaturePageShell mainClassName="text-app-text">
       {/* Toast Notification */}
       <AnimatePresence>
         {notification && (
@@ -259,7 +260,11 @@ export function InventoryDetailWorkspace({
         )}
 
         {activeTab === "historico" && (
-          <InventoryDetailHistoricoTab detail={detail} />
+          <InventoryDetailHistoricoTab
+            api={api}
+            detail={detail}
+            onUpdated={handleUpdatedDetail}
+          />
         )}
 
         {activeTab === "vitrine" && (
@@ -291,7 +296,7 @@ export function InventoryDetailWorkspace({
         }}
         onConfirm={() => void handleDeleteListing()}
       />
-    </div>
+    </FeaturePageShell>
   );
 
   async function handleDeleteListing() {

@@ -118,7 +118,7 @@ function AgencyStoreRow({
             href={`https://${store.subdominio}.lojaveiculos.com.br`}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2.5 bg-panel border border-line text-muted hover:text-accent-text hover:border-accent/40 rounded-xl transition-all hover:shadow-lg"
+            className="p-2.5 bg-panel border border-line text-muted hover:text-accent-text hover:border-accent/40 rounded-xl transition-all"
             title="Ver Site Público"
           >
             <ExternalLink className="size-4" />

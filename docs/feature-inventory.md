@@ -46,6 +46,23 @@ Every migrated feature needs one row before implementation. Status values:
 | SaaS lifecycle data    | new                              | api/internal     | No product-event ledger, activation milestones, account health, cohort retention, or cancellation-reason model                                                                                                                                                                                                                                                                                                                                                                                                                          | Critical gap      | Instrument acquisition, activation, adoption, retention, expansion, support load, and churn before scaling acquisition.                                                   |
 | V1 historical data     | lojaveiculos                     | tools/api        | Dump profiler and legacy-id schema only                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Critical gap      | Build rerunnable importers, parity reports, rehearsal, pilot-wave cutover, and rollback tooling for active V1 stores.                                                     |
 
+### Commission workspace operating contract
+
+- Target segment: owners, supervisors, and finance operators at independent
+  used-vehicle dealerships with seller commission rules.
+- Customer outcome: close a seller period without spreadsheets while tracing
+  every amount back to the closed sale and vehicle snapshot.
+- Leading metrics: percentage of closed sales with a complete commission state,
+  reconciliation issue count, and time from period review to settlement.
+- Billing and entitlement: remains part of the existing Finance surface; access
+  is controlled separately by `finance.read` and `finance.update` permissions.
+- Support owner: Finance (`api/web`), with production data incidents owned by
+  the backend service owner and workflow/UI incidents by the web owner.
+- Failure and degraded state: stale settlement input fails atomically with no
+  partial payment; sales without commission, orphan links, standard-commission
+  seller mismatch, missing vehicles, and cancelled/reverted sales remain
+  visible as explicit reconciliation issues.
+
 ## Commercial Launch Gate
 
 A route, screen, adapter, or provider-readiness check is not enough to clear a

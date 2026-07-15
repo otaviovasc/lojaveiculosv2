@@ -38,13 +38,13 @@ export function FinanceDateField({
   );
 }
 
-function fromInputDate(value: string) {
+export function fromInputDate(value: string) {
   if (!value) return null;
   const date = new Date(`${value}T12:00:00`);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function toInputDate(value: Date) {
+export function toInputDate(value: Date) {
   const year = value.getFullYear();
   const month = String(value.getMonth() + 1).padStart(2, "0");
   const day = String(value.getDate()).padStart(2, "0");

@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { Command, Search } from "lucide-react";
 import type { AppTheme } from "../../app/theme";
 import {
   DashboardSidebarNavItem,
@@ -6,6 +8,7 @@ import {
   SidebarFooterActions,
 } from "./dashboard-sidebar-parts";
 import type { DashboardSidebarItem } from "./dashboard-sidebar-parts";
+import { SidebarTexture } from "./TextureBackground";
 
 export type { DashboardSidebarItem };
 
@@ -25,6 +28,7 @@ export type DashboardSidebarProps<Id extends string = string> = {
   workspaceLogoUrl?: string | null | undefined;
   workspaceMeta?: string;
   workspaceName: string;
+  onSearchClick?: () => void;
 };
 
 export function DashboardSidebar<Id extends string = string>({
@@ -43,7 +47,17 @@ export function DashboardSidebar<Id extends string = string>({
   workspaceLogoUrl,
   workspaceMeta = "Loja atual",
   workspaceName,
+  onSearchClick,
 }: DashboardSidebarProps<Id>) {
+  const [isMac, setIsMac] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const isMacOS = navigator.userAgent.toUpperCase().indexOf("MAC") >= 0;
+      setIsMac(isMacOS);
+    }
+  }, []);
+
   const isCompact = variant === "desktop" && collapsed;
   const settingsItem = items.find((item) => item.id === "settings");
   const mainItems = items.filter((item) => item.id !== "settings");
@@ -54,6 +68,8 @@ export function DashboardSidebar<Id extends string = string>({
     <div
       className={`workspace-sidebar${isCompact ? " workspace-sidebar--compact" : ""}${variant === "mobile" ? " workspace-sidebar--mobile" : ""} ${className}`}
     >
+      <SidebarTexture />
+
       <SidebarWorkspace
         collapsed={isCompact}
         meta={workspaceMeta}
@@ -63,6 +79,40 @@ export function DashboardSidebar<Id extends string = string>({
         iconUrl={workspaceIconUrl}
         logoUrl={workspaceLogoUrl}
       />
+
+      {onSearchClick && (
+        <div className="workspace-sidebar__search-wrap">
+          {isCompact ? (
+            <button
+              aria-label="Buscar módulos e áreas"
+              className="workspace-sidebar__search-trigger-compact"
+              onClick={onSearchClick}
+              type="button"
+              title="Buscar"
+            >
+              <Search aria-hidden="true" className="size-4" />
+            </button>
+          ) : (
+            <button
+              className="workspace-sidebar__search-trigger"
+              onClick={onSearchClick}
+              type="button"
+            >
+              <Search aria-hidden="true" className="size-4" />
+              <span>Buscar...</span>
+              <kbd>
+                {isMac ? (
+                  <>
+                    <Command className="size-3" />K
+                  </>
+                ) : (
+                  "Ctrl K"
+                )}
+              </kbd>
+            </button>
+          )}
+        </div>
+      )}
 
       <nav
         aria-label="Modulos"

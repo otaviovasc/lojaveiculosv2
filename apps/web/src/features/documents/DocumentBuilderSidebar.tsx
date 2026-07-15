@@ -1,7 +1,7 @@
-import { FileLock2, FilePenLine } from "lucide-react";
+import { FileLock2, FilePenLine, Search } from "lucide-react";
+import { useState } from "react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { kindLabel } from "./documentLabels";
-import { templateKindLabel } from "./documentBuilderModel";
 import type { DocumentTemplate } from "./types";
 
 export function DocumentBuilderSidebar({
@@ -13,14 +13,38 @@ export function DocumentBuilderSidebar({
   selectedTemplateKey: string | null;
   templates: readonly DocumentTemplate[];
 }) {
+  const [search, setSearch] = useState("");
+  const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
+  const visibleTemplates = normalizedSearch
+    ? templates.filter((template) =>
+        [template.title, template.description, kindLabel(template.kind)]
+          .join(" ")
+          .toLocaleLowerCase("pt-BR")
+          .includes(normalizedSearch),
+      )
+    : templates;
+
   return (
-    <aside className="documents-builder-sidebar">
+    <aside
+      aria-label="Biblioteca de modelos"
+      className="documents-builder-sidebar"
+    >
       <div className="documents-builder-sidebar-header">
         <span>Biblioteca</span>
-        <strong>{templates.length} modelos migrados</strong>
+        <strong>{templates.length} modelos da loja</strong>
       </div>
+      <label className="documents-builder-template-search">
+        <span className="sr-only">Buscar modelos</span>
+        <Search aria-hidden="true" className="size-4" />
+        <input
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar modelo"
+          type="search"
+          value={search}
+        />
+      </label>
       <div className="documents-builder-template-list">
-        {templates.map((template) => {
+        {visibleTemplates.map((template) => {
           const isSelected = template.templateKey === selectedTemplateKey;
           const Icon = template.mode === "editable" ? FilePenLine : FileLock2;
           return (
@@ -37,10 +61,7 @@ export function DocumentBuilderSidebar({
               </span>
               <span className="documents-builder-template-copy">
                 <strong>{template.title}</strong>
-                <small>
-                  {templateKindLabel(template.kind)} ·{" "}
-                  {kindLabel(template.kind)}
-                </small>
+                <small>{kindLabel(template.kind)}</small>
               </span>
               <FeatureStatusBadge
                 className="documents-builder-template-mode"
@@ -51,6 +72,11 @@ export function DocumentBuilderSidebar({
             </button>
           );
         })}
+        {visibleTemplates.length === 0 ? (
+          <p className="documents-builder-template-empty">
+            Nenhum modelo corresponde à busca.
+          </p>
+        ) : null}
       </div>
     </aside>
   );

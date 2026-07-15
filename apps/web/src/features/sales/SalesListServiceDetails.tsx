@@ -147,7 +147,7 @@ function CommissionSummary({ value }: { value: SnapshotRecord }) {
       <span className="text-app-text">
         Tipo: {value.ruleType === "fixed" ? "Fixo" : "Percentual"}
       </span>
-      <span className="text-success">
+      <span className="text-success-strong">
         {value.ruleType === "fixed"
           ? formatCents(amountValueCents ?? 0)
           : `${String(value.percentageRate ?? "")}%`}
@@ -166,7 +166,7 @@ function TradeInSummary({ value }: { value: SnapshotRecord }) {
       <span className="text-accent-strong">
         {valuationCents ? formatCents(valuationCents) : ""}
       </span>
-      <span className="text-xs text-success uppercase font-black">
+      <span className="text-xs text-success-strong uppercase font-black">
         Cadastro Auto
       </span>
     </div>

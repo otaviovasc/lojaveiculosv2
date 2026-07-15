@@ -67,7 +67,7 @@
   font-weight: 900;
   letter-spacing: -0.02em;
   line-height: 1;
-  color: #ffffff;
+  color: var(--color-inverse);
 }
 
 /* Update kpi-icon-container styles to support hover and rotation in CSS */

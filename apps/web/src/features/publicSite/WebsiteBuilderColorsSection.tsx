@@ -59,8 +59,8 @@ export function WebsiteBuilderColorsSection({
                 className={cn(
                   "group relative flex flex-col gap-2.5 rounded-xl border-2 p-3.5 text-left transition-all duration-200",
                   isActive
-                    ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
-                    : "border-border/50 hover:border-muted-foreground/40 hover:bg-muted/30",
+                    ? "border-primary bg-primary/10 ring-1 ring-primary/20"
+                    : "border-border/50 hover:border-line-strong hover:bg-muted/30",
                 )}
                 key={palette.name}
                 onClick={() => {

@@ -21,6 +21,7 @@ export function createListing(
 ): VehicleListing {
   return {
     catalog: null,
+    commercialTags: [],
     createdAt: testNow,
     description: null,
     doors: null,
@@ -36,6 +37,7 @@ export function createListing(
     plate: "ABC1D23",
     priceCents: 9500000,
     publicSlug: null,
+    resaleAnalysis: null,
     status: "draft",
     storeId: "store_1",
     tenantId: "tenant_1",
@@ -44,6 +46,7 @@ export function createListing(
     trimName: null,
     unitIds: [],
     updatedAt: testNow,
+    videoUrl: null,
     ...input,
   };
 }

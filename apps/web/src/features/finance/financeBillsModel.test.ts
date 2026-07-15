@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createEntryDraft,
   filterEntries,
+  filterOperationalCashEntries,
   initialFinanceFilters,
   toEntryInput,
   toRecurringInput,
@@ -78,6 +79,19 @@ describe("finance bills model", () => {
         status: "pending",
       }).map((item) => item.id),
     ).toEqual(["1"]);
+  });
+
+  it("keeps operational cash inputs independent from date filters", () => {
+    const entries = [
+      entry("overdue", "Aluguel", "Operacional", "pending", "2026-06-01"),
+      entry("upcoming", "Seguro", "Operacional", "pending", "2026-06-25"),
+    ];
+
+    expect(
+      filterOperationalCashEntries(entries, initialFinanceFilters).map(
+        (item) => item.id,
+      ),
+    ).toEqual(["overdue", "upcoming"]);
   });
 
   it("matches raw backend categories by their localized display label", () => {

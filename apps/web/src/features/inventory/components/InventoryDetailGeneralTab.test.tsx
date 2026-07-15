@@ -160,6 +160,7 @@ function createDetail({
     documents: [],
     listing: {
       catalog: null,
+      commercialTags: [],
       createdAt: "2026-01-01T00:00:00.000Z",
       description: "Veículo de teste",
       doors: 2,
@@ -174,6 +175,7 @@ function createDetail({
       plate: "ABC1D23",
       priceCents: 18990000,
       publicSlug: null,
+      resaleAnalysis: null,
       status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -182,6 +184,7 @@ function createDetail({
       trimName: "Touring",
       unitIds: ["unit_1"],
       updatedAt: "2026-01-01T00:00:00.000Z",
+      videoUrl: null,
     },
     media: [],
     priceHistory: [],

@@ -87,6 +87,8 @@ export const llmsText = `# Loja Veiculos API
 - inventory.read: required to read vehicle inventory.
 - inventory.create: reserved for vehicle creation workflows.
 - inventory.update_description: reserved for descriptive inventory edits.
+- inventory.update_commercial_tags: reserved for public listing tag edits.
+- inventory.update_video: reserved for public listing video edits.
 - inventory.update_internal_notes: reserved for internal vehicle note edits.
 - inventory.update_price: reserved for price edits.
 - inventory.update_status: reserved for listing lifecycle edits.
@@ -230,14 +232,12 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/external-api/leads: creates a CRM lead with V2 buyer fields or V1 aliases name/email/phone/message/vehicleId; requires lead.create, CRM entitlement, and an Idempotency-Key deduplication key.
 - GET /api/v1/external-api/leads/{leadId}: returns one lead; requires lead.read and CRM entitlement.
 - PATCH /api/v1/external-api/leads/{leadId}: updates lead buyer fields or status; requires lead.update, CRM entitlement, and an Idempotency-Key deduplication key.
-
 ## Current internal monitoring endpoints
 - GET /api/v1/internal/health: returns scoped admin observability with audit events, health status, alerts, action/outcome/severity metrics, actor activity, and open audit sink failures; requires audit.read.
 
 ## Finance side effects
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.
 - Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_listing, vehicle_unit, sale, and sale_payment.
-
 ## Vehicle document kinds
 - Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.
 ## External API safety limits

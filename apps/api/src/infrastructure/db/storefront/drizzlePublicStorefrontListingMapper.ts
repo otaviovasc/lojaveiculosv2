@@ -10,6 +10,7 @@ export function toPublicVehicleListing(
   heroMedia: PublicVehicleMedia | null,
 ): PublicVehicleListing {
   return {
+    commercialTags: listingCommercialTags(row.listingMetadata),
     condition: row.condition,
     description: row.description,
     doors: row.doors,
@@ -28,7 +29,37 @@ export function toPublicVehicleListing(
     title: row.title,
     transmission: row.transmission,
     trimName: row.trimName,
+    videoUrl: listingVideoUrl(row.listingMetadata),
   };
+}
+
+function listingCommercialTags(metadata: unknown): readonly string[] {
+  if (!isRecord(metadata) || !Array.isArray(metadata.commercialTags)) return [];
+  return Array.from(
+    new Set(
+      metadata.commercialTags.flatMap((value) => {
+        if (typeof value !== "string") return [];
+        const tag = value.trim();
+        return tag ? [tag.slice(0, 40)] : [];
+      }),
+    ),
+  ).slice(0, 12);
+}
+
+function listingVideoUrl(metadata: unknown): string | null {
+  if (!isRecord(metadata) || typeof metadata.videoUrl !== "string") return null;
+  const value = metadata.videoUrl.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
 function assertPublicSlug(slug: string | null): string {

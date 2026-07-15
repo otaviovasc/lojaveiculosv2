@@ -29,6 +29,7 @@ describe("Drizzle public storefront repository", () => {
     });
     expect(listings).toEqual([
       expect.objectContaining({
+        commercialTags: ["Único dono", "Revisado"],
         condition: "used",
         engineAspiration: "turbo",
         engineDisplacement: "2.0",
@@ -37,6 +38,7 @@ describe("Drizzle public storefront repository", () => {
         status: "available",
         thumbnailUrl: "https://cdn.local/front.jpg",
         title: "Fiat Toro Volcano 2023",
+        videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
       }),
     ]);
     expect(listings[0]?.heroMedia?.url).toBe("https://cdn.local/front.jpg");
@@ -61,6 +63,7 @@ describe("Drizzle public storefront repository", () => {
           featuredUntil: null,
           fuelType: "flex",
           listingId: "listing_certified",
+          listingMetadata: {},
           manufactureYear: 2022,
           mileageKm: 18000,
           modelYear: 2023,
@@ -203,7 +206,6 @@ describe("Drizzle public storefront repository", () => {
       ],
     });
     const repository = createDrizzlePublicStorefrontRepository(db);
-
     const listing = await repository.findPublicListingDetail({
       listingSlug: "fiat-toro-2023",
       storeId: "store_1" as never,

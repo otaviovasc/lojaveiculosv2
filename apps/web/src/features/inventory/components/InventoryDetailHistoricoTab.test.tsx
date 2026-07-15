@@ -1,29 +1,36 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { InventoryApi } from "../api/apiClient";
 import { createInventoryDetailFixture } from "../model/inventoryDetail.testSupport";
 import { InventoryDetailHistoricoTab } from "./InventoryDetailHistoricoTab";
 
 afterEach(cleanup);
 
 describe("InventoryDetailHistoricoTab", () => {
-  it("renders only events present in the listing detail", () => {
+  it("renders persisted analysis, operational events, and backend audit events", async () => {
+    const baseDetail = createInventoryDetailFixture();
     const detail = createInventoryDetailFixture({
-      costs: [
-        {
-          amountCents: 35000,
-          costDate: "2026-02-02T10:00:00.000Z",
-          createdAt: "2026-02-02T10:00:00.000Z",
-          description: "Higienização",
-          id: "cost_1",
-          kind: "preparation",
-          storeId: "store_1",
-          tenantId: "tenant_1",
-          unitId: "unit_1",
-          updatedAt: "2026-02-02T10:00:00.000Z",
+      listing: {
+        ...baseDetail.listing,
+        resaleAnalysis: {
+          dealRiskScore: 32,
+          generatedAt: "2026-02-04T10:00:00.000Z",
+          provider: { model: "gpt-5.4-mini", name: "openai" },
+          riskLevel: "low",
+          suggestedDescription: "Descrição sugerida",
+          summary: "Boa liquidez com margem controlada.",
+          topics: [
+            {
+              code: "W",
+              message: "Quilometragem compatível.",
+              title: "Liquidez",
+              type: "positive",
+            },
+          ],
         },
-      ],
+      },
       priceHistory: [
         {
           actorUserId: "user_1",
@@ -35,33 +42,43 @@ describe("InventoryDetailHistoricoTab", () => {
           reason: null,
         },
       ],
-      statusHistory: [
-        {
-          actorUserId: "user_1",
-          changedAt: "2026-02-01T10:00:00.000Z",
-          fromStatus: "draft",
-          id: "status_1",
-          listingId: "listing_1",
-          reason: null,
-          target: "listing",
-          toStatus: "published",
-          unitId: null,
-        },
-      ],
     });
+    const api = {
+      listListingAuditEvents: vi.fn(async () => [
+        {
+          action: "vehicle_listing.details.update",
+          actorId: "user_123456789",
+          actorKind: "user" as const,
+          category: "data_change" as const,
+          changes: [{ path: "priceCents" }],
+          id: "audit_1",
+          occurredAt: "2026-02-03T10:00:00.000Z",
+          outcome: "succeeded" as const,
+          providerName: null,
+          summary: "Updated vehicle listing details",
+        },
+      ]),
+    } as unknown as InventoryApi;
 
-    render(<InventoryDetailHistoricoTab detail={detail} />);
+    render(
+      <InventoryDetailHistoricoTab
+        api={api}
+        detail={detail}
+        onUpdated={vi.fn()}
+      />,
+    );
 
     expect(screen.getByText("Preço do anúncio alterado")).toBeVisible();
     expect(screen.getByText(/185\.000.*189\.900/)).toBeVisible();
-    expect(screen.getByText("Status do anúncio alterado")).toBeVisible();
-    expect(screen.getByText("Rascunho → Publicado")).toBeVisible();
-    expect(screen.getByText("Custo registrado")).toBeVisible();
-    expect(screen.getByText(/Preparação.*350.*Higienização/)).toBeVisible();
-    expect(screen.getByText(/Nenhuma análise.*foi gerada/i)).toBeVisible();
     expect(
-      screen.getByText(/Operadores e ações detalhadas não são simulados/i),
+      screen.getByText("Boa liquidez com margem controlada."),
     ).toBeVisible();
-    expect(screen.queryByText("Carlos Cunha")).toBeNull();
+    expect(screen.getByText(/openai.*gpt-5.4-mini/i)).toBeVisible();
+    expect(await screen.findByText("Dados do veículo alterados")).toBeVisible();
+    expect(screen.getByText(/Operador user_123456/)).toBeVisible();
+    expect(screen.queryByText(/Nenhuma análise.*foi gerada/i)).toBeNull();
+    expect(
+      screen.queryByText(/Operadores e ações detalhadas não são simulados/i),
+    ).toBeNull();
   });
 });

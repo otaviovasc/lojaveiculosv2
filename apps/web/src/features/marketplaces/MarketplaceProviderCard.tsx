@@ -11,6 +11,7 @@ import {
   providerLabels,
 } from "./marketplaceLabels";
 import { resolveMarketplaceConnectionPresentation } from "./marketplaceConnectionPresentation";
+import { MarketplaceProviderBrand } from "./MarketplaceProviderBrand";
 import type {
   MarketplaceAccount,
   MarketplaceProvider,
@@ -59,15 +60,22 @@ export function MarketplaceProviderCard({
       data-provider={provider}
     >
       <header className="marketplace-card-header">
-        <span className={`is-${connection.tone}`}>
-          <ConnectionIcon aria-hidden="true" className="size-4" />
-          {getMarketplaceConnectionLabel(
-            state?.connectionStatus,
-            account?.status,
-          )}
-        </span>
-        <h3>{providerLabels[provider]}</h3>
-        <p>Publicação manual do estoque da loja, sem importação de leads.</p>
+        <div className="marketplace-card-header__topline">
+          <MarketplaceProviderBrand provider={provider} />
+          <span
+            className={`marketplace-connection-status is-${connection.tone}`}
+          >
+            <ConnectionIcon aria-hidden="true" className="size-4" />
+            {getMarketplaceConnectionLabel(
+              state?.connectionStatus,
+              account?.status,
+            )}
+          </span>
+        </div>
+        <p className="marketplace-card__purpose">
+          Publique, atualize e retire anúncios em lote. Leads continuam fora
+          desta integração.
+        </p>
       </header>
       <div className="marketplace-actions">
         {connection.connectLabel ? (
@@ -89,21 +97,26 @@ export function MarketplaceProviderCard({
           </button>
         ) : null}
       </div>
-      <div className="marketplace-form-grid">
-        <input
-          aria-label={`Código de autorização do ${providerLabels[provider]}`}
-          onChange={(event) => onOauthCodeChange(provider, event.target.value)}
-          placeholder="Código recebido após autorizar a conta"
-          value={oauthCode}
-        />
-        <button
-          disabled={isSaving || !oauthCode.trim()}
-          onClick={() => void onCompleteConnection(provider)}
-          type="button"
-        >
-          Finalizar conexão
-        </button>
-      </div>
+      <details className="marketplace-authorization">
+        <summary>Inserir código de autorização</summary>
+        <div className="marketplace-form-grid">
+          <input
+            aria-label={`Código de autorização do ${providerLabels[provider]}`}
+            onChange={(event) =>
+              onOauthCodeChange(provider, event.target.value)
+            }
+            placeholder="Código recebido após autorizar a conta"
+            value={oauthCode}
+          />
+          <button
+            disabled={isSaving || !oauthCode.trim()}
+            onClick={() => void onCompleteConnection(provider)}
+            type="button"
+          >
+            Finalizar conexão
+          </button>
+        </div>
+      </details>
       <MarketplaceRequirementChecklist state={state} />
       <div className="marketplace-job-actions">
         <button

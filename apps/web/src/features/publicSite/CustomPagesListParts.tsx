@@ -30,7 +30,7 @@ export function PageCard({
 }) {
   const previewUrl = buildCustomPagePreviewPath(page, storeSlug);
   return (
-    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-primary/30 hover:shadow-lg">
+    <div className="group relative flex flex-col overflow-hidden rounded-xl border border-border/50 bg-card transition-all hover:border-line-strong hover:shadow-lg">
       <div className="flex-1 p-5">
         <div className="mb-3 flex items-start justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -45,7 +45,7 @@ export function PageCard({
             </div>
           </div>
           {!page.visible ? (
-            <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning">
+            <span className="shrink-0 rounded-full bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning-strong">
               Rascunho
             </span>
           ) : null}

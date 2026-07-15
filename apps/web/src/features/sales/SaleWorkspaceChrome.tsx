@@ -117,7 +117,7 @@ export function SaleWorkspaceMessage({ message }: { message: string | null }) {
   if (!message) return null;
   return (
     <FeatureAlert
-      className="fixed bottom-6 right-6 z-[9999] max-w-sm shadow-xl"
+      className="fixed bottom-6 right-6 z-[var(--z-index-popover)] max-w-sm shadow-xl"
       title="Formalização"
       tone="info"
     >

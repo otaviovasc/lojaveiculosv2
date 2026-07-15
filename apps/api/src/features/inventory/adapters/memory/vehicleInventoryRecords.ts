@@ -17,6 +17,7 @@ export function createListingRecord(
   const now = new Date();
   return {
     ...record,
+    commercialTags: record.commercialTags ?? [],
     createdAt: now,
     doors: record.doors ?? null,
     engineAspiration: record.engineAspiration ?? null,
@@ -27,9 +28,11 @@ export function createListingRecord(
     isVisibleOnPublicSite: record.isVisibleOnPublicSite ?? false,
     mileageKm: record.mileageKm ?? null,
     publicSlug: record.publicSlug ?? null,
+    resaleAnalysis: record.resaleAnalysis ?? null,
     transmission: record.transmission ?? null,
     unitIds: [],
     updatedAt: now,
+    videoUrl: record.videoUrl ?? null,
   };
 }
 

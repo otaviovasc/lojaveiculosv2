@@ -136,7 +136,7 @@ export function TooltipContent({
             pointerEvents: "none",
           }}
           className={cn(
-            "z-[9999] rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground shadow-2xl w-max max-w-[240px] leading-relaxed border border-white/10",
+            "z-[var(--z-index-tooltip)] rounded-xl bg-primary px-4 py-2 text-xs font-black text-primary-foreground shadow-2xl w-max max-w-[240px] leading-relaxed border border-white/10",
             className,
           )}
         >

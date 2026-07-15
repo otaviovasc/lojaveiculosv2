@@ -188,7 +188,6 @@
     var(--color-panel)
   );
   border-color: color-mix(in srgb, var(--color-accent) 35%, var(--color-line));
-  box-shadow: inset 3px 0 var(--color-accent);
   color: var(--color-accent-soft-foreground);
 }
 .automation-run-item > strong {

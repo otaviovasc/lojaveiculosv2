@@ -52,6 +52,7 @@ export type PublicStorefrontSiteResult = {
 };
 
 export type PublicVehicleListing = {
+  commercialTags: readonly string[];
   condition: "certified_pre_owned" | "new" | "used";
   description: string | null;
   doors: number | null;
@@ -70,6 +71,7 @@ export type PublicVehicleListing = {
   title: string;
   transmission: string | null;
   trimName: string | null;
+  videoUrl: string | null;
 };
 
 export type PublicVehicleMedia = {

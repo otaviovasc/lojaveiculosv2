@@ -16,17 +16,20 @@ export function FeatureField({
 }) {
   return (
     <label
-      className={cx("grid gap-2 text-sm font-black text-app-text", className)}
+      className={cx(
+        "grid gap-2 text-sm font-semibold text-app-text/90",
+        className,
+      )}
     >
       <span>{label}</span>
       {children}
       {error ? (
-        <span className="text-xs font-black text-danger" role="alert">
+        <span className="text-xs font-semibold text-danger" role="alert">
           {error}
         </span>
       ) : null}
       {hint ? (
-        <span className="text-xs font-bold text-muted">{hint}</span>
+        <span className="text-xs font-medium text-muted">{hint}</span>
       ) : null}
     </label>
   );
@@ -63,11 +66,11 @@ export function FeatureFormSection({
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h4 className="text-xs font-black uppercase tracking-wider text-accent">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-accent">
             {title}
           </h4>
           {description ? (
-            <p className="mt-1 text-xs font-bold text-muted">{description}</p>
+            <p className="mt-1 text-xs font-medium text-muted">{description}</p>
           ) : null}
         </div>
         {actions ? <div className="shrink-0">{actions}</div> : null}

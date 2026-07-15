@@ -38,7 +38,6 @@
 
 .crm-whatsapp-campaign-source-tabs button[aria-selected="true"] {
   background: var(--color-panel);
-  box-shadow: var(--shadow-sm);
   color: var(--color-accent-readable);
 }
 

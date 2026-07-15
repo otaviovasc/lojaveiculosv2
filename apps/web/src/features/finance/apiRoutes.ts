@@ -19,6 +19,19 @@ export const financeRoutes = {
     ),
   commissionRules: (baseUrl?: string) =>
     createFinanceEndpoint("/finance/commission-rules", baseUrl),
+  commissionSettlement: (baseUrl?: string) =>
+    createFinanceEndpoint("/finance/commissions/settlements", baseUrl),
+  commissionWorkspace: (
+    baseUrl: string | undefined,
+    input: { from: string; to: string },
+  ) => {
+    const endpoint = createFinanceEndpoint(
+      "/finance/commissions/workspace",
+      baseUrl,
+    );
+    const params = new URLSearchParams(input);
+    return `${endpoint}?${params.toString()}`;
+  },
   documentUploads: (entryId: string, baseUrl?: string) =>
     createFinanceEndpoint(
       `/finance/entries/${encodeURIComponent(entryId)}/documents/uploads`,

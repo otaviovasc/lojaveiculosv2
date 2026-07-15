@@ -4,20 +4,15 @@ import { inventoryAcquisitionSchemas } from "./inventoryAcquisitionOpenApiSchema
 import { inventoryWorkflowSchemas } from "./inventoryWorkflowOpenApiSchemas.js";
 import { inventoryMediaSchemas } from "./inventoryMediaOpenApiSchemas.js";
 import {
+  inventoryListingSchemas,
+  listingStatusEnum,
+} from "./inventoryListingOpenApiSchemas.js";
+import {
   listingTechnicalSchemas,
   objectSchema,
   unitIdentitySchemas,
   vehicleDocumentKinds,
 } from "./inventoryOpenApiSchemaParts.js";
-
-const listingStatusEnum = [
-  "archived",
-  "draft",
-  "in_preparation",
-  "published",
-  "sold_out",
-  "unpublished",
-] as const;
 
 export const inventorySchemas = {
   AttachListingUnitRequest: objectSchema([], {
@@ -31,6 +26,11 @@ export const inventorySchemas = {
     },
   }),
   CreateListingRequest: objectSchema(["title"], {
+    commercialTags: {
+      type: "array",
+      items: { type: "string", maxLength: 40 },
+      maxItems: 12,
+    },
     description: { type: ["string", "null"], minLength: 1 },
     ...listingTechnicalSchemas,
     plate: { type: ["string", "null"], minLength: 1, default: null },
@@ -40,29 +40,14 @@ export const inventorySchemas = {
       enum: ["draft", "in_preparation", "published", "unpublished"],
     },
     title: { type: "string", minLength: 1 },
+    videoUrl: { type: ["string", "null"], format: "uri" },
   }),
   ...inventoryAcquisitionSchemas,
   ...inventoryChecklistSchemas,
   ...inventoryFinanceSchemas,
+  ...inventoryListingSchemas,
   ...inventoryMediaSchemas,
   ...inventoryWorkflowSchemas,
-  InventoryListing: objectSchema(["id", "status", "title"], {
-    createdAt: { type: "string", format: "date-time" },
-    description: { type: ["string", "null"] },
-    ...listingTechnicalSchemas,
-    id: { type: "string" },
-    isVisibleOnPublicSite: { type: "boolean" },
-    plate: { type: ["string", "null"] },
-    priceCents: { type: ["integer", "null"], minimum: 0 },
-    publicSlug: { type: ["string", "null"] },
-    status: {
-      type: "string",
-      enum: listingStatusEnum,
-    },
-    title: { type: "string" },
-    updatedAt: { type: "string", format: "date-time" },
-    unitIds: { type: "array", items: { type: "string" } },
-  }),
   InventoryUnit: objectSchema(["id", "listingId", "status"], {
     colorName: { type: ["string", "null"] },
     createdAt: { type: "string", format: "date-time" },
@@ -170,6 +155,11 @@ export const inventorySchemas = {
     description: { type: "string", minLength: 1 },
   }),
   UpdateListingDetailsRequest: objectSchema([], {
+    commercialTags: {
+      type: "array",
+      items: { type: "string", maxLength: 40 },
+      maxItems: 12,
+    },
     description: { type: ["string", "null"], minLength: 1 },
     ...listingTechnicalSchemas,
     priceCents: { type: ["integer", "null"], minimum: 0 },
@@ -185,6 +175,7 @@ export const inventorySchemas = {
       ],
     },
     title: { type: "string", minLength: 1 },
+    videoUrl: { type: ["string", "null"], format: "uri" },
   }),
   UpdateListingPriceRequest: objectSchema(["priceCents"], {
     priceCents: { type: ["integer", "null"], minimum: 0 },

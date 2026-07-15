@@ -7,7 +7,7 @@
 }
 
 .agency-create-guidance__header > span {
-  color: color-mix(in srgb, var(--color-accent) 52%, var(--color-inverse));
+  color: var(--color-accent-readable);
   font-size: var(--font-size-xs);
   font-weight: 850;
   letter-spacing: 0.08em;
@@ -76,11 +76,11 @@
 }
 
 .agency-guidance-step--info .agency-guidance-step__icon {
-  color: color-mix(in srgb, var(--color-info) 45%, var(--color-inverse));
+  color: var(--color-info);
 }
 
 .agency-guidance-step--success .agency-guidance-step__icon {
-  color: color-mix(in srgb, var(--color-success) 58%, var(--color-inverse));
+  color: var(--color-success-strong);
 }
 
 .agency-guidance-step__icon svg {

@@ -52,7 +52,7 @@ export function GalleryBlock({ component, context }: BuilderBlockProps) {
           {images.map((image, index) => (
             <button
               className={cx(
-                "group overflow-hidden rounded-xl border border-line bg-app text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 hover:shadow-[0_12px_24px_rgba(15,23,42,0.05)] cursor-pointer",
+                "group overflow-hidden rounded-xl border border-line bg-app text-left transition-all duration-300 hover:-translate-y-1 hover:border-accent/20 cursor-pointer",
                 layout === "carousel" &&
                   "min-w-[78%] snap-start sm:min-w-[42%] lg:min-w-[31%]",
                 layout === "mosaic" &&
@@ -85,7 +85,7 @@ export function GalleryBlock({ component, context }: BuilderBlockProps) {
         <div className="fixed inset-0 z-50 grid place-items-center bg-app-text/90 p-4 backdrop-blur-sm">
           <button
             aria-label="Fechar imagem"
-            className="absolute right-6 top-6 rounded-full bg-panel p-3 text-app-text border border-line shadow-lg transition-transform hover:scale-105 active:scale-95"
+            className="absolute right-6 top-6 rounded-full bg-panel p-3 text-app-text border border-line transition-transform hover:scale-105 active:scale-95"
             onClick={() => setSelectedIndex(null)}
             type="button"
           >

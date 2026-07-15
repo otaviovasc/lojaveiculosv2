@@ -32,13 +32,17 @@
 }
 
 .workspace-sidebar__nav-item {
+  --sidebar-item-accent: var(--color-accent);
+  --sidebar-item-accent-strong: var(--color-accent-strong);
+  --sidebar-item-soft: var(--color-sidebar-selected);
+
   position: relative;
   display: flex;
   min-height: 2.5rem;
   align-items: center;
   justify-content: space-between;
   gap: var(--app-space-sm);
-  border: 0;
+  border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-sidebar-muted);
@@ -47,29 +51,148 @@
   font-size: var(--font-size-sm);
   text-align: left;
   transition:
-    background var(--motion-duration-fast),
+    border-color var(--motion-duration-fast),
+    background-color var(--motion-duration-fast),
     color var(--motion-duration-fast),
-    transform var(--motion-duration-fast);
+    transform var(--motion-duration-fast) var(--motion-ease-emphasized);
 }
 
-.workspace-sidebar__nav-item:hover {
-  background: var(--color-sidebar-raised);
+.workspace-sidebar__nav-item[data-module-id="inventory"] {
+  --sidebar-item-accent: var(--color-inventory);
+  --sidebar-item-accent-strong: var(--color-inventory-strong);
+  --sidebar-item-soft: var(--color-inventory-soft);
+}
+
+.workspace-sidebar__nav-item[data-module-id="sales"] {
+  --sidebar-item-accent: var(--color-sales);
+  --sidebar-item-accent-strong: var(--color-sales-strong);
+  --sidebar-item-soft: var(--color-sales-soft);
+}
+
+.workspace-sidebar__nav-item:is(
+  [data-module-id="customers"],
+  [data-module-id="crm"]
+) {
+  --sidebar-item-accent: var(--color-crm);
+  --sidebar-item-accent-strong: var(--color-crm-strong);
+  --sidebar-item-soft: var(--color-crm-soft);
+}
+
+.workspace-sidebar__nav-item:is(
+  [data-module-id="documents"],
+  [data-module-id="checklists"],
+  [data-module-id="fiscal"]
+) {
+  --sidebar-item-accent: var(--color-documents);
+  --sidebar-item-accent-strong: var(--color-documents-strong);
+  --sidebar-item-soft: var(--color-documents-soft);
+}
+
+.workspace-sidebar__nav-item:is(
+  [data-module-id="simulations"],
+  [data-module-id="auto-entries"],
+  [data-module-id="commissions"],
+  [data-module-id="billing"],
+  [data-module-id="expenses"],
+  [data-module-id="reports"]
+) {
+  --sidebar-item-accent: var(--color-finance);
+  --sidebar-item-accent-strong: var(--color-finance-strong);
+  --sidebar-item-soft: var(--color-finance-soft);
+}
+
+.workspace-sidebar__nav-item[data-module-id="settings"] {
+  --sidebar-item-accent: var(--color-settings);
+  --sidebar-item-accent-strong: var(--color-settings-strong);
+  --sidebar-item-soft: var(--color-settings-soft);
+}
+
+.workspace-sidebar__nav-item:hover:not(.is-active):not(:disabled):not(
+    [aria-disabled="true"]
+  ) {
+  border-color: var(--color-sidebar-line);
+  background: var(--color-sidebar-hover);
   color: var(--color-sidebar-text);
+  transform: translateX(2px);
 }
 
 .workspace-sidebar__nav-item.is-active {
-  background: var(--color-sidebar-raised);
-  color: var(--color-sidebar-text);
   font-weight: 700;
+  border-color: color-mix(in srgb, var(--sidebar-item-accent) 32%, transparent);
+  background: var(--sidebar-item-soft);
+  color: var(--color-sidebar-text);
+  transform: translateX(1px);
+}
+
+.workspace-sidebar__nav-item.is-active:hover {
+  border-color: color-mix(in srgb, var(--sidebar-item-accent) 58%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--sidebar-item-accent) 10%,
+    var(--sidebar-item-soft)
+  );
+  transform: translateX(2px);
+}
+
+.workspace-sidebar__nav-item:active:not(.is-active) {
+  background: var(--color-sidebar-pressed);
+  transform: translateX(1px) scale(0.985);
+}
+
+.workspace-sidebar__nav-item.is-active:active {
+  background: color-mix(
+    in srgb,
+    var(--sidebar-item-accent) 18%,
+    var(--sidebar-item-soft)
+  );
+  transform: translateX(1px) scale(0.985);
+}
+
+.workspace-sidebar__nav-item:focus-visible {
+  outline: 2px solid var(--sidebar-item-accent);
+  outline-offset: 2px;
+}
+
+.workspace-sidebar__nav-item:disabled,
+.workspace-sidebar__nav-item[aria-disabled="true"] {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-sidebar-muted);
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
 }
 
 .workspace-sidebar__nav-item.is-active::before {
   position: absolute;
-  inset: 0 auto 0 0;
+  inset: 0.35rem auto 0.35rem -1px;
   width: 0.2rem;
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  background: var(--color-accent);
   content: "";
+  background: var(--sidebar-item-accent);
+}
+
+.workspace-sidebar__nav-icon svg {
+  transition:
+    color var(--motion-duration-fast),
+    transform var(--motion-duration-fast) var(--motion-ease-emphasized);
+}
+
+.workspace-sidebar__nav-item:hover .workspace-sidebar__nav-icon svg {
+  color: var(--sidebar-item-accent);
+}
+
+.workspace-sidebar__nav-item.is-active .workspace-sidebar__nav-icon svg {
+  color: var(--sidebar-item-accent-strong);
+}
+
+.workspace-sidebar__nav-item.is-active:hover .workspace-sidebar__nav-icon svg {
+  color: var(--sidebar-item-accent);
+  transform: scale(1.06);
+}
+
+.workspace-sidebar__nav-item.is-active .workspace-sidebar__nav-meta kbd {
+  color: var(--color-sidebar-text);
 }
 
 .workspace-sidebar__nav-item.is-compact {
@@ -159,16 +282,64 @@
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--color-sidebar-muted);
+  transition:
+    border-color var(--motion-duration-fast),
+    background-color var(--motion-duration-fast),
+    color var(--motion-duration-fast),
+    transform var(--motion-duration-fast);
 }
 
 .workspace-sidebar__utility:hover,
-.workspace-sidebar__utility--active,
 .workspace-sidebar__close:hover,
 .workspace-sidebar__footer-button:hover,
 .workspace-sidebar__collapse-button:hover {
   border-color: var(--color-sidebar-line);
-  background: var(--color-sidebar-raised);
+  background: var(--color-sidebar-hover);
   color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__utility--active {
+  border-color: color-mix(in srgb, var(--color-settings) 32%, transparent);
+  background: var(--color-settings-soft);
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__utility--active:hover {
+  border-color: color-mix(in srgb, var(--color-settings) 58%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--color-settings) 10%,
+    var(--color-settings-soft)
+  );
+  color: var(--color-sidebar-text);
+}
+
+.workspace-sidebar__utility:active,
+.workspace-sidebar__close:active,
+.workspace-sidebar__footer-button:active,
+.workspace-sidebar__collapse-button:active {
+  background: var(--color-sidebar-pressed);
+  color: var(--color-sidebar-text);
+  transform: scale(0.96);
+}
+
+.workspace-sidebar__utility:focus-visible,
+.workspace-sidebar__close:focus-visible,
+.workspace-sidebar__footer-button:focus-visible,
+.workspace-sidebar__collapse-button:focus-visible {
+  outline: 2px solid var(--color-accent-readable);
+  outline-offset: 2px;
+}
+
+.workspace-sidebar__utility:disabled,
+.workspace-sidebar__close:disabled,
+.workspace-sidebar__footer-button:disabled,
+.workspace-sidebar__collapse-button:disabled {
+  border-color: transparent;
+  background: transparent;
+  color: var(--color-sidebar-muted);
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .workspace-sidebar__footer-button,
@@ -201,4 +372,44 @@
 .workspace-sidebar__footer-actions.is-compact
   .workspace-sidebar__collapse-button {
   width: 100%;
+}
+
+/* PaperTexture gives the shell a quiet material finish without another logo. */
+.workspace-sidebar {
+  position: relative;
+  background-color: var(--color-sidebar);
+}
+
+.workspace-sidebar__texture {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0.11;
+  mix-blend-mode: multiply;
+}
+
+:root[data-theme="dark"] .workspace-sidebar__texture {
+  opacity: 0.14;
+  mix-blend-mode: soft-light;
+}
+
+.workspace-sidebar > :not(.workspace-sidebar__texture) {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-sidebar__nav-item,
+  .workspace-sidebar__nav-icon svg,
+  .workspace-sidebar__store-trigger,
+  .workspace-sidebar__search-trigger,
+  .workspace-sidebar__search-trigger-compact,
+  .workspace-sidebar__utility,
+  .workspace-sidebar__close,
+  .workspace-sidebar__footer-button,
+  .workspace-sidebar__collapse-button {
+    transition-duration: 0.01ms;
+  }
 }

@@ -29,15 +29,25 @@ export const listUnitsQuerySchema = z.object({
 });
 
 const vehicleColorSchema = z.enum(vehicleColorValues);
+const commercialTagsSchema = z.array(z.string().trim().min(1).max(40)).max(12);
+const listingVideoUrlSchema = z
+  .string()
+  .trim()
+  .url()
+  .max(2048)
+  .refine((value) => /^https?:\/\//i.test(value))
+  .nullable();
 
 export const createListingSchema = z.object({
   catalog: listingCatalogSchema.nullable().optional(),
+  commercialTags: commercialTagsSchema.optional(),
   description: listingDescriptionTextSchema.nullable().optional(),
   ...listingTechnicalSchemaShape,
   plate: z.string().trim().min(1).nullable().default(null),
   priceCents: z.number().int().nonnegative().nullable().optional(),
   status: z.enum(allowedCreateStatuses).optional(),
   title: z.string().trim().min(1),
+  videoUrl: listingVideoUrlSchema.optional(),
 });
 
 export const descriptionSchema = z.object({
@@ -51,11 +61,13 @@ export const priceSchema = z.object({
 
 export const updateListingDetailsSchema = z.object({
   catalog: listingCatalogSchema.nullable().optional(),
+  commercialTags: commercialTagsSchema.optional(),
   description: listingDescriptionTextSchema.nullable().optional(),
   ...listingTechnicalSchemaShape,
   priceCents: z.number().int().nonnegative().nullable().optional(),
   status: z.enum(listingStatuses).optional(),
   title: z.string().trim().min(1).optional(),
+  videoUrl: listingVideoUrlSchema.optional(),
 });
 
 export const attachUnitSchema = z.object({

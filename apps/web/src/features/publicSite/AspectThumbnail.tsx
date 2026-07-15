@@ -7,7 +7,7 @@ export function AspectThumbnail({
 }) {
   const activeClass = active
     ? "border-accent bg-accent/15"
-    : "border-muted/40 bg-muted/5 group-hover:border-muted-strong/50 group-hover:bg-muted/10";
+    : "border-muted/40 bg-muted/5 group-hover:border-line-strong group-hover:bg-muted/10";
   return (
     <div className="flex size-8 items-center justify-center" aria-hidden="true">
       {type === "wide" && (

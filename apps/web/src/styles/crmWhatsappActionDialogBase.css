@@ -194,6 +194,5 @@
 
 .crm-whatsapp-action-segmented button[aria-selected="true"] {
   background: var(--color-panel);
-  box-shadow: 0 0.375rem 1rem rgb(21 34 45 / 0.08);
   color: var(--color-text);
 }

@@ -20,6 +20,8 @@
   border: 0;
   background: var(--color-overlay);
   backdrop-filter: blur(6px);
+  animation: feature-overlay-fade-in var(--motion-duration-base)
+    var(--motion-ease-standard) both;
 }
 
 .feature-dialog,
@@ -37,6 +39,8 @@
 .feature-dialog {
   width: 100%;
   border-radius: var(--surface-radius-xl);
+  animation: feature-dialog-enter var(--motion-duration-slow)
+    var(--motion-ease-emphasized) both;
 }
 
 .feature-dialog--medium {
@@ -63,6 +67,30 @@
   font-size: var(--font-size-lg);
 }
 
+.feature-dialog__heading {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--app-space-sm);
+}
+
+.feature-dialog__icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 18%, transparent);
+  border-radius: var(--radius-md);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+}
+
+.feature-dialog__icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
 .feature-dialog__close,
 .feature-drawer__close {
   display: grid;
@@ -73,6 +101,19 @@
   border-radius: var(--radius-md);
   background: var(--color-surface-subtle);
   color: var(--color-ink-muted);
+  transition:
+    border-color var(--motion-duration-fast),
+    background-color var(--motion-duration-fast),
+    color var(--motion-duration-fast),
+    transform var(--motion-duration-fast) var(--motion-ease-emphasized);
+}
+
+.feature-dialog__close:hover,
+.feature-drawer__close:hover {
+  border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-line));
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
+  transform: translateY(-1px);
 }
 
 .feature-dialog__close svg {
@@ -103,4 +144,48 @@
   max-height: none;
   border-block: 0;
   border-right: 0;
+  animation: feature-drawer-enter var(--motion-duration-slow)
+    var(--motion-ease-emphasized) both;
+}
+
+@keyframes feature-overlay-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes feature-dialog-enter {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes feature-drawer-enter {
+  from {
+    opacity: 0;
+    transform: translateX(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feature-overlay__backdrop,
+  .feature-dialog,
+  .feature-drawer {
+    animation: none;
+  }
 }

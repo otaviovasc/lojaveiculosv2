@@ -239,7 +239,7 @@ export function CustomPageEditor({
             "mx-4 mt-2 rounded-lg px-4 py-2.5 text-xs font-bold",
             statusMessage.type === "error"
               ? "bg-destructive/10 text-destructive"
-              : "bg-success/10 text-success",
+              : "bg-success/10 text-success-strong",
           )}
         >
           {statusMessage.text}

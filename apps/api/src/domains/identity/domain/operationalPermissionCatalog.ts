@@ -30,9 +30,27 @@ export const operationalPermissionGroups = [
         "medium",
       ),
       permission(
+        "inventory.update_commercial_tags",
+        "Editar tags comerciais",
+        "Alterar os destaques comerciais exibidos no anúncio público.",
+        "medium",
+      ),
+      permission(
+        "inventory.update_video",
+        "Editar vídeo do anúncio",
+        "Alterar o vídeo exibido no anúncio público.",
+        "medium",
+      ),
+      permission(
         "inventory.update_internal_notes",
         "Editar notas internas",
         "Visualizar e editar observações internas e histórico privado do veículo.",
+        "medium",
+      ),
+      permission(
+        "inventory.resale_analysis_generate",
+        "Gerar análise de revenda",
+        "Executar e salvar uma nova análise comercial do veículo.",
         "medium",
       ),
       permission(

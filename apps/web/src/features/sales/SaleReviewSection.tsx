@@ -114,7 +114,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 <span className="text-muted block text-xs uppercase">
                   Total em Pagamentos
                 </span>
-                <span className="text-success block mt-0.5 text-sm font-black">
+                <span className="text-success-strong block mt-0.5 text-sm font-black">
                   {formatCents(totalPaid)}
                 </span>
               </div>
@@ -123,7 +123,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                   Diferença
                 </span>
                 {totalPaid >= salePrice ? (
-                  <span className="text-success block mt-0.5 font-black uppercase tracking-wider text-xs flex items-center gap-1">
+                  <span className="text-success-strong block mt-0.5 font-black uppercase tracking-wider text-xs flex items-center gap-1">
                     <Check className="size-3" /> Quitada
                   </span>
                 ) : (
@@ -173,7 +173,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
                 {sale.selectedDocumentKinds.map((k) => (
                   <span
                     key={k}
-                    className="inline-flex items-center gap-1 bg-success/10 text-success border border-success/25 px-2.5 py-1 rounded-lg text-xs font-black"
+                    className="inline-flex items-center gap-1 bg-success/10 text-success-strong border border-success/25 px-2.5 py-1 rounded-lg text-xs font-black"
                   >
                     <Check className="size-3" />
                     {formatDocumentKindLabel(k)}

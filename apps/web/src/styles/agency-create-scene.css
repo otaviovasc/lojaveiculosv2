@@ -61,8 +61,7 @@
 }
 
 .agency-create-back:focus-visible {
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--color-sidebar-text) 40%, transparent);
+  box-shadow: var(--shadow-focus);
   outline: none;
 }
 
@@ -140,18 +139,18 @@
 }
 
 .agency-create-flow__step--accent {
-  background: color-mix(in srgb, var(--color-accent) 18%, transparent);
-  color: color-mix(in srgb, var(--color-accent) 52%, var(--color-inverse));
+  background: var(--color-accent-soft);
+  color: var(--color-accent-readable);
 }
 
 .agency-create-flow__step--info {
-  background: color-mix(in srgb, var(--color-info) 24%, transparent);
-  color: color-mix(in srgb, var(--color-info) 45%, var(--color-inverse));
+  background: var(--color-blue-soft);
+  color: var(--color-info-soft-foreground);
 }
 
 .agency-create-flow__step--success {
-  background: color-mix(in srgb, var(--color-success) 18%, transparent);
-  color: color-mix(in srgb, var(--color-success) 58%, var(--color-inverse));
+  background: var(--color-green-soft);
+  color: var(--color-success-soft-foreground);
 }
 
 .agency-create-intro__art {

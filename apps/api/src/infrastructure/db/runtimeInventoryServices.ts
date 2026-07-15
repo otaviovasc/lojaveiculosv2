@@ -24,20 +24,41 @@ import {
   createDrizzleBillingQuotaGuard,
   type DrizzleBillingQuotaClient,
 } from "./billing/drizzleBillingQuotaGuard.js";
+import { createOpenAiVehicleAnalysisProvider } from "../vehicleEnrichment/openAiVehicleAnalysisProvider.js";
+import {
+  createDrizzleVehicleAuditRepository,
+  type DrizzleVehicleAuditClient,
+} from "./audit/drizzleVehicleAuditRepository.js";
 
 export function createRuntimeInventoryServices(
   db: unknown,
   env: Record<string, string | undefined>,
   runtimeMediaStorage?: ObjectStorage | null,
+  auditDb?: unknown | null,
 ): InventoryListingServices {
   const mediaStorage = runtimeMediaStorage ?? createRuntimeObjectStorage(env);
   const catalogProvider = createFipeVehicleCatalogProvider({
     ...(env.FIPE_API_BASE_URL ? { baseUrl: env.FIPE_API_BASE_URL } : {}),
     ...(env.FIPE_API_TOKEN ? { token: env.FIPE_API_TOKEN } : {}),
   });
+  const resaleAnalysisProvider = createOpenAiVehicleAnalysisProvider({
+    apiKey: env.API_OPENAI_KEY,
+    model:
+      env.API_OPENAI_INVENTORY_RESALE_MODEL ??
+      env.API_OPENAI_DEFAULT_MODEL ??
+      env.API_OPENAI_MODEL ??
+      "gpt-5.4-mini",
+  });
 
   const drizzleAdapter: DrizzleVehicleInventoryAdapter = (client) => ({
     ...createDrizzleVehicleInventoryRepositories(client),
+    ...(auditDb
+      ? {
+          auditRepository: createDrizzleVehicleAuditRepository(
+            auditDb as DrizzleVehicleAuditClient,
+          ),
+        }
+      : {}),
     catalogProvider,
     catalogRepository: createDrizzleVehicleCatalogRepository(
       client as unknown as DrizzleVehicleCatalogClient,
@@ -48,6 +69,7 @@ export function createRuntimeInventoryServices(
     quotaGuard: createDrizzleBillingQuotaGuard(
       client as unknown as DrizzleBillingQuotaClient,
     ),
+    resaleAnalysisProvider,
     storeBrandingReader: createDrizzleVehicleStoreBrandingReader(client),
     ...(mediaStorage ? { mediaStorage } : {}),
   });

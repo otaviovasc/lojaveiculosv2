@@ -7,6 +7,7 @@ import type {
   VehicleEngineDisplacement,
   VehicleListingCatalog,
   VehicleFuelType,
+  VehicleListing,
   VehicleListingStatus,
   VehicleMediaKind,
   VehicleTransmission,
@@ -15,6 +16,7 @@ import type {
 
 export type CreateVehicleListingRecord = {
   catalog: VehicleListingCatalog | null;
+  commercialTags?: readonly string[];
   description: string | null;
   doors?: number | null;
   engineAspiration?: VehicleEngineAspiration | null;
@@ -28,12 +30,14 @@ export type CreateVehicleListingRecord = {
   plate: string | null;
   priceCents: number | null;
   publicSlug?: string | null;
+  resaleAnalysis?: VehicleListing["resaleAnalysis"];
   status: VehicleListingStatus;
   storeId: string | null;
   tenantId: string | null;
   title: string;
   transmission?: VehicleTransmission | null;
   trimName: string | null;
+  videoUrl?: string | null;
 };
 
 export type CreateVehicleUnitRecord = {

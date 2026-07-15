@@ -32,6 +32,7 @@ import {
 import { financeServices, type FinanceServices } from "./financeServices.js";
 import { registerFinanceAutoEntryRuleRoutes } from "./financeAutoEntryRules.controller.js";
 import { createProtectedFinanceServiceContext } from "./finance.controller.context.js";
+import { registerCommissionWorkspaceRoutes } from "./commissionWorkspace.controller.js";
 
 export type FinanceContextFactory = (
   context: Context,
@@ -52,6 +53,7 @@ export function createFinanceFeature(
   const createContext = (context: Context) =>
     createProtectedFinanceServiceContext(context, contextFactory);
   registerFinanceAutoEntryRuleRoutes(financeFeature, services, createContext);
+  registerCommissionWorkspaceRoutes(financeFeature, services, createContext);
 
   financeFeature.get("/summary", async (context) =>
     handleFinance(context, async () => {

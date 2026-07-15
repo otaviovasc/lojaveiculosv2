@@ -147,6 +147,7 @@ export const storefrontSchemas = {
     type: "object",
     additionalProperties: false,
     required: [
+      "commercialTags",
       "condition",
       "description",
       "doors",
@@ -164,8 +165,13 @@ export const storefrontSchemas = {
       "title",
       "transmission",
       "trimName",
+      "videoUrl",
     ],
     properties: {
+      commercialTags: {
+        type: "array",
+        items: { type: "string" },
+      },
       condition: {
         type: "string",
         enum: ["new", "used", "certified_pre_owned"],
@@ -216,6 +222,7 @@ export const storefrontSchemas = {
         enum: ["manual", "automatic", "automated", "cvt", "other"],
       },
       trimName: { type: ["string", "null"] },
+      videoUrl: { type: ["string", "null"], format: "uri" },
     },
   },
 } as const;

@@ -5,6 +5,7 @@ import type {
   CreateInventoryMediaInput,
   CreateInventoryUnitInput,
   InventoryChecklist,
+  InventoryAuditEvent,
   InventoryListingDetail,
   InventoryListingList,
   ReserveInventoryListingInput,
@@ -120,6 +121,12 @@ export function createInventoryApi({
       input,
     );
 
+  const analyzeListingResale = (listingId: string) =>
+    postJson<InventoryListingDetail>(
+      inventoryRoutes.listingResaleAnalysis(listingId, baseUrl),
+      {},
+    );
+
   const releaseReservation = (
     unitId: string,
     input: { reason?: string | null; saleId?: string | null },
@@ -175,6 +182,13 @@ export function createInventoryApi({
       headers: createInventoryHeaders(auth),
     }).then(readJson<InventoryListingList>);
 
+  const listListingAuditEvents = (listingId: string) =>
+    fetch(inventoryRoutes.listingAuditEvents(listingId, baseUrl), {
+      headers: createInventoryHeaders(auth),
+    })
+      .then(readJson<{ events: InventoryAuditEvent[] }>)
+      .then((payload) => payload.events);
+
   const listChecklists = (unitId: string) =>
     fetch(inventoryRoutes.checklists(unitId, baseUrl), {
       headers: createInventoryHeaders(auth),
@@ -189,6 +203,7 @@ export function createInventoryApi({
     sendJson<InventoryListingDetail>(
       inventoryRoutes.detail(listingId, baseUrl),
       {
+        commercialTags: input.commercialTags,
         description: input.description,
         catalog: input.catalog,
         doors: input.doors,
@@ -204,6 +219,7 @@ export function createInventoryApi({
         title: input.title,
         transmission: input.transmission,
         trimName: input.trimName,
+        videoUrl: input.videoUrl,
       },
       "PATCH",
     );
@@ -239,6 +255,7 @@ export function createInventoryApi({
   return {
     addCost,
     analyzeResale,
+    analyzeListingResale,
     attachUnit,
     createChecklist,
     createFlow: async (input) => {
@@ -282,6 +299,7 @@ export function createInventoryApi({
     ...acquisitionApi,
     ...catalogApi,
     listChecklists,
+    listListingAuditEvents,
     listListings,
     ...mediaApi,
     releaseReservation,

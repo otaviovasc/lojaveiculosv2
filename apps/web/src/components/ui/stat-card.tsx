@@ -8,7 +8,7 @@ const THEMES = {
       "bg-primary/10 text-primary border-primary/20 group-hover:bg-primary/15",
     glow: "bg-primary/10",
     bottomBorder: "from-brand via-brand-light to-brand",
-    hoverBorder: "group-hover:border-primary/30",
+    hoverBorder: "group-hover:border-line-strong",
   },
   success: {
     bgGradient: "from-success/10 via-card to-background",
@@ -56,7 +56,7 @@ const THEMES = {
       "bg-primary/10 text-primary border-primary/15 group-hover:bg-primary/15",
     glow: "bg-primary/10",
     bottomBorder: "from-primary via-brand-light to-primary",
-    hoverBorder: "group-hover:border-primary/20",
+    hoverBorder: "group-hover:border-line-strong",
   },
 };
 
@@ -120,7 +120,7 @@ function StatCard({
             <p
               className={cn(
                 "mt-1.5 text-xs font-semibold",
-                trend.positive ? "text-success" : "text-destructive",
+                trend.positive ? "text-success-strong" : "text-destructive",
               )}
             >
               {trend.positive ? "+" : ""}

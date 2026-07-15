@@ -195,7 +195,7 @@ export function WebsiteBuilderDesign({
       {mobileTab === "edit" && !showMobilePreview ? (
         <button
           aria-label="Abrir preview mobile"
-          className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-110 active:scale-95 md:hidden"
+          className="fixed bottom-20 right-4 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-110 active:scale-95 md:hidden"
           onClick={() => setShowMobilePreview(true)}
           title="Abrir preview mobile"
           type="button"
@@ -217,7 +217,7 @@ function WebsiteBuilderStatus({
       className={cn(
         "mx-4 mt-2 flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-medium",
         message.type === "success"
-          ? "bg-success/10 text-success"
+          ? "bg-success/10 text-success-strong"
           : "bg-destructive/10 text-destructive",
       )}
     >

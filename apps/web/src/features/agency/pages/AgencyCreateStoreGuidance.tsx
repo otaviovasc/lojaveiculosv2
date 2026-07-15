@@ -3,7 +3,7 @@ import { FeatureCard } from "../../../components/ui/FeatureCards";
 
 export function AgencyCreateStoreGuidance() {
   return (
-    <FeatureCard className="agency-create-guidance">
+    <FeatureCard className="agency-create-guidance" padding="none">
       <header className="agency-create-guidance__header">
         <span>Próximos passos</span>
         <h2>Da criação à operação</h2>

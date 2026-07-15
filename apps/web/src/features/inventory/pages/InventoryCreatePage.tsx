@@ -231,7 +231,7 @@ export function InventoryCreatePage({
     });
 
   return (
-    <main className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col px-4 pb-12 animate-fade-in text-app-text">
+    <main className="content-frame animate-fade-in text-app-text">
       <div className="flex flex-col gap-4 pb-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h2 className="text-2xl font-black tracking-wide uppercase lg:text-3xl">
@@ -240,7 +240,7 @@ export function InventoryCreatePage({
         </div>
         {onBack ? (
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-accent-soft/20 bg-accent-soft px-4 text-sm font-black text-accent-strong shadow-sm"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-accent-soft/20 bg-accent-soft px-4 text-sm font-black text-accent-strong"
             onClick={onBack}
             type="button"
           >

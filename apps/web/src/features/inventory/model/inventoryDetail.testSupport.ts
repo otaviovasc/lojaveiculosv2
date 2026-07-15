@@ -9,6 +9,7 @@ export function createInventoryDetailFixture(
     documents: [],
     listing: {
       catalog: null,
+      commercialTags: [],
       createdAt: "2026-01-01T12:00:00.000Z",
       description: "Descrição persistida",
       doors: 4,
@@ -23,6 +24,7 @@ export function createInventoryDetailFixture(
       plate: "ABC1D23",
       priceCents: 18990000,
       publicSlug: "veiculo-teste",
+      resaleAnalysis: null,
       status: "published",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -31,6 +33,7 @@ export function createInventoryDetailFixture(
       trimName: "Touring",
       unitIds: ["unit_1"],
       updatedAt: "2026-01-01T12:00:00.000Z",
+      videoUrl: null,
     },
     media: [],
     priceHistory: [],

@@ -30,7 +30,7 @@ export function RoleCard({
       className={cx(
         "flex flex-col text-left p-4 rounded-xl border transition-all duration-300 w-full cursor-pointer",
         isSelected
-          ? "border-accent bg-accent-soft/30 shadow-sm"
+          ? "border-accent bg-accent-soft/30"
           : "border-line bg-panel hover:bg-app-elevated/40",
         disabled && "opacity-80 cursor-not-allowed",
       )}
@@ -67,7 +67,7 @@ export function CustomRoleCard({
         className={cx(
           "flex flex-col text-left p-4 rounded-xl border transition-all duration-300 w-full cursor-pointer pr-10",
           isSelected
-            ? "border-accent bg-accent-soft/30 shadow-sm"
+            ? "border-accent bg-accent-soft/30"
             : "border-line bg-panel hover:bg-app-elevated/40",
           disabled && "opacity-80 cursor-not-allowed",
         )}
@@ -86,7 +86,7 @@ export function CustomRoleCard({
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-lg border border-line bg-panel hover:border-danger hover:text-danger-text text-muted opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm z-10"
+          className="absolute top-3 right-3 flex size-6 items-center justify-center rounded-lg border border-line bg-panel hover:border-danger hover:text-danger-text text-muted opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer z-10"
           title="Excluir cargo customizado"
         >
           <X className="size-3.5" />

@@ -129,6 +129,7 @@ export function cleanUpdateListingRequest(
     catalog?: Parameters<
       InventoryListingServices["updateListingDetails"]
     >[1]["catalog"];
+    commercialTags?: readonly string[] | undefined;
     description?: string | null | undefined;
     doors?: number | null | undefined;
     engineAspiration?: Parameters<
@@ -158,6 +159,7 @@ export function cleanUpdateListingRequest(
       InventoryListingServices["updateListingDetails"]
     >[1]["transmission"];
     trimName?: string | null | undefined;
+    videoUrl?: string | null | undefined;
   },
 ): Parameters<InventoryListingServices["updateListingDetails"]>[1] {
   const result: Parameters<
@@ -165,6 +167,9 @@ export function cleanUpdateListingRequest(
   >[1] = { listingId };
 
   if (input.catalog !== undefined) result.catalog = input.catalog;
+  if (input.commercialTags !== undefined) {
+    result.commercialTags = input.commercialTags;
+  }
   if (input.description !== undefined) result.description = input.description;
   if (input.doors !== undefined) result.doors = input.doors;
   if (input.engineAspiration !== undefined) {
@@ -189,6 +194,7 @@ export function cleanUpdateListingRequest(
     result.transmission = input.transmission;
   }
   if (input.trimName !== undefined) result.trimName = input.trimName;
+  if (input.videoUrl !== undefined) result.videoUrl = input.videoUrl;
 
   return result;
 }

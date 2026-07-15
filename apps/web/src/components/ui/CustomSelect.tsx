@@ -223,6 +223,7 @@ export function CustomSelect<Value extends string = string>({
       {isOpen
         ? createPortal(
             <div
+              aria-label={`${ariaLabel ?? "Seleção"}: opções`}
               className="custom-select-menu"
               id={`${id}-listbox`}
               ref={menuRef}
@@ -272,11 +273,8 @@ function fallbackValue<Value extends string>(
   options: readonly CustomSelectOption<Value>[],
   defaultValue: Value | undefined,
 ) {
-  return (
-    defaultValue ??
-    options.find((option) => !option.disabled)?.value ??
-    ("" as Value)
-  );
+  const firstValue = options.find((option) => !option.disabled)?.value;
+  return defaultValue ?? firstValue ?? ("" as Value);
 }
 
 function firstEnabled<Value extends string>(

@@ -44,7 +44,7 @@
     var(--color-panel)
   );
   border: 1px solid var(--color-line-strong);
-  border-radius: 1.5rem;
+  border-radius: var(--surface-radius-2xl);
   box-shadow: var(--shadow-panel);
   display: grid;
   gap: 1.25rem;
@@ -65,7 +65,7 @@
   align-items: end;
   background: var(--color-app-elevated);
   border: 1px solid var(--color-line);
-  border-radius: 1.25rem;
+  border-radius: var(--surface-radius-2xl);
   display: grid;
   gap: 0.55rem;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -82,7 +82,7 @@
 
 .agency-stats-unavailable__visual span {
   background: color-mix(in srgb, var(--color-accent) 24%, var(--color-panel));
-  border-radius: 0.4rem 0.4rem 0 0;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   min-height: 32%;
 }
 

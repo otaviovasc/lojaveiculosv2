@@ -184,7 +184,7 @@ export function CrmLeadDetailsFinanciamento({
           </div>
 
           <button
-            className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-accent-foreground cursor-pointer hover:opacity-90 shadow-sm transition-opacity"
+            className="w-full inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-xs font-black text-accent-foreground cursor-pointer hover:opacity-90 transition-opacity"
             onClick={() => void handleSave()}
             type="button"
           >

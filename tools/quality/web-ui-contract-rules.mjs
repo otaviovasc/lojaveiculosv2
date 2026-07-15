@@ -32,9 +32,9 @@ export const webUiContractMessages = {
     suggestion: "Use FeatureDialog, ConfirmDialog, or visible feature state.",
   },
   "button-color-shadow": {
-    label: "colored shadow on static button state",
+    label: "colored shadow on an action control",
     suggestion:
-      "Buttons cannot use colored shadows on their base static state. Use color shadows only on interactive states (e.g. hover, focus, active).",
+      "Keep actions flat in every visual state; use the shared focus-visible ring for keyboard focus.",
   },
 };
 
@@ -95,14 +95,10 @@ export function findWebUiContractViolations(file, source) {
       }
       if (isButton && name === "className") {
         const classNames = extractClassNames(attribute.initializer);
-        const statePrefixes =
-          /^(?:hover|focus|active|group-hover|group-focus|group-active|peer-hover|peer-focus|peer-active|focus-visible|focus-within|disabled|dark|motion-safe|motion-reduce):/;
         for (const cls of classNames) {
-          if (!statePrefixes.test(cls)) {
-            if (/shadow-\[.*(?:color|rgb|hsl|okl|#)/i.test(cls)) {
-              add("button-color-shadow", attribute);
-              break;
-            }
+          if (/shadow-\[.*(?:color|rgb|hsl|okl|#)/i.test(cls)) {
+            add("button-color-shadow", attribute);
+            break;
           }
         }
       }

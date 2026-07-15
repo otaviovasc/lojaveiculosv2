@@ -61,7 +61,7 @@ export function InventoryCreateSidebar({
   const previewPhoto = media[0]?.previewUrl || null;
 
   return (
-    <aside className="custom-scrollbar xl:sticky xl:top-6 flex flex-col self-start w-full max-h-[calc(100vh-3rem)] overflow-y-auto pr-1">
+    <aside className="custom-scrollbar xl:sticky xl:top-6 flex flex-col self-start w-full max-h-[calc(100dvh-3rem)] overflow-y-auto pr-1">
       <div className="glass-panel-branded overflow-hidden rounded-2xl border border-line bg-panel shadow-[var(--shadow-panel)] flex flex-col divide-y divide-line/60">
         {/* Preview Content */}
         <PreviewCardContent
@@ -242,7 +242,7 @@ function ProgressCardContent({
       <button
         type="submit"
         disabled={isSubmitting}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent hover:bg-accent-strong hover:text-accent-strong-foreground text-accent-foreground font-black text-sm transition-all shadow-lg disabled:opacity-75 cursor-pointer"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-accent hover:bg-accent-strong hover:text-accent-strong-foreground text-accent-foreground font-black text-sm transition-all disabled:opacity-75 cursor-pointer"
       >
         {isSubmitting ? (
           <LoaderCircle className="size-4 animate-spin" />

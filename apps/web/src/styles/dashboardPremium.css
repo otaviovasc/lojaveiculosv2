@@ -83,7 +83,7 @@
   overflow: hidden;
   border-radius: 1.5rem;
   padding: 1.625rem;
-  color: #ffffff;
+  color: var(--color-inverse);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
@@ -101,8 +101,8 @@
     rgba(255, 255, 255, 0.15) 100%
   );
   -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
+    linear-gradient(var(--color-inverse) 0 0) content-box,
+    linear-gradient(var(--color-inverse) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
@@ -186,6 +186,7 @@
   background-image: url("/icons/lv-logo-outline-dark.svg");
   background-repeat: repeat;
   background-size: 280px 116px;
+  background-position: -80px 0;
   opacity: 0.035;
 }
 
@@ -198,6 +199,7 @@
   background-image: url("/icons/lv-logo-outline-dark.svg");
   background-repeat: repeat;
   background-size: 180px 75px;
+  background-position: -50px 0;
 }
 
 :root[data-theme="dark"] .bg-logo-pattern-subtle {
@@ -250,17 +252,9 @@
 }
 
 .card-header-gradient {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.5) 0%,
-    transparent 100%
-  );
+  background: transparent !important;
 }
 
 :root[data-theme="dark"] .card-header-gradient {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.02) 0%,
-    transparent 100%
-  );
+  background: transparent !important;
 }

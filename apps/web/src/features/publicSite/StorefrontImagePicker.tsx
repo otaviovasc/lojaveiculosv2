@@ -52,7 +52,7 @@ export function StorefrontImagePicker({
           />
           <button
             aria-label={`Remover ${label}`}
-            className="absolute -right-2 -top-2 inline-flex size-8 items-center justify-center rounded-full bg-danger text-inverse opacity-0 shadow-md transition-opacity group-hover:opacity-100"
+            className="absolute -right-2 -top-2 inline-flex size-8 items-center justify-center rounded-full bg-danger text-inverse opacity-0 transition-opacity group-hover:opacity-100"
             onClick={() => onChange(null)}
             title="Remover imagem"
             type="button"

@@ -130,7 +130,6 @@
   padding: 0 1rem;
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.02);
 }
 
 .documents-detail-actions button:hover:not(:disabled),
@@ -138,9 +137,8 @@
 .documents-detail-secondary button:hover:not(:disabled),
 .documents-upload-actions button:hover:not(:disabled) {
   background: var(--color-app);
-  border-color: var(--color-muted);
+  border-color: var(--color-line-strong);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.05);
 }
 
 .documents-detail-actions button:active,
@@ -154,14 +152,12 @@
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-accent-foreground);
-  box-shadow: 0 4px 12px rgba(225, 31, 38, 0.2);
 }
 
 .documents-detail-actions button:first-child:hover:not(:disabled),
 .documents-upload-actions button:last-child:hover:not(:disabled) {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);
-  box-shadow: 0 6px 18px rgba(225, 31, 38, 0.35);
 }
 
 .documents-detail-actions button:disabled,
@@ -202,7 +198,7 @@
 
 .documents-detail-meta div:hover {
   background: var(--color-panel);
-  border-color: var(--color-muted);
+  border-color: var(--color-line-strong);
 }
 
 .documents-detail-meta dt {

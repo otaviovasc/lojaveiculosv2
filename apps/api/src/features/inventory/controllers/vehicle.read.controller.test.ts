@@ -84,4 +84,28 @@ describe("inventory read routes", () => {
       listingId: "listing_1",
     });
   });
+
+  it("wires vehicle audit and persisted analysis requests", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const auditResponse = await app.request(
+      "/api/v1/inventory/listings/listing_1/audit-events",
+    );
+    const analysisResponse = await app.request(
+      "/api/v1/inventory/listings/listing_1/resale-analysis",
+      { method: "POST" },
+    );
+
+    expect(auditResponse.status).toBe(200);
+    expect(analysisResponse.status).toBe(200);
+    expect(services.listListingAuditEvents).toHaveBeenCalledWith(
+      expect.any(Object),
+      { listingId: "listing_1" },
+    );
+    expect(services.analyzeListingResale).toHaveBeenCalledWith(
+      expect.any(Object),
+      { listingId: "listing_1" },
+    );
+  });
 });

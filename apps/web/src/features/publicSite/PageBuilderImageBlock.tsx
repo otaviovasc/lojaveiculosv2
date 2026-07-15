@@ -60,7 +60,7 @@ export function ImageBlock({ component, context }: BuilderBlockProps) {
         <div className="fixed inset-0 z-50 grid place-items-center bg-app-text/90 p-4 backdrop-blur-sm">
           <button
             aria-label="Fechar imagem"
-            className="absolute right-6 top-6 rounded-full border border-line bg-panel p-3 text-app-text shadow-lg transition-transform hover:scale-105 active:scale-95"
+            className="absolute right-6 top-6 rounded-full border border-line bg-panel p-3 text-app-text transition-transform hover:scale-105 active:scale-95"
             onClick={() => setOpen(false)}
             type="button"
           >

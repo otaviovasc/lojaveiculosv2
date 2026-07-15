@@ -150,7 +150,7 @@ export function LocalDevAuthPage() {
       <div className="grid gap-3">
         {localDevAccounts.map((account) => (
           <button
-            className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition hover:border-slate-400 hover:bg-slate-50"
+            className="flex w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 text-left transition hover:border-slate-400 hover:bg-slate-50"
             key={account.userId}
             onClick={() => signIn(account)}
             type="button"

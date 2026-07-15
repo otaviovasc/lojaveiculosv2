@@ -22,11 +22,15 @@ import { requestFinanceEntryDocumentUpload } from "../../../domains/finance/serv
 import { updateFinanceEntry } from "../../../domains/finance/services/FinanceService/updateFinanceEntry.js";
 import { updateFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/updateFinanceAutoEntryRule.js";
 import { materializeFinanceAutoEntries } from "../../../domains/finance/services/FinanceService/materializeFinanceAutoEntries.js";
+import { getCommissionWorkspace } from "../../../domains/finance/services/FinanceService/getCommissionWorkspace.js";
+import { settleCommissionEntries } from "../../../domains/finance/services/FinanceService/settleCommissionEntries.js";
 import { createDrizzleFinanceRepository } from "../../../infrastructure/db/finance/drizzleFinanceRepository.js";
+import { createDrizzleCommissionWorkspaceRepository } from "../../../infrastructure/db/finance/drizzleCommissionWorkspaceRepository.js";
 import { createDrizzleFinanceAutoEntryRepository } from "../../../infrastructure/db/finance/drizzleFinanceAutoEntryRepository.js";
 import { createDrizzleDocumentRepository } from "../../../infrastructure/db/documents/drizzleDocumentRepository.js";
 import { createMemoryFinanceRepository } from "../../inventory/adapters/memory/financeRepository.js";
 import { createMemoryObjectStorage } from "../../../infrastructure/storage/memoryObjectStorage.js";
+import { createMemoryCommissionWorkspaceRepository } from "../adapters/memory/commissionWorkspaceRepository.js";
 import { createTestDocumentRepository } from "../../../domains/documents/testSupportDocumentRepository.js";
 import { createTestFinanceAutoEntryRepository } from "../../../domains/finance/testSupportFinanceAutoEntryRepository.js";
 import {
@@ -82,6 +86,8 @@ export function createFinanceServices(
         deactivateFinanceAutoEntryRule(context, input, txPorts),
       ),
     getEntry: (context, input) => getFinanceEntryDetail(context, input, ports),
+    getCommissionWorkspace: (context, input) =>
+      getCommissionWorkspace(context, input, ports),
     getSummary: (context) => getFinanceSummary(context, ports),
     async listEntries(context, input) {
       const result = await listFinanceEntries(context, input, ports);
@@ -109,6 +115,10 @@ export function createFinanceServices(
       ),
     requestDocumentUpload: (context, input) =>
       requestFinanceEntryDocumentUpload(context, input, ports),
+    settleCommissionEntries: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        settleCommissionEntries(context, input, txPorts),
+      ),
     updateEntry: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         updateFinanceEntry(context, input, txPorts),
@@ -132,10 +142,13 @@ function resolveFinancePorts(
     );
   }
 
+  const financeRepository = createMemoryFinanceRepository();
   return {
+    commissionWorkspaceRepository:
+      createMemoryCommissionWorkspaceRepository(financeRepository),
     documentRepository: createTestDocumentRepository(),
     financeAutoEntryRepository: createTestFinanceAutoEntryRepository(),
-    financeRepository: createMemoryFinanceRepository(),
+    financeRepository,
     objectStorage: createMemoryObjectStorage(),
   };
 }
@@ -161,6 +174,8 @@ export function createDrizzleFinancePorts(
   objectStorage: FinanceServicePorts["objectStorage"] | undefined,
 ): FinanceServicePorts {
   return {
+    commissionWorkspaceRepository:
+      createDrizzleCommissionWorkspaceRepository(drizzleClient),
     documentRepository: createDrizzleDocumentRepository(drizzleClient),
     financeAutoEntryRepository:
       createDrizzleFinanceAutoEntryRepository(drizzleClient),

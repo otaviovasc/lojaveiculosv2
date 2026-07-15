@@ -8,17 +8,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-md hover:bg-brand-dark hover:text-accent-strong-foreground hover:shadow-lg active:scale-[0.96]",
+          "bg-primary text-primary-foreground shadow-md hover:bg-brand-dark hover:text-accent-strong-foreground hover:-translate-y-[1px] hover:shadow-lg active:translate-y-0 active:scale-[0.96]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 active:scale-[0.96]",
+          "bg-destructive text-destructive-foreground shadow-md hover:bg-destructive/90 hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.96]",
         outline:
-          "border-2 border-border bg-card text-foreground shadow-sm hover:border-primary/50 hover:bg-secondary active:scale-[0.96]",
+          "border-2 border-border bg-card text-foreground shadow-sm hover:border-line-strong hover:bg-secondary hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.96]",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:scale-[0.96]",
+          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.96]",
         ghost: "text-foreground hover:bg-secondary active:scale-[0.96]",
         link: "text-primary underline-offset-4 hover:underline",
         brand:
-          "bg-gradient-brand text-white shadow-md hover:opacity-90 active:scale-[0.96]",
+          "bg-gradient-brand text-white shadow-md hover:opacity-90 hover:-translate-y-[1px] active:translate-y-0 active:scale-[0.96]",
       },
       size: {
         default: "h-12 px-6 py-3",

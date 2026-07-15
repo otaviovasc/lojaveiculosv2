@@ -190,8 +190,8 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-4 lg:gap-0">
           <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
-              <span>Fornecedor</span>
+            <h4 className="text-xs font-black uppercase text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
+              <span className="tracking-normal">Fornecedor</span>
             </h4>
             <div className="grid gap-3">
               <InventoryField label="Selecionar Fornecedor">
@@ -232,8 +232,8 @@ export function VehicleAcquisitionCard({ api, unit }: Props) {
           <div className="block lg:hidden h-px bg-line/60 w-full my-6" />
 
           <div>
-            <h4 className="text-xs font-black uppercase tracking-wider text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
-              <span>Origem e Valores</span>
+            <h4 className="text-xs font-black uppercase text-muted mb-4 flex items-center gap-1.5 border-b border-line/30 pb-2">
+              <span className="tracking-normal">Origem e Valores</span>
             </h4>
             <VehicleAcquisitionSourcePanel
               acquisitionDraft={acquisitionDraft}

@@ -55,6 +55,7 @@ it("reuses CRM-first insurance executions when the linked sale closes", async ()
     payments: [
       {
         amountCents: 5_000_000,
+        dueAt: new Date("2026-07-14T12:00:00.000Z"),
         method: "pix",
         principalCents: 5_000_000,
       },

@@ -1,6 +1,6 @@
 .documents-page {
   background: var(--color-app);
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .documents-main {
@@ -113,15 +113,10 @@
 }
 
 .documents-list-panel {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-panel);
   display: grid;
   gap: 0.85rem;
   grid-template-columns: minmax(0, 1fr);
   min-width: 0;
-  padding: 0.9rem;
 }
 
 .documents-list-heading {

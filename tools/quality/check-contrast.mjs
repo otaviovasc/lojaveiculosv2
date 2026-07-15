@@ -13,9 +13,14 @@ const tokensSource = ["tokens.css", "contrast-tokens.css"]
   .map((file) => readText(join(webSourceRoot, "styles", file)))
   .join("\n");
 const publicSource = readText(join(webSourceRoot, "styles/publicSite.css"));
-const themes = buildContrastThemes(tokensSource, publicSource);
+const contextualSource = readText(join(webSourceRoot, "styles/global.css"));
+const themes = buildContrastThemes(
+  tokensSource,
+  publicSource,
+  contextualSource,
+);
 const interactionThemes = themes.filter(
-  (theme) => theme.name !== "public-light",
+  (theme) => theme.name !== "public-light" && !theme.name.includes(":"),
 );
 const extensions = new Set([".css", ".js", ".jsx", ".ts", ".tsx"]);
 const files = walkFiles([webSourceRoot, designSystemRoot], { extensions });

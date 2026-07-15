@@ -112,6 +112,7 @@ const detail = {
   documents: [],
   listing: {
     catalog: null,
+    commercialTags: [],
     createdAt: "2026-07-01T12:00:00.000Z",
     description: null,
     doors: 4,
@@ -126,6 +127,7 @@ const detail = {
     plate: "ABC1D23",
     priceCents: 18_990_000,
     publicSlug: "sedan-premium",
+    resaleAnalysis: null,
     status: "published",
     storeId: "store_1",
     tenantId: "tenant_1",
@@ -134,6 +136,7 @@ const detail = {
     trimName: "Prestige",
     unitIds: ["unit_1"],
     updatedAt: "2026-07-01T12:00:00.000Z",
+    videoUrl: null,
   },
   media: [],
   priceHistory: [],

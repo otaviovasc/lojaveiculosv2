@@ -62,7 +62,7 @@ export function SaleServicesPaymentsSection({
               Total Lançado: {sale.payments.length} parcelas
             </span>
             {balance <= 0 ? (
-              <span className="text-success font-black flex items-center gap-1 uppercase tracking-wider">
+              <span className="text-success-strong font-black flex items-center gap-1 uppercase tracking-wider">
                 <Check className="size-3" /> Valor Total Coberto
               </span>
             ) : (

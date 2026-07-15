@@ -23,7 +23,7 @@ export function SaleContextVehicleDetails({
   return (
     <BorderGlow
       borderRadius={16}
-      className="w-full mt-2"
+      className="sales-vehicle-card-glow w-full mt-2"
       colors={["var(--color-accent)", "var(--color-primary-contrast)"]}
       glowIntensity={0.6}
     >

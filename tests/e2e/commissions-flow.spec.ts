@@ -34,9 +34,9 @@ test.describe("commissions flow", () => {
 
     for (const period of [
       "Esta semana",
-      "Mes passado",
+      "Mês passado",
       "Customizado",
-      "Este mes",
+      "Este mês",
     ]) {
       await selectFilter(page, "Periodo", period);
     }
@@ -81,6 +81,7 @@ test.describe("commissions flow", () => {
     const countBefore = await rulesPanel
       .getByText(/regras ativas/i)
       .textContent();
+    await rulesPanel.getByRole("button", { name: /Gerenciar/ }).click();
     await rulesPanel.getByLabel("Nome").fill(`Regra QA ${Date.now()}`);
     await rulesPanel.getByLabel("Categoria").fill("Venda QA");
     await rulesPanel.getByLabel("%").fill("1.25");
@@ -123,7 +124,7 @@ test.describe("commissions flow", () => {
       page.getByRole("button", { name: "Bônus manual" }),
     ).toHaveCount(0);
     await expect(
-      page.getByRole("button", { name: "Pagar vendedor" }),
+      page.getByRole("button", { name: "Fechar pendências" }),
     ).toHaveCount(0);
     await expect(
       page.getByRole("button", { name: "Editar comissão" }),

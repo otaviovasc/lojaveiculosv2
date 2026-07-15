@@ -117,13 +117,12 @@ export function Combobox({
 
   const dropdownContent = (
     <div
-      className="combobox-portal-content"
+      className="combobox-portal-content z-[var(--z-index-dropdown)]"
       style={{
         position: "absolute",
         top: coords.top,
         left: coords.left,
         width: coords.width,
-        zIndex: 9999,
         pointerEvents: "auto",
       }}
     >
@@ -243,7 +242,7 @@ export function Combobox({
       <button
         type="button"
         className={cn(
-          "flex h-12 w-full items-center justify-between rounded-2xl border border-input bg-card/50 px-4 py-3 text-base text-foreground shadow-sm transition-all duration-200 cursor-pointer text-left focus:outline-none",
+          "flex h-12 w-full items-center justify-between rounded-2xl border border-input bg-card/50 px-4 py-3 text-base text-foreground transition-all duration-200 cursor-pointer text-left focus:outline-none",
           disabled && "opacity-50 cursor-not-allowed pointer-events-none",
         )}
         onClick={() => !disabled && setOpen(!open)}

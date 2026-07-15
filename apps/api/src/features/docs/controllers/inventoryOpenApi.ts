@@ -4,39 +4,19 @@ import { inventoryFinancePaths } from "./inventoryFinanceOpenApi.js";
 import { inventoryChecklistPaths } from "./inventoryChecklistOpenApi.js";
 import { inventoryWorkflowPaths } from "./inventoryWorkflowOpenApi.js";
 import { inventoryMediaPaths } from "./inventoryMediaOpenApi.js";
+import { inventoryReadPaths } from "./inventoryReadOpenApi.js";
 import {
   authResponses,
   detailResponse,
   listingIdParameter,
   listResponse,
   queryParameter,
-  unitListResponse,
   unitIdParameter,
   validationResponse,
 } from "./inventoryOpenApiParts.js";
 
 export const inventoryPaths = {
-  "/api/v1/inventory/units": {
-    get: {
-      tags: ["Inventory"],
-      summary: "List inventory units",
-      description:
-        "Returns one inventory row per vehicle unit. Listings remain the commercial grouping; units are the stock objects shown on the inventory page.",
-      operationId: "listInventoryUnits",
-      security: [{ bearerAuth: ["inventory.read"] }],
-      parameters: [
-        queryParameter("search"),
-        queryParameter("status"),
-        queryParameter("limit"),
-        queryParameter("offset"),
-      ],
-      responses: {
-        "200": unitListResponse,
-        ...validationResponse,
-        ...authResponses,
-      },
-    },
-  },
+  ...inventoryReadPaths,
   "/api/v1/inventory/listings": {
     get: {
       tags: ["Inventory"],
@@ -114,9 +94,11 @@ export const inventoryPaths = {
         {
           bearerAuth: [
             "inventory.update_description",
+            "inventory.update_commercial_tags",
             "inventory.update_internal_notes",
             "inventory.update_price",
             "inventory.update_status",
+            "inventory.update_video",
           ],
         },
       ],

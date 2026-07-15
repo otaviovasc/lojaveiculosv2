@@ -1,5 +1,5 @@
 :root {
-  --promo-banner-bg: #09090b;
+  --promo-banner-bg: #151515;
 }
 
 /* Promo Banner Panel */
@@ -8,7 +8,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  color: #ffffff; /* text-white */
+  color: var(--color-inverse); /* warm inverse text */
   box-shadow:
     0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1); /* shadow-xl */
@@ -16,7 +16,7 @@
   position: relative;
   overflow: hidden;
   background-color: var(--promo-banner-bg); /* bg-zinc-950 */
-  border: 1px solid #27272a; /* border-zinc-800 */
+  border: 1px solid #4a4444; /* border-zinc-800 */
   padding: 1.5rem; /* added padding that matches standard panels/diff behavior */
 }
 
@@ -63,7 +63,7 @@
   text-transform: uppercase;
   letter-spacing: 0.05em; /* tracking-wider */
   margin-top: 0.875rem; /* mt-3.5 */
-  color: #ffffff; /* text-white */
+  color: var(--color-inverse); /* warm inverse text */
 }
 
 .promo-banner-icon-container {
@@ -109,14 +109,13 @@
   align-items: center;
   gap: 0.375rem; /* gap-1.5 */
   transition: all 0.2s ease;
-  color: #ffffff; /* text-white */
+  color: var(--color-inverse); /* warm inverse text */
   background-color: rgba(255, 255, 255, 0.1); /* bg-white/10 */
   padding: 0.5rem 0.875rem; /* py-2 px-3.5 */
   border-radius: 0.75rem; /* rounded-xl */
   border: 1px solid rgba(255, 255, 255, 0.15); /* border-white/15 */
   backdrop-filter: blur(4px); /* backdrop-blur-sm */
   cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* shadow-md */
 }
 
 .promo-banner-btn:hover {
@@ -130,7 +129,7 @@
 .dashboard-resource-api {
   background: linear-gradient(
     135deg,
-    #09090b 30%,
+    #151515 30%,
     rgba(37, 99, 235, 0.15) 75%,
     rgba(37, 99, 235, 0.3) 100%
   ) !important;
@@ -143,7 +142,7 @@
 .dashboard-resource-api .promo-banner-btn {
   background-color: #2563eb !important;
   border-color: #3b82f6 !important;
-  color: #ffffff !important;
+  color: var(--color-inverse) !important;
 }
 .dashboard-resource-api .promo-banner-btn:hover {
   background-color: #1d4ed8 !important;
@@ -153,7 +152,7 @@
 .dashboard-resource-marketing {
   background: linear-gradient(
     135deg,
-    #09090b 30%,
+    #151515 30%,
     rgba(225, 31, 38, 0.15) 75%,
     rgba(225, 31, 38, 0.3) 100%
   ) !important;
@@ -166,7 +165,7 @@
 .dashboard-resource-marketing .promo-banner-btn {
   background-color: #e11f26 !important;
   border-color: #ef4444 !important;
-  color: #ffffff !important;
+  color: var(--color-inverse) !important;
 }
 .dashboard-resource-marketing .promo-banner-btn:hover {
   background-color: #b91c1c !important;
@@ -176,7 +175,7 @@
 .dashboard-resource-design {
   background: linear-gradient(
     135deg,
-    #09090b 30%,
+    #151515 30%,
     rgba(124, 58, 237, 0.15) 75%,
     rgba(124, 58, 237, 0.3) 100%
   ) !important;
@@ -189,7 +188,7 @@
 .dashboard-resource-design .promo-banner-btn {
   background-color: #7c3aed !important;
   border-color: #8b5cf6 !important;
-  color: #ffffff !important;
+  color: var(--color-inverse) !important;
 }
 .dashboard-resource-design .promo-banner-btn:hover {
   background-color: #6d28d9 !important;

@@ -22,6 +22,7 @@ import {
 } from "./apiClient";
 import { AutoEntriesCommandBar } from "./AutoEntriesCommandBar";
 import { AutoEntriesNotices } from "./AutoEntriesNotices";
+import { AutoEntriesOverview } from "./AutoEntriesOverview";
 import { AutoEntriesTabs } from "./AutoEntriesTabs";
 import { AutoEntryDomainPanel } from "./AutoEntryDomainPanel";
 import { AutoEntryRuleDialog } from "./AutoEntryRuleDialog";
@@ -70,7 +71,6 @@ export function AutoEntriesWorkspace({
     sellerOptions ?? [],
   );
   const [sellerError, setSellerError] = useState<string | null>(null);
-
   useEffect(() => {
     if (sellerOptions !== undefined) {
       setSellers(sellerOptions);
@@ -107,23 +107,19 @@ export function AutoEntriesWorkspace({
     () => workspace.rules.filter((rule) => !rule.family && !rule.ruleKey),
     [workspace.rules],
   );
-
   const openCreate = () => {
     if (!capabilities.canManage || activeTab !== "custom") return;
     setEditingRule(null);
     setIsDialogOpen(true);
   };
-
   const openEdit = (rule: AutoEntryRule) => {
     if (!capabilities.canManage) return;
     setEditingRule(rule);
     setIsDialogOpen(true);
   };
-
   const saveRule = async (input: AutoEntryRuleInput) => {
     await workspace.saveRule(editingRule?.id ?? null, input);
   };
-
   const confirmDelete = async () => {
     if (!deleteTarget || !capabilities.canManage) return;
     setDeleteError(null);
@@ -136,25 +132,31 @@ export function AutoEntriesWorkspace({
       );
     }
   };
-
   return (
-    <FeaturePageShell mainClassName="feature-shell">
+    <FeaturePageShell mainClassName="auto-entries-shell">
       <AutoEntriesCommandBar
         activeTab={activeTab}
         canManage={capabilities.canManage}
         isLoading={workspace.loadState.kind === "loading"}
         onCreate={openCreate}
         onRefresh={() => void workspace.refresh()}
-        ruleCount={workspace.rules.length}
       />
-      <AutoEntriesTabs onChange={setActiveTab} value={activeTab} />
+      {workspace.loadState.kind === "ready" ? (
+        <>
+          <AutoEntriesOverview rules={workspace.rules} />
+          <AutoEntriesTabs
+            onChange={setActiveTab}
+            rules={workspace.rules}
+            value={activeTab}
+          />
+        </>
+      ) : null}
       <AutoEntriesNotices
         activeSaleTab={activeTab === "vehicle_sale_closed"}
         canManage={capabilities.canManage}
         feedback={workspace.feedback}
         sellerError={sellerError}
       />
-
       {workspace.loadState.kind === "loading" ? (
         <FeatureLoadingState
           className="feature-empty"
@@ -206,7 +208,7 @@ export function AutoEntriesWorkspace({
             try {
               await workspace.saveRules(mutations);
             } catch {
-              // The hook exposes the actionable API message in the page notice.
+              /* The hook exposes the actionable API message. */
             }
           }}
           rules={workspace.rules}
@@ -214,7 +216,6 @@ export function AutoEntriesWorkspace({
           tab={activeTab}
         />
       )}
-
       {capabilities.canManage ? (
         <AutoEntryRuleDialog
           defaultEvent="vehicle_sale_closed"

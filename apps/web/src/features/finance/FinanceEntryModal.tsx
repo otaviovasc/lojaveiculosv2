@@ -86,7 +86,7 @@ export function FinanceEntryModal({
 
   return (
     <FeatureDialog
-      className="max-w-3xl"
+      className={`max-w-3xl${activeType === "commission" ? " commission-dialog" : ""}`}
       description={`${financeTypeLabels[draft.type]} com vencimento, status e recibo.`}
       footer={
         <div className="grid gap-3">

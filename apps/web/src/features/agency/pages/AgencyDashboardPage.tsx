@@ -159,7 +159,7 @@ export function AgencyDashboardPage() {
     });
 
   return (
-    <div className="mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-8 px-4 py-8 animate-fade-in">
+    <div className="content-frame animate-fade-in">
       <AgencyDashboardHeader
         onCreate={() => void navigate("/agency/admin/create-store")}
       />

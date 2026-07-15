@@ -26,7 +26,6 @@
   background: var(--color-panel);
   border-color: var(--color-accent);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgb(0 0 0 / 0.04);
 }
 
 .documents-version-list button span:first-child {
@@ -74,7 +73,7 @@
   box-shadow: var(--shadow-panel);
   display: grid;
   gap: 1rem;
-  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
   max-width: 32rem;
   overflow-y: auto;
   padding: 1.25rem;

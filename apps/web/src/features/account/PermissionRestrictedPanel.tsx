@@ -11,7 +11,7 @@ export function PermissionRestrictedPanel({
   title?: string;
 }) {
   return (
-    <main className="min-h-screen bg-app px-4 py-8 text-app-text">
+    <main className="content-frame min-h-screen bg-app text-app-text">
       <section className="mx-auto flex min-h-[420px] w-full max-w-2xl flex-col items-center justify-center gap-4 text-center">
         <div className="flex size-12 items-center justify-center rounded-lg border border-line bg-panel text-accent">
           <LockKeyhole aria-hidden className="size-5" />

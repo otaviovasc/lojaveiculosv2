@@ -35,11 +35,11 @@
   --color-app-text: #151515 !important;
   --color-muted: #4a4444 !important; /* Brand Chumbo */
   --color-muted-foreground: #4a4444 !important;
-  --color-panel: #ffffff !important;
+  --color-panel: var(--color-warm-white) !important;
   --color-line: #e8e3e2 !important; /* Brand Cinza Quente */
-  --color-line-strong: #4a4444 !important; /* Brand Chumbo */
-  --color-inverse: #ffffff;
-  --public-accent-foreground-light: #ffffff !important;
+  --color-line-strong: #a09898 !important; /* Brand Cinza Medio */
+  --color-inverse: var(--color-warm-white);
+  --public-accent-foreground-light: var(--color-warm-white) !important;
   --public-accent-foreground-dark: #151515 !important;
 
   /* Theme variables used by Tailwind */
@@ -60,7 +60,7 @@
   /* Status Colors */
   --color-danger: #b81820 !important;
   --color-destructive: #b81820 !important;
-  --color-destructive-foreground: #ffffff !important;
+  --color-destructive-foreground: var(--color-warm-white) !important;
   --color-warning: #b89418 !important;
   --color-success: #18b841 !important;
   --color-success-strong: color-mix(

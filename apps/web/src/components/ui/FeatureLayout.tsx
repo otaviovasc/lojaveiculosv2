@@ -12,21 +12,8 @@ export function FeaturePageShell({
   mainClassName?: string;
   variant?: "content" | "dashboard" | "plain";
 }) {
-  if (variant === "content") {
+  if (variant === "content" || variant === "plain") {
     return <main className={cx("content-frame", className)}>{children}</main>;
-  }
-
-  if (variant === "plain") {
-    return (
-      <main
-        className={cx(
-          "mx-auto flex w-full max-w-[var(--layout-content-max)] flex-col gap-5 p-4 lg:p-6",
-          className,
-        )}
-      >
-        {children}
-      </main>
-    );
   }
 
   return (
@@ -36,7 +23,6 @@ export function FeaturePageShell({
         className,
       )}
     >
-      <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
       <main className={cx("dashboard-main relative z-10", mainClassName)}>
         {children}
       </main>
@@ -79,9 +65,9 @@ export function FeaturePageHeader({
         </div>
         <h1 className="documents-top-bar-title">{title}</h1>
         {description ? (
-          <p className="max-w-3xl text-sm font-bold text-muted">
+          <div className="max-w-3xl text-sm font-bold text-muted">
             {description}
-          </p>
+          </div>
         ) : null}
         {chip ? <span className="documents-top-bar-chip">{chip}</span> : null}
       </div>
@@ -164,12 +150,19 @@ export function FeatureToolbar({
   className,
   eyebrow,
   onSubmit,
+  radius = "default",
 }: {
   children: ReactNode;
   className?: string;
   eyebrow?: ReactNode;
   onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
+  radius?: "default" | "xl";
 }) {
+  const toolbarClassName = cx(
+    "glass-panel-branded p-5 !overflow-visible",
+    radius === "xl" && "feature-toolbar--radius-xl",
+    className,
+  );
   const content = (
     <>
       {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
@@ -179,22 +172,13 @@ export function FeatureToolbar({
 
   if (onSubmit) {
     return (
-      <form
-        className={cx("glass-panel-branded p-5 !overflow-visible", className)}
-        onSubmit={onSubmit}
-      >
+      <form className={toolbarClassName} onSubmit={onSubmit}>
         {content}
       </form>
     );
   }
 
-  return (
-    <section
-      className={cx("glass-panel-branded p-5 !overflow-visible", className)}
-    >
-      {content}
-    </section>
-  );
+  return <section className={toolbarClassName}>{content}</section>;
 }
 
 export function FeatureSection({
@@ -205,6 +189,7 @@ export function FeatureSection({
   headerClassName,
   icon,
   padding = "default",
+  radius = "default",
   title,
   titleClassName,
 }: {
@@ -215,18 +200,20 @@ export function FeatureSection({
   headerClassName?: string;
   icon?: ReactNode;
   padding?: "comfortable" | "compact" | "default" | "none";
+  radius?: "default" | "xl";
   title?: ReactNode;
   titleClassName?: string;
 }) {
   const hasHeader = Boolean(title || description || actions || icon);
-
   return (
     <section
       className={cx(
         "panel",
         padding === "comfortable" && "p-6 md:p-8",
         padding === "compact" && "p-5",
+        padding === "default" && "p-5",
         padding === "none" && "!p-0",
+        radius === "xl" && "panel--radius-xl",
         className,
       )}
     >
@@ -243,7 +230,7 @@ export function FeatureSection({
               {title ? (
                 <h3
                   className={cx(
-                    "text-base font-black text-app-text",
+                    "text-base font-bold text-app-text",
                     titleClassName,
                   )}
                 >
@@ -252,7 +239,9 @@ export function FeatureSection({
               ) : null}
             </div>
             {description ? (
-              <p className="mt-1 text-sm font-bold text-muted">{description}</p>
+              <p className="mt-1 text-sm font-medium text-muted">
+                {description}
+              </p>
             ) : null}
           </div>
           {actions ? <div className="shrink-0">{actions}</div> : null}

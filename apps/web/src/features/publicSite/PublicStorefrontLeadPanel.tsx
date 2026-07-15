@@ -72,7 +72,7 @@ export function LeadPanel({
               placeholder="Seu telefone"
             />
             <a
-              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] hover:brightness-105 active:translate-y-0 active:scale-95"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95"
               href={settings.contact.whatsappUrl ?? undefined}
             >
               <MessageCircle aria-hidden="true" className="size-4" />

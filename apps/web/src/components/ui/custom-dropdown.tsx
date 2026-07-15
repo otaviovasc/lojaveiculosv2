@@ -97,13 +97,13 @@ export function CustomDropdown({
 
   const dropdownContent = (
     <div
+      className="z-[var(--z-index-dropdown)]"
       ref={dropdownRef}
       style={{
         position: "absolute",
         top: coords.top,
         left: coords.left,
         width: coords.width,
-        zIndex: 9999,
         pointerEvents: "auto",
       }}
     >
@@ -162,10 +162,10 @@ export function CustomDropdown({
         type="button"
         disabled={disabled}
         className={cn(
-          "flex w-full items-center justify-between border border-input bg-card/50 transition-all duration-200 text-left hover:border-primary/50 hover:bg-card",
+          "flex w-full items-center justify-between border border-input bg-card/50 transition-all duration-200 text-left hover:border-line-strong hover:bg-card",
           sizeClasses[size],
           open &&
-            "ring-2 ring-primary/20 border-primary focus:outline-none bg-card shadow-md",
+            "ring-2 ring-primary/20 border-primary focus:outline-none bg-card",
           disabled && "opacity-50 cursor-not-allowed",
           triggerClassName,
         )}

@@ -72,7 +72,7 @@ export function PrintWrapper({
         </div>
         <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:items-center sm:gap-3">
           <button
-            className="flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-center text-sm font-black text-accent-foreground shadow-sm transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground sm:px-5"
+            className="flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl bg-accent px-3 text-center text-sm font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground sm:px-5"
             onClick={handlePrint}
             type="button"
           >

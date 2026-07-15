@@ -92,7 +92,7 @@ export function CrmPipelineToolbar({
               className={
                 "inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg px-4 text-xs font-black transition-all cursor-pointer " +
                 (p.id === activePipelineId
-                  ? "bg-panel border border-line/60 text-app-text shadow-sm"
+                  ? "bg-panel border border-line/60 text-app-text"
                   : "text-muted hover:text-app-text hover:bg-line/10")
               }
               key={p.id}

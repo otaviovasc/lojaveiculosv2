@@ -5,9 +5,11 @@ import {
 } from "./financeOpenApiParts.js";
 import { objectSchema } from "./inventoryOpenApiSchemaParts.js";
 import { financeAutoEntrySchemas } from "./financeAutoEntryOpenApi.js";
+import { commissionWorkspaceSchemas } from "./commissionWorkspaceOpenApi.js";
 
 export const financeSchemas = {
   ...financeAutoEntrySchemas,
+  ...commissionWorkspaceSchemas,
   AttachFinanceDocumentRequest: objectSchema(
     ["fileName", "storageKey", "title"],
     {
@@ -101,6 +103,10 @@ export const financeSchemas = {
       category: { type: "string" },
       dueAt: { type: ["string", "null"], format: "date-time" },
       id: { type: "string" },
+      links: {
+        type: "array",
+        items: { $ref: "#/components/schemas/FinanceEntryLink" },
+      },
       metadata: { type: "object", additionalProperties: true },
       name: { type: "string" },
       paidAt: { type: ["string", "null"], format: "date-time" },

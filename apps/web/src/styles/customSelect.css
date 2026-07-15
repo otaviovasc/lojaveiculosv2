@@ -98,8 +98,13 @@
 }
 
 .custom-select-option[data-selected="true"] {
-  background: var(--color-accent-soft);
-  color: var(--color-accent-strong);
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.custom-select-option[data-selected="true"] .custom-select-leading,
+.custom-select-option[data-selected="true"] .custom-select-chevron {
+  color: currentColor;
 }
 
 .custom-select-option:disabled {

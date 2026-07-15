@@ -11,19 +11,10 @@ import { updateVehicleUnit } from "../../../domains/vehicle/services/VehicleServ
 import { upsertVehicleUnitAcquisition } from "../../../domains/vehicle/services/VehicleService/manageVehicleUnitAcquisition.js";
 import type { VehicleInventoryServicePorts } from "../../../domains/vehicle/services/VehicleService/serviceSupport.js";
 import type { VehicleListingCatalog } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
-
-type TradeInSnapshot = {
-  brand: string | null;
-  chassi: string | null;
-  color: string | null;
-  enabled: boolean;
-  model: string | null;
-  plate: string | null;
-  renavam: string | null;
-  valuationCents: number | null;
-  yearFabrication: number | null;
-  yearModel: number | null;
-};
+import {
+  readTradeInSnapshot,
+  type TradeInSnapshot,
+} from "./salesTradeInSnapshot.js";
 
 export async function registerTradeInAcquisition(
   context: ServiceContext,
@@ -100,13 +91,19 @@ function listingInputFromTradeIn(
 ): CreateVehicleListingInput {
   return {
     catalog: catalogFromTradeIn(tradeIn),
+    doors: tradeIn.doors,
+    engineAspiration: tradeIn.engineAspiration,
+    engineDisplacement: tradeIn.engineDisplacement,
+    fuelType: tradeIn.fuelType,
     internalNotes: "Veiculo recebido como troca em formalizacao de venda.",
     manufactureYear: tradeIn.yearFabrication,
+    mileageKm: tradeIn.mileageKm,
     modelYear: tradeIn.yearModel,
     plate: tradeIn.plate,
     priceCents: null,
     status: "in_preparation",
     title: titleFromTradeIn(tradeIn),
+    transmission: tradeIn.transmission,
     trimName: tradeIn.model,
   };
 }
@@ -114,6 +111,7 @@ function listingInputFromTradeIn(
 function catalogFromTradeIn(
   tradeIn: TradeInSnapshot,
 ): VehicleListingCatalog | null {
+  if (tradeIn.catalog) return tradeIn.catalog;
   if (!tradeIn.brand && !tradeIn.model) return null;
   return {
     brandCode: null,
@@ -139,51 +137,6 @@ function titleFromTradeIn(tradeIn: TradeInSnapshot): string {
   return "Veiculo recebido na troca";
 }
 
-function readTradeInSnapshot(value: unknown): TradeInSnapshot | null {
-  if (!value || typeof value !== "object") return null;
-  const record = value as Record<string, unknown>;
-  if (record.enabled !== true) return null;
-  const tradeIn = {
-    brand: readString(record.brand),
-    chassi: readString(record.chassi) ?? readString(record.chassis),
-    color: readString(record.color),
-    enabled: true,
-    model: readString(record.model),
-    plate: readString(record.plate),
-    renavam: readString(record.renavam),
-    valuationCents: readCents(record.valuationCents),
-    yearFabrication: readInteger(record.yearFabrication),
-    yearModel: readInteger(record.yearModel),
-  } satisfies TradeInSnapshot;
-
-  if (!tradeIn.brand && !tradeIn.model && !tradeIn.plate && !tradeIn.chassi) {
-    return null;
-  }
-  return tradeIn;
-}
-
 function readString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function readInteger(value: unknown): number | null {
-  const numberValue =
-    typeof value === "number"
-      ? value
-      : typeof value === "string" && value.trim()
-        ? Number(value)
-        : null;
-  if (!Number.isInteger(numberValue) || Number(numberValue) <= 0) return null;
-  return Number(numberValue);
-}
-
-function readCents(value: unknown): number | null {
-  const numberValue =
-    typeof value === "number"
-      ? value
-      : typeof value === "string" && value.trim()
-        ? Number(value)
-        : null;
-  if (!Number.isInteger(numberValue) || Number(numberValue) < 0) return null;
-  return Number(numberValue);
 }

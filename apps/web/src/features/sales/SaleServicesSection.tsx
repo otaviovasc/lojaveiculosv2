@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Banknote } from "lucide-react";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
+import type { InventoryApi } from "../inventory/api/apiClient";
 import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import { SaleServicesPaymentsSection } from "./SaleServicesPaymentsSection";
 import { SaleServicesTabs } from "./SaleServicesTabs";
@@ -15,9 +16,11 @@ import type {
 import type { SaleRecord } from "./types";
 
 export function ServicesSection({
+  inventoryApi,
   sale,
   update,
 }: {
+  inventoryApi: InventoryApi | null;
   sale: SaleRecord;
   update: UpdateSale;
 }) {
@@ -99,6 +102,7 @@ export function ServicesSection({
         documentation={documentation}
         financing={financing}
         insurance={insurance}
+        inventoryApi={inventoryApi}
         onChange={handleServiceChange}
         onTabChange={setActiveTab}
         sale={sale}

@@ -60,7 +60,7 @@ export function DocumentsListToolbar({
   status: DocumentStatus | "";
 }) {
   return (
-    <FeatureToolbar eyebrow="Documentos">
+    <FeatureToolbar eyebrow="Documentos" radius="xl">
       <form
         className="grid gap-3 md:grid-cols-[1fr_220px_200px] items-center mt-4"
         onSubmit={(event) => event.preventDefault()}

@@ -6,9 +6,11 @@ import {
   query,
 } from "./financeOpenApiParts.js";
 import { financeAutoEntryPaths } from "./financeAutoEntryOpenApi.js";
+import { commissionWorkspacePaths } from "./commissionWorkspaceOpenApi.js";
 
 export const financePaths = {
   ...financeAutoEntryPaths,
+  ...commissionWorkspacePaths,
   "/api/v1/finance/summary": {
     get: operation(
       "finance.read",

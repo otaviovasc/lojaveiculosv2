@@ -143,7 +143,7 @@ export function SettingsModule({
 
       <div className="settings-topbar my-2 flex flex-wrap items-center justify-between gap-3">
         <FeatureTabs
-          activeClassName="!bg-accent !text-accent-foreground shadow-sm scale-[1.02]"
+          activeClassName="!bg-accent !text-accent-foreground scale-[1.02]"
           ariaLabel="Áreas de configuração"
           className="settings-primary-tabs"
           onChange={(tab) => selectTab(tab, setActiveTab)}
@@ -160,7 +160,7 @@ export function SettingsModule({
         <button
           aria-label="Atualizar"
           aria-busy={status.kind === "loading" || undefined}
-          className="settings-refresh-button inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-line bg-panel/75 px-4 text-xs font-black text-app-text shadow-sm hover:bg-app-elevated/45 disabled:cursor-wait disabled:opacity-70"
+          className="settings-refresh-button inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-line bg-panel/75 px-4 text-xs font-black text-app-text hover:bg-app-elevated/45 disabled:cursor-wait disabled:opacity-70"
           disabled={status.kind === "loading"}
           onClick={() => void refresh()}
           title="Atualizar configurações"
@@ -184,7 +184,7 @@ export function SettingsModule({
         <FeatureEmptyState
           action={
             <button
-              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel px-4 text-xs font-black text-app-text shadow-sm hover:bg-app-elevated/45"
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel px-4 text-xs font-black text-app-text hover:bg-app-elevated/45"
               onClick={() => void refresh()}
               type="button"
             >

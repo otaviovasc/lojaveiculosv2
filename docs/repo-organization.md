@@ -129,8 +129,10 @@ Before adding or moving a module:
 2. Place it according to the contracts above.
 3. Keep the interface deep enough that callers do not need to understand its
    implementation details.
-4. Keep source files under 250 lines by extracting coherent modules, not by
-   hiding complexity in generic helpers. Long-form docs are exempt.
+4. Keep source files under the enforced 250-line default. Files under
+   `apps/web/**` have a 550-line ceiling so cohesive frontend components and
+   styles can stay together; do not use that allowance to combine business
+   logic, adapters, or unrelated concerns. Long-form docs are exempt.
 5. Run focused checks first, then `pnpm run validate` before handoff.
 
 ## Validation Tiers
@@ -169,6 +171,9 @@ Before adding or moving a module:
 - `pnpm run check:api-errors`: blocks direct controller `{ message }` JSON
   error responses and manual `context.error` assignment outside the shared HTTP
   error helper.
+- `pnpm run check:button-cursors`: keeps the global stylesheet chain intact so
+  enabled native and ARIA buttons always render the pointer cursor while
+  disabled controls retain the not-allowed cursor.
 - `pnpm run check:contrast`: resolves semantic foreground/background tokens in
   light and dark themes, checks inherited hover/active/selected state colors,
   composites translucent surfaces, and requires tenant accent foreground

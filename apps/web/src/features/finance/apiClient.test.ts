@@ -36,6 +36,15 @@ describe("finance api client", () => {
     expect(financeRoutes.commissionRules()).toBe(
       "/api/v1/finance/commission-rules",
     );
+    expect(financeRoutes.commissionSettlement()).toBe(
+      "/api/v1/finance/commissions/settlements",
+    );
+    expect(
+      financeRoutes.commissionWorkspace(undefined, {
+        from: "2026-07-01T00:00:00.000Z",
+        to: "2026-07-31T23:59:59.999Z",
+      }),
+    ).toContain("/api/v1/finance/commissions/workspace?");
   });
 
   it("creates an entry and attaches an optional uploaded document", async () => {
@@ -181,6 +190,48 @@ describe("finance api client", () => {
       "/api/v1/finance/entries?limit=200&offset=2&type=commission",
       expect.any(Object),
     );
+  });
+
+  it("loads the sale-first workspace and settles commissions in one request", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          adjustments: [],
+          generatedAt: "2026-07-14T12:00:00.000Z",
+          reconciliation: [],
+          sales: [],
+          sellerNames: {},
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ totalCents: 10000, updatedCount: 1 }),
+      );
+    const api = createFinanceApi({ fetch: fetchMock });
+
+    await api.getCommissionWorkspace({
+      from: "2026-07-01T00:00:00.000Z",
+      to: "2026-07-31T23:59:59.999Z",
+    });
+    await api.settleCommissionEntries({
+      entryIds: ["entry_1"],
+      paidAt: "2026-07-14T12:00:00.000Z",
+      sellerUserId: "seller_1",
+    });
+
+    expect(fetchMock.mock.calls[0]?.[0]).toContain(
+      "/api/v1/finance/commissions/workspace?",
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "/api/v1/finance/commissions/settlements",
+      expect.objectContaining({ method: "POST" }),
+    );
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toEqual({
+      entryIds: ["entry_1"],
+      paidAt: "2026-07-14T12:00:00.000Z",
+      sellerUserId: "seller_1",
+    });
   });
 });
 

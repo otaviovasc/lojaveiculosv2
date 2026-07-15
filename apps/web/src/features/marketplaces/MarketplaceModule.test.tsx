@@ -25,6 +25,16 @@ describe("MarketplaceModule", () => {
     render(<MarketplaceModule api={createApi()} />);
 
     expect(await screen.findByText("Checklist da conta")).toBeVisible();
+    expect(screen.getByRole("img", { name: "Logo OLX" })).toHaveAttribute(
+      "src",
+      "/images/integrationslogos/olx.png",
+    );
+    expect(
+      screen.getByRole("region", {
+        name: "Resumo operacional dos marketplaces",
+      }),
+    ).toBeVisible();
+    expect(screen.getByText("Visão por veículo")).toBeVisible();
     expect(
       screen.getByRole("toolbar", { name: "Ações dos marketplaces" }),
     ).toBeVisible();
@@ -46,7 +56,7 @@ describe("MarketplaceModule", () => {
     const card = heading.closest(".marketplace-card");
     expect(card).not.toBeNull();
     expect(card).toHaveAttribute("data-connection-tone", "danger");
-    expect(card?.querySelector(".marketplace-card-header span")).toHaveClass(
+    expect(card?.querySelector(".marketplace-connection-status")).toHaveClass(
       "is-danger",
     );
     expect(

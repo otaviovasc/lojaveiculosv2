@@ -22,7 +22,7 @@ function Input({
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary",
         "focus-visible:bg-card focus-visible:shadow-[0_0_15px_oklch(var(--primary)/0.15)]",
         "disabled:cursor-not-allowed disabled:opacity-50",
-        "hover:border-primary/50 hover:bg-card",
+        "hover:border-line-strong hover:bg-card",
         "touch-target",
         inputSize === "sm"
           ? "h-9 px-3 py-1.5 text-sm"

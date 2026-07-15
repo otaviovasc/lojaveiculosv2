@@ -178,7 +178,9 @@ export function CrmLeadFinancialProducts({
       </div>
       <div aria-live="polite" className="mt-4 min-h-5 text-xs font-bold">
         {error ? <span className="text-danger">{error}</span> : null}
-        {feedback ? <span className="text-success">{feedback}</span> : null}
+        {feedback ? (
+          <span className="text-success-strong">{feedback}</span>
+        ) : null}
       </div>
       <div className="mt-3 flex justify-end">
         <FeatureActionButton

@@ -1,4 +1,4 @@
-/* Fluxo de caixa refinements */
+/* Finance surfaces stay scoped to the finance workspaces and use product tokens. */
 
 .finance-detail-strip > div,
 .finance-detail-strip > button,
@@ -10,18 +10,17 @@
 .finance-insight-row,
 .finance-option-card {
   transition:
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
 }
 
-.finance-detail-strip > button {
+.finance-detail-strip > button,
+.finance-option-card {
   cursor: pointer;
 }
 
 .finance-detail-strip > button:hover,
-.finance-detail-strip > button:focus-visible,
 .finance-entry-card:hover,
 .finance-entry-card:focus-within,
 .finance-urgency-row:hover,
@@ -29,28 +28,30 @@
 .finance-recurring-card:hover,
 .finance-recurring-card:focus-within,
 .finance-source-card:hover,
-.finance-insight-row:hover {
+.finance-source-card:focus-within,
+.finance-insight-row:hover,
+.finance-option-card:hover {
   border-color: var(--color-line-strong);
   background: var(--color-panel);
-  box-shadow: var(--shadow-panel);
 }
 
-.finance-detail-strip > button:hover,
-.finance-entry-card:hover,
-.finance-urgency-row:hover,
-.finance-recurring-card:hover,
-.finance-source-card:hover {
-  transform: translateY(-0.125rem);
-}
-
-.finance-detail-strip > button:active {
-  transform: translateY(0);
+.finance-detail-strip > button:active,
+.finance-option-card:active {
+  transform: scale(0.99);
 }
 
 .finance-detail-strip > button:focus-visible,
 .finance-option-card:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+.finance-table-row {
+  transition: background-color 0.2s ease;
+}
+
+.finance-table-row:hover {
+  background-color: var(--color-app-elevated);
 }
 
 .finance-metric-received,
@@ -120,14 +121,6 @@
   background: var(--color-danger);
 }
 
-.finance-table-row {
-  transition: background-color 0.18s ease;
-}
-
-.finance-table-row:hover {
-  background-color: var(--color-app-elevated);
-}
-
 .finance-cell-amount[data-entry-type="revenue"],
 .finance-entry-card[data-entry-type="revenue"] .finance-card-amount {
   color: var(--color-green-start);
@@ -147,11 +140,15 @@
   border: 1px solid var(--color-line);
   background: var(--color-app-elevated);
   color: var(--color-muted);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .finance-entry-card,
 .finance-recurring-card {
   position: relative;
+  min-width: 0;
 }
 
 .finance-recurring-info {
@@ -167,23 +164,8 @@
   opacity: 0.72;
 }
 
-.finance-recurring-card:hover,
-.finance-recurring-card:focus-within,
-.finance-source-card:hover,
-.finance-insight-row:hover {
-  border-color: var(--color-accent);
-}
-
 .finance-insight-row:hover {
   transform: translateX(0.125rem);
-}
-
-.finance-option-card {
-  cursor: pointer;
-}
-
-.finance-option-card:hover {
-  border-color: var(--color-line-strong);
 }
 
 .finance-option-card--active {
@@ -193,8 +175,8 @@
 .finance-option-card svg {
   color: var(--color-muted);
   transition:
-    color 0.18s ease,
-    transform 0.18s ease;
+    color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .finance-option-card:hover svg {
@@ -204,4 +186,79 @@
 
 .finance-option-card--active svg {
   color: var(--color-accent-strong);
+}
+
+.finance-filter-toolbar,
+.commission-filter-toolbar {
+  position: relative;
+  border-color: var(--color-line);
+  background: var(--color-panel);
+  backdrop-filter: none;
+  box-shadow: var(--shadow-panel);
+}
+
+.finance-filter-toolbar::after,
+.commission-filter-toolbar::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 0.25rem;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    var(--color-accent-strong)
+  );
+  content: "";
+  pointer-events: none;
+}
+
+.commission-dialog {
+  background: var(--color-panel);
+  backdrop-filter: none;
+}
+
+.finance-cash-flow-card.feature-stat-card--green {
+  --feature-stat-card-foreground: var(--color-dark-control-surface);
+}
+
+.finance-cash-flow-card.feature-stat-card--green .feature-stat-card__icon {
+  color: var(--color-success-strong);
+}
+
+@media (max-width: 39.999rem) {
+  .finance-cash-flow-card > div:first-child {
+    padding-right: 0;
+  }
+
+  .finance-cash-flow-card .feature-stat-card__label {
+    padding-right: 1.5rem;
+  }
+
+  .finance-cash-flow-card .feature-stat-card__value {
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 63.999rem) {
+  .finance-recurring-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .finance-detail-strip > div,
+  .finance-detail-strip > button,
+  .finance-urgency-summary-card,
+  .finance-urgency-row,
+  .finance-entry-card,
+  .finance-recurring-card,
+  .finance-source-card,
+  .finance-insight-row,
+  .finance-option-card,
+  .finance-table-row,
+  .finance-option-card svg {
+    transition: none;
+  }
 }

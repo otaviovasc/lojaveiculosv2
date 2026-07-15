@@ -120,8 +120,6 @@
 .feature-action--primary {
   background: var(--color-accent);
   color: var(--color-accent-foreground);
-  box-shadow: 0 8px 20px
-    color-mix(in srgb, var(--color-accent) 18%, transparent);
 }
 
 .feature-action--primary:hover:not(:disabled) {
@@ -136,7 +134,6 @@
 
 .feature-action--secondary:hover:not(:disabled) {
   border-color: var(--color-line-strong);
-  box-shadow: var(--shadow-panel);
 }
 
 .feature-action--danger {

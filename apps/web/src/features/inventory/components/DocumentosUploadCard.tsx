@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { FileText, Upload } from "lucide-react";
+import { Download, Eye, FileText, LoaderCircle, Upload } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "../../../components/ui/tooltip";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { InventoryApi } from "../api/apiClient";
 import { documentKindOptions } from "../model/formModel";
@@ -23,6 +29,9 @@ export function DocumentosUploadCard({ api, detail, onUpdated, unit }: Props) {
     "vehicle_registration",
   );
   const [isUploading, setIsUploading] = useState(false);
+  const [activeDocumentAction, setActiveDocumentAction] = useState<
+    string | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const documents = unit
     ? detail.documents.filter((document) => document.targetId === unit.id)
@@ -59,6 +68,42 @@ export function DocumentosUploadCard({ api, detail, onUpdated, unit }: Props) {
       );
     } finally {
       setIsUploading(false);
+    }
+  }
+
+  async function openDocument(
+    documentId: string,
+    disposition: "attachment" | "inline",
+  ) {
+    const actionKey = `${documentId}:${disposition}`;
+    const previewWindow =
+      disposition === "inline" ? openPendingPreviewWindow() : null;
+    setActiveDocumentAction(actionKey);
+    setError(null);
+    try {
+      const access = await api.getDocumentAccess(documentId, disposition);
+      if (previewWindow) {
+        previewWindow.location.replace(access.downloadUrl);
+      } else {
+        triggerDocumentLink(access.downloadUrl, {
+          ...(disposition === "attachment"
+            ? { fileName: access.fileName }
+            : {}),
+          newTab: disposition === "inline",
+        });
+      }
+    } catch (caught) {
+      previewWindow?.close();
+      setError(
+        formatApiErrorDisplay(
+          caught,
+          disposition === "inline"
+            ? "Não foi possível abrir a prévia do documento."
+            : "Não foi possível baixar o documento.",
+        ),
+      );
+    } finally {
+      setActiveDocumentAction(null);
     }
   }
 
@@ -136,13 +181,103 @@ export function DocumentosUploadCard({ api, detail, onUpdated, unit }: Props) {
               className="flex items-center gap-2 rounded-xl border border-line bg-app/20 p-3 text-xs font-bold"
             >
               <FileText className="size-4 shrink-0 text-muted" />
-              <span className="min-w-0 flex-1 truncate">{document.title}</span>
-              <span className="text-muted">Armazenado</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-app-text">{document.title}</p>
+                {document.fileName !== document.title ? (
+                  <p className="truncate text-xs text-muted">
+                    {document.fileName}
+                  </p>
+                ) : null}
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <DocumentActionButton
+                  disabled={activeDocumentAction !== null}
+                  icon={
+                    activeDocumentAction === `${document.id}:inline`
+                      ? LoaderCircle
+                      : Eye
+                  }
+                  label="Pré-visualizar documento"
+                  loading={activeDocumentAction === `${document.id}:inline`}
+                  onClick={() => void openDocument(document.id, "inline")}
+                />
+                <DocumentActionButton
+                  disabled={activeDocumentAction !== null}
+                  icon={
+                    activeDocumentAction === `${document.id}:attachment`
+                      ? LoaderCircle
+                      : Download
+                  }
+                  label="Baixar documento"
+                  loading={activeDocumentAction === `${document.id}:attachment`}
+                  onClick={() => void openDocument(document.id, "attachment")}
+                />
+              </div>
             </li>
           ))}
         </ul>
       )}
     </section>
+  );
+}
+
+function openPendingPreviewWindow() {
+  try {
+    const previewWindow = window.open("about:blank", "_blank");
+    if (previewWindow) previewWindow.opener = null;
+    return previewWindow;
+  } catch {
+    return null;
+  }
+}
+
+function triggerDocumentLink(
+  url: string,
+  options: { fileName?: string; newTab: boolean },
+) {
+  const link = window.document.createElement("a");
+  link.href = url;
+  link.rel = "noopener noreferrer";
+  if (options.newTab) link.target = "_blank";
+  if (options.fileName) link.download = options.fileName;
+  window.document.body.appendChild(link);
+  link.click();
+  window.document.body.removeChild(link);
+}
+
+function DocumentActionButton({
+  disabled,
+  icon: Icon,
+  label,
+  loading,
+  onClick,
+}: {
+  disabled: boolean;
+  icon: typeof Eye;
+  label: string;
+  loading: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label={label}
+          className="border border-line bg-panel text-muted hover:border-accent/40 hover:bg-accent-soft hover:text-accent-strong"
+          disabled={disabled}
+          onClick={onClick}
+          size="icon-sm"
+          type="button"
+          variant="ghost"
+        >
+          <Icon
+            aria-hidden="true"
+            className={loading ? "animate-spin" : undefined}
+          />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 

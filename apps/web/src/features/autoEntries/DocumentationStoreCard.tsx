@@ -108,6 +108,7 @@ export function DocumentationStoreCard({
     <AutoEntryDomainCard
       description="Registra o custo da transferência e a parcela da documentação que entra como receita."
       title="Custos e receita da loja"
+      tone="green"
     >
       <AutoEntryValueOrigin active={Object.values(stored).every(Boolean)} />
       <FeatureFieldGroup>

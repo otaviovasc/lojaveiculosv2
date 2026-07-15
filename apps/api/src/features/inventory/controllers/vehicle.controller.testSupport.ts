@@ -56,6 +56,7 @@ export function createInventoryTestApp(
 export function createInventoryTestServices(): InventoryListingServices {
   return {
     addVehicleCost: vi.fn(async () => listingDetailResult()),
+    analyzeListingResale: vi.fn(async () => listingDetailResult()),
     archiveVehicleSupplier: vi.fn(async () => supplierResult()),
     attachListingUnit: vi.fn(async () => listingDetailResult()),
     attachVehicleDocument: vi.fn(async () => listingDetailResult()),
@@ -158,6 +159,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       nextOffset: null,
       total: 1,
     })),
+    listListingAuditEvents: vi.fn(async () => []),
     listUnits: vi.fn(async () => ({
       hasMore: false,
       items: [
@@ -218,11 +220,13 @@ export async function createUserContext() {
       "inventory.media_delete",
       "inventory.media_update",
       "inventory.read",
+      "inventory.update_commercial_tags",
       "inventory.update_description",
       "inventory.update_internal_notes",
       "inventory.update_price",
       "inventory.update_status",
       "inventory.update_unit",
+      "inventory.update_video",
     ],
     request: { requestId: "req_1" },
     storeId: "store_1",

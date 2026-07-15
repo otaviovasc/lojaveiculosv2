@@ -92,7 +92,7 @@ export function CrmQuickAddPipelineModal({ onClose, onCreatePipeline }: Props) {
                   className={
                     "group text-left p-3 rounded-xl border transition-all cursor-pointer " +
                     (isSelected
-                      ? "bg-accent-soft/10 border-accent shadow-sm"
+                      ? "bg-accent-soft/10 border-accent"
                       : "bg-app-elevated/20 border-line hover:border-line/80 hover:bg-line/5")
                   }
                 >

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrencyValue, parseCurrencyInput } from "./masks";
+import {
+  formatBrazilianDocument,
+  formatBrazilianPhone,
+  formatCurrencyValue,
+  parseCurrencyInput,
+} from "./masks";
 
 describe("currency input helpers", () => {
   it.each([
@@ -33,4 +38,22 @@ describe("currency input helpers", () => {
       expect(formatCurrencyValue(input)).toBe("");
     },
   );
+});
+
+describe("Brazilian contact masks", () => {
+  it.each([
+    ["12345678901", "123.456.789-01"],
+    ["11222333000181", "11.222.333/0001-81"],
+    ["11.222.333/0001-81 extra", "11.222.333/0001-81"],
+  ])("formats document %j", (input, expected) => {
+    expect(formatBrazilianDocument(input)).toBe(expected);
+  });
+
+  it.each([
+    ["11987654321", "(11) 98765-4321"],
+    ["551132345678", "(11) 3234-5678"],
+    ["55987654321", "(55) 98765-4321"],
+  ])("formats phone %j", (input, expected) => {
+    expect(formatBrazilianPhone(input)).toBe(expected);
+  });
 });

@@ -3,6 +3,7 @@ import type {
   VehicleEngineAspiration,
   VehicleEngineDisplacement,
 } from "@lojaveiculosv2/shared";
+import type { VehicleResaleAnalysisSnapshot } from "./vehicleEnrichmentTypes.js";
 
 export type {
   VehicleColor,
@@ -69,6 +70,7 @@ export type VehicleListingCatalog = {
 
 export type VehicleListing = {
   catalog: VehicleListingCatalog | null;
+  commercialTags: readonly string[];
   createdAt: Date;
   description: string | null;
   doors: number | null;
@@ -84,6 +86,7 @@ export type VehicleListing = {
   plate: string | null;
   priceCents: number | null;
   publicSlug: string | null;
+  resaleAnalysis: VehicleResaleAnalysisSnapshot | null;
   status: VehicleListingStatus;
   storeId: string | null;
   tenantId: string | null;
@@ -92,6 +95,7 @@ export type VehicleListing = {
   trimName: string | null;
   unitIds: readonly string[];
   updatedAt: Date;
+  videoUrl: string | null;
 };
 
 export type VehicleUnit = {

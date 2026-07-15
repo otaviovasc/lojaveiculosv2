@@ -184,7 +184,6 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   width: 2.5rem;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.02);
 }
 
 .documents-icon-button:hover:not(:disabled) {
@@ -192,7 +191,6 @@
   border-color: var(--color-accent);
   color: var(--color-accent-strong);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(225, 31, 38, 0.1);
 }
 
 .documents-icon-button:active:not(:disabled) {

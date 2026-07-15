@@ -11,14 +11,14 @@ describe("InventoryLeadBadge", () => {
     const { rerender } = render(<InventoryLeadBadge leads={1} />);
     expect(screen.getByText("1 lead").parentElement).toHaveClass(
       "bg-success/10",
-      "text-success",
+      "text-success-strong",
       "border-success/20",
     );
 
     rerender(<InventoryLeadBadge leads={3} />);
     expect(screen.getByText("3 leads").parentElement).toHaveClass(
       "bg-warning/10",
-      "text-warning",
+      "text-warning-strong",
       "border-warning/20",
     );
 

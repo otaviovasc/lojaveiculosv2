@@ -28,7 +28,7 @@ import type { AutoEntryRule, AutoEntryRuleMutation } from "./types";
 
 export function FinancingRulesPanel(props: AutoEntryDomainPanelProps) {
   return (
-    <div className="grid gap-4 xl:grid-cols-2">
+    <div className="grid items-start gap-4 xl:grid-cols-2">
       <FinancingStoreCard {...props} />
       <FinancingSellerCard {...props} />
     </div>
@@ -63,6 +63,7 @@ function FinancingStoreCard({
     <AutoEntryDomainCard
       description="A loja recebe uma taxa por faixa R1–R5 do financiamento. Campos vazios não criam regras sugeridas."
       title="Matriz da loja"
+      tone="blue"
     >
       <AutoEntryValueOrigin
         active={Object.values(storedValues).some(Boolean)}
@@ -119,6 +120,7 @@ function FinancingSellerCard({
     <AutoEntryDomainCard
       description="A seleção identifica quem dispara e recebe a comissão. As sugestões V1 só viram regras após salvar."
       title="Matriz por vendedor"
+      tone="blue"
     >
       <AutoEntrySellerField
         onChange={setSellerUserId}

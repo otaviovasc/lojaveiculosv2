@@ -19,6 +19,10 @@ import type {
   SaleScope,
 } from "../../ports/salesRepository.js";
 import { findReservationSignalPayment } from "../../salePaymentSignals.js";
+import {
+  collectMissingSalePaymentFields,
+  hasSaleBuyerName,
+} from "../../salePaymentReadiness.js";
 
 export type SalesServicePorts = {
   salesRepository: SalesRepository;
@@ -144,7 +148,7 @@ export function collectMissingSaleFields(
   purpose: SaleReadinessPurpose = "close",
 ): readonly string[] {
   const missing: string[] = [];
-  if (!hasBuyerName(sale.buyerSnapshot)) missing.push("buyer");
+  if (!hasSaleBuyerName(sale.buyerSnapshot)) missing.push("buyer");
   if (!sale.leadId) missing.push("lead");
   if (!sale.unitId) missing.push("vehicle_unit");
   if (!sale.sellerUserId) missing.push("seller");
@@ -170,6 +174,8 @@ export function collectMissingSaleFields(
     missing.push("payment_principal_coverage");
   }
 
+  missing.push(...collectMissingSalePaymentFields(sale.payments));
+
   for (const kind of readRequiredDocumentKinds(sale.documentPolicySnapshot)) {
     if (!sale.selectedDocumentKinds.includes(kind)) {
       missing.push(`document:${kind}`);
@@ -177,10 +183,6 @@ export function collectMissingSaleFields(
   }
 
   return missing;
-}
-
-function hasBuyerName(snapshot: Record<string, unknown>): boolean {
-  return typeof snapshot.name === "string" && snapshot.name.trim().length > 0;
 }
 
 export function logSalesServiceEvent(

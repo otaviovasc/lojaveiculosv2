@@ -5,6 +5,8 @@ import { listVehicleCatalogModels } from "../../../domains/vehicle/services/Vehi
 import { listVehicleCatalogVersions } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogVersions.js";
 import { listVehicleCatalogYears } from "../../../domains/vehicle/services/VehicleCatalogService/listVehicleCatalogYears.js";
 import { createVehicleListing } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
+import { analyzeVehicleListingResale } from "../../../domains/vehicle/services/VehicleService/analyzeVehicleListingResale.js";
+import { listVehicleAuditEvents } from "../../../domains/vehicle/services/VehicleService/listVehicleAuditEvents.js";
 import { createVehicleMedia } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import { deleteVehicleMedia } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import { listVehicleChecklists } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
@@ -54,6 +56,15 @@ export function createInventoryListingServices(
 
   return {
     ...createInventoryTransactionalServices({ ports, transactionRunner }),
+    async analyzeListingResale(context, input) {
+      const listing = await analyzeVehicleListingResale(context, input, ports);
+      return loadInventoryListingDetailDto(
+        context,
+        listing.id,
+        ports,
+        "inventory.read",
+      );
+    },
     archiveVehicleSupplier: (context, input) =>
       archiveVehicleSupplier(context, input, ports),
     async createListing(context, input) {
@@ -112,6 +123,8 @@ export function createInventoryListingServices(
     async listListings(context, input) {
       return toListDto(await listVehicleListings(context, input, ports));
     },
+    listListingAuditEvents: (context, input) =>
+      listVehicleAuditEvents(context, input, ports),
     async listUnits(context, input) {
       return toUnitListDto(await listVehicleUnits(context, input, ports));
     },

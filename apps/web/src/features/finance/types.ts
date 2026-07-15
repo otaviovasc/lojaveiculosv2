@@ -158,3 +158,47 @@ export type AttachFinanceDocumentInput = {
   storageKey: string;
   title: string;
 };
+
+export type CommissionWorkspaceSale = {
+  closedAt: string | null;
+  createdAt: string;
+  entries: readonly FinanceEntry[];
+  id: string;
+  isCurrentRevision: boolean;
+  listingSnapshot: Record<string, unknown>;
+  salePriceCents: number | null;
+  sellerUserId: string | null;
+  standardCommissionEnabled: boolean;
+  status: "cancelled" | "closed" | "draft" | "pending";
+  unitId: string | null;
+  updatedAt: string;
+};
+
+export type CommissionReconciliationIssue = {
+  code:
+    | "cancelled_sale"
+    | "missing_commission"
+    | "missing_sale"
+    | "missing_vehicle"
+    | "reverted_sale"
+    | "seller_mismatch";
+  entryId: string | null;
+  saleId: string | null;
+  severity: "critical" | "warning";
+};
+
+export type CommissionWorkspaceSnapshot = {
+  adjustments: readonly FinanceEntry[];
+  generatedAt: string;
+  reconciliation: readonly CommissionReconciliationIssue[];
+  sales: readonly CommissionWorkspaceSale[];
+  sellerNames: Readonly<Record<string, string>>;
+};
+
+export type CommissionSettlementResult = {
+  entryIds: readonly string[];
+  paidAt: string;
+  sellerUserId: string;
+  totalCents: number;
+  updatedCount: number;
+};

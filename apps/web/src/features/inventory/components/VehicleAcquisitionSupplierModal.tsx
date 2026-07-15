@@ -8,6 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog";
+import {
+  formatBrazilianDocument,
+  formatBrazilianPhone,
+} from "../../../lib/masks";
 import type { VehicleSupplier, VehicleSupplierKind } from "../model/types";
 import {
   InventoryField,
@@ -44,7 +48,16 @@ export function VehicleAcquisitionSupplierModal({
 
   useEffect(() => {
     if (isOpen) {
-      setDraft(supplier ? fromSupplier(supplier) : emptySupplierDraft);
+      const initialDraft = supplier
+        ? fromSupplier(supplier)
+        : emptySupplierDraft;
+      setDraft({
+        ...initialDraft,
+        documentNumber: formatBrazilianDocument(
+          initialDraft.documentNumber ?? "",
+        ),
+        phone: formatBrazilianPhone(initialDraft.phone ?? ""),
+      });
       setError(null);
     }
   }, [isOpen, supplier]);
@@ -128,21 +141,44 @@ export function VehicleAcquisitionSupplierModal({
               />
             </InventoryField>
             <TextField
+              autoComplete="off"
+              disabled={isSaving}
+              inputMode="numeric"
               label="Documento (CPF/CNPJ)"
-              onChange={(value) => updateDraft("documentNumber", value)}
+              maxLength={18}
+              onChange={(value) =>
+                updateDraft("documentNumber", formatBrazilianDocument(value))
+              }
+              placeholder="000.000.000-00"
               value={draft.documentNumber}
             />
           </div>
 
           <div className="grid gap-3 grid-cols-2">
             <TextField
+              autoComplete="tel"
+              disabled={isSaving}
+              inputMode="tel"
               label="Telefone"
-              onChange={(value) => updateDraft("phone", value)}
+              maxLength={15}
+              onChange={(value) =>
+                updateDraft("phone", formatBrazilianPhone(value))
+              }
+              placeholder="(11) 98765-4321"
+              type="tel"
               value={draft.phone}
             />
             <TextField
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
+              disabled={isSaving}
+              inputMode="email"
               label="E-mail"
               onChange={(value) => updateDraft("email", value)}
+              placeholder="fornecedor@exemplo.com"
+              spellCheck={false}
+              type="email"
               value={draft.email}
             />
           </div>
@@ -150,11 +186,13 @@ export function VehicleAcquisitionSupplierModal({
           {showIntegrationFields ? (
             <div className="grid gap-3 grid-cols-2 pt-2 border-t border-line/30">
               <TextField
+                disabled={isSaving}
                 label="Provedor"
                 onChange={(value) => updateDraft("provider", value)}
                 value={draft.provider}
               />
               <TextField
+                disabled={isSaving}
                 label="Código externo"
                 onChange={(value) => updateDraft("externalProviderId", value)}
                 value={draft.externalProviderId}

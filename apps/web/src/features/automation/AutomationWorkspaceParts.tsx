@@ -84,7 +84,11 @@ export function AutomationMetricCard({
       duration={0.38}
       trigger="mount"
     >
-      <FeatureCard className="automation-metric" data-tone={tone}>
+      <FeatureCard
+        className="automation-metric"
+        data-tone={tone}
+        padding="none"
+      >
         <span className="automation-metric-icon">
           <Icon aria-hidden="true" className="size-4" />
         </span>

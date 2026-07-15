@@ -52,6 +52,105 @@
   width: 1.125rem;
 }
 
+.feature-stat-card--tinted {
+  border-color: var(--feature-stat-card-border);
+  background: var(--feature-stat-card-surface);
+  color: var(--feature-stat-card-foreground);
+}
+
+.feature-stat-card--tinted .feature-stat-card__hint,
+.feature-stat-card--tinted .feature-stat-card__icon,
+.feature-stat-card--tinted .feature-stat-card__label,
+.feature-stat-card--tinted .feature-stat-card__value {
+  color: var(--feature-stat-card-foreground);
+}
+
+.feature-stat-card--accent {
+  --feature-stat-card-border: var(--color-line);
+  --feature-stat-card-foreground: var(--color-dark-control-surface);
+  --feature-stat-card-surface: var(--color-warm-white);
+}
+
+.feature-stat-card--blue {
+  --feature-stat-card-border: color-mix(
+    in srgb,
+    var(--color-blue-start) 24%,
+    var(--color-line)
+  );
+  --feature-stat-card-foreground: color-mix(
+    in srgb,
+    var(--color-blue-end) 72%,
+    var(--color-dark-control-surface)
+  );
+  --feature-stat-card-surface: color-mix(
+    in srgb,
+    var(--color-warm-white) 80%,
+    var(--color-blue-start)
+  );
+}
+
+.feature-stat-card--danger {
+  --feature-stat-card-border: var(--color-line);
+  --feature-stat-card-foreground: var(--color-dark-control-surface);
+  --feature-stat-card-surface: var(--color-warm-white);
+}
+
+.feature-stat-card--green {
+  --feature-stat-card-border: color-mix(
+    in srgb,
+    var(--color-green-start) 24%,
+    var(--color-line)
+  );
+  --feature-stat-card-foreground: color-mix(
+    in srgb,
+    var(--color-green-start) 68%,
+    var(--color-dark-control-surface)
+  );
+  --feature-stat-card-surface: color-mix(
+    in srgb,
+    var(--color-warm-white) 80%,
+    var(--color-green-start)
+  );
+}
+
+.feature-stat-card--neutral {
+  --feature-stat-card-border: var(--color-line);
+  --feature-stat-card-foreground: var(--color-dark-control-surface);
+  --feature-stat-card-surface: color-mix(
+    in srgb,
+    var(--color-warm-white) 70%,
+    var(--color-app-elevated)
+  );
+}
+
+.feature-stat-card--violet {
+  --feature-stat-card-border: var(--color-line);
+  --feature-stat-card-foreground: var(--color-dark-control-surface);
+  --feature-stat-card-surface: color-mix(
+    in srgb,
+    var(--color-warm-white) 70%,
+    var(--color-app-elevated)
+  );
+}
+
+.feature-stat-card--warning {
+  --feature-stat-card-border: color-mix(
+    in srgb,
+    var(--color-warning) 26%,
+    var(--color-line)
+  );
+  --feature-stat-card-foreground: color-mix(
+    in srgb,
+    var(--color-warning) 70%,
+    var(--color-dark-control-surface)
+  );
+  --feature-stat-card-surface: color-mix(
+    in srgb,
+    var(--color-warm-white) 76%,
+    var(--color-warning)
+  );
+}
+
 .feature-stat__icon--accent,
 .feature-metric--accent .feature-metric__icon {
   background: var(--color-accent-soft);

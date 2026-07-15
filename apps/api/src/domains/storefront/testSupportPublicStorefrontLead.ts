@@ -22,6 +22,7 @@ export const testPublicStorefrontStore = {
 };
 
 export const testPublicStorefrontListing = {
+  commercialTags: [],
   condition: "used" as const,
   description: "Ready to sell.",
   doors: 4,
@@ -42,6 +43,7 @@ export const testPublicStorefrontListing = {
   title: "Fiat Toro Volcano 2023",
   transmission: "automatic",
   trimName: "Volcano",
+  videoUrl: null,
 };
 
 function toPublicLead(lead: CrmLead) {

@@ -23,7 +23,6 @@
 
 .crm-whatsapp-vehicle-option[aria-pressed="true"] {
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 0.1875rem var(--color-accent-soft);
 }
 
 .crm-whatsapp-vehicle-option:disabled {

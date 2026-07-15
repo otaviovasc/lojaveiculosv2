@@ -21,7 +21,7 @@
 .documents-upload-dialog {
   display: grid;
   gap: 1rem;
-  max-height: min(44rem, calc(100vh - 2rem));
+  max-height: min(44rem, calc(100dvh - 2rem));
   max-width: 46rem;
   overflow: auto;
   padding: 1rem;
@@ -259,7 +259,7 @@
 
 @media (max-width: 720px) {
   .documents-upload-dialog {
-    max-height: calc(100vh - 1rem);
+    max-height: calc(100dvh - 1rem);
     padding: 0.875rem;
   }
 

@@ -98,6 +98,10 @@ function defaultRows(): FakePublicStorefrontRows {
         featuredUntil: null,
         fuelType: "flex",
         listingId: "listing_1",
+        listingMetadata: {
+          commercialTags: ["Único dono", "Revisado"],
+          videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
+        },
         manufactureYear: 2022,
         mileageKm: 32000,
         modelYear: 2023,

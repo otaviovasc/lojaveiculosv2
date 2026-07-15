@@ -9,6 +9,7 @@ export function FeatureDialog({
   className,
   description,
   footer,
+  icon,
   isOpen,
   onClose,
   title,
@@ -17,6 +18,7 @@ export function FeatureDialog({
   className?: string;
   description?: ReactNode;
   footer?: ReactNode;
+  icon?: ReactNode;
   isOpen: boolean;
   onClose: () => void;
   title: ReactNode;
@@ -44,9 +46,16 @@ export function FeatureDialog({
         tabIndex={-1}
       >
         <div className="feature-dialog__header">
-          <h3 className="feature-dialog__title" id={titleId}>
-            {title}
-          </h3>
+          <div className="feature-dialog__heading">
+            {icon ? (
+              <span aria-hidden="true" className="feature-dialog__icon">
+                {icon}
+              </span>
+            ) : null}
+            <h3 className="feature-dialog__title" id={titleId}>
+              {title}
+            </h3>
+          </div>
           <button
             aria-label="Fechar"
             className="feature-dialog__close"

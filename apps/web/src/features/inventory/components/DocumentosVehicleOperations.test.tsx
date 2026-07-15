@@ -22,7 +22,10 @@ import { deliveryChecklistTemplate } from "./DocumentosChecklistModel";
 import { DocumentosRenaveCard } from "./DocumentosRenaveCard";
 import { DocumentosUploadCard } from "./DocumentosUploadCard";
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 describe("vehicle document operations", () => {
   it("persists creation and item completion for the delivery checklist", async () => {
@@ -99,6 +102,12 @@ describe("vehicle document operations", () => {
     };
     const api = {
       attachUnitDocument: vi.fn(async () => stored),
+      getDocumentAccess: vi.fn(async () => ({
+        downloadUrl: "https://storage.example/signed-crlv.pdf",
+        expiresAt: "2026-02-01T11:00:00.000Z",
+        fileName: "crlv.pdf",
+        mimeType: "application/pdf",
+      })),
       requestUnitDocumentUpload: vi.fn(async () => ({
         expiresAt: "2026-02-01T11:00:00.000Z",
         publicUrl: "https://storage.example/crlv.pdf",
@@ -126,7 +135,44 @@ describe("vehicle document operations", () => {
       }),
     );
     expect(screen.getByText("crlv.pdf")).toBeVisible();
-    expect(screen.getByText("Armazenado")).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Pré-visualizar documento" }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Baixar documento" }),
+    ).toBeVisible();
+
+    const replace = vi.fn();
+    vi.spyOn(window, "open").mockReturnValue({
+      close: vi.fn(),
+      location: { replace },
+      opener: null,
+    } as unknown as Window);
+    await userEvent.click(
+      screen.getByRole("button", { name: "Pré-visualizar documento" }),
+    );
+    await waitFor(() =>
+      expect(api.getDocumentAccess).toHaveBeenCalledWith(
+        "document_1",
+        "inline",
+      ),
+    );
+    expect(replace).toHaveBeenCalledWith(
+      "https://storage.example/signed-crlv.pdf",
+    );
+
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(
+      () => undefined,
+    );
+    await userEvent.click(
+      screen.getByRole("button", { name: "Baixar documento" }),
+    );
+    await waitFor(() =>
+      expect(api.getDocumentAccess).toHaveBeenCalledWith(
+        "document_1",
+        "attachment",
+      ),
+    );
   });
 
   it("rejects an empty document before requesting storage", async () => {

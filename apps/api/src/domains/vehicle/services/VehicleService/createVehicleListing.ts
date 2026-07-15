@@ -30,6 +30,7 @@ const allowedCreateStatuses = [
 
 export type CreateVehicleListingInput = {
   catalog?: VehicleListingCatalog | null;
+  commercialTags?: readonly string[];
   description?: string | null;
   doors?: number | null;
   engineAspiration?: VehicleEngineAspiration | null;
@@ -45,6 +46,7 @@ export type CreateVehicleListingInput = {
   title: string;
   transmission?: VehicleTransmission | null;
   trimName?: string | null;
+  videoUrl?: string | null;
 };
 
 function requireStoreScope(context: ServiceContext): {
@@ -124,6 +126,7 @@ export async function createVehicleListing(
 
   const listing = await getListingRepository(ports).create({
     catalog: input.catalog ?? null,
+    commercialTags: input.commercialTags ?? [],
     description: input.description ?? null,
     doors: input.doors ?? null,
     engineAspiration: input.engineAspiration ?? null,
@@ -141,6 +144,7 @@ export async function createVehicleListing(
     title: input.title,
     transmission: input.transmission ?? null,
     trimName: input.trimName ?? input.catalog?.modelName ?? null,
+    videoUrl: input.videoUrl ?? null,
   });
 
   await auditVehicleServiceEvent(context, {

@@ -4,6 +4,7 @@ import {
   UnitMediaTabs,
   VehicleDetailHeader,
   VehicleLeadCard,
+  VehicleListingVideo,
   VehicleStory,
 } from "./PublicListingDetailSections";
 import type {
@@ -89,6 +90,10 @@ export function PublicListingDetailContent({
             media={activeMedia}
             onSelect={setSelectedMediaUrl}
             selectedUrl={selectedMedia?.url ?? null}
+          />
+          <VehicleListingVideo
+            title={detail.listing.title}
+            videoUrl={detail.listing.videoUrl}
           />
           <div className="hidden lg:block">
             <VehicleStory colorNames={colorNames} detail={detail} />

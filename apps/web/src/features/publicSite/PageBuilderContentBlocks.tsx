@@ -45,7 +45,7 @@ export function HeroBlock({ component, context }: BuilderBlockProps) {
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
             <a
-              className="group inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded px-8 text-sm font-bold text-inverse shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer"
+              className="group inline-flex min-h-12 w-fit items-center justify-center gap-2 rounded px-8 text-sm font-bold text-inverse transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer"
               href={ctaUrl}
               style={{ background: context.accent }}
             >
@@ -104,7 +104,7 @@ export function AboutBlock({ component }: BuilderBlockProps) {
       <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
         {textProp(props.title) ?? "Sobre a loja"}
       </h2>
-      <p className="mt-6 whitespace-pre-wrap text-base font-medium leading-relaxed text-muted">
+      <p className="mt-6 whitespace-pre-wrap text-base font-medium leading-relaxed text-muted max-w-prose">
         {textProp(props.text) ?? ""}
       </p>
     </div>
@@ -138,7 +138,7 @@ export function TextBlock({ component }: BuilderBlockProps) {
         classForTextAlign(props.alignment),
       )}
     >
-      <p className="mx-auto max-w-3xl whitespace-pre-wrap text-base font-medium leading-relaxed text-muted sm:text-lg">
+      <p className="mx-auto max-w-prose whitespace-pre-wrap text-base font-medium leading-relaxed text-muted sm:text-lg">
         {textProp(props.content) ??
           textProp(props.text) ??
           textProp(props.body) ??
@@ -170,7 +170,7 @@ export function CtaBlock({ component, context }: BuilderBlockProps) {
           </p>
           <a
             className={cx(
-              "mt-8 inline-flex min-h-12 items-center justify-center rounded border px-8 text-sm font-bold shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_16px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] active:translate-y-0 active:scale-95 cursor-pointer",
+              "mt-8 inline-flex min-h-12 items-center justify-center rounded border px-8 text-sm font-bold transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 cursor-pointer",
               isPrimary
                 ? "border-transparent text-inverse"
                 : buttonStyle === "outline"
@@ -292,7 +292,7 @@ export function ScrollZoomBlock({ component, context }: BuilderBlockProps) {
           <h2 className="mt-1.5 text-3xl font-extrabold tracking-tight md:text-4xl text-app-text">
             {textProp(props.title) ?? "Destaque"}
           </h2>
-          <p className="mt-6 whitespace-pre-wrap text-base font-medium leading-relaxed text-muted">
+          <p className="mt-6 whitespace-pre-wrap text-base font-medium leading-relaxed text-muted max-w-prose">
             {textProp(props.subtitle) ?? textProp(props.text) ?? ""}
           </p>
         </div>

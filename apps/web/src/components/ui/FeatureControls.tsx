@@ -120,7 +120,7 @@ export function FeatureDateField({
   value: string;
 }) {
   return (
-    <div className={cx("inline-flex items-center gap-1", className)}>
+    <div className={cx("inline-flex w-full items-center gap-1", className)}>
       {name ? <input name={name} type="hidden" value={value} /> : null}
       <DatePickerField
         align={align}
@@ -176,9 +176,9 @@ export function FeatureSegmentedControl<Value extends string>({
           <button
             aria-pressed={active}
             className={cx(
-              "inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-md px-0 text-xs font-bold transition-all cursor-pointer sm:px-2.5 sm:font-black",
+              "inline-flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-1 rounded-md px-0 text-xs font-bold transition-colors sm:px-2.5 sm:font-black",
               active
-                ? "bg-accent text-accent-foreground shadow-sm"
+                ? "bg-accent text-accent-foreground"
                 : "text-muted hover:text-app-text",
             )}
             disabled={disabled}

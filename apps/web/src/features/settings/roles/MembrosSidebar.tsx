@@ -32,7 +32,7 @@ export function MembrosSidebar({
 }) {
   return (
     <FeatureCard
-      className="glass-panel-branded border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100vh-10rem)] overflow-hidden"
+      className="glass-panel-branded border border-line/45 shadow-[var(--shadow-panel)] hover:translate-y-0 hover:border-line/45 transition-none flex flex-col md:h-[calc(100dvh-10rem)] overflow-hidden"
       padding="compact"
     >
       <FeatureCardHeader
@@ -61,7 +61,7 @@ export function MembrosSidebar({
               className={cx(
                 "relative overflow-hidden group border transition-all duration-300 hover:bg-app-elevated/40 hover:border-line-strong cursor-pointer flex items-center gap-3",
                 active
-                  ? "border-accent bg-accent-soft/30 border-l-[4px] border-l-accent shadow-sm"
+                  ? "border-accent bg-accent-soft/30 border-l-[4px] border-l-accent"
                   : "border-line bg-panel/20",
               )}
             >
@@ -137,7 +137,7 @@ export function MembrosSidebar({
               : "Sem permissão para convidar membros"
           }
           className={cx(
-            "w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-accent-foreground transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98 shadow-sm",
+            "w-full flex h-10 items-center justify-center gap-2 rounded-lg bg-accent text-xs font-black text-accent-foreground transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98",
             canInvite
               ? "cursor-pointer"
               : "cursor-not-allowed opacity-50 hover:bg-accent",

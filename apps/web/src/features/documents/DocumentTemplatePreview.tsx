@@ -14,7 +14,10 @@ export function DocumentTemplatePreview({
   preview: DocumentTemplatePreviewModel;
 }) {
   return (
-    <aside className="documents-template-preview-pane">
+    <section
+      aria-label="Prévia do documento"
+      className="documents-template-preview-pane"
+    >
       <header>
         <div>
           <FileText aria-hidden="true" className="size-4" />
@@ -99,6 +102,6 @@ export function DocumentTemplatePreview({
           <span>Ana Cliente</span>
         </footer>
       </article>
-    </aside>
+    </section>
   );
 }

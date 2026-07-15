@@ -126,6 +126,8 @@ export function saleMissingFields(
     );
     if (!signalPayment) {
       missing.push("Sinal de reserva");
+    } else if (!signalPayment.dueAt) {
+      missing.push("Data do sinal de reserva");
     }
     return missing;
   }
@@ -196,6 +198,7 @@ function toPaymentInput(
 ): SalePaymentInput {
   return {
     amountCents: payment.amountCents,
+    dueAt: payment.dueAt,
     extraCents: payment.extraCents,
     ...(payment.id.startsWith("draft-payment-") ? {} : { id: payment.id }),
     installments: payment.installments,

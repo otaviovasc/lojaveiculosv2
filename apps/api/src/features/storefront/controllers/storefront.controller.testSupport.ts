@@ -24,6 +24,7 @@ const listingHeroMedia = {
 };
 
 const listing = {
+  commercialTags: [],
   condition: "used" as const,
   description: "Ready to sell.",
   doors: 4,
@@ -50,6 +51,7 @@ const listing = {
   title: "Fiat Toro Volcano 2023",
   transmission: "automatic",
   trimName: "Volcano",
+  videoUrl: null,
 };
 
 export const { id: _listingId, ...listingResponse } = listing;

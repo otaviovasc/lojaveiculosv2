@@ -101,7 +101,6 @@ export function DashboardHome({
   if (bodyState === "loading") {
     return (
       <div className="relative min-h-screen store-dashboard overflow-hidden">
-        <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
         <main className="dashboard-main">
           <DashboardHomeLoadingSkeleton />
         </main>
@@ -125,7 +124,6 @@ export function DashboardHome({
 
   return (
     <div className="relative min-h-screen store-dashboard overflow-hidden">
-      <div className="fixed inset-0 bg-logo-pattern pointer-events-none" />
       <main ref={containerRef} className="dashboard-main">
         <DashboardHomeToolbar
           copyState={copyState}

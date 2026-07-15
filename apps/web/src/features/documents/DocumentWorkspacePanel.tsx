@@ -64,7 +64,7 @@ export function DocumentWorkspacePanel({
           </div>
           <div className="documents-workspace-actions">
             <button
-              className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground cursor-pointer shadow-sm transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-75"
+              className="documents-upload-action inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-75"
               disabled={isBusy}
               onClick={onOpenUpload}
               type="button"
@@ -86,7 +86,7 @@ export function DocumentWorkspacePanel({
         ) : (
           <>
             <button
-              className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
+              className="documents-back-button inline-flex min-h-9 items-center gap-2 rounded-lg bg-accent-soft px-3 text-xs font-black text-accent-strong cursor-pointer border border-accent-soft/20 transition-all duration-200 hover:scale-105 active:scale-95"
               onClick={() => onSelectFolder(null)}
               type="button"
             >
@@ -103,7 +103,7 @@ export function DocumentWorkspacePanel({
             {hasMore && !isLoading ? (
               <div className="flex justify-center py-4">
                 <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent-soft px-6 text-sm font-black text-accent-strong disabled:opacity-70 cursor-pointer border border-accent-soft/20 shadow-sm transition-all duration-200 hover:scale-105 active:scale-95"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent-soft px-6 text-sm font-black text-accent-strong disabled:opacity-70 cursor-pointer border border-accent-soft/20 transition-all duration-200 hover:scale-105 active:scale-95"
                   disabled={isLoadingMore}
                   onClick={onLoadMore}
                   type="button"

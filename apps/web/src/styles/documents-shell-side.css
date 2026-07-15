@@ -280,13 +280,11 @@
   min-height: 2.6rem;
   padding: 0 1.25rem;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(225, 31, 38, 0.2);
 }
 .documents-empty-state-cta:hover {
   background: var(--color-accent-strong);
   color: var(--color-accent-strong-foreground);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(225, 31, 38, 0.35);
 }
 
 .documents-empty-state-cta:active {
@@ -303,5 +301,5 @@
 .documents-empty-state[data-kind="no-results"]
   .documents-empty-state-cta:hover {
   background: var(--color-panel);
-  border-color: var(--color-muted);
+  border-color: var(--color-line-strong);
 }

@@ -5,7 +5,7 @@
   box-shadow: var(--shadow-panel);
   display: grid;
   gap: 1rem;
-  max-height: calc(100vh - 1.5rem);
+  max-height: calc(100dvh - 1.5rem);
   max-width: min(78rem, calc(100vw - 1.5rem));
   overflow: auto;
   padding: 1rem;
@@ -230,7 +230,7 @@
 
 @media (max-width: 760px) {
   .documents-templates-dialog {
-    max-height: calc(100vh - 1rem);
+    max-height: calc(100dvh - 1rem);
     max-width: calc(100vw - 1rem);
     padding: 0.75rem;
   }

@@ -144,9 +144,9 @@ describe("color contrast helpers", () => {
     const light = readThemeVariables("light");
     const dark = readThemeVariables("dark");
 
-    expect(resolveVariable(light, "--color-sidebar")).toBe(hex("ffffff"));
+    expect(resolveVariable(light, "--color-sidebar")).toBe(hex("fff4ee"));
     expect(resolveVariable(light, "--color-sidebar-raised")).toBe(
-      hex("f4efee"),
+      hex("f7ece7"),
     );
     expect(resolveVariable(dark, "--color-sidebar")).toBe(hex("151515"));
     expect(resolveVariable(dark, "--color-sidebar-raised")).toBe(hex("2a2424"));

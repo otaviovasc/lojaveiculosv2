@@ -28,9 +28,9 @@ export function FeatureEmptyState({
       )}
     >
       <IconComponent aria-hidden="true" className="mb-4 size-14 text-muted" />
-      <h3 className="text-xl font-black text-app-text">{title}</h3>
+      <h3 className="text-xl font-bold text-app-text">{title}</h3>
       <div className="mt-2 flex w-full justify-center">
-        <p className="w-full max-w-md text-sm font-bold text-muted">{body}</p>
+        <p className="w-full max-w-md text-sm font-medium text-muted">{body}</p>
       </div>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
@@ -55,14 +55,24 @@ export function FeatureAlert({
   return (
     <section
       aria-live={tone === "danger" ? "assertive" : "polite"}
-      className={cx("feature-alert", `feature-alert--${tone}`, className)}
+      className={cx(
+        "feature-alert flex items-start gap-3",
+        `feature-alert--${tone}`,
+        className,
+      )}
       data-tone={tone}
       role={tone === "danger" ? "alert" : "status"}
     >
-      {icon}
-      {title ? <strong>{title}</strong> : null}
-      {children}
-      {action ? <div>{action}</div> : null}
+      {icon ? (
+        <span className="feature-alert__icon mt-0.5 shrink-0">{icon}</span>
+      ) : null}
+      <div className="feature-alert__content min-w-0 flex-1">
+        {title ? (
+          <strong className="feature-alert__title block">{title}</strong>
+        ) : null}
+        <div className={cx(title ? "mt-1" : undefined)}>{children}</div>
+        {action ? <div className="mt-3">{action}</div> : null}
+      </div>
     </section>
   );
 }
@@ -110,7 +120,7 @@ export function FeatureStatusBadge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full text-xs font-black uppercase tracking-wider",
+        "inline-flex items-center gap-1.5 rounded-full text-xs font-semibold uppercase tracking-wider",
         size === "default" && "px-2.5 py-1",
         size === "compact" && "px-2 py-1",
         size === "dense" && "px-2 py-0.5",
@@ -118,7 +128,10 @@ export function FeatureStatusBadge({
         className,
       )}
     >
-      <span className="size-1.5 rounded-full bg-current" />
+      <span
+        aria-hidden="true"
+        className={cx("size-1.5 rounded-full", statusDotToneClass(tone))}
+      />
       {children}
     </span>
   );
@@ -126,16 +139,24 @@ export function FeatureStatusBadge({
 
 function statusToneClass(tone: FeatureStatusTone) {
   if (tone === "success") {
-    return "bg-green-soft text-success-strong border border-success-strong/20";
+    return "border border-success-strong/30 bg-green-soft text-app-text";
   }
   if (tone === "warning") {
-    return "bg-warning/10 text-warning-strong border border-warning-strong/20";
+    return "border border-warning-strong/30 bg-warning/10 text-app-text";
   }
   if (tone === "danger" || tone === "pink") {
-    return "bg-accent-soft text-danger border border-danger/20";
+    return "border border-danger/30 bg-accent-soft text-app-text";
   }
   if (tone === "blue") {
-    return "bg-blue-soft text-blue-start border border-blue-start/20";
+    return "border border-blue-start/30 bg-blue-soft text-app-text";
   }
   return "bg-panel text-muted border border-line";
+}
+
+function statusDotToneClass(tone: FeatureStatusTone) {
+  if (tone === "success") return "bg-success-strong";
+  if (tone === "warning") return "bg-warning-strong";
+  if (tone === "danger" || tone === "pink") return "bg-danger";
+  if (tone === "blue") return "bg-blue-start";
+  return "bg-muted";
 }

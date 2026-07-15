@@ -69,12 +69,12 @@ export function PermissionGroupPanel({
                         "px-2 py-1 text-xs font-black uppercase rounded-md transition-all cursor-pointer",
                         active
                           ? option.value === "allow"
-                            ? "bg-emerald-500 text-white shadow-sm"
+                            ? "bg-emerald-500 text-white"
                             : option.value === "deny"
-                              ? "bg-danger text-white shadow-sm"
+                              ? "bg-danger text-white"
                               : isAllowed
-                                ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/10 shadow-sm"
-                                : "bg-danger/20 text-danger border border-danger/10 shadow-sm"
+                                ? "bg-emerald-500/20 text-emerald-500 border border-emerald-500/10"
+                                : "bg-danger/20 text-danger border border-danger/10"
                           : "text-muted hover:text-app-text disabled:opacity-50 hover:bg-app-elevated/45",
                       )}
                     >

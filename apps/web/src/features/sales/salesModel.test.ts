@@ -7,6 +7,7 @@ import {
   paymentPrincipalTotal,
   reservationSignalPayment,
   saleMissingFields,
+  toDraftInput,
 } from "./salesModel";
 import type { SaleRecord } from "./types";
 
@@ -120,7 +121,10 @@ describe("sales model start context", () => {
   it("accepts close when terminal service states include accounting facts", () => {
     const sale = saleRecord({
       payments: [
-        payment("financing", "pending", 5000000, { method: "financing" }),
+        payment("financing", "pending", 5000000, {
+          installments: 36,
+          method: "financing",
+        }),
       ],
       saleSourceSnapshot: {
         documentation: {
@@ -150,6 +154,44 @@ describe("sales model start context", () => {
     });
 
     expect(saleMissingFields(sale, "close")).toContain("Valor financiado");
+  });
+
+  it("requires payment dates and installments for installment methods", () => {
+    const sale = saleRecord({
+      payments: [
+        payment("card", "pending", 5000000, {
+          dueAt: null,
+          installments: null,
+          method: "credit_card",
+        }),
+      ],
+    });
+
+    expect(saleMissingFields(sale, "close")).toEqual(
+      expect.arrayContaining(["Data dos pagamentos", "Quantidade de parcelas"]),
+    );
+  });
+
+  it("persists the payment schedule and method-specific details", () => {
+    const input = toDraftInput(
+      saleRecord({
+        payments: [
+          payment("card", "pending", 5000000, {
+            dueAt: "2026-02-10",
+            installments: 6,
+            metadata: { methodReference: "Visa · autorização 123456" },
+            method: "credit_card",
+          }),
+        ],
+      }),
+    );
+
+    expect(input.payments?.[0]).toMatchObject({
+      dueAt: "2026-02-10",
+      installments: 6,
+      metadata: { methodReference: "Visa · autorização 123456" },
+      method: "credit_card",
+    });
   });
 });
 
@@ -188,7 +230,7 @@ function payment(
 ): SaleRecord["payments"][number] {
   return {
     amountCents: principalCents,
-    dueAt: null,
+    dueAt: "2026-01-15",
     extraCents: 0,
     id,
     installments: null,

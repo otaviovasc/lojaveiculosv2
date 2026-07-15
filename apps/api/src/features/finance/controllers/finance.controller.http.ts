@@ -13,6 +13,9 @@ import { FinanceAutoEntryRuleValidationError } from "../../../domains/finance/se
 import { FinanceAutoEntryEvaluationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryEvaluator.js";
 import { FinanceDocumentStorageScopeError } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import { FinanceLinkTargetNotFoundError } from "../../../infrastructure/db/finance/drizzleFinanceLinkTargets.js";
+import { CommissionSettlementConflictError } from "../../../domains/finance/ports/commissionWorkspaceRepository.js";
+import { CommissionWorkspaceValidationError } from "../../../domains/finance/commissionWorkspaceValidation.js";
+import { CommissionSettlementValidationError } from "../../../domains/finance/services/FinanceService/settleCommissionEntries.js";
 
 export async function parseJson<Schema extends z.ZodType>(
   context: Context,
@@ -47,6 +50,33 @@ export async function handleFinance(
         error,
         message: error.message,
         status: 400,
+      });
+    }
+
+    if (error instanceof CommissionWorkspaceValidationError) {
+      return jsonApiError(context, {
+        code: "COMMISSION_WORKSPACE_VALIDATION_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
+    }
+
+    if (error instanceof CommissionSettlementValidationError) {
+      return jsonApiError(context, {
+        code: "COMMISSION_SETTLEMENT_VALIDATION_ERROR",
+        error,
+        message: error.message,
+        status: 400,
+      });
+    }
+
+    if (error instanceof CommissionSettlementConflictError) {
+      return jsonApiError(context, {
+        code: "COMMISSION_SETTLEMENT_CONFLICT",
+        error,
+        message: error.message,
+        status: 409,
       });
     }
 

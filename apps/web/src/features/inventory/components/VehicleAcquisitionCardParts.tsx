@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { RefreshCw, Truck } from "lucide-react";
 import { InventoryField, InventoryInput } from "./InventoryFormParts";
 
@@ -19,22 +19,18 @@ export function CardHeader({ isLoading }: { isLoading: boolean }) {
 export function TextField({
   label,
   onChange,
-  placeholder,
-  type = "text",
   value,
-}: {
+  ...inputProps
+}: Omit<ComponentProps<typeof InventoryInput>, "onChange" | "value"> & {
   label: string;
   onChange: (value: string) => void;
-  placeholder?: string | undefined;
-  type?: string | undefined;
   value?: string | null | undefined;
 }) {
   return (
     <InventoryField label={label}>
       <InventoryInput
+        {...inputProps}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        type={type}
         value={value ?? ""}
       />
     </InventoryField>

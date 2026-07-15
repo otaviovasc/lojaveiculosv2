@@ -14,6 +14,7 @@ import { MarketplaceErrorAlert } from "./MarketplaceErrorAlert";
 import {
   MarketplaceBatchProgress,
   MarketplaceJobList,
+  MarketplaceOperationsOverview,
   MarketplacePreviewPanel,
   MarketplaceProviderCard,
 } from "./MarketplacePanels";
@@ -201,6 +202,19 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       ) : null}
       {overview ? (
         <>
+          <MarketplaceOperationsOverview overview={overview} />
+          <div className="marketplace-section-heading marketplace-section-heading--channels">
+            <div>
+              <span className="marketplace-section-heading__eyebrow">
+                Canais disponíveis
+              </span>
+              <h2>Conexões da loja</h2>
+              <p>
+                Cada canal mantém seu próprio contrato, credenciais e retorno
+                operacional.
+              </p>
+            </div>
+          </div>
           <section className="marketplace-grid">
             {overview.providers.map((provider) => (
               <MarketplaceProviderCard
@@ -226,11 +240,13 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
               />
             ))}
           </section>
-          <MarketplacePreviewPanel
-            plan={selectedPreview}
-            provider={selectedProvider}
-          />
-          <MarketplaceBatchProgress lastRun={lastRun} />
+          {selectedPreview ? (
+            <MarketplacePreviewPanel
+              plan={selectedPreview}
+              provider={selectedProvider}
+            />
+          ) : null}
+          {lastRun ? <MarketplaceBatchProgress lastRun={lastRun} /> : null}
           <MarketplaceJobList overview={overview} onRetry={retryJob} />
         </>
       ) : status.kind === "error" ? (

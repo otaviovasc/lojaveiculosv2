@@ -90,6 +90,14 @@ describe("finance transaction composition", () => {
       (services) => services.payEntry(context(), { entryId: "entry_1" }),
     ],
     [
+      "settleCommissionEntries",
+      (services) =>
+        services.settleCommissionEntries(context(), {
+          entryIds: ["entry_1"],
+          sellerUserId: "seller_1",
+        }),
+    ],
+    [
       "updateAutoEntryRule",
       (services) =>
         services.updateAutoEntryRule(context(), {

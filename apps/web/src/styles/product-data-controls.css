@@ -217,7 +217,6 @@
 .feature-tabs__item.is-active {
   background: var(--color-surface);
   color: var(--color-ink);
-  box-shadow: var(--shadow-panel);
 }
 
 .feature-segmented__item svg,

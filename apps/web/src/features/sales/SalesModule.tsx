@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { useOptionalAccountSession } from "../account/accountSession";
+import {
+  createInventoryApi,
+  type InventoryApi,
+} from "../inventory/api/apiClient";
+import { createInventoryApiOptions } from "../inventory/api/inventoryRuntimeApi";
 import { createSalesApi, type SalesApi } from "./apiClient";
 import { createSalesApiOptions } from "./runtimeApi";
 import { SalesList } from "./SalesList";
@@ -23,9 +28,17 @@ import {
 } from "./salesModuleSupport";
 import type { SaleRecord } from "./types";
 
-export function SalesModule({ api }: { api?: SalesApi }) {
+export function SalesModule({
+  api,
+  inventoryApi,
+}: {
+  api?: SalesApi;
+  inventoryApi?: InventoryApi;
+}) {
   const accountSession = useOptionalAccountSession();
   const [runtimeApi, setRuntimeApi] = useState<SalesApi | null>(api ?? null);
+  const [runtimeInventoryApi, setRuntimeInventoryApi] =
+    useState<InventoryApi | null>(inventoryApi ?? null);
   const [contextOptions, setContextOptions] = useState<SaleContextOptionsState>(
     { kind: "loading", options: emptySaleContextOptions },
   );
@@ -38,12 +51,22 @@ export function SalesModule({ api }: { api?: SalesApi }) {
   useEffect(() => {
     if (api) {
       setRuntimeApi(api);
+      setRuntimeInventoryApi(inventoryApi ?? null);
       return;
     }
-    void createSalesApiOptions().then((options) =>
-      setRuntimeApi(createSalesApi(options)),
-    );
-  }, [api]);
+    let isActive = true;
+    void Promise.all([
+      createSalesApiOptions(),
+      createInventoryApiOptions(),
+    ]).then(([salesOptions, inventoryOptions]) => {
+      if (!isActive) return;
+      setRuntimeApi(createSalesApi(salesOptions));
+      setRuntimeInventoryApi(createInventoryApi(inventoryOptions));
+    });
+    return () => {
+      isActive = false;
+    };
+  }, [api, inventoryApi]);
 
   const fetchContextOptions = useCallback(
     () =>
@@ -233,6 +256,7 @@ export function SalesModule({ api }: { api?: SalesApi }) {
         />
       ) : (
         <SaleWorkspace
+          inventoryApi={runtimeInventoryApi}
           contextMessage={contextMessage(contextOptions)}
           contextOptions={contextOptions.options}
           onCancel={(sale, reason) => transition(sale, "cancel", reason)}

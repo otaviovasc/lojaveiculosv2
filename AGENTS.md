@@ -143,8 +143,10 @@ emit documents, manage billing, or trigger audited operational workflows.
   whether a primitive already exists. If it does, use it. If it almost works,
   add a small variant. If no primitive fits and the pattern is recurring, create
   one.
-- Prefer small modules. Keep source files under 250 lines unless the file is a
-  generated artifact or a documented exception.
+- Prefer small modules. The enforced default is 250 lines; files under
+  `apps/web/**` may use up to 550 lines when colocating cohesive frontend
+  components or styles improves ownership. Treat 550 as a ceiling, not a
+  target, and keep business logic, adapters, and unrelated concerns separated.
 
 ## Quality Gates
 

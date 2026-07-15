@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { InventoryApi } from "../inventory/api/apiClient";
 import { SaleCancelDialog } from "./SaleCancelDialog";
 import { SaleRevertDialog } from "./SaleRevertDialog";
 import { SaleWorkspaceStepContent } from "./SaleWorkspaceStepContent";
@@ -29,6 +30,7 @@ import type { SaleRecord } from "./types";
 export function SaleWorkspace({
   contextMessage = null,
   contextOptions = emptySaleContextOptions,
+  inventoryApi = null,
   onCancel,
   onClose,
   onReserve,
@@ -39,6 +41,7 @@ export function SaleWorkspace({
 }: {
   contextMessage?: string | null;
   contextOptions?: SaleContextOptions;
+  inventoryApi?: InventoryApi | null;
   onCancel: (sale: SaleRecord, reason: string) => Promise<SaleRecord | void>;
   onClose: (sale: SaleRecord) => Promise<SaleRecord | void>;
   onReserve: (sale: SaleRecord) => Promise<SaleRecord | void>;
@@ -204,6 +207,7 @@ export function SaleWorkspace({
           contextMessage={contextMessage}
           contextOptions={contextOptions}
           currentStep={currentStep}
+          inventoryApi={inventoryApi}
           sale={draft}
           update={update}
         />

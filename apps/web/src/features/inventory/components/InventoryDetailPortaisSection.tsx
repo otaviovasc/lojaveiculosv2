@@ -31,7 +31,7 @@ export function InventoryDetailPortaisSection({
           </span>
           {publicListingUrl ? (
             <>
-              <p className="text-xs font-bold text-success">
+              <p className="text-xs font-bold text-success-strong">
                 Publicado no portal próprio
               </p>
               <a

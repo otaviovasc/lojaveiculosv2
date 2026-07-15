@@ -102,3 +102,11 @@ export type InventoryResaleAnalysisResponse = {
   summary: string;
   topics: readonly InventoryResaleTopic[];
 };
+
+export type VehicleResaleAnalysisSnapshot = InventoryResaleAnalysisResponse & {
+  generatedAt: Date;
+  provider: {
+    model: string;
+    name: string;
+  };
+};

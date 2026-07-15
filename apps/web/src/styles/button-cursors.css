@@ -1,0 +1,10 @@
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not(button):not([aria-disabled="true"]) {
+  cursor: pointer !important;
+}
+
+button:disabled,
+button[aria-disabled="true"],
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed !important;
+}

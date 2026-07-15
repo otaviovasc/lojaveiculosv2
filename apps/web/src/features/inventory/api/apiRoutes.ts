@@ -79,6 +79,25 @@ export const inventoryRoutes = {
       `/inventory/listings/${encodeURIComponent(listingId)}`,
       baseUrl,
     ),
+  listingAuditEvents: (listingId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(listingId)}/audit-events`,
+      baseUrl,
+    ),
+  listingResaleAnalysis: (listingId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/listings/${encodeURIComponent(listingId)}/resale-analysis`,
+      baseUrl,
+    ),
+  documentDownload: (
+    documentId: string,
+    disposition: "attachment" | "inline",
+    baseUrl?: string,
+  ) =>
+    createInventoryEndpoint(
+      `/documents/${encodeURIComponent(documentId)}/download?disposition=${disposition}`,
+      baseUrl,
+    ),
   plateLookup: (baseUrl?: string) =>
     createInventoryEndpoint("/inventory/enrichment/plate", baseUrl),
   resaleAnalysis: (baseUrl?: string) =>

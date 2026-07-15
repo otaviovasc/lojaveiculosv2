@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, Phone, Sparkles } from "lucide-react";
+import { Mail, MessageCircle, Phone, Play, Sparkles } from "lucide-react";
 import { LeadCaptureForm } from "./LeadCaptureForm";
 import {
   AvailableBadge,
@@ -21,6 +21,7 @@ import type {
   PublicStorefrontListingDetailData,
   PublicStorefrontSettingsData,
 } from "./types";
+import { youtubeEmbedUrl } from "./pageBuilderRenderUtils";
 
 export function VehicleDetailHeader({
   colorNames,
@@ -40,6 +41,9 @@ export function VehicleDetailHeader({
           {detail.listing.trimName ? (
             <DetailBadge>{detail.listing.trimName}</DetailBadge>
           ) : null}
+          {detail.listing.commercialTags.map((tag) => (
+            <DetailBadge key={tag}>{tag}</DetailBadge>
+          ))}
           {colorNames.length ? (
             <DetailBadge>
               {colorNames.length} {colorNames.length === 1 ? "cor" : "cores"}
@@ -66,6 +70,47 @@ export function VehicleDetailHeader({
         </p>
       </div>
     </header>
+  );
+}
+
+export function VehicleListingVideo({
+  title,
+  videoUrl,
+}: {
+  title: string;
+  videoUrl: string | null;
+}) {
+  if (!videoUrl) return null;
+  const embedUrl = youtubeEmbedUrl(videoUrl);
+  return (
+    <section className="overflow-hidden rounded-xl border border-line bg-panel shadow-sm">
+      <div className="flex items-center gap-2 border-b border-line px-5 py-4">
+        <Play aria-hidden="true" className="size-4 text-accent" />
+        <h2 className="text-sm font-black uppercase tracking-[0.16em] text-app-text">
+          Vídeo do veículo
+        </h2>
+      </div>
+      {embedUrl ? (
+        <iframe
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="aspect-video w-full border-0"
+          loading="lazy"
+          referrerPolicy="strict-origin-when-cross-origin"
+          src={embedUrl}
+          title={`Vídeo de ${title}`}
+        />
+      ) : (
+        <video
+          className="aspect-video w-full bg-app"
+          controls
+          preload="metadata"
+          src={videoUrl}
+        >
+          Seu navegador não suporta a reprodução deste vídeo.
+        </video>
+      )}
+    </section>
   );
 }
 
@@ -122,7 +167,7 @@ export function VehicleLeadCard({
           <div className="grid gap-2">
             {whatsappUrl ? (
               <a
-                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-success-strong px-5 text-xs font-black uppercase tracking-[0.12em] text-success-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 active:scale-95"
+                className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-success-strong px-5 text-xs font-black uppercase tracking-[0.12em] text-success-foreground transition-all hover:-translate-y-0.5 hover:brightness-95 active:translate-y-0 active:scale-95"
                 href={whatsappUrl}
                 rel="noreferrer"
                 target="_blank"
@@ -216,7 +261,7 @@ export function UnitMediaTabs({
       {groups.map((group, index) => (
         <button
           aria-pressed={group.unitId === selectedUnitId}
-          className="rounded-xl border border-line bg-panel px-3 py-2 text-xs font-black text-muted shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent-strong data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent-strong cursor-pointer"
+          className="rounded-xl border border-line bg-panel px-3 py-2 text-xs font-black text-muted transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent-strong data-[selected=true]:bg-accent-soft data-[selected=true]:text-accent-strong cursor-pointer"
           data-selected={group.unitId === selectedUnitId ? "true" : undefined}
           key={group.unitId}
           onClick={() => onSelect(group.unitId)}

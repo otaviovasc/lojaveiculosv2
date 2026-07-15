@@ -15,9 +15,12 @@ import type { VehicleSalesRepository } from "../../ports/vehicleSalesRepository.
 import type { VehicleAcquisitionRepository } from "../../ports/vehicleAcquisitionRepository.js";
 import type { VehicleStoreBrandingReader } from "../../ports/vehicleStoreBrandingReader.js";
 import type { BillingQuotaGuard } from "../../../billing/ports/billingQuotaGuard.js";
+import type { VehicleAuditRepository } from "../../ports/vehicleAuditRepository.js";
+import type { VehicleResaleAnalysisProvider } from "../../ports/vehicleResaleAnalysisProvider.js";
 
 export type VehicleInventoryServicePorts = {
   acquisitionRepository?: VehicleAcquisitionRepository;
+  auditRepository?: VehicleAuditRepository;
   catalogProvider?: VehicleCatalogProvider;
   catalogRepository?: VehicleCatalogRepository;
   checklistRepository?: VehicleChecklistRepository;
@@ -29,6 +32,7 @@ export type VehicleInventoryServicePorts = {
   mediaStorage?: VehicleMediaStorage;
   operationsRepository?: VehicleOperationsRepository;
   quotaGuard?: BillingQuotaGuard;
+  resaleAnalysisProvider?: VehicleResaleAnalysisProvider;
   salesRepository?: VehicleSalesRepository;
   unitRepository?: VehicleUnitRepository;
   storeBrandingReader?: VehicleStoreBrandingReader;

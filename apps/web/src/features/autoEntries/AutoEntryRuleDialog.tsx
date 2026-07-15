@@ -109,7 +109,7 @@ export function AutoEntryRuleDialog({
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && requestClose()}>
         <DialogContent
-          className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto"
+          className="max-h-[calc(100dvh-2rem)] max-w-3xl overflow-y-auto"
           padding="none"
           radius="3xl"
           surface="panel"

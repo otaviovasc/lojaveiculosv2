@@ -188,7 +188,7 @@ function SaleCard({
               <span>Validação Interna</span>
               <span
                 className={
-                  score.completed === score.total ? "text-success" : ""
+                  score.completed === score.total ? "text-success-strong" : ""
                 }
               >
                 {score.completed}/{score.total} requisitos

@@ -159,7 +159,7 @@ export function AgencyCreateStorePage({
         <AgencyCreateStoreIntro onBack={() => void navigate("/agency/admin")} />
 
         <div className="agency-create-grid">
-          <FeatureCard className="agency-create-form-card">
+          <FeatureCard className="agency-create-form-card" padding="none">
             <div aria-hidden="true" className="agency-create-card-rail">
               <span />
               <span />

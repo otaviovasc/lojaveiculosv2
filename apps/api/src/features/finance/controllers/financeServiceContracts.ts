@@ -40,6 +40,14 @@ import type {
 } from "../../../domains/finance/ports/financeRepository.js";
 import type { FinanceAutoEntryRule } from "../../../domains/finance/ports/financeAutoEntryRepository.js";
 import type { FinanceSummary } from "../../../domains/finance/services/FinanceService/getFinanceSummary.js";
+import type {
+  CommissionWorkspace,
+  GetCommissionWorkspaceInput,
+} from "../../../domains/finance/services/FinanceService/getCommissionWorkspace.js";
+import type {
+  CommissionSettlementResult,
+  SettleCommissionEntriesInput,
+} from "../../../domains/finance/services/FinanceService/settleCommissionEntries.js";
 import type { TransactionRunner } from "../../../shared/transaction.js";
 
 export type FinanceEntryListItemDto = FinanceEntry & {
@@ -90,6 +98,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: GetFinanceEntryDetailInput,
   ) => Promise<FinanceEntryDetail>;
+  getCommissionWorkspace: (
+    context: ServiceContext,
+    input: GetCommissionWorkspaceInput,
+  ) => Promise<CommissionWorkspace>;
   getSummary: (context: ServiceContext) => Promise<FinanceSummary>;
   listAutoEntryRules: (
     context: ServiceContext,
@@ -119,6 +131,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: RequestFinanceEntryDocumentUploadInput,
   ) => Promise<ObjectUpload>;
+  settleCommissionEntries: (
+    context: ServiceContext,
+    input: SettleCommissionEntriesInput,
+  ) => Promise<CommissionSettlementResult>;
   updateAutoEntryRule: (
     context: ServiceContext,
     input: UpdateFinanceAutoEntryRuleInput,

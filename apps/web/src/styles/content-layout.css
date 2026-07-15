@@ -1,0 +1,22 @@
+/* Keep page boundaries in one final cascade layer so feature-local shell
+   styles cannot silently replace the shared application spacing. */
+:is(
+  .content-frame,
+  .dashboard-main,
+  .commission-workspace,
+  .feature-page,
+  .feature-shell,
+  .marketplace-shell,
+  .internal-shell,
+  .documents-shell,
+  .crm-page,
+  .billing-shell,
+  .public-api-shell,
+  .agency-stats-page,
+  .agency-create-page
+) {
+  padding-top: var(--layout-content-block-padding);
+  padding-right: max(var(--layout-content-gutter), env(safe-area-inset-right));
+  padding-bottom: var(--layout-content-block-padding);
+  padding-left: max(var(--layout-content-gutter), env(safe-area-inset-left));
+}

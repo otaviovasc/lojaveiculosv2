@@ -52,7 +52,7 @@ describe("web UI contract rules", () => {
     expect(kinds(source)).toEqual([]);
   });
 
-  it("detects colored shadows on static button states but allows them on interactive prefixes", () => {
+  it("detects colored shadows on action controls in every state", () => {
     const source = [
       "<button className='shadow-[0_4px_12px_rgba(255,0,0,0.5)]'>Click</button>;",
       "<Button className='shadow-[0_4px_12px_color-mix(in_srgb,red,transparent)]'>Click</Button>;",
@@ -61,6 +61,7 @@ describe("web UI contract rules", () => {
     ].join("\n");
 
     expect(kinds(source)).toEqual([
+      "button-color-shadow",
       "button-color-shadow",
       "button-color-shadow",
     ]);

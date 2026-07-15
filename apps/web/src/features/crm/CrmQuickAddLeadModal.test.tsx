@@ -26,13 +26,16 @@ describe("CrmQuickAddLeadModal", () => {
     expect(
       screen.getByRole("dialog", { name: "Novo negócio" }),
     ).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Criar" }));
+    await user.click(screen.getByRole("button", { name: "Criar negócio" }));
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Informe o nome do contato.",
     );
 
     await user.type(screen.getByLabelText("Nome do contato"), "Ana Souza");
-    await user.click(screen.getByRole("button", { name: "Criar" }));
+    const phone = screen.getByLabelText("Telefone");
+    await user.type(phone, "11999998888");
+    expect(phone).toHaveValue("(11) 99999-8888");
+    await user.click(screen.getByRole("button", { name: "Criar negócio" }));
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "Não foi possível criar o negócio.",

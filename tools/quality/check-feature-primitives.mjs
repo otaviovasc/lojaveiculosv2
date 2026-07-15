@@ -1,11 +1,26 @@
 import { join } from "node:path";
 import { readText, repoPath, repoRoot, walkFiles } from "./quality-files.mjs";
-import { findFeaturePrimitiveViolations } from "./feature-primitive-rules.mjs";
+import {
+  findFeaturePrimitiveViolations,
+  findFeatureSectionContractViolations,
+} from "./feature-primitive-rules.mjs";
 
 const featuresRoot = join(repoRoot, "apps/web/src/features");
 const allowMarker = "feature-primitives-allow-local";
 const allowMarkerPattern = /feature-primitives-allow-local:\s+\S(?:.*\S)?/;
 const failures = [];
+const featureLayout = join(
+  repoRoot,
+  "apps/web/src/components/ui/FeatureLayout.tsx",
+);
+
+for (const violation of findFeatureSectionContractViolations(
+  readText(featureLayout),
+)) {
+  failures.push(
+    `${repoPath(featureLayout)} ${violation.name}: ${violation.suggestion}.`,
+  );
+}
 
 for (const file of walkFiles(featuresRoot, { extensions: new Set([".tsx"]) })) {
   const source = readText(file);
@@ -18,8 +33,9 @@ for (const file of walkFiles(featuresRoot, { extensions: new Set([".tsx"]) })) {
   }
 
   for (const violation of findFeaturePrimitiveViolations(file, source)) {
+    const verb = violation.verb ?? "declares";
     failures.push(
-      `${repoPath(file)}:${violation.line} declares ${violation.name}: ${violation.suggestion}.`,
+      `${repoPath(file)}:${violation.line} ${verb} ${violation.name}: ${violation.suggestion}.`,
     );
   }
 }

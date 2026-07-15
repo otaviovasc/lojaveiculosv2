@@ -1,14 +1,9 @@
 import { Hono, type Context } from "hono";
-import {
-  createHttpServiceContext,
-  HttpContextAuthenticationError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
-import type { ServiceContext } from "../../../shared/serviceContext.js";
+import { createHttpServiceContext } from "../../../infrastructure/http/createHttpServiceContext.js";
 import {
   inventoryListingServices,
   type InventoryListingServices,
 } from "./listingServices.js";
-import type { InventoryEnrichmentServices } from "./inventoryEnrichmentServices.js";
 import {
   handle,
   parseJson,
@@ -38,18 +33,17 @@ import { registerInventoryEnrichmentRoutes } from "./vehicle.enrichment.controll
 import { registerInventoryAcquisitionRoutes } from "./vehicle.acquisition.controller.js";
 import { registerInventoryUnitRoutes } from "./vehicle.unit.controller.js";
 import { registerInventoryPublicationRoutes } from "./vehicle.publication.controller.js";
+import {
+  createProtectedServiceContext,
+  normalizeFeatureOptions,
+  type CreateInventoryFeatureOptions,
+} from "./vehicle.controller.options.js";
 
 export type { InventoryListingServices } from "./listingServices.js";
-
-export type InventoryContextFactory = (
-  context: Context,
-) => Promise<ServiceContext>;
-
-export type CreateInventoryFeatureOptions = {
-  contextFactory?: InventoryContextFactory;
-  enrichmentServices?: InventoryEnrichmentServices;
-  services?: InventoryListingServices;
-};
+export type {
+  CreateInventoryFeatureOptions,
+  InventoryContextFactory,
+} from "./vehicle.controller.options.js";
 
 export function createInventoryFeature(
   input: CreateInventoryFeatureOptions | InventoryListingServices = {},
@@ -102,6 +96,34 @@ export function createInventoryFeature(
 
       return context.json(result);
     }),
+  );
+
+  inventoryFeature.get("/listings/:listingId/audit-events", async (context) =>
+    handle(context, async () => {
+      const serviceContext = await createContext(context);
+      const events = await services.listListingAuditEvents(serviceContext, {
+        listingId: context.req.param("listingId"),
+      });
+      return context.json({
+        events: events.map((event) => ({
+          ...event,
+          occurredAt: event.occurredAt.toISOString(),
+        })),
+      });
+    }),
+  );
+
+  inventoryFeature.post(
+    "/listings/:listingId/resale-analysis",
+    async (context) =>
+      handle(context, async () => {
+        const serviceContext = await createContext(context);
+        return context.json(
+          await services.analyzeListingResale(serviceContext, {
+            listingId: context.req.param("listingId"),
+          }),
+        );
+      }),
   );
 
   inventoryFeature.delete("/listings/:listingId", async (context) =>
@@ -223,25 +245,3 @@ export function createInventoryFeature(
 }
 
 export const vehicleFeature = createInventoryFeature();
-
-function normalizeFeatureOptions(
-  input: CreateInventoryFeatureOptions | InventoryListingServices,
-): CreateInventoryFeatureOptions {
-  if ("createListing" in input) return { services: input };
-  return input;
-}
-
-async function createProtectedServiceContext(
-  context: Context,
-  contextFactory: InventoryContextFactory,
-): Promise<ServiceContext> {
-  const serviceContext = await contextFactory(context);
-
-  if (!["integration", "user"].includes(serviceContext.actor.kind)) {
-    throw new HttpContextAuthenticationError(
-      "Inventory routes require authenticated user or integration context.",
-    );
-  }
-
-  return serviceContext;
-}

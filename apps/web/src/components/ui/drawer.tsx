@@ -128,7 +128,7 @@ export function Drawer({
                 {footer ?? (
                   <button
                     onClick={onClose}
-                    className="flex-1 bg-primary text-primary-foreground font-bold py-4 rounded-2xl shadow-md hover:shadow-lg transition-all active:scale-95"
+                    className="flex-1 bg-primary text-primary-foreground font-bold py-4 rounded-2xl transition-all active:scale-95"
                   >
                     Concluído
                   </button>

@@ -12,13 +12,13 @@ const interestToneClasses: Record<
   { badge: string; icon: string; title: string }
 > = {
   healthy: {
-    badge: "bg-success/10 text-success border-success/20",
-    icon: "text-success",
+    badge: "bg-success/10 text-success-strong border-success/20",
+    icon: "text-success-strong",
     title: "Interesse saudavel",
   },
   hot: {
-    badge: "bg-warning/10 text-warning border-warning/20",
-    icon: "text-warning",
+    badge: "bg-warning/10 text-warning-strong border-warning/20",
+    icon: "text-warning-strong",
     title: "Esquentando",
   },
   very_hot: {

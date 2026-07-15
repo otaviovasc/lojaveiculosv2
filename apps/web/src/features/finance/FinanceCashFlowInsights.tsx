@@ -29,7 +29,7 @@ export function FinanceCashFlowInsights({
   );
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr]">
+    <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-start">
       <FeatureSection
         description="Maiores centros de custo considerando gastos e comissões."
         icon={<ChartNoAxesColumn className="size-5" />}

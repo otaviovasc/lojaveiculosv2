@@ -93,6 +93,7 @@ function createRepository(
     ),
     listPublicListings: vi.fn(async () => [
       {
+        commercialTags: [],
         condition: "used" as const,
         description: "Ready to sell.",
         doors: 4,
@@ -111,6 +112,7 @@ function createRepository(
         title: "Fiat Toro Volcano 2023",
         transmission: "automatic",
         trimName: "Volcano",
+        videoUrl: null,
       },
     ]),
   };

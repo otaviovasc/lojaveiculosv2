@@ -56,3 +56,10 @@ export type InventoryDocument = {
   updatedAt: string;
   uploadedAt: string;
 };
+
+export type InventoryDocumentAccess = {
+  downloadUrl: string;
+  expiresAt: string;
+  fileName: string;
+  mimeType: string | null;
+};

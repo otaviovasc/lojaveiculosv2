@@ -150,6 +150,7 @@ function summary(
   return {
     listing: {
       catalog: null,
+      commercialTags: [],
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
       doors: null,
@@ -164,6 +165,7 @@ function summary(
       plate: null,
       priceCents: overrides.priceCents ?? 12345678,
       publicSlug: null,
+      resaleAnalysis: null,
       status,
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -172,6 +174,7 @@ function summary(
       trimName: null,
       unitIds: [`${id}_unit`],
       updatedAt: "2026-01-01T00:00:00.000Z",
+      videoUrl: null,
     },
     mediaCount: 0,
     primaryMediaUrl: null,

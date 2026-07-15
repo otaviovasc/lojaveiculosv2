@@ -50,6 +50,7 @@ export function listingDetailResult() {
 export function listingDto() {
   return {
     catalog: null,
+    commercialTags: [],
     createdAt: "2026-01-01T00:00:00.000Z",
     description: "Clean vehicle",
     doors: null,
@@ -65,6 +66,7 @@ export function listingDto() {
     plate: "ABC1D23",
     priceCents: 12000000,
     publicSlug: "fiat-toro",
+    resaleAnalysis: null,
     status: "published" as const,
     storeId: "store_1",
     tenantId: "tenant_1",
@@ -73,6 +75,7 @@ export function listingDto() {
     trimName: null,
     unitIds: ["unit_1"],
     updatedAt: "2026-01-01T00:00:00.000Z",
+    videoUrl: null,
   };
 }
 

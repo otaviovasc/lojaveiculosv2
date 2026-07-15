@@ -35,14 +35,20 @@ export function ConfirmCommissionPayDialog({
   filters: CommissionFilters;
   isLoading: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (paidAt: string) => void;
   seller: CommissionSellerGroup;
 }) {
   const entries = pendingSellerEntries(seller, filters);
   const totalCents = entries.reduce((sum, entry) => sum + entry.amountCents, 0);
+  const [paidAt, setPaidAt] = useState(() => todayInput());
 
   return (
-    <FeatureDialog isOpen onClose={onCancel} title="Confirmar pagamento">
+    <FeatureDialog
+      isOpen
+      onClose={onCancel}
+      title="Confirmar pagamento"
+      className="commission-dialog"
+    >
       <div className="grid gap-4">
         <div className="rounded-lg border border-line bg-app p-4">
           <p className="text-sm font-bold text-muted">Marcar como pago para</p>
@@ -58,20 +64,36 @@ export function ConfirmCommissionPayDialog({
           <p className="text-2xl font-black">{formatCurrency(totalCents)}</p>
           <p className="text-sm font-bold">{entries.length} lançamento(s)</p>
         </div>
+        <FinanceField label="Data do pagamento">
+          <FinanceDateField
+            label="Data do pagamento"
+            onChange={setPaidAt}
+            value={paidAt}
+          />
+        </FinanceField>
         <p className="rounded-lg border border-line bg-app p-3 text-xs font-bold text-muted">
-          Cada lançamento será pago individualmente, preservando auditoria e
-          permissões. O filtro de origem atual também limita este fechamento.
+          Os lançamentos serão fechados em uma única operação atômica. Se algum
+          item tiver mudado desde a conferência, nada será baixado e a tela será
+          atualizada. O filtro de origem atual também limita este fechamento.
         </p>
         <DialogActions
+          confirmDisabled={!paidAt}
           confirmIcon={<HandCoins aria-hidden="true" className="size-4" />}
           confirmLabel="Confirmar pagamento"
           isLoading={isLoading}
           onCancel={onCancel}
-          onConfirm={onConfirm}
+          onConfirm={() => onConfirm(paidAt)}
         />
       </div>
     </FeatureDialog>
   );
+}
+
+function todayInput() {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${now.getFullYear()}-${month}-${day}`;
 }
 
 export function BonusCommissionDialog({
@@ -104,7 +126,12 @@ export function BonusCommissionDialog({
   const canSubmit = draft.name.trim() && Number.isFinite(amount) && amount > 0;
 
   return (
-    <FeatureDialog isOpen onClose={onCancel} title="Bônus manual">
+    <FeatureDialog
+      isOpen
+      onClose={onCancel}
+      title="Bônus manual"
+      className="commission-dialog"
+    >
       <div className="grid gap-4 md:grid-cols-2">
         <FinanceField label="Vendedor">
           <FinanceSelect

@@ -12,6 +12,7 @@ export function SaleRulesPanel(props: AutoEntryDomainPanelProps) {
       <AutoEntryDomainCard
         description="A receita da venda segue as datas dos pagamentos. Esta regra apenas repassa a comissão registrada na venda."
         title="Comissão padrão da venda"
+        tone="blue"
       >
         {standard ? (
           <dl className="grid gap-3 sm:grid-cols-3">
@@ -31,7 +32,7 @@ export function SaleRulesPanel(props: AutoEntryDomainPanelProps) {
           </p>
         )}
       </AutoEntryDomainCard>
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid items-start gap-4 xl:grid-cols-2">
         <SaleSellerOverrideCard {...props} />
         <SaleExtraCommissionCard {...props} />
       </div>

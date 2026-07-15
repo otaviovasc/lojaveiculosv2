@@ -1,4 +1,3 @@
-import type { AuditFieldChange } from "@lojaveiculosv2/audit";
 import type { PermissionKey } from "@lojaveiculosv2/shared";
 import { assertPermission } from "../../../../shared/authorization.js";
 import type { ServiceContext } from "../../../../shared/serviceContext.js";
@@ -20,9 +19,11 @@ import {
 } from "./serviceSupport.js";
 import { assertGenericListingStatusAllowed } from "../../policies/workflowStatusPolicy.js";
 import { recordListingOperationsLedger } from "../../operations/recordListingOperationsLedger.js";
+import { createListingChanges } from "../../vehicleListingChanges.js";
 
 export type UpdateVehicleListingDetailsInput = {
   catalog?: VehicleListingCatalog | null;
+  commercialTags?: readonly string[];
   description?: string | null;
   doors?: number | null;
   engineAspiration?: VehicleEngineAspiration | null;
@@ -38,6 +39,7 @@ export type UpdateVehicleListingDetailsInput = {
   title?: string;
   transmission?: VehicleTransmission | null;
   trimName?: string | null;
+  videoUrl?: string | null;
 };
 
 export async function updateVehicleListingDetails(
@@ -65,6 +67,9 @@ export async function updateVehicleListingDetails(
           ? { description: input.description }
           : {}),
         ...(input.catalog !== undefined ? { catalog: input.catalog } : {}),
+        ...(input.commercialTags !== undefined
+          ? { commercialTags: input.commercialTags }
+          : {}),
         ...(input.doors !== undefined ? { doors: input.doors } : {}),
         ...(input.engineAspiration !== undefined
           ? { engineAspiration: input.engineAspiration }
@@ -94,6 +99,7 @@ export async function updateVehicleListingDetails(
           ? { transmission: input.transmission }
           : {}),
         ...(input.trimName !== undefined ? { trimName: input.trimName } : {}),
+        ...(input.videoUrl !== undefined ? { videoUrl: input.videoUrl } : {}),
         updatedAt: new Date(),
       })
     : listing;
@@ -155,74 +161,18 @@ function requiredPermissionsForInput(
   if (input.internalNotes !== undefined) {
     permissions.push("inventory.update_internal_notes");
   }
-  if (input.priceCents !== undefined)
+  if (input.priceCents !== undefined) {
     permissions.push("inventory.update_price");
-  if (input.status !== undefined) permissions.push("inventory.update_status");
+  }
+  if (input.commercialTags !== undefined) {
+    permissions.push("inventory.update_commercial_tags");
+  }
+  if (input.videoUrl !== undefined) {
+    permissions.push("inventory.update_video");
+  }
+  if (input.status !== undefined) {
+    permissions.push("inventory.update_status");
+  }
 
   return [...new Set(permissions)];
-}
-
-function createListingChanges(
-  listing: VehicleListing,
-  input: UpdateVehicleListingDetailsInput,
-): AuditFieldChange[] {
-  return [
-    changeFor("title", listing.title, input.title),
-    changeFor("description", listing.description, input.description),
-    changeFor("doors", listing.doors, input.doors),
-    changeFor(
-      "engineAspiration",
-      listing.engineAspiration,
-      input.engineAspiration,
-    ),
-    changeFor(
-      "engineDisplacement",
-      listing.engineDisplacement,
-      input.engineDisplacement,
-    ),
-    changeFor("fuelType", listing.fuelType, input.fuelType),
-    redactedTextChangeFor(
-      "internalNotes",
-      listing.internalNotes,
-      input.internalNotes,
-    ),
-    changeFor(
-      "catalog.brandName",
-      listing.catalog?.brandName ?? null,
-      input.catalog?.brandName,
-    ),
-    changeFor(
-      "catalog.modelName",
-      listing.catalog?.modelName ?? null,
-      input.catalog?.modelName,
-    ),
-    changeFor("mileageKm", listing.mileageKm, input.mileageKm),
-    changeFor("modelYear", listing.modelYear, input.modelYear),
-    changeFor("priceCents", listing.priceCents, input.priceCents),
-    changeFor("status", listing.status, input.status),
-    changeFor("transmission", listing.transmission, input.transmission),
-    changeFor("trimName", listing.trimName, input.trimName),
-  ].filter((change): change is AuditFieldChange => Boolean(change));
-}
-
-function changeFor(
-  path: string,
-  before: string | number | null,
-  after: string | number | null | undefined,
-): AuditFieldChange | null {
-  if (after === undefined || before === after) return null;
-  return { after, before, path };
-}
-
-function redactedTextChangeFor(
-  path: string,
-  before: string | null,
-  after: string | null | undefined,
-): AuditFieldChange | null {
-  if (after === undefined || before === after) return null;
-  return {
-    after: after ? "[set]" : null,
-    before: before ? "[set]" : null,
-    path,
-  };
 }

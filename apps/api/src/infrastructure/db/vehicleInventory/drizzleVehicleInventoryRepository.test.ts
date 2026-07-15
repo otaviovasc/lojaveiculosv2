@@ -21,6 +21,7 @@ describe("Drizzle vehicle inventory repositories", () => {
 
     const listing = await listingRepository.create({
       catalog: null,
+      commercialTags: ["Único dono", "Revisado"],
       description: "Clean sedan",
       manufactureYear: null,
       modelYear: null,
@@ -31,6 +32,7 @@ describe("Drizzle vehicle inventory repositories", () => {
       tenantId: "tenant_1",
       title: "Civic EXL",
       trimName: null,
+      videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
     });
     const unit = await unitRepository.create({
       listingId: listing.id,
@@ -45,6 +47,10 @@ describe("Drizzle vehicle inventory repositories", () => {
     expect(db.inserted).toEqual([
       expect.objectContaining({
         askingPriceCents: 12000000,
+        metadata: {
+          commercialTags: ["Único dono", "Revisado"],
+          videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
+        },
         status: "published",
         title: "Civic EXL",
       }),
@@ -55,10 +61,12 @@ describe("Drizzle vehicle inventory repositories", () => {
       }),
     ]);
     expect(listing).toMatchObject({
+      commercialTags: ["Único dono", "Revisado"],
       id: "listing_1",
       plate: null,
       status: "published",
       unitIds: [],
+      videoUrl: "https://www.youtube.com/watch?v=vehicle-demo",
     });
     expect(unit).toMatchObject({
       id: "unit_1",

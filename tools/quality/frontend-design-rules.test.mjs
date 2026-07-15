@@ -120,4 +120,19 @@ describe("frontend design rules", () => {
     );
     expect(violationsTokensOk).toHaveLength(0);
   });
+
+  it("validates SVG colors without treating assets as source code", () => {
+    expect(
+      findFrontendDesignViolations(
+        "logo.svg",
+        '<svg><path fill="#e11f26" /></svg>',
+      ),
+    ).toEqual([]);
+    expect(
+      findFrontendDesignViolations(
+        "logo.svg",
+        '<svg><path fill="#ff0000" /></svg>',
+      ),
+    ).toEqual([expect.stringContaining("SVG color")]);
+  });
 });

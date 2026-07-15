@@ -62,6 +62,7 @@ describe("sales controller reversion", () => {
         payments: [
           {
             amountCents: 5000000,
+            dueAt: "2026-07-14T12:00:00.000Z",
             method: "pix",
             principalCents: 5000000,
             providerPaymentId: "provider-payment-1",
@@ -133,7 +134,12 @@ function saleDraft() {
     buyerSnapshot: { name: "Maria" },
     leadId: "lead-1",
     payments: [
-      { amountCents: 5000000, method: "pix", principalCents: 5000000 },
+      {
+        amountCents: 5000000,
+        dueAt: "2026-07-14T12:00:00.000Z",
+        method: "pix",
+        principalCents: 5000000,
+      },
     ],
     salePriceCents: 5000000,
     selectedDocumentKinds: ["sale_contract", "delivery_term"],

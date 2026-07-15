@@ -80,6 +80,7 @@ function listingDetail(): InventoryListingDetail {
     documents: [],
     listing: {
       catalog: null,
+      commercialTags: [],
       createdAt: "2026-01-01T00:00:00.000Z",
       description: null,
       doors: null,
@@ -94,6 +95,7 @@ function listingDetail(): InventoryListingDetail {
       plate: "ABC1D23",
       priceCents: 12000000,
       publicSlug: null,
+      resaleAnalysis: null,
       status: "draft",
       storeId: "store_1",
       tenantId: "tenant_1",
@@ -102,6 +104,7 @@ function listingDetail(): InventoryListingDetail {
       trimName: null,
       unitIds: [],
       updatedAt: "2026-01-01T00:00:00.000Z",
+      videoUrl: null,
     },
     media: [
       {

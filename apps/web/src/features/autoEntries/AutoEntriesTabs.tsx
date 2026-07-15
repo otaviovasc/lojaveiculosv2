@@ -7,7 +7,7 @@ import {
   Users,
 } from "lucide-react";
 import { FeatureTabs } from "../../components/ui/FeatureTabs";
-import type { AutoEntryWorkspaceTab } from "./types";
+import type { AutoEntryRule, AutoEntryWorkspaceTab } from "./types";
 
 const tabs = [
   { icon: Car, label: "Venda", value: "vehicle_sale_closed" },
@@ -28,19 +28,46 @@ const tabs = [
 
 export function AutoEntriesTabs({
   onChange,
+  rules,
   value,
 }: {
   onChange: (value: AutoEntryWorkspaceTab) => void;
+  rules: readonly AutoEntryRule[];
   value: AutoEntryWorkspaceTab;
 }) {
+  const activeRules = rules.filter((rule) => rule.status === "active");
+  const options = tabs.map((tab) => ({
+    ...tab,
+    label: (
+      <span className="auto-entries-tab__label">
+        <span>{tab.label}</span>
+        <span aria-hidden="true" className="auto-entries-tab__count">
+          {countForTab(activeRules, tab.value)}
+        </span>
+      </span>
+    ),
+  }));
+
   return (
     <FeatureTabs
       ariaLabel="Origem dos lançamentos automáticos"
-      className="settings-tabs w-full overflow-x-auto"
+      className="auto-entries-tabs"
       onChange={onChange}
-      optionClassName="shrink-0"
-      options={tabs}
+      optionClassName="auto-entries-tab"
+      options={options}
       value={value}
     />
   );
+}
+
+function countForTab(
+  rules: readonly AutoEntryRule[],
+  tab: AutoEntryWorkspaceTab,
+) {
+  if (tab === "custom") {
+    return rules.filter((rule) => !rule.family && !rule.ruleKey).length;
+  }
+  return rules.filter(
+    (rule) => Boolean(rule.family || rule.ruleKey) && rule.event === tab,
+  ).length;
 }

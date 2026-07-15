@@ -24,6 +24,7 @@ import {
   type DashboardSidebarItem,
 } from "./ui/dashboard-sidebar";
 import { Logo } from "./ui/logo";
+import { TextureBackground } from "./ui/TextureBackground";
 import { WorkspaceCommandPalette } from "./ui/WorkspaceCommandPalette";
 
 type AppShellProps = {
@@ -109,7 +110,7 @@ export function AppShell({
         </aside>
         <div aria-hidden="true" className="app-shell__loading-content">
           <div className="h-16 border-b border-line bg-panel lg:hidden" />
-          <main className="grid gap-5 p-4 lg:p-6">
+          <main className="content-frame">
             <div className="h-24 animate-pulse rounded-lg bg-panel" />
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {Array.from({ length: 4 }, (_, index) => (
@@ -147,6 +148,7 @@ export function AppShell({
           workspaceLogoUrl={tenantBrand.logoUrl}
           workspaceMeta={tenantBrand.storeLabel}
           workspaceName={tenantBrand.storeName}
+          onSearchClick={() => setIsCommandOpen(true)}
         />
       </aside>
 
@@ -229,31 +231,18 @@ export function AppShell({
               workspaceLogoUrl={tenantBrand.logoUrl}
               workspaceMeta={tenantBrand.storeLabel}
               workspaceName={tenantBrand.storeName}
+              onSearchClick={() => setIsCommandOpen(true)}
             />
           </aside>
         </div>
       )}
 
-      <div className="app-shell__content">
-        <div className="app-shell__desktop-bar">
-          <div className="app-shell__context">
-            <span>{tenantBrand.storeName}</span>
-            <strong>{activeModule.title}</strong>
-          </div>
-          <button
-            aria-haspopup="dialog"
-            className="app-shell__command-trigger"
-            onClick={() => setIsCommandOpen(true)}
-            type="button"
-          >
-            <Search aria-hidden="true" />
-            <span>Buscar módulos e áreas</span>
-            <kbd>
-              <Command aria-hidden="true" />K
-            </kbd>
-          </button>
-        </div>
-        {children}
+      <div
+        className="app-shell__content relative"
+        data-active-module={activeModule.id}
+      >
+        <TextureBackground />
+        <div className="relative z-10">{children}</div>
       </div>
 
       <WorkspaceCommandPalette

@@ -105,6 +105,7 @@ function createListing(
   overrides: Partial<PublicVehicleListing> = {},
 ): PublicVehicleListing {
   return {
+    commercialTags: [],
     condition: "used",
     description: null,
     doors: 4,
@@ -122,6 +123,7 @@ function createListing(
     title: "Carro",
     transmission: null,
     trimName: null,
+    videoUrl: null,
     ...overrides,
   };
 }

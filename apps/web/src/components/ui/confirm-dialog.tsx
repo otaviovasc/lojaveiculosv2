@@ -154,7 +154,7 @@ export function ConfirmDialog({
                 className={
                   variant === "destructive"
                     ? "rounded-xl px-4 py-2.5 text-sm font-medium text-destructive-foreground bg-destructive hover:bg-destructive/90 transition-colors disabled:opacity-50"
-                    : "rounded-xl px-4 py-2.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50 shadow-md hover:shadow-lg"
+                    : "rounded-xl px-4 py-2.5 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors disabled:opacity-50"
                 }
               >
                 {isLoading ? loadingLabel : confirmLabel}

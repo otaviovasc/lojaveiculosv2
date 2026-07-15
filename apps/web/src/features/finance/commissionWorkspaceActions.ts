@@ -72,17 +72,40 @@ export async function payCommissionSeller(
     seller: CommissionSellerGroup;
     setPayingSellerId: (sellerId: string | null) => void;
   },
+  paidAt: string,
 ) {
   const entriesToPay = pendingSellerEntries(context.seller, context.filters);
+  if (!entriesToPay.length) {
+    context.setToast({
+      kind: "error",
+      message: "A conferência não encontrou lançamentos aptos para pagamento.",
+      title: "Nenhuma pendência apta",
+    });
+    context.onPaid();
+    context.refresh();
+    return;
+  }
   context.setPayingSellerId(context.seller.sellerId);
   try {
-    await Promise.all(
-      entriesToPay.map((entry) => context.api.payEntry(entry.id)),
-    );
+    const result = await context.api.settleCommissionEntries({
+      entryIds: entriesToPay.map((entry) => entry.id),
+      paidAt: `${paidAt}T12:00:00.000Z`,
+      sellerUserId: context.seller.sellerId,
+    });
+    const currency = new Intl.NumberFormat("pt-BR", {
+      currency: "BRL",
+      style: "currency",
+    }).format(result.totalCents / 100);
     context.setToast({
       kind: "success",
-      message: `${entriesToPay.length} lançamento(s) pagos`,
-      title: "Comissões pagas",
+      message:
+        result.updatedCount > 0
+          ? `${result.updatedCount} lançamento(s) pagos · ${currency}`
+          : `Este fechamento de ${currency} já havia sido concluído. Nenhuma baixa foi duplicada.`,
+      title:
+        result.updatedCount > 0
+          ? "Comissões pagas"
+          : "Fechamento já processado",
     });
     context.onPaid();
     context.refresh();
@@ -91,10 +114,11 @@ export async function payCommissionSeller(
       kind: "error",
       message: formatApiErrorDisplay(
         error,
-        "Não foi possível pagar as comissões.",
+        "Nada foi baixado. A conferência será atualizada para você tentar novamente.",
       ),
-      title: "Erro ao pagar",
+      title: "Fechamento não concluído",
     });
+    context.refresh();
   } finally {
     context.setPayingSellerId(null);
   }

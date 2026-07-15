@@ -7,6 +7,7 @@ import type {
   InventoryListingDetail,
   InventoryMediaRecord,
   InventoryMediaUpload,
+  InventoryDocumentAccess,
   UpdateInventoryMediaInput,
 } from "../model/types";
 
@@ -111,10 +112,21 @@ export function createInventoryMediaApi({
       },
     );
 
+  const getDocumentAccess = (
+    documentId: string,
+    disposition: "attachment" | "inline",
+  ) =>
+    fetch(inventoryRoutes.documentDownload(documentId, disposition, baseUrl), {
+      headers: createInventoryHeaders(auth),
+    }).then((response) =>
+      readApiJson<InventoryDocumentAccess>(response, { feature: "Inventory" }),
+    );
+
   return {
     attachUnitDocument,
     createMedia,
     deleteMedia,
+    getDocumentAccess,
     reorderMedia,
     requestUnitDocumentUpload,
     requestMediaUpload,

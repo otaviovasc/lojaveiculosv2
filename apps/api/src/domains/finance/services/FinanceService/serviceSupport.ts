@@ -15,6 +15,7 @@ import type {
   FinanceRepository,
 } from "../../ports/financeRepository.js";
 import type { FinanceAutoEntryRepository } from "../../ports/financeAutoEntryRepository.js";
+import type { CommissionWorkspaceRepository } from "../../ports/commissionWorkspaceRepository.js";
 import type { FinanceServicePorts } from "./types.js";
 export type { FinanceServicePorts } from "./types.js";
 
@@ -51,6 +52,15 @@ export function getFinanceAutoEntryRepository(
   return requirePort(
     ports?.financeAutoEntryRepository,
     "financeAutoEntryRepository",
+  );
+}
+
+export function getCommissionWorkspaceRepository(
+  ports: Pick<FinanceServicePorts, "commissionWorkspaceRepository"> | undefined,
+): CommissionWorkspaceRepository {
+  return requirePort(
+    ports?.commissionWorkspaceRepository,
+    "commissionWorkspaceRepository",
   );
 }
 

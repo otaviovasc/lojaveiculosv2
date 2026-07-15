@@ -1,4 +1,4 @@
-import { FileText, FolderOpen, RefreshCcw, UploadCloud } from "lucide-react";
+import { FolderOpen, RefreshCcw, UploadCloud } from "lucide-react";
 import type { DocumentsFolderKey } from "./documentDisplayModel";
 import {
   FeatureActionButton,
@@ -11,7 +11,6 @@ export function DocumentsWorkspaceTopBar({
   isRefreshing,
   isUploading,
   onOpenFolders,
-  onOpenTemplates,
   onRefresh,
   onUpload,
   selectedKey,
@@ -24,7 +23,6 @@ export function DocumentsWorkspaceTopBar({
   isRefreshing: boolean;
   isUploading: boolean;
   onOpenFolders: () => void;
-  onOpenTemplates: () => void;
   onRefresh: () => void;
   onUpload: () => void;
   selectedKey: DocumentsFolderKey;
@@ -48,11 +46,6 @@ export function DocumentsWorkspaceTopBar({
             isBusy={isRefreshing}
             label="Atualizar"
             onClick={onRefresh}
-          />
-          <FeatureActionButton
-            icon={FileText}
-            label="Modelos"
-            onClick={onOpenTemplates}
           />
           {showUpload ? (
             <FeatureActionButton

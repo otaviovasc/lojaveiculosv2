@@ -21,7 +21,11 @@ const semanticPairs = [
   ["--color-blue-soft", "--color-info-soft-foreground"],
 ];
 
-export function buildContrastThemes(tokensSource, publicSource = "") {
+export function buildContrastThemes(
+  tokensSource,
+  publicSource = "",
+  contextualSource = "",
+) {
   const root = postcss.parse(tokensSource);
   const base = declarationsForRule(root, (selector) => selector === ":root");
   const aliases = declarationsForAtRule(root, "theme");
@@ -48,13 +52,21 @@ export function buildContrastThemes(tokensSource, publicSource = "") {
       ),
     );
   }
+  if (contextualSource) {
+    addContextualThemes(themes, contextualSource, light, dark);
+  }
   return themes;
 }
 
 export function findSemanticContrastViolations(themes) {
   const failures = [];
   for (const currentTheme of themes) {
-    for (const [backgroundName, foregroundName] of semanticPairs) {
+    const pairs = currentTheme.name.includes(":")
+      ? semanticPairs.filter(([backgroundName]) =>
+          ["--color-accent", "--color-accent-strong"].includes(backgroundName),
+        )
+      : semanticPairs;
+    for (const [backgroundName, foregroundName] of pairs) {
       const background = resolveColor(
         `var(${backgroundName})`,
         currentTheme.variables,
@@ -91,6 +103,38 @@ function declarationsForRule(root, matches) {
     applyDeclarations(variables, rule);
   });
   return variables;
+}
+
+function addContextualThemes(themes, source, light, dark) {
+  const root = postcss.parse(source);
+  const modules = new Set();
+  root.walkRules((rule) => {
+    for (const match of rule.selector.matchAll(
+      /\[data-active-module=["']([^"']+)["']\]/g,
+    )) {
+      modules.add(match[1]);
+    }
+  });
+  for (const module of modules) {
+    const selector = `[data-active-module="${module}"]`;
+    const lightOverrides = declarationsForRule(
+      root,
+      (ruleSelector) =>
+        ruleSelector.includes(selector) && !ruleSelector.includes("data-theme"),
+    );
+    const darkOverrides = declarationsForRule(
+      root,
+      (ruleSelector) =>
+        ruleSelector.includes(selector) && ruleSelector.includes("data-theme"),
+    );
+    themes.push(
+      theme(`light:${module}`, applyVariables(light, lightOverrides)),
+      theme(
+        `dark:${module}`,
+        applyVariables(applyVariables(dark, lightOverrides), darkOverrides),
+      ),
+    );
+  }
 }
 
 function declarationsForAtRule(root, name) {

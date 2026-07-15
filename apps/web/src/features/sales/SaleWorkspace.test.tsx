@@ -332,7 +332,7 @@ function saleRecord(overrides: Partial<SaleRecord> = {}): SaleRecord {
 function payment(id: string): SaleRecord["payments"][number] {
   return {
     amountCents: 18990000,
-    dueAt: null,
+    dueAt: "2026-01-15",
     extraCents: 0,
     id,
     installments: null,

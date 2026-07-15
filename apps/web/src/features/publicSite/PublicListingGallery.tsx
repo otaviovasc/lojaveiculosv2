@@ -195,7 +195,7 @@ export function MediaStrip({
         <button
           aria-label={item.altText ?? item.kind}
           aria-pressed={item.url === selectedUrl}
-          className="public-media-thumb group aspect-square overflow-hidden rounded-lg border border-line bg-panel shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:ring-2 data-[selected=true]:ring-accent/20"
+          className="public-media-thumb group aspect-square overflow-hidden rounded-lg border border-line bg-panel transition-all hover:-translate-y-0.5 hover:border-accent/40 data-[selected=true]:border-accent data-[selected=true]:ring-2 data-[selected=true]:ring-accent/20"
           data-selected={item.url === selectedUrl ? "true" : undefined}
           key={`${item.displayOrder}-${item.url}`}
           onClick={() => onSelect(item.url)}

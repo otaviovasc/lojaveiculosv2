@@ -1,10 +1,6 @@
-import { Percent, Repeat2, Sigma } from "lucide-react";
-import { useState, type FormEvent } from "react";
-import type {
-  CommissionRule,
-  FinanceRecurringEntry,
-  FinanceSummary,
-} from "./types";
+import { Repeat2, Sigma } from "lucide-react";
+import { useState } from "react";
+import type { FinanceRecurringEntry, FinanceSummary } from "./types";
 import {
   FinanceDateField,
   FinanceField,
@@ -126,95 +122,6 @@ export function FinanceRecurringPanel({
   );
 }
 
-export function CommissionRulesPanel({
-  canCreate = true,
-  items,
-  onCreate,
-}: {
-  canCreate?: boolean;
-  items: CommissionRule[];
-  onCreate: (input: CommissionDraft) => Promise<void> | void;
-}) {
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const submitRule = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const percentage = Number(data.get("percent"));
-    if (!Number.isFinite(percentage) || percentage <= 0 || percentage > 100) {
-      setError("Informe um percentual entre 0,01% e 100%.");
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      await onCreate({
-        category: String(data.get("category") || "Venda"),
-        name: String(data.get("name") || "Regra"),
-        percentageBasisPoints: Math.round(percentage * 100),
-        type: "percentage",
-      });
-      form.reset();
-    } catch {
-      setError("Não foi possível criar a regra de comissão.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <FinancePanel
-      icon={<Percent className="size-5" />}
-      title="Regras de comissão"
-    >
-      {canCreate ? (
-        <form
-          className="grid gap-3 md:grid-cols-4"
-          onSubmit={(event) => void submitRule(event)}
-        >
-          <FinanceField label="Nome">
-            <FinanceInput name="name" required />
-          </FinanceField>
-          <FinanceField label="Categoria">
-            <FinanceInput name="category" required />
-          </FinanceField>
-          <FinanceField label="%">
-            <FinanceInput
-              max="100"
-              min="0.01"
-              name="percent"
-              required
-              step="0.01"
-              type="number"
-            />
-          </FinanceField>
-          <button
-            className="min-h-11 self-end rounded-lg bg-accent px-4 text-sm font-black text-accent-foreground"
-            disabled={isSaving}
-            type="submit"
-          >
-            {isSaving ? "Criando regra…" : "Criar regra"}
-          </button>
-        </form>
-      ) : (
-        <p className="text-sm font-bold text-muted">
-          Consulte as regras existentes. A criação exige permissão financeira.
-        </p>
-      )}
-      {error ? (
-        <p className="mt-3 text-sm font-bold text-danger" role="alert">
-          {error}
-        </p>
-      ) : null}
-      <p className="mt-3 text-sm font-bold text-muted">
-        {items.length} regras ativas.
-      </p>
-    </FinancePanel>
-  );
-}
-
 export type RecurringDraft = {
   amountCents: number;
   category: string;
@@ -224,16 +131,11 @@ export type RecurringDraft = {
   type: "commission" | "expense" | "revenue";
 };
 
-export type CommissionDraft = {
-  category: string;
-  name: string;
-  percentageBasisPoints: number;
-  type: "percentage";
-};
-
 function formatCurrency(valueCents: number) {
   return new Intl.NumberFormat("pt-BR", {
     currency: "BRL",
     style: "currency",
   }).format(valueCents / 100);
 }
+
+export { CommissionRulesPanel } from "./CommissionRulesPanel";

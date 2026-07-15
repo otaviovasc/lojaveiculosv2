@@ -37,7 +37,7 @@ export function CommissionRow({
       <td className="px-4 py-3">
         <FinanceBadge>{financeStatusLabels[entry.status]}</FinanceBadge>
       </td>
-      <td className="px-4 py-3 text-right font-black text-app-text">
+      <td className="px-4 py-3 text-right font-black text-app-text whitespace-nowrap">
         {formatCurrency(entry.amountCents)}
       </td>
       <td className="px-4 py-3">
@@ -111,12 +111,14 @@ function CommissionActions({
         icon={<Pencil aria-hidden="true" className="size-4" />}
         label="Editar comissão"
         onClick={() => onEdit(entry)}
+        variant="edit"
       />
       <CommissionIconAction
         disabled={entry.status === "cancelled"}
         icon={<XCircle aria-hidden="true" className="size-4" />}
         label="Cancelar comissão"
         onClick={() => onCancel(entry)}
+        variant="delete"
       />
     </div>
   );

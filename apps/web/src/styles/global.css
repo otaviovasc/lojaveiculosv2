@@ -2,6 +2,7 @@
 @import "./tokens.css";
 @import "./contrast-tokens.css";
 @import "./components.css";
+@import "./button-cursors.css";
 @import "./calendar.css";
 @import "./marketing.css";
 @import "./customSelect.css";
@@ -109,6 +110,7 @@
 @import "./marketplaces.css";
 @import "./featureModules.css";
 @import "./finance.css";
+@import "./autoEntries.css";
 @import "./sales.css";
 @import "./sales-delete-dialog.css";
 @import "./sales-summary.css";
@@ -126,8 +128,13 @@
 @import "./product-overlays.css";
 @import "./product-legacy-responsive.css";
 @import "./artifact-viewer.css";
+@import "./content-layout.css";
 
 @source "../**/*.{ts,tsx}";
+
+html:focus-within {
+  scroll-behavior: smooth;
+}
 
 * {
   box-sizing: border-box;
@@ -150,6 +157,11 @@ h6 {
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 /* Prevent text elements from shrink-wrapping in centered flex columns.
@@ -203,4 +215,142 @@ h6 {
 
 *::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+/* Custom Prose Utility for long-form reading contexts */
+.prose {
+  max-width: 65ch;
+  line-height: 1.625;
+}
+
+.prose p {
+  margin-block: 0 1.25em;
+  text-wrap: pretty;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  margin-block-start: 1.75em;
+  margin-block-end: 0.75em;
+  line-height: 1.25;
+}
+
+.prose ul,
+.prose ol {
+  margin-block: 0 1.25em;
+  padding-inline-start: 1.5em;
+}
+
+.prose li {
+  margin-block: 0.5em;
+}
+
+/* Global numeric alignment for tables and numeric-heavy displays */
+table,
+.table,
+[role="table"],
+.kpi-card-value,
+.feature-stat-card__value,
+.feature-metric-card__value {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Contextual Accent Overrides based on active feature module */
+[data-active-module="sales"] {
+  --color-accent: var(--color-sales);
+  --color-accent-strong: var(--color-sales-strong);
+  --color-accent-soft: var(--color-sales-soft);
+  --color-accent-contrast: var(--color-solid-dark-foreground);
+  --color-accent-strong-contrast: var(--color-solid-light-foreground);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-sales),
+    var(--color-sales-strong)
+  );
+}
+
+[data-active-module="inventory"] {
+  --color-accent: var(--color-inventory);
+  --color-accent-strong: var(--color-inventory-strong);
+  --color-accent-soft: var(--color-inventory-soft);
+  --color-accent-contrast: var(--color-solid-dark-foreground);
+  --color-accent-strong-contrast: var(--color-solid-light-foreground);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-inventory),
+    var(--color-inventory-strong)
+  );
+}
+
+[data-active-module="crm"] {
+  --color-accent: var(--color-crm);
+  --color-accent-strong: var(--color-crm-strong);
+  --color-accent-soft: var(--color-crm-soft);
+  --color-accent-contrast: var(--color-solid-dark-foreground);
+  --color-accent-strong-contrast: var(--color-solid-light-foreground);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-crm),
+    var(--color-crm-strong)
+  );
+}
+
+[data-active-module="expenses"],
+[data-active-module="commissions"],
+[data-active-module="auto-entries"] {
+  --color-accent: var(--color-finance);
+  --color-accent-strong: var(--color-finance-strong);
+  --color-accent-soft: var(--color-finance-soft);
+  --color-accent-contrast: var(--color-solid-light-foreground);
+  --color-accent-strong-contrast: var(--color-solid-light-foreground);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-finance),
+    var(--color-finance-strong)
+  );
+}
+
+[data-active-module="documents"] {
+  --color-accent: var(--color-documents);
+  --color-accent-strong: var(--color-documents-strong);
+  --color-accent-soft: var(--color-documents-soft);
+  --color-accent-contrast: var(--color-solid-light-foreground);
+  --color-accent-strong-contrast: var(--color-solid-light-foreground);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-documents),
+    var(--color-documents-strong)
+  );
+}
+
+[data-active-module="settings"] {
+  --color-accent: var(--color-settings);
+  --color-accent-strong: var(--color-settings-strong);
+  --color-accent-soft: var(--color-settings-soft);
+  --color-accent-contrast: var(--color-solid-light-foreground);
+  --color-accent-strong-contrast: var(--color-solid-light-foreground);
+  --background-image-gradient-brand: linear-gradient(
+    135deg,
+    var(--color-settings),
+    var(--color-settings-strong)
+  );
+}
+
+:root[data-theme="dark"] [data-active-module="sales"],
+:root[data-theme="dark"] [data-active-module="inventory"],
+:root[data-theme="dark"] [data-active-module="crm"] {
+  --color-accent-strong-contrast: var(--color-solid-dark-foreground);
+}
+
+:root[data-theme="dark"] [data-active-module="expenses"],
+:root[data-theme="dark"] [data-active-module="commissions"],
+:root[data-theme="dark"] [data-active-module="auto-entries"] {
+  --color-accent-contrast: var(--color-solid-deep-foreground);
+}
+
+:root[data-theme="dark"] [data-active-module="documents"],
+:root[data-theme="dark"] [data-active-module="settings"] {
+  --color-accent-contrast: var(--color-solid-dark-foreground);
 }
