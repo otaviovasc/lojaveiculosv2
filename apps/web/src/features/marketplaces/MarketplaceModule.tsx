@@ -1,11 +1,13 @@
-import { RefreshCcw, Store } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CheckCircle2, RefreshCcw, Store } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import AnimatedContent from "../../components/ui/AnimatedContent";
 import {
   FeatureActionButton,
   FeaturePageShell,
   FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
 import {
+  FeatureAlert,
   FeatureEmptyState,
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
@@ -22,6 +24,12 @@ import {
   formatMarketplaceError,
   type MarketplaceErrorDisplay,
 } from "./marketplaceErrors";
+import { providerLabels } from "./marketplaceLabels";
+import {
+  marketplaceRedirectUri,
+  readMarketplaceOauthCallback,
+} from "./marketplaceOauthCallback";
+import { marketplaceProviderOrder } from "./marketplaceProviderPresentation";
 import { createMarketplaceRuntimeApi } from "./runtimeApi";
 import type {
   MarketplaceAccountStatus,
@@ -46,16 +54,21 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     useState<MarketplaceProvider | null>(null);
   const [lastRun, setLastRun] =
     useState<MarketplaceStockSyncRunResponse | null>(null);
-  const redirectUri = `${window.location.origin}/marketplaces/oauth/callback`;
+  const oauthCallbackStartedRef = useRef(false);
+  const redirectUri = marketplaceRedirectUri(window.location);
+
+  const applyOverview = (nextOverview: MarketplaceOverview) => {
+    setOverview(nextOverview);
+    setSelectedProvider(
+      (current) => current ?? orderedProviders(nextOverview)[0] ?? null,
+    );
+  };
 
   const refresh = async () => {
     setStatus({ kind: "loading" });
     try {
       const nextOverview = await marketplaceApi.getOverview();
-      setOverview(nextOverview);
-      setSelectedProvider(
-        (current) => current ?? nextOverview.providers[0] ?? null,
-      );
+      applyOverview(nextOverview);
       setStatus({ kind: "ready" });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
@@ -63,8 +76,47 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   };
 
   useEffect(() => {
-    void refresh();
+    if (oauthCallbackStartedRef.current) return;
+    oauthCallbackStartedRef.current = true;
+    void initializeMarketplace();
   }, []);
+
+  const initializeMarketplace = async () => {
+    const callback = readMarketplaceOauthCallback(window.location);
+    if (callback.kind === "none") {
+      await refresh();
+      return;
+    }
+
+    if (callback.kind === "error") {
+      clearOauthCallbackLocation();
+      try {
+        applyOverview(await marketplaceApi.getOverview());
+      } catch {
+        // The authorization error remains the most useful visible state.
+      }
+      setStatus({ kind: "error", display: oauthErrorDisplay(callback) });
+      return;
+    }
+
+    setStatus({ kind: "saving", provider: callback.provider });
+    try {
+      await marketplaceApi.completeConnection({
+        code: callback.code,
+        provider: callback.provider,
+        redirectUri,
+      });
+      applyOverview(await marketplaceApi.getOverview());
+      clearOauthCallbackLocation();
+      setStatus({
+        kind: "saved",
+        message: `${providerLabels[callback.provider]} conectado. Nenhum anúncio foi enviado.`,
+      });
+    } catch (error) {
+      clearOauthCallbackLocation();
+      setStatus({ kind: "error", display: errorDisplay(error) });
+    }
+  };
 
   const upsertAccount = async (
     provider: MarketplaceProvider,
@@ -77,8 +129,14 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         provider,
         status: nextStatus,
       });
-      setOverview(await marketplaceApi.getOverview());
-      setStatus({ kind: "saved" });
+      applyOverview(await marketplaceApi.getOverview());
+      setStatus({
+        kind: "saved",
+        message:
+          nextStatus === "active"
+            ? `${providerLabels[provider]} ativado. Gere uma prévia antes de enviar o estoque.`
+            : `Envios ao ${providerLabels[provider]} pausados. Nenhum anúncio foi alterado agora.`,
+      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -104,8 +162,11 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
     try {
       await marketplaceApi.completeConnection({ code, provider, redirectUri });
       setOauthCodes((current) => ({ ...current, [provider]: "" }));
-      setOverview(await marketplaceApi.getOverview());
-      setStatus({ kind: "saved" });
+      applyOverview(await marketplaceApi.getOverview());
+      setStatus({
+        kind: "saved",
+        message: `${providerLabels[provider]} conectado. Nenhum anúncio foi enviado.`,
+      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -122,7 +183,10 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         [provider]: { batchId: preview.batchId, plan: preview.plan },
       }));
       setSelectedProvider(provider);
-      setStatus({ kind: "saved" });
+      setStatus({
+        kind: "saved",
+        message: `Prévia do ${providerLabels[provider]} pronta. Revise os bloqueios antes de enviar.`,
+      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -142,8 +206,11 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         [provider]: { batchId: result.batchId, plan: result.plan },
       }));
       setSelectedProvider(provider);
-      setOverview(await marketplaceApi.getOverview());
-      setStatus({ kind: "saved" });
+      applyOverview(await marketplaceApi.getOverview());
+      setStatus({
+        kind: "saved",
+        message: `Lote do ${providerLabels[provider]} enfileirado. Acompanhe o resultado das publicações abaixo.`,
+      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -155,8 +222,11 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       await marketplaceApi.retrySyncJob(job.id, {
         reason: "retry_from_marketplace_stock_sync_ui",
       });
-      setOverview(await marketplaceApi.getOverview());
-      setStatus({ kind: "saved" });
+      applyOverview(await marketplaceApi.getOverview());
+      setStatus({
+        kind: "saved",
+        message: `Nova tentativa enfileirada no ${providerLabels[job.provider]}.`,
+      });
     } catch (error) {
       setStatus({ kind: "error", display: errorDisplay(error) });
     }
@@ -192,6 +262,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
         >
           <FeatureActionButton
             icon={RefreshCcw}
+            isBusy={status.kind === "loading"}
             label="Atualizar"
             onClick={() => void refresh()}
           />
@@ -200,9 +271,20 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
       {status.kind === "error" ? (
         <MarketplaceErrorAlert {...status.display} />
       ) : null}
+      {status.kind === "saved" ? (
+        <FeatureAlert
+          className="marketplace-feedback"
+          icon={<CheckCircle2 aria-hidden="true" className="size-5" />}
+          tone="success"
+        >
+          {status.message}
+        </FeatureAlert>
+      ) : null}
       {overview ? (
         <>
-          <MarketplaceOperationsOverview overview={overview} />
+          <AnimatedContent distance={14} duration={0.32} trigger="mount">
+            <MarketplaceOperationsOverview overview={overview} />
+          </AnimatedContent>
           <div className="marketplace-section-heading marketplace-section-heading--channels">
             <div>
               <span className="marketplace-section-heading__eyebrow">
@@ -210,34 +292,41 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
               </span>
               <h2>Conexões da loja</h2>
               <p>
-                Cada canal mantém seu próprio contrato, credenciais e retorno
-                operacional.
+                Conecte e revise cada canal conforme o contrato que ele exige. A
+                prévia não publica nenhum anúncio.
               </p>
             </div>
           </div>
           <section className="marketplace-grid">
-            {overview.providers.map((provider) => (
-              <MarketplaceProviderCard
-                account={overview.accounts.find(
-                  (account) => account.provider === provider,
-                )}
-                isSaving={
-                  status.kind === "saving" && status.provider === provider
-                }
+            {orderedProviders(overview).map((provider, index) => (
+              <AnimatedContent
+                delay={index * 0.06}
+                distance={18}
+                duration={0.38}
                 key={provider}
-                oauthCode={oauthCodes[provider] ?? ""}
-                onCompleteConnection={completeConnection}
-                onConnect={createConnectUrl}
-                onOauthCodeChange={updateOauthCode}
-                onPreview={previewStock}
-                onRun={runStock}
-                onStatusChange={upsertAccount}
-                preview={previews[provider]?.plan ?? null}
-                provider={provider}
-                state={overview.providerStates.find(
-                  (state) => state.provider === provider,
-                )}
-              />
+                trigger="mount"
+              >
+                <MarketplaceProviderCard
+                  account={overview.accounts.find(
+                    (account) => account.provider === provider,
+                  )}
+                  isSaving={
+                    status.kind === "saving" && status.provider === provider
+                  }
+                  oauthCode={oauthCodes[provider] ?? ""}
+                  onCompleteConnection={completeConnection}
+                  onConnect={createConnectUrl}
+                  onOauthCodeChange={updateOauthCode}
+                  onPreview={previewStock}
+                  onRun={runStock}
+                  onStatusChange={upsertAccount}
+                  preview={previews[provider]?.plan ?? null}
+                  provider={provider}
+                  state={overview.providerStates.find(
+                    (state) => state.provider === provider,
+                  )}
+                />
+              </AnimatedContent>
             ))}
           </section>
           {selectedPreview ? (
@@ -280,7 +369,7 @@ type MarketplaceStatus =
   | { display: MarketplaceErrorDisplay; kind: "error" }
   | { kind: "loading" }
   | { kind: "ready" }
-  | { kind: "saved" }
+  | { kind: "saved"; message: string }
   | { kind: "saving"; provider: MarketplaceProvider };
 
 function errorDisplay(error: unknown) {
@@ -288,4 +377,31 @@ function errorDisplay(error: unknown) {
     error,
     "Não foi possível concluir a ação no marketplace.",
   );
+}
+
+function orderedProviders(overview: MarketplaceOverview) {
+  return marketplaceProviderOrder.filter((provider) =>
+    overview.providers.includes(provider),
+  );
+}
+
+function clearOauthCallbackLocation() {
+  window.history.replaceState({}, "", "/dashboard#/marketplaces");
+}
+
+function oauthErrorDisplay(
+  callback: Extract<
+    ReturnType<typeof readMarketplaceOauthCallback>,
+    { kind: "error" }
+  >,
+): MarketplaceErrorDisplay {
+  return {
+    failed: "A conexão não foi concluída.",
+    fix: callback.message,
+    provider: callback.provider
+      ? providerLabels[callback.provider]
+      : "Canal não identificado",
+    requestId: "Não informado",
+    vehicleLabel: "Não se aplica",
+  };
 }

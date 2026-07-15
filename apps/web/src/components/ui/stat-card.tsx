@@ -66,6 +66,7 @@ interface StatCardProps {
   icon?: LucideIcon;
   trend?: { value: string; positive: boolean };
   className?: string;
+  density?: "compact" | "default";
   theme?: keyof typeof THEMES;
   variant?: "card" | "cell";
 }
@@ -76,6 +77,7 @@ function StatCard({
   icon: Icon,
   trend,
   className,
+  density = "default",
   theme = "default",
   variant = "card",
 }: StatCardProps) {
@@ -88,7 +90,9 @@ function StatCard({
         variant === "card"
           ? "rounded-2xl border border-border/50 bg-card/45 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:scale-[1.01] " +
               currentTheme.hoverBorder
-          : "p-5 md:p-6 bg-card/40 hover:bg-card/65",
+          : density === "compact"
+            ? "p-3 md:p-4 bg-card/40 hover:bg-card/65"
+            : "p-5 md:p-6 bg-card/40 hover:bg-card/65",
         className,
       )}
     >
@@ -113,7 +117,12 @@ function StatCard({
           <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 transition-colors group-hover:text-foreground/80">
             {label}
           </div>
-          <div className="mt-2 font-mono text-3xl font-bold tabular-nums text-foreground tracking-tight">
+          <div
+            className={cn(
+              "font-mono font-bold tabular-nums text-foreground tracking-tight",
+              density === "compact" ? "mt-1 text-2xl" : "mt-2 text-3xl",
+            )}
+          >
             {value}
           </div>
           {trend && (
@@ -131,11 +140,14 @@ function StatCard({
         {Icon && (
           <div
             className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all duration-300 group-hover:scale-110",
+              "flex shrink-0 items-center justify-center border transition-all duration-300 group-hover:scale-110",
+              density === "compact"
+                ? "h-8 w-8 rounded-lg"
+                : "h-10 w-10 rounded-xl",
               currentTheme.iconBg,
             )}
           >
-            <Icon className="h-5 w-5" />
+            <Icon className={density === "compact" ? "h-4 w-4" : "h-5 w-5"} />
           </div>
         )}
       </div>

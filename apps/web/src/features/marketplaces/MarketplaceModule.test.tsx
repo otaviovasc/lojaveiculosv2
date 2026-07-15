@@ -19,12 +19,17 @@ import type {
 } from "./types";
 
 describe("MarketplaceModule", () => {
-  afterEach(cleanup);
+  afterEach(() => {
+    cleanup();
+    window.history.replaceState({}, "", "/");
+  });
 
   it("renders the account requirement checklist", async () => {
     render(<MarketplaceModule api={createApi()} />);
 
-    expect(await screen.findByText("Checklist da conta")).toBeVisible();
+    await waitFor(() =>
+      expect(screen.getByText("Estado da conta")).toBeVisible(),
+    );
     expect(screen.getByRole("img", { name: "Logo OLX" })).toHaveAttribute(
       "src",
       "/images/integrationslogos/olx.png",
@@ -61,12 +66,12 @@ describe("MarketplaceModule", () => {
     );
     expect(
       within(card as HTMLElement).getByRole("button", {
-        name: "Reconectar conta",
+        name: "Reconectar conta do OLX",
       }),
     ).toBeEnabled();
     expect(
       within(card as HTMLElement).getByRole("button", {
-        name: /Prever estoque/i,
+        name: /Validar lote.*OLX/i,
       }),
     ).toBeDisabled();
     expect(
@@ -83,7 +88,9 @@ describe("MarketplaceModule", () => {
 
     render(<MarketplaceModule api={api} />);
 
-    await user.click(await screen.findByRole("button", { name: /Prever/i }));
+    await user.click(
+      await screen.findByRole("button", { name: /Validar lote.*OLX/i }),
+    );
 
     expect(await screen.findByText("Honda Civic EXL")).toBeVisible();
     expect(screen.getByText("Publicar")).toBeVisible();
@@ -100,9 +107,11 @@ describe("MarketplaceModule", () => {
 
     render(<MarketplaceModule api={api} />);
 
-    await user.click(await screen.findByRole("button", { name: /Prever/i }));
     await user.click(
-      await screen.findByRole("button", { name: /Enfileirar/i }),
+      await screen.findByRole("button", { name: /Validar lote.*OLX/i }),
+    );
+    await user.click(
+      await screen.findByRole("button", { name: /Enviar lote à OLX/i }),
     );
 
     expect(api.runStockSync).toHaveBeenCalledWith("olx", {
@@ -129,7 +138,8 @@ describe("MarketplaceModule", () => {
     expect(api.retrySyncJob).toHaveBeenCalledWith("job_failed", {
       reason: "retry_from_marketplace_stock_sync_ui",
     });
-    expect(screen.getByText(/Publicar anúncio · Falhou/)).toBeVisible();
+    expect(screen.getByText("Publicar anúncio")).toBeVisible();
+    expect(screen.getByText("Falhou")).toBeVisible();
     expect(screen.queryByText("listing_1")).not.toBeInTheDocument();
   });
 
@@ -153,7 +163,9 @@ describe("MarketplaceModule", () => {
 
     render(<MarketplaceModule api={api} />);
 
-    await user.click(await screen.findByRole("button", { name: /Prever/i }));
+    await user.click(
+      await screen.findByRole("button", { name: /Validar lote.*OLX/i }),
+    );
 
     expect(await screen.findByText("Falha no marketplace")).toBeVisible();
     expect(screen.getByText(/Muitas tentativas em sequencia/)).toBeVisible();
@@ -161,6 +173,54 @@ describe("MarketplaceModule", () => {
     expect(within(screen.getByRole("alert")).getByText("OLX")).toBeVisible();
     expect(screen.getByText("Honda Civic EXL")).toBeVisible();
     expect(screen.getByText("req_123")).toBeVisible();
+  });
+
+  it("explains the different provider contracts", async () => {
+    render(
+      <MarketplaceModule
+        api={createApi({
+          getOverview: vi.fn(async () => bothProvidersOverview),
+        })}
+      />,
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("Catálogo e anúncio por item")).toBeVisible(),
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Autoupload de classificados")).toBeVisible(),
+    );
+    expect(
+      screen.getByText("Categoria, marca, modelo, versão e ano"),
+    ).toBeVisible();
+    expect(screen.getByText("Telefone e CEP da loja")).toBeVisible();
+    expect(screen.getByText("Placa válida para veículos usados")).toBeVisible();
+  });
+
+  it("completes an OAuth callback and reports that no listing was sent", async () => {
+    window.history.replaceState(
+      {},
+      "",
+      `/marketplaces/oauth/callback?code=authorization_code_123&state=${encodeURIComponent(
+        JSON.stringify({ provider: "olx" }),
+      )}`,
+    );
+    const api = createApi();
+
+    render(<MarketplaceModule api={api} />);
+
+    await waitFor(() =>
+      expect(api.completeConnection).toHaveBeenCalledWith({
+        code: "authorization_code_123",
+        provider: "olx",
+        redirectUri: "http://localhost:3000/marketplaces/oauth/callback",
+      }),
+    );
+    expect(
+      await screen.findByText("OLX conectado. Nenhum anúncio foi enviado."),
+    ).toBeVisible();
+    expect(window.location.pathname).toBe("/dashboard");
+    expect(window.location.hash).toBe("#/marketplaces");
   });
 });
 
@@ -248,6 +308,29 @@ const reconnectRequiredOverview: MarketplaceOverview = {
       ],
     },
   ],
+};
+
+const bothProvidersOverview: MarketplaceOverview = {
+  ...overview,
+  accounts: [
+    account,
+    {
+      ...account,
+      id: "account_ml",
+      provider: "mercado_livre",
+    },
+  ],
+  providerStates: [
+    ...overview.providerStates,
+    {
+      accountId: "account_ml",
+      connectionStatus: "connected",
+      lastSyncSummary: null,
+      provider: "mercado_livre",
+      requirements: [],
+    },
+  ],
+  providers: ["olx", "mercado_livre"],
 };
 
 const plan: MarketplaceStockPlan = {

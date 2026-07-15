@@ -2,15 +2,19 @@ import {
   AlertTriangle,
   BadgeCheck,
   CheckCircle2,
+  ClipboardCheck,
   Play,
   SearchCheck,
 } from "lucide-react";
+import { FeatureInput } from "../../components/ui/FeatureControls";
+import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import {
   getMarketplaceConnectionLabel,
   getMarketplaceRequirementCopy,
   providerLabels,
 } from "./marketplaceLabels";
 import { resolveMarketplaceConnectionPresentation } from "./marketplaceConnectionPresentation";
+import { marketplaceProviderPresentation } from "./marketplaceProviderPresentation";
 import { MarketplaceProviderBrand } from "./MarketplaceProviderBrand";
 import type {
   MarketplaceAccount,
@@ -50,9 +54,12 @@ export function MarketplaceProviderCard({
   state: MarketplaceProviderState | undefined;
 }) {
   const connection = resolveMarketplaceConnectionPresentation(state, account);
+  const presentation = marketplaceProviderPresentation[provider];
+  const providerLabel = providerLabels[provider];
   const statusAction = connection.statusAction;
   const ConnectionIcon =
     connection.tone === "success" ? BadgeCheck : AlertTriangle;
+
   return (
     <article
       className="marketplace-card"
@@ -72,72 +79,113 @@ export function MarketplaceProviderCard({
             )}
           </span>
         </div>
-        <p className="marketplace-card__purpose">
-          Publique, atualize e retire anúncios em lote. Leads continuam fora
-          desta integração.
-        </p>
+        <div className="marketplace-card__intro">
+          <span className="marketplace-card__channel-type">
+            {presentation.channelType}
+          </span>
+          <p>{presentation.description}</p>
+        </div>
       </header>
+
+      <section
+        aria-label={`O que o ${providerLabel} valida`}
+        className="marketplace-channel-contract"
+      >
+        <div className="marketplace-channel-contract__heading">
+          <ClipboardCheck aria-hidden="true" className="size-4" />
+          <strong>O canal valida</strong>
+        </div>
+        <ul>
+          {presentation.readinessItems.map((item) => (
+            <li key={item}>
+              <CheckCircle2 aria-hidden="true" className="size-4" />
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <MarketplaceRequirementChecklist state={state} />
+
       <div className="marketplace-actions">
         {connection.connectLabel ? (
-          <button
-            disabled={isSaving}
+          <FeatureActionButton
+            {...(connection.tone === "success" ? { icon: BadgeCheck } : {})}
+            isBusy={isSaving}
+            label={`${connection.connectLabel} do ${providerLabel}`}
             onClick={() => void onConnect(provider)}
-            type="button"
+            variant={connection.canSync ? "secondary" : "primary"}
           >
             {connection.connectLabel}
-          </button>
+          </FeatureActionButton>
         ) : null}
         {statusAction ? (
-          <button
-            disabled={isSaving}
+          <FeatureActionButton
+            isBusy={isSaving}
+            label={`${statusAction.label} publicações no ${providerLabel}`}
             onClick={() => void onStatusChange(provider, statusAction.status)}
-            type="button"
           >
-            {statusAction.label}
-          </button>
+            {statusAction.label === "Pausar" ? "Pausar envios" : "Ativar conta"}
+          </FeatureActionButton>
         ) : null}
       </div>
-      <details className="marketplace-authorization">
-        <summary>Inserir código de autorização</summary>
-        <div className="marketplace-form-grid">
-          <input
-            aria-label={`Código de autorização do ${providerLabels[provider]}`}
-            onChange={(event) =>
-              onOauthCodeChange(provider, event.target.value)
-            }
-            placeholder="Código recebido após autorizar a conta"
-            value={oauthCode}
-          />
-          <button
-            disabled={isSaving || !oauthCode.trim()}
-            onClick={() => void onCompleteConnection(provider)}
-            type="button"
-          >
-            Finalizar conexão
-          </button>
+
+      {!connection.canSync ? (
+        <details className="marketplace-authorization">
+          <summary>Conexão manual para suporte</summary>
+          <p>{presentation.authorizationHint}</p>
+          <div className="marketplace-form-grid">
+            <FeatureInput
+              aria-label={`Código de autorização do ${providerLabel}`}
+              disabled={isSaving}
+              minLength={8}
+              onChange={(event) =>
+                onOauthCodeChange(provider, event.target.value)
+              }
+              placeholder="Cole o código devolvido pelo canal"
+              value={oauthCode}
+            />
+            <FeatureActionButton
+              disabled={oauthCode.trim().length < 8}
+              isBusy={isSaving}
+              label={`Finalizar conexão manual do ${providerLabel}`}
+              onClick={() => void onCompleteConnection(provider)}
+            >
+              Finalizar conexão
+            </FeatureActionButton>
+          </div>
+        </details>
+      ) : null}
+
+      <footer className="marketplace-card__footer">
+        <div className="marketplace-preview-summary">
+          <strong>{preview ? preview.total : "—"}</strong>
+          <span>
+            {preview
+              ? `${preview.total === 1 ? "veículo avaliado" : "veículos avaliados"} · ${preview.blocked} bloqueados`
+              : "Gere a prévia antes de enviar"}
+          </span>
         </div>
-      </details>
-      <MarketplaceRequirementChecklist state={state} />
-      <div className="marketplace-job-actions">
-        <button
-          disabled={isSaving || !connection.canSync}
-          onClick={() => void onPreview(provider)}
-          type="button"
-        >
-          <SearchCheck aria-hidden="true" className="size-4" />
-          Prever estoque
-        </button>
-        <button
-          disabled={
-            isSaving || !connection.canSync || !preview || preview.total === 0
-          }
-          onClick={() => void onRun(provider)}
-          type="button"
-        >
-          <Play aria-hidden="true" className="size-4" />
-          Enfileirar lote
-        </button>
-      </div>
+        <div className="marketplace-job-actions">
+          <FeatureActionButton
+            disabled={!connection.canSync}
+            icon={SearchCheck}
+            isBusy={isSaving}
+            label={`${presentation.previewLabel} no ${providerLabel}`}
+            onClick={() => void onPreview(provider)}
+          >
+            {presentation.previewLabel}
+          </FeatureActionButton>
+          <FeatureActionButton
+            disabled={!connection.canSync || !preview || preview.total === 0}
+            icon={Play}
+            isBusy={isSaving}
+            label={presentation.runLabel}
+            onClick={() => void onRun(provider)}
+            variant="primary"
+          />
+        </div>
+      </footer>
     </article>
   );
 }
@@ -150,7 +198,7 @@ function MarketplaceRequirementChecklist({
   const requirements = state?.requirements ?? [];
   return (
     <section className="marketplace-checklist" aria-label="Checklist da conta">
-      <h4>Checklist da conta</h4>
+      <h4>Estado da conta</h4>
       {requirements.length ? (
         <ul>
           {requirements.map((requirement) => {
@@ -174,9 +222,9 @@ function MarketplaceRequirementChecklist({
           })}
         </ul>
       ) : !state ? (
-        <p>O provedor ainda não informou o checklist desta conta.</p>
+        <p>O canal ainda não informou a prontidão desta conta.</p>
       ) : (
-        <p>Checklist concluído: nenhuma pendência operacional encontrada.</p>
+        <p>Nenhuma pendência operacional encontrada nesta conta.</p>
       )}
     </section>
   );

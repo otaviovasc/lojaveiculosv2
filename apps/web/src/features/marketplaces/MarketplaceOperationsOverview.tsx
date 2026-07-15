@@ -45,10 +45,7 @@ export function MarketplaceOperationsOverview({
             Operação centralizada
           </span>
           <h2>Distribuição do estoque</h2>
-          <p>
-            Conecte os canais uma vez e acompanhe a prontidão do catálogo sem
-            selecionar veículos manualmente.
-          </p>
+          <p>Prontidão, correções e fila de publicação dos canais.</p>
         </div>
         <div
           className="marketplace-operations__connection-summary"
@@ -65,6 +62,7 @@ export function MarketplaceOperationsOverview({
         role="region"
       >
         <StatCard
+          density="compact"
           icon={BadgeCheck}
           label="Canais prontos"
           theme="success"
@@ -72,6 +70,7 @@ export function MarketplaceOperationsOverview({
           variant="cell"
         />
         <StatCard
+          density="compact"
           icon={TriangleAlert}
           label="Pedem atenção"
           theme="amber"
@@ -79,6 +78,7 @@ export function MarketplaceOperationsOverview({
           variant="cell"
         />
         <StatCard
+          density="compact"
           icon={Activity}
           label="Na fila agora"
           theme="blue"
@@ -86,6 +86,7 @@ export function MarketplaceOperationsOverview({
           variant="cell"
         />
         <StatCard
+          density="compact"
           icon={TriangleAlert}
           label="Falhas recentes"
           theme={failedJobs ? "amber" : "default"}
@@ -94,21 +95,21 @@ export function MarketplaceOperationsOverview({
         />
       </div>
 
-      <div className="marketplace-operations__vehicle-detail">
-        <span className="marketplace-operations__vehicle-icon">
+      <aside className="marketplace-operations__scope">
+        <span className="marketplace-operations__scope-icon">
           <CarFront aria-hidden="true" className="size-5" />
         </span>
         <div>
           <strong>Visão por veículo</strong>
           <p>
-            O detalhe do veículo concentra os portais daquele anúncio. Aqui,
-            acompanhe conexões e lotes do estoque inteiro.
+            Ajustes de um anúncio ficam no detalhe do veículo; esta central
+            cuida dos lotes da loja.
             {evaluatedItems > 0
-              ? ` A última sincronização avaliou ${evaluatedItems} itens de canal.`
-              : " Gere uma prévia em um canal para medir a cobertura atual."}
+              ? ` Última revisão: ${evaluatedItems} itens de canal.`
+              : " Gere uma prévia para medir a cobertura."}
           </p>
         </div>
-      </div>
+      </aside>
     </section>
   );
 }
