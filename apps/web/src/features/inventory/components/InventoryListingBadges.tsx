@@ -54,12 +54,14 @@ export function MercosulPlateBadge({ plate }: { plate: string }) {
   return (
     <span
       aria-label={`Placa ${formatted}`}
-      className="inline-flex align-middle flex-col overflow-hidden rounded-[3px] border border-gray-300 dark:border-line bg-white dark:bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] min-w-[70px] max-w-[80px] text-center select-none shrink-0"
+      className="inline-flex h-7 min-w-[70px] max-w-[80px] shrink-0 select-none flex-col overflow-hidden rounded-[3px] border border-gray-300 bg-white text-center align-middle shadow-sm dark:border-line dark:bg-white"
     >
-      <span className="bg-blue-600 px-1 py-0.5 text-xs font-black uppercase leading-none tracking-widest text-center text-white dark:bg-blue-600">
-        Brasil
+      <span className="flex h-2 shrink-0 items-center justify-center bg-blue-600 px-1 text-white dark:bg-blue-600">
+        <span className="origin-center scale-50 text-xs font-black uppercase leading-none tracking-widest">
+          Brasil
+        </span>
       </span>
-      <span className="px-1.5 py-0.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
+      <span className="flex h-5 items-center justify-center px-1.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
         {formatted}
       </span>
     </span>
