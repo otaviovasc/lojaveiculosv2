@@ -1,8 +1,6 @@
 import type { AttachVehicleDocumentInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleDocument.js";
-import type { AttachVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/attachVehicleUnit.js";
 import type { AddVehicleCostInput } from "../../../domains/vehicle/services/VehicleService/addVehicleCost.js";
 import type { ApproveVehicleAiStudioImageInput } from "../../../domains/vehicle/services/VehicleService/approveVehicleAiStudioImage.js";
-import type { CreateVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/createVehicleListing.js";
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import type { DeleteVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
@@ -62,19 +60,16 @@ import {
   type InventoryUnitListResponse,
 } from "./listingResponseDtos.js";
 import { createInventoryListingServices } from "./listingServicesFactory.js";
+import type {
+  AttachListingInput,
+  CreateListingInput,
+  VehicleMediaResult,
+} from "./listingServiceTypes.js";
 export { listingStatuses } from "./vehicle.controller.statuses.js";
 export type {
   CreateInventoryListingServicesOptions,
   DrizzleVehicleInventoryAdapter,
 } from "./listingServiceOptions.js";
-
-export type VehicleMediaResult = {
-  mediaId: string;
-  storageKey: string;
-  status: "created";
-  unitId: string;
-  url: string;
-};
 
 export type InventoryListingServices = {
   analyzeListingResale: (
@@ -250,13 +245,5 @@ export type InventoryListingServices = {
     input: SellVehicleUnitInput,
   ) => Promise<InventoryListingDetailResponse>;
 };
-type ExplicitOptionalUndefined<T> = {
-  [Key in keyof T]: Record<string, never> extends Pick<T, Key>
-    ? T[Key] | undefined
-    : T[Key];
-};
-type AttachListingInput = ExplicitOptionalUndefined<AttachVehicleUnitInput>;
-type CreateListingInput = ExplicitOptionalUndefined<CreateVehicleListingInput>;
-
 export const inventoryListingServices = createInventoryListingServices();
 export { createInventoryListingServices };

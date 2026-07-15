@@ -130,7 +130,7 @@ export function ImageTemplateAiStudioSection({
         <StatusMessage exhausted={quota.isExhausted} status={status} />
         <div className="grid gap-2 sm:grid-cols-2">
           <button
-            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-inverse transition-colors hover:bg-accent-strong disabled:opacity-55"
+            className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-black text-accent-foreground transition-colors hover:bg-accent-strong hover:text-accent-strong-foreground disabled:opacity-55"
             disabled={!canGenerate}
             onClick={() => void generate()}
             type="button"

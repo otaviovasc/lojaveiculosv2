@@ -227,18 +227,19 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 | `OLX_TOKEN_URL`                         | No          | staging, production | No     | Defaults to `https://auth.olx.com.br/oauth/token`.                                            |
 | `OLX_LISTINGS_PATH`                     | No          | staging, production | No     | Defaults to `/autoupload/import`.                                                             |
 | `OLX_REQUIREMENT_CONFIG`                | No          | staging, production | No     | Optional JSON account-check and requirement override. Invalid JSON fails closed.              |
-| `HEDRA_API_KEY`                         | No          | staging, production | Yes    | Hedra API key for Inventory Estudio Digital IA.                                                                    |
-| `HEDRA_API_BASE_URL`                    | No          | staging, production | No     | Defaults to `https://api.hedra.com`; override if Hedra provides another endpoint.                                  |
-| `HEDRA_ASSET_PATH`                      | No          | staging, production | No     | Source image asset create/list path. Defaults to `/web-app/public/assets`.                                         |
-| `HEDRA_ASSET_UPLOAD_PATH`               | No          | staging, production | No     | Source image asset upload path with `{id}`. Defaults to `/web-app/public/assets/{id}/upload`.                      |
-| `HEDRA_IMAGE_TO_IMAGE_PATH`             | No          | staging, production | No     | Image-to-image generation path. Defaults to `/web-app/public/generations`.                                         |
-| `HEDRA_GENERATION_STATUS_PATH`          | No          | staging, production | No     | Polling path with `{id}`. Defaults to `/web-app/public/generations/{id}/status`.                                   |
-| `HEDRA_AUTH_HEADER`                     | No          | staging, production | No     | Defaults to `X-API-Key`.                                                                                            |
-| `HEDRA_AUTH_SCHEME`                     | No          | staging, production | No     | Optional auth scheme; blank for `X-API-Key`.                                                                       |
-| `HEDRA_FLUX_2_PRO_MODEL_ID`             | No          | staging, production | No     | Hedra model id mapped from the internal `flux_2_pro` image-to-image model.                                         |
-| `HEDRA_POLL_INTERVAL_MS`                | No          | staging, production | No     | Async Hedra polling interval. Defaults to `1500`.                                                                  |
-| `HEDRA_POLL_MAX_ATTEMPTS`               | No          | staging, production | No     | Async Hedra polling attempts. Defaults to `120`.                                                                   |
-| `HEDRA_REQUEST_TIMEOUT_MS`              | No          | staging, production | No     | Per-request timeout for Hedra create/status/download HTTP calls. Defaults to `60000`.                              |
+| `HEDRA_API_KEY`                         | No          | staging, production | Yes    | Hedra API key for Inventory Estudio Digital IA.                                               |
+| `HEDRA_API_BASE_URL`                    | No          | staging, production | No     | Defaults to `https://api.hedra.com`; override if Hedra provides another endpoint.             |
+| `HEDRA_ASSET_PATH`                      | No          | staging, production | No     | Source image asset create/list path. Defaults to `/web-app/public/assets`.                    |
+| `HEDRA_ASSET_UPLOAD_PATH`               | No          | staging, production | No     | Source image asset upload path with `{id}`. Defaults to `/web-app/public/assets/{id}/upload`. |
+| `HEDRA_IMAGE_TO_IMAGE_PATH`             | No          | staging, production | No     | Image-to-image generation path. Defaults to `/web-app/public/generations`.                    |
+| `HEDRA_GENERATION_STATUS_PATH`          | No          | staging, production | No     | Polling path with `{id}`. Defaults to `/web-app/public/generations/{id}/status`.              |
+| `HEDRA_AUTH_HEADER`                     | No          | staging, production | No     | Defaults to `X-API-Key`.                                                                      |
+| `HEDRA_AUTH_SCHEME`                     | No          | staging, production | No     | Optional auth scheme; blank for `X-API-Key`.                                                  |
+| `HEDRA_FLUX_2_PRO_MODEL_ID`             | No          | staging, production | No     | Hedra model id mapped from the internal `flux_2_pro` image-to-image model.                    |
+| `HEDRA_POLL_INTERVAL_MS`                | No          | staging, production | No     | Async Hedra polling interval. Defaults to `1500`.                                             |
+| `HEDRA_POLL_MAX_ATTEMPTS`               | No          | staging, production | No     | Async Hedra polling attempts. Defaults to `120`.                                              |
+| `HEDRA_REQUEST_TIMEOUT_MS`              | No          | staging, production | No     | Per-request timeout for Hedra create/status/download HTTP calls. Defaults to `60000`.         |
+| `HTTP_REQUEST_TIMEOUT_MS`               | No          | staging, production | No     | Node HTTP server inbound timeout. Defaults to `240000`; external gateways can enforce less.   |
 
 ## Vehicle Catalog Sync
 

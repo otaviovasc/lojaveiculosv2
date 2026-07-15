@@ -15,6 +15,7 @@ import {
   acquisitionResult,
   supplierResult,
 } from "./vehicle.acquisition.controller.fixtures.js";
+import { aiStudioGenerationResult } from "./vehicle.aiStudio.testFixtures.js";
 
 export { listingDetailResult } from "./vehicle.controller.testFixtures.js";
 
@@ -108,22 +109,7 @@ export function createInventoryTestServices(): InventoryListingServices {
       yearCode: "2024-1",
     })),
     getListing: vi.fn(async () => listingDetailResult()),
-    generateAiStudioImage: vi.fn(async () => ({
-      beforeUrl: "https://cdn.local/front.jpg",
-      credits: 4,
-      generatedStorageKey:
-        "tenants/tenant_1/stores/store_1/units/unit_1/ai-studio/output.png",
-      generatedUrl: "https://cdn.local/output.png",
-      guidance: 0.75,
-      mediaId: "media_1",
-      model: "flux_2_pro" as const,
-      providerGenerationId: "hedra_generation_1",
-      sourceStorageKey:
-        "tenants/tenant_1/stores/store_1/units/unit_1/photo/front.jpg",
-      strength: 0.75,
-      templateId: "premium_studio" as const,
-      unitId: "unit_1",
-    })),
+    generateAiStudioImage: vi.fn(async () => aiStudioGenerationResult()),
     getVehicleUnitAcquisition: vi.fn(async () => acquisitionResult()),
     listChecklists: vi.fn(async () => [
       {

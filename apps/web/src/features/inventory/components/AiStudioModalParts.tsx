@@ -58,7 +58,7 @@ export function AiStudioPhotoStrip({
           className={cx(
             "relative aspect-[4/3] overflow-hidden rounded-lg border bg-app-elevated transition-all",
             selectedMediaId === item.id
-              ? "border-accent shadow-[var(--shadow-focus)]"
+              ? "border-accent"
               : "border-line hover:border-accent/60",
           )}
           key={item.id}
@@ -71,7 +71,7 @@ export function AiStudioPhotoStrip({
             src={item.url}
           />
           {selectedMediaId === item.id ? (
-            <span className="absolute right-2 top-2 rounded-full bg-accent p-1 text-inverse">
+            <span className="absolute right-2 top-2 rounded-full bg-accent p-1 text-accent-foreground">
               <CheckCircle2 aria-hidden="true" className="size-3.5" />
             </span>
           ) : null}
@@ -108,7 +108,7 @@ export function AiStudioTemplateSelector({
             className={cx(
               "min-h-28 rounded-lg border p-3 text-left transition-all",
               selected
-                ? "border-accent bg-accent-soft text-app-text shadow-[var(--shadow-focus)]"
+                ? "border-accent bg-accent-soft text-app-text"
                 : "border-line bg-app-elevated text-muted hover:border-accent/60 hover:text-app-text",
             )}
             key={template.id}

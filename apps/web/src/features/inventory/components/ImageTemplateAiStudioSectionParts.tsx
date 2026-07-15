@@ -36,7 +36,7 @@ export function QuotaCard({ quota }: { quota: AiStudioGenerationQuota }) {
           style={{ width: `${percentUsed}%` }}
         />
       </div>
-      <p className="mt-2 text-[11px] font-bold text-muted">
+      <p className="mt-2 text-xs font-bold text-muted">
         Limite mensal do plano PRO em {quota.periodLabel}.
       </p>
     </section>
@@ -81,7 +81,7 @@ export function SelectedPhotoCard({
             className={cx(
               "h-16 w-20 shrink-0 overflow-hidden rounded-lg border transition-all",
               selectedPhoto.id === photo.id
-                ? "border-accent shadow-[var(--shadow-focus)]"
+                ? "border-accent"
                 : "border-line opacity-70 hover:opacity-100",
             )}
             key={photo.id}

@@ -9,7 +9,6 @@ import {
   crmWhatsappReadPermissions,
   crmWhatsappSalesPermissions,
 } from "./crmWhatsappAccessPermissions.js";
-
 const allPermissions = [
   "audit.read",
   "analytics.read",
@@ -243,7 +242,6 @@ export const defaultRolePermissions: Record<RoleKey, readonly PermissionKey[]> =
       ...saleSupervisorPermissions,
     ],
   };
-
 export { canAccess, resolvePermissions } from "./permissionResolver.js";
 export type {
   PermissionDecision,

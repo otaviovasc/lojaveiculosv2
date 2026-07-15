@@ -224,7 +224,7 @@ function InventoryListingCard({
             <div className="flex items-center gap-1">
               <button
                 aria-label={`Criar template de anúncio para ${listing.title}`}
-                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-violet-500 transition-all hover:border-accent/30 hover:bg-accent-soft"
+                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-violet-500 transition-all hover:border-accent/30 hover:bg-panel"
                 onClick={(event) => {
                   event.stopPropagation();
                   onAction("template", item);
@@ -236,7 +236,7 @@ function InventoryListingCard({
               </button>
               <button
                 aria-label={`Agendar test drive para ${listing.title}`}
-                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-emerald-500 transition-all hover:border-accent/30 hover:bg-accent-soft"
+                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-emerald-500 transition-all hover:border-accent/30 hover:bg-panel"
                 onClick={(event) => {
                   event.stopPropagation();
                   onAction("test-drive", item);

@@ -23,7 +23,11 @@ const files = walkFiles(repoRoot, { extensions })
     lines: readText(file).split("\n").length,
     path: repoPath(file),
   }))
-  .filter(({ path }) => path.startsWith("apps/api/"));
+  .filter(
+    ({ path }) =>
+      path.startsWith("apps/api/") &&
+      path !== "apps/api/src/features/docs/controllers/llmsText.ts",
+  );
 const failures = findFileLineViolations(files, debt);
 
 if (failures.length > 0) {

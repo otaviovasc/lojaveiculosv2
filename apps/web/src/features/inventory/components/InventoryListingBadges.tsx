@@ -53,10 +53,10 @@ export function MercosulPlateBadge({ plate }: { plate: string }) {
 
   return (
     <span className="inline-flex align-middle flex-col overflow-hidden rounded-[3px] border border-gray-300 dark:border-line bg-white dark:bg-white shadow-[0_1px_2px_rgba(0,0,0,0.1)] min-w-[70px] max-w-[80px] text-center select-none shrink-0">
-      <span className="bg-blue-600 dark:bg-blue-600 px-1 py-0.5 text-[6.5px] font-black tracking-widest text-white uppercase leading-none text-center">
+      <span className="bg-blue-600 px-1 py-0.5 text-xs font-black uppercase leading-none tracking-widest text-center text-white dark:bg-blue-600">
         Brasil
       </span>
-      <span className="px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-gray-900 leading-none">
+      <span className="px-1.5 py-0.5 font-mono text-xs font-bold leading-none tracking-wider text-gray-900">
         {formatted}
       </span>
     </span>

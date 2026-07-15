@@ -13,6 +13,10 @@ import {
   vehicleCatalogTypes,
 } from "./vehicle.controller.schemaParts.js";
 import { listingDescriptionTextSchema } from "./vehicleDescriptionRichText.js";
+export {
+  aiStudioApprovalSchema,
+  aiStudioGenerationSchema,
+} from "./vehicle.aiStudio.schemas.js";
 
 export const listListingsQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
@@ -116,23 +120,6 @@ export const createMediaSchema = z.object({
   displayOrder: z.number().int().nonnegative().optional(),
   kind: z.enum(mediaKinds).default("photo"),
   storageKey: z.string().trim().min(1),
-});
-
-export const aiStudioTemplateSchema = z.enum([
-  "premium_studio",
-  "industrial_garage",
-  "urban_scene",
-]);
-
-export const aiStudioGenerationSchema = z.object({
-  mediaId: z.string().trim().min(1),
-  templateId: aiStudioTemplateSchema,
-});
-
-export const aiStudioApprovalSchema = z.object({
-  generatedStorageKey: z.string().trim().min(1),
-  mediaId: z.string().trim().min(1),
-  templateId: aiStudioTemplateSchema,
 });
 
 export const updateMediaSchema = z.object({

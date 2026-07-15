@@ -1,4 +1,10 @@
-import { CarFront, Clock, FileArchive, Image as ImageIcon, Printer } from "lucide-react";
+import {
+  CarFront,
+  Clock,
+  FileArchive,
+  Image as ImageIcon,
+  Printer,
+} from "lucide-react";
 import {
   formatInventoryPrice,
   getInventoryCatalogLine,
@@ -295,13 +301,13 @@ export function InventoryListingTable({
                           tooltip="Test Drive"
                         />
                         {item.mediaCount > 0 ? (
-                        <FeatureRowAction
-                          ariaLabel="Baixar Fotos (ZIP)"
-                          icon={FileArchive}
-                          iconClassName="text-accent"
-                          onClick={() => onAction("zip-photos", item)}
-                          tooltip="Baixar Fotos (ZIP)"
-                        />
+                          <FeatureRowAction
+                            ariaLabel="Baixar Fotos (ZIP)"
+                            icon={FileArchive}
+                            iconClassName="text-accent"
+                            onClick={() => onAction("zip-photos", item)}
+                            tooltip="Baixar Fotos (ZIP)"
+                          />
                         ) : null}
                       </FeatureRowActions>
                     ) : null}
