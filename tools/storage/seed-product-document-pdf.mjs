@@ -7,8 +7,7 @@ import {
 import { buildSeedDocumentContent } from "./seed-product-document-pdf-content.mjs";
 
 const A4 = [595.28, 841.89];
-const FIXED_PDF_DATE = new Date("2026-07-11T12:00:00.000Z");
-export const SEED_DOCUMENT_ARTIFACT_VERSION = "branded-a4-v2";
+export const SEED_DOCUMENT_ARTIFACT_VERSION = "branded-a4-v3";
 
 export async function renderSeedDocumentPdf(document) {
   const content = buildSeedDocumentContent(document);
@@ -51,11 +50,12 @@ export function isOwnedSeedDocumentStorageKey(storageKey) {
 }
 
 function applyMetadata(pdf, content) {
+  const documentDate = new Date(`${content.issueDateIso}T12:00:00.000Z`);
   pdf.setAuthor(content.storeName);
-  pdf.setCreationDate(FIXED_PDF_DATE);
+  pdf.setCreationDate(documentDate);
   pdf.setCreator("Loja Veículos OS");
   pdf.setKeywords(["loja veículos", "documento automotivo", "demonstração"]);
-  pdf.setModificationDate(FIXED_PDF_DATE);
+  pdf.setModificationDate(documentDate);
   pdf.setProducer("Loja Veículos OS");
   pdf.setSubject("Documento automotivo demonstrativo");
   pdf.setTitle(content.title);

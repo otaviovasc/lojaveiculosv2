@@ -57,9 +57,7 @@ Run the full local stack from the repo root:
 ```bash
 corepack enable
 pnpm install
-pnpm run db:up
-pnpm run db:push:local
-pnpm run db:seed:local
+pnpm run db:reset
 pnpm run dev:all:local
 ```
 
@@ -107,14 +105,17 @@ For local database cleanup:
 
 ```bash
 pnpm run db:clean:local
-pnpm run db:reset:local
+pnpm run db:reset
 ```
 
 `db:clean:local` keeps the Docker volumes, truncates local product and audit
-tables with `CASCADE`, and re-runs the local seed. `db:reset:local` recreates
-the local Docker volumes, pushes the schema, and re-runs the same seed. Both
-commands refuse to run when database URLs do not match the known local database
-names, users, and ports, or when production/Railway runtime markers are present.
+tables with `CASCADE`, and re-runs the local seed. `db:reset` is the canonical
+from-scratch command: it recreates the local Postgres, audit, and Redis volumes;
+pushes both schemas; loads the catalog and complete product scenario; materializes
+R2 fixtures; checks the shared Z-API instance and Asaas sandbox read-only; and
+runs seed QA. Both commands refuse to run when database URLs do not match the
+known local database names, users, and ports, or when production/Railway runtime
+markers are present.
 
 Useful checks:
 

@@ -25,6 +25,20 @@ export function requireEnv(name) {
   return value;
 }
 
+export function assertSeedR2WritesAllowed({
+  apply,
+  bucketName,
+  allowedBucket = process.env.R2_SEED_WRITE_BUCKET,
+}) {
+  if (!apply) return;
+
+  if (!bucketName || !allowedBucket || allowedBucket !== bucketName) {
+    throw new Error(
+      "R2 seed writes are disabled. Set R2_SEED_WRITE_BUCKET to the exact name of the dedicated test bucket.",
+    );
+  }
+}
+
 function loadEnvFile(path) {
   for (const line of readFileSync(path, "utf8").split("\n")) {
     const parsed = parseEnvLine(line);

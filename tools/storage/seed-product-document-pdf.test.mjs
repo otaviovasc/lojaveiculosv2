@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
+import "../db/reset-local-databases-core.test.mjs";
+import "../qa/local-seed-smoke-providers.test.mjs";
 import {
   createSeedDocumentArtifact,
   sha256SeedDocumentBytes,
@@ -13,6 +15,8 @@ import {
   SEED_DOCUMENT_ARTIFACT_VERSION,
   shouldRefreshSeedDocumentArtifact,
 } from "./seed-product-document-pdf.mjs";
+import "./seed-product-media-placeholder.test.mjs";
+import "./storageScriptEnv.test.mjs";
 
 const seededPayment = {
   documentId: "51000000-0000-4000-8000-000000000005",
@@ -40,6 +44,18 @@ const seededPayment = {
 };
 
 describe("seed product document PDF", () => {
+  it("derives the visible and embedded issue date from the seeded document", async () => {
+    const bytes = await renderSeedDocumentPdf({
+      ...seededPayment,
+      issuedAt: new Date("2026-07-03T19:45:00.000Z"),
+    });
+    const pdf = await PDFDocument.load(bytes);
+    const text = await extractPdfText(bytes);
+
+    expect(text).toContain("3 de julho de 2026");
+    expect(pdf.getCreationDate()).toEqual(new Date("2026-07-03T12:00:00.000Z"));
+  });
+
   it("refreshes only stale local seed fixtures", () => {
     expect(
       shouldRefreshSeedDocumentArtifact({ fixture: "local-product-seed" }),

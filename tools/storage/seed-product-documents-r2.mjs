@@ -10,7 +10,11 @@ import {
   SEED_DOCUMENT_ARTIFACT_VERSION,
   shouldRefreshSeedDocumentArtifact,
 } from "./seed-product-document-pdf.mjs";
-import { loadLocalEnv, requireEnv } from "./storageScriptEnv.mjs";
+import {
+  assertSeedR2WritesAllowed,
+  loadLocalEnv,
+  requireEnv,
+} from "./storageScriptEnv.mjs";
 
 const localDatabaseUrl =
   "postgresql://lojaveiculosv2:lojaveiculosv2_dev@localhost:54321/lojaveiculosv2";
@@ -26,6 +30,7 @@ if (!config) {
   console.info("R2 env absent; skipped seeded document object upload.");
   process.exit(0);
 }
+assertSeedR2WritesAllowed({ apply, bucketName: config.bucketName });
 
 const client = new S3Client({
   credentials: {
@@ -51,10 +56,12 @@ try {
   for (const document of documents) {
     const artifact = await createSeedDocumentArtifact(document);
     const object = await readObjectState(document.storageKey);
-    const refreshFixture = shouldRefreshSeedDocumentArtifact(object.metadata, {
-      expectedSha256: artifact.sha256,
-      storageKey: document.storageKey,
-    });
+    const refreshFixture =
+      object.exists &&
+      shouldRefreshSeedDocumentArtifact(object.metadata, {
+        expectedSha256: artifact.sha256,
+        storageKey: document.storageKey,
+      });
     if (object.exists && !refreshFixture) {
       result.skippedExisting += 1;
       console.info(`exists ${document.storageKey}`);
@@ -109,6 +116,7 @@ async function readSeedDocumentRows() {
         d.storage_key as "storageKey",
         d.kind::text as kind,
         d.status::text as status,
+        d.uploaded_at as "issuedAt",
         d.metadata,
         s.trading_name as "storeName",
         sp.document_number as "storeDocumentNumber",
@@ -132,6 +140,7 @@ async function readSeedDocumentRows() {
         v.storage_key as "storageKey",
         d.kind::text as kind,
         d.status::text as status,
+        d.uploaded_at as "issuedAt",
         coalesce(v.metadata, d.metadata, '{}'::jsonb) as metadata,
         s.trading_name as "storeName",
         sp.document_number as "storeDocumentNumber",

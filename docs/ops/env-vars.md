@@ -154,16 +154,17 @@ sends through the same scoped CRM service path used by authenticated requests.
 
 ## Object Storage
 
-| Name                              | Required | Environments        | Secret | Notes                                                                                                           |
-| --------------------------------- | -------- | ------------------- | ------ | --------------------------------------------------------------------------------------------------------------- |
-| `R2_BUCKET_NAME`                  | Yes      | staging, production | No     | Application media bucket for inventory, documents, finance attachments, and CRM WhatsApp inbound media mirrors. |
-| `R2_ACCESS_KEY_ID`                | Yes      | staging, production | Yes    | Storage access key.                                                                                             |
-| `R2_SECRET_ACCESS_KEY`            | Yes      | staging, production | Yes    | Storage secret key.                                                                                             |
-| `R2_ENDPOINT`                     | Yes      | staging, production | No     | S3-compatible endpoint.                                                                                         |
-| `R2_PUBLIC_BASE_URL`              | Yes      | staging, production | No     | Public media base URL.                                                                                          |
-| `R2_REGION`                       | Yes      | staging, production | No     | S3 region value expected by SDK.                                                                                |
-| `R2_UPLOAD_URL_EXPIRES_SECONDS`   | Yes      | staging, production | No     | Presigned upload TTL.                                                                                           |
-| `R2_DOWNLOAD_URL_EXPIRES_SECONDS` | No       | staging, production | No     | Presigned download TTL for private/download flows. Defaults to `300`.                                           |
+| Name                              | Required | Environments        | Secret | Notes                                                                                                               |
+| --------------------------------- | -------- | ------------------- | ------ | ------------------------------------------------------------------------------------------------------------------- |
+| `R2_BUCKET_NAME`                  | Yes      | staging, production | No     | Application media bucket for inventory, documents, finance attachments, and CRM WhatsApp inbound media mirrors.     |
+| `R2_ACCESS_KEY_ID`                | Yes      | staging, production | Yes    | Storage access key.                                                                                                 |
+| `R2_SECRET_ACCESS_KEY`            | Yes      | staging, production | Yes    | Storage secret key.                                                                                                 |
+| `R2_ENDPOINT`                     | Yes      | staging, production | No     | S3-compatible endpoint.                                                                                             |
+| `R2_PUBLIC_BASE_URL`              | Yes      | staging, production | No     | Public media base URL.                                                                                              |
+| `R2_REGION`                       | Yes      | staging, production | No     | S3 region value expected by SDK.                                                                                    |
+| `R2_SEED_WRITE_BUCKET`            | No       | local               | No     | Exact dedicated test bucket name that opts `db:seed`/`db:reset` into R2 writes. Never set in staging or production. |
+| `R2_UPLOAD_URL_EXPIRES_SECONDS`   | Yes      | staging, production | No     | Presigned upload TTL.                                                                                               |
+| `R2_DOWNLOAD_URL_EXPIRES_SECONDS` | No       | staging, production | No     | Presigned download TTL for private/download flows. Defaults to `300`.                                               |
 
 CRM WhatsApp inbound media is mirrored best-effort through the shared object
 storage adapter. Successful mirrors store the public R2 URL on

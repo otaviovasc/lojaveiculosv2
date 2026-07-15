@@ -1,4 +1,4 @@
-const ISSUE_DATE = "11 de julho de 2026";
+const FALLBACK_ISSUE_DATE = "2026-07-11";
 
 const KIND_CONTENT = {
   delivery_term: {
@@ -77,6 +77,8 @@ export function buildSeedDocumentContent(document) {
     metadata.documentCategory,
     metadata.reference,
   );
+  const issueDateIso = normalizeIssueDate(document.issuedAt);
+  const issueDate = formatIssueDate(issueDateIso);
   const fields = [
     person && { label: personFieldLabel(document.kind), value: person },
     vehicle && { label: "Veículo", value: vehicle },
@@ -91,14 +93,15 @@ export function buildSeedDocumentContent(document) {
       value: formatMoney(metadata.amountCents),
     },
     { label: "Situação", value: statusLabel(document.status) },
-    { label: "Emissão", value: ISSUE_DATE },
+    { label: "Emissão", value: issueDate },
   ].filter(Boolean);
   const recordTitle = humanTitle(document.title);
 
   return {
     contactLine: buildContactLine(document),
     fields: fields.slice(0, 6),
-    issueDate: ISSUE_DATE,
+    issueDate,
+    issueDateIso,
     statement: spec.statement.replace("A loja", storeName),
     status: statusLabel(document.status),
     storeDocument: formatCnpj(document.storeDocumentNumber),
@@ -110,6 +113,21 @@ export function buildSeedDocumentContent(document) {
     title: spec.title,
     signatures: signatureLabels(document.kind, person, storeName),
   };
+}
+
+function normalizeIssueDate(value) {
+  const parsed = value instanceof Date ? value : new Date(value ?? "invalid");
+  if (Number.isNaN(parsed.getTime())) return FALLBACK_ISSUE_DATE;
+  return parsed.toISOString().slice(0, 10);
+}
+
+function formatIssueDate(value) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(new Date(`${value}T12:00:00.000Z`));
 }
 
 function buildContactLine(document) {
