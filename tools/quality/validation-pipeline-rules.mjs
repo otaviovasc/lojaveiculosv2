@@ -1,5 +1,3 @@
-import { requiredCiActions } from "./ci-workflow-rules.mjs";
-
 const qualityTestCommand =
   "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/quality/*.test.mjs --root ../..";
 const seedDocumentTestCommand =
@@ -44,7 +42,7 @@ export function findValidationPipelineViolations(input) {
   expectScript("validate", "pnpm run validate:push");
   expectScript("prepare", "husky");
   expectScript(
-    "validate:ci",
+    "validate:release",
     "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables",
   );
   expectScript(
@@ -94,24 +92,6 @@ export function findValidationPipelineViolations(input) {
     ["pnpm run validate:push"],
     ["pnpm run validate"],
   );
-  expectWorkflowEntries(
-    ".github/workflows/ci.yml",
-    "uses",
-    requiredCiActions.map(({ name, ref }) => `${name}@${ref}`),
-  );
-  expectWorkflowEntries(".github/workflows/ci.yml", "run", [
-    "pnpm run validate:ci",
-    "pnpm run test:smoke:api",
-  ]);
-  expectWorkflowOrder(".github/workflows/ci.yml", "uses", [
-    `${requiredCiActions[1].name}@${requiredCiActions[1].ref}`,
-    `${requiredCiActions[2].name}@${requiredCiActions[2].ref}`,
-  ]);
-  expectWorkflowOrder(".github/workflows/ci.yml", "run", [
-    "pnpm run validate:ci",
-    "pnpm run test:smoke:api",
-  ]);
-
   return failures;
 
   function expectScript(script, expected) {
@@ -149,18 +129,6 @@ export function findValidationPipelineViolations(input) {
     }
   }
 
-  function expectIncludes(file, required, forbidden) {
-    const source = fileSources[file] ?? "";
-    for (const text of required) {
-      if (!source.includes(text)) failures.push(`${file} must include ${text}`);
-    }
-    for (const text of forbidden) {
-      if (source.includes(text)) {
-        failures.push(`${file} must not include ${text}`);
-      }
-    }
-  }
-
   function expectHook(file, required, forbidden) {
     const commands = executableHookCommands(fileSources[file]);
     if ((fileModes[file] & 0o111) === 0) {
@@ -178,30 +146,6 @@ export function findValidationPipelineViolations(input) {
       }
     }
   }
-
-  function expectWorkflowEntries(file, key, required) {
-    const entries = workflowEntries(fileSources[file], key);
-    for (const value of required) {
-      if (!entries.includes(value)) {
-        failures.push(`${file} must execute ${key}: ${value}`);
-      }
-    }
-  }
-
-  function expectWorkflowOrder(file, key, orderedValues) {
-    const entries = workflowEntries(fileSources[file], key);
-    let priorIndex = -1;
-    for (const value of orderedValues) {
-      const index = entries.indexOf(value, priorIndex + 1);
-      if (index <= priorIndex) {
-        failures.push(
-          `${file} must place ${key}: ${value} after ${orderedValues[0]}`,
-        );
-        return;
-      }
-      priorIndex = index;
-    }
-  }
 }
 
 function executableHookCommands(source) {
@@ -210,24 +154,6 @@ function executableHookCommands(source) {
     .map((line) => line.trim())
     .filter((line) => line !== "" && !line.startsWith("#"))
     .map((line) => line.replace(/\s+#.*$/, "").trim());
-}
-
-function workflowEntries(source, key) {
-  const lines = String(source ?? "").split(/\r?\n/);
-  const matcher = new RegExp(`^\\s*(?:-\\s*)?${key}:\\s*([^#]+?)(?:\\s+#.*)?$`);
-  return lines.flatMap((line) => {
-    const match = matcher.exec(line);
-    if (!match) return [];
-    const value = unquoteYamlScalar(match[1].trim());
-    return key === "run" ? commandParts(value) : [value];
-  });
-}
-
-function unquoteYamlScalar(value) {
-  const quote = value[0];
-  return quote && quote === value.at(-1) && (quote === '"' || quote === "'")
-    ? value.slice(1, -1)
-    : value;
 }
 
 function commandParts(command) {

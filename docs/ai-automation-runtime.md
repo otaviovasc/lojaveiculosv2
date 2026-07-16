@@ -210,7 +210,7 @@ Computer execution remains disabled until all gates below pass:
 6. The eval suite has a zero-tolerance gate for approval bypass, cross-tenant
    access, secret exposure, and execution on a stale digest. Quality/cost
    thresholds must be recorded from a representative baseline before rollout.
-7. CI passes `pnpm run validate:ci`, the explicit web production build, API
+7. The operator release gate passes `pnpm run validate:release`, the explicit web production build, API
    smoke contracts, executor tests, and the committed eval regression suite.
 8. Staging runs behind an off-by-default feature flag, store entitlement, domain
    allowlist, spend limit, concurrency limit, and operator kill switch before a

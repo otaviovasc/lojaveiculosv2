@@ -18,8 +18,4 @@ module "repository_rules" {
 
   repository_name  = var.github_repository
   protected_branch = "main"
-  required_checks = [
-    "Validate",
-    "Production smoke checks",
-  ]
 }

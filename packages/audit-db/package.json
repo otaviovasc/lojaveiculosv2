@@ -7,6 +7,7 @@
   "types": "src/index.ts",
   "scripts": {
     "db:generate": "drizzle-kit generate --config drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config drizzle.config.ts",
     "db:push": "node ../../tools/db/ensure-local-database-url.mjs AUDIT_DATABASE_URL && drizzle-kit push --config drizzle.config.ts",
     "db:push:force": "node ../../tools/db/ensure-local-database-url.mjs AUDIT_DATABASE_URL && drizzle-kit push --force --config drizzle.config.ts",
     "db:studio": "drizzle-kit studio --config drizzle.config.ts",

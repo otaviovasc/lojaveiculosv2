@@ -50,7 +50,7 @@ build:deployables` instead performs these steps in order:
 1. run the typed Vite production build with `emptyOutDir: true`;
 2. emit `.vite/manifest.json` with automatic Rolldown code splitting enabled;
 3. verify the fresh web artifacts against byte budgets;
-4. build the API deployable.
+4. verify the API's production TypeScript runtime contract.
 
 The budgets are raw, minified artifact bytes rather than gzip estimates. Vite
 compares its chunk warning with uncompressed JavaScript because that size also
@@ -86,6 +86,7 @@ Core runtime:
 - `API_BASE_URL`
 - `DATABASE_URL`
 - `AUDIT_DATABASE_URL`
+- `REDIS_URL`
 - `DB_POOL_MAX`
 
 Authentication:
@@ -204,19 +205,31 @@ pnpm run test:smoke:api
 pnpm run validate
 ```
 
+After deployment, set the public operator URLs and run:
+
+```bash
+pnpm run release:smoke:staging
+pnpm run release:smoke:production
+```
+
 ## Railway Deployment Checklist
 
 1. Create or link the Railway project and production environment.
-2. Provision product Postgres and audit Postgres.
+2. Provision product Postgres, audit Postgres, and Redis.
 3. Configure product API service variables from `.env.example`.
 4. Configure web service variables from `.env.example`.
-5. Configure R2 values after bucket creation.
-6. Configure Clerk production keys, authorized parties, invitation redirect URL,
+5. Configure the CRM schedule worker with the API's Clerk, R2, Z-API, product
+   DB, audit DB, and Redis runtime contract.
+6. Configure R2 values after bucket creation.
+7. Configure Clerk production keys, authorized parties, invitation redirect URL,
    and Portuguese invitation/auth templates.
-7. Configure Asaas and SPEDY values manually.
-8. Configure public domains and storefront DNS.
-9. Deploy API and web.
-10. Run health checks, provider status checks, and the critical smoke suite.
+8. Configure Asaas and SPEDY values manually.
+9. Configure public domains and storefront DNS.
+10. Confirm `/health` liveness and `/ready` product/audit database readiness.
+11. Deploy API first, then web and the CRM schedule worker from the exact
+    staging-accepted commit.
+12. Verify Redis reconnect/replay and a successful worker cron execution.
+13. Run health checks, provider status checks, and the critical smoke suite.
 
 Do not mutate production databases, service variables, domains, or deployment
 state from an agent session unless the operator explicitly asks for that

@@ -2,6 +2,7 @@ import * as schema from "@lojaveiculosv2/db";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import { readDbCloseTimeoutSeconds } from "./runtimeConfig.js";
+import { createDatabaseReadinessCheck } from "../runtime/readiness.js";
 
 export type RuntimeResource = {
   close: () => Promise<void>;
@@ -17,6 +18,7 @@ export function createProductDb(
   });
   return {
     db: drizzle(client, { schema }),
+    readinessCheck: createDatabaseReadinessCheck("productDatabase", client),
     resource: createPostgresResource("product-db", client, env),
   };
 }

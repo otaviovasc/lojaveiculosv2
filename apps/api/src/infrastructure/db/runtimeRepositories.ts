@@ -18,6 +18,10 @@ import {
   type RuntimeResource,
 } from "./runtimeResources.js";
 import { createRuntimeObjectStorage } from "./runtimeObjectStorage.js";
+import {
+  createReadinessProbe,
+  readReadinessTimeoutMs,
+} from "../runtime/readiness.js";
 
 export { RuntimeDatabaseConfigError } from "./runtimeConfig.js";
 export type { RuntimeResource } from "./runtimeResources.js";
@@ -105,16 +109,26 @@ export function createRuntimeAppDependencies(
   ];
 
   try {
+    const readiness = createReadinessProbe(
+      [
+        productDb.readinessCheck,
+        ...(auditDatabase ? [auditDatabase.readinessCheck] : []),
+      ],
+      readReadinessTimeoutMs(env),
+    );
     return {
-      appOptions: createRuntimeHttpAppOptions({
-        auditDb: auditDatabase?.db ?? null,
-        clerkAccountProviders,
-        crmRealtimeBroker,
-        db: productDb.db,
-        env,
-        identityVerifier: createRuntimeIdentityVerifier(env),
-        objectStorage,
-      }),
+      appOptions: {
+        ...createRuntimeHttpAppOptions({
+          auditDb: auditDatabase?.db ?? null,
+          clerkAccountProviders,
+          crmRealtimeBroker,
+          db: productDb.db,
+          env,
+          identityVerifier: createRuntimeIdentityVerifier(env),
+          objectStorage,
+        }),
+        readiness,
+      },
       close: () => closeRuntimeResources(resources),
       resources,
     };

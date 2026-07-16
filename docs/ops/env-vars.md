@@ -4,8 +4,8 @@ This document is the canonical checklist for Loja Veiculos V2 runtime variables.
 Keep `.env.example`, Railway variables, and this file aligned.
 
 Do not commit real secrets. Use Railway service variables, Railway reference
-variables, sealed variables for high-risk secrets, and GitHub environment
-secrets for CI-only values.
+variables, sealed variables for high-risk secrets, and operator-local
+environment variables for public smoke-test URLs.
 
 ## Core Runtime
 
@@ -22,6 +22,8 @@ secrets for CI-only values.
 | `AUDIT_DB_POOL_MAX`                  | No       | staging, production        | No     | Audit DB pool limit. Defaults to `DB_POOL_MAX`.                            |
 | `DB_CLOSE_TIMEOUT_SECONDS`           | Yes      | staging, production        | No     | Graceful database close timeout in seconds.                                |
 | `SHUTDOWN_TIMEOUT_MS`                | Yes      | staging, production        | No     | Overall graceful shutdown timeout in milliseconds.                         |
+| `READINESS_TIMEOUT_MS`               | No       | staging, production        | No     | Per-database readiness probe timeout. Defaults to `2000`.                  |
+| `WEB_DIST_DIR`                       | No       | local, staging, production | No     | Web static asset directory override. Defaults to `apps/web/dist`.          |
 | `EXTERNAL_API_RATE_LIMIT_PER_MINUTE` | Yes      | staging, production        | No     | Per-minute external API rate limit.                                        |
 | `LOG_LEVEL`                          | Yes      | staging, production        | No     | Usually `info`; use `debug` only temporarily.                              |
 
@@ -118,21 +120,21 @@ queue scheduling. Postgres remains the durable source of truth for webhook
 payloads, leads, sessions, messages, activities, and idempotency through
 `provider_events`.
 
-| Name                                | Required | Environments               | Secret | Notes                                                                                                                                     |
-| ----------------------------------- | -------- | -------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `REDIS_URL`                         | No       | local, staging, production | Yes    | Local default is `redis://localhost:63790`; enables Redis-backed CRM WhatsApp SSE tickets/fanout. In-process fallback is used when unset. |
-| `CRM_ZAPI_API_BASE_URL`             | No       | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                |
-| `CRM_ZAPI_TEST_INSTANCE_ID`         | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                               |
-| `CRM_ZAPI_TEST_INSTANCE_TOKEN`      | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                            |
-| `CRM_ZAPI_TEST_CLIENT_TOKEN`        | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                       |
-| `CRM_ZAPI_CLIENT_TOKEN`             | No       | staging, production        | Yes    | ZAPI client token fallback for stored CRM credentials. Prefer credentials refs per connection.                                            |
-| `ZAPI_CLIENT_TOKEN`                 | No       | staging, production        | Yes    | Legacy ZAPI client-token alias. Prefer `CRM_ZAPI_CLIENT_TOKEN` for new environments.                                                      |
-| `CRM_ZAPI_TEST_PAIR_PHONE`          | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                              |
-| `CRM_ZAPI_WEBHOOK_TOKEN`            | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                     |
-| `RUN_ZAPI_E2E`                      | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                               |
-| `CRM_WHATSAPP_SCHEDULE_BATCH_SIZE`  | No       | local, staging, production | No     | Scheduled-message worker send limit per store scope. Defaults to `25`.                                                                    |
-| `CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT` | No       | local, staging, production | No     | Scheduled-message worker due store-scope discovery limit per run. Defaults to `100`.                                                      |
-| `CRM_WHATSAPP_SCHEDULE_DUE_AT`      | No       | local                      | No     | Optional ISO datetime override for local/manual scheduled-message worker runs. Leave empty in deployed cron runs.                         |
+| Name                                | Required | Environments               | Secret | Notes                                                                                                                                                   |
+| ----------------------------------- | -------- | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `REDIS_URL`                         | Deployed | local, staging, production | Yes    | Local default is `redis://localhost:63790`; Railway API and CRM cron use `${{ lojaveiculosv2-redis.REDIS_URL }}`. In-process fallback is degraded mode. |
+| `CRM_ZAPI_API_BASE_URL`             | No       | local                      | No     | ZAPI base URL for the CRM test connection.                                                                                                              |
+| `CRM_ZAPI_TEST_INSTANCE_ID`         | No       | local                      | Yes    | Dedicated ZAPI test instance id. Never commit a real value.                                                                                             |
+| `CRM_ZAPI_TEST_INSTANCE_TOKEN`      | No       | local                      | Yes    | Dedicated ZAPI test instance token. Never commit a real value.                                                                                          |
+| `CRM_ZAPI_TEST_CLIENT_TOKEN`        | No       | local                      | Yes    | ZAPI client token for the test instance. Never commit a real value.                                                                                     |
+| `CRM_ZAPI_CLIENT_TOKEN`             | No       | staging, production        | Yes    | ZAPI client token fallback for stored CRM credentials. Prefer credentials refs per connection.                                                          |
+| `ZAPI_CLIENT_TOKEN`                 | No       | staging, production        | Yes    | Legacy ZAPI client-token alias. Prefer `CRM_ZAPI_CLIENT_TOKEN` for new environments.                                                                    |
+| `CRM_ZAPI_TEST_PAIR_PHONE`          | No       | local                      | Yes    | Optional phone number used by `crm:zapi:diagnose` to request a pairing code.                                                                            |
+| `CRM_ZAPI_WEBHOOK_TOKEN`            | Yes      | preview, production        | Yes    | Shared secret required outside local dev. Send it as `x-crm-webhook-token` or callback URL `?token=`.                                                   |
+| `RUN_ZAPI_E2E`                      | No       | local, CI                  | No     | Must be `true` before any real-send ZAPI end-to-end test is allowed to run.                                                                             |
+| `CRM_WHATSAPP_SCHEDULE_BATCH_SIZE`  | No       | local, staging, production | No     | Scheduled-message worker send limit per store scope. Defaults to `25`.                                                                                  |
+| `CRM_WHATSAPP_SCHEDULE_SCOPE_LIMIT` | No       | local, staging, production | No     | Scheduled-message worker due store-scope discovery limit per run. Defaults to `100`.                                                                    |
+| `CRM_WHATSAPP_SCHEDULE_DUE_AT`      | No       | local                      | No     | Optional ISO datetime override for local/manual scheduled-message worker runs. Leave empty in deployed cron runs.                                       |
 
 ZAPI callback URLs use the public API base URL plus the CRM connection id:
 
@@ -151,6 +153,9 @@ CRM WhatsApp scheduled messages are stored durably in Postgres. Run
 `pnpm run crm:whatsapp:schedule:process` from a local shell or Railway cron
 worker to process due messages. The worker discovers due store scopes, then
 sends through the same scoped CRM service path used by authenticated requests.
+Railway runs the worker every five minutes in UTC. Because it composes the API
+runtime, it also needs the API's Clerk, R2, Z-API, product DB, audit DB, and
+Redis configuration. Do not set `CRM_WHATSAPP_SCHEDULE_DUE_AT` on Railway.
 
 ## Object Storage
 
@@ -268,12 +273,14 @@ The sync also stores raw FIPE JSON responses in
 `vehicle_catalog_raw_responses` for provider-evidence audits and parser
 validation.
 
-## CI Smoke Test Secrets
+## Operator Smoke Test URLs
 
-| Name                      | Required | Environments   | Secret | Notes                           |
-| ------------------------- | -------- | -------------- | ------ | ------------------------------- |
-| `STAGING_API_BASE_URL`    | Yes      | GitHub Actions | Yes    | Used by `staging-smoke.yml`.    |
-| `PRODUCTION_API_BASE_URL` | Yes      | GitHub Actions | Yes    | Used by `production-smoke.yml`. |
+| Name                      | Required | Environments   | Secret | Notes                               |
+| ------------------------- | -------- | -------------- | ------ | ----------------------------------- |
+| `STAGING_API_BASE_URL`    | Yes      | operator shell | No     | Used by `release:smoke:staging`.    |
+| `STAGING_WEB_BASE_URL`    | Yes      | operator shell | No     | Used by `release:smoke:staging`.    |
+| `PRODUCTION_API_BASE_URL` | Yes      | operator shell | No     | Used by `release:smoke:production`. |
+| `PRODUCTION_WEB_BASE_URL` | Yes      | operator shell | No     | Used by `release:smoke:production`. |
 
 ## Railway Reference Pattern
 
@@ -282,6 +289,21 @@ Use Railway references for internal service links:
 ```text
 DATABASE_URL=${{ Postgres.DATABASE_URL }}
 AUDIT_DATABASE_URL=${{ AuditPostgres.DATABASE_URL }}
+REDIS_URL=${{ lojaveiculosv2-redis.REDIS_URL }}
 API_BASE_URL=https://${{ lojaveiculosv2-api.RAILWAY_PUBLIC_DOMAIN }}
 PUBLIC_APP_URL=https://${{ lojaveiculosv2-web.RAILWAY_PUBLIC_DOMAIN }}
 ```
+
+For the current staging topology, environment-owned runtime values are Railway
+shared variables. The API references `${{ shared.KEY }}`, the web references
+only `VITE_API_BASE_URL` and `VITE_CLERK_PUBLISHABLE_KEY`, and the CRM schedule
+worker references the corresponding API variables. This keeps one editable
+staging value for every credential or public URL while still giving the worker
+the complete API runtime contract.
+
+Unknown staging values use conspicuous `keepme_*` placeholders in Railway, not
+in source. Replace core Clerk, R2, marketplace-encryption, and CRM values before
+the first manual upload. Provider implementation selectors must remain
+fail-closed until their entire credential and endpoint set is real; only then
+set `ASAAS_RUNTIME_IMPLEMENTATION=http` or
+`SPEDY_RUNTIME_IMPLEMENTATION=http`.

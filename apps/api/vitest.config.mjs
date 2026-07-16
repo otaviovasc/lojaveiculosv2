@@ -1,4 +1,12 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 import { createCoverageConfig } from "../../tools/testing/vitest-coverage-policy.mjs";
 
-export default defineConfig(createCoverageConfig("@lojaveiculosv2/api"));
+const coverageConfig = createCoverageConfig("@lojaveiculosv2/api");
+
+export default defineConfig({
+  ...coverageConfig,
+  test: {
+    ...coverageConfig.test,
+    exclude: [...configDefaults.exclude, "dist/**"],
+  },
+});

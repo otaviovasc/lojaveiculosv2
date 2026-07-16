@@ -17,11 +17,6 @@ variable "protected_branch" {
   type        = string
 }
 
-variable "required_checks" {
-  description = "Required GitHub status check contexts."
-  type        = list(string)
-}
-
 resource "github_branch_protection" "branch" {
   repository_id = var.repository_name
   pattern       = var.protected_branch
@@ -34,10 +29,5 @@ resource "github_branch_protection" "branch" {
   required_pull_request_reviews {
     dismiss_stale_reviews           = true
     required_approving_review_count = 1
-  }
-
-  required_status_checks {
-    strict   = true
-    contexts = var.required_checks
   }
 }

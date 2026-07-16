@@ -141,7 +141,7 @@ Before adding or moving a module:
   `lint-staged`.
 - `pnpm run validate:push`: full local gate used by pre-push and by
   `pnpm run validate`.
-- `pnpm run validate:ci`: CI gate. It runs the push gate and then enforces V8
+- `pnpm run validate:release`: release gate. It runs the push gate and then enforces V8
   coverage thresholds for every runtime workspace and emits both deployable
   production bundles. Keep deployment smoke checks separate.
 - `pnpm run test:quality-tools`: regression suite for the AST/static guard
@@ -165,9 +165,8 @@ Before adding or moving a module:
   after a clean web production build.
 - `pnpm run check:style-overrides`: keeps padding and radius decisions inside
   shared UI primitive variants instead of feature-local `className` overrides.
-- `pnpm run check:ci-security`: keeps the CI token read-only, pins every runner
-  and third-party action, disables persisted checkout credentials, requires
-  bounded job timeouts, and verifies weekly Dependabot updates for actions.
+- `pnpm run release:verify`: operator release preflight. It requires a clean,
+  named Git branch before running the full release gate and API smoke contracts.
 - `pnpm run check:api-errors`: blocks direct controller `{ message }` JSON
   error responses and manual `context.error` assignment outside the shared HTTP
   error helper.

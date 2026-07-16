@@ -1,6 +1,7 @@
 import * as auditSchema from "@lojaveiculosv2/audit-db";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { createDatabaseReadinessCheck } from "../runtime/readiness.js";
 import { createClerkHttpIdentityVerifier } from "../auth/clerkHttpIdentityVerifier.js";
 import {
   createClerkInvitationSender,
@@ -83,6 +84,7 @@ export function createAuditDb(env: Record<string, string | undefined>) {
     close: () => client.end({ timeout: readDbCloseTimeoutSeconds(env) }),
     db: drizzle(client, { schema: auditSchema }),
     name: "audit-db",
+    readinessCheck: createDatabaseReadinessCheck("auditDatabase", client),
   };
 }
 

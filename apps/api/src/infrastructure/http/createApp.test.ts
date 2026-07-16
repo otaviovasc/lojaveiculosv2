@@ -5,6 +5,26 @@ import { createInventoryTestServices } from "../../features/inventory/controller
 import { createApp } from "./createApp.js";
 
 describe("API middleware", () => {
+  it("separates liveness from dependency readiness", async () => {
+    const app = createApp({
+      readiness: async () => ({
+        checks: { productDatabase: "not_ready" },
+        ok: false,
+      }),
+    });
+
+    const healthResponse = await app.request("/health");
+    const readinessResponse = await app.request("/ready");
+
+    expect(healthResponse.status).toBe(200);
+    expect(await healthResponse.json()).toEqual({ ok: true });
+    expect(readinessResponse.status).toBe(503);
+    expect(await readinessResponse.json()).toEqual({
+      checks: { productDatabase: "not_ready" },
+      ok: false,
+    });
+  });
+
   it("applies security and CORS headers to normal responses", async () => {
     const app = createApp();
 

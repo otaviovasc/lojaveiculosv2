@@ -10,7 +10,10 @@ import {
   createFiscalTemplate,
   previewFiscalTemplate,
 } from "./manageFiscalTemplates.js";
-import { FiscalValidationError } from "../../domain/fiscalErrors.js";
+import {
+  FiscalTemplateNotFoundError,
+  FiscalValidationError,
+} from "../../domain/fiscalErrors.js";
 import { repeatFiscalDocument } from "./repeatFiscalDocument.js";
 
 describe("FiscalService", () => {
@@ -106,6 +109,50 @@ describe("FiscalService", () => {
         ports,
       ),
     ).rejects.toBeInstanceOf(FiscalValidationError);
+  });
+
+  it("uses empty template variables for a fixed-description template", async () => {
+    const ports = createFiscalTestPorts();
+    const context = createFiscalContext();
+    const template = await createFiscalTemplate(
+      context,
+      {
+        descriptionTemplate: "Comissao fixa",
+        name: "Comissao fixa",
+        serviceNationalCode: "TEST003",
+        useCase: "financing_commission",
+      },
+      ports,
+    );
+
+    const document = await issueFiscalDocument(
+      context,
+      {
+        documentKind: "nfse",
+        documentType: "nfse_service_commission",
+        externalReference: "sale_fixed_description",
+        templateId: template.id,
+      },
+      ports,
+    );
+
+    expect(document.metadata.renderedDescription).toBe("Comissao fixa");
+  });
+
+  it("rejects a missing requested template before provider issue", async () => {
+    const ports = createFiscalTestPorts();
+
+    await expect(
+      issueFiscalDocument(
+        createFiscalContext(),
+        {
+          documentType: "nfse",
+          externalReference: "sale_missing_template",
+          templateId: "template_missing",
+        },
+        ports,
+      ),
+    ).rejects.toBeInstanceOf(FiscalTemplateNotFoundError);
   });
 
   it("blocks vehicle NF-e issue when required structured data is missing", async () => {

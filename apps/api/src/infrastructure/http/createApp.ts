@@ -24,6 +24,7 @@ import { createHttpAccountContext } from "./createHttpAccountContext.js";
 import { createHttpServiceContext } from "./createHttpServiceContext.js";
 import { createExternalApiRequestLogger } from "./externalApiRequestLogger.js";
 import { installAccountProvisioningRoutes } from "./installAccountProvisioningRoutes.js";
+import { installHealthRoutes } from "./installHealthRoutes.js";
 import { installHttpMiddleware } from "./installHttpMiddleware.js";
 import { installAutomationRoutes } from "./installAutomationRoutes.js";
 import { createLocalHttpLogger } from "./localHttpLogger.js";
@@ -38,7 +39,7 @@ export function createApp(options: CreateAppOptions = {}) {
     "/api/v1/*",
     createExternalApiRequestLogger(options.externalApiRepository),
   );
-  const contextOptions = {
+  const ctxConfig = {
     ...(options.audit ? { audit: options.audit } : {}),
     ...(options.identityVerifier
       ? { identityVerifier: options.identityVerifier }
@@ -62,10 +63,9 @@ export function createApp(options: CreateAppOptions = {}) {
         repository: options.publicStorefrontRepository,
       }
     : {};
-  const contextFactory = (context: Context) =>
-    createHttpServiceContext(context, contextOptions);
+  const contextFactory = (c: Context) => createHttpServiceContext(c, ctxConfig);
   app.route("/", docsFeature);
-  app.get("/health", (context) => context.json({ ok: true }));
+  installHealthRoutes(app, options.readiness);
   installAccountProvisioningRoutes(app, options, contextFactory);
   app.route(
     "/api/v1/public/storefront",

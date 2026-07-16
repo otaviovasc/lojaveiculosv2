@@ -5,7 +5,7 @@ deployments themselves.
 
 Use Terraform here for:
 
-- GitHub branch protection and required checks
+- GitHub branch protection and pull-request review rules
 - GitHub environment rules
 - DNS records
 - Sentry projects and alert rules
@@ -43,3 +43,6 @@ Apply only after review:
 ```bash
 terraform apply
 ```
+
+Run Terraform from an operator workstation. This repository intentionally does
+not use GitHub Actions; local state and credentials must never be committed.

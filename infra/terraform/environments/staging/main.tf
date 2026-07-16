@@ -18,8 +18,4 @@ module "repository_rules" {
 
   repository_name  = var.github_repository
   protected_branch = "staging"
-  required_checks = [
-    "Validate",
-    "Staging smoke checks",
-  ]
 }

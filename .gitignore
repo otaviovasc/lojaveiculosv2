@@ -19,4 +19,6 @@ test-results/
 !docker/postgres/seed/*.sql
 !docker/postgres/seed/product/*.sql
 !packages/db/drizzle/*.sql
+!packages/db/migrations/*.sql
+!packages/audit-db/migrations/*.sql
 *.gz

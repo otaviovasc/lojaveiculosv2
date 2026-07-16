@@ -57,6 +57,21 @@ describe("product database schema contract", () => {
     }
   });
 
+  it("resolves every foreign-key reference with matching columns", () => {
+    let foreignKeyCount = 0;
+    for (const { config, exportName } of tables) {
+      for (const foreignKey of config.foreignKeys) {
+        const reference = foreignKey.reference();
+        foreignKeyCount += 1;
+        expect(reference.columns.length, exportName).toBeGreaterThan(0);
+        expect(reference.foreignColumns.length, exportName).toBe(
+          reference.columns.length,
+        );
+      }
+    }
+    expect(foreignKeyCount).toBeGreaterThan(50);
+  });
+
   it("publishes the canonical database naming policy", () => {
     expect(schema.databaseNamingPolicy).toEqual({
       columnCase: "lower_snake_case",

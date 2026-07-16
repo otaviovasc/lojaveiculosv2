@@ -3,7 +3,8 @@
 ## Fast Rollback Options
 
 1. Redeploy the previous healthy Railway deployment.
-2. Revert the merge commit and let Railway redeploy after CI.
+2. Revert the merge commit, run `pnpm run release:verify`, and deploy the
+   validated rollback commit through Railway.
 3. Disable the feature flag or entitlement if the change is flag-controlled.
 4. Restore the previous variable value if the issue is configuration-only.
 

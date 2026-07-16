@@ -10,9 +10,10 @@ const qualityCheckFiles = readdirSync(join(root, "tools/quality"))
   .map((file) => `tools/quality/${file}`)
   .sort();
 const fileSources = Object.fromEntries(
-  [".husky/pre-commit", ".husky/pre-push", ".github/workflows/ci.yml"].map(
-    (file) => [file, readIfPresent(file)],
-  ),
+  [".husky/pre-commit", ".husky/pre-push"].map((file) => [
+    file,
+    readIfPresent(file),
+  ]),
 );
 const fileModes = Object.fromEntries(
   [".husky/pre-commit", ".husky/pre-push"].map((file) => [

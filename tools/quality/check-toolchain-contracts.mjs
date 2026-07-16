@@ -63,7 +63,7 @@ function workspaceConfigs() {
 
 function deployableBuildFailures() {
   return [
-    ["apps/api/package.json", "tsc -b"],
+    ["apps/api/package.json", "tsc --noEmit"],
     ["apps/web/package.json", "tsc -b && vite build"],
   ].flatMap(([file, expectedBuild]) =>
     findDeployableBuildViolations(

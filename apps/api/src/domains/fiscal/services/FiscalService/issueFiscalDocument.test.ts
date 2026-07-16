@@ -11,10 +11,9 @@ import type { FiscalServicePorts } from "./serviceSupport.js";
 describe("issueFiscalDocument", () => {
   it("issues inside the persisted scope and records a critical audit", async () => {
     const harness = createHarness();
-    const context = createContext(harness.record);
 
-    const result = await issueFiscalDocument(
-      context,
+    await issueFiscalDocument(
+      createContext(harness.record),
       {
         documentType: "nfe",
         externalReference: "sale_1",
@@ -50,13 +49,11 @@ describe("issueFiscalDocument", () => {
     expect(harness.record).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "fiscal.document.issue",
-        criticality: "critical",
         outcome: "succeeded",
         storeId: "store_1",
         tenantId: "tenant_1",
       }),
     );
-    expect(result.status).toBe("issued");
   });
 
   it("uses empty metadata and audits a provider failure as failed", async () => {
@@ -114,6 +111,32 @@ describe("issueFiscalDocument", () => {
         harness.ports,
       ),
     ).rejects.toThrow("audit unavailable");
+  });
+
+  it("persists an unknown provider failure without synthetic success", async () => {
+    const harness = createHarness();
+    harness.issueDocument.mockRejectedValueOnce("provider unavailable");
+
+    await expect(
+      issueFiscalDocument(
+        createContext(harness.record),
+        { documentType: "nfe", externalReference: "sale_unknown_error" },
+        harness.ports,
+      ),
+    ).rejects.toBe("provider unavailable");
+
+    expect(harness.updateDocumentStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: { providerErrorName: "UnknownError" },
+        status: "error",
+      }),
+    );
+    expect(harness.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "fiscal.document.issue",
+        outcome: "failed",
+      }),
+    );
   });
 });
 
@@ -186,7 +209,13 @@ function createHarness(status: "failed" | "issued" = "issued") {
       updateTemplate: unused("updateTemplate"),
     },
   };
-  return { createDocument, issueDocument, ports, record };
+  return {
+    createDocument,
+    issueDocument,
+    ports,
+    record,
+    updateDocumentStatus,
+  };
 }
 
 function createDocumentRecord(

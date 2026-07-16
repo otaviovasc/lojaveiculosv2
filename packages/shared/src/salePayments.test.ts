@@ -29,5 +29,6 @@ describe("sale payment contract", () => {
     expect(
       new Set(salePaymentMethods.filter(salePaymentMethodUsesInstallments)),
     ).toEqual(new Set(salePaymentInstallmentMethods));
+    expect(salePaymentMethodUsesInstallments("pix")).toBe(false);
   });
 });

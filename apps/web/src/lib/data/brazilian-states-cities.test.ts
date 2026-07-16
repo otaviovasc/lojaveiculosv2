@@ -9,9 +9,13 @@ import {
 } from "./brazilian-states-cities";
 
 describe("Brazilian state and city catalog", () => {
-  it("publishes all states with unique codes and names", () => {
+  it("publishes every state and city with unique state codes and names", () => {
     const codes = getAllStateCodes();
     const names = getAllStateNames();
+    const cityCount = BRAZILIAN_STATES.reduce(
+      (total, state) => total + state.cities.length,
+      0,
+    );
 
     expect(BRAZILIAN_STATES).toHaveLength(27);
     expect(codes).toHaveLength(27);
@@ -20,6 +24,7 @@ describe("Brazilian state and city catalog", () => {
     expect(new Set(names).size).toBe(27);
     expect(codes).toContain("SP");
     expect(names).toContain("São Paulo");
+    expect(cityCount).toBe(5_571);
   });
 
   it("resolves a state by name or case-insensitive code", () => {
@@ -29,6 +34,7 @@ describe("Brazilian state and city catalog", () => {
     });
     expect(getStateByCode("XX")).toBeUndefined();
     expect(getStateByName("São Paulo")?.code).toBe("SP");
+    expect(getStateByName("são paulo")?.code).toBe("SP");
     expect(getStateByName("sp")?.name).toBe("São Paulo");
     expect(getStateByName("unknown")).toBeUndefined();
   });

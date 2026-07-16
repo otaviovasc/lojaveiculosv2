@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { requiredCiActions } from "./ci-workflow-rules.mjs";
 import { findValidationPipelineViolations } from "./validation-pipeline-rules.mjs";
 
 describe("validation pipeline rules", () => {
-  it("accepts the canonical hooks, CI, scripts, and checker wiring", () => {
+  it("accepts the canonical local hooks, scripts, and checker wiring", () => {
     expect(findValidationPipelineViolations(validPipeline())).toEqual([]);
   });
 
@@ -47,12 +46,10 @@ describe("validation pipeline rules", () => {
     );
   });
 
-  it("rejects hook drift and CI stage reordering", () => {
+  it("rejects hook drift and a weakened release gate", () => {
     const input = validPipeline();
     input.fileSources[".husky/pre-commit"] = "pnpm run validate:push\n";
-    input.fileSources[".github/workflows/ci.yml"] =
-      workflowActions() +
-      "\nrun: pnpm run test:smoke:api\nrun: pnpm run validate:ci\n";
+    input.scripts["validate:release"] = "pnpm run validate:push";
 
     const failures = findValidationPipelineViolations(input);
     expect(failures).toEqual(
@@ -60,26 +57,7 @@ describe("validation pipeline rules", () => {
         ".husky/pre-commit must execute pnpm exec lint-staged",
         ".husky/pre-commit must execute pnpm run validate:commit",
         ".husky/pre-commit must not execute pnpm run validate:push",
-        ".github/workflows/ci.yml must place run: pnpm run test:smoke:api after pnpm run validate:ci",
-      ]),
-    );
-  });
-
-  it("rejects commented-out CI commands and actions", () => {
-    const input = validPipeline();
-    input.fileSources[".github/workflows/ci.yml"] = input.fileSources[
-      ".github/workflows/ci.yml"
-    ]
-      .replace(
-        `uses: ${requiredCiActions[1].name}@${requiredCiActions[1].ref}`,
-        `# uses: ${requiredCiActions[1].name}@${requiredCiActions[1].ref}`,
-      )
-      .replace("run: pnpm run validate:ci", "# run: pnpm run validate:ci");
-
-    expect(findValidationPipelineViolations(input)).toEqual(
-      expect.arrayContaining([
-        `.github/workflows/ci.yml must execute uses: ${requiredCiActions[1].name}@${requiredCiActions[1].ref}`,
-        ".github/workflows/ci.yml must execute run: pnpm run validate:ci",
+        'validate:release must be "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables"',
       ]),
     );
   });
@@ -133,7 +111,6 @@ function validPipeline() {
       ".husky/pre-push": 0o755,
     },
     fileSources: {
-      ".github/workflows/ci.yml": `${workflowActions()}\nrun: pnpm run validate:ci\nrun: pnpm run test:smoke:api\n`,
       ".husky/pre-commit": "pnpm exec lint-staged\npnpm run validate:commit\n",
       ".husky/pre-push": "pnpm run validate:push\n",
     },
@@ -160,7 +137,7 @@ function validPipeline() {
         "pnpm --filter @lojaveiculosv2/api exec vitest run src/infrastructure/http/productionSmoke.test.ts",
       typecheck: "pnpm -r typecheck",
       validate: "pnpm run validate:push",
-      "validate:ci":
+      "validate:release":
         "pnpm run validate:push && pnpm run test:coverage && pnpm run build:deployables",
       "validate:commit":
         "pnpm run validate:core-guardrails && pnpm run test:quality-tools && pnpm run test:seed-document-pdf",
@@ -171,10 +148,4 @@ function validPipeline() {
       "verify:web-bundle": "node tools/quality/verify-web-bundle-artifacts.mjs",
     },
   };
-}
-
-function workflowActions() {
-  return requiredCiActions
-    .map(({ name, ref }) => `uses: ${name}@${ref}`)
-    .join("\n");
 }

@@ -8,14 +8,15 @@ implementation, deployment, incident response, and continuous improvement.
 
 ```text
 signal -> issue -> reproduce -> regression test -> fix -> validate -> PR
-  -> CI -> Codex review -> staging -> smoke tests -> production -> monitor
+  -> Codex review -> local release gate -> staging -> smoke tests
+  -> operator production promotion -> monitor
 ```
 
 The goal is high autonomy inside strong rails:
 
 - Codex can inspect code, write tests, fix issues, run checks, and open PRs.
-- GitHub Actions is the objective validation gate.
-- Railway deploys only after CI passes.
+- The clean-commit local release gate is the objective validation gate.
+- Railway builds and deploys; GitHub Actions is intentionally unused.
 - Staging catches integration issues before production.
 - Observability turns runtime failures into fixable issues.
 - Humans approve high-risk production changes.
@@ -24,9 +25,8 @@ The goal is high autonomy inside strong rails:
 
 Implemented in this repo:
 
-- CI workflow: `.github/workflows/ci.yml`
-- Staging smoke workflow: `.github/workflows/staging-smoke.yml`
-- Production smoke workflow: `.github/workflows/production-smoke.yml`
+- Local commit, push, and release validation tiers
+- Operator staging and production HTTP smoke commands
 - API smoke script: `pnpm run test:smoke:api`
 - Terraform scaffold for GitHub branch protection:
   `infra/terraform/`
@@ -45,7 +45,7 @@ Verified locally:
 
 - Railway CLI is installed from Homebrew at `/opt/homebrew/bin/railway`.
 - Railway CLI version: `5.13.3`.
-- Railway agent tooling is healthy.
+- Railway MCP is configured in local stdio mode and uses the authenticated CLI.
 - Railway authentication works for the current user.
 - Terraform version: `1.15.6`.
 - GitHub CLI version: `2.92.0`.
@@ -53,16 +53,18 @@ Verified locally:
 - `terraform fmt -check -recursive infra/terraform` passes.
 - Terraform staging and production configs validate when provider execution is
   allowed outside the sandbox.
+- The six-resource Railway staging topology was applied on 2026-07-16. Product
+  Postgres, audit Postgres, and Redis reached `SUCCESS`; the API, web, and CRM
+  cron services intentionally have no code deployment yet.
 
 Still external/manual:
 
-- Create the new Railway project.
-- Create `production` and `staging` Railway environments.
-- Connect Railway services to the GitHub repo.
-- Enable Railway Wait for CI.
-- Enable Railway PR environments.
-- Configure service variables and sealed secrets.
-- Add GitHub secrets for `STAGING_API_BASE_URL` and `PRODUCTION_API_BASE_URL`.
+- Configure staging service variables and sealed secrets.
+- Upload the verified API, web, and CRM worker commit to staging and run smoke
+  checks.
+- Apply the reviewed six-resource plan to production only after staging
+  acceptance. Production is currently empty.
+- Configure operator-local staging and production smoke URLs.
 - Add Terraform modules for GitHub, DNS, Sentry, and uptime monitors.
 
 ## Railway Shape
@@ -70,30 +72,34 @@ Still external/manual:
 Target Railway project:
 
 ```text
-loja-v2
+respectful-respect
   production
     lojaveiculosv2-api
     lojaveiculosv2-web
+    lojaveiculosv2-crm-schedule-worker (Railway cron, every 5 minutes)
     product Postgres
     audit Postgres
-    Redis if needed
+    Redis
   staging
     same service shape with isolated variables and databases
-  PR environments
-    temporary validation environments for pull requests
 ```
 
-Use `main` for production and `staging` for staging. Enable Wait for CI so a
-failed GitHub workflow skips deployment.
+Use accepted commits from `main` for production and `staging` for staging.
+GitHub source autodeploy stays disabled; both environments use explicit manual
+uploads after local verification. Redis is enabled for CRM realtime fanout and
+replay. The only worker is the short-lived scheduled-message cron; PR
+environments, permanent queue consumers, and speculative cron services remain
+disabled until measured value justifies cost.
 
-Railway healthcheck path:
+Railway healthcheck paths:
 
 ```text
-/health
+API: /ready
+Web: /health
 ```
 
-The API already exposes `/health` in
-`apps/api/src/infrastructure/http/createApp.ts`.
+The API exposes `/health` for liveness and `/ready` for bounded product/audit
+database probes.
 
 ## Terraform Boundary
 
@@ -166,11 +172,11 @@ Prohibited unless specifically requested:
 
 ## Daily Operating Flow
 
-1. Review failed CI, failed deploys, and production errors.
+1. Review failed local release gates, failed deploys, and production errors.
 2. Group failures by service, deployment, commit, and fingerprint.
 3. Create an issue with sanitized evidence.
 4. Ask Codex to reproduce, add a regression test, fix, and validate.
-5. Review the PR through CI, Codex review, and human review where needed.
+5. Review the PR through Codex review and human review where needed.
 6. Merge to staging, smoke test, then promote to production.
 7. Watch the same fingerprint after deploy.
 8. Update tests, docs, `AGENTS.md`, or runbooks if the mistake can repeat.
@@ -182,6 +188,7 @@ Run from repo root:
 ```bash
 pnpm run validate
 pnpm run test:smoke:api
+pnpm run release:verify
 ```
 
 If full validation is too expensive during an investigation, run the narrowest

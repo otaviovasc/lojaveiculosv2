@@ -8,7 +8,7 @@ export default defineConfig({
   dbCredentials: {
     url: process.env.AUDIT_DATABASE_URL ?? localAuditDatabaseUrl,
   },
-  out: "./drizzle",
+  out: "./migrations",
   schema: "./src/schema/*.ts",
   strict: true,
 });
