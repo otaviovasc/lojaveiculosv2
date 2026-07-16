@@ -3,6 +3,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2 } from "lucide-react";
+import { applyInputMask, formatBrazilianWhatsappPhone } from "../../lib/masks";
 import { WebsiteBuilderImageUrlField } from "./WebsiteBuilderImageFields";
 import { StorefrontImagePicker } from "./StorefrontImagePicker";
 import type {
@@ -87,14 +88,22 @@ export function WebsiteBuilderContactPanel({
           <Input
             className="h-10"
             id="whatsapp"
-            onChange={(event) =>
+            inputMode="tel"
+            onChange={(event) => {
+              const whatsapp = applyInputMask(
+                event.currentTarget,
+                formatBrazilianWhatsappPhone,
+              );
               updateConfig("socialLinks", {
                 ...config.socialLinks,
-                whatsapp: event.target.value,
-              })
-            }
-            placeholder="5511999999999"
-            value={config.socialLinks.whatsapp ?? ""}
+                whatsapp,
+              });
+            }}
+            placeholder="+55 (11) 99999-9999"
+            type="tel"
+            value={formatBrazilianWhatsappPhone(
+              config.socialLinks.whatsapp ?? "",
+            )}
           />
         </div>
         <div className="space-y-2">

@@ -11,6 +11,7 @@ import type { ReactElement, ReactNode } from "react";
 import { useState } from "react";
 import { CustomSelect } from "../../components/ui/CustomSelect";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import { sourceLabels, sourceOptions } from "./crmPipelineConfig";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import type { LeadCreateDraft } from "./crmPipelineModels";
@@ -79,8 +80,14 @@ export function LeadCreatePanel({
         <CrmField icon={<Phone />} label="WhatsApp">
           <input
             className="crm-input"
-            onChange={(event) => setBuyerPhone(event.target.value)}
+            inputMode="tel"
+            onChange={(event) =>
+              setBuyerPhone(
+                applyInputMask(event.currentTarget, formatBrazilianPhone),
+              )
+            }
             placeholder="(00) 00000-0000"
+            type="tel"
             value={buyerPhone}
           />
         </CrmField>

@@ -1,4 +1,5 @@
 import { AtSign, Mail, MessageCircle, Phone } from "lucide-react";
+import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import { readString } from "./publicStorefrontTheme";
 import type { PublicStorefrontSettingsData } from "./types";
 
@@ -69,7 +70,12 @@ export function LeadPanel({
             <input
               aria-label="Telefone"
               className="min-h-12 rounded-xl border border-line bg-panel px-4 text-sm font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+              inputMode="tel"
+              onInput={(event) => {
+                applyInputMask(event.currentTarget, formatBrazilianPhone);
+              }}
               placeholder="Seu telefone"
+              type="tel"
             />
             <a
               className="flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-5 text-sm font-bold text-accent-foreground transition-all duration-300 hover:-translate-y-0.5 hover:brightness-105 active:translate-y-0 active:scale-95"

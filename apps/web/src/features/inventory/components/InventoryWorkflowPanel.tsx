@@ -1,6 +1,11 @@
 import { Handshake } from "lucide-react";
 import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
+import {
+  applyInputMask,
+  formatBrazilianDocument,
+  formatBrazilianPhone,
+} from "../../../lib/masks";
 import type { InventoryApi } from "../api/apiClient";
 import {
   InventoryField,
@@ -188,15 +193,26 @@ export function InventoryWorkflowPanel({
           <InventoryField label="Documento">
             <InventoryInput
               disabled={isSaving}
-              onChange={setField("buyerDocument")}
-              value={form.buyerDocument}
+              inputMode="numeric"
+              onChange={(event) =>
+                setField("buyerDocument")(
+                  formatBrazilianDocument(event.target.value),
+                )
+              }
+              value={formatBrazilianDocument(form.buyerDocument)}
             />
           </InventoryField>
           <InventoryField label="Telefone">
             <InventoryInput
               disabled={isSaving}
-              onChange={setField("buyerPhone")}
-              value={form.buyerPhone}
+              inputMode="tel"
+              onChange={(event) =>
+                setField("buyerPhone")(
+                  applyInputMask(event.currentTarget, formatBrazilianPhone),
+                )
+              }
+              type="tel"
+              value={formatBrazilianPhone(form.buyerPhone)}
             />
           </InventoryField>
           <InventoryField label="E-mail">

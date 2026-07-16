@@ -192,6 +192,9 @@ Feature forms in `apps/web` must use the shared feature primitives
 (`FeatureField`, `FeatureInput`, `FeatureSelect`, `FeatureActionButton`) before
 adding local markup. Masks for Brazilian documents, phones, and CEP values must
 come from the existing mask utilities, not from screen-local string handling.
+`pnpm run check:input-masks` scans the full web source tree and enforces that
+contract for document, local phone, E.164 WhatsApp, CEP, and category-aware PIX
+inputs.
 
 Client-side validation should mirror the backend controller schema for the same
 payload and block obviously invalid submissions before the API call. Backend

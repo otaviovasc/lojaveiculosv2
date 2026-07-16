@@ -4,6 +4,7 @@ import {
   FeatureActionButton,
   FeatureSection,
 } from "../../components/ui/FeatureLayout";
+import { formatBrazilianDocument } from "../../lib/masks";
 import type { FiscalApi } from "./apiClient";
 import type { FiscalRecipient, FiscalTemplate } from "./types";
 
@@ -92,8 +93,12 @@ export function FiscalCatalogPanels({ api, onError }: Props) {
           <input
             aria-label="CNPJ ou CPF do tomador"
             onChange={(event) =>
-              setRecipient({ ...recipient, documentNumber: event.target.value })
+              setRecipient({
+                ...recipient,
+                documentNumber: formatBrazilianDocument(event.target.value),
+              })
             }
+            inputMode="numeric"
             placeholder="CNPJ ou CPF"
             value={recipient.documentNumber}
           />

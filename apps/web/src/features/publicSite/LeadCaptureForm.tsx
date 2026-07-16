@@ -1,6 +1,11 @@
 import { Send } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState } from "react";
+import {
+  applyInputMask,
+  formatBrazilianPhone,
+  normalizeBrazilianPhoneDigits,
+} from "../../lib/masks";
 import { deriveLeadCaptureState, type LeadCaptureSnapshot } from "./state";
 import type {
   PublicStorefrontLeadInput,
@@ -61,8 +66,13 @@ export function LeadCaptureForm({
         <input
           aria-label="Telefone"
           className="min-h-12 rounded-xl border border-line bg-panel px-4 text-xs font-semibold text-app-text outline-none shadow-sm transition-all focus:border-accent/40 focus:ring-4 focus:ring-accent/10"
+          inputMode="tel"
           name="buyerPhone"
+          onInput={(event) => {
+            applyInputMask(event.currentTarget, formatBrazilianPhone);
+          }}
           placeholder="Seu telefone"
+          type="tel"
         />
       </div>
       <input
@@ -119,7 +129,10 @@ function createLeadInput(
   return {
     buyerName,
     ...optionalField("buyerEmail", getFormValue(formData, "buyerEmail")),
-    ...optionalField("buyerPhone", getFormValue(formData, "buyerPhone")),
+    ...optionalField(
+      "buyerPhone",
+      normalizeBrazilianPhoneDigits(getFormValue(formData, "buyerPhone") ?? ""),
+    ),
     ...optionalField("message", getFormValue(formData, "message")),
   };
 }

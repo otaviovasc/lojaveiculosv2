@@ -1,3 +1,4 @@
+import { normalizeBrazilianPhoneDigits } from "../../lib/masks";
 import { pipelineStatuses } from "./crmPipelineConfig";
 import type {
   CreateProductCrmActivityInput,
@@ -34,6 +35,20 @@ export type LeadTaskMetadata = {
   dueAt?: string | undefined;
   title?: string | undefined;
 };
+
+export function buildLeadContactPatch(
+  lead: Pick<ProductCrmLead, "buyerPhone">,
+  draft: LeadContactPatch,
+): LeadContactPatch {
+  const { buyerPhone, ...patch } = draft;
+  if (!("buyerPhone" in draft)) return patch;
+
+  const currentPhone = normalizeBrazilianPhoneDigits(lead.buyerPhone ?? "");
+  const nextPhone = normalizeBrazilianPhoneDigits(buyerPhone ?? "");
+  return currentPhone === nextPhone
+    ? patch
+    : { ...patch, buyerPhone: nextPhone || null };
+}
 
 export function filterLeads(leads: ProductCrmLead[], filters: LeadFilters) {
   const needle = normalize(filters.search);

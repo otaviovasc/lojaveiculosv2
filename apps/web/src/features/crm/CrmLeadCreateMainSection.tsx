@@ -1,4 +1,5 @@
 import type { LeadCreateFullState } from "./CrmLeadCreateTypes";
+import { formatBrazilianCpf } from "../../lib/masks";
 import {
   CrmCreateField,
   CrmCreateDateField,
@@ -81,7 +82,10 @@ export function CrmLeadCreateMainSection({
         <div className="crm-client-pair">
           <CrmCreateField label="CPF *">
             <CrmCreateInput
-              onChange={(event) => onChange({ cpf: event.target.value })}
+              inputMode="numeric"
+              onChange={(event) =>
+                onChange({ cpf: formatBrazilianCpf(event.target.value) })
+              }
               placeholder="000.000.000-00"
               type="text"
               value={state.cpf}

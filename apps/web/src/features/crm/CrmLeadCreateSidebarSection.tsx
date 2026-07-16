@@ -1,4 +1,5 @@
 import type { LeadCreateFullState } from "./CrmLeadCreateTypes";
+import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import {
   CrmCreateField,
   CrmCreateInput,
@@ -52,27 +53,49 @@ export function CrmLeadCreateSidebarSection({
           </CrmCreateField>
           <CrmCreateField label="Telefone fixo">
             <CrmCreateInput
+              inputMode="tel"
               onChange={(event) =>
-                onChange({ telefoneFixo: event.target.value })
+                onChange({
+                  telefoneFixo: applyInputMask(
+                    event.currentTarget,
+                    formatBrazilianPhone,
+                  ),
+                })
               }
               placeholder="Digite o telefone"
-              type="text"
+              type="tel"
               value={state.telefoneFixo}
             />
           </CrmCreateField>
           <CrmCreateField label="Celular">
             <CrmCreateInput
-              onChange={(event) => onChange({ buyerPhone: event.target.value })}
+              inputMode="tel"
+              onChange={(event) =>
+                onChange({
+                  buyerPhone: applyInputMask(
+                    event.currentTarget,
+                    formatBrazilianPhone,
+                  ),
+                })
+              }
               placeholder="Digite o celular"
-              type="text"
+              type="tel"
               value={state.buyerPhone}
             />
           </CrmCreateField>
           <CrmCreateField label="WhatsApp">
             <CrmCreateInput
-              onChange={(event) => onChange({ whatsapp: event.target.value })}
+              inputMode="tel"
+              onChange={(event) =>
+                onChange({
+                  whatsapp: applyInputMask(
+                    event.currentTarget,
+                    formatBrazilianPhone,
+                  ),
+                })
+              }
               placeholder="Digite o WhatsApp"
-              type="text"
+              type="tel"
               value={state.whatsapp}
             />
           </CrmCreateField>

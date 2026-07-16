@@ -1,9 +1,14 @@
 import { MessageCircle, Save, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import { sourceLabels, statusLabels } from "./crmPipelineConfig";
 import type { LeadContactPatch } from "./crmPipelineModels";
-import { formatLeadContact, formatLeadName } from "./crmPipelineModels";
+import {
+  buildLeadContactPatch,
+  formatLeadContact,
+  formatLeadName,
+} from "./crmPipelineModels";
 import type { CrmLeadStatus, ProductCrmLead } from "./productCrmTypes";
 
 type LeadDetailPanelProps = {
@@ -24,7 +29,9 @@ export function LeadDetailPanel({
     setDraft({
       buyerEmail: lead?.buyerEmail ?? null,
       buyerName: lead?.buyerName ?? null,
-      buyerPhone: lead?.buyerPhone ?? null,
+      buyerPhone: lead?.buyerPhone
+        ? formatBrazilianPhone(lead.buyerPhone)
+        : null,
     });
   }, [lead]);
 
@@ -33,7 +40,7 @@ export function LeadDetailPanel({
   const save = async () => {
     setIsSaving(true);
     try {
-      await onUpdateLead(lead.id, draft);
+      await onUpdateLead(lead.id, buildLeadContactPatch(lead, draft));
     } finally {
       setIsSaving(false);
     }
@@ -71,12 +78,15 @@ export function LeadDetailPanel({
         />
         <input
           className="crm-input"
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              buyerPhone: event.target.value,
-            }))
-          }
+          onChange={(event) => {
+            const buyerPhone = applyInputMask(
+              event.currentTarget,
+              formatBrazilianPhone,
+            );
+            setDraft((current) => ({ ...current, buyerPhone }));
+          }}
+          inputMode="tel"
+          type="tel"
           value={draft.buyerPhone ?? ""}
         />
         <input

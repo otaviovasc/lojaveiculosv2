@@ -1,4 +1,5 @@
 import { Upload } from "lucide-react";
+import { formatBrazilianPixKey } from "../../lib/masks";
 import type { LeadCreateFullState } from "./CrmLeadCreateTypes";
 import {
   CrmCreateField,
@@ -55,14 +56,28 @@ export function CrmLeadCreateFinanceSection({
           </CrmCreateField>
           <CrmCreateField label="Categoria PIX">
             <CrmCreateSelect
-              onChange={(pixCategory) => onChange({ pixCategory })}
+              onChange={(pixCategory) => onChange({ pixCategory, pixKey: "" })}
               options={pixCategoryOptions}
               value={state.pixCategory}
             />
           </CrmCreateField>
           <CrmCreateField className="crm-client-wide" label="Chave PIX">
             <CrmCreateInput
-              onChange={(event) => onChange({ pixKey: event.target.value })}
+              inputMode={
+                state.pixCategory === "CPF" ||
+                state.pixCategory === "CNPJ" ||
+                state.pixCategory === "Celular"
+                  ? "numeric"
+                  : "text"
+              }
+              onChange={(event) =>
+                onChange({
+                  pixKey: formatBrazilianPixKey(
+                    event.target.value,
+                    state.pixCategory,
+                  ),
+                })
+              }
               placeholder="Digite a chave PIX"
               type="text"
               value={state.pixKey}

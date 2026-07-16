@@ -3,11 +3,12 @@ import type {
   CreateOwnerStoreInput,
 } from "./apiClient";
 import { isValidBrazilianCnpj } from "@lojaveiculosv2/shared";
-import { normalizePublicSlug } from "../../lib/utils";
 import {
   formatBrazilianCnpj,
   formatBrazilianPhone,
-} from "../settings/settingsMasks";
+  normalizeBrazilianPhoneDigits,
+} from "../../lib/masks";
+import { normalizePublicSlug } from "../../lib/utils";
 
 export type OwnerStoreForm = {
   contactPhone: string;
@@ -169,6 +170,5 @@ function onlyDigits(value: string) {
 }
 
 function localPhoneDigits(value: string) {
-  const digits = onlyDigits(value);
-  return digits.startsWith("55") ? digits.slice(2) : digits;
+  return normalizeBrazilianPhoneDigits(value);
 }

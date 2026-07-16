@@ -1,8 +1,3 @@
-import {
-  formatBrazilianCpf,
-  formatBrazilianPhone,
-  formatBrazilianZipCode,
-} from "../../../lib/masks";
 import type { DriverData } from "./TestDriveWizardTypes";
 
 export function createEmptyDriver(): DriverData {
@@ -28,7 +23,3 @@ export function getCurrentDepartureTime() {
   const mm = String(now.getMinutes()).padStart(2, "0");
   return `${hh}:${mm}`;
 }
-
-export const maskCPF = formatBrazilianCpf;
-export const maskCEP = formatBrazilianZipCode;
-export const maskPhone = formatBrazilianPhone;

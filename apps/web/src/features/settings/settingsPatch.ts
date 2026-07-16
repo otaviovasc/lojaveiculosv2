@@ -1,12 +1,57 @@
 import type { StoreSettingsSnapshot, UpdateStoreSettingsInput } from "./types";
+import {
+  formatBrazilianDocument,
+  formatBrazilianPhone,
+  formatBrazilianWhatsappPhone,
+  formatBrazilianZipCode,
+} from "../../lib/masks";
+
+export function createStoreSettingsDraft(
+  settings: StoreSettingsSnapshot,
+): StoreSettingsSnapshot {
+  return {
+    ...settings,
+    profile: {
+      ...settings.profile,
+      ...(settings.profile.addressZipCode
+        ? {
+            addressZipCode: formatBrazilianZipCode(
+              settings.profile.addressZipCode,
+            ),
+          }
+        : {}),
+      ...(settings.profile.contactPhone
+        ? {
+            contactPhone: formatBrazilianPhone(settings.profile.contactPhone),
+          }
+        : {}),
+      ...(settings.profile.documentNumber
+        ? {
+            documentNumber: formatBrazilianDocument(
+              settings.profile.documentNumber,
+            ),
+          }
+        : {}),
+      ...(settings.profile.whatsappPhone
+        ? {
+            whatsappPhone: formatBrazilianWhatsappPhone(
+              settings.profile.whatsappPhone,
+            ),
+          }
+        : {}),
+    },
+  };
+}
 
 export function createStoreSettingsPatch(
   before: StoreSettingsSnapshot,
   after: StoreSettingsSnapshot,
 ): UpdateStoreSettingsInput {
   const input: UpdateStoreSettingsInput = {};
+  const beforeDraft = createStoreSettingsDraft(before);
+  const afterDraft = createStoreSettingsDraft(after);
   const identity = changedFields(before.identity, after.identity);
-  const profile = changedFields(before.profile, after.profile);
+  const profile = changedFields(beforeDraft.profile, afterDraft.profile);
   const publicSite = changedFields(before.publicSite, after.publicSite);
 
   if (identity) input.identity = identity;

@@ -1,4 +1,5 @@
 import type { LeadCreateFullState } from "./CrmLeadCreateTypes";
+import { formatBrazilianZipCode } from "../../lib/masks";
 import {
   CrmCreateField,
   CrmCreateInput,
@@ -20,8 +21,11 @@ export function CrmLeadCreateAddressSection({
         <div className="crm-client-pair">
           <CrmCreateField label="CEP">
             <CrmCreateInput
-              onChange={(event) => onChange({ cep: event.target.value })}
-              placeholder="00000-00"
+              inputMode="numeric"
+              onChange={(event) =>
+                onChange({ cep: formatBrazilianZipCode(event.target.value) })
+              }
+              placeholder="00000-000"
               type="text"
               value={state.cep}
             />

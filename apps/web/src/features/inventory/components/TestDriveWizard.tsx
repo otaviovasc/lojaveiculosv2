@@ -13,9 +13,6 @@ import { TestDriveWizardFooter } from "./TestDriveWizardFooter";
 import {
   createEmptyDriver,
   getCurrentDepartureTime,
-  maskCEP,
-  maskCPF,
-  maskPhone,
 } from "./TestDriveWizardUtils";
 import type {
   DriverData,
@@ -283,7 +280,6 @@ export default function TestDriveWizard({
                   isNewLead={isNewLead}
                   leads={leads}
                   loading={loading}
-                  maskPhone={maskPhone}
                   onDriverChange={setDriver}
                   onSearchLeads={(value) => void handleSearchLeads(value)}
                   onSelectLead={handleSelectLead}
@@ -300,8 +296,6 @@ export default function TestDriveWizard({
                   departureTime={departureTime}
                   driver={driver}
                   fetchCepAddress={(value) => void fetchCepAddress(value)}
-                  maskCEP={maskCEP}
-                  maskCPF={maskCPF}
                   onDepartureTimeChange={setDepartureTime}
                   onDriverChange={setDriver}
                   onReturnTimeChange={setReturnTime}

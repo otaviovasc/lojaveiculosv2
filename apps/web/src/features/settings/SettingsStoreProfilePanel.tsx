@@ -23,16 +23,19 @@ import {
 } from "../../components/ui/FeatureLayout";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import {
+  applyInputMask,
+  formatBrazilianDocument,
+  formatBrazilianPhone,
+  formatBrazilianWhatsappPhone,
+  formatBrazilianZipCode,
+} from "../../lib/masks";
+import {
   businessHoursToText,
   textToBusinessHours,
 } from "./settingsBusinessHours";
 import { fetchBrazilianZipCodeAddress } from "./settingsCep";
-import {
-  formatBrazilianDocument,
-  formatBrazilianPhone,
-  formatBrazilianZipCode,
-} from "./settingsMasks";
 import { SettingsStateCityFields } from "./SettingsStateCityFields";
+import { createStoreSettingsDraft } from "./settingsPatch";
 import type { StoreSettingsSnapshot } from "./types";
 
 export function SettingsStoreProfilePanel({
@@ -44,12 +47,12 @@ export function SettingsStoreProfilePanel({
   onSave: (settings: StoreSettingsSnapshot) => Promise<void>;
   settings: StoreSettingsSnapshot;
 }) {
-  const [draft, setDraft] = useState(() => createSettingsDraft(settings));
+  const [draft, setDraft] = useState(() => createStoreSettingsDraft(settings));
   const [zipLookup, setZipLookup] = useState<ZipLookupState>({
     kind: "idle",
   });
 
-  useEffect(() => setDraft(createSettingsDraft(settings)), [settings]);
+  useEffect(() => setDraft(createStoreSettingsDraft(settings)), [settings]);
 
   const lookupZipCode = async () => {
     const zipCode = draft.profile.addressZipCode ?? "";
@@ -255,7 +258,10 @@ export function SettingsStoreProfilePanel({
                       ...draft,
                       profile: {
                         ...draft.profile,
-                        contactPhone: formatBrazilianPhone(event.target.value),
+                        contactPhone: applyInputMask(
+                          event.currentTarget,
+                          formatBrazilianPhone,
+                        ),
                       },
                     })
                   }
@@ -275,7 +281,10 @@ export function SettingsStoreProfilePanel({
                       ...draft,
                       profile: {
                         ...draft.profile,
-                        whatsappPhone: formatBrazilianPhone(event.target.value),
+                        whatsappPhone: applyInputMask(
+                          event.currentTarget,
+                          formatBrazilianWhatsappPhone,
+                        ),
                       },
                     })
                   }
@@ -421,19 +430,4 @@ function zipLookupHelp(state: ZipLookupState) {
   if (state.kind === "loading") return "Buscando cidade e UF pelo CEP...";
   if (state.kind === "success") return "Cidade e UF preenchidas pelo CEP.";
   return "Ao sair do campo, cidade e UF serão preenchidas automaticamente.";
-}
-
-function createSettingsDraft(
-  settings: StoreSettingsSnapshot,
-): StoreSettingsSnapshot {
-  const documentNumber = settings.profile.documentNumber;
-  if (!documentNumber) return settings;
-
-  return {
-    ...settings,
-    profile: {
-      ...settings.profile,
-      documentNumber: formatBrazilianDocument(documentNumber),
-    },
-  };
 }

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createStoreSettingsPatch } from "./settingsPatch";
+import {
+  createStoreSettingsDraft,
+  createStoreSettingsPatch,
+} from "./settingsPatch";
 import type { StoreSettingsSnapshot } from "./types";
 
 describe("createStoreSettingsPatch", () => {
@@ -13,7 +16,29 @@ describe("createStoreSettingsPatch", () => {
     });
 
     expect(createStoreSettingsPatch(before, after)).toEqual({
-      profile: { whatsappPhone: "(11) 99999-0000" },
+      profile: { whatsappPhone: "+55 (11) 99999-0000" },
+    });
+  });
+
+  it("preserves the WhatsApp country code when saving another profile field", () => {
+    const before = createSettings({
+      profile: {
+        ...createSettings().profile,
+        whatsappPhone: "+5511900000000",
+      },
+    });
+    const draft = createStoreSettingsDraft(before);
+    const after = createSettings({
+      ...draft,
+      profile: {
+        ...draft.profile,
+        contactEmail: "novo-contato@example.com",
+      },
+    });
+
+    expect(draft.profile.whatsappPhone).toBe("+55 (11) 90000-0000");
+    expect(createStoreSettingsPatch(before, after)).toEqual({
+      profile: { contactEmail: "novo-contato@example.com" },
     });
   });
 

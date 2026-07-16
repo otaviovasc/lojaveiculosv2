@@ -1,6 +1,11 @@
 import { Check, Mail, MapPin, MessageCircle, Phone, Send } from "lucide-react";
 import { useState, type FormEvent, type InputHTMLAttributes } from "react";
 import { formatApiErrorDisplay, readApiVoid } from "../../lib/apiErrors";
+import {
+  applyInputMask,
+  formatBrazilianPhone,
+  normalizeBrazilianPhoneDigits,
+} from "../../lib/masks";
 import type { BuilderBlockProps } from "./pageBuilderRenderTypes";
 import { textProp } from "./pageBuilderRenderUtils";
 
@@ -23,7 +28,9 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           body: JSON.stringify({
             buyerEmail: value(formData, "email"),
             buyerName: value(formData, "name") ?? "Contato pelo site",
-            buyerPhone: value(formData, "phone"),
+            buyerPhone:
+              normalizeBrazilianPhoneDigits(value(formData, "phone") ?? "") ||
+              undefined,
             message: value(formData, "message"),
           }),
           headers: {
@@ -72,7 +79,15 @@ export function ContactSectionBlock({ component, context }: BuilderBlockProps) {
           ) : null}
           <div className="grid gap-4 sm:grid-cols-2">
             {show("phone") ? (
-              <PublicInput name="phone" placeholder="Telefone de contato" />
+              <PublicInput
+                inputMode="tel"
+                name="phone"
+                onInput={(event) => {
+                  applyInputMask(event.currentTarget, formatBrazilianPhone);
+                }}
+                placeholder="Telefone de contato"
+                type="tel"
+              />
             ) : null}
             {show("email") ? (
               <PublicInput name="email" placeholder="E-mail" type="email" />

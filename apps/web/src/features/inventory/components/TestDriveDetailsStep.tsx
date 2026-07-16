@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { formatBrazilianCpf, formatBrazilianZipCode } from "../../../lib/masks";
 import type { DriverData } from "./TestDriveWizardTypes";
 
 const addressFields: Array<{
@@ -16,8 +17,6 @@ export function TestDriveDetailsStep({
   driver,
   returnTime,
   fetchCepAddress,
-  maskCEP,
-  maskCPF,
   onDepartureTimeChange,
   onDriverChange,
   onReturnTimeChange,
@@ -27,8 +26,6 @@ export function TestDriveDetailsStep({
   driver: DriverData;
   returnTime: string;
   fetchCepAddress: (cep: string) => void;
-  maskCEP: (value: string) => string;
-  maskCPF: (value: string) => string;
   onDepartureTimeChange: (value: string) => void;
   onDriverChange: (driver: DriverData) => void;
   onReturnTimeChange: (value: string) => void;
@@ -42,7 +39,10 @@ export function TestDriveDetailsStep({
             type="text"
             value={driver.cpf}
             onChange={(e) =>
-              onDriverChange({ ...driver, cpf: maskCPF(e.target.value) })
+              onDriverChange({
+                ...driver,
+                cpf: formatBrazilianCpf(e.target.value),
+              })
             }
             placeholder="000.000.000-00"
             className="min-h-11 px-3 rounded-lg border border-line bg-app text-sm font-bold outline-none"
@@ -78,7 +78,7 @@ export function TestDriveDetailsStep({
               type="text"
               value={driver.cep}
               onChange={(e) => {
-                const val = maskCEP(e.target.value);
+                const val = formatBrazilianZipCode(e.target.value);
                 onDriverChange({ ...driver, cep: val });
                 if (val.replace(/\D/g, "").length === 8) fetchCepAddress(val);
               }}

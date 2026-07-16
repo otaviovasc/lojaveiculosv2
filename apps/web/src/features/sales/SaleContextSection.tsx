@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Car, User, Plus, Sparkles } from "lucide-react";
 import { Combobox } from "../../components/ui/combobox";
+import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import { SaleField, SaleFormSection } from "./SaleWorkspaceForm";
 import { SaleContextAcquisitionSection } from "./SaleContextAcquisitionSection";
 import { SaleContextVehicleDetails } from "./SaleContextVehicleDetails";
@@ -288,17 +289,25 @@ export function ContextSection({
             <SaleField label="Telefone">
               <input
                 className="sales-input"
-                value={String(sale.buyerSnapshot.phone ?? "")}
-                onChange={(e) =>
+                inputMode="tel"
+                value={formatBrazilianPhone(
+                  String(sale.buyerSnapshot.phone ?? ""),
+                )}
+                onChange={(event) => {
+                  const phone = applyInputMask(
+                    event.currentTarget,
+                    formatBrazilianPhone,
+                  );
                   update((draft) => ({
                     ...draft,
                     buyerSnapshot: {
                       ...draft.buyerSnapshot,
-                      phone: e.target.value,
+                      phone,
                     },
-                  }))
-                }
+                  }));
+                }}
                 placeholder="Ex: (11) 99999-9999"
+                type="tel"
               />
             </SaleField>
 

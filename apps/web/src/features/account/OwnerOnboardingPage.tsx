@@ -13,11 +13,12 @@ import {
   FeatureSection,
 } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
-import { normalizePublicSlug } from "../../lib/utils";
 import {
+  applyInputMask,
   formatBrazilianCnpj,
   formatBrazilianPhone,
-} from "../settings/settingsMasks";
+} from "../../lib/masks";
+import { normalizePublicSlug } from "../../lib/utils";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { persistCurrentStoreSlug } from "./currentStore";
 import {
@@ -175,7 +176,9 @@ export function OwnerOnboardingPage() {
                 value={contactPhone}
                 onChange={(event) => {
                   clearFieldError("contactPhone");
-                  setContactPhone(formatBrazilianPhone(event.target.value));
+                  setContactPhone(
+                    applyInputMask(event.currentTarget, formatBrazilianPhone),
+                  );
                 }}
                 placeholder="(11) 98765-4321"
               />

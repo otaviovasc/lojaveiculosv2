@@ -1,5 +1,6 @@
 import { Car, FileSpreadsheet, User } from "lucide-react";
 import type { ReactNode } from "react";
+import { formatBrazilianDocument } from "../../lib/masks";
 import { SaleField } from "./SaleWorkspaceForm";
 import type { SaleRecord } from "./types";
 import type { RequiredFieldsPolicy } from "./validation";
@@ -26,9 +27,13 @@ export function BuyerDocumentationFields({
       <DocumentInput
         error={errors.buyerDocument}
         label={`CPF / CNPJ ${policy.buyerDocument ? "*" : ""}`}
-        onChange={(value) => onChange("document", value)}
+        onChange={(value) =>
+          onChange("document", formatBrazilianDocument(value))
+        }
         placeholder="Digite apenas números"
-        value={String(buyer.document || buyer.cpf || "")}
+        value={formatBrazilianDocument(
+          String(buyer.document || buyer.cpf || ""),
+        )}
       />
       <DocumentInput
         error={errors.buyerAddress}

@@ -1,4 +1,5 @@
 import { CheckCircle2, Loader2, Search } from "lucide-react";
+import { applyInputMask, formatBrazilianPhone } from "../../../lib/masks";
 import type { DriverData, Lead } from "./TestDriveWizardTypes";
 
 const leadModeButtonBase =
@@ -19,7 +20,6 @@ export function TestDriveLeadStep({
   loading,
   searchLead,
   selectedLead,
-  maskPhone,
   onDriverChange,
   onSearchLeads,
   onSelectLead,
@@ -32,7 +32,6 @@ export function TestDriveLeadStep({
   loading: boolean;
   searchLead: string;
   selectedLead: Lead | null;
-  maskPhone: (value: string) => string;
   onDriverChange: (driver: DriverData) => void;
   onSearchLeads: (value: string) => void;
   onSelectLead: (lead: Lead) => void;
@@ -140,12 +139,16 @@ export function TestDriveLeadStep({
             <label className="grid gap-1.5 text-xs font-black text-app-text">
               <span>Telefone *</span>
               <input
-                type="text"
+                inputMode="tel"
+                type="tel"
                 value={driver.phone}
                 onChange={(e) =>
                   onDriverChange({
                     ...driver,
-                    phone: maskPhone(e.target.value),
+                    phone: applyInputMask(
+                      e.currentTarget,
+                      formatBrazilianPhone,
+                    ),
                   })
                 }
                 placeholder="(00) 00000-0000"

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { applyInputMask, formatBrazilianPhone } from "../../lib/masks";
 import { pipelineStatuses, statusLabels } from "./crmPipelineConfig";
 import type {
   CreateProductCrmLeadInput,
@@ -57,8 +58,14 @@ export function LeadCreatePanel({
         />
         <input
           className="crm-input"
-          onChange={(event) => setBuyerPhone(event.target.value)}
+          inputMode="tel"
+          onChange={(event) =>
+            setBuyerPhone(
+              applyInputMask(event.currentTarget, formatBrazilianPhone),
+            )
+          }
           placeholder="WhatsApp"
+          type="tel"
           value={buyerPhone}
         />
         <input

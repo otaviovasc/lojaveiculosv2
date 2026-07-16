@@ -60,6 +60,28 @@ describe("onboarding validation", () => {
     });
   });
 
+  it("preserves a valid local phone whose DDD is 55", () => {
+    const result = validateOwnerStoreForm({
+      contactPhone: "55987654321",
+      documentNumber: "11222333000181",
+      publicSlug: "auto-prime",
+      storeLegalName: "",
+      storeTradingName: "Auto Prime",
+    });
+
+    expect(result).toEqual({
+      input: {
+        profile: {
+          contactPhone: "(55) 98765-4321",
+          documentNumber: "11.222.333/0001-81",
+        },
+        publicSlug: "auto-prime",
+        storeTradingName: "Auto Prime",
+      },
+      ok: true,
+    });
+  });
+
   it("blocks incomplete agency store forms before submitting", () => {
     const result = validateAgencyStoreForm({
       publicSlug: "a",
