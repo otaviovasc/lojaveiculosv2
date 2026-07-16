@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { FiscalProviderGateway } from "../../ports/fiscalProviderGateway.js";
+import type {
+  FiscalProviderDocumentStatus,
+  FiscalProviderGateway,
+} from "../../ports/fiscalProviderGateway.js";
 import type {
   FiscalDocument,
   FiscalRepository,
@@ -15,7 +18,11 @@ import { syncFiscalDocumentStatus } from "./syncFiscalDocumentStatus.js";
 describe("syncFiscalDocumentStatus", () => {
   it.each([
     ["cancelled", "cancelled", "succeeded"],
+    ["queued", "queued", "succeeded"],
+    ["authorized", "authorized", "succeeded"],
     ["failed", "failed", "failed"],
+    ["error", "error", "failed"],
+    ["rejected", "rejected", "failed"],
     ["issued", "issued", "succeeded"],
     ["processing", "processing", "succeeded"],
   ] as const)(
@@ -143,7 +150,7 @@ function createContext(
 function createHarness(
   overrides: {
     document?: FiscalDocument | null;
-    providerStatus?: "cancelled" | "failed" | "issued" | "processing";
+    providerStatus?: FiscalProviderDocumentStatus;
   } = {},
 ) {
   const document =

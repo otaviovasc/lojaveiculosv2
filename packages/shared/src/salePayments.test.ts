@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   isActiveSalePaymentStatus,
   isSalePaymentMethod,
+  salePaymentInstallmentMethods,
+  salePaymentMethodUsesInstallments,
   salePaymentMethods,
 } from "./salePayments.js";
 
@@ -20,5 +22,12 @@ describe("sale payment contract", () => {
     expect(isActiveSalePaymentStatus("paid")).toBe(true);
     expect(isActiveSalePaymentStatus("cancelled")).toBe(false);
     expect(isActiveSalePaymentStatus("refunded")).toBe(false);
+  });
+
+  it("identifies methods that support installments", () => {
+    expect(salePaymentInstallmentMethods).toEqual(["credit_card", "financing"]);
+    expect(
+      new Set(salePaymentMethods.filter(salePaymentMethodUsesInstallments)),
+    ).toEqual(new Set(salePaymentInstallmentMethods));
   });
 });

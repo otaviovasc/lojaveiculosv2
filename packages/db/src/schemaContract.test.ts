@@ -1,7 +1,13 @@
-import { is } from "drizzle-orm";
-import { getTableConfig, PgTable } from "drizzle-orm/pg-core";
+import { is, SQL } from "drizzle-orm";
+import {
+  getTableConfig,
+  PgDialect,
+  pgTable,
+  PgTable,
+} from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as schema from "./index.js";
+import { externalReference } from "./schema/_shared.js";
 
 const tables = Object.entries(schema).flatMap(([exportName, value]) =>
   is(value, PgTable) ? [{ config: getTableConfig(value), exportName }] : [],
@@ -59,5 +65,27 @@ describe("product database schema contract", () => {
       tableCase: "lower_snake_case",
       timestampPolicy: "created_at_updated_at_with_timezone",
     });
+  });
+
+  it("keeps shared timestamp and external-reference builders canonical", () => {
+    const updateSql = schema.tenants.updatedAt.onUpdateFn?.();
+
+    expect(is(updateSql, SQL)).toBe(true);
+    if (!is(updateSql, SQL)) throw new Error("Missing updated_at SQL callback");
+    expect(new PgDialect().sqlToQuery(updateSql).sql).toBe("now()");
+
+    const referenceTable = pgTable("external_reference_contract", {
+      providerId: externalReference("provider_id"),
+    });
+    const providerId = getTableConfig(referenceTable).columns.find(
+      ({ name }) => name === "provider_id",
+    );
+
+    expect(providerId).toMatchObject({
+      columnType: "PgVarchar",
+      dataType: "string",
+      name: "provider_id",
+    });
+    expect(providerId?.getSQLType()).toBe("varchar(191)");
   });
 });

@@ -85,6 +85,7 @@ describe("Brazilian contact masks", () => {
   });
 
   it.each([
+    ["", ""],
     ["11987654321", "+55 (11) 98765-4321"],
     ["551132345678", "+55 (11) 3234-5678"],
     ["55987654321", "+55 (55) 98765-4321"],
@@ -140,6 +141,22 @@ describe("Brazilian contact masks", () => {
     expect(applyInputMask(input, formatBrazilianCpf)).toBe("123.4");
     expect(input.value).toBe("123.4");
     expect(selection).toEqual({ start: 4, end: 4 });
+  });
+
+  it("defaults a missing selection to the end of the input", () => {
+    const selection = { start: -1, end: -1 };
+    const input = {
+      value: "1234",
+      selectionStart: null,
+      selectionEnd: null,
+      setSelectionRange(start: number, end: number) {
+        selection.start = start;
+        selection.end = end;
+      },
+    };
+
+    expect(applyInputMask(input, formatBrazilianCpf)).toBe("123.4");
+    expect(selection).toEqual({ start: 5, end: 5 });
   });
 
   it("keeps a selected digit range aligned after punctuation is inserted", () => {

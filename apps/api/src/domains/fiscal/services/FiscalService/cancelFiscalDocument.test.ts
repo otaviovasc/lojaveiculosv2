@@ -1,24 +1,27 @@
 import { describe, expect, it, vi } from "vitest";
 import { createServiceContext } from "../../../../shared/serviceContext.js";
-import type { FiscalProviderGateway } from "../../ports/fiscalProviderGateway.js";
+import type { FiscalProviderDocumentStatus } from "../../ports/fiscalProviderGateway.js";
 import type {
   FiscalDocument,
   FiscalDocumentStatus,
   FiscalRepository,
 } from "../../ports/fiscalRepository.js";
 import { cancelFiscalDocument } from "./cancelFiscalDocument.js";
-import { unexpectedCall } from "../../testSupport.js";
+import { createFiscalTestPorts } from "../../testSupport.js";
 import {
   FiscalDocumentNotFoundError,
   FiscalProviderReferenceMissingError,
   FiscalScopeError,
-  type FiscalServicePorts,
 } from "./serviceSupport.js";
 
 describe("cancelFiscalDocument", () => {
   it.each([
     ["cancelled", "cancelled", "succeeded"],
+    ["queued", "queued", "succeeded"],
+    ["authorized", "authorized", "succeeded"],
     ["failed", "failed", "failed"],
+    ["error", "error", "failed"],
+    ["rejected", "rejected", "failed"],
     ["issued", "issued", "succeeded"],
     ["processing", "processing", "succeeded"],
   ] as const)(
@@ -53,10 +56,6 @@ describe("cancelFiscalDocument", () => {
           providerDocumentId: "persisted_provider_document",
           status: expectedStatus,
         }),
-      );
-      expect(harness.updateDocumentStatus.mock.calls[0]?.[0]).toHaveProperty(
-        "providerDocumentId",
-        "persisted_provider_document",
       );
       expect(harness.record).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -183,49 +182,28 @@ function createContext(
 function createHarness(
   overrides: {
     document?: FiscalDocument | null;
-    providerStatus?: "cancelled" | "failed" | "issued" | "processing";
+    providerStatus?: FiscalProviderDocumentStatus;
   } = {},
 ) {
   const document =
     overrides.document === undefined ? documentRecord : overrides.document;
+  const ports = createFiscalTestPorts();
   const record = vi.fn(async () => undefined);
-  const cancelDocument = vi.fn<FiscalProviderGateway["cancelDocument"]>(
-    async () => ({
+  const cancelDocument = vi
+    .spyOn(ports.fiscalProviderGateway, "cancelDocument")
+    .mockResolvedValue({
       accessKey: "new_access_key",
       providerDocumentId: "persisted_provider_document",
       status: overrides.providerStatus ?? "cancelled",
-    }),
-  );
-  const findDocumentById = vi.fn<FiscalRepository["findDocumentById"]>(
-    async () => document,
-  );
-  const updateDocumentStatus = vi.fn<FiscalRepository["updateDocumentStatus"]>(
-    async (input) => updatedDocument(documentRecord, input),
-  );
-  const ports: FiscalServicePorts = {
-    fiscalProviderGateway: {
-      cancelDocument,
-      getProviderStatus: unexpectedCall("getProviderStatus"),
-      issueDocument: unexpectedCall("issueDocument"),
-      syncDocumentStatus: unexpectedCall("syncDocumentStatus"),
-    },
-    fiscalRepository: {
-      createDocument: unexpectedCall("createDocument"),
-      createDocumentSnapshot: async () => undefined,
-      createRecipient: unexpectedCall("createRecipient"),
-      createTemplate: unexpectedCall("createTemplate"),
-      findDocumentById,
-      getDocument: unexpectedCall("getDocument"),
-      getOverview: unexpectedCall("getOverview"),
-      getRecipient: unexpectedCall("getRecipient"),
-      getTemplate: unexpectedCall("getTemplate"),
-      listRecipients: unexpectedCall("listRecipients"),
-      listTemplates: unexpectedCall("listTemplates"),
-      updateDocumentStatus,
-      updateRecipient: unexpectedCall("updateRecipient"),
-      updateTemplate: unexpectedCall("updateTemplate"),
-    },
-  };
+    });
+  const findDocumentById = vi
+    .spyOn(ports.fiscalRepository, "findDocumentById")
+    .mockResolvedValue(document);
+  const updateDocumentStatus = vi
+    .spyOn(ports.fiscalRepository, "updateDocumentStatus")
+    .mockImplementation(async (input) =>
+      updatedDocument(documentRecord, input),
+    );
   return {
     cancelDocument,
     findDocumentById,
