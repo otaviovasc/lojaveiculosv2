@@ -35,14 +35,14 @@ describe("FinanceEntryModal", () => {
       target: { value: "Aluguel da loja" },
     });
     fireEvent.change(screen.getByLabelText("Valor"), {
-      target: { value: "2500" },
+      target: { value: "250000" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Salvar lançamento" }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({
-        amount: "2500",
+        amount: "2500.00",
         category: "Operacional",
         name: "Aluguel da loja",
         type: "expense",
@@ -104,7 +104,7 @@ describe("FinanceEntryModal", () => {
       target: { value: "Comissão da venda" },
     });
     fireEvent.change(screen.getByLabelText("Valor"), {
-      target: { value: "100" },
+      target: { value: "10000" },
     });
     fireEvent.click(
       screen.getByRole("button", {

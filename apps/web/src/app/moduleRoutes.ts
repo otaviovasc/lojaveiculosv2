@@ -3,6 +3,7 @@ import type { ModuleId } from "./modules";
 export type ModuleSurface =
   | "automation"
   | "billing"
+  | "checklists"
   | "crm-leads"
   | "crm-whatsapp"
   | "dashboard"
@@ -25,7 +26,7 @@ export const moduleSurfaceById = {
   "auto-entries": "finance-auto-entries",
   autobot: "automation",
   billing: "billing",
-  checklists: "placeholder",
+  checklists: "checklists",
   commissions: "finance-commissions",
   crm: "crm-whatsapp",
   "custom-pages": "storefront-pages",

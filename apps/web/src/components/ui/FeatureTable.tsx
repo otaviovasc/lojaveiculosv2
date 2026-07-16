@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { cx, type FeatureIcon } from "./featureShared";
 
 export function FeatureTableFrame({
@@ -46,7 +46,7 @@ export function FeatureRowAction({
   disabled?: boolean;
   icon: FeatureIcon;
   iconClassName?: string;
-  onClick: () => void;
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void;
   tooltip: ReactNode;
 }) {
   return (

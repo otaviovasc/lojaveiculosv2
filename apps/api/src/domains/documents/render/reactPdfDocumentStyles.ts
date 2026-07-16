@@ -1,5 +1,7 @@
 import { StyleSheet } from "@react-pdf/renderer";
 
+export const createDocumentPdfStyles = StyleSheet.create;
+
 export const styles = StyleSheet.create({
   body: { gap: 14 },
   brandCopy: { flex: 1, gap: 3 },

@@ -1,8 +1,9 @@
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
 import {
   useEffect,
   useId,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
@@ -13,6 +14,7 @@ import { createPortal } from "react-dom";
 export type CustomSelectOption<Value extends string = string> = {
   disabled?: boolean;
   label: ReactNode;
+  searchText?: string;
   value: Value;
 };
 
@@ -22,12 +24,15 @@ type CustomSelectProps<Value extends string = string> = {
   defaultValue?: Value | undefined;
   density?: "compact" | "default";
   disabled?: boolean | undefined;
+  emptyMessage?: string | undefined;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
   onChange?: ((value: Value) => void) | undefined;
   options: readonly CustomSelectOption<Value>[];
   placeholder?: string | undefined;
   radius?: "default" | "xl";
+  searchable?: boolean | undefined;
+  searchPlaceholder?: string | undefined;
   value?: Value | undefined;
 };
 
@@ -37,12 +42,15 @@ export function CustomSelect<Value extends string = string>({
   defaultValue,
   density = "default",
   disabled = false,
+  emptyMessage = "Nenhuma opção encontrada",
   leftIcon,
   name,
   onChange,
   options,
   placeholder = "Selecionar",
   radius = "default",
+  searchable = false,
+  searchPlaceholder = "Buscar...",
   value,
 }: CustomSelectProps<Value>) {
   const id = useId();
@@ -51,6 +59,7 @@ export function CustomSelect<Value extends string = string>({
   const menuRef = useRef<HTMLDivElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
   const [menuPosition, setMenuPosition] = useState({
     left: 0,
     maxHeight: 288,
@@ -65,6 +74,10 @@ export function CustomSelect<Value extends string = string>({
   const selectedOption =
     options.find((option) => option.value === selectedValue) ??
     options.find((option) => !option.disabled);
+  const visibleOptions = useMemo(
+    () => filterOptions(options, searchable ? searchQuery : ""),
+    [options, searchQuery, searchable],
+  );
 
   useEffect(() => {
     if (value !== undefined) return;
@@ -79,10 +92,16 @@ export function CustomSelect<Value extends string = string>({
       if (rootRef.current?.contains(target)) return;
       if (menuRef.current?.contains(target)) return;
       setIsOpen(false);
+      setSearchQuery("");
     };
     document.addEventListener("pointerdown", onPointerDown);
     return () => document.removeEventListener("pointerdown", onPointerDown);
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !searchable) return;
+    setActiveIndex(firstEnabled(visibleOptions));
+  }, [isOpen, searchQuery, searchable, visibleOptions]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -149,33 +168,63 @@ export function CustomSelect<Value extends string = string>({
       (option) => option.value === selectedValue && !option.disabled,
     );
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : firstEnabled(options));
+    setSearchQuery("");
     setIsOpen(true);
+  };
+
+  const closeMenu = () => {
+    setIsOpen(false);
+    setSearchQuery("");
   };
 
   const selectOption = (option: CustomSelectOption<Value>) => {
     if (disabled || option.disabled) return;
     if (value === undefined) setInternalValue(option.value);
     onChange?.(option.value);
-    setIsOpen(false);
+    closeMenu();
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       if (!isOpen) openMenu();
-      else setActiveIndex(nextEnabled(options, activeIndex, event.key));
+      else setActiveIndex(nextEnabled(visibleOptions, activeIndex, event.key));
       return;
     }
 
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       if (!isOpen) openMenu();
-      else if (options[activeIndex]) selectOption(options[activeIndex]);
+      else if (visibleOptions[activeIndex])
+        selectOption(visibleOptions[activeIndex]);
       return;
     }
 
-    if (event.key === "Escape") setIsOpen(false);
-    if (event.key === "Tab") setIsOpen(false);
+    if (event.key === "Escape") closeMenu();
+    if (event.key === "Tab") closeMenu();
+  };
+
+  const onSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex(nextEnabled(visibleOptions, activeIndex, event.key));
+      return;
+    }
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      const option = visibleOptions[activeIndex];
+      if (option) selectOption(option);
+      return;
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeMenu();
+      triggerRef.current?.focus();
+    }
   };
 
   return (
@@ -204,7 +253,7 @@ export function CustomSelect<Value extends string = string>({
           .filter(Boolean)
           .join(" ")}
         disabled={disabled}
-        onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
+        onClick={() => (isOpen ? closeMenu() : openMenu())}
         ref={triggerRef}
         type="button"
       >
@@ -223,11 +272,8 @@ export function CustomSelect<Value extends string = string>({
       {isOpen
         ? createPortal(
             <div
-              aria-label={`${ariaLabel ?? "Seleção"}: opções`}
               className="custom-select-menu"
-              id={`${id}-listbox`}
               ref={menuRef}
-              role="listbox"
               style={{
                 left: menuPosition.left,
                 maxHeight: menuPosition.maxHeight,
@@ -236,37 +282,89 @@ export function CustomSelect<Value extends string = string>({
                 top: menuPosition.top,
               }}
             >
-              {options.map((option, index) => {
-                const isSelected = option.value === selectedValue;
-                return (
-                  <button
-                    aria-selected={isSelected}
-                    className="custom-select-option"
-                    data-active={index === activeIndex ? "true" : undefined}
-                    data-selected={isSelected ? "true" : undefined}
-                    disabled={option.disabled}
-                    key={option.value}
-                    onClick={() => selectOption(option)}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    role="option"
-                    type="button"
-                  >
-                    <span>{option.label}</span>
-                    {isSelected ? (
-                      <Check
-                        aria-hidden="true"
-                        className="custom-select-check"
-                      />
-                    ) : null}
-                  </button>
-                );
-              })}
+              {searchable ? (
+                <label className="custom-select-search">
+                  <span className="sr-only">
+                    {`${ariaLabel ?? "Seleção"}: buscar`}
+                  </span>
+                  <Search aria-hidden="true" />
+                  <input
+                    aria-label={`${ariaLabel ?? "Seleção"}: buscar`}
+                    autoFocus
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onKeyDown={onSearchKeyDown}
+                    placeholder={searchPlaceholder}
+                    type="search"
+                    value={searchQuery}
+                  />
+                </label>
+              ) : null}
+              <div
+                aria-label={`${ariaLabel ?? "Seleção"}: opções`}
+                className="custom-select-options"
+                id={`${id}-listbox`}
+                role="listbox"
+              >
+                {visibleOptions.map((option, index) => {
+                  const isSelected = option.value === selectedValue;
+                  return (
+                    <button
+                      aria-selected={isSelected}
+                      className="custom-select-option"
+                      data-active={index === activeIndex ? "true" : undefined}
+                      data-selected={isSelected ? "true" : undefined}
+                      disabled={option.disabled}
+                      key={option.value}
+                      onClick={() => selectOption(option)}
+                      onMouseEnter={() => setActiveIndex(index)}
+                      role="option"
+                      type="button"
+                    >
+                      <span>{option.label}</span>
+                      {isSelected ? (
+                        <Check
+                          aria-hidden="true"
+                          className="custom-select-check"
+                        />
+                      ) : null}
+                    </button>
+                  );
+                })}
+                {visibleOptions.length === 0 ? (
+                  <p className="custom-select-empty" role="status">
+                    {emptyMessage}
+                  </p>
+                ) : null}
+              </div>
             </div>,
             document.body,
           )
         : null}
     </div>
   );
+}
+
+function filterOptions<Value extends string>(
+  options: readonly CustomSelectOption<Value>[],
+  query: string,
+) {
+  const normalizedQuery = normalizeSearch(query);
+  if (!normalizedQuery) return options;
+
+  return options.filter((option) => {
+    const searchableLabel =
+      option.searchText ??
+      (typeof option.label === "string" ? option.label : option.value);
+    return normalizeSearch(searchableLabel).includes(normalizedQuery);
+  });
+}
+
+function normalizeSearch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}]/gu, "")
+    .toLocaleLowerCase("pt-BR");
 }
 
 function fallbackValue<Value extends string>(

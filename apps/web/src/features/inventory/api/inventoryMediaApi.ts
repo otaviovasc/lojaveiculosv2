@@ -75,6 +75,17 @@ export function createInventoryMediaApi({
       }),
     );
 
+  const getMediaContent = async (unitId: string, mediaId: string) => {
+    const response = await fetch(
+      inventoryRoutes.mediaContent(unitId, mediaId, baseUrl),
+      { headers: createInventoryHeaders(auth) },
+    );
+    if (!response.ok) {
+      await readApiJson<never>(response, { feature: "Inventory" });
+    }
+    return response.blob();
+  };
+
   const reorderMedia = (
     unitId: string,
     items: ReadonlyArray<{ displayOrder: number; mediaId: string }>,
@@ -127,6 +138,7 @@ export function createInventoryMediaApi({
     createMedia,
     deleteMedia,
     getDocumentAccess,
+    getMediaContent,
     reorderMedia,
     requestUnitDocumentUpload,
     requestMediaUpload,

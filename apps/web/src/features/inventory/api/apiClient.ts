@@ -38,6 +38,10 @@ import {
 } from "./apiClientSupport";
 import { uploadObjectToStorage } from "../../../lib/objectUpload";
 import type { CreateInventoryApiOptions, InventoryApi } from "./apiTypes";
+import type {
+  InventoryChecklistOverview,
+  InventoryChecklistOverviewInput,
+} from "../model/checklistOverviewTypes";
 
 export { createInventoryHeaders, inventoryRoutes } from "./apiRoutes";
 export type { CreateInventoryApiOptions, InventoryApi } from "./apiTypes";
@@ -201,6 +205,30 @@ export function createInventoryApi({
       .then(readJson<{ checklists: InventoryChecklist[] }>)
       .then((payload) => payload.checklists);
 
+  const listChecklistOverview = (input: InventoryChecklistOverviewInput = {}) =>
+    fetch(inventoryRoutes.checklistOverview(input, baseUrl), {
+      headers: createInventoryHeaders(auth),
+    }).then(readJson<InventoryChecklistOverview>);
+
+  const downloadChecklistReport = async (
+    input: InventoryChecklistOverviewInput = {},
+  ) => {
+    const response = await fetch(
+      inventoryRoutes.checklistReport(input, baseUrl),
+      {
+        headers: createInventoryHeaders(auth),
+      },
+    );
+    if (!response.ok) await readJson<never>(response);
+    return {
+      blob: await response.blob(),
+      fileName:
+        response.headers
+          .get("content-disposition")
+          ?.match(/filename="?([^";]+)"?/i)?.[1] ?? "checklists.pdf",
+    };
+  };
+
   const updateListingDetails = (
     listingId: string,
     input: UpdateInventoryListingInput,
@@ -263,6 +291,7 @@ export function createInventoryApi({
     analyzeListingResale,
     attachUnit,
     createChecklist,
+    downloadChecklistReport,
     createFlow: async (input) => {
       const listing = await createListing(input.listing);
       const listingId = listing.listing.id;
@@ -305,6 +334,7 @@ export function createInventoryApi({
     ...acquisitionApi,
     ...catalogApi,
     listChecklists,
+    listChecklistOverview,
     listListingAuditEvents,
     listListings,
     ...mediaApi,

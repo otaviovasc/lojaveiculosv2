@@ -154,4 +154,4 @@ export type SettingsStatus =
   | { kind: "saved" }
   | { kind: "saving" };
 
-export type SettingsTab = "roles" | "store" | "storefront";
+export type SettingsTab = "roles" | "store";

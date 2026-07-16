@@ -145,7 +145,7 @@ function statusToneClass(tone: FeatureStatusTone) {
     return "border border-warning-strong/30 bg-warning/10 text-app-text";
   }
   if (tone === "danger" || tone === "pink") {
-    return "border border-danger/30 bg-accent-soft text-app-text";
+    return "border border-danger/30 bg-accent-soft text-accent-soft-foreground";
   }
   if (tone === "blue") {
     return "border border-blue-start/30 bg-blue-soft text-app-text";

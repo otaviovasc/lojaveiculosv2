@@ -10,6 +10,7 @@ import {
   AutomationWorkspace,
   BillingModule,
   BillingUpgradePanel,
+  ChecklistModule,
   CrmModule,
   DocumentsModule,
   FinanceModule,
@@ -68,6 +69,8 @@ export function AdminApp() {
           <DashboardHome onNavigate={navigate} />
         ) : activeSurface === "inventory" ? (
           <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
+        ) : activeSurface === "checklists" ? (
+          <ChecklistModule />
         ) : activeSurface === "automation" ? (
           <AutomationWorkspace />
         ) : activeSurface === "finance-auto-entries" ? (

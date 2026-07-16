@@ -1,4 +1,5 @@
 import { Repeat2 } from "lucide-react";
+import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import { FinanceDateField } from "./FinanceDateField";
 import {
@@ -152,12 +153,12 @@ export function DetailsStep({
       </FinanceField>
       <FinanceField label="Valor">
         <FinanceInput
-          min="0.01"
-          onChange={setField("amount")}
+          inputMode="decimal"
+          onChange={(event) =>
+            setField("amount")(parseCurrencyInput(event.target.value))
+          }
           required
-          step="0.01"
-          type="number"
-          value={draft.amount}
+          value={formatCurrencyValue(draft.amount)}
         />
       </FinanceField>
       <FinanceField label="Status inicial">

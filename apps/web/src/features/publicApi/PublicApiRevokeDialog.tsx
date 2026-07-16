@@ -32,6 +32,7 @@ export function PublicApiRevokeDialog({
           variant="danger"
         />
       }
+      icon={<Trash2 aria-hidden="true" />}
       isOpen={client !== null}
       onClose={onClose}
       title="Revogar acesso externo"

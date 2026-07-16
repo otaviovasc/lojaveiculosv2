@@ -74,6 +74,7 @@ export function FeatureSelect<Value extends string = string>({
   defaultValue?: Value | undefined;
   density?: "compact" | "default";
   disabled?: boolean | undefined;
+  emptyMessage?: string | undefined;
   iconInset?: boolean;
   leftIcon?: ReactNode | undefined;
   name?: string | undefined;
@@ -81,6 +82,8 @@ export function FeatureSelect<Value extends string = string>({
   options: readonly CustomSelectOption<Value>[];
   placeholder?: string | undefined;
   radius?: "default" | "md";
+  searchable?: boolean | undefined;
+  searchPlaceholder?: string | undefined;
   value?: Value | undefined;
 }) {
   return (

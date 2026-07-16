@@ -10,6 +10,10 @@ export function AdjustSection({
   imageHeightScale,
   imageXOffset,
   imageYOffset,
+  cropXOffset,
+  setCropXOffset,
+  cropYOffset,
+  setCropYOffset,
   setActiveSection,
   setBgBlurAmount,
   setBlurBrightness,
@@ -25,6 +29,10 @@ export function AdjustSection({
   imageHeightScale: number;
   imageXOffset: number;
   imageYOffset: number;
+  cropXOffset: number;
+  setCropXOffset: (value: number) => void;
+  cropYOffset: number;
+  setCropYOffset: (value: number) => void;
   setActiveSection: (section: string | null) => void;
   setBgBlurAmount: (value: number) => void;
   setBlurBrightness: (value: number) => void;
@@ -40,54 +48,93 @@ export function AdjustSection({
       onToggle={() =>
         setActiveSection(activeSection === "adjust" ? null : "adjust")
       }
-      title="Enquadramento & Tamanhos"
+      title="Enquadramento e fundo"
     >
-      <div className="p-4 pt-0 space-y-4 text-xs font-bold text-app-text">
+      <div className="p-4 pt-3 space-y-4 text-xs font-bold text-app-text">
         <RangeControl
-          label="Zoom Imagem"
+          defaultValue={1}
+          label="Zoom da foto"
           max="2"
-          min="0.5"
+          maxLabel="2,00x"
+          min="1"
+          minLabel="1,00x"
           step="0.05"
           value={imageHeightScale}
           valueLabel={`${imageHeightScale.toFixed(2)}x`}
-          onChange={(value) => {
-            setImageHeightScale(value);
-            setImageWidthScale(value);
+          onChange={(val) => {
+            setImageHeightScale(val);
+            setImageWidthScale(val);
           }}
         />
         <RangeControl
-          label="Deslocar Horizontal X"
+          defaultValue={0}
+          label="Deslocamento horizontal"
           max="300"
+          maxLabel="+300px"
           min="-300"
+          minLabel="−300px"
           step="5"
           value={imageXOffset}
           valueLabel={`${imageXOffset}px`}
           onChange={setImageXOffset}
         />
         <RangeControl
-          label="Deslocar Vertical Y"
+          defaultValue={0}
+          label="Deslocamento vertical"
           max="300"
+          maxLabel="+300px"
           min="-300"
+          minLabel="−300px"
           step="5"
           value={imageYOffset}
           valueLabel={`${imageYOffset}px`}
           onChange={setImageYOffset}
         />
+        <RangeControl
+          defaultValue={0}
+          label="Recorte horizontal"
+          max="300"
+          maxLabel="+300px"
+          min="-300"
+          minLabel="−300px"
+          step="5"
+          value={cropXOffset}
+          valueLabel={`${cropXOffset}px`}
+          onChange={setCropXOffset}
+        />
+        <RangeControl
+          defaultValue={0}
+          label="Recorte vertical"
+          max="300"
+          maxLabel="+300px"
+          min="-300"
+          minLabel="−300px"
+          step="5"
+          value={cropYOffset}
+          valueLabel={`${cropYOffset}px`}
+          onChange={setCropYOffset}
+        />
         {bgStyle === "blur" && (
           <>
             <RangeControl
-              label="Opacidade Fundo"
+              defaultValue={0.4}
+              label="Luminosidade do fundo"
               max="0.9"
+              maxLabel="Claro"
               min="0.1"
+              minLabel="Escuro"
               step="0.05"
               value={blurBrightness}
               valueLabel={blurBrightness.toFixed(2)}
               onChange={setBlurBrightness}
             />
             <RangeControl
-              label="Desfoque Fundo"
+              defaultValue={40}
+              label="Desfoque do fundo"
               max="80"
+              maxLabel="80px"
               min="10"
+              minLabel="10px"
               step="5"
               value={bgBlurAmount}
               valueLabel={`${bgBlurAmount}px`}

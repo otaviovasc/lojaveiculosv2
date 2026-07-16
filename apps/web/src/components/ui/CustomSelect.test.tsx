@@ -18,6 +18,10 @@ describe("CustomSelect", () => {
     expect(container.querySelector('[role="listbox"]')).toBeNull();
     expect(
       screen.getByRole("listbox", { name: "Seleção: opções" }).parentElement,
+    ).toHaveClass("custom-select-menu");
+    expect(
+      screen.getByRole("listbox", { name: "Seleção: opções" }).parentElement
+        ?.parentElement,
     ).toBe(document.body);
 
     await user.click(screen.getByRole("option", { name: "Disponivel" }));
@@ -46,15 +50,43 @@ describe("CustomSelect", () => {
 
     await user.click(screen.getByRole("button", { name: "Rascunho" }));
 
-    const listbox = screen.getByRole("listbox") as HTMLElement;
-    expect(listbox.style.width).toBe("");
-    expect(listbox).toHaveStyle({
+    const menu = screen.getByRole("listbox").parentElement as HTMLElement;
+    expect(menu.style.width).toBe("");
+    expect(menu).toHaveStyle({
       left: "30px",
       maxWidth: "1000px",
       minWidth: "120px",
     });
 
     rectSpy.mockRestore();
+  });
+
+  it("filters searchable options without accents", async () => {
+    const user = userEvent.setup();
+    render(
+      <CustomSelect
+        ariaLabel="Estado"
+        options={[
+          { label: "Paraná (PR)", value: "PR" },
+          { label: "São Paulo (SP)", value: "SP" },
+        ]}
+        searchable
+        value="PR"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Estado" }));
+    await user.type(
+      screen.getByRole("searchbox", { name: "Estado: buscar" }),
+      "sao paulo",
+    );
+
+    expect(
+      screen.getByRole("option", { name: "São Paulo (SP)" }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole("option", { name: "Paraná (PR)" }),
+    ).not.toBeInTheDocument();
   });
 });
 

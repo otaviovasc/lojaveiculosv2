@@ -1,9 +1,9 @@
 import {
+  CalendarClock,
   CarFront,
   Clock,
   FileArchive,
-  Image as ImageIcon,
-  Printer,
+  LayoutTemplate,
 } from "lucide-react";
 import {
   formatInventoryPrice,
@@ -287,26 +287,26 @@ export function InventoryListingTable({
                     {onAction ? (
                       <FeatureRowActions className="gap-2.5">
                         <FeatureRowAction
-                          ariaLabel="Criar Template de Anúncio"
-                          icon={ImageIcon}
-                          iconClassName="text-violet-500"
+                          ariaLabel={`Criar post para ${listing.title}`}
+                          icon={LayoutTemplate}
+                          iconClassName="text-accent"
                           onClick={() => onAction("template", item)}
-                          tooltip="Criar Template"
+                          tooltip="Criar post"
                         />
                         <FeatureRowAction
-                          ariaLabel="Agendar Test Drive"
-                          icon={Printer}
-                          iconClassName="text-emerald-500"
+                          ariaLabel={`Agendar test drive para ${listing.title}`}
+                          icon={CalendarClock}
+                          iconClassName="text-success"
                           onClick={() => onAction("test-drive", item)}
-                          tooltip="Test Drive"
+                          tooltip="Test drive"
                         />
                         {item.mediaCount > 0 ? (
                           <FeatureRowAction
-                            ariaLabel="Baixar Fotos (ZIP)"
+                            ariaLabel={`Baixar fotos de ${listing.title}`}
                             icon={FileArchive}
                             iconClassName="text-accent"
                             onClick={() => onAction("zip-photos", item)}
-                            tooltip="Baixar Fotos (ZIP)"
+                            tooltip="Baixar fotos em ZIP"
                           />
                         ) : null}
                       </FeatureRowActions>

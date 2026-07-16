@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createInventoryListingSummary } from "../model/inventoryListingSummary.testSupport";
 import {
@@ -49,6 +49,28 @@ describe("InventoryListingCardGrid", () => {
       "from-accent/20",
       "mix-blend-soft-light",
     );
+  });
+
+  it("opens the post workflow without selecting the vehicle card", () => {
+    const onAction = vi.fn();
+    const onSelect = vi.fn();
+    const item = createInventoryListingSummary("listing_1");
+    render(
+      <InventoryListingCardGrid
+        items={[item]}
+        onAction={onAction}
+        onSelect={onSelect}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Criar post para Toyota Corolla XEI",
+      }),
+    );
+
+    expect(onAction).toHaveBeenCalledWith("template", item);
+    expect(onSelect).not.toHaveBeenCalled();
   });
 });
 

@@ -82,9 +82,16 @@ export function drawCover(
   ctx.drawImage(img, drawX, drawY, drawW, drawH);
 }
 
+export function getRelativeLuminance(hex: string): number {
+  const cleanHex = hex.replace("#", "");
+  if (cleanHex.length !== 6) return 0.5;
+  const r = parseInt(cleanHex.slice(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.slice(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.slice(4, 6), 16) / 255;
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
 export function isLightTheme(config: ImageTemplatePreset) {
-  return (
-    (config.bgStyle === "solid" || config.bgStyle === "gradient") &&
-    (config.color === hexColor("ffffff") || config.color === hexColor("f3f4f6"))
-  );
+  if (config.bgStyle === "blur") return false;
+  return getRelativeLuminance(config.color) > 0.6;
 }

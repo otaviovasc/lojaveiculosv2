@@ -3,6 +3,7 @@ import type { AddVehicleCostInput } from "../../../domains/vehicle/services/Vehi
 import type { ApproveVehicleAiStudioImageInput } from "../../../domains/vehicle/services/VehicleService/approveVehicleAiStudioImage.js";
 import type { CreateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import type { DeleteVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
+import type { GetVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/getVehicleMedia.js";
 import type { DeleteVehicleListingInput } from "../../../domains/vehicle/services/VehicleService/deleteVehicleListing.js";
 import type {
   GenerateVehicleAiStudioImageInput,
@@ -10,9 +11,6 @@ import type {
 } from "../../../domains/vehicle/services/VehicleService/generateVehicleAiStudioImage.js";
 import type { ListVehicleListingsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
 import type { ListVehicleUnitsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
-import type { CreateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/createVehicleChecklist.js";
-import type { ListVehicleChecklistsInput } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
-import type { UpdateVehicleChecklistInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleChecklist.js";
 import type {
   CreateVehicleSupplierInput,
   ListVehicleSuppliersInput,
@@ -33,8 +31,8 @@ import type { UpdateVehicleListingDetailsInput } from "../../../domains/vehicle/
 import type { UpdateVehicleMediaInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleMedia.js";
 import type { UpdateVehicleUnitInput } from "../../../domains/vehicle/services/VehicleService/updateVehicleUnit.js";
 import type { VehicleListingStatus } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
+import type { VehicleMedia } from "../../../domains/vehicle/ports/vehicleInventoryRepository.js";
 import type { VehicleMediaUpload } from "../../../domains/vehicle/ports/vehicleMediaStorage.js";
-import type { VehicleChecklist } from "../../../domains/vehicle/ports/vehicleChecklistRepository.js";
 import type {
   VehicleSupplier,
   VehicleUnitAcquisition,
@@ -65,13 +63,14 @@ import type {
   CreateListingInput,
   VehicleMediaResult,
 } from "./listingServiceTypes.js";
+import type { InventoryChecklistServices } from "./listingChecklistServices.js";
 export { listingStatuses } from "./vehicle.controller.statuses.js";
 export type {
   CreateInventoryListingServicesOptions,
   DrizzleVehicleInventoryAdapter,
 } from "./listingServiceOptions.js";
 
-export type InventoryListingServices = {
+export type InventoryListingServices = InventoryChecklistServices & {
   analyzeListingResale: (
     context: ServiceContext,
     input: { listingId: string },
@@ -100,10 +99,6 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: { listingId: string; status: VehicleListingStatus },
   ) => Promise<InventoryListingDetailResponse>;
-  createChecklist: (
-    context: ServiceContext,
-    input: CreateVehicleChecklistInput,
-  ) => Promise<InventoryListingDetailResponse>;
   createListing: (
     context: ServiceContext,
     input: CreateListingInput,
@@ -128,6 +123,10 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: { listingId: string },
   ) => Promise<InventoryListingDetailResponse>;
+  getMedia: (
+    context: ServiceContext,
+    input: GetVehicleMediaInput,
+  ) => Promise<VehicleMedia>;
   generateAiStudioImage: (
     context: ServiceContext,
     input: GenerateVehicleAiStudioImageInput,
@@ -160,10 +159,6 @@ export type InventoryListingServices = {
     context: ServiceContext,
     input: PublishVehicleListingInput,
   ) => Promise<InventoryListingDetailResponse>;
-  listChecklists: (
-    context: ServiceContext,
-    input: ListVehicleChecklistsInput,
-  ) => Promise<readonly VehicleChecklist[]>;
   listVehicleSuppliers: (
     context: ServiceContext,
     input: ListVehicleSuppliersInput,
@@ -227,10 +222,6 @@ export type InventoryListingServices = {
   updateListingUnit: (
     context: ServiceContext,
     input: UpdateVehicleUnitInput,
-  ) => Promise<InventoryListingDetailResponse>;
-  updateChecklist: (
-    context: ServiceContext,
-    input: UpdateVehicleChecklistInput,
   ) => Promise<InventoryListingDetailResponse>;
   updateVehicleSupplier: (
     context: ServiceContext,

@@ -53,6 +53,7 @@ export function CrmQuickAddPipelineModal({ onClose, onCreatePipeline }: Props) {
           onConfirm={handleSubmit}
         />
       }
+      icon={<Layers aria-hidden="true" />}
       isOpen
       onClose={onClose}
       title="Novo Pipeline"

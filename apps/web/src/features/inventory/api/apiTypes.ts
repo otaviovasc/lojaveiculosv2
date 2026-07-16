@@ -27,6 +27,11 @@ import type { InventoryAiStudioApi } from "./inventoryAiStudioApi";
 import type { InventoryCatalogApi } from "./inventoryCatalogApi";
 import type { InventoryMediaApi } from "./inventoryMediaApi";
 import type { ListInventoryInput } from "./apiRoutes";
+import type {
+  InventoryChecklistOverview,
+  InventoryChecklistOverviewInput,
+  InventoryChecklistPdf,
+} from "../model/checklistOverviewTypes";
 
 export type InventoryApi = {
   attachUnit: (
@@ -41,6 +46,9 @@ export type InventoryApi = {
     unitId: string,
     input: CreateInventoryChecklistInput,
   ) => Promise<InventoryListingDetail>;
+  downloadChecklistReport: (
+    input?: InventoryChecklistOverviewInput,
+  ) => Promise<InventoryChecklistPdf>;
   createFlow: (
     input: CreateInventoryFlowInput,
   ) => Promise<CreateInventoryFlowResult>;
@@ -61,6 +69,9 @@ export type InventoryApi = {
     listingId: string,
   ) => Promise<readonly InventoryAuditEvent[]>;
   listChecklists: (unitId: string) => Promise<readonly InventoryChecklist[]>;
+  listChecklistOverview: (
+    input?: InventoryChecklistOverviewInput,
+  ) => Promise<InventoryChecklistOverview>;
   releaseReservation: (
     unitId: string,
     input: ReleaseInventoryReservationInput,

@@ -7,11 +7,12 @@ export async function saveQaScreenshot(
   page: Page,
   testInfo: TestInfo,
   name: string,
+  options: { fullPage?: boolean } = {},
 ) {
   const screenshotPath = resolveQaArtifactPath(testInfo, `${name}.png`);
   await mkdir(path.dirname(screenshotPath), { recursive: true });
   await page.screenshot({
-    fullPage: true,
+    fullPage: options.fullPage ?? true,
     path: screenshotPath,
   });
 }

@@ -39,11 +39,22 @@ export type SharedPdfDocument = {
 
 const e = React.createElement;
 
+export const DocumentPdfRoot = Document;
+export const DocumentPdfPage = Page;
+export const DocumentPdfText = Text;
+export const DocumentPdfView = View;
+
+export async function renderDocumentPdf(
+  document: React.ReactElement<React.ComponentProps<typeof Document>>,
+): Promise<Uint8Array> {
+  const buffer = await renderToBuffer(document);
+  return new Uint8Array(buffer);
+}
+
 export async function renderSharedDocumentPdf(
   document: SharedPdfDocument,
 ): Promise<Uint8Array> {
-  const buffer = await renderToBuffer(createSharedPdfDocument(document));
-  return new Uint8Array(buffer);
+  return renderDocumentPdf(createSharedPdfDocument(document));
 }
 
 export function createSharedPdfDocument(document: SharedPdfDocument) {
@@ -146,11 +157,15 @@ function DocumentPdfBody({ document }: { document: SharedPdfDocument }) {
     ...document.fields.map((section) =>
       e(DocumentPdfSection, { key: section.title, section }),
     ),
-    e(DocumentPdfClauses, { clauses: document.clauses }),
+    document.clauses.length
+      ? e(DocumentPdfClauses, { clauses: document.clauses })
+      : null,
     document.audit
       ? e(DocumentPdfSection, { section: document.audit, compact: true })
       : null,
-    e(DocumentPdfSignatures, { signatures: document.signatures }),
+    document.signatures.length
+      ? e(DocumentPdfSignatures, { signatures: document.signatures })
+      : null,
   );
 }
 

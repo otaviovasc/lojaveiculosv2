@@ -16,23 +16,24 @@ export type PublicApiEndpoint = {
 
 const endpointPresentation = {
   listExternalApiVehicles: {
-    description: "Lista veiculos com DTO publico limpo.",
+    description: "Lista veículos com um DTO público limpo.",
     samplePath: "?available=true&limit=20",
-    title: "Listar veiculos",
+    title: "Listar veículos",
   },
   searchExternalApiVehicles: {
-    description: "Aceita q, preco, ano, km, cor, combustivel, cambio e sort.",
+    description:
+      "Aceita busca, preço, ano, km, cor, combustível, câmbio e ordenação.",
     samplePath: "?q=toro&minPrice=100000&sort=price_asc",
-    title: "Buscar veiculos",
+    title: "Buscar veículos",
   },
   getExternalApiVehicle: {
     description:
-      "Detalhe com midia publica, historico de preco e unidades seguras.",
+      "Detalhe com mídia pública, histórico de preço e unidades seguras.",
     samplePath: "",
-    title: "Detalhe do veiculo",
+    title: "Detalhe do veículo",
   },
   listExternalApiLeads: {
-    description: "Busca leads por status, origem, telefone, texto e veiculo.",
+    description: "Busca leads por status, origem, telefone, texto e veículo.",
     samplePath: "?status=new&limit=20",
     title: "Listar leads",
   },
@@ -49,7 +50,7 @@ const endpointPresentation = {
   },
   updateExternalApiLead: {
     description:
-      "Atualiza o lead com Idempotency-Key para rejeitar duplicatas; respostas anteriores nao sao repetidas.",
+      "Atualiza o lead com Idempotency-Key para rejeitar duplicatas; respostas anteriores não são repetidas.",
     samplePath: "",
     title: "Atualizar lead",
   },

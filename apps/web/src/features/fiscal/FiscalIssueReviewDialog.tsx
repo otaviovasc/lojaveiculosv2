@@ -1,4 +1,4 @@
-import { Send, ShieldAlert } from "lucide-react";
+import { Send, ShieldAlert, ShieldCheck } from "lucide-react";
 import {
   FeatureDialog,
   FeatureDialogActions,
@@ -28,6 +28,7 @@ export function FiscalIssueReviewDialog({
           onConfirm={onConfirm}
         />
       }
+      icon={<ShieldCheck aria-hidden="true" />}
       isOpen={Boolean(reference)}
       onClose={onClose}
       title="Revisar antes de emitir"

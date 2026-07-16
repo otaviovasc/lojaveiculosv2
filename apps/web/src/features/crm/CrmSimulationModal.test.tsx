@@ -21,7 +21,7 @@ describe("CrmSimulationModal", () => {
     ).toBeInTheDocument();
     const downpayment = screen.getByLabelText("Valor da Entrada (R$)");
     await user.clear(downpayment);
-    await user.type(downpayment, "120000");
+    await user.type(downpayment, "12000000");
 
     expect(screen.getByRole("alert")).toHaveTextContent(
       "A entrada não pode ser maior que o valor do veículo.",

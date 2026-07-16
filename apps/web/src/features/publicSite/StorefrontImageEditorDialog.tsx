@@ -111,6 +111,7 @@ export function StorefrontImageEditorDialog({
           onConfirm={() => void commitEditedImage()}
         />
       }
+      icon={<SlidersHorizontal aria-hidden="true" />}
       isOpen={isOpen}
       onClose={onClose}
       title="Recortar e ajustar imagem"

@@ -55,6 +55,15 @@ describe("auto-entry rule model", () => {
     });
   });
 
+  it("opens fixed-value rules with the shared Brazilian currency mask", () => {
+    const rule: AutoEntryRule = {
+      ...autoEntryRule(),
+      calculation: { amountCents: 185_050, kind: "fixed" },
+    };
+
+    expect(createAutoEntryDraft(rule.event, rule).amountReais).toBe("1.850,50");
+  });
+
   it("accepts the backend currency maximum without rounding", () => {
     const draft = {
       ...createAutoEntryDraft("insurance_issued"),

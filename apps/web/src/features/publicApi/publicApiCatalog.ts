@@ -13,9 +13,14 @@ import type { PublicApiScope } from "./types";
 
 export type PublicApiScopeOption = {
   description: string;
-  group: "CRM" | "Financeiro" | "Inventario" | "Operacao";
+  group: "CRM" | "Financeiro" | "Inventário" | "Operação";
   label: string;
   scope: PublicApiScope;
+};
+
+export type PublicApiScopeGroup = {
+  label: PublicApiScopeOption["group"];
+  options: PublicApiScopeOption[];
 };
 
 export type PublicApiScopePreset = {
@@ -30,73 +35,73 @@ export const publicApiBasePath = "/api/v1/external-api";
 
 export const scopeOptions: PublicApiScopeOption[] = [
   option(
-    "Inventario",
+    "Inventário",
     "inventory.read",
-    "Ler veiculos",
-    "Listas, busca e detalhes seguros para apps externos.",
+    "Ler veículos",
+    "Listas, busca e detalhes seguros para aplicativos externos.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.create",
     "Criar estoque",
-    "Criacao de anuncios e unidades pelo contrato V2.",
+    "Criação de anúncios e unidades pelo contrato V2.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.update_price",
-    "Editar preco",
-    "Atualizacao de precos com auditoria.",
+    "Editar preço",
+    "Atualização de preços com auditoria.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.update_description",
-    "Editar descricao",
-    "Campos publicos e descricoes comerciais.",
+    "Editar descrição",
+    "Campos públicos e descrições comerciais.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.update_internal_notes",
     "Notas internas",
-    "Campos internos de operacao.",
+    "Campos internos de operação.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.update_status",
-    "Status do anuncio",
-    "Publicar, arquivar ou preparar anuncios.",
+    "Status do anúncio",
+    "Publicar, arquivar ou preparar anúncios.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.update_unit",
     "Unidades",
-    "Cor, status, placa, chassi e estoque fisico.",
+    "Cor, status, placa, chassi e estoque físico.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.media_update",
-    "Midia",
-    "Uploads, ordenacao e visibilidade de fotos.",
+    "Mídia",
+    "Uploads, ordenação e visibilidade de fotos.",
   ),
   option(
-    "Inventario",
+    "Inventário",
     "inventory.document_attach",
     "Documentos",
-    "Anexos de unidade e documentos de veiculo.",
+    "Anexos de unidade e documentos de veículo.",
   ),
   option(
-    "Operacao",
+    "Operação",
     "inventory.cost_create",
     "Custos",
-    "Despesas operacionais ligadas ao veiculo.",
+    "Despesas operacionais ligadas ao veículo.",
   ),
   option(
-    "Operacao",
+    "Operação",
     "inventory.reserve",
     "Reservas",
-    "Reservar e liberar unidades com chave de deduplicacao.",
+    "Reservar e liberar unidades com chave de deduplicação.",
   ),
   option(
-    "Operacao",
+    "Operação",
     "inventory.sell",
     "Vendas",
     "Finalizar venda e gerar efeitos financeiros.",
@@ -105,19 +110,19 @@ export const scopeOptions: PublicApiScopeOption[] = [
     "Financeiro",
     "finance.read",
     "Ler financeiro",
-    "Resumo, lancamentos, regras e documentos.",
+    "Resumo, lançamentos, regras e documentos.",
   ),
   option(
     "Financeiro",
     "finance.create",
     "Criar financeiro",
-    "Lancamentos, recorrencias e comissoes.",
+    "Lançamentos, recorrências e comissões.",
   ),
   option(
     "Financeiro",
     "finance.update",
     "Editar financeiro",
-    "Pagamento, cancelamento e atualizacao.",
+    "Pagamento, cancelamento e atualização.",
   ),
   option(
     "Financeiro",
@@ -136,7 +141,7 @@ export const scopeOptions: PublicApiScopeOption[] = [
     "CRM",
     "lead.create",
     "Criar leads",
-    "Formularios, chatbots, marketplaces e agentes.",
+    "Formulários, chatbots, marketplaces e agentes.",
   ),
   option(
     "CRM",
@@ -146,9 +151,23 @@ export const scopeOptions: PublicApiScopeOption[] = [
   ),
 ];
 
+const scopeGroupOrder: PublicApiScopeOption["group"][] = [
+  "Inventário",
+  "Operação",
+  "Financeiro",
+  "CRM",
+];
+
+export const scopeGroups: PublicApiScopeGroup[] = scopeGroupOrder.map(
+  (label) => ({
+    label,
+    options: scopeOptions.filter((option) => option.group === label),
+  }),
+);
+
 export const scopePresets: PublicApiScopePreset[] = [
   {
-    description: "Busca de veiculos, detalhes seguros e criacao de leads.",
+    description: "Busca de veículos, detalhes seguros e criação de leads.",
     icon: Bot,
     label: "Agente de vendas IA",
     name: "ai-sales-agent",
@@ -162,7 +181,7 @@ export const scopePresets: PublicApiScopePreset[] = [
     scopes: ["inventory.read", "lead.create"],
   },
   {
-    description: "Sincronizacao completa de estoque e midia.",
+    description: "Sincronização completa de estoque e mídia.",
     icon: CarFront,
     label: "DMS de estoque",
     name: "inventory-dms",
@@ -177,7 +196,7 @@ export const scopePresets: PublicApiScopePreset[] = [
     ],
   },
   {
-    description: "Leitura e avancos de leads por CRM proprio.",
+    description: "Leitura e avanços de leads por CRM próprio.",
     icon: UsersRound,
     label: "CRM externo",
     name: "external-crm",
@@ -187,7 +206,7 @@ export const scopePresets: PublicApiScopePreset[] = [
 
 export const publicApiResources = [
   {
-    description: "Rota unica de documentacao Markdown para humanos e agentes.",
+    description: "Documentação Markdown única para pessoas e agentes.",
     icon: BookOpen,
     label: "Docs",
     path: `${publicApiBasePath}/docs`,
@@ -199,19 +218,19 @@ export const publicApiResources = [
     path: `${publicApiBasePath}/openapi.json`,
   },
   {
-    description: "Indice compacto para LLMs e agentes de coding.",
+    description: "Índice compacto para LLMs e agentes de código.",
     icon: Bot,
     label: "llms.txt",
     path: `${publicApiBasePath}/llms.txt`,
   },
   {
-    description: "Manifesto de capacidades, auth, scopes e fluxos.",
+    description: "Manifesto de capacidades, autenticação, escopos e fluxos.",
     icon: ShieldCheck,
     label: "Manifest",
     path: `${publicApiBasePath}/manifest`,
   },
   {
-    description: "Tool definitions para busca de veiculos e leads.",
+    description: "Definições de ferramentas para buscar veículos e leads.",
     icon: Zap,
     label: "AI tools",
     path: `${publicApiBasePath}/ai-tools`,

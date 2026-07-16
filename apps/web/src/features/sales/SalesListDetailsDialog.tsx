@@ -1,10 +1,17 @@
-import { Building, CheckCircle2, Coins, Edit, Eye, User } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "../../components/ui/dialog";
+  Building,
+  CheckCircle2,
+  Coins,
+  Edit,
+  Eye,
+  FileCheck2,
+  User,
+} from "lucide-react";
+import {
+  FeatureDialog,
+  FeatureDialogActions,
+} from "../../components/ui/FeatureOverlay";
+import { formatBrazilianDocument, formatBrazilianPhone } from "../../lib/masks";
 import {
   canPersistSaleWorkspaceEdits,
   formatCents,
@@ -27,72 +34,56 @@ export function SalesListDetailsDialog({
 }) {
   const canEdit = canPersistSaleWorkspaceEdits(sale);
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent
-        className="flex max-h-[85vh] w-[calc(100vw-2rem)] max-w-3xl flex-col overflow-hidden shadow-2xl"
-        padding="none"
-        radius="3xl"
-        surface="panel"
-      >
-        <div
-          className={[
-            "p-6 pr-14 border-b border-line/50 flex justify-between items-start gap-4",
-            saleStatusBannerClass(sale.status),
-          ].join(" ")}
-        >
-          <div>
-            <span className="text-xs font-black text-muted uppercase tracking-widest block mb-1">
-              Detalhes do Rascunho de Formalização
-            </span>
-            <DialogTitle className="text-lg font-black text-app-text uppercase tracking-wider">
-              {String(sale.listingSnapshot?.title || "") ||
-                "Formalização de Venda"}
-            </DialogTitle>
-            <DialogDescription className="flex flex-wrap gap-2.5 items-center mt-2.5 text-muted">
-              <span className="text-xs font-bold text-muted">
-                Atualizada em{" "}
-                {new Date(sale.updatedAt).toLocaleDateString("pt-BR")}
-              </span>
-              <span className="size-1 rounded-full bg-muted/65" />
-              <span className="text-xs font-bold text-muted">
-                Status: {salesStatusLabels[sale.status]}
-              </span>
-            </DialogDescription>
-          </div>
-        </div>
-
-        <div className="p-6 overflow-y-auto flex flex-col gap-6">
-          <SaleBuyerVehicleDetails sale={sale} />
-          <SaleAcquisitionDetails sale={sale} />
-          <SaleServicesDetails sale={sale} />
-          <SaleFinancialDetails sale={sale} />
-        </div>
-
-        <div className="p-6 border-t border-line/50 flex justify-between items-center bg-app-elevated/25">
-          <button
-            className="sales-primary-button !min-h-10 !h-10 text-xs flex items-center gap-2"
-            onClick={() => onEdit(sale)}
-            type="button"
-          >
-            <div className="gloss-overlay" />
-            {canEdit ? <Edit className="size-4" /> : <Eye className="size-4" />}
-            <span>
-              {canEdit
-                ? "Formalizar / Editar Venda"
-                : "Visualizar formalização"}
-            </span>
-          </button>
-
-          <button
-            className="sales-secondary-button !min-h-10 !h-10 text-xs"
-            onClick={onClose}
-            type="button"
-          >
-            Fechar Painel
-          </button>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <FeatureDialog
+      className="max-w-3xl"
+      description={
+        <span className="flex flex-wrap items-center gap-2.5">
+          <span>Rascunho de formalização</span>
+          <span
+            aria-hidden="true"
+            className="size-1 rounded-full bg-muted/65"
+          />
+          <span>
+            Atualizada em {new Date(sale.updatedAt).toLocaleDateString("pt-BR")}
+          </span>
+          <span
+            aria-hidden="true"
+            className="size-1 rounded-full bg-muted/65"
+          />
+          <span>Status: {salesStatusLabels[sale.status]}</span>
+        </span>
+      }
+      footer={
+        <FeatureDialogActions
+          cancelLabel="Fechar painel"
+          confirmIcon={
+            canEdit ? (
+              <Edit aria-hidden="true" className="size-4" />
+            ) : (
+              <Eye aria-hidden="true" className="size-4" />
+            )
+          }
+          confirmLabel={
+            canEdit ? "Formalizar / editar venda" : "Visualizar formalização"
+          }
+          onCancel={onClose}
+          onConfirm={() => onEdit(sale)}
+        />
+      }
+      icon={<FileCheck2 aria-hidden="true" />}
+      isOpen
+      onClose={onClose}
+      title={
+        String(sale.listingSnapshot?.title || "") || "Formalização de venda"
+      }
+    >
+      <div className="flex flex-col gap-6">
+        <SaleBuyerVehicleDetails sale={sale} />
+        <SaleAcquisitionDetails sale={sale} />
+        <SaleServicesDetails sale={sale} />
+        <SaleFinancialDetails sale={sale} />
+      </div>
+    </FeatureDialog>
   );
 }
 
@@ -108,9 +99,16 @@ function SaleBuyerVehicleDetails({ sale }: { sale: SaleRecord }) {
           <Meta label="Nome" value={sale.buyerSnapshot.name} />
           <Meta
             label="CPF/CNPJ"
-            value={sale.buyerSnapshot.document || sale.buyerSnapshot.cpf}
+            value={formatBrazilianDocument(
+              String(
+                sale.buyerSnapshot.document || sale.buyerSnapshot.cpf || "",
+              ),
+            )}
           />
-          <Meta label="Telefone" value={sale.buyerSnapshot.phone} />
+          <Meta
+            label="Telefone"
+            value={formatBrazilianPhone(String(sale.buyerSnapshot.phone || ""))}
+          />
           <Meta label="E-mail" value={sale.buyerSnapshot.email} truncate />
           <div className="col-span-2">
             <dt className="text-muted text-xs uppercase font-bold">Endereço</dt>
@@ -230,10 +228,4 @@ function Meta({
       </dd>
     </div>
   );
-}
-
-function saleStatusBannerClass(status: SaleRecord["status"]) {
-  if (status === "closed") return "bg-success/10 border-success/25";
-  if (status === "pending") return "bg-amber-500/10 border-amber-500/25";
-  return "bg-blue-500/10 border-blue-500/25";
 }

@@ -16,6 +16,7 @@ import {
   supplierResult,
 } from "./vehicle.acquisition.controller.fixtures.js";
 import { aiStudioGenerationResult } from "./vehicle.aiStudio.testFixtures.js";
+import { createChecklistTestServices } from "./vehicle.checklist.controller.fixtures.js";
 
 export { listingDetailResult } from "./vehicle.controller.testFixtures.js";
 
@@ -56,6 +57,7 @@ export function createInventoryTestApp(
 
 export function createInventoryTestServices(): InventoryListingServices {
   return {
+    ...createChecklistTestServices(),
     addVehicleCost: vi.fn(async () => listingDetailResult()),
     analyzeListingResale: vi.fn(async () => listingDetailResult()),
     archiveVehicleSupplier: vi.fn(async () => supplierResult()),
@@ -63,7 +65,6 @@ export function createInventoryTestServices(): InventoryListingServices {
     attachListingUnit: vi.fn(async () => listingDetailResult()),
     attachVehicleDocument: vi.fn(async () => listingDetailResult()),
     changeListingStatus: vi.fn(async () => listingDetailResult()),
-    createChecklist: vi.fn(async () => listingDetailResult()),
     createListing: vi.fn(async () => listingDetailResult()),
     deleteListing: vi.fn(async () => undefined),
     createVehicleSupplier: vi.fn(async () => supplierResult()),
@@ -109,30 +110,22 @@ export function createInventoryTestServices(): InventoryListingServices {
       yearCode: "2024-1",
     })),
     getListing: vi.fn(async () => listingDetailResult()),
+    getMedia: vi.fn(async () => ({
+      altText: "Front photo",
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      displayOrder: 0,
+      id: "media_1",
+      isPublic: true,
+      kind: "photo" as const,
+      storageKey: "tenants/tenant_1/stores/store_1/units/unit_1/front.jpg",
+      storeId: "store_1",
+      tenantId: "tenant_1",
+      unitId: "unit_1",
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      url: "https://cdn.local/front.jpg",
+    })),
     generateAiStudioImage: vi.fn(async () => aiStudioGenerationResult()),
     getVehicleUnitAcquisition: vi.fn(async () => acquisitionResult()),
-    listChecklists: vi.fn(async () => [
-      {
-        completedAt: null,
-        completedByUserId: null,
-        createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        id: "checklist_1",
-        items: [
-          {
-            id: "item_1",
-            label: "Manual",
-            notes: null,
-            status: "passed" as const,
-          },
-        ],
-        name: "Entrega",
-        status: "in_progress" as const,
-        storeId: "store_1",
-        tenantId: "tenant_1",
-        unitId: "unit_1",
-        updatedAt: new Date("2026-01-01T00:00:00.000Z"),
-      },
-    ]),
     listCatalogBrands: vi.fn(async () => [{ code: "21", name: "Fiat" }]),
     listCatalogModels: vi.fn(async () => [{ code: "toro", name: "Toro" }]),
     listCatalogVersions: vi.fn(async () => [
@@ -202,7 +195,6 @@ export function createInventoryTestServices(): InventoryListingServices {
     sellUnit: vi.fn(async () => listingDetailResult()),
     updateListingDescription: vi.fn(async () => listingDetailResult()),
     updateListingDetails: vi.fn(async () => listingDetailResult()),
-    updateChecklist: vi.fn(async () => listingDetailResult()),
     updateListingPrice: vi.fn(async () => listingDetailResult()),
     updateListingUnit: vi.fn(async () => listingDetailResult()),
     updateVehicleSupplier: vi.fn(async () => supplierResult()),

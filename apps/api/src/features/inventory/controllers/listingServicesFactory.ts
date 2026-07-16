@@ -11,7 +11,10 @@ import { listVehicleAuditEvents } from "../../../domains/vehicle/services/Vehicl
 import { createVehicleMedia } from "../../../domains/vehicle/services/VehicleService/createVehicleMedia.js";
 import { deleteVehicleMedia } from "../../../domains/vehicle/services/VehicleService/deleteVehicleMedia.js";
 import { generateVehicleAiStudioImage } from "../../../domains/vehicle/services/VehicleService/generateVehicleAiStudioImage.js";
+import { getVehicleMedia } from "../../../domains/vehicle/services/VehicleService/getVehicleMedia.js";
 import { listVehicleChecklists } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklists.js";
+import { listVehicleChecklistOverview } from "../../../domains/vehicle/services/VehicleService/listVehicleChecklistOverview.js";
+import { exportVehicleChecklistReport } from "../../../domains/vehicle/services/VehicleService/exportVehicleChecklistReport.js";
 import { listVehicleListings } from "../../../domains/vehicle/services/VehicleService/listVehicleListings.js";
 import { listVehicleUnits } from "../../../domains/vehicle/services/VehicleService/listVehicleUnits.js";
 import {
@@ -58,6 +61,8 @@ export function createInventoryListingServices(
 
   return {
     ...createInventoryTransactionalServices({ ports, transactionRunner }),
+    exportChecklistReport: (context, input) =>
+      exportVehicleChecklistReport(context, input, ports),
     async analyzeListingResale(context, input) {
       const listing = await analyzeVehicleListingResale(context, input, ports);
       return loadInventoryListingDetailDto(
@@ -123,6 +128,7 @@ export function createInventoryListingServices(
     async getListing(context, input) {
       return loadInventoryListingDetailDto(context, input.listingId, ports);
     },
+    getMedia: (context, input) => getVehicleMedia(context, input, ports),
     async generateAiStudioImage(context, input) {
       return generateVehicleAiStudioImage(context, input, ports);
     },
@@ -144,6 +150,9 @@ export function createInventoryListingServices(
     },
     async listChecklists(context, input) {
       return listVehicleChecklists(context, input, ports);
+    },
+    async listChecklistOverview(context, input) {
+      return listVehicleChecklistOverview(context, input, ports);
     },
     listVehicleSuppliers: (context, input) =>
       listVehicleSuppliers(context, input, ports),

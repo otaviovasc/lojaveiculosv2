@@ -1,3 +1,4 @@
+import { TriangleAlert } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { FeatureTextarea } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
@@ -52,6 +53,7 @@ export function SaleReasonDialog({
           variant="danger"
         />
       }
+      icon={<TriangleAlert aria-hidden="true" />}
       isOpen={isOpen}
       onClose={handleClose}
       title={title}

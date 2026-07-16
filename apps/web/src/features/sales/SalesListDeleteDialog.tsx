@@ -23,14 +23,10 @@ export function SalesListDeleteDialog({
           variant="danger"
         />
       }
+      icon={<Trash2 aria-hidden="true" />}
       isOpen
       onClose={onClose}
-      title={
-        <span className="sales-delete-dialog__title">
-          <Trash2 aria-hidden="true" />
-          Excluir rascunho de venda
-        </span>
-      }
+      title="Excluir rascunho de venda"
     >
       <div className="sales-delete-dialog__content">
         <p>

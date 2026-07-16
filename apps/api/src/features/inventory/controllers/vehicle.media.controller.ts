@@ -16,6 +16,7 @@ import {
   cleanRequestDocumentUploadRequest,
   cleanUpdateMediaRequest,
 } from "./vehicle.controller.cleaners.js";
+import { proxyVehicleMediaContent } from "../adapters/proxyVehicleMediaContent.js";
 
 type CreateContext = (context: Context) => Promise<ServiceContext>;
 
@@ -48,6 +49,20 @@ export function registerInventoryMediaRoutes(
 
       return context.json(result, 201);
     }),
+  );
+
+  inventoryFeature.get(
+    "/units/:unitId/media/:mediaId/content",
+    async (context) =>
+      handle(context, async () => {
+        const serviceContext = await createContext(context);
+        const media = await services.getMedia(serviceContext, {
+          mediaId: context.req.param("mediaId"),
+          unitId: context.req.param("unitId"),
+        });
+
+        return proxyVehicleMediaContent(media);
+      }),
   );
 
   inventoryFeature.patch("/units/:unitId/media/reorder", async (context) =>

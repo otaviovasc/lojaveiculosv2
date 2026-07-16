@@ -20,6 +20,11 @@ export const BillingUpgradePanel = lazy(() =>
     default: module.BillingUpgradePanel,
   })),
 );
+export const ChecklistModule = lazy(() =>
+  import("../features/checklists/ChecklistModule").then((module) => ({
+    default: module.ChecklistModule,
+  })),
+);
 export const CrmModule = lazy(() =>
   import("../features/crm/CrmModule").then((module) => ({
     default: module.CrmModule,

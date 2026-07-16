@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatBrazilianCpf,
   formatBrazilianDocument,
   formatBrazilianPhone,
+  formatBrazilianZipCode,
   formatCurrencyValue,
   parseCurrencyInput,
 } from "./masks";
@@ -49,11 +51,22 @@ describe("Brazilian contact masks", () => {
     expect(formatBrazilianDocument(input)).toBe(expected);
   });
 
+  it("keeps CPF-only fields capped at eleven digits", () => {
+    expect(formatBrazilianCpf("12345678901234")).toBe("123.456.789-01");
+  });
+
   it.each([
     ["11987654321", "(11) 98765-4321"],
     ["551132345678", "(11) 3234-5678"],
     ["55987654321", "(55) 98765-4321"],
   ])("formats phone %j", (input, expected) => {
     expect(formatBrazilianPhone(input)).toBe(expected);
+  });
+
+  it.each([
+    ["01310930", "01310-930"],
+    ["01310-930 extra", "01310-930"],
+  ])("formats zip code %j", (input, expected) => {
+    expect(formatBrazilianZipCode(input)).toBe(expected);
   });
 });

@@ -5,6 +5,46 @@ import {
 } from "./vehicle.controller.testSupport.js";
 
 describe("inventory checklist routes", () => {
+  it("lists the filtered fleet overview through the service boundary", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/checklists/overview?scope=all&status=attention&search=toro",
+    );
+
+    expect(response.status).toBe(200);
+    expect(services.listChecklistOverview).toHaveBeenCalledWith(
+      expect.any(Object),
+      { scope: "all", search: "toro", status: "attention" },
+    );
+    expect(await response.json()).toMatchObject({
+      generatedAt: "2026-07-15T12:00:00.000Z",
+      summary: { unitCount: 0 },
+    });
+  });
+
+  it("returns checklist reports as private PDF downloads", async () => {
+    const services = createInventoryTestServices();
+    const app = createInventoryTestApp(services);
+
+    const response = await app.request(
+      "/api/v1/inventory/checklists/report.pdf?scope=active&unitId=unit_1",
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toBe("application/pdf");
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(response.headers.get("content-disposition")).toContain(
+      "checklists-geral-2026-07-15.pdf",
+    );
+    expect(await response.text()).toBe("%PDF-1.7");
+    expect(services.exportChecklistReport).toHaveBeenCalledWith(
+      expect.any(Object),
+      { scope: "active", unitId: "unit_1" },
+    );
+  });
+
   it("lists unit checklists through the service boundary", async () => {
     const services = createInventoryTestServices();
     const app = createInventoryTestApp(services);

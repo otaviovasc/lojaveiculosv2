@@ -1,3 +1,4 @@
+import { Ban, Bot, CircleCheckBig, CircleX } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   FeatureTextarea,
@@ -60,6 +61,7 @@ export function AutomationCreateDialog({
           onConfirm={() => void submit().catch(() => undefined)}
         />
       }
+      icon={<Bot aria-hidden="true" />}
       isOpen={isOpen}
       onClose={onClose}
       title="Nova automação segura"
@@ -134,6 +136,7 @@ export function AutomationDecisionDialog({
     : isReject
       ? "Rejeitar plano"
       : "Aprovar plano";
+  const DecisionIcon = isCancel ? Ban : isReject ? CircleX : CircleCheckBig;
 
   return (
     <FeatureDialog
@@ -151,6 +154,7 @@ export function AutomationDecisionDialog({
           variant={isCancel || isReject ? "danger" : "primary"}
         />
       }
+      icon={<DecisionIcon aria-hidden="true" />}
       isOpen={decision !== null}
       onClose={onClose}
       title={title}

@@ -4,6 +4,7 @@ import { attachVehicleUnit } from "./attachVehicleUnit.js";
 import { createVehicleChecklist } from "./createVehicleChecklist.js";
 import { getVehicleListingDetail } from "./getVehicleListingDetail.js";
 import { listVehicleChecklists } from "./listVehicleChecklists.js";
+import { listVehicleChecklistOverview } from "./listVehicleChecklistOverview.js";
 import { updateVehicleChecklist } from "./updateVehicleChecklist.js";
 import {
   createContext,
@@ -107,6 +108,61 @@ describe("VehicleService checklists", () => {
     await expect(
       listVehicleChecklists(context, { unitId: unit.id }, ports),
     ).rejects.toThrow("Missing permission: inventory.checklist_read");
+  });
+
+  it("builds fleet metrics from real item states and missing checklists", async () => {
+    const context = createContext([
+      "inventory.checklist_read",
+      "inventory.checklist_update",
+      "inventory.create",
+    ]);
+    const ports = createInMemoryVehiclePorts([createListing()]);
+    const firstUnit = await attachVehicleUnit(
+      context,
+      { listingId: "listing_1", stockNumber: "stock_1" },
+      ports,
+    );
+    await attachVehicleUnit(
+      context,
+      { listingId: "listing_1", stockNumber: "stock_2" },
+      ports,
+    );
+    await createVehicleChecklist(
+      context,
+      {
+        items: [
+          { label: "Manual", status: "pending" },
+          { label: "Pneus", status: "failed" },
+          { label: "Chave", status: "waived" },
+        ],
+        name: "Entrega",
+        unitId: firstUnit.id,
+      },
+      ports,
+    );
+
+    const overview = await listVehicleChecklistOverview(
+      context,
+      { scope: "active" },
+      ports,
+    );
+
+    expect(overview.summary).toMatchObject({
+      attentionUnitCount: 2,
+      checklistCount: 1,
+      failedItemCount: 1,
+      itemCount: 3,
+      missingChecklistUnitCount: 1,
+      pendingItemCount: 1,
+      progressPercent: 33,
+      resolvedItemCount: 1,
+      unitCount: 2,
+      waivedItemCount: 1,
+    });
+    expect(overview.items.map((item) => item.status)).toEqual([
+      "failed",
+      "missing",
+    ]);
   });
 });
 

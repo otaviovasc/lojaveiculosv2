@@ -106,17 +106,28 @@ export function AiStudioTemplateSelector({
           <button
             aria-pressed={selected}
             className={cx(
-              "min-h-28 rounded-lg border p-3 text-left transition-all",
+              "relative min-h-28 rounded-xl border p-3 text-left outline-none transition-[background-color,border-color,color,transform] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel active:translate-y-px",
               selected
-                ? "border-accent bg-accent-soft text-app-text"
-                : "border-line bg-app-elevated text-muted hover:border-accent/60 hover:text-app-text",
+                ? "border-accent bg-accent-soft text-accent-soft-foreground ring-1 ring-accent"
+                : "border-line bg-app-elevated text-muted hover:border-line-strong hover:bg-panel hover:text-app-text",
             )}
             key={template.id}
             onClick={() => onSelect(template.id)}
             type="button"
           >
-            <span className="mb-3 flex size-9 items-center justify-center rounded-lg border border-line bg-panel text-accent">
-              <Icon aria-hidden="true" className="size-4" />
+            <span
+              className={cx(
+                "mb-3 flex size-9 items-center justify-center rounded-lg border",
+                selected
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-line bg-panel text-accent",
+              )}
+            >
+              {selected ? (
+                <CheckCircle2 aria-hidden="true" className="size-4" />
+              ) : (
+                <Icon aria-hidden="true" className="size-4" />
+              )}
             </span>
             <span className="block text-sm font-black">{template.label}</span>
             <span className="mt-1 block text-xs font-bold leading-relaxed">

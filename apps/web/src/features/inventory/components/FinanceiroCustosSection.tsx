@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Filter, Plus, DollarSign, Paperclip, Upload } from "lucide-react";
+import { formatCurrencyValue, parseCurrencyInput } from "../../../lib/masks";
 import type { InventoryCostKind } from "../model/types";
 import {
   InventorySelect,
@@ -40,7 +41,7 @@ export function FinanceiroCustosSection({
 
   const handleAddCost = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanValue = parseFloat(costValue.replace(/[^0-9.-]+/g, "")) * 100;
+    const cleanValue = Number(costValue) * 100;
     if (isNaN(cleanValue) || cleanValue <= 0 || !costAccount) return;
 
     const success = await onAddCost(
@@ -237,11 +238,12 @@ export function FinanceiroCustosSection({
               <InventoryField label="Valor (R$)" required>
                 <InventoryInput
                   disabled={isAdding}
-                  type="number"
-                  step="0.01"
+                  inputMode="decimal"
                   placeholder="0,00"
-                  value={costValue}
-                  onChange={(e) => setCostValue(e.target.value)}
+                  value={formatCurrencyValue(costValue)}
+                  onChange={(e) =>
+                    setCostValue(parseCurrencyInput(e.target.value))
+                  }
                   required
                 />
               </InventoryField>

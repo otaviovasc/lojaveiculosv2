@@ -12,9 +12,10 @@ import {
   AiStudioTemplateSelector,
 } from "./AiStudioModalParts";
 import { ControlSection } from "./ImageTemplateControlPrimitives";
-import type {
-  ImageTemplateListing,
-  ImageTemplateMedia,
+import {
+  isImageTemplatePhoto,
+  type ImageTemplateListing,
+  type ImageTemplateMedia,
 } from "./ImageTemplateTypes";
 import {
   QuotaCard,
@@ -112,9 +113,9 @@ export function ImageTemplateAiStudioSection({
       onToggle={() =>
         setActiveSection(activeSection === "ai-studio" ? null : "ai-studio")
       }
-      title="Melhorar foto com IA"
+      title="Foto com IA (PRO)"
     >
-      <div className="space-y-4 p-4 pt-0">
+      <div className="space-y-4 p-4 pt-3">
         <QuotaCard quota={quota} />
         <SelectedPhotoCard
           photos={photos}
@@ -165,5 +166,5 @@ export function ImageTemplateAiStudioSection({
 function isPhotoMedia(
   media: ImageTemplateMedia & { index: number },
 ): media is IndexedImageTemplateMedia {
-  return media.kind === undefined || media.kind === "photo";
+  return isImageTemplatePhoto(media);
 }

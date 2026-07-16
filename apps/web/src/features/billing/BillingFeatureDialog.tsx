@@ -38,6 +38,13 @@ export function BillingFeatureDialog({
   return (
     <FeatureDialog
       className="billing-feature-dialog"
+      icon={
+        enabled ? (
+          <BadgeCheck aria-hidden="true" />
+        ) : (
+          <PackagePlus aria-hidden="true" />
+        )
+      }
       isOpen={Boolean(row)}
       onClose={onClose}
       title={enabled ? `Seu pacote ${label}` : `Adicione ${label}`}

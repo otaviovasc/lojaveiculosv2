@@ -17,7 +17,9 @@ describe("CrmWhatsappNewConversationDialog", () => {
     );
 
     await user.type(screen.getByLabelText("Nome"), "Ana");
-    await user.type(screen.getByLabelText("WhatsApp"), "(11) 99999-9999");
+    const phone = screen.getByLabelText("WhatsApp");
+    await user.type(phone, "11999999999");
+    expect(phone).toHaveValue("(11) 99999-9999");
     await user.type(screen.getByLabelText("Mensagem"), "Ola, tudo bem?");
     await user.click(screen.getByRole("button", { name: "Iniciar conversa" }));
 

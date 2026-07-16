@@ -71,7 +71,7 @@ describe("vehicle document operations", () => {
         expect.objectContaining({ status: "in_progress" }),
       ),
     );
-    expect(screen.getByText("1/7 concluídos")).toBeVisible();
+    expect(screen.getByText("1/7 resolvidos")).toBeVisible();
   });
 
   it("uploads and attaches a real unit document", async () => {

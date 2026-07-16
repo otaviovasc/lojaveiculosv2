@@ -1,5 +1,6 @@
 import type { InventoryAuth, InventoryUnitStatus } from "../model/types";
 import type { InventoryCatalogVehicleType } from "../model/types";
+import type { InventoryChecklistOverviewInput } from "../model/checklistOverviewTypes";
 
 export type ListInventoryInput = {
   limit?: number;
@@ -18,6 +19,20 @@ type CatalogInput = {
 };
 
 export const inventoryRoutes = {
+  checklistOverview: (
+    input: InventoryChecklistOverviewInput = {},
+    baseUrl?: string,
+  ) =>
+    checklistOverviewEndpoint("/inventory/checklists/overview", input, baseUrl),
+  checklistReport: (
+    input: InventoryChecklistOverviewInput = {},
+    baseUrl?: string,
+  ) =>
+    checklistOverviewEndpoint(
+      "/inventory/checklists/report.pdf",
+      input,
+      baseUrl,
+    ),
   catalogBrands: (input: CatalogInput = {}, baseUrl?: string) =>
     catalogEndpoint("/inventory/catalog/brands", input, baseUrl),
   catalogModels: (
@@ -152,6 +167,11 @@ export const inventoryRoutes = {
       `/inventory/units/${encodeURIComponent(unitId)}/media/${encodeURIComponent(mediaId)}`,
       baseUrl,
     ),
+  mediaContent: (unitId: string, mediaId: string, baseUrl?: string) =>
+    createInventoryEndpoint(
+      `/inventory/units/${encodeURIComponent(unitId)}/media/${encodeURIComponent(mediaId)}/content`,
+      baseUrl,
+    ),
   mediaReorder: (unitId: string, baseUrl?: string) =>
     createInventoryEndpoint(
       `/inventory/units/${encodeURIComponent(unitId)}/media/reorder`,
@@ -213,6 +233,20 @@ export const inventoryRoutes = {
       baseUrl,
     ),
 } as const;
+
+function checklistOverviewEndpoint(
+  path: string,
+  input: InventoryChecklistOverviewInput,
+  baseUrl?: string,
+) {
+  const endpoint = createInventoryEndpoint(path, baseUrl);
+  const params = new URLSearchParams();
+  if (input.scope) params.set("scope", input.scope);
+  if (input.search) params.set("search", input.search);
+  if (input.status) params.set("status", input.status);
+  if (input.unitId) params.set("unitId", input.unitId);
+  return params.size > 0 ? `${endpoint}?${params.toString()}` : endpoint;
+}
 
 function catalogEndpoint(path: string, input: CatalogInput, baseUrl?: string) {
   const endpoint = createInventoryEndpoint(path, baseUrl);

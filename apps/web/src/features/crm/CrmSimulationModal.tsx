@@ -6,6 +6,7 @@ import {
   FeatureDialog,
   FeatureDialogActions,
 } from "../../components/ui/FeatureOverlay";
+import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import { CrmSelect } from "./CrmFormControls";
 import type { LeadVehicleOption } from "./CrmPipelineViewTypes";
 import {
@@ -128,27 +129,24 @@ export function CrmSimulationModal({
           <FeatureField label="Valor do Veículo (R$)">
             <FeatureInput
               aria-invalid={vehicleValueInvalid}
-              min={0}
+              inputMode="decimal"
               onChange={(e) => {
-                setVehicleValue(Number(e.target.value));
+                setVehicleValue(currencyInputNumber(e.target.value));
                 setSubmitError(null);
               }}
-              type="number"
-              value={vehicleValue}
+              value={formatCurrencyValue(vehicleValue)}
             />
           </FeatureField>
 
           <FeatureField label="Valor da Entrada (R$)">
             <FeatureInput
               aria-invalid={downpaymentInvalid}
-              max={Math.max(0, vehicleValue)}
-              min={0}
+              inputMode="decimal"
               onChange={(e) => {
-                setDownpayment(Number(e.target.value));
+                setDownpayment(currencyInputNumber(e.target.value));
                 setSubmitError(null);
               }}
-              type="number"
-              value={downpayment}
+              value={formatCurrencyValue(downpayment)}
             />
           </FeatureField>
         </div>
@@ -217,4 +215,8 @@ export function CrmSimulationModal({
       </div>
     </FeatureDialog>
   );
+}
+
+function currencyInputNumber(value: string) {
+  return Number(parseCurrencyInput(value) || 0);
 }

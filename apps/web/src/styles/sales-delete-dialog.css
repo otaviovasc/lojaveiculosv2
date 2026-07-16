@@ -2,16 +2,14 @@
   border-top: 0.25rem solid var(--color-danger);
 }
 
-.sales-delete-dialog__title {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--app-space-sm);
+.sales-delete-dialog .feature-dialog__title,
+.sales-delete-dialog .feature-dialog__icon {
   color: var(--color-danger);
 }
 
-.sales-delete-dialog__title svg {
-  width: 1.15rem;
-  height: 1.15rem;
+.sales-delete-dialog .feature-dialog__icon {
+  border-color: color-mix(in srgb, var(--color-danger) 28%, transparent);
+  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-surface));
 }
 
 .sales-delete-dialog__content {

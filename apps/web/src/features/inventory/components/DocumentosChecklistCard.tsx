@@ -87,6 +87,9 @@ export function DocumentosChecklistCard({
   const completedCount = checklist?.items.filter(
     (item) => item.status === "passed" || item.status === "waived",
   ).length;
+  const failedCount = checklist?.items.filter(
+    (item) => item.status === "failed",
+  ).length;
 
   return (
     <section
@@ -103,7 +106,8 @@ export function DocumentosChecklistCard({
         {checklist ? (
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-muted">
-              {completedCount}/{checklist.items.length} concluídos
+              {completedCount}/{checklist.items.length} resolvidos
+              {failedCount ? ` · ${failedCount} reprovados` : ""}
             </span>
             <button
               aria-label="Resetar checklist"
@@ -161,6 +165,20 @@ export function DocumentosChecklistCard({
           onChangeNewItem={setNewItemText}
           onDelete={(itemId) =>
             void updateItems(items.filter((item) => item.id !== itemId))
+          }
+          onNotesChange={(itemId, notes) =>
+            void updateItems(
+              items.map((item) =>
+                item.id === itemId ? { ...item, notes } : item,
+              ),
+            )
+          }
+          onStatusChange={(itemId, status) =>
+            void updateItems(
+              items.map((item) =>
+                item.id === itemId ? { ...item, status } : item,
+              ),
+            )
           }
           onToggle={(itemId) =>
             void updateItems(

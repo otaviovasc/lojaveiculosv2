@@ -5,6 +5,7 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createPublicApi, type PublicApi } from "./apiClient";
 import { PublicApiClientList } from "./PublicApiClientList";
 import { PublicApiCommandDeck } from "./PublicApiCommandDeck";
+import { publicApiBasePath } from "./publicApiCatalog";
 import { PublicApiKeyCreator } from "./PublicApiKeyCreator";
 import { PublicApiOverview } from "./PublicApiOverview";
 import { PublicApiReferencePanel } from "./PublicApiReferencePanel";
@@ -17,6 +18,8 @@ import type { PublicApiClient, PublicApiScope, PublicApiStatus } from "./types";
 
 export function PublicApiModule({ api }: { api?: PublicApi }) {
   const publicApi = useMemo(() => api ?? createRuntimePublicApi(), [api]);
+  const deploymentBaseUrl = useMemo(readPublicApiDeploymentBaseUrl, []);
+  const apiBaseUrl = `${deploymentBaseUrl.replace(/\/$/, "")}${publicApiBasePath}`;
   const [clients, setClients] = useState<PublicApiClient[]>([]);
   const [name, setName] = useState("Agente de vendas IA");
   const [scopes, setScopes] = useState<PublicApiScope[]>([
@@ -122,7 +125,14 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
   return (
     <FeaturePageShell mainClassName="public-api-shell">
       <PublicApiCommandDeck
+        activeClientCount={
+          clients.filter((client) => client.status === "active").length
+        }
+        copiedBaseUrl={copiedId === "base-url"}
+        apiBaseUrl={apiBaseUrl}
+        hasLoadedClients={hasLoadedClients}
         isLoading={status.kind === "loading"}
+        onCopyBaseUrl={() => void copyToClipboard(apiBaseUrl, "base-url")}
         onRefresh={() => void refresh()}
       />
 
@@ -141,7 +151,10 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
 
       <PublicApiOverview />
 
-      <section className="internal-grid two public-api-main-grid">
+      <section
+        aria-label="Configuração e clientes da Public API"
+        className="public-api-management-flow"
+      >
         <PublicApiKeyCreator
           copiedId={copiedId}
           createdKey={createdKey}
@@ -166,7 +179,7 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
 
       <PublicApiReferencePanel
         copiedId={copiedId}
-        deploymentBaseUrl={readPublicApiDeploymentBaseUrl()}
+        deploymentBaseUrl={deploymentBaseUrl}
         onCopy={copyToClipboard}
       />
       <PublicApiRevokeDialog
@@ -185,6 +198,7 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
 }
 
 function copySuccessMessage(id: string) {
+  if (id === "base-url") return "URL base copiada.";
   if (id === "created-key") return "Chave copiada com segurança.";
   if (id.includes(":")) return "Exemplo curl copiado.";
   return "Rota do artefato copiada.";
@@ -204,6 +218,6 @@ function createRuntimePublicApi(): PublicApi {
 function errorMessage(error: unknown) {
   return formatApiErrorDisplay(
     error,
-    "Nao foi possivel carregar a API publica.",
+    "Não foi possível carregar a API pública.",
   );
 }

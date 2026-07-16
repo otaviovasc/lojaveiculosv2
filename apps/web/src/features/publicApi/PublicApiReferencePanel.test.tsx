@@ -21,7 +21,7 @@ describe("PublicApiReferencePanel", () => {
     expect(
       screen.getByRole("button", { name: "Copiar rota do artefato Docs" }),
     ).toBeVisible();
-    expect(screen.queryByText("Listar veiculos")).not.toBeInTheDocument();
+    expect(screen.queryByText("Listar veículos")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /Rotas/ }));
 
@@ -32,13 +32,13 @@ describe("PublicApiReferencePanel", () => {
       expect(region).toHaveAccessibleName(/Exemplo curl para/);
     }
 
-    await user.click(screen.getByText("Listar veiculos"));
+    await user.click(screen.getByText("Listar veículos"));
     expect(
-      screen.getByLabelText("Exemplo curl para Listar veiculos"),
+      screen.getByLabelText("Exemplo curl para Listar veículos"),
     ).toBeVisible();
 
     await user.click(
-      screen.getByRole("button", { name: "Copiar curl de Listar veiculos" }),
+      screen.getByRole("button", { name: "Copiar curl de Listar veículos" }),
     );
     expect(onCopy).toHaveBeenCalledOnce();
   });

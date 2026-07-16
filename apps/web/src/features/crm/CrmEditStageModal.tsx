@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, PencilLine } from "lucide-react";
 import { FeatureColorPicker } from "../../components/ui/FeatureColorPicker";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
@@ -53,6 +53,7 @@ export function CrmEditStageModal({ stage, onClose, onSave }: Props) {
           onConfirm={handleSubmit}
         />
       }
+      icon={<PencilLine aria-hidden="true" />}
       isOpen
       onClose={onClose}
       title="Editar Etapa"

@@ -8,6 +8,7 @@ import {
   FeatureFormSection,
 } from "../../components/ui/FeatureForms";
 import { Switch } from "../../components/ui/switch";
+import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import { autoEntryPercentageBasisLabel } from "./autoEntryLabels";
 import { autoEntryCalculationOptions, autoEntryTimingOptions } from "./model";
@@ -42,7 +43,11 @@ export function AutoEntryCalculationSection({
               aria-invalid={Boolean(errors.amountReais)}
               inputMode="decimal"
               onChange={(event) =>
-                onChange({ amountReais: event.target.value })
+                onChange({
+                  amountReais: formatCurrencyValue(
+                    parseCurrencyInput(event.target.value),
+                  ),
+                })
               }
               placeholder="Ex.: 500,00"
               value={draft.amountReais}

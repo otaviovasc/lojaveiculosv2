@@ -1,4 +1,4 @@
-import { RefreshCcw, Save, Store, Users, Wand2 } from "lucide-react";
+import { RefreshCcw, Save, Store, Users } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FeatureTabs } from "../../components/ui/FeatureControls";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
@@ -8,7 +8,6 @@ import {
   FeatureLoadingState,
 } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
-import { StorefrontCustomizationModule } from "../publicSite/StorefrontCustomizationModule";
 import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
 import type { SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
@@ -150,7 +149,6 @@ export function SettingsModule({
           optionClassName="inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 text-xs font-black text-muted transition-all hover:text-app-text"
           options={[
             { label: "Perfil da Loja", value: "store", icon: Store },
-            { label: "Vitrine Digital", value: "storefront", icon: Wand2 },
             { label: "Papéis e Permissões", value: "roles", icon: Users },
           ]}
           value={activeTab}
@@ -196,10 +194,6 @@ export function SettingsModule({
           icon={Store}
           title="Configurações indisponíveis"
         />
-      ) : activeTab === "storefront" ? (
-        <div className="-mx-4 -mb-6 md:-mx-6">
-          <StorefrontCustomizationModule initialTab="design" />
-        </div>
       ) : activeTab === "roles" && roles ? (
         <RoleManagementPanel
           isSaving={status.kind === "saving"}
@@ -213,7 +207,7 @@ export function SettingsModule({
       ) : (
         <FeatureLoadingState
           className="settings-empty"
-          icon={Wand2}
+          icon={activeTab === "roles" ? Users : Store}
           title="Carregando configurações"
         />
       )}
@@ -232,7 +226,7 @@ function readInitialSettingsTab(): SettingsTab {
   if (typeof window === "undefined") return "store";
   const query = window.location.hash.split("?")[1] ?? "";
   const tab = new URLSearchParams(query).get("tab");
-  return tab === "roles" || tab === "storefront" ? tab : "store";
+  return tab === "roles" ? tab : "store";
 }
 
 function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {

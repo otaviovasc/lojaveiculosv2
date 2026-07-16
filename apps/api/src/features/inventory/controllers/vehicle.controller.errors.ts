@@ -28,6 +28,7 @@ import {
 } from "../../../domains/vehicle/workflows/vehicleSaleWorkflowRules.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
 import { createVehicleAiStudioProviderPublicDetails } from "./vehicle.aiStudio.errors.js";
+import { VehicleMediaContentDeliveryError } from "../adapters/proxyVehicleMediaContent.js";
 
 export function mapInventoryWorkflowError(
   context: Context,
@@ -114,6 +115,15 @@ export function mapInventoryResourceError(
   context: Context,
   error: unknown,
 ): Response | null {
+  if (error instanceof VehicleMediaContentDeliveryError) {
+    return jsonApiError(context, {
+      code: "VEHICLE_MEDIA_CONTENT_UNAVAILABLE",
+      error,
+      message: error.message,
+      status: error.statusCode,
+    });
+  }
+
   if (isVehicleInventoryNotFoundError(error)) {
     return jsonApiError(context, {
       code: "INVENTORY_NOT_FOUND",

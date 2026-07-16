@@ -76,6 +76,7 @@
 @import "./crmClientCards.css";
 @import "./crmClientForms.css";
 @import "./settings.css";
+@import "./settingsProfile.css";
 @import "./settingsForms.css";
 @import "./roles.css";
 @import "./billing.css";
@@ -110,6 +111,7 @@
 @import "./publicApi.css";
 @import "./marketplaces.css";
 @import "./featureModules.css";
+@import "./checklists.css";
 @import "./finance.css";
 @import "./autoEntries.css";
 @import "./sales.css";

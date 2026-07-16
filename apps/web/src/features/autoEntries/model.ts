@@ -1,4 +1,5 @@
 import { financeAutoEntryMaxAmountCents } from "@lojaveiculosv2/shared";
+import { formatCurrencyValue } from "../../lib/masks";
 import { formatDecimal, parsePercentageToRatePpm } from "./numericModel";
 import type {
   AutoEntryCalculation,
@@ -67,7 +68,7 @@ export function createAutoEntryDraft(
   return {
     amountReais:
       rule.calculation.kind === "fixed"
-        ? formatDecimal(rule.calculation.amountCents / 100)
+        ? formatCurrencyValue(rule.calculation.amountCents / 100)
         : "",
     calculationBasis:
       rule.calculation.kind === "fixed"

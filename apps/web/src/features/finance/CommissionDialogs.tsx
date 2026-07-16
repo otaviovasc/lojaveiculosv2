@@ -4,6 +4,7 @@ import {
   FeatureDialog,
   FeatureDialogActions,
 } from "../../components/ui/FeatureOverlay";
+import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import {
   pendingSellerEntries,
   type CommissionFilters,
@@ -44,6 +45,7 @@ export function ConfirmCommissionPayDialog({
 
   return (
     <FeatureDialog
+      icon={<HandCoins aria-hidden="true" />}
       isOpen
       onClose={onCancel}
       title="Confirmar pagamento"
@@ -127,6 +129,7 @@ export function BonusCommissionDialog({
 
   return (
     <FeatureDialog
+      icon={<PlusCircle aria-hidden="true" />}
       isOpen
       onClose={onCancel}
       title="Bônus manual"
@@ -150,13 +153,14 @@ export function BonusCommissionDialog({
         </FinanceField>
         <FinanceField label="Valor">
           <FinanceInput
-            min="0.01"
+            inputMode="decimal"
             onChange={(event) =>
-              setDraft({ ...draft, amount: event.target.value })
+              setDraft({
+                ...draft,
+                amount: parseCurrencyInput(event.target.value),
+              })
             }
-            step="0.01"
-            type="number"
-            value={draft.amount}
+            value={formatCurrencyValue(draft.amount)}
           />
         </FinanceField>
         <FinanceField label="Referência">

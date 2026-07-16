@@ -32,17 +32,23 @@ export async function renderImageTemplate({
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
+  if (config.fontFamily) {
+    try {
+      await document.fonts.load(`800 24px "${config.fontFamily}"`);
+      await document.fonts.load(`500 24px "${config.fontFamily}"`);
+      await document.fonts.load(`900 24px "${config.fontFamily}"`);
+    } catch (e) {
+      console.warn("Failed to pre-load font:", config.fontFamily, e);
+    }
+  }
+
   const height = getImageTemplateHeight(format);
   canvas.width = IMAGE_TEMPLATE_WIDTH;
   canvas.height = height;
 
   let mainImg: HTMLImageElement | null = null;
   if (photoUrl) {
-    try {
-      mainImg = await loadImage(photoUrl);
-    } catch {
-      /* ignore missing image */
-    }
+    mainImg = await loadImage(photoUrl);
   }
 
   drawBackground(ctx, mainImg, config, format, height, storeSettings);
@@ -137,7 +143,7 @@ async function drawLogoOrStoreName(
   const storeName = storeSettings?.identity?.tradingName || "Loja Veículos";
   if (!logoDrawn && storeName) {
     ctx.fillStyle = textColor;
-    ctx.font = `800 ${64 * config.fontSizeScale}px "${config.fontFamily}", sans-serif`;
+    ctx.font = `800 ${64 * config.logoScale}px "${config.fontFamily}", sans-serif`;
     ctx.textAlign = "center";
     ctx.fillText(storeName, IMAGE_TEMPLATE_WIDTH / 2, logoY + 70);
     ctx.textAlign = "left";

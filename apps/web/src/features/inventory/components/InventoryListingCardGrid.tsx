@@ -1,13 +1,17 @@
 import {
+  CalendarClock,
   CarFront,
-  Image as ImageIcon,
-  Printer,
   FileArchive,
   ChevronRight,
   Clock,
+  LayoutTemplate,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { FeatureEmptyState } from "../../../components/ui/FeatureStates";
+import {
+  FeatureRowAction,
+  FeatureRowActions,
+} from "../../../components/ui/FeatureTable";
 import {
   formatInventoryPrice,
   getInventoryCatalogLine,
@@ -221,46 +225,40 @@ function InventoryListingCard({
           </div>
 
           {onAction ? (
-            <div className="flex items-center gap-1">
-              <button
-                aria-label={`Criar template de anúncio para ${listing.title}`}
-                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-violet-500 transition-all hover:border-accent/30 hover:bg-panel"
+            <FeatureRowActions className="h-auto gap-1">
+              <FeatureRowAction
+                ariaLabel={`Criar post para ${listing.title}`}
+                icon={LayoutTemplate}
+                iconClassName="text-accent"
                 onClick={(event) => {
                   event.stopPropagation();
                   onAction("template", item);
                 }}
-                title="Criar Template"
-                type="button"
-              >
-                <ImageIcon aria-hidden="true" className="size-3.5" />
-              </button>
-              <button
-                aria-label={`Agendar test drive para ${listing.title}`}
-                className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-emerald-500 transition-all hover:border-accent/30 hover:bg-panel"
+                tooltip="Criar post"
+              />
+              <FeatureRowAction
+                ariaLabel={`Agendar test drive para ${listing.title}`}
+                icon={CalendarClock}
+                iconClassName="text-success"
                 onClick={(event) => {
                   event.stopPropagation();
                   onAction("test-drive", item);
                 }}
-                title="Test Drive"
-                type="button"
-              >
-                <Printer aria-hidden="true" className="size-3.5" />
-              </button>
+                tooltip="Test drive"
+              />
               {item.mediaCount > 0 ? (
-                <button
-                  aria-label={`Baixar fotos de ${listing.title}`}
-                  className="cursor-pointer rounded-lg border border-line bg-panel p-1.5 text-accent transition-all hover:border-accent/30 hover:bg-accent-soft hover:text-accent-strong"
+                <FeatureRowAction
+                  ariaLabel={`Baixar fotos de ${listing.title}`}
+                  icon={FileArchive}
+                  iconClassName="text-accent"
                   onClick={(event) => {
                     event.stopPropagation();
                     onAction("zip-photos", item);
                   }}
-                  title="Baixar Fotos (ZIP)"
-                  type="button"
-                >
-                  <FileArchive aria-hidden="true" className="size-3.5" />
-                </button>
+                  tooltip="Baixar fotos em ZIP"
+                />
               ) : null}
-            </div>
+            </FeatureRowActions>
           ) : null}
         </div>
       </div>

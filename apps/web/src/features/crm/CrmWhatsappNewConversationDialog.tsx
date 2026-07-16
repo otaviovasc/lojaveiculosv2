@@ -1,5 +1,6 @@
 import { MessageSquarePlus } from "lucide-react";
 import { useState } from "react";
+import { formatBrazilianPhone } from "../../lib/masks";
 import { ActionDialog } from "./CrmWhatsappActionDialogFrame";
 import {
   CrmFieldError,
@@ -101,7 +102,7 @@ export function CrmWhatsappNewConversationDialog({
           inputMode="tel"
           onBlur={() => setPhoneTouched(true)}
           onChange={(event) => {
-            setPhone(event.target.value);
+            setPhone(formatBrazilianPhone(event.target.value));
             setSubmitError(null);
           }}
           placeholder="(11) 99999-9999"

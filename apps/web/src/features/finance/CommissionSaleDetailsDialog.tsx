@@ -19,6 +19,7 @@ export function CommissionSaleDetailsDialog({
   return (
     <FeatureDialog
       className="commission-dialog"
+      icon={<CircleDollarSign aria-hidden="true" />}
       isOpen
       onClose={onClose}
       title="Detalhes da venda e comissões"

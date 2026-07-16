@@ -32,6 +32,18 @@ describe("inventory route helpers", () => {
     expect(inventoryRoutes.checklistDetail("unit 1", "checklist 1")).toBe(
       "/api/v1/inventory/units/unit%201/checklists/checklist%201",
     );
+    expect(
+      inventoryRoutes.checklistOverview({
+        scope: "active",
+        search: "toro branca",
+        status: "attention",
+      }),
+    ).toBe(
+      "/api/v1/inventory/checklists/overview?scope=active&search=toro+branca&status=attention",
+    );
+    expect(
+      inventoryRoutes.checklistReport({ scope: "all", unitId: "unit 1" }),
+    ).toBe("/api/v1/inventory/checklists/report.pdf?scope=all&unitId=unit+1");
     expect(inventoryRoutes.unitAcquisition("unit 1")).toBe(
       "/api/v1/inventory/units/unit%201/acquisition",
     );

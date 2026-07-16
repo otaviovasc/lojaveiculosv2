@@ -6,6 +6,7 @@ export type BgStyleType = "blur" | "solid" | "gradient";
 
 export type ImageTemplatePreset = {
   name: string;
+  format: FormatType;
   color: string;
   bgStyle: BgStyleType;
   priceColor: string;
@@ -31,6 +32,8 @@ export type ImageTemplatePreset = {
   showPhones: boolean;
   showInstagram: boolean;
   showWebsite: boolean;
+  footerYOffset: number;
+  contactSizeScale: number;
 };
 
 export type ImageTemplateListing = {
@@ -65,6 +68,27 @@ export const COLOR_PRESETS = [
   hexColor("ffffff"),
   hexColor("f3f4f6"),
 ];
+
+export const PRICE_COLOR_PRESETS = [
+  hexColor("ed1d24"),
+  hexColor("facc15"),
+  hexColor("10b981"),
+  hexColor("ffffff"),
+];
+
+export function isImageTemplatePhoto(media: ImageTemplateMedia) {
+  return media.kind === undefined || media.kind === "photo";
+}
+
+export function getImageTemplateDownloadBaseName(title: string) {
+  const normalized = title
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .toLowerCase();
+  return normalized || "veiculo";
+}
 
 export function getImageTemplateHeight(format: FormatType) {
   return format === "story" ? 1920 : 1080;

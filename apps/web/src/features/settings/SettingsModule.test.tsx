@@ -20,6 +20,9 @@ describe("SettingsModule", () => {
     expect(screen.getByRole("tab", { name: "Perfil da Loja" })).toHaveClass(
       "!bg-accent",
     );
+    expect(
+      screen.queryByRole("tab", { name: "Vitrine Digital" }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Atualizar" })).toBeVisible();
     expect(
       screen.queryByRole("heading", { name: "Configurações da loja" }),

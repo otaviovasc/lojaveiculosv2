@@ -17,17 +17,17 @@ export function drawVehicleDetails(
 ) {
   const card = getCardMetrics(config, format, height);
 
-  if (config.showGlassBox) {
+  if (config.showGlassBox && config.showVehicleDetails) {
     ctx.save();
-    ctx.fillStyle = isLightTheme(config)
-      ? alphaColor(255, 255, 255, 0.85)
-      : alphaColor(255, 255, 255, config.glassOpacity);
+    ctx.fillStyle = alphaColor(255, 255, 255, config.glassOpacity);
     ctx.shadowBlur = config.glassBlur;
     ctx.shadowColor = alphaColor(0, 0, 0, 0.25);
     ctx.beginPath();
     ctx.roundRect(card.x, card.y, card.w, card.h, 40 * config.fontSizeScale);
     ctx.fill();
-    ctx.strokeStyle = alphaColor(255, 255, 255, 0.15);
+    ctx.strokeStyle = isLightTheme(config)
+      ? alphaColor(0, 0, 0, 0.08)
+      : alphaColor(255, 255, 255, 0.15);
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
@@ -78,9 +78,13 @@ export function drawVehicleDetails(
 }
 
 export function getTemplateColors(config: ImageTemplatePreset) {
-  return isLightTheme(config)
-    ? { text: hexColor("171717"), dim: alphaColor(0, 0, 0, 0.6) }
-    : { text: config.customTextColor, dim: `${config.customTextColor}cc` };
+  const text =
+    config.customTextColor ||
+    (isLightTheme(config) ? hexColor("171717") : hexColor("ffffff"));
+  return {
+    text,
+    dim: text.startsWith("#") && text.length === 7 ? `${text}cc` : text,
+  };
 }
 
 function fitTitleSize(

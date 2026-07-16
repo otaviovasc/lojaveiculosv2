@@ -16,7 +16,7 @@ export function QuotaCard({ quota }: { quota: AiStudioGenerationQuota }) {
   const percentUsed = Math.min((quota.used / quota.limit) * 100, 100);
 
   return (
-    <section className="rounded-xl border border-line bg-panel p-3">
+    <section className="rounded-xl border border-line bg-app p-3">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-black uppercase tracking-wider text-muted">
@@ -26,7 +26,7 @@ export function QuotaCard({ quota }: { quota: AiStudioGenerationQuota }) {
             {quota.used}/{quota.limit} gerações usadas
           </p>
         </div>
-        <span className="rounded-full border border-accent-soft bg-accent-soft px-3 py-1 text-xs font-black text-accent-strong">
+        <span className="rounded-full border border-accent bg-accent-soft px-3 py-1 text-xs font-black text-accent-soft-foreground">
           {quota.remaining} restantes
         </span>
       </div>
@@ -79,10 +79,10 @@ export function SelectedPhotoCard({
           <button
             aria-label="Selecionar foto base para IA"
             className={cx(
-              "h-16 w-20 shrink-0 overflow-hidden rounded-lg border transition-all",
+              "relative h-16 w-20 shrink-0 overflow-hidden rounded-lg border-2 outline-none transition-[border-color,opacity,transform] focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-panel",
               selectedPhoto.id === photo.id
-                ? "border-accent"
-                : "border-line opacity-70 hover:opacity-100",
+                ? "scale-[1.03] border-accent"
+                : "border-line opacity-60 hover:border-line-strong hover:opacity-100",
             )}
             key={photo.id}
             onClick={() => setSelectedPhotoIndex(photo.index)}
@@ -93,6 +93,11 @@ export function SelectedPhotoCard({
               className="size-full object-cover"
               src={photo.url}
             />
+            {selectedPhoto.id === photo.id ? (
+              <span className="absolute right-1 top-1 grid size-5 place-items-center rounded-md bg-accent text-accent-foreground">
+                <CheckCircle2 aria-hidden="true" className="size-3.5" />
+              </span>
+            ) : null}
           </button>
         ))}
       </div>

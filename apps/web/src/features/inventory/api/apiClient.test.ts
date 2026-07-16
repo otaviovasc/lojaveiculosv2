@@ -261,6 +261,53 @@ describe("createInventoryApi", () => {
     });
   });
 
+  it("lists checklist overview and preserves the PDF filename", async () => {
+    const calls: string[] = [];
+    const api = createInventoryApi({
+      fetch: async (input) => {
+        calls.push(String(input));
+        if (String(input).endsWith("report.pdf?scope=active")) {
+          return new Response("%PDF-1.7", {
+            headers: {
+              "Content-Disposition":
+                'attachment; filename="checklists-geral-2026-07-15.pdf"',
+              "Content-Type": "application/pdf",
+            },
+          });
+        }
+        return new Response(
+          JSON.stringify({
+            generatedAt: "2026-07-15T12:00:00.000Z",
+            items: [],
+            summary: {
+              attentionUnitCount: 0,
+              checklistCount: 0,
+              failedItemCount: 0,
+              itemCount: 0,
+              missingChecklistUnitCount: 0,
+              pendingItemCount: 0,
+              progressPercent: 0,
+              resolvedItemCount: 0,
+              unitCount: 0,
+              waivedItemCount: 0,
+            },
+          }),
+          { headers: { "Content-Type": "application/json" } },
+        );
+      },
+    });
+
+    await api.listChecklistOverview({ scope: "active", status: "attention" });
+    const report = await api.downloadChecklistReport({ scope: "active" });
+
+    expect(calls).toEqual([
+      "/api/v1/inventory/checklists/overview?scope=active&status=attention",
+      "/api/v1/inventory/checklists/report.pdf?scope=active",
+    ]);
+    expect(report.fileName).toBe("checklists-geral-2026-07-15.pdf");
+    expect(await report.blob.text()).toBe("%PDF-1.7");
+  });
+
   it("routes plate lookup and resale analysis through inventory enrichment", async () => {
     const fake = createFakeFetch([
       {
