@@ -279,7 +279,7 @@ function ChecklistCard(props: RowProps) {
   const { item } = props;
   const failedList = getFailedItemsList(item);
   return (
-    <article className="rounded-2xl border border-line bg-panel p-4 shadow-sm hover:border-line-strong transition-all duration-200">
+    <article className="rounded-2xl border border-line bg-panel p-4 hover:border-line-strong transition-colors duration-200">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <strong className="block truncate text-sm text-app-text font-extrabold">

@@ -113,7 +113,6 @@
   border-color: color-mix(in srgb, var(--color-accent) 34%, var(--color-line));
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
-  transform: translateY(-1px);
 }
 
 .feature-dialog__close svg {
@@ -139,13 +138,22 @@
 }
 
 .feature-drawer {
-  width: min(30rem, 100vw);
+  width: min(32rem, 100vw);
   height: 100dvh;
   max-height: none;
   border-block: 0;
   border-right: 0;
   animation: feature-drawer-enter var(--motion-duration-slow)
     var(--motion-ease-emphasized) both;
+}
+
+/* Width variants for content-heavy panels (e.g. the checklist editor). */
+.feature-drawer--wide {
+  width: min(46rem, 100vw);
+}
+
+.feature-drawer--full {
+  width: min(60rem, 100vw);
 }
 
 @keyframes feature-overlay-fade-in {

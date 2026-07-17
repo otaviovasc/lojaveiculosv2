@@ -121,7 +121,7 @@ export function ChecklistOverviewDrawer({
 
   return (
     <FeatureDrawer
-      className="!max-w-2xl"
+      className="feature-drawer--wide"
       footer={
         item ? (
           <div className="flex w-full flex-wrap justify-end gap-2">
@@ -145,7 +145,7 @@ export function ChecklistOverviewDrawer({
     >
       {item ? (
         <div aria-busy={saving} className="space-y-5">
-          <div className="rounded-xl border border-line bg-app/30 p-4 shadow-sm">
+          <div className="rounded-xl border border-line bg-app/30 p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-black text-app-text">

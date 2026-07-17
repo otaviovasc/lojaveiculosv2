@@ -1,4 +1,4 @@
-/* Checklist Feature Premium Visual Signature */
+/* Checklist feature — flat, operational styling (no gloss/glow). */
 
 .checklist-metrics-grid {
   display: grid;
@@ -34,7 +34,6 @@
 }
 
 .checklist-metric-card:hover {
-  transform: translateY(-3px);
   border-color: var(--color-line-strong);
 }
 
@@ -56,27 +55,19 @@
 }
 
 .checklist-metric-card[data-tone="blue"]::before {
-  background: linear-gradient(
-    90deg,
-    var(--color-blue-start),
-    var(--color-info)
-  );
+  background: var(--color-info);
 }
 
 .checklist-metric-card[data-tone="green"]::before {
-  background: linear-gradient(
-    90deg,
-    var(--color-green-start),
-    var(--color-success)
-  );
+  background: var(--color-success);
 }
 
 .checklist-metric-card[data-tone="danger"]::before {
-  background: linear-gradient(90deg, var(--color-danger), var(--color-accent));
+  background: var(--color-danger);
 }
 
 .checklist-metric-card[data-tone="warning"]::before {
-  background: linear-gradient(90deg, var(--color-warning), #eab308);
+  background: var(--color-warning);
 }
 
 /* Active State styling */
@@ -109,12 +100,6 @@
   width: 2.5rem;
   height: 2.5rem;
   border-radius: var(--radius-md);
-  transition: transform var(--motion-duration-base)
-    var(--motion-ease-emphasized);
-}
-
-.checklist-metric-card:hover .checklist-metric-icon {
-  transform: scale(1.1) rotate(2deg);
 }
 
 .checklist-metric-icon--blue {
@@ -167,7 +152,6 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-line);
   background: var(--color-panel);
-  box-shadow: var(--shadow-panel);
 }
 
 .checklist-table-row {
@@ -178,7 +162,7 @@
   background: var(--color-app);
 }
 
-/* Glowing/Premium Progress indicator */
+/* Progress indicator (flat, no glow). */
 .checklist-progress-bar-container {
   position: relative;
   height: 6px;
@@ -191,23 +175,16 @@
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--color-accent) 0%,
-    var(--color-accent-strong) 100%
-  );
+  background: var(--color-accent);
   transition: width var(--motion-duration-slow) var(--motion-ease-emphasized);
-  box-shadow: 0 0 8px rgba(225, 31, 38, 0.3);
 }
 
 .checklist-progress-bar--complete {
-  background: linear-gradient(90deg, var(--color-success) 0%, #10b981 100%);
-  box-shadow: 0 0 8px rgba(24, 184, 65, 0.3);
+  background: var(--color-success);
 }
 
 .checklist-progress-bar--failed {
-  background: linear-gradient(90deg, var(--color-danger) 0%, #ef4444 100%);
-  box-shadow: 0 0 8px rgba(184, 24, 32, 0.3);
+  background: var(--color-danger);
 }
 
 /* Item editor styling */
@@ -233,7 +210,6 @@
 
 .checklist-editor-item:hover {
   border-color: var(--color-line-strong);
-  box-shadow: var(--shadow-panel);
 }
 
 .checklist-editor-item[data-status="passed"] {
