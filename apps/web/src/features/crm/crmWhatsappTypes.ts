@@ -90,6 +90,20 @@ export type CrmWhatsappWebhookEndpoint = {
   url: string;
 };
 
+export type CrmWhatsappWebhookConfigResult = {
+  error: string | null;
+  ok: boolean;
+  status: number | null;
+  type: string;
+  url: string;
+};
+
+export type CrmWhatsappConfigureWebhooksResult = {
+  connectionId: string;
+  results: CrmWhatsappWebhookConfigResult[];
+  tokenApplied: boolean;
+};
+
 export type CrmWhatsappConnectionsResponse = {
   connections: CrmWhatsappProviderConnection[];
 };

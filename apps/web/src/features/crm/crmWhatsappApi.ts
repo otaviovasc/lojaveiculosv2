@@ -79,6 +79,8 @@ export function createCrmWhatsappApi({
       ),
     closeSession: (sessionId) =>
       postMaybeJson(crmWhatsappRoutes.closeSession(sessionId, baseUrl)),
+    configureConnectionWebhooks: (connectionId) =>
+      postJson(crmWhatsappRoutes.connectionWebhooks(connectionId, baseUrl)),
     cancelCampaign: (campaignId) =>
       postJson(
         crmWhatsappCampaignRoutes.campaignAction(campaignId, "cancel", baseUrl),

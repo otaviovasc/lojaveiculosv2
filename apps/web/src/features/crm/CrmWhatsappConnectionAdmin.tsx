@@ -6,6 +6,7 @@ import {
   ConnectionSetupFlow,
 } from "./CrmWhatsappConnectionViews";
 import type {
+  CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
   CrmWhatsappUpdateConnectionInput,
   CrmWhatsappWebhookEndpoint,
@@ -17,6 +18,7 @@ export function CrmWhatsappConnectionAdmin({
   error,
   isLoading = false,
   onClose,
+  onConfigureWebhooks,
   onUpdate,
   onRefresh,
 }: {
@@ -26,6 +28,9 @@ export function CrmWhatsappConnectionAdmin({
   error?: Error | null;
   isLoading?: boolean;
   onClose?: () => void;
+  onConfigureWebhooks: (
+    connectionId: CrmWhatsappProviderConnection["id"],
+  ) => Promise<CrmWhatsappConfigureWebhooksResult | null>;
   onRefresh: () => Promise<void>;
   onUpdate: (
     connectionId: CrmWhatsappProviderConnection["id"],
@@ -48,6 +53,9 @@ export function CrmWhatsappConnectionAdmin({
   const [localError, setLocalError] = useState<string | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState<string | null>(null);
   const [draft, setDraft] = useState({ instanceId: "", instanceToken: "" });
+  const [isConfiguringWebhooks, setIsConfiguringWebhooks] = useState(false);
+  const [webhookConfigResult, setWebhookConfigResult] =
+    useState<CrmWhatsappConfigureWebhooksResult | null>(null);
 
   useEffect(() => {
     setLocalError(null);
@@ -55,6 +63,7 @@ export function CrmWhatsappConnectionAdmin({
       instanceId: selected?.externalInstanceId ?? "",
       instanceToken: "",
     });
+    setWebhookConfigResult(null);
     setSetupStep(selected && hasCredentials(selected) ? 1 : 0);
   }, [selected]);
 
@@ -84,6 +93,20 @@ export function CrmWhatsappConnectionAdmin({
     }
   };
 
+  const configureWebhooks = async () => {
+    if (!selected) return;
+    setIsConfiguringWebhooks(true);
+    try {
+      const result = await onConfigureWebhooks(selected.id);
+      setWebhookConfigResult(result);
+      if (!result) {
+        setLocalError("Nao foi possivel configurar os webhooks na ZAPI.");
+      }
+    } finally {
+      setIsConfiguringWebhooks(false);
+    }
+  };
+
   const saveInstance = async () => {
     if (!selected) return false;
     const instanceId = draft.instanceId.trim();
@@ -98,8 +121,11 @@ export function CrmWhatsappConnectionAdmin({
       const saved = await onUpdate(selected.id, {
         instanceCredentials: { instanceId, instanceToken },
       });
-      if (saved) setDraft({ instanceId, instanceToken: "" });
-      else setLocalError("Nao foi possivel salvar a instancia ZAPI.");
+      if (saved) {
+        setDraft({ instanceId, instanceToken: "" });
+        // Auto-register the ZAPI webhooks as soon as credentials are stored.
+        void configureWebhooks();
+      } else setLocalError("Nao foi possivel salvar a instancia ZAPI.");
       return saved;
     } finally {
       setIsSaving(false);
@@ -160,12 +186,15 @@ export function CrmWhatsappConnectionAdmin({
               copiedWebhook={copiedWebhook}
               disabled={disabled}
               draft={draft}
+              isConfiguringWebhooks={isConfiguringWebhooks}
               isRefreshing={isRefreshing}
               isSaving={isSaving}
+              onConfigureWebhooks={() => void configureWebhooks()}
               onCopy={(endpoint) => void copyWebhook(endpoint)}
               onDraftChange={setDraft}
               onRefresh={() => void refresh()}
               onSave={() => void saveInstance()}
+              webhookConfigResult={webhookConfigResult}
             />
           ) : (
             <ConnectionSetupFlow
@@ -174,6 +203,7 @@ export function CrmWhatsappConnectionAdmin({
               currentStep={setupStep}
               disabled={disabled}
               draft={draft}
+              isConfiguringWebhooks={isConfiguringWebhooks}
               isRefreshing={isRefreshing}
               isSaving={isSaving}
               localError={localError}
@@ -184,12 +214,14 @@ export function CrmWhatsappConnectionAdmin({
                 setupStep,
               })}
               onCancel={() => onClose?.()}
+              onConfigureWebhooks={() => void configureWebhooks()}
               onCopy={(endpoint) => void copyWebhook(endpoint)}
               onDraftChange={setDraft}
               onNext={() => void advanceSetup()}
               onRefresh={() => void refresh()}
               onSave={() => void saveInstance()}
               onStepChange={setSetupStep}
+              webhookConfigResult={webhookConfigResult}
             />
           )}
         </>

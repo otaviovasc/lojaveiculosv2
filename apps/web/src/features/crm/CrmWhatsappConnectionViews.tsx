@@ -14,6 +14,7 @@ import {
   type InstanceDraft,
 } from "./CrmWhatsappConnectionInstanceForm";
 import type {
+  CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappProviderConnection,
   CrmWhatsappWebhookEndpoint,
 } from "./crmWhatsappTypes";
@@ -29,13 +30,25 @@ type SharedProps = {
   copiedWebhook: string | null;
   disabled: boolean;
   draft: InstanceDraft;
+  isConfiguringWebhooks: boolean;
   isRefreshing: boolean;
   isSaving: boolean;
+  onConfigureWebhooks: () => void;
   onCopy: (endpoint: CrmWhatsappWebhookEndpoint) => void;
   onDraftChange: (draft: InstanceDraft) => void;
   onRefresh: () => void;
   onSave: () => void;
+  webhookConfigResult: CrmWhatsappConfigureWebhooksResult | null;
 };
+
+function readWebhookAutoConfig(props: SharedProps) {
+  return {
+    disabled: props.disabled,
+    isConfiguring: props.isConfiguringWebhooks,
+    onConfigure: props.onConfigureWebhooks,
+    result: props.webhookConfigResult,
+  };
+}
 
 export function ConnectionSetupFlow({
   currentStep,
@@ -79,10 +92,11 @@ export function ConnectionSetupFlow({
       ) : null}
       {currentStep === 1 ? (
         <CrmWhatsappWorkflowPanel
-          description="Copie cada URL para o evento correspondente no painel da ZAPI."
+          description="Configure os webhooks na ZAPI automaticamente ou copie cada URL manualmente."
           title="Webhooks da conexao"
         >
           <ConnectionWebhookList
+            autoConfig={readWebhookAutoConfig(props)}
             copiedType={props.copiedWebhook}
             embedded
             endpoints={props.connection.webhookEndpoints ?? []}
@@ -155,6 +169,7 @@ export function ConnectionDashboard(props: SharedProps) {
           title="Webhooks da integracao"
         >
           <ConnectionWebhookList
+            autoConfig={readWebhookAutoConfig(props)}
             copiedType={props.copiedWebhook}
             embedded
             endpoints={props.connection.webhookEndpoints ?? []}

@@ -46,6 +46,16 @@ export const crmWhatsappRoutes = {
       `/crm/whatsapp/connections/${encodeURIComponent(String(connectionId))}`,
       baseUrl,
     ),
+  connectionWebhooks: (
+    connectionId: CrmWhatsappConnectionId,
+    baseUrl?: string,
+  ) =>
+    createCrmEndpoint(
+      `/crm/whatsapp/connections/${encodeURIComponent(
+        String(connectionId),
+      )}/webhooks/configure`,
+      baseUrl,
+    ),
   conversationsStart: (baseUrl?: string) =>
     createCrmEndpoint("/crm/whatsapp/conversations/start", baseUrl),
   events: (baseUrl?: string) =>

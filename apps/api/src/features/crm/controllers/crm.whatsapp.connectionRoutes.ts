@@ -1,5 +1,9 @@
 import type { Context, Hono } from "hono";
 import type { ServiceContext } from "../../../shared/serviceContext.js";
+import {
+  buildWhatsappWebhookEndpoints,
+  resolveWebhookBaseUrl,
+} from "../../../domains/crm/whatsapp/whatsappWebhookEndpoints.js";
 import { whatsappUpdateConnectionSchema } from "./crm.controller.schemas.js";
 import {
   assertWhatsappList,
@@ -82,63 +86,65 @@ export function registerCrmWhatsappConnectionRoutes(
       );
     }),
   );
+
+  crmFeature.post(
+    "/whatsapp/connections/:connectionId/webhooks/configure",
+    async (context) =>
+      handleWhatsapp(context, async () => {
+        const connectionId = context.req.param("connectionId");
+        if (!connectionId) {
+          throw new CrmWhatsappValidationError(
+            "Route param connectionId is invalid.",
+          );
+        }
+        const serviceContext = await createContext(context);
+        const { basePath, requestOrigin } = readWebhookRequestBase(context);
+        const result = await services.configureWhatsappConnectionWebhooks(
+          serviceContext,
+          {
+            basePath,
+            connectionId,
+            requestOrigin,
+            webhookToken: readWebhookToken(),
+          },
+        );
+        return context.json(result);
+      }),
+  );
 }
-
-type ZapiWebhookEndpointType =
-  | "chat-presence"
-  | "connected"
-  | "delivery"
-  | "disconnected"
-  | "received"
-  | "status";
-
-const zapiWebhookEndpoints: Array<{
-  label: string;
-  type: ZapiWebhookEndpointType;
-}> = [
-  { label: "Mensagens recebidas", type: "received" },
-  { label: "Entrega", type: "delivery" },
-  { label: "Status de mensagem", type: "status" },
-  { label: "Conectado", type: "connected" },
-  { label: "Desconectado", type: "disconnected" },
-  { label: "Presenca no chat", type: "chat-presence" },
-];
 
 function withWebhookEndpoints(
   context: Context,
   connections: readonly WhatsappConnection[],
 ) {
-  return connections.map((connection) => {
-    const webhookBaseUrl = readWebhookBaseUrl(context, connection);
-    return {
-      ...connection,
-      webhookEndpoints: zapiWebhookEndpoints.map((endpoint) => ({
-        ...endpoint,
-        url: `${webhookBaseUrl}/whatsapp/webhooks/zapi/${encodeURIComponent(
-          connection.id,
-        )}/${endpoint.type}`,
-      })),
-      webhookTokenRequired: Boolean(process.env.CRM_ZAPI_WEBHOOK_TOKEN),
-    };
-  });
+  const { basePath, requestOrigin } = readWebhookRequestBase(context);
+  return connections.map((connection) => ({
+    ...connection,
+    // Displayed URLs intentionally omit the webhook token so it never reaches
+    // the browser clipboard; the auto-configure flow appends it server-side.
+    webhookEndpoints: buildWhatsappWebhookEndpoints({
+      baseUrl: resolveWebhookBaseUrl({
+        basePath,
+        requestOrigin,
+        webhookUrl: connection.webhookUrl,
+      }),
+      connectionId: connection.id,
+    }),
+    webhookTokenRequired: Boolean(readWebhookToken()),
+  }));
 }
 
-function readWebhookBaseUrl(context: Context, connection: WhatsappConnection) {
+function readWebhookRequestBase(context: Context): {
+  basePath: string;
+  requestOrigin: string;
+} {
   const requestUrl = new URL(context.req.url);
-  const basePath = requestUrl.pathname.replace(
-    /\/whatsapp\/connections.*$/,
-    "",
-  );
-  if (connection.webhookUrl) {
-    try {
-      const configured = new URL(connection.webhookUrl);
-      const configuredPath = configured.pathname.replace(/\/+$/, "");
-      return configuredPath
-        ? `${configured.origin}${configuredPath}`
-        : `${configured.origin}${basePath}`;
-    } catch {
-      return `${requestUrl.origin}${basePath}`;
-    }
-  }
-  return `${requestUrl.origin}${basePath}`;
+  return {
+    basePath: requestUrl.pathname.replace(/\/whatsapp\/connections.*$/, ""),
+    requestOrigin: requestUrl.origin,
+  };
+}
+
+function readWebhookToken(): string | null {
+  return process.env.CRM_ZAPI_WEBHOOK_TOKEN?.trim() || null;
 }

@@ -13,6 +13,7 @@ import {
   sendZapiReaction,
 } from "./zapiCrmWhatsappMessageActions.js";
 import { sendZapiText } from "./zapiCrmWhatsappTextActions.js";
+import { configureZapiWebhooks } from "./zapiCrmWhatsappWebhookActions.js";
 import {
   assertZapiProvider,
   resolveZapiCredentials,
@@ -28,6 +29,13 @@ export function createZapiCrmWhatsappGateway(
   };
 
   return {
+    async configureWebhooks(connection, input) {
+      return configureZapiWebhooks(
+        credentialsFor(connection),
+        fetchImpl,
+        input,
+      );
+    },
     async deleteMessage(connection, input) {
       return deleteZapiMessage(credentialsFor(connection), fetchImpl, input);
     },

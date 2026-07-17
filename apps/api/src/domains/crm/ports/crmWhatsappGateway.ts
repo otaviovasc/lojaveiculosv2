@@ -102,7 +102,32 @@ export type CrmWhatsappDeleteMessageResult = {
   raw: Record<string, unknown>;
 };
 
+export type CrmWhatsappWebhookRegistration = {
+  type: string;
+  url: string;
+};
+
+export type CrmWhatsappConfigureWebhooksInput = {
+  webhooks: readonly CrmWhatsappWebhookRegistration[];
+};
+
+export type CrmWhatsappWebhookConfigResult = {
+  error: string | null;
+  ok: boolean;
+  status: number | null;
+  type: string;
+  url: string;
+};
+
+export type CrmWhatsappConfigureWebhooksResult = {
+  results: readonly CrmWhatsappWebhookConfigResult[];
+};
+
 export type CrmWhatsappGateway = {
+  configureWebhooks: (
+    connection: CrmConnection,
+    input: CrmWhatsappConfigureWebhooksInput,
+  ) => Promise<CrmWhatsappConfigureWebhooksResult>;
   deleteMessage: (
     connection: CrmConnection,
     input: CrmWhatsappDeleteMessageInput,

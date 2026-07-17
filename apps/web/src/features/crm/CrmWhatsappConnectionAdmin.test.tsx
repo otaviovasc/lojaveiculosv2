@@ -12,9 +12,11 @@ describe("CrmWhatsappConnectionAdmin", () => {
   it("keeps connected credentials collapsed and saves write-only values", async () => {
     const user = userEvent.setup();
     const onUpdate = vi.fn(async () => true);
+    const onConfigureWebhooks = vi.fn(async () => webhookConfigResult());
     const { container } = render(
       <CrmWhatsappConnectionAdmin
         connections={[createConnectedConnection()]}
+        onConfigureWebhooks={onConfigureWebhooks}
         onRefresh={vi.fn(async () => undefined)}
         onUpdate={onUpdate}
       />,
@@ -54,6 +56,36 @@ describe("CrmWhatsappConnectionAdmin", () => {
         },
       }),
     );
+    // Saving credentials auto-registers the ZAPI webhooks.
+    await waitFor(() =>
+      expect(onConfigureWebhooks).toHaveBeenCalledWith("connection_1"),
+    );
+  });
+
+  it("registers ZAPI webhooks on demand and reports the result", async () => {
+    const user = userEvent.setup();
+    const onConfigureWebhooks = vi.fn(async () => webhookConfigResult());
+    render(
+      <CrmWhatsappConnectionAdmin
+        connections={[
+          createDisconnectedConnection({ credentialsConfigured: true }),
+        ]}
+        onConfigureWebhooks={onConfigureWebhooks}
+        onRefresh={vi.fn(async () => undefined)}
+        onUpdate={vi.fn(async () => true)}
+      />,
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: /Configurar webhooks na ZAPI/i }),
+    );
+
+    await waitFor(() =>
+      expect(onConfigureWebhooks).toHaveBeenCalledWith("connection_1"),
+    );
+    expect(
+      await screen.findByText(/webhooks registrados na ZAPI automaticamente/i),
+    ).toBeInTheDocument();
   });
 
   it("guides an unconfigured connection through one setup panel at a time", async () => {
@@ -63,6 +95,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
     render(
       <CrmWhatsappConnectionAdmin
         connections={[createDisconnectedConnection()]}
+        onConfigureWebhooks={vi.fn(async () => null)}
         onRefresh={onRefresh}
         onUpdate={onUpdate}
       />,
@@ -99,6 +132,7 @@ describe("CrmWhatsappConnectionAdmin", () => {
         connections={[
           createDisconnectedConnection({ credentialsConfigured: true }),
         ]}
+        onConfigureWebhooks={vi.fn(async () => null)}
         onRefresh={vi.fn(async () => undefined)}
         onUpdate={vi.fn(async () => true)}
       />,
@@ -162,6 +196,22 @@ function credentials(storedInstanceConfigured: boolean) {
     instanceTokenEnv: null,
     mode: "stored",
     storedInstanceConfigured,
+  };
+}
+
+function webhookConfigResult() {
+  return {
+    connectionId: "connection_1",
+    results: [
+      {
+        error: null,
+        ok: true,
+        status: 200,
+        type: "received",
+        url: "https://api.example.test/webhooks/received?token=secret",
+      },
+    ],
+    tokenApplied: true,
   };
 }
 

@@ -159,6 +159,7 @@ function createTestWhatsappGateway(
     raw: {},
   }));
   return {
+    configureWebhooks: vi.fn(async () => ({ results: [] })),
     deleteMessage: vi.fn(async () => ({ raw: {} })),
     getConnectionStatus: vi.fn(async () => ({
       checkedAt: new Date("2026-07-02T19:00:00.000Z"),

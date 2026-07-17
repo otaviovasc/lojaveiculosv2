@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { CrmWhatsappApi } from "./crmWhatsappApi";
 import { asError } from "./crmWhatsappHookSupport";
 import type {
+  CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappConnectionId,
   CrmWhatsappProviderConnection,
   CrmWhatsappUpdateConnectionInput,
@@ -46,6 +47,20 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
     [api],
   );
 
+  const configureWebhooks = useCallback(
+    async (
+      connectionId: CrmWhatsappConnectionId,
+    ): Promise<CrmWhatsappConfigureWebhooksResult | null> => {
+      try {
+        return await api.configureConnectionWebhooks(connectionId);
+      } catch (caught) {
+        setError(asError(caught));
+        return null;
+      }
+    },
+    [api],
+  );
+
   useEffect(() => {
     let active = true;
     setIsLoading(true);
@@ -67,6 +82,7 @@ export function useCrmWhatsappConnections(api: CrmWhatsappApi) {
   }, [loadConnections]);
 
   return {
+    configureWebhooks,
     connections,
     error,
     hasConnectedConnection: connections.some(

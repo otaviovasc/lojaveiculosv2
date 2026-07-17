@@ -1,21 +1,17 @@
 import type { ServiceContext } from "../../../shared/serviceContext.js";
 import type { CrmWhatsappCatalogProductsPage } from "../../../domains/crm/ports/crmWhatsappGateway.js";
-import type {
-  CrmWhatsappScheduledMessage,
-  CrmWhatsappScheduledMessageScope,
-} from "../../../domains/crm/ports/crmWhatsappRepository.js";
-import type {
-  UpdateWhatsappConnectionInput,
-  WhatsappConnection,
-} from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import type { CrmWhatsappScheduledMessage } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { CrmWhatsappScheduledMessageScope } from "../../../domains/crm/ports/crmWhatsappRepository.js";
+import type { UpdateWhatsappConnectionInput } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import type { WhatsappConnection } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import type { ConfigureWhatsappConnectionWebhooksInput } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
+import type { ConfigureWhatsappConnectionWebhooksResult } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
 import type { UpdateWhatsappBotIntegrationInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { ExecuteWhatsappBotActionInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotActions.js";
 import type { AuthenticateWhatsappBotSecretInput } from "../../../domains/crm/services/CrmWhatsapp/whatsappBotIntegration.js";
 import type { CrmBotIntegration } from "../../../domains/crm/ports/crmBotIntegrationRepository.js";
-import type {
-  IngestZapiWhatsappWebhookInput,
-  IngestZapiWhatsappWebhookResult,
-} from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
+import type { IngestZapiWhatsappWebhookInput } from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
+import type { IngestZapiWhatsappWebhookResult } from "../../../domains/crm/services/CrmWhatsapp/ingestZapiWhatsappWebhook.js";
 import type { ListWhatsappMessagesInput } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappMessages.js";
 import type {
   CountWhatsappSessionsInput,
@@ -104,6 +100,10 @@ export type CrmWhatsappServices = CrmWhatsappQuickMessageServices &
     closeWhatsappSession: CrmContextService<
       CloseWhatsappSessionInput,
       WhatsappSession
+    >;
+    configureWhatsappConnectionWebhooks: CrmContextService<
+      ConfigureWhatsappConnectionWebhooksInput,
+      ConfigureWhatsappConnectionWebhooksResult
     >;
     cancelWhatsappScheduledMessage: CrmContextService<
       CancelWhatsappScheduledMessageInput,

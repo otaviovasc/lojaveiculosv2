@@ -6,6 +6,9 @@ import { CrmWhatsappGatewayError as GatewayError } from "../ports/crmWhatsappGat
 
 export function createDisabledCrmWhatsappGateway(): CrmWhatsappGateway {
   return {
+    async configureWebhooks(): Promise<never> {
+      throw new GatewayError("CRM WhatsApp gateway is not configured.");
+    },
     async deleteMessage(): Promise<never> {
       throw new GatewayError("CRM WhatsApp gateway is not configured.");
     },

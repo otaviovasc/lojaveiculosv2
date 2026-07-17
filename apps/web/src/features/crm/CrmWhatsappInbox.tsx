@@ -103,6 +103,7 @@ export function CrmWhatsappInbox({
                 disabled={!inbox.permissions.canConnectionManage}
                 embedded
                 onClose={() => setActiveScope("conversations")}
+                onConfigureWebhooks={inbox.configureConnectionWebhooks}
                 onRefresh={inbox.refreshConnections}
                 onUpdate={inbox.updateConnection}
               />

@@ -277,6 +277,7 @@ export function useCrmWhatsappInbox(api: CrmWhatsappApi) {
     connectionId,
     connectionError: connections.error,
     connectionIsLoading: connections.isLoading,
+    configureConnectionWebhooks: connections.configureWebhooks,
     connections: connections.connections,
     refreshConnections: connections.refreshConnections,
     updateConnection: connections.updateConnection,

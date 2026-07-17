@@ -174,6 +174,7 @@ function readOnlyRoutes(sessionId: string, messageId: string) {
 
 function createGatewaySpies(): CrmWhatsappGateway {
   return {
+    configureWebhooks: vi.fn<CrmWhatsappGateway["configureWebhooks"]>(),
     deleteMessage: vi.fn<CrmWhatsappGateway["deleteMessage"]>(),
     getConnectionStatus: vi.fn<CrmWhatsappGateway["getConnectionStatus"]>(),
     listCatalogProducts: vi.fn<CrmWhatsappGateway["listCatalogProducts"]>(),

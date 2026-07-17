@@ -2,6 +2,7 @@ import {
   listWhatsappConnections,
   updateWhatsappConnection,
 } from "../../../domains/crm/services/CrmWhatsapp/listWhatsappConnections.js";
+import { configureWhatsappConnectionWebhooks } from "../../../domains/crm/services/CrmWhatsapp/configureWhatsappConnectionWebhooks.js";
 import {
   authenticateWhatsappBotSecret,
   getWhatsappBotIntegration,
@@ -68,6 +69,7 @@ type CatalogBindings = Pick<
 type ConnectionBindings = Pick<
   CrmWhatsappServices,
   | "authenticateWhatsappBotSecret"
+  | "configureWhatsappConnectionWebhooks"
   | "executeWhatsappBotAction"
   | "getWhatsappBotIntegration"
   | "listWhatsappConnections"
@@ -134,6 +136,8 @@ const buildConnectionBindings = (
 ): ConnectionBindings => ({
   authenticateWhatsappBotSecret: (context, input) =>
     authenticateWhatsappBotSecret(context, input, ports),
+  configureWhatsappConnectionWebhooks: (context, input) =>
+    configureWhatsappConnectionWebhooks(context, input, ports),
   executeWhatsappBotAction: (context, input) =>
     executeWhatsappBotAction(context, input, ports),
   getWhatsappBotIntegration: (context) =>

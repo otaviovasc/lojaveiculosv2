@@ -69,6 +69,10 @@ export function createRuntimeCrmWhatsappApi(): CrmWhatsappApi {
       createCrmWhatsappApi(await createProductCrmApiOptions()).closeSession(
         sessionId,
       ),
+    configureConnectionWebhooks: async (connectionId) =>
+      createCrmWhatsappApi(
+        await createProductCrmApiOptions(),
+      ).configureConnectionWebhooks(connectionId),
     cancelCampaign: async (campaignId) =>
       createCrmWhatsappApi(await createProductCrmApiOptions()).cancelCampaign(
         campaignId,

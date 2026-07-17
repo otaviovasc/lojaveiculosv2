@@ -23,6 +23,7 @@ import type {
   CrmWhatsappInterventionInput,
   CrmWhatsappMessageQuery,
   CrmWhatsappMessage,
+  CrmWhatsappConfigureWebhooksResult,
   CrmWhatsappConnectionsResponse,
   CrmWhatsappUpdateConnectionInput,
   CrmWhatsappProviderConnection,
@@ -62,6 +63,9 @@ export type CrmWhatsappApi = {
   closeSession: (
     sessionId: CrmWhatsappSessionId,
   ) => Promise<CrmWhatsappSession | null>;
+  configureConnectionWebhooks: (
+    connectionId: CrmWhatsappConnectionId,
+  ) => Promise<CrmWhatsappConfigureWebhooksResult>;
   deleteMessage: (
     messageId: CrmWhatsappMessage["id"],
   ) => Promise<CrmWhatsappMessage | null>;
