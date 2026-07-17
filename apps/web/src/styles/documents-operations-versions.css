@@ -35,7 +35,7 @@
   font-weight: 800;
   padding: 0.15rem 0.45rem;
   border-radius: 9999px;
-  border: 1px solid rgba(225, 31, 38, 0.1);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .documents-version-list button span:nth-child(2) {

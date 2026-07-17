@@ -25,6 +25,7 @@ import {
   FeatureRowActions,
   FeatureTableFrame,
 } from "../../../components/ui/FeatureTable";
+import { ImageWithFallback } from "../../../components/ui/ImageWithFallback";
 import { InventoryLeadBadge } from "./InventoryLeadBadge";
 import { InventorySortableHeader } from "./InventorySortableHeader";
 
@@ -162,18 +163,17 @@ export function InventoryListingTable({
                 {visibleColumns.fotos && (
                   <td className="whitespace-nowrap px-4 py-3 align-middle">
                     <div className="relative flex h-10 w-16 items-center justify-center overflow-hidden rounded-lg border border-line/40 bg-app-elevated shadow-inner">
-                      {item.primaryMediaUrl ? (
-                        <img
-                          alt={listing.title}
-                          className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
-                          src={item.primaryMediaUrl}
-                        />
-                      ) : (
-                        <CarFront
-                          aria-hidden="true"
-                          className="size-5 text-muted/50"
-                        />
-                      )}
+                      <ImageWithFallback
+                        alt={listing.title}
+                        className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        fallback={
+                          <CarFront
+                            aria-hidden="true"
+                            className="size-5 text-muted/50"
+                          />
+                        }
+                        src={item.primaryMediaUrl}
+                      />
                     </div>
                   </td>
                 )}

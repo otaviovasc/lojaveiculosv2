@@ -149,7 +149,7 @@
 .documents-origin-badge.origin-automatic {
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
-  border-color: rgba(225, 31, 38, 0.1);
+  border-color: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .documents-origin-badge.origin-manual {

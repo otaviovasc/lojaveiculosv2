@@ -1,18 +1,5 @@
 import { useState } from "react";
-import {
-  Briefcase,
-  Shield,
-  ChevronDown,
-  Move,
-  ArrowLeft,
-  Printer,
-  MapPin,
-  Trash2,
-  ExternalLink,
-  DollarSign,
-  FileText,
-  Image as ImageIcon,
-} from "lucide-react";
+import { ChevronDown, Gauge } from "lucide-react";
 import { NotesBlockField } from "./NotesBlockField";
 
 export type TabId =
@@ -58,7 +45,10 @@ export function TechnicalSpecsPanel({
   return (
     <div className="glass-panel-branded rounded-2xl p-5 border border-line flex flex-col gap-4 hover:border-accent/40 hover:shadow-md transition-all group">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-2">
-        <h3 className="text-sm font-black text-app-text uppercase tracking-wider">
+        <h3 className="flex items-center gap-2 text-sm font-black text-app-text uppercase tracking-wider">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-strong">
+            <Gauge className="size-4" />
+          </span>
           Especificações Técnicas
         </h3>
         <button
@@ -94,9 +84,9 @@ export function TechnicalSpecsPanel({
       </div>
 
       {/* Accordions Stack */}
-      <div className="flex flex-col gap-2.5 mt-2">
+      <div className="mt-2 overflow-hidden rounded-xl border border-line divide-y divide-line/60">
         {/* 1. Opcionais dropdown */}
-        <div className="border border-line/50 rounded-xl overflow-hidden bg-app">
+        <div>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -121,7 +111,7 @@ export function TechnicalSpecsPanel({
 
           {isOpcionaisExpanded && (
             <div
-              className="p-3.5 bg-panel/30 border-t border-line/50 flex flex-col gap-2.5 max-h-48 overflow-y-auto"
+              className="p-3.5 bg-app/40 border-t border-line/60 flex flex-col gap-2.5 max-h-48 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {opcionais.map((o) => (
@@ -143,7 +133,7 @@ export function TechnicalSpecsPanel({
         </div>
 
         {/* 2. Observações Especiais dropdown */}
-        <div className="border border-line/50 rounded-xl overflow-hidden bg-app">
+        <div>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -168,7 +158,7 @@ export function TechnicalSpecsPanel({
 
           {isObservacoesExpanded && (
             <div
-              className="p-3.5 bg-panel/30 border-t border-line/50 flex flex-col gap-2.5 max-h-48 overflow-y-auto"
+              className="p-3.5 bg-app/40 border-t border-line/60 flex flex-col gap-2.5 max-h-48 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {observacoes.map((o) => (
@@ -190,7 +180,7 @@ export function TechnicalSpecsPanel({
         </div>
 
         {/* 3. Notas Internas dropdown */}
-        <div className="border border-line/50 rounded-xl overflow-hidden bg-app">
+        <div>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -215,7 +205,7 @@ export function TechnicalSpecsPanel({
 
           {isNotasExpanded && (
             <div
-              className="p-3.5 bg-panel/30 border-t border-line/50"
+              className="p-3.5 bg-app/40 border-t border-line/60"
               onClick={(e) => e.stopPropagation()}
             >
               <NotesBlockField

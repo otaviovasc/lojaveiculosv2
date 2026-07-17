@@ -64,7 +64,7 @@ export function CommissionSummaryCards({
   ] as const;
 
   return (
-    <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+    <section className="commission-summary-cards grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
       {items.map(({ hint, icon, label, tone, value }) => (
         <FeatureStatCard
           appearance="tinted"

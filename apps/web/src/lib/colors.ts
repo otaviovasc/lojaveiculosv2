@@ -15,10 +15,12 @@ export function getTextColorForBackground(hexColor: string): string {
   const rgb = parseHexColor(hexColor);
   if (!rgb) return "var(--color-text)";
 
-  return contrastRatio(parseHexColor(DARK_READABLE_TEXT)!, rgb) >=
-    contrastRatio(parseHexColor(LIGHT_READABLE_TEXT)!, rgb)
-    ? DARK_READABLE_TEXT
-    : LIGHT_READABLE_TEXT;
+  // Keep badge text a single consistent color across columns; only drop to
+  // dark text when light text would be genuinely unreadable on this color.
+  return contrastRatio(parseHexColor(LIGHT_READABLE_TEXT)!, rgb) >=
+    MINIMUM_TEXT_CONTRAST
+    ? LIGHT_READABLE_TEXT
+    : DARK_READABLE_TEXT;
 }
 
 export function getContrastColorForText(hexColor: string): string {

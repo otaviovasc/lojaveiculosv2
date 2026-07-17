@@ -37,8 +37,8 @@
 }
 
 .documents-row:hover {
-  border-color: rgba(225, 31, 38, 0.25);
-  box-shadow: 0 4px 12px rgba(225, 31, 38, 0.04);
+  border-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-accent) 4%, transparent);
   transform: translateY(-1.5px);
   background: var(--color-app-elevated);
 }

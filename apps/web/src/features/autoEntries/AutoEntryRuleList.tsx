@@ -14,6 +14,7 @@ import {
   FeatureRowAction,
   FeatureRowActions,
 } from "../../components/ui/FeatureTable";
+import { cx } from "../../components/ui/featureShared";
 import { Switch } from "../../components/ui/switch";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import {
@@ -21,6 +22,7 @@ import {
   autoEntryOutputLabel,
   autoEntryTimingLabel,
 } from "./autoEntryLabels";
+import { autoEntryMetaForTab } from "./domainMeta";
 import type { AutoEntryRule } from "./types";
 
 export function AutoEntryRuleList({
@@ -82,23 +84,40 @@ export function AutoEntryRuleList({
     >
       {orderedRules.map((rule) => {
         const isWorking = workingKey === rule.id;
+        const isActive = rule.status === "active";
+        const meta = autoEntryMetaForTab(rule.event);
+        const Icon = meta.icon;
         const sellerName = rule.sellerUserId
           ? (sellerNames.get(rule.sellerUserId) ?? "Vendedor específico")
           : "Todos os vendedores da origem";
         return (
-          <FeatureCard key={rule.id} padding="compact">
+          <FeatureCard
+            className={cx(
+              "auto-entry-rule-card",
+              `ae-tone--${meta.tone}`,
+              !isActive && "is-paused",
+            )}
+            key={rule.id}
+            padding="compact"
+          >
             <FeatureCardHeader
               actions={
-                <FeatureStatusBadge
-                  tone={rule.status === "active" ? "success" : "neutral"}
-                >
-                  {rule.status === "active" ? "Ativa" : "Pausada"}
+                <FeatureStatusBadge tone={isActive ? "success" : "neutral"}>
+                  {isActive ? "Ativa" : "Pausada"}
                 </FeatureStatusBadge>
+              }
+              icon={
+                <span
+                  aria-hidden="true"
+                  className="auto-entry-rule-card__badge"
+                >
+                  <Icon className="size-4" />
+                </span>
               }
             >
               <FeatureCardTitle>{rule.name}</FeatureCardTitle>
               <p className="mt-1 text-xs font-black uppercase tracking-wider text-muted">
-                {rule.category} · prioridade {rule.priority}
+                {meta.tab} · {rule.category} · prioridade {rule.priority}
               </p>
             </FeatureCardHeader>
 
@@ -123,7 +142,7 @@ export function AutoEntryRuleList({
             </dl>
 
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/50 pt-4">
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-black uppercase tracking-wider text-muted">
                   Escopo do vendedor
                 </p>
@@ -136,7 +155,7 @@ export function AutoEntryRuleList({
                   Ativa
                   <Switch
                     aria-label={`Ativar regra ${rule.name}`}
-                    checked={rule.status === "active"}
+                    checked={isActive}
                     disabled={!canManage || isWorking}
                     onCheckedChange={(checked) => onToggle(rule, checked)}
                   />

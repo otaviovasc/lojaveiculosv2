@@ -1,30 +1,7 @@
-import {
-  Car,
-  FileText,
-  Landmark,
-  ListPlus,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
-import { FeatureTabs } from "../../components/ui/FeatureTabs";
+import { useRef, type KeyboardEvent } from "react";
+import { cx } from "../../components/ui/featureShared";
+import { autoEntryTabsMeta } from "./domainMeta";
 import type { AutoEntryRule, AutoEntryWorkspaceTab } from "./types";
-
-const tabs = [
-  { icon: Car, label: "Venda", value: "vehicle_sale_closed" },
-  { icon: Landmark, label: "Financiamento", value: "financing_approved" },
-  {
-    icon: FileText,
-    label: "Documentação",
-    value: "transfer_documentation_charged",
-  },
-  { icon: ShieldCheck, label: "Seguro", value: "insurance_issued" },
-  { icon: Users, label: "Consórcio", value: "consortium_sold" },
-  { icon: ListPlus, label: "Personalizadas", value: "custom" },
-] satisfies ReadonlyArray<{
-  icon: typeof Car;
-  label: string;
-  value: AutoEntryWorkspaceTab;
-}>;
 
 export function AutoEntriesTabs({
   onChange,
@@ -36,27 +13,66 @@ export function AutoEntriesTabs({
   value: AutoEntryWorkspaceTab;
 }) {
   const activeRules = rules.filter((rule) => rule.status === "active");
-  const options = tabs.map((tab) => ({
-    ...tab,
-    label: (
-      <span className="auto-entries-tab__label">
-        <span>{tab.label}</span>
-        <span aria-hidden="true" className="auto-entries-tab__count">
-          {countForTab(activeRules, tab.value)}
-        </span>
-      </span>
-    ),
-  }));
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const activeIndex = autoEntryTabsMeta.findIndex((tab) => tab.value === value);
+
+  const moveFocus = (
+    event: KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) => {
+    const count = autoEntryTabsMeta.length;
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % count;
+    else if (event.key === "ArrowLeft") {
+      nextIndex = (currentIndex - 1 + count) % count;
+    } else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = count - 1;
+
+    const next = nextIndex === null ? undefined : autoEntryTabsMeta[nextIndex];
+    if (nextIndex === null || !next) return;
+    event.preventDefault();
+    onChange(next.value);
+    tabRefs.current[nextIndex]?.focus();
+  };
 
   return (
-    <FeatureTabs
-      ariaLabel="Origem dos lançamentos automáticos"
+    <div
+      aria-label="Origem dos lançamentos automáticos"
       className="auto-entries-tabs"
-      onChange={onChange}
-      optionClassName="auto-entries-tab"
-      options={options}
-      value={value}
-    />
+      role="tablist"
+    >
+      {autoEntryTabsMeta.map((meta, index) => {
+        const Icon = meta.icon;
+        const active = meta.value === value;
+        return (
+          <button
+            aria-selected={active}
+            className={cx(
+              "auto-entries-tab",
+              `ae-tone--${meta.tone}`,
+              active && "is-active",
+            )}
+            key={meta.value}
+            onClick={() => onChange(meta.value)}
+            onKeyDown={(event) => moveFocus(event, index)}
+            ref={(node) => {
+              tabRefs.current[index] = node;
+            }}
+            role="tab"
+            tabIndex={active || (activeIndex < 0 && index === 0) ? 0 : -1}
+            type="button"
+          >
+            <span aria-hidden="true" className="auto-entries-tab__icon">
+              <Icon className="size-4" />
+            </span>
+            <span className="auto-entries-tab__label">{meta.tab}</span>
+            <span aria-hidden="true" className="auto-entries-tab__count">
+              {countForTab(activeRules, meta.value)}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

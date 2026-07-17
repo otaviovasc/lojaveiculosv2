@@ -49,9 +49,9 @@ export function DocumentsTable({
         {...(onToggleSelect ? { onToggleSelect } : {})}
         {...(selectedIds ? { selectedIds } : {})}
       />
-      <FeatureTableFrame className="hidden md:block">
+      <FeatureTableFrame className="hidden md:block documents-table-frame">
         <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
-          <thead className="bg-app/80 text-xs font-black uppercase tracking-wider text-muted border-b border-line">
+          <thead className="sticky top-0 z-20 bg-app text-xs font-black uppercase tracking-wider text-muted border-b border-line">
             <tr>
               {showSelect ? <th className="px-3 py-3.5 w-10" /> : null}
               <th className="min-w-56 px-4 py-3.5">Documento</th>

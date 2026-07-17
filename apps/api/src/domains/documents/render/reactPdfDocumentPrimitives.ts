@@ -140,7 +140,8 @@ export function DocumentPdfSignatures({
     ...signatures.map((signature) =>
       e(
         View,
-        { key: signature, style: styles.signature },
+        { key: signature, style: styles.signature, wrap: false },
+        e(View, { style: styles.signatureSpace }),
         e(View, { style: styles.signatureLine }),
         e(Text, { style: styles.signatureLabel }, signature),
         e(Text, { style: styles.muted }, "Assinatura"),

@@ -5,11 +5,7 @@ import {
   FeatureEmptyState,
   FeatureStatusBadge,
 } from "../../components/ui/FeatureStates";
-import {
-  canPersistSaleWorkspaceEdits,
-  formatCents,
-  paymentPrincipalTotal,
-} from "./salesModel";
+import { canPersistSaleWorkspaceEdits, formatCents } from "./salesModel";
 import {
   getSaleRequirementsScore,
   salesStatusLabels,
@@ -114,7 +110,7 @@ function SaleCard({
           </FeatureStatusBadge>
         </div>
 
-        <div className="flex items-center gap-3 bg-app-elevated/20 p-2 rounded-xl border border-line/45">
+        <div className="flex items-center gap-3">
           <div className="size-12 rounded-lg bg-app-elevated border border-line/50 overflow-hidden flex items-center justify-center shrink-0">
             {sale.listingSnapshot?.primaryMediaUrl ? (
               <img
@@ -154,7 +150,7 @@ function SaleCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-app-elevated/20 p-2.5 rounded-xl border border-line/40 text-xs font-bold text-app-text min-w-0">
+        <div className="flex items-center gap-2 pt-3 border-t border-line/45 text-xs font-bold text-app-text min-w-0">
           <User className="size-4 text-muted shrink-0" />
           <span className="truncate">
             Cliente:{" "}
@@ -164,7 +160,7 @@ function SaleCard({
           </span>
         </div>
 
-        <div className="flex justify-between items-center bg-app-elevated/10 p-2.5 rounded-xl border border-line/30">
+        <div className="flex justify-between items-center">
           <span className="text-xs font-black text-muted uppercase tracking-wider">
             Valor Acordado
           </span>
@@ -278,7 +274,7 @@ function SaleCardAction({
 
 function saleStatusAccentClass(status: SaleRecord["status"]) {
   if (status === "closed") return "bg-success";
-  if (status === "pending") return "bg-amber-500";
+  if (status === "pending") return "bg-warning";
   if (status === "cancelled") return "bg-muted";
-  return "bg-blue-500";
+  return "bg-blue-start";
 }

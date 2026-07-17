@@ -105,7 +105,6 @@ export function InsuranceRulesPanel({
       <AutoEntryDomainCard
         description="A loja recebe uma parcela da comissão aplicada pela seguradora; o vendedor recebe uma taxa do prêmio."
         title="Divisão do seguro"
-        tone="warning"
       >
         <AutoEntryValueOrigin active={Boolean(store && seller)} />
         <section aria-labelledby="insurance-applied-rate-title">

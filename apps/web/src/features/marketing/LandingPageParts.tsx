@@ -26,8 +26,8 @@ export function HeroSection() {
       <LandingNav />
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 pb-14 pt-28 sm:px-8 lg:px-10">
         <div className="max-w-4xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/18 bg-white/8 px-3 py-1 text-xs font-black uppercase tracking-[0.28em] text-emerald-200">
-            <Sparkles className="size-3.5" />
+          <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-black uppercase tracking-[0.28em] text-white">
+            <Sparkles className="size-3.5 text-accent" />
             SaaS para lojas de veículos
           </span>
           <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.95] tracking-normal sm:text-6xl lg:text-7xl">
@@ -115,10 +115,10 @@ export function WorkflowSection() {
         <div className="mt-9 grid gap-4 md:grid-cols-3">
           {landingSteps.map(([label, text], index) => (
             <article
-              className="rounded-md border border-line bg-panel p-6 shadow-sm"
+              className="group rounded-md border border-line bg-panel p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md"
               key={label}
             >
-              <span className="flex size-10 items-center justify-center rounded-md bg-primary text-sm font-black text-white">
+              <span className="flex size-10 items-center justify-center rounded-md bg-primary text-sm font-black text-white transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
                 {index + 1}
               </span>
               <h3 className="mt-5 text-xl font-black">{label}</h3>
@@ -139,7 +139,7 @@ export function FeatureSection() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.26em] text-emerald-700">
+            <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
               Plataforma
             </p>
             <h2 className="mt-3 max-w-2xl text-3xl font-black sm:text-4xl">
@@ -150,7 +150,10 @@ export function FeatureSection() {
         </div>
         <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {landingFeatures.map(({ icon: Icon, label, text }) => (
-            <article className="rounded-md border border-line p-5" key={label}>
+            <article
+              className="group rounded-md border border-line bg-panel/40 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:bg-panel hover:shadow-md"
+              key={label}
+            >
               <Icon className="size-6 text-accent" />
               <h3 className="mt-4 text-lg font-black">{label}</h3>
               <p className="mt-2 text-sm font-semibold leading-6 text-muted">
@@ -169,7 +172,7 @@ export function FinalCta() {
     <section className="bg-primary px-5 py-16 text-white sm:px-8 lg:px-10">
       <div className="mx-auto flex max-w-7xl flex-col justify-between gap-8 md:flex-row md:items-center">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.26em] text-emerald-200">
+          <p className="text-xs font-black uppercase tracking-[0.26em] text-accent">
             Loja Veículos V2
           </p>
           <h2 className="mt-3 max-w-2xl text-3xl font-black sm:text-4xl">

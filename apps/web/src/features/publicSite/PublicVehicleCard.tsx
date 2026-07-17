@@ -1,4 +1,5 @@
 import { Car, Eye, Calendar, Gauge } from "lucide-react";
+import { useState } from "react";
 import {
   formatPublicVehicleMileage,
   formatPublicVehiclePrice,
@@ -100,18 +101,24 @@ export function PublicVehicleCard({
 }
 
 function VehicleImage({ listing }: { listing: PublicVehicleListing }) {
-  if (listing.thumbnailUrl) {
+  const [failed, setFailed] = useState(false);
+
+  if (listing.thumbnailUrl && !failed) {
     return (
       <img
         alt={listing.title}
         className="size-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+        onError={() => setFailed(true)}
         src={listing.thumbnailUrl}
       />
     );
   }
   return (
-    <div className="flex size-full items-center justify-center bg-accent-soft text-accent">
-      <Car aria-hidden="true" className="size-8" />
+    <div className="flex size-full flex-col items-center justify-center gap-2 bg-gradient-to-br from-app to-app-elevated text-muted">
+      <Car aria-hidden="true" className="size-10 opacity-40" />
+      <span className="text-xs font-bold uppercase tracking-wider opacity-70">
+        Fotos em breve
+      </span>
     </div>
   );
 }

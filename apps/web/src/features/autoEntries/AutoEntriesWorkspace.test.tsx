@@ -43,12 +43,7 @@ describe("AutoEntriesWorkspace", () => {
         name: "Cobertura das regras automáticas",
       }),
     ).toBeVisible();
-    expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "Automação financeira",
-      }),
-    ).toBeVisible();
+    expect(screen.getByText("Cobertura da automação")).toBeVisible();
     expect(screen.getByText("Receita da venda preservada")).toBeVisible();
     expect(screen.getByText("Comissão padrão da venda")).toBeVisible();
     expect(

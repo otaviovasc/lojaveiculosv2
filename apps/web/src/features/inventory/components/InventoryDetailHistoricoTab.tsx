@@ -111,8 +111,8 @@ export function InventoryDetailHistoricoTab({
         {analysisError ? <FeatureAlert>{analysisError}</FeatureAlert> : null}
         {analysis ? (
           <div className="grid gap-4">
-            <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
-              <div className="rounded-xl border border-line bg-app/30 p-4">
+            <div className="grid divide-y divide-line/60 overflow-hidden rounded-xl border border-line sm:grid-cols-[160px_minmax(0,1fr)] sm:divide-x sm:divide-y-0">
+              <div className="bg-app/20 p-4">
                 <p className="text-xs font-bold text-muted">Risco comercial</p>
                 <p className="mt-1 text-3xl font-black text-app-text">
                   {analysis.dealRiskScore}
@@ -122,7 +122,7 @@ export function InventoryDetailHistoricoTab({
                   {riskLabel(analysis.riskLevel)}
                 </p>
               </div>
-              <div className="rounded-xl border border-line bg-app/30 p-4">
+              <div className="p-4">
                 <p className="text-sm font-black text-app-text">
                   {analysis.summary}
                 </p>
@@ -136,7 +136,7 @@ export function InventoryDetailHistoricoTab({
             <ul className="grid gap-2 md:grid-cols-2">
               {analysis.topics.map((topic, index) => (
                 <li
-                  className="rounded-xl border border-line bg-app/20 p-3"
+                  className="rounded-lg bg-app/40 p-3"
                   key={`${topic.code}-${topic.title}-${index}`}
                 >
                   <p className="text-xs font-black text-app-text">
@@ -195,10 +195,10 @@ export function InventoryDetailHistoricoTab({
             Carregando eventos auditados...
           </p>
         ) : auditEvents.length ? (
-          <ol className="grid gap-2">
+          <ol className="divide-y divide-line/60 overflow-hidden rounded-xl border border-line">
             {auditEvents.map((event) => (
               <li
-                className="grid gap-1 rounded-xl border border-line bg-app/20 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_auto]"
+                className="grid gap-1 bg-app/10 p-3 text-xs sm:grid-cols-[minmax(0,1fr)_auto]"
                 key={event.id}
               >
                 <div>

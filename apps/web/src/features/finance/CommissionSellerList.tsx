@@ -102,7 +102,7 @@ function SellerCard({
   return (
     <article className="commission-seller-card overflow-hidden rounded-lg border border-line bg-panel shadow-[var(--shadow-panel)]">
       <div className="border-b border-line p-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+        <div className="flex flex-col gap-4">
           <div className="flex min-w-0 items-start gap-3">
             <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-sm font-black text-accent-strong">
               #{seller.rank}
@@ -120,7 +120,7 @@ function SellerCard({
               </p>
             </div>
           </div>
-          <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-5 xl:w-auto">
+          <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
             <SellerMetric
               icon={Clock3}
               label="A pagar"

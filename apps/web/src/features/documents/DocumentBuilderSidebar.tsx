@@ -1,8 +1,25 @@
 import { FileLock2, FilePenLine, Search } from "lucide-react";
 import { useState } from "react";
-import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import {
+  FeatureStatusBadge,
+  type FeatureStatusTone,
+} from "../../components/ui/FeatureStates";
 import { kindLabel } from "./documentLabels";
 import type { DocumentTemplate } from "./types";
+
+function templateBadge(template: DocumentTemplate): {
+  label: string;
+  locked: boolean;
+  tone: FeatureStatusTone;
+} {
+  if (template.source === "store") {
+    return { label: "Personalizado", locked: false, tone: "success" };
+  }
+  if (template.mode === "editable") {
+    return { label: "Editável", locked: false, tone: "blue" };
+  }
+  return { label: "Oficial", locked: true, tone: "neutral" };
+}
 
 export function DocumentBuilderSidebar({
   onSelect,
@@ -31,7 +48,7 @@ export function DocumentBuilderSidebar({
     >
       <div className="documents-builder-sidebar-header">
         <span>Biblioteca</span>
-        <strong>{templates.length} modelos da loja</strong>
+        <strong>{templates.length} modelos disponíveis</strong>
       </div>
       <label className="documents-builder-template-search">
         <span className="sr-only">Buscar modelos</span>
@@ -46,7 +63,8 @@ export function DocumentBuilderSidebar({
       <div className="documents-builder-template-list">
         {visibleTemplates.map((template) => {
           const isSelected = template.templateKey === selectedTemplateKey;
-          const Icon = template.mode === "editable" ? FilePenLine : FileLock2;
+          const badge = templateBadge(template);
+          const Icon = badge.locked ? FileLock2 : FilePenLine;
           return (
             <button
               aria-pressed={isSelected}
@@ -65,9 +83,9 @@ export function DocumentBuilderSidebar({
               </span>
               <FeatureStatusBadge
                 className="documents-builder-template-mode"
-                tone={template.mode === "editable" ? "success" : "neutral"}
+                tone={badge.tone}
               >
-                {template.mode === "editable" ? "Editável" : "Travado"}
+                {badge.label}
               </FeatureStatusBadge>
             </button>
           );

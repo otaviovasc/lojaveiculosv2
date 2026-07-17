@@ -54,15 +54,17 @@ test.describe("financial workspace layout guardrails", () => {
     ).toBeGreaterThanOrEqual((await locatorBox(actionToolbar)).width - 2);
     await expectNoClippedText(page, ".feature-stat-card__value");
     await expectMinimumTargets(page.locator(".feature-stat-card"), 44);
-    await expectMinimumTargets(
-      page.locator(".finance-mobile-action:visible"),
-      44,
-    );
+    // Ledger rows depend on the seeded period filter; only enforce touch
+    // targets when the ledger actually renders row actions.
+    const ledgerActions = page.locator(".finance-mobile-action:visible");
+    if ((await ledgerActions.count()) > 0) {
+      await expectMinimumTargets(ledgerActions, 44);
+    }
     await expectAccessible(page);
     await expectViewportSafe(page);
   });
 
-  test("commissions keeps five distinct stats and intentional mobile rows", async ({
+  test("commissions keeps six distinct summary stats and intentional mobile rows", async ({
     page,
   }) => {
     await openAsOwner(page, "/commissions", "desktop");
@@ -80,9 +82,21 @@ test.describe("financial workspace layout guardrails", () => {
     await expectWorkspaceHeading(page, "/commissions");
     await waitForSettledWorkspace(page);
     await expectSameRow(pageHeaderActions(page));
-    await expect(page.locator(".feature-stat-card__value")).toHaveCount(5);
+    await expect(
+      page.locator(".commission-summary-cards .feature-stat-card__value"),
+    ).toHaveCount(6);
     await expectNoClippedText(page, ".feature-stat-card__value");
-    await expectSameRow(page.locator(".commission-seller-metric"));
+    // Seller metrics render as an intentional 2-column grid on mobile.
+    const sellerMetrics = page
+      .locator(".commission-seller-card")
+      .first()
+      .locator(".feature-stat-card");
+    await expect(sellerMetrics.first()).toBeVisible();
+    const sellerMetricBoxes = await boxes(await allLocators(sellerMetrics));
+    expect(sellerMetricBoxes.length).toBeGreaterThanOrEqual(4);
+    for (const row of uniqueRows(sellerMetricBoxes)) {
+      expect(row.length).toBeLessThanOrEqual(2);
+    }
     await expectMinimumTargets(
       page.locator(
         ".commission-icon-action:visible, .commission-seller-action:visible",
@@ -186,6 +200,9 @@ async function expectMinimumTargets(locator: Locator, minimum: number) {
 }
 
 async function expectSameRow(target: Locator | Locator[]) {
+  if (!Array.isArray(target)) {
+    await expect(target.first()).toBeVisible();
+  }
   const targetBoxes = await boxes(
     Array.isArray(target) ? target : await allLocators(target),
   );

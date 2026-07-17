@@ -7,9 +7,14 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { FeatureFormSection } from "../../../components/ui/FeatureForms";
+import { cx } from "../../../components/ui/featureShared";
 import type { RoleKey, RoleManagementView, RoleMemberView } from "../types";
 import { CustomRoleCard, RoleCard } from "./RoleCards";
-import { featureBlocks, type CustomRolePreset } from "./RoleHelpers";
+import {
+  featureBlocks,
+  getRoleVisual,
+  type CustomRolePreset,
+} from "./RoleHelpers";
 import { PermissionGroupPanel } from "./PermissionGroupPanel";
 import type { Draft, OverrideMode } from "./roleDraft";
 
@@ -111,16 +116,23 @@ export function RoleAssignmentSection({
   roles: RoleManagementView;
 }) {
   const renderRoleGrid = (title: string, list: AvailableRole[]) => {
-    if (list.length === 0) return null;
+    const [first] = list;
+    if (!first) return null;
+    const marker = getRoleVisual(first.role);
     return (
       <div className="flex flex-col gap-2">
-        <h5 className="text-xs font-black uppercase tracking-wider text-accent mb-1">
+        <h5 className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-app-text mb-1">
+          <span
+            aria-hidden="true"
+            className={cx("h-3.5 w-1 rounded-full", marker.tile)}
+          />
           {title}
         </h5>
         <div className="flex flex-col gap-2 w-full">
           {list.map((role) => (
             <RoleCard
               key={role.role}
+              role={role.role}
               label={role.label}
               description={role.description}
               isSelected={
@@ -226,12 +238,12 @@ export function PermissionExceptionsSection({
           return (
             <div
               key={block.key}
-              className="border border-line/45 rounded-xl overflow-hidden bg-panel/30"
+              className="border border-line rounded-lg overflow-hidden bg-app"
             >
               <button
                 type="button"
                 onClick={() => onToggleBlock(block.key)}
-                className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-app-elevated/45 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between gap-4 p-4 text-left hover:bg-surface-subtle transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-3">
                   <div className="flex size-9 items-center justify-center rounded-lg bg-accent-soft text-accent-strong shrink-0">
@@ -249,7 +261,7 @@ export function PermissionExceptionsSection({
                 <ChevronIcon className="size-5 text-muted shrink-0 transition-transform duration-300" />
               </button>
               {isExpanded && (
-                <div className="p-4 bg-panel/10 border-t border-line/45 grid gap-6">
+                <div className="p-4 border-t border-line grid gap-6">
                   {roles.permissionGroups
                     .filter((group) => block.groups.includes(group.key))
                     .map((group) => (
@@ -282,7 +294,7 @@ export function RoleManagementFooter({
   onSave: () => void;
 }) {
   return (
-    <div className="shrink-0 p-4 border-t border-line/40 bg-panel/95 backdrop-blur-md flex items-center justify-end gap-3 rounded-b-xl shadow-md-up">
+    <div className="shrink-0 p-4 border-t border-line bg-panel flex items-center justify-end gap-3">
       <button
         className="flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-6 text-sm font-black text-accent-foreground disabled:opacity-70 transition-all hover:bg-accent-strong hover:text-accent-strong-foreground active:scale-98 cursor-pointer"
         disabled={!editable || isSaving}

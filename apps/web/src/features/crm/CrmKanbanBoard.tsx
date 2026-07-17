@@ -165,29 +165,32 @@ export function CrmKanbanBoard({
               }}
               onDrop={(e) => void handleDrop(e, stage)}
             >
-              {/* Competitor Header */}
-              <header className="p-3 pb-2 flex flex-col gap-1 shrink-0 text-left">
-                <div className="flex items-center justify-between">
+              {/* Full colored header, badge-style */}
+              <header
+                className="p-3 pb-2.5 flex flex-col gap-1 shrink-0 text-left rounded-t-xl"
+                style={{
+                  backgroundColor: stage.color,
+                  color: stageBadgeTextColor,
+                }}
+              >
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className="px-2.5 py-0.5 rounded text-xs font-black uppercase shrink-0"
-                      style={{
-                        backgroundColor: stage.color,
-                        color: stageBadgeTextColor,
-                      }}
-                    >
+                    <span className="text-xs font-black uppercase truncate">
                       {stage.name}
                     </span>
-                    <span className="text-xs font-bold text-muted">
+                    <span
+                      className="text-xs font-black leading-none rounded-full px-1.5 py-0.5 shrink-0"
+                      style={{ backgroundColor: `${stageBadgeTextColor}26` }}
+                    >
                       {stageLeads.length}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1.5 text-muted">
+                  <div className="flex items-center gap-1.5">
                     <div className="relative crm-stage-menu-container">
                       <button
                         aria-expanded={activeMenuStageId === stage.id}
                         aria-label={`Abrir menu da fase ${stage.name}`}
-                        className="p-1 rounded hover:bg-line/20 hover:text-app-text cursor-pointer flex items-center justify-center size-5"
+                        className="p-1 rounded opacity-75 hover:opacity-100 hover:bg-black/10 cursor-pointer flex items-center justify-center size-5 transition-opacity"
                         onClick={() =>
                           setActiveMenuStageId(
                             activeMenuStageId === stage.id ? null : stage.id,
@@ -200,7 +203,7 @@ export function CrmKanbanBoard({
                         </span>
                       </button>
                       {activeMenuStageId === stage.id && (
-                        <div className="absolute right-0 top-full mt-1 z-50 w-36 bg-panel border border-line rounded-lg shadow-xl p-1">
+                        <div className="absolute right-0 top-full mt-1 z-50 w-36 bg-panel border border-line rounded-lg shadow-xl p-1 text-app-text">
                           <button
                             className="w-full text-left px-2.5 py-1.5 text-xs font-bold rounded-md hover:bg-line/15 text-app-text cursor-pointer"
                             onClick={() => {
@@ -216,7 +219,7 @@ export function CrmKanbanBoard({
                     </div>
                     <button
                       aria-label={`Recolher fase ${stage.name}`}
-                      className="p-1 rounded hover:bg-line/20 hover:text-app-text cursor-pointer"
+                      className="p-1 rounded opacity-75 hover:opacity-100 hover:bg-black/10 cursor-pointer transition-opacity"
                       onClick={() =>
                         setCollapsedStages((prev) => ({
                           ...prev,
@@ -229,13 +232,13 @@ export function CrmKanbanBoard({
                     </button>
                   </div>
                 </div>
-                <span className="text-xs font-black text-app-text mt-0.5">
+                <span className="text-xs font-black mt-0.5 opacity-90">
                   {getStageTotalValue(stageLeads)}
                 </span>
               </header>
 
               {/* Card List */}
-              <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[150px]">
+              <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[440px]">
                 {stageLeads.map((lead) => (
                   <CrmLeadCard
                     key={lead.id}
@@ -247,17 +250,21 @@ export function CrmKanbanBoard({
                   />
                 ))}
                 {stageLeads.length === 0 && (
-                  <div className="text-center py-8 text-xs font-bold text-muted border border-dashed border-line/30 rounded-lg">
+                  <div className="flex flex-1 items-center justify-center text-center text-xs font-bold text-muted border border-dashed border-line/30 rounded-lg">
                     Nenhum item.
                   </div>
                 )}
               </div>
 
-              {/* Column Footer matching competitor */}
-              <footer className="p-2 border-t border-line/20 shrink-0">
+              {/* Column Footer — full colored CTA, mirrors the header */}
+              <footer className="shrink-0">
                 <button
-                  className="w-full flex items-center gap-1 py-1.5 text-xs font-bold text-muted hover:text-app-text rounded-lg transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-black uppercase rounded-b-xl transition hover:brightness-110 cursor-pointer"
                   onClick={() => onQuickAddDeal(stage.id)}
+                  style={{
+                    backgroundColor: stage.color,
+                    color: stageBadgeTextColor,
+                  }}
                   type="button"
                 >
                   <Plus aria-hidden="true" className="size-3.5" />
@@ -269,7 +276,7 @@ export function CrmKanbanBoard({
         })}
 
       {/* Dotted Criar fase column at the end */}
-      <div className="w-72 shrink-0 flex flex-col items-center justify-center p-6 border border-dashed border-line/50 rounded-xl min-h-[200px] bg-panel/10 hover:bg-panel/20 transition-colors">
+      <div className="w-72 shrink-0 flex flex-col items-center justify-center p-6 border border-dashed border-line/50 rounded-xl min-h-[540px] bg-panel/10 hover:bg-panel/20 transition-colors">
         <button
           className="flex flex-col items-center gap-2.5 text-muted hover:text-accent cursor-pointer transition-colors group"
           onClick={onAddStage}

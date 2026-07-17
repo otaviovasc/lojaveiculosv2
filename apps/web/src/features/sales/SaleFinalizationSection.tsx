@@ -83,11 +83,11 @@ export function FinalizationSection({ sale }: { sale: SaleRecord }) {
       <BorderGlow
         borderRadius={16}
         glowIntensity={0.5}
-        colors={["var(--color-blue-start)", "var(--color-violet-start)"]}
+        colors={["var(--color-blue-start)", "var(--color-accent)"]}
       >
         <div className="p-5 bg-panel/85 border border-line/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-3 shrink-0">
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/20 shrink-0">
+            <div className="p-2.5 rounded-xl bg-blue-soft text-blue-start border border-blue-start/20 shrink-0">
               <Sparkles className="size-5 animate-pulse" />
             </div>
             <div>
@@ -103,7 +103,7 @@ export function FinalizationSection({ sale }: { sale: SaleRecord }) {
           <button
             type="button"
             onClick={goToNfe}
-            className="sales-primary-button !min-h-11 !h-11 flex items-center gap-2 w-full sm:w-auto shrink-0 justify-center bg-blue-600 hover:bg-blue-700 "
+            className="sales-primary-button !min-h-11 !h-11 flex items-center gap-2 w-full sm:w-auto shrink-0 justify-center bg-blue-start hover:bg-blue-end text-white"
           >
             <div className="gloss-overlay" />
             <span>Ir para NF-e</span>

@@ -17,6 +17,14 @@ export type DocumentBuilderDraft = {
 export type DocumentBuilderSaveState =
   "dirty" | "error" | "idle" | "saved" | "saving";
 
+export type DocumentBuilderStatusTone =
+  "dirty" | "error" | "idle" | "locked" | "saved" | "saving";
+
+export type DocumentBuilderStatus = {
+  label: string;
+  tone: DocumentBuilderStatusTone;
+};
+
 export function createDocumentBuilderDraft(
   template: DocumentTemplate | null,
 ): DocumentBuilderDraft {
@@ -114,6 +122,19 @@ export function blockTitle(block: DocumentTemplateBlock, index: number) {
   if (block.type === "signature") return block.title ?? "Assinaturas";
   if (block.type === "table") return block.title;
   return block.label ?? `Bloco ${index + 1}`;
+}
+
+const blockTypeLabels: Record<DocumentTemplateBlock["type"], string> = {
+  clause: "Cláusula",
+  field_grid: "Campos",
+  heading: "Título",
+  paragraph: "Parágrafo",
+  signature: "Assinaturas",
+  table: "Tabela",
+};
+
+export function blockTypeLabel(type: DocumentTemplateBlock["type"]) {
+  return blockTypeLabels[type] ?? type;
 }
 
 export function sampleVariable(token: string) {

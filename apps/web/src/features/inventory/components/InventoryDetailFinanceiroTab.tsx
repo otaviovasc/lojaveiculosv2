@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
+import { ClipboardList, Wallet } from "lucide-react";
 import { getVehicleColorLabel } from "@lojaveiculosv2/shared";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import { FinanceiroCustosSection } from "./FinanceiroCustosSection";
-import type { CostItem } from "./FinanceiroCustosSectionModel";
 import { FinanceiroCashFlowSection } from "./FinanceiroCashFlowSection";
 import { FinanceiroNotasFiscaisSection } from "./FinanceiroNotasFiscaisSection";
 import { VehicleAcquisitionCard } from "./VehicleAcquisitionCard";
@@ -148,7 +148,10 @@ export function InventoryDetailFinanceiroTab({
       <div className="grid w-full grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col justify-between rounded-2xl border border-line bg-panel p-5">
           <div>
-            <h3 className="mb-4 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
+            <h3 className="mb-4 flex items-center gap-2 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
+              <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500">
+                <Wallet className="size-4" />
+              </span>
               Resumo Financeiro
             </h3>
             <div className="flex flex-col gap-3">
@@ -193,7 +196,10 @@ export function InventoryDetailFinanceiroTab({
         </div>
 
         <div className="flex flex-col gap-4 rounded-2xl border border-line bg-panel p-5">
-          <h3 className="border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
+          <h3 className="flex items-center gap-2 border-b border-line pb-3 text-sm font-black uppercase tracking-wider">
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500">
+              <ClipboardList className="size-4" />
+            </span>
             Dados de Entrada
           </h3>
           <div className="grid grid-cols-2 gap-4 text-xs font-bold">
@@ -223,24 +229,28 @@ export function InventoryDetailFinanceiroTab({
             ))}
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-line/60 pt-4">
+          <div className="flex flex-col border-t border-line/60 pt-4">
             <span className="mb-1 block text-xs font-black uppercase tracking-wider text-muted">
               Observações
             </span>
-            <FinanceiroReadOnlyNote
-              label="Notas internas"
-              value={listing.internalNotes || "Sem notas internas registradas."}
-            />
-            <FinanceiroReadOnlyNote
-              label="Descrição do anúncio"
-              value={
-                listing.description || "Sem descrição comercial registrada."
-              }
-            />
-            <FinanceiroReadOnlyNote
-              label="Custos registrados"
-              value={summarizeCosts(selectedCosts)}
-            />
+            <div className="divide-y divide-line/50">
+              <FinanceiroReadOnlyNote
+                label="Notas internas"
+                value={
+                  listing.internalNotes || "Sem notas internas registradas."
+                }
+              />
+              <FinanceiroReadOnlyNote
+                label="Descrição do anúncio"
+                value={
+                  listing.description || "Sem descrição comercial registrada."
+                }
+              />
+              <FinanceiroReadOnlyNote
+                label="Custos registrados"
+                value={summarizeCosts(selectedCosts)}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -278,11 +288,11 @@ function FinanceiroReadOnlyNote({
   value: string;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-panel/60 p-3">
-      <span className="block border-b border-line/40 pb-1.5 text-xs font-black uppercase tracking-wider text-primary">
+    <div className="py-2.5 first:pt-0">
+      <span className="block text-xs font-black uppercase tracking-wider text-muted">
         {label}
       </span>
-      <p className="mt-2 text-xs font-bold leading-relaxed text-app-text">
+      <p className="mt-1 text-xs font-bold leading-relaxed text-app-text">
         {value}
       </p>
     </div>

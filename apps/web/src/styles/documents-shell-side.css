@@ -3,26 +3,37 @@
 .documents-folder-sidebar {
   background: var(--color-panel);
   border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
-  box-shadow:
-    0 4px 20px rgb(0 0 0 / 0.02),
-    var(--shadow-panel);
-  display: grid;
-  gap: 1rem;
+  border-radius: var(--surface-radius-xl);
+  box-shadow: var(--shadow-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-height: calc(100dvh - 2rem);
   min-width: 0;
-  padding: 1.25rem;
+  padding: 1rem;
+}
+
+/* Stick the folder rail to the viewport on desktop so it never
+   grows past the screen; its list scrolls internally instead. */
+@media (min-width: 901px) {
+  .documents-desktop-folders {
+    align-self: start;
+    position: sticky;
+    top: 1rem;
+  }
 }
 
 .documents-folder-sidebar-header {
-  display: grid;
-  gap: 0.25rem;
   border-bottom: 1px solid var(--color-line);
-  padding-bottom: 0.75rem;
+  display: grid;
+  flex: none;
+  gap: 0.15rem;
+  padding-bottom: 0.7rem;
 }
 
 .documents-folder-sidebar-header strong {
   color: var(--color-text);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: 800;
   letter-spacing: -0.01em;
 }
@@ -31,6 +42,8 @@
   color: var(--color-muted);
   font-size: var(--font-size-xs);
   font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 /* Elegant Search Field */
@@ -40,16 +53,17 @@
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
   display: flex;
+  flex: none;
   gap: 0.5rem;
-  min-height: 2.6rem;
-  padding: 0 0.85rem;
+  min-height: 2.5rem;
+  padding: 0 0.75rem;
   transition: all 0.2s ease;
 }
 
 .documents-folder-sidebar-search:focus-within {
   border-color: var(--color-accent);
   background: var(--color-panel);
-  box-shadow: 0 0 0 3px rgba(225, 31, 38, 0.1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .documents-folder-sidebar-search input {
@@ -65,9 +79,11 @@
 }
 
 .documents-folder-sidebar-list {
+  align-content: start;
   display: grid;
-  gap: 1.25rem;
-  max-height: 60vh;
+  flex: 1 1 auto;
+  gap: 1rem;
+  min-height: 0;
   overflow-y: auto;
   padding-right: 0.25rem;
 }

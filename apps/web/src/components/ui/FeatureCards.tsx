@@ -127,7 +127,7 @@ export function FeatureStatCard({
         <strong
           className={cx(
             "feature-stat-card__value mt-1 block whitespace-nowrap font-black leading-tight tracking-tight text-app-text tabular-nums",
-            density === "default" && "text-base sm:text-2xl",
+            density === "default" && "feature-stat-card__value--fluid",
             density === "compact" && "text-sm sm:text-base",
           )}
         >

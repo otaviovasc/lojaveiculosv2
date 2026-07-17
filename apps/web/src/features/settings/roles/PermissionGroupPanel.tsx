@@ -35,7 +35,7 @@ export function PermissionGroupPanel({
 
           return (
             <article
-              className="flex items-center justify-between gap-4 rounded-xl border border-line bg-panel/30 p-4 hover:border-accent/20 hover:shadow-md transition-all duration-300 min-h-[72px]"
+              className="flex items-center justify-between gap-4 rounded-lg border border-line bg-app p-3.5 min-h-[68px] transition-colors hover:border-line-strong"
               key={permission.key}
             >
               <div className="min-w-0 flex-1">
@@ -48,7 +48,7 @@ export function PermissionGroupPanel({
               </div>
 
               <div
-                className="flex items-center rounded-lg bg-app/60 p-0.5 border border-line shrink-0"
+                className="flex items-center rounded-lg bg-panel p-0.5 border border-line shrink-0"
                 role="group"
               >
                 {(

@@ -1,17 +1,43 @@
-import { Eye, FilePenLine, Save, Sparkles } from "lucide-react";
-import type { ReactNode } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  FilePenLine,
+  Loader2,
+  Lock,
+  Pencil,
+  Save,
+  Sparkles,
+} from "lucide-react";
+import type { ComponentType, ReactNode } from "react";
+import type { DocumentBuilderStatus } from "./documentBuilderModel";
 
 export type DocumentBuilderInspectorView = "assistant" | "preview";
+
+const statusIcon: Record<
+  DocumentBuilderStatus["tone"],
+  ComponentType<{ className?: string }>
+> = {
+  dirty: Pencil,
+  error: AlertTriangle,
+  idle: CheckCircle2,
+  locked: Lock,
+  saved: CheckCircle2,
+  saving: Loader2,
+};
 
 export function DocumentBuilderHeader({
   isSaveDisabled,
   onSave,
-  saveStatus,
+  saveLabel = "Salvar",
+  status,
 }: {
   isSaveDisabled: boolean;
   onSave: () => void;
-  saveStatus: string;
+  saveLabel?: string;
+  status: DocumentBuilderStatus;
 }) {
+  const StatusIcon = statusIcon[status.tone];
   return (
     <header className="documents-builder-topbar">
       <div className="documents-builder-heading">
@@ -26,10 +52,18 @@ export function DocumentBuilderHeader({
       </div>
 
       <div className="documents-builder-save-status">
-        <span className="documents-builder-status-text">{saveStatus}</span>
+        <span className="documents-builder-status-pill" data-tone={status.tone}>
+          <StatusIcon
+            aria-hidden="true"
+            className={
+              status.tone === "saving" ? "size-3.5 animate-spin" : "size-3.5"
+            }
+          />
+          {status.label}
+        </span>
         <button disabled={isSaveDisabled} onClick={onSave} type="button">
           <Save aria-hidden="true" className="size-4" />
-          Salvar
+          {saveLabel}
         </button>
       </div>
     </header>
@@ -58,17 +92,6 @@ export function DocumentBuilderInspector({
         role="tablist"
       >
         <button
-          aria-controls="documents-builder-assistant-panel"
-          aria-selected={view === "assistant"}
-          id="documents-builder-assistant-tab"
-          onClick={() => onViewChange("assistant")}
-          role="tab"
-          type="button"
-        >
-          <Sparkles aria-hidden="true" className="size-4" />
-          Assistente
-        </button>
-        <button
           aria-controls="documents-builder-preview-panel"
           aria-selected={view === "preview"}
           id="documents-builder-preview-tab"
@@ -79,16 +102,19 @@ export function DocumentBuilderInspector({
           <Eye aria-hidden="true" className="size-4" />
           Prévia
         </button>
+        <button
+          aria-controls="documents-builder-assistant-panel"
+          aria-selected={view === "assistant"}
+          id="documents-builder-assistant-tab"
+          onClick={() => onViewChange("assistant")}
+          role="tab"
+          type="button"
+        >
+          <Sparkles aria-hidden="true" className="size-4" />
+          Assistente
+        </button>
       </div>
 
-      <div
-        aria-labelledby="documents-builder-assistant-tab"
-        hidden={view !== "assistant"}
-        id="documents-builder-assistant-panel"
-        role="tabpanel"
-      >
-        {assistant}
-      </div>
       <div
         aria-labelledby="documents-builder-preview-tab"
         hidden={view !== "preview"}
@@ -96,6 +122,14 @@ export function DocumentBuilderInspector({
         role="tabpanel"
       >
         {preview}
+      </div>
+      <div
+        aria-labelledby="documents-builder-assistant-tab"
+        hidden={view !== "assistant"}
+        id="documents-builder-assistant-panel"
+        role="tabpanel"
+      >
+        {assistant}
       </div>
     </aside>
   );

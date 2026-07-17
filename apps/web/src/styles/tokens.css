@@ -103,7 +103,13 @@
   --app-space-4xl: 60px;
 
   --layout-content-max: 100%;
-  --layout-content-gutter: var(--app-space-4xl);
+  /* Fluid gutter: full 60px on desktop, tightens to 15px on phones so
+     390px viewports keep enough usable content width. */
+  --layout-content-gutter: clamp(
+    var(--app-space-md),
+    4.2vw,
+    var(--app-space-4xl)
+  );
   --layout-content-block-padding: var(--app-space-xl);
   --layout-content-gap: var(--app-space-lg);
   --layout-header-height: 4.25rem;

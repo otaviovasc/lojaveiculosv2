@@ -21,7 +21,7 @@ export function DocumentosRenaveCard() {
         </span>
       </header>
 
-      <div className="rounded-xl border border-line bg-app p-4">
+      <div className="rounded-xl bg-warning/8 p-4">
         <div className="flex items-start gap-3">
           <CircleAlert className="mt-0.5 size-5 shrink-0 text-warning" />
           <div className="grid gap-1.5">

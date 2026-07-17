@@ -1,5 +1,8 @@
+import { Coins, Percent } from "lucide-react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   FeatureInput,
+  FeatureSegmentedControl,
   FeatureSelect,
 } from "../../components/ui/FeatureControls";
 import {
@@ -7,12 +10,18 @@ import {
   FeatureFieldGroup,
   FeatureFormSection,
 } from "../../components/ui/FeatureForms";
+import { cx } from "../../components/ui/featureShared";
 import { Switch } from "../../components/ui/switch";
 import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import { autoEntryPercentageBasisLabel } from "./autoEntryLabels";
-import { autoEntryCalculationOptions, autoEntryTimingOptions } from "./model";
+import { AutoEntryTimingSelector } from "./AutoEntryTimingSelector";
 import type { AutoEntryDraftErrors, AutoEntryRuleDraft } from "./types";
+
+const calculationChoices = [
+  { icon: Coins, label: "Valor fixo", value: "fixed" },
+  { icon: Percent, label: "Percentual", value: "percentage" },
+] as const;
 
 export function AutoEntryCalculationSection({
   draft,
@@ -29,17 +38,17 @@ export function AutoEntryCalculationSection({
       title="Cálculo"
     >
       <FeatureFieldGroup>
-        <FeatureField label="Modelo de cálculo">
-          <FeatureSelect
+        <ChoiceField label="Modelo de cálculo">
+          <FeatureSegmentedControl
             ariaLabel="Modelo de cálculo"
             onChange={(calculationKind) => onChange({ calculationKind })}
-            options={autoEntryCalculationOptions}
+            options={calculationChoices}
             value={draft.calculationKind}
           />
-        </FeatureField>
+        </ChoiceField>
         {draft.calculationKind === "fixed" ? (
           <FeatureField error={errors.amountReais} label="Valor fixo (R$)">
-            <FeatureInput
+            <AffixInput
               aria-invalid={Boolean(errors.amountReais)}
               inputMode="decimal"
               onChange={(event) =>
@@ -50,16 +59,18 @@ export function AutoEntryCalculationSection({
                 })
               }
               placeholder="Ex.: 500,00"
+              prefix="R$"
               value={draft.amountReais}
             />
           </FeatureField>
         ) : (
           <FeatureField error={errors.percentage} label="Percentual (%)">
-            <FeatureInput
+            <AffixInput
               aria-invalid={Boolean(errors.percentage)}
               inputMode="decimal"
               onChange={(event) => onChange({ percentage: event.target.value })}
               placeholder="Ex.: 1,5"
+              suffix="%"
               value={draft.percentage}
             />
           </FeatureField>
@@ -101,49 +112,21 @@ export function AutoEntryExecutionSection({
       value: seller.id,
     })),
   ];
-  const timingHint =
-    draft.timingKind === "days_after" ? "De 1 a 365 dias" : "De 1 a 31";
 
   return (
     <FeatureFormSection
       description="Defina quando a regra entra na fila e se ela vale para todos os vendedores ou para um vendedor específico da origem."
       title="Execução"
     >
-      <FeatureFieldGroup>
-        <FeatureField label="Momento do lançamento">
-          <FeatureSelect
-            ariaLabel="Momento do lançamento"
-            onChange={(timingKind) => onChange({ timingKind, timingValue: "" })}
-            options={autoEntryTimingOptions}
-            value={draft.timingKind}
-          />
-        </FeatureField>
-        {draft.timingKind !== "same_day" ? (
-          <FeatureField
-            error={errors.timingValue}
-            hint={timingHint}
-            label={draft.timingKind === "days_after" ? "Quantidade" : "Dia"}
-          >
-            <FeatureInput
-              aria-invalid={Boolean(errors.timingValue)}
-              inputMode="numeric"
-              max={draft.timingKind === "days_after" ? 365 : 31}
-              min={1}
-              onChange={(event) =>
-                onChange({ timingValue: event.target.value })
-              }
-              type="number"
-              value={draft.timingValue}
-            />
-          </FeatureField>
-        ) : (
-          <div className="flex items-center rounded-lg border border-line/60 bg-app-elevated px-3 text-sm font-bold text-muted">
-            O lançamento será criado na data segura informada pelo evento.
-          </div>
-        )}
-      </FeatureFieldGroup>
+      <AutoEntryTimingSelector
+        error={errors.timingValue}
+        kind={draft.timingKind}
+        onKindChange={(timingKind) => onChange({ timingKind, timingValue: "" })}
+        onValueChange={(timingValue) => onChange({ timingValue })}
+        value={draft.timingValue}
+      />
 
-      <div className="mt-3">
+      <div className="mt-4">
         <FeatureFieldGroup>
           <FeatureField
             hint="Regras globais e específicas são aditivas; o lançamento recebe o vendedor do evento de origem."
@@ -192,5 +175,44 @@ export function AutoEntryExecutionSection({
         />
       </div>
     </FeatureFormSection>
+  );
+}
+
+function ChoiceField({
+  children,
+  hint,
+  label,
+}: {
+  children: ReactNode;
+  hint?: ReactNode;
+  label: ReactNode;
+}) {
+  return (
+    <div className="grid gap-2 text-sm font-semibold text-app-text/90">
+      <span>{label}</span>
+      {children}
+      {hint ? (
+        <span className="text-xs font-medium text-muted">{hint}</span>
+      ) : null}
+    </div>
+  );
+}
+
+function AffixInput({
+  className,
+  prefix,
+  suffix,
+  ...props
+}: ComponentProps<"input"> & { prefix?: string; suffix?: string }) {
+  return (
+    <div className="auto-entry-affix">
+      {prefix ? (
+        <span className="auto-entry-affix__prefix">{prefix}</span>
+      ) : null}
+      <input {...props} className={cx("auto-entry-affix__input", className)} />
+      {suffix ? (
+        <span className="auto-entry-affix__suffix">{suffix}</span>
+      ) : null}
+    </div>
   );
 }

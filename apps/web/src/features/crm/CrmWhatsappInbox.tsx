@@ -168,19 +168,19 @@ function WhatsappDisconnectedState({
       </span>
       <div>
         <strong>WhatsApp desconectado</strong>
-        <h2>Conecte o numero da loja para abrir o atendimento.</h2>
+        <h2>Conecte o número da loja para abrir o atendimento.</h2>
         <p>
-          As conversas e ferramentas de envio aparecem assim que a conexao
+          As conversas e ferramentas de envio aparecem assim que a conexão
           estiver ativa.
         </p>
       </div>
       {canManage ? (
         <button className="crm-action" onClick={onConnect} type="button">
           <PlugZap aria-hidden="true" />
-          Configurar conexao
+          Configurar conexão
         </button>
       ) : (
-        <p>Solicite a um administrador da loja para configurar a conexao.</p>
+        <p>Solicite a um administrador da loja para configurar a conexão.</p>
       )}
     </section>
   );

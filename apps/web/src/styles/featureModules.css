@@ -7,6 +7,85 @@
   padding: 1rem;
 }
 
+/* Branded empty state: an accent icon chip and a faint LV watermark replace the
+   generic lonely-gray-icon pattern, so vacant surfaces still carry the
+   automotive identity. Tone follows the active module accent. */
+.feature-empty-state {
+  --feature-empty-accent: var(--color-accent);
+  --feature-empty-accent-strong: var(--color-accent-strong);
+  --feature-empty-accent-soft: var(--color-accent-soft);
+  position: relative;
+  isolation: isolate;
+}
+
+.feature-empty-state__watermark {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("/icons/lv-logo-outline-dark.svg");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 260px auto;
+  opacity: 0.04;
+}
+
+:root[data-theme="dark"] .feature-empty-state__watermark {
+  background-image: url("/icons/lv-logo-outline-light.svg");
+  opacity: 0.05;
+}
+
+.feature-empty-state__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: var(--surface-radius-xl);
+  border: 1px solid
+    color-mix(in srgb, var(--feature-empty-accent) 24%, var(--color-line));
+  background: var(--feature-empty-accent-soft);
+  color: var(--feature-empty-accent-strong);
+  box-shadow: 0 10px 24px
+    color-mix(in srgb, var(--feature-empty-accent) 14%, transparent);
+}
+
+.feature-empty-state__title {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.feature-empty-state__chip--blue {
+  --feature-empty-accent: var(--color-blue-start);
+  --feature-empty-accent-strong: var(--color-blue-start);
+  --feature-empty-accent-soft: var(--color-blue-soft);
+}
+
+.feature-empty-state__chip--green {
+  --feature-empty-accent: var(--color-green-start);
+  --feature-empty-accent-strong: var(--color-success-strong);
+  --feature-empty-accent-soft: var(--color-green-soft);
+}
+
+.feature-empty-state__chip--warning {
+  --feature-empty-accent: var(--color-warning);
+  --feature-empty-accent-strong: var(--color-warning-strong);
+  --feature-empty-accent-soft: color-mix(
+    in srgb,
+    var(--color-warning) 14%,
+    var(--color-panel)
+  );
+}
+
+.feature-empty-state__chip--neutral {
+  --feature-empty-accent: var(--color-line-strong);
+  --feature-empty-accent-strong: var(--color-muted);
+  --feature-empty-accent-soft: var(--color-app-elevated);
+}
+
 .feature-hero,
 .feature-panel,
 .feature-card,
@@ -112,8 +191,14 @@
 }
 
 .feature-form-row {
+  flex-wrap: wrap;
   margin-top: 1rem;
   width: 100%;
+}
+
+.feature-form-row input,
+.feature-form-row .custom-select {
+  flex: 1 1 10rem;
 }
 
 .feature-form-row input {
@@ -127,14 +212,32 @@
   width: 100%;
 }
 
-.feature-form-row button {
+/* Direct children only: select triggers nested inside .custom-select must keep
+   their neutral style — red stays reserved for real actions. */
+.feature-form-row > button,
+.feature-panel > button {
+  align-items: center;
   background: var(--color-accent);
   border-radius: var(--radius-md);
   color: var(--color-accent-foreground);
+  display: inline-flex;
   font-size: var(--font-size-sm);
   font-weight: 900;
+  gap: 0.5rem;
+  justify-content: center;
   min-height: 2.75rem;
   padding: 0 1rem;
+}
+
+.feature-panel > button {
+  align-self: flex-start;
+  margin-top: 1rem;
+}
+
+.feature-form-row > button:disabled,
+.feature-panel > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .feature-list {

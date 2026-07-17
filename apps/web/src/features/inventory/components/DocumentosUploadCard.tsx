@@ -174,11 +174,11 @@ export function DocumentosUploadCard({ api, detail, onUpdated, unit }: Props) {
           </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-2">
+        <ul className="divide-y divide-line/60 overflow-hidden rounded-xl border border-line">
           {documents.map((document) => (
             <li
               key={document.id}
-              className="flex items-center gap-2 rounded-xl border border-line bg-app/20 p-3 text-xs font-bold"
+              className="flex items-center gap-2 bg-app/10 p-3 text-xs font-bold"
             >
               <FileText className="size-4 shrink-0 text-muted" />
               <div className="min-w-0 flex-1">

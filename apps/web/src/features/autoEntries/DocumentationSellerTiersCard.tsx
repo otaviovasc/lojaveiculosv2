@@ -85,7 +85,6 @@ export function DocumentationSellerTiersCard({
     <AutoEntryDomainCard
       description="A comissão fixa depende do valor cobrado. 650–749/25 e 750+/40 são sugestões, não regras ativas."
       title="Faixas por vendedor"
-      tone="blue"
     >
       <AutoEntrySellerField
         onChange={setSellerUserId}

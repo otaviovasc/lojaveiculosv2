@@ -100,7 +100,6 @@ export function SaleSellerOverrideCard({
     <AutoEntryDomainCard
       description="Substitui apenas a comissão padrão quando o vendedor selecionado originar a venda."
       title="Exceção por vendedor"
-      tone="blue"
     >
       <AutoEntrySellerField
         onChange={setSellerUserId}

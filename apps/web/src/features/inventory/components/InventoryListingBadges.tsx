@@ -8,24 +8,24 @@ import type { InventoryUnitStatus } from "../model/types";
 export function StatusPill({ status }: { status: InventoryDisplayStatus }) {
   const tone =
     status === "published" || status === "available"
-      ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+      ? "bg-green-soft text-success-strong border border-success-strong/25"
       : status === "in_preparation" || status === "reserved"
-        ? "bg-warning/10 text-warning border border-warning/20"
+        ? "bg-warning/10 text-warning-strong border border-warning/25"
         : status === "sold_out" || status === "sold" || status === "delivered"
-          ? "bg-blue-500/10 text-blue-500 border border-blue-500/20"
+          ? "bg-blue-soft text-blue-start border border-blue-start/25"
           : status === "acquired"
-            ? "bg-violet-500/10 text-violet-500 border border-violet-500/20"
+            ? "bg-violet-start/10 text-violet-start border border-violet-start/25"
             : "bg-panel text-muted border border-line";
 
   const dotColor =
     status === "published" || status === "available"
-      ? "bg-emerald-500"
+      ? "bg-success-strong"
       : status === "in_preparation" || status === "reserved"
-        ? "bg-warning"
+        ? "bg-warning-strong"
         : status === "sold_out" || status === "sold" || status === "delivered"
-          ? "bg-blue-500"
+          ? "bg-blue-start"
           : status === "acquired"
-            ? "bg-violet-500"
+            ? "bg-violet-start"
             : "bg-muted";
   const label = isInventoryUnitStatus(status)
     ? inventoryUnitStatusLabels[status]
@@ -34,7 +34,7 @@ export function StatusPill({ status }: { status: InventoryDisplayStatus }) {
   return (
     <span
       className={
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider backdrop-blur-md " +
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black uppercase tracking-wider " +
         tone
       }
     >

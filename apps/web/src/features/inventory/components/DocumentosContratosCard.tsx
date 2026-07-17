@@ -42,7 +42,7 @@ export function DocumentosContratosCard({
         </div>
 
         {documents.length ? (
-          <div className="flex flex-col gap-2.5">
+          <div className="divide-y divide-line/60 overflow-hidden rounded-xl border border-line">
             {documents.map((document) => (
               <ContractDocumentItem document={document} key={document.id} />
             ))}
@@ -105,7 +105,7 @@ function ContractDocumentItem({
 }) {
   return (
     <a
-      className="flex items-center justify-between rounded-xl border border-line bg-app/30 p-3 text-xs font-bold transition-colors hover:bg-app/50"
+      className="flex items-center justify-between bg-app/10 p-3 text-xs font-bold transition-colors hover:bg-app/40"
       href={documentsRouteHash({
         documentId: document.id,
         unitId: document.unitId,

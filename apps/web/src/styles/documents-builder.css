@@ -1,5 +1,7 @@
 .documents-builder-main {
   background: var(--color-app);
+  display: grid;
+  gap: 0.9rem;
   max-width: none;
   padding: 1.25rem;
 }
@@ -9,7 +11,7 @@
 .documents-builder-sidebar,
 .documents-builder-editor,
 .documents-builder-inspector,
-.documents-builder-title-panel,
+.documents-builder-name-panel,
 .documents-builder-blocks,
 .documents-builder-ai-panel {
   min-width: 0;
@@ -20,22 +22,23 @@
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: var(--surface-radius-xl);
+  box-shadow: var(--shadow-panel);
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr) auto;
   padding: 1rem 1.25rem;
   position: relative;
+  overflow: hidden;
 }
 
 .documents-builder-topbar::before {
   background: var(--color-accent);
-  border-radius: var(--surface-radius-xl) 0 0 var(--surface-radius-xl);
   bottom: 0;
   content: "";
   left: 0;
   position: absolute;
   top: 0;
-  width: 0.2rem;
+  width: 0.25rem;
 }
 
 .documents-builder-heading {
@@ -52,8 +55,8 @@
 
 .documents-builder-heading > div > span,
 .documents-builder-sidebar-header span,
-.documents-builder-title-panel > div > span,
-.documents-builder-title-field > span,
+.documents-builder-editor-head p,
+.documents-builder-name-field > span,
 .documents-builder-panel-heading span,
 .documents-builder-block header small,
 .documents-builder-ai-prompt > span {
@@ -98,23 +101,62 @@
   gap: 0.75rem;
 }
 
-.documents-builder-status-text {
+/* Status pill — communicates save state with a tone-coded chip. */
+.documents-builder-status-pill {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
   color: var(--color-muted);
+  display: inline-flex;
   font-size: var(--font-size-xs);
-  font-weight: 700;
+  font-weight: 750;
+  gap: 0.4rem;
+  padding: 0.35rem 0.7rem;
   white-space: nowrap;
 }
 
+.documents-builder-status-pill[data-tone="saved"],
+.documents-builder-status-pill[data-tone="idle"] {
+  background: var(--color-green-soft);
+  border-color: color-mix(
+    in srgb,
+    var(--color-success-strong) 30%,
+    transparent
+  );
+  color: var(--color-success-strong);
+}
+
+.documents-builder-status-pill[data-tone="dirty"] {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--color-warning-strong) 32%,
+    transparent
+  );
+  color: var(--color-warning-strong);
+}
+
+.documents-builder-status-pill[data-tone="saving"] {
+  background: var(--color-blue-soft);
+  border-color: color-mix(in srgb, var(--color-blue-start) 30%, transparent);
+  color: var(--color-blue-start);
+}
+
+.documents-builder-status-pill[data-tone="error"] {
+  background: var(--color-accent-soft);
+  border-color: color-mix(in srgb, var(--color-danger) 32%, transparent);
+  color: var(--color-danger);
+}
+
+/* Primary accent actions: Save, Create editable copy, AI suggest. */
 .documents-builder-save-status button,
-.documents-builder-title-panel button,
-.documents-builder-panel-heading button,
-.documents-builder-primary-action,
-.documents-builder-diff footer button {
+.documents-builder-primary-action {
   align-items: center;
-  background: var(--color-accent-strong);
-  border: 1px solid var(--color-accent-strong);
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
   border-radius: var(--radius-md);
-  color: var(--color-accent-strong-foreground);
+  color: var(--color-accent-foreground);
   cursor: pointer;
   display: inline-flex;
   font-size: var(--font-size-sm);
@@ -122,38 +164,67 @@
   gap: 0.5rem;
   justify-content: center;
   min-height: 2.6rem;
-  padding: 0 1rem;
+  padding: 0 1.1rem;
   transition:
     background-color var(--motion-duration-base) var(--motion-ease-standard),
     border-color var(--motion-duration-base) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard),
     transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
 .documents-builder-save-status button:not(:disabled):hover,
 .documents-builder-primary-action:not(:disabled):hover {
-  background: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
   transform: translateY(-1px);
 }
 
 .documents-builder-save-status button:not(:disabled):active,
 .documents-builder-primary-action:not(:disabled):active {
-  transform: translateY(1px);
+  transform: translateY(0);
 }
 
 .documents-builder-save-status button:focus-visible,
-.documents-builder-title-panel button:focus-visible,
-.documents-builder-panel-heading button:focus-visible,
 .documents-builder-primary-action:focus-visible,
+.documents-builder-ghost-action:focus-visible,
+.documents-builder-panel-heading button:focus-visible,
 .documents-builder-diff footer button:focus-visible {
   box-shadow: var(--shadow-focus);
   outline: none;
 }
 
+/* Ghost / secondary actions: Restore default, Add clause. */
+.documents-builder-ghost-action,
+.documents-builder-panel-heading button {
+  align-items: center;
+  background: var(--color-app);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.6rem;
+  padding: 0 1rem;
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard);
+  white-space: nowrap;
+}
+
+.documents-builder-ghost-action:not(:disabled):hover,
+.documents-builder-panel-heading button:not(:disabled):hover {
+  background: var(--color-surface-subtle);
+  border-color: var(--color-line-strong);
+}
+
 .documents-builder-save-status button:disabled,
-.documents-builder-title-panel button:disabled,
-.documents-builder-panel-heading button:disabled,
 .documents-builder-primary-action:disabled,
+.documents-builder-ghost-action:disabled,
+.documents-builder-panel-heading button:disabled,
 .documents-builder-diff footer button:disabled,
 .documents-builder-rich-toolbar button:disabled {
   background: var(--color-app);
@@ -161,6 +232,7 @@
   color: var(--color-muted);
   cursor: not-allowed;
   opacity: 0.55;
+  box-shadow: none;
   transform: none;
 }
 
@@ -168,10 +240,10 @@
   align-items: start;
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(14rem, 15rem) minmax(0, 1fr) minmax(
-      18rem,
-      20rem
-    );
+  grid-template-columns:
+    minmax(14rem, 15rem)
+    minmax(0, 1fr)
+    minmax(19rem, 22rem);
 }
 
 @media (max-width: 1320px) {

@@ -109,7 +109,6 @@ export function ConsortiumRulesPanel({
       <AutoEntryDomainCard
         description="A receita da loja é taxa total × participação da loja; a comissão do vendedor usa a carta de crédito."
         title="Divisão do consórcio"
-        tone="blue"
       >
         <AutoEntryValueOrigin active={Boolean(store && seller)} />
         <FeatureFieldGroup className="lg:grid-cols-3">

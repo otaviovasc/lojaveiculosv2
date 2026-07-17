@@ -12,7 +12,6 @@ export function SaleRulesPanel(props: AutoEntryDomainPanelProps) {
       <AutoEntryDomainCard
         description="A receita da venda segue as datas dos pagamentos. Esta regra apenas repassa a comissão registrada na venda."
         title="Comissão padrão da venda"
-        tone="blue"
       >
         {standard ? (
           <dl className="grid gap-3 sm:grid-cols-3">

@@ -34,44 +34,44 @@ export function FinanceiroCashFlowSection({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-app/30 border border-line rounded-xl p-4 flex items-center gap-3">
-          <div className="size-9 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20 shrink-0 animate-none">
+      <div className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-line bg-line/60 md:grid-cols-3">
+        <div className="bg-panel p-4 flex items-center gap-3">
+          <div className="size-9 rounded-full bg-green-soft text-success-strong flex items-center justify-center shrink-0 animate-none">
             <ArrowUpRight className="size-4.5" />
           </div>
           <div>
             <span className="block text-xs uppercase tracking-wider text-muted">
               Entradas
             </span>
-            <span className="text-sm font-black text-emerald-500">
+            <span className="text-sm font-black text-success-strong">
               {formatBRL(cashFlowEntradas)}
             </span>
           </div>
         </div>
 
-        <div className="bg-app/30 border border-line rounded-xl p-4 flex items-center gap-3">
-          <div className="size-9 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center border border-rose-500/20 shrink-0 animate-none">
+        <div className="bg-panel p-4 flex items-center gap-3">
+          <div className="size-9 rounded-full bg-danger/10 text-danger flex items-center justify-center shrink-0 animate-none">
             <ArrowDownLeft className="size-4.5" />
           </div>
           <div>
             <span className="block text-xs uppercase tracking-wider text-muted">
               Saídas
             </span>
-            <span className="text-sm font-black text-rose-500">
+            <span className="text-sm font-black text-danger">
               {formatBRL(cashFlowSaidas)}
             </span>
           </div>
         </div>
 
-        <div className="bg-app/30 border border-line rounded-xl p-4 flex items-center gap-3">
-          <div className="size-9 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20 shrink-0 animate-none">
+        <div className="bg-panel p-4 flex items-center gap-3">
+          <div className="size-9 rounded-full bg-blue-soft text-blue-start flex items-center justify-center shrink-0 animate-none">
             <DollarSign className="size-4.5" />
           </div>
           <div>
             <span className="block text-xs uppercase tracking-wider text-muted">
               Saldo Líquido
             </span>
-            <span className="text-sm font-black text-blue-500">
+            <span className="text-sm font-black text-blue-start">
               -{formatBRL(cashFlowSaidas)}
             </span>
           </div>
@@ -101,7 +101,7 @@ export function FinanceiroCashFlowSection({
                     {item.description}
                   </td>
                   <td className="py-3 text-muted">{item.origin}</td>
-                  <td className="py-3 text-right font-black text-rose-500">
+                  <td className="py-3 text-right font-black text-danger">
                     {formatBRL(item.value)}
                   </td>
                   <td className="py-3 text-right">

@@ -83,18 +83,19 @@ variables service-scoped: only `VITE_*` public build-time values belong on the
 web service, while Clerk secrets and database credentials belong on the API
 service.
 
-| Name                                 | Required | Environments | Secret | Notes                                                                                 |
-| ------------------------------------ | -------- | ------------ | ------ | ------------------------------------------------------------------------------------- |
-| `LOCAL_AUTH_BYPASS`                  | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                    |
-| `DEV_CLERK_USER_ID`                  | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.            |
-| `DEV_STORE_SLUG`                     | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.          |
-| `VITE_LOCAL_AUTH_BYPASS`             | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production. |
-| `VITE_DEV_CLERK_USER_ID`             | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                |
-| `VITE_DEV_STORE_SLUG`                | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.              |
-| `VITE_DEV_CLERK_SESSION_TOKEN`       | No       | local        | Yes    | Optional local Clerk session token override for CRM API calls.                        |
-| `VITE_DEV_API_PROXY_TARGET`          | No       | local        | No     | Vite dev proxy target for `/api/v1`.                                                  |
-| `VITE_DEV_PUBLIC_STORE_HOST`         | No       | local        | No     | Forwarded storefront host used by local public-site previews.                         |
-| `DEV_SUPERVISOR_SHUTDOWN_TIMEOUT_MS` | No       | local        | No     | Local multi-process supervisor shutdown timeout.                                      |
+| Name                                 | Required | Environments | Secret | Notes                                                                                     |
+| ------------------------------------ | -------- | ------------ | ------ | ----------------------------------------------------------------------------------------- |
+| `LOCAL_AUTH_BYPASS`                  | No       | local        | No     | Authless seeded preview only. Leave empty when testing real Clerk.                        |
+| `DEV_CLERK_USER_ID`                  | No       | local        | No     | API-side seeded preview Clerk id. Only used when `LOCAL_AUTH_BYPASS=true`.                |
+| `DEV_STORE_SLUG`                     | No       | local        | No     | API-side seeded preview store slug. Only used when `LOCAL_AUTH_BYPASS=true`.              |
+| `VITE_LOCAL_AUTH_BYPASS`             | No       | local        | No     | Enables the browser-only seeded account switcher. Never set in staging or production.     |
+| `VITE_DEV_CLERK_USER_ID`             | No       | local        | No     | Frontend seeded preview Clerk id. Leave empty when testing real Clerk.                    |
+| `VITE_DEV_STORE_SLUG`                | No       | local        | No     | Frontend seeded preview store slug. Leave empty when testing real Clerk.                  |
+| `VITE_DEV_CLERK_SESSION_TOKEN`       | No       | local        | Yes    | Optional local Clerk session token override for CRM API calls.                            |
+| `VITE_DEV_API_PROXY_TARGET`          | No       | local        | No     | Vite dev proxy target for `/api/v1`.                                                      |
+| `VITE_DEV_PUBLIC_STORE_HOST`         | No       | local        | No     | Forwarded storefront host used by local public-site previews.                             |
+| `DEV_SUPERVISOR_SHUTDOWN_TIMEOUT_MS` | No       | local        | No     | Local multi-process supervisor shutdown timeout.                                          |
+| `PLAYWRIGHT_BASE_URL`                | No       | local        | No     | Base URL Playwright and the UI-audit tooling target. Defaults to `http://127.0.0.1:5173`. |
 | Use one auth mode at a time:         |
 
 - Real Clerk QA: configure `CLERK_SECRET_KEY`, `VITE_CLERK_PUBLISHABLE_KEY`,

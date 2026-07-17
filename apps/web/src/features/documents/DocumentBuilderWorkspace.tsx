@@ -1,4 +1,4 @@
-import { RotateCcw } from "lucide-react";
+import { Lock, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
@@ -21,6 +21,7 @@ import {
   isDocumentBuilderDirty,
   type DocumentBuilderDraft,
   type DocumentBuilderSaveState,
+  type DocumentBuilderStatus,
 } from "./documentBuilderModel";
 import { renderDocumentTemplatePreview } from "./documentTemplatePreviewModel";
 import type { DocumentTemplate, UpdateDocumentTemplateInput } from "./types";
@@ -56,7 +57,7 @@ export function DocumentBuilderWorkspace({
   );
   const [saveState, setSaveState] = useState<DocumentBuilderSaveState>("idle");
   const [inspectorView, setInspectorView] =
-    useState<DocumentBuilderInspectorView>("assistant");
+    useState<DocumentBuilderInspectorView>("preview");
   const onSaveRef = useRef(onSave);
 
   useEffect(() => {
@@ -68,15 +69,17 @@ export function DocumentBuilderWorkspace({
     setSaveState("idle");
   }, [selected?.templateKey]);
 
-  const isEditable = selected?.mode === "editable";
+  const isSystemLocked = selected?.mode === "locked";
+  const canEdit = selected?.mode === "editable";
+  const isStoreCopy = selected?.source === "store";
   const isDirty = isDocumentBuilderDirty(selected, draft);
   const clauses = useMemo(() => documentBuilderClauses(draft.blocks), [draft]);
   const canSave = Boolean(
-    selected && isEditable && draft.title.trim() && clauses.length,
+    selected && canEdit && draft.title.trim() && clauses.length,
   );
 
   useEffect(() => {
-    if (!selected || !isEditable || !isDirty || !canSave) return;
+    if (!selected || !canEdit || !isDirty || !canSave) return;
     setSaveState("dirty");
     const timer = window.setTimeout(() => {
       setSaveState("saving");
@@ -85,7 +88,7 @@ export function DocumentBuilderWorkspace({
         .catch(() => setSaveState("error"));
     }, 1200);
     return () => window.clearTimeout(timer);
-  }, [canSave, draft, isDirty, isEditable, selected]);
+  }, [canEdit, canSave, draft, isDirty, selected]);
 
   if (!selected) {
     return (
@@ -102,6 +105,8 @@ export function DocumentBuilderWorkspace({
     selected.kind,
     selected.context,
   );
+
+  const status = builderStatus(saveState, isSaving, canEdit, isSystemLocked);
 
   return (
     <FeaturePageShell
@@ -123,7 +128,7 @@ export function DocumentBuilderWorkspace({
             .then(() => setSaveState("saved"))
             .catch(() => setSaveState("error"));
         }}
-        saveStatus={saveStatusLabel(saveState, isSaving, selected.mode)}
+        status={status}
       />
 
       <section className="documents-builder-layout">
@@ -134,43 +139,73 @@ export function DocumentBuilderWorkspace({
         />
 
         <main className="documents-builder-editor">
-          <section className="documents-builder-title-panel">
-            <div>
-              <span>{kindLabel(selected.kind)}</span>
-              <strong>
-                {isEditable
-                  ? "Personalize o texto usado nas próximas emissões."
-                  : "Este modelo segue a estrutura oficial do sistema."}
-              </strong>
+          <header className="documents-builder-editor-head">
+            <span className="documents-builder-kind-chip">
+              {kindLabel(selected.kind)}
+            </span>
+            <p>
+              {canEdit
+                ? "Personalize o texto usado nas próximas emissões deste documento."
+                : "Documento gerado automaticamente pelo sistema a partir dos dados da operação."}
+            </p>
+          </header>
+
+          {isSystemLocked ? (
+            <div className="documents-builder-locked-notice">
+              <span
+                aria-hidden="true"
+                className="documents-builder-locked-notice-icon"
+              >
+                <Lock className="size-5" />
+              </span>
+              <div>
+                <strong>Modelo oficial · somente leitura</strong>
+                <p>
+                  Este documento é gerado automaticamente pelo sistema com os
+                  dados da operação. O layout e o conteúdo seguem um padrão fixo
+                  e não podem ser editados como texto. Use a prévia ao lado para
+                  conferir a estrutura.
+                </p>
+              </div>
             </div>
-            <label className="documents-builder-title-field">
+          ) : null}
+
+          <div className="documents-builder-name-panel">
+            <label className="documents-builder-name-field">
               <span>Nome do modelo</span>
               <input
-                disabled={!isEditable}
+                disabled={!canEdit}
                 onChange={(event) =>
                   setDraft((current) => ({
                     ...current,
                     title: event.target.value,
                   }))
                 }
+                placeholder="Ex.: Contrato de compra e venda"
                 value={draft.title}
               />
             </label>
             <button
-              disabled={!isEditable}
+              className="documents-builder-ghost-action"
+              disabled={!canEdit}
               onClick={() =>
                 setDraft(createDefaultDocumentBuilderDraft(selected))
+              }
+              title={
+                isStoreCopy
+                  ? "Restaurar o texto do modelo oficial"
+                  : "Restaurar o texto padrão"
               }
               type="button"
             >
               <RotateCcw aria-hidden="true" className="size-4" />
-              Restaurar padrão
+              {isStoreCopy ? "Restaurar oficial" : "Restaurar padrão"}
             </button>
-          </section>
+          </div>
 
           <DocumentBuilderBlocks
             blocks={draft.blocks}
-            isEditable={isEditable}
+            isEditable={canEdit}
             onBlocksChange={(blocks) =>
               setDraft((current) => ({ ...current, blocks }))
             }
@@ -182,6 +217,7 @@ export function DocumentBuilderWorkspace({
           assistant={
             <DocumentBuilderAiPanel
               api={api}
+              canEdit={canEdit}
               draft={draft}
               onApply={setDraft}
               selected={selected}
@@ -202,17 +238,22 @@ export function DocumentBuilderWorkspace({
   );
 }
 
-function saveStatusLabel(
+function builderStatus(
   state: DocumentBuilderSaveState,
   isSaving: boolean,
-  mode: DocumentTemplate["mode"],
-) {
-  if (mode === "locked") return "Renderizador travado";
-  if (isSaving || state === "saving") return "Salvando";
-  if (state === "dirty") return "Alterações não salvas";
-  if (state === "error") return "Erro ao salvar";
-  if (state === "saved") return "Salvo";
-  return "Sem alterações";
+  canEdit: boolean,
+  isSystemLocked: boolean,
+): DocumentBuilderStatus {
+  if (isSystemLocked && !canEdit) {
+    return { label: "Somente leitura", tone: "locked" };
+  }
+  if (isSaving || state === "saving")
+    return { label: "Salvando…", tone: "saving" };
+  if (state === "dirty")
+    return { label: "Alterações não salvas", tone: "dirty" };
+  if (state === "error") return { label: "Erro ao salvar", tone: "error" };
+  if (state === "saved") return { label: "Tudo salvo", tone: "saved" };
+  return { label: "Sem alterações", tone: "idle" };
 }
 
 function saveSelectedTemplate(

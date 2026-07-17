@@ -1,4 +1,14 @@
-import { Briefcase, Shield } from "lucide-react";
+import {
+  BadgeCheck,
+  Briefcase,
+  Clock,
+  Coins,
+  Shield,
+  Tag,
+  TrendingUp,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { cx } from "../../../components/ui/featureShared";
 
 export function WorkspaceKPIStrip({
   salePrice,
@@ -15,47 +25,42 @@ export function WorkspaceKPIStrip({
 }) {
   return (
     <div className="flex flex-col lg:flex-row gap-4 justify-between lg:items-center bg-panel/30 border border-line/60 rounded-2xl p-4.5">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4.5 flex-1 min-w-0">
-        <div className="min-w-0">
-          <span className="block text-xs font-black uppercase tracking-wider text-muted">
-            Preço de Venda
-          </span>
-          <span className="block text-base font-black text-accent-strong mt-0.5">
-            {salePrice}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <span className="block text-xs font-black uppercase tracking-wider text-muted">
-            Custos Registrados
-          </span>
-          <span className="block text-base font-black mt-0.5 text-app-text">
-            {acquisitionPrice}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <span className="block text-xs font-black uppercase tracking-wider text-muted">
-            Margem Base
-          </span>
-          <span className="mt-0.5 block text-base font-black text-success-strong">
-            {margin}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <span className="block text-xs font-black uppercase tracking-wider text-muted">
-            Tempo em Pátio
-          </span>
-          <span className="mt-0.5 block text-base font-black text-warning-strong">
-            {stockTime}
-          </span>
-        </div>
-        <div className="min-w-0">
-          <span className="block text-xs font-black uppercase tracking-wider text-muted">
-            Status do Anúncio
-          </span>
-          <span className="mt-0.5 block text-base font-black text-accent-strong">
-            {renaveStatus}
-          </span>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 flex-1 min-w-0">
+        <KPIItem
+          icon={Tag}
+          tile="bg-accent-soft text-accent-strong"
+          label="Preço de Venda"
+          value={salePrice}
+          valueClassName="text-accent-strong"
+        />
+        <KPIItem
+          icon={Coins}
+          tile="bg-blue-500/10 text-blue-500"
+          label="Custos Registrados"
+          value={acquisitionPrice}
+          valueClassName="text-app-text"
+        />
+        <KPIItem
+          icon={TrendingUp}
+          tile="bg-emerald-500/10 text-emerald-500"
+          label="Margem Base"
+          value={margin}
+          valueClassName="text-success-strong"
+        />
+        <KPIItem
+          icon={Clock}
+          tile="bg-amber-500/10 text-amber-600"
+          label="Tempo em Pátio"
+          value={stockTime}
+          valueClassName="text-warning-strong"
+        />
+        <KPIItem
+          icon={BadgeCheck}
+          tile="bg-violet-500/10 text-violet-500"
+          label="Status do Anúncio"
+          value={renaveStatus}
+          valueClassName="text-app-text"
+        />
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-line/60 pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
@@ -72,6 +77,46 @@ export function WorkspaceKPIStrip({
         >
           <Shield className="size-3.5" />
           <span>Seguro na venda</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function KPIItem({
+  icon: Icon,
+  tile,
+  label,
+  value,
+  valueClassName,
+}: {
+  icon: LucideIcon;
+  tile: string;
+  label: string;
+  value: string;
+  valueClassName: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 min-w-0">
+      <span
+        className={cx(
+          "flex size-9 shrink-0 items-center justify-center rounded-xl",
+          tile,
+        )}
+      >
+        <Icon className="size-4" />
+      </span>
+      <div className="min-w-0">
+        <span className="block text-xs font-black uppercase tracking-wider text-muted truncate">
+          {label}
+        </span>
+        <span
+          className={cx(
+            "mt-0.5 block text-base font-black truncate",
+            valueClassName,
+          )}
+        >
+          {value}
         </span>
       </div>
     </div>

@@ -1,5 +1,19 @@
 import { isColorApproved } from "./frontend-design-colors.mjs";
 
+// Partner marketplace portals render third-party logos and brand colours
+// (iCarros orange, OLX teal, Webmotors blue, Mercado Livre indigo) that
+// legitimately fall outside the store's approved palette — you cannot recolour
+// a partner's logo. Exempt only these specific assets from the brand-palette
+// checks; every other design rule still applies to them.
+const partnerPortalBrandAssets = [
+  "/apps/web/public/icons/portals/",
+  "/features/inventory/components/InventoryDetailPortaisSection.tsx",
+];
+
+function isPartnerPortalBrandAsset(file) {
+  return partnerPortalBrandAssets.some((part) => file.includes(part));
+}
+
 export const hardcodedColorPattern =
   /#[0-9a-fA-F]{3,8}\b|\brgba?\s*\([^)]*\)|\bhsla?\s*\([^)]*\)/g;
 export const runtimeTailwindPattern =
@@ -19,7 +33,9 @@ export const inlineFontSizePattern =
 
 export function findFrontendDesignViolations(file, source) {
   const failures = [];
+  const isPartnerPortalAsset = isPartnerPortalBrandAsset(file);
   if (file.endsWith(".svg")) {
+    if (isPartnerPortalAsset) return failures;
     for (const match of source.matchAll(hardcodedColorPattern)) {
       if (!isColorApproved(match[0])) {
         failures.push(
@@ -58,9 +74,9 @@ export function findFrontendDesignViolations(file, source) {
     }
   } else {
     // JS/TS/JSX/TSX Files
-    // 1. Check for hardcoded colors
+    // 1. Check for hardcoded colors (partner-portal brand assets are exempt)
     const hardcodedColors = [...source.matchAll(hardcodedColorPattern)];
-    if (hardcodedColors.length > 0) {
+    if (!isPartnerPortalAsset && hardcodedColors.length > 0) {
       failures.push(
         `${file}: hardcoded color found; use design tokens / global CSS instead of raw color codes.`,
       );

@@ -12,6 +12,7 @@ import { FeatureActionButton } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import { cx, type FeatureIcon } from "../../components/ui/featureShared";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
+import type { AutoEntryTone } from "./domainMeta";
 import { sellerSelectOptions } from "./domainModel";
 
 export function AutoEntryDomainCard({
@@ -19,36 +20,24 @@ export function AutoEntryDomainCard({
   description,
   icon: Icon = SlidersHorizontal,
   title,
-  tone = "accent",
+  tone,
 }: {
   children: ReactNode;
   description: ReactNode;
   icon?: FeatureIcon;
   title: ReactNode;
-  tone?: "accent" | "blue" | "green" | "warning" | "violet" | "neutral";
+  /** Overrides the origin colour; when omitted the card inherits the panel tone. */
+  tone?: AutoEntryTone;
 }) {
   return (
-    <FeatureCard className="auto-entry-domain-card" padding="comfortable">
+    <FeatureCard
+      className={cx("auto-entry-domain-card", tone && `ae-tone--${tone}`)}
+      padding="comfortable"
+    >
       <FeatureCardHeader
         className="auto-entry-domain-card__header"
         icon={
-          <span
-            aria-hidden="true"
-            className={cx(
-              "auto-entry-domain-card__icon",
-              tone === "accent" &&
-                "bg-accent-soft border-accent/20 text-accent-strong",
-              tone === "green" &&
-                "bg-emerald-500/10 border-emerald-500/20 text-emerald-500",
-              tone === "blue" &&
-                "bg-blue-soft border-blue-start/20 text-blue-start",
-              tone === "warning" &&
-                "bg-warning/10 border-warning/20 text-warning-strong",
-              tone === "violet" &&
-                "bg-violet-500/10 border-violet-500/20 text-violet-start",
-              tone === "neutral" && "bg-app-elevated border-line text-muted",
-            )}
-          >
+          <span aria-hidden="true" className="auto-entry-domain-card__icon">
             <Icon className="size-4" />
           </span>
         }

@@ -10,11 +10,13 @@ import { useState } from "react";
 
 export function DocumentBuilderAiPanel({
   api,
+  canEdit,
   draft,
   onApply,
   selected,
 }: {
   api: DocumentsApi | null;
+  canEdit: boolean;
   draft: DocumentBuilderDraft;
   onApply: (draft: DocumentBuilderDraft) => void;
   selected: DocumentTemplate;
@@ -26,10 +28,7 @@ export function DocumentBuilderAiPanel({
     "idle",
   );
 
-  const canSuggest =
-    Boolean(api) &&
-    selected.mode === "editable" &&
-    instruction.trim().length >= 3;
+  const canSuggest = Boolean(api) && canEdit && instruction.trim().length >= 3;
 
   const suggest = async () => {
     if (!api || !canSuggest) return;
@@ -98,7 +97,7 @@ export function DocumentBuilderAiPanel({
       <label className="documents-builder-ai-prompt">
         <span>Pedido</span>
         <textarea
-          disabled={!api || selected.mode !== "editable"}
+          disabled={!api || !canEdit}
           onChange={(event) => setInstruction(event.target.value)}
           placeholder="Ex.: deixe a cláusula de garantia mais clara e objetiva"
           value={instruction}

@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { FeatureEmptyState } from "../../../components/ui/FeatureStates";
+import { ImageWithFallback } from "../../../components/ui/ImageWithFallback";
 import {
   FeatureRowAction,
   FeatureRowActions,
@@ -120,9 +121,17 @@ function InventoryListingCard({
       <div className="relative flex aspect-[4/3] w-full shrink-0 items-center justify-center overflow-hidden border-b border-line/30 bg-app-elevated">
         {item.primaryMediaUrl ? (
           <>
-            <img
+            <ImageWithFallback
               alt={listing.title}
               className="block h-full w-full object-cover transition-[filter,transform] duration-500 group-hover:scale-105 group-hover:blur-[2px]"
+              fallback={
+                <span className="flex size-full flex-col items-center justify-center gap-1.5 text-muted/60">
+                  <CarFront aria-hidden="true" className="size-8" />
+                  <span className="text-xs font-bold uppercase tracking-wider">
+                    Fotos em breve
+                  </span>
+                </span>
+              }
               src={item.primaryMediaUrl}
             />
             <span
@@ -137,7 +146,12 @@ function InventoryListingCard({
             />
           </>
         ) : (
-          <CarFront aria-hidden="true" className="size-8 text-muted/50" />
+          <span className="flex size-full flex-col items-center justify-center gap-1.5 text-muted/60">
+            <CarFront aria-hidden="true" className="size-8" />
+            <span className="text-xs font-bold uppercase tracking-wider">
+              Fotos em breve
+            </span>
+          </span>
         )}
 
         <div

@@ -12,7 +12,6 @@ import {
   type AutoEntryRankValues,
 } from "./AutoEntryRateMatrix";
 import {
-  autoEntryFamilies,
   financingRanks,
   financingSellerSuggestions,
   financingStoreSuggestions,
@@ -63,7 +62,6 @@ function FinancingStoreCard({
     <AutoEntryDomainCard
       description="A loja recebe uma taxa por faixa R1–R5 do financiamento. Campos vazios não criam regras sugeridas."
       title="Matriz da loja"
-      tone="blue"
     >
       <AutoEntryValueOrigin
         active={Object.values(storedValues).some(Boolean)}
@@ -120,7 +118,6 @@ function FinancingSellerCard({
     <AutoEntryDomainCard
       description="A seleção identifica quem dispara e recebe a comissão. As sugestões V1 só viram regras após salvar."
       title="Matriz por vendedor"
-      tone="blue"
     >
       <AutoEntrySellerField
         onChange={setSellerUserId}

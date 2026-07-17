@@ -18,7 +18,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
         </div>
 
         <div className="grid gap-4">
-          <div className="sales-glass-panel p-4 bg-app-elevated/20 border border-line grid gap-3">
+          <div className="grid gap-3">
             <h4 className="text-xs font-black text-app-text flex items-center gap-1.5 uppercase tracking-wider border-b border-line/40 pb-2">
               <User className="size-4 text-accent" />
               <span>Cliente Comprador</span>
@@ -58,7 +58,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
             </div>
           </div>
 
-          <div className="sales-glass-panel p-4 bg-app-elevated/20 border border-line grid gap-3">
+          <div className="grid gap-3">
             <h4 className="text-xs font-black text-app-text flex items-center gap-1.5 uppercase tracking-wider border-b border-line/40 pb-2">
               <Car className="size-4 text-accent" />
               <span>Veículo Vinculado</span>
@@ -94,7 +94,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
             </div>
           </div>
 
-          <div className="sales-glass-panel p-4 bg-app-elevated/20 border border-line grid gap-3">
+          <div className="grid gap-3">
             <h4 className="text-xs font-black text-app-text flex items-center gap-1.5 uppercase tracking-wider border-b border-line/40 pb-2">
               <Coins className="size-4 text-accent" />
               <span>Composição Financeira</span>
@@ -159,7 +159,7 @@ export function ReviewSection({ sale }: { sale: SaleRecord }) {
             )}
           </div>
 
-          <div className="sales-glass-panel p-4 bg-app-elevated/20 border border-line grid gap-3">
+          <div className="grid gap-3">
             <h4 className="text-xs font-black text-app-text flex items-center gap-1.5 uppercase tracking-wider border-b border-line/40 pb-2">
               <FileText className="size-4 text-accent" />
               <span>Documentação Anexada</span>

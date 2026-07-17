@@ -1,6 +1,6 @@
 .documents-folder-sidebar-row:hover {
   background: var(--color-app-elevated);
-  transform: translateY(-1px);
+  border-color: var(--color-line);
 }
 
 .documents-folder-sidebar-row--active,

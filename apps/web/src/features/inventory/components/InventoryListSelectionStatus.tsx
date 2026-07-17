@@ -19,7 +19,7 @@ export function InventoryListSelectionStatus({
 
       {state.kind === "idle" && (
         <div className="flex items-start gap-3 text-muted">
-          <Info className="size-5 shrink-0 text-violet-500 mt-0.5" />
+          <Info className="size-5 shrink-0 text-accent mt-0.5" />
           <p className="text-sm font-bold leading-relaxed">
             Selecione um veículo para gerenciar workflow, fotos, custos e dados
             técnicos.

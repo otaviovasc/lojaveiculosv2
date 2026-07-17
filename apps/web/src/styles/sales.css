@@ -25,17 +25,23 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 :root[data-theme="dark"] .sales-glass-panel {
-  background: rgba(21, 21, 21, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.35);
+  background: color-mix(
+    in srgb,
+    var(--color-panel) 80%,
+    var(--color-transparent)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-line) 55%, var(--color-transparent));
+  box-shadow: var(--shadow-raised);
 }
 .sales-glass-panel:hover {
-  border-color: rgba(225, 31, 38, 0.25);
-  box-shadow: 0 12px 30px rgba(225, 31, 38, 0.04);
-}
-:root[data-theme="dark"] .sales-glass-panel:hover {
-  border-color: rgba(225, 31, 38, 0.25);
-  box-shadow: 0 16px 40px rgba(225, 31, 38, 0.06);
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 25%,
+    var(--color-transparent)
+  );
+  box-shadow: 0 12px 30px
+    color-mix(in srgb, var(--color-accent) 6%, var(--color-transparent));
 }
 
 :root:not([data-theme="dark"]) .sales-vehicle-card-glow {
@@ -131,7 +137,11 @@
 }
 .sales-card-item:hover {
   transform: translateY(-2px);
-  border-color: rgba(225, 31, 38, 0.3);
+  border-color: color-mix(
+    in srgb,
+    var(--color-accent) 30%,
+    var(--color-transparent)
+  );
 }
 .sales-card-item-active {
   border-color: var(--color-accent) !important;
@@ -265,11 +275,11 @@
   padding: 1.25rem;
   position: relative;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.01);
+  box-shadow: var(--shadow-panel);
 }
 .sales-payment-row:hover {
   border-color: var(--color-line-strong);
-  box-shadow: 0 4px 16px rgba(21, 21, 21, 0.03);
+  box-shadow: var(--shadow-raised);
 }
 /* Wizard Header / Step tabs */
 .sales-wizard-header {

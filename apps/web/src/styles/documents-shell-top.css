@@ -54,7 +54,7 @@
 .documents-top-bar-chip {
   align-items: center;
   background: var(--color-accent-soft);
-  border: 1px solid rgba(225, 31, 38, 0.15);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 15%, transparent);
   border-radius: 999px;
   color: var(--color-accent-strong);
   display: inline-flex;
@@ -191,6 +191,11 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgb(0 0 0 / 0.06);
   border-color: var(--color-line-strong);
+}
+
+.documents-kpi-card[aria-pressed="true"],
+.documents-kpi-card.is-active {
+  border-color: var(--color-accent);
 }
 
 .documents-kpi-card::after {

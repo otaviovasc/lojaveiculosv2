@@ -160,7 +160,7 @@ export function ChecklistOverviewTable({
           </tbody>
         </table>
       </FeatureTableFrame>
-      <div className="grid gap-3 md:hidden">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 md:hidden">
         {items.map((item) => (
           <ChecklistCard
             busy={busyUnitId === item.unit.id}

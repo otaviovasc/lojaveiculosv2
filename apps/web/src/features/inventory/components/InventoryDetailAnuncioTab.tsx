@@ -1,5 +1,16 @@
-import { useEffect, useState } from "react";
-import { LoaderCircle, Save, Sparkles } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import {
+  AlignLeft,
+  Check,
+  ExternalLink,
+  Hash,
+  LoaderCircle,
+  type LucideIcon,
+  Megaphone,
+  Save,
+  Tag,
+  Video,
+} from "lucide-react";
 import { CurrencyInput } from "../../../components/ui/currency-input";
 import {
   FeatureInput,
@@ -113,47 +124,80 @@ export function InventoryDetailAnuncioTab({
         description={
           "Descrição, preço, tags e vídeo são salvos no anúncio oficial e aparecem na vitrine quando ele é publicado."
         }
-        icon={<Sparkles aria-hidden="true" className="size-4 shrink-0" />}
+        icon={
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent-strong">
+            <Megaphone aria-hidden="true" className="size-4" />
+          </span>
+        }
         radius="xl"
         title="Configuração do anúncio"
       >
         {error ? <FeatureAlert>{error}</FeatureAlert> : null}
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="grid gap-2">
-            <FeatureField label="Descrição">
-              <FeatureTextarea
-                aria-label="Descrição do anúncio"
-                className="min-h-32 resize-y disabled:text-muted disabled:opacity-100"
-                disabled={isSaving}
-                onChange={(event) => setDescription(event.target.value)}
-                placeholder="Descreva os destaques comerciais do veículo..."
-                value={description}
-              />
-            </FeatureField>
-          </div>
-
-          <div className="grid gap-2">
-            <FeatureField
-              hint={`Valor salvo: ${advertisedPrice}`}
-              label="Valor do anúncio"
-            >
-              <CurrencyInput
-                aria-label="Valor do anúncio"
-                disabled={isSaving}
-                id="inventory-ad-price"
-                inputClassName="text-sm disabled:text-muted disabled:opacity-100"
-                onChange={setPrice}
-                value={price}
-              />
-            </FeatureField>
-          </div>
-        </div>
+        <FeatureField
+          hint={`${description.trim().length} caracteres`}
+          label={<FieldLabel icon={AlignLeft}>Descrição</FieldLabel>}
+        >
+          <FeatureTextarea
+            aria-label="Descrição do anúncio"
+            className="min-h-36 resize-y disabled:text-muted disabled:opacity-100"
+            disabled={isSaving}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Descreva os destaques comerciais do veículo..."
+            value={description}
+          />
+        </FeatureField>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <FeatureField
+            hint={`Valor salvo: ${advertisedPrice}`}
+            label={<FieldLabel icon={Tag}>Valor do anúncio</FieldLabel>}
+          >
+            <CurrencyInput
+              aria-label="Valor do anúncio"
+              disabled={isSaving}
+              id="inventory-ad-price"
+              inputClassName="text-sm disabled:text-muted disabled:opacity-100"
+              onChange={setPrice}
+              value={price}
+            />
+          </FeatureField>
+
+          <div className="grid content-start gap-2">
+            <FeatureField
+              hint="Aceita YouTube ou um arquivo de vídeo público."
+              label={<FieldLabel icon={Video}>Vídeo do anúncio</FieldLabel>}
+            >
+              <FeatureInput
+                aria-label="URL do vídeo do anúncio"
+                className="disabled:text-muted disabled:opacity-100"
+                disabled={isSaving}
+                inputMode="url"
+                maxLength={2048}
+                onChange={(event) => setVideoUrl(event.target.value)}
+                placeholder="https://youtube.com/watch?v=..."
+                type="url"
+                value={videoUrl}
+              />
+            </FeatureField>
+            {nextVideoUrl && isHttpUrl(nextVideoUrl) ? (
+              <a
+                className="inline-flex w-fit items-center gap-1 text-xs font-black text-accent-strong hover:underline"
+                href={nextVideoUrl}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <ExternalLink aria-hidden="true" className="size-3" />
+                Abrir vídeo em nova aba
+              </a>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="grid gap-2.5">
+          <FeatureField
             hint="Separe as tags por vírgulas. Máximo de 12 tags."
-            label="Tags comerciais"
+            label={<FieldLabel icon={Hash}>Tags comerciais</FieldLabel>}
           >
             <FeatureInput
               aria-label="Tags comerciais"
@@ -165,26 +209,37 @@ export function InventoryDetailAnuncioTab({
               value={commercialTags}
             />
           </FeatureField>
-
-          <FeatureField
-            hint="Aceita YouTube ou um arquivo de vídeo público."
-            label="Vídeo do anúncio"
-          >
-            <FeatureInput
-              aria-label="URL do vídeo do anúncio"
-              className="disabled:text-muted disabled:opacity-100"
-              disabled={isSaving}
-              inputMode="url"
-              maxLength={2048}
-              onChange={(event) => setVideoUrl(event.target.value)}
-              placeholder="https://youtube.com/watch?v=..."
-              type="url"
-              value={videoUrl}
-            />
-          </FeatureField>
+          {nextCommercialTags.length ? (
+            <div className="flex flex-wrap gap-1.5">
+              {nextCommercialTags.map((tag) => (
+                <span
+                  className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-xs font-black text-accent-strong"
+                  key={tag}
+                >
+                  <Hash aria-hidden="true" className="size-3" />
+                  {tag}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs font-bold text-muted">
+              As tags aparecerão aqui conforme você digita.
+            </p>
+          )}
         </div>
 
-        <div className="flex justify-end border-t border-line pt-4">
+        <div className="flex flex-col-reverse items-stretch gap-3 border-t border-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+          {hasChanges ? (
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-warning-strong">
+              <span className="size-2 shrink-0 rounded-full bg-warning-strong" />
+              Alterações não salvas
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-muted">
+              <Check aria-hidden="true" className="size-3.5 text-emerald-500" />
+              Anúncio sincronizado
+            </span>
+          )}
           <FeatureActionButton
             disabled={!hasChanges}
             icon={isSaving ? LoaderCircle : Save}
@@ -202,6 +257,21 @@ export function InventoryDetailAnuncioTab({
         title={listing.title}
       />
     </div>
+  );
+}
+
+function FieldLabel({
+  children,
+  icon: Icon,
+}: {
+  children: ReactNode;
+  icon: LucideIcon;
+}) {
+  return (
+    <span className="flex items-center gap-1.5">
+      <Icon aria-hidden="true" className="size-3.5 text-muted" />
+      {children}
+    </span>
   );
 }
 

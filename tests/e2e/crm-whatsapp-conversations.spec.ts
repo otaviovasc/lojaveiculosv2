@@ -228,11 +228,11 @@ test.describe("CRM WhatsApp conversations", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: "Conecte o numero da loja para abrir o atendimento.",
+        name: "Conecte o número da loja para abrir o atendimento.",
       }),
     ).toBeVisible();
     await expect(page.getByLabel("Conversas do WhatsApp")).toHaveCount(0);
-    await page.getByRole("button", { name: "Configurar conexao" }).click();
+    await page.getByRole("button", { name: "Configurar conexão" }).click();
     await expect(page.getByRole("tab", { name: "Conexão" })).toHaveAttribute(
       "aria-selected",
       "true",

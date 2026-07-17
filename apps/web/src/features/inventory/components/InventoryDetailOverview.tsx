@@ -97,7 +97,7 @@ export function InventoryDetailOverview({
                   : "Sob consulta"}
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line/60">
               <OverviewMetric
                 icon={<Gauge className="size-4" />}
                 label="Km"
@@ -123,13 +123,13 @@ export function InventoryDetailOverview({
                 value={detail.documents.length}
               />
             </div>
-            <div className="rounded-xl border border-line bg-panel p-3">
+            <div className="flex items-center justify-between gap-3 border-t border-line/60 pt-3">
               <span className="text-xs font-black uppercase tracking-widest text-muted">
                 Custos registrados
               </span>
-              <p className="mt-1 text-lg font-black text-app-text">
+              <span className="text-lg font-black text-app-text">
                 {totalCosts ? formatPrice(totalCosts) : "Nenhum custo"}
-              </p>
+              </span>
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@ export function InventoryDetailOverview({
           />
         </div>
 
-        <div className="mt-4 grid gap-2">
+        <div className="mt-4 divide-y divide-line/60 border-t border-line/60">
           {readiness.map((item) => (
             <ReadinessRow key={item.label} {...item} />
           ))}
@@ -177,7 +177,7 @@ function OverviewMetric({
   value: number | string;
 }) {
   return (
-    <div className="rounded-xl border border-line bg-panel p-3">
+    <div className="bg-app p-3">
       <div className="flex items-center gap-2 text-muted">
         {icon}
         <span className="text-xs font-black uppercase tracking-wider">
@@ -202,7 +202,7 @@ function ReadinessRow({
 }) {
   const Icon = done ? CheckCircle2 : CircleAlert;
   return (
-    <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-app px-3 py-2.5">
+    <div className="flex items-center justify-between gap-3 px-1 py-2.5">
       <div className="flex min-w-0 items-center gap-2">
         <Icon
           className={

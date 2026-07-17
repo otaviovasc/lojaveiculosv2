@@ -91,7 +91,6 @@ export function SaleExtraCommissionCard({
     <AutoEntryDomainCard
       description="Sempre soma um valor fixo para um beneficiário, independentemente de quem originou a venda."
       title="Comissões extras"
-      tone="blue"
     >
       {existing.length > 0 ? (
         <ul className="grid gap-2" aria-label="Comissões extras ativas">

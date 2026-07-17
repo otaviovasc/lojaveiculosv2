@@ -9,7 +9,7 @@ export function SaleDocumentsValidationStatus({
 }) {
   const statusClassName = isValid
     ? "bg-panel border-success-strong/25 text-app-text"
-    : "bg-amber-500/10 border-amber-500/25 text-amber-600";
+    : "bg-warning/10 border-warning/25 text-warning-strong";
 
   return (
     <div
@@ -32,12 +32,12 @@ export function SaleDocumentsValidationStatus({
         </>
       ) : (
         <>
-          <ShieldAlert className="size-5 text-amber-500 shrink-0" />
+          <ShieldAlert className="size-5 text-warning-strong shrink-0" />
           <div className="flex flex-col">
             <span className="text-xs font-black uppercase tracking-wider">
               Documentação com Pendências
             </span>
-            <span className="text-xs font-bold text-amber-500/80">
+            <span className="text-xs font-bold text-warning-strong/80">
               Preencha os campos obrigatórios (*). {Object.keys(errors).length}{" "}
               erro(s) listado(s).
             </span>

@@ -2,6 +2,7 @@ import { FilePlus2, GripVertical, Trash2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import {
   blockTitle,
+  blockTypeLabel,
   createClauseBlock,
   renderSampleText,
   sampleVariable,
@@ -37,8 +38,8 @@ export function DocumentBuilderBlocks({
     <section className="documents-builder-blocks">
       <header className="documents-builder-panel-heading">
         <div>
-          <span>Estrutura compartilhada</span>
-          <h2>Blocos do documento</h2>
+          <span>Conteúdo do documento</span>
+          <h2>Blocos e cláusulas</h2>
         </div>
         <button
           disabled={!isEditable}
@@ -46,7 +47,7 @@ export function DocumentBuilderBlocks({
           type="button"
         >
           <FilePlus2 aria-hidden="true" className="size-4" />
-          Cláusula
+          Adicionar cláusula
         </button>
       </header>
 
@@ -62,7 +63,7 @@ export function DocumentBuilderBlocks({
                 <GripVertical aria-hidden="true" className="size-4" />
               </span>
               <div>
-                <small>{block.type}</small>
+                <small>{blockTypeLabel(block.type)}</small>
                 <strong>{blockTitle(block, index)}</strong>
               </div>
               {isEditable && isTextBlock(block) ? (
