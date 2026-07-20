@@ -81,7 +81,9 @@ describe("createLocalHttpLogger", () => {
       headers: { "x-request-id": "req_500" },
     });
 
-    expect(readLogLine(error)).toMatchObject({
+    // jsonApiError also emits a request.internal_error line for staging/prod
+    // visibility; assert the local middleware line among all error calls.
+    expect(readLogLine(error, "request.failed")).toMatchObject({
       code: "INTERNAL_SERVER_ERROR",
       component: "http",
       event: "request.failed",
@@ -92,8 +94,15 @@ describe("createLocalHttpLogger", () => {
   });
 });
 
-function readLogLine(spy: { mock: { calls: Array<Array<unknown>> } }) {
-  const first = spy.mock.calls[0]?.[0];
-  if (typeof first !== "string") throw new Error("Missing log line.");
-  return JSON.parse(first) as Record<string, unknown>;
+function readLogLine(
+  spy: { mock: { calls: Array<Array<unknown>> } },
+  event?: string,
+) {
+  const lines = spy.mock.calls
+    .map((call) => call[0])
+    .filter((line): line is string => typeof line === "string")
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
+  const match = event ? lines.find((line) => line.event === event) : lines[0];
+  if (!match) throw new Error("Missing log line.");
+  return match;
 }
