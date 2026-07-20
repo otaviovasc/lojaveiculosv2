@@ -1,10 +1,5 @@
 import { lazy } from "react";
 
-export const AutomationWorkspace = lazy(() =>
-  import("../features/automation/AutomationWorkspace").then((module) => ({
-    default: module.AutomationWorkspace,
-  })),
-);
 export const AutoEntriesWorkspace = lazy(() =>
   import("../features/autoEntries/AutoEntriesWorkspace").then((module) => ({
     default: module.AutoEntriesWorkspace,

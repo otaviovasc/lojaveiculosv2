@@ -1,4 +1,4 @@
-import { RefreshCcw, Save, Store, Users } from "lucide-react";
+import { RefreshCcw, Save, Store, Users, Globe2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FeatureTabs } from "../../components/ui/FeatureControls";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
@@ -11,6 +11,7 @@ import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { notifyTenantAdminBrandUpdated } from "../../app/tenantAdminBranding";
 import type { SettingsApi } from "./apiClient";
 import { RoleManagementPanel } from "./roles/RoleManagementPanel";
+import { SettingsDomainPanel } from "./SettingsDomainPanel";
 import { SettingsStoreProfilePanel } from "./SettingsStoreProfilePanel";
 import { createRuntimeSettingsApi } from "./runtimeSettingsApi";
 import { createStoreSettingsPatch } from "./settingsPatch";
@@ -149,6 +150,7 @@ export function SettingsModule({
           optionClassName="inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-lg px-4 text-xs font-black text-muted transition-all hover:text-app-text"
           options={[
             { label: "Perfil da Loja", value: "store", icon: Store },
+            { label: "Domínio", value: "domain", icon: Globe2 },
             { label: "Papéis e Permissões", value: "roles", icon: Users },
           ]}
           value={activeTab}
@@ -194,6 +196,28 @@ export function SettingsModule({
           icon={Store}
           title="Configurações indisponíveis"
         />
+      ) : activeTab === "domain" && settings ? (
+        <SettingsDomainPanel
+          isSaving={status.kind === "saving"}
+          onSave={save}
+          settings={settings}
+        />
+      ) : activeTab === "domain" && status.kind === "error" ? (
+        <FeatureEmptyState
+          action={
+            <button
+              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-line bg-panel px-4 text-xs font-black text-app-text hover:bg-app-elevated/45"
+              onClick={() => void refresh()}
+              type="button"
+            >
+              <RefreshCcw aria-hidden="true" className="size-3.5" />
+              Tentar carregar novamente
+            </button>
+          }
+          body="Os dados atuais não puderam ser carregados. Nenhuma alteração foi aplicada."
+          icon={Globe2}
+          title="Configurações indisponíveis"
+        />
       ) : activeTab === "roles" && roles ? (
         <RoleManagementPanel
           isSaving={status.kind === "saving"}
@@ -207,7 +231,13 @@ export function SettingsModule({
       ) : (
         <FeatureLoadingState
           className="settings-empty"
-          icon={activeTab === "roles" ? Users : Store}
+          icon={
+            activeTab === "roles"
+              ? Users
+              : activeTab === "domain"
+                ? Globe2
+                : Store
+          }
           title="Carregando configurações"
         />
       )}
@@ -226,7 +256,7 @@ function readInitialSettingsTab(): SettingsTab {
   if (typeof window === "undefined") return "store";
   const query = window.location.hash.split("?")[1] ?? "";
   const tab = new URLSearchParams(query).get("tab");
-  return tab === "roles" ? tab : "store";
+  return tab === "roles" || tab === "domain" ? tab : "store";
 }
 
 function selectTab(tab: SettingsTab, setActiveTab: (tab: SettingsTab) => void) {

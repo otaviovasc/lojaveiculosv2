@@ -1,7 +1,6 @@
 export const adminRoutePaths = [
   "/",
   "/auto-entries",
-  "/autobot",
   "/billing",
   "/checklists",
   "/commissions",
@@ -11,8 +10,6 @@ export const adminRoutePaths = [
   "/custom-pages",
   "/dashboard",
   "/documents",
-  "/domain",
-  "/dominio",
   "/expenses",
   "/fiscal",
   "/inventory",

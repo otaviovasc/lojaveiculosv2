@@ -24,7 +24,6 @@ type ModulePermissionRule = {
 
 const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   "auto-entries": gate(["finance.read"], "regras de lançamentos automáticos"),
-  autobot: gate(["automation.read"], "automações assistidas"),
   billing: gate(["billing.manage"], "assinatura e faturamento"),
   checklists: gate(["inventory.checklist_read"], "checklists"),
   commissions: gate(["finance.read"], "comissões"),
@@ -36,7 +35,6 @@ const modulePermissionRules: Partial<Record<ModuleId, ModulePermissionRule>> = {
   "custom-pages": gate(["store_public_site.manage"], "páginas da vitrine"),
   customers: gate(["lead.read"], "clientes"),
   documents: gate(["documents.read"], "documentos"),
-  domain: gate(["store_public_site.manage"], "domínio da loja"),
   expenses: gate(["finance.read"], "gastos"),
   fiscal: gate(["fiscal.manage"], "emissão fiscal"),
   inventory: gate(["inventory.read"], "estoque"),
