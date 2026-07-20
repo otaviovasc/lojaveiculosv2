@@ -136,14 +136,14 @@ function ConfiguredLandingAuthActions({
 
   return (
     <>
-      <SignUpButton mode="modal">
+      <SignUpButton fallbackRedirectUrl={sessionPath} mode="modal">
         <button className={primaryClass} type="button">
           {primaryLabel}
           <ArrowRight className="size-4" />
         </button>
       </SignUpButton>
       {!compact ? (
-        <SignInButton mode="modal">
+        <SignInButton fallbackRedirectUrl={sessionPath} mode="modal">
           <button className={secondaryClass} type="button">
             Entrar
           </button>

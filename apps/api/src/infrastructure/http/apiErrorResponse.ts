@@ -33,7 +33,9 @@ export function jsonApiError(context: Context, input: ApiErrorResponseInput) {
   } satisfies HttpErrorMetadata);
 
   if (input.status >= 500) {
-    context.error = normalizeError(input.error);
+    const normalizedError = normalizeError(input.error);
+    context.error = normalizedError;
+    logInternalApiError(context, input, requestId, normalizedError);
   }
 
   return context.json(
@@ -64,4 +66,31 @@ function readErrorName(error: unknown): string | undefined {
 function normalizeError(error: unknown) {
   if (error instanceof Error) return error;
   return new Error(error === undefined ? "Unknown error" : String(error));
+}
+
+// Internal (5xx) errors are otherwise invisible in staging/production: the
+// per-request HTTP logger only runs when APP_ENV === "local", so a 500 leaves no
+// server-side trace to pair with the requestId returned to the client. Log the
+// stack here (the single choke point for every formatted API error) so failures
+// are diagnosable from Railway logs. The client response is unchanged.
+function logInternalApiError(
+  context: Context,
+  input: ApiErrorResponseInput,
+  requestId: string,
+  error: Error,
+) {
+  console.error(
+    JSON.stringify({
+      component: "http",
+      event: "request.internal_error",
+      code: input.code,
+      method: context.req.method,
+      path: context.req.path,
+      requestId,
+      status: input.status,
+      errorName: error.name,
+      errorMessage: error.message,
+      stack: error.stack ?? null,
+    }),
+  );
 }

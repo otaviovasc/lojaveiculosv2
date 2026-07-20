@@ -78,6 +78,17 @@ export async function processBillingProviderWebhook(
 
   try {
     const sync = await syncWebhook(webhook, repository);
+    context.logger.info(
+      "billing.webhook.asaas.record.completed",
+      createServiceLogMetadata(context, {
+        eventType: webhook.eventType,
+        providerEventId: webhook.providerEventId,
+        syncStatus: sync.status,
+        ...(sync.reason ? { syncReason: sync.reason } : {}),
+        ...(sync.storeId ? { syncStoreId: sync.storeId } : {}),
+        ...(sync.tenantId ? { syncTenantId: sync.tenantId } : {}),
+      }),
+    );
     await repository.updateStatus({
       eventId: recorded.event.id,
       status: sync.status === "synced" ? "processed" : "ignored",
