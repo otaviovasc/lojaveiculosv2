@@ -172,3 +172,23 @@ pnpm run test:smoke:api
 Do not disable lint, tests, type checks, audit checks, or boundary checks to make
 a change pass. Fix the implementation or document a temporary exception in
 `docs/architecture.md`.
+
+## Deploy And Release Flow
+
+Railway auto-deploys from GitHub branches: pushing `staging` deploys the
+staging environment, and merging into `main` deploys production.
+
+1. Work on a feature branch and open a PR as usual.
+2. Promote to staging with `pnpm run release:staging`. It runs
+   `release:verify`, merges the branch into `staging`, and pushes, which
+   triggers the staging deploy.
+3. Wait for the deploy to succeed, run `pnpm run release:smoke:staging`, and
+   test the flows on staging.
+4. Open the release PR with `pnpm run release:promote` and merge it. Only PRs
+   from `staging` can merge into `main` (`main-source-guard` check plus branch
+   protection).
+5. Run `pnpm run release:smoke:production` and watch logs and Sentry.
+
+Never push directly to `main`: the pre-push hook and GitHub branch protection
+both block it. Full details, rollback, and post-deploy checks live in
+`docs/runbooks/deploy.md`.
