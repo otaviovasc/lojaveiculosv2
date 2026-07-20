@@ -44,16 +44,8 @@ function createTestApi() {
           ? input.href
           : input.url;
 
-    if (url.endsWith("/api/v1/finance/summary")) {
-      return jsonResponse({
-        cancelledAmountCents: 0,
-        commissionAmountCents: 0,
-        expenseAmountCents: 0,
-        overdueAmountCents: 0,
-        paidAmountCents: 0,
-        pendingAmountCents: 0,
-        revenueAmountCents: 0,
-      });
+    if (url.endsWith("/api/v1/finance/recurring-entries/materialize")) {
+      return jsonResponse({ generatedEntries: [] });
     }
     if (url.endsWith("/api/v1/finance/recurring-entries")) {
       return jsonResponse({ recurringEntries: [] });

@@ -23,6 +23,9 @@ export const llmsText = `# Loja Veiculos API
 - Create finance entry: POST /api/v1/finance/entries\n- Get finance entry: GET /api/v1/finance/entries/{entryId}
 - Update finance entry: PATCH /api/v1/finance/entries/{entryId}\n- Delete finance entry: DELETE /api/v1/finance/entries/{entryId}
 - Request finance document upload: POST /api/v1/finance/entries/{entryId}/documents/uploads\n- Attach finance document: POST /api/v1/finance/entries/{entryId}/documents
+- Download finance entry document: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/download\n- Stream finance entry document content: GET /api/v1/finance/entries/{entryId}/documents/{documentId}/content
+- Update recurring finance entry: PATCH /api/v1/finance/recurring-entries/{recurringEntryId}\n- Cancel recurring finance entry: DELETE /api/v1/finance/recurring-entries/{recurringEntryId}
+- Materialize recurring finance entries: POST /api/v1/finance/recurring-entries/materialize
 - Analytics dashboard: GET /api/v1/analytics/dashboard\n- Compliance snapshot: GET /api/v1/compliance/snapshot
 - Marketplace overview: GET /api/v1/marketplaces/overview\n- Create marketplace OAuth URL: POST /api/v1/marketplaces/connect-url
 - Complete marketplace OAuth: POST /api/v1/marketplaces/oauth/complete\n- Upsert marketplace connection: PUT /api/v1/marketplaces/integrations/{provider}
@@ -188,7 +191,12 @@ export const llmsText = `# Loja Veiculos API
 - POST /api/v1/finance/entries/{entryId}/cancel: marks an entry cancelled with JSON reason; requires finance.update.
 - POST /api/v1/finance/entries/{entryId}/documents/uploads: returns scoped PUT upload instructions for finance documents; requires finance.attach_document.
 - POST /api/v1/finance/entries/{entryId}/documents: attaches an uploaded document to a finance entry; requires finance.attach_document.
+- GET /api/v1/finance/entries/{entryId}/documents/{documentId}/download: returns a short-lived download descriptor for a document attached to a finance entry; requires finance.read.
+- GET /api/v1/finance/entries/{entryId}/documents/{documentId}/content: streams the finance entry document content with safe delivery headers; requires finance.read.
 - GET /api/v1/finance/recurring-entries and POST /api/v1/finance/recurring-entries: list and create recurring finance entries.
+- PATCH /api/v1/finance/recurring-entries/{recurringEntryId}: updates a recurring finance entry template; requires finance.update.
+- DELETE /api/v1/finance/recurring-entries/{recurringEntryId}: cancels a recurring finance entry template with an optional reason query parameter; requires finance.update.
+- POST /api/v1/finance/recurring-entries/materialize: creates pending finance entries for due occurrences of pending recurring templates up to an optional asOf timestamp; requires finance.create.
 - GET /api/v1/finance/commission-rules and POST /api/v1/finance/commission-rules: list and create commission rules.
 
 ## Current analytics endpoints

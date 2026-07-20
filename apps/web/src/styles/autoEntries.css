@@ -2,9 +2,9 @@
    ---------------------------------------------------------------------------
    The layout leans on a small set of "tone" tokens so every origin (venda,
    financiamento, documentação, seguro, consórcio) carries a consistent colour
-   identity across the tabs, the coverage summary, the domain headers and the
-   rule cards. Tones map onto the per-module accents defined in tokens.css so
-   the whole surface stays theme-aware in light and dark mode. */
+   identity across the navigator, the coverage summary, the domain headers and
+   the rule cards. Tones map onto the per-module accents defined in tokens.css
+   so the whole surface stays theme-aware in light and dark mode. */
 
 .ae-tone {
   --tone: var(--color-line-strong);
@@ -56,14 +56,16 @@
 }
 
 .ae-tone--neutral {
-  --tone: var(--color-line-strong);
+  /* --tone doubles as the card header band colour, so it needs real contrast
+     against --tone-on; line-strong is too washed out for that. */
+  --tone: var(--color-muted);
   --tone-strong: var(--color-muted);
   --tone-soft: var(--color-app-elevated);
   --tone-on: var(--color-panel);
 }
 
 /* -------------------------------------------------------------------------- */
-/* Shell                                                                       */
+/* Shell + content                                                             */
 /* -------------------------------------------------------------------------- */
 
 .auto-entries-shell {
@@ -71,274 +73,229 @@
   padding-inline: max(var(--app-space-md), env(safe-area-inset-left));
 }
 
+.ae-content {
+  display: grid;
+  gap: var(--app-space-lg);
+  align-content: start;
+  min-width: 0;
+}
+
+.ae-content-enter {
+  animation: ae-content-in 220ms ease-out;
+}
+
+@keyframes ae-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
-/* Hero + coverage summary                                                     */
+/* Segmented tab bar (V1 pattern)                                              */
 /* -------------------------------------------------------------------------- */
 
-.auto-entries-hero {
-  background: var(--color-panel);
+.ae-tabs {
+  background: var(--color-app-elevated);
   border: 1px solid var(--color-line);
   border-radius: var(--surface-radius-xl);
   display: grid;
-  gap: var(--app-space-lg);
-  padding: var(--app-space-lg);
+  gap: var(--app-space-xs);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: var(--app-space-xs);
 }
 
-.auto-entries-hero__top {
+.ae-tab {
   align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--app-space-md);
-  justify-content: space-between;
-}
-
-.auto-entries-hero__intro {
-  align-items: center;
-  display: flex;
-  gap: var(--app-space-md);
-  min-width: 0;
-}
-
-.auto-entries-hero__status {
-  align-items: center;
+  background: transparent;
   border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  display: inline-flex;
-  flex: 0 0 auto;
-  height: 2.5rem;
-  justify-content: center;
-  width: 2.5rem;
-}
-
-.auto-entries-hero__status.is-complete {
-  background: color-mix(in srgb, var(--color-success) 14%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-success) 32%, transparent);
-  color: var(--color-success-strong);
-}
-
-.auto-entries-hero__status.is-incomplete {
-  background: color-mix(in srgb, var(--color-warning) 16%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--color-warning) 34%, transparent);
-  color: var(--color-warning-strong);
-}
-
-.auto-entries-hero__eyebrow {
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  line-height: 1.15;
-}
-
-.auto-entries-hero__subtitle {
+  border-radius: var(--radius-lg);
   color: var(--color-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 700;
-  margin-top: 0.2rem;
-  max-width: 52ch;
-}
-
-.auto-entries-hero__stats {
-  align-items: center;
+  cursor: pointer;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--app-space-sm);
-}
-
-.auto-entries-coverage {
-  display: grid;
-  gap: var(--app-space-sm);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13.5rem), 1fr));
-}
-
-.auto-entries-coverage__item {
-  align-items: center;
-  background: var(--color-app);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
-  display: flex;
-  gap: var(--app-space-sm);
+  gap: 0.35rem var(--app-space-xs);
+  min-height: 2.75rem;
   min-width: 0;
-  padding: var(--app-space-sm) var(--app-space-md);
-  position: relative;
+  padding: var(--app-space-xs) var(--app-space-sm);
   transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
     border-color var(--motion-duration-base) var(--motion-ease-standard),
-    background-color var(--motion-duration-base) var(--motion-ease-standard);
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+    color var(--motion-duration-base) var(--motion-ease-standard);
 }
 
-.auto-entries-coverage__item.is-ready {
-  background: color-mix(in srgb, var(--tone-soft) 55%, var(--color-panel));
-  border-color: color-mix(in srgb, var(--tone) 40%, var(--color-line));
+.ae-tab:hover:not(.is-active) {
+  background: color-mix(in srgb, var(--color-panel) 60%, transparent);
+  color: var(--color-text);
 }
 
-.auto-entries-coverage__icon {
+.ae-tab:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.ae-tab__icon {
   align-items: center;
   background: color-mix(in srgb, var(--tone-soft) 70%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--tone) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone) 26%, transparent);
   border-radius: var(--radius-md);
   color: var(--tone-strong);
   display: inline-flex;
   flex: 0 0 auto;
-  height: 2.25rem;
+  height: 1.75rem;
   justify-content: center;
-  width: 2.25rem;
+  width: 1.75rem;
 }
 
-.auto-entries-coverage__body {
-  display: grid;
-  gap: 0.1rem;
-  min-width: 0;
-}
-
-.auto-entries-coverage__label {
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
+.ae-tab__label {
+  flex: 1 1 100%;
+  font-size: var(--font-size-xs);
   font-weight: 900;
+  letter-spacing: -0.01em;
   line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  order: 3;
 }
 
-.auto-entries-coverage__status {
+.ae-tab__count {
   align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
   color: var(--color-muted);
   display: inline-flex;
+  flex: 0 0 auto;
   font-size: var(--font-size-xs);
-  font-weight: 800;
-  gap: 0.35rem;
+  font-weight: 900;
+  height: 1.25rem;
+  justify-content: center;
+  margin-inline-start: auto;
+  min-width: 1.25rem;
+  padding-inline: 0.3rem;
 }
 
-.auto-entries-coverage__dot {
+.ae-tab__dot {
+  background: var(--color-line-strong);
   border-radius: 999px;
   flex: 0 0 auto;
   height: 0.45rem;
   width: 0.45rem;
 }
 
-.auto-entries-coverage__item.is-ready .auto-entries-coverage__dot {
-  background: var(--tone);
+.ae-tab__dot.is-ready {
+  background: var(--color-green-start);
 }
 
-.auto-entries-coverage__item:not(.is-ready) .auto-entries-coverage__dot {
-  background: var(--color-line-strong);
-}
-
-.auto-entries-coverage__count {
-  align-items: center;
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: 999px;
-  color: var(--color-muted);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  height: 1.5rem;
-  justify-content: center;
-  margin-left: auto;
-  min-width: 1.5rem;
-  padding-inline: 0.4rem;
-}
-
-.auto-entries-coverage__item.is-ready .auto-entries-coverage__count {
+/* The active tab mirrors the domain-card header: a full band painted in the
+   origin tone with the icon, count and dot rendered on-tone, instead of a
+   plain panel background where only the icon chip carried the colour. */
+.ae-tab.is-active {
   background: var(--tone);
   border-color: transparent;
   color: var(--tone-on);
 }
 
+.ae-tab.is-active .ae-tab__icon {
+  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
+  border-color: color-mix(in srgb, var(--tone-on) 28%, transparent);
+  color: var(--tone-on);
+}
+
+.ae-tab.is-active .ae-tab__count {
+  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
+  border-color: color-mix(in srgb, var(--tone-on) 28%, transparent);
+  color: var(--tone-on);
+}
+
+.ae-tab.is-active .ae-tab__dot {
+  background: color-mix(in srgb, var(--tone-on) 55%, transparent);
+}
+
+.ae-tab.is-active .ae-tab__dot.is-ready {
+  background: var(--tone-on);
+}
+
+@media (min-width: 64rem) {
+  .ae-tabs {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .ae-tab {
+    flex-wrap: nowrap;
+    gap: var(--app-space-xs);
+    justify-content: center;
+    padding: var(--app-space-sm);
+  }
+
+  .ae-tab__icon {
+    height: 2rem;
+    width: 2rem;
+  }
+
+  .ae-tab__label {
+    flex: 0 1 auto;
+    font-size: var(--font-size-sm);
+    order: 0;
+  }
+
+  .ae-tab__count {
+    margin-inline-start: 0;
+  }
+}
+
 /* -------------------------------------------------------------------------- */
-/* Tabs                                                                        */
+/* Coverage summary strip (V1 "Resumo da Automação" pattern)                   */
 /* -------------------------------------------------------------------------- */
 
-.auto-entries-tabs {
-  background: var(--color-panel);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+.ae-summary__body {
+  display: grid;
+  gap: var(--app-space-md);
+  margin-top: var(--app-space-md);
+}
+
+.ae-summary__pills {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--app-space-xs);
-  overflow-x: auto;
-  padding: var(--app-space-xs);
-  scrollbar-width: none;
-  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.auto-entries-tabs::-webkit-scrollbar {
-  display: none;
+.ae-summary__meter {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
-.auto-entries-tab {
-  align-items: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  color: var(--color-muted);
-  cursor: pointer;
-  display: inline-flex;
-  flex: 1 0 auto;
-  gap: var(--app-space-sm);
-  justify-content: center;
-  min-height: 2.9rem;
-  padding: var(--app-space-sm) var(--app-space-md);
-  transition:
-    background-color var(--motion-duration-base) var(--motion-ease-standard),
-    border-color var(--motion-duration-base) var(--motion-ease-standard),
-    color var(--motion-duration-base) var(--motion-ease-standard);
-  white-space: nowrap;
-}
-
-.auto-entries-tab:hover:not(.is-active) {
-  background: var(--color-app);
-  color: var(--color-text);
-}
-
-.auto-entries-tab:focus-visible {
-  box-shadow: var(--shadow-focus);
-  outline: none;
-}
-
-.auto-entries-tab__icon {
-  align-items: center;
-  color: var(--tone-strong);
-  display: inline-flex;
-  flex: 0 0 auto;
-  justify-content: center;
-}
-
-.auto-entries-tab__label {
-  font-size: var(--font-size-sm);
-  font-weight: 900;
-  letter-spacing: -0.01em;
-}
-
-.auto-entries-tab__count {
-  align-items: center;
+.ae-summary__bar {
   background: var(--color-app-elevated);
   border-radius: 999px;
+  height: 0.375rem;
+  overflow: hidden;
+}
+
+.ae-summary__bar-fill {
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    var(--color-accent-strong)
+  );
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.ae-summary__stats {
   color: var(--color-muted);
-  display: inline-flex;
-  flex: 0 0 auto;
   font-size: var(--font-size-xs);
-  font-weight: 900;
-  height: 1.35rem;
-  justify-content: center;
-  min-width: 1.35rem;
-  padding-inline: 0.3rem;
-}
-
-.auto-entries-tab.is-active {
-  background: var(--tone);
-  border-color: color-mix(in srgb, var(--tone-strong) 40%, transparent);
-  color: var(--tone-on);
-}
-
-.auto-entries-tab.is-active .auto-entries-tab__icon {
-  color: var(--tone-on);
-}
-
-.auto-entries-tab.is-active .auto-entries-tab__count {
-  background: color-mix(in srgb, var(--tone-on) 24%, transparent);
-  color: var(--tone-on);
+  font-weight: 800;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -353,21 +310,17 @@
 
 .auto-entries-domain__heading {
   align-items: center;
-  background: var(--tone);
-  border: 1px solid color-mix(in srgb, var(--tone-strong) 45%, transparent);
-  border-radius: var(--radius-lg);
-  color: var(--tone-on);
   display: flex;
   gap: var(--app-space-md);
-  padding: var(--app-space-md);
+  min-width: 0;
 }
 
 .auto-entries-domain__icon {
   align-items: center;
-  background: color-mix(in srgb, var(--tone-on) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tone-on) 24%, transparent);
+  background: color-mix(in srgb, var(--tone-soft) 70%, var(--color-panel));
+  border: 1px solid color-mix(in srgb, var(--tone) 30%, transparent);
   border-radius: var(--radius-md);
-  color: var(--tone-on);
+  color: var(--tone-strong);
   display: inline-flex;
   flex: 0 0 auto;
   height: 2.75rem;
@@ -376,7 +329,7 @@
 }
 
 .auto-entries-domain__eyebrow {
-  color: color-mix(in srgb, var(--tone-on) 82%, transparent);
+  color: var(--tone-strong);
   font-size: var(--font-size-xs);
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -384,7 +337,7 @@
 }
 
 .auto-entries-domain__title {
-  color: var(--tone-on);
+  color: var(--color-text);
   font-size: var(--font-size-lg);
   font-weight: 900;
   line-height: 1.1;
@@ -392,7 +345,7 @@
 }
 
 .auto-entries-domain__description {
-  color: color-mix(in srgb, var(--tone-on) 84%, transparent);
+  color: var(--color-muted);
   font-size: var(--font-size-sm);
   font-weight: 700;
   margin-top: 0.25rem;
@@ -402,9 +355,23 @@
 /* Domain cards                                                                */
 /* -------------------------------------------------------------------------- */
 
+/* The header mirrors the CRM kanban column header: a full-width band painted
+   in the domain tone, with the icon, title and description rendered on-tone
+   instead of the old tinted icon + plain text under a tone border-top.
+   The card is a full-height flex column so paired cards in a panel grid end
+   at the same position, with the save action pinned to the bottom. */
 .auto-entry-domain-card {
-  border-top: 3px solid var(--tone);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-width: 0;
+  overflow: hidden;
+}
+
+.auto-entry-domain-card__header {
+  background: var(--tone);
+  color: var(--tone-on);
+  padding: var(--app-space-md) var(--app-space-lg);
 }
 
 .auto-entry-domain-card__header > div:nth-child(2) {
@@ -413,10 +380,10 @@
 
 .auto-entry-domain-card__icon {
   align-items: center;
-  background: color-mix(in srgb, var(--tone-soft) 70%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--tone) 26%, transparent);
+  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone-on) 28%, transparent);
   border-radius: var(--radius-md);
-  color: var(--tone-strong);
+  color: var(--tone-on);
   display: inline-flex;
   flex: 0 0 auto;
   height: 2.5rem;
@@ -424,15 +391,138 @@
   width: 2.5rem;
 }
 
-.auto-entry-domain-card__title {
+.auto-entry-domain-card__header .auto-entry-domain-card__title {
+  color: var(--tone-on);
   font-size: var(--font-size-lg);
   line-height: 1.15;
 }
 
+.auto-entry-domain-card__header .auto-entry-domain-card__description {
+  color: color-mix(in srgb, var(--tone-on) 84%, transparent);
+}
+
 .auto-entry-domain-card__content {
-  display: grid;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
   gap: var(--app-space-md);
-  margin-top: var(--app-space-md);
+  padding: var(--app-space-lg);
+}
+
+.auto-entry-domain-card__save {
+  margin-top: auto;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Stat tiles, facts and rule rows (shared card-content patterns)              */
+/* -------------------------------------------------------------------------- */
+
+/* Tone-tinted tile for read-only values inside domain cards. Tone fallbacks
+   keep the tile neutral when it renders outside an origin context, such as
+   inside dialogs portaled to the document root. */
+.ae-stat {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    var(--tone-soft, var(--color-app-elevated)) 45%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--tone, var(--color-line-strong)) 18%,
+      var(--color-line)
+    );
+  border-radius: var(--radius-lg);
+  display: flex;
+  gap: var(--app-space-sm);
+  min-width: 0;
+  padding: var(--app-space-sm) var(--app-space-md);
+}
+
+.ae-stat__icon {
+  align-items: center;
+  background: color-mix(
+    in srgb,
+    var(--tone, var(--color-muted)) 12%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--tone, var(--color-muted)) 24%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--tone-strong, var(--color-muted));
+  display: inline-flex;
+  flex: 0 0 auto;
+  height: 2.25rem;
+  justify-content: center;
+  width: 2.25rem;
+}
+
+.ae-stat__body {
+  min-width: 0;
+}
+
+.ae-stat__label {
+  color: var(--color-muted);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.ae-stat__value {
+  color: var(--color-text);
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  line-height: 1.3;
+  margin-top: 0.125rem;
+  overflow-wrap: anywhere;
+}
+
+.ae-stat__hint {
+  color: var(--color-muted);
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: 0.25rem;
+}
+
+/* Icon + label/value pair used inside rule rows, where a nested tile would
+   be too heavy next to the tinted row background. */
+.ae-fact {
+  align-items: flex-start;
+  display: flex;
+  gap: var(--app-space-xs);
+  min-width: 0;
+}
+
+.ae-fact__icon {
+  color: var(--tone-strong, var(--color-muted));
+  flex: 0 0 auto;
+  margin-top: 0.125rem;
+}
+
+/* Tinted row used by the rules overview, saved extra commissions and the
+   documentation tier editor. */
+.ae-rule-item {
+  background: color-mix(
+    in srgb,
+    var(--tone-soft, var(--color-app-elevated)) 35%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--tone, var(--color-line-strong)) 16%,
+      var(--color-line)
+    );
+  border-radius: var(--radius-lg);
+  min-width: 0;
+  padding: var(--app-space-md);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -440,15 +530,14 @@
 /* -------------------------------------------------------------------------- */
 
 .auto-entry-rule-card {
-  border-top: 3px solid var(--tone);
+  overflow: hidden;
   transition:
     border-color var(--motion-duration-base) var(--motion-ease-standard),
     box-shadow var(--motion-duration-base) var(--motion-ease-standard);
 }
 
 .auto-entry-rule-card:hover {
-  border-color: var(--color-line-strong);
-  border-top-color: var(--tone);
+  border-color: var(--tone);
   box-shadow: var(--shadow-raised);
 }
 
@@ -456,17 +545,37 @@
   opacity: 0.82;
 }
 
+.auto-entry-rule-card__header {
+  background: var(--tone);
+  color: var(--tone-on);
+  padding: var(--app-space-sm) var(--app-space-md);
+}
+
 .auto-entry-rule-card__badge {
   align-items: center;
-  background: color-mix(in srgb, var(--tone-soft) 70%, var(--color-panel));
-  border: 1px solid color-mix(in srgb, var(--tone) 26%, transparent);
+  background: color-mix(in srgb, var(--tone-on) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tone-on) 28%, transparent);
   border-radius: var(--radius-md);
-  color: var(--tone-strong);
+  color: var(--tone-on);
   display: inline-flex;
   flex: 0 0 auto;
   height: 2.25rem;
   justify-content: center;
   width: 2.25rem;
+}
+
+.auto-entry-rule-card__header .auto-entry-rule-card__title {
+  color: var(--tone-on);
+}
+
+.auto-entry-rule-card__header .auto-entry-rule-card__meta {
+  color: color-mix(in srgb, var(--tone-on) 80%, transparent);
+}
+
+.auto-entry-rule-card__body {
+  display: grid;
+  gap: var(--app-space-md);
+  padding: var(--app-space-md);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -586,22 +695,21 @@
     gap: var(--app-space-xl);
     padding-inline: var(--app-space-xl);
   }
-
-  .auto-entries-hero {
-    padding: var(--app-space-xl);
-  }
-
-  .auto-entries-tab {
-    flex: 1 1 0;
-  }
 }
 
 @media (max-width: 40rem) {
   .auto-entries-shell {
     padding-inline: var(--app-space-sm);
   }
+}
 
-  .auto-entries-tab {
-    flex: 0 0 auto;
+@media (prefers-reduced-motion: reduce) {
+  .ae-tab,
+  .auto-entry-rule-card {
+    transition: none;
+  }
+
+  .ae-content-enter {
+    animation: none;
   }
 }

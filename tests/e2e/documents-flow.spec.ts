@@ -62,7 +62,12 @@ test.describe("documents center QA flow", () => {
 
     await expect(page.getByRole("heading", { name: "Geral" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Enviar documento" }),
+      page
+        .getByRole("toolbar", { name: "Ações do workspace" })
+        .getByRole("button", { name: "Enviar documento" }),
+    ).toBeVisible();
+    await expect(
+      page.locator(".documents-table-frame .documents-upload-list-button"),
     ).toBeVisible();
     await expect(page.locator("tbody tr").first()).toBeVisible();
     await page.setViewportSize({ height: 900, width: 1100 });
@@ -118,12 +123,14 @@ test.describe("documents center QA flow", () => {
 
     await page.getByRole("button", { name: "Fechar detalhes" }).click();
     await page.getByRole("button", { name: "Modelos" }).click();
-    await expect(page.getByText("Document builder")).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Blocos do documento" }),
+      page.getByRole("heading", { name: "Modelos de documentos" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Blocos e cláusulas" }),
     ).toBeVisible();
     await saveQaScreenshot(page, testInfo, "document-templates-after");
-    await page.getByRole("button", { name: "Voltar para documentos" }).click();
+    await page.getByRole("button", { name: "Documentos" }).click();
     await expect(page.getByRole("heading", { name: "Geral" })).toBeVisible();
 
     const uploadTitle = `QA documento ${Date.now()}`;
@@ -133,7 +140,9 @@ test.describe("documents center QA flow", () => {
       Buffer.from("%PDF-1.4\n1 0 obj\n<<>>\nendobj\ntrailer\n<<>>\n%%EOF\n"),
     );
 
-    await page.getByRole("button", { name: "Enviar documento" }).click();
+    await page
+      .locator(".documents-table-frame .documents-upload-list-button")
+      .click();
     await expect(
       page.getByRole("dialog", { name: "Anexar documentos" }),
     ).toBeVisible();

@@ -29,6 +29,13 @@ describe("finance transaction composition", () => {
       (services) => services.cancelEntry(context(), { entryId: "entry_1" }),
     ],
     [
+      "cancelRecurringEntry",
+      (services) =>
+        services.cancelRecurringEntry(context(), {
+          recurringEntryId: "recurring_1",
+        }),
+    ],
+    [
       "createAutoEntryRule",
       (services) =>
         services.createAutoEntryRule(context(), {
@@ -86,6 +93,13 @@ describe("finance transaction composition", () => {
         }),
     ],
     [
+      "materializeRecurringEntries",
+      (services) =>
+        services.materializeRecurringEntries(context(), {
+          asOf: new Date("2026-07-13T12:00:00.000Z"),
+        }),
+    ],
+    [
       "payEntry",
       (services) => services.payEntry(context(), { entryId: "entry_1" }),
     ],
@@ -111,6 +125,14 @@ describe("finance transaction composition", () => {
         services.updateEntry(context(), {
           amountCents: 1200,
           entryId: "entry_1",
+        }),
+    ],
+    [
+      "updateRecurringEntry",
+      (services) =>
+        services.updateRecurringEntry(context(), {
+          amountCents: 1200,
+          recurringEntryId: "recurring_1",
         }),
     ],
   ];

@@ -1,4 +1,4 @@
-import { Download, FileSearch, Trash2 } from "lucide-react";
+import { Download, FileSearch, Trash2, UploadCloud } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import {
   FeatureRowAction,
@@ -18,6 +18,14 @@ import { statusLabel } from "./documentLabels";
 import { DocumentWorkspaceMobileList } from "./DocumentWorkspaceMobileList";
 import type { WorkspaceDocument } from "./types";
 
+export type DocumentsUploadListAction = {
+  disabled?: boolean;
+  hint?: string;
+  label: string;
+  onClick: () => void;
+  title?: string;
+};
+
 export function DocumentsTable({
   documents,
   isBusy,
@@ -26,6 +34,7 @@ export function DocumentsTable({
   onSelect,
   onToggleSelect,
   selectedIds,
+  upload,
 }: {
   documents: readonly WorkspaceDocument[];
   isBusy: boolean;
@@ -34,6 +43,7 @@ export function DocumentsTable({
   onSelect: (document: WorkspaceDocument) => void;
   onToggleSelect?: (documentId: string, next: boolean) => void;
   selectedIds?: ReadonlySet<string>;
+  upload?: DocumentsUploadListAction;
 }) {
   if (documents.length === 0) return null;
   const showSelect = Boolean(onToggleSelect);
@@ -48,6 +58,7 @@ export function DocumentsTable({
         onSelect={onSelect}
         {...(onToggleSelect ? { onToggleSelect } : {})}
         {...(selectedIds ? { selectedIds } : {})}
+        {...(upload ? { upload } : {})}
       />
       <FeatureTableFrame className="hidden md:block documents-table-frame">
         <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
@@ -67,6 +78,27 @@ export function DocumentsTable({
                 Ações
               </th>
             </tr>
+            {upload ? (
+              <tr className="documents-upload-list-row">
+                <th colSpan={showSelect ? 9 : 8}>
+                  <button
+                    className="documents-upload-list-button"
+                    disabled={upload.disabled}
+                    onClick={upload.onClick}
+                    title={upload.title ?? upload.label}
+                    type="button"
+                  >
+                    <UploadCloud aria-hidden="true" className="size-4" />
+                    <span>{upload.label}</span>
+                    {upload.hint ? (
+                      <span className="documents-upload-list-button-hint">
+                        {upload.hint}
+                      </span>
+                    ) : null}
+                  </button>
+                </th>
+              </tr>
+            ) : null}
           </thead>
           <tbody className="divide-y divide-line/40">
             {documents.map((document) => {

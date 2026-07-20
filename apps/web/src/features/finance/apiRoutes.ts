@@ -47,6 +47,15 @@ export const financeRoutes = {
       `/finance/entries/${encodeURIComponent(entryId)}`,
       baseUrl,
     ),
+  entryDocumentContent: (
+    entryId: string,
+    documentId: string,
+    baseUrl?: string,
+  ) =>
+    createFinanceEndpoint(
+      `/finance/entries/${encodeURIComponent(entryId)}/documents/${encodeURIComponent(documentId)}/content`,
+      baseUrl,
+    ),
   entries: (
     baseUrl?: string,
     input: ListFinanceEntriesInput | FinanceEntryType = {},
@@ -60,6 +69,8 @@ export const financeRoutes = {
     if (query.type) params.set("type", query.type);
     return params.size > 0 ? `${endpoint}?${params.toString()}` : endpoint;
   },
+  materializeRecurringEntries: (baseUrl?: string) =>
+    createFinanceEndpoint("/finance/recurring-entries/materialize", baseUrl),
   payEntry: (entryId: string, baseUrl?: string) =>
     createFinanceEndpoint(
       `/finance/entries/${encodeURIComponent(entryId)}/pay`,
@@ -67,8 +78,11 @@ export const financeRoutes = {
     ),
   recurringEntries: (baseUrl?: string) =>
     createFinanceEndpoint("/finance/recurring-entries", baseUrl),
-  summary: (baseUrl?: string) =>
-    createFinanceEndpoint("/finance/summary", baseUrl),
+  recurringEntry: (recurringEntryId: string, baseUrl?: string) =>
+    createFinanceEndpoint(
+      `/finance/recurring-entries/${encodeURIComponent(recurringEntryId)}`,
+      baseUrl,
+    ),
 } as const;
 
 export function createFinanceHeaders(auth: FinanceAuth): HeadersInit {

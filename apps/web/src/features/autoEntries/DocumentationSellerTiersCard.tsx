@@ -148,7 +148,7 @@ function TierRow({
       ? ["650,00", "749,99", "25,00"]
       : ["750,00", "Sem limite", "40,00"];
   return (
-    <div className="grid gap-3 rounded-lg border border-line/60 bg-app-elevated p-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
+    <div className="ae-rule-item grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
       <TierInput
         label="Mínimo (R$)"
         onChange={(min) => onChange({ ...tier, min })}

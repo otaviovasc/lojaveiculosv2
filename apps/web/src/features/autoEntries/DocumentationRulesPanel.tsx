@@ -4,7 +4,7 @@ import { DocumentationStoreCard } from "./DocumentationStoreCard";
 
 export function DocumentationRulesPanel(props: AutoEntryDomainPanelProps) {
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-2">
+    <div className="grid items-stretch gap-4 xl:grid-cols-2">
       <DocumentationStoreCard {...props} />
       <DocumentationSellerTiersCard {...props} />
     </div>

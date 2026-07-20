@@ -5,11 +5,15 @@ import {
 } from "./financeOpenApiParts.js";
 import { objectSchema } from "./inventoryOpenApiSchemaParts.js";
 import { financeAutoEntrySchemas } from "./financeAutoEntryOpenApi.js";
+import { financeEntryDocumentSchemas } from "./financeEntryDocumentOpenApi.js";
+import { financeRecurringEntrySchemas } from "./financeRecurringEntryOpenApi.js";
 import { commissionWorkspaceSchemas } from "./commissionWorkspaceOpenApi.js";
 
 export const financeSchemas = {
   ...financeAutoEntrySchemas,
   ...commissionWorkspaceSchemas,
+  ...financeEntryDocumentSchemas,
+  ...financeRecurringEntrySchemas,
   AttachFinanceDocumentRequest: objectSchema(
     ["fileName", "storageKey", "title"],
     {

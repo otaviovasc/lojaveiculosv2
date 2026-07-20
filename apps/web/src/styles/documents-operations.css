@@ -104,8 +104,7 @@
 /* Detail buttons */
 .documents-detail-actions button,
 .documents-detail-edit-actions button,
-.documents-detail-secondary button,
-.documents-upload-actions button {
+.documents-detail-secondary button {
   align-items: center;
   background: var(--color-app);
   border: 1px solid var(--color-line);
@@ -127,8 +126,7 @@
 
 .documents-detail-actions button:hover:not(:disabled),
 .documents-detail-edit-actions button:hover:not(:disabled),
-.documents-detail-secondary button:hover:not(:disabled),
-.documents-upload-actions button:hover:not(:disabled) {
+.documents-detail-secondary button:hover:not(:disabled) {
   background: var(--color-surface-subtle);
   border-color: var(--color-line-strong);
   transform: translateY(-1px);
@@ -147,15 +145,13 @@
 }
 
 /* Primary action (Visualizar) */
-.documents-detail-actions button:first-child,
-.documents-upload-actions button:last-child {
+.documents-detail-actions button:first-child {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: var(--color-accent-foreground);
 }
 
-.documents-detail-actions button:first-child:hover:not(:disabled),
-.documents-upload-actions button:last-child:hover:not(:disabled) {
+.documents-detail-actions button:first-child:hover:not(:disabled) {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);
 }

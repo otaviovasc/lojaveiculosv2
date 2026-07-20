@@ -22,7 +22,7 @@ import {
 } from "./apiClient";
 import { AutoEntriesCommandBar } from "./AutoEntriesCommandBar";
 import { AutoEntriesNotices } from "./AutoEntriesNotices";
-import { AutoEntriesOverview } from "./AutoEntriesOverview";
+import { AutoEntriesSummary } from "./AutoEntriesSummary";
 import { AutoEntriesTabs } from "./AutoEntriesTabs";
 import { AutoEntryDomainPanel } from "./AutoEntryDomainPanel";
 import { AutoEntryRuleDialog } from "./AutoEntryRuleDialog";
@@ -141,22 +141,6 @@ export function AutoEntriesWorkspace({
         onCreate={openCreate}
         onRefresh={() => void workspace.refresh()}
       />
-      {workspace.loadState.kind === "ready" ? (
-        <>
-          <AutoEntriesOverview rules={workspace.rules} />
-          <AutoEntriesTabs
-            onChange={setActiveTab}
-            rules={workspace.rules}
-            value={activeTab}
-          />
-        </>
-      ) : null}
-      <AutoEntriesNotices
-        activeSaleTab={activeTab === "vehicle_sale_closed"}
-        canManage={capabilities.canManage}
-        feedback={workspace.feedback}
-        sellerError={sellerError}
-      />
       {workspace.loadState.kind === "loading" ? (
         <FeatureLoadingState
           className="feature-empty"
@@ -180,41 +164,62 @@ export function AutoEntriesWorkspace({
             title="Lançamentos indisponíveis"
           />
         </>
-      ) : activeTab === "custom" ? (
-        <AutoEntryRuleList
-          canManage={capabilities.canManage}
-          onCreate={openCreate}
-          onDelete={(rule) => {
-            setDeleteError(null);
-            setDeleteTarget(rule);
-          }}
-          onEdit={openEdit}
-          onToggle={(rule, active) =>
-            void workspace.toggleRule(rule, active ? "active" : "inactive")
-          }
-          rules={customRules}
-          sellers={sellers}
-          workingKey={workspace.workingKey}
-        />
       ) : (
-        <AutoEntryDomainPanel
-          canManage={capabilities.canManage}
-          isSaving={workspace.workingKey === "domain"}
-          onDelete={(rule) => {
-            setDeleteError(null);
-            setDeleteTarget(rule);
-          }}
-          onSave={async (mutations) => {
-            try {
-              await workspace.saveRules(mutations);
-            } catch {
-              /* The hook exposes the actionable API message. */
-            }
-          }}
-          rules={workspace.rules}
-          sellers={sellers}
-          tab={activeTab}
-        />
+        <>
+          <AutoEntriesNotices
+            activeSaleTab={activeTab === "vehicle_sale_closed"}
+            canManage={capabilities.canManage}
+            feedback={workspace.feedback}
+            sellerError={sellerError}
+          />
+          <AutoEntriesTabs
+            onChange={setActiveTab}
+            rules={workspace.rules}
+            value={activeTab}
+          />
+          <div className="ae-content ae-content-enter" key={activeTab}>
+            {activeTab === "custom" ? (
+              <AutoEntryRuleList
+                canManage={capabilities.canManage}
+                onCreate={openCreate}
+                onDelete={(rule) => {
+                  setDeleteError(null);
+                  setDeleteTarget(rule);
+                }}
+                onEdit={openEdit}
+                onToggle={(rule, active) =>
+                  void workspace.toggleRule(
+                    rule,
+                    active ? "active" : "inactive",
+                  )
+                }
+                rules={customRules}
+                sellers={sellers}
+                workingKey={workspace.workingKey}
+              />
+            ) : (
+              <AutoEntryDomainPanel
+                canManage={capabilities.canManage}
+                isSaving={workspace.workingKey === "domain"}
+                onDelete={(rule) => {
+                  setDeleteError(null);
+                  setDeleteTarget(rule);
+                }}
+                onSave={async (mutations) => {
+                  try {
+                    await workspace.saveRules(mutations);
+                  } catch {
+                    /* The hook exposes the actionable API message. */
+                  }
+                }}
+                rules={workspace.rules}
+                sellers={sellers}
+                tab={activeTab}
+              />
+            )}
+          </div>
+          <AutoEntriesSummary rules={workspace.rules} />
+        </>
       )}
       {capabilities.canManage ? (
         <AutoEntryRuleDialog

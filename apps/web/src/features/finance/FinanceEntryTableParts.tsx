@@ -1,10 +1,4 @@
-import {
-  CheckCircle2,
-  Pencil,
-  ReceiptText,
-  RotateCcw,
-  XCircle,
-} from "lucide-react";
+import { Pencil, ReceiptText, XCircle } from "lucide-react";
 import {
   FeatureRowAction,
   FeatureRowActions,
@@ -15,21 +9,21 @@ import {
 } from "../../components/ui/FeatureStates";
 import { entryDescription, entrySellerName } from "./commissionEntryMeta";
 import { financeStatusLabels } from "./FinanceFormParts";
-import { formatCurrency, formatFinanceCategory } from "./financeBillsFormat";
+import { formatCurrency } from "./financeBillsFormat";
 import type { FinanceEntry } from "./types";
 
 export function EntryTitle({ entry }: { entry: FinanceEntry }) {
   const description = entryDescription(entry);
   return (
     <div className="min-w-0">
-      <strong className="block break-words text-sm font-black text-app-text">
+      <strong className="block text-sm font-black text-app-text finance-entry-title__name">
         {entry.name}
       </strong>
-      <span className="mt-1 block break-words text-xs font-bold text-muted">
-        {formatFinanceCategory(entry.category)} · {entrySellerName(entry)}
+      <span className="mt-1 block truncate text-xs font-bold text-muted">
+        {entrySellerName(entry)}
       </span>
       {description ? (
-        <span className="mt-1 block max-w-md truncate text-xs font-bold text-muted">
+        <span className="mt-1 block max-w-md text-xs font-bold text-muted finance-entry-title__desc">
           {description}
         </span>
       ) : null}
@@ -38,11 +32,37 @@ export function EntryTitle({ entry }: { entry: FinanceEntry }) {
   );
 }
 
-export function StatusButton({ entry }: { entry: FinanceEntry }) {
+export function StatusButton({
+  canUpdate = false,
+  entry,
+  onToggle,
+}: {
+  canUpdate?: boolean;
+  entry: FinanceEntry;
+  onToggle?: (entry: FinanceEntry) => void;
+}) {
+  const toggleable =
+    canUpdate && onToggle !== undefined && entry.status !== "cancelled";
+  if (!toggleable) {
+    return (
+      <FeatureStatusBadge tone={statusTone(entry.status)}>
+        {financeStatusLabels[entry.status]}
+      </FeatureStatusBadge>
+    );
+  }
+  const pending = entry.status !== "paid";
   return (
-    <FeatureStatusBadge tone={statusTone(entry.status)}>
-      {financeStatusLabels[entry.status]}
-    </FeatureStatusBadge>
+    <button
+      aria-label={pending ? "Marcar como pago" : "Marcar como pendente"}
+      className="cursor-pointer rounded-full transition-transform hover:scale-[1.03] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)] active:scale-95"
+      onClick={() => onToggle(entry)}
+      title={pending ? "Marcar como pago" : "Marcar como pendente"}
+      type="button"
+    >
+      <FeatureStatusBadge tone={statusTone(entry.status)}>
+        {financeStatusLabels[entry.status]}
+      </FeatureStatusBadge>
+    </button>
   );
 }
 
@@ -52,16 +72,12 @@ export function EntryActions({
   entry,
   onCancel,
   onEdit,
-  onMarkPending,
-  onPay,
 }: {
   canAttach?: boolean;
   canUpdate?: boolean;
   entry: FinanceEntry;
   onCancel: (entry: FinanceEntry) => void;
   onEdit: (entry: FinanceEntry) => void;
-  onMarkPending: (entry: FinanceEntry) => void;
-  onPay: (entry: FinanceEntry) => void;
 }) {
   if (!canAttach && !canUpdate) return null;
   return (
@@ -81,19 +97,6 @@ export function EntryActions({
             icon={Pencil}
             onClick={() => onEdit(entry)}
             tooltip="Editar"
-          />
-          <FeatureRowAction
-            ariaLabel={
-              entry.status === "paid"
-                ? "Marcar como pendente"
-                : "Marcar como pago"
-            }
-            disabled={entry.status === "cancelled"}
-            icon={entry.status === "paid" ? RotateCcw : CheckCircle2}
-            onClick={() =>
-              entry.status === "paid" ? onMarkPending(entry) : onPay(entry)
-            }
-            tooltip={entry.status === "paid" ? "Marcar pendente" : "Pagar"}
           />
           <FeatureRowAction
             ariaLabel="Cancelar lançamento"

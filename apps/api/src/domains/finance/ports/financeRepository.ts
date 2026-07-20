@@ -130,11 +130,33 @@ export type CreateFinanceRecurringEntryInput = Omit<
   "createdAt" | "id" | "lastGeneratedAt" | "updatedAt"
 >;
 
+export type FindFinanceRecurringEntryInput = {
+  recurringEntryId: string;
+  storeId: string | null;
+  tenantId: string | null;
+};
+
 export type ListFinanceRecurringEntriesInput = {
   limit: number;
   storeId: string | null;
   tenantId: string | null;
   type?: FinanceEntryType | null;
+};
+
+export type UpdateFinanceRecurringEntryInput = {
+  amountCents?: number;
+  category?: string;
+  dayOfMonth?: number | null;
+  frequency?: FinanceRecurrenceFrequency;
+  lastGeneratedAt?: Date | null;
+  metadata?: Record<string, unknown>;
+  name?: string;
+  nextDueAt?: Date;
+  recurringEntryId: string;
+  sellerUserId?: string | null;
+  status?: FinanceEntryStatus;
+  storeId: string | null;
+  tenantId: string | null;
 };
 
 export type CreateCommissionRuleInput = Omit<
@@ -161,6 +183,9 @@ export type FinanceRepository = {
   findById: (
     input: FindFinanceEntryInput,
   ) => Promise<FinanceEntryBundle | null>;
+  findRecurringById: (
+    input: FindFinanceRecurringEntryInput,
+  ) => Promise<FinanceRecurringEntry | null>;
   list: (
     input: ListFinanceEntriesInput,
   ) => Promise<readonly FinanceEntryBundle[]>;
@@ -171,4 +196,7 @@ export type FinanceRepository = {
     input: ListFinanceRecurringEntriesInput,
   ) => Promise<readonly FinanceRecurringEntry[]>;
   updateEntry: (input: UpdateFinanceEntryInput) => Promise<FinanceEntryBundle>;
+  updateRecurringEntry: (
+    input: UpdateFinanceRecurringEntryInput,
+  ) => Promise<FinanceRecurringEntry>;
 };

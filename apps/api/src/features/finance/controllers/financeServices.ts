@@ -6,20 +6,24 @@ import type {
 } from "./financeServiceContracts.js";
 import { attachFinanceEntryDocument } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
 import { cancelFinanceEntry } from "../../../domains/finance/services/FinanceService/cancelFinanceEntry.js";
+import { cancelFinanceRecurringEntry } from "../../../domains/finance/services/FinanceService/cancelFinanceRecurringEntry.js";
 import { createCommissionRule } from "../../../domains/finance/services/FinanceService/createCommissionRule.js";
 import { createFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/createFinanceAutoEntryRule.js";
 import { deactivateFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/deactivateFinanceAutoEntryRule.js";
 import { createFinanceEntry } from "../../../domains/finance/services/FinanceService/createFinanceEntry.js";
 import { createFinanceRecurringEntry } from "../../../domains/finance/services/FinanceService/createFinanceRecurringEntry.js";
 import { getFinanceEntryDetail } from "../../../domains/finance/services/FinanceService/getFinanceEntryDetail.js";
+import { getFinanceEntryDocumentDownload } from "../../../domains/finance/services/FinanceService/getFinanceEntryDocumentDownload.js";
 import { getFinanceSummary } from "../../../domains/finance/services/FinanceService/getFinanceSummary.js";
 import { listCommissionRules } from "../../../domains/finance/services/FinanceService/listCommissionRules.js";
 import { listFinanceAutoEntryRules } from "../../../domains/finance/services/FinanceService/listFinanceAutoEntryRules.js";
 import { listFinanceEntries } from "../../../domains/finance/services/FinanceService/listFinanceEntries.js";
 import { listFinanceRecurringEntries } from "../../../domains/finance/services/FinanceService/listFinanceRecurringEntries.js";
+import { materializeFinanceRecurringEntries } from "../../../domains/finance/services/FinanceService/materializeFinanceRecurringEntries.js";
 import { payFinanceEntry } from "../../../domains/finance/services/FinanceService/payFinanceEntry.js";
 import { requestFinanceEntryDocumentUpload } from "../../../domains/finance/services/FinanceService/requestFinanceEntryDocumentUpload.js";
 import { updateFinanceEntry } from "../../../domains/finance/services/FinanceService/updateFinanceEntry.js";
+import { updateFinanceRecurringEntry } from "../../../domains/finance/services/FinanceService/updateFinanceRecurringEntry.js";
 import { updateFinanceAutoEntryRule } from "../../../domains/finance/services/FinanceService/updateFinanceAutoEntryRule.js";
 import { materializeFinanceAutoEntries } from "../../../domains/finance/services/FinanceService/materializeFinanceAutoEntries.js";
 import { getCommissionWorkspace } from "../../../domains/finance/services/FinanceService/getCommissionWorkspace.js";
@@ -61,6 +65,10 @@ export function createFinanceServices(
       transactionRunner.runInTransaction((txPorts) =>
         cancelFinanceEntry(context, input, txPorts),
       ),
+    cancelRecurringEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        cancelFinanceRecurringEntry(context, input, txPorts),
+      ),
     createAutoEntryRule: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         createFinanceAutoEntryRule(context, input, txPorts),
@@ -86,6 +94,8 @@ export function createFinanceServices(
         deactivateFinanceAutoEntryRule(context, input, txPorts),
       ),
     getEntry: (context, input) => getFinanceEntryDetail(context, input, ports),
+    getEntryDocumentDownload: (context, input) =>
+      getFinanceEntryDocumentDownload(context, input, ports),
     getCommissionWorkspace: (context, input) =>
       getCommissionWorkspace(context, input, ports),
     getSummary: (context) => getFinanceSummary(context, ports),
@@ -113,6 +123,10 @@ export function createFinanceServices(
       transactionRunner.runInTransaction((txPorts) =>
         materializeFinanceAutoEntries(context, input, txPorts),
       ),
+    materializeRecurringEntries: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        materializeFinanceRecurringEntries(context, input, txPorts),
+      ),
     requestDocumentUpload: (context, input) =>
       requestFinanceEntryDocumentUpload(context, input, ports),
     settleCommissionEntries: (context, input) =>
@@ -122,6 +136,10 @@ export function createFinanceServices(
     updateEntry: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>
         updateFinanceEntry(context, input, txPorts),
+      ),
+    updateRecurringEntry: (context, input) =>
+      transactionRunner.runInTransaction((txPorts) =>
+        updateFinanceRecurringEntry(context, input, txPorts),
       ),
     updateAutoEntryRule: (context, input) =>
       transactionRunner.runInTransaction((txPorts) =>

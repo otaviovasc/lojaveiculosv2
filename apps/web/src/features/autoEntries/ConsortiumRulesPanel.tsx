@@ -1,3 +1,4 @@
+import { Store, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import {
@@ -8,6 +9,7 @@ import {
   AutoEntryDomainCard,
   AutoEntryInlineError,
   AutoEntrySaveAction,
+  AutoEntryStat,
   AutoEntryValueOrigin,
 } from "./AutoEntryDomainPrimitives";
 import {
@@ -105,7 +107,7 @@ export function ConsortiumRulesPanel({
 
   const preview = consortiumPreview(values);
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[2fr_1fr]">
+    <div className="grid items-stretch gap-4 xl:grid-cols-[2fr_1fr]">
       <AutoEntryDomainCard
         description="A receita da loja é taxa total × participação da loja; a comissão do vendedor usa a carta de crédito."
         title="Divisão do consórcio"
@@ -145,8 +147,16 @@ export function ConsortiumRulesPanel({
         title="Prévia"
         tone="neutral"
       >
-        <Preview label="Receita da loja" value={preview.store} />
-        <Preview label="Comissão do vendedor" value={preview.seller} />
+        <AutoEntryStat
+          icon={Store}
+          label="Receita da loja"
+          value={preview.store}
+        />
+        <AutoEntryStat
+          icon={UserRound}
+          label="Comissão do vendedor"
+          value={preview.seller}
+        />
       </AutoEntryDomainCard>
     </div>
   );
@@ -172,16 +182,6 @@ function PercentField({
         value={value}
       />
     </FeatureField>
-  );
-}
-function Preview({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-line/60 bg-app-elevated p-3">
-      <p className="text-xs font-black uppercase tracking-wider text-muted">
-        {label}
-      </p>
-      <p className="mt-1 font-black text-app-text">{value}</p>
-    </div>
   );
 }
 function policyInput(rule: AutoEntryRule | undefined, key: string) {

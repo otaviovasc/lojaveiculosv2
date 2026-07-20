@@ -4,16 +4,19 @@ import { BrowserRouter } from "react-router-dom";
 import { App } from "./app/App";
 import { applyInitialTheme } from "./app/theme";
 import { ClerkAuthProvider } from "./features/account/ClerkAuthProvider";
+import { AppErrorBoundary } from "./features/system/AppErrorBoundary";
 import "./styles/global.css";
 
 applyInitialTheme();
 
 createRoot(document.getElementById("root") as HTMLElement).render(
   <StrictMode>
-    <BrowserRouter>
-      <ClerkAuthProvider>
-        <App />
-      </ClerkAuthProvider>
-    </BrowserRouter>
+    <AppErrorBoundary>
+      <BrowserRouter>
+        <ClerkAuthProvider>
+          <App />
+        </ClerkAuthProvider>
+      </BrowserRouter>
+    </AppErrorBoundary>
   </StrictMode>,
 );

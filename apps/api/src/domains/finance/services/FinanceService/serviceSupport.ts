@@ -12,6 +12,7 @@ import type { ObjectStorage } from "../../../../shared/storage/objectStorage.js"
 import type { DocumentRepository } from "../../../documents/ports/documentRepository.js";
 import type {
   FinanceEntryBundle,
+  FinanceRecurringEntry,
   FinanceRepository,
 } from "../../ports/financeRepository.js";
 import type { FinanceAutoEntryRepository } from "../../ports/financeAutoEntryRepository.js";
@@ -30,6 +31,20 @@ export class FinanceEntryNotFoundError extends Error {
   constructor(entryId: string) {
     super(`Finance entry not found: ${entryId}`);
     this.name = "FinanceEntryNotFoundError";
+  }
+}
+
+export class FinanceEntryDocumentNotFoundError extends Error {
+  constructor(documentId: string) {
+    super(`Finance entry document not found: ${documentId}`);
+    this.name = "FinanceEntryDocumentNotFoundError";
+  }
+}
+
+export class FinanceRecurringEntryNotFoundError extends Error {
+  constructor(recurringEntryId: string) {
+    super(`Finance recurring entry not found: ${recurringEntryId}`);
+    this.name = "FinanceRecurringEntryNotFoundError";
   }
 }
 
@@ -91,6 +106,23 @@ export async function findScopedFinanceEntry(
   return bundle;
 }
 
+export async function findScopedFinanceRecurringEntry(
+  context: ServiceContext,
+  repository: FinanceRepository,
+  recurringEntryId: string,
+): Promise<FinanceRecurringEntry> {
+  const recurringEntry = await repository.findRecurringById({
+    recurringEntryId,
+    storeId: context.storeId,
+    tenantId: context.tenantId,
+  });
+
+  if (!recurringEntry) {
+    throw new FinanceRecurringEntryNotFoundError(recurringEntryId);
+  }
+  return recurringEntry;
+}
+
 export function requireFinanceScope(context: ServiceContext): {
   storeId: string;
   tenantId: string;
@@ -143,7 +175,8 @@ export async function auditFinanceServiceEvent(
       | "finance_auto_entry_execution"
       | "finance_auto_entry_rule"
       | "finance_document"
-      | "finance_entry";
+      | "finance_entry"
+      | "finance_recurring_entry";
     metadata?: SafeAuditMetadata;
     permission?: PermissionKey;
     relatedEntities?: readonly AuditEntityReference[];

@@ -1,4 +1,8 @@
 import { Repeat2 } from "lucide-react";
+import {
+  FeatureFieldGroup,
+  FeatureFormSection,
+} from "../../components/ui/FeatureForms";
 import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import { FinanceDateField } from "./FinanceDateField";
@@ -116,13 +120,28 @@ export function RecurrenceStep({
   );
 }
 
+export function EditContextSummary({ draft }: { draft: FinanceEntryDraft }) {
+  return (
+    <div className="mb-5 flex flex-wrap items-center gap-2">
+      <span className="rounded-full bg-accent-soft px-3 py-1 text-xs font-black uppercase text-accent-strong">
+        {financeTypeLabels[draft.type]}
+      </span>
+      <span className="rounded-full border border-line bg-app px-3 py-1 text-xs font-black uppercase text-muted">
+        {draft.recurrence === "recurring" ? "Recorrente" : "Lançamento único"}
+      </span>
+    </div>
+  );
+}
+
 export function DetailsStep({
   draft,
+  isRecurringEdit = false,
   sellerOptions = [],
   setDraft,
   setField,
 }: {
   draft: FinanceEntryDraft;
+  isRecurringEdit?: boolean;
   sellerOptions?: readonly SaleSellerOption[];
   setDraft: (draft: FinanceEntryDraft) => void;
   setField: FinanceDraftFieldSetter;
@@ -137,77 +156,110 @@ export function DetailsStep({
     Boolean(draft.sellerUserId) &&
     !sellerOptions.some((seller) => seller.id === draft.sellerUserId);
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <FinanceField label="Identificação">
-        <FinanceInput onChange={setField("name")} required value={draft.name} />
-      </FinanceField>
-      <FinanceField label="Categoria">
-        <FinanceSelect
-          onChange={setField("category")}
-          options={categories.map((category) => ({
-            label: category,
-            value: category,
-          }))}
-          value={draft.category}
-        />
-      </FinanceField>
-      <FinanceField label="Valor">
-        <FinanceInput
-          inputMode="decimal"
-          onChange={(event) =>
-            setField("amount")(parseCurrencyInput(event.target.value))
-          }
-          required
-          value={formatCurrencyValue(draft.amount)}
-        />
-      </FinanceField>
-      <FinanceField label="Status inicial">
-        <FinanceSelect
-          onChange={setField("status")}
-          options={(["pending", "paid", "cancelled"] as const).map(
-            (status) => ({
-              label: financeStatusLabels[status],
-              value: status,
-            }),
-          )}
-          value={draft.status}
-        />
-      </FinanceField>
-      <FinanceDateField
-        label="Vencimento"
-        onChange={setField("dueAt")}
-        value={draft.dueAt}
-      />
-      <FinanceDateField
-        disabled={draft.status !== "paid"}
-        label="Pagamento"
-        onChange={setField("paidAt")}
-        value={draft.paidAt}
-      />
-      <FinanceField label="Vendedor" hint="Opcional para comissões.">
-        <FinanceSelect
-          onChange={setField("sellerUserId")}
-          options={[
-            { label: "Sem vendedor", value: "" },
-            ...(selectedSellerMissing
-              ? [
-                  {
-                    label: "Vendedor vinculado",
-                    value: draft.sellerUserId,
-                  },
-                ]
-              : []),
-            ...sellerOptions.map((seller) => ({
-              label: seller.label,
-              value: seller.id,
-            })),
-          ]}
-          value={draft.sellerUserId}
-        />
-      </FinanceField>
-      <FinanceField label="Observação">
-        <FinanceInput onChange={setField("notes")} value={draft.notes} />
-      </FinanceField>
+    <div className="grid gap-5 md:grid-cols-2">
+      <FeatureFormSection
+        className="md:col-span-2"
+        description="Identifique o lançamento, a categoria, o valor e o vencimento."
+        title="Lançamento"
+      >
+        <FeatureFieldGroup>
+          <FinanceField label="Identificação">
+            <FinanceInput
+              onChange={setField("name")}
+              required
+              value={draft.name}
+            />
+          </FinanceField>
+          <FinanceField label="Categoria">
+            <FinanceSelect
+              onChange={setField("category")}
+              options={categories.map((category) => ({
+                label: category,
+                value: category,
+              }))}
+              value={draft.category}
+            />
+          </FinanceField>
+          <FinanceField label="Valor">
+            <FinanceInput
+              inputMode="decimal"
+              onChange={(event) =>
+                setField("amount")(parseCurrencyInput(event.target.value))
+              }
+              required
+              value={formatCurrencyValue(draft.amount)}
+            />
+          </FinanceField>
+          <FinanceDateField
+            label="Vencimento"
+            onChange={setField("dueAt")}
+            value={draft.dueAt}
+          />
+        </FeatureFieldGroup>
+      </FeatureFormSection>
+
+      {isRecurringEdit ? null : (
+        <FeatureFormSection
+          className="md:col-span-2"
+          description="Controle a situação atual e a data de quitação."
+          title="Status e pagamento"
+        >
+          <FeatureFieldGroup>
+            <FinanceField label="Status inicial">
+              <FinanceSelect
+                onChange={setField("status")}
+                options={(["pending", "paid", "cancelled"] as const).map(
+                  (status) => ({
+                    label: financeStatusLabels[status],
+                    value: status,
+                  }),
+                )}
+                value={draft.status}
+              />
+            </FinanceField>
+            <FinanceDateField
+              disabled={draft.status !== "paid"}
+              label="Pagamento"
+              onChange={setField("paidAt")}
+              value={draft.paidAt}
+            />
+          </FeatureFieldGroup>
+        </FeatureFormSection>
+      )}
+
+      <FeatureFormSection
+        className="md:col-span-2"
+        description="Vincule um vendedor e registre anotações internas."
+        title="Atribuição e notas"
+      >
+        <FeatureFieldGroup>
+          <FinanceField hint="Opcional para comissões." label="Vendedor">
+            <FinanceSelect
+              onChange={setField("sellerUserId")}
+              options={[
+                { label: "Sem vendedor", value: "" },
+                ...(selectedSellerMissing
+                  ? [
+                      {
+                        label: "Vendedor vinculado",
+                        value: draft.sellerUserId,
+                      },
+                    ]
+                  : []),
+                ...sellerOptions.map((seller) => ({
+                  label: seller.label,
+                  value: seller.id,
+                })),
+              ]}
+              value={draft.sellerUserId}
+            />
+          </FinanceField>
+          <FinanceField className="md:col-span-2" label="Observação">
+            <FinanceInput onChange={setField("notes")} value={draft.notes} />
+          </FinanceField>
+        </FeatureFieldGroup>
+      </FeatureFormSection>
+
       {draft.recurrence === "recurring" ? (
         <RecurringFields draft={draft} setField={setField} />
       ) : null}

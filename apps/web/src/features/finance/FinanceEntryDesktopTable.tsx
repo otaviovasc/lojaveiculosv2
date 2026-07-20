@@ -1,13 +1,11 @@
 import { FeatureTableFrame } from "../../components/ui/FeatureTable";
-import { entrySourceKey, sourceLabel } from "./financeCashFlowModel";
-import { formatDate } from "./financeBillsFormat";
-import { FinanceBadge } from "./FinanceFormParts";
+import { formatCurrency, formatDate } from "./financeBillsFormat";
 import {
-  amountLabel,
   EntryActions,
   EntryTitle,
   StatusButton,
 } from "./FinanceEntryTableParts";
+import { FinanceCategoryBadge } from "./FinanceCategoryBadge";
 import type { FinanceEntry } from "./types";
 
 export function FinanceEntryDesktopTable({
@@ -28,53 +26,65 @@ export function FinanceEntryDesktopTable({
   onPay: (entry: FinanceEntry) => void;
 }) {
   return (
-    <FeatureTableFrame className="hidden md:block">
-      <table className="w-full min-w-[920px] text-left text-sm">
+    <FeatureTableFrame className="hidden md:block finance-table-frame">
+      <table className="w-full table-fixed text-left text-sm">
+        <colgroup>
+          <col style={{ width: "32%" }} />
+          <col style={{ width: "18%" }} />
+          <col style={{ width: "15%" }} />
+          <col style={{ width: "13%" }} />
+          <col style={{ width: "12%" }} />
+          <col style={{ width: "10%" }} />
+        </colgroup>
         <thead className="border-b border-line text-xs font-black uppercase tracking-wider text-muted">
           <tr>
-            <th className="px-4 py-3">Lançamento</th>
-            <th className="px-4 py-3">Origem</th>
-            <th className="px-4 py-3">Vencimento</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Valor</th>
-            <th className="px-4 py-3 text-right">Ações</th>
+            <th className="pb-3 pt-3 pr-3 pl-0">Lançamento</th>
+            <th className="px-3 py-3">Categoria</th>
+            <th className="px-3 py-3 text-right">Valor</th>
+            <th className="px-3 py-3">Vencimento</th>
+            <th className="px-3 py-3">Status</th>
+            <th className="pb-3 pt-3 pl-3 pr-0 text-right">Ações</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-line">
           {entries.map((entry) => (
             <tr
-              className="align-top transition-colors hover:bg-app finance-table-row"
+              className="align-middle transition-colors hover:bg-app finance-table-row"
               key={entry.id}
             >
-              <td className="px-4 py-3">
+              <td className="pb-3 pt-3 pr-3 pl-0">
                 <EntryTitle entry={entry} />
               </td>
-              <td className="px-4 py-3">
-                <FinanceBadge className="finance-source-badge">
-                  {sourceLabel(entrySourceKey(entry))}
-                </FinanceBadge>
-              </td>
-              <td className="px-4 py-3 font-bold text-muted">
-                {formatDate(entry.dueAt)}
-              </td>
-              <td className="px-4 py-3">
-                <StatusButton entry={entry} />
+              <td className="px-3 py-3">
+                <FinanceCategoryBadge category={entry.category} />
               </td>
               <td
-                className="px-4 py-3 text-right font-black text-app-text finance-cell-amount"
+                className="whitespace-nowrap px-3 py-3 text-right font-black text-app-text finance-cell-amount"
                 data-entry-type={entry.type}
               >
                 {amountLabel(entry)}
               </td>
-              <td className="px-4 py-3">
+              <td className="whitespace-nowrap px-3 py-3 font-bold text-muted">
+                {formatDate(entry.dueAt)}
+              </td>
+              <td className="px-3 py-3">
+                <StatusButton
+                  canUpdate={canUpdate}
+                  entry={entry}
+                  onToggle={(target) =>
+                    target.status === "paid"
+                      ? onMarkPending(target)
+                      : onPay(target)
+                  }
+                />
+              </td>
+              <td className="pb-3 pt-3 pl-3 pr-0">
                 <EntryActions
                   canAttach={canAttach}
                   canUpdate={canUpdate}
                   entry={entry}
                   onCancel={onCancel}
                   onEdit={onEdit}
-                  onMarkPending={onMarkPending}
-                  onPay={onPay}
                 />
               </td>
             </tr>
@@ -83,4 +93,9 @@ export function FinanceEntryDesktopTable({
       </table>
     </FeatureTableFrame>
   );
+}
+
+function amountLabel(entry: FinanceEntry) {
+  const prefix = entry.type === "revenue" ? "+ " : "- ";
+  return `${prefix}${formatCurrency(entry.amountCents)}`;
 }

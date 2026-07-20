@@ -149,16 +149,16 @@ export function FeatureStatusBadge({
 
 function statusToneClass(tone: FeatureStatusTone) {
   if (tone === "success") {
-    return "border border-success-strong/30 bg-green-soft text-app-text";
+    return "border border-success-strong/30 bg-green-soft text-success-strong";
   }
   if (tone === "warning") {
-    return "border border-warning-strong/30 bg-warning/10 text-app-text";
+    return "border border-warning-strong/30 bg-warning/10 text-warning-strong";
   }
   if (tone === "danger" || tone === "pink") {
-    return "border border-danger/30 bg-accent-soft text-accent-soft-foreground";
+    return "border border-danger/30 bg-danger/10 text-danger";
   }
   if (tone === "blue") {
-    return "border border-blue-start/30 bg-blue-soft text-app-text";
+    return "border border-blue-start/30 bg-blue-soft text-blue-start";
   }
   return "bg-panel text-muted border border-line";
 }

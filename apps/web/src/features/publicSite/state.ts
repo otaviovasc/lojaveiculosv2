@@ -1,3 +1,4 @@
+import { AppApiError } from "../../lib/apiErrors";
 import type { PublicStorefrontPageData } from "./types";
 
 export type PublicStorefrontSnapshot = {
@@ -10,6 +11,7 @@ export type PublicStorefrontState =
   | { kind: "loading" }
   | { data: PublicStorefrontPageData; kind: "empty" }
   | { error: Error; kind: "error" }
+  | { kind: "not-found" }
   | { data: PublicStorefrontPageData; kind: "ready" };
 
 export type LeadCaptureSnapshot = {
@@ -30,6 +32,12 @@ export function derivePublicStorefrontState(
   if (snapshot.isLoading) return { kind: "loading" };
 
   if (snapshot.error) {
+    if (
+      snapshot.error instanceof AppApiError &&
+      snapshot.error.status === 404
+    ) {
+      return { kind: "not-found" };
+    }
     return { error: snapshot.error, kind: "error" };
   }
 

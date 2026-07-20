@@ -35,7 +35,7 @@ export function DocumentsWorkspaceTopBar({
       actions={
         <>
           <FeatureActionButton
-            className="md:hidden"
+            className="documents-top-bar-action--mobile-only"
             icon={FolderOpen}
             label="Pastas"
             onClick={onOpenFolders}

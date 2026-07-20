@@ -1,4 +1,4 @@
-import { Filter, Link2, UserRound } from "lucide-react";
+import { Link2, UserRound, X } from "lucide-react";
 import {
   FeatureSearchField,
   FeatureSelect,
@@ -18,7 +18,7 @@ import {
 import type { FinanceEntry } from "./types";
 
 const filterLabelClassName =
-  "grid gap-1.5 text-xs font-bold uppercase tracking-wider text-muted";
+  "finance-filters__field finance-filter-label grid min-w-0 gap-1 text-xs font-bold uppercase tracking-wider text-muted";
 
 export function FinanceBillsFilters({
   entries,
@@ -33,29 +33,11 @@ export function FinanceBillsFilters({
   const hasFilters = hasAnyActiveFilter(filters);
 
   return (
-    <FeatureToolbar className="finance-filter-toolbar" radius="xl">
-      <div className="mb-4 flex items-center justify-between gap-3 border-b border-line/60 pb-3.5">
-        <div className="flex items-center gap-2">
-          <div className="flex size-7 items-center justify-center rounded-lg bg-accent-soft text-accent-strong">
-            <Filter aria-hidden="true" className="size-4" />
-          </div>
-          <h3 className="text-sm font-bold tracking-tight text-app-text">
-            Filtros de lançamentos
-          </h3>
-        </div>
-        {hasFilters ? (
-          <button
-            className="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg border border-line bg-panel px-3.5 text-xs font-bold text-muted transition-colors hover:border-line-strong hover:bg-app hover:text-app-text focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
-            onClick={() => onChange({ ...initialFinanceFilters })}
-            type="button"
-          >
-            Limpar filtros
-          </button>
-        ) : null}
-      </div>
-
-      <div className="finance-filter-grid grid items-end gap-3.5 md:grid-cols-2 xl:grid-cols-5">
-        <label className={filterLabelClassName}>
+    <FeatureToolbar className="finance-filters-card">
+      <div className="finance-filters__row">
+        <label
+          className={`${filterLabelClassName} finance-filters__field--search`}
+        >
           Buscar
           <FeatureSearchField
             label="Buscar"
@@ -111,10 +93,21 @@ export function FinanceBillsFilters({
             value={filters.sellerUserId}
           />
         </label>
+        {hasFilters ? (
+          <button
+            aria-label="Limpar filtros"
+            className="finance-filters__clear"
+            onClick={() => onChange({ ...initialFinanceFilters })}
+            type="button"
+          >
+            <X aria-hidden="true" className="size-3.5" />
+            Limpar
+          </button>
+        ) : null}
       </div>
 
       {filters.datePreset === "custom" ? (
-        <div className="mt-3 grid grid-cols-2 gap-2 border-t border-line/60 pt-3 md:max-w-xl">
+        <div className="finance-filters__custom-dates">
           <FinanceDateField
             label="De"
             onChange={(dateFrom) => onChange({ ...filters, dateFrom })}

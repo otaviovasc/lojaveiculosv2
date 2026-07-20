@@ -46,8 +46,9 @@
     color-mix(in srgb, var(--feature-empty-accent) 24%, var(--color-line));
   background: var(--feature-empty-accent-soft);
   color: var(--feature-empty-accent-strong);
-  box-shadow: 0 10px 24px
-    color-mix(in srgb, var(--feature-empty-accent) 14%, transparent);
+  box-shadow:
+    0 0 0 6px color-mix(in srgb, var(--feature-empty-accent) 8%, transparent),
+    0 10px 24px color-mix(in srgb, var(--feature-empty-accent) 14%, transparent);
 }
 
 .feature-empty-state__title {
@@ -262,36 +263,51 @@
 }
 
 .feature-alert {
-  color: var(--color-danger);
+  --feature-alert-tone: var(--color-danger);
+  --feature-alert-tone-strong: var(--color-danger);
+  background: color-mix(
+    in srgb,
+    var(--feature-alert-tone) 7%,
+    var(--color-panel)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--feature-alert-tone) 30%, var(--color-line));
+  border-radius: var(--radius-lg);
+  color: var(--feature-alert-tone-strong);
   font-size: var(--font-size-sm);
   font-weight: 900;
 }
 
 .feature-alert--success {
-  border-color: color-mix(
-    in srgb,
-    var(--color-success-strong) 35%,
-    var(--color-line)
-  );
-  color: var(--color-success-strong);
+  --feature-alert-tone: var(--color-success-strong);
+  --feature-alert-tone-strong: var(--color-success-strong);
 }
 
 .feature-alert--warning {
-  border-color: color-mix(
-    in srgb,
-    var(--color-warning-strong) 35%,
-    var(--color-line)
-  );
-  color: var(--color-warning-strong);
+  --feature-alert-tone: var(--color-warning);
+  --feature-alert-tone-strong: var(--color-warning-strong);
 }
 
 .feature-alert--info {
-  border-color: color-mix(
+  --feature-alert-tone: var(--color-blue-start);
+  --feature-alert-tone-strong: var(--color-blue-start);
+}
+
+.feature-alert__icon {
+  align-items: center;
+  background: color-mix(
     in srgb,
-    var(--color-blue-start) 35%,
-    var(--color-line)
+    var(--feature-alert-tone) 14%,
+    var(--color-panel)
   );
-  color: var(--color-blue-start);
+  border: 1px solid
+    color-mix(in srgb, var(--feature-alert-tone) 26%, var(--color-line));
+  border-radius: var(--radius-md);
+  color: var(--feature-alert-tone-strong);
+  display: inline-flex;
+  height: 2rem;
+  justify-content: center;
+  width: 2rem;
 }
 
 .feature-empty {

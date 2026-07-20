@@ -4,7 +4,6 @@ import {
   commissionRules,
   financeEntries,
   financeEntryLinks,
-  financeRecurringEntries,
 } from "@lojaveiculosv2/db";
 import type * as schema from "@lojaveiculosv2/db";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
@@ -18,13 +17,13 @@ import {
   toInsertCommissionRule,
   toInsertEntry,
   toInsertLink,
-  toInsertRecurringEntry,
   toLink,
-  toRecurringEntry,
   toUpdateEntry,
   type LinkRow,
 } from "./drizzleFinanceMappers.js";
 import { validateFinanceLinkTargets } from "./drizzleFinanceLinkTargets.js";
+import { createDrizzleFinanceRecurringEntriesRepository } from "./drizzleFinanceRecurringEntries.js";
+import { requireFinanceScope } from "./drizzleFinanceScope.js";
 
 export type DrizzleFinanceClient = PostgresJsDatabase<typeof schema>;
 
@@ -32,6 +31,7 @@ export function createDrizzleFinanceRepository(
   db: DrizzleFinanceClient,
 ): FinanceRepository {
   return {
+    ...createDrizzleFinanceRecurringEntriesRepository(db),
     async createCommissionRule(input) {
       const [row] = await db
         .insert(commissionRules)
@@ -60,18 +60,6 @@ export function createDrizzleFinanceRepository(
             .returning()
         : [];
       return { entry: toEntry(entryRow), links: linkRows.map(toLink) };
-    },
-    async createRecurringEntry(input) {
-      const [row] = await db
-        .insert(financeRecurringEntries)
-        .values(toInsertRecurringEntry(input))
-        .returning();
-      if (!row) {
-        throw new Error(
-          "Drizzle adapter did not return recurring finance entry.",
-        );
-      }
-      return toRecurringEntry(row);
     },
     async findById(input) {
       const scope = requireFinanceScope(input);
@@ -137,19 +125,6 @@ export function createDrizzleFinanceRepository(
         )
         .slice(0, input.limit)
         .map(toCommissionRule);
-    },
-    async listRecurringEntries(input) {
-      const scope = requireFinanceScope(input);
-      const rows = await db.select().from(financeRecurringEntries);
-      return rows
-        .filter((row) => row.storeId === scope.storeId)
-        .filter((row) => row.tenantId === scope.tenantId)
-        .filter((row) => !input.type || row.type === input.type)
-        .sort(
-          (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
-        )
-        .slice(0, input.limit)
-        .map(toRecurringEntry);
     },
     async updateEntry(input) {
       const scope = requireFinanceScope(input);
@@ -221,22 +196,6 @@ export function createDrizzleFinanceRepository(
         .filter((row) => row.targetType === input.targetType)
         .map((row) => row.entryId),
     );
-  }
-}
-
-function requireFinanceScope(input: {
-  storeId: string | null;
-  tenantId: string | null;
-}): { storeId: string; tenantId: string } {
-  if (!input.storeId) throw new FinanceDrizzleScopeError("storeId");
-  if (!input.tenantId) throw new FinanceDrizzleScopeError("tenantId");
-  return { storeId: input.storeId, tenantId: input.tenantId };
-}
-
-export class FinanceDrizzleScopeError extends Error {
-  constructor(fieldName: string) {
-    super(`Finance drizzle repository requires ${fieldName}.`);
-    this.name = "FinanceDrizzleScopeError";
   }
 }
 

@@ -69,14 +69,9 @@ describe("document content controller", () => {
   it("forces untrusted active content to download as opaque bytes", async () => {
     const response = await proxyDocumentContent(
       {
-        document: linkedDocument,
-        downloadMethod: "GET",
         downloadUrl: "https://storage.local/untrusted-content",
-        expiresAt: new Date("2026-01-01T10:05:00.000Z"),
         fileName: "payload.html",
         mimeType: "text/html",
-        versionId: "version_2",
-        versionNumber: 2,
       },
       async () =>
         new Response(

@@ -1,10 +1,17 @@
-import { AlertTriangle, CalendarClock, Pencil } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  CalendarDays,
+  Pencil,
+} from "lucide-react";
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import { cx } from "../../components/ui/featureShared";
 import { urgentFinanceEntries } from "./financeCashFlowModel";
 import { formatCurrency, formatDate } from "./financeBillsFormat";
 import type { FinanceEntry } from "./types";
+
+const VISIBLE_ROWS = 3;
 
 export function FinanceUrgencyPanel({
   entries,
@@ -18,56 +25,59 @@ export function FinanceUrgencyPanel({
   const urgent = urgentFinanceEntries(entries);
   if (urgent.top.length === 0) return null;
   const hasOverdue = urgent.overdue.length > 0;
+  const focus = hasOverdue ? urgent.overdue : urgent.upcoming;
+  const rows = urgent.top.slice(0, VISIBLE_ROWS);
+  const remaining = focus.length - rows.length;
 
   return (
-    <FeatureSection
-      actions={
+    <section
+      aria-label={hasOverdue ? "Atenção imediata" : "Próximos vencimentos"}
+      className={cx(
+        "finance-urgency-alert",
+        hasOverdue
+          ? "finance-urgency-alert--danger"
+          : "finance-urgency-alert--warning",
+      )}
+    >
+      <header className="finance-urgency-alert__header">
+        <span aria-hidden="true" className="finance-urgency-alert__icon">
+          {hasOverdue ? (
+            <AlertTriangle className="size-4" />
+          ) : (
+            <CalendarClock className="size-4" />
+          )}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-black text-app-text">
+            {hasOverdue
+              ? `${urgent.overdue.length} conta(s) vencida(s) — Atenção!`
+              : `${urgent.upcoming.length} conta(s) a pagar nos próximos 7 dias`}
+          </h3>
+          <p className="text-xs font-bold text-muted">
+            Total: {formatCurrency(sumEntries(focus))}
+          </p>
+        </div>
         <button
-          className="rounded-lg border border-line bg-app px-3 py-2 text-xs font-black text-app-text"
+          className="inline-flex min-h-9 shrink-0 cursor-pointer items-center rounded-lg border border-line bg-panel px-3 text-xs font-black text-app-text transition-colors hover:border-line-strong"
           onClick={onViewAll}
           type="button"
         >
           Ver tabela
         </button>
-      }
-      description="Contas pendentes vencidas ou com vencimento nos próximos 7 dias."
-      icon={
-        hasOverdue ? (
-          <AlertTriangle className="size-5" />
-        ) : (
-          <CalendarClock className="size-5" />
-        )
-      }
-      title={hasOverdue ? "Atenção imediata" : "Próximos vencimentos"}
-    >
-      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,0.34fr)_minmax(0,1fr)] finance-urgency-wrapper">
-        <div
-          className="min-w-0 rounded-lg border border-line bg-app p-4 finance-urgency-summary-card"
-          data-has-overdue={hasOverdue}
-        >
-          <FeatureStatusBadge tone={hasOverdue ? "danger" : "warning"}>
-            {hasOverdue
-              ? `${urgent.overdue.length} vencido(s)`
-              : `${urgent.upcoming.length} próximo(s)`}
-          </FeatureStatusBadge>
-          <strong className="mt-3 block text-2xl font-black text-app-text">
-            {formatCurrency(
-              sumEntries(hasOverdue ? urgent.overdue : urgent.upcoming),
-            )}
-          </strong>
-          <p className="mt-1 text-sm font-bold text-muted">
-            {hasOverdue
-              ? "Resolva ou reprograme os lançamentos vencidos."
-              : "Prepare pagamentos da próxima semana."}
-          </p>
-        </div>
-        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-2 finance-urgency-rows">
-          {urgent.top.map((entry) => (
-            <UrgencyRow entry={entry} key={entry.id} onEdit={onEdit} />
-          ))}
-        </div>
+      </header>
+
+      <div className="finance-urgency-alert__rows">
+        {rows.map((entry) => (
+          <UrgencyRow entry={entry} key={entry.id} onEdit={onEdit} />
+        ))}
       </div>
-    </FeatureSection>
+
+      {remaining > 0 ? (
+        <p className="finance-urgency-alert__footer">
+          +{remaining} outra(s) conta(s) para acompanhar
+        </p>
+      ) : null}
+    </section>
   );
 }
 
@@ -83,31 +93,43 @@ function UrgencyRow({
   const overdue = days !== null && days < 0;
 
   return (
-    <article className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-line bg-app p-3 finance-urgency-row">
-      <div className="min-w-0">
+    <article className="flex min-w-0 items-center gap-3 px-4 py-3 finance-urgency-row">
+      <span
+        aria-hidden="true"
+        className={cx(
+          "finance-urgency-alert__day",
+          overdue
+            ? "finance-urgency-alert__day--danger"
+            : "finance-urgency-alert__day--warning",
+        )}
+      >
+        <CalendarDays className="size-4" />
+      </span>
+      <div className="min-w-0 flex-1">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <strong className="truncate text-sm font-black text-app-text">
             {entry.name}
           </strong>
-          <FeatureStatusBadge tone={overdue ? "danger" : "warning"}>
-            {relativeDueLabel(days)}
+          <FeatureStatusBadge
+            size="dense"
+            tone={overdue ? "danger" : "warning"}
+          >
+            {overdue ? "Vencida" : "Urgente"}
           </FeatureStatusBadge>
         </div>
-        <p className="mt-1 text-xs font-bold text-muted">
-          {formatDate(entry.dueAt)}
+        <p className="mt-0.5 text-xs font-bold text-muted">
+          {relativeDueLabel(days)} · {formatDate(entry.dueAt)}
         </p>
       </div>
-      <div className="flex shrink-0 items-center gap-3">
-        <strong className="text-sm font-black text-danger">
-          {formatCurrency(entry.amountCents)}
-        </strong>
-        <FeatureRowAction
-          ariaLabel={`Editar ${entry.name}`}
-          icon={Pencil}
-          onClick={() => onEdit(entry)}
-          tooltip="Editar"
-        />
-      </div>
+      <strong className="shrink-0 text-sm font-black text-danger tabular-nums">
+        {formatCurrency(entry.amountCents)}
+      </strong>
+      <FeatureRowAction
+        ariaLabel={`Editar ${entry.name}`}
+        icon={Pencil}
+        onClick={() => onEdit(entry)}
+        tooltip="Editar"
+      />
     </article>
   );
 }

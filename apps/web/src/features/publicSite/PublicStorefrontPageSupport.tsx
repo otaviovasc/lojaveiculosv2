@@ -1,4 +1,9 @@
 import type { ReactNode } from "react";
+import { RefreshCcw } from "lucide-react";
+import {
+  StatusPage,
+  type StatusPageTone,
+} from "../../components/ui/StatusPage";
 import type { PublicStorefrontSnapshot } from "./state";
 
 export function applyPublicStorefrontMetadata(
@@ -33,21 +38,44 @@ export function applyPublicStorefrontMetadata(
 
 export function StorefrontStateFrame({
   action,
-  icon,
+  body,
+  illustration,
   title,
+  tone = "accent",
 }: {
   action?: ReactNode;
-  icon: ReactNode;
+  body: ReactNode;
+  illustration?: ReactNode;
   title: string;
+  tone?: StatusPageTone;
 }) {
   return (
     <main className="mx-auto flex min-h-[32rem] w-full max-w-7xl items-center justify-center px-4 py-6 lg:px-6 lg:py-8">
-      <section className="w-full max-w-md rounded-2xl border border-line bg-panel p-6 text-center shadow-md">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-accent-soft text-accent">
-          {icon}
-        </div>
-        <h2 className="mt-4 text-xl font-black">{title}</h2>
-        {action}
+      <StatusPage
+        body={body}
+        illustration={illustration}
+        layout="fill"
+        primaryAction={action}
+        title={title}
+        tone={tone}
+      />
+    </main>
+  );
+}
+
+export function StorefrontLoadingFrame({ title }: { title: string }) {
+  return (
+    <main className="mx-auto flex min-h-[32rem] w-full max-w-7xl items-center justify-center px-4 py-6 lg:px-6 lg:py-8">
+      <section
+        aria-busy="true"
+        aria-live="polite"
+        className="flex w-full max-w-md flex-col items-center gap-3 rounded-2xl border border-line bg-panel p-8 text-center text-muted shadow-md"
+        role="status"
+      >
+        <RefreshCcw aria-hidden="true" className="size-6 animate-spin" />
+        <strong className="text-base font-black text-foreground">
+          {title}
+        </strong>
       </section>
     </main>
   );

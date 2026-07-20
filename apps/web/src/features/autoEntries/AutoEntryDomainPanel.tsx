@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cx } from "../../components/ui/featureShared";
+import { AutoEntryRulesOverview } from "./AutoEntryRulesOverview";
 import { ConsortiumRulesPanel } from "./ConsortiumRulesPanel";
 import { DocumentationRulesPanel } from "./DocumentationRulesPanel";
 import { autoEntryMetaForTab } from "./domainMeta";
@@ -37,6 +38,11 @@ export function AutoEntryDomainPanel({
         </div>
       </div>
       {panelForTab(tab, props)}
+      <AutoEntryRulesOverview
+        event={tab}
+        rules={props.rules}
+        sellers={props.sellers}
+      />
     </section>
   );
 }

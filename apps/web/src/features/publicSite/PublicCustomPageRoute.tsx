@@ -1,18 +1,25 @@
-import { RefreshCcw } from "lucide-react";
+import { Home, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { Button } from "../../components/ui/button";
+import { StatusIllustration } from "../../components/ui/StatusIllustration";
+import { AppApiError } from "../../lib/apiErrors";
 import {
   createPublicStorefrontApi,
   type PublicStorefrontApi,
 } from "./apiClient";
 import { PageBuilderRenderer } from "./PageBuilderRenderer";
-import { StorefrontStateFrame } from "./PublicStorefrontPageSupport";
+import {
+  StorefrontLoadingFrame,
+  StorefrontStateFrame,
+} from "./PublicStorefrontPageSupport";
 import type { PublicStorefrontCustomPageData } from "./types";
 
 type PublicCustomPageState =
   | { data: PublicStorefrontCustomPageData; kind: "ready" }
   | { error: Error; kind: "error" }
-  | { kind: "loading" };
+  | { kind: "loading" }
+  | { kind: "not-found" };
 
 export function PublicCustomPageRoute({ api }: { api?: PublicStorefrontApi }) {
   const { pageSlug, storeSlug } = useParams<{
@@ -42,6 +49,10 @@ export function PublicCustomPageRoute({ api }: { api?: PublicStorefrontApi }) {
       })
       .catch((error: unknown) => {
         if (!isActive) return;
+        if (error instanceof AppApiError && error.status === 404) {
+          setState({ kind: "not-found" });
+          return;
+        }
         setState({
           error: error instanceof Error ? error : new Error(String(error)),
           kind: "error",
@@ -68,31 +79,46 @@ export function PublicCustomPageRoute({ api }: { api?: PublicStorefrontApi }) {
     );
   }
 
-  if (state.kind === "error") {
+  if (state.kind === "not-found") {
     return (
       <StorefrontStateFrame
         action={
-          <button
-            className="mt-5 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-accent-foreground"
-            onClick={() => setRetryKey((current) => current + 1)}
-            type="button"
-          >
-            <RefreshCcw aria-hidden="true" className="size-4" />
-            Tentar novamente
-          </button>
+          <Button asChild variant="outline">
+            <a href="/">
+              <Home aria-hidden="true" />
+              Voltar para o início
+            </a>
+          </Button>
         }
-        icon={<RefreshCcw aria-hidden="true" className="size-6" />}
-        title="Página temporariamente indisponível"
+        body="Não encontramos esta página. Confira o link recebido ou volte para a vitrine da loja."
+        illustration={<StatusIllustration variant="lost-car" />}
+        title="Página não encontrada"
       />
     );
   }
 
-  return (
-    <StorefrontStateFrame
-      icon={<RefreshCcw aria-hidden="true" className="size-6 animate-spin" />}
-      title="Carregando página"
-    />
-  );
+  if (state.kind === "error") {
+    return (
+      <StorefrontStateFrame
+        action={
+          <Button
+            onClick={() => setRetryKey((current) => current + 1)}
+            type="button"
+            variant="brand"
+          >
+            <RefreshCcw aria-hidden="true" />
+            Tentar novamente
+          </Button>
+        }
+        body="Não foi possível carregar esta página agora. Verifique sua conexão e tente novamente em instantes."
+        illustration={<StatusIllustration variant="offline" />}
+        title="Página temporariamente indisponível"
+        tone="danger"
+      />
+    );
+  }
+
+  return <StorefrontLoadingFrame title="Carregando página" />;
 }
 
 function applyCustomPageMetadata(data: PublicStorefrontCustomPageData) {

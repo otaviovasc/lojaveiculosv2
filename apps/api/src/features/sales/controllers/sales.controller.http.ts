@@ -1,12 +1,7 @@
 import type { Context } from "hono";
 import type { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
-import {
-  HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
-  HttpContextRequestPolicyError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
+import { commonApiErrorResponse } from "../../../infrastructure/http/commonApiErrorResponse.js";
 import {
   VehicleListingNotFoundError,
   VehicleUnitNotFoundError,
@@ -78,38 +73,8 @@ export async function handleSales(
         status: 409,
       });
     }
-    if (error instanceof AuthorizationError) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-    if (error instanceof HttpContextAuthenticationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHENTICATION_REQUIRED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-    if (error instanceof HttpContextAuthorizationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-    if (error instanceof HttpContextRequestPolicyError) {
-      return jsonApiError(context, {
-        code: "HTTP_REQUEST_POLICY_ERROR",
-        error,
-        message: error.message,
-        status: error.statusCode,
-      });
-    }
+    const commonResponse = commonApiErrorResponse(context, error);
+    if (commonResponse) return commonResponse;
     return jsonApiError(context, {
       code: "INTERNAL_SERVER_ERROR",
       error,

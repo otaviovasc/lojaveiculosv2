@@ -42,6 +42,14 @@ export async function handleControllerAction(
   }
 }
 
+export function commonApiErrorResponse(
+  context: Context,
+  error: unknown,
+): Response | null {
+  const mappedError = commonApiErrorInput(error);
+  return mappedError ? jsonApiError(context, mappedError) : null;
+}
+
 function commonApiErrorInput(error: unknown): ApiErrorResponseInput | null {
   if (error instanceof HttpContextAuthenticationError) {
     return {

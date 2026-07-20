@@ -2,12 +2,23 @@ import { FolderOpen, Upload, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import type { DocumentsApi } from "./apiClient";
+import { InventorySelect } from "../inventory/components/InventoryFormParts";
 import {
   DocumentUploadQueue,
   type UploadQueueItem,
 } from "./DocumentUploadQueue";
-import type { DocumentUpload, WorkspaceDocument } from "./types";
+import { kindOptions } from "./documentLabels";
+import type { DocumentKind, DocumentUpload, WorkspaceDocument } from "./types";
 import { DocumentsDialogShell } from "./DocumentsDialogShell";
+
+const maxDocumentFileBytes = 25 * 1024 * 1024;
+
+const uploadKindOptions = kindOptions
+  .filter((option) => option.value)
+  .map((option) => ({
+    label: option.label,
+    value: option.value as DocumentKind,
+  }));
 
 export type DocumentUploadTarget =
   | { label: string; mode: "general" }
@@ -31,6 +42,7 @@ export function DocumentUploadDialog({
   target: DocumentUploadTarget;
 }) {
   const [items, setItems] = useState<UploadQueueItem[]>([]);
+  const [defaultKind, setDefaultKind] = useState<DocumentKind>("other");
   const [status, setStatus] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -42,6 +54,7 @@ export function DocumentUploadDialog({
   useEffect(() => {
     if (!isOpen) {
       setItems([]);
+      setDefaultKind("other");
       setStatus(null);
       setProgress(0);
       setIsUploading(false);
@@ -51,23 +64,39 @@ export function DocumentUploadDialog({
   if (!isOpen) return null;
 
   const addFiles = (files: File[]) => {
-    const accepted = files.filter(isAcceptedDocumentFile);
-    if (accepted.length !== files.length) {
+    const accepted: File[] = [];
+    const rejected: string[] = [];
+    for (const file of files) {
+      const reason = validateDocumentFile(file);
+      if (reason) rejected.push(`${file.name} (${reason})`);
+      else accepted.push(file);
+    }
+    if (rejected.length > 0) {
       setStatus(
-        "Alguns arquivos foram ignorados. Envie apenas PDFs ou imagens.",
+        rejected.length === 1
+          ? `Arquivo ignorado: ${rejected[0]}.`
+          : `${rejected.length} arquivos ignorados: ${rejected.join("; ")}.`,
       );
+    } else {
+      setStatus(null);
     }
     setItems((current) => [
       ...current,
       ...accepted.map((file) => ({
         file,
         id: `${file.name}:${file.size}:${file.lastModified}:${crypto.randomUUID()}`,
-        kind: "other" as const,
+        kind: defaultKind,
         progress: 0,
         status: "queued" as const,
         title: file.name,
       })),
     ]);
+  };
+
+  const clearItems = () => {
+    if (isUploading) return;
+    setItems([]);
+    setStatus(null);
   };
 
   const updateItem = (
@@ -183,24 +212,27 @@ export function DocumentUploadDialog({
     <DocumentsDialogShell
       animated
       canDismiss={!isUploading}
-      className="glass-panel-branded documents-upload-dialog !p-6 relative overflow-hidden"
+      className="documents-upload-dialog"
       onClose={onClose}
       title="Anexar documentos"
     >
       <header className="documents-upload-header">
-        <div>
+        <div aria-hidden="true" className="documents-upload-header-icon">
+          <Upload className="size-5" />
+        </div>
+        <div className="documents-upload-header-text">
           <strong>Enviar documentos</strong>
           <span>Inclua arquivos, revise metadados e salve na pasta certa.</span>
         </div>
         <button
           aria-label="Fechar"
-          className="inline-flex size-7 items-center justify-center rounded-full border border-line bg-app-elevated text-muted hover:text-primary transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+          className="documents-upload-close"
           disabled={isUploading}
           onClick={onClose}
           title="Fechar"
           type="button"
         >
-          <X aria-hidden="true" className="size-3.5" />
+          <X aria-hidden="true" className="size-4" />
         </button>
       </header>
 
@@ -218,6 +250,26 @@ export function DocumentUploadDialog({
             ? "Vinculado à unidade do veículo"
             : "Documentos gerais da loja"}
         </small>
+      </section>
+
+      <section
+        aria-label="Tipo dos novos documentos"
+        className="documents-upload-defaults"
+      >
+        <label className="documents-upload-defaults-field">
+          <span>Tipo de documento</span>
+          <InventorySelect
+            ariaLabel="Tipo de documento dos novos arquivos"
+            disabled={isUploading}
+            onChange={(kind) => setDefaultKind(kind)}
+            options={uploadKindOptions}
+            value={defaultKind}
+          />
+        </label>
+        <p>
+          Aplicado aos arquivos adicionados abaixo. Ajuste o tipo e o título de
+          cada arquivo na fila antes de salvar.
+        </p>
       </section>
 
       <label
@@ -242,12 +294,15 @@ export function DocumentUploadDialog({
         ></input>
         <Upload aria-hidden="true" className="size-7" />
         <strong>Selecione ou arraste arquivos</strong>
-        <span>PDFs ou imagens. Pode enviar vários de uma vez.</span>
+        <span>
+          PDF ou imagens, até 25 MB por arquivo. Envie vários de uma vez.
+        </span>
       </label>
 
       <DocumentUploadQueue
         isUploading={isUploading}
         items={items}
+        onClearAll={clearItems}
         onRemove={(id) =>
           setItems((current) => current.filter((entry) => entry.id !== id))
         }
@@ -270,9 +325,9 @@ export function DocumentUploadDialog({
         </div>
       ) : null}
 
-      <footer className="documents-upload-actions flex justify-end gap-3 mt-4">
+      <footer className="documents-upload-actions">
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-line bg-app px-4 text-sm font-bold text-app-text hover:bg-app-elevated transition-all duration-200 hover:scale-102 active:scale-98 cursor-pointer disabled:opacity-50"
+          className="documents-upload-button"
           disabled={isUploading}
           onClick={onClose}
           type="button"
@@ -280,7 +335,7 @@ export function DocumentUploadDialog({
           Cancelar
         </button>
         <button
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-sm font-black text-accent-foreground cursor-pointer transition-all duration-200 hover:scale-102 active:scale-98 disabled:opacity-70"
+          className="documents-upload-button documents-upload-button--primary"
           disabled={!canUpload}
           onClick={() => {
             void uploadDocuments();
@@ -328,6 +383,13 @@ function isLocalMockUploadUrl(uploadUrl: string) {
   } catch {
     return false;
   }
+}
+
+function validateDocumentFile(file: File) {
+  if (!isAcceptedDocumentFile(file)) return "envie apenas PDF ou imagem";
+  if (file.size === 0) return "arquivo vazio";
+  if (file.size > maxDocumentFileBytes) return "excede o limite de 25 MB";
+  return null;
 }
 
 function isAcceptedDocumentFile(file: File) {

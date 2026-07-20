@@ -57,6 +57,7 @@
 @import "./publicApi.css";
 @import "./marketplaces.css";
 @import "./featureModules.css";
+@import "./statusPages.css";
 @import "./checklists.css";
 @import "./finance.css";
 @import "./autoEntries.css";
@@ -302,4 +303,12 @@ table,
 :root[data-theme="dark"] [data-active-module="documents"],
 :root[data-theme="dark"] [data-active-module="settings"] {
   --color-accent-contrast: var(--color-solid-dark-foreground);
+}
+
+/* Dark documents: accent-soft is a translucent dark tint, so text on it must
+   stay light. Without this the selected sidebar row renders near-black text
+   on a dark blue-tinted background. */
+:root[data-theme="dark"] [data-active-module="documents"] {
+  --color-accent-soft-foreground: var(--color-text);
+  --color-accent-soft-muted: var(--color-muted);
 }

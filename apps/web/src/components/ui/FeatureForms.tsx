@@ -9,7 +9,7 @@ export function FeatureField({
   label,
 }: {
   children: ReactNode;
-  className?: string;
+  className?: string | undefined;
   error?: ReactNode;
   hint?: ReactNode;
   label: ReactNode;

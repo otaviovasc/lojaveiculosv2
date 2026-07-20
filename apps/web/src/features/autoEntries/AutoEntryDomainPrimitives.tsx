@@ -32,7 +32,7 @@ export function AutoEntryDomainCard({
   return (
     <FeatureCard
       className={cx("auto-entry-domain-card", tone && `ae-tone--${tone}`)}
-      padding="comfortable"
+      padding="none"
     >
       <FeatureCardHeader
         className="auto-entry-domain-card__header"
@@ -45,7 +45,7 @@ export function AutoEntryDomainCard({
         <FeatureCardTitle className="auto-entry-domain-card__title">
           {title}
         </FeatureCardTitle>
-        <FeatureCardDescription className="mt-1">
+        <FeatureCardDescription className="auto-entry-domain-card__description mt-1">
           {description}
         </FeatureCardDescription>
       </FeatureCardHeader>
@@ -67,7 +67,7 @@ export function AutoEntrySaveAction({
 }) {
   if (!canManage) return null;
   return (
-    <div className="flex justify-end border-t border-line/50 pt-4">
+    <div className="auto-entry-domain-card__save flex justify-end border-t border-line/50 pt-4">
       <FeatureActionButton
         icon={Save}
         isBusy={isSaving}
@@ -75,6 +75,57 @@ export function AutoEntrySaveAction({
         onClick={onClick}
         variant="primary"
       />
+    </div>
+  );
+}
+
+/** Tone-tinted tile for a single read-only value inside a domain card. */
+export function AutoEntryStat({
+  className,
+  hint,
+  icon: Icon,
+  label,
+  value,
+}: {
+  className?: string;
+  hint?: ReactNode;
+  icon?: FeatureIcon;
+  label: ReactNode;
+  value: ReactNode;
+}) {
+  return (
+    <div className={cx("ae-stat", className)}>
+      {Icon ? (
+        <span aria-hidden="true" className="ae-stat__icon">
+          <Icon className="size-4" />
+        </span>
+      ) : null}
+      <div className="ae-stat__body">
+        <span className="ae-stat__label">{label}</span>
+        <span className="ae-stat__value">{value}</span>
+        {hint ? <span className="ae-stat__hint">{hint}</span> : null}
+      </div>
+    </div>
+  );
+}
+
+/** Icon + label/value line used inside rule rows (lighter than a stat tile). */
+export function AutoEntryFact({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: FeatureIcon;
+  label: ReactNode;
+  value: ReactNode;
+}) {
+  return (
+    <div className="ae-fact">
+      <Icon aria-hidden="true" className="ae-fact__icon size-4" />
+      <div className="min-w-0">
+        <span className="ae-stat__label">{label}</span>
+        <span className="ae-stat__value">{value}</span>
+      </div>
     </div>
   );
 }

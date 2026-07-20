@@ -1,3 +1,4 @@
+import { Store, UserRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { FeatureInput } from "../../components/ui/FeatureControls";
 import {
@@ -8,6 +9,7 @@ import {
   AutoEntryDomainCard,
   AutoEntryInlineError,
   AutoEntrySaveAction,
+  AutoEntryStat,
   AutoEntryValueOrigin,
 } from "./AutoEntryDomainPrimitives";
 import {
@@ -101,7 +103,7 @@ export function InsuranceRulesPanel({
 
   const preview = previewInsurance(values);
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-[2fr_1fr]">
+    <div className="grid items-stretch gap-4 xl:grid-cols-[2fr_1fr]">
       <AutoEntryDomainCard
         description="A loja recebe uma parcela da comissão aplicada pela seguradora; o vendedor recebe uma taxa do prêmio."
         title="Divisão do seguro"
@@ -118,11 +120,11 @@ export function InsuranceRulesPanel({
             Faixa fixa do contrato: é contexto do cálculo e não uma configuração
             da loja.
           </p>
-          <dl className="mt-3 grid grid-cols-3 gap-3">
-            <PolicyValue label="Mínima" value="10%" />
-            <PolicyValue label="Padrão" value="10%" />
-            <PolicyValue label="Máxima" value="20%" />
-          </dl>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <AutoEntryStat label="Mínima" value="10%" />
+            <AutoEntryStat label="Padrão" value="10%" />
+            <AutoEntryStat label="Máxima" value="20%" />
+          </div>
         </section>
         <FeatureFieldGroup>
           <PercentField
@@ -152,8 +154,16 @@ export function InsuranceRulesPanel({
         title="Prévia"
         tone="neutral"
       >
-        <Preview label="Receita da loja" value={preview.store} />
-        <Preview label="Comissão do vendedor" value={preview.seller} />
+        <AutoEntryStat
+          icon={Store}
+          label="Receita da loja"
+          value={preview.store}
+        />
+        <AutoEntryStat
+          icon={UserRound}
+          label="Comissão do vendedor"
+          value={preview.seller}
+        />
       </AutoEntryDomainCard>
     </div>
   );
@@ -179,26 +189,6 @@ function PercentField({
         value={value}
       />
     </FeatureField>
-  );
-}
-function Preview({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-line/60 bg-app-elevated p-3">
-      <p className="text-xs font-black uppercase tracking-wider text-muted">
-        {label}
-      </p>
-      <p className="mt-1 font-black text-app-text">{value}</p>
-    </div>
-  );
-}
-function PolicyValue({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-line/60 bg-app-elevated p-3">
-      <dt className="text-xs font-black uppercase tracking-wider text-muted">
-        {label}
-      </dt>
-      <dd className="mt-1 font-black text-app-text">{value}</dd>
-    </div>
   );
 }
 function policyRateInput(rule: AutoEntryRule | undefined, key: string) {

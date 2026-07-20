@@ -4,6 +4,8 @@ import type {
   FinanceEntry,
   FinanceEntryStatus,
   FinanceEntryType,
+  FinanceRecurringEntry,
+  UpdateFinanceRecurringEntryInput,
 } from "./types";
 
 export type FinanceEntryDraft = {
@@ -133,6 +135,49 @@ export function toRecurringInput(
     sellerUserId: draft.sellerUserId.trim() || null,
     status: draft.status,
     type: draft.type,
+  };
+}
+
+export function recurringEntryToDraft(
+  entry: FinanceRecurringEntry,
+): FinanceEntryDraft {
+  const occurrences = entry.metadata?.occurrences;
+  return {
+    ...createEntryDraft(entry.type),
+    amount: String(entry.amountCents / 100),
+    category: entry.category,
+    dueAt: entry.nextDueAt ? entry.nextDueAt.slice(0, 10) : "",
+    name: entry.name,
+    notes:
+      typeof entry.metadata?.notes === "string" ? entry.metadata.notes : "",
+    recurrence: "recurring",
+    recurrenceDay: entry.dayOfMonth ? String(entry.dayOfMonth) : "",
+    recurrenceFrequency: entry.frequency,
+    recurrenceOccurrences:
+      typeof occurrences === "number" && Number.isFinite(occurrences)
+        ? String(occurrences)
+        : "",
+    sellerUserId: entry.sellerUserId ?? "",
+  };
+}
+
+export function toRecurringUpdateInput(
+  draft: FinanceEntryDraft,
+  existingMetadata?: Record<string, unknown>,
+): UpdateFinanceRecurringEntryInput {
+  const input = toRecurringInput(draft);
+  return {
+    amountCents: input.amountCents,
+    category: input.category,
+    dayOfMonth: input.dayOfMonth ?? null,
+    frequency: input.frequency,
+    metadata: {
+      ...(existingMetadata ?? {}),
+      ...(input.metadata ?? {}),
+    },
+    name: input.name,
+    nextDueAt: input.nextDueAt,
+    sellerUserId: input.sellerUserId ?? null,
   };
 }
 

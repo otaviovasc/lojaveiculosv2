@@ -18,7 +18,8 @@ import {
 } from "./financeBillsModel";
 import { FinanceCashFlowInsights } from "./FinanceCashFlowInsights";
 import { FinanceCashFlowOverview } from "./FinanceCashFlowOverview";
-import { CommissionRulesPanel } from "./FinanceCorePanels";
+import { FinanceCommissionDueCards } from "./FinanceCommissionDueCards";
+import { CommissionRulesPanel } from "./CommissionRulesPanel";
 import { FinanceEntryDialogs } from "./FinanceEntryDialogs";
 import { FinanceEntryTable } from "./FinanceEntryTable";
 import {
@@ -27,6 +28,7 @@ import {
   FinanceToastMessage,
 } from "./FinanceModuleFeedback";
 import {
+  cancelFinanceRecurringEntry,
   submitFinanceDraft,
   updateFinanceEntryStatus,
 } from "./financeModuleActions";
@@ -44,18 +46,15 @@ import { useFinanceAccess } from "./useFinanceAccess";
 
 export function FinanceEntriesWorkspace({
   api,
-  defaultActiveType,
   onNavigate,
 }: {
   api: FinanceApi | undefined;
-  defaultActiveType: Exclude<FinanceEntryType, "commission">;
   onNavigate: ((moduleId: "reports") => void) | undefined;
 }) {
   const { canAttach, canCreate, canUpdate, sellerOptions } = useFinanceAccess(
     Boolean(api),
   );
-  const [activeType, setActiveType] =
-    useState<FinanceEntryType>(defaultActiveType);
+  const [activeType, setActiveType] = useState<FinanceEntryType | "all">("all");
   const [entriesByType, setEntriesByType] = useState<
     Record<FinanceEntryType, FinanceEntry[]>
   >({
@@ -75,7 +74,11 @@ export function FinanceEntriesWorkspace({
   });
   const [refreshToken, setRefreshToken] = useState(0);
   const [modalEntry, setModalEntry] = useState<FinanceEntry | null>(null);
+  const [modalRecurringEntry, setModalRecurringEntry] =
+    useState<FinanceRecurringEntry | null>(null);
   const [cancelTarget, setCancelTarget] = useState<FinanceEntry | null>(null);
+  const [cancelRecurringTarget, setCancelRecurringTarget] =
+    useState<FinanceRecurringEntry | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const tableRef = useRef<HTMLDivElement>(null);
   const visibleEntriesByType = useMemo(
@@ -89,7 +92,6 @@ export function FinanceEntriesWorkspace({
     }),
     [entriesByType, sellerOptions],
   );
-  const activeEntries = visibleEntriesByType[activeType];
   const allEntries = useMemo(
     () => [
       ...visibleEntriesByType.expense,
@@ -98,6 +100,16 @@ export function FinanceEntriesWorkspace({
     ],
     [visibleEntriesByType],
   );
+  const activeEntries = useMemo(() => {
+    if (activeType === "all") {
+      return [...allEntries].sort((a, b) => {
+        const dateA = a.dueAt ? new Date(a.dueAt).getTime() : 0;
+        const dateB = b.dueAt ? new Date(b.dueAt).getTime() : 0;
+        return dateB - dateA;
+      });
+    }
+    return visibleEntriesByType[activeType];
+  }, [activeType, visibleEntriesByType, allEntries]);
   const filteredEntries = useMemo(
     () => filterEntries(activeEntries, filters),
     [activeEntries, filters],
@@ -110,6 +122,17 @@ export function FinanceEntriesWorkspace({
     () => filterOperationalCashEntries(allEntries, filters),
     [allEntries, filters],
   );
+  const filteredCountsByType = useMemo(() => {
+    const counts: Record<FinanceEntryType, number> = {
+      commission: 0,
+      expense: 0,
+      revenue: 0,
+    };
+    for (const entry of filteredCashEntries) {
+      counts[entry.type] += 1;
+    }
+    return counts;
+  }, [filteredCashEntries]);
 
   useEffect(() => {
     if (api) {
@@ -124,7 +147,7 @@ export function FinanceEntriesWorkspace({
   useEffect(() => {
     if (!runtimeApi) return;
     setListState({ kind: "loading" });
-    void loadFinanceWorkspace(runtimeApi)
+    void loadFinanceWorkspace(runtimeApi, { materializeRecurring: canCreate })
       .then((payload) => {
         setCommissionRules(payload.commissionRules);
         setEntriesByType(payload.entriesByType);
@@ -141,7 +164,7 @@ export function FinanceEntriesWorkspace({
           ),
         });
       });
-  }, [refreshToken, runtimeApi]);
+  }, [canCreate, refreshToken, runtimeApi]);
 
   const refresh = () => setRefreshToken((current) => current + 1);
   const scrollToTable = () =>
@@ -150,7 +173,7 @@ export function FinanceEntriesWorkspace({
   const submitDraft = async (draft: FinanceEntryDraft) => {
     if (!runtimeApi) return;
     await submitFinanceDraft(
-      { api: runtimeApi, modalEntry, refresh, setToast },
+      { api: runtimeApi, modalEntry, modalRecurringEntry, refresh, setToast },
       draft,
     );
   };
@@ -173,6 +196,7 @@ export function FinanceEntriesWorkspace({
         canCreate={canCreate}
         onCreate={() => {
           setModalEntry(null);
+          setModalRecurringEntry(null);
           setIsModalOpen(true);
         }}
         onExport={() => exportFinanceCsv(filteredEntries, activeType)}
@@ -204,19 +228,20 @@ export function FinanceEntriesWorkspace({
           scrollToTable();
         }}
       />
-      <FinanceTypeTabs
-        activeType={activeType}
-        onTypeChange={(type) => {
-          setActiveType(type);
-          setToast(null);
+      <FinanceCommissionDueCards entries={visibleEntriesByType.commission} />
+
+      <FinanceUrgencyPanel
+        entries={operationalCashEntries}
+        onEdit={(entry) => {
+          if (!canUpdate) return;
+          setActiveType(entry.type);
+          setModalEntry(entry);
+          setModalRecurringEntry(null);
+          setIsModalOpen(true);
         }}
+        onViewAll={scrollToTable}
       />
-      <FinanceBillsFilters
-        entries={allEntries}
-        filters={filters}
-        onChange={setFilters}
-      />
-      {toast ? <FinanceToastMessage toast={toast} /> : null}
+
       <div ref={tableRef}>
         <FinanceEntryTable
           activeType={activeType}
@@ -229,32 +254,36 @@ export function FinanceEntriesWorkspace({
           onCreate={() => setIsModalOpen(true)}
           onEdit={(entry) => {
             setModalEntry(entry);
+            setModalRecurringEntry(null);
             setIsModalOpen(true);
           }}
+          onExport={() => exportFinanceCsv(filteredEntries, activeType)}
           onMarkPending={(entry) => void updateStatus(entry, "pending")}
           onPay={(entry) => void updateStatus(entry, "pay")}
           otherEntryCount={Math.max(
             0,
             filteredCashEntries.length - filteredEntries.length,
           )}
+          toast={toast ? <FinanceToastMessage toast={toast} /> : null}
+          filters={
+            <FinanceBillsFilters
+              entries={allEntries}
+              filters={filters}
+              onChange={setFilters}
+            />
+          }
+          typeTabs={
+            <FinanceTypeTabs
+              activeType={activeType}
+              counts={filteredCountsByType}
+              onTypeChange={(type) => {
+                setActiveType(type);
+                setToast(null);
+              }}
+            />
+          }
         />
       </div>
-      <FinanceUrgencyPanel
-        entries={operationalCashEntries}
-        onEdit={(entry) => {
-          if (!canUpdate) return;
-          setActiveType(entry.type);
-          setModalEntry(entry);
-          setIsModalOpen(true);
-        }}
-        onViewAll={scrollToTable}
-      />
-      <FinanceRecurringBillsPanel items={recurringEntries} />
-      <FinanceCashFlowInsights
-        commissionRules={commissionRules}
-        entries={operationalCashEntries}
-        recurringEntries={recurringEntries}
-      />
       {activeType === "commission" && canCreate ? (
         <CommissionRulesPanel
           items={commissionRules}
@@ -265,21 +294,51 @@ export function FinanceEntriesWorkspace({
           }}
         />
       ) : null}
+      <div className="finance-bottom-grid">
+        <FinanceRecurringBillsPanel
+          canUpdate={canUpdate}
+          items={recurringEntries}
+          onCancel={(entry) => setCancelRecurringTarget(entry)}
+          onEdit={(entry) => {
+            setModalEntry(null);
+            setModalRecurringEntry(entry);
+            setIsModalOpen(true);
+          }}
+        />
+        <FinanceCashFlowInsights
+          commissionRules={commissionRules}
+          entries={operationalCashEntries}
+          recurringEntries={recurringEntries}
+        />
+      </div>
       <FinanceLoadError listState={listState} />
       <FinanceEntryDialogs
-        activeType={activeType}
+        activeType={activeType === "all" ? "expense" : activeType}
+        api={runtimeApi}
+        cancelRecurringTarget={cancelRecurringTarget}
         cancelTarget={cancelTarget}
         isModalOpen={isModalOpen}
         modalEntry={modalEntry}
+        modalRecurringEntry={modalRecurringEntry}
         onCancelClose={() => setCancelTarget(null)}
         onCancelConfirm={async () => {
           if (!cancelTarget) return;
           await cancelEntry(runtimeApi, cancelTarget, refresh, setToast);
           setCancelTarget(null);
         }}
+        onCancelRecurringClose={() => setCancelRecurringTarget(null)}
+        onCancelRecurringConfirm={async () => {
+          if (!runtimeApi || !cancelRecurringTarget) return;
+          await cancelFinanceRecurringEntry(
+            { api: runtimeApi, refresh, setToast },
+            cancelRecurringTarget,
+          );
+          setCancelRecurringTarget(null);
+        }}
         onModalClose={() => {
           setIsModalOpen(false);
           setModalEntry(null);
+          setModalRecurringEntry(null);
         }}
         onSubmit={submitDraft}
         sellerOptions={sellerOptions}

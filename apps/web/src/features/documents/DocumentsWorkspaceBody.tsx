@@ -204,6 +204,16 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
                 onSelect={onSelectDocument}
                 onToggleSelect={selection.toggle}
                 selectedIds={selection.selectedIds}
+                {...(showUpload
+                  ? {
+                      upload: {
+                        disabled: !api,
+                        hint: "PDFs ou imagens salvos nesta pasta",
+                        label: "Enviar documento",
+                        onClick: onUploadClick,
+                      },
+                    }
+                  : {})}
               />
             </>
           ) : null}

@@ -27,7 +27,7 @@ import type { AutoEntryRule, AutoEntryRuleMutation } from "./types";
 
 export function FinancingRulesPanel(props: AutoEntryDomainPanelProps) {
   return (
-    <div className="grid items-start gap-4 xl:grid-cols-2">
+    <div className="grid items-stretch gap-4 xl:grid-cols-2">
       <FinancingStoreCard {...props} />
       <FinancingSellerCard {...props} />
     </div>

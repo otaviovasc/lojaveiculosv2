@@ -5,11 +5,9 @@ import type {
   createCommissionRuleSchema,
   createFinanceAutoEntryRuleSchema,
   createFinanceEntrySchema,
-  createRecurringEntrySchema,
   listCommissionRulesQuerySchema,
   listFinanceAutoEntryRulesQuerySchema,
   listFinanceEntriesQuerySchema,
-  listRecurringEntriesQuerySchema,
   updateFinanceEntrySchema,
   updateFinanceAutoEntryRuleSchema,
 } from "./finance.controller.schemas.js";
@@ -97,32 +95,6 @@ function cleanDocumentUpload(
     metadata: input.metadata,
     sizeBytes: input.sizeBytes,
     ...(input.title !== undefined ? { title: input.title } : {}),
-  };
-}
-
-export function cleanListRecurringQuery(
-  input: z.infer<typeof listRecurringEntriesQuerySchema>,
-) {
-  return {
-    ...(input.limit !== undefined ? { limit: input.limit } : {}),
-    ...(input.type !== undefined ? { type: input.type } : {}),
-  };
-}
-
-export function cleanCreateRecurringInput(
-  input: z.infer<typeof createRecurringEntrySchema>,
-) {
-  return {
-    amountCents: input.amountCents,
-    category: input.category,
-    dayOfMonth: input.dayOfMonth ?? null,
-    frequency: input.frequency,
-    metadata: input.metadata,
-    name: input.name,
-    nextDueAt: input.nextDueAt,
-    sellerUserId: input.sellerUserId ?? null,
-    status: input.status,
-    type: input.type,
   };
 }
 

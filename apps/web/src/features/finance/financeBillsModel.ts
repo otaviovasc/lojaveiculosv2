@@ -1,3 +1,4 @@
+import { AppApiError } from "../../lib/apiErrors";
 import type { FinanceApi } from "./apiClient";
 import {
   entrySourceKey,
@@ -17,9 +18,11 @@ export {
   createEntryDraft,
   entryToDraft,
   expenseCategories,
+  recurringEntryToDraft,
   revenueCategories,
   toEntryInput,
   toRecurringInput,
+  toRecurringUpdateInput,
 } from "./financeEntryDraftModel";
 export type { FinanceEntryDraft } from "./financeEntryDraftModel";
 
@@ -52,19 +55,26 @@ export const initialFinanceFilters: FinanceFilters = {
   window: "next30",
 };
 
-export async function loadFinanceWorkspace(api: FinanceApi) {
+export async function loadFinanceWorkspace(
+  api: FinanceApi,
+  options: { materializeRecurring?: boolean } = {},
+) {
+  if (options.materializeRecurring) {
+    await api.materializeRecurringEntries().catch((error) => {
+      if (isAuthError(error)) return;
+      throw error;
+    });
+  }
   const [
     expenseEntries,
     revenueEntries,
     commissionEntries,
-    summary,
     recurringEntries,
     commissionRules,
   ] = await Promise.all([
     api.listAllEntries("expense"),
     api.listAllEntries("revenue"),
     api.listAllEntries("commission"),
-    api.getSummary(),
     api.listRecurringEntries(),
     api.listCommissionRules(),
   ]);
@@ -79,8 +89,14 @@ export async function loadFinanceWorkspace(api: FinanceApi) {
     commissionRules,
     entriesByType,
     recurringEntries,
-    summary,
   };
+}
+
+function isAuthError(error: unknown) {
+  return (
+    error instanceof AppApiError &&
+    (error.status === 401 || error.status === 403)
+  );
 }
 
 export function filterEntries(

@@ -123,6 +123,21 @@ export const listRecurringEntriesQuerySchema = z.object({
   type: z.enum(financeEntryTypes).optional(),
 });
 
+export const updateRecurringEntrySchema = z.object({
+  amountCents: z.number().int().positive().optional(),
+  category: z.string().trim().min(1).max(120).optional(),
+  dayOfMonth: z.number().int().min(1).max(31).nullable().optional(),
+  frequency: z.enum(financeRecurrenceFrequencies).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
+  name: z.string().trim().min(1).max(191).optional(),
+  nextDueAt: z.coerce.date().optional(),
+  sellerUserId: z.string().trim().min(1).nullable().optional(),
+});
+
+export const materializeRecurringEntriesSchema = z.object({
+  asOf: z.coerce.date().optional(),
+});
+
 export const createCommissionRuleSchema = z.object({
   category: z.string().trim().min(1).max(120),
   fixedAmountCents: z.number().int().positive().nullable().optional(),

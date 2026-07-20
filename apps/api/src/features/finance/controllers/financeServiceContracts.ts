@@ -18,8 +18,18 @@ import type { RequestFinanceEntryDocumentUploadInput } from "../../../domains/fi
 import type { UpdateFinanceEntryInput } from "../../../domains/finance/services/FinanceService/updateFinanceEntry.js";
 import type { PayFinanceEntryInput } from "../../../domains/finance/services/FinanceService/payFinanceEntry.js";
 import type { CancelFinanceEntryInput } from "../../../domains/finance/services/FinanceService/cancelFinanceEntry.js";
+import type { CancelFinanceRecurringEntryInput } from "../../../domains/finance/services/FinanceService/cancelFinanceRecurringEntry.js";
 import type { CreateFinanceRecurringEntryInput } from "../../../domains/finance/services/FinanceService/createFinanceRecurringEntry.js";
+import type {
+  FinanceEntryDocumentDownload,
+  GetFinanceEntryDocumentDownloadInput,
+} from "../../../domains/finance/services/FinanceService/getFinanceEntryDocumentDownload.js";
 import type { ListFinanceRecurringEntriesInput } from "../../../domains/finance/services/FinanceService/listFinanceRecurringEntries.js";
+import type {
+  MaterializeFinanceRecurringEntriesInput,
+  MaterializeFinanceRecurringEntriesResult,
+} from "../../../domains/finance/services/FinanceService/materializeFinanceRecurringEntries.js";
+import type { UpdateFinanceRecurringEntryInput } from "../../../domains/finance/services/FinanceService/updateFinanceRecurringEntry.js";
 import type { CreateCommissionRuleInput } from "../../../domains/finance/services/FinanceService/createCommissionRule.js";
 import type { ListCommissionRulesInput } from "../../../domains/finance/services/FinanceService/listCommissionRules.js";
 import type { CreateFinanceAutoEntryRuleInput } from "../../../domains/finance/services/FinanceService/createFinanceAutoEntryRule.js";
@@ -70,6 +80,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: CancelFinanceEntryInput,
   ) => Promise<FinanceEntryBundle>;
+  cancelRecurringEntry: (
+    context: ServiceContext,
+    input: CancelFinanceRecurringEntryInput,
+  ) => Promise<FinanceRecurringEntry>;
   createAutoEntryRule: (
     context: ServiceContext,
     input: CreateFinanceAutoEntryRuleInput,
@@ -98,6 +112,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: GetFinanceEntryDetailInput,
   ) => Promise<FinanceEntryDetail>;
+  getEntryDocumentDownload: (
+    context: ServiceContext,
+    input: GetFinanceEntryDocumentDownloadInput,
+  ) => Promise<FinanceEntryDocumentDownload>;
   getCommissionWorkspace: (
     context: ServiceContext,
     input: GetCommissionWorkspaceInput,
@@ -123,6 +141,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: MaterializeFinanceAutoEntriesInput,
   ) => Promise<readonly MaterializedFinanceAutoEntry[]>;
+  materializeRecurringEntries: (
+    context: ServiceContext,
+    input: MaterializeFinanceRecurringEntriesInput,
+  ) => Promise<MaterializeFinanceRecurringEntriesResult>;
   payEntry: (
     context: ServiceContext,
     input: PayFinanceEntryInput,
@@ -143,6 +165,10 @@ export type FinanceServices = {
     context: ServiceContext,
     input: UpdateFinanceEntryInput,
   ) => Promise<FinanceEntryBundle>;
+  updateRecurringEntry: (
+    context: ServiceContext,
+    input: UpdateFinanceRecurringEntryInput,
+  ) => Promise<FinanceRecurringEntry>;
 };
 
 export type CreateFinanceServicesOptions =

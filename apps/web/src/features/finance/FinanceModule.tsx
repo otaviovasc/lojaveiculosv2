@@ -16,11 +16,5 @@ export function FinanceModule({
     return api ? <CommissionWorkspace api={api} /> : <CommissionWorkspace />;
   }
 
-  return (
-    <FinanceEntriesWorkspace
-      api={api}
-      defaultActiveType={defaultActiveType}
-      onNavigate={onNavigate}
-    />
-  );
+  return <FinanceEntriesWorkspace api={api} onNavigate={onNavigate} />;
 }

@@ -5,6 +5,7 @@ import { ModulePlaceholder } from "../components/ModulePlaceholder";
 import { FeatureLoadingState } from "../components/ui/FeatureStates";
 import { PermissionRestrictedPanel } from "../features/account/PermissionRestrictedPanel";
 import { useOptionalAccountSession } from "../features/account/accountSession";
+import { AppErrorBoundary } from "../features/system/AppErrorBoundary";
 import {
   AutoEntriesWorkspace,
   AutomationWorkspace,
@@ -50,66 +51,76 @@ export function AdminApp() {
 
   return (
     <AppShell activeModule={activeModule} onNavigate={navigate}>
-      <Suspense fallback={<FeatureLoadingState title="Carregando módulo" />}>
-        {owner && !moduleEntitlement.canUse && moduleEntitlement.featureKey ? (
-          <BillingUpgradePanel
-            featureKey={moduleEntitlement.featureKey}
-            managedByAgency={managedByAgency}
-            module={activeModule}
-            onOpenBilling={() => navigate("billing")}
-          />
-        ) : !modulePermission.canView ? (
-          <PermissionRestrictedPanel
-            title={modulePermission.title}
-            {...(modulePermission.description
-              ? { description: modulePermission.description }
-              : {})}
-          />
-        ) : activeSurface === "dashboard" ? (
-          <DashboardHome onNavigate={navigate} />
-        ) : activeSurface === "inventory" ? (
-          <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
-        ) : activeSurface === "checklists" ? (
-          <ChecklistModule />
-        ) : activeSurface === "automation" ? (
-          <AutomationWorkspace />
-        ) : activeSurface === "finance-auto-entries" ? (
-          <AutoEntriesWorkspace />
-        ) : activeSurface === "crm-leads" ? (
-          <CrmModule routeSurface="leads" />
-        ) : activeSurface === "sales" ? (
-          <SalesModule />
-        ) : activeSurface === "crm-whatsapp" ? (
-          <CrmModule routeSurface="whatsapp" />
-        ) : activeSurface === "billing" ? (
-          <BillingModule />
-        ) : activeSurface === "documents" ? (
-          <DocumentsModule />
-        ) : activeSurface === "reports" ? (
-          <ReportsModule />
-        ) : activeSurface === "finance-expenses" ? (
-          <FinanceModule defaultActiveType="expense" onNavigate={navigate} />
-        ) : activeSurface === "finance-commissions" ? (
-          <FinanceModule defaultActiveType="commission" onNavigate={navigate} />
-        ) : activeSurface === "storefront-design" ? (
-          <StorefrontCustomizationModule key="customize" initialTab="design" />
-        ) : activeSurface === "storefront-pages" ? (
-          <StorefrontCustomizationModule
-            key="custom-pages"
-            initialTab="pages"
-          />
-        ) : activeSurface === "public-api" ? (
-          <PublicApiModule />
-        ) : activeSurface === "marketplaces" ? (
-          <MarketplaceModule />
-        ) : activeSurface === "fiscal" ? (
-          <FiscalModule />
-        ) : activeSurface === "settings" ? (
-          <SettingsModule key="settings" />
-        ) : (
-          <ModulePlaceholder module={activeModule} />
-        )}
-      </Suspense>
+      <AppErrorBoundary layout="fill">
+        <Suspense fallback={<FeatureLoadingState title="Carregando módulo" />}>
+          {owner &&
+          !moduleEntitlement.canUse &&
+          moduleEntitlement.featureKey ? (
+            <BillingUpgradePanel
+              featureKey={moduleEntitlement.featureKey}
+              managedByAgency={managedByAgency}
+              module={activeModule}
+              onOpenBilling={() => navigate("billing")}
+            />
+          ) : !modulePermission.canView ? (
+            <PermissionRestrictedPanel
+              title={modulePermission.title}
+              {...(modulePermission.description
+                ? { description: modulePermission.description }
+                : {})}
+            />
+          ) : activeSurface === "dashboard" ? (
+            <DashboardHome onNavigate={navigate} />
+          ) : activeSurface === "inventory" ? (
+            <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
+          ) : activeSurface === "checklists" ? (
+            <ChecklistModule />
+          ) : activeSurface === "automation" ? (
+            <AutomationWorkspace />
+          ) : activeSurface === "finance-auto-entries" ? (
+            <AutoEntriesWorkspace />
+          ) : activeSurface === "crm-leads" ? (
+            <CrmModule routeSurface="leads" />
+          ) : activeSurface === "sales" ? (
+            <SalesModule />
+          ) : activeSurface === "crm-whatsapp" ? (
+            <CrmModule routeSurface="whatsapp" />
+          ) : activeSurface === "billing" ? (
+            <BillingModule />
+          ) : activeSurface === "documents" ? (
+            <DocumentsModule />
+          ) : activeSurface === "reports" ? (
+            <ReportsModule />
+          ) : activeSurface === "finance-expenses" ? (
+            <FinanceModule defaultActiveType="expense" onNavigate={navigate} />
+          ) : activeSurface === "finance-commissions" ? (
+            <FinanceModule
+              defaultActiveType="commission"
+              onNavigate={navigate}
+            />
+          ) : activeSurface === "storefront-design" ? (
+            <StorefrontCustomizationModule
+              key="customize"
+              initialTab="design"
+            />
+          ) : activeSurface === "storefront-pages" ? (
+            <StorefrontCustomizationModule
+              key="custom-pages"
+              initialTab="pages"
+            />
+          ) : activeSurface === "public-api" ? (
+            <PublicApiModule />
+          ) : activeSurface === "marketplaces" ? (
+            <MarketplaceModule />
+          ) : activeSurface === "fiscal" ? (
+            <FiscalModule />
+          ) : activeSurface === "settings" ? (
+            <SettingsModule key="settings" />
+          ) : (
+            <ModulePlaceholder module={activeModule} />
+          )}
+        </Suspense>
+      </AppErrorBoundary>
     </AppShell>
   );
 }

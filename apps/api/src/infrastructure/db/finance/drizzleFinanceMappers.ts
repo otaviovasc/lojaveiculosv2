@@ -14,6 +14,7 @@ import type {
   FinanceEntryLink,
   FinanceRecurringEntry,
   UpdateFinanceEntryInput,
+  UpdateFinanceRecurringEntryInput,
 } from "../../../domains/finance/ports/financeRepository.js";
 
 export type EntryRow = InferSelectModel<typeof financeEntries>;
@@ -25,6 +26,7 @@ export type RecurringRow = InferSelectModel<typeof financeRecurringEntries>;
 export type InsertRecurringRow = InferInsertModel<
   typeof financeRecurringEntries
 >;
+export type UpdateRecurringRow = Partial<InsertRecurringRow>;
 export type RuleRow = InferSelectModel<typeof commissionRules>;
 export type InsertRuleRow = InferInsertModel<typeof commissionRules>;
 
@@ -92,6 +94,30 @@ export function toInsertRecurringEntry(
     storeId: input.storeId,
     tenantId: input.tenantId,
     type: input.type,
+  };
+}
+
+export function toUpdateRecurringEntry(
+  input: UpdateFinanceRecurringEntryInput,
+): UpdateRecurringRow {
+  return {
+    ...(input.amountCents !== undefined
+      ? { amountCents: input.amountCents }
+      : {}),
+    ...(input.category !== undefined ? { category: input.category } : {}),
+    ...(input.dayOfMonth !== undefined ? { dayOfMonth: input.dayOfMonth } : {}),
+    ...(input.frequency !== undefined ? { frequency: input.frequency } : {}),
+    ...(input.lastGeneratedAt !== undefined
+      ? { lastGeneratedAt: input.lastGeneratedAt }
+      : {}),
+    ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+    ...(input.name !== undefined ? { name: input.name } : {}),
+    ...(input.nextDueAt !== undefined ? { nextDueAt: input.nextDueAt } : {}),
+    ...(input.sellerUserId !== undefined
+      ? { sellerUserId: input.sellerUserId }
+      : {}),
+    ...(input.status !== undefined ? { status: input.status } : {}),
+    updatedAt: new Date(),
   };
 }
 

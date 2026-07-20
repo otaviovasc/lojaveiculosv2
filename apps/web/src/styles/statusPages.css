@@ -1,0 +1,166 @@
+/* Full-page status surfaces (404, crash, restricted, storefront states).
+   Tone is driven by data-tone so a single markup shape serves every state
+   without runtime class interpolation. Colors stay token-only. */
+.status-page {
+  --status-accent: var(--color-accent);
+  --status-accent-strong: var(--color-accent-strong);
+  --status-accent-soft: var(--color-accent-soft);
+  align-items: center;
+  background: var(--color-app);
+  display: flex;
+  isolation: isolate;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2.5rem 1rem;
+  position: relative;
+}
+
+.status-page--fill {
+  background: var(--color-app);
+  min-height: 26rem;
+  padding: 2rem 1rem;
+}
+
+/* Keep the LV watermark subtle behind status copy, especially on small
+   screens where it would otherwise sit right behind the body text. */
+.status-page .feature-empty-state__watermark {
+  opacity: 0.03;
+}
+
+.status-page[data-tone="danger"] {
+  --status-accent: var(--color-danger);
+  --status-accent-strong: var(--color-danger);
+  --status-accent-soft: color-mix(
+    in srgb,
+    var(--color-danger) 12%,
+    var(--color-panel)
+  );
+}
+
+.status-page[data-tone="warning"] {
+  --status-accent: var(--color-warning);
+  --status-accent-strong: var(--color-warning-strong);
+  --status-accent-soft: color-mix(
+    in srgb,
+    var(--color-warning) 16%,
+    var(--color-panel)
+  );
+}
+
+.status-page[data-tone="blue"] {
+  --status-accent: var(--color-blue-start);
+  --status-accent-strong: var(--color-blue-start);
+  --status-accent-soft: var(--color-blue-soft);
+}
+
+.status-page[data-tone="neutral"] {
+  --status-accent: var(--color-line-strong);
+  --status-accent-strong: var(--color-muted);
+  --status-accent-soft: var(--color-app-elevated);
+}
+
+.status-page__inner {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  max-width: 30rem;
+  position: relative;
+  text-align: center;
+  width: 100%;
+}
+
+.status-page__scene {
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--status-accent) 10%, var(--color-panel)),
+    var(--color-panel) 72%
+  );
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-2xl);
+  box-shadow: var(--shadow-panel);
+  overflow: hidden;
+  padding: 0.75rem 0.75rem 0.25rem;
+  width: min(100%, 22rem);
+}
+
+.status-page__scene .status-illustration {
+  display: block;
+  height: auto;
+  width: 100%;
+}
+
+.status-page__code {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  box-shadow: var(--shadow-raised);
+  color: var(--status-accent-strong);
+  font-family: var(--font-display);
+  font-size: var(--font-size-display);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-top: -1.5rem;
+  padding: 0.35rem 1.5rem;
+  position: relative;
+}
+
+.status-page__title {
+  color: var(--color-text);
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  margin-top: 1.25rem;
+}
+
+.status-page__body {
+  color: var(--color-muted);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.6;
+  margin-top: 0.5rem;
+  max-width: 26rem;
+}
+
+.status-page__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.status-page__meta {
+  color: var(--color-caption);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  margin-top: 1.25rem;
+}
+
+.status-page__extra {
+  margin-top: 1.25rem;
+  width: 100%;
+}
+
+@media (max-width: 480px) {
+  .status-page__scene {
+    width: min(100%, 18rem);
+  }
+
+  .status-page__actions {
+    align-items: stretch;
+    flex-direction: column;
+    width: min(100%, 18rem);
+  }
+
+  .status-page__actions > * {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .status-page .feature-empty-state__watermark {
+    background-size: 200px auto;
+    opacity: 0.02;
+  }
+}

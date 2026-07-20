@@ -1,4 +1,8 @@
-import { AutoEntryDomainCard } from "./AutoEntryDomainPrimitives";
+import { Activity, Calculator, Replace } from "lucide-react";
+import {
+  AutoEntryDomainCard,
+  AutoEntryStat,
+} from "./AutoEntryDomainPrimitives";
 import { autoEntryCalculationLabel } from "./autoEntryLabels";
 import { findRule } from "./domainModel";
 import type { AutoEntryDomainPanelProps } from "./domainPanelTypes";
@@ -14,38 +18,33 @@ export function SaleRulesPanel(props: AutoEntryDomainPanelProps) {
         title="Comissão padrão da venda"
       >
         {standard ? (
-          <dl className="grid gap-3 sm:grid-cols-3">
-            <Value
+          <div className="grid gap-3 sm:grid-cols-3">
+            <AutoEntryStat
+              icon={Calculator}
               label="Cálculo"
               value={autoEntryCalculationLabel(standard.calculation)}
             />
-            <Value label="Resolução" value="Substituída por vendedor" />
-            <Value
+            <AutoEntryStat
+              icon={Replace}
+              label="Resolução"
+              value="Substituída por vendedor"
+            />
+            <AutoEntryStat
+              icon={Activity}
               label="Status"
               value={standard.status === "active" ? "Ativa" : "Pausada"}
             />
-          </dl>
+          </div>
         ) : (
           <p className="text-sm font-bold text-muted">
             Nenhuma regra padrão foi retornada. Não há valor numérico presumido.
           </p>
         )}
       </AutoEntryDomainCard>
-      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <div className="grid items-stretch gap-4 xl:grid-cols-2">
         <SaleSellerOverrideCard {...props} />
         <SaleExtraCommissionCard {...props} />
       </div>
-    </div>
-  );
-}
-
-function Value({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-line/60 bg-app-elevated p-3">
-      <dt className="text-xs font-black uppercase tracking-wider text-muted">
-        {label}
-      </dt>
-      <dd className="mt-1 text-sm font-black text-app-text">{value}</dd>
     </div>
   );
 }

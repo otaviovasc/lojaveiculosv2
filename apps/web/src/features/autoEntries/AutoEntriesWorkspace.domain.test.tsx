@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AutoEntryRulesApi } from "./apiClient";
@@ -29,7 +35,7 @@ describe("AutoEntriesWorkspace domain rules", () => {
       />,
     );
 
-    expect(await screen.findByText("Bônus fixo")).toBeVisible();
+    expect(await screen.findAllByText("Bônus fixo")).toHaveLength(2);
     await user.click(screen.getByRole("tab", { name: "Personalizadas" }));
     expect(screen.getByText("Nenhuma regra configurada")).toBeVisible();
     expect(screen.queryByText("Bônus fixo")).not.toBeInTheDocument();
@@ -58,7 +64,100 @@ describe("AutoEntriesWorkspace domain rules", () => {
     await user.click(screen.getByRole("tab", { name: "Consórcio" }));
     expect(screen.getByText("Divisão do consórcio")).toBeVisible();
   });
+
+  it("lists the configured rules of each tab with beneficiary, value and status", async () => {
+    const extraRule = autoEntryRule();
+    const pausedRule: AutoEntryRule = {
+      ...extraRule,
+      calculation: { amountCents: 40_000, kind: "fixed" },
+      id: "paused_rule",
+      name: "Bônus pausado",
+      recipient: { kind: "fixed_user", userId: "seller_ghost" },
+      status: "inactive",
+    };
+    const financingRule: AutoEntryRule = {
+      ...extraRule,
+      calculation: { basis: "financing", kind: "rate_ppm", ratePpm: 5_400 },
+      category: "Comissão",
+      conditions: { financingRank: "R3" },
+      event: "financing_approved",
+      family: "financing.seller",
+      id: "financing_rule",
+      name: "Comissão do vendedor no financiamento R3",
+      recipient: { kind: "event_seller" },
+      resolution: "seller_override",
+      ruleKey: "financing.seller.R3",
+      sellerUserId: "seller_1",
+    };
+    const api = autoEntryApiWith([extraRule, pausedRule, financingRule]);
+    const user = userEvent.setup();
+    render(
+      <AutoEntriesWorkspace
+        api={api}
+        grantedPermissions={["finance.read", "finance.auto_entries.manage"]}
+        sellerOptions={[
+          {
+            detail: "Vendedor",
+            id: "seller_1",
+            label: "Ana",
+            role: "salesman",
+          },
+        ]}
+      />,
+    );
+
+    const saleOverview = within(await overviewSection());
+    expect(saleOverview.getByText("Bônus fixo")).toBeVisible();
+    expect(saleOverview.getByText("Bônus pausado")).toBeVisible();
+    expect(saleOverview.getByText("Ana")).toBeVisible();
+    expect(saleOverview.getByText("Vendedor não encontrado")).toBeVisible();
+    expect(saleOverview.getByText("R$ 250,00")).toBeVisible();
+    expect(saleOverview.getByText("R$ 400,00")).toBeVisible();
+    expect(saleOverview.getByText("Ativa")).toBeVisible();
+    expect(saleOverview.getByText("Pausada")).toBeVisible();
+
+    await user.click(screen.getByRole("tab", { name: "Financiamento" }));
+    const financingOverview = within(await overviewSection());
+    expect(
+      financingOverview.getByText("Comissão do vendedor no financiamento R3"),
+    ).toBeVisible();
+    expect(
+      financingOverview.getByText("0,54% sobre o valor financiado"),
+    ).toBeVisible();
+    expect(financingOverview.getAllByText("Vendedor da origem")).toHaveLength(
+      2,
+    );
+    expect(financingOverview.getByText("Ana")).toBeVisible();
+    expect(financingOverview.queryByText("Bônus fixo")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "Seguro" }));
+    expect(
+      await screen.findByText(
+        "Nenhuma regra desta origem foi configurada ainda.",
+      ),
+    ).toBeVisible();
+
+    await user.click(screen.getByRole("tab", { name: "Personalizadas" }));
+    expect(
+      screen.queryByRole("heading", { name: "Visão geral das regras" }),
+    ).not.toBeInTheDocument();
+  });
 });
+
+async function overviewSection() {
+  const heading = await screen.findByRole("heading", {
+    name: "Visão geral das regras",
+  });
+  const section = heading.closest("section");
+  expect(section).not.toBeNull();
+  return section as HTMLElement;
+}
+
+function autoEntryApiWith(rules: AutoEntryRule[]): AutoEntryRulesApi {
+  const api = autoEntryApi(rules[0] ?? autoEntryRule());
+  vi.mocked(api.listRules).mockResolvedValue(rules);
+  return api;
+}
 
 function autoEntryApi(rule: AutoEntryRule): AutoEntryRulesApi {
   return {

@@ -22,8 +22,9 @@ export function AutoEntriesTabs({
   ) => {
     const count = autoEntryTabsMeta.length;
     let nextIndex: number | null = null;
-    if (event.key === "ArrowRight") nextIndex = (currentIndex + 1) % count;
-    else if (event.key === "ArrowLeft") {
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = (currentIndex + 1) % count;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
       nextIndex = (currentIndex - 1 + count) % count;
     } else if (event.key === "Home") nextIndex = 0;
     else if (event.key === "End") nextIndex = count - 1;
@@ -38,17 +39,18 @@ export function AutoEntriesTabs({
   return (
     <div
       aria-label="Origem dos lançamentos automáticos"
-      className="auto-entries-tabs"
+      className="ae-tabs"
       role="tablist"
     >
       {autoEntryTabsMeta.map((meta, index) => {
         const Icon = meta.icon;
         const active = meta.value === value;
+        const count = countForTab(activeRules, meta.value);
         return (
           <button
             aria-selected={active}
             className={cx(
-              "auto-entries-tab",
+              "ae-tab",
               `ae-tone--${meta.tone}`,
               active && "is-active",
             )}
@@ -62,13 +64,17 @@ export function AutoEntriesTabs({
             tabIndex={active || (activeIndex < 0 && index === 0) ? 0 : -1}
             type="button"
           >
-            <span aria-hidden="true" className="auto-entries-tab__icon">
+            <span aria-hidden="true" className="ae-tab__icon">
               <Icon className="size-4" />
             </span>
-            <span className="auto-entries-tab__label">{meta.tab}</span>
-            <span aria-hidden="true" className="auto-entries-tab__count">
-              {countForTab(activeRules, meta.value)}
+            <span className="ae-tab__label">{meta.tab}</span>
+            <span aria-hidden="true" className="ae-tab__count">
+              {count}
             </span>
+            <span
+              aria-hidden="true"
+              className={cx("ae-tab__dot", count > 0 && "is-ready")}
+            />
           </button>
         );
       })}

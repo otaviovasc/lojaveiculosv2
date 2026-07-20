@@ -10,27 +10,9 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CommissionRulesPanel,
-  FinanceRecurringPanel,
-} from "./FinanceCorePanels";
-import { commissionRuleValue } from "./CommissionRulesPanel";
+  commissionRuleValue,
+} from "./CommissionRulesPanel";
 import type { CommissionRule } from "./types";
-
-describe("FinanceRecurringPanel", () => {
-  afterEach(() => cleanup());
-
-  it("does not submit a recurrence without the required next date", () => {
-    const onCreate = vi.fn();
-    const { container } = render(
-      <FinanceRecurringPanel items={[]} onCreate={onCreate} />,
-    );
-
-    const form = container.querySelector("form");
-    expect(form).not.toBeNull();
-    fireEvent.submit(form!);
-
-    expect(onCreate).not.toHaveBeenCalled();
-  });
-});
 
 describe("CommissionRulesPanel", () => {
   afterEach(() => cleanup());

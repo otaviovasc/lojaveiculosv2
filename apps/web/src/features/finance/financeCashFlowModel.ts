@@ -72,6 +72,44 @@ export function summarizeCashFlow(
   );
 }
 
+export function commissionDueSummary(entries: readonly FinanceEntry[]) {
+  const today = startOfDay(new Date());
+  const weekEnd = addDays(today, 7);
+  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const pending = entries.filter(
+    (entry) =>
+      entry.type === "commission" &&
+      entry.status === "pending" &&
+      dueDate(entry) !== null,
+  );
+  const sum = (list: readonly FinanceEntry[]) =>
+    list.reduce((total, entry) => total + entry.amountCents, 0);
+  const topSeller = (list: readonly FinanceEntry[]) => {
+    const totals = new Map<string, number>();
+    for (const entry of list) {
+      const name = entrySellerName(entry);
+      totals.set(name, (totals.get(name) ?? 0) + entry.amountCents);
+    }
+    return [...totals.entries()].sort(
+      (left, right) => right[1] - left[1],
+    )[0]?.[0];
+  };
+  const within = (limit: Date) =>
+    pending.filter((entry) => {
+      const dueAt = dueDate(entry);
+      return dueAt !== null && dueAt <= limit;
+    });
+  const week = within(weekEnd);
+  const month = within(monthEnd);
+  return {
+    monthCents: sum(month),
+    monthTopSeller: topSeller(month),
+    pendingCount: pending.length,
+    weekCents: sum(week),
+    weekTopSeller: topSeller(week),
+  };
+}
+
 export function urgentFinanceEntries(entries: readonly FinanceEntry[]) {
   const today = startOfDay(new Date());
   const nextWeek = addDays(today, 7);

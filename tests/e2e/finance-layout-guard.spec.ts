@@ -11,32 +11,38 @@ import { setQaViewport } from "./support/viewports";
 test.use({ baseURL: process.env.QA_BASE_URL ?? "http://127.0.0.1:5173" });
 
 test.describe("financial workspace layout guardrails", () => {
-  test("expenses keeps V1 hierarchy, aligned actions and unclipped metrics", async ({
+  test("expenses keeps the ledger workspace hierarchy and unclipped metrics", async ({
     page,
   }) => {
     await openAsOwner(page, "/expenses", "desktop");
 
-    const overview = sectionWithHeading(page, "Fluxo de caixa");
+    const overview = page.locator("section").filter({
+      has: page.locator(".feature-stat-card"),
+    });
+    const ledger = sectionWithHeading(page, "Registro de lançamentos");
     const typeTabs = page.getByRole("group", { name: "Tipos" });
-    const filters = sectionWithHeading(page, "Filtros");
-    const ledger = sectionWithHeading(page, "Registro de gastos");
-    const urgency = sectionWithHeading(
-      page,
-      /Atenção imediata|Próximos vencimentos/,
-    );
-    const positions = await boxes([
-      overview,
-      typeTabs,
-      filters,
+    const filters = ledger.locator("section").filter({
+      has: page.getByPlaceholder(/Descri[cç][aã]o ou categoria/i),
+    });
+    const urgency = page.getByRole("region", {
+      name: /Atenção imediata|Próximos vencimentos/,
+    });
+
+    await expect(typeTabs).toBeVisible();
+    await expect(filters).toBeVisible();
+    await expect(urgency).toBeVisible();
+
+    const [overviewBox, ledgerBox, urgencyBox] = await boxes([
+      overview.first(),
       ledger,
       urgency,
     ]);
 
-    expect(positions[0]!.y).toBeLessThan(positions[1]!.y);
-    expect(positions[1]!.y).toBeLessThan(positions[2]!.y);
-    expect(positions[2]!.y).toBeLessThan(positions[3]!.y);
-    expect(positions[3]!.y).toBeLessThan(positions[4]!.y);
-    expect(positions[3]!.y).toBeLessThan(900);
+    // Single-column hierarchy: KPIs and the urgency alert sit above the
+    // ledger; ledger content starts within the first viewport.
+    expect(overviewBox.y).toBeLessThan(ledgerBox.y);
+    expect(urgencyBox.y).toBeLessThan(ledgerBox.y);
+    expect(ledgerBox.y).toBeLessThan(900);
     await expectSameRow(pageHeaderActions(page));
     await expectNoClippedText(page, ".feature-stat-card__value");
 
@@ -54,6 +60,14 @@ test.describe("financial workspace layout guardrails", () => {
     ).toBeGreaterThanOrEqual((await locatorBox(actionToolbar)).width - 2);
     await expectNoClippedText(page, ".feature-stat-card__value");
     await expectMinimumTargets(page.locator(".feature-stat-card"), 44);
+    // Mobile keeps the single-column stack: urgency alert above the ledger.
+    const [mobileUrgencyBox, mobileLedgerBox] = await boxes([
+      page.getByRole("region", {
+        name: /Atenção imediata|Próximos vencimentos/,
+      }),
+      sectionWithHeading(page, "Registro de lançamentos"),
+    ]);
+    expect(mobileUrgencyBox.y).toBeLessThan(mobileLedgerBox.y);
     // Ledger rows depend on the seeded period filter; only enforce touch
     // targets when the ledger actually renders row actions.
     const ledgerActions = page.locator(".finance-mobile-action:visible");

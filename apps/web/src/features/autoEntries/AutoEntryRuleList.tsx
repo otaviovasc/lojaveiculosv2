@@ -1,4 +1,11 @@
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Banknote,
+  CalendarClock,
+  Pencil,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useMemo } from "react";
 import {
   FeatureCard,
@@ -22,6 +29,7 @@ import {
   autoEntryOutputLabel,
   autoEntryTimingLabel,
 } from "./autoEntryLabels";
+import { AutoEntryFact, AutoEntryStat } from "./AutoEntryDomainPrimitives";
 import { autoEntryMetaForTab } from "./domainMeta";
 import type { AutoEntryRule } from "./types";
 
@@ -98,7 +106,7 @@ export function AutoEntryRuleList({
               !isActive && "is-paused",
             )}
             key={rule.id}
-            padding="compact"
+            padding="none"
           >
             <FeatureCardHeader
               actions={
@@ -106,6 +114,7 @@ export function AutoEntryRuleList({
                   {isActive ? "Ativa" : "Pausada"}
                 </FeatureStatusBadge>
               }
+              className="auto-entry-rule-card__header"
               icon={
                 <span
                   aria-hidden="true"
@@ -115,70 +124,64 @@ export function AutoEntryRuleList({
                 </span>
               }
             >
-              <FeatureCardTitle>{rule.name}</FeatureCardTitle>
-              <p className="mt-1 text-xs font-black uppercase tracking-wider text-muted">
+              <FeatureCardTitle className="auto-entry-rule-card__title">
+                {rule.name}
+              </FeatureCardTitle>
+              <p className="auto-entry-rule-card__meta mt-1 text-xs font-black uppercase tracking-wider">
                 {meta.tab} · {rule.category} · prioridade {rule.priority}
               </p>
             </FeatureCardHeader>
 
-            <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border border-line/60 bg-app-elevated p-3">
-                <dt className="text-xs font-black uppercase tracking-wider text-muted">
-                  Lançamento
-                </dt>
-                <dd className="mt-1 font-black text-app-text">
-                  {autoEntryOutputLabel(rule.outputType)} ·{" "}
-                  {autoEntryCalculationLabel(rule.calculation)}
-                </dd>
+            <div className="auto-entry-rule-card__body">
+              <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <AutoEntryStat
+                  icon={Banknote}
+                  label="Lançamento"
+                  value={`${autoEntryOutputLabel(rule.outputType)} · ${autoEntryCalculationLabel(rule.calculation)}`}
+                />
+                <AutoEntryStat
+                  icon={CalendarClock}
+                  label="Quando"
+                  value={autoEntryTimingLabel(rule.timing)}
+                />
               </div>
-              <div className="rounded-lg border border-line/60 bg-app-elevated p-3">
-                <dt className="text-xs font-black uppercase tracking-wider text-muted">
-                  Quando
-                </dt>
-                <dd className="mt-1 font-black text-app-text">
-                  {autoEntryTimingLabel(rule.timing)}
-                </dd>
-              </div>
-            </dl>
 
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line/50 pt-4">
-              <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-wider text-muted">
-                  Escopo do vendedor
-                </p>
-                <p className="mt-1 text-sm font-black text-app-text">
-                  {sellerName}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-xs font-black text-muted">
-                  Ativa
-                  <Switch
-                    aria-label={`Ativar regra ${rule.name}`}
-                    checked={isActive}
-                    disabled={!canManage || isWorking}
-                    onCheckedChange={(checked) => onToggle(rule, checked)}
-                  />
-                </label>
-                {canManage ? (
-                  <FeatureRowActions>
-                    <FeatureRowAction
-                      ariaLabel={`Editar regra ${rule.name}`}
-                      disabled={isWorking}
-                      icon={Pencil}
-                      onClick={() => onEdit(rule)}
-                      tooltip="Editar regra"
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line/50 pt-4">
+                <AutoEntryFact
+                  icon={Users}
+                  label="Escopo do vendedor"
+                  value={sellerName}
+                />
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-xs font-black text-muted">
+                    Ativa
+                    <Switch
+                      aria-label={`Ativar regra ${rule.name}`}
+                      checked={isActive}
+                      disabled={!canManage || isWorking}
+                      onCheckedChange={(checked) => onToggle(rule, checked)}
                     />
-                    <FeatureRowAction
-                      ariaLabel={`Excluir regra ${rule.name}`}
-                      disabled={isWorking}
-                      icon={Trash2}
-                      iconClassName="text-danger"
-                      onClick={() => onDelete(rule)}
-                      tooltip="Excluir regra"
-                    />
-                  </FeatureRowActions>
-                ) : null}
+                  </label>
+                  {canManage ? (
+                    <FeatureRowActions>
+                      <FeatureRowAction
+                        ariaLabel={`Editar regra ${rule.name}`}
+                        disabled={isWorking}
+                        icon={Pencil}
+                        onClick={() => onEdit(rule)}
+                        tooltip="Editar regra"
+                      />
+                      <FeatureRowAction
+                        ariaLabel={`Excluir regra ${rule.name}`}
+                        disabled={isWorking}
+                        icon={Trash2}
+                        iconClassName="text-danger"
+                        onClick={() => onDelete(rule)}
+                        tooltip="Excluir regra"
+                      />
+                    </FeatureRowActions>
+                  ) : null}
+                </div>
               </div>
             </div>
           </FeatureCard>

@@ -1,5 +1,6 @@
 import type {
   AutoEntryCalculation,
+  AutoEntryConditions,
   AutoEntryEvent,
   AutoEntryOutputType,
   AutoEntryPercentageBasis,
@@ -50,6 +51,24 @@ export function autoEntryTimingLabel(timing: AutoEntryTiming) {
     return `Dia ${timing.day} do próximo mês`;
   }
   return `Dia ${timing.day} do mês`;
+}
+
+/**
+ * Human label for the value range a rule applies to. Only basis ranges carry
+ * user-meaningful scope not already present in the rule name (financing rank
+ * and gravame flags are repeated in the name, so they stay out).
+ */
+export function autoEntryConditionLabel(
+  conditions: AutoEntryConditions | undefined,
+) {
+  const range = conditions?.basisRange;
+  if (!range || (range.minCents === undefined && range.maxCents == null)) {
+    return null;
+  }
+  const min =
+    range.minCents === undefined ? "Sem mínimo" : money(range.minCents);
+  const max = range.maxCents == null ? "sem limite" : money(range.maxCents);
+  return `${min} – ${max}`;
 }
 
 function basisLabel(basis: AutoEntryPercentageBasis) {

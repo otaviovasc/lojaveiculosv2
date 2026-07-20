@@ -1,14 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { AppApiError } from "../../lib/apiErrors";
+import type { FinanceApi } from "./apiClient";
 import {
   createEntryDraft,
   filterEntries,
   filterOperationalCashEntries,
   initialFinanceFilters,
+  loadFinanceWorkspace,
+  recurringEntryToDraft,
   toEntryInput,
   toRecurringInput,
 } from "./financeBillsModel";
 import { formatFinanceCategory } from "./financeBillsFormat";
-import type { FinanceEntry } from "./types";
+import type { FinanceEntry, FinanceRecurringEntry } from "./types";
 
 describe("finance bills model", () => {
   beforeEach(() => {
@@ -63,6 +67,47 @@ describe("finance bills model", () => {
       nextDueAt: new Date("2026-06-25T12:00:00").toISOString(),
       type: "expense",
     });
+  });
+
+  it("maps a recurring entry back to an editable draft", () => {
+    const draft = recurringEntryToDraft(
+      recurringEntry({
+        dayOfMonth: 10,
+        frequency: "yearly",
+        metadata: {
+          generatedCount: 2,
+          notes: "Revisão anual",
+          occurrences: 5,
+        },
+        nextDueAt: "2026-07-10T12:00:00.000Z",
+        sellerUserId: "seller_1",
+      }),
+    );
+
+    expect(draft).toMatchObject({
+      amount: "1234.5",
+      category: "Aluguel",
+      dueAt: "2026-07-10",
+      name: "Aluguel do pátio",
+      notes: "Revisão anual",
+      recurrence: "recurring",
+      recurrenceDay: "10",
+      recurrenceFrequency: "yearly",
+      recurrenceOccurrences: "5",
+      sellerUserId: "seller_1",
+      status: "pending",
+      type: "expense",
+    });
+  });
+
+  it("maps recurring entries without an occurrence cap to blank fields", () => {
+    const draft = recurringEntryToDraft(
+      recurringEntry({ dayOfMonth: null, metadata: { occurrences: null } }),
+    );
+
+    expect(draft.recurrenceDay).toBe("");
+    expect(draft.recurrenceOccurrences).toBe("");
+    expect(draft.notes).toBe("");
   });
 
   it("filters entries by status, due window, and search query", () => {
@@ -223,6 +268,91 @@ describe("finance bills model", () => {
     ).toEqual(["dated", "undated"]);
   });
 });
+
+describe("loadFinanceWorkspace", () => {
+  it("loads entries, recurring rules, and commission rules without a summary", async () => {
+    const api = createWorkspaceApi();
+
+    const payload = await loadFinanceWorkspace(api);
+
+    expect(api.materializeRecurringEntries).not.toHaveBeenCalled();
+    expect(payload).not.toHaveProperty("summary");
+    expect(payload.entriesByType.expense.map((item) => item.id)).toEqual([
+      "expense_1",
+    ]);
+    expect(payload.recurringEntries.map((item) => item.id)).toEqual(["rec_1"]);
+    expect(payload.commissionRules).toEqual([]);
+  });
+
+  it("materializes recurring entries before listing when requested", async () => {
+    const api = createWorkspaceApi();
+
+    await loadFinanceWorkspace(api, { materializeRecurring: true });
+
+    expect(api.materializeRecurringEntries).toHaveBeenCalledOnce();
+    const materializeOrder =
+      api.materializeRecurringEntries.mock.invocationCallOrder[0] ?? 0;
+    const listOrder = api.listAllEntries.mock.invocationCallOrder[0] ?? 0;
+    expect(materializeOrder).toBeLessThan(listOrder);
+  });
+
+  it("ignores auth failures from materialize for read-only viewers", async () => {
+    const api = createWorkspaceApi();
+    api.materializeRecurringEntries.mockRejectedValueOnce(
+      new AppApiError({ message: "forbidden", status: 403 }),
+    );
+
+    const payload = await loadFinanceWorkspace(api, {
+      materializeRecurring: true,
+    });
+
+    expect(payload.recurringEntries).toHaveLength(1);
+  });
+
+  it("propagates unexpected materialize failures", async () => {
+    const api = createWorkspaceApi();
+    api.materializeRecurringEntries.mockRejectedValueOnce(
+      new AppApiError({ message: "boom", status: 500 }),
+    );
+
+    await expect(
+      loadFinanceWorkspace(api, { materializeRecurring: true }),
+    ).rejects.toMatchObject({ status: 500 });
+    expect(api.listAllEntries).not.toHaveBeenCalled();
+  });
+});
+
+function createWorkspaceApi() {
+  const api = {
+    listAllEntries: vi.fn(async (type: FinanceEntry["type"]) => [
+      entry(`${type}_1`, "Lançamento", "Operacional", "pending", "2026-06-25"),
+    ]),
+    listCommissionRules: vi.fn(async () => []),
+    listRecurringEntries: vi.fn(async () => [recurringEntry({ id: "rec_1" })]),
+    materializeRecurringEntries: vi.fn(async () => ({ generatedEntries: [] })),
+  };
+  return api as unknown as FinanceApi & {
+    [K in keyof typeof api]: (typeof api)[K];
+  };
+}
+
+function recurringEntry(
+  overrides: Partial<FinanceRecurringEntry> = {},
+): FinanceRecurringEntry {
+  return {
+    amountCents: 123450,
+    category: "Aluguel",
+    dayOfMonth: 10,
+    frequency: "monthly",
+    id: "rec_1",
+    name: "Aluguel do pátio",
+    nextDueAt: "2026-07-10T12:00:00.000Z",
+    sellerUserId: null,
+    status: "pending",
+    type: "expense",
+    ...overrides,
+  };
+}
 
 function entry(
   id: string,

@@ -1,4 +1,4 @@
-import { Download, FileSearch, Trash2 } from "lucide-react";
+import { Download, FileSearch, Trash2, UploadCloud } from "lucide-react";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
 import {
   FeatureRowAction,
@@ -7,6 +7,7 @@ import {
 import { MercosulPlateBadge } from "../inventory/components/InventoryListingCardGrid";
 import { DocumentOriginBadge } from "./DocumentBadges";
 import { documentVehicleInfo } from "./documentDisplayModel";
+import type { DocumentsUploadListAction } from "./DocumentWorkspaceTable";
 import {
   documentFileLabel,
   documentKindBadge,
@@ -24,6 +25,7 @@ export function DocumentWorkspaceMobileList({
   onSelect,
   onToggleSelect,
   selectedIds,
+  upload,
 }: {
   documents: readonly WorkspaceDocument[];
   isBusy: boolean;
@@ -32,6 +34,7 @@ export function DocumentWorkspaceMobileList({
   onSelect: (document: WorkspaceDocument) => void;
   onToggleSelect?: (documentId: string, next: boolean) => void;
   selectedIds?: ReadonlySet<string>;
+  upload?: DocumentsUploadListAction;
 }) {
   return (
     <ul
@@ -39,6 +42,25 @@ export function DocumentWorkspaceMobileList({
       className="grid gap-2 md:hidden"
       data-testid="documents-mobile-list"
     >
+      {upload ? (
+        <li>
+          <button
+            className="documents-upload-list-button"
+            disabled={upload.disabled}
+            onClick={upload.onClick}
+            title={upload.title ?? upload.label}
+            type="button"
+          >
+            <UploadCloud aria-hidden="true" className="size-4" />
+            <span>{upload.label}</span>
+            {upload.hint ? (
+              <span className="documents-upload-list-button-hint">
+                {upload.hint}
+              </span>
+            ) : null}
+          </button>
+        </li>
+      ) : null}
       {documents.map((document) => {
         const isChecked = Boolean(selectedIds?.has(document.id));
         const vehicle = documentVehicleInfo(document);

@@ -9,19 +9,20 @@ import type {
   FinanceAuth,
   FinanceDocumentUpload,
   FinanceEntry,
+  FinanceEntryDetail,
   FinanceEntryList,
   FinanceEntryBundle,
   FinanceRecurringEntry,
-  FinanceSummary,
   FinanceEntryType,
   UpdateFinanceEntryInput,
+  UpdateFinanceRecurringEntryInput,
 } from "./types";
 import {
   createFinanceHeaders,
   financeRoutes,
   type ListFinanceEntriesInput,
 } from "./apiRoutes";
-import { cleanJson, readJson, type JsonBody } from "./apiJson";
+import { cleanJson, readJson, readUpload, type JsonBody } from "./apiJson";
 import { mergeEntryMetadata } from "./financeBillsActions";
 import { uploadFinanceDocumentObject } from "./financeDocumentUpload";
 
@@ -46,7 +47,7 @@ export type FinanceApi = {
   createRecurringEntry: (
     input: CreateFinanceRecurringEntryInput,
   ) => Promise<FinanceRecurringEntry>;
-  getSummary: () => Promise<FinanceSummary>;
+  getEntryDetail: (entryId: string) => Promise<FinanceEntryDetail>;
   getCommissionWorkspace: (input: {
     from: string;
     to: string;
@@ -55,11 +56,19 @@ export type FinanceApi = {
   listEntries: (input: ListFinanceEntriesInput) => Promise<FinanceEntryList>;
   listCommissionRules: () => Promise<CommissionRule[]>;
   listRecurringEntries: () => Promise<FinanceRecurringEntry[]>;
+  materializeRecurringEntries: () => Promise<{
+    generatedEntries: readonly FinanceEntry[];
+  }>;
+  openEntryDocument: (entryId: string, documentId: string) => Promise<Blob>;
   payEntry: (entryId: string) => Promise<FinanceEntryBundle>;
   cancelEntry: (
     entryId: string,
     reason?: string,
   ) => Promise<FinanceEntryBundle>;
+  cancelRecurringEntry: (
+    recurringEntryId: string,
+    reason?: string,
+  ) => Promise<FinanceRecurringEntry>;
   requestDocumentUpload: (
     entryId: string,
     file: File,
@@ -73,6 +82,10 @@ export type FinanceApi = {
     entryId: string,
     input: UpdateFinanceEntryInput,
   ) => Promise<FinanceEntryBundle>;
+  updateRecurringEntry: (
+    recurringEntryId: string,
+    input: UpdateFinanceRecurringEntryInput,
+  ) => Promise<FinanceRecurringEntry>;
 };
 
 export type CreateFinanceEntryFlowInput = CreateFinanceEntryInput & {
@@ -148,6 +161,16 @@ export function createFinanceApi({
           reason,
         },
       ),
+    cancelRecurringEntry: (recurringEntryId, reason) => {
+      const route = financeRoutes.recurringEntry(recurringEntryId, baseUrl);
+      const url = reason
+        ? `${route}?reason=${encodeURIComponent(reason)}`
+        : route;
+      return fetch(url, {
+        headers: createFinanceHeaders(auth),
+        method: "DELETE",
+      }).then(readJson<FinanceRecurringEntry>);
+    },
     createEntry,
     createCommissionRule: (input) =>
       postJson<CommissionRule>(financeRoutes.commissionRules(baseUrl), input),
@@ -188,10 +211,10 @@ export function createFinanceApi({
         financeRoutes.recurringEntries(baseUrl),
         input,
       ),
-    getSummary: () =>
-      fetch(financeRoutes.summary(baseUrl), {
+    getEntryDetail: (entryId) =>
+      fetch(financeRoutes.entry(entryId, baseUrl), {
         headers: createFinanceHeaders(auth),
-      }).then(readJson<FinanceSummary>),
+      }).then(readJson<FinanceEntryDetail>),
     getCommissionWorkspace: (input) =>
       fetch(financeRoutes.commissionWorkspace(baseUrl, input), {
         headers: createFinanceHeaders(auth),
@@ -215,6 +238,18 @@ export function createFinanceApi({
       })
         .then(readJson<{ recurringEntries: FinanceRecurringEntry[] }>)
         .then((payload) => payload.recurringEntries),
+    materializeRecurringEntries: () =>
+      postJson<{ generatedEntries: readonly FinanceEntry[] }>(
+        financeRoutes.materializeRecurringEntries(baseUrl),
+        {},
+      ),
+    openEntryDocument: (entryId, documentId) =>
+      fetch(financeRoutes.entryDocumentContent(entryId, documentId, baseUrl), {
+        headers: createFinanceHeaders(auth),
+      }).then(async (response) => {
+        await readUpload(response);
+        return response.blob();
+      }),
     payEntry: (entryId) =>
       postJson<FinanceEntryBundle>(
         financeRoutes.payEntry(entryId, baseUrl),
@@ -229,6 +264,11 @@ export function createFinanceApi({
     updateEntry: (entryId, input) =>
       patchJson<FinanceEntryBundle>(
         financeRoutes.entry(entryId, baseUrl),
+        input,
+      ),
+    updateRecurringEntry: (recurringEntryId, input) =>
+      patchJson<FinanceRecurringEntry>(
+        financeRoutes.recurringEntry(recurringEntryId, baseUrl),
         input,
       ),
   };

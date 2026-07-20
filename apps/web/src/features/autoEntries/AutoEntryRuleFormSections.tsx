@@ -16,6 +16,7 @@ import { formatCurrencyValue, parseCurrencyInput } from "../../lib/masks";
 import type { SaleSellerOption } from "../sales/saleContextOptions";
 import { autoEntryPercentageBasisLabel } from "./autoEntryLabels";
 import { AutoEntryTimingSelector } from "./AutoEntryTimingSelector";
+import { AutoEntryStat } from "./AutoEntryDomainPrimitives";
 import type { AutoEntryDraftErrors, AutoEntryRuleDraft } from "./types";
 
 const calculationChoices = [
@@ -77,18 +78,13 @@ export function AutoEntryCalculationSection({
         )}
       </FeatureFieldGroup>
       {draft.calculationKind === "percentage" ? (
-        <div className="mt-3 rounded-lg border border-line/60 bg-app-elevated p-3">
-          <p className="text-xs font-black uppercase tracking-wider text-muted">
-            Base do percentual
-          </p>
-          <p className="mt-1 text-sm font-black text-app-text">
-            {autoEntryPercentageBasisLabel(draft.calculationBasis)}
-          </p>
-          <p className="mt-1 text-xs font-bold text-muted">
-            A base salva é preservada ao editar. Ao trocar o evento, a base
-            padrão do novo evento é aplicada.
-          </p>
-        </div>
+        <AutoEntryStat
+          className="mt-3"
+          hint="A base salva é preservada ao editar. Ao trocar o evento, a base padrão do novo evento é aplicada."
+          icon={Percent}
+          label="Base do percentual"
+          value={autoEntryPercentageBasisLabel(draft.calculationBasis)}
+        />
       ) : null}
     </FeatureFormSection>
   );
@@ -159,7 +155,7 @@ export function AutoEntryExecutionSection({
         </FeatureFieldGroup>
       </div>
 
-      <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-line/60 bg-app-elevated p-3">
+      <div className="ae-stat mt-4 justify-between">
         <div>
           <p className="text-sm font-black text-app-text">Regra ativa</p>
           <p className="text-xs font-bold text-muted">

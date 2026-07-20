@@ -16,7 +16,7 @@ import { CommissionSaleDetailsDialog } from "./CommissionSaleDetailsDialog";
 import { CommissionReconciliationPanel } from "./CommissionReconciliationPanel";
 import { CommissionSummaryCards } from "./CommissionSummaryCards";
 import { FinanceEntryModal } from "./FinanceEntryModal";
-import { CommissionRulesPanel } from "./FinanceCorePanels";
+import { CommissionRulesPanel } from "./CommissionRulesPanel";
 import { createFinanceApiOptions } from "./runtimeApi";
 import {
   buildCommissionWorkspace,

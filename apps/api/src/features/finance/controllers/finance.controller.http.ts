@@ -1,18 +1,19 @@
 import type { Context } from "hono";
 import type { z } from "zod";
-import { AuthorizationError } from "../../../shared/authorization.js";
-import {
-  HttpContextAuthenticationError,
-  HttpContextAuthorizationError,
-  HttpContextRequestPolicyError,
-} from "../../../infrastructure/http/createHttpServiceContext.js";
 import { jsonApiError } from "../../../infrastructure/http/apiErrorResponse.js";
-import { FinanceEntryNotFoundError } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
+import { commonApiErrorResponse } from "../../../infrastructure/http/commonApiErrorResponse.js";
+import {
+  FinanceEntryDocumentNotFoundError,
+  FinanceEntryNotFoundError,
+  FinanceRecurringEntryNotFoundError,
+} from "../../../domains/finance/services/FinanceService/serviceSupport.js";
 import { FinanceAutoEntryRuleNotFoundError } from "../../../domains/finance/services/FinanceService/serviceSupport.js";
 import { FinanceAutoEntryRuleValidationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryRuleValidation.js";
 import { FinanceAutoEntryEvaluationError } from "../../../domains/finance/services/FinanceService/financeAutoEntryEvaluator.js";
 import { FinanceDocumentStorageScopeError } from "../../../domains/finance/services/FinanceService/attachFinanceEntryDocument.js";
+import { FinanceDocumentStorageUnavailableError } from "../../../domains/finance/services/FinanceService/getFinanceEntryDocumentDownload.js";
 import { FinanceLinkTargetNotFoundError } from "../../../infrastructure/db/finance/drizzleFinanceLinkTargets.js";
+import { DocumentContentDeliveryError } from "../../documents/adapters/proxyDocumentContent.js";
 import { CommissionSettlementConflictError } from "../../../domains/finance/ports/commissionWorkspaceRepository.js";
 import { CommissionWorkspaceValidationError } from "../../../domains/finance/commissionWorkspaceValidation.js";
 import { CommissionSettlementValidationError } from "../../../domains/finance/services/FinanceService/settleCommissionEntries.js";
@@ -92,21 +93,30 @@ export async function handleFinance(
       });
     }
 
-    if (error instanceof AuthorizationError) {
-      return jsonApiError(context, {
-        code: "AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-
     if (error instanceof FinanceDocumentStorageScopeError) {
       return jsonApiError(context, {
         code: "FINANCE_STORAGE_SCOPE_ERROR",
         error,
         message: error.message,
         status: 400,
+      });
+    }
+
+    if (error instanceof FinanceDocumentStorageUnavailableError) {
+      return jsonApiError(context, {
+        code: "FINANCE_STORAGE_UNAVAILABLE",
+        error,
+        message: error.message,
+        status: 503,
+      });
+    }
+
+    if (error instanceof DocumentContentDeliveryError) {
+      return jsonApiError(context, {
+        code: "FINANCE_DOCUMENT_CONTENT_DELIVERY_FAILED",
+        error,
+        message: error.message,
+        status: 502,
       });
     }
 
@@ -128,6 +138,24 @@ export async function handleFinance(
       });
     }
 
+    if (error instanceof FinanceEntryDocumentNotFoundError) {
+      return jsonApiError(context, {
+        code: "FINANCE_ENTRY_DOCUMENT_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
+    }
+
+    if (error instanceof FinanceRecurringEntryNotFoundError) {
+      return jsonApiError(context, {
+        code: "FINANCE_RECURRING_ENTRY_NOT_FOUND",
+        error,
+        message: error.message,
+        status: 404,
+      });
+    }
+
     if (error instanceof FinanceAutoEntryRuleNotFoundError) {
       return jsonApiError(context, {
         code: "FINANCE_AUTO_ENTRY_RULE_NOT_FOUND",
@@ -137,32 +165,8 @@ export async function handleFinance(
       });
     }
 
-    if (error instanceof HttpContextAuthenticationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHENTICATION_REQUIRED",
-        error,
-        message: error.message,
-        status: 401,
-      });
-    }
-
-    if (error instanceof HttpContextAuthorizationError) {
-      return jsonApiError(context, {
-        code: "HTTP_AUTHORIZATION_DENIED",
-        error,
-        message: error.message,
-        status: 403,
-      });
-    }
-
-    if (error instanceof HttpContextRequestPolicyError) {
-      return jsonApiError(context, {
-        code: "HTTP_REQUEST_POLICY_ERROR",
-        error,
-        message: error.message,
-        status: error.statusCode,
-      });
-    }
+    const commonResponse = commonApiErrorResponse(context, error);
+    if (commonResponse) return commonResponse;
 
     return jsonApiError(context, {
       code: "INTERNAL_SERVER_ERROR",

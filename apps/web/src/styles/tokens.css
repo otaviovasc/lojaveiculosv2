@@ -374,6 +374,7 @@
   --font-size-3xl: 2.1875rem; /* 35px */
   --font-size-4xl: 2.5rem; /* 40px */
   --font-size-5xl: 3.125rem; /* 50px */
+  --font-size-display: 3.75rem; /* 60px — full-page status numerals (404/500) */
 }
 
 .touch-target {

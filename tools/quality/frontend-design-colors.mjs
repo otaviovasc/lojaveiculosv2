@@ -58,6 +58,7 @@ export const approvedBaseColors = [
   [124, 58, 237], // violet-600 #7c3aed
   [109, 40, 217], // violet-700 #6d28d9
   [237, 233, 254], // violet-100 #ede9fe
+  [167, 139, 250], // accessible violet text on dark surfaces #a78bfa
   [168, 162, 158], // stone-400 #a8a29e
   [120, 113, 108], // stone-500 #78716c
   [87, 83, 78], // stone-600 #57534e

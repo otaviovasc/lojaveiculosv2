@@ -94,14 +94,15 @@ export async function cancelEntry(
 
 export function exportFinanceCsv(
   entries: readonly FinanceEntry[],
-  activeType: FinanceEntryType,
+  activeType: FinanceEntryType | "all",
 ) {
   const csv = buildFinanceCsv(entries);
   const fileType = {
+    all: "consolidado",
     commission: "comissoes",
     expense: "gastos",
     revenue: "receitas",
-  } satisfies Record<FinanceEntryType, string>;
+  } satisfies Record<FinanceEntryType | "all", string>;
   const url = URL.createObjectURL(
     new Blob([csv], { type: "text/csv;charset=utf-8" }),
   );

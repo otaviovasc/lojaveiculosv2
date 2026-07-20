@@ -1,4 +1,4 @@
-import { Trash2 } from "lucide-react";
+import { Banknote, Trash2, UserRound } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   FeatureInput,
@@ -11,9 +11,11 @@ import {
 import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import {
   AutoEntryDomainCard,
+  AutoEntryFact,
   AutoEntryInlineError,
   AutoEntrySaveAction,
 } from "./AutoEntryDomainPrimitives";
+import { autoEntryCalculationLabel } from "./autoEntryLabels";
 import {
   AutoEntryTimingFields,
   buildTiming,
@@ -95,18 +97,11 @@ export function SaleExtraCommissionCard({
       {existing.length > 0 ? (
         <ul className="grid gap-2" aria-label="Comissões extras ativas">
           {existing.map((rule) => (
-            <li
-              className="rounded-lg border border-line/60 bg-app-elevated p-3 text-sm"
-              key={rule.id}
-            >
-              <strong className="text-app-text">{rule.name}</strong>
-              <div className="mt-1 flex items-center justify-between gap-3">
-                <span className="font-bold text-muted">
-                  Beneficiário:{" "}
-                  {rule.recipient?.kind === "fixed_user"
-                    ? sellerName(sellers, rule.recipient.userId)
-                    : "Não definido"}
-                </span>
+            <li className="ae-rule-item grid gap-2.5 text-sm" key={rule.id}>
+              <div className="flex items-start justify-between gap-3">
+                <strong className="font-black text-app-text">
+                  {rule.name}
+                </strong>
                 {canManage ? (
                   <FeatureRowAction
                     ariaLabel={`Excluir comissão extra ${rule.name}`}
@@ -118,10 +113,38 @@ export function SaleExtraCommissionCard({
                   />
                 ) : null}
               </div>
+              <div className="grid gap-x-4 gap-y-2 sm:grid-cols-2">
+                <AutoEntryFact
+                  icon={UserRound}
+                  label="Beneficiário"
+                  value={
+                    rule.recipient?.kind === "fixed_user"
+                      ? sellerName(sellers, rule.recipient.userId)
+                      : "Não definido"
+                  }
+                />
+                <AutoEntryFact
+                  icon={Banknote}
+                  label="Valor"
+                  value={autoEntryCalculationLabel(rule.calculation)}
+                />
+              </div>
             </li>
           ))}
         </ul>
       ) : null}
+      <FeatureField
+        hint="Beneficiário fixo; não limita o vendedor que originou a venda."
+        label="Beneficiário"
+      >
+        <FeatureSelect
+          ariaLabel="Beneficiário da comissão extra"
+          onChange={setRecipientUserId}
+          options={sellerSelectOptions(sellers)}
+          placeholder="Selecione o beneficiário"
+          value={recipientUserId || undefined}
+        />
+      </FeatureField>
       <FeatureFieldGroup>
         <FeatureField label="Nome da comissão">
           <FeatureInput
@@ -129,27 +152,15 @@ export function SaleExtraCommissionCard({
             value={name}
           />
         </FeatureField>
-        <FeatureField
-          hint="Beneficiário fixo; não limita o vendedor que originou a venda."
-          label="Beneficiário"
-        >
-          <FeatureSelect
-            ariaLabel="Beneficiário da comissão extra"
-            onChange={setRecipientUserId}
-            options={sellerSelectOptions(sellers)}
-            placeholder="Selecione o beneficiário"
-            value={recipientUserId || undefined}
+        <FeatureField label="Valor fixo (R$)">
+          <FeatureInput
+            inputMode="decimal"
+            onChange={(event) => setAmount(event.target.value)}
+            placeholder="Ex.: 250,00"
+            value={amount}
           />
         </FeatureField>
       </FeatureFieldGroup>
-      <FeatureField label="Valor fixo (R$)">
-        <FeatureInput
-          inputMode="decimal"
-          onChange={(event) => setAmount(event.target.value)}
-          placeholder="Ex.: 250,00"
-          value={amount}
-        />
-      </FeatureField>
       <AutoEntryTimingFields draft={timing} onChange={setTiming} />
       <AutoEntryInlineError message={error} />
       <AutoEntrySaveAction

@@ -22,6 +22,7 @@ import {
 } from "./AppLazyRoutes";
 import { PublicStorefrontSlugGuard } from "./PublicStorefrontSlugGuard";
 import { StoreAdminRoute } from "./StoreAdminRoute";
+import { NotFoundPage } from "../features/system/NotFoundPage";
 
 export function App() {
   return (
@@ -94,7 +95,7 @@ export function App() {
           }
         />
         <Route path="/p/:pageSlug" element={<PublicCustomPageRoute />} />
-        <Route path="*" element={<StoreAdminRoute />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
   );

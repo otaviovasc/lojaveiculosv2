@@ -24,6 +24,7 @@ export function DocumentsDialogShell({
   const content = (
     <DialogContent
       className={className}
+      data-active-module="documents"
       onClick={(event) => event.stopPropagation()}
       padding="none"
       showCloseButton={false}

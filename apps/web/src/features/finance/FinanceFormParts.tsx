@@ -42,15 +42,17 @@ export function FinancePanel({
 
 export function FinanceField({
   children,
+  className,
   hint,
   label,
 }: {
   children: ReactNode;
+  className?: string;
   hint?: string;
   label: string;
 }) {
   return (
-    <FeatureField hint={hint} label={label}>
+    <FeatureField className={className} hint={hint} label={label}>
       {children}
     </FeatureField>
   );

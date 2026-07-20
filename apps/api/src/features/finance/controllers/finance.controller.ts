@@ -6,11 +6,9 @@ import {
   cancelFinanceEntrySchema,
   createCommissionRuleSchema,
   createFinanceEntrySchema,
-  createRecurringEntrySchema,
   financeDocumentUploadSchema,
   listCommissionRulesQuerySchema,
   listFinanceEntriesQuerySchema,
-  listRecurringEntriesQuerySchema,
   payFinanceEntrySchema,
   updateFinanceEntrySchema,
 } from "./finance.controller.schemas.js";
@@ -18,10 +16,8 @@ import {
   cleanAttachDocumentInput,
   cleanCreateCommissionRuleInput,
   cleanCreateEntryInput,
-  cleanCreateRecurringInput,
   cleanListCommissionRulesQuery,
   cleanListQuery,
-  cleanListRecurringQuery,
   cleanUpdateEntryInput,
 } from "./finance.controller.cleaners.js";
 import {
@@ -31,14 +27,18 @@ import {
 } from "./finance.controller.http.js";
 import { financeServices, type FinanceServices } from "./financeServices.js";
 import { registerFinanceAutoEntryRuleRoutes } from "./financeAutoEntryRules.controller.js";
+import { registerFinanceEntryDocumentRoutes } from "./financeEntryDocuments.controller.js";
+import { registerFinanceRecurringEntryRoutes } from "./financeRecurringEntries.controller.js";
 import { createProtectedFinanceServiceContext } from "./finance.controller.context.js";
 import { registerCommissionWorkspaceRoutes } from "./commissionWorkspace.controller.js";
+import type { DocumentContentFetcher } from "../../documents/adapters/proxyDocumentContent.js";
 
 export type FinanceContextFactory = (
   context: Context,
 ) => Promise<ServiceContext>;
 
 export type CreateFinanceFeatureOptions = {
+  contentFetcher?: DocumentContentFetcher;
   contextFactory?: FinanceContextFactory;
   services?: FinanceServices;
 };
@@ -54,6 +54,13 @@ export function createFinanceFeature(
     createProtectedFinanceServiceContext(context, contextFactory);
   registerFinanceAutoEntryRuleRoutes(financeFeature, services, createContext);
   registerCommissionWorkspaceRoutes(financeFeature, services, createContext);
+  registerFinanceEntryDocumentRoutes(
+    financeFeature,
+    services,
+    createContext,
+    options.contentFetcher,
+  );
+  registerFinanceRecurringEntryRoutes(financeFeature, services, createContext);
 
   financeFeature.get("/summary", async (context) =>
     handleFinance(context, async () => {
@@ -169,35 +176,6 @@ export function createFinanceFeature(
         cleanAttachDocumentInput(context.req.param("entryId"), input),
       );
       return context.json(document, 201);
-    }),
-  );
-
-  financeFeature.get("/recurring-entries", async (context) =>
-    handleFinance(context, async () => {
-      const parsed = listRecurringEntriesQuerySchema.safeParse(
-        context.req.query(),
-      );
-      if (!parsed.success) {
-        throw new FinanceRequestValidationError("Request query is invalid.");
-      }
-      const serviceContext = await createContext(context);
-      const recurringEntries = await services.listRecurringEntries(
-        serviceContext,
-        cleanListRecurringQuery(parsed.data),
-      );
-      return context.json({ recurringEntries });
-    }),
-  );
-
-  financeFeature.post("/recurring-entries", async (context) =>
-    handleFinance(context, async () => {
-      const input = await parseJson(context, createRecurringEntrySchema);
-      const serviceContext = await createContext(context);
-      const recurringEntry = await services.createRecurringEntry(
-        serviceContext,
-        cleanCreateRecurringInput(input),
-      );
-      return context.json(recurringEntry, 201);
     }),
   );
 

@@ -18,7 +18,10 @@ export class DocumentContentDeliveryError extends Error {
 }
 
 export async function proxyDocumentContent(
-  download: DocumentDownloadDescriptor,
+  download: Pick<
+    DocumentDownloadDescriptor,
+    "downloadUrl" | "fileName" | "mimeType"
+  >,
   fetcher: DocumentContentFetcher = (url, init) => fetch(url, init),
   policy: DocumentContentPolicy = {},
 ) {

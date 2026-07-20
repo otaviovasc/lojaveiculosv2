@@ -48,6 +48,18 @@ export type FinanceEntryBundle = {
   links: readonly FinanceEntryLink[];
 };
 
+export type FinanceEntryDocument = {
+  fileName?: string | null;
+  id: string;
+  kind?: string;
+  mimeType?: string | null;
+  title: string;
+};
+
+export type FinanceEntryDetail = FinanceEntryBundle & {
+  documents: readonly FinanceEntryDocument[];
+};
+
 export type FinanceEntryList = {
   entries: readonly FinanceEntry[];
   hasMore: boolean;
@@ -84,27 +96,21 @@ export type UpdateFinanceEntryInput = Partial<
   >
 >;
 
-export type FinanceSummary = {
-  cancelledAmountCents: number;
-  commissionAmountCents: number;
-  expenseAmountCents: number;
-  overdueAmountCents: number;
-  paidAmountCents: number;
-  pendingAmountCents: number;
-  revenueAmountCents: number;
-};
-
 export type FinanceRecurringEntry = {
   amountCents: number;
   category: string;
+  createdAt?: string;
   dayOfMonth: number | null;
   frequency: FinanceRecurrenceFrequency;
   id: string;
+  lastGeneratedAt?: string | null;
+  metadata?: Record<string, unknown>;
   name: string;
   nextDueAt: string;
   sellerUserId: string | null;
   status: FinanceEntryStatus;
   type: FinanceEntryType;
+  updatedAt?: string;
 };
 
 export type CreateFinanceRecurringEntryInput = {
@@ -119,6 +125,20 @@ export type CreateFinanceRecurringEntryInput = {
   status?: FinanceEntryStatus;
   type: FinanceEntryType;
 };
+
+export type UpdateFinanceRecurringEntryInput = Partial<
+  Pick<
+    CreateFinanceRecurringEntryInput,
+    | "amountCents"
+    | "category"
+    | "dayOfMonth"
+    | "frequency"
+    | "metadata"
+    | "name"
+    | "nextDueAt"
+    | "sellerUserId"
+  >
+>;
 
 export type CommissionRule = {
   category: string;

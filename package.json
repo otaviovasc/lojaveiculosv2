@@ -53,7 +53,7 @@
     "test:e2e:local": "pnpm run db:clean:local && pnpm run test:e2e",
     "qa:flows": "pnpm run test:e2e",
     "qa:flows:local": "pnpm run test:e2e:local",
-    "qa:ui-quality": "playwright test tests/e2e/product-ui-quality.spec.ts tests/e2e/public-agency-ui-quality.spec.ts tests/e2e/finance-layout-guard.spec.ts tests/e2e/theme-selection-guard.spec.ts",
+    "qa:ui-quality": "playwright test tests/e2e/product-ui-quality.spec.ts tests/e2e/public-agency-ui-quality.spec.ts tests/e2e/finance-layout-guard.spec.ts tests/e2e/theme-selection-guard.spec.ts tests/e2e/status-pages-ui-quality.spec.ts",
     "crm:zapi:diagnose": "node tools/migration/crm-whatsapp/zapi-connection-diagnostic.mjs",
     "billing:asaas:sync-smoke": "pnpm --filter @lojaveiculosv2/api billing:asaas:sync-smoke",
     "billing:asaas:webhook-smoke": "node tools/qa/asaas-billing-webhook-smoke.mjs",

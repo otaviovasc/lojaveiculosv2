@@ -13,6 +13,7 @@
   --color-danger-readable: #b81820;
   --color-danger-soft-foreground: #8c1118;
   --color-info-soft-foreground: #1d4ed8;
+  --color-finance-readable: var(--color-finance);
   --color-dark-control-surface: #2a2424;
   --color-dark-control-surface-hover: #4a4444;
 }
@@ -29,6 +30,7 @@
   --color-danger-readable: #fce8e9;
   --color-danger-soft-foreground: #f4efee;
   --color-info-soft-foreground: #f4efee;
+  --color-finance-readable: #a78bfa;
 }
 
 @theme {

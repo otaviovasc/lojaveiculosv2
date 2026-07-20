@@ -1,6 +1,8 @@
-import { RefreshCcw, SearchX } from "lucide-react";
+import { Home, RefreshCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
+import { Button } from "../../components/ui/button";
+import { StatusIllustration } from "../../components/ui/StatusIllustration";
 import {
   createPublicStorefrontApi,
   type PublicStorefrontApi,
@@ -13,6 +15,7 @@ import {
 } from "./state";
 import {
   applyPublicStorefrontMetadata,
+  StorefrontLoadingFrame,
   StorefrontStateFrame,
 } from "./PublicStorefrontPageSupport";
 import {
@@ -172,8 +175,38 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
   if (renderedState.kind === "empty") {
     return (
       <StorefrontStateFrame
-        icon={<SearchX aria-hidden="true" className="size-6" />}
+        action={
+          <Button
+            onClick={() => setRetryKey((current) => current + 1)}
+            type="button"
+            variant="brand"
+          >
+            <RefreshCcw aria-hidden="true" />
+            Verificar novamente
+          </Button>
+        }
+        body="Esta loja ainda não publicou veículos na vitrine. Volte em breve para conferir as novidades."
+        illustration={<StatusIllustration variant="empty-lot" />}
         title="Estoque indisponível"
+        tone="blue"
+      />
+    );
+  }
+
+  if (renderedState.kind === "not-found") {
+    return (
+      <StorefrontStateFrame
+        action={
+          <Button asChild variant="outline">
+            <a href="/">
+              <Home aria-hidden="true" />
+              Voltar para o início
+            </a>
+          </Button>
+        }
+        body="Não encontramos uma vitrine neste endereço. Confira o link recebido ou tente localizar a loja com outro nome."
+        illustration={<StatusIllustration variant="lost-car" />}
+        title="Vitrine não encontrada"
       />
     );
   }
@@ -182,27 +215,24 @@ export function PublicStorefrontPage({ api }: { api?: PublicStorefrontApi }) {
     return (
       <StorefrontStateFrame
         action={
-          <button
-            className="mt-5 flex min-h-11 items-center justify-center gap-2 rounded-lg bg-accent px-4 font-black text-accent-foreground"
+          <Button
             onClick={() => setRetryKey((current) => current + 1)}
             type="button"
+            variant="brand"
           >
-            <RefreshCcw aria-hidden="true" className="size-4" />
+            <RefreshCcw aria-hidden="true" />
             Tentar novamente
-          </button>
+          </Button>
         }
-        icon={<RefreshCcw aria-hidden="true" className="size-6" />}
+        body="Não foi possível carregar a vitrine agora. Verifique sua conexão e tente novamente em instantes."
+        illustration={<StatusIllustration variant="offline" />}
         title="Vitrine temporariamente indisponível"
+        tone="danger"
       />
     );
   }
 
-  return (
-    <StorefrontStateFrame
-      icon={<RefreshCcw aria-hidden="true" className="size-6 animate-spin" />}
-      title="Carregando estoque"
-    />
-  );
+  return <StorefrontLoadingFrame title="Carregando estoque" />;
 }
 
 export function setListingParam(

@@ -47,4 +47,22 @@ describe("App routes", () => {
       screen.queryByText("Configuração de autenticação ausente"),
     ).not.toBeInTheDocument();
   });
+
+  it("serves a friendly 404 page for unknown paths instead of booting the admin app", async () => {
+    render(
+      <MemoryRouter initialEntries={["/nao-existe/nada"]}>
+        <ClerkAuthProvider>
+          <App />
+        </ClerkAuthProvider>
+      </MemoryRouter>,
+    );
+
+    expect(
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Página não encontrada",
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("404")).toBeInTheDocument();
+  });
 });

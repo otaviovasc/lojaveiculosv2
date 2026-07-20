@@ -6,11 +6,15 @@ import {
   query,
 } from "./financeOpenApiParts.js";
 import { financeAutoEntryPaths } from "./financeAutoEntryOpenApi.js";
+import { financeEntryDocumentPaths } from "./financeEntryDocumentOpenApi.js";
+import { financeRecurringEntryPaths } from "./financeRecurringEntryOpenApi.js";
 import { commissionWorkspacePaths } from "./commissionWorkspaceOpenApi.js";
 
 export const financePaths = {
   ...financeAutoEntryPaths,
   ...commissionWorkspacePaths,
+  ...financeEntryDocumentPaths,
+  ...financeRecurringEntryPaths,
   "/api/v1/finance/summary": {
     get: operation(
       "finance.read",

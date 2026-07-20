@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AutoEntryRulesApi } from "./apiClient";
@@ -39,17 +45,28 @@ describe("AutoEntriesWorkspace", () => {
       }),
     ).toBeVisible();
     expect(
-      await screen.findByRole("region", {
-        name: "Cobertura das regras automáticas",
+      await screen.findByRole("heading", {
+        name: "Cobertura da automação",
       }),
     ).toBeVisible();
-    expect(screen.getByText("Cobertura da automação")).toBeVisible();
     expect(screen.getByText("Receita da venda preservada")).toBeVisible();
-    expect(screen.getByText("Comissão padrão da venda")).toBeVisible();
+    const standardCard = screen
+      .getByRole("heading", { name: "Comissão padrão da venda" })
+      .closest("section");
+    expect(standardCard).not.toBeNull();
     expect(
-      screen.getByText("100% sobre a comissão informada na venda"),
+      within(standardCard as HTMLElement).getByText(
+        "100% sobre a comissão informada na venda",
+      ),
     ).toBeVisible();
     expect(screen.getByText("Exceção por vendedor")).toBeVisible();
+    const overview = screen
+      .getByRole("heading", { name: "Visão geral das regras" })
+      .closest("section");
+    expect(overview).not.toBeNull();
+    expect(
+      within(overview as HTMLElement).getByText("Comissão padrão da venda"),
+    ).toBeVisible();
   });
 
   it("keeps a paused rule visible and an archived rule absent after refresh", async () => {
@@ -163,9 +180,7 @@ describe("AutoEntriesWorkspace", () => {
     );
 
     expect(
-      screen.queryByRole("region", {
-        name: "Cobertura das regras automáticas",
-      }),
+      screen.queryByRole("heading", { name: "Cobertura da automação" }),
     ).not.toBeInTheDocument();
     rejectLoad?.(new Error("offline"));
     expect(
@@ -174,9 +189,7 @@ describe("AutoEntriesWorkspace", () => {
       }),
     ).toBeVisible();
     expect(
-      screen.queryByRole("region", {
-        name: "Cobertura das regras automáticas",
-      }),
+      screen.queryByRole("heading", { name: "Cobertura da automação" }),
     ).not.toBeInTheDocument();
   });
 });

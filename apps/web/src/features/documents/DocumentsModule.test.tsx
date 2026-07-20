@@ -167,6 +167,106 @@ describe("DocumentsModule", () => {
       expect(regenerateDocument).toHaveBeenCalledWith("document_general"),
     );
   });
+
+  it("applies the default type to queued files and uploads them", async () => {
+    const requestDocumentUpload = vi.fn(async () => ({
+      expiresAt: "2026-01-01T10:15:00.000Z",
+      publicUrl: "https://cdn.local/nota.pdf",
+      storageKey: "documents/nota.pdf",
+      uploadHeaders: {},
+      uploadMethod: "PUT" as const,
+      uploadUrl: "https://upload.local/nota.pdf",
+    }));
+    const createUploadedDocument = vi.fn(
+      async () => documents[0]! satisfies WorkspaceDocument,
+    );
+    const api = createDocumentsApiMock({
+      createUploadedDocument,
+      requestDocumentUpload,
+    });
+
+    renderDocumentsModule(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Enviar documento" }),
+    );
+
+    const defaultKindTrigger = await screen.findByRole("button", {
+      name: "Tipo de documento dos novos arquivos",
+    });
+    fireEvent.click(defaultKindTrigger);
+    fireEvent.click(await screen.findByRole("option", { name: "Nota fiscal" }));
+
+    fireEvent.change(
+      screen.getByLabelText("Selecionar documentos para envio"),
+      {
+        target: {
+          files: [new File(["pdf"], "nota.pdf", { type: "application/pdf" })],
+        },
+      },
+    );
+
+    expect(
+      await screen.findByRole("button", { name: "Tipo do arquivo nota.pdf" }),
+    ).toHaveTextContent("Nota fiscal");
+
+    fireEvent.click(screen.getByRole("button", { name: "Salvar documento" }));
+
+    await waitFor(() =>
+      expect(createUploadedDocument).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "invoice", title: "nota.pdf" }),
+      ),
+    );
+  });
+
+  it("rejects oversized files and keeps the queue empty", async () => {
+    const api = createDocumentsApiMock();
+
+    renderDocumentsModule(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Enviar documento" }),
+    );
+
+    const oversized = new File(["x"], "grande.pdf", {
+      type: "application/pdf",
+    });
+    Object.defineProperty(oversized, "size", { value: 26 * 1024 * 1024 });
+    fireEvent.change(
+      screen.getByLabelText("Selecionar documentos para envio"),
+      { target: { files: [oversized] } },
+    );
+
+    expect(await screen.findByText(/excede o limite de 25 MB/)).toBeVisible();
+    expect(screen.queryByLabelText("Fila de envio")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Salvar documento" }),
+    ).toBeDisabled();
+  });
+
+  it("clears the upload queue", async () => {
+    const api = createDocumentsApiMock();
+
+    renderDocumentsModule(api);
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Enviar documento" }),
+    );
+    fireEvent.change(
+      screen.getByLabelText("Selecionar documentos para envio"),
+      {
+        target: {
+          files: [new File(["pdf"], "doc.pdf", { type: "application/pdf" })],
+        },
+      },
+    );
+
+    expect(await screen.findByLabelText("Fila de envio")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "Limpar fila" }));
+
+    expect(screen.queryByLabelText("Fila de envio")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Salvar documento" }),
+    ).toBeDisabled();
+  });
 });
 
 function renderDocumentsModule(api: DocumentsApi) {

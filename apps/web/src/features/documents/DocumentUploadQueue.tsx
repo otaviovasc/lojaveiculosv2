@@ -24,11 +24,13 @@ export type UploadQueueItem = {
 export function DocumentUploadQueue({
   isUploading,
   items,
+  onClearAll,
   onRemove,
   onUpdate,
 }: {
   isUploading: boolean;
   items: UploadQueueItem[];
+  onClearAll: () => void;
   onRemove: (id: string) => void;
   onUpdate: (
     id: string,
@@ -37,15 +39,27 @@ export function DocumentUploadQueue({
 }) {
   if (items.length === 0) return null;
 
+  const totalBytes = items.reduce((total, item) => total + item.file.size, 0);
+
   return (
     <section className="documents-upload-queue" aria-label="Fila de envio">
       <header className="documents-upload-queue-header">
-        <strong>
-          {items.length === 1
-            ? "1 arquivo selecionado"
-            : `${items.length} arquivos selecionados`}
-        </strong>
-        <span>Revise título e tipo antes de salvar.</span>
+        <div className="documents-upload-queue-summary">
+          <strong>
+            {items.length === 1
+              ? `1 arquivo selecionado (${formatFileSize(totalBytes)})`
+              : `${items.length} arquivos selecionados (${formatFileSize(totalBytes)})`}
+          </strong>
+          <span>Revise título e tipo antes de salvar.</span>
+        </div>
+        <button
+          className="documents-upload-queue-clear"
+          disabled={isUploading}
+          onClick={onClearAll}
+          type="button"
+        >
+          Limpar fila
+        </button>
       </header>
       <div className="documents-upload-list">
         {items.map((item, index) => (

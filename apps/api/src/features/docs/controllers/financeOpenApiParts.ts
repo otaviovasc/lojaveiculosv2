@@ -8,6 +8,22 @@ export const entryIdParameter = {
   description: "Finance entry identifier.",
 } as const;
 
+export const recurringEntryIdParameter = {
+  name: "recurringEntryId",
+  in: "path",
+  required: true,
+  schema: { type: "string", minLength: 1 },
+  description: "Recurring finance entry identifier.",
+} as const;
+
+export const financeDocumentIdParameter = {
+  name: "documentId",
+  in: "path",
+  required: true,
+  schema: { type: "string", minLength: 1 },
+  description: "Finance entry document identifier.",
+} as const;
+
 export const entryLinkTargetEnum = [
   "document",
   "lead",

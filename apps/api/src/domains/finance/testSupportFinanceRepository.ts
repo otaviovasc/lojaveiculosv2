@@ -92,6 +92,16 @@ export function createTestFinanceRepository(): TestFinanceRepository {
         links: links.filter((link) => link.entryId === entry.id),
       };
     },
+    async findRecurringById(input) {
+      return (
+        recurringEntries.find(
+          (item) =>
+            item.id === input.recurringEntryId &&
+            item.storeId === input.storeId &&
+            item.tenantId === input.tenantId,
+        ) ?? null
+      );
+    },
     async list(input) {
       return entries
         .filter((entry) => entry.storeId === input.storeId)
@@ -183,6 +193,46 @@ export function createTestFinanceRepository(): TestFinanceRepository {
         entry: updated,
         links: links.filter((link) => link.entryId === updated.id),
       };
+    },
+    async updateRecurringEntry(input) {
+      const current = recurringEntries.find(
+        (entry) =>
+          entry.id === input.recurringEntryId &&
+          entry.storeId === input.storeId &&
+          entry.tenantId === input.tenantId,
+      );
+      if (!current)
+        throw new Error(
+          `Finance recurring entry not found: ${input.recurringEntryId}`,
+        );
+      const updated: FinanceRecurringEntry = {
+        ...current,
+        ...(input.amountCents !== undefined
+          ? { amountCents: input.amountCents }
+          : {}),
+        ...(input.category !== undefined ? { category: input.category } : {}),
+        ...(input.dayOfMonth !== undefined
+          ? { dayOfMonth: input.dayOfMonth }
+          : {}),
+        ...(input.frequency !== undefined
+          ? { frequency: input.frequency }
+          : {}),
+        ...(input.lastGeneratedAt !== undefined
+          ? { lastGeneratedAt: input.lastGeneratedAt }
+          : {}),
+        ...(input.metadata !== undefined ? { metadata: input.metadata } : {}),
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.nextDueAt !== undefined
+          ? { nextDueAt: input.nextDueAt }
+          : {}),
+        ...(input.sellerUserId !== undefined
+          ? { sellerUserId: input.sellerUserId }
+          : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
+        updatedAt: new Date(),
+      };
+      recurringEntries.splice(recurringEntries.indexOf(current), 1, updated);
+      return updated;
     },
   };
 }

@@ -1,22 +1,35 @@
-import { Banknote, HandCoins, Receipt, TrendingUp } from "lucide-react";
+import { HandCoins, List, Receipt, TrendingUp } from "lucide-react";
 import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
-import { FinanceBadge, financeTypeLabels } from "./FinanceFormParts";
+import { financeTypeLabels } from "./FinanceFormParts";
 import type { FinanceEntryType } from "./types";
 
-const financeTypes: FinanceEntryType[] = ["expense", "revenue", "commission"];
+const financeTypes: (FinanceEntryType | "all")[] = [
+  "all",
+  "expense",
+  "revenue",
+  "commission",
+];
 
 const typeIcons = {
+  all: List,
   commission: HandCoins,
   expense: Receipt,
   revenue: TrendingUp,
-} satisfies Record<FinanceEntryType, typeof Receipt>;
+} satisfies Record<FinanceEntryType | "all", typeof Receipt>;
+
+const tabLabels: Record<FinanceEntryType | "all", string> = {
+  all: "Todos",
+  ...financeTypeLabels,
+};
 
 export function FinanceTypeTabs({
   activeType,
+  counts,
   onTypeChange,
 }: {
-  activeType: FinanceEntryType;
-  onTypeChange: (type: FinanceEntryType) => void;
+  activeType: FinanceEntryType | "all";
+  counts?: Record<FinanceEntryType, number>;
+  onTypeChange: (type: FinanceEntryType | "all") => void;
 }) {
   return (
     <FeatureSegmentedControl
@@ -24,36 +37,21 @@ export function FinanceTypeTabs({
       onChange={onTypeChange}
       options={financeTypes.map((type) => ({
         icon: typeIcons[type],
-        label: financeTypeLabels[type],
+        label: (
+          <span className="inline-flex items-center gap-1.5">
+            {tabLabels[type]}
+            {counts ? (
+              <span aria-hidden="true" className="finance-type-tab__count">
+                {type === "all"
+                  ? counts.expense + counts.revenue + counts.commission
+                  : counts[type]}
+              </span>
+            ) : null}
+          </span>
+        ),
         value: type,
       }))}
       value={activeType}
     />
-  );
-}
-
-export function FinanceModuleHeader() {
-  return (
-    <section className="rounded-lg border border-line bg-panel p-5 shadow-[var(--shadow-panel)]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            <FinanceBadge>Financeiro</FinanceBadge>
-            <FinanceBadge>Anexos opcionais</FinanceBadge>
-          </div>
-          <h2 className="text-2xl font-black text-app-text lg:text-4xl">
-            Lançamentos financeiros
-          </h2>
-          <p className="max-w-3xl text-sm font-bold text-muted">
-            Registre gastos, receitas e comissões com status operacional,
-            vencimento e comprovante opcional por upload assinado.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 rounded-lg bg-accent-soft px-3 py-2 text-sm font-black text-accent-strong">
-          <Banknote aria-hidden="true" className="size-4" />
-          Fluxo financeiro por loja
-        </div>
-      </div>
-    </section>
   );
 }

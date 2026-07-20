@@ -132,6 +132,19 @@
   border-color: var(--color-accent-strong);
 }
 
+/* Shown only on mobile; declared unlayered so it wins over the base
+   `.documents-top-bar-action` display (Tailwind's `md:hidden` cannot, since
+   layered utilities lose to unlayered component styles). */
+.documents-top-bar-action--mobile-only {
+  display: none;
+}
+
+@media (max-width: 767.98px) {
+  .documents-top-bar-action--mobile-only {
+    display: inline-flex;
+  }
+}
+
 @media (max-width: 640px) {
   .documents-top-bar-actions {
     display: grid;
