@@ -7,6 +7,7 @@
     "dev": "tsx watch src/main.ts",
     "catalog:normalize-names": "tsx src/jobs/normalizeVehicleCatalogNames.ts",
     "catalog:sync": "tsx src/jobs/syncVehicleCatalog.ts",
+    "catalog:import-csv": "tsx src/jobs/importFipeCsv.ts",
     "billing:asaas:sync-smoke": "tsx src/jobs/syncBillingProviderSubscription.ts",
     "crm:whatsapp:schedule:process": "tsx src/jobs/processCrmWhatsappScheduledMessages.ts",
     "build": "tsc --noEmit",
