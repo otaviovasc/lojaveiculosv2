@@ -75,13 +75,17 @@ separate because audit isolation is a product invariant, not optional capacity.
 
 ## Deployment Rules
 
-- GitHub hosts source and reviews only; GitHub Actions is intentionally unused.
-- GitHub source autodeploy stays disabled. Upload staging and production
-  manually from the exact locally verified commit, avoiding builds for rejected
-  or unrelated pushes.
-- A Git push alone does not deploy. After replacing staging placeholders and
-  passing `pnpm run release:verify`, use the explicit `railway up --service ...`
-  sequence in `docs/runbooks/deploy.md`.
+- GitHub hosts source, reviews, and the `main-source-guard` check that only
+  allows PRs into `main` from `staging`; quality gates stay local in the
+  pre-commit and pre-push hooks.
+- GitHub source autodeploy is enabled per environment: the `staging`
+  environment tracks the `staging` branch and `production` tracks `main`,
+  declared in `.railway/railway.ts`.
+- A push to the environment branch deploys. Promote with
+  `pnpm run release:staging` after `release:verify` passes, then smoke test
+  staging before opening the release PR with `pnpm run release:promote`. The
+  explicit `railway up --service ...` sequence in `docs/runbooks/deploy.md`
+  remains a break-glass path.
 - Keep PR environments disabled until their feedback value justifies Railway
   usage.
 - API deployment healthcheck path: `/ready`.

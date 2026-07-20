@@ -43,6 +43,8 @@
     "build:deployables": "pnpm --filter @lojaveiculosv2/web build && pnpm run verify:web-bundle && pnpm --filter @lojaveiculosv2/api build",
     "release:smoke:production": "node tools/release/smoke-deployment.mjs production",
     "release:smoke:staging": "node tools/release/smoke-deployment.mjs staging",
+    "release:staging": "node tools/release/promote-to-staging.mjs",
+    "release:promote": "node tools/release/promote-to-production.mjs",
     "release:verify": "node tools/release/assert-clean-worktree.mjs && pnpm run validate:release && pnpm run test:smoke:api",
     "verify:web-bundle": "node tools/quality/verify-web-bundle-artifacts.mjs",
     "typecheck": "pnpm -r typecheck",

@@ -22,6 +22,7 @@
 
 ## Validation
 
+- [ ] PRs into `main` come from `staging` (enforced by `main-source-guard`)
 - [ ] `pnpm run check:frontend-composition`
 - [ ] `pnpm run validate`
 - [ ] Visual QA evidence attached when required

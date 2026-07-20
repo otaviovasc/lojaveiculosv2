@@ -16,7 +16,8 @@ The goal is high autonomy inside strong rails:
 
 - Codex can inspect code, write tests, fix issues, run checks, and open PRs.
 - The clean-commit local release gate is the objective validation gate.
-- Railway builds and deploys; GitHub Actions is intentionally unused.
+- Railway builds and deploys via GitHub source autodeploy per environment;
+  GitHub Actions runs only the `main-source-guard` branch check.
 - Staging catches integration issues before production.
 - Observability turns runtime failures into fixable issues.
 - Humans approve high-risk production changes.
@@ -85,8 +86,9 @@ respectful-respect
 ```
 
 Use accepted commits from `main` for production and `staging` for staging.
-GitHub source autodeploy stays disabled; both environments use explicit manual
-uploads after local verification. Redis is enabled for CRM realtime fanout and
+GitHub source autodeploy is enabled per environment: `staging` tracks the
+`staging` branch and `production` tracks `main`, so promoting a verified branch
+deploys without manual uploads. Redis is enabled for CRM realtime fanout and
 replay. The only worker is the short-lived scheduled-message cron; PR
 environments, permanent queue consumers, and speculative cron services remain
 disabled until measured value justifies cost.

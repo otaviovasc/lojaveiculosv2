@@ -1,1 +1,20 @@
+#!/bin/sh
+# Block direct pushes to main whose commits did not come through staging.
+# Server-side enforcement lives in the main-source-guard workflow + branch
+# protection; this hook is the local safety net.
+guard_main_push() {
+  while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ] && [ "$local_sha" != "0000000000000000000000000000000000000000" ]; then
+      git fetch origin staging --quiet
+      if ! git merge-base --is-ancestor "$local_sha" origin/staging; then
+        echo "pre-push: refusing to push to main: commits are not reachable from origin/staging." >&2
+        echo "pre-push: promote through staging first (pnpm run release:staging), then open the staging -> main PR." >&2
+        exit 1
+      fi
+    fi
+  done
+}
+
+guard_main_push
+
 pnpm run validate:push

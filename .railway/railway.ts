@@ -1,14 +1,27 @@
-import { defineRailway, postgres, project, redis, service } from "railway/iac";
+import {
+  defineRailway,
+  github,
+  postgres,
+  project,
+  redis,
+  service,
+} from "railway/iac";
 
 export default defineRailway((context) => {
   const appEnvironment = context.isEnvironment("production")
     ? "production"
     : "staging";
+  // Each environment auto-deploys from its own branch: staging <- staging,
+  // production <- main. Pushing to the branch triggers the Railway deploy.
+  const appSource = github("otaviovasc/lojaveiculosv2", {
+    branch: context.isEnvironment("production") ? "main" : "staging",
+  });
   const productDatabase = postgres("lojaveiculosv2-postgres");
   const auditDatabase = postgres("lojaveiculosv2-audit-postgres");
   const realtimeCache = redis("lojaveiculosv2-redis");
 
   const api = service("lojaveiculosv2-api", {
+    source: appSource,
     build: "pnpm --filter @lojaveiculosv2/api build",
     env: {
       API_BASE_URL: context.shared.API_BASE_URL,
@@ -77,6 +90,7 @@ export default defineRailway((context) => {
   });
 
   const web = service("lojaveiculosv2-web", {
+    source: appSource,
     build: "pnpm --filter @lojaveiculosv2/web build",
     env: {
       APP_ENV: appEnvironment,
@@ -90,6 +104,7 @@ export default defineRailway((context) => {
   });
 
   const crmScheduleWorker = service("lojaveiculosv2-crm-schedule-worker", {
+    source: appSource,
     build: "pnpm --filter @lojaveiculosv2/api build",
     deploy: {
       cronSchedule: "*/5 * * * *",

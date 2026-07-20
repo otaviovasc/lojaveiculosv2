@@ -12,8 +12,10 @@ This repository intentionally defines only the minimum persistent topology:
 API, web, product Postgres, separate audit Postgres, Redis for CRM realtime,
 and one short-lived CRM scheduled-message cron worker. Buckets, PR environments,
 permanent queue consumers, and extra cron workers remain deferred until measured
-usage requires them. Deployments are uploaded manually after `pnpm run
-release:verify`; no GitHub Actions or GitHub autodeploy is required.
+usage requires them. The app services auto-deploy from GitHub: the `staging`
+environment tracks the `staging` branch and `production` tracks `main`, so a
+push to the environment's branch triggers the deploy after the local release
+gates pass.
 
 ## Common commands
 
@@ -52,8 +54,9 @@ Before applying or deploying:
    shared variables, the worker references the API variables, and the web reads
    only its public `VITE_*` shared variables.
 3. Run `pnpm run release:verify` from a clean commit.
-4. Deploy API first, then web and the CRM cron worker explicitly. Confirm the
-   first scheduled worker execution exits successfully.
+4. Promote with `pnpm run release:staging`; pushing `staging` auto-deploys the
+   staging environment. Confirm the first scheduled worker execution exits
+   successfully.
 5. Run the matching `release:smoke:*` command.
 
 ## Notes

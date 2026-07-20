@@ -1,0 +1,20 @@
+name: main-source-guard
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+jobs:
+  main-source-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Only staging may merge into main
+        run: |
+          if [ "${{ github.head_ref }}" != "staging" ]; then
+            echo "::error::Pull requests into main must come from the staging branch (got '${{ github.head_ref }}')."
+            echo "Promote your work to staging first, verify it there, then open the staging -> main release PR."
+            exit 1
+          fi
+          echo "Source branch is staging. Release PR allowed."

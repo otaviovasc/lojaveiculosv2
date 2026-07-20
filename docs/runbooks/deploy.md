@@ -2,37 +2,37 @@
 
 ## Normal Flow
 
-1. Merge feature work through a pull request.
+1. Merge feature work through a pull request into a feature branch.
 2. Confirm Codex review has no unresolved P0/P1 findings.
-3. Run `pnpm run release:verify` from a clean branch.
-4. Merge or fast-forward the accepted commit to `staging`, then check it out.
-5. Select the Railway `staging` environment and manually upload the API first,
-   then the web and CRM schedule worker services from that exact checkout.
-6. Wait for Railway staging API and web deployments to reach `SUCCESS`, then
+3. From the feature branch, run `pnpm run release:staging`. This runs
+   `release:verify`, merges the branch into `staging`, and pushes it.
+4. Pushing `staging` triggers the Railway staging auto-deploy (GitHub source,
+   branch `staging`) for the API, web, and CRM schedule worker services.
+5. Wait for the staging API and web deployments to reach `SUCCESS`, then
    verify the first CRM worker cron execution exits successfully.
-7. Run `pnpm run release:smoke:staging`.
-8. Promote the exact accepted commit through a release PR into `main`.
-9. From that exact `main` commit, select `production` and manually upload API,
-   then web and the CRM schedule worker.
-10. Wait for API and web production deployments to reach `SUCCESS`, then
-    verify the first CRM worker cron execution exits successfully.
-11. Run `pnpm run release:smoke:production`.
-12. Watch Railway logs, HTTP metrics, and Sentry for the release window.
+6. Run `pnpm run release:smoke:staging` and test the flows on staging.
+7. Run `pnpm run release:promote` to open the `staging` -> `main` release PR.
+   The `main-source-guard` check only allows PRs into `main` from `staging`.
+8. Merge the release PR. The push to `main` triggers the Railway production
+   auto-deploy (GitHub source, branch `main`).
+9. Wait for API and web production deployments to reach `SUCCESS`, then
+   verify the first CRM worker cron execution exits successfully.
+10. Run `pnpm run release:smoke:production`.
+11. Watch Railway logs, HTTP metrics, and Sentry for the release window.
 
-```bash
-railway environment staging
-railway up --service lojaveiculosv2-api --detach
-railway up --service lojaveiculosv2-web --detach
-railway up --service lojaveiculosv2-crm-schedule-worker --detach
-```
-
-Use the same commands with `railway environment production` only from the
-accepted production commit.
+Manual uploads with `railway up --service <name> --detach` remain available
+as a break-glass path when the GitHub auto-deploy is unhealthy.
 
 ## Railway Settings
 
-- GitHub source autodeploy: disabled for both environments.
-- Do not enable Wait for CI; this project does not use GitHub Actions.
+- GitHub source autodeploy: enabled per environment. The `staging` environment
+  deploys from the `staging` branch; `production` deploys from `main`. Service
+  sources are declared in `.railway/railway.ts`.
+- Pull requests into `main` must come from `staging`; enforced by the
+  `main-source-guard` GitHub Actions check plus branch protection. A pre-push
+  hook blocks local pushes to `main` that bypass `staging`.
+- Wait for CI stays disabled; quality gates run locally via the pre-commit and
+  pre-push hooks, and staging is verified before promotion.
 - API build: `pnpm --filter @lojaveiculosv2/api build`.
 - API start: `pnpm run db:migrate:deploy && pnpm --filter @lojaveiculosv2/api start`.
 - API healthcheck: `/ready`.
@@ -83,8 +83,9 @@ Also verify:
   environment. Do not add permanent consumers or extra cron services without a
   measured backlog or reliability requirement.
 - Keep PR environments and Railway buckets disabled by default.
-- Upload only the app services included in the verified release; do not rebuild
-  unchanged services automatically on every push.
+- Upload only the app services included in the verified release; pushes to the
+  environment branch redeploy all app services, so batch changes into one
+  verified promotion instead of many small pushes.
 - Prefer Railway serverless sleep for staging only after verifying that cold
   starts do not break smoke tests or provider callbacks.
 
