@@ -85,19 +85,6 @@ describe("module permissions", () => {
     ).toBe(true);
   });
 
-  it("shows the AI operator only with automation read access", () => {
-    const allowed = sessionForRole("manager", ["automation.read"]);
-    const denied = sessionForRole("salesman", ["inventory.read"]);
-
-    expect(getModulePermission("autobot", allowed).canView).toBe(true);
-    expect(getModulePermission("autobot", denied).canView).toBe(false);
-    expect(
-      filterNavigationGroups(navigationGroups, allowed)
-        .flatMap((group) => group.items)
-        .some((item) => item.id === "autobot"),
-    ).toBe(true);
-  });
-
   it("keeps automatic entries readable without granting management", () => {
     const readOnly = sessionForRole("investor", ["finance.read"]);
 
@@ -149,7 +136,6 @@ describe("module permissions", () => {
 
     expect(visibleIds).toContain("billing");
     expect(visibleIds).toContain("crm");
-    expect(visibleIds).toContain("domain");
     expect(visibleIds).toContain("fiscal");
     expect(visibleIds).toContain("marketplaces");
     expect(visibleIds).toContain("public-api");
@@ -189,7 +175,6 @@ describe("module permissions", () => {
 
   it("maps commercial modules to their effective entitlement", () => {
     const locked = sessionForRole("owner", [], []);
-    const unlocked = sessionForRole("owner", [], ["custom_domain"]);
 
     expect(getModuleEntitlement("crm", locked).featureKey).toBe("crm");
     expect(getModuleEntitlement("fiscal", locked).featureKey).toBe("nfe");
@@ -202,11 +187,6 @@ describe("module permissions", () => {
     expect(getModuleEntitlement("simulations", locked).featureKey).toBe(
       "simulations",
     );
-    expect(getModuleEntitlement("domain", locked)).toEqual({
-      canUse: false,
-      featureKey: "custom_domain",
-    });
-    expect(getModuleEntitlement("domain", unlocked).canUse).toBe(true);
     expect(getModuleEntitlement("checklists", locked).canUse).toBe(true);
     expect(getModuleEntitlement("expenses", locked).canUse).toBe(true);
   });

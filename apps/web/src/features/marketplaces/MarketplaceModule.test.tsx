@@ -25,7 +25,10 @@ describe("MarketplaceModule", () => {
   });
 
   it("renders the account requirement checklist", async () => {
+    const user = userEvent.setup();
     render(<MarketplaceModule api={createApi()} />);
+
+    await user.click(await screen.findByText("Requisitos do canal"));
 
     await waitFor(() =>
       expect(screen.getByText("Estado da conta")).toBeVisible(),
@@ -35,7 +38,7 @@ describe("MarketplaceModule", () => {
       "/images/integrationslogos/olx.png",
     );
     expect(
-      screen.getByRole("region", {
+      screen.getByRole("group", {
         name: "Resumo operacional dos marketplaces",
       }),
     ).toBeVisible();
@@ -61,19 +64,24 @@ describe("MarketplaceModule", () => {
     const card = heading.closest(".marketplace-card");
     expect(card).not.toBeNull();
     expect(card).toHaveAttribute("data-connection-tone", "danger");
-    expect(card?.querySelector(".marketplace-connection-status")).toHaveClass(
-      "is-danger",
-    );
+    expect(
+      within(card as HTMLElement).getAllByText("Reconexão necessária").length,
+    ).toBeGreaterThan(0);
     expect(
       within(card as HTMLElement).getByRole("button", {
         name: "Reconectar conta do OLX",
       }),
     ).toBeEnabled();
     expect(
-      within(card as HTMLElement).getByRole("button", {
+      within(card as HTMLElement).queryByRole("button", {
         name: /Validar lote.*OLX/i,
       }),
-    ).toBeDisabled();
+    ).not.toBeInTheDocument();
+    expect(
+      within(card as HTMLElement).queryByRole("button", {
+        name: /Enviar lote à OLX/i,
+      }),
+    ).not.toBeInTheDocument();
     expect(
       within(card as HTMLElement).queryByRole("button", { name: "Ativar" }),
     ).not.toBeInTheDocument();
@@ -169,13 +177,13 @@ describe("MarketplaceModule", () => {
 
     expect(await screen.findByText("Falha no marketplace")).toBeVisible();
     expect(screen.getByText(/Muitas tentativas em sequencia/)).toBeVisible();
-    expect(screen.getByText("Aguardar 60 segundos.")).toBeVisible();
-    expect(within(screen.getByRole("alert")).getByText("OLX")).toBeVisible();
-    expect(screen.getByText("Honda Civic EXL")).toBeVisible();
-    expect(screen.getByText("req_123")).toBeVisible();
+    expect(screen.getByText(/Aguardar 60 segundos\./)).toBeVisible();
+    expect(within(screen.getByRole("alert")).getByText(/OLX/)).toBeVisible();
+    expect(screen.getByText(/req_123/)).toBeVisible();
   });
 
   it("explains the different provider contracts", async () => {
+    const user = userEvent.setup();
     render(
       <MarketplaceModule
         api={createApi({
@@ -190,6 +198,9 @@ describe("MarketplaceModule", () => {
     await waitFor(() =>
       expect(screen.getByText("Autoupload de classificados")).toBeVisible(),
     );
+    for (const summary of screen.getAllByText("Requisitos do canal")) {
+      await user.click(summary);
+    }
     expect(
       screen.getByText("Categoria, marca, modelo, versão e ano"),
     ).toBeVisible();

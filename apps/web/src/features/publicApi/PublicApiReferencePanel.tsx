@@ -3,12 +3,18 @@ import {
   ChevronDown,
   Copy,
   FileJson,
+  KeyRound,
   Route,
   ShieldCheck,
   TerminalSquare,
 } from "lucide-react";
 import { useState } from "react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { FeatureSegmentedControl } from "../../components/ui/FeatureControls";
+import {
+  FeatureActionButton,
+  FeatureSection,
+} from "../../components/ui/FeatureLayout";
+import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import { publicApiBasePath, publicApiResources } from "./publicApiCatalog";
 import {
   createCurlExample,
@@ -29,13 +35,12 @@ export function PublicApiReferencePanel({
 
   return (
     <FeatureSection
-      className="internal-panel public-api-panel public-api-reference"
+      className="public-api-panel public-api-reference"
       description="Documentação para pessoas, contratos para ferramentas e exemplos executáveis no mesmo lugar."
-      headerClassName="internal-panel-title"
       icon={<Route aria-hidden="true" className="size-5" />}
       title="Central do desenvolvedor"
     >
-      <div className="public-api-reference-overview">
+      <div className="public-api-reference-overview mt-4">
         <div className="public-api-quickstart">
           <p>
             <TerminalSquare aria-hidden="true" className="size-4" />
@@ -49,27 +54,25 @@ export function PublicApiReferencePanel({
           <div className="public-api-quickstart__endpoint">
             <small>Endpoint base</small>
             <code>{apiBaseUrl}</code>
-            <button
-              aria-label={
+            <FeatureRowAction
+              ariaLabel={
                 copiedId === "base-url"
                   ? "URL da API copiada"
                   : "Copiar URL da API"
               }
-              className="internal-icon-action"
+              icon={copiedId === "base-url" ? Check : Copy}
               onClick={() => void onCopy(apiBaseUrl, "base-url")}
-              title="Copiar URL da API"
-              type="button"
-            >
-              {copiedId === "base-url" ? (
-                <Check aria-hidden="true" className="size-4" />
-              ) : (
-                <Copy aria-hidden="true" className="size-4" />
-              )}
-            </button>
+              tooltip="Copiar URL da API"
+            />
           </div>
           <small className="public-api-quickstart__security">
             <ShieldCheck aria-hidden="true" className="size-4" />
             Nunca exponha a chave no navegador ou em repositórios.
+          </small>
+          <small className="public-api-quickstart__security">
+            <KeyRound aria-hidden="true" className="size-4" />
+            Chaves <code>lv2_...</code> por cliente e loja. Mutações exigem{" "}
+            <code>Idempotency-Key</code> e entram na trilha de auditoria.
           </small>
         </div>
 
@@ -80,28 +83,21 @@ export function PublicApiReferencePanel({
             Gere um SDK pelo OpenAPI, dê contexto a um agente com llms.txt ou
             copie um curl pronto para testar agora.
           </p>
-          <div
-            aria-label="Conteúdo da referência pública"
-            className="public-api-reference-switch"
-            role="group"
-          >
-            <button
-              aria-pressed={view === "resources"}
-              className={view === "resources" ? "is-active" : undefined}
-              onClick={() => setView("resources")}
-              type="button"
-            >
-              Artefatos <span>{publicApiResources.length}</span>
-            </button>
-            <button
-              aria-pressed={view === "endpoints"}
-              className={view === "endpoints" ? "is-active" : undefined}
-              onClick={() => setView("endpoints")}
-              type="button"
-            >
-              Rotas <span>{publicApiEndpoints.length}</span>
-            </button>
-          </div>
+          <FeatureSegmentedControl
+            ariaLabel="Conteúdo da referência pública"
+            onChange={(nextView) => setView(nextView)}
+            options={[
+              {
+                label: `Artefatos (${publicApiResources.length})`,
+                value: "resources" as const,
+              },
+              {
+                label: `Rotas (${publicApiEndpoints.length})`,
+                value: "endpoints" as const,
+              },
+            ]}
+            value={view}
+          />
         </div>
       </div>
 
@@ -169,21 +165,14 @@ export function PublicApiReferencePanel({
                   >
                     <code>{curl}</code>
                   </pre>
-                  <button
-                    aria-label={`Copiar curl de ${endpoint.title}`}
-                    className="documents-top-bar-action"
+                  <FeatureActionButton
+                    className="public-api-endpoint-copy"
+                    icon={copiedId === copyId ? Check : FileJson}
+                    label={`Copiar curl de ${endpoint.title}`}
                     onClick={() => void onCopy(curl, copyId)}
-                    type="button"
                   >
-                    {copiedId === copyId ? (
-                      <Check aria-hidden="true" className="size-4" />
-                    ) : (
-                      <FileJson aria-hidden="true" className="size-4" />
-                    )}
-                    <span>
-                      {copiedId === copyId ? "Copiado" : "Copiar curl"}
-                    </span>
-                  </button>
+                    {copiedId === copyId ? "Copiado" : "Copiar curl"}
+                  </FeatureActionButton>
                 </div>
               </details>
             );

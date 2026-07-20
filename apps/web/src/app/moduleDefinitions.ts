@@ -11,14 +11,6 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     id: "auto-entries",
     title: "Lançamentos automáticos",
   },
-  autobot: {
-    action: "Criar automação",
-    description:
-      "Prévias versionadas, validação humana e trilha segura antes de qualquer execução.",
-    eyebrow: "IA operacional",
-    id: "autobot",
-    title: "Operador IA",
-  },
   billing: {
     action: "Definir faturas",
     description: "Cobranças, planos e add-ons com estados de bloqueio claros.",
@@ -75,13 +67,6 @@ export const moduleDefinitions: Record<ModuleId, ModuleDefinition> = {
     eyebrow: "Operação",
     id: "documents",
     title: "Documentos",
-  },
-  domain: {
-    action: "Validar DNS",
-    description: "Domínio próprio para o site público e canais conectados.",
-    eyebrow: "Canais",
-    id: "domain",
-    title: "Domínio",
   },
   expenses: {
     action: "Classificar gastos",

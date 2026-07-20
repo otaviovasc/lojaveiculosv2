@@ -8,7 +8,6 @@ import { useOptionalAccountSession } from "../features/account/accountSession";
 import { AppErrorBoundary } from "../features/system/AppErrorBoundary";
 import {
   AutoEntriesWorkspace,
-  AutomationWorkspace,
   BillingModule,
   BillingUpgradePanel,
   ChecklistModule,
@@ -75,8 +74,6 @@ export function AdminApp() {
             <InventoryListPage stores={inventoryStoreLinks(accountSession)} />
           ) : activeSurface === "checklists" ? (
             <ChecklistModule />
-          ) : activeSurface === "automation" ? (
-            <AutomationWorkspace />
           ) : activeSurface === "finance-auto-entries" ? (
             <AutoEntriesWorkspace />
           ) : activeSurface === "crm-leads" ? (
