@@ -2,6 +2,7 @@ import type { CreateSettingsApiOptions } from "./apiClient";
 import type { SettingsAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -10,7 +11,7 @@ export async function createSettingsApiOptions(): Promise<CreateSettingsApiOptio
   const accessToken = await readClerkToken();
   return {
     auth: createSettingsAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readBaseUrl(),
   };
 }

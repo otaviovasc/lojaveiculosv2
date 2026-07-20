@@ -17,6 +17,7 @@ import { useAccountSession } from "../../account/accountSession";
 import { persistCurrentStoreSlug } from "../../account/currentStore";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../../account/runtimeAuth";
@@ -47,7 +48,7 @@ export function AgencyDashboardPage() {
       const token = await readClerkToken();
       const api = createAgencyApi({
         auth: createRuntimeActorAuth(token),
-        fetch: window.fetch.bind(window),
+        fetch: createRuntimeFetch(),
         ...readRuntimeApiBaseUrl(),
       });
       const overview = await api.getOverview(agencyTenant.tenantId);

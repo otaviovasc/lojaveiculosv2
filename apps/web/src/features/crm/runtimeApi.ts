@@ -8,6 +8,7 @@ import type { ProductCrmAuth } from "./productCrmTypes";
 import { readRuntimeStoreSlug } from "../account/currentStore";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -271,7 +272,7 @@ export async function createProductCrmApiOptions(): Promise<CreateProductCrmApiO
 
   return {
     auth: createProductCrmAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readCrmBaseUrl(),
   };
 }

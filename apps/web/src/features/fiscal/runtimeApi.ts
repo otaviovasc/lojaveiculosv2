@@ -6,6 +6,7 @@ import {
 import type { FiscalAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -14,7 +15,7 @@ export async function createFiscalApiOptions(): Promise<CreateFiscalApiOptions> 
   const accessToken = await readClerkToken();
   return {
     auth: createAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readBaseUrl(),
   };
 }

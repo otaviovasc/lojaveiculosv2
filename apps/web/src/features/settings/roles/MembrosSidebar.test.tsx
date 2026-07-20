@@ -15,6 +15,7 @@ describe("MembrosSidebar", () => {
         customRoles={[]}
         memberPresetMapping={{}}
         onInviteClick={vi.fn()}
+        onSendInvitation={vi.fn()}
         onSelectId={vi.fn()}
         roleLabel={roleLabel}
         roles={roles}
@@ -26,6 +27,7 @@ describe("MembrosSidebar", () => {
     expect(screen.getByText("Novo Vendedor")).toBeInTheDocument();
     expect(screen.getByText("novo@lojaveiculos.com.br")).toBeInTheDocument();
     expect(screen.getByText("Pendente")).toBeInTheDocument();
+    expect(screen.getByText("Reenviar convite")).toBeInTheDocument();
   });
 });
 
