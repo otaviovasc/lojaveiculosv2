@@ -1,5 +1,14 @@
-import { Activity, BadgeCheck, CarFront, TriangleAlert } from "lucide-react";
-import { StatCard } from "../../components/ui/stat-card";
+import {
+  Activity,
+  BadgeCheck,
+  CarFront,
+  CircleX,
+  TriangleAlert,
+} from "lucide-react";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
 import { resolveMarketplaceConnectionPresentation } from "./marketplaceConnectionPresentation";
 import type { MarketplaceOverview } from "./types";
 
@@ -27,76 +36,44 @@ export function MarketplaceOperationsOverview({
     (total, state) => total + (state.lastSyncSummary?.total ?? 0),
     0,
   );
-  const ConnectionSummaryIcon = channelsRequiringAttention
-    ? TriangleAlert
-    : BadgeCheck;
-  const connectionSummary =
-    channelsRequiringAttention === 0
-      ? "Todos os canais prontos"
-      : connectedProviders === 0
-        ? `${channelsRequiringAttention} canais pedem atenção`
-        : `${connectedProviders} de ${overview.providers.length} canais prontos`;
 
   return (
-    <section className="marketplace-operations marketplace-panel">
-      <header className="marketplace-section-heading">
-        <div>
-          <span className="marketplace-section-heading__eyebrow">
-            Operação centralizada
-          </span>
-          <h2>Distribuição do estoque</h2>
-          <p>Prontidão, correções e fila de publicação dos canais.</p>
-        </div>
-        <div
-          className="marketplace-operations__connection-summary"
-          data-ready={channelsRequiringAttention === 0}
-        >
-          <ConnectionSummaryIcon aria-hidden="true" className="size-4" />
-          <span>{connectionSummary}</span>
-        </div>
-      </header>
-
-      <div
-        aria-label="Resumo operacional dos marketplaces"
-        className="marketplace-operations__metrics"
-        role="region"
-      >
-        <StatCard
-          density="compact"
+    <section
+      aria-label="Operação dos marketplaces"
+      className="marketplace-overview"
+    >
+      <FeatureKpiStrip ariaLabel="Resumo operacional dos marketplaces">
+        <FeatureKpiCard
+          animationIndex={0}
           icon={BadgeCheck}
           label="Canais prontos"
-          theme="success"
+          tone="green"
           value={connectedProviders}
-          variant="cell"
         />
-        <StatCard
-          density="compact"
+        <FeatureKpiCard
+          animationIndex={1}
           icon={TriangleAlert}
           label="Pedem atenção"
-          theme="amber"
+          tone="pink"
           value={channelsRequiringAttention}
-          variant="cell"
         />
-        <StatCard
-          density="compact"
+        <FeatureKpiCard
+          animationIndex={2}
           icon={Activity}
           label="Na fila agora"
-          theme="blue"
+          tone="blue"
           value={pendingJobs}
-          variant="cell"
         />
-        <StatCard
-          density="compact"
-          icon={TriangleAlert}
+        <FeatureKpiCard
+          animationIndex={3}
+          icon={CircleX}
           label="Falhas recentes"
-          theme={failedJobs ? "amber" : "default"}
+          tone="violet"
           value={failedJobs}
-          variant="cell"
         />
-      </div>
-
-      <aside className="marketplace-operations__scope">
-        <span className="marketplace-operations__scope-icon">
+      </FeatureKpiStrip>
+      <aside className="marketplace-scope-note">
+        <span className="marketplace-scope-note__icon">
           <CarFront aria-hidden="true" className="size-5" />
         </span>
         <div>

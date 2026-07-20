@@ -6,7 +6,14 @@ import {
   Trash2,
 } from "lucide-react";
 import { FeatureSection } from "../../components/ui/FeatureLayout";
-import { FeatureLoadingState } from "../../components/ui/FeatureStates";
+import {
+  FeatureAlert,
+  FeatureEmptyState,
+  FeatureLoadingState,
+  FeatureStatusBadge,
+  type FeatureStatusTone,
+} from "../../components/ui/FeatureStates";
+import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import type {
   PublicApiClient,
   PublicApiClientStatus,
@@ -39,61 +46,59 @@ export function PublicApiClientList({
       actions={
         hasLoaded ? (
           <div
-            className="public-api-client-summary"
             aria-label="Resumo dos clientes"
+            className="flex flex-wrap items-center gap-2"
           >
-            <span>
-              <strong>{activeCount}</strong> ativos
-            </span>
-            <span>
-              <strong>{clients.length}</strong> no total
-            </span>
+            <FeatureStatusBadge size="dense" tone="success">
+              {activeCount} ativos
+            </FeatureStatusBadge>
+            <FeatureStatusBadge size="dense">
+              {clients.length} no total
+            </FeatureStatusBadge>
           </div>
         ) : null
       }
-      className="internal-panel public-api-panel public-api-clients"
+      className="public-api-panel"
       description="Identifique cada integração pelo nome, acompanhe os escopos e encerre acessos sem expor segredos."
-      headerClassName="internal-panel-title"
       icon={<KeyRound aria-hidden="true" className="size-5" />}
       title="Clientes conectados"
     >
-      <div className="public-api-client-list">
+      <div className="mt-4">
         {!hasLoaded && status.kind === "loading" ? (
           <FeatureLoadingState
-            className="public-api-client-state public-api-client-state--loading"
+            className="feature-empty"
             icon={LoaderCircle}
             title="Carregando clientes externos"
-          >
-            <span aria-hidden="true" className="public-api-client-skeleton" />
-            <span aria-hidden="true" className="public-api-client-skeleton" />
-          </FeatureLoadingState>
+          />
         ) : null}
 
         {!hasLoaded && status.kind === "error" ? (
-          <p className="public-api-client-state" role="status">
+          <FeatureAlert>
             Os clientes externos não puderam ser carregados.
-          </p>
+          </FeatureAlert>
         ) : null}
 
-        {hasLoaded
-          ? clients.map((client) => (
-              <article key={client.id}>
-                <div className="public-api-client-card__header">
-                  <span data-status={client.status}>
+        {hasLoaded && clients.length > 0 ? (
+          <div className="public-api-client-list">
+            {clients.map((client) => (
+              <article className="public-api-client-card" key={client.id}>
+                <div className="flex items-center justify-between gap-3">
+                  <FeatureStatusBadge
+                    size="dense"
+                    tone={clientStatusTone(client.status)}
+                  >
                     {clientStatusLabel(client.status)}
-                  </span>
-                  <button
-                    aria-label={`Revogar ${client.name}`}
-                    className="internal-icon-action danger"
+                  </FeatureStatusBadge>
+                  <FeatureRowAction
+                    ariaLabel={`Revogar ${client.name}`}
                     disabled={
                       client.status === "revoked" || status.kind === "saving"
                     }
+                    icon={Trash2}
+                    iconClassName="text-danger"
                     onClick={() => onRevoke(client)}
-                    title="Revogar chave"
-                    type="button"
-                  >
-                    <Trash2 aria-hidden="true" className="size-4" />
-                  </button>
+                    tooltip="Revogar chave"
+                  />
                 </div>
 
                 <div className="public-api-client-main">
@@ -124,22 +129,17 @@ export function PublicApiClientList({
                   </span>
                 </footer>
               </article>
-            ))
-          : null}
+            ))}
+          </div>
+        ) : null}
 
         {hasLoaded && clients.length === 0 ? (
-          <div className="public-api-client-empty">
-            <span>
-              <KeyRound aria-hidden="true" className="size-5" />
-            </span>
-            <div>
-              <strong>Nenhum cliente externo criado.</strong>
-              <small>
-                Configure o primeiro acesso acima. Ele aparecerá aqui com os
-                escopos e prefixos de identificação.
-              </small>
-            </div>
-          </div>
+          <FeatureEmptyState
+            body="Configure o primeiro acesso acima. Ele aparecerá aqui com os escopos e prefixos de identificação."
+            density="compact"
+            icon={KeyRound}
+            title="Nenhum cliente externo criado."
+          />
         ) : null}
       </div>
     </FeatureSection>
@@ -150,6 +150,12 @@ function clientStatusLabel(status: PublicApiClientStatus) {
   if (status === "active") return "Ativo";
   if (status === "suspended") return "Suspenso";
   return "Revogado";
+}
+
+function clientStatusTone(status: PublicApiClientStatus): FeatureStatusTone {
+  if (status === "active") return "success";
+  if (status === "suspended") return "warning";
+  return "danger";
 }
 
 function formatClientDate(value: string) {

@@ -1,5 +1,7 @@
 import { RotateCcw } from "lucide-react";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { FeatureStatusBadge } from "../../components/ui/FeatureStates";
+import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import {
   getMarketplaceJobStatusLabel,
   getMarketplaceJobTypeLabel,
@@ -19,11 +21,10 @@ export function MarketplaceJobList({
   overview: MarketplaceOverview;
 }) {
   return (
-    <section className="marketplace-panel">
-      <header>
-        <h3>Sincronizações recentes</h3>
-        <p>Resultados dos últimos lotes solicitados para a loja atual.</p>
-      </header>
+    <FeatureSection
+      description="Resultados dos últimos lotes solicitados para a loja atual."
+      title="Atividade recente"
+    >
       <div className="marketplace-job-list">
         {overview.jobs.length ? (
           overview.jobs.map((job) => (
@@ -44,15 +45,12 @@ export function MarketplaceJobList({
               </div>
               {job.errorMessage ? <JobFailureMessage job={job} /> : null}
               {job.status === "failed" ? (
-                <button
-                  aria-label={`Tentar novamente no ${providerLabels[job.provider]}`}
-                  className="marketplace-job__retry"
+                <FeatureRowAction
+                  ariaLabel={`Tentar novamente no ${providerLabels[job.provider]}`}
+                  icon={RotateCcw}
                   onClick={() => void onRetry(job)}
-                  title="Tentar novamente"
-                  type="button"
-                >
-                  <RotateCcw aria-hidden="true" className="size-4" />
-                </button>
+                  tooltip="Tentar novamente"
+                />
               ) : null}
             </article>
           ))
@@ -60,7 +58,7 @@ export function MarketplaceJobList({
           <p>Nenhuma sincronização de estoque foi solicitada.</p>
         )}
       </div>
-    </section>
+    </FeatureSection>
   );
 }
 

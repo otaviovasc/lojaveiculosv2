@@ -3,8 +3,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AnimatedContent from "../../components/ui/AnimatedContent";
 import {
   FeatureActionButton,
+  FeaturePageHeader,
   FeaturePageShell,
-  FeatureToolbar,
 } from "../../components/ui/FeatureLayout";
 import {
   FeatureAlert,
@@ -14,11 +14,10 @@ import {
 import type { MarketplaceApi } from "./apiClient";
 import { MarketplaceErrorAlert } from "./MarketplaceErrorAlert";
 import {
-  MarketplaceBatchProgress,
   MarketplaceJobList,
   MarketplaceOperationsOverview,
-  MarketplacePreviewPanel,
   MarketplaceProviderCard,
+  MarketplaceStockPanel,
 } from "./MarketplacePanels";
 import {
   formatMarketplaceError,
@@ -39,7 +38,6 @@ import type {
   MarketplaceStockPlan,
   MarketplaceStockSyncRunResponse,
 } from "./types";
-import "./marketplaceCommandBar.css";
 
 export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
   const marketplaceApi = useMemo(
@@ -242,38 +240,25 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
 
   return (
     <FeaturePageShell mainClassName="marketplace-shell">
-      <FeatureToolbar className="marketplace-command-bar">
-        <div className="marketplace-command-bar__identity">
-          <span className="marketplace-command-bar__mark">
-            <Store aria-hidden="true" className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <p className="marketplace-command-bar__meta">Canais de venda</p>
-            <h1>Marketplaces da loja</h1>
-            <p className="marketplace-command-bar__description">
-              Revise conexões, pendências e lotes antes de publicar o estoque.
-            </p>
-          </div>
-        </div>
-        <div
-          aria-label="Ações dos marketplaces"
-          className="marketplace-command-bar__actions"
-          role="toolbar"
-        >
+      <FeaturePageHeader
+        actions={
           <FeatureActionButton
             icon={RefreshCcw}
             isBusy={status.kind === "loading"}
             label="Atualizar"
             onClick={() => void refresh()}
           />
-        </div>
-      </FeatureToolbar>
+        }
+        actionsLabel="Ações dos marketplaces"
+        description="Revise conexões, pendências e lotes antes de publicar o estoque."
+        eyebrow="Canais de venda"
+        title="Marketplaces"
+      />
       {status.kind === "error" ? (
         <MarketplaceErrorAlert {...status.display} />
       ) : null}
       {status.kind === "saved" ? (
         <FeatureAlert
-          className="marketplace-feedback"
           icon={<CheckCircle2 aria-hidden="true" className="size-5" />}
           tone="success"
         >
@@ -285,19 +270,7 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
           <AnimatedContent distance={14} duration={0.32} trigger="mount">
             <MarketplaceOperationsOverview overview={overview} />
           </AnimatedContent>
-          <div className="marketplace-section-heading marketplace-section-heading--channels">
-            <div>
-              <span className="marketplace-section-heading__eyebrow">
-                Canais disponíveis
-              </span>
-              <h2>Conexões da loja</h2>
-              <p>
-                Conecte e revise cada canal conforme o contrato que ele exige. A
-                prévia não publica nenhum anúncio.
-              </p>
-            </div>
-          </div>
-          <section className="marketplace-grid">
+          <section aria-label="Conexões da loja" className="marketplace-grid">
             {orderedProviders(overview).map((provider, index) => (
               <AnimatedContent
                 delay={index * 0.06}
@@ -329,13 +302,13 @@ export function MarketplaceModule({ api }: { api?: MarketplaceApi }) {
               </AnimatedContent>
             ))}
           </section>
-          {selectedPreview ? (
-            <MarketplacePreviewPanel
+          {selectedPreview || lastRun ? (
+            <MarketplaceStockPanel
+              lastRun={lastRun}
               plan={selectedPreview}
               provider={selectedProvider}
             />
           ) : null}
-          {lastRun ? <MarketplaceBatchProgress lastRun={lastRun} /> : null}
           <MarketplaceJobList overview={overview} onRetry={retryJob} />
         </>
       ) : status.kind === "error" ? (
