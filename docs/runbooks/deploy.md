@@ -13,8 +13,10 @@
 6. Run `pnpm run release:smoke:staging` and test the flows on staging.
 7. Run `pnpm run release:promote` to open the `staging` -> `main` release PR.
    The `main-source-guard` check only allows PRs into `main` from `staging`.
-8. Merge the release PR. The push to `main` triggers the Railway production
-   auto-deploy (GitHub source, branch `main`).
+   Production is not provisioned yet, so this step currently only keeps `main`
+   as the accepted baseline and deploys nothing.
+8. Once production is provisioned, merge the release PR. The push to `main`
+   triggers the Railway production auto-deploy (GitHub source, branch `main`).
 9. Wait for API and web production deployments to reach `SUCCESS`, then
    verify the first CRM worker cron execution exits successfully.
 10. Run `pnpm run release:smoke:production`.
