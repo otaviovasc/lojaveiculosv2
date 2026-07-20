@@ -1,6 +1,7 @@
 import type { RoleKey, RoleManagementView, RoleMemberView } from "../types";
 import { getRoleVisual, type CustomRolePreset } from "./RoleHelpers";
-import { UserCog, UserPlus } from "lucide-react";
+import { Send, UserCog, UserPlus } from "lucide-react";
+import { useState } from "react";
 import {
   FeatureCard,
   FeatureCardHeader,
@@ -9,7 +10,9 @@ import {
   FeatureList,
   FeatureListItemButton,
 } from "../../../components/ui/FeatureCards";
+import { FeatureAlert } from "../../../components/ui/FeatureStates";
 import { cx } from "../../../components/ui/featureShared";
+import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 
 export function MembrosSidebar({
   roles,
@@ -20,6 +23,7 @@ export function MembrosSidebar({
   roleLabel,
   canInvite,
   onInviteClick,
+  onSendInvitation,
 }: {
   roles: RoleManagementView;
   selected: RoleMemberView;
@@ -29,7 +33,25 @@ export function MembrosSidebar({
   roleLabel: (role: RoleKey, roles: RoleManagementView) => string;
   canInvite: boolean;
   onInviteClick: () => void;
+  onSendInvitation: (invitationId: string) => Promise<unknown>;
 }) {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+
+  const sendInvitation = async (invitationId: string) => {
+    setSendingId(invitationId);
+    setSendError(null);
+    try {
+      await onSendInvitation(invitationId);
+    } catch (error) {
+      setSendError(
+        formatApiErrorDisplay(error, "Não foi possível enviar o convite."),
+      );
+    } finally {
+      setSendingId(null);
+    }
+  };
+
   return (
     <FeatureCard
       className="flex flex-col md:h-[calc(100dvh-10rem)] overflow-hidden"
@@ -100,6 +122,11 @@ export function MembrosSidebar({
                   >
                     {member.manageable ? "Editável" : "Protegido"}
                   </span>
+                  {member.status === "invited" ? (
+                    <span className="inline-flex items-center rounded bg-amber-500/10 px-1.5 py-0.5 text-xs font-black uppercase tracking-wider text-amber-600">
+                      Convite pendente
+                    </span>
+                  ) : null}
                 </div>
               </div>
             </FeatureListItemButton>
@@ -142,11 +169,30 @@ export function MembrosSidebar({
                     {invitation.email}
                   </span>
                 ) : null}
+                {canInvite ? (
+                  <button
+                    className="mt-1 inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-line bg-panel px-2.5 text-xs font-black text-app-text transition-colors hover:border-accent hover:text-accent-text"
+                    disabled={sendingId !== null}
+                    onClick={() => void sendInvitation(invitation.id)}
+                    type="button"
+                  >
+                    <Send className="size-3.5" />
+                    {sendingId === invitation.id
+                      ? "Enviando..."
+                      : invitation.status === "sent"
+                        ? "Reenviar convite"
+                        : "Enviar convite"}
+                  </button>
+                ) : null}
               </div>
             </div>
           );
         })}
       </FeatureList>
+
+      {sendError ? (
+        <FeatureAlert className="mt-3">{sendError}</FeatureAlert>
+      ) : null}
 
       <div className="shrink-0 pt-4 border-t border-line/45 mt-2">
         <button

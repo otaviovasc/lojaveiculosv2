@@ -102,6 +102,7 @@ function kindLabel(kind: DocumentKind) {
   return (
     {
       buyer_document: "Cadastro comprador",
+      consignment_contract: "Contrato de consignação",
       delivery_term: "Termo de entrega",
       finance_receipt: "Financeiro",
       inspection: "Vistoria",
@@ -114,6 +115,7 @@ function kindLabel(kind: DocumentKind) {
       sale_receipt: "Recibo",
       test_drive: "Test drive",
       vehicle_registration: "Documento da unidade",
+      warranty_certificate: "Certificado de garantia",
     } satisfies Record<DocumentKind, string>
   )[kind];
 }

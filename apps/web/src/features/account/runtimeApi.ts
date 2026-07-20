@@ -2,6 +2,7 @@ import type { AccountAuth } from "./apiClient";
 import { createAccountApi, type AccountApi } from "./apiClient";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "./runtimeAuth";
@@ -12,7 +13,7 @@ export async function createRuntimeAccountApi(input?: {
   const accessToken = input?.accessToken ?? (await readClerkToken());
   return createAccountApi({
     auth: createAccountAuth(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readRuntimeApiBaseUrl(),
   });
 }

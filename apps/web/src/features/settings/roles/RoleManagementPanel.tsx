@@ -198,6 +198,7 @@ export function RoleManagementPanel({
         roleLabel={roleLabel}
         canInvite={canInviteMembers}
         onInviteClick={() => setIsInviteOpen(true)}
+        onSendInvitation={onResendInvitation}
       />
       <FeatureSection
         actions={<RoleEditabilityBadge editable={editable} />}

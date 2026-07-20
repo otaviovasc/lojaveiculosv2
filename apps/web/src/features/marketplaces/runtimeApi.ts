@@ -6,6 +6,7 @@ import type { MarketplaceApi } from "./apiClient";
 import type { MarketplaceAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -14,7 +15,7 @@ export async function createMarketplaceApiOptions(): Promise<CreateMarketplaceAp
   const accessToken = await readClerkToken();
   return {
     auth: createMarketplaceAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readBaseUrl(),
   };
 }

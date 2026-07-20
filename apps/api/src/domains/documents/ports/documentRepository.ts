@@ -1,5 +1,6 @@
 export type DocumentKind =
   | "buyer_document"
+  | "consignment_contract"
   | "delivery_term"
   | "finance_receipt"
   | "inspection"
@@ -11,7 +12,8 @@ export type DocumentKind =
   | "sale_receipt"
   | "sale_contract"
   | "test_drive"
-  | "vehicle_registration";
+  | "vehicle_registration"
+  | "warranty_certificate";
 
 export type DocumentStatus =
   "archived" | "draft" | "issued" | "pending_signature" | "signed" | "voided";

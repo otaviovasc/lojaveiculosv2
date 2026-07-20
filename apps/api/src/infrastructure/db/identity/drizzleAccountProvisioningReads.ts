@@ -37,6 +37,11 @@ export async function ensureUser(
     .where(eq(users.email, email))
     .limit(1);
   if (emailOwner) {
+    if (!emailOwner.clerkUserId) {
+      return updateUserProfile(db, emailOwner.id, email, profile.name, {
+        clerkUserId: profile.clerkUserId,
+      });
+    }
     throw new AccountProvisioningConflictError(
       "A different Clerk user already owns this email in V2.",
     );
@@ -231,10 +236,11 @@ async function updateUserProfile(
   id: string,
   email: string,
   name: string | null,
+  identity: { clerkUserId?: string } = {},
 ) {
   const [updated] = await db
     .update(users)
-    .set({ email, name })
+    .set({ email, name, ...identity })
     .where(eq(users.id, id))
     .returning();
   if (!updated) throw new Error("Failed to update V2 user.");

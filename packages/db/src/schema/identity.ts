@@ -71,7 +71,7 @@ export const users = pgTable(
   {
     ...lifecycleColumns,
     ...softDeleteColumns,
-    clerkUserId: varchar("clerk_user_id", { length: 191 }).notNull(),
+    clerkUserId: varchar("clerk_user_id", { length: 191 }),
     email: varchar("email", { length: 254 }).notNull(),
     name: text("name"),
     tenantId: uuid("tenant_id").references(() => tenants.id),
