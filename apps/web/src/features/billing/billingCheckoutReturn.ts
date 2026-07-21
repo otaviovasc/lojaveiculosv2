@@ -1,3 +1,7 @@
+export function redirectToCheckout(checkoutUrl: string) {
+  window.location.assign(checkoutUrl);
+}
+
 export function readBillingCheckoutReturn(scope: "agency" | "store") {
   if (typeof window === "undefined") return null;
   const status = new URLSearchParams(window.location.search).get("checkout");

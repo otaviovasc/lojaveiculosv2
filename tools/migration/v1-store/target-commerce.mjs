@@ -1,5 +1,6 @@
 import { cents, legacyMetadata, mapDocumentKind, targetId } from "./common.mjs";
 import { addLegacyMap } from "./target-foundation.mjs";
+import { log, progress } from "./log.mjs";
 import {
   documentKindsForSale,
   mapEntryType,
@@ -13,6 +14,7 @@ import {
 } from "./sale-snapshots.mjs";
 
 export async function seedSalesAndFinance(tx, data, config, ids) {
+  log(`  Sales & finance: ${data.sales.length} sale(s)...`);
   const sources = new Map(
     data.saleSources.map((source) => [source.id, source]),
   );
@@ -27,7 +29,10 @@ export async function seedSalesAndFinance(tx, data, config, ids) {
       primaryPhotoByVehicle.set(photo.veiculoId, photo);
     }
   }
-  for (const sale of data.sales) {
+  for (const [index, sale] of data.sales.entries()) {
+    if (index % 10 === 0 || index === data.sales.length - 1) {
+      progress("  Sales", index + 1, data.sales.length);
+    }
     const saleId = targetId(config.legacyStoreId, "Sale", sale.id);
     ids.sales.set(sale.id, saleId);
     const vehicle = data.vehicles.find((item) => item.id === sale.veiculoId);
@@ -72,6 +77,9 @@ export async function seedSalesAndFinance(tx, data, config, ids) {
     }
   }
 
+  log(
+    `  Sales & finance: ${data.recurringEntries.length} recurring entry(s)...`,
+  );
   for (const recurring of data.recurringEntries) {
     await tx`INSERT INTO finance_recurring_entries
       (id, amount_cents, category, day_of_month, frequency, metadata, name, next_due_at, seller_user_id, status, store_id, tenant_id, type, created_at, updated_at)
@@ -82,7 +90,11 @@ export async function seedSalesAndFinance(tx, data, config, ids) {
       ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, updated_at=excluded.updated_at`;
   }
 
-  for (const entry of data.entries) {
+  log(`  Sales & finance: ${data.entries.length} finance entry(s)...`);
+  for (const [index, entry] of data.entries.entries()) {
+    if (index % 10 === 0 || index === data.entries.length - 1) {
+      progress("  Finance entries", index + 1, data.entries.length);
+    }
     const entryId = targetId(config.legacyStoreId, "Entry", entry.id);
     ids.entries.set(entry.id, entryId);
     await tx`INSERT INTO finance_entries
@@ -102,6 +114,7 @@ export async function seedSalesAndFinance(tx, data, config, ids) {
     await seedFinanceLinks(tx, entry, entryId, config, ids);
   }
   await seedCommissionRules(tx, data, config, ids);
+  log("  Sales & finance done");
 }
 
 async function seedFinanceLinks(tx, entry, entryId, config, ids) {
@@ -119,6 +132,7 @@ async function seedFinanceLinks(tx, entry, entryId, config, ids) {
 }
 
 async function seedCommissionRules(tx, data, config, ids) {
+  log("  Sales & finance: commission rules...");
   for (const access of data.accesses) {
     if (!access.commissionType) continue;
     const type =
@@ -137,6 +151,9 @@ async function seedCommissionRules(tx, data, config, ids) {
 }
 
 export async function seedDocumentsAndFiscal(tx, data, config, ids) {
+  log(
+    `  Documents & fiscal: ${data.recipients.length} recipient(s), ${data.fiscalDocuments.length} fiscal doc(s), ${data.documents.length} doc(s)...`,
+  );
   for (const recipient of data.recipients) {
     const recipientId = targetId(
       config.legacyStoreId,
@@ -169,7 +186,13 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids) {
         ${recipient.name}, ${recipient.municipalRegistration || null}, ${recipient.notes || null}, ${recipient.phone || null}, ${ids.store}, ${ids.tenant}, ${recipient.createdAt}, ${recipient.updatedAt})
       ON CONFLICT (id) DO UPDATE SET address=excluded.address, notes=excluded.notes, updated_at=excluded.updated_at`;
   }
-  for (const fiscal of data.fiscalDocuments) {
+  log(
+    `  Documents & fiscal: ${data.fiscalDocuments.length} fiscal document(s)...`,
+  );
+  for (const [index, fiscal] of data.fiscalDocuments.entries()) {
+    if (index % 10 === 0 || index === data.fiscalDocuments.length - 1) {
+      progress("  Fiscal documents", index + 1, data.fiscalDocuments.length);
+    }
     const fiscalId = targetId(
       config.legacyStoreId,
       "FiscalDocument",
@@ -185,7 +208,11 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids) {
     await seedFiscalLinks(tx, fiscal, fiscalId, config, ids);
   }
   const testDrives = new Map(data.testDrives.map((row) => [row.id, row]));
-  for (const document of data.documents) {
+  log(`  Documents & fiscal: ${data.documents.length} document(s)...`);
+  for (const [index, document] of data.documents.entries()) {
+    if (index % 50 === 0 || index === data.documents.length - 1) {
+      progress("  Documents", index + 1, data.documents.length);
+    }
     await seedDocument(
       tx,
       {
@@ -196,6 +223,7 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids) {
       ids,
     );
   }
+  log("  Documents & fiscal done");
 }
 
 async function seedDocument(tx, document, config, ids) {

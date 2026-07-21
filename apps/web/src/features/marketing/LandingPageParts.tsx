@@ -1,85 +1,8 @@
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Logo } from "../../components/ui";
 import { LandingAuthActions } from "./LandingAuthActions";
-import { LandingHeroShader } from "./LandingHeroShader";
-import {
-  landingFeatures,
-  landingOutcomes,
-  landingSteps,
-} from "./landingContent";
-
-export function HeroSection() {
-  return (
-    <section className="relative isolate flex min-h-[88svh] items-center overflow-hidden">
-      <video
-        aria-label="Demonstração da plataforma Loja Veículos"
-        autoPlay
-        className="absolute inset-0 -z-20 h-full w-full object-cover"
-        loop
-        muted
-        playsInline
-        src="https://cdn.lojaveiculos.com.br/videos-lv/landings/VSL%20LV%202.mp4"
-      />
-      <LandingHeroShader />
-      <div className="absolute inset-0 -z-10 bg-black/68" />
-      <LandingNav />
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-5 pb-14 pt-28 sm:px-8 lg:px-10">
-        <div className="max-w-4xl">
-          <span className="inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/15 px-3 py-1 text-xs font-black uppercase tracking-[0.28em] text-white">
-            <Sparkles className="size-3.5 text-accent" />
-            SaaS para lojas de veículos
-          </span>
-          <h1 className="mt-6 max-w-3xl text-5xl font-black leading-[0.95] tracking-normal sm:text-6xl lg:text-7xl">
-            Loja Veículos
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg font-semibold leading-8 text-white/82 sm:text-xl">
-            Venda online com site profissional, estoque organizado, leads no
-            WhatsApp, CRM, financeiro e publicação em marketplaces no mesmo
-            painel.
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <LandingAuthActions primaryLabel="Começar agora" />
-            <a
-              className="inline-flex h-12 items-center justify-center rounded-md border border-white/20 px-5 text-sm font-black text-white transition hover:bg-white/10"
-              href="#como-funciona"
-            >
-              Ver fluxo
-            </a>
-          </div>
-        </div>
-        <div className="grid max-w-4xl grid-cols-2 gap-3 sm:grid-cols-4">
-          {landingOutcomes.map(([label, text]) => (
-            <div
-              className="rounded-md border border-white/12 bg-white/8 p-4 backdrop-blur"
-              key={label}
-            >
-              <p className="text-sm font-black text-white">{label}</p>
-              <p className="mt-2 text-xs font-semibold leading-5 text-white/68">
-                {text}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function LandingNav() {
-  return (
-    <header className="absolute inset-x-0 top-0 z-20">
-      <nav className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-5 sm:px-8 lg:px-10">
-        <Link className="flex items-center gap-3" to="/">
-          <Logo className="h-9 w-auto" variant="full-white" />
-        </Link>
-        <div className="flex items-center gap-2">
-          <LandingAuthActions compact primaryLabel="Criar conta" />
-        </div>
-      </nav>
-    </header>
-  );
-}
+import { landingFeatures, landingPains, landingSteps } from "./landingContent";
 
 export function OutcomeStrip() {
   return (
@@ -99,10 +22,47 @@ export function OutcomeStrip() {
   );
 }
 
+export function ProblemSection() {
+  return (
+    <section className="bg-app px-5 py-16 text-app-text sm:px-8 lg:px-10">
+      <div className="mx-auto max-w-7xl">
+        <p className="text-xs font-black uppercase tracking-[0.26em] text-accent-strong">
+          O status quo do mercado
+        </p>
+        <h2 className="mt-3 max-w-3xl text-3xl font-black sm:text-4xl">
+          Por que a maioria das lojas perde o jogo digital.
+        </h2>
+        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {landingPains.map(({ title, pain, solution }, index) => (
+            <article
+              className="rounded-md border border-line bg-panel p-5 shadow-sm"
+              key={title}
+            >
+              <span className="text-xs font-black uppercase tracking-[0.22em] text-accent-strong">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <h3 className="mt-3 text-base font-black uppercase tracking-wide">
+                {title}
+              </h3>
+              <p className="mt-2 text-sm font-semibold leading-6 text-muted">
+                {pain}
+              </p>
+              <p className="mt-3 border-t border-line pt-3 text-sm font-bold leading-6 text-app-text">
+                <span className="text-accent-strong">Na Loja Veículos: </span>
+                {solution}
+              </p>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function WorkflowSection() {
   return (
     <section
-      className="bg-app px-5 py-16 text-app-text sm:px-8 lg:px-10"
+      className="bg-panel px-5 py-16 text-app-text sm:px-8 lg:px-10"
       id="como-funciona"
     >
       <div className="mx-auto max-w-7xl">
@@ -110,12 +70,12 @@ export function WorkflowSection() {
           Como funciona
         </p>
         <h2 className="mt-3 max-w-3xl text-3xl font-black sm:text-4xl">
-          Da criação da conta ao site publicado, em um fluxo direto.
+          Da entrada do pátio ao dinheiro no caixa.
         </h2>
         <div className="mt-9 grid gap-4 md:grid-cols-3">
           {landingSteps.map(([label, text], index) => (
             <article
-              className="group rounded-md border border-line bg-panel p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md"
+              className="group rounded-md border border-line bg-app p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 hover:shadow-md"
               key={label}
             >
               <span className="flex size-10 items-center justify-center rounded-md bg-primary text-sm font-black text-white transition-colors group-hover:bg-accent group-hover:text-accent-foreground">
@@ -135,7 +95,10 @@ export function WorkflowSection() {
 
 export function FeatureSection() {
   return (
-    <section className="bg-panel px-5 py-16 text-app-text sm:px-8 lg:px-10">
+    <section
+      className="bg-app px-5 py-16 text-app-text sm:px-8 lg:px-10"
+      id="plataforma"
+    >
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
           <div>
@@ -182,5 +145,30 @@ export function FinalCta() {
         <LandingAuthActions primaryLabel="Criar minha loja" />
       </div>
     </section>
+  );
+}
+
+export function LandingFooter() {
+  return (
+    <footer className="border-t border-white/12 bg-primary px-5 pb-8 pt-10 text-white sm:px-8 lg:px-10">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8 md:flex-row md:items-center md:justify-between">
+        <Link className="flex items-center gap-3" to="/">
+          <Logo className="h-8 w-auto" variant="full-white" />
+        </Link>
+        <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-bold text-white/75">
+          <a className="transition hover:text-white" href="#como-funciona">
+            Como funciona
+          </a>
+          <a className="transition hover:text-white" href="#plataforma">
+            Plataforma
+          </a>
+        </nav>
+        <LandingAuthActions compact primaryLabel="Criar conta" />
+      </div>
+      <p className="mx-auto mt-8 max-w-7xl text-xs font-semibold text-white/50">
+        © {new Date().getFullYear()} Loja Veículos. Sistema de gestão para lojas
+        de veículos.
+      </p>
+    </footer>
   );
 }

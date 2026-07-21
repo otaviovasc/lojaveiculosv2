@@ -6,8 +6,10 @@ import {
   slugify,
   targetId,
 } from "./common.mjs";
+import { log, progress } from "./log.mjs";
 
 export async function seedFoundation(tx, data, config, ids) {
+  log("  Foundation: tenant/store...");
   const store = data.store;
   const customization = json(store.customization);
   const ownerPayload = json(store.user);
@@ -64,7 +66,11 @@ export async function seedFoundation(tx, data, config, ids) {
     ownerAccess,
     ...data.accesses.filter((access) => access.id !== ownerAccess.id),
   ];
-  for (const access of orderedAccesses) {
+  log(`  Foundation: ${orderedAccesses.length} user(s)...`);
+  for (const [index, access] of orderedAccesses.entries()) {
+    if (index % 5 === 0 || index === orderedAccesses.length - 1) {
+      progress("  Foundation users", index + 1, orderedAccesses.length);
+    }
     const profile = json(access.profile);
     const isOwner = access.id === ownerAccess.id;
     const userId = targetId(
@@ -104,12 +110,26 @@ export async function seedFoundation(tx, data, config, ids) {
     await addLegacyMap(tx, ids.run, "LojaAccess", access.id, "users", userId);
   }
 
+  log(`  Foundation: ${config.entitlements.length} entitlement(s)...`);
   for (const featureKey of config.entitlements) {
     await tx`INSERT INTO store_entitlements (id, feature_key, metadata, source, status, store_id, tenant_id, created_at, updated_at)
       VALUES (${targetId(config.legacyStoreId, "entitlement", featureKey)}, ${featureKey}, ${tx.json({ migrationRunId: ids.run })}, 'v1_migration_manifest', 'active', ${ids.store}, ${ids.tenant}, now(), now())
       ON CONFLICT (store_id, feature_key) DO UPDATE SET status='active', metadata=excluded.metadata, updated_at=now()`;
   }
+  log("  Foundation: billing account...");
+  const billingEmail = nullableString(contact.email ?? ownerPayload.email, 254);
+  const [billingCustomer] = await tx`INSERT INTO billing_customers
+    (id, document_number, email, name, provider, provider_customer_id, tenant_id, created_at, updated_at)
+    VALUES (${targetId(config.legacyStoreId, "billing_customers", store.id)}, null, ${billingEmail}, ${config.tenantLegalName || tradingName}, 'asaas', ${`local_asaas_customer_${ids.tenant}`}, ${ids.tenant}, now(), now())
+    ON CONFLICT (tenant_id, provider) DO UPDATE SET name=excluded.name, updated_at=now()
+    RETURNING id`;
+  await tx`INSERT INTO subscriptions
+    (id, billing_customer_id, current_period_end, current_period_start, provider, provider_subscription_id, status, tenant_id, created_at, updated_at)
+    SELECT ${targetId(config.legacyStoreId, "subscriptions", store.id)}, ${billingCustomer.id}, now() + interval '14 days', now(), 'asaas', ${`local_asaas_subscription_${ids.tenant}`}, 'trialing', ${ids.tenant}, now(), now()
+    WHERE NOT EXISTS (SELECT 1 FROM subscriptions WHERE tenant_id = ${ids.tenant})`;
+
   await addLegacyMap(tx, ids.run, "Loja", store.id, "stores", ids.store);
+  log("  Foundation done");
 }
 
 export async function addLegacyMap(
