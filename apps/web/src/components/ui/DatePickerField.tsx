@@ -38,7 +38,7 @@ export function DatePickerField({
       <button
         ref={triggerRef}
         className={cn(
-          "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target",
+          "datepicker-field-trigger group flex min-h-11 w-full items-center gap-2 px-3.5 py-2 rounded-xl bg-card/60 hover:bg-card border border-border/50 hover:border-accent/40 text-foreground transition-all duration-200 cursor-pointer active:scale-[0.98] select-none touch-target whitespace-nowrap",
           "disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:bg-card/60 disabled:active:scale-100",
         )}
         disabled={isDisabled}

@@ -12,12 +12,6 @@
   min-width: 0;
 }
 
-@media (min-width: 80rem) {
-  .finance-bottom-grid {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  }
-}
-
 /* -------------------------------------------------------------------------- */
 /* Urgency alert (V1-style full-width strip)                                   */
 /* -------------------------------------------------------------------------- */

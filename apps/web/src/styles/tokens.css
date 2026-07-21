@@ -135,7 +135,7 @@
   --surface-radius-xl: 16px;
   --surface-radius-2xl: 20px;
   --shadow-focus: 0 0 0 3px
-    color-mix(in srgb, var(--color-primary) 26%, transparent);
+    color-mix(in srgb, var(--color-accent) 26%, transparent);
   --shadow-panel: 0 12px 32px rgb(21 21 21 / 0.06);
   --shadow-raised: 0 20px 60px rgb(21 21 21 / 0.1);
   --shadow-float: 0 24px 80px rgb(21 21 21 / 0.14);
@@ -317,7 +317,7 @@
   --color-violet-500: var(--color-violet-foreground);
   --color-border: var(--color-line);
   --color-input: var(--color-line);
-  --color-ring: var(--color-primary);
+  --color-ring: var(--color-accent);
 
   /* Map feature accents to Tailwind theme variables */
   --color-sales: var(--color-sales);
