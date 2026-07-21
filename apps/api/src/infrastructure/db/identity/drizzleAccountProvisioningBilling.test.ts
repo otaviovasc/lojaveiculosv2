@@ -37,7 +37,7 @@ describe("account provisioning billing defaults", () => {
     expect(source).toContain("catalogVersion");
     expect(source).toContain("includedInTrial");
     expect(source).toContain("../billing/drizzleBillingAccount.js");
-    expect(billingAccount).toContain("addDays(new Date(), 14)");
+    expect(billingAccount).toContain("addDays(now, 14)");
     expect(
       existsSync(
         new URL("./drizzleAccountProvisioningBillingItems.ts", import.meta.url),

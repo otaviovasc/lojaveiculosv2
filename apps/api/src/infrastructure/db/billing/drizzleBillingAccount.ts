@@ -112,12 +112,13 @@ export async function ensureSubscription(
     .limit(1);
   if (existing) return existing;
 
+  const now = new Date();
   const [subscription] = await db
     .insert(subscriptions)
     .values({
       billingCustomerId,
-      currentPeriodEnd: addDays(new Date(), 14),
-      currentPeriodStart: new Date(),
+      currentPeriodEnd: addDays(now, 14),
+      currentPeriodStart: now,
       provider: "asaas",
       providerSubscriptionId: `local_asaas_subscription_${tenantId}`,
       status: "trialing",
