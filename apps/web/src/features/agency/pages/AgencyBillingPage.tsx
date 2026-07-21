@@ -9,23 +9,19 @@ import {
   FeatureAlert,
   FeatureEmptyState,
 } from "../../../components/ui/FeatureStates";
+import { FeatureTabs } from "../../../components/ui/FeatureTabs";
 import { BillingEventList } from "../../billing/BillingPanels";
 import { BillingAutomaticBillingPanel } from "../../billing/BillingAutomaticBillingPanel";
-import { BillingTabs, type BillingTab } from "../../billing/BillingNavigation";
 import { readBillingCheckoutReturn } from "../../billing/billingCheckoutReturn";
 import type { BillingCheckoutState } from "../../billing/BillingCheckoutPanel";
-import type {
-  BillingEntitlementStatus,
-  BillingProviderStatus,
-  EntitlementKey,
-} from "../../billing/types";
+import type { BillingProviderStatus } from "../../billing/types";
 import { useAccountSession } from "../../account/accountSession";
 import type { AgencyApi, AgencyTenantOverview } from "../apiClient";
 import {
-  agencyBillingDefaultReason,
   agencyBillingErrorMessage,
   createAgencyBillingPanelOverview,
   type AgencyBillingStatus,
+  type AgencyBillingTab,
 } from "./AgencyBillingPage.model";
 import { createRuntimeAgencyBillingApi } from "./AgencyBillingPage.runtime";
 import { AgencyBillingStoreEntitlements } from "./AgencyBillingStoreEntitlements";
@@ -50,8 +46,7 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
   const [checkoutState, setCheckoutState] = useState<BillingCheckoutState>({
     kind: "idle",
   });
-  const [activeTab, setActiveTab] = useState<BillingTab>("overview");
-  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<AgencyBillingTab>("overview");
   const checkoutReturn = readBillingCheckoutReturn("agency");
 
   const refresh = async () => {
@@ -107,36 +102,6 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
     }
   };
 
-  const updateEntitlement = async (
-    featureKey: EntitlementKey,
-    nextStatus: BillingEntitlementStatus,
-  ) => {
-    if (!agencyTenant || !selectedStoreId) return;
-    setStatus({ kind: "saving", featureKey });
-    try {
-      const billingApi = api ?? (await createRuntimeAgencyBillingApi());
-      const reason =
-        reasons[featureKey]?.trim() || agencyBillingDefaultReason(nextStatus);
-      setOverview(
-        await billingApi.updateStoreEntitlement(
-          agencyTenant.tenantId,
-          selectedStoreId,
-          featureKey,
-          {
-            featureKey,
-            metadata: { updatedFrom: "agency_billing_console" },
-            reason,
-            status: nextStatus,
-          },
-        ),
-      );
-      setReasons((current) => ({ ...current, [featureKey]: "" }));
-      setStatus({ kind: "ready" });
-    } catch (error) {
-      setStatus({ kind: "error", message: agencyBillingErrorMessage(error) });
-    }
-  };
-
   return (
     <FeaturePageShell className="billing-shell" variant="content">
       <FeaturePageHeader
@@ -184,23 +149,24 @@ export function AgencyBillingPage({ api }: { api?: AgencyApi }) {
                 : Promise.reject(new Error("Agency tenant not found."))
             }
           />
-          <BillingTabs activeTab={activeTab} onChange={setActiveTab} />
+          <FeatureTabs
+            ariaLabel="Seções do plano do grupo"
+            className="billing-tabs"
+            onChange={setActiveTab}
+            options={[
+              { label: "Plano e pacotes", value: "overview" },
+              { label: "Cobrança", value: "billing" },
+              { label: "Histórico", value: "history" },
+            ]}
+            value={activeTab}
+          />
           {activeTab === "overview" ? (
             <>
               <AgencyBillingStoreEntitlements
                 overview={overview}
                 panelOverview={panelOverview}
-                reasons={reasons}
                 selectedStoreId={selectedStoreId}
-                status={status}
-                onReasonChange={(featureKey, reason) =>
-                  setReasons((current) => ({
-                    ...current,
-                    [featureKey]: reason,
-                  }))
-                }
                 onStoreChange={setSelectedStoreId}
-                onUpdate={updateEntitlement}
               />
               <AgencyBillingAllocation overview={overview} />
             </>

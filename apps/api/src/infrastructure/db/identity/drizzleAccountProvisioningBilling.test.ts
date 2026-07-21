@@ -25,6 +25,10 @@ describe("account provisioning billing defaults", () => {
       new URL("./drizzleAccountProvisioningBilling.ts", import.meta.url),
       "utf8",
     );
+    const billingAccount = readFileSync(
+      new URL("../billing/drizzleBillingAccount.ts", import.meta.url),
+      "utf8",
+    );
 
     expect(source).not.toContain(".insert(plans)");
     expect(source).not.toContain(".insert(planFeatures)");
@@ -32,7 +36,8 @@ describe("account provisioning billing defaults", () => {
     expect(source).not.toContain("ensureStoreAddonItem");
     expect(source).toContain("catalogVersion");
     expect(source).toContain("includedInTrial");
-    expect(source).toContain("addDays(new Date(), 14)");
+    expect(source).toContain("../billing/drizzleBillingAccount.js");
+    expect(billingAccount).toContain("addDays(new Date(), 14)");
     expect(
       existsSync(
         new URL("./drizzleAccountProvisioningBillingItems.ts", import.meta.url),

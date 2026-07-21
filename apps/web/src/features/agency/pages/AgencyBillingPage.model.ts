@@ -1,8 +1,6 @@
 import type {
-  BillingEntitlementStatus,
   BillingOverview,
   BillingProviderStatus,
-  EntitlementKey,
 } from "../../billing/types";
 import { formatApiErrorDisplay } from "../../../lib/apiErrors";
 import type { AgencyTenantOverview } from "../apiClient";
@@ -11,8 +9,9 @@ export type AgencyBillingStatus =
   | { kind: "error"; message: string }
   | { kind: "loading" }
   | { kind: "ready" }
-  | { featureKey: EntitlementKey; kind: "saving" }
   | { kind: "syncing" };
+
+export type AgencyBillingTab = "billing" | "history" | "overview";
 
 export type AgencyBillingCanonicalState = {
   canCheckout: boolean;
@@ -172,12 +171,6 @@ export function agencyBillingConfigurationLabels(
       }),
     ),
   ];
-}
-
-export function agencyBillingDefaultReason(status: BillingEntitlementStatus) {
-  return status === "active"
-    ? "Entitlement enabled from agency billing console."
-    : "Entitlement changed from agency billing console.";
 }
 
 export function agencyBillingErrorMessage(error: unknown) {

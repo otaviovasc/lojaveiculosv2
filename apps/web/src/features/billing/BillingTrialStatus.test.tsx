@@ -1,20 +1,42 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BillingTrialStatus } from "./BillingTrialStatus";
 import type { BillingOverview } from "./types";
 
+afterEach(cleanup);
+
 describe("BillingTrialStatus", () => {
-  it("states that a fresh trial has no contracted plan or package", () => {
+  it("states that subscribing now guarantees the plan with immediate charge", () => {
     render(<BillingTrialStatus overview={trialOverview()} />);
 
     expect(screen.getByText("Teste gratuito")).toBeVisible();
     expect(
-      screen.getByText(/Nenhum plano ou pacote foi contratado/),
+      screen.getByText(/Assine agora para garantir seu plano/),
     ).toBeVisible();
+    expect(screen.getByText(/a cobrança é feita na hora/)).toBeVisible();
     expect(screen.getByText("Relatórios")).toBeVisible();
     expect(screen.queryByText("CRM")).not.toBeInTheDocument();
+  });
+
+  it("fires the subscribe CTA callback", async () => {
+    const user = userEvent.setup();
+    const onCta = vi.fn();
+    render(<BillingTrialStatus overview={trialOverview()} onCta={onCta} />);
+
+    await user.click(screen.getByRole("button", { name: "Assinar agora" }));
+
+    expect(onCta).toHaveBeenCalledOnce();
+  });
+
+  it("hides the CTA when no callback is provided", () => {
+    render(<BillingTrialStatus overview={trialOverview()} />);
+
+    expect(
+      screen.queryByRole("button", { name: "Assinar agora" }),
+    ).not.toBeInTheDocument();
   });
 
   it("directs an expired trial to the first billing flow", () => {

@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { BillingPlanComposition } from "./BillingPanels";
 import type { BillingOverview } from "./types";
 
@@ -68,16 +68,7 @@ describe("BillingPlanComposition", () => {
       tenantId: "tenant_1",
     } satisfies BillingOverview;
 
-    render(
-      <BillingPlanComposition
-        canManage
-        overview={overview}
-        onReasonChange={vi.fn()}
-        onUpdate={vi.fn().mockResolvedValue(undefined)}
-        reasons={{}}
-        savingFeatureKey={null}
-      />,
-    );
+    render(<BillingPlanComposition canManage overview={overview} />);
 
     expect(screen.getByRole("heading", { name: "CRM WhatsApp" })).toBeVisible();
     expect(screen.getByText(/R\$\s249,99\/mês/)).toBeVisible();

@@ -32,8 +32,9 @@ export async function migrateToV2(data, config) {
         VALUES (${ids.run}, ${config.dumpLabel}, ${tx.json({ legacyStoreId: config.legacyStoreId, source: "v1-directory-archive" })}, now(), 'running', now(), now())
         ON CONFLICT (id) DO UPDATE SET status='running', metadata=excluded.metadata, started_at=now(), completed_at=null, updated_at=now()`;
       log(`Migration run id: ${ids.run}`);
-      await withTimer("Foundation (tenant, store, users, entitlements)", () =>
-        seedFoundation(tx, data, config, ids),
+      await withTimer(
+        "Foundation (tenant, store, users, entitlements, billing)",
+        () => seedFoundation(tx, data, config, ids),
       );
       await withTimer("Inventory (vehicles, media, checklists)", () =>
         seedInventory(tx, data, config, ids),
