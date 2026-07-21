@@ -1,4 +1,4 @@
-import { useState, useEffect, type DragEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { getTextColorForBackground } from "../../lib/colors";
 import { CrmLeadCard } from "./CrmLeadCard";
@@ -20,6 +20,8 @@ type Props = {
   onEditStage?: (stage: PipelineStage) => void;
 };
 
+const COLUMN_PAGE_SIZE = 30;
+
 export function CrmKanbanBoard({
   stages,
   visibleStages,
@@ -40,6 +42,15 @@ export function CrmKanbanBoard({
   const [activeMenuStageId, setActiveMenuStageId] = useState<string | null>(
     null,
   );
+  const [visibleCounts, setVisibleCounts] = useState<Record<string, number>>(
+    {},
+  );
+
+  const showMoreLeads = (stageId: string) =>
+    setVisibleCounts((prev) => ({
+      ...prev,
+      [stageId]: (prev[stageId] ?? COLUMN_PAGE_SIZE) + COLUMN_PAGE_SIZE,
+    }));
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -104,6 +115,9 @@ export function CrmKanbanBoard({
         .filter((s) => visibleStages[s.id] !== false)
         .map((stage) => {
           const stageLeads = getLeadsForStage(stage.id, stage.status);
+          const visibleCount = visibleCounts[stage.id] ?? COLUMN_PAGE_SIZE;
+          const visibleLeads = stageLeads.slice(0, visibleCount);
+          const hiddenCount = stageLeads.length - visibleLeads.length;
           const isCollapsed = collapsedStages[stage.id] === true;
           const isOver = dragOverStageId === stage.id;
           const stageBadgeTextColor = getTextColorForBackground(stage.color);
@@ -152,7 +166,7 @@ export function CrmKanbanBoard({
           return (
             <article
               className={
-                "w-72 shrink-0 glass-panel-branded border rounded-xl flex flex-col max-h-[580px] bg-panel/30 transition-all " +
+                "w-72 shrink-0 glass-panel-branded border rounded-xl flex flex-col max-h-[min(760px,85vh)] bg-panel/30 transition-all " +
                 (isOver
                   ? "border-accent ring-2 ring-accent/20 scale-[1.01]"
                   : "border-line/60")
@@ -239,7 +253,7 @@ export function CrmKanbanBoard({
 
               {/* Card List */}
               <div className="flex-1 overflow-y-auto p-2.5 flex flex-col gap-2.5 min-h-[440px]">
-                {stageLeads.map((lead) => (
+                {visibleLeads.map((lead) => (
                   <CrmLeadCard
                     key={lead.id}
                     lead={lead}
@@ -253,6 +267,12 @@ export function CrmKanbanBoard({
                   <div className="flex flex-1 items-center justify-center text-center text-xs font-bold text-muted border border-dashed border-line/30 rounded-lg">
                     Nenhum item.
                   </div>
+                )}
+                {hiddenCount > 0 && (
+                  <KanbanLoadMore
+                    remaining={hiddenCount}
+                    onLoadMore={() => showMoreLeads(stage.id)}
+                  />
                 )}
               </div>
 
@@ -294,5 +314,44 @@ export function CrmKanbanBoard({
         </button>
       </div>
     </section>
+  );
+}
+
+function KanbanLoadMore({
+  remaining,
+  onLoadMore,
+}: {
+  remaining: number;
+  onLoadMore: () => void;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const onLoadMoreRef = useRef(onLoadMore);
+  onLoadMoreRef.current = onLoadMore;
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          onLoadMoreRef.current();
+        }
+      },
+      { root: sentinel.closest(".overflow-y-auto"), rootMargin: "120px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div className="shrink-0" ref={sentinelRef}>
+      <button
+        className="w-full py-1.5 text-xs font-black uppercase text-muted hover:text-accent border border-dashed border-line/40 rounded-lg transition-colors cursor-pointer"
+        onClick={onLoadMore}
+        type="button"
+      >
+        Mostrar mais ({remaining})
+      </button>
+    </div>
   );
 }

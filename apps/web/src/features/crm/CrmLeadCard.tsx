@@ -56,7 +56,7 @@ export function CrmLeadCard({
 
   return (
     <article
-      className="glass-panel-branded p-4 rounded-lg border border-line/60 bg-panel hover:bg-panel hover:shadow-lg transition-all cursor-pointer flex flex-col gap-2.5 group relative overflow-hidden text-left"
+      className="glass-panel-branded shrink-0 p-4 rounded-lg border border-line/60 bg-panel hover:bg-panel hover:shadow-lg transition-all cursor-pointer flex flex-col gap-2.5 group relative overflow-hidden text-left"
       draggable
       onClick={() => onSelectLead(lead.id)}
       onDragStart={handleDragStart}

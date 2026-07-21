@@ -42,11 +42,13 @@ export function DashboardHome({
   const publicStoreSlug = readRuntimeStoreSlug();
 
   const [startDate, setStartDate] = useState<Date>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d;
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const [endDate, setEndDate] = useState<Date>(() => new Date());
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  });
 
   const refresh = useCallback(async () => {
     setStatus({ kind: "loading" });

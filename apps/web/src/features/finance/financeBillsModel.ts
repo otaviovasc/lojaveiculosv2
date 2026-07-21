@@ -46,13 +46,13 @@ export type FinanceFilters = {
 
 export const initialFinanceFilters: FinanceFilters = {
   dateFrom: "",
-  datePreset: "next30",
+  datePreset: "thisMonth",
   dateTo: "",
   query: "",
   sellerUserId: "all",
   source: "all",
   status: "all",
-  window: "next30",
+  window: "thisMonth",
 };
 
 export async function loadFinanceWorkspace(

@@ -64,6 +64,7 @@ export function AppShell({
   const storeLabel = readStoreLabel();
   const tenantBrandState = useTenantAdminBrand({
     fallbackStoreLabel: storeLabel,
+    theme,
   });
   const sidebarItems = useMemo(
     () =>
@@ -144,7 +145,6 @@ export function AppShell({
   return (
     <div
       className={`app-shell${isSidebarCollapsed ? " app-shell--compact" : ""}`}
-      style={tenantBrandState.style}
     >
       <aside className="app-shell__sidebar">
         <DashboardSidebar
