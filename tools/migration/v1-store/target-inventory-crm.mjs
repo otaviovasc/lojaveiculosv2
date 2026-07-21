@@ -9,9 +9,14 @@ import {
   targetId,
 } from "./common.mjs";
 import { addLegacyMap } from "./target-foundation.mjs";
+import { log, progress } from "./log.mjs";
 
 export async function seedInventory(tx, data, config, ids) {
-  for (const vehicle of data.vehicles) {
+  log(`  Inventory: ${data.vehicles.length} vehicle(s)...`);
+  for (const [index, vehicle] of data.vehicles.entries()) {
+    if (index % 10 === 0 || index === data.vehicles.length - 1) {
+      progress("  Inventory vehicles", index + 1, data.vehicles.length);
+    }
     const listingId = targetId(
       config.legacyStoreId,
       "Veiculo:listing",
@@ -67,7 +72,11 @@ export async function seedInventory(tx, data, config, ids) {
     );
   }
 
-  for (const photo of data.photos) {
+  log(`  Inventory: ${data.photos.length} photo(s)...`);
+  for (const [index, photo] of data.photos.entries()) {
+    if (index % 50 === 0 || index === data.photos.length - 1) {
+      progress("  Inventory photos", index + 1, data.photos.length);
+    }
     const unitId = required(ids.units, photo.veiculoId, "photo vehicle");
     await tx`INSERT INTO vehicle_media
       (id, display_order, is_public, kind, metadata, storage_key, store_id, tenant_id, unit_id, url, created_at, updated_at)
@@ -76,16 +85,22 @@ export async function seedInventory(tx, data, config, ids) {
       ON CONFLICT (id) DO UPDATE SET url=excluded.url, storage_key=excluded.storage_key, display_order=excluded.display_order`;
   }
 
-  for (const checklist of data.checklists) {
+  log(`  Inventory: ${data.checklists.length} checklist(s)...`);
+  for (const [index, checklist] of data.checklists.entries()) {
+    if (index % 10 === 0 || index === data.checklists.length - 1) {
+      progress("  Inventory checklists", index + 1, data.checklists.length);
+    }
     await tx`INSERT INTO vehicle_checklists
       (id, items, name, status, store_id, tenant_id, unit_id, created_at, updated_at)
       VALUES (${targetId(config.legacyStoreId, "VehicleChecklist", checklist.id)}, ${tx.json([legacyMetadata("VehicleChecklist", checklist)])},
         'Checklist legado', 'passed', ${ids.store}, ${ids.tenant}, ${required(ids.units, checklist.veiculoId, "checklist vehicle")}, ${checklist.createdAt}, ${checklist.updatedAt})
       ON CONFLICT (id) DO UPDATE SET items=excluded.items, updated_at=excluded.updated_at`;
   }
+  log("  Inventory done");
 }
 
 export async function seedCrm(tx, data, config, ids) {
+  log("  CRM: pipeline/stages...");
   const pipelineId = targetId(
     config.legacyStoreId,
     "crm_pipeline",
@@ -94,6 +109,7 @@ export async function seedCrm(tx, data, config, ids) {
   await tx`INSERT INTO crm_pipelines (id, description, is_default, name, store_id, tenant_id, created_at, updated_at)
     VALUES (${pipelineId}, 'Migrado do Loja Veículos V1', true, 'Pipeline legado', ${ids.store}, ${ids.tenant}, now(), now())
     ON CONFLICT (id) DO UPDATE SET updated_at=now()`;
+  log(`  CRM: ${data.columns.length} stage(s)...`);
   for (const column of data.columns) {
     const stageId = targetId(config.legacyStoreId, "LeadColumn", column.id);
     ids.stages.set(column.id, stageId);
@@ -107,7 +123,11 @@ export async function seedCrm(tx, data, config, ids) {
   const soldLeadIds = new Set(
     data.sales.map((sale) => sale.leadId).filter(Boolean),
   );
-  for (const lead of data.leads) {
+  log(`  CRM: ${data.leads.length} lead(s)...`);
+  for (const [index, lead] of data.leads.entries()) {
+    if (index % 100 === 0 || index === data.leads.length - 1) {
+      progress("  CRM leads", index + 1, data.leads.length);
+    }
     const leadId = targetId(config.legacyStoreId, "Lead", lead.id);
     ids.leads.set(lead.id, leadId);
     const stageStatusValue = stageStatus(
@@ -126,7 +146,11 @@ export async function seedCrm(tx, data, config, ids) {
       ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, status=excluded.status, updated_at=excluded.updated_at`;
     await addLegacyMap(tx, ids.run, "Lead", lead.id, "leads", leadId);
   }
-  for (const interaction of data.interactions)
+  log(`  CRM: ${data.interactions.length} interaction(s)...`);
+  for (const [index, interaction] of data.interactions.entries()) {
+    if (index % 100 === 0 || index === data.interactions.length - 1) {
+      progress("  CRM interactions", index + 1, data.interactions.length);
+    }
     await seedActivity(
       tx,
       interaction,
@@ -136,7 +160,12 @@ export async function seedCrm(tx, data, config, ids) {
       ids,
       config,
     );
-  for (const task of data.tasks)
+  }
+  log(`  CRM: ${data.tasks.length} task(s)...`);
+  for (const [index, task] of data.tasks.entries()) {
+    if (index % 100 === 0 || index === data.tasks.length - 1) {
+      progress("  CRM tasks", index + 1, data.tasks.length);
+    }
     await seedActivity(
       tx,
       task,
@@ -146,7 +175,12 @@ export async function seedCrm(tx, data, config, ids) {
       ids,
       config,
     );
-  for (const interest of data.interests) {
+  }
+  log(`  CRM: ${data.interests.length} interest(s)...`);
+  for (const [index, interest] of data.interests.entries()) {
+    if (index % 50 === 0 || index === data.interests.length - 1) {
+      progress("  CRM interests", index + 1, data.interests.length);
+    }
     const listingId = required(
       ids.listings,
       interest.veiculoId,
@@ -157,6 +191,7 @@ export async function seedCrm(tx, data, config, ids) {
         ${listingId}, ${ids.store}, ${ids.tenant}, ${ids.units.get(interest.veiculoId) || null}, ${interest.createdAt}, ${interest.createdAt})
       ON CONFLICT (id) DO NOTHING`;
   }
+  log("  CRM done");
 }
 
 async function seedActivity(

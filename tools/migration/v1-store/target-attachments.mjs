@@ -1,8 +1,17 @@
 import { legacyMetadata, targetId } from "./common.mjs";
 import { addLegacyMap } from "./target-foundation.mjs";
+import { log, progress } from "./log.mjs";
 
 export async function seedFinanceAttachments(tx, data, config, ids) {
-  for (const entry of data.entries) {
+  const attachments = data.entries.filter(
+    (entry) => entry.attachmentUrl || entry.attachmentR2Key,
+  );
+  log(`  Finance attachments: ${attachments.length} attachment(s)...`);
+  for (const [index, entry] of attachments.entries()) {
+    if (index % 10 === 0 || index === attachments.length - 1) {
+      progress("  Finance attachments", index + 1, attachments.length);
+    }
+    // entry is already filtered above; keep the guard for safety
     if (!entry.attachmentUrl && !entry.attachmentR2Key) continue;
     const documentId = targetId(
       config.legacyStoreId,
@@ -33,4 +42,5 @@ export async function seedFinanceAttachments(tx, data, config, ids) {
       documentId,
     );
   }
+  log("  Finance attachments done");
 }

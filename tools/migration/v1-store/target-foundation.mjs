@@ -6,8 +6,10 @@ import {
   slugify,
   targetId,
 } from "./common.mjs";
+import { log, progress } from "./log.mjs";
 
 export async function seedFoundation(tx, data, config, ids) {
+  log("  Foundation: tenant/store...");
   const store = data.store;
   const customization = json(store.customization);
   const ownerPayload = json(store.user);
@@ -64,7 +66,11 @@ export async function seedFoundation(tx, data, config, ids) {
     ownerAccess,
     ...data.accesses.filter((access) => access.id !== ownerAccess.id),
   ];
-  for (const access of orderedAccesses) {
+  log(`  Foundation: ${orderedAccesses.length} user(s)...`);
+  for (const [index, access] of orderedAccesses.entries()) {
+    if (index % 5 === 0 || index === orderedAccesses.length - 1) {
+      progress("  Foundation users", index + 1, orderedAccesses.length);
+    }
     const profile = json(access.profile);
     const isOwner = access.id === ownerAccess.id;
     const userId = targetId(
@@ -104,12 +110,14 @@ export async function seedFoundation(tx, data, config, ids) {
     await addLegacyMap(tx, ids.run, "LojaAccess", access.id, "users", userId);
   }
 
+  log(`  Foundation: ${config.entitlements.length} entitlement(s)...`);
   for (const featureKey of config.entitlements) {
     await tx`INSERT INTO store_entitlements (id, feature_key, metadata, source, status, store_id, tenant_id, created_at, updated_at)
       VALUES (${targetId(config.legacyStoreId, "entitlement", featureKey)}, ${featureKey}, ${tx.json({ migrationRunId: ids.run })}, 'v1_migration_manifest', 'active', ${ids.store}, ${ids.tenant}, now(), now())
       ON CONFLICT (store_id, feature_key) DO UPDATE SET status='active', metadata=excluded.metadata, updated_at=now()`;
   }
   await addLegacyMap(tx, ids.run, "Loja", store.id, "stores", ids.store);
+  log("  Foundation done");
 }
 
 export async function addLegacyMap(

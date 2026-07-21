@@ -6,18 +6,7 @@ import { assertConfigured, json, nullableString } from "./v1-store/common.mjs";
 import { loadStoreData, withV1Archive } from "./v1-store/source.mjs";
 import { migrateToV2 } from "./v1-store/target.mjs";
 
-// ── FILL THESE VALUES BEFORE RUNNING ────────────────────────────────────────
-const V1_ARCHIVE_PATH =
-  "/Users/otaviovasconceloss/Downloads/2026-07-20T16:32Z/db_lojaveiculos";
-const V1_STORE_ID = 200;
-const V2_DATABASE_URL = "";
-const TARGET_OWNER_CLERK_USER_ID = "";
-const TARGET_OWNER_EMAIL = "";
-const TARGET_TENANT_LEGAL_NAME = "otavio tenant name";
-const TARGET_STORE_LEGAL_NAME = "otavio store name";
-const TARGET_STORE_TRADING_NAME = "MB Auto Store";
-const TARGET_STORE_SLUG = "mb-auto-store";
-const TARGET_ENTITLEMENTS = [
+const DEFAULT_ENTITLEMENTS = [
   "analytics",
   "automation",
   "compliance",
@@ -31,35 +20,13 @@ const TARGET_ENTITLEMENTS = [
   "subdomain",
 ];
 
-const APPLY = true; // Keep false for the first run. Dry-run writes are rolled back.
-const ALLOW_REMOTE_TARGET = false; // Set true only for an intentional staging/production run.
-const CONFIRM_STORE_SLUG = "mb-auto-store"; // When APPLY=true, type the exact TARGET_STORE_SLUG here.
-const AVAILABLE_VEHICLE_SALE_POLICY = "cancelled"; // One V1 sale points to an available vehicle.
-// ─────────────────────────────────────────────────────────────────────────────
-
-const config = {
-  allowRemoteTarget: ALLOW_REMOTE_TARGET,
-  apply: APPLY,
-  archivePath: V1_ARCHIVE_PATH,
-  availableVehicleSalePolicy: AVAILABLE_VEHICLE_SALE_POLICY,
-  confirmStoreSlug: CONFIRM_STORE_SLUG,
-  dumpLabel: `2026-07-20:${basename(V1_ARCHIVE_PATH)}`,
-  entitlements: TARGET_ENTITLEMENTS,
-  legacyStoreId: V1_STORE_ID,
-  ownerClerkUserId: TARGET_OWNER_CLERK_USER_ID,
-  ownerEmail: TARGET_OWNER_EMAIL,
-  storeLegalName: TARGET_STORE_LEGAL_NAME,
-  storeSlug: TARGET_STORE_SLUG,
-  storeTradingName: TARGET_STORE_TRADING_NAME,
-  targetUrl: V2_DATABASE_URL,
-  tenantLegalName: TARGET_TENANT_LEGAL_NAME,
-};
+const config = await promptConfig();
 
 assertConfigured(config);
-const result = await withV1Archive(V1_ARCHIVE_PATH, async (source) => {
-  const data = await loadStoreData(source, V1_STORE_ID);
+const result = await withV1Archive(config.archivePath, async (source) => {
+  const data = await loadStoreData(source, config.legacyStoreId);
   process.stdout.write(
-    `Loaded V1 store ${V1_STORE_ID}: ${data.vehicles.length} vehicles, ${data.leads.length} leads, ${data.sales.length} sales.\n`,
+    `Loaded V1 store ${config.legacyStoreId}: ${data.vehicles.length} vehicles, ${data.leads.length} leads, ${data.sales.length} sales.\n`,
   );
   config.accessEmails = await promptForMissingAccessEmails(data, config);
   return migrateToV2(data, config);
@@ -69,6 +36,68 @@ process.stdout.write(
     ? `Migration applied. V2 store id: ${result.ids.store}\n`
     : "Dry run succeeded; all V2 writes were rolled back.\n",
 );
+
+async function promptConfig() {
+  if (!process.env.DATABASE_URL) {
+    throw new Error("Set DATABASE_URL in the environment before running.");
+  }
+
+  const terminal = createInterface({ input: stdin, output: stdout });
+  try {
+    const archivePath = await ask(terminal, "V1 archive path");
+    const legacyStoreId = Number(await ask(terminal, "V1 store ID", "200"));
+    const ownerClerkUserId = await ask(terminal, "Owner Clerk user id");
+    const ownerEmail = await ask(terminal, "Owner email");
+    const tenantLegalName = await ask(terminal, "Tenant legal name");
+    const storeLegalName = await ask(terminal, "Store legal name");
+    const storeTradingName = await ask(terminal, "Store trading name");
+    const storeSlug = await ask(terminal, "Store slug");
+    const apply = (await ask(terminal, "Apply writes? (y/n)", "n"))
+      .trim()
+      .toLowerCase()
+      .startsWith("y");
+    const confirmStoreSlug = apply
+      ? await ask(terminal, "Confirm store slug (type exact slug)")
+      : "";
+    const allowRemoteTarget = (
+      await ask(terminal, "Allow remote target? (y/n)", "y")
+    )
+      .trim()
+      .toLowerCase()
+      .startsWith("y");
+    const availableVehicleSalePolicy = await ask(
+      terminal,
+      "Policy for available vehicle with a V1 sale",
+      "cancelled",
+    );
+
+    return {
+      allowRemoteTarget,
+      apply,
+      archivePath,
+      availableVehicleSalePolicy,
+      confirmStoreSlug,
+      dumpLabel: `${new Date().toISOString().slice(0, 16)}:${basename(archivePath)}`,
+      entitlements: DEFAULT_ENTITLEMENTS,
+      legacyStoreId,
+      ownerClerkUserId,
+      ownerEmail,
+      storeLegalName,
+      storeSlug,
+      storeTradingName,
+      targetUrl: process.env.DATABASE_URL,
+      tenantLegalName,
+    };
+  } finally {
+    terminal.close();
+  }
+}
+
+async function ask(terminal, label, fallback) {
+  const suffix = fallback !== undefined ? ` [${fallback}]` : "";
+  const answer = (await terminal.question(`${label}${suffix}: `)).trim();
+  return answer || fallback || "";
+}
 
 async function promptForMissingAccessEmails(data, migrationConfig) {
   const ownerAccess = data.accesses.find(

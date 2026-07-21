@@ -1,5 +1,6 @@
 import postgres from "postgres";
 import { deterministicUuid, targetId } from "./common.mjs";
+import { log, withTimer } from "./log.mjs";
 import { seedFoundation } from "./target-foundation.mjs";
 import { seedCrm, seedInventory } from "./target-inventory-crm.mjs";
 import {
@@ -12,21 +13,46 @@ class DryRunRollback extends Error {}
 
 export async function migrateToV2(data, config) {
   enforceTargetSafety(config);
-  const sql = postgres(config.targetUrl, { max: 1, prepare: false });
+  const targetUrl = new URL(config.targetUrl);
+  const isLocal = ["127.0.0.1", "localhost", "::1"].includes(
+    targetUrl.hostname,
+  );
+  const sql = postgres(config.targetUrl, {
+    max: 1,
+    prepare: false,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
+  });
   const ids = createIds(config);
+  log(`Connecting to ${targetUrl.hostname}:${targetUrl.port}...`);
   try {
     await assertTargetSchema(sql);
+    log("Target schema OK");
     await sql.begin(async (tx) => {
       await tx`INSERT INTO migration_runs (id, dump_label, metadata, started_at, status, created_at, updated_at)
         VALUES (${ids.run}, ${config.dumpLabel}, ${tx.json({ legacyStoreId: config.legacyStoreId, source: "v1-directory-archive" })}, now(), 'running', now(), now())
         ON CONFLICT (id) DO UPDATE SET status='running', metadata=excluded.metadata, started_at=now(), completed_at=null, updated_at=now()`;
-      await seedFoundation(tx, data, config, ids);
-      await seedInventory(tx, data, config, ids);
-      await seedCrm(tx, data, config, ids);
-      await seedSalesAndFinance(tx, data, config, ids);
-      await seedDocumentsAndFiscal(tx, data, config, ids);
-      await seedFinanceAttachments(tx, data, config, ids);
-      const parity = await collectParity(tx, ids.store);
+      log(`Migration run id: ${ids.run}`);
+      await withTimer("Foundation (tenant, store, users, entitlements)", () =>
+        seedFoundation(tx, data, config, ids),
+      );
+      await withTimer("Inventory (vehicles, media, checklists)", () =>
+        seedInventory(tx, data, config, ids),
+      );
+      await withTimer("CRM (leads, activities, interests)", () =>
+        seedCrm(tx, data, config, ids),
+      );
+      await withTimer("Sales & finance", () =>
+        seedSalesAndFinance(tx, data, config, ids),
+      );
+      await withTimer("Documents & fiscal", () =>
+        seedDocumentsAndFiscal(tx, data, config, ids),
+      );
+      await withTimer("Finance attachments", () =>
+        seedFinanceAttachments(tx, data, config, ids),
+      );
+      const parity = await withTimer("Parity check", () =>
+        collectParity(tx, ids.store),
+      );
       assertParity(data, parity);
       await tx`UPDATE migration_runs SET status='succeeded', completed_at=now(), metadata=metadata || ${tx.json({ parity, preservedStoreConfiguration: { customModels: data.customModels, saleSources: data.saleSources, settings: data.settings } })}, updated_at=now() WHERE id=${ids.run}`;
       if (!config.apply)
