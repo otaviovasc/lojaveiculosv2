@@ -48,7 +48,7 @@ describe("AppShell tenant branding", () => {
       fetch: fetchMock as unknown as typeof fetch,
     });
 
-    const { container } = render(
+    render(
       <AppShell activeModule={moduleDefinitions.dashboard} onNavigate={vi.fn()}>
         <div>Loaded child</div>
       </AppShell>,
@@ -69,9 +69,7 @@ describe("AppShell tenant branding", () => {
       document.querySelector('link[data-tenant-admin-brand="favicon"]'),
     ).toHaveAttribute("href", "https://cdn.example.com/favicon.png");
     expect(
-      (container.firstElementChild as HTMLElement).style.getPropertyValue(
-        "--color-accent",
-      ),
+      document.documentElement.style.getPropertyValue("--color-accent"),
     ).toBe(accent);
   });
 });
