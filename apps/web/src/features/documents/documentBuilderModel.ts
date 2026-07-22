@@ -253,17 +253,6 @@ export function updateBlockBody(
   return { ...block, body };
 }
 
-export function isDocumentBuilderDirty(
-  template: DocumentTemplate | null,
-  draft: DocumentBuilderDraft,
-) {
-  if (!template) return false;
-  return (
-    template.title !== draft.title ||
-    JSON.stringify(template.blocks) !== JSON.stringify(draft.blocks)
-  );
-}
-
 export function applyDocumentBuilderSuggestion(
   suggestion: DocumentTemplateSuggestion,
 ): DocumentBuilderDraft {

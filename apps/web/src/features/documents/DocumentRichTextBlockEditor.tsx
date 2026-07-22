@@ -229,11 +229,14 @@ export function DocumentRichTextBlockEditor({
     },
     extensions,
     immediatelyRender: false,
-    onUpdate: ({ editor: activeEditor }) => onChange(activeEditor.getText()),
+    onUpdate: ({ editor: activeEditor }) =>
+      onChange(activeEditor.getText({ blockSeparator: "\n" })),
   });
 
   useEffect(() => {
-    if (!editor || editor.getText() === value) return;
+    if (!editor) return;
+    const currentText = editor.getText({ blockSeparator: "\n" });
+    if (currentText === value) return;
     editor.commands.setContent(toHtml(value));
   }, [editor, value]);
 
@@ -298,11 +301,18 @@ export function DocumentRichTextBlockEditor({
 }
 
 function toHtml(value: string) {
-  const withChips = escapeHtml(value).replace(
-    /\{\{[^{}]+\}\}/g,
-    (token) => `<span data-variable-chip data-token="${token}">${token}</span>`,
-  );
-  return `<p>${withChips}</p>`;
+  if (!value) return "<p></p>";
+  const lines = value.split(/\r?\n/);
+  return lines
+    .map((line) => {
+      const withChips = escapeHtml(line).replace(
+        /\{\{[^{}]+\}\}/g,
+        (token) =>
+          `<span data-variable-chip data-token="${token}">${token}</span>`,
+      );
+      return `<p>${withChips || "<br>"}</p>`;
+    })
+    .join("");
 }
 
 function escapeHtml(value: string) {

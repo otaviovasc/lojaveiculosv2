@@ -132,8 +132,14 @@ export function DocumentBuilderBlocks({
           </button>
           <button
             className="documents-builder-primary-action text-xs shrink-0 flex items-center gap-1.5"
-            onClick={() => appendBlock(createClauseBlock())}
+            onClick={() => {
+              const clauseCount = blocks.filter(
+                (b) => b.type === "clause" || b.type === "paragraph",
+              ).length;
+              appendBlock(createClauseBlock("", `Cláusula ${clauseCount + 1}`));
+            }}
             type="button"
+            title="Adicionar nova cláusula ao documento"
           >
             <Plus aria-hidden="true" className="size-4 shrink-0" />
             <span>+ Cláusula</span>

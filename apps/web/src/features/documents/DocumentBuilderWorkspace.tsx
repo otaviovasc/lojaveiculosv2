@@ -14,7 +14,6 @@ import {
   createDefaultDocumentBuilderDraft,
   createDocumentBuilderDraft,
   documentBuilderClauses,
-  isDocumentBuilderDirty,
   type DocumentBuilderDraft,
   type DocumentBuilderSaveState,
   type DocumentBuilderStatus,
@@ -51,6 +50,12 @@ export function DocumentBuilderWorkspace({
   const [draft, setDraft] = useState<DocumentBuilderDraft>(() =>
     createDocumentBuilderDraft(selected),
   );
+  // Local baseline of the last persisted draft. The server may normalize
+  // blocks on save, so comparing against the template prop would flip the
+  // dirty flag back on after every autosave and retrigger it in a loop.
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    JSON.stringify(draft),
+  );
   const [saveState, setSaveState] = useState<DocumentBuilderSaveState>("idle");
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAiFloatingOpen, setIsAiFloatingOpen] = useState(false);
@@ -61,14 +66,16 @@ export function DocumentBuilderWorkspace({
   }, [onSave]);
 
   useEffect(() => {
-    setDraft(createDocumentBuilderDraft(selected));
+    const next = createDocumentBuilderDraft(selected);
+    setDraft(next);
+    setSavedSnapshot(JSON.stringify(next));
     setSaveState("idle");
   }, [selected?.templateKey]);
 
   const isSystemLocked = selected?.mode === "locked";
   const canEdit = selected?.mode === "editable";
   const isStoreCopy = selected?.source === "store";
-  const isDirty = isDocumentBuilderDirty(selected, draft);
+  const isDirty = JSON.stringify(draft) !== savedSnapshot;
   const clauses = useMemo(() => documentBuilderClauses(draft.blocks), [draft]);
   const clauseBank = useMemo(
     () => collectTemplateClauseBank(templates),
@@ -84,7 +91,10 @@ export function DocumentBuilderWorkspace({
     const timer = window.setTimeout(() => {
       setSaveState("saving");
       void saveSelectedTemplate(selected, draft, onSaveRef.current)
-        .then(() => setSaveState("saved"))
+        .then(() => {
+          setSavedSnapshot(JSON.stringify(draft));
+          setSaveState("saved");
+        })
         .catch(() => setSaveState("error"));
     }, 1200);
     return () => window.clearTimeout(timer);
@@ -239,7 +249,10 @@ export function DocumentBuilderWorkspace({
             onClick={() => {
               setSaveState("saving");
               void saveSelectedTemplate(selected, draft, onSave)
-                .then(() => setSaveState("saved"))
+                .then(() => {
+                  setSavedSnapshot(JSON.stringify(draft));
+                  setSaveState("saved");
+                })
                 .catch(() => setSaveState("error"));
             }}
             type="button"
