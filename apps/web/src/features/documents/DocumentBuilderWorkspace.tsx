@@ -1,4 +1,4 @@
-import { Lock, RotateCcw } from "lucide-react";
+import { Eye, Lock, RotateCcw, Save, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FeaturePageShell } from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
@@ -6,15 +6,11 @@ import type { DocumentsApi } from "./apiClient";
 import { DocumentBuilderAiPanel } from "./DocumentBuilderAiPanel";
 import { DocumentBuilderBlocks } from "./DocumentBuilderBlocks";
 import { DocumentBuilderSidebar } from "./DocumentBuilderSidebar";
-import {
-  DocumentBuilderHeader,
-  DocumentBuilderInspector,
-  type DocumentBuilderInspectorView,
-} from "./DocumentBuilderWorkspaceChrome";
+import { DocumentBuilderHeader } from "./DocumentBuilderWorkspaceChrome";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
 import { DocumentsSectionNavigation } from "./DocumentsSectionNavigation";
-import { kindLabel } from "./documentLabels";
 import {
+  collectTemplateClauseBank,
   createDefaultDocumentBuilderDraft,
   createDocumentBuilderDraft,
   documentBuilderClauses,
@@ -56,8 +52,8 @@ export function DocumentBuilderWorkspace({
     createDocumentBuilderDraft(selected),
   );
   const [saveState, setSaveState] = useState<DocumentBuilderSaveState>("idle");
-  const [inspectorView, setInspectorView] =
-    useState<DocumentBuilderInspectorView>("preview");
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isAiFloatingOpen, setIsAiFloatingOpen] = useState(false);
   const onSaveRef = useRef(onSave);
 
   useEffect(() => {
@@ -74,6 +70,10 @@ export function DocumentBuilderWorkspace({
   const isStoreCopy = selected?.source === "store";
   const isDirty = isDocumentBuilderDirty(selected, draft);
   const clauses = useMemo(() => documentBuilderClauses(draft.blocks), [draft]);
+  const clauseBank = useMemo(
+    () => collectTemplateClauseBank(templates),
+    [templates],
+  );
   const canSave = Boolean(
     selected && canEdit && draft.title.trim() && clauses.length,
   );
@@ -111,7 +111,7 @@ export function DocumentBuilderWorkspace({
   return (
     <FeaturePageShell
       className="documents-builder-page"
-      mainClassName="documents-builder-main"
+      mainClassName="documents-builder-main documents-builder-main-wide"
     >
       <DocumentsSectionNavigation
         activeSection="templates"
@@ -120,36 +120,16 @@ export function DocumentBuilderWorkspace({
         templateCount={templates.length}
       />
 
-      <DocumentBuilderHeader
-        isSaveDisabled={!canSave || !isDirty || isSaving}
-        onSave={() => {
-          setSaveState("saving");
-          void saveSelectedTemplate(selected, draft, onSave)
-            .then(() => setSaveState("saved"))
-            .catch(() => setSaveState("error"));
-        }}
-        status={status}
-      />
+      <DocumentBuilderHeader status={status} />
 
-      <section className="documents-builder-layout">
+      <section className="documents-builder-layout documents-builder-layout-wide">
         <DocumentBuilderSidebar
           onSelect={setSelectedKey}
           selectedTemplateKey={selected.templateKey}
           templates={templates}
         />
 
-        <main className="documents-builder-editor">
-          <header className="documents-builder-editor-head">
-            <span className="documents-builder-kind-chip">
-              {kindLabel(selected.kind)}
-            </span>
-            <p>
-              {canEdit
-                ? "Personalize o texto usado nas próximas emissões deste documento."
-                : "Documento gerado automaticamente pelo sistema a partir dos dados da operação."}
-            </p>
-          </header>
-
+        <main className="documents-builder-editor documents-builder-editor-wide">
           {isSystemLocked ? (
             <div className="documents-builder-locked-notice">
               <span
@@ -163,8 +143,8 @@ export function DocumentBuilderWorkspace({
                 <p>
                   Este documento é gerado automaticamente pelo sistema com os
                   dados da operação. O layout e o conteúdo seguem um padrão fixo
-                  e não podem ser editados como texto. Use a prévia ao lado para
-                  conferir a estrutura.
+                  e não podem ser editados como texto. Use o botão "Prévia PDF"
+                  para conferir.
                 </p>
               </div>
             </div>
@@ -205,6 +185,7 @@ export function DocumentBuilderWorkspace({
 
           <DocumentBuilderBlocks
             blocks={draft.blocks}
+            clauseBank={clauseBank}
             isEditable={canEdit}
             onBlocksChange={(blocks) =>
               setDraft((current) => ({ ...current, blocks }))
@@ -212,9 +193,27 @@ export function DocumentBuilderWorkspace({
             variables={selected.availableVariables}
           />
         </main>
+      </section>
 
-        <DocumentBuilderInspector
-          assistant={
+      {/* Floating CTA dock: AI panel + Prévia / Salvar / Assistente actions */}
+      <div className="documents-builder-floating-dock">
+        {isAiFloatingOpen ? (
+          <div className="mb-3 w-96 rounded-2xl border border-line bg-panel p-4 shadow-2xl backdrop-blur-xl animate-in slide-in-from-bottom-5 duration-200">
+            <div className="flex items-center justify-between border-b border-line pb-2 mb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="size-4 text-blue-400" />
+                <strong className="text-sm font-black text-app-text">
+                  Assistente IA de Documentos
+                </strong>
+              </div>
+              <button
+                className="text-muted hover:text-app-text text-xs font-bold"
+                onClick={() => setIsAiFloatingOpen(false)}
+                type="button"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
             <DocumentBuilderAiPanel
               api={api}
               canEdit={canEdit}
@@ -222,18 +221,78 @@ export function DocumentBuilderWorkspace({
               onApply={setDraft}
               selected={selected}
             />
-          }
-          onViewChange={setInspectorView}
-          preview={
+          </div>
+        ) : null}
+
+        <div className="documents-builder-fab-row">
+          <button
+            className="documents-builder-fab"
+            onClick={() => setIsPreviewModalOpen(true)}
+            type="button"
+          >
+            <Eye aria-hidden="true" className="size-5" />
+            <span>Prévia PDF</span>
+          </button>
+          <button
+            className="documents-builder-fab documents-builder-fab-primary"
+            disabled={!canSave || !isDirty || isSaving}
+            onClick={() => {
+              setSaveState("saving");
+              void saveSelectedTemplate(selected, draft, onSave)
+                .then(() => setSaveState("saved"))
+                .catch(() => setSaveState("error"));
+            }}
+            type="button"
+          >
+            <Save aria-hidden="true" className="size-5" />
+            <span>Salvar</span>
+          </button>
+          <button
+            className="documents-builder-fab documents-builder-fab-primary"
+            onClick={() => setIsAiFloatingOpen((prev) => !prev)}
+            type="button"
+          >
+            <Sparkles className="size-5" />
+            <span>Assistente IA</span>
+          </button>
+        </div>
+      </div>
+
+      {/* PDF Interactive Preview Modal */}
+      {isPreviewModalOpen ? (
+        <div
+          className="documents-detail-modal-backdrop"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsPreviewModalOpen(false);
+          }}
+        >
+          <div className="documents-modal-dialog max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto bg-panel border border-line rounded-2xl shadow-2xl">
+            <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
+              <div>
+                <span className="text-xs font-black text-accent-strong uppercase tracking-wider">
+                  Prévia do Documento em PDF
+                </span>
+                <h2 className="text-xl font-black text-app-text m-0">
+                  {draft.title}
+                </h2>
+              </div>
+              <button
+                aria-label="Fechar prévia"
+                className="documents-icon-button"
+                onClick={() => setIsPreviewModalOpen(false)}
+                type="button"
+              >
+                <X className="size-5" />
+              </button>
+            </header>
             <DocumentTemplatePreview
               isCustomized={selected.isCustomized || isDirty}
               kind={selected.kind}
               preview={preview}
             />
-          }
-          view={inspectorView}
-        />
-      </section>
+          </div>
+        </div>
+      ) : null}
     </FeaturePageShell>
   );
 }

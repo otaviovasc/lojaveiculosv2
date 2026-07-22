@@ -58,6 +58,9 @@ export function DocumentDetailPanel({
   versions: DocumentVersion[];
 }) {
   const [isEditingMetadata, setIsEditingMetadata] = useState(false);
+  const [activeTab, setActiveTab] = useState<"info" | "links" | "versions">(
+    "info",
+  );
 
   useEffect(() => {
     if (document) void onPreview(document.id);
@@ -74,161 +77,246 @@ export function DocumentDetailPanel({
   const isVoided = document.status === "voided";
 
   return (
-    <section
-      aria-label="Documento aberto"
-      className="documents-detail-panel documents-selected-document-panel"
+    <div
+      className="documents-detail-modal-backdrop"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      <header className="documents-detail-header">
-        <div>
-          <span>Documento aberto</span>
-          <strong>{document.title}</strong>
+      <section
+        aria-label="Documento aberto"
+        className="documents-detail-panel documents-selected-document-panel documents-modal-dialog"
+      >
+        <header className="documents-detail-header">
+          <div className="documents-detail-header-info">
+            <div className="documents-detail-header-row">
+              <span className="documents-detail-kicker">Documento aberto:</span>
+              <h2 className="documents-detail-title">{document.title}</h2>
+              <div className="documents-detail-badges-inline">
+                <DocumentOriginBadge document={document} />
+                <DocumentScopeBadge document={document} />
+              </div>
+            </div>
+          </div>
+          <button
+            aria-label="Fechar detalhes"
+            className="documents-icon-button documents-modal-close"
+            onClick={onClose}
+            title="Fechar detalhes"
+            type="button"
+          >
+            <X aria-hidden="true" className="size-5" />
+          </button>
+        </header>
+
+        <div className="documents-modal-grid">
+          {/* Main Document Preview Viewer Area */}
+          <div className="documents-modal-preview-column">
+            <section className="documents-preview-card">
+              <DocumentGeneratedPreview
+                document={document}
+                onRefresh={() => void onPreview(document.id)}
+                preview={preview}
+                previewError={previewError}
+              />
+            </section>
+            <div className="documents-detail-actions">
+              <ActionButton
+                disabled={isBusy}
+                icon={<FileSearch aria-hidden="true" className="size-4" />}
+                label="Visualizar"
+                onClick={() => void onPreview(document.id)}
+              />
+              <ActionButton
+                disabled={isBusy}
+                icon={<Download aria-hidden="true" className="size-4" />}
+                label="Baixar"
+                onClick={() => void onDownload(document.id)}
+              />
+              {document.capabilities.canRegenerate ? (
+                <ActionButton
+                  disabled={isBusy || isVoided}
+                  icon={<RefreshCcw aria-hidden="true" className="size-4" />}
+                  label="Regenerar"
+                  onClick={() => void onRegenerate(document.id)}
+                />
+              ) : null}
+            </div>
+          </div>
+
+          {/* Right Inspector & Metadata Side Column */}
+          <div className="documents-modal-inspector-column">
+            <div className="documents-detail-tabs-bar">
+              <button
+                className={`documents-detail-tab-btn ${activeTab === "info" ? "active" : ""}`}
+                onClick={() => setActiveTab("info")}
+                type="button"
+              >
+                Informações
+              </button>
+              <button
+                className={`documents-detail-tab-btn ${activeTab === "links" ? "active" : ""}`}
+                onClick={() => setActiveTab("links")}
+                type="button"
+              >
+                Vínculos
+              </button>
+              <button
+                className={`documents-detail-tab-btn ${activeTab === "versions" ? "active" : ""}`}
+                onClick={() => setActiveTab("versions")}
+                type="button"
+              >
+                Versões ({versions.length})
+              </button>
+            </div>
+
+            <div className="documents-detail-tab-content">
+              {activeTab === "info" && (
+                <>
+                  {isEditingMetadata ? (
+                    <DocumentMetadataEditor
+                      document={document}
+                      isBusy={isBusy}
+                      onCancel={() => setIsEditingMetadata(false)}
+                      onSaved={() => setIsEditingMetadata(false)}
+                      onUpdate={onUpdate}
+                    />
+                  ) : null}
+
+                  <dl className="documents-detail-meta">
+                    <Meta label="Escopo" value={documentScopeLabel(document)} />
+                    <Meta
+                      label="Unidade"
+                      value={
+                        vehicle
+                          ? [vehicle.plate, vehicle.label, vehicle.vin]
+                              .filter(Boolean)
+                              .join(" · ")
+                          : "Geral"
+                      }
+                    />
+                    <Meta label="Tipo" value={kindLabel(document.kind)} />
+                    <Meta label="Status" value={statusLabel(document.status)} />
+                    <Meta label="Arquivo" value={document.file.fileName} />
+                    <Meta
+                      label="Metadados"
+                      value={documentFileLabel(document)}
+                    />
+                    <Meta
+                      label="MIME"
+                      value={document.file.mimeType ?? "Indisponível"}
+                    />
+                    <Meta
+                      label="Tamanho"
+                      value={formatFileSizeLabel(document.file.fileSizeBytes)}
+                    />
+                    <Meta
+                      label="Criado"
+                      value={formatDateTime(document.createdAt)}
+                    />
+                    <Meta
+                      label="Enviado/emitido"
+                      value={formatDateTime(document.uploadedAt)}
+                    />
+                    <Meta
+                      label="Responsável"
+                      value={documentActorLabel(document)}
+                    />
+                    <Meta
+                      label="Processo"
+                      value={readSourceProcess(document)}
+                    />
+                  </dl>
+                </>
+              )}
+
+              {activeTab === "links" && (
+                <section className="documents-linked-list">
+                  <strong>Vínculos do Documento</strong>
+                  {vehicle ? (
+                    <div className="documents-linked-vehicle-card">
+                      <span className="documents-linked-plate">
+                        {vehicle.plate || "S/Placa"}
+                      </span>
+                      <div>
+                        <strong>{vehicle.label}</strong>
+                        {vehicle.vin ? <p>CHASSI: {vehicle.vin}</p> : null}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="documents-linked-empty">
+                      Sem vínculo específico (Documento Geral da Loja)
+                    </p>
+                  )}
+                </section>
+              )}
+
+              {activeTab === "versions" && (
+                <section className="documents-version-list">
+                  <strong>Histórico de Versões</strong>
+                  {versions.length === 0 ? (
+                    <p className="documents-versions-empty">
+                      Nenhuma versão anterior carregada.
+                    </p>
+                  ) : (
+                    <div className="documents-versions-stack">
+                      {versions.map((version) => (
+                        <button
+                          disabled={isBusy}
+                          key={version.id}
+                          onClick={() =>
+                            void onDownload(document.id, version.id)
+                          }
+                          title={`Baixar versão ${version.versionNumber}`}
+                          type="button"
+                          className="documents-version-item-btn"
+                        >
+                          <div>
+                            <strong>v{version.versionNumber}</strong>
+                            <span>{formatDateTime(version.createdAt)}</span>
+                          </div>
+                          <span className="documents-version-size">
+                            {formatFileSizeLabel(version.file.fileSizeBytes)}
+                          </span>
+                          <Download aria-hidden="true" className="size-4" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+
+            <footer className="documents-detail-secondary">
+              <button
+                disabled={isBusy || isVoided}
+                onClick={() => {
+                  setActiveTab("info");
+                  setIsEditingMetadata(true);
+                }}
+                type="button"
+              >
+                <Edit3 aria-hidden="true" className="size-4" />
+                Editar
+              </button>
+              <button onClick={() => onManageLinks(document)} type="button">
+                <Link2 aria-hidden="true" className="size-4" />
+                Vínculos
+              </button>
+              <button
+                disabled={isBusy || isVoided}
+                onClick={() => onDelete(document)}
+                type="button"
+                className="documents-action-delete"
+              >
+                <Trash2 aria-hidden="true" className="size-4" />
+                Excluir
+              </button>
+            </footer>
+          </div>
         </div>
-        <button
-          aria-label="Fechar detalhes"
-          className="documents-icon-button"
-          onClick={onClose}
-          title="Fechar detalhes"
-          type="button"
-        >
-          <X aria-hidden="true" className="size-4" />
-        </button>
-      </header>
-
-      <div className="documents-detail-badges">
-        <DocumentOriginBadge document={document} />
-        <DocumentScopeBadge document={document} />
-      </div>
-
-      <section className="documents-preview-card">
-        <DocumentGeneratedPreview
-          document={document}
-          onRefresh={() => void onPreview(document.id)}
-          preview={preview}
-          previewError={previewError}
-        />
       </section>
-
-      <div className="documents-detail-actions">
-        <ActionButton
-          disabled={isBusy}
-          icon={<FileSearch aria-hidden="true" className="size-4" />}
-          label="Visualizar"
-          onClick={() => void onPreview(document.id)}
-        />
-        <ActionButton
-          disabled={isBusy}
-          icon={<Download aria-hidden="true" className="size-4" />}
-          label="Baixar"
-          onClick={() => void onDownload(document.id)}
-        />
-        {document.capabilities.canRegenerate ? (
-          <ActionButton
-            disabled={isBusy || isVoided}
-            icon={<RefreshCcw aria-hidden="true" className="size-4" />}
-            label="Regenerar"
-            onClick={() => void onRegenerate(document.id)}
-          />
-        ) : null}
-      </div>
-
-      {isEditingMetadata ? (
-        <DocumentMetadataEditor
-          document={document}
-          isBusy={isBusy}
-          onCancel={() => setIsEditingMetadata(false)}
-          onSaved={() => setIsEditingMetadata(false)}
-          onUpdate={onUpdate}
-        />
-      ) : null}
-
-      <dl className="documents-detail-meta">
-        <Meta label="Escopo" value={documentScopeLabel(document)} />
-        <Meta
-          label="Unidade"
-          value={
-            vehicle
-              ? [vehicle.plate, vehicle.label, vehicle.vin]
-                  .filter(Boolean)
-                  .join(" · ")
-              : "Geral"
-          }
-        />
-        <Meta label="Tipo" value={kindLabel(document.kind)} />
-        <Meta label="Status" value={statusLabel(document.status)} />
-        <Meta label="Arquivo" value={document.file.fileName} />
-        <Meta label="Metadados" value={documentFileLabel(document)} />
-        <Meta label="MIME" value={document.file.mimeType ?? "Indisponível"} />
-        <Meta
-          label="Tamanho"
-          value={formatFileSizeLabel(document.file.fileSizeBytes)}
-        />
-        <Meta label="Criado" value={formatDateTime(document.createdAt)} />
-        <Meta
-          label="Enviado/emitido"
-          value={formatDateTime(document.uploadedAt)}
-        />
-        <Meta label="Responsável" value={documentActorLabel(document)} />
-        <Meta label="Processo" value={readSourceProcess(document)} />
-      </dl>
-
-      <section className="documents-linked-list">
-        <strong>Vínculos</strong>
-        {vehicle ? (
-          <p>
-            {[vehicle.plate, vehicle.label, vehicle.vin]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
-        ) : (
-          <p>Geral</p>
-        )}
-      </section>
-
-      <section className="documents-version-list">
-        <strong>Versões</strong>
-        {versions.length === 0 ? (
-          <p>Nenhuma versão carregada.</p>
-        ) : (
-          versions.map((version) => (
-            <button
-              disabled={isBusy}
-              key={version.id}
-              onClick={() => void onDownload(document.id, version.id)}
-              title={`Baixar versão ${version.versionNumber}`}
-              type="button"
-            >
-              <span>v{version.versionNumber}</span>
-              <span>{formatDateTime(version.createdAt)}</span>
-              <span>{formatFileSizeLabel(version.file.fileSizeBytes)}</span>
-              <Download aria-hidden="true" className="size-4" />
-            </button>
-          ))
-        )}
-      </section>
-
-      <footer className="documents-detail-secondary">
-        <button
-          disabled={isBusy || isVoided}
-          onClick={() => setIsEditingMetadata(true)}
-          type="button"
-        >
-          <Edit3 aria-hidden="true" className="size-4" />
-          Editar
-        </button>
-        <button onClick={() => onManageLinks(document)} type="button">
-          <Link2 aria-hidden="true" className="size-4" />
-          Gerenciar vínculos
-        </button>
-        <button
-          disabled={isBusy || isVoided}
-          onClick={() => onDelete(document)}
-          type="button"
-        >
-          <Trash2 aria-hidden="true" className="size-4" />
-          Excluir
-        </button>
-      </footer>
-    </section>
+    </div>
   );
 }
 

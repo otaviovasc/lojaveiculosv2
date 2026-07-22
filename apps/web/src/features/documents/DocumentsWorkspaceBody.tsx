@@ -101,6 +101,102 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
 
   return (
     <section className="documents-list-panel" aria-label="Lista de documentos">
+      {isLoading ? <DocumentsTableSkeleton /> : null}
+      {!isLoading && !errorMessage ? (
+        <DocumentsListToolbar
+          activeOrigin={originFilter}
+          dateFrom={filters.dateFrom}
+          dateTo={filters.dateTo}
+          hasActiveFilters={hasActiveFilters || originFilter !== "all"}
+          isLoading={isLoading}
+          kind={filters.kind}
+          onClearFilters={clearAllFilters}
+          onDateFromChange={(value) => onSetFilter("dateFrom", value)}
+          onDateToChange={(value) => onSetFilter("dateTo", value)}
+          onKindChange={onKindChange}
+          onOriginSelect={onOriginSelect}
+          onSearchChange={onSearchChange}
+          onSortChange={onSortChange}
+          onStatusChange={onStatusChange}
+          search={search}
+          sortBy={sortBy}
+          status={filters.status}
+        />
+      ) : null}
+      {!isLoading && !errorMessage && folderDocuments.length === 0 ? (
+        <DocumentsEmptyState
+          {...(showUpload
+            ? {
+                ctaLabel: "Enviar primeiro documento",
+                onAction: onUploadClick,
+              }
+            : {})}
+          kind="folder-empty"
+          message={
+            selectedFolderKey === "general"
+              ? "Nenhum documento na pasta Geral. Envios manuais e documentos emitidos sem vínculo aparecerão aqui."
+              : "Esta unidade ainda não tem documentos. Use o botão Enviar para adicionar."
+          }
+          title={
+            selectedFolderKey === "general"
+              ? "Pasta Geral vazia"
+              : "Unidade sem documentos"
+          }
+        />
+      ) : null}
+      {!isLoading &&
+      !errorMessage &&
+      folderDocuments.length > 0 &&
+      sortedVisible.length === 0 ? (
+        <DocumentsEmptyState
+          ctaLabel="Limpar filtros"
+          kind="no-results"
+          message="Nenhum documento corresponde aos filtros desta pasta. Tente alterar origem, status, tipo, período ou busca."
+          onAction={clearAllFilters}
+          title="Sem resultados para os filtros"
+        />
+      ) : null}
+      {!isLoading && sortedVisible.length > 0 ? (
+        <>
+          <DocumentsTableSheetHeader
+            allSelected={
+              visibleSelectedCount > 0 &&
+              visibleSelectedCount === sortedVisible.length
+            }
+            disabled={isLoading}
+            indeterminate={
+              visibleSelectedCount > 0 &&
+              visibleSelectedCount < sortedVisible.length
+            }
+            isDownloading={isLoading}
+            onDeselectAll={selection.clear}
+            onDownloadSelected={onDownloadSelected}
+            onToggle={selection.toggleAll}
+            selectedCount={visibleSelectedCount}
+            totalCount={sortedVisible.length}
+          />
+          <DocumentsTable
+            documents={sortedVisible}
+            isBusy={state.isDocumentActionBusy}
+            onDelete={onSetDocumentToDelete}
+            onDownload={onDownloadDocument}
+            onSelect={onSelectDocument}
+            onToggleSelect={selection.toggle}
+            selectedIds={selection.selectedIds}
+            {...(showUpload
+              ? {
+                  upload: {
+                    disabled: !api,
+                    hint: "PDFs ou imagens salvos nesta pasta",
+                    label: "Enviar documento",
+                    onClick: onUploadClick,
+                  },
+                }
+              : {})}
+          />
+        </>
+      ) : null}
+
       {state.selectedDocument ? (
         <DocumentDetailPanel
           document={state.selectedDocument}
@@ -120,105 +216,7 @@ export function DocumentsWorkspaceBody(props: DocumentsWorkspaceBodyProps) {
           previewError={state.documentPreviewError}
           versions={state.documentVersions}
         />
-      ) : (
-        <>
-          {isLoading ? <DocumentsTableSkeleton /> : null}
-          {!isLoading && !errorMessage ? (
-            <DocumentsListToolbar
-              activeOrigin={originFilter}
-              dateFrom={filters.dateFrom}
-              dateTo={filters.dateTo}
-              hasActiveFilters={hasActiveFilters || originFilter !== "all"}
-              isLoading={isLoading}
-              kind={filters.kind}
-              onClearFilters={clearAllFilters}
-              onDateFromChange={(value) => onSetFilter("dateFrom", value)}
-              onDateToChange={(value) => onSetFilter("dateTo", value)}
-              onKindChange={onKindChange}
-              onOriginSelect={onOriginSelect}
-              onSearchChange={onSearchChange}
-              onSortChange={onSortChange}
-              onStatusChange={onStatusChange}
-              search={search}
-              sortBy={sortBy}
-              status={filters.status}
-            />
-          ) : null}
-          {!isLoading && !errorMessage && folderDocuments.length === 0 ? (
-            <DocumentsEmptyState
-              {...(showUpload
-                ? {
-                    ctaLabel: "Enviar primeiro documento",
-                    onAction: onUploadClick,
-                  }
-                : {})}
-              kind="folder-empty"
-              message={
-                selectedFolderKey === "general"
-                  ? "Nenhum documento na pasta Geral. Envios manuais e documentos emitidos sem vínculo aparecerão aqui."
-                  : "Esta unidade ainda não tem documentos. Use o botão Enviar para adicionar."
-              }
-              title={
-                selectedFolderKey === "general"
-                  ? "Pasta Geral vazia"
-                  : "Unidade sem documentos"
-              }
-            />
-          ) : null}
-          {!isLoading &&
-          !errorMessage &&
-          folderDocuments.length > 0 &&
-          sortedVisible.length === 0 ? (
-            <DocumentsEmptyState
-              ctaLabel="Limpar filtros"
-              kind="no-results"
-              message="Nenhum documento corresponde aos filtros desta pasta. Tente alterar origem, status, tipo, período ou busca."
-              onAction={clearAllFilters}
-              title="Sem resultados para os filtros"
-            />
-          ) : null}
-          {!isLoading && sortedVisible.length > 0 ? (
-            <>
-              <DocumentsTableSheetHeader
-                allSelected={
-                  visibleSelectedCount > 0 &&
-                  visibleSelectedCount === sortedVisible.length
-                }
-                disabled={isLoading}
-                indeterminate={
-                  visibleSelectedCount > 0 &&
-                  visibleSelectedCount < sortedVisible.length
-                }
-                isDownloading={isLoading}
-                onDeselectAll={selection.clear}
-                onDownloadSelected={onDownloadSelected}
-                onToggle={selection.toggleAll}
-                selectedCount={visibleSelectedCount}
-                totalCount={sortedVisible.length}
-              />
-              <DocumentsTable
-                documents={sortedVisible}
-                isBusy={state.isDocumentActionBusy}
-                onDelete={onSetDocumentToDelete}
-                onDownload={onDownloadDocument}
-                onSelect={onSelectDocument}
-                onToggleSelect={selection.toggle}
-                selectedIds={selection.selectedIds}
-                {...(showUpload
-                  ? {
-                      upload: {
-                        disabled: !api,
-                        hint: "PDFs ou imagens salvos nesta pasta",
-                        label: "Enviar documento",
-                        onClick: onUploadClick,
-                      },
-                    }
-                  : {})}
-              />
-            </>
-          ) : null}
-        </>
-      )}
+      ) : null}
     </section>
   );
 }
