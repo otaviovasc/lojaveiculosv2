@@ -1,5 +1,6 @@
-import { cents, legacyMetadata, mapDocumentKind, targetId } from "./common.mjs";
+import { cents, legacyMetadata, targetId } from "./common.mjs";
 import { addLegacyMap } from "./target-foundation.mjs";
+import { seedMigratedDocument } from "./document-artifacts.mjs";
 import { log, progress } from "./log.mjs";
 import {
   documentKindsForSale,
@@ -150,7 +151,7 @@ async function seedCommissionRules(tx, data, config, ids) {
   }
 }
 
-export async function seedDocumentsAndFiscal(tx, data, config, ids) {
+export async function seedDocumentsAndFiscal(tx, data, config, ids, uploader) {
   log(
     `  Documents & fiscal: ${data.recipients.length} recipient(s), ${data.fiscalDocuments.length} fiscal doc(s), ${data.documents.length} doc(s)...`,
   );
@@ -209,11 +210,12 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids) {
   }
   const testDrives = new Map(data.testDrives.map((row) => [row.id, row]));
   log(`  Documents & fiscal: ${data.documents.length} document(s)...`);
+  const artifactCounts = { generated: 0, legacyFile: 0, unavailable: 0 };
   for (const [index, document] of data.documents.entries()) {
     if (index % 50 === 0 || index === data.documents.length - 1) {
       progress("  Documents", index + 1, data.documents.length);
     }
-    await seedDocument(
+    const plan = await seedMigratedDocument(
       tx,
       {
         ...document,
@@ -221,46 +223,16 @@ export async function seedDocumentsAndFiscal(tx, data, config, ids) {
       },
       config,
       ids,
+      uploader,
     );
+    if (plan.artifact === "generated") artifactCounts.generated += 1;
+    else if (plan.artifact === "legacy-file") artifactCounts.legacyFile += 1;
+    else artifactCounts.unavailable += 1;
   }
-  log("  Documents & fiscal done");
-}
-
-async function seedDocument(tx, document, config, ids) {
-  const documentId = targetId(config.legacyStoreId, "Document", document.id);
-  const available = Boolean(document.pdfR2Key && document.pdfUrl);
-  const storageKey = available
-    ? document.pdfR2Key
-    : `legacy-unavailable/v1/Document/${document.id}`;
-  const metadata = legacyMetadata("Document", document, {
-    artifactAvailable: available,
-    legacyPublicUrl: document.pdfUrl || null,
-  });
-  await tx`INSERT INTO documents
-    (id, created_by_user_id, file_name, kind, metadata, mime_type, status, storage_key, store_id, tenant_id, title, uploaded_at, created_at, updated_at)
-    VALUES (${documentId}, ${ids.users.get(document.sellerId) || null}, ${`${document.title || document.type}-${document.id}.pdf`}, ${mapDocumentKind(document.type)},
-      ${tx.json(metadata)}, 'application/pdf', ${available ? "issued" : "archived"}, ${storageKey}, ${ids.store}, ${ids.tenant}, ${document.title || document.type},
-      ${document.occurredAt || document.createdAt}, ${document.createdAt}, ${document.updatedAt})
-    ON CONFLICT (id) DO UPDATE SET metadata=excluded.metadata, status=excluded.status, updated_at=excluded.updated_at`;
-  const targets = [
-    ["vehicle_unit", ids.units.get(document.veiculoId)],
-    ["lead", ids.leads.get(document.leadId)],
-    ["sale", ids.sales.get(document.saleId)],
-  ].filter(([, id]) => id);
-  if (!targets.length) targets.push(["store", ids.store]);
-  for (const [type, id] of targets)
-    await tx`INSERT INTO document_links
-    (id, document_id, link_role, store_id, target_id, target_type, tenant_id, created_at, updated_at)
-    VALUES (${targetId(config.legacyStoreId, `DocumentLink:${type}`, document.id)}, ${documentId}, 'primary', ${ids.store}, ${id}, ${type}, ${ids.tenant}, ${document.createdAt}, ${document.updatedAt})
-    ON CONFLICT (id) DO NOTHING`;
-  await addLegacyMap(
-    tx,
-    ids.run,
-    "Document",
-    document.id,
-    "documents",
-    documentId,
+  log(
+    `  Documents artifacts: ${artifactCounts.generated} rendered, ${artifactCounts.legacyFile} legacy file(s), ${artifactCounts.unavailable} unavailable`,
   );
+  log("  Documents & fiscal done");
 }
 
 async function seedFiscalLinks(tx, fiscal, fiscalId, config, ids) {
