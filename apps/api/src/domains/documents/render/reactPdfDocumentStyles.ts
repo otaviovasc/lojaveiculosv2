@@ -2,137 +2,248 @@ import { StyleSheet } from "@react-pdf/renderer";
 
 export const createDocumentPdfStyles = StyleSheet.create;
 
-export const styles = StyleSheet.create({
-  page: {
-    backgroundColor: "#ffffff",
-    color: "#151515",
-    fontSize: 9.5,
-    padding: "132 46 68",
-  },
-  body: { gap: 16 },
+export const documentPdfColors = {
+  navy: "#14213d",
+  ink: "#333333",
+  muted: "#666666",
+  cardBackground: "#f8fafc",
+  cardBorder: "#e2e8f0",
+  tableHeaderBackground: "#f1f5f9",
+  labelMuted: "#64748b",
+  valueInk: "#1e293b",
+  highlight: "#ffff00",
+  footerBorder: "#cbd5e1",
+  footerMuted: "#94a3b8",
+} as const;
 
-  /* Header — dark brand bar aligned to the page gutter */
+/**
+ * Shared visual language ported from the V1 (@react-pdf/renderer) documents:
+ * Helvetica on white, navy accents, slate card grids and dense form rows.
+ */
+export const styles = StyleSheet.create({
+  /* Page variants */
+  pageContract: {
+    backgroundColor: "#ffffff",
+    color: documentPdfColors.ink,
+    fontFamily: "Helvetica",
+    fontSize: 9.5,
+    lineHeight: 1.6,
+    paddingBottom: 80,
+    paddingHorizontal: 50,
+    paddingTop: 45,
+  },
+  pageForm: {
+    backgroundColor: "#ffffff",
+    color: "#000000",
+    fontFamily: "Helvetica",
+    fontSize: 9,
+    lineHeight: 1.2,
+    padding: 30,
+  },
+  pageTerm: {
+    backgroundColor: "#ffffff",
+    color: documentPdfColors.ink,
+    fontFamily: "Helvetica",
+    fontSize: 10,
+    lineHeight: 1.6,
+    padding: 60,
+  },
+  pageReservation: {
+    backgroundColor: "#ffffff",
+    color: "#000000",
+    fontFamily: "Helvetica",
+    fontSize: 9,
+    lineHeight: 1.35,
+    paddingBottom: 40,
+    paddingHorizontal: 38,
+    paddingTop: 34,
+  },
+
+  /* Premium header (contract) */
   header: {
     alignItems: "center",
-    backgroundColor: "#151515",
-    borderBottomColor: "#e11f26",
-    borderBottomWidth: 3,
+    borderBottomColor: documentPdfColors.navy,
+    borderBottomWidth: 1.5,
+    flexDirection: "column",
+    marginBottom: 20,
+    paddingBottom: 15,
+  },
+  headerTop: { alignItems: "center", marginBottom: 15, width: "100%" },
+  headerBottom: {
+    alignItems: "flex-end",
     flexDirection: "row",
-    gap: 12,
-    left: 46,
-    padding: 16,
-    position: "absolute",
-    right: 46,
-    top: 34,
+    justifyContent: "space-between",
+    width: "100%",
   },
-  logoMark: {
-    alignItems: "center",
-    backgroundColor: "#e11f26",
-    borderRadius: 7,
-    color: "#ffffff",
-    fontSize: 13,
-    fontWeight: 700,
-    height: 40,
-    justifyContent: "center",
-    letterSpacing: 0.5,
-    width: 40,
-  },
-  brandCopy: { flex: 1, gap: 3 },
+  headerLeft: { flex: 1 },
+  headerRight: { alignItems: "flex-end" },
+  logo: { maxHeight: 80, maxWidth: 200, objectFit: "contain" },
+  logoContainer: { alignItems: "center", marginBottom: 5 },
   storeName: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: 0.2,
-  },
-  headerMuted: { color: "#b8adaa", fontSize: 7.5, letterSpacing: 0.2 },
-  documentTitle: { alignItems: "flex-end", flex: 1.1, gap: 4 },
-  headerTitle: {
-    color: "#ffffff",
-    fontSize: 15,
-    fontWeight: 700,
-    letterSpacing: 0.2,
-    textAlign: "right",
-  },
-
-  /* Intro paragraph */
-  intro: { color: "#1f1b1b", fontSize: 10, lineHeight: 1.55 },
-
-  /* Field-grid sections */
-  section: { gap: 10 },
-  sectionCompact: { gap: 8, marginTop: 2 },
-  sectionTitle: {
-    borderBottomColor: "#e8e3e2",
-    borderBottomWidth: 1,
-    color: "#151515",
-    fontSize: 9,
-    fontWeight: 700,
-    letterSpacing: 0.6,
-    paddingBottom: 5,
+    color: documentPdfColors.navy,
+    fontSize: 12,
+    fontWeight: "bold",
+    marginBottom: 4,
     textTransform: "uppercase",
   },
-  fieldGrid: {
-    columnGap: 16,
+  storeDetail: {
+    color: documentPdfColors.muted,
+    fontSize: 8,
+    marginBottom: 2,
+  },
+  docTitle: {
+    color: documentPdfColors.navy,
+    fontSize: 13,
+    fontWeight: "bold",
+    marginBottom: 4,
+    textAlign: "right",
+    textTransform: "uppercase",
+  },
+  docSubtitle: {
+    color: documentPdfColors.muted,
+    fontSize: 8.5,
+    textAlign: "right",
+    textTransform: "uppercase",
+  },
+
+  /* Section titles */
+  sectionTitle: {
+    borderBottomColor: documentPdfColors.navy,
+    borderBottomWidth: 1,
+    color: "#000000",
+    fontSize: 10,
+    fontWeight: "bold",
+    letterSpacing: 0.5,
+    marginBottom: 10,
+    marginTop: 15,
+    paddingBottom: 4,
+    textTransform: "uppercase",
+  },
+  formSectionHeader: {
+    fontSize: 9,
+    fontWeight: "bold",
+    marginBottom: 5,
+    marginTop: 5,
+  },
+
+  /* Vehicle card grid */
+  vehicleGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    rowGap: 6,
+    gap: 8,
+    marginBottom: 15,
   },
-  field: {
-    borderBottomColor: "#ece7e4",
-    borderBottomWidth: 1,
-    gap: 2,
-    paddingBottom: 6,
-    paddingTop: 2,
-    width: "48%",
+  vehicleField: {
+    backgroundColor: documentPdfColors.cardBackground,
+    borderColor: documentPdfColors.cardBorder,
+    borderRadius: 4,
+    borderWidth: 1,
+    padding: 8,
   },
-  fieldLabel: {
-    color: "#8a807b",
+  vehicleFieldHalf: { width: "48.5%" },
+  vehicleFieldThird: { width: "31.5%" },
+  vehicleFieldFull: { width: "100%" },
+  cardFieldLabel: {
+    color: documentPdfColors.labelMuted,
     fontSize: 7,
-    fontWeight: 700,
+    fontWeight: "bold",
     letterSpacing: 0.5,
+    marginBottom: 3,
     textTransform: "uppercase",
   },
-  fieldValue: { color: "#151515", fontSize: 10, lineHeight: 1.35 },
+  cardFieldValue: {
+    color: documentPdfColors.valueInk,
+    fontSize: 9.5,
+    fontWeight: "bold",
+    textTransform: "uppercase",
+  },
 
-  /* Clauses */
-  clauseOpening: { gap: 10 },
-  clause: {
-    borderLeftColor: "#e11f26",
-    borderLeftWidth: 2,
-    gap: 3,
-    paddingLeft: 11,
+  /* Prose */
+  preambleText: {
+    color: documentPdfColors.ink,
+    fontSize: 9.5,
+    marginBottom: 12,
+    textAlign: "justify",
   },
-  clauseLabel: {
-    color: "#b81820",
-    fontSize: 8,
-    fontWeight: 700,
-    letterSpacing: 0.5,
+  clauseTitle: {
+    color: "#000000",
+    fontSize: 10,
+    fontWeight: "bold",
+    marginBottom: 6,
+    marginTop: 12,
     textTransform: "uppercase",
   },
-  clauseText: { color: "#151515", fontSize: 9.5, lineHeight: 1.55 },
+  clauseText: {
+    color: documentPdfColors.ink,
+    fontSize: 9.5,
+    marginBottom: 10,
+    textAlign: "justify",
+  },
+  bold: { fontWeight: "bold" },
+  highlight: {
+    backgroundColor: documentPdfColors.highlight,
+    paddingHorizontal: 2,
+  },
 
   /* Signatures */
-  signatures: {
+  signaturesRow: {
     flexDirection: "row",
-    gap: 24,
+    gap: 40,
     justifyContent: "space-between",
-    marginTop: 34,
   },
-  signature: { gap: 5, width: "46%" },
-  signatureSpace: { height: 26 },
-  signatureLine: { borderTopColor: "#151515", borderTopWidth: 1 },
-  signatureLabel: { color: "#151515", fontSize: 8, fontWeight: 700 },
-
-  /* Footer */
-  footer: {
-    borderTopColor: "#e8e3e2",
+  signatureBox: { alignItems: "center", flex: 1 },
+  signatureLine: {
+    borderTopColor: "#000000",
     borderTopWidth: 1,
+    marginBottom: 6,
+    paddingTop: 45,
+    width: "100%",
+  },
+  signatureName: {
+    fontSize: 9.5,
+    fontWeight: "bold",
+    marginBottom: 2,
+    textAlign: "center",
+    textTransform: "uppercase",
+  },
+  signatureRole: {
+    color: documentPdfColors.muted,
+    fontSize: 7.5,
+    letterSpacing: 0.3,
+    textAlign: "center",
+    textTransform: "uppercase",
+  },
+
+  /* Fixed footer + rubrica */
+  footer: {
+    borderTopColor: documentPdfColors.footerBorder,
+    borderTopWidth: 0.5,
     bottom: 30,
     flexDirection: "row",
     justifyContent: "space-between",
-    left: 46,
-    paddingTop: 6,
+    left: 50,
+    paddingTop: 10,
     position: "absolute",
-    right: 46,
+    right: 50,
   },
-  muted: { color: "#736b67", fontSize: 7.5, letterSpacing: 0.3 },
+  footerContactText: { color: documentPdfColors.labelMuted, fontSize: 8 },
+  footerPageNumber: { color: documentPdfColors.footerMuted, fontSize: 8 },
+  rubricaFixed: {
+    alignItems: "center",
+    bottom: 50,
+    left: 80,
+    position: "absolute",
+    right: 80,
+  },
+  rubricaLine: {
+    borderTopColor: "#000000",
+    borderTopWidth: 0.5,
+    marginBottom: 2,
+    width: "100%",
+  },
+  rubricaText: {
+    color: documentPdfColors.muted,
+    fontSize: 7,
+    textTransform: "uppercase",
+  },
 });

@@ -1,6 +1,8 @@
 import type { LinkedDocument } from "../ports/documentRepository.js";
 import { buildDocumentPreview } from "../preview/documentPreview.js";
 import { renderDocumentPreviewPdf } from "./documentPreviewPdf.js";
+import { renderWorkflowDocumentPdf } from "../../vehicle/documents/vehicleWorkflowPdf.js";
+import type { CreateVehicleDocumentRecord } from "../../vehicle/ports/vehicleInventoryRepository.js";
 
 export type DocumentRegenerationBlockReason =
   "document_state_unsupported" | "renderer_unavailable";
@@ -15,13 +17,40 @@ type DocumentRegenerationRenderer = (
 ) => Promise<Uint8Array>;
 
 const metadataSummaryRenderer = "metadata-summary-pdf";
+const workflowReactPdfRenderer = "react-pdf";
 
 const regenerationRenderers = new Map<string, DocumentRegenerationRenderer>([
   [
     metadataSummaryRenderer,
     (document) => renderDocumentPreviewPdf(buildDocumentPreview(document)),
   ],
+  [
+    workflowReactPdfRenderer,
+    (document) => renderWorkflowDocumentPdf(toVehicleDocumentRecord(document)),
+  ],
 ]);
+
+/** "react-pdf" is stamped by the vehicle sale/reservation workflows. */
+function toVehicleDocumentRecord(
+  document: LinkedDocument,
+): CreateVehicleDocumentRecord {
+  return {
+    createdByUserId: null,
+    fileName: document.fileName,
+    fileSizeBytes: document.fileSizeBytes,
+    kind: document.kind,
+    linkRole: document.linkRole,
+    metadata: document.metadata,
+    mimeType: document.mimeType,
+    status: document.status,
+    storageKey: document.storageKey,
+    storeId: document.storeId,
+    targetId: document.targetId,
+    targetType: "vehicle_unit",
+    tenantId: document.tenantId,
+    title: document.title,
+  };
+}
 
 export function getDocumentRegenerationCapability(
   document: LinkedDocument,
@@ -48,4 +77,5 @@ export function getDocumentRegenerationRenderer(
 
 export const documentRegenerationRendererKeys = {
   metadataSummary: metadataSummaryRenderer,
+  workflowReactPdf: workflowReactPdfRenderer,
 } as const;
