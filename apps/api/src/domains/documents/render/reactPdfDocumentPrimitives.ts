@@ -1,41 +1,20 @@
 import React from "react";
 import {
   Document,
+  Image,
   Page,
   Text,
   View,
   renderToBuffer,
 } from "@react-pdf/renderer";
 import { styles } from "./reactPdfDocumentStyles.js";
+import { formatCnpj, formatPhoneForPdf } from "./reactPdfFormatHelpers.js";
 
-export type SharedPdfField = {
-  label: string;
-  value: string;
-};
-
-export type SharedPdfSection = {
-  fields: readonly SharedPdfField[];
-  title: string;
-};
-
-export type SharedPdfBrand = {
-  accentColor?: string | undefined;
-  contactLine?: string | undefined;
-  logoText?: string | undefined;
-  storeDocument?: string | undefined;
-  storeName: string;
-};
-
-export type SharedPdfDocument = {
-  audit?: SharedPdfSection | undefined;
-  brand: SharedPdfBrand;
-  clauses: readonly string[];
-  fields: readonly SharedPdfSection[];
-  intro: string;
-  signatures: readonly string[];
-  subtitle: string;
-  title: string;
-};
+/** Single style object accepted by @react-pdf/renderer `style` props. */
+export type PdfStyle = Exclude<
+  NonNullable<React.ComponentProps<typeof View>["style"]>,
+  unknown[]
+>;
 
 const e = React.createElement;
 
@@ -43,6 +22,7 @@ export const DocumentPdfRoot = Document;
 export const DocumentPdfPage = Page;
 export const DocumentPdfText = Text;
 export const DocumentPdfView = View;
+export const DocumentPdfImage = Image;
 
 export async function renderDocumentPdf(
   document: React.ReactElement<React.ComponentProps<typeof Document>>,
@@ -51,189 +31,160 @@ export async function renderDocumentPdf(
   return new Uint8Array(buffer);
 }
 
-export async function renderSharedDocumentPdf(
-  document: SharedPdfDocument,
-): Promise<Uint8Array> {
-  return renderDocumentPdf(createSharedPdfDocument(document));
-}
+/* ---------- shared payload types ---------- */
 
-export function createSharedPdfDocument(document: SharedPdfDocument) {
+export type PdfStoreInfo = {
+  address?: string | undefined;
+  city?: string | undefined;
+  document?: string | undefined;
+  instagram?: string | undefined;
+  logoUrl?: string | undefined;
+  name: string;
+  phone?: string | undefined;
+  state?: string | undefined;
+};
+
+export type PdfVehicleInfo = {
+  brand?: string | undefined;
+  chassi?: string | undefined;
+  color?: string | undefined;
+  fuel?: string | undefined;
+  laudo?: string | undefined;
+  manufactureYear?: number | string | undefined;
+  model?: string | undefined;
+  modelYear?: number | string | undefined;
+  plate?: string | undefined;
+  renavam?: string | undefined;
+  title?: string | undefined;
+  version?: string | undefined;
+  km?: number | string | undefined;
+};
+
+export type PdfPaymentRow = {
+  date?: string | undefined;
+  description?: string | undefined;
+  method: string;
+  valueCents: number;
+};
+
+export type PdfSignatureInfo = {
+  highlightText?: string | undefined;
+  name: string;
+  role?: string | undefined;
+};
+
+/* ---------- shared building blocks ---------- */
+
+export function PdfLogo({ src }: { src?: string | undefined }) {
+  if (!src) return null;
   return e(
-    Document,
-    {
-      author: document.brand.storeName,
-      creator: "Loja Veículos OS",
-      keywords: "loja veículos, documento automotivo, fluxo operacional",
-      language: "pt-BR",
-      producer: "Loja Veículos OS",
-      subject: document.subtitle,
-      title: document.title,
-    },
-    e(
-      Page,
-      { size: "A4", style: styles.page },
-      e(DocumentPdfHeader, {
-        brand: document.brand,
-        subtitle: document.subtitle,
-        title: document.title,
-      }),
-      e(DocumentPdfFooter, { storeName: document.brand.storeName }),
-      e(DocumentPdfBody, { document }),
-    ),
+    View,
+    { style: styles.logoContainer },
+    e(Image, { src, style: styles.logo }),
   );
 }
 
-export function DocumentPdfHeader({
-  brand,
+/** Logo image, or a styled store name when the store has no logo. */
+export function PdfLogoOrName({
+  logoUrl,
+  storeName,
+}: {
+  logoUrl?: string | undefined;
+  storeName: string;
+}) {
+  if (logoUrl) return e(PdfLogo, { src: logoUrl });
+  return e(
+    View,
+    { style: styles.logoContainer },
+    e(Text, { style: [styles.storeName, { fontSize: 14 }] }, storeName),
+  );
+}
+
+/** Premium fixed header: centered logo, store info left, doc title right. */
+export function PdfPremiumHeader({
+  store,
   subtitle,
   title,
 }: {
-  brand: SharedPdfBrand;
+  store: PdfStoreInfo;
   subtitle: string;
   title: string;
 }) {
   return e(
     View,
     { fixed: true, style: styles.header },
-    e(View, { style: styles.logoMark }, e(Text, null, brand.logoText ?? "LV")),
+    e(View, { style: styles.headerTop }, e(PdfLogo, { src: store.logoUrl })),
     e(
       View,
-      { style: styles.brandCopy },
-      e(Text, { style: styles.storeName }, brand.storeName),
-      e(Text, { style: styles.headerMuted }, brand.storeDocument ?? ""),
-      e(Text, { style: styles.headerMuted }, brand.contactLine ?? ""),
-    ),
-    e(
-      View,
-      { style: styles.documentTitle },
-      e(Text, { style: styles.headerTitle }, title),
-      e(Text, { style: styles.headerMuted }, subtitle),
+      { style: styles.headerBottom },
+      e(
+        View,
+        { style: styles.headerLeft },
+        e(Text, { style: styles.storeName }, store.name),
+        store.document
+          ? e(
+              Text,
+              { style: styles.storeDetail },
+              `CNPJ: ${formatCnpj(store.document)}`,
+            )
+          : null,
+        store.address
+          ? e(Text, { style: styles.storeDetail }, store.address)
+          : null,
+        store.phone
+          ? e(
+              Text,
+              { style: styles.storeDetail },
+              `WhatsApp: ${formatPhoneForPdf(store.phone)}`,
+            )
+          : null,
+        store.instagram
+          ? e(
+              Text,
+              { style: styles.storeDetail },
+              `Instagram: ${store.instagram}`,
+            )
+          : null,
+      ),
+      e(
+        View,
+        { style: styles.headerRight },
+        e(Text, { style: styles.docTitle }, title),
+        e(Text, { style: styles.docSubtitle }, subtitle),
+      ),
     ),
   );
 }
 
-export function DocumentPdfFooter({ storeName }: { storeName: string }) {
+export function PdfSectionTitle({ title }: { title: string }) {
+  return e(Text, { style: styles.sectionTitle }, title);
+}
+
+/** Fixed footer: contact line left, "Página X de Y" right. */
+export function PdfPageFooter({ contactLine }: { contactLine?: string }) {
   return e(
     View,
     { fixed: true, style: styles.footer },
-    e(
-      Text,
-      { style: styles.muted },
-      `Gerado com segurança por ${storeName} · Loja Veículos OS`,
-    ),
+    e(Text, { style: styles.footerContactText }, contactLine ?? ""),
     e(Text, {
+      fixed: true,
       render: ({ pageNumber, totalPages }) =>
         `Página ${pageNumber} de ${totalPages}`,
-      style: styles.muted,
+      style: styles.footerPageNumber,
     }),
   );
 }
 
-export function DocumentPdfSignatures({
-  signatures,
-}: {
-  signatures: readonly string[];
-}) {
+/** Fixed "RUBRICA DO COMPRADOR" line rendered on every contract page. */
+export function PdfRubricaLine() {
   return e(
     View,
-    { style: styles.signatures },
-    ...signatures.map((signature) =>
-      e(
-        View,
-        { key: signature, style: styles.signature, wrap: false },
-        e(View, { style: styles.signatureSpace }),
-        e(View, { style: styles.signatureLine }),
-        e(Text, { style: styles.signatureLabel }, signature),
-        e(Text, { style: styles.muted }, "Assinatura"),
-      ),
-    ),
+    { fixed: true, style: styles.rubricaFixed },
+    e(View, { style: styles.rubricaLine }),
+    e(Text, { style: styles.rubricaText }, "Rubrica do Comprador"),
   );
 }
 
-function DocumentPdfBody({ document }: { document: SharedPdfDocument }) {
-  return e(
-    View,
-    { style: styles.body },
-    e(Text, { style: styles.intro }, document.intro),
-    ...document.fields.map((section) =>
-      e(DocumentPdfSection, { key: section.title, section }),
-    ),
-    document.clauses.length
-      ? e(DocumentPdfClauses, { clauses: document.clauses })
-      : null,
-    document.audit
-      ? e(DocumentPdfSection, { section: document.audit, compact: true })
-      : null,
-    document.signatures.length
-      ? e(DocumentPdfSignatures, { signatures: document.signatures })
-      : null,
-  );
-}
-
-function DocumentPdfSection({
-  compact = false,
-  section,
-}: {
-  compact?: boolean;
-  section: SharedPdfSection;
-}) {
-  return e(
-    View,
-    { style: compact ? styles.sectionCompact : styles.section },
-    e(Text, { style: styles.sectionTitle }, section.title),
-    e(
-      View,
-      { style: styles.fieldGrid },
-      ...section.fields.map((field) =>
-        e(
-          View,
-          { key: `${section.title}-${field.label}`, style: styles.field },
-          e(Text, { style: styles.fieldLabel }, field.label),
-          e(Text, { style: styles.fieldValue }, field.value),
-        ),
-      ),
-    ),
-  );
-}
-
-export function DocumentPdfClauses({
-  clauses,
-}: {
-  clauses: readonly string[];
-}) {
-  const [firstClause, ...remainingClauses] = clauses;
-  return e(
-    View,
-    { style: styles.section },
-    firstClause
-      ? e(
-          View,
-          { style: styles.clauseOpening, wrap: false },
-          e(Text, { style: styles.sectionTitle }, "Cláusulas"),
-          e(DocumentPdfClause, { clause: firstClause, index: 0 }),
-        )
-      : e(Text, { style: styles.sectionTitle }, "Cláusulas"),
-    ...remainingClauses.map((clause, index) =>
-      e(DocumentPdfClause, {
-        clause,
-        index: index + 1,
-        key: `${index + 1}-${clause}`,
-      }),
-    ),
-  );
-}
-
-export function DocumentPdfClause({
-  clause,
-  index,
-}: {
-  clause: string;
-  index: number;
-}) {
-  return e(
-    View,
-    { style: styles.clause, wrap: false },
-    e(Text, { style: styles.clauseLabel }, `Cláusula ${index + 1}`),
-    e(Text, { style: styles.clauseText }, clause),
-  );
-}
+export * from "./reactPdfFormatHelpers.js";
+export * from "./reactPdfDocumentBlocks.js";
+export * from "./reactPdfPaymentTables.js";

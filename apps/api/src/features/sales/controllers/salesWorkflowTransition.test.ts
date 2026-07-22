@@ -76,7 +76,7 @@ describe("sales workflow transition", () => {
     expect(sale.status).toBe("closed");
     expect(vehiclePorts.listings.get("listing_1")?.status).toBe("sold_out");
     expect(vehiclePorts.units.get("unit_1")?.status).toBe("sold");
-    expect(vehiclePorts.documents.size).toBe(4);
+    expect(vehiclePorts.documents.size).toBe(5);
     expect(vehiclePorts.financeRepository.entries).toHaveLength(1);
     expect(vehiclePorts.financeRepository.entries[0]?.amountCents).toBe(
       5000000,

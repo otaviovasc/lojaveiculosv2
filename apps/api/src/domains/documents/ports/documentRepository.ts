@@ -1,4 +1,5 @@
 export type DocumentKind =
+  | "buyer_acknowledgment"
   | "buyer_document"
   | "consignment_contract"
   | "delivery_term"

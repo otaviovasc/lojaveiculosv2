@@ -35,6 +35,7 @@ export type VehicleTransmission =
 export type VehicleMediaKind = "document_preview" | "photo" | "video";
 
 export type VehicleDocumentKind =
+  | "buyer_acknowledgment"
   | "buyer_document"
   | "consignment_contract"
   | "delivery_term"

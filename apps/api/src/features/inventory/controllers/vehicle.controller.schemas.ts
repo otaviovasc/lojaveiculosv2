@@ -214,10 +214,14 @@ export const updateChecklistSchema = z.object({
 
 const buyerSchema = z.object({
   address: z.string().trim().min(1).nullable().optional(),
+  cep: z.string().trim().min(1).nullable().optional(),
+  city: z.string().trim().min(1).nullable().optional(),
+  district: z.string().trim().min(1).nullable().optional(),
   document: z.string().trim().min(1).nullable().optional(),
   email: z.string().trim().email().nullable().optional(),
   name: z.string().trim().min(1),
   phone: z.string().trim().min(1).nullable().optional(),
+  state: z.string().trim().min(1).nullable().optional(),
 });
 
 export const reserveUnitSchema = z.object({

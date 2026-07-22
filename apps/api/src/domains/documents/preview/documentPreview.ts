@@ -101,6 +101,7 @@ function text(value: unknown) {
 function kindLabel(kind: DocumentKind) {
   return (
     {
+      buyer_acknowledgment: "Termo de recebimento",
       buyer_document: "Cadastro comprador",
       consignment_contract: "Contrato de consignação",
       delivery_term: "Termo de entrega",

@@ -62,6 +62,7 @@
     "billing:asaas:webhook-smoke": "node tools/qa/asaas-billing-webhook-smoke.mjs",
     "qa:seed:local": "node tools/qa/local-seed-smoke.mjs",
     "qa:document-artifact": "pnpm --filter @lojaveiculosv2/api exec tsx ../../tools/qa/render-workflow-pdf-evidence.ts",
+    "qa:all-document-artifacts": "pnpm --filter @lojaveiculosv2/api exec tsx ../../tools/qa/render-all-document-pdfs.ts",
     "test:quality-tools": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/quality/*.test.mjs --root ../..",
     "test:coverage": "pnpm -r test:coverage",
     "test:seed-document-pdf": "pnpm --filter @lojaveiculosv2/web exec vitest run --expect.requireAssertions tools/storage/seed-product-document-pdf.test.mjs --root ../..",

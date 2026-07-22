@@ -30,6 +30,7 @@ export const documentKind = pgEnum("document_kind", [
   "internal",
   "other",
   "warranty_certificate",
+  "buyer_acknowledgment",
 ]);
 
 export const documentStatus = pgEnum("document_status", [
