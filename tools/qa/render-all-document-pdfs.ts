@@ -440,6 +440,18 @@ const jobs = [
       ),
   },
   {
+    name: "termo-recebimento-documentos",
+    render: () =>
+      renderWorkflowDocumentPdf(
+        workflowRecord(
+          "buyer_acknowledgment",
+          "termo-recebimento-documentos.pdf",
+          "Termo de Recebimento de Documentos e Itens",
+          saleFinance,
+        ),
+      ),
+  },
+  {
     name: "procuracao-veiculo-troca",
     render: () =>
       renderWorkflowDocumentPdf(

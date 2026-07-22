@@ -2,6 +2,7 @@ import { z } from "zod";
 import { documentTemplateKeys } from "@lojaveiculosv2/documents";
 
 export const documentKinds = [
+  "buyer_acknowledgment",
   "buyer_document",
   "consignment_contract",
   "delivery_term",

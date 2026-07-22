@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { PDFDocument } from "pdf-lib";
+import React from "react";
 import type { CreateVehicleDocumentRecord } from "../ports/vehicleInventoryRepository.js";
+import {
+  BUYER_ACKNOWLEDGMENT_ITEMS,
+  createBuyerAcknowledgmentDocument,
+} from "./vehicleBuyerAcknowledgmentPdf.js";
 import { buildWorkflowPdfModel } from "./vehicleWorkflowPdfModel.js";
 import { renderWorkflowDocumentPdf } from "./vehicleWorkflowPdf.js";
 import {
@@ -116,6 +121,7 @@ describe("vehicle workflow pdf", () => {
     "sale_receipt",
     "delivery_term",
     "power_of_attorney",
+    "buyer_acknowledgment",
     "reservation_receipt",
   ] as const)("renders %s as PDF bytes", async (kind) => {
     const pdf = await renderWorkflowDocumentPdf({ ...record, kind });
@@ -127,7 +133,33 @@ describe("vehicle workflow pdf", () => {
     expect(document.getAuthor()).toBe("Loja Veículos");
     expect(document.getCreator()).toBe("Loja Veículos OS");
   });
+
+  it("lists every acknowledgment item in the buyer checklist document", () => {
+    const model = buildWorkflowPdfModel({
+      ...record,
+      kind: "buyer_acknowledgment",
+    });
+    const document = createBuyerAcknowledgmentDocument(model);
+    const text = collectPdfText(document).join(" ");
+
+    expect(BUYER_ACKNOWLEDGMENT_ITEMS).toHaveLength(9);
+    for (const item of BUYER_ACKNOWLEDGMENT_ITEMS) {
+      expect(text).toContain(item.replace(/:$/, ""));
+    }
+    expect(text).toContain("TERMO DE RECEBIMENTO DE DOCUMENTOS E ITENS");
+    expect(text).toContain("Ana Cliente");
+    expect(text).toContain("ABC1D23");
+  });
 });
+
+function collectPdfText(node: unknown): string[] {
+  if (typeof node === "string") return [node];
+  if (Array.isArray(node)) return node.flatMap(collectPdfText);
+  if (React.isValidElement(node)) {
+    return collectPdfText((node.props as { children?: unknown }).children);
+  }
+  return [];
+}
 
 const buyerMetadata = {
   address: "Rua A",

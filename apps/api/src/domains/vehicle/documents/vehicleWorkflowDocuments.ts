@@ -19,6 +19,7 @@ export const vehicleSaleDocumentKinds = [
   "sale_receipt",
   "delivery_term",
   "power_of_attorney",
+  "buyer_acknowledgment",
 ] as const satisfies readonly VehicleDocumentKind[];
 
 export type VehicleSaleDocumentKind = (typeof vehicleSaleDocumentKinds)[number];
@@ -49,6 +50,11 @@ const soldDocuments: Record<VehicleSaleDocumentKind, WorkflowDocumentSpec> = {
     kind: "power_of_attorney",
     role: "power_of_attorney",
     title: "Procuração",
+  },
+  buyer_acknowledgment: {
+    kind: "buyer_acknowledgment",
+    role: "buyer_acknowledgment",
+    title: "Termo de recebimento de documentos e itens",
   },
 };
 

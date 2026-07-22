@@ -1,5 +1,6 @@
 import { renderDocumentPdf } from "../../documents/render/reactPdfDocumentPrimitives.js";
 import type { CreateVehicleDocumentRecord } from "../ports/vehicleInventoryRepository.js";
+import { createBuyerAcknowledgmentDocument } from "./vehicleBuyerAcknowledgmentPdf.js";
 import { createDeliveryTermDocument } from "./vehicleDeliveryTermPdf.js";
 import { createPowerOfAttorneyDocument } from "./vehiclePowerOfAttorneyPdf.js";
 import { createReservationReceiptDocument } from "./vehicleReservationReceiptPdf.js";
@@ -19,6 +20,8 @@ export async function renderWorkflowDocumentPdf(
 
 function createWorkflowDocument(kind: string, model: WorkflowPdfModel) {
   switch (kind) {
+    case "buyer_acknowledgment":
+      return createBuyerAcknowledgmentDocument(model);
     case "delivery_term":
       return createDeliveryTermDocument(model);
     case "power_of_attorney":
