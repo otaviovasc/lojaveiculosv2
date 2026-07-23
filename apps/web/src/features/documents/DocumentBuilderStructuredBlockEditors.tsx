@@ -1,6 +1,10 @@
 import { Trash2 } from "lucide-react";
 import { FeatureSelect } from "../../components/ui/FeatureControls";
-import { getFriendlyVariableLabel } from "./DocumentRichTextBlockEditor";
+import {
+  getFriendlyVariableLabel,
+  renderTextWithVariableChips,
+  VariableBadgeChip,
+} from "./DocumentRichTextBlockEditor";
 import type { DocumentTemplateBlock } from "./types";
 
 type FieldGridBlock = Extract<DocumentTemplateBlock, { type: "field_grid" }>;
@@ -74,7 +78,10 @@ export function FieldGridBlockEditor({
                 />
               </label>
               <label className="documents-builder-field-label">
-                <span>Variável</span>
+                <span className="flex items-center justify-between gap-2">
+                  <span>Variável</span>
+                  <VariableBadgeChip token={field.token} />
+                </span>
                 <FeatureSelect
                   ariaLabel="Variável do campo"
                   density="compact"
@@ -113,12 +120,92 @@ export function FieldGridBlockEditor({
   );
 }
 
+function StructuredItemEditor({
+  ariaLabel,
+  customPlaceholder,
+  itemValue,
+  labelPrefix,
+  onRemove,
+  onUpdate,
+  variables,
+}: {
+  ariaLabel: string;
+  customPlaceholder: string;
+  itemValue: string;
+  labelPrefix: string;
+  onRemove: () => void;
+  onUpdate: (val: string) => void;
+  variables: readonly string[];
+}) {
+  const isVariable =
+    variables.includes(itemValue) || /^\{\{[^{}]+\}\}$/.test(itemValue);
+  const selectedMode = isVariable ? itemValue : "custom";
+
+  const options = [
+    ...variables.map((token) => ({
+      label: getFriendlyVariableLabel(token),
+      value: token,
+    })),
+    { label: "Texto livre…", value: "custom" },
+  ];
+
+  return (
+    <div className="documents-builder-structured-row">
+      <label className="documents-builder-field-label">
+        <span className="flex items-center justify-between gap-2">
+          <span>{labelPrefix}</span>
+          {isVariable ? <VariableBadgeChip token={itemValue} /> : null}
+        </span>
+        <div className="flex gap-2 items-center w-full">
+          <div
+            className={selectedMode === "custom" ? "w-44 shrink-0" : "w-full"}
+          >
+            <FeatureSelect
+              ariaLabel={ariaLabel}
+              density="compact"
+              onChange={(val) => {
+                if (val === "custom") {
+                  onUpdate(isVariable ? "" : itemValue);
+                } else {
+                  onUpdate(val);
+                }
+              }}
+              options={options}
+              searchable
+              searchPlaceholder="Buscar opção…"
+              value={selectedMode}
+            />
+          </div>
+          {selectedMode === "custom" && (
+            <input
+              className="documents-builder-title-input flex-1 grow min-w-[14rem]"
+              onChange={(e) => onUpdate(e.target.value)}
+              placeholder={customPlaceholder}
+              value={isVariable ? "" : itemValue}
+            />
+          )}
+        </div>
+      </label>
+      <button
+        aria-label="Remover item"
+        className="documents-builder-icon-action"
+        onClick={onRemove}
+        type="button"
+      >
+        <Trash2 aria-hidden="true" className="size-4" />
+      </button>
+    </div>
+  );
+}
+
 export function TableBlockEditor({
   block,
   onChange,
+  variables = [],
 }: {
   block: TableBlock;
   onChange: (block: DocumentTemplateBlock) => void;
+  variables?: readonly string[];
 }) {
   const updateColumn = (index: number, value: string) => {
     onChange({
@@ -139,7 +226,10 @@ export function TableBlockEditor({
   return (
     <div className="documents-builder-structured-editor">
       <label className="documents-builder-field-label">
-        <span>Título da tabela</span>
+        <span className="flex items-center justify-between">
+          <span>Título da tabela</span>
+          {renderTextWithVariableChips(block.title)}
+        </span>
         <input
           className="documents-builder-title-input"
           onChange={(event) =>
@@ -157,29 +247,16 @@ export function TableBlockEditor({
           Colunas
         </span>
         {block.columns.map((column, index) => (
-          <div
-            className="documents-builder-structured-row"
+          <StructuredItemEditor
+            ariaLabel={`Coluna ${index + 1}`}
+            customPlaceholder="Ex: Descrição, Vencimento..."
+            itemValue={column}
             key={`${block.id}-column-${index}`}
-          >
-            <label className="documents-builder-field-label">
-              <span>Coluna {index + 1}</span>
-              <input
-                className="documents-builder-title-input"
-                onChange={(event) => updateColumn(index, event.target.value)}
-                value={column}
-              />
-            </label>
-            <button
-              aria-label="Remover coluna"
-              className="documents-builder-icon-action"
-              disabled={block.columns.length <= 1}
-              onClick={() => removeColumn(index)}
-              title="Remover coluna"
-              type="button"
-            >
-              <Trash2 aria-hidden="true" className="size-4" />
-            </button>
-          </div>
+            labelPrefix={`Coluna ${index + 1}`}
+            onRemove={() => removeColumn(index)}
+            onUpdate={(val) => updateColumn(index, val)}
+            variables={variables}
+          />
         ))}
         <button
           className="documents-builder-ghost-action"
@@ -196,9 +273,11 @@ export function TableBlockEditor({
 export function SignatureBlockEditor({
   block,
   onChange,
+  variables = [],
 }: {
   block: SignatureBlock;
   onChange: (block: DocumentTemplateBlock) => void;
+  variables?: readonly string[];
 }) {
   const updateRole = (index: number, value: string) => {
     onChange({
@@ -219,7 +298,10 @@ export function SignatureBlockEditor({
   return (
     <div className="documents-builder-structured-editor">
       <label className="documents-builder-field-label">
-        <span>Título do bloco de assinaturas</span>
+        <span className="flex items-center justify-between">
+          <span>Título do bloco de assinaturas</span>
+          {block.title ? renderTextWithVariableChips(block.title) : null}
+        </span>
         <input
           className="documents-builder-title-input"
           onChange={(event) =>
@@ -237,29 +319,16 @@ export function SignatureBlockEditor({
           Signatários
         </span>
         {block.roles.map((role, index) => (
-          <div
-            className="documents-builder-structured-row"
+          <StructuredItemEditor
+            ariaLabel={`Signatário ${index + 1}`}
+            customPlaceholder="Ex: Testemunha 1, Fiador..."
+            itemValue={role}
             key={`${block.id}-role-${index}`}
-          >
-            <label className="documents-builder-field-label">
-              <span>Signatário {index + 1}</span>
-              <input
-                className="documents-builder-title-input"
-                onChange={(event) => updateRole(index, event.target.value)}
-                value={role}
-              />
-            </label>
-            <button
-              aria-label="Remover signatário"
-              className="documents-builder-icon-action"
-              disabled={block.roles.length <= 1}
-              onClick={() => removeRole(index)}
-              title="Remover signatário"
-              type="button"
-            >
-              <Trash2 aria-hidden="true" className="size-4" />
-            </button>
-          </div>
+            labelPrefix={`Signatário ${index + 1}`}
+            onRemove={() => removeRole(index)}
+            onUpdate={(val) => updateRole(index, val)}
+            variables={variables}
+          />
         ))}
         <button
           className="documents-builder-ghost-action"

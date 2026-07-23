@@ -112,13 +112,15 @@ export function DocumentTemplatesPanel({
             <span>Cláusulas</span>
             <button
               aria-label="Adicionar cláusula"
+              className="documents-template-add-clause flex items-center gap-1 text-xs font-semibold text-accent-strong hover:underline"
               onClick={() =>
                 setDraft({ ...draft, clauses: [...draft.clauses, ""] })
               }
               title="Adicionar cláusula"
               type="button"
             >
-              <Plus aria-hidden="true" className="size-4" />
+              <Plus aria-hidden="true" className="size-3.5" />
+              <span>+ Cláusula</span>
             </button>
           </div>
           {draft.clauses.map((clause, index) => (

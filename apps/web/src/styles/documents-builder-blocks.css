@@ -360,6 +360,20 @@ select.documents-builder-title-input {
 }
 
 /* Banco de Cláusulas modal */
+.documents-clause-bank-dialog {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  max-width: 48rem;
+  overflow-y: auto;
+  padding: 1.5rem;
+  width: 100%;
+}
+
 .documents-clause-bank-search {
   align-items: center;
   background: var(--color-panel);

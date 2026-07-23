@@ -322,15 +322,11 @@
 .documents-builder-add-bar {
   align-items: center;
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-  scrollbar-width: none;
-}
-
-.documents-builder-add-bar::-webkit-scrollbar {
-  display: none;
+  padding: 0.35rem 0.15rem;
+  position: relative;
+  z-index: 10;
 }
 
 .documents-builder-add-bar button {
@@ -338,8 +334,9 @@
   min-height: 2.25rem;
 }
 
-/* The editor stylesheet forces ghost actions to full width on mobile;
-   keep them compact inside the add-bar so they stay on one row. */
-.documents-builder-add-bar .documents-builder-ghost-action {
+.documents-builder-add-bar .documents-builder-ghost-action,
+.documents-builder-add-bar .documents-builder-primary-action {
+  flex: 0 0 auto;
   width: auto;
+  white-space: nowrap;
 }

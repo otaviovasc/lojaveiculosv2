@@ -13,16 +13,27 @@ import { lazy, Suspense, useState } from "react";
 import {
   blockTitle,
   blockTypeLabel,
+  createBuyerFieldsBlock,
   createClauseBlock,
+  createConsignmentSignaturesBlock,
+  createDriverFieldsBlock,
   createFieldGridBlock,
+  createFinanceDetailTableBlock,
+  createFinanceFieldsBlock,
   createHeadingBlock,
+  createPaymentTableBlock,
+  createReceiptSignaturesBlock,
+  createSaleSignaturesBlock,
   createSignatureBlock,
   createTableBlock,
+  createTestDriveSignaturesBlock,
+  createVehicleFieldsBlock,
   renderSampleText,
   sampleVariable,
   updateBlockBody,
   type TemplateClauseGroup,
 } from "./documentBuilderModel";
+import { FeatureSelect } from "../../components/ui/FeatureControls";
 import {
   DocumentClauseBankModal,
   type ClauseBankSelection,
@@ -40,7 +51,11 @@ const DocumentRichTextBlockEditor = lazy(() =>
   })),
 );
 
-import { getFriendlyVariableLabel } from "./DocumentRichTextBlockEditor";
+import {
+  getFriendlyVariableLabel,
+  renderTextWithVariableChips,
+  VariableBadgeChip,
+} from "./DocumentRichTextBlockEditor";
 
 export function DocumentBuilderBlocks({
   blocks,
@@ -79,7 +94,7 @@ export function DocumentBuilderBlocks({
       {isEditable ? (
         <div
           aria-label="Adicionar blocos"
-          className="documents-builder-add-bar"
+          className="documents-builder-add-bar flex flex-wrap gap-2 items-center"
           role="toolbar"
         >
           <button
@@ -94,46 +109,120 @@ export function DocumentBuilderBlocks({
             />
             <span>Banco de Cláusulas</span>
           </button>
-          <button
-            className="documents-builder-ghost-action text-xs shrink-0 flex items-center gap-1.5"
-            onClick={() => appendBlock(createHeadingBlock())}
-            type="button"
-            title="Adicionar título de seção"
-          >
-            <Heading aria-hidden="true" className="size-3.5 shrink-0" />
-            <span>+ Título</span>
-          </button>
-          <button
-            className="documents-builder-ghost-action text-xs shrink-0 flex items-center gap-1.5"
-            onClick={() => appendBlock(createFieldGridBlock())}
-            type="button"
-            title="Adicionar grade de campos (Veículo / Comprador / Loja)"
-          >
-            <LayoutGrid aria-hidden="true" className="size-3.5 shrink-0" />
-            <span>+ Campos</span>
-          </button>
-          <button
-            className="documents-builder-ghost-action text-xs shrink-0 flex items-center gap-1.5"
-            onClick={() => appendBlock(createSignatureBlock())}
-            type="button"
-            title="Adicionar bloco de assinaturas"
-          >
-            <PenTool aria-hidden="true" className="size-3.5 shrink-0" />
-            <span>+ Assinaturas</span>
-          </button>
-          <button
-            className="documents-builder-ghost-action text-xs shrink-0 flex items-center gap-1.5"
-            onClick={() => appendBlock(createTableBlock())}
-            type="button"
-            title="Adicionar tabela de valores ou pagamentos"
-          >
-            <TableIcon aria-hidden="true" className="size-3.5 shrink-0" />
-            <span>+ Tabela</span>
-          </button>
+          <div className="shrink-0 min-w-[11rem]">
+            <FeatureSelect
+              ariaLabel="Adicionar cabeçalho ou título"
+              density="compact"
+              onChange={(val) => {
+                if (val === "sale_contract")
+                  appendBlock(
+                    createHeadingBlock("CONTRATO DE COMPRA E VENDA DE VEÍCULO"),
+                  );
+                if (val === "delivery_term")
+                  appendBlock(
+                    createHeadingBlock("TERMO DE ENTREGA E RESPONSABILIDADE"),
+                  );
+                if (val === "reservation_receipt")
+                  appendBlock(
+                    createHeadingBlock("RECIBO DE SINAL DE RESERVA DE VEÍCULO"),
+                  );
+                if (val === "power_of_attorney")
+                  appendBlock(
+                    createHeadingBlock("PROCURAÇÃO ESPECÍFICA PARA DETRAN"),
+                  );
+                if (val === "warranty_cert")
+                  appendBlock(
+                    createHeadingBlock(
+                      "CERTIFICADO DE GARANTIA DE VEÍCULO USADO",
+                    ),
+                  );
+                if (val === "custom_heading")
+                  appendBlock(createHeadingBlock("Novo Título de Seção"));
+              }}
+              options={[
+                { label: "+ Cabeçalho: Contrato", value: "sale_contract" },
+                { label: "+ Cabeçalho: Entrega", value: "delivery_term" },
+                {
+                  label: "+ Cabeçalho: Recibo Reserva",
+                  value: "reservation_receipt",
+                },
+                {
+                  label: "+ Cabeçalho: Procuração",
+                  value: "power_of_attorney",
+                },
+                { label: "+ Cabeçalho: Garantia", value: "warranty_cert" },
+                { label: "+ Título de Seção", value: "custom_heading" },
+              ]}
+              value=""
+            />
+          </div>
+          <div className="shrink-0 min-w-[10rem]">
+            <FeatureSelect
+              ariaLabel="Adicionar bloco de campos"
+              density="compact"
+              onChange={(val) => {
+                if (val === "vehicle") appendBlock(createVehicleFieldsBlock());
+                if (val === "buyer") appendBlock(createBuyerFieldsBlock());
+                if (val === "finance") appendBlock(createFinanceFieldsBlock());
+                if (val === "driver") appendBlock(createDriverFieldsBlock());
+              }}
+              options={[
+                { label: "+ Campos: Veículo", value: "vehicle" },
+                { label: "+ Campos: Comprador", value: "buyer" },
+                { label: "+ Campos: Financeiro", value: "finance" },
+                { label: "+ Campos: Condutor", value: "driver" },
+              ]}
+              value=""
+            />
+          </div>
+          <div className="shrink-0 min-w-[11rem]">
+            <FeatureSelect
+              ariaLabel="Adicionar bloco de assinaturas"
+              density="compact"
+              onChange={(val) => {
+                if (val === "sale") appendBlock(createSaleSignaturesBlock());
+                if (val === "testdrive")
+                  appendBlock(createTestDriveSignaturesBlock());
+                if (val === "consignment")
+                  appendBlock(createConsignmentSignaturesBlock());
+                if (val === "receipt")
+                  appendBlock(createReceiptSignaturesBlock());
+              }}
+              options={[
+                { label: "+ Assinaturas: Venda", value: "sale" },
+                { label: "+ Assinaturas: Test Drive", value: "testdrive" },
+                { label: "+ Assinaturas: Consignação", value: "consignment" },
+                { label: "+ Assinaturas: Recibo", value: "receipt" },
+              ]}
+              value=""
+            />
+          </div>
+          <div className="shrink-0 min-w-[10rem]">
+            <FeatureSelect
+              ariaLabel="Adicionar tabela"
+              density="compact"
+              onChange={(val) => {
+                if (val === "payments") appendBlock(createPaymentTableBlock());
+                if (val === "detail")
+                  appendBlock(createFinanceDetailTableBlock());
+              }}
+              options={[
+                { label: "+ Tabela: Pagamentos", value: "payments" },
+                { label: "+ Tabela: Custos/Valores", value: "detail" },
+              ]}
+              value=""
+            />
+          </div>
           <button
             className="documents-builder-primary-action text-xs shrink-0 flex items-center gap-1.5"
-            onClick={() => appendBlock(createClauseBlock())}
+            onClick={() => {
+              const clauseCount = blocks.filter(
+                (b) => b.type === "clause" || b.type === "paragraph",
+              ).length;
+              appendBlock(createClauseBlock("", `Cláusula ${clauseCount + 1}`));
+            }}
             type="button"
+            title="Adicionar nova cláusula ao documento"
           >
             <Plus aria-hidden="true" className="size-4 shrink-0" />
             <span>+ Cláusula</span>
@@ -207,16 +296,28 @@ function renderBlock({
 }) {
   if (block.type === "heading") {
     return isEditable ? (
-      <label className="documents-builder-field-label">
-        <span>Título da seção</span>
-        <input
-          className="documents-builder-title-input"
-          onChange={(event) => onChange({ ...block, text: event.target.value })}
+      <Suspense
+        fallback={
+          <div
+            aria-live="polite"
+            className="documents-builder-block-preview"
+            role="status"
+          >
+            Carregando editor…
+          </div>
+        }
+      >
+        <DocumentRichTextBlockEditor
+          onChange={(value) => onChange({ ...block, text: value })}
+          placeholder="Escreva o título da seção…"
           value={block.text}
+          variables={variables}
         />
-      </label>
+      </Suspense>
     ) : (
-      <p className="documents-builder-block-preview">{block.text}</p>
+      <p className="documents-builder-block-preview font-bold text-app-text">
+        {renderSampleText(block.text)}
+      </p>
     );
   }
 
@@ -260,8 +361,9 @@ function renderBlock({
           <div key={`${block.id}-${field.token}-${index}`}>
             <dt>{field.label}</dt>
             <dd>
-              <code>{getFriendlyVariableLabel(field.token)}</code>
-              <span>{sampleVariable(field.token)}</span>
+              <span className="font-semibold text-app-text">
+                {sampleVariable(field.token)}
+              </span>
             </dd>
           </div>
         ))}
@@ -271,24 +373,46 @@ function renderBlock({
 
   if (block.type === "table") {
     return isEditable ? (
-      <TableBlockEditor block={block} onChange={onChange} />
+      <TableBlockEditor
+        block={block}
+        onChange={onChange}
+        variables={variables}
+      />
     ) : (
-      <div className="documents-builder-table-block">
-        {block.columns.map((column, index) => (
-          <span key={`${column}-${index}`}>{column}</span>
-        ))}
+      <div className="documents-builder-table-block flex flex-col gap-2">
+        {block.title ? (
+          <strong className="text-xs font-bold text-muted uppercase">
+            {renderSampleText(block.title)}
+          </strong>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          {block.columns.map((column, index) => (
+            <span key={`${column}-${index}`}>{renderSampleText(column)}</span>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (block.type === "signature") {
     return isEditable ? (
-      <SignatureBlockEditor block={block} onChange={onChange} />
+      <SignatureBlockEditor
+        block={block}
+        onChange={onChange}
+        variables={variables}
+      />
     ) : (
-      <div className="documents-builder-signature-block">
-        {block.roles.map((role, index) => (
-          <span key={`${role}-${index}`}>{role}</span>
-        ))}
+      <div className="documents-builder-signature-block flex flex-col gap-2">
+        {block.title ? (
+          <strong className="text-xs font-bold text-muted uppercase">
+            {renderSampleText(block.title)}
+          </strong>
+        ) : null}
+        <div className="flex flex-wrap gap-3">
+          {block.roles.map((role, index) => (
+            <span key={`${role}-${index}`}>{renderSampleText(role)}</span>
+          ))}
+        </div>
       </div>
     );
   }

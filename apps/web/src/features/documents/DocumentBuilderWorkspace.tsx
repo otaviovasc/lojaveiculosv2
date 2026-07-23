@@ -9,12 +9,12 @@ import { DocumentBuilderSidebar } from "./DocumentBuilderSidebar";
 import { DocumentBuilderHeader } from "./DocumentBuilderWorkspaceChrome";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
 import { DocumentsSectionNavigation } from "./DocumentsSectionNavigation";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 import {
   collectTemplateClauseBank,
   createDefaultDocumentBuilderDraft,
   createDocumentBuilderDraft,
   documentBuilderClauses,
-  isDocumentBuilderDirty,
   type DocumentBuilderDraft,
   type DocumentBuilderSaveState,
   type DocumentBuilderStatus,
@@ -51,6 +51,12 @@ export function DocumentBuilderWorkspace({
   const [draft, setDraft] = useState<DocumentBuilderDraft>(() =>
     createDocumentBuilderDraft(selected),
   );
+  // Local baseline of the last persisted draft. The server may normalize
+  // blocks on save, so comparing against the template prop would flip the
+  // dirty flag back on after every autosave and retrigger it in a loop.
+  const [savedSnapshot, setSavedSnapshot] = useState(() =>
+    JSON.stringify(draft),
+  );
   const [saveState, setSaveState] = useState<DocumentBuilderSaveState>("idle");
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAiFloatingOpen, setIsAiFloatingOpen] = useState(false);
@@ -61,14 +67,16 @@ export function DocumentBuilderWorkspace({
   }, [onSave]);
 
   useEffect(() => {
-    setDraft(createDocumentBuilderDraft(selected));
+    const next = createDocumentBuilderDraft(selected);
+    setDraft(next);
+    setSavedSnapshot(JSON.stringify(next));
     setSaveState("idle");
   }, [selected?.templateKey]);
 
   const isSystemLocked = selected?.mode === "locked";
   const canEdit = selected?.mode === "editable";
   const isStoreCopy = selected?.source === "store";
-  const isDirty = isDocumentBuilderDirty(selected, draft);
+  const isDirty = JSON.stringify(draft) !== savedSnapshot;
   const clauses = useMemo(() => documentBuilderClauses(draft.blocks), [draft]);
   const clauseBank = useMemo(
     () => collectTemplateClauseBank(templates),
@@ -84,7 +92,10 @@ export function DocumentBuilderWorkspace({
     const timer = window.setTimeout(() => {
       setSaveState("saving");
       void saveSelectedTemplate(selected, draft, onSaveRef.current)
-        .then(() => setSaveState("saved"))
+        .then(() => {
+          setSavedSnapshot(JSON.stringify(draft));
+          setSaveState("saved");
+        })
         .catch(() => setSaveState("error"));
     }, 1200);
     return () => window.clearTimeout(timer);
@@ -239,7 +250,10 @@ export function DocumentBuilderWorkspace({
             onClick={() => {
               setSaveState("saving");
               void saveSelectedTemplate(selected, draft, onSave)
-                .then(() => setSaveState("saved"))
+                .then(() => {
+                  setSavedSnapshot(JSON.stringify(draft));
+                  setSaveState("saved");
+                })
                 .catch(() => setSaveState("error"));
             }}
             type="button"
@@ -260,38 +274,36 @@ export function DocumentBuilderWorkspace({
 
       {/* PDF Interactive Preview Modal */}
       {isPreviewModalOpen ? (
-        <div
-          className="documents-detail-modal-backdrop"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsPreviewModalOpen(false);
-          }}
+        <DocumentsDialogShell
+          backdropClassName="documents-detail-modal-backdrop"
+          className="documents-pdf-preview-dialog"
+          onClose={() => setIsPreviewModalOpen(false)}
+          title="Prévia do Documento em PDF"
         >
-          <div className="documents-modal-dialog max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto bg-panel border border-line rounded-2xl shadow-2xl">
-            <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
-              <div>
-                <span className="text-xs font-black text-accent-strong uppercase tracking-wider">
-                  Prévia do Documento em PDF
-                </span>
-                <h2 className="text-xl font-black text-app-text m-0">
-                  {draft.title}
-                </h2>
-              </div>
-              <button
-                aria-label="Fechar prévia"
-                className="documents-icon-button"
-                onClick={() => setIsPreviewModalOpen(false)}
-                type="button"
-              >
-                <X className="size-5" />
-              </button>
-            </header>
-            <DocumentTemplatePreview
-              isCustomized={selected.isCustomized || isDirty}
-              kind={selected.kind}
-              preview={preview}
-            />
-          </div>
-        </div>
+          <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
+            <div>
+              <span className="text-xs font-black text-accent-strong uppercase tracking-wider">
+                Prévia do Documento em PDF
+              </span>
+              <h2 className="text-xl font-black text-app-text m-0">
+                {draft.title}
+              </h2>
+            </div>
+            <button
+              aria-label="Fechar prévia"
+              className="documents-icon-button"
+              onClick={() => setIsPreviewModalOpen(false)}
+              type="button"
+            >
+              <X className="size-5" />
+            </button>
+          </header>
+          <DocumentTemplatePreview
+            isCustomized={selected.isCustomized || isDirty}
+            kind={selected.kind}
+            preview={preview}
+          />
+        </DocumentsDialogShell>
       ) : null}
     </FeaturePageShell>
   );
