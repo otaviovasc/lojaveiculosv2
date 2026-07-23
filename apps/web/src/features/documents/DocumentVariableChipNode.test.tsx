@@ -47,6 +47,8 @@ describe("VariableChip round-trip", () => {
     expect(getVariableMeta("{{document.issuedAt}}").label).toBe(
       "Data de Emissão",
     );
+    expect(getVariableMeta("{{vehicle.title}}").label).toBe("Veículo");
+    expect(getVariableMeta("{{vehicle.label}}").label).toBe("Veículo");
     expect(getVariableMeta("{{vehicle.km}}").label).toBe("Quilometragem");
     expect(getVariableMeta("{{driver.document}}").label).toBe(
       "CPF do Condutor",

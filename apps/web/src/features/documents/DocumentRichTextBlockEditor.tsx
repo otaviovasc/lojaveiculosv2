@@ -53,22 +53,33 @@ export function getVariableMeta(variable: string): VariableMeta {
     // Buyer
     "buyer.name": { icon: User, label: "Nome do Comprador" },
     "buyer.document": { icon: FileCheck, label: "CPF/CNPJ do Comprador" },
+    "buyer.cpf": { icon: FileCheck, label: "CPF do Comprador" },
     "buyer.address": { icon: MapPin, label: "Endereço do Comprador" },
+    "buyer.email": { icon: User, label: "E-mail do Comprador" },
+    "buyer.phone": { icon: Phone, label: "Telefone do Comprador" },
 
     // Driver
     "driver.name": { icon: User, label: "Nome do Condutor" },
     "driver.document": { icon: FileCheck, label: "CPF do Condutor" },
 
     // Vehicle
-    "vehicle.title": { icon: Car, label: "Veículo (descrição)" },
+    "vehicle.title": { icon: Car, label: "Veículo" },
+    "vehicle.label": { icon: Car, label: "Veículo" },
     "vehicle.plate": { icon: Hash, label: "Placa" },
     "vehicle.renavam": { icon: FileSpreadsheet, label: "RENAVAM" },
     "vehicle.chassis": { icon: Hash, label: "Chassi (VIN)" },
     "vehicle.km": { icon: Gauge, label: "Quilometragem" },
     "vehicle.color": { icon: Palette, label: "Cor" },
+    "vehicle.brand": { icon: Car, label: "Marca do Veículo" },
+    "vehicle.model": { icon: Car, label: "Modelo do Veículo" },
+    "vehicle.version": { icon: Car, label: "Versão do Veículo" },
+    "vehicle.year": { icon: Calendar, label: "Ano do Veículo" },
+    "vehicle.fuel": { icon: Car, label: "Combustível" },
 
     // Finance
     "finance.saleprice": { icon: DollarSign, label: "Valor da Venda" },
+    "sale.price": { icon: DollarSign, label: "Valor da Venda" },
+    "finance.price": { icon: DollarSign, label: "Valor da Venda" },
     "finance.signalamount": { icon: DollarSign, label: "Valor do Sinal" },
     "finance.paymentmethod": { icon: CreditCard, label: "Forma de Pagamento" },
 
@@ -100,7 +111,14 @@ export function getVariableMeta(variable: string): VariableMeta {
     const categoryLabel = grp
       ? grp.label
       : parts[0]!.charAt(0).toUpperCase() + parts[0]!.slice(1);
+    const subField = parts[1]!.toLowerCase();
+    if (subField === "label" || subField === "title") {
+      return { icon: grp ? grp.icon : Tag, label: categoryLabel };
+    }
     const formattedField = formatSubFieldToPortuguese(parts[1]!);
+    if (categoryLabel.toLowerCase() === formattedField.toLowerCase()) {
+      return { icon: grp ? grp.icon : Tag, label: categoryLabel };
+    }
     return {
       icon: grp ? grp.icon : Tag,
       label: `${categoryLabel}: ${formattedField}`,
@@ -141,6 +159,7 @@ export function formatSubFieldToPortuguese(rawField: string): string {
     fuel: "Combustível",
     "full name": "Nome Completo",
     installments: "Parcelas",
+    label: "Descrição",
     make: "Marca",
     mileage: "Quilometragem",
     model: "Modelo",
@@ -157,6 +176,7 @@ export function formatSubFieldToPortuguese(rawField: string): string {
     rg: "RG",
     state: "Estado (UF)",
     street: "Endereço",
+    title: "Título",
     total: "Valor Total",
     transmission: "Transmissão",
     version: "Versão",
@@ -197,6 +217,28 @@ export function formatSubFieldToPortuguese(rawField: string): string {
 
 export function getFriendlyVariableLabel(variable: string): string {
   return getVariableMeta(variable).label;
+}
+
+export function VariableBadgeChip({ token }: { token: string }) {
+  const meta = getVariableMeta(token);
+  const Icon = meta.icon;
+  return (
+    <span className="documents-variable-chip-btn inline-flex items-center gap-1.5 select-none align-middle font-normal not-italic">
+      <Icon className="size-3.5 shrink-0 text-accent-strong" />
+      <span>{meta.label}</span>
+    </span>
+  );
+}
+
+export function renderTextWithVariableChips(text: string) {
+  if (!text) return null;
+  const parts = text.split(/(\{\{[^{}]+\}\})/g);
+  return parts.map((part, index) => {
+    if (/^\{\{[^{}]+\}\}$/.test(part)) {
+      return <VariableBadgeChip key={`${part}-${index}`} token={part} />;
+    }
+    return part;
+  });
 }
 
 export function DocumentRichTextBlockEditor({

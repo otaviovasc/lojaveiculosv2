@@ -251,6 +251,20 @@
   padding: 0;
 }
 
+.documents-pdf-preview-dialog {
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: var(--surface-radius-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  max-width: 56rem;
+  overflow-y: auto;
+  padding: 1.5rem;
+  width: 100%;
+}
+
 .documents-modal-dialog .documents-detail-header {
   padding: 1.25rem;
   margin: 0;

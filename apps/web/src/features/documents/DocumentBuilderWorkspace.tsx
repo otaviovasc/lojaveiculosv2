@@ -9,6 +9,7 @@ import { DocumentBuilderSidebar } from "./DocumentBuilderSidebar";
 import { DocumentBuilderHeader } from "./DocumentBuilderWorkspaceChrome";
 import { DocumentTemplatePreview } from "./DocumentTemplatePreview";
 import { DocumentsSectionNavigation } from "./DocumentsSectionNavigation";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 import {
   collectTemplateClauseBank,
   createDefaultDocumentBuilderDraft,
@@ -273,38 +274,36 @@ export function DocumentBuilderWorkspace({
 
       {/* PDF Interactive Preview Modal */}
       {isPreviewModalOpen ? (
-        <div
-          className="documents-detail-modal-backdrop"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setIsPreviewModalOpen(false);
-          }}
+        <DocumentsDialogShell
+          backdropClassName="documents-detail-modal-backdrop"
+          className="documents-pdf-preview-dialog"
+          onClose={() => setIsPreviewModalOpen(false)}
+          title="Prévia do Documento em PDF"
         >
-          <div className="documents-modal-dialog max-w-4xl p-6 relative max-h-[90vh] overflow-y-auto bg-panel border border-line rounded-2xl shadow-2xl">
-            <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
-              <div>
-                <span className="text-xs font-black text-accent-strong uppercase tracking-wider">
-                  Prévia do Documento em PDF
-                </span>
-                <h2 className="text-xl font-black text-app-text m-0">
-                  {draft.title}
-                </h2>
-              </div>
-              <button
-                aria-label="Fechar prévia"
-                className="documents-icon-button"
-                onClick={() => setIsPreviewModalOpen(false)}
-                type="button"
-              >
-                <X className="size-5" />
-              </button>
-            </header>
-            <DocumentTemplatePreview
-              isCustomized={selected.isCustomized || isDirty}
-              kind={selected.kind}
-              preview={preview}
-            />
-          </div>
-        </div>
+          <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
+            <div>
+              <span className="text-xs font-black text-accent-strong uppercase tracking-wider">
+                Prévia do Documento em PDF
+              </span>
+              <h2 className="text-xl font-black text-app-text m-0">
+                {draft.title}
+              </h2>
+            </div>
+            <button
+              aria-label="Fechar prévia"
+              className="documents-icon-button"
+              onClick={() => setIsPreviewModalOpen(false)}
+              type="button"
+            >
+              <X className="size-5" />
+            </button>
+          </header>
+          <DocumentTemplatePreview
+            isCustomized={selected.isCustomized || isDirty}
+            kind={selected.kind}
+            preview={preview}
+          />
+        </DocumentsDialogShell>
       ) : null}
     </FeaturePageShell>
   );

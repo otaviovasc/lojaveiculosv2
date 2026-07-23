@@ -6,6 +6,7 @@ import {
   type TemplateClauseGroup,
 } from "./documentBuilderModel";
 import { getFriendlyVariableLabel } from "./DocumentRichTextBlockEditor";
+import { DocumentsDialogShell } from "./DocumentsDialogShell";
 
 export type ClauseBankSelection = {
   body: string;
@@ -53,145 +54,143 @@ export function DocumentClauseBankModal({
   const isEmpty = !showRecommended && visibleGroups.length === 0;
 
   return (
-    <div
-      className="documents-detail-modal-backdrop"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <DocumentsDialogShell
+      backdropClassName="documents-detail-modal-backdrop"
+      className="documents-clause-bank-dialog"
+      onClose={onClose}
+      title="Banco de Cláusulas"
     >
-      <div className="documents-modal-dialog max-w-3xl p-6 relative max-h-[85vh] overflow-y-auto bg-panel border border-line rounded-2xl shadow-2xl">
-        <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
-          <div className="flex items-center gap-2.5">
-            <BookOpen className="size-5 text-accent-strong" />
-            <div>
-              <h2 className="text-lg font-black text-app-text m-0">
-                Banco de Cláusulas
-              </h2>
-              <p className="text-xs text-muted font-semibold m-0">
-                Insira cláusulas prontas dos modelos do sistema ou recomendações
-                jurídicas.
-              </p>
-            </div>
-          </div>
-          <button
-            aria-label="Fechar banco de cláusulas"
-            className="documents-icon-button"
-            onClick={onClose}
-            type="button"
-          >
-            <X className="size-5" />
-          </button>
-        </header>
-
-        <label className="documents-clause-bank-search">
-          <Search aria-hidden="true" className="size-4 shrink-0" />
-          <input
-            aria-label="Buscar cláusula"
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Buscar cláusula…"
-            type="search"
-            value={search}
-          />
-        </label>
-
-        <div
-          aria-label="Filtrar cláusulas"
-          className="documents-clause-bank-filters"
-          role="toolbar"
-        >
-          <FilterChip
-            isActive={filter === FILTER_ALL}
-            label="Todas"
-            onSelect={() => setFilter(FILTER_ALL)}
-          />
-          <FilterChip
-            isActive={filter === FILTER_RECOMMENDED}
-            label="Recomendadas"
-            onSelect={() => setFilter(FILTER_RECOMMENDED)}
-          />
-          {clauseBank.map((group) => (
-            <FilterChip
-              isActive={filter === group.templateKey}
-              key={group.templateKey}
-              label={group.templateTitle}
-              onSelect={() => setFilter(group.templateKey)}
-            />
-          ))}
-        </div>
-
-        <div className="documents-clause-bank-list">
-          {showRecommended ? (
-            <section className="documents-clause-bank-section">
-              <h3 className="documents-clause-bank-section-title">
-                Recomendadas
-              </h3>
-              {recommended.map((clause) => (
-                <article
-                  className="documents-clause-bank-card"
-                  key={clause.title}
-                >
-                  <header className="documents-clause-bank-card-header">
-                    <div>
-                      <strong>{clause.title}</strong>
-                      <span className="documents-clause-bank-badge">
-                        {clause.category}
-                      </span>
-                    </div>
-                    <InsertClauseButton
-                      onInsert={() =>
-                        onInsert({ body: clause.body, label: clause.title })
-                      }
-                    />
-                  </header>
-                  <p className="documents-clause-bank-description">
-                    {clause.description}
-                  </p>
-                  <ClauseBankPreview body={clause.body} />
-                </article>
-              ))}
-            </section>
-          ) : null}
-
-          {visibleGroups.map((group) => (
-            <section
-              className="documents-clause-bank-section"
-              key={group.templateKey}
-            >
-              <h3 className="documents-clause-bank-section-title">
-                {group.templateTitle}
-              </h3>
-              {group.clauses.map((clause) => (
-                <article
-                  className="documents-clause-bank-card"
-                  key={`${group.templateKey}-${clause.label}`}
-                >
-                  <header className="documents-clause-bank-card-header">
-                    <div>
-                      <strong>{clause.label}</strong>
-                      <span className="documents-clause-bank-template-tag">
-                        {group.templateTitle}
-                      </span>
-                    </div>
-                    <InsertClauseButton
-                      onInsert={() =>
-                        onInsert({ body: clause.body, label: clause.label })
-                      }
-                    />
-                  </header>
-                  <ClauseBankPreview body={clause.body} />
-                </article>
-              ))}
-            </section>
-          ))}
-
-          {isEmpty ? (
-            <p className="documents-clause-bank-empty" role="status">
-              Nenhuma cláusula encontrada.
+      <header className="flex items-center justify-between border-b border-line pb-4 mb-4">
+        <div className="flex items-center gap-2.5">
+          <BookOpen className="size-5 text-accent-strong" />
+          <div>
+            <h2 className="text-lg font-black text-app-text m-0">
+              Banco de Cláusulas
+            </h2>
+            <p className="text-xs text-muted font-semibold m-0">
+              Insira cláusulas prontas dos modelos do sistema ou recomendações
+              jurídicas.
             </p>
-          ) : null}
+          </div>
         </div>
+        <button
+          aria-label="Fechar banco de cláusulas"
+          className="documents-icon-button"
+          onClick={onClose}
+          type="button"
+        >
+          <X className="size-5" />
+        </button>
+      </header>
+
+      <label className="documents-clause-bank-search">
+        <Search aria-hidden="true" className="size-4 shrink-0" />
+        <input
+          aria-label="Buscar cláusula"
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Buscar cláusula…"
+          type="search"
+          value={search}
+        />
+      </label>
+
+      <div
+        aria-label="Filtrar cláusulas"
+        className="documents-clause-bank-filters"
+        role="toolbar"
+      >
+        <FilterChip
+          isActive={filter === FILTER_ALL}
+          label="Todas"
+          onSelect={() => setFilter(FILTER_ALL)}
+        />
+        <FilterChip
+          isActive={filter === FILTER_RECOMMENDED}
+          label="Recomendadas"
+          onSelect={() => setFilter(FILTER_RECOMMENDED)}
+        />
+        {clauseBank.map((group) => (
+          <FilterChip
+            isActive={filter === group.templateKey}
+            key={group.templateKey}
+            label={group.templateTitle}
+            onSelect={() => setFilter(group.templateKey)}
+          />
+        ))}
       </div>
-    </div>
+
+      <div className="documents-clause-bank-list">
+        {showRecommended ? (
+          <section className="documents-clause-bank-section">
+            <h3 className="documents-clause-bank-section-title">
+              Recomendadas
+            </h3>
+            {recommended.map((clause) => (
+              <article
+                className="documents-clause-bank-card"
+                key={clause.title}
+              >
+                <header className="documents-clause-bank-card-header">
+                  <div>
+                    <strong>{clause.title}</strong>
+                    <span className="documents-clause-bank-badge">
+                      {clause.category}
+                    </span>
+                  </div>
+                  <InsertClauseButton
+                    onInsert={() =>
+                      onInsert({ body: clause.body, label: clause.title })
+                    }
+                  />
+                </header>
+                <p className="documents-clause-bank-description">
+                  {clause.description}
+                </p>
+                <ClauseBankPreview body={clause.body} />
+              </article>
+            ))}
+          </section>
+        ) : null}
+
+        {visibleGroups.map((group) => (
+          <section
+            className="documents-clause-bank-section"
+            key={group.templateKey}
+          >
+            <h3 className="documents-clause-bank-section-title">
+              {group.templateTitle}
+            </h3>
+            {group.clauses.map((clause) => (
+              <article
+                className="documents-clause-bank-card"
+                key={`${group.templateKey}-${clause.label}`}
+              >
+                <header className="documents-clause-bank-card-header">
+                  <div>
+                    <strong>{clause.label}</strong>
+                    <span className="documents-clause-bank-template-tag">
+                      {group.templateTitle}
+                    </span>
+                  </div>
+                  <InsertClauseButton
+                    onInsert={() =>
+                      onInsert({ body: clause.body, label: clause.label })
+                    }
+                  />
+                </header>
+                <ClauseBankPreview body={clause.body} />
+              </article>
+            ))}
+          </section>
+        ))}
+
+        {isEmpty ? (
+          <p className="documents-clause-bank-empty" role="status">
+            Nenhuma cláusula encontrada.
+          </p>
+        ) : null}
+      </div>
+    </DocumentsDialogShell>
   );
 }
 

@@ -322,15 +322,11 @@
 .documents-builder-add-bar {
   align-items: center;
   display: flex;
-  flex-direction: row;
+  flex-wrap: wrap;
   gap: 0.5rem;
-  overflow-x: auto;
-  padding-bottom: 0.25rem;
-  scrollbar-width: none;
-}
-
-.documents-builder-add-bar::-webkit-scrollbar {
-  display: none;
+  padding: 0.35rem 0.15rem;
+  position: relative;
+  z-index: 10;
 }
 
 .documents-builder-add-bar button {

@@ -72,7 +72,7 @@ export const documentVariableCatalog = [
   ),
   variable(
     "vehicle.title",
-    "Veiculo",
+    "Veículo",
     "{{vehicle.title}}",
     "Fiat Toro Volcano 2023",
     ["vehicle"],
@@ -150,17 +150,30 @@ export function variablesForContext(context: DocumentTemplateContext) {
 }
 
 export function sampleValue(token: string) {
-  return (
-    documentVariableCatalog.find((item) => item.token === token)?.sample ??
-    "Valor preenchido na emissao"
+  const normalizedToken = token.trim();
+  const item = documentVariableCatalog.find(
+    (v) =>
+      v.token === normalizedToken ||
+      v.key === normalizedToken ||
+      `{{${v.key}}}` === normalizedToken,
   );
+  if (item) return item.sample;
+
+  if (normalizedToken.includes("phone")) return "(11) 99999-9999";
+  if (normalizedToken.includes("address"))
+    return "Rua das Flores, 123 - Centro";
+  if (normalizedToken.includes("price")) return "R$ 126.900,00";
+  if (normalizedToken.includes("date") || normalizedToken.includes("issuedAt"))
+    return "24/06/2026";
+  if (normalizedToken.includes("name")) return "Ana Cliente";
+  if (normalizedToken.includes("document")) return "123.456.789-00";
+
+  return "Valor preenchido na emissão";
 }
 
 export function interpolateSampleVariables(value: string) {
-  return documentVariableCatalog.reduce(
-    (current, item) => current.replaceAll(item.token, item.sample),
-    value,
-  );
+  if (!value) return value;
+  return value.replace(/\{\{[^{}]+\}\}/g, (token) => sampleValue(token));
 }
 
 function variable(
