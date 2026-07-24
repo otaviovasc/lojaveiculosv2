@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { Check, Clock, Link2, X } from "lucide-react";
+import { CarFront, Check, Clock, Link2, X } from "lucide-react";
+import type { CrmWhatsappVehicleOption } from "./crmWhatsappExtraTypes";
 import type { CrmWhatsappSession } from "./crmWhatsappTypes";
 import type {
   CrmLeadVisit,
@@ -15,6 +16,7 @@ export type CrmWhatsappVisitsPageProps = {
   api?: CrmVisitsApi;
   canManage: boolean;
   canRead: boolean;
+  listVehicles?: () => Promise<readonly CrmWhatsappVehicleOption[]>;
 };
 
 export const visitViewLabels: Record<VisitView, string> = {
@@ -138,6 +140,12 @@ export function VisitRow({
             <Link2 aria-hidden="true" className="size-3" />
             Lead vinculado
           </a>
+          {visit.vehicleTitle ? (
+            <p>
+              <CarFront aria-hidden="true" className="mr-1 inline size-3.5" />
+              {visit.vehicleTitle}
+            </p>
+          ) : null}
           {visit.notes ? <p>{visit.notes}</p> : null}
         </div>
         <div className="crm-whatsapp-visit-actions">

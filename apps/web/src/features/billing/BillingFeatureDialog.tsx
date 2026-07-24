@@ -1,37 +1,18 @@
 import { BadgeCheck, PackagePlus, ShieldCheck } from "lucide-react";
 import { FeatureDialog } from "../../components/ui/FeatureOverlay";
 import { featureLabels, featureValueCopy, isEnabled } from "./billingFormat";
-import type {
-  BillingEntitlementMatrixRow,
-  BillingEntitlementStatus,
-  EntitlementKey,
-} from "./types";
+import type { BillingEntitlementMatrixRow } from "./types";
 
 export function BillingFeatureDialog({
-  isSaving,
   onClose,
-  onReasonChange,
-  onUpdate,
   priceLabel,
-  reason,
   row,
 }: {
-  isSaving: boolean;
   onClose: () => void;
-  onReasonChange: (featureKey: EntitlementKey, reason: string) => void;
-  onUpdate: (
-    featureKey: EntitlementKey,
-    status: BillingEntitlementStatus,
-  ) => Promise<void>;
   priceLabel: string;
-  reason: string;
   row: BillingEntitlementMatrixRow | null;
 }) {
   if (!row) return null;
-  void isSaving;
-  void onReasonChange;
-  void onUpdate;
-  void reason;
   const label = featureLabels[row.featureKey];
   const enabled = isEnabled(row.status);
 

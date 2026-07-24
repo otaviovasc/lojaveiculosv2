@@ -6,6 +6,8 @@ import {
   subscriptions,
 } from "@lojaveiculosv2/db";
 import type { UpdateBillingSelectionInput } from "../../../domains/billing/ports/billingRepository.js";
+import { BillingSelectionError } from "../../../domains/billing/services/BillingService/updateBillingSelection.js";
+import { ensureTenantBillingAccount } from "./drizzleBillingAccount.js";
 import type { DrizzleBillingClient } from "./drizzleBillingRepository.js";
 
 export async function updateStoreSubscriptionSelection(
@@ -13,20 +15,22 @@ export async function updateStoreSubscriptionSelection(
   input: UpdateBillingSelectionInput,
 ) {
   const now = new Date();
-  const [subscription] = await db
+  const [existingSubscription] = await db
     .select()
     .from(subscriptions)
     .where(eq(subscriptions.tenantId, input.tenantId))
     .orderBy(desc(subscriptions.createdAt))
     .limit(1);
-  if (!subscription) throw new Error("Billing subscription was not found.");
+  const subscription =
+    existingSubscription ??
+    (await ensureTenantBillingAccount(db, input.tenantId)).subscription;
 
   const [plan] = await db
     .select()
     .from(plans)
     .where(and(eq(plans.id, input.planId), eq(plans.status, "active")))
     .limit(1);
-  if (!plan) throw new Error("Selected billing plan was not found.");
+  if (!plan) throw new BillingSelectionError("Selected plan is unavailable.");
   const selectedAddons = input.addonIds.length
     ? await db
         .select()
@@ -41,7 +45,7 @@ export async function updateStoreSubscriptionSelection(
         addon.catalogVersion !== plan.catalogVersion,
     )
   ) {
-    throw new Error("Selected billing add-on was not found.");
+    throw new BillingSelectionError("Selected add-on is unavailable.");
   }
 
   const activeItems = await db

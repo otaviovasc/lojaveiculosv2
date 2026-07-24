@@ -19,7 +19,6 @@ const productRoutes = [
   { name: "whatsapp", path: "/crm" },
   { name: "billing", path: "/billing" },
   { name: "documents", path: "/documents" },
-  { name: "automation", path: "/autobot" },
   { name: "simulations", path: "/simulations" },
   { name: "automatic-entries", path: "/auto-entries" },
   { name: "reports", path: "/reports" },
@@ -32,7 +31,6 @@ const productRoutes = [
   { name: "public-api", path: "/public-api" },
   { name: "settings", path: "/settings" },
   { name: "checklists", path: "/checklists" },
-  { name: "domain", path: "/domain" },
   { name: "paid-traffic", path: "/paid-traffic" },
 ] as const;
 

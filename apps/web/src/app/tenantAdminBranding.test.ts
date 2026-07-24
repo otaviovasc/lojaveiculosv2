@@ -35,6 +35,25 @@ describe("tenant admin branding", () => {
     expect(style["--color-accent-soft-foreground"]).toBe(hex("151515"));
     expect(style["--color-accent-strong"]).toMatch(/^#/);
     expect(style["--color-accent-soft"]).toMatch(/^#/);
+    expect(style["--color-ring"]).toBe(accent);
+    expect(style["--shadow-focus"]).toBe(
+      `0 0 0 3px color-mix(in srgb, ${accent} 26%, transparent)`,
+    );
+    expect(style["--color-accent-contrast"]).toBe(hex("ffffff"));
+    expect(style["--color-accent-readable"]).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
+  it("derives a light readable accent for dark theme surfaces", () => {
+    const brand = createTenantAdminBrand(
+      createSettings({ theme: { accentColor: hex("0f766e") } }),
+    );
+    const lightStyle = createTenantAdminBrandStyle(brand);
+    const darkStyle = createTenantAdminBrandStyle(brand, { dark: true });
+
+    expect(darkStyle["--color-accent-readable"]).toMatch(/^#[0-9a-f]{6}$/);
+    expect(darkStyle["--color-accent-readable"]).not.toBe(
+      lightStyle["--color-accent-readable"],
+    );
   });
 
   it("chooses readable foregrounds for light tenant accent colors", () => {

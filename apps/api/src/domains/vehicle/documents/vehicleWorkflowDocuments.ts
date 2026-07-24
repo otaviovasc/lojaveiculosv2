@@ -19,6 +19,7 @@ export const vehicleSaleDocumentKinds = [
   "sale_receipt",
   "delivery_term",
   "power_of_attorney",
+  "buyer_acknowledgment",
 ] as const satisfies readonly VehicleDocumentKind[];
 
 export type VehicleSaleDocumentKind = (typeof vehicleSaleDocumentKinds)[number];
@@ -50,6 +51,11 @@ const soldDocuments: Record<VehicleSaleDocumentKind, WorkflowDocumentSpec> = {
     role: "power_of_attorney",
     title: "Procuração",
   },
+  buyer_acknowledgment: {
+    kind: "buyer_acknowledgment",
+    role: "buyer_acknowledgment",
+    title: "Termo de recebimento de documentos e itens",
+  },
 };
 
 export function buildReservationReceiptDocument(input: {
@@ -71,6 +77,7 @@ export function buildReservationReceiptDocument(input: {
         paymentMethod: input.signalPayment.method,
         signalAmountCents: input.signalPayment.amountCents,
         status: input.signalPayment.status,
+        tablePriceCents: input.listing.priceCents,
         totalAmountCents: input.sale.sale.salePriceCents,
       },
       saleId: input.sale.sale.id,
@@ -115,12 +122,20 @@ export function buildSoldDocuments(input: {
         documentType: spec.role,
         finance: {
           allocatedAmountCents: sumPaymentAmounts(activePayments),
+          discountCents:
+            input.listing.priceCents === null
+              ? null
+              : Math.max(
+                  0,
+                  input.listing.priceCents - input.sale.sale.salePriceCents,
+                ),
           paidAmountCents: sumPaymentAmounts(
             activePayments.filter((payment) => payment.status === "paid"),
           ),
           paymentMethod: paymentMethods.join(", "),
           payments: activePayments.map(paymentSnapshot),
           salePriceCents: input.sale.sale.salePriceCents,
+          tablePriceCents: input.listing.priceCents,
         },
         saleId: input.sale.sale.id,
         salePaymentIds: activePayments.map((payment) => payment.id),
@@ -142,8 +157,13 @@ function sumPaymentAmounts(payments: readonly VehicleSalePayment[]): number {
 }
 
 function paymentSnapshot(payment: VehicleSalePayment) {
+  const metadata = payment.metadata ?? {};
   return {
     amountCents: payment.amountCents,
+    description:
+      typeof metadata.description === "string" && metadata.description.trim()
+        ? metadata.description.trim()
+        : null,
     dueAt: payment.dueAt,
     extraCents: payment.extraCents,
     id: payment.id,
@@ -153,38 +173,14 @@ function paymentSnapshot(payment: VehicleSalePayment) {
     principalCents: payment.principalCents,
     providerPaymentId: payment.providerPaymentId,
     status: payment.status,
+    tradeInVehicle:
+      metadata.tradeInVehicle && typeof metadata.tradeInVehicle === "object"
+        ? metadata.tradeInVehicle
+        : null,
   };
 }
 
-export function appendVehicleDocumentVoidHistory(
-  metadata: Record<string, unknown>,
-  input: Pick<VoidVehicleDocumentsBySaleInput, "actorId" | "at" | "reason">,
-): Record<string, unknown> {
-  return {
-    ...metadata,
-    operationHistory: [
-      ...vehicleDocumentOperationHistory(metadata),
-      {
-        action: "voided",
-        actorId: input.actorId,
-        at: input.at,
-        reason: input.reason,
-      },
-    ],
-  };
-}
-
-function vehicleDocumentOperationHistory(metadata: Record<string, unknown>) {
-  const value = metadata.operationHistory;
-  if (!Array.isArray(value)) return [];
-  return value.filter(
-    (item): item is Record<string, unknown> =>
-      Boolean(item) &&
-      typeof item === "object" &&
-      typeof (item as Record<string, unknown>).action === "string" &&
-      typeof (item as Record<string, unknown>).actorId === "string",
-  );
-}
+export { appendVehicleDocumentVoidHistory } from "./vehicleWorkflowDocumentHistory.js";
 
 export function isVehicleSaleDocumentKind(
   value: string,
@@ -231,6 +227,9 @@ function buildDocumentRecord(input: {
 function vehicleSnapshot(listing: VehicleListing, unit: VehicleUnit) {
   return {
     catalog: listing.catalog,
+    color: unit.colorName,
+    fuelType: listing.fuelType,
+    km: listing.mileageKm,
     listingId: listing.id,
     manufactureYear: listing.manufactureYear,
     modelYear: listing.modelYear,

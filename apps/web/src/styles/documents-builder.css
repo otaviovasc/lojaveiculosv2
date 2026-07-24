@@ -22,40 +22,26 @@
   background: var(--color-panel);
   border: 1px solid var(--color-line);
   border-radius: var(--surface-radius-xl);
-  box-shadow: var(--shadow-panel);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.25);
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: 1rem 1.25rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.documents-builder-topbar::before {
-  background: var(--color-accent);
-  bottom: 0;
-  content: "";
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 0.25rem;
+  padding: 0.5rem 1rem;
+  position: sticky;
+  top: 0.5rem;
+  z-index: 50;
+  backdrop-filter: blur(12px);
 }
 
 .documents-builder-heading {
   align-items: center;
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: auto minmax(0, 1fr);
+  color: var(--color-accent-strong);
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
-.documents-builder-heading > div {
-  display: grid;
-  gap: 0.15rem;
-}
-
-.documents-builder-heading > div > span,
 .documents-builder-sidebar-header span,
-.documents-builder-editor-head p,
 .documents-builder-name-field > span,
 .documents-builder-panel-heading span,
 .documents-builder-block header small,
@@ -67,38 +53,14 @@
   text-transform: uppercase;
 }
 
-.documents-builder-heading-icon {
-  align-items: center;
-  background: var(--color-accent-soft);
-  border-radius: var(--radius-lg);
-  color: var(--color-accent-strong);
-  display: inline-flex;
-  height: 2.75rem;
-  justify-content: center;
-  width: 2.75rem;
-}
-
 .documents-builder-topbar h1 {
   color: var(--color-text);
   font-family: var(--font-display);
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-base);
   font-weight: 850;
   letter-spacing: -0.025em;
   line-height: 1.15;
   margin: 0;
-}
-
-.documents-builder-topbar p {
-  color: var(--color-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 550;
-  margin: 0;
-}
-
-.documents-builder-save-status {
-  align-items: center;
-  display: flex;
-  gap: 0.75rem;
 }
 
 /* Status pill — communicates save state with a tone-coded chip. */
@@ -149,8 +111,7 @@
   color: var(--color-danger);
 }
 
-/* Primary accent actions: Save, Create editable copy, AI suggest. */
-.documents-builder-save-status button,
+/* Primary accent actions: Create editable copy, AI suggest. */
 .documents-builder-primary-action {
   align-items: center;
   background: var(--color-accent);
@@ -172,19 +133,16 @@
     transform var(--motion-duration-fast) var(--motion-ease-standard);
 }
 
-.documents-builder-save-status button:not(:disabled):hover,
 .documents-builder-primary-action:not(:disabled):hover {
   background: var(--color-accent-strong);
   border-color: var(--color-accent-strong);
   transform: translateY(-1px);
 }
 
-.documents-builder-save-status button:not(:disabled):active,
 .documents-builder-primary-action:not(:disabled):active {
   transform: translateY(0);
 }
 
-.documents-builder-save-status button:focus-visible,
 .documents-builder-primary-action:focus-visible,
 .documents-builder-ghost-action:focus-visible,
 .documents-builder-panel-heading button:focus-visible,
@@ -221,7 +179,6 @@
   border-color: var(--color-line-strong);
 }
 
-.documents-builder-save-status button:disabled,
 .documents-builder-primary-action:disabled,
 .documents-builder-ghost-action:disabled,
 .documents-builder-panel-heading button:disabled,
@@ -246,37 +203,140 @@
     minmax(19rem, 22rem);
 }
 
-@media (max-width: 1320px) {
-  .documents-builder-layout {
-    grid-template-columns: minmax(14rem, 15rem) minmax(0, 1fr);
-  }
+.documents-builder-main-wide {
+  padding: 0.75rem 1rem;
+}
 
-  .documents-builder-inspector {
-    grid-column: 2;
+.documents-builder-layout-wide {
+  align-items: start;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(15rem, 18rem) minmax(0, 1fr);
+}
+
+.documents-builder-editor-wide {
+  width: 100%;
+  max-width: 100%;
+}
+
+.documents-variable-chip-btn {
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 25%, transparent);
+  border-radius: var(--radius-md);
+  color: var(--color-accent-strong);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  padding: 0.35rem 0.65rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.documents-variable-chip-btn:hover {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+  transform: translateY(-1px);
+}
+
+/* Floating CTA dock — sits above every overlay, including modals (z-index 1000). */
+.documents-builder-floating-dock {
+  align-items: flex-end;
+  bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  right: 1.5rem;
+  z-index: 1100;
+}
+
+.documents-builder-fab-row {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.documents-builder-fab {
+  align-items: center;
+  background: var(--color-panel);
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  color: var(--color-text);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  gap: 0.5rem;
+  padding: 0.75rem 1.1rem;
+  transition:
+    background-color var(--motion-duration-base) var(--motion-ease-standard),
+    border-color var(--motion-duration-base) var(--motion-ease-standard),
+    box-shadow var(--motion-duration-base) var(--motion-ease-standard),
+    transform var(--motion-duration-fast) var(--motion-ease-standard);
+  white-space: nowrap;
+}
+
+.documents-builder-fab:not(:disabled):hover {
+  border-color: var(--color-line-strong);
+  transform: translateY(-2px);
+}
+
+.documents-builder-fab-primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
+.documents-builder-fab-primary:not(:disabled):hover {
+  background: var(--color-accent-strong);
+  border-color: var(--color-accent-strong);
+}
+
+.documents-builder-fab:focus-visible {
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.documents-builder-fab:disabled {
+  background: var(--color-app);
+  border-color: var(--color-line);
+  box-shadow: none;
+  color: var(--color-muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+}
+
+@media (max-width: 960px) {
+  .documents-builder-layout-wide {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-@media (max-width: 860px) {
-  .documents-builder-main {
-    padding: 0.75rem;
-  }
+/* FeaturePageShell wraps the page in overflow-hidden, which kills
+   position: sticky on the sidebar. Restore visibility for this page only. */
+.store-dashboard.documents-builder-page {
+  overflow: visible;
+}
 
-  .documents-builder-topbar,
-  .documents-builder-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* Horizontal add-block toolbar: one row, scrolls instead of wrapping. */
+.documents-builder-add-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.35rem 0.15rem;
+  position: relative;
+  z-index: 10;
+}
 
-  .documents-builder-topbar {
-    align-items: start;
-    padding: 1rem;
-  }
+.documents-builder-add-bar button {
+  flex: 0 0 auto;
+  min-height: 2.25rem;
+}
 
-  .documents-builder-save-status {
-    justify-content: space-between;
-    width: 100%;
-  }
-
-  .documents-builder-inspector {
-    grid-column: auto;
-  }
+.documents-builder-add-bar .documents-builder-ghost-action,
+.documents-builder-add-bar .documents-builder-primary-action {
+  flex: 0 0 auto;
+  width: auto;
+  white-space: nowrap;
 }

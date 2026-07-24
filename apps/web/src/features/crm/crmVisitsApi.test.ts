@@ -32,6 +32,7 @@ describe("CRM visits API", () => {
     await expect(
       api.createVisit({
         leadId: "lead_1",
+        listingId: null,
         scheduledAt: "2026-07-07T14:00:00.000Z",
         sessionId: "session_1",
       }),
@@ -45,6 +46,7 @@ describe("CRM visits API", () => {
       init: {
         body: JSON.stringify({
           leadId: "lead_1",
+          listingId: null,
           scheduledAt: "2026-07-07T14:00:00.000Z",
           sessionId: "session_1",
         }),

@@ -1,5 +1,5 @@
-import { CreditCard, RefreshCcw, Sparkles } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { CreditCard, RefreshCcw, Sparkles, TriangleAlert } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FeatureActionButton,
   FeaturePageHeader,
@@ -9,29 +9,26 @@ import {
   FeatureAlert,
   FeatureEmptyState,
 } from "../../components/ui/FeatureStates";
+import { FeatureTabs } from "../../components/ui/FeatureTabs";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createBillingApi, type BillingApi } from "./apiClient";
-import { readBillingCheckoutReturn } from "./billingCheckoutReturn";
-import { BillingTabs, type BillingTab } from "./BillingNavigation";
-import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
-import { BillingTrialStatus } from "./BillingTrialStatus";
 import {
-  BillingCheckoutPanel,
-  type BillingCheckoutState,
-} from "./BillingCheckoutPanel";
+  readBillingCheckoutReturn,
+  redirectToCheckout,
+} from "./billingCheckoutReturn";
+import { BillingAutomaticBillingPanel } from "./BillingAutomaticBillingPanel";
+import type { BillingCheckoutState } from "./BillingCheckoutPanel";
+import { BillingSignupFlow } from "./BillingSignupFlow";
+import { BillingTrialStatus } from "./BillingTrialStatus";
 import {
   BillingAllocationTable,
   BillingEventList,
   BillingKpiGrid,
-  BillingPlanComposition,
 } from "./BillingPanels";
 import { createBillingApiOptions } from "./runtimeApi";
-import type {
-  BillingEntitlementStatus,
-  BillingOverview,
-  BillingProviderStatus,
-  EntitlementKey,
-} from "./types";
+import type { BillingOverview, BillingProviderStatus } from "./types";
+
+type BillingPageTab = "assinatura" | "detalhes";
 
 export function BillingModule({ api }: { api?: BillingApi }) {
   const billingApi = useMemo(() => api ?? createRuntimeBillingApi(), [api]);
@@ -39,14 +36,15 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   const [providerStatus, setProviderStatus] =
     useState<BillingProviderStatus | null>(null);
   const [status, setStatus] = useState<BillingStatus>({ kind: "loading" });
-  const [activeTab, setActiveTab] = useState<BillingTab>("overview");
+  const [activeTab, setActiveTab] = useState<BillingPageTab>("assinatura");
   const [checkoutState, setCheckoutState] = useState<BillingCheckoutState>({
     kind: "idle",
   });
-  const [reasons, setReasons] = useState<Record<string, string>>({});
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [selectionSaving, setSelectionSaving] = useState(false);
+  const signupRef = useRef<HTMLDivElement | null>(null);
+  const [signupScrollSignal, setSignupScrollSignal] = useState(0);
   const checkoutReturn = readBillingCheckoutReturn("store");
 
   const refresh = async () => {
@@ -108,27 +106,14 @@ export function BillingModule({ api }: { api?: BillingApi }) {
     void refresh();
   }, []);
 
-  const updateEntitlement = async (
-    featureKey: EntitlementKey,
-    nextStatus: BillingEntitlementStatus,
-  ) => {
-    setStatus({ kind: "saving", featureKey });
-    try {
-      const reason = reasons[featureKey]?.trim() || defaultReason(nextStatus);
-      setOverview(
-        await billingApi.updateEntitlement(featureKey, {
-          featureKey,
-          metadata: { updatedFrom: "billing_admin_console" },
-          reason,
-          status: nextStatus,
-        }),
-      );
-      setReasons((current) => ({ ...current, [featureKey]: "" }));
-      setStatus({ kind: "saved" });
-    } catch (error) {
-      setStatus({ kind: "error", message: errorMessage(error) });
+  useEffect(() => {
+    if (signupScrollSignal > 0) {
+      signupRef.current?.scrollIntoView?.({
+        behavior: "smooth",
+        block: "start",
+      });
     }
-  };
+  }, [signupScrollSignal]);
 
   const startCheckout: BillingApi["createCheckout"] = async (input) => {
     setCheckoutState({ kind: "starting" });
@@ -136,7 +121,7 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       await saveSelection();
       const checkout = await billingApi.createCheckout(input);
       setCheckoutState({ kind: "started" });
-      window.location.assign(checkout.checkoutUrl);
+      redirectToCheckout(checkout.checkoutUrl);
       return checkout;
     } catch (error) {
       setCheckoutState({ kind: "idle" });
@@ -144,6 +129,13 @@ export function BillingModule({ api }: { api?: BillingApi }) {
       throw error;
     }
   };
+
+  const goToSignup = () => {
+    setActiveTab("assinatura");
+    setSignupScrollSignal((current) => current + 1);
+  };
+
+  const canManage = overview?.authority.currentActorCanManage ?? false;
 
   return (
     <FeaturePageShell className="billing-shell" variant="content">
@@ -182,24 +174,28 @@ export function BillingModule({ api }: { api?: BillingApi }) {
 
       {overview ? (
         <>
-          <BillingTrialStatus overview={overview} />
-          <BillingTabs activeTab={activeTab} onChange={setActiveTab} />
-          {activeTab === "overview" ? (
-            <>
-              <BillingPlanComposition
-                canManage={overview.authority.currentActorCanManage}
+          <BillingTrialStatus
+            overview={overview}
+            onCta={canManage ? goToSignup : undefined}
+          />
+          <BillingKpiGrid overview={overview} />
+          <FeatureTabs
+            ariaLabel="Seções da assinatura"
+            className="billing-tabs"
+            onChange={setActiveTab}
+            options={[
+              { label: "Assinatura", value: "assinatura" },
+              { label: "Detalhes", value: "detalhes" },
+            ]}
+            value={activeTab}
+          />
+          {activeTab === "assinatura" ? (
+            <div ref={signupRef}>
+              <BillingSignupFlow
+                canManage={canManage}
+                checkoutState={checkoutState}
                 overview={overview}
-                reasons={reasons}
-                savingFeatureKey={
-                  status.kind === "saving" ? status.featureKey : null
-                }
-                onReasonChange={(featureKey, reason) =>
-                  setReasons((current) => ({
-                    ...current,
-                    [featureKey]: reason,
-                  }))
-                }
-                onUpdate={updateEntitlement}
+                providerStatus={providerStatus}
                 selectedAddonIds={selectedAddonIds}
                 selectedPlanId={selectedPlanId}
                 selectionSaving={selectionSaving}
@@ -211,35 +207,34 @@ export function BillingModule({ api }: { api?: BillingApi }) {
                   )
                 }
                 onPlanSelect={setSelectedPlanId}
-                onSaveSelection={saveSelection}
+                onSubscribe={startCheckout}
               />
-              <BillingKpiGrid overview={overview} />
-            </>
-          ) : null}
-          {activeTab === "billing" ? (
+            </div>
+          ) : (
             <>
-              {canStartSubscription(overview) ? (
-                <BillingCheckoutPanel
-                  checkoutState={checkoutState}
-                  overview={overview}
-                  providerStatus={providerStatus}
-                  selectedAddonIds={selectedAddonIds}
-                  selectedPlanId={selectedPlanId}
-                  onCheckout={startCheckout}
-                />
-              ) : null}
               {isPaidSubscription(overview) ? (
                 <BillingAutomaticBillingPanel overview={overview} />
               ) : null}
               <BillingAllocationTable allocations={overview.allocations} />
-            </>
-          ) : null}
-          {activeTab === "history" ? (
-            <>
               <BillingEventList events={overview.entitlementEvents} />
             </>
-          ) : null}
+          )}
         </>
+      ) : status.kind === "error" ? (
+        <FeatureEmptyState
+          action={
+            <FeatureActionButton
+              icon={RefreshCcw}
+              label="Tentar novamente"
+              onClick={() => void refresh()}
+              variant="primary"
+            />
+          }
+          body="Não foi possível sincronizar planos, pacotes e cobrança. Nenhuma cobrança foi feita."
+          icon={TriangleAlert}
+          title="Faturamento indisponível"
+          tone="warning"
+        />
       ) : (
         <FeatureEmptyState
           body="Sincronizando planos, add-ons e acesso efetivo por feature."
@@ -251,16 +246,6 @@ export function BillingModule({ api }: { api?: BillingApi }) {
   );
 }
 
-function canStartSubscription(overview: BillingOverview) {
-  const status = overview.subscription?.status;
-  return (
-    !status ||
-    status === "cancelled" ||
-    status === "expired" ||
-    status === "trialing"
-  );
-}
-
 function isPaidSubscription(overview: BillingOverview) {
   return (
     overview.subscription?.status === "active" ||
@@ -269,11 +254,7 @@ function isPaidSubscription(overview: BillingOverview) {
 }
 
 type BillingStatus =
-  | { kind: "error"; message: string }
-  | { kind: "loading" }
-  | { kind: "ready" }
-  | { kind: "saved" }
-  | { featureKey: EntitlementKey; kind: "saving" };
+  { kind: "error"; message: string } | { kind: "loading" } | { kind: "ready" };
 
 function createRuntimeBillingApi(): BillingApi {
   return {
@@ -295,12 +276,6 @@ function createRuntimeBillingApi(): BillingApi {
         await createBillingApiOptions(),
       ).syncProviderSubscription(input),
   };
-}
-
-function defaultReason(status: BillingEntitlementStatus) {
-  return status === "active"
-    ? "Entitlement enabled from billing console."
-    : "Entitlement changed from billing console.";
 }
 
 function errorMessage(error: unknown) {

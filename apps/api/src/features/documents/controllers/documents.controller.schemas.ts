@@ -2,7 +2,9 @@ import { z } from "zod";
 import { documentTemplateKeys } from "@lojaveiculosv2/documents";
 
 export const documentKinds = [
+  "buyer_acknowledgment",
   "buyer_document",
+  "consignment_contract",
   "delivery_term",
   "finance_receipt",
   "inspection",
@@ -15,6 +17,7 @@ export const documentKinds = [
   "sale_contract",
   "test_drive",
   "vehicle_registration",
+  "warranty_certificate",
 ] as const;
 
 export const documentStatuses = [

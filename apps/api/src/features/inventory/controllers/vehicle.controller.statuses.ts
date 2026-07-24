@@ -20,7 +20,9 @@ export const unitStatuses = [
 export const mediaKinds = ["document_preview", "photo", "video"] as const;
 
 export const documentKinds = [
+  "buyer_acknowledgment",
   "buyer_document",
+  "consignment_contract",
   "delivery_term",
   "inspection",
   "internal",
@@ -32,4 +34,5 @@ export const documentKinds = [
   "sale_contract",
   "test_drive",
   "vehicle_registration",
+  "warranty_certificate",
 ] as const;

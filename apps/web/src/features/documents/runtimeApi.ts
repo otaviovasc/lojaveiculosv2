@@ -2,6 +2,7 @@ import type { CreateDocumentsApiOptions } from "./apiClient";
 import type { DocumentsAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -11,7 +12,7 @@ export async function createDocumentsApiOptions(): Promise<CreateDocumentsApiOpt
 
   return {
     auth: createDocumentsAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readDocumentsBaseUrl(),
   };
 }

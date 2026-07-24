@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarCheck, Plus, RefreshCw } from "lucide-react";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
+import type { CrmWhatsappVehicleOption } from "./crmWhatsappExtraTypes";
 import type { CrmLeadVisit, LeadVisitStatus } from "./crmVisitsApi";
 import { createRuntimeCrmVisitsApi } from "./crmVisitsRuntimeApi";
 import {
@@ -27,17 +28,23 @@ export function CrmWhatsappVisitsPage({
   api,
   canManage,
   canRead,
+  listVehicles,
 }: CrmWhatsappVisitsPageProps) {
   const visitsApi = useMemo(() => api ?? createRuntimeCrmVisitsApi(), [api]);
   const [activeView, setActiveView] = useState<VisitView>("today");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingVehicles, setIsLoadingVehicles] = useState(false);
   const [mode, setMode] = useState<"create" | "list">("list");
   const [notes, setNotes] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
+  const [selectedListingId, setSelectedListingId] = useState("");
   const [step, setStep] = useState(0);
   const [visits, setVisits] = useState<CrmLeadVisit[]>([]);
+  const [vehicleOptions, setVehicleOptions] = useState<
+    readonly CrmWhatsappVehicleOption[]
+  >([]);
   const linkedLeadId = activeSession?.leadId ?? null;
 
   const refresh = useCallback(async () => {
@@ -62,10 +69,30 @@ export function CrmWhatsappVisitsPage({
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (mode !== "create" || !listVehicles) return;
+    let active = true;
+    setIsLoadingVehicles(true);
+    void listVehicles()
+      .then((options) => {
+        if (active) setVehicleOptions(options);
+      })
+      .catch(() => {
+        if (active) setVehicleOptions([]);
+      })
+      .finally(() => {
+        if (active) setIsLoadingVehicles(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [listVehicles, mode]);
+
   const resetCreation = () => {
     setMode("list");
     setNotes("");
     setScheduledAt("");
+    setSelectedListingId("");
     setStep(0);
     setError(null);
   };
@@ -74,6 +101,7 @@ export function CrmWhatsappVisitsPage({
     setMode("create");
     setNotes("");
     setScheduledAt("");
+    setSelectedListingId("");
     setStep(0);
     setError(null);
   };
@@ -92,6 +120,7 @@ export function CrmWhatsappVisitsPage({
     try {
       const visit = await visitsApi.createVisit({
         leadId: linkedLeadId,
+        listingId: selectedListingId || null,
         notes: notes.trim() || null,
         scheduledAt: new Date(scheduledAt).toISOString(),
         ...(typeof activeSession?.id === "string"
@@ -207,11 +236,15 @@ export function CrmWhatsappVisitsPage({
               ) : null}
               <VisitCreationStep
                 activeSession={activeSession}
+                isLoadingVehicles={isLoadingVehicles}
                 notes={notes}
                 onNotesChange={setNotes}
+                onSelectedListingIdChange={setSelectedListingId}
                 onScheduledAtChange={setScheduledAt}
                 scheduledAt={scheduledAt}
+                selectedListingId={selectedListingId}
                 step={step}
+                vehicleOptions={vehicleOptions}
               />
             </div>
             <CrmWhatsappWorkflowFooter

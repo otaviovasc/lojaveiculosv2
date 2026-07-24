@@ -2,6 +2,7 @@ import type { CreateFinanceApiOptions } from "./apiClient";
 import type { FinanceAuth } from "./types";
 import {
   createRuntimeActorAuth,
+  createRuntimeFetch,
   readClerkToken,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
@@ -11,7 +12,7 @@ export async function createFinanceApiOptions(): Promise<CreateFinanceApiOptions
 
   return {
     auth: createFinanceAuthFromEnv(accessToken),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
     ...readFinanceBaseUrl(),
   };
 }

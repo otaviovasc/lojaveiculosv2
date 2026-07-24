@@ -170,18 +170,28 @@ describe("finance bills model", () => {
   });
 
   it("formats vehicle cost categories created by inventory workflows", () => {
-    expect(formatFinanceCategory("vehicle_preparation")).toBe("Preparação");
-    expect(formatFinanceCategory("vehicle_acquisition")).toBe("Aquisição");
-    expect(formatFinanceCategory("vehicle_repair")).toBe("Reparo");
-    expect(formatFinanceCategory("vehicle_transport")).toBe("Transporte");
-    expect(formatFinanceCategory("vehicle_fee")).toBe("Taxas");
-    expect(formatFinanceCategory("vehicle_tax")).toBe("Impostos");
-    expect(formatFinanceCategory("vehicle_other")).toBe("Outros");
+    expect(formatFinanceCategory("vehicle_preparation")).toBe(
+      "Preparação do veículo",
+    );
+    expect(formatFinanceCategory("vehicle_acquisition")).toBe(
+      "Aquisição de veículo",
+    );
+    expect(formatFinanceCategory("vehicle_repair")).toBe("Reparo do veículo");
+    expect(formatFinanceCategory("vehicle_transport")).toBe(
+      "Transporte do veículo",
+    );
+    expect(formatFinanceCategory("vehicle_fee")).toBe("Taxas do veículo");
+    expect(formatFinanceCategory("vehicle_tax")).toBe("Impostos do veículo");
+    expect(formatFinanceCategory("vehicle_other")).toBe("Outros (veículo)");
 
-    expect(formatFinanceCategory("vehicle_maintenance")).toBe("Manutenção");
-    expect(formatFinanceCategory("vehicle_inspection")).toBe("Inspeção");
+    expect(formatFinanceCategory("vehicle_maintenance")).toBe(
+      "Manutenção do veículo",
+    );
+    expect(formatFinanceCategory("vehicle_inspection")).toBe(
+      "Inspeção veicular",
+    );
     expect(formatFinanceCategory("vehicle_unknown_custom")).toBe(
-      "vehicle_unknown_custom",
+      "Vehicle unknown custom",
     );
   });
 

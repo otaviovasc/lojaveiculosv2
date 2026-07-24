@@ -97,7 +97,10 @@ export async function insertStoreMembership(
   await db
     .insert(storeMemberships)
     .values({ roleTemplateId, storeId, tenantId, userId })
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      set: { roleTemplateId, status: "active" },
+      target: [storeMemberships.storeId, storeMemberships.userId],
+    });
 }
 
 export async function insertStoreDefaults(

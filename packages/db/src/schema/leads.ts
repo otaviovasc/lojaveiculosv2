@@ -161,6 +161,9 @@ export const leadVisits = pgTable(
     leadId: uuid("lead_id")
       .notNull()
       .references(() => leads.id),
+    listingId: uuid("listing_id").references(() => vehicleListings.id, {
+      onDelete: "set null",
+    }),
     notes: text("notes"),
     scheduledAt: timestamp("scheduled_at", { withTimezone: true }).notNull(),
     status: varchar("status", { length: 80 }).notNull().default("scheduled"),
@@ -170,9 +173,11 @@ export const leadVisits = pgTable(
     tenantId: uuid("tenant_id")
       .notNull()
       .references(() => tenants.id),
+    vehicleTitle: varchar("vehicle_title", { length: 191 }),
   },
   (table) => [
     index("lead_visits_lead_id_idx").on(table.leadId),
+    index("lead_visits_listing_id_idx").on(table.listingId),
     index("lead_visits_scheduled_at_idx").on(table.scheduledAt),
     index("lead_visits_store_id_idx").on(table.storeId),
   ],

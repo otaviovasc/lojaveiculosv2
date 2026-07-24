@@ -248,7 +248,7 @@ export const llmsText = `# Loja Veiculos API
 - Vehicle cost, reserve, and sell workflows create finance_entries in the same tenant/store scope.
 - Finance rows are linked through finance_entry_links to targets such as vehicle_cost, vehicle_listing, vehicle_unit, sale, and sale_payment.
 ## Vehicle document kinds
-- Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, and power_of_attorney.
+- Workflow documents include reservation_receipt, sale_contract, sale_receipt, delivery_term, power_of_attorney, and buyer_acknowledgment.
 ## External API safety limits
 - External API key requests are tenant and store scoped before services run.
 - External clients use least-privilege scopes instead of operator roles.

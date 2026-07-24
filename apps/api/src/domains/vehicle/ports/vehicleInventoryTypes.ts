@@ -35,7 +35,9 @@ export type VehicleTransmission =
 export type VehicleMediaKind = "document_preview" | "photo" | "video";
 
 export type VehicleDocumentKind =
+  | "buyer_acknowledgment"
   | "buyer_document"
+  | "consignment_contract"
   | "delivery_term"
   | "finance_receipt"
   | "inspection"
@@ -47,7 +49,8 @@ export type VehicleDocumentKind =
   | "sale_receipt"
   | "sale_contract"
   | "test_drive"
-  | "vehicle_registration";
+  | "vehicle_registration"
+  | "warranty_certificate";
 
 export type VehicleDocumentTargetType = "vehicle_unit";
 

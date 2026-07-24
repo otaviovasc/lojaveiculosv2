@@ -15,6 +15,7 @@ import {
   CrmScopeError,
   CrmVisitNotFoundError,
   CrmVisitSessionMismatchError,
+  CrmVisitVehicleNotFoundError,
 } from "../../../domains/crm/services/CrmService/serviceSupport.js";
 
 export async function handleCrm(
@@ -54,6 +55,9 @@ function crmErrorResponse(error: unknown): ApiErrorResponseInput | null {
   }
   if (error instanceof CrmVisitSessionMismatchError) {
     return apiErrorInput(error, "CRM_VISIT_SESSION_MISMATCH", 409);
+  }
+  if (error instanceof CrmVisitVehicleNotFoundError) {
+    return apiErrorInput(error, "CRM_VISIT_VEHICLE_NOT_FOUND", 404);
   }
   if (error instanceof CrmScopeError) {
     return apiErrorInput(error, "CRM_SCOPE_ERROR", 400);

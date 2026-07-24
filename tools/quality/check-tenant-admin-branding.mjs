@@ -9,10 +9,13 @@ const requiredMarkers = [
     file: "apps/web/src/components/AppShell.tsx",
     markers: [
       "useTenantAdminBrand",
-      "style={tenantBrandState.style}",
       "workspaceIconUrl={tenantBrand.iconUrl}",
       "workspaceLogoUrl={tenantBrand.logoUrl}",
     ],
+  },
+  {
+    file: "apps/web/src/app/useTenantAdminBrand.ts",
+    markers: ["document.documentElement", "setProperty", "removeProperty"],
   },
   {
     file: "apps/web/src/components/ui/dashboard-sidebar.tsx",

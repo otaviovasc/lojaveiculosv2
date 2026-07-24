@@ -1,13 +1,16 @@
+import { Check, Copy, Plug, RefreshCcw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { FeaturePageShell } from "../../components/ui/FeatureLayout";
+import {
+  FeatureActionButton,
+  FeaturePageHeader,
+  FeaturePageShell,
+} from "../../components/ui/FeatureLayout";
 import { FeatureAlert } from "../../components/ui/FeatureStates";
 import { formatApiErrorDisplay } from "../../lib/apiErrors";
 import { createPublicApi, type PublicApi } from "./apiClient";
 import { PublicApiClientList } from "./PublicApiClientList";
-import { PublicApiCommandDeck } from "./PublicApiCommandDeck";
 import { publicApiBasePath } from "./publicApiCatalog";
 import { PublicApiKeyCreator } from "./PublicApiKeyCreator";
-import { PublicApiOverview } from "./PublicApiOverview";
 import { PublicApiReferencePanel } from "./PublicApiReferencePanel";
 import { PublicApiRevokeDialog } from "./PublicApiRevokeDialog";
 import {
@@ -124,16 +127,33 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
 
   return (
     <FeaturePageShell mainClassName="public-api-shell">
-      <PublicApiCommandDeck
-        activeClientCount={
-          clients.filter((client) => client.status === "active").length
+      <FeaturePageHeader
+        actions={
+          <>
+            <FeatureActionButton
+              icon={copiedId === "base-url" ? Check : Copy}
+              label="Copiar URL base"
+              onClick={() => void copyToClipboard(apiBaseUrl, "base-url")}
+              title={apiBaseUrl}
+            />
+            <FeatureActionButton
+              icon={RefreshCcw}
+              isBusy={status.kind === "loading"}
+              label="Atualizar"
+              onClick={() => void refresh()}
+              title="Atualizar clientes da Public API"
+            />
+          </>
         }
-        copiedBaseUrl={copiedId === "base-url"}
-        apiBaseUrl={apiBaseUrl}
-        hasLoadedClients={hasLoadedClients}
-        isLoading={status.kind === "loading"}
-        onCopyBaseUrl={() => void copyToClipboard(apiBaseUrl, "base-url")}
-        onRefresh={() => void refresh()}
+        actionsLabel="Ações da Public API"
+        description="Crie acessos por finalidade, libere somente os escopos necessários e acompanhe cada integração externa."
+        eyebrow={
+          <>
+            <Plug aria-hidden="true" className="size-4" />
+            Integrações
+          </>
+        }
+        title="Public API"
       />
 
       {status.kind === "error" ? (
@@ -149,33 +169,26 @@ export function PublicApiModule({ api }: { api?: PublicApi }) {
         </FeatureAlert>
       ) : null}
 
-      <PublicApiOverview />
-
-      <section
-        aria-label="Configuração e clientes da Public API"
-        className="public-api-management-flow"
-      >
-        <PublicApiKeyCreator
-          copiedId={copiedId}
-          createdKey={createdKey}
-          name={name}
-          onCopy={copyToClipboard}
-          onCreate={() => void createClient()}
-          onNameChange={setName}
-          onScopesChange={setScopes}
-          scopes={scopes}
-          status={status}
-        />
-        <PublicApiClientList
-          clients={clients}
-          hasLoaded={hasLoadedClients}
-          onRevoke={(client) => {
-            setRevokeError(null);
-            setRevokeTarget(client);
-          }}
-          status={status}
-        />
-      </section>
+      <PublicApiKeyCreator
+        copiedId={copiedId}
+        createdKey={createdKey}
+        name={name}
+        onCopy={copyToClipboard}
+        onCreate={() => void createClient()}
+        onNameChange={setName}
+        onScopesChange={setScopes}
+        scopes={scopes}
+        status={status}
+      />
+      <PublicApiClientList
+        clients={clients}
+        hasLoaded={hasLoadedClients}
+        onRevoke={(client) => {
+          setRevokeError(null);
+          setRevokeTarget(client);
+        }}
+        status={status}
+      />
 
       <PublicApiReferencePanel
         copiedId={copiedId}

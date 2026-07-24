@@ -28,7 +28,7 @@ export function FinanceRecurringBillsPanel({
       icon={<Repeat2 className="size-5" />}
       title="Recorrências"
     >
-      <div className="mt-3 grid gap-2">
+      <div className="mt-3 grid gap-2 xl:grid-cols-2">
         {items.length ? (
           items.map((entry) => {
             const exhaustedAt = entry.metadata?.exhaustedAt;

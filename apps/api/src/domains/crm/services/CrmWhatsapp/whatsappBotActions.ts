@@ -183,6 +183,11 @@ export async function executeWhatsappBotAction(
         context,
         {
           leadId: await resolveBotActionLeadId(context, input, ports),
+          ...(readOptionalText(input.payload, "listingId")
+            ? {
+                listingId: readRequiredText(input.payload, "listingId"),
+              }
+            : {}),
           notes: readOptionalText(input.payload, "notes") ?? null,
           scheduledAt: readRequiredDate(input.payload, "scheduledAt"),
           ...(input.sessionId ? { sessionId: input.sessionId } : {}),

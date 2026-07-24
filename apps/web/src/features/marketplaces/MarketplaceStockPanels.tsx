@@ -1,12 +1,17 @@
 import {
   Ban,
   CheckCircle2,
+  ClipboardList,
   ListChecks,
   RefreshCcw,
   Send,
   Trash2,
 } from "lucide-react";
-import { StatCard } from "../../components/ui/stat-card";
+import {
+  FeatureKpiCard,
+  FeatureKpiStrip,
+} from "../../components/ui/FeatureKpis";
+import { FeatureSection } from "../../components/ui/FeatureLayout";
 import { getMarketplaceBlockerCopy, providerLabels } from "./marketplaceLabels";
 import type {
   MarketplaceProvider,
@@ -15,138 +20,83 @@ import type {
   MarketplaceStockSyncRunResponse,
 } from "./types";
 
-export function MarketplacePreviewPanel({
+export function MarketplaceStockPanel({
+  lastRun,
   plan,
   provider,
 }: {
+  lastRun: MarketplaceStockSyncRunResponse | null;
   plan: MarketplaceStockPlan | null;
   provider: MarketplaceProvider | null;
 }) {
   const blockedItems = plan?.items.filter(
     (item) => item.decision === "blocked",
   );
+  const description = lastRun
+    ? `${providerLabels[lastRun.provider]} · último lote desta sessão`
+    : provider
+      ? `Prévia do ${providerLabels[provider]} antes de enfileirar o lote.`
+      : "Selecione um provedor antes de enfileirar o lote.";
+
   return (
-    <section className="marketplace-panel">
-      <header>
-        <h3>Prévia do estoque</h3>
-        <p>
-          {provider ? providerLabels[provider] : "Selecione um provedor"} antes
-          de enfileirar o lote.
-        </p>
-      </header>
+    <FeatureSection description={description} title="Prévia e envios">
       {plan ? (
-        <>
-          <div className="marketplace-counts" aria-label="Contagens da prévia">
-            <StatCard
+        <div className="marketplace-stock-panel">
+          <FeatureKpiStrip ariaLabel="Contagens da prévia e do lote">
+            <FeatureKpiCard
               icon={ListChecks}
               label="Total"
-              theme="blue"
+              tone="blue"
               value={plan.total}
-              variant="cell"
             />
-            <StatCard
+            <FeatureKpiCard
               icon={Send}
               label="Publicar"
-              theme="success"
+              tone="green"
               value={plan.publish}
-              variant="cell"
             />
-            <StatCard
+            <FeatureKpiCard
               icon={RefreshCcw}
               label="Atualizar"
-              theme="indigo"
+              tone="violet"
               value={plan.update}
-              variant="cell"
             />
-            <StatCard
+            <FeatureKpiCard
               icon={Trash2}
               label="Remover"
-              theme="amber"
+              tone="pink"
               value={plan.unpublish}
-              variant="cell"
             />
-            <StatCard
+            <FeatureKpiCard
               icon={CheckCircle2}
               label="Sem ação"
-              theme="default"
+              tone="blue"
               value={plan.noOp}
-              variant="cell"
             />
-            <StatCard
+            <FeatureKpiCard
               icon={Ban}
               label="Bloqueados"
-              theme="amber"
+              tone="pink"
               value={plan.blocked}
-              variant="cell"
             />
-          </div>
+            {lastRun ? (
+              <FeatureKpiCard
+                icon={ClipboardList}
+                label="Jobs criados"
+                tone="green"
+                value={lastRun.createdJobs.length}
+              />
+            ) : null}
+          </FeatureKpiStrip>
           <BlockedListingList items={blockedItems ?? []} />
-        </>
+        </div>
       ) : (
-        <p>
-          A prévia ainda não foi gerada. Use “Prever estoque” na conta que
-          deseja revisar.
+        <p className="marketplace-stock-panel__empty">
+          A prévia ainda não foi gerada. Use “Gerar prévia” na conta que deseja
+          revisar.
         </p>
       )}
-    </section>
-  );
-}
-
-export function MarketplaceBatchProgress({
-  lastRun,
-}: {
-  lastRun: MarketplaceStockSyncRunResponse | null;
-}) {
-  return (
-    <section className="marketplace-panel">
-      <header>
-        <h3>Progresso do lote</h3>
-        <p>
-          {lastRun
-            ? `${providerLabels[lastRun.provider]} · último lote desta sessão`
-            : "Nenhum lote foi enviado nesta sessão."}
-        </p>
-      </header>
-      {lastRun ? (
-        <div className="marketplace-counts" aria-label="Progresso do lote">
-          <StatCard
-            icon={ListChecks}
-            label="Jobs criados"
-            theme="blue"
-            value={lastRun.createdJobs.length}
-            variant="cell"
-          />
-          <StatCard
-            icon={Send}
-            label="Publicar"
-            theme="success"
-            value={lastRun.plan.publish}
-            variant="cell"
-          />
-          <StatCard
-            icon={RefreshCcw}
-            label="Atualizar"
-            theme="indigo"
-            value={lastRun.plan.update}
-            variant="cell"
-          />
-          <StatCard
-            icon={Trash2}
-            label="Remover"
-            theme="amber"
-            value={lastRun.plan.unpublish}
-            variant="cell"
-          />
-          <StatCard
-            icon={Ban}
-            label="Bloqueados"
-            theme="amber"
-            value={lastRun.plan.blocked}
-            variant="cell"
-          />
-        </div>
-      ) : null}
-    </section>
+    </FeatureSection>
   );
 }
 

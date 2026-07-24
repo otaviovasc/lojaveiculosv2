@@ -4,7 +4,9 @@ import type { CrmLeadVisit } from "../../ports/crmVisitRepository.js";
 import {
   CrmLeadNotFoundError,
   CrmVisitSessionMismatchError,
+  CrmVisitVehicleNotFoundError,
   getCrmRepository,
+  getCrmVehicleInventory,
   getCrmWhatsappRepository,
   requireCrmScope,
   type CrmServicePorts,
@@ -62,9 +64,28 @@ export function visitActivityMetadata(
 ) {
   return {
     kind: "visit",
+    listingId: visit.listingId,
     scheduledAt: visit.scheduledAt.toISOString(),
     visitId: visit.id,
     visitStatus: visit.status,
     ...extra,
   };
+}
+
+export async function resolveVisitVehicleInterest(
+  context: ServiceContext,
+  listingId: string | null,
+  ports: CrmServicePorts,
+): Promise<{ listingId: string | null; vehicleTitle: string | null }> {
+  if (!listingId) return { listingId: null, vehicleTitle: null };
+  const scope = requireCrmScope(context);
+  const listing = await getCrmVehicleInventory(
+    ports,
+  ).listingRepository.findById({
+    listingId,
+    storeId: scope.storeId,
+    tenantId: scope.tenantId,
+  });
+  if (!listing) throw new CrmVisitVehicleNotFoundError(listingId);
+  return { listingId: listing.id, vehicleTitle: listing.title };
 }

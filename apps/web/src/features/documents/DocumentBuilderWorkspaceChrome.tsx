@@ -6,7 +6,6 @@ import {
   Loader2,
   Lock,
   Pencil,
-  Save,
   Sparkles,
 } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
@@ -27,45 +26,27 @@ const statusIcon: Record<
 };
 
 export function DocumentBuilderHeader({
-  isSaveDisabled,
-  onSave,
-  saveLabel = "Salvar",
   status,
 }: {
-  isSaveDisabled: boolean;
-  onSave: () => void;
-  saveLabel?: string;
   status: DocumentBuilderStatus;
 }) {
   const StatusIcon = statusIcon[status.tone];
   return (
-    <header className="documents-builder-topbar">
+    <header className="documents-builder-topbar sticky top-0 z-30 shadow-lg backdrop-blur-md bg-panel/95">
       <div className="documents-builder-heading">
-        <span className="documents-builder-heading-icon">
-          <FilePenLine aria-hidden="true" className="size-5" />
-        </span>
-        <div>
-          <span>Configuração da loja</span>
-          <h1>Modelos de documentos</h1>
-          <p>Edite os textos usados nos documentos emitidos pela operação.</p>
-        </div>
+        <FilePenLine aria-hidden="true" className="size-4" />
+        <h1>Modelos de documentos</h1>
       </div>
 
-      <div className="documents-builder-save-status">
-        <span className="documents-builder-status-pill" data-tone={status.tone}>
-          <StatusIcon
-            aria-hidden="true"
-            className={
-              status.tone === "saving" ? "size-3.5 animate-spin" : "size-3.5"
-            }
-          />
-          {status.label}
-        </span>
-        <button disabled={isSaveDisabled} onClick={onSave} type="button">
-          <Save aria-hidden="true" className="size-4" />
-          {saveLabel}
-        </button>
-      </div>
+      <span className="documents-builder-status-pill" data-tone={status.tone}>
+        <StatusIcon
+          aria-hidden="true"
+          className={
+            status.tone === "saving" ? "size-3.5 animate-spin" : "size-3.5"
+          }
+        />
+        {status.label}
+      </span>
     </header>
   );
 }

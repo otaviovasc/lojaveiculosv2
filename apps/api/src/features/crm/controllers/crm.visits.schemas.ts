@@ -21,6 +21,7 @@ export const listVisitsQuerySchema = z.object({
 export const createVisitSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
   leadId: z.string().uuid(),
+  listingId: z.string().uuid().nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
   scheduledAt: z.string().datetime(),
   sessionId: z.string().uuid().optional(),
@@ -28,6 +29,7 @@ export const createVisitSchema = z.object({
 
 export const updateVisitSchema = z.object({
   assignedUserId: z.string().uuid().nullable().optional(),
+  listingId: z.string().uuid().nullable().optional(),
   notes: z.string().trim().max(2000).nullable().optional(),
   scheduledAt: z.string().datetime().optional(),
   status: z.enum(["scheduled", "confirmed", "no_show"]).optional(),

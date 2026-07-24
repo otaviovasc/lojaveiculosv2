@@ -75,19 +75,23 @@ export function SalesListFilters({
           </div>
 
           <div className="datepicker-range-picker flex items-center bg-app-elevated border border-line p-0.5 rounded-xl h-10 px-1.5 shrink-0 justify-between sm:justify-start">
-            <DatePickerField
-              label="De"
-              onChange={(value) => onStartDateChange(value)}
-              value={startDate}
-            />
-            <span className="datepicker-separator-text px-1 text-muted text-xs font-black uppercase">
+            <div className="w-[9.5rem] shrink-0">
+              <DatePickerField
+                label="De"
+                onChange={(value) => onStartDateChange(value)}
+                value={startDate}
+              />
+            </div>
+            <span className="datepicker-separator-text px-1 text-muted text-xs font-black uppercase shrink-0">
               até
             </span>
-            <DatePickerField
-              label="Até"
-              onChange={(value) => onEndDateChange(value)}
-              value={endDate}
-            />
+            <div className="w-[9.5rem] shrink-0">
+              <DatePickerField
+                label="Até"
+                onChange={(value) => onEndDateChange(value)}
+                value={endDate}
+              />
+            </div>
             {(startDate || endDate) && (
               <button
                 className="p-1 hover:bg-app rounded-md text-muted hover:text-app-text ml-1.5 shrink-0"

@@ -1,6 +1,7 @@
 import { readApiJson } from "../../lib/apiErrors";
 import {
   createRuntimeAuthHeaders,
+  createRuntimeFetch,
   readRuntimeApiBaseUrl,
 } from "../account/runtimeAuth";
 import type { AutoEntryRule, AutoEntryRuleInput } from "./types";
@@ -68,7 +69,7 @@ export function createAutoEntryRulesApi({
 export function createRuntimeAutoEntryRulesApi(): AutoEntryRulesApi {
   return createAutoEntryRulesApi({
     ...readRuntimeApiBaseUrl(),
-    fetch: window.fetch.bind(window),
+    fetch: createRuntimeFetch(),
   });
 }
 

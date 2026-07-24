@@ -64,7 +64,7 @@ describe("inventory reserve/sell rollback", () => {
     },
     {
       name: "sell",
-      objectCount: 4,
+      objectCount: 5,
       run: (services: ReturnType<typeof createInventoryListingServices>) =>
         services.sellUnit(workflowContext("inventory.sell"), {
           buyer: buyer(),

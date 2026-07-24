@@ -4,9 +4,7 @@ import {
   ExternalLink,
   Loader2,
   ShieldCheck,
-  Zap,
 } from "lucide-react";
-import { useState, type ReactNode } from "react";
 import type {
   BillingOverview,
   BillingProviderStatus,
@@ -32,9 +30,6 @@ export function BillingCheckoutPanel({
   selectedAddonIds?: readonly string[];
   selectedPlanId?: string | null;
 }) {
-  const [paymentMethod, setPaymentMethod] = useState<"CREDIT_CARD" | "PIX">(
-    "CREDIT_CARD",
-  );
   const activePlans = overview.plans.filter((plan) => plan.status === "active");
   const controlledSelection = selectedPlanId !== undefined;
   const selectedPlan =
@@ -48,15 +43,14 @@ export function BillingCheckoutPanel({
   const selectedTotalCents =
     (selectedPlan?.monthlyPriceCents ?? 0) +
     selectedAddons.reduce((sum, addon) => sum + addon.monthlyPriceCents, 0);
-  const canCheckout =
-    Boolean(selectedPlan) &&
-    Boolean(providerStatus?.configured && providerStatus.webhookConfigured) &&
-    selectedTotalCents > 0 &&
-    paymentMethod === "CREDIT_CARD" &&
-    checkoutState.kind !== "starting";
   const providerReady = Boolean(
     providerStatus?.configured && providerStatus.webhookConfigured,
   );
+  const canCheckout =
+    Boolean(selectedPlan) &&
+    providerReady &&
+    selectedTotalCents > 0 &&
+    checkoutState.kind !== "starting";
 
   return (
     <section className="billing-checkout-panel">
@@ -103,24 +97,12 @@ export function BillingCheckoutPanel({
         ) : null}
 
         <div className="billing-checkout-box">
-          <div>
+          <div className="billing-checkout-readiness">
             <span>Forma de pagamento</span>
-            <div className="billing-methods" role="group">
-              <MethodToggle
-                active={paymentMethod === "CREDIT_CARD"}
-                description="Assinatura recorrente"
-                icon={<CreditCard aria-hidden="true" className="size-4" />}
-                label="Cartao"
-                onToggle={() => setPaymentMethod("CREDIT_CARD")}
-              />
-              <MethodToggle
-                active={paymentMethod === "PIX"}
-                description="Avulso em breve"
-                icon={<Zap aria-hidden="true" className="size-4" />}
-                label="Pix"
-                onToggle={() => setPaymentMethod("PIX")}
-              />
-            </div>
+            <strong>
+              <CreditCard aria-hidden="true" className="size-4" /> Cartão —
+              assinatura recorrente
+            </strong>
           </div>
           <div className="billing-checkout-readiness">
             <span>Checkout</span>
@@ -129,12 +111,6 @@ export function BillingCheckoutPanel({
             </strong>
             {!providerReady ? (
               <p>Estamos finalizando a conexão segura de cobrança.</p>
-            ) : null}
-            {paymentMethod === "PIX" ? (
-              <p>
-                Assinatura recorrente via Asaas Checkout esta liberada por
-                cartao. Pix sera tratado como cobranca avulsa.
-              </p>
             ) : null}
           </div>
           <div className="billing-checkout-total">
@@ -166,34 +142,5 @@ export function BillingCheckoutPanel({
         </div>
       </div>
     </section>
-  );
-}
-
-function MethodToggle({
-  active,
-  description,
-  icon,
-  label,
-  onToggle,
-}: {
-  active: boolean;
-  description: string;
-  icon: ReactNode;
-  label: string;
-  onToggle: () => void;
-}) {
-  return (
-    <button
-      aria-pressed={active}
-      className={active ? "billing-method-active" : ""}
-      onClick={onToggle}
-      type="button"
-    >
-      {icon}
-      <span>
-        <strong>{label}</strong>
-        <small>{description}</small>
-      </span>
-    </button>
   );
 }

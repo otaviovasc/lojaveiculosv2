@@ -78,7 +78,9 @@ describe("DocumentsModule", () => {
     expect(
       await screen.findByRole("heading", { name: "Honda Civic" }),
     ).toBeVisible();
-    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(
+      await screen.findByRole("dialog", { name: /^Documento aberto:/ }),
+    ).toBeVisible();
     expect(api.downloadDocument).toHaveBeenCalledWith("document_unit", {
       disposition: "inline",
     });
@@ -92,13 +94,15 @@ describe("DocumentsModule", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /Contrato geral/i }),
     );
-    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(
+      await screen.findByRole("dialog", { name: /^Documento aberto:/ }),
+    ).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: /Honda Civic/i }));
 
     await waitFor(() =>
       expect(
-        screen.queryByLabelText("Documento aberto"),
+        screen.queryByRole("dialog", { name: /^Documento aberto:/ }),
       ).not.toBeInTheDocument(),
     );
   });
@@ -116,7 +120,9 @@ describe("DocumentsModule", () => {
       await screen.findByRole("button", { name: /Contrato geral/i }),
     );
 
-    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(
+      await screen.findByRole("dialog", { name: /^Documento aberto:/ }),
+    ).toBeVisible();
     expect(
       await screen.findByText(
         "A prévia não está disponível. Tente novamente ou gerencie os dados do documento.",
@@ -136,7 +142,9 @@ describe("DocumentsModule", () => {
       await screen.findByRole("button", { name: /Contrato geral/i }),
     );
 
-    expect(await screen.findByLabelText("Documento aberto")).toBeVisible();
+    expect(
+      await screen.findByRole("dialog", { name: /^Documento aberto:/ }),
+    ).toBeVisible();
     expect(
       screen.queryByRole("button", { name: "Regenerar" }),
     ).not.toBeInTheDocument();

@@ -138,9 +138,14 @@ export const botActionExamples = [
     code: `{
   "action": "set_visita",
   "sessionId": "4e0b8d0a-7a93-4a5f-8d26-89a35f8e5d61",
-  "payload": { "scheduledAt": "2026-07-08T18:00:00.000Z", "notes": "Avaliacao presencial." }
+  "payload": {
+    "scheduledAt": "2026-07-08T18:00:00.000Z",
+    "listingId": "44000000-0000-4000-8000-000000000001",
+    "notes": "Avaliacao presencial."
+  }
 }`,
-    description: "Cria visita ligada ao lead V2 da conversa.",
+    description:
+      "Cria visita ligada ao lead V2 da conversa. listingId e opcional para visitas gerais a loja.",
     title: "set_visita",
   },
   {

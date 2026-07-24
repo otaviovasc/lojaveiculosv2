@@ -14,12 +14,43 @@ export const landingOutcomes = [
   ["Portais integrados", "Pronto para publicar em OLX e Mercado Livre."],
 ] as const;
 
+export const landingPains = [
+  {
+    title: "Burocracia fiscal manual",
+    pain: "Notas de entrada, venda e consignação emitidas em portais lentos, com risco de erro tributário.",
+    solution: "Emissão de NFe e NFSe integrada ao fluxo da venda.",
+  },
+  {
+    title: "Leads esquecidos no pós-venda",
+    pain: "Compradores antigos ficam frios e nunca são reengajados para a próxima troca.",
+    solution:
+      "CRM com WhatsApp, campanhas e test-drives conectados ao estoque.",
+  },
+  {
+    title: "Caixa e comissões sem rumo",
+    pain: "Sem visão real do fluxo de caixa e do lucro por carro, com comissão calculada na planilha.",
+    solution:
+      "Financeiro com despesas, cobrança e comissões registradas por venda.",
+  },
+  {
+    title: "Equipe sem controle de acesso",
+    pain: "Dados sensíveis da loja expostos por falta de permissões por papel.",
+    solution: "Permissões por papel e operação auditada em cada ação.",
+  },
+] as const;
+
 export const landingSteps = [
-  ["Crie a conta", "Valide seu acesso e configure o perfil da loja."],
-  ["Cadastre o estoque", "Inclua unidade, fotos, checklist e custo de compra."],
   [
-    "Publique e acompanhe",
-    "Site, CRM, marketplace e financeiro no mesmo painel.",
+    "Cadastro único",
+    "Insira os dados do veículo uma vez: ficha, fotos, checklist e custos.",
+  ],
+  [
+    "Publicação controlada",
+    "Site da loja no ar e anúncios em marketplaces em fila auditada.",
+  ],
+  [
+    "Venda no caixa",
+    "Leads no CRM, venda registrada, comissão e financeiro no mesmo painel.",
   ],
 ] as const;
 

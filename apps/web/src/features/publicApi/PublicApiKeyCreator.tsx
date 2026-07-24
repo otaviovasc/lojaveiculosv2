@@ -1,13 +1,15 @@
-import {
-  Check,
-  Copy,
-  KeyRound,
-  Plus,
-  ShieldCheck,
-  SlidersHorizontal,
-} from "lucide-react";
+import { Check, Copy, KeyRound, Plus, ShieldCheck } from "lucide-react";
 import { useState } from "react";
-import { FeatureSection } from "../../components/ui/FeatureLayout";
+import { FeatureField } from "../../components/ui/FeatureForms";
+import {
+  FeatureInput,
+  FeatureSegmentedControl,
+} from "../../components/ui/FeatureControls";
+import {
+  FeatureActionButton,
+  FeatureSection,
+} from "../../components/ui/FeatureLayout";
+import { FeatureRowAction } from "../../components/ui/FeatureTable";
 import {
   scopeGroups,
   scopePresets,
@@ -44,11 +46,10 @@ export function PublicApiKeyCreator({
 
   return (
     <FeatureSection
-      className="internal-panel public-api-panel public-api-key-creator"
+      className="public-api-panel"
       description="Parta de um perfil pronto, ajuste as permissões e nomeie o acesso para encontrá-lo depois."
-      headerClassName="internal-panel-title"
       icon={<ShieldCheck aria-hidden="true" className="size-5" />}
-      title="Configure um novo acesso"
+      title="Nova chave de acesso"
     >
       {createdKey ? (
         <div className="internal-secret public-api-secret">
@@ -60,105 +61,75 @@ export function PublicApiKeyCreator({
             </small>
             <code>{createdKey}</code>
           </div>
-          <button
-            aria-label={
+          <FeatureRowAction
+            ariaLabel={
               copiedId === "created-key"
                 ? "Chave copiada"
                 : "Copiar nova chave da API"
             }
-            className="internal-icon-action"
+            icon={copiedId === "created-key" ? Check : Copy}
             onClick={() => void onCopy(createdKey, "created-key")}
-            title="Copiar chave"
-            type="button"
-          >
-            {copiedId === "created-key" ? (
-              <Check aria-hidden="true" className="size-4" />
-            ) : (
-              <Copy aria-hidden="true" className="size-4" />
-            )}
-          </button>
+            tooltip="Copiar chave"
+          />
         </div>
       ) : null}
 
-      <div className="public-api-builder-grid">
-        <div className="public-api-builder-profile">
-          <div className="public-api-builder-kicker">
-            <span>01</span>
-            <div>
-              <strong>Escolha um ponto de partida</strong>
-              <small>Os perfis já trazem o mínimo recomendado.</small>
-            </div>
-          </div>
-
-          <div className="public-api-presets">
+      <div className="mt-4 grid gap-5">
+        <div className="grid gap-2">
+          <span className="text-sm font-semibold text-app-text/90">
+            Ponto de partida
+          </span>
+          <div
+            aria-label="Perfis de acesso"
+            className="public-api-presets"
+            role="group"
+          >
             {scopePresets.map((preset) => {
               const isSelected = scopesEqual(scopes, preset.scopes);
               return (
                 <button
                   aria-pressed={isSelected}
-                  className={isSelected ? "is-active" : ""}
+                  className={
+                    isSelected
+                      ? "public-api-preset is-active"
+                      : "public-api-preset"
+                  }
                   key={preset.name}
                   onClick={() =>
                     applyPreset(preset, onNameChange, onScopesChange)
                   }
                   type="button"
                 >
-                  <span className="public-api-preset-icon">
-                    <preset.icon aria-hidden="true" className="size-4" />
-                  </span>
+                  <preset.icon aria-hidden="true" className="size-4" />
                   <span>{preset.label}</span>
                   <small>{preset.description}</small>
-                  <i aria-hidden="true">
-                    {isSelected ? "Selecionado" : "Usar perfil"}
-                  </i>
                 </button>
               );
             })}
           </div>
-
-          <label className="internal-field public-api-client-name">
-            <span>Nome do cliente</span>
-            <small>Use o sistema e a finalidade, como “CRM · Pós-venda”.</small>
-            <input
-              autoComplete="off"
-              value={name}
-              onChange={(event) => onNameChange(event.target.value)}
-            />
-          </label>
         </div>
 
-        <div className="public-api-builder-permissions">
-          <div className="public-api-builder-kicker">
-            <span>02</span>
-            <div>
-              <strong>Revise as permissões</strong>
-              <small>{scopes.length} escopos selecionados no total.</small>
-            </div>
-          </div>
+        <FeatureField
+          hint="Use o sistema e a finalidade, como “CRM · Pós-venda”."
+          label="Nome do cliente"
+        >
+          <FeatureInput
+            autoComplete="off"
+            onChange={(event) => onNameChange(event.target.value)}
+            value={name}
+          />
+        </FeatureField>
 
-          <div
-            aria-label="Categorias de permissão"
-            className="public-api-scope-tabs"
-            role="group"
-          >
-            {scopeGroups.map((group) => {
-              const selectedCount = countSelectedScopes(group, scopes);
-              return (
-                <button
-                  aria-pressed={activeGroup === group.label}
-                  className={activeGroup === group.label ? "is-active" : ""}
-                  key={group.label}
-                  onClick={() => setActiveGroup(group.label)}
-                  type="button"
-                >
-                  <span>{group.label}</span>
-                  <small>
-                    {selectedCount}/{group.options.length}
-                  </small>
-                </button>
-              );
-            })}
-          </div>
+        <div className="grid gap-3">
+          <FeatureSegmentedControl
+            ariaLabel="Categorias de permissão"
+            onChange={(nextGroup) => setActiveGroup(nextGroup)}
+            options={scopeGroups.map((group) => ({
+              label: group.label,
+              value: group.label,
+            }))}
+            value={activeGroup}
+          />
 
           <div
             aria-label={`Escopos de ${selectedGroup.label}`}
@@ -166,7 +137,7 @@ export function PublicApiKeyCreator({
             role="group"
           >
             {selectedGroup.options.map((option) => (
-              <label className="internal-check" key={option.scope}>
+              <label className="public-api-scope-option" key={option.scope}>
                 <input
                   checked={scopes.includes(option.scope)}
                   onChange={() =>
@@ -183,27 +154,25 @@ export function PublicApiKeyCreator({
             ))}
           </div>
         </div>
-      </div>
 
-      <div className="public-api-builder-footer">
-        <span>
-          <SlidersHorizontal aria-hidden="true" className="size-4" />
-          <strong>{scopes.length}</strong> permissões para <b>{name}</b>
-        </span>
-        <button
-          className="internal-primary"
-          disabled={
-            !name.trim() ||
-            scopes.length === 0 ||
-            status.kind === "loading" ||
-            status.kind === "saving"
-          }
-          onClick={onCreate}
-          type="button"
-        >
-          <Plus aria-hidden="true" className="size-4" />
-          {status.kind === "saving" ? "Criando acesso" : "Criar chave"}
-        </button>
+        <div className="public-api-creator-footer">
+          <span>
+            <strong>{scopes.length}</strong> permissões para <b>{name}</b>
+          </span>
+          <FeatureActionButton
+            disabled={
+              !name.trim() ||
+              scopes.length === 0 ||
+              status.kind === "loading" ||
+              status.kind === "saving"
+            }
+            icon={Plus}
+            isBusy={status.kind === "saving"}
+            label="Criar chave"
+            onClick={onCreate}
+            variant="primary"
+          />
+        </div>
       </div>
     </FeatureSection>
   );
@@ -227,15 +196,5 @@ function toggleScope(scopes: PublicApiScope[], scope: PublicApiScope) {
 function scopesEqual(left: PublicApiScope[], right: PublicApiScope[]) {
   return (
     left.length === right.length && left.every((scope) => right.includes(scope))
-  );
-}
-
-function countSelectedScopes(
-  group: PublicApiScopeGroup,
-  scopes: PublicApiScope[],
-) {
-  return group.options.reduce(
-    (count, option) => count + Number(scopes.includes(option.scope)),
-    0,
   );
 }

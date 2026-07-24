@@ -167,6 +167,11 @@ p {
   background: transparent;
 }
 
+::selection {
+  background-color: var(--color-accent);
+  color: var(--color-accent-foreground);
+}
+
 /* Custom Prose Utility for long-form reading contexts */
 .prose {
   max-width: 65ch;

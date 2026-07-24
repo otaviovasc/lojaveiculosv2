@@ -11,12 +11,14 @@ export type CrmLeadVisit = {
   createdAt: string;
   id: string;
   leadId: string;
+  listingId: string | null;
   notes: string | null;
   scheduledAt: string;
   status: LeadVisitStatus;
   storeId: string;
   tenantId: string;
   updatedAt: string;
+  vehicleTitle: string | null;
 };
 
 export type ListCrmVisitsInput = {
@@ -32,6 +34,7 @@ export type ListCrmVisitsInput = {
 export type CreateCrmVisitInput = {
   assignedUserId?: string | null;
   leadId: string;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt: string;
   sessionId?: string;
@@ -39,6 +42,7 @@ export type CreateCrmVisitInput = {
 
 export type UpdateCrmVisitInput = {
   assignedUserId?: string | null;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt?: string;
   status?: Extract<LeadVisitStatus, "confirmed" | "no_show" | "scheduled">;

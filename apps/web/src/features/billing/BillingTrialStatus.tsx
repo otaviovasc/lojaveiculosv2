@@ -3,8 +3,10 @@ import { featureLabels } from "./billingFormat";
 import type { BillingOverview } from "./types";
 
 export function BillingTrialStatus({
+  onCta,
   overview,
 }: {
+  onCta?: (() => void) | undefined;
   overview: BillingOverview;
 }) {
   const subscription = overview.subscription;
@@ -30,7 +32,7 @@ export function BillingTrialStatus({
         </h2>
         <p>
           {isTrial
-            ? "Nenhum plano ou pacote foi contratado. Você só paga depois de escolher e concluir o checkout Asaas."
+            ? "Assine agora para garantir seu plano — a cobrança é feita na hora, no cartão. Você confere o valor no checkout Asaas antes de concluir."
             : "Os acessos gratuitos expiraram. Revise o plano, escolha os pacotes e conclua a primeira cobrança."}
         </p>
         {isTrial ? (
@@ -42,6 +44,11 @@ export function BillingTrialStatus({
               </span>
             ))}
           </div>
+        ) : null}
+        {onCta ? (
+          <button className="billing-trial-cta" onClick={onCta} type="button">
+            Assinar agora
+          </button>
         ) : null}
       </div>
       <div className="billing-trial-deadline">
