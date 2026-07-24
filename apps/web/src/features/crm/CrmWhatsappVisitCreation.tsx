@@ -1,12 +1,19 @@
-import { CalendarClock, MessageCircle, UserRound } from "lucide-react";
+import {
+  CalendarClock,
+  CarFront,
+  MessageCircle,
+  UserRound,
+} from "lucide-react";
 import {
   FeatureInput,
+  FeatureSelect,
   FeatureTextarea,
 } from "../../components/ui/FeatureControls";
 import { FeatureField } from "../../components/ui/FeatureForms";
 import { crmWhatsappSessionHash } from "./crmRouteState";
 import { CrmWhatsappWorkflowPanel } from "./CrmWhatsappWorkflow";
 import type { CrmWhatsappSession } from "./crmWhatsappTypes";
+import type { CrmWhatsappVehicleOption } from "./crmWhatsappExtraTypes";
 
 export const visitCreationSteps = [
   { description: "Conversa vinculada", label: "Cliente" },
@@ -17,17 +24,25 @@ export const visitCreationSteps = [
 export function VisitCreationStep({
   activeSession,
   notes,
+  isLoadingVehicles,
   onNotesChange,
+  onSelectedListingIdChange,
   onScheduledAtChange,
   scheduledAt,
+  selectedListingId,
   step,
+  vehicleOptions,
 }: {
   activeSession: CrmWhatsappSession | null;
+  isLoadingVehicles: boolean;
   notes: string;
   onNotesChange: (value: string) => void;
+  onSelectedListingIdChange: (value: string) => void;
   onScheduledAtChange: (value: string) => void;
   scheduledAt: string;
+  selectedListingId: string;
   step: number;
+  vehicleOptions: readonly CrmWhatsappVehicleOption[];
 }) {
   if (step === 0) {
     return (
@@ -88,7 +103,32 @@ export function VisitCreationStep({
             />
           </FeatureField>
           <FeatureField
-            hint="Inclua preferencias, veiculo de interesse ou orientacoes para a equipe."
+            hint="Opcional. Deixe sem veículo específico para uma visita geral à loja."
+            label="Veículo de interesse"
+          >
+            <FeatureSelect
+              ariaLabel="Veículo de interesse"
+              disabled={isLoadingVehicles}
+              onChange={onSelectedListingIdChange}
+              options={[
+                { label: "Sem veículo específico", value: "" },
+                ...vehicleOptions.map((vehicle) => ({
+                  label: vehicle.title,
+                  value: vehicle.listingId,
+                })),
+              ]}
+              placeholder={
+                isLoadingVehicles
+                  ? "Carregando veículos..."
+                  : "Sem veículo específico"
+              }
+              searchable
+              searchPlaceholder="Buscar veículo..."
+              value={selectedListingId}
+            />
+          </FeatureField>
+          <FeatureField
+            hint="Inclua preferências ou orientações para a equipe."
             label="Observacoes"
           >
             <FeatureTextarea
@@ -123,6 +163,15 @@ export function VisitCreationStep({
           icon={<CalendarClock aria-hidden="true" />}
           label="Data e hora"
           value={formatVisitDateTime(scheduledAt)}
+        />
+        <ReviewItem
+          icon={<CarFront aria-hidden="true" />}
+          label="Veículo de interesse"
+          value={
+            vehicleOptions.find(
+              (vehicle) => vehicle.listingId === selectedListingId,
+            )?.title ?? "Sem veículo específico"
+          }
         />
         <ReviewItem
           label="Observacoes"

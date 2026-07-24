@@ -13,12 +13,16 @@ import {
   runCrmTransaction,
   type CrmServicePorts,
 } from "./serviceSupport.js";
-import { visitActivityMetadata } from "./leadVisitSupport.js";
+import {
+  resolveVisitVehicleInterest,
+  visitActivityMetadata,
+} from "./leadVisitSupport.js";
 
 const permission = "crm.visits.manage";
 
 export type UpdateLeadVisitInput = {
   assignedUserId?: string | null;
+  listingId?: string | null;
   notes?: string | null;
   scheduledAt?: Date;
   status?: Extract<LeadVisitStatus, "confirmed" | "no_show" | "scheduled">;
@@ -37,6 +41,7 @@ export async function updateLeadVisit(
     "crm.visit.update.started",
     createServiceLogMetadata(context, {
       hasAssignedUser: input.assignedUserId !== undefined,
+      hasVehicleInterestChange: input.listingId !== undefined,
       hasNotes: input.notes !== undefined,
       hasScheduledAt: Boolean(input.scheduledAt),
       status: input.status ?? null,
@@ -44,6 +49,10 @@ export async function updateLeadVisit(
     }),
   );
 
+  const vehicleInterest =
+    input.listingId !== undefined
+      ? await resolveVisitVehicleInterest(context, input.listingId, ports)
+      : null;
   const visit = await runCrmTransaction(ports, async (transactionPorts) => {
     const before = await getCrmVisitRepository(transactionPorts).findVisitById({
       storeId: scope.storeId as never,
@@ -56,6 +65,12 @@ export async function updateLeadVisit(
         ? { assignedUserId: input.assignedUserId as never }
         : {}),
       ...(input.notes !== undefined ? { notes: input.notes } : {}),
+      ...(vehicleInterest
+        ? {
+            listingId: vehicleInterest.listingId,
+            vehicleTitle: vehicleInterest.vehicleTitle,
+          }
+        : {}),
       ...(input.scheduledAt ? { scheduledAt: input.scheduledAt } : {}),
       ...(input.status ? { status: input.status } : {}),
       storeId: scope.storeId as never,

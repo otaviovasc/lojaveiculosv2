@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
+import type { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -58,6 +59,7 @@ describe("CrmWhatsappVisitsPage", () => {
     await waitFor(() =>
       expect(createVisitMock).toHaveBeenCalledWith({
         leadId: "22000000-0000-4000-8000-000000000001",
+        listingId: null,
         notes: "Receber na loja",
         scheduledAt: new Date(scheduledAt).toISOString(),
         sessionId: "34000000-0000-4000-8000-000000000001",
@@ -65,6 +67,52 @@ describe("CrmWhatsappVisitsPage", () => {
     );
     expect(screen.getByText("Receber na loja")).toBeVisible();
     expect(screen.getByRole("button", { name: "Nova visita" })).toBeVisible();
+  });
+
+  it("optionally links an inventory vehicle to the visit", async () => {
+    const user = userEvent.setup();
+    const scheduledAt = toDatetimeLocal(new Date());
+    const listingId = "44000000-0000-4000-8000-000000000001";
+    const created = createVisit({
+      id: "visit_vehicle",
+      listingId,
+      scheduledAt: new Date(scheduledAt).toISOString(),
+      vehicleTitle: "SUV Prata",
+    });
+    const createVisitMock = vi.fn(async () => created);
+    const api = createVisitsApi({
+      createVisit: createVisitMock,
+      listVisits: vi.fn(async () => []),
+    });
+    const listVehicles = vi.fn(async () => [
+      {
+        listingId,
+        mediaCount: 0,
+        status: "published",
+        title: "SUV Prata",
+      },
+    ]);
+
+    renderPage(api, createSession(), true, listVehicles);
+    await screen.findByText("Nenhuma visita nesta visao.");
+    await user.click(screen.getByRole("button", { name: "Nova visita" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    await user.type(screen.getByLabelText("Data da visita"), scheduledAt);
+    await user.click(
+      await screen.findByRole("button", { name: "Veículo de interesse" }),
+    );
+    await user.click(await screen.findByRole("option", { name: "SUV Prata" }));
+    await user.click(screen.getByRole("button", { name: "Continuar" }));
+    expect(screen.getByText("SUV Prata")).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Criar visita" }));
+
+    await waitFor(() =>
+      expect(createVisitMock).toHaveBeenCalledWith(
+        expect.objectContaining({ listingId }),
+      ),
+    );
+    expect(listVehicles).toHaveBeenCalled();
+    expect(screen.getByText("SUV Prata")).toBeVisible();
   });
 
   it("preserves the draft when going back and clears it on cancel", async () => {
@@ -181,6 +229,7 @@ function renderPage(
   api: CrmVisitsApi,
   activeSession: CrmWhatsappSession | null = createSession(),
   canManage = true,
+  listVehicles?: ComponentProps<typeof CrmWhatsappVisitsPage>["listVehicles"],
 ) {
   render(
     <CrmWhatsappVisitsPage
@@ -188,6 +237,7 @@ function renderPage(
       api={api}
       canManage={canManage}
       canRead
+      {...(listVehicles ? { listVehicles } : {})}
     />,
   );
 }
@@ -238,12 +288,14 @@ function createVisit(overrides: Partial<CrmLeadVisit> = {}): CrmLeadVisit {
     createdAt: now.toISOString(),
     id: "visit_1",
     leadId: "22000000-0000-4000-8000-000000000001",
+    listingId: null,
     notes: "Receber cliente",
     scheduledAt: now.toISOString(),
     status: "scheduled",
     storeId: "store_1",
     tenantId: "tenant_1",
     updatedAt: now.toISOString(),
+    vehicleTitle: null,
     ...overrides,
   };
 }
