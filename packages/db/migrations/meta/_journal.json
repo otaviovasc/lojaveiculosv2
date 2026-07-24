@@ -43,6 +43,13 @@
       "when": 1784686168381,
       "tag": "0005_buyer_acknowledgment_document_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1784906073475,
+      "tag": "0006_visit_vehicle_interest",
+      "breakpoints": true
     }
   ]
 }

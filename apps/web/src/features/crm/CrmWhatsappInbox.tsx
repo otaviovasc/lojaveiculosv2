@@ -146,6 +146,7 @@ export function CrmWhatsappInbox({
               activeSession={inbox.activeSession}
               canManage={inbox.permissions.canVisitsManage}
               canRead={inbox.permissions.canVisitsRead}
+              listVehicles={inbox.listVehicles}
             />
           ) : null}
         </>

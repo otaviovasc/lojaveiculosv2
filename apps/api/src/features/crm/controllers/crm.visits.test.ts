@@ -54,8 +54,17 @@ describe("CRM visits routes", () => {
       method: "POST",
     });
     expect(created.status).toBe(201);
-    const visit = (await created.json()) as { id: string; status: string };
-    expect(visit.status).toBe("scheduled");
+    const visit = (await created.json()) as {
+      id: string;
+      listingId: string | null;
+      status: string;
+      vehicleTitle: string | null;
+    };
+    expect(visit).toMatchObject({
+      listingId: null,
+      status: "scheduled",
+      vehicleTitle: null,
+    });
 
     const listed = await app.request(`/api/v1/crm/visits?leadId=${lead.id}`);
     expect(listed.status).toBe(200);

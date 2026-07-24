@@ -106,6 +106,13 @@ export class CrmVisitSessionMismatchError extends Error {
   }
 }
 
+export class CrmVisitVehicleNotFoundError extends Error {
+  constructor(listingId: string) {
+    super(`Vehicle listing not found for CRM visit: ${listingId}`);
+    this.name = "CrmVisitVehicleNotFoundError";
+  }
+}
+
 export class CrmScopeError extends Error {
   constructor(fieldName: string) {
     super(`CRM service requires ${fieldName}.`);
