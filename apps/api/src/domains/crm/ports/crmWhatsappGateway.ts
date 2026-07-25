@@ -166,7 +166,11 @@ export type CrmWhatsappGateway = {
 };
 
 export class CrmWhatsappGatewayError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    public readonly status: 429 | 502 = 502,
+    public readonly retryAfterSeconds?: number,
+  ) {
     super(message);
     this.name = "CrmWhatsappGatewayError";
   }
