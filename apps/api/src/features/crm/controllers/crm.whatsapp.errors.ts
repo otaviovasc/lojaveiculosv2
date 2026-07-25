@@ -73,11 +73,22 @@ export async function handleWhatsapp(
       });
     }
     if (error instanceof CrmWhatsappGatewayError) {
+      if (error.status === 429) {
+        const retryAfterSeconds = error.retryAfterSeconds ?? 1;
+        context.header("Retry-After", String(retryAfterSeconds));
+        return jsonApiError(context, {
+          code: "CRM_WHATSAPP_PROVIDER_RATE_LIMITED",
+          details: { retryAfterSeconds },
+          error,
+          message: error.message,
+          status: 429,
+        });
+      }
       return jsonApiError(context, {
         code: "CRM_WHATSAPP_GATEWAY_ERROR",
         error,
         message: error.message,
-        status: 502,
+        status: error.status,
       });
     }
     if (error instanceof WhatsappBotIntegrationIncompleteError) {

@@ -2,7 +2,10 @@ import type { StoreId, TenantId } from "@lojaveiculosv2/shared";
 import { describe, expect, it, vi } from "vitest";
 import type { CrmConnection } from "../../../domains/crm/ports/crmConnectionRepository.js";
 import type { DispatchCrmBotWebhookInput } from "../../../domains/crm/ports/crmBotWebhookDispatcher.js";
-import type { CrmWhatsappSendMediaInput } from "../../../domains/crm/ports/crmWhatsappGateway.js";
+import {
+  CrmWhatsappGatewayError,
+  type CrmWhatsappSendMediaInput,
+} from "../../../domains/crm/ports/crmWhatsappGateway.js";
 import { createMemoryCrmConnectionRepository } from "../adapters/memory/crmConnectionRepository.js";
 import { createMemoryCrmWhatsappRepository } from "../adapters/memory/crmWhatsappRepository.js";
 import {
@@ -107,6 +110,43 @@ describe("CRM WhatsApp bot media action parity", () => {
       message: "Payload field imageUrl is required.",
     });
     expect(sendMedia).not.toHaveBeenCalled();
+  });
+
+  it("preserves provider rate limits for external bot clients such as n8n", async () => {
+    const whatsappRepository = createMemoryCrmWhatsappRepository();
+    const inbound = await seedSession(whatsappRepository);
+    const app = createBotActionApp({
+      crmWhatsappGateway: {
+        sendMedia: vi.fn(async () => {
+          throw new CrmWhatsappGatewayError(
+            "ZAPI send media failed with HTTP 429: Too many requests",
+            429,
+            5,
+          );
+        }),
+      },
+      crmWhatsappRepository: whatsappRepository,
+    });
+    await configureBot(app);
+
+    const response = await app.request(
+      "/api/v1/crm/whatsapp/integrations/bot/actions",
+      jsonRequest(
+        {
+          action: "send_image",
+          payload: { imageUrl: "https://cdn.example.test/vehicle.jpg" },
+          sessionId: inbound.session.id,
+        },
+        { "X-Webhook-Secret": "bot-secret-value" },
+      ),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("5");
+    await expect(response.json()).resolves.toMatchObject({
+      code: "CRM_WHATSAPP_PROVIDER_RATE_LIMITED",
+      details: { retryAfterSeconds: 5 },
+    });
   });
 });
 
