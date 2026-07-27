@@ -44,8 +44,8 @@ export function InventoryDetailVitrineTab({
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [storeSlug, setStoreSlug] = useState("demo");
-  const [storeName, setStoreName] = useState("Loja Demo");
+  const [storeSlug, setStoreSlug] = useState("");
+  const [storeName, setStoreName] = useState("");
   const [whatsappPhone, setWhatsappPhone] = useState("");
   const [activePage, setActivePage] = useState<StorefrontCustomPage | null>(
     null,
@@ -66,7 +66,7 @@ export function InventoryDetailVitrineTab({
       setStoreName(
         settingsData.identity.tradingName ||
           settingsData.identity.legalName ||
-          "Loja Demo",
+          settingsData.identity.publicSlug,
       );
       setWhatsappPhone(settingsData.profile.whatsappPhone || "");
       setSettings(settingsData);
@@ -102,6 +102,7 @@ export function InventoryDetailVitrineTab({
   };
 
   const handleCreate = async () => {
+    if (!settings) return;
     setIsBusy(true);
     setError(null);
     try {
@@ -320,7 +321,7 @@ export function InventoryDetailVitrineTab({
             </div>
             <button
               onClick={() => void handleCreate()}
-              disabled={isBusy}
+              disabled={isBusy || !settings}
               className="mt-2 self-center lg:self-start min-h-10 rounded-lg bg-accent text-accent-foreground font-black text-xs hover:bg-accent-strong hover:text-accent-strong-foreground transition-all cursor-pointer px-6 flex items-center justify-center gap-1.5 disabled:opacity-50"
               type="button"
             >
