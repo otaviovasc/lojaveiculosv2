@@ -25,6 +25,7 @@ import {
 } from "./crm.controller.schemas.js";
 import type { FinanceServices } from "../../finance/controllers/financeServices.js";
 import { financeServices as defaultFinanceServices } from "../../finance/controllers/financeServices.js";
+import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import {
   createCrmLeadFinancialProduct,
   type CrmFinancialProductTransactionRunner,
@@ -47,6 +48,7 @@ export type CreateCrmFeatureOptions = {
     CrmFinancialProductTransactionRunner | undefined;
   financeServices?: Pick<FinanceServices, "materializeAutoEntries"> | undefined;
   realtimeBroker?: CrmRealtimeBroker | undefined;
+  resolveBotEntitlements?: ResolveCrmBotEntitlements | undefined;
   services?: CrmServices;
   webhookContextFactory?: CrmContextFactory;
 };
@@ -195,6 +197,9 @@ export function createCrmFeature(options: CreateCrmFeatureOptions = {}) {
       : {}),
     ...(options.realtimeBroker
       ? { realtimeBroker: options.realtimeBroker }
+      : {}),
+    ...(options.resolveBotEntitlements
+      ? { resolveBotEntitlements: options.resolveBotEntitlements }
       : {}),
     services,
   });

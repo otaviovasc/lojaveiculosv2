@@ -3,6 +3,8 @@ import {
   createServiceContext,
   type ServiceContext,
 } from "../../../shared/serviceContext.js";
+import type { EntitlementKey, PermissionKey } from "@lojaveiculosv2/shared";
+import type { ResolveCrmBotEntitlements } from "../../../domains/crm/ports/crmBotEntitlementResolver.js";
 import { parseWhatsappJson } from "./crm.whatsapp.controller.support.js";
 import {
   CrmWhatsappValidationError,
@@ -19,6 +21,7 @@ import type { CrmBotIntegration } from "../../../domains/crm/ports/crmBotIntegra
 type RegisterCrmWhatsappIntegrationRoutesOptions = {
   createContext: (context: Context) => Promise<ServiceContext>;
   createWebhookContext: (context: Context) => Promise<ServiceContext>;
+  resolveBotEntitlements?: ResolveCrmBotEntitlements;
   services: CrmServices;
 };
 
@@ -27,6 +30,7 @@ export function registerCrmWhatsappIntegrationRoutes(
   {
     createContext,
     createWebhookContext,
+    resolveBotEntitlements = denyAllBotEntitlements,
     services,
   }: RegisterCrmWhatsappIntegrationRoutesOptions,
 ) {
@@ -42,6 +46,11 @@ export function registerCrmWhatsappIntegrationRoutes(
   crmFeature.post("/whatsapp/integrations/bot/actions", async (context) =>
     handleWhatsapp(context, async () => {
       const input = await parseWhatsappJson(context, whatsappBotActionSchema);
+      if (context.req.header("Store-Id")) {
+        throw new CrmWhatsappValidationError(
+          "Store-Id header is not accepted for bot actions.",
+        );
+      }
       const webhookSecret = context.req.header("x-webhook-secret")?.trim();
       if (!webhookSecret) {
         throw new CrmWhatsappValidationError(
@@ -53,8 +62,19 @@ export function registerCrmWhatsappIntegrationRoutes(
         authContext,
         { webhookSecret },
       );
+      const entitlements = await safeResolveBotEntitlements(
+        authContext,
+        integration,
+        resolveBotEntitlements,
+      );
       const result = await services.executeWhatsappBotAction(
-        createBotServiceContext(authContext, integration, input.idempotencyKey),
+        createBotServiceContext(
+          authContext,
+          integration,
+          input.action,
+          entitlements,
+          input.idempotencyKey,
+        ),
         cleanBotActionInput(input),
       );
       return context.json({ action: input.action, result, success: true });
@@ -96,11 +116,21 @@ const botPermissions = [
   "crm.visits.manage",
   "crm.visits.read",
   "lead.update",
-];
+] satisfies PermissionKey[];
+
+const financingReadBotPermissions = [
+  "financing.simulation.read",
+] satisfies PermissionKey[];
+
+const financingCreateBotPermissions = [
+  "financing.simulation.create",
+] satisfies PermissionKey[];
 
 function createBotServiceContext(
   base: ServiceContext,
   integration: CrmBotIntegration,
+  action: ReturnType<typeof whatsappBotActionSchema.parse>["action"],
+  entitlements: readonly EntitlementKey[],
   idempotencyKey?: string,
 ) {
   return Object.assign(
@@ -113,7 +143,7 @@ function createBotServiceContext(
       },
       audit: base.audit,
       logger: base.logger,
-      permissions: botPermissions,
+      permissions: botPermissionsForAction(action),
       request: {
         ...(base.request ?? { requestId: base.requestId }),
         ...(idempotencyKey ? { idempotencyKey } : {}),
@@ -122,8 +152,48 @@ function createBotServiceContext(
       storeId: integration.storeId,
       tenantId: integration.tenantId,
     }),
-    { entitlements: ["crm"] as const },
+    { entitlements },
   );
+}
+
+async function safeResolveBotEntitlements(
+  context: ServiceContext,
+  integration: CrmBotIntegration,
+  resolveBotEntitlements: ResolveCrmBotEntitlements,
+) {
+  try {
+    return await resolveBotEntitlements({
+      context,
+      integrationId: integration.id,
+      storeId: integration.storeId,
+      tenantId: integration.tenantId,
+    });
+  } catch (error) {
+    context.logger.warn("crm.whatsapp.bot.entitlements.resolve.failed", {
+      errorName: error instanceof Error ? error.name : "UnknownError",
+      integrationId: integration.id,
+      requestId: context.requestId,
+      storeId: integration.storeId,
+      tenantId: integration.tenantId,
+    });
+    return [];
+  }
+}
+
+async function denyAllBotEntitlements() {
+  return [] satisfies EntitlementKey[];
+}
+
+function botPermissionsForAction(
+  action: ReturnType<typeof whatsappBotActionSchema.parse>["action"],
+) {
+  if (action === "credere_create_simulation") {
+    return financingCreateBotPermissions;
+  }
+  if (action === "credere_get_simulation" || action === "credere_readiness") {
+    return financingReadBotPermissions;
+  }
+  return botPermissions;
 }
 
 function cleanBotActionInput(

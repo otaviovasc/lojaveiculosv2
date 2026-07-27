@@ -23,6 +23,10 @@ export const openApiTags = [
     description: "Store-scoped finance entries, rules, and attachments.",
   },
   {
+    name: "Financing",
+    description: "Credere financing connection, mapping, and simulations.",
+  },
+  {
     name: "Compliance",
     description: "LGPD, access review, audit export, and security posture.",
   },

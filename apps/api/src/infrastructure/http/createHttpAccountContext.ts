@@ -108,6 +108,7 @@ async function resolveAccountAuthorization(
   );
   if (isPlatformAdmin) {
     permissions.add("billing.manage");
+    permissions.add("financing.connection.manage");
     permissions.add("tenant.manage");
     permissions.add("store.manage");
   }
@@ -119,6 +120,7 @@ async function resolveAccountAuthorization(
     });
     if (isAgency) {
       permissions.add("billing.manage");
+      permissions.add("financing.connection.manage");
       permissions.add("store.manage");
     }
   }

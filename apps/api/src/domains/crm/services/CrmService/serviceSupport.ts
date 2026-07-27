@@ -19,6 +19,7 @@ import type { CrmVisitRepository } from "../../ports/crmVisitRepository.js";
 import type { CrmWebhookEventRepository } from "../../ports/crmWebhookEventRepository.js";
 import type { CrmWhatsappGateway } from "../../ports/crmWhatsappGateway.js";
 import type { CrmWhatsappRepository } from "../../ports/crmWhatsappRepository.js";
+import type { CrmFinancingBotActions } from "../../ports/crmFinancingBotActions.js";
 import type {
   VehicleListingRepository,
   VehicleMediaRepository,
@@ -37,6 +38,7 @@ export type CrmServicePorts = {
   crmWhatsappGateway?: CrmWhatsappGateway;
   crmWhatsappMediaStorage?: ObjectStorage;
   crmWhatsappRepository?: CrmWhatsappRepository;
+  financingBotActions?: CrmFinancingBotActions;
   environment?: string;
   transaction?: <T>(
     action: (ports: CrmServicePorts) => Promise<T>,

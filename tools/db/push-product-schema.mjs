@@ -26,6 +26,7 @@ try {
   runDrizzlePush({ bootstrap: true });
   await installFinanceAutoEntryParity(sql);
   await installFiscalCatalogParity(sql);
+  await ensureFinancingScopeIndexes();
   await verifyBootstrapState();
   await installScopeForeignKeys();
   await verifyFinalState();
@@ -34,6 +35,7 @@ try {
     const tableState = await readAutomationTableState();
     if (tableState.count === tableState.expected) {
       await ensureScopeIndexes();
+      await ensureFinancingScopeIndexes();
       await installScopeForeignKeys();
     }
   } catch (restoreError) {
@@ -55,7 +57,12 @@ function runDrizzlePush({ bootstrap }) {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      ...(bootstrap ? { DRIZZLE_AUTOMATION_BOOTSTRAP: "true" } : {}),
+      ...(bootstrap
+        ? {
+            DRIZZLE_AUTOMATION_BOOTSTRAP: "true",
+            DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP: "true",
+          }
+        : {}),
     },
     encoding: "utf8",
     maxBuffer: 16 * 1024 * 1024,
@@ -127,17 +134,57 @@ async function detachScopeForeignKeys() {
         DROP CONSTRAINT IF EXISTS "automation_approvals_step_run_scope_fk";
       ALTER TABLE "automation_steps"
         DROP CONSTRAINT IF EXISTS "automation_steps_run_scope_fk";
+      ALTER TABLE IF EXISTS "financing_inquiry_events"
+        DROP CONSTRAINT IF EXISTS "financing_inquiry_events_operation_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_inquiry_events_inquiry_scope_fk";
+      ALTER TABLE IF EXISTS "financing_conditions"
+        DROP CONSTRAINT IF EXISTS "financing_conditions_inquiry_scope_fk";
+      ALTER TABLE IF EXISTS "financing_operation_requests"
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_inquiry_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_consent_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_mapping_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_operation_requests_account_scope_fk";
+      ALTER TABLE IF EXISTS "financing_inquiries"
+        DROP CONSTRAINT IF EXISTS "financing_inquiries_consent_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_inquiries_mapping_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_inquiries_account_scope_fk";
+      ALTER TABLE IF EXISTS "financing_customer_consents"
+        DROP CONSTRAINT IF EXISTS "financing_customer_consents_store_scope_fk";
+      ALTER TABLE IF EXISTS "financing_provider_store_banks"
+        DROP CONSTRAINT IF EXISTS "financing_provider_store_banks_mapping_scope_fk";
+      ALTER TABLE IF EXISTS "financing_provider_store_mappings"
+        DROP CONSTRAINT IF EXISTS "financing_provider_store_mappings_store_scope_fk",
+        DROP CONSTRAINT IF EXISTS "financing_provider_store_mappings_account_scope_fk";
+      ALTER TABLE IF EXISTS "provider_oauth_transactions"
+        DROP CONSTRAINT IF EXISTS "provider_oauth_transactions_account_scope_fk";
+      ALTER TABLE IF EXISTS "financing_provider_tokens"
+        DROP CONSTRAINT IF EXISTS "financing_provider_tokens_account_scope_fk";
     `);
   });
 }
 
+async function ensureFinancingScopeIndexes() {
+  await sql.unsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "stores_id_tenant_unique"
+      ON "stores" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_provider_accounts_id_tenant_unique"
+      ON "financing_provider_accounts" ("id", "tenant_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_provider_store_mappings_id_scope_unique"
+      ON "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_customer_consents_id_scope_unique"
+      ON "financing_customer_consents" ("id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_operation_requests_id_scope_unique"
+      ON "financing_operation_requests" ("id", "tenant_id", "store_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "financing_inquiries_id_scope_unique"
+      ON "financing_inquiries" ("id", "tenant_id", "store_id");
+  `);
+  console.log("Financing scope indexes are ready for Drizzle foreign keys.");
+}
+
 async function installScopeForeignKeys() {
+  await detachScopeForeignKeys();
   await sql.begin(async (transaction) => {
     await transaction.unsafe(`
-      ALTER TABLE "automation_approvals"
-        DROP CONSTRAINT IF EXISTS "automation_approvals_step_run_scope_fk";
-      ALTER TABLE "automation_steps"
-        DROP CONSTRAINT IF EXISTS "automation_steps_run_scope_fk";
       ALTER TABLE "automation_steps"
         ADD CONSTRAINT "automation_steps_run_scope_fk"
         FOREIGN KEY ("run_id", "tenant_id", "store_id")
@@ -148,6 +195,70 @@ async function installScopeForeignKeys() {
         FOREIGN KEY ("step_id", "run_id", "tenant_id", "store_id")
         REFERENCES "automation_steps" ("id", "run_id", "tenant_id", "store_id")
         ON DELETE CASCADE;
+      ALTER TABLE "financing_provider_store_mappings"
+        ADD CONSTRAINT "financing_provider_store_mappings_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id")
+        ON DELETE CASCADE,
+        ADD CONSTRAINT "financing_provider_store_mappings_store_scope_fk"
+        FOREIGN KEY ("store_id", "tenant_id")
+        REFERENCES "stores" ("id", "tenant_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_provider_store_banks"
+        ADD CONSTRAINT "financing_provider_store_banks_mapping_scope_fk"
+        FOREIGN KEY ("mapping_id", "account_id", "tenant_id", "store_id")
+        REFERENCES "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_provider_tokens"
+        ADD CONSTRAINT "financing_provider_tokens_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "provider_oauth_transactions"
+        ADD CONSTRAINT "provider_oauth_transactions_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id");
+      ALTER TABLE "financing_customer_consents"
+        ADD CONSTRAINT "financing_customer_consents_store_scope_fk"
+        FOREIGN KEY ("store_id", "tenant_id")
+        REFERENCES "stores" ("id", "tenant_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_inquiries"
+        ADD CONSTRAINT "financing_inquiries_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id"),
+        ADD CONSTRAINT "financing_inquiries_mapping_scope_fk"
+        FOREIGN KEY ("store_mapping_id", "account_id", "tenant_id", "store_id")
+        REFERENCES "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "financing_inquiries_consent_scope_fk"
+        FOREIGN KEY ("consent_id", "tenant_id", "store_id")
+        REFERENCES "financing_customer_consents" ("id", "tenant_id", "store_id");
+      ALTER TABLE "financing_operation_requests"
+        ADD CONSTRAINT "financing_operation_requests_account_scope_fk"
+        FOREIGN KEY ("account_id", "tenant_id")
+        REFERENCES "financing_provider_accounts" ("id", "tenant_id"),
+        ADD CONSTRAINT "financing_operation_requests_mapping_scope_fk"
+        FOREIGN KEY ("mapping_id", "account_id", "tenant_id", "store_id")
+        REFERENCES "financing_provider_store_mappings" ("id", "account_id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "financing_operation_requests_consent_scope_fk"
+        FOREIGN KEY ("consent_id", "tenant_id", "store_id")
+        REFERENCES "financing_customer_consents" ("id", "tenant_id", "store_id"),
+        ADD CONSTRAINT "financing_operation_requests_inquiry_scope_fk"
+        FOREIGN KEY ("inquiry_id", "tenant_id", "store_id")
+        REFERENCES "financing_inquiries" ("id", "tenant_id", "store_id");
+      ALTER TABLE "financing_conditions"
+        ADD CONSTRAINT "financing_conditions_inquiry_scope_fk"
+        FOREIGN KEY ("inquiry_id", "tenant_id", "store_id")
+        REFERENCES "financing_inquiries" ("id", "tenant_id", "store_id")
+        ON DELETE CASCADE;
+      ALTER TABLE "financing_inquiry_events"
+        ADD CONSTRAINT "financing_inquiry_events_inquiry_scope_fk"
+        FOREIGN KEY ("inquiry_id", "tenant_id", "store_id")
+        REFERENCES "financing_inquiries" ("id", "tenant_id", "store_id")
+        ON DELETE CASCADE,
+        ADD CONSTRAINT "financing_inquiry_events_operation_scope_fk"
+        FOREIGN KEY ("operation_request_id", "tenant_id", "store_id")
+        REFERENCES "financing_operation_requests" ("id", "tenant_id", "store_id");
     `);
   });
 }
@@ -183,6 +294,22 @@ async function verifyFinalState() {
     "automation_approvals_proposal_digest_sha256",
     "automation_approvals_step_run_scope_fk",
     "automation_steps_run_scope_fk",
+    "financing_conditions_inquiry_scope_fk",
+    "financing_customer_consents_store_scope_fk",
+    "financing_inquiries_account_scope_fk",
+    "financing_inquiries_consent_scope_fk",
+    "financing_inquiries_mapping_scope_fk",
+    "financing_inquiry_events_inquiry_scope_fk",
+    "financing_inquiry_events_operation_scope_fk",
+    "financing_operation_requests_account_scope_fk",
+    "financing_operation_requests_consent_scope_fk",
+    "financing_operation_requests_inquiry_scope_fk",
+    "financing_operation_requests_mapping_scope_fk",
+    "financing_provider_store_banks_mapping_scope_fk",
+    "financing_provider_store_mappings_account_scope_fk",
+    "financing_provider_store_mappings_store_scope_fk",
+    "financing_provider_tokens_account_scope_fk",
+    "provider_oauth_transactions_account_scope_fk",
   ];
   const rows = await sql`
     select conname
@@ -193,12 +320,18 @@ async function verifyFinalState() {
   const missing = expectedConstraints.filter((name) => !actual.has(name));
   if (missing.length) {
     throw new Error(
-      `Automation scope constraints are missing after db push: ${missing.join(", ")}`,
+      `Scope constraints are missing after db push: ${missing.join(", ")}`,
     );
   }
   const expectedIndexes = [
     "automation_runs_id_scope_unique",
     "automation_steps_id_run_scope_unique",
+    "financing_customer_consents_id_scope_unique",
+    "financing_inquiries_id_scope_unique",
+    "financing_operation_requests_id_scope_unique",
+    "financing_provider_accounts_id_tenant_unique",
+    "financing_provider_store_mappings_id_scope_unique",
+    "stores_id_tenant_unique",
   ];
   const indexRows = await sql`
     select indexname
@@ -212,8 +345,8 @@ async function verifyFinalState() {
   );
   if (missingIndexes.length) {
     throw new Error(
-      `Automation scope indexes are missing after db push: ${missingIndexes.join(", ")}`,
+      `Scope indexes are missing after db push: ${missingIndexes.join(", ")}`,
     );
   }
-  console.log("Automation scope constraints verified in the local product DB.");
+  console.log("Scope constraints verified in the local product DB.");
 }

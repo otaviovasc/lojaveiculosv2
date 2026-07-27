@@ -92,6 +92,14 @@ pnpm run qa:permissions:local
 The product seed creates realistic local data for inventory, CRM/leads,
 finance, commissions, documents, public storefront, billing, marketplace,
 external API, fiscal, provider events, users, roles, and entitlements.
+To import the complete versioned FIPE snapshot into the local product database
+through the catalog parser and idempotent upsert path, run:
+
+```bash
+pnpm run db:seed:fipe:local
+```
+
+This command is local-only and refuses deployed or non-local database targets.
 When R2 variables are present in the root `.env`, `db:seed:local` also uploads
 fixture PDFs for seeded document rows so local previews resolve through the real
 R2 download flow. To inspect or rerun only that repair step:

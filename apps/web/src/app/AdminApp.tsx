@@ -21,6 +21,7 @@ import {
   ReportsModule,
   SalesModule,
   SettingsModule,
+  SimulationsPage,
   StorefrontCustomizationModule,
 } from "./AdminAppLazyModules";
 import { moduleDefinitions } from "./moduleDefinitions";
@@ -113,6 +114,8 @@ export function AdminApp() {
             <FiscalModule />
           ) : activeSurface === "settings" ? (
             <SettingsModule key="settings" />
+          ) : activeSurface === "simulations" ? (
+            <SimulationsPage />
           ) : (
             <ModulePlaceholder module={activeModule} />
           )}

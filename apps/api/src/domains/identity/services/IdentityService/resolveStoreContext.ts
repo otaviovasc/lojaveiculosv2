@@ -96,5 +96,8 @@ function resolveBillingAuthorityPermissions(input: {
     return permissions;
   }
 
-  return permissions.filter((permission) => permission !== "billing.manage");
+  return permissions.filter(
+    (permission) =>
+      !["billing.manage", "financing.connection.manage"].includes(permission),
+  );
 }

@@ -40,6 +40,14 @@ import {
   logWhatsappServiceEvent,
 } from "./serviceSupport.js";
 import { updateBotSession } from "./whatsappBotSessionActions.js";
+import {
+  assertCredereBotActionAuthorized,
+  botActionPermission,
+  executeCredereCreateSimulationAction,
+  executeCredereGetSimulationAction,
+  executeCredereReadinessAction,
+  isCredereBotAction,
+} from "./whatsappBotCredereActions.js";
 
 export type ExecuteWhatsappBotActionInput = {
   action: WhatsappBotActionName;
@@ -57,7 +65,8 @@ export async function executeWhatsappBotAction(
   input: ExecuteWhatsappBotActionInput,
   ports: CrmServicePorts,
 ) {
-  assertPermission(context, "crm.whatsapp.integrations.manage");
+  assertBotActionAuthorized(context, input.action);
+  const auditPermission = botActionPermission(input.action);
   logWhatsappServiceEvent(context, "crm.whatsapp.bot.action.execute.started", {
     action: input.action,
     connectionId: input.connectionId ?? null,
@@ -72,10 +81,16 @@ export async function executeWhatsappBotAction(
       idempotencyKey: input.idempotencyKey ?? null,
       sessionId: input.sessionId ?? null,
     },
-    permission: "crm.whatsapp.integrations.manage",
+    permission: auditPermission,
     summary: "Executed CRM WhatsApp bot action",
   });
   switch (input.action) {
+    case "credere_readiness":
+      return executeCredereReadinessAction(context, ports);
+    case "credere_create_simulation":
+      return executeCredereCreateSimulationAction(context, input, ports);
+    case "credere_get_simulation":
+      return executeCredereGetSimulationAction(context, input, ports);
     case "send_text":
       return executeBotSendTextAction(context, input, ports);
     case "send_image":
@@ -216,4 +231,15 @@ export async function executeWhatsappBotAction(
         422,
       );
   }
+}
+
+function assertBotActionAuthorized(
+  context: ServiceContext,
+  action: WhatsappBotActionName,
+) {
+  if (isCredereBotAction(action)) {
+    assertCredereBotActionAuthorized(context, action);
+    return;
+  }
+  assertPermission(context, "crm.whatsapp.integrations.manage");
 }

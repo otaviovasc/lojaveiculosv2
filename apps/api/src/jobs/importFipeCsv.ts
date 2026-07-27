@@ -5,35 +5,24 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { splitVehicleCatalogName } from "../domains/vehicle/catalog/catalogNameNormalization.js";
 import type { VehicleCatalogType } from "../domains/vehicle/ports/vehicleCatalogProvider.js";
-import { parseFipePriceCents } from "../infrastructure/catalog/fipeVehicleCatalogMapping.js";
+import {
+  parseFipeModelYear,
+  parseFipePriceCents,
+} from "../infrastructure/catalog/fipeVehicleCatalogMapping.js";
 import { loadLocalEnv } from "../infrastructure/config/loadLocalEnv.js";
 import { createDrizzleVehicleCatalogWrites } from "../infrastructure/db/vehicleCatalog/drizzleVehicleCatalogWrites.js";
+import { resolveFipeCsvPath } from "./fipeCsvImportConfig.js";
+import { assertFipeCsvHeader, parseFipeCsvRow } from "./fipeCsvImportParser.js";
 
 loadLocalEnv();
 
-const csvPath =
-  process.env.FIPE_CSV_PATH ??
-  new URL("../../../../../tabela-fipe-335.csv", import.meta.url).pathname;
+const csvPath = resolveFipeCsvPath();
 
 const vehicleTypeByCode: Record<string, VehicleCatalogType> = {
   CAR: "cars",
   MOTO: "motorcycles",
   MOTORCYCLE: "motorcycles",
   TRUCK: "trucks",
-};
-
-type CsvRow = {
-  brandCode: string;
-  brandValue: string;
-  fipeCode: string;
-  fuelType: string;
-  modelCode: string;
-  modelValue: string;
-  month: string;
-  price: string;
-  type: string;
-  yearCode: string;
-  yearValue: string;
 };
 
 async function main(): Promise<void> {
@@ -58,10 +47,11 @@ async function main(): Promise<void> {
     let isHeader = true;
     for await (const line of lineReader) {
       if (isHeader) {
+        assertFipeCsvHeader(line);
         isHeader = false;
         continue;
       }
-      const row = parseRow(line);
+      const row = parseFipeCsvRow(line);
       if (!row) {
         counts.skipped += 1;
         continue;
@@ -97,13 +87,13 @@ async function main(): Promise<void> {
       });
       counts.versions.add(version.id);
 
-      const modelYear = Number.parseInt(row.yearCode.slice(0, 4), 10);
+      const modelYear = parseFipeModelYear(row.yearCode);
       await writes.upsertYear({
         code: row.yearCode,
         fuelCode: row.yearCode.includes("-")
           ? (row.yearCode.split("-")[1] ?? null)
           : null,
-        modelYear: Number.isFinite(modelYear) ? modelYear : null,
+        modelYear,
         name: row.yearValue,
         versionId: version.id,
       });
@@ -116,7 +106,7 @@ async function main(): Promise<void> {
         fuel: row.fuelType || null,
         modelCode: row.modelCode,
         modelName: row.modelValue,
-        modelYear: Number.isFinite(modelYear) ? modelYear : null,
+        modelYear,
         priceCents: parseFipePriceCents(row.price),
         referenceMonth: row.month || null,
         source: "fipe",
@@ -129,6 +119,9 @@ async function main(): Promise<void> {
       if (counts.rows % 5000 === 0) {
         console.log(`progress: ${counts.rows} rows processed...`);
       }
+    }
+    if (isHeader) {
+      throw new Error("The FIPE CSV is empty.");
     }
 
     console.log(
@@ -145,69 +138,6 @@ async function main(): Promise<void> {
   } finally {
     await dbClient.end();
   }
-}
-
-function parseRow(line: string): CsvRow | null {
-  const fields = parseCsvLine(line);
-  if (fields.length < 12) return null;
-  const [
-    type,
-    brandCode,
-    brandValue,
-    modelCode,
-    modelValue,
-    yearCode,
-    yearValue,
-    fipeCode,
-    _fuelLetter,
-    fuelType,
-    price,
-    month,
-  ] = fields;
-  if (!type || !brandCode || !modelCode || !yearCode) return null;
-  return {
-    brandCode,
-    brandValue: brandValue ?? "",
-    fipeCode: fipeCode ?? "",
-    fuelType: fuelType ?? "",
-    modelCode,
-    modelValue: modelValue ?? "",
-    month: month ?? "",
-    price: price ?? "",
-    type,
-    yearCode,
-    yearValue: yearValue ?? "",
-  };
-}
-
-function parseCsvLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    if (inQuotes) {
-      if (char === '"') {
-        if (line[index + 1] === '"') {
-          current += '"';
-          index += 1;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += char;
-      }
-    } else if (char === '"') {
-      inQuotes = true;
-    } else if (char === ",") {
-      fields.push(current);
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  fields.push(current);
-  return fields;
 }
 
 function requireEnv(name: string): string {

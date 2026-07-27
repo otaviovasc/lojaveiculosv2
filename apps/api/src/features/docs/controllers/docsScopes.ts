@@ -9,6 +9,11 @@ export const openApiScopes = {
     "Request uploads and attach documents to finance entries.",
   "finance.auto_entries.manage":
     "Create, update, pause, and archive automatic finance entry rules.",
+  "financing.connection.manage":
+    "Manage agency Credere OAuth connection and store mappings.",
+  "financing.simulation.create": "Create store-scoped financing simulations.",
+  "financing.simulation.read":
+    "Read and refresh store-scoped financing simulations.",
   "inventory.read": "Read vehicle inventory.",
   "inventory.create": "Create vehicle inventory records.",
   "inventory.update_description": "Edit descriptive vehicle fields.",

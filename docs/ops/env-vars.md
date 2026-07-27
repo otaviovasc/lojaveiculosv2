@@ -32,6 +32,11 @@ The product DB push wrapper sets it automatically during the first phase that
 creates automation scope indexes before their composite foreign keys. Leave it
 unset in staging, production, and Railway service variables.
 
+`DRIZZLE_SCOPE_FOREIGN_KEY_BOOTSTRAP` is an internal, local-only schema tooling
+flag. The product DB push wrapper sets it automatically while it creates the
+composite tenant/store indexes required by financing scope foreign keys. Leave
+it unset in staging, production, and Railway service variables.
+
 ## Authentication
 
 Use a dedicated Clerk project for V2. Do not reuse V1 Clerk secrets or
@@ -178,6 +183,27 @@ storage adapter. Successful mirrors store the public R2 URL on
 type, byte size, and mirror timestamp under `metadata.media`. Failed mirrors
 keep the provider URL and set `metadata.media.mirrorStatus=failed`.
 
+## Credere Financing
+
+Credere financing uses tenant-owned OAuth connections: agencies connect once
+for affiliated stores, while direct owner-operated stores can connect their own
+Credere account. Do not commit real client credentials or encryption keys.
+
+| Name                                | Required     | Environments               | Secret | Notes                                                                                                                     |
+| ----------------------------------- | ------------ | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `CREDERE_CLIENT_ID`                 | When enabled | staging, production        | Yes    | OAuth client id issued by Credere. All four core values must be configured together.                                      |
+| `CREDERE_CLIENT_SECRET`             | When enabled | staging, production        | Yes    | OAuth client secret issued by Credere.                                                                                    |
+| `CREDERE_REDIRECT_URI`              | When enabled | staging, production        | No     | Public API OAuth callback URI registered with Credere.                                                                    |
+| `CREDERE_CREDENTIAL_ENCRYPTION_KEY` | When enabled | staging, production        | Yes    | Key material for persisted provider credentials.                                                                          |
+| `CREDERE_BANK_POLICY_CODES`         | No           | local, staging, production | No     | Optional comma-separated FEBRABAN allowlist. When unset, runtime uses all Credere active/okay banks for the mapped store. |
+
+Store simulation routes require the `simulations` entitlement and explicit
+customer consent. Provider errors must be returned as stable JSON API errors
+without raw provider payloads, tokens, CPF/CNPJ, email, or phone details.
+When all Credere values are absent, the API remains healthy and these routes
+return `CREDERE_FINANCING_UNAVAILABLE` without claiming an official provider
+operation. A partial configuration fails closed during startup.
+
 R2 browser uploads require a bucket-level CORS policy in addition to these
 runtime variables. Use `docs/ops/r2-cors-lojaveiculosv2.json` for the
 Cloudflare dashboard or `docs/ops/r2-cors-lojaveiculosv2-wrangler.json` for
@@ -243,23 +269,23 @@ if a new lane uses another port, add the exact `http://localhost:<port>` and
 
 ## Vehicle Catalog Sync
 
-| Name                                   | Required | Environments               | Secret | Notes                                                                                                                      |
-| -------------------------------------- | -------- | -------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `FIPE_API_BASE_URL`                    | No       | local, staging, production | No     | FIPE-compatible API base URL. Defaults to Parallelum FIPE v2.                                                              |
-| `FIPE_API_TOKEN`                       | No       | staging, production        | Yes    | Optional FIPE subscription token, sent as `X-Subscription-Token`.                                                          |
-| `FIPE_CATALOG_SYNC_VEHICLE_TYPES`      | No       | local, staging, production | No     | Comma-separated `cars`, `motorcycles`, `trucks`. Defaults to `cars`.                                                       |
-| `FIPE_CATALOG_SYNC_CONCURRENCY`        | No       | local, staging, production | No     | Brand worker count, capped by service logic. Defaults to `1`.                                                              |
-| `FIPE_CATALOG_SYNC_BRAND_CODES`        | No       | local, staging, production | No     | Optional comma-separated FIPE brand codes for targeted raw-data refreshes.                                                 |
-| `FIPE_CATALOG_SYNC_BRAND_LIMIT`        | No       | local                      | No     | Optional local/testing limit for brands per run.                                                                           |
-| `FIPE_CATALOG_SYNC_HTTP_MAX_ATTEMPTS`  | No       | local, staging, production | No     | HTTP attempts for retryable FIPE responses. Defaults to `5`.                                                               |
-| `FIPE_CATALOG_SYNC_INCLUDE_YEARS`      | No       | local, staging, production | No     | Set `false` to refresh only brands, model families, and versions before year backfill.                                     |
-| `FIPE_CATALOG_SYNC_HTTP_TIMEOUT_MS`    | No       | local, staging, production | No     | Per-request FIPE HTTP timeout in milliseconds. Defaults to `30000`.                                                        |
-| `FIPE_CATALOG_SYNC_HTTP_RETRY_BASE_MS` | No       | local, staging, production | No     | Exponential retry base delay in milliseconds. Defaults to `1000`.                                                          |
-| `FIPE_CATALOG_SYNC_REFERENCE_CODE`     | No       | local, staging, production | No     | Optional FIPE reference month code. Defaults to the latest code returned by `/references`.                                 |
-| `FIPE_CATALOG_SYNC_REFRESH_AFTER_DAYS` | No       | local, staging, production | No     | Refresh existing version years after this age. Defaults to `30`; `0` only fills missing rows.                              |
-| `FIPE_CATALOG_SYNC_REFRESH_EXISTING`   | No       | local, staging, production | No     | Set `true` to force a full refresh of existing version-year lookups.                                                       |
-| `FIPE_CATALOG_NORMALIZE_DRY_RUN`       | No       | local, staging, production | No     | Dry-run flag for the vehicle catalog name-normalization job.                                                               |
-| `FIPE_CSV_PATH`                        | No       | local                      | No     | Optional path to the FIPE table CSV for the `catalog:import-csv` job. Defaults to the repo-adjacent `tabela-fipe-335.csv`. |
+| Name                                   | Required | Environments               | Secret | Notes                                                                                                                    |
+| -------------------------------------- | -------- | -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `FIPE_API_BASE_URL`                    | No       | local, staging, production | No     | FIPE-compatible API base URL. Defaults to Parallelum FIPE v2.                                                            |
+| `FIPE_API_TOKEN`                       | No       | staging, production        | Yes    | Optional FIPE subscription token, sent as `X-Subscription-Token`.                                                        |
+| `FIPE_CATALOG_SYNC_VEHICLE_TYPES`      | No       | local, staging, production | No     | Comma-separated `cars`, `motorcycles`, `trucks`. Defaults to `cars`.                                                     |
+| `FIPE_CATALOG_SYNC_CONCURRENCY`        | No       | local, staging, production | No     | Brand worker count, capped by service logic. Defaults to `1`.                                                            |
+| `FIPE_CATALOG_SYNC_BRAND_CODES`        | No       | local, staging, production | No     | Optional comma-separated FIPE brand codes for targeted raw-data refreshes.                                               |
+| `FIPE_CATALOG_SYNC_BRAND_LIMIT`        | No       | local                      | No     | Optional local/testing limit for brands per run.                                                                         |
+| `FIPE_CATALOG_SYNC_HTTP_MAX_ATTEMPTS`  | No       | local, staging, production | No     | HTTP attempts for retryable FIPE responses. Defaults to `5`.                                                             |
+| `FIPE_CATALOG_SYNC_INCLUDE_YEARS`      | No       | local, staging, production | No     | Set `false` to refresh only brands, model families, and versions before year backfill.                                   |
+| `FIPE_CATALOG_SYNC_HTTP_TIMEOUT_MS`    | No       | local, staging, production | No     | Per-request FIPE HTTP timeout in milliseconds. Defaults to `30000`.                                                      |
+| `FIPE_CATALOG_SYNC_HTTP_RETRY_BASE_MS` | No       | local, staging, production | No     | Exponential retry base delay in milliseconds. Defaults to `1000`.                                                        |
+| `FIPE_CATALOG_SYNC_REFERENCE_CODE`     | No       | local, staging, production | No     | Optional FIPE reference month code. Defaults to the latest code returned by `/references`.                               |
+| `FIPE_CATALOG_SYNC_REFRESH_AFTER_DAYS` | No       | local, staging, production | No     | Refresh existing version years after this age. Defaults to `30`; `0` only fills missing rows.                            |
+| `FIPE_CATALOG_SYNC_REFRESH_EXISTING`   | No       | local, staging, production | No     | Set `true` to force a full refresh of existing version-year lookups.                                                     |
+| `FIPE_CATALOG_NORMALIZE_DRY_RUN`       | No       | local, staging, production | No     | Dry-run flag for the vehicle catalog name-normalization job.                                                             |
+| `FIPE_CSV_PATH`                        | No       | local                      | No     | Optional path to the FIPE table CSV for the `catalog:import-csv` job. Defaults to repository-root `tabela-fipe-335.csv`. |
 
 Parallelum FIPE brand responses currently include `code` and `name`, but no
 logo URL. The catalog sync enriches brands from the legacy `brands.json` logo
