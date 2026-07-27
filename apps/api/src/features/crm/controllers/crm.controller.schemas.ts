@@ -46,11 +46,22 @@ export const leadActivityDirectionSchema = z.enum([
 ]);
 
 export const listLeadsQuerySchema = z.object({
+  cursor: z.string().trim().min(1).max(512).optional(),
   listingId: z.string().uuid().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
+  pipelineId: z.string().uuid().optional(),
+  pipelineStageId: z.string().uuid().optional(),
   search: z.string().trim().max(120).optional(),
   source: leadSourceSchema.optional(),
+  status: leadStatusSchema.optional(),
+});
+
+export const listLeadBoardQuerySchema = z.object({
+  pipelineId: z.string().uuid(),
+  search: z.string().trim().min(1).max(120).optional(),
+  source: leadSourceSchema.optional(),
+  stageLimit: z.coerce.number().int().min(1).max(100).default(20),
   status: leadStatusSchema.optional(),
 });
 

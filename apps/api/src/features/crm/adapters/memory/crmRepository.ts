@@ -1,6 +1,7 @@
 import type {
   CreateCrmLeadInput,
   CreateLeadActivityInput,
+  CountCrmLeadsInput,
   CrmLead,
   CrmLeadActivity,
   CrmRepository,
@@ -108,6 +109,9 @@ export function createMemoryCrmRepository(): CrmRepository {
           Boolean(lead.pipelineStageId && stageIds.has(lead.pipelineStageId)),
       ).length;
     },
+    async countLeads(input) {
+      return filterLeads(leads, input).length;
+    },
     async findLeadById(input) {
       return findScopedLead(leads, input.leadId, input) ?? null;
     },
@@ -135,20 +139,25 @@ export function createMemoryCrmRepository(): CrmRepository {
         )
         .slice(0, input.limit);
     },
+    async listLeadBoard(input) {
+      const stages = new Map<string, CrmLead[]>();
+      for (const lead of filterLeads(leads, input)) {
+        if (!lead.pipelineStageId) continue;
+        const items = stages.get(lead.pipelineStageId) ?? [];
+        items.push(lead);
+        stages.set(lead.pipelineStageId, items);
+      }
+      return [...stages.entries()].map(([pipelineStageId, items]) => ({
+        items: items.slice(0, input.stageLimit),
+        pipelineStageId,
+        total: items.length,
+      }));
+    },
     async listLeads(input) {
-      return leads
-        .filter((lead) => lead.storeId === input.storeId)
-        .filter((lead) => lead.tenantId === input.tenantId)
-        .filter(
-          (lead) => !input.listingId || lead.listingId === input.listingId,
-        )
-        .filter((lead) => !input.source || lead.source === input.source)
-        .filter((lead) => !input.status || lead.status === input.status)
-        .filter((lead) => matchesSearch(lead, input.search))
-        .sort(
-          (left, right) => right.updatedAt.getTime() - left.updatedAt.getTime(),
-        )
-        .slice(input.offset ?? 0, (input.offset ?? 0) + input.limit);
+      const offset = input.cursor ? 0 : (input.offset ?? 0);
+      return filterLeads(leads, input)
+        .filter((lead) => isAfterCursor(lead, input.cursor))
+        .slice(offset, offset + input.limit);
     },
     async updateLead(input) {
       const lead = findScopedLead(leads, input.leadId, input);
@@ -159,6 +168,42 @@ export function createMemoryCrmRepository(): CrmRepository {
       return lead;
     },
   };
+}
+
+function filterLeads(
+  leads: CrmLead[],
+  input: CountCrmLeadsInput | ListCrmLeadsInput,
+) {
+  return leads
+    .filter((lead) => lead.storeId === input.storeId)
+    .filter((lead) => lead.tenantId === input.tenantId)
+    .filter((lead) => !input.listingId || lead.listingId === input.listingId)
+    .filter((lead) => !input.pipelineId || lead.pipelineId === input.pipelineId)
+    .filter(
+      (lead) =>
+        !input.pipelineStageId ||
+        lead.pipelineStageId === input.pipelineStageId,
+    )
+    .filter((lead) => !input.source || lead.source === input.source)
+    .filter((lead) => !input.status || lead.status === input.status)
+    .filter((lead) => matchesSearch(lead, input.search))
+    .sort(compareLeadsDescending);
+}
+
+function compareLeadsDescending(left: CrmLead, right: CrmLead) {
+  const timestampDifference =
+    right.updatedAt.getTime() - left.updatedAt.getTime();
+  return timestampDifference || right.id.localeCompare(left.id);
+}
+
+function isAfterCursor(lead: CrmLead, cursor: ListCrmLeadsInput["cursor"]) {
+  if (!cursor) return true;
+  const leadTimestamp = lead.updatedAt.getTime();
+  const cursorTimestamp = cursor.updatedAt.getTime();
+  return (
+    leadTimestamp < cursorTimestamp ||
+    (leadTimestamp === cursorTimestamp && lead.id < cursor.id)
+  );
 }
 
 function findScopedLead(

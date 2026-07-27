@@ -29,6 +29,14 @@ export function createRuntimeProductCrmApi(): ProductCrmApi {
       createProductCrmApi(await createProductCrmApiOptions()).listActivities(
         leadId,
       ),
+    listLeadBoard: async (query) =>
+      createProductCrmApi(await createProductCrmApiOptions()).listLeadBoard(
+        query,
+      ),
+    listLeadPage: async (query) =>
+      createProductCrmApi(await createProductCrmApiOptions()).listLeadPage(
+        query,
+      ),
     listLeads: async (query) =>
       createProductCrmApi(await createProductCrmApiOptions()).listLeads(query),
     listPipelines: async () =>

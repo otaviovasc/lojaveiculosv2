@@ -12,7 +12,11 @@ import type { DeleteCrmPipelineInput } from "../../../domains/crm/services/CrmSe
 import { getCrmLead } from "../../../domains/crm/services/CrmService/getCrmLead.js";
 import type { GetCrmLeadInput } from "../../../domains/crm/services/CrmService/getCrmLead.js";
 import { listCrmLeads } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
-import type { ListCrmLeadsInput } from "../../../domains/crm/services/CrmService/listCrmLeads.js";
+import type {
+  ListCrmLeadsInput,
+  ListCrmLeadsResult,
+} from "../../../domains/crm/services/CrmService/listCrmLeads.js";
+import { listCrmLeadBoard } from "../../../domains/crm/services/CrmService/listCrmLeadBoard.js";
 import { listCrmPipelines } from "../../../domains/crm/services/CrmService/listCrmPipelines.js";
 import { listLeadActivities } from "../../../domains/crm/services/CrmService/listLeadActivities.js";
 import type { ListLeadActivitiesInput } from "../../../domains/crm/services/CrmService/listLeadActivities.js";
@@ -56,7 +60,6 @@ import {
   createCrmWhatsappServiceBindings,
   type CrmWhatsappServices,
 } from "./crmWhatsappServiceBindings.js";
-
 export type CrmServices = CrmWhatsappServices & {
   createActivity: (
     context: ServiceContext,
@@ -94,10 +97,14 @@ export type CrmServices = CrmWhatsappServices & {
     context: ServiceContext,
     input: ListLeadActivitiesInput,
   ) => Promise<readonly CrmLeadActivity[]>;
+  listLeadBoard: (
+    context: ServiceContext,
+    input: Parameters<typeof listCrmLeadBoard>[1],
+  ) => ReturnType<typeof listCrmLeadBoard>;
   listLeads: (
     context: ServiceContext,
     input: ListCrmLeadsInput,
-  ) => Promise<readonly CrmLead[]>;
+  ) => Promise<ListCrmLeadsResult>;
   listPipelines: (context: ServiceContext) => Promise<readonly CrmPipeline[]>;
   listVisits: (
     context: ServiceContext,
@@ -120,18 +127,15 @@ export type CrmServices = CrmWhatsappServices & {
     input: UpdateCrmLeadInput,
   ) => Promise<CrmLead>;
 };
-
 export type CreateCrmServicesOptions = {
   drizzleClient?: DrizzleCrmClient;
   environment?: string;
   ports?: Partial<CrmServicePorts>;
 };
-
 export function createCrmServices(
   options: CreateCrmServicesOptions = {},
 ): CrmServices {
   const ports = resolveCrmPorts(options);
-
   return {
     createActivity: (context, input) =>
       createLeadActivity(context, input, ports),
@@ -148,6 +152,7 @@ export function createCrmServices(
     getLead: (context, input) => getCrmLead(context, input, ports),
     listActivities: (context, input) =>
       listLeadActivities(context, input, ports),
+    listLeadBoard: (context, input) => listCrmLeadBoard(context, input, ports),
     listLeads: (context, input) => listCrmLeads(context, input, ports),
     listPipelines: (context) => listCrmPipelines(context, ports),
     listVisits: (context, input) => listLeadVisits(context, input, ports),
@@ -160,7 +165,6 @@ export function createCrmServices(
     ...createCrmWhatsappServiceBindings(ports),
   };
 }
-
 function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
   const createVehicleInventory = (client: DrizzleCrmClient) => {
     const repositories = createDrizzleVehicleInventoryRepositories(
@@ -206,7 +210,6 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
         crmWhatsappRepository: createMemoryCrmWhatsappRepository(),
         environment: options.environment ?? "test",
       };
-
   const ports = { ...defaultPorts, ...(options.ports ?? {}) };
   if (options.drizzleClient && !ports.transaction) {
     ports.transaction = async (action) =>
@@ -238,8 +241,6 @@ function resolveCrmPorts(options: CreateCrmServicesOptions): CrmServicePorts {
         });
       });
   }
-
   return ports;
 }
-
 export const crmServices = createCrmServices();

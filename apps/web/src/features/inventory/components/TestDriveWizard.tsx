@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
+import { useRemoteSearch } from "../../../lib/useRemoteSearch";
 import { createInventoryRuntimeHeaders } from "../api/inventoryRuntimeApi";
 import type { InventoryListingSummary } from "../model/types";
 import type { InventoryStoreSettings } from "./InventoryPrintTypes";
@@ -60,6 +61,7 @@ export default function TestDriveWizard({
   // Leads state
   const [leads, setLeads] = useState<Lead[]>([]);
   const [searchLead, setSearchLead] = useState("");
+  const remoteLeadSearch = useRemoteSearch(searchLead, { minLength: 3 });
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [isNewLead, setIsNewLead] = useState(false);
 
@@ -108,30 +110,37 @@ export default function TestDriveWizard({
     }
   }, [isOpen]);
 
-  // Search leads
-  const handleSearchLeads = async (val: string) => {
-    setSearchLead(val);
-    if (val.length < 3) {
+  useEffect(() => {
+    if (!isOpen || remoteLeadSearch === null) {
+      if (remoteLeadSearch === null) setLeads([]);
+      return;
+    }
+    if (!remoteLeadSearch) {
       setLeads([]);
       return;
     }
+    let active = true;
     setLoading(true);
-    try {
-      const headers = await createInventoryRuntimeHeaders();
-      const res = await fetch(
-        `/api/v1/crm/leads?search=${encodeURIComponent(val)}`,
-        { headers },
-      );
-      if (res.ok) {
-        const data = (await res.json()) as LeadsResponse;
-        setLeads(data.leads ?? data.items ?? []);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    void createInventoryRuntimeHeaders()
+      .then((headers) =>
+        fetch(
+          `/api/v1/crm/leads?search=${encodeURIComponent(remoteLeadSearch)}`,
+          { headers },
+        ),
+      )
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = (await response.json()) as LeadsResponse;
+        if (active) setLeads(data.leads ?? data.items ?? []);
+      })
+      .catch((error) => console.error(error))
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [isOpen, remoteLeadSearch]);
 
   const handleSelectLead = (lead: Lead) => {
     setSelectedLead(lead);
@@ -281,7 +290,7 @@ export default function TestDriveWizard({
                   leads={leads}
                   loading={loading}
                   onDriverChange={setDriver}
-                  onSearchLeads={(value) => void handleSearchLeads(value)}
+                  onSearchLeads={setSearchLead}
                   onSelectLead={handleSelectLead}
                   searchLead={searchLead}
                   selectedLead={selectedLead}

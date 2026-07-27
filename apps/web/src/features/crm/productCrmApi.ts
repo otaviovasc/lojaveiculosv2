@@ -31,6 +31,10 @@ export type ProductCrmApi = {
   createPipeline: (input: CreateProductCrmPipelineInput) => Promise<Pipeline>;
   deletePipeline: (pipelineId: string) => Promise<{ deleted: true }>;
   listActivities: (leadId: string) => Promise<ProductCrmLeadActivity[]>;
+  listLeadBoard: (
+    query: ProductCrmLeadBoardQuery,
+  ) => Promise<ProductCrmLeadBoard>;
+  listLeadPage: (query?: ProductCrmLeadQuery) => Promise<ProductCrmLeadPage>;
   listLeads: (query?: ProductCrmLeadQuery) => Promise<ProductCrmLead[]>;
   listPipelines: () => Promise<Pipeline[]>;
   moveLeadPipelineStage: (
@@ -63,12 +67,37 @@ export type MoveProductCrmLeadStageInput = {
 };
 
 export type ProductCrmLeadQuery = {
+  cursor?: string;
   listingId?: string;
   limit?: number;
   offset?: number;
+  pipelineId?: string;
+  pipelineStageId?: string;
   search?: string;
   source?: CrmLeadSource;
   status?: CrmLeadStatus;
+};
+
+export type ProductCrmLeadPage = {
+  leads: ProductCrmLead[];
+  nextCursor: string | null;
+  total: number;
+};
+
+export type ProductCrmLeadBoardQuery = {
+  pipelineId: string;
+  search?: string;
+  source?: CrmLeadSource;
+  stageLimit?: number;
+  status?: CrmLeadStatus;
+};
+
+export type ProductCrmLeadBoardStage = ProductCrmLeadPage & {
+  pipelineStageId: string;
+};
+
+export type ProductCrmLeadBoard = {
+  stages: ProductCrmLeadBoardStage[];
 };
 
 export type CreateProductCrmApiOptions = {
@@ -101,6 +130,18 @@ export function createProductCrmApi({
       headers: createProductCrmHeaders(auth),
       method: "PATCH",
     }).then(readJson<T>);
+  const listLeadPage = (query?: ProductCrmLeadQuery) =>
+    getJson<ProductCrmLeadPage>(
+      withQuery(productCrmRoutes.leads(baseUrl), [
+        createProductCrmLeadQuery(query),
+      ]),
+    );
+  const listLeadBoard = (query: ProductCrmLeadBoardQuery) =>
+    getJson<ProductCrmLeadBoard>(
+      withQuery(productCrmRoutes.leadBoard(baseUrl), [
+        createProductCrmLeadBoardQuery(query),
+      ]),
+    );
 
   return {
     createActivity: (leadId, input) =>
@@ -119,12 +160,9 @@ export function createProductCrmApi({
       getJson<{ activities: ProductCrmLeadActivity[] }>(
         productCrmRoutes.activities(leadId, baseUrl),
       ).then((payload) => payload.activities),
-    listLeads: (query) =>
-      getJson<{ leads: ProductCrmLead[] }>(
-        withQuery(productCrmRoutes.leads(baseUrl), [
-          createProductCrmLeadQuery(query),
-        ]),
-      ).then((payload) => payload.leads),
+    listLeadBoard,
+    listLeadPage,
+    listLeads: (query) => listLeadPage(query).then((payload) => payload.leads),
     listPipelines: () =>
       getJson<{ pipelines: Pipeline[] }>(
         productCrmRoutes.pipelines(baseUrl),
@@ -163,6 +201,8 @@ export const productCrmRoutes = {
     ),
   lead: (leadId: string, baseUrl?: string) =>
     createCrmEndpoint(`/crm/leads/${encodeURIComponent(leadId)}`, baseUrl),
+  leadBoard: (baseUrl?: string) =>
+    createCrmEndpoint("/crm/leads/board", baseUrl),
   leadPipelineStage: (leadId: string, baseUrl?: string) =>
     createCrmEndpoint(
       `/crm/leads/${encodeURIComponent(leadId)}/pipeline-stage`,
@@ -177,11 +217,26 @@ export const productCrmRoutes = {
   pipelines: (baseUrl?: string) => createCrmEndpoint("/crm/pipelines", baseUrl),
 } as const;
 
+export function createProductCrmLeadBoardQuery(
+  query: ProductCrmLeadBoardQuery,
+) {
+  const params = new URLSearchParams();
+  addOptionalParam(params, "pipelineId", query.pipelineId);
+  addOptionalParam(params, "search", query.search);
+  addOptionalParam(params, "source", query.source);
+  addOptionalParam(params, "stageLimit", query.stageLimit);
+  addOptionalParam(params, "status", query.status);
+  return params;
+}
+
 export function createProductCrmLeadQuery(query: ProductCrmLeadQuery = {}) {
   const params = new URLSearchParams();
+  addOptionalParam(params, "cursor", query.cursor);
   addOptionalParam(params, "listingId", query.listingId);
   addOptionalParam(params, "limit", query.limit);
   addOptionalParam(params, "offset", query.offset);
+  addOptionalParam(params, "pipelineId", query.pipelineId);
+  addOptionalParam(params, "pipelineStageId", query.pipelineStageId);
   addOptionalParam(params, "search", query.search);
   addOptionalParam(params, "source", query.source);
   addOptionalParam(params, "status", query.status);

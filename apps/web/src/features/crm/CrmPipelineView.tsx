@@ -6,7 +6,7 @@ import { CrmLeadDetailsPage } from "./CrmLeadDetailsPage";
 import { CrmPipelineToolbar } from "./CrmPipelineToolbar";
 import { CrmPipelineSettingsLayout } from "./CrmPipelineSettingsLayout";
 import { CrmSimulationModal } from "./CrmSimulationModal";
-import type { FinancingSimulationDraft } from "./crmLeadData";
+import { getLeadStageId, type FinancingSimulationDraft } from "./crmLeadData";
 import type { CrmPipelineViewProps } from "./CrmPipelineViewTypes";
 import { type PipelineStage } from "./crmPipelineStorage";
 import {
@@ -21,12 +21,9 @@ import { CrmQuickAddStageModal } from "./CrmQuickAddStageModal";
 import { CrmEditStageModal } from "./CrmEditStageModal";
 import { CrmListView } from "./CrmListView";
 import { CrmPipelineAlert, CrmPipelineLoading } from "./CrmPipelineViewStates";
-import { useCrmPipelines } from "./useCrmPipelines";
 import { getFilteredLeads, hasAnyClientFilter } from "./CrmPipelineViewFilters";
 
 export function CrmPipelineView(props: CrmPipelineViewProps) {
-  const storeId = props.leads[0]?.storeId ?? "default";
-
   const {
     pipelines,
     activePipelineId,
@@ -38,7 +35,7 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     handleAddStage,
     isLoading: isPipelineLoading,
     error: pipelineError,
-  } = useCrmPipelines(storeId, props.pipelineApi);
+  } = props.pipelinesState;
 
   const [visibleStages, setVisibleStages] = useState<Record<string, boolean>>(
     {},
@@ -109,6 +106,15 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
     return getFilteredLeads(props.viewLeads, activePipeline, customFilters);
   }, [props.viewLeads, activePipeline, customFilters]);
   const hasActiveFilters = hasAnyClientFilter(props.filters, customFilters);
+  const remainingLeadCount =
+    activePipeline?.stages.reduce((total, stage) => {
+      const loaded = props.leads.filter(
+        (lead) => getLeadStageId(lead) === stage.id,
+      ).length;
+      return (
+        total + Math.max(0, (props.stageTotals[stage.id] ?? loaded) - loaded)
+      );
+    }, 0) ?? 0;
   const openQuickAddLead = () =>
     setQuickAddLeadStageId(activePipeline?.stages[0]?.id ?? "new");
   const resetClientFilters = () => {
@@ -268,18 +274,30 @@ export function CrmPipelineView(props: CrmPipelineViewProps) {
             <CrmKanbanBoard
               onAddStage={() => setIsQuickStageOpen(true)}
               onQuickAddDeal={setQuickAddLeadStageId}
+              onLoadMoreStage={props.onLoadMoreStage}
               onSelectLead={props.onSelectLead}
               onSimulateClick={setSimulateLead}
               onUpdateStage={handleUpdateStage}
               onEditStage={setEditingStage}
               stages={activePipeline.stages}
+              loadingStageIds={props.loadingStageIds}
+              stageTotals={props.stageTotals}
               vehicleOptions={props.vehicleOptions}
               viewLeads={filteredLeads}
               visibleStages={visibleStages}
             />
           ) : (
             <CrmListView
+              isLoadingMore={props.loadingStageIds.size > 0}
               leads={filteredLeads}
+              onLoadMore={async () => {
+                await Promise.all(
+                  activePipeline.stages.map((stage) =>
+                    props.onLoadMoreStage(stage.id),
+                  ),
+                );
+              }}
+              remaining={remainingLeadCount}
               stages={activePipeline.stages}
               vehicleOptions={props.vehicleOptions}
               onSelectLead={props.onSelectLead}

@@ -111,14 +111,37 @@ export type CreateIdempotentLeadActivityResult = {
 };
 
 export type ListCrmLeadsInput = {
+  cursor?: CrmLeadCursor;
   listingId?: string;
   limit: number;
   offset?: number;
+  pipelineId?: string;
+  pipelineStageId?: string;
   search?: string;
   source?: LeadSource;
   status?: LeadStatus;
   storeId: StoreId;
   tenantId: TenantId;
+};
+
+export type CrmLeadCursor = {
+  id: string;
+  updatedAt: Date;
+};
+
+export type CountCrmLeadsInput = Omit<
+  ListCrmLeadsInput,
+  "cursor" | "limit" | "offset"
+>;
+
+export type ListCrmLeadBoardInput = CountCrmLeadsInput & {
+  stageLimit: number;
+};
+
+export type CrmLeadBoardStage = {
+  items: readonly CrmLead[];
+  pipelineStageId: string;
+  total: number;
 };
 
 export type ListLeadActivitiesInput = {
@@ -154,9 +177,13 @@ export type CrmRepository = {
     storeId: StoreId;
     tenantId: TenantId;
   }) => Promise<number>;
+  countLeads: (input: CountCrmLeadsInput) => Promise<number>;
   listActivities: (
     input: ListLeadActivitiesInput,
   ) => Promise<readonly CrmLeadActivity[]>;
+  listLeadBoard: (
+    input: ListCrmLeadBoardInput,
+  ) => Promise<readonly CrmLeadBoardStage[]>;
   listLeads: (input: ListCrmLeadsInput) => Promise<readonly CrmLead[]>;
   updateLead: (input: UpdateCrmLeadInput) => Promise<CrmLead>;
 };

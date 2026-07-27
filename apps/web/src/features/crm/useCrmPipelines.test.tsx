@@ -61,6 +61,8 @@ function createProductCrmApi(overrides: Partial<ProductCrmApi>): ProductCrmApi {
     createPipeline: vi.fn(notExpected),
     deletePipeline: vi.fn(notExpected),
     listActivities: vi.fn(notExpected),
+    listLeadBoard: vi.fn(notExpected),
+    listLeadPage: vi.fn(notExpected),
     listLeads: vi.fn(notExpected),
     listPipelines: vi.fn(notExpected),
     moveLeadPipelineStage: vi.fn(notExpected),

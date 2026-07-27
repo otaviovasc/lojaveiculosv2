@@ -1,11 +1,4 @@
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ClipboardCheck, Download, RefreshCcw } from "lucide-react";
 import {
   FeatureSearchField,
@@ -48,6 +41,7 @@ import {
   resolveChecklistCapabilities,
 } from "./checklistPermissions";
 import AnimatedContent from "../../components/ui/AnimatedContent";
+import { useRemoteSearch } from "../../lib/useRemoteSearch";
 
 export function ChecklistModule({
   api,
@@ -73,7 +67,7 @@ export function ChecklistModule({
   const [scope, setScope] = useState<InventoryChecklistOverviewScope>("active");
   const [status, setStatus] = useState<InventoryChecklistOverviewFilter>("all");
   const [search, setSearch] = useState("");
-  const deferredSearch = useDeferredValue(search);
+  const remoteSearch = useRemoteSearch(search);
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState<string | null>(null);
@@ -175,13 +169,13 @@ export function ChecklistModule({
     () => ({
       scope,
       status,
-      ...(deferredSearch.trim() ? { search: deferredSearch.trim() } : {}),
+      ...(remoteSearch ? { search: remoteSearch } : {}),
     }),
-    [deferredSearch, scope, status],
+    [remoteSearch, scope, status],
   );
 
   const refresh = useCallback(async () => {
-    if (!runtimeApi) return;
+    if (!runtimeApi || remoteSearch === null) return;
     const requestId = ++refreshSequence.current;
     setLoading(true);
     setError(null);
@@ -200,7 +194,7 @@ export function ChecklistModule({
     } finally {
       if (requestId === refreshSequence.current) setLoading(false);
     }
-  }, [query, runtimeApi]);
+  }, [query, remoteSearch, runtimeApi]);
 
   useEffect(() => {
     void refresh();
