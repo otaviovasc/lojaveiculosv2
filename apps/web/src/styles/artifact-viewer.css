@@ -111,7 +111,8 @@
 }
 
 .artifact-viewer__document > .artifact-viewer__loading,
-.artifact-viewer__document > .artifact-viewer__message {
+.artifact-viewer__document > .artifact-viewer__message,
+.artifact-viewer__document > .react-pdf__message {
   width: 100%;
   grid-column: 1 / -1;
 }
